@@ -1,0 +1,16 @@
+# $Id$
+
+WATCHERS = dicuccio ludwigf gotvyans
+
+ASN_DEP = seq seqset
+
+LIB = xobjreadex
+SRC = glimmer_reader idmapper idmapper_builtin idmapper_config \
+	  idmapper_database idmapper_gcassembly idmapper_scope \
+	  source_mod_parser_wrapper
+
+DLL_LIB = xobjread xobjutil
+
+
+USES_LIBRARIES =  \
+    $(OBJREAD_LIBS) xobjutil

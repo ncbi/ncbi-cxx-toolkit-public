@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(test_ncbi_rwstream)
+  NCBI_sources(test_ncbi_rwstream)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_add_test()
+  NCBI_project_watchers(lavr)
+NCBI_end_app()
+

@@ -1,0 +1,1467 @@
+Seq-entry ::= set {
+  class nuc-prot ,
+  seq-set { 
+seq {
+  id {
+    local
+      str "cleanup_feat" } ,
+  descr {
+    pub {
+      pub {
+          article {
+            title {
+              name "A new granulation method for compressed tablets [proceedings]." } ,
+            authors {
+              names
+                std {
+                  {
+                    name
+                      name {
+                        last "Rubinstein" ,
+                        first "M" ,
+                        initials "M.H." } } } } ,
+            from
+              journal {
+                title {
+                  iso-jta "J. Pharm. Pharmacol." } ,
+                imp {
+                  date
+                    std {
+                      year 1976 ,
+                      month 12 } ,
+                  volume "28" ,
+                  pages "67P" ,
+                  pubstatus ppublish } } } ,
+          pmid 12345 } } ,
+    pub {
+      pub {
+        article {
+          title {
+            name "[Clinico-statistical findings on irreversible chronic
+ tardive dyskinesia caused by psychopharmaceuticals]" } ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Fiorillo" ,
+                      first "A" ,
+                      initials "A." } } ,
+                {
+                  name
+                    name {
+                      last "Maietta" ,
+                      first "A" ,
+                      initials "A." } } } } ,
+          from
+            journal {
+              title {
+                iso-jta "Acta Neurol (Napoli)" } ,
+              imp {
+                date
+                  std {
+                    year 1977 ,
+                    month 9 } ,
+                volume "32" ,
+                issue "5" ,
+                pages "569-578" ,
+                pubstatus ppublish } } } ,
+        pmid 22222 } } ,
+    pub {
+      pub {
+        article {
+          title {
+            name "Results after intracapsular extraction: the atonic pupil." } ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Percival" ,
+                      first "S" ,
+                      initials "S.P." } } } } ,
+          from
+            journal {
+              title {
+                iso-jta "Ophthalmic Surg" } ,
+              imp {
+                date
+                  std {
+                    year 1977 ,
+                    month 6 } ,
+                volume "8" ,
+                issue "3" ,
+                pages "138-143" ,
+                pubstatus ppublish } } } ,
+        pmid 333333 } } ,
+    pub {
+      pub {
+        equiv {
+          pmid 121212 } ,
+        equiv {
+          pmid 212121 } } } ,
+    pub {
+      pub {
+       } }
+ } ,
+  inst {
+    repr raw ,
+    mol dna ,
+    length 20 ,
+    seq-data iupacna "AAAAATTTTTGGGGGCCCCC" } ,
+  annot {
+    {
+      data 
+        ftable {
+          {
+            data
+              prot {
+                processed preprotein } , 
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              prot {
+                processed mature } , 
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              rna {
+                type other ,
+                ext 
+                  name "misc_RNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "its1" } ,
+              {
+                qual "db_xref" ,
+                val "a:b" } ,
+              {
+                qual "db_xref" ,
+                val "SWISS-PROT:b" } ,
+              {
+                qual "db_xref" ,
+                val "SPTREMBL:b" } ,
+              {
+                qual "db_xref" ,
+                val "SUBTILIS:b" } ,
+              {
+                qual "db_xref" ,
+                val "MGD:MGD:foo" } ,
+              {
+                qual "db_xref" ,
+                val "MGD:MGI:foo" } ,
+              {
+                qual "db_xref" ,
+                val "cdd:b" } ,
+              {
+                qual "db_xref" ,
+                val "FlyBase:b" } ,
+              {
+                qual "db_xref" ,
+                val "GENEDB:b" } ,
+              {
+                qual "db_xref" ,
+                val "LocusID:b" } ,
+              {
+                qual "db_xref" ,
+                val "MaizeDB:b" } ,
+              {
+                qual "db_xref" ,
+                val "HPRD:HPRD_foo" } ,
+              {
+                qual "db_xref" ,
+                val "Genew:HPRD_foo" } ,
+              {
+                qual "db_xref" ,
+                val "IFO:HPRD_foo" } ,
+              {
+                qual "db_xref" ,
+                val "BHB:HPRD_foo" } ,
+              {
+                qual "db_xref" ,
+                val "BHB:12345" } ,
+              {
+                qual "db_xref" ,
+                val "BHB:a:b" } ,
+              {
+                qual "gdb_xref" ,
+                val "text for gdb_xref qual" } ,
+              {
+                qual "gene" ,
+                val "gene 2" } ,
+              {
+                qual "codon_start" ,
+                val "gene 2" } ,
+              {
+                qual "replace" ,
+                val "UUU" } ,
+              {
+                qual "note" ,
+                val "some note text" } } ,
+            dbxref {
+              {
+                db "BHB" ,
+                tag str "12345" } ,
+              {
+                db "PID" ,
+                tag str "12345" } ,
+              {
+                db "NID" ,
+                tag str "12345" } ,
+              {
+                db "PIDg" ,
+                tag str "12345" } ,
+              {
+                db "a" ,
+                tag str "12345" } } } ,
+          {
+            data
+              rna {
+                type other ,
+                ext 
+                  name "misc_RNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "its 1" } } } ,
+          {
+            data
+              rna {
+                type other ,
+                ext 
+                  name "misc_RNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "Ribosomal DNA internal transcribed spacer 1" } } } ,
+          {
+            data
+              rna {
+                type other ,
+                ext 
+                  name "misc_RNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "internal transcribed spacer 1 (ITS1)" } } } ,
+          {
+            data
+              rna {
+                type other ,
+                ext 
+                  name "misc_RNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "its2" } } } ,
+          {
+            data
+              rna {
+                type other ,
+                ext 
+                  name "misc_RNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "its 2" } } } ,
+          {
+            data
+              rna {
+                type other ,
+                ext 
+                  name "misc_RNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "Ribosomal DNA internal transcribed spacer 2" } } } ,
+          {
+            data
+              rna {
+                type other ,
+                ext 
+                  name "misc_RNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "internal transcribed spacer 2 (ITS2)" } } } ,
+          {
+            data
+              rna {
+                type other ,
+                ext 
+                  name "misc_RNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "its3" } } } ,
+          {
+            data
+              rna {
+                type other ,
+                ext 
+                  name "misc_RNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "its 3" } } } ,
+          {
+            data
+              rna {
+                type other ,
+                ext 
+                  name "misc_RNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "Ribosomal DNA internal transcribed spacer 3" } } } ,
+          {
+            data
+              rna {
+                type other ,
+                ext 
+                  name "misc_RNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "internal transcribed spacer 3 (ITS3)" } } } ,
+          {
+            data
+              rna {
+                type rRNA ,
+                ext 
+                  name "foo rRNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "transposon" ,
+                val "class III integron" } ,
+              {
+                qual "transposon" ,
+                val "some qualifier text" } ,
+              {
+                qual "insertion_seq" ,
+                val "some qualifier text" } ,
+              {
+                qual "satellite" ,
+                val "some qualifier text" } ,
+              {
+                qual "notes" ,
+                val "some note text" } } } ,
+          {
+            data
+              imp {
+                key "allele" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "comment" ,
+                val "some note text" } } } ,
+          {
+            data
+              imp {
+                key "mutation" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "replace" ,
+                val "T" } ,
+              {
+                qual "partial" ,
+                val "TRUE" } ,
+              {
+                qual "exception" ,
+                val "TRUE" } } } ,
+          {
+            data
+              imp {
+                key "Import" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              imp {
+                key "virion" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "exception" ,
+                val "some exception text" } } } ,
+          {
+            data
+              gene {
+                locus "gene 1" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "pseudo" ,
+                val "pseudo text" } ,
+              {
+                qual "allele" ,
+                val "some allele text" } ,
+              {
+                qual "locus_tag" ,
+                val "some locus_tag text" } ,
+              {
+                qual "old_locus_tag" ,
+                val "some old_locus_tag text" } ,
+              {
+                qual "map" ,
+                val "some map text" } } } ,
+          {
+            data
+              imp {
+                key "repeat_unit" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              imp {
+                key "satellite" } ,
+            comment "microsatellite" ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              imp {
+                key "satellite" } ,
+            comment "microsatellite: something" ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              imp {
+                key "satellite" } ,
+            comment "microsatellite: something; plus a real comment" ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              imp {
+                key "precursor_RNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "standard_name" ,
+                val "standard name text" } } ,
+            cit
+              pub {
+                pmid 333333 ,
+                pmid 12345 ,
+                pmid 333333 ,
+                pmid 22222 } } ,
+          {
+            data
+              imp {
+                key "mRNA" } ,
+            comment "should become mRNA" ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "product qualifier text" } } } ,
+          {
+            data
+              imp {
+                key "tRNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "Glutamate" } } } ,
+          {
+            data
+              imp {
+                key "tRNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "anticodon" ,
+                val "(pos:1..3, aa:Leu)" } } },
+          {
+            data
+              imp {
+                key "tRNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "tRNA-Leu(UUU)" } } } ,
+          {
+            data
+              imp {
+                key "tRNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "tRNA-Met(TTT,AAA,GGG,CCC)" } } } ,
+          {
+            data
+              imp {
+                key "tRNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "tRNA-fMet(TTT,AAA,GGG,CCC)" } } } ,
+          {
+            data
+              imp {
+                key "rRNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              imp {
+                key "snRNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              imp {
+                key "scRNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              imp {
+                key "snoRNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              imp {
+                key "misc_RNA" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              imp {
+                key "proprotein" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              imp {
+                key "mat_peptide" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              imp {
+                key "sig_peptide" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } } ,
+          {
+            data
+              imp {
+                key "transit_peptide" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" },
+            qual {
+              {
+                qual "rpt_unit" ,
+                val "(1,2,3..5)" } ,
+              {
+                qual "rpt_unit_range" ,
+                val "(1,2-30,3)" } ,
+              {
+                qual "rpt_unit_seq" ,
+                val "(1,UUUAGC,3)" } ,
+              {
+                qual "replace" ,
+                val "(1,2,3)" } ,
+              {
+                qual "compare" ,
+                val "(1,2,3)" } ,
+              {
+                qual "compare" ,
+                val "1" } ,
+              {
+                qual "old_locus_tag" ,
+                val "(1,2,3)" } ,
+              {
+                qual "usedin" ,
+                val "(1,2,3)" } ,
+              {
+                qual "rpt_type" ,
+                val "(1,2,3)" } } } ,
+          {
+            data 
+              cdregion {
+                } ,
+            product
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "product" ,
+                val "cdregion product qualifier text" } ,
+              {
+                qual "function" ,
+                val "cdregion function qualifier text" } ,
+              {
+                qual "EC_number" ,
+                val "cdregion EC_number qualifier text" } ,
+              {
+                qual "prot_note" ,
+                val "cdregion prot_note qualifier text" } ,
+              {
+                qual "codon_start" ,
+                val "2" } ,
+              {
+                qual "transl_table" ,
+                val "5" } ,
+              {
+                qual "transl_except" ,
+                val "(pos:3..5,aa:Asp)" } } } ,
+          {
+            data 
+              cdregion {
+                } ,
+            product
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            qual {
+              {
+                qual "prot_note" ,
+                val "cdregion prot_note qualifier text" } } } ,
+          {
+            data
+              gene {
+                locus " bar " ,
+                syn {
+                  "bar" ,
+                  "bar." ,
+                  "bar " ,
+                  "zap" ,
+                  "abc" ,
+                  "zap" } ,
+                locus-tag " foo " } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat" } ,
+            except-text "ribosome slippage, trans splicing, alternate processing, adjusted for low quality genome, non-consensus splice site, reasons cited in publication" } } } } } ,
+
+seq {
+  id {
+    local
+      str "cleanup_feat_prot_2" } ,
+  inst {
+    repr raw ,
+    mol aa ,
+    length 20 ,
+    seq-data iupacaa "AAAAATTTTTGGGGGCCCCC" } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              prot {
+                name {
+                  "rbcl" } ,
+                desc "RbcL" } ,
+            location
+              int {
+                from 0 ,
+                to 5 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "rbcs" } ,
+                desc "RbcS" } ,
+            location
+              int {
+                from 0 ,
+                to 5 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "rubisco large subunit" } ,
+                desc "RbcL" } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "rubisco small subunit" } ,
+                desc "RbcS" } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose 1,5-bisphosphate carboxylase/oxygenase large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose 1,5-bisphosphate carboxylase large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose bisphosphate carboxylase large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose-bisphosphate carboxylase large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose-1,5-bisphosphate carboxylase large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose-1,5-bisphosphate carboxylase, large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "large subunit of ribulose-1,5-bisphosphate carboxylase/oxygenase" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose-1,5-bisphosphate carboxylase oxygenase large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose bisphosphate carboxylase large chain" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose 1,5-bisphosphate carboxylase-oxygenase large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose bisphosphate carboxylase oxygenase large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose 1,5 bisphosphate carboxylase large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose-1,5-bisphosphate carboxylase/oxygenase, large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "large subunit of ribulose-1,5-bisphosphate carboxylase/oxgenase" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose bisphosphate carboxylase/oxygenase large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose-1,5-bisphosphate carboxylase oxygenase, large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose 5-bisphosphate carboxylase, large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulosebisphosphate carboxylase large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose bisphosphate large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose 1,5 bisphosphate carboxylase/oxygenase large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose 1,5-bisphosphate carboxylase/oxygenase large chain" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "large subunit ribulose-1,5-bisphosphate carboxylase/oxygenase" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose-bisphosphate carboxylase, large subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "ribulose-1, 5-bisphosphate carboxylase/oxygenase large-subunit" } } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } ,
+          {
+            data
+              prot {
+                name {
+                  "name one" ,
+                  "name two description" } ,
+                desc "name two description" } ,
+            location
+              int {
+                from 1 ,
+                to 6 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot_2" } } } } } } ,
+seq {
+  id {
+    local
+      str "cleanup_feat_prot" } ,
+  inst {
+    repr raw ,
+    mol aa ,
+    length 20 ,
+    seq-data iupacaa "AAAAATTTTTGGGGGCCCCC" } ,
+  annot {
+    {
+      data 
+        ftable {
+          {
+            data
+              prot {
+               } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot" } } ,
+          {
+            data
+              prot {
+                processed preprotein } , 
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot" } } ,
+          {
+            data
+              prot {
+                processed mature } , 
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot" } } ,
+          {
+            data
+              imp {
+                key "proprotein" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot" } ,
+            qual {
+              {
+                qual "product" ,
+                val "product qualifier text" } ,
+              {
+                qual "EC_number" ,
+                val "EC_number qualifier text" } ,
+              {
+                qual "standard_name" ,
+                val "standard_name qualifier text" } ,
+              {
+                qual "label" ,
+                val "label qualifier text" } ,
+              {
+                qual "allele" ,
+                val "allele qualifier text" } } },
+          {
+            data
+              imp {
+                key "mat_peptide" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot" } } ,
+          {
+            data
+              imp {
+                key "sig_peptide" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot" } } ,
+          {
+            data
+              imp {
+                key "transit_peptide" } ,
+            location
+              int {
+                from 0 ,
+                to 19 ,
+                strand plus ,
+                id
+                  local 
+                    str "cleanup_feat_prot" } } } } } } } }
+        

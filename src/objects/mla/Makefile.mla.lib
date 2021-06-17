@@ -1,0 +1,6 @@
+LIB = mla
+SRC = mla__ mla___
+
+
+USES_LIBRARIES =  \
+    medlars pub pubmed

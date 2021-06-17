@@ -1,0 +1,13 @@
+# $Id$
+
+NCBI_begin_app(agp_validate)
+  NCBI_sources(agp_validate AltValidator AgpFastaComparator)
+  NCBI_uses_toolkit_libraries(
+    entrez2cli ncbi_xloader_genbank ncbi_xloader_lds2
+    taxon1 xobjutil
+  )
+  if(NCBI_COMPONENT_VDB_FOUND)
+    NCBI_uses_toolkit_libraries(ncbi_xloader_wgs)
+  endif()
+  NCBI_project_watchers(sapojnik)
+NCBI_end_app()

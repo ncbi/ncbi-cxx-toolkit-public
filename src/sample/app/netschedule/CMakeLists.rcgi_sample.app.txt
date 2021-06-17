@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(rcgi_sample)
+  NCBI_sources(rcgi_sample)
+  NCBI_uses_toolkit_libraries(xgridcgi)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()

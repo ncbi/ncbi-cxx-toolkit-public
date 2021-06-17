@@ -1,0 +1,5 @@
+APP_PROJ = cgi2rcgi
+PROJ_TAG = grid
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

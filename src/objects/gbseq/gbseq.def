@@ -1,0 +1,10 @@
+[-]
+_export = NCBI_GBSEQ_EXPORT
+
+[GBInterval]
+from._type  = TSeqPos
+to._type    = TSeqPos
+point._type = TSeqPos
+
+[GBSeq]
+length._type = TSeqPos

@@ -1,0 +1,169 @@
+Seq-submit ::= {
+  sub {
+    contact {
+      contact {
+        name
+          name {
+            last "q" ,
+            first "q" ,
+            initials "qq" } ,
+        affil
+          str "q" } } ,
+    cit {
+      authors {
+        names
+          std {
+            {
+              name
+                name {
+                  last "q" ,
+                  first "q" ,
+                  initials "qq." } } } ,
+        affil
+          str "q" } ,
+      date
+        std {
+          year 2010 ,
+          month 2 ,
+          day 16 } } ,
+    subtype new ,
+    tool "Sequin 10.00 - MS WINDOWS 2000/XP" } ,
+  data
+    entrys {
+      set {
+        class nuc-prot ,
+        descr {
+          source {
+            genome genomic ,
+            org {
+              taxname "Acanthamoeba castellanii" ,
+              orgname {
+                lineage "Eukaryota; Acanthamoebidae; Acanthamoeba" ,
+                gcode 1 ,
+                div "INV" } } } ,
+          pub {
+            pub {
+              gen {
+                cit "Unpublished" ,
+                authors {
+                  names
+                    std {
+                      {
+                        name
+                          name {
+                            last "q" ,
+                            first "q" ,
+                            initials "qq." } } } ,
+                  affil
+                    str "q" } ,
+                title "q" } } } } ,
+        seq-set {
+          seq {
+            id {
+              local
+                str "nuc1" } ,
+            descr {
+              molinfo {
+                biomol genomic } ,
+              user {
+                type
+                  str "NcbiCleanup" ,
+                data {
+                  {
+                    label
+                      str "method" ,
+                    data
+                      str "SequinCleanup" } ,
+                  {
+                    label
+                      str "version" ,
+                    data
+                      int 7 } ,
+                  {
+                    label
+                      str "month" ,
+                    data
+                      int 2 } ,
+                  {
+                    label
+                      str "day" ,
+                    data
+                      int 16 } ,
+                  {
+                    label
+                      str "year" ,
+                    data
+                      int 2010 } } } ,
+              create-date
+                std {
+                  year 2010 ,
+                  month 2 ,
+                  day 16 } } ,
+            inst {
+              repr raw ,
+              mol dna ,
+              length 376 ,
+              seq-data
+                iupacna "AAA##AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC" } ,
+            annot {
+              {
+                data
+                  ftable {
+                    {
+                      data
+                        cdregion {
+                          code {
+                            id 1 } } ,
+                      partial TRUE ,
+                      product
+                        whole
+                          local
+                            str "nuc1_1" ,
+                      location
+                        mix {
+                          int {
+                            from 5 ,
+                            to 49 ,
+                            strand plus ,
+                            id
+                              local
+                                str "nuc1" ,
+                            fuzz-from lim lt } ,
+                          int {
+                            from 59 ,
+                            to 375 ,
+                            strand plus ,
+                            id
+                              local
+                                str "nuc1" } } } } } } } ,
+          seq {
+            id {
+              local
+                str "nuc1_1" } ,
+            descr {
+              molinfo {
+                biomol peptide ,
+                tech concept-trans } } ,
+            inst {
+              repr raw ,
+              mol aa ,
+              length 121 ,
+              seq-data
+                ncbieaa "KKKKKKKKKKKKKKKKKKKKKKKKKKKIFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFLGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP" } ,
+            annot {
+              {
+                data
+                  ftable {
+                    {
+                      data 
+                        prot {
+                          name {
+                            "foo" } } ,
+                      partial TRUE ,
+                      location 
+                        int {
+                          from 0 ,
+                          to 121 ,
+                          strand plus ,
+                          id local str "nuc1_1" } } } } } } } } } }

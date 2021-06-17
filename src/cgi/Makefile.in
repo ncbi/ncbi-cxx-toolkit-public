@@ -1,0 +1,14 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+
+# Meta-makefile for the "Cgi" lib
+#################################
+
+LIB_PROJ = cgi fcgi
+SUB_PROJ = test
+PROJ_TAG = web
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,12 @@
+# $Id$
+
+# Meta-makefile("IGBLAST" project)
+#################################
+
+
+LIB_PROJ = igblast
+#SUB_PROJ = unit_test demo
+#EXPENDABLE_SUB_PROJ = demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

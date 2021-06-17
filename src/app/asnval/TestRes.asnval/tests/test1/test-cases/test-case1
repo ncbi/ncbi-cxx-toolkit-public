@@ -1,0 +1,10 @@
+# put asnvalidate command assuming:
+# 1) use -i argument first (optional)
+# 2) don't use -o argument, script will add '-o -' option
+# 3) working folder is where this script located
+-i wgs-715.sqn
+-i ALACA30300.sqn
+-i GB-3513.sqn
+-i SQD-1475.sqn
+-i asnfail_all.sqn
+-i reject.sqn

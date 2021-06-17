@@ -1,0 +1,9 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(mirror_test)
+  NCBI_sources(mirror_test)
+  NCBI_uses_toolkit_libraries(sdbapi xconnect)
+NCBI_end_app()
+

@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = gui_core
+
+HOSTED_LIBS    = gui_core gui_framework
+
+DEPENDENCIES   = gui_config gui_objects gui_utils gui_widgets \
+                 ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_trackmgr
+
+CPPFLAGS = -DNCBI_GUICORE_EXPORTS
+

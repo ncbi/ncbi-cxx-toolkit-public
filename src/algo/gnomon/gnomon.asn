@@ -1,0 +1,67 @@
+--- $id: $
+---
+--- Definitions for the Gnomon HMM parameters
+---
+
+NCBI-GNOMON DEFINITIONS ::=
+BEGIN
+
+Gnomon-params ::= SET OF Gnomon-param
+
+Gnomon-param ::= SEQUENCE {
+    gc-content-range SEQUENCE { -- percents
+        from INTEGER ,
+        to INTEGER } ,
+    param CHOICE {
+        intergenic Intergenic-params ,
+        intron Intron-params ,
+        exon Exon-params ,
+        start Markov-chain-array ,
+        stop Markov-chain-array ,
+        donor Markov-chain-array ,
+        acceptor Markov-chain-array ,
+        coding-region SEQUENCE OF Markov-chain-params , -- three elements (per phase)
+        non-coding-region Markov-chain-params } }
+
+Length-distribution-params ::= SEQUENCE {
+    step INTEGER ,
+    p SEQUENCE OF REAL , -- P(step*(i+.5))|i=0,1,...,N-1
+    a REAL , -- Loretz function coefficient for the tail
+    l REAL , -- Loretz function coefficient for the tail
+    range SEQUENCE {
+        min INTEGER ,
+        max INTEGER } }
+
+Intergenic-params ::= SEQUENCE {
+    initp REAL , -- probability of a genomic point be intergenic
+    to-single REAL , -- probability of next gene to be single-exon
+    length Length-distribution-params }
+
+Intron-params ::= SEQUENCE {
+    initp REAL , -- probability of a genomic point be in an intron
+    phase-probabilities SEQUENCE OF REAL , -- 3 elements (per phase)
+    to-term REAL, -- probability to be the last 
+    length Length-distribution-params }
+
+Exon-params ::= SEQUENCE {
+    first-exon-phase-probabilities SEQUENCE OF REAL , -- 3 elements (per end phase)
+    internal-exon-phase-probabilities SEQUENCE OF REAL , -- 3*3 elements (begin phase x end phase)
+    first-exon-length Length-distribution-params ,
+    internal-exon-length Length-distribution-params ,
+    last-exon-length Length-distribution-params ,
+    single-exon-length Length-distribution-params }
+
+Markov-chain-params ::= SEQUENCE {
+    order INTEGER ,
+    probabilities SEQUENCE OF -- four elements (per base)
+        CHOICE {
+        prev-order Markov-chain-params,
+        value REAL } }
+
+Markov-chain-array ::= SEQUENCE {
+    in-exon INTEGER,
+    in-intron INTEGER,
+    matrix SEQUENCE OF Markov-chain-params -- in-exon+in-intron elements
+    }
+
+END

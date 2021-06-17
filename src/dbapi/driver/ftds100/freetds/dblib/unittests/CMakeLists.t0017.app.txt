@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db100_t0017)
+  NCBI_sources(t0017 common)
+  NCBI_set_test_assets(t0017.sql t0017.in t0017.in.be)
+  NCBI_add_test(test-db100 db100_t0017)
+NCBI_end_app()
+

@@ -1,0 +1,13 @@
+# $Id$
+
+NCBI_begin_app(unit_test_feature_edit)
+  NCBI_sources(unit_test_feature_edit)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xobjutil test_boost)
+
+  NCBI_set_test_assets(feature_edit_test_cases)
+  NCBI_add_test()
+
+  NCBI_project_watchers(foleyjp)
+NCBI_end_app()
+

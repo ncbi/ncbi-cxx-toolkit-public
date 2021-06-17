@@ -1,0 +1,21 @@
+#define TAGS gbench
+#include "ncbi_gui_base.lst"
+app/blast
+app/blastdb
+internal/txclient$
+internal/txxmldoc$
+internal/myncbi$
+internal/aligndb
+internal/gbench
+internal/tmsmart/smartnetclient
+internal/blast/SplitDB/asn4smart
+misc/hgvs$
+misc/third_party
+-algo/blast/unit_tests
+-[^gi].*/app
+-[^g].*/unit_test
+-algo/ms
+-internal/gbench/app/msaviewer
+-internal/gbench/app/sviewer
+-internal/gbench/app/treeview
+-internal/gbench/app/uud

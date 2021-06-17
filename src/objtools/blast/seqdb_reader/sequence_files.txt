@@ -1,0 +1,196 @@
+
+Author:  Kevin Bealer
+Updated: April 2008
+
+----- Sequence Files -----
+
+Naming:   <any-name>.[np]sq
+Encoding: binary
+Style:    concatenated binary sequence data
+
+  The sequence file contains sequence (strand) data for each sequence
+  stored in a BlastDB volume.  Sequence data encodes the DNA, RNA, or
+  protein data that make up a sequence.  No sequence identifiers or
+  other metadata describing the sequence is stored here.
+
+  The data stored here is binary data, and each object is stored as a
+  sequence of unaligned bytes.  In the nucleotide case it is not even
+  possible to determine where sequences begin and end by looking at
+  the data in this file alone.  (For protein it is, but the data is
+  not used that way.)
+
+--- Notation ---
+
+ The suffix "[]" added to a type (e.g. Int4[]) indicates an array of
+ that type.
+
+Int4:
+
+  Four byte integer, always in big-endian order.  Not necessarily
+  aligned to a 4 byte offset.
+
+Int8:
+
+  Eight byte integer, always in big-endian order.  Not necessarily
+  aligned to a 4 or 8 byte offset.
+
+--- Sequence Data Encodings ---
+
+-- Protein --
+
+Protein sequences are encoded in a format called Ncbistdaa.  This
+format encodes the same range of data as the common text format for
+proteins (Iupacaa), but uses codes for each protein starting at 1,
+rather than using letters of the ASCII alphabet.  (This is probably
+intended to allow the values to be indices into matrices, with less
+storage and computational overhead.)
+
+The length of a protein sequence is not encoded directly; instead it
+can be found by subtracting its starting address from the starting
+addres of the following sequence.
+
+-- Nucleotide --
+
+-- Packed Sequence Data --
+
+The nucleotide data is stored in packed NcbiNa2 format.  This format
+uses two bits for each nucleotide base (letter), using the values A=0,
+C=1, G=2, and T=3.  Four such values are stored in each byte.  The
+bases are stored in each byte starting at the most significant bits,
+and proceding down to the least significant.  For example, bases TACG
+are encoded as 3,0,1,2, and then (3 << 6) + (1 << 2) + 2, yielding an
+(unsigned) byte value of 198.
+
+To find the number of bytes used to store a nucleotide sequence, the
+end point (as a byte offset) is subtracted from the starting point.
+Since nucleotide sequences are packed four bases per byte, this must
+be multiplied by four to get the sequence length in bases.
+
+But this technique does not tell us the exact length -- to find the
+exact length, we need to know how many of the bases in the last byte
+are part of the sequence.  BlastDB solves this problem by using the
+last base of the last byte to store a number from 0-3; this is the
+"remainder", a count of how many of the bases in the last byte are
+part of the sequence.  If a sequence is exactly divisible by four, an
+additional byte must be appended to contain this count (which will be
+zero.)  For the sequence (TACG), the full byte encoding is (225, 0).
+
+Another example: The sequence TGGTTACAAC would first be broken into
+byte sized chunks (TGGT,TACA,AC).  Each base is encoded numerically,
+(3223,3010,01).  The last byte only contains 2 bases, so it is padded
+with a zero base and the remainder (2), yielding (3223,3010,0102).  In
+decimal this is 235, 196, and 18, or in hexadecimal, (EB, C4, 12).
+
+One consequence of this packing technique is that finding an exact
+length of a nucleotide sequence requires looking at the offsets in the
+index file as well as the (last byte of) sequence data.  Although this
+seems like a small cost, the nature of the memory hierarchy makes this
+operation expensive, since the CPU cache line of the last byte of the
+sequence, and sometimes the disk block containing it, may need to be
+paged in from disk -- this is known as a page fault.  Programs needing
+approximate sequence lengths (such as for statistical calculations),
+can avoid the extra I/O overhead by asking the SeqDB or readdb library
+for an approximate length.
+
+(In the case of SeqDB, the approximate length is computed by assuming
+the "remainder" count is the last two bits of the OID.  This design
+provides a stable value for any specific OID, and produces totals that
+resemble accurate counts when summed over large numbers of OIDs.)
+
+-- Ambiguity Data --
+
+The packing for nucleotide sequences as discussed above represents the
+four bases A, C, G, T.  In practice, many nucleotide sequences have
+regions of bases that are unknown (could be any value), or partially
+unknown (where either of several values could appear, e.g. 'C or G').
+These regions are known as "ambiguities".  These values cannot be
+represented in NA2, since the 2 bits/base of the NA2 format can only
+take 4 possible values.
+
+The BlastDB format represents these bases in the (na2) sequence data
+as randomly selected bases from the set of values that are believed to
+be possible in these positions.  For example, a region of "C or G"
+ambiguities will be represented by randomly selected C or G values.
+Regions of 'N' ambiguities represent segments of the sequence where
+the value of the bases are completely unknown.
+
+The random-base method described above is used by bioinformatics code
+needing to rapidly process sequences, for tasks that are not sensitive
+to the presence or value of the ambiguity data.  For some other tasks,
+it is important to know the exact value of the ambiguous regions.
+
+To support this, the BlastDB format contains a segment of data for
+each nucleotide sequence that describes the ambiguities that need to
+be applied to reconstituted the original sequence data.  There are two
+versions of this data format -- an old version that is more compact,
+and a new version that provides capability for longer ambiguous
+regions and for offsets into larger sequences.  In both cases, the
+data that is stored is the sequence offset where the ambiguity begins
+(as a number of nucleotide bases), the length of the ambiguous region,
+and the value of the ambiguity (indicating which possible bases the
+ambiguous region might possibly contain in the actual sequence.)
+
+Ambiguity Data Format:
+
+Offset  Type    Fieldname     Notes
+------  ----    ---------     -----
+0       Int4    num-segments  Number of segments and new/old bit.
+4       Int4[]? old-segments  Old-format segments (if present)
+4       Int8[]? new-segments  New-format segments (if present)
+
+If the high bit (0x80000000) of the num_segments field is 1, the
+segments data uses the new format.  If the high bit is 0, the
+ambiguity data uses the old format.
+
+Note that in spite of the labels 'old' and 'new', both formats are
+still used.  Since the old format is more compact, it is used for
+cases where the new format is not needed, or where it provides no
+benefit.
+
+(Implementation Note: The decision to use old or new format is made
+slightly differently by readdb versus SeqDB.  The readdb code uses the
+old format unless it is impossible to do so.  The SeqDB code switches
+to the new format whenever it reduces the number of ambiguous segments
+that must be represented.)
+
+The `segments' field will be treated as an Int4 array by the code, but
+in the case of the new format, each segment is represented by two Int4
+elements rather than just one, conceptually an Int8.  Both formats are
+shown below as bit fields.  Storage of Int4 and Int8 is "big-endian".
+
+(In the following, higher bit numbers are more significant; ranges are
+inclusive, and Int4 and Int8 are stored in )
+
+
+-- Old Ambiguity Format --
+
+Maximum bases per segment: 16
+Maximum starting offset:   16777215 (2^24-1)
+
+Bits:   Purpose:
+-----   --------
+31-28   Ambiguity value in NcbiNA4 encoding.
+27-24   Length of ambiguity region minus one.
+23-0    Offset of ambiguous region start (in bases).
+
+-- New Ambiguity Format --
+
+Maximum bases per segment: 4096
+Maximum starting offset:   4294967295 (2^32-1)
+
+Bits:   Purpose:
+-----   --------
+63-60   Ambiguity value in NcbiNA4 encoding.
+59-48   Length of ambiguity region minus one.
+47-32   (unused)
+31-0    Offset of ambiguous region start (in bases).
+
+
+-- Using Ambiguous Sequences --
+
+To decode ambiguities, the ncbi2na format data (which packs 4 bases in
+each byte) is expanded into a 4na or 8na format that can express the
+ambiguities.  Each ambiguous region is then decoded in turn and the
+necessary ambiguous bases are written into the buffer at the specified
+locations.
+

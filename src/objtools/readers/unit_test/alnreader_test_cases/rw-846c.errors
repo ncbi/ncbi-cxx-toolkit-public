@@ -1,0 +1,11 @@
+Line No    : 10
+Severity   : Error
+Problem    : Alignment.IllegalSequenceId
+Message    : Unable to parse sequence ID string.
+
+SeqID      : lcl||12345
+Line No    : 10
+Severity   : Error
+Problem    : Alignment.IllegalSequenceId
+Message    : At ID 'lcl||12345': 'lcl||12345' is not a valid local ID
+

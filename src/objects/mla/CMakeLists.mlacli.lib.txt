@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(mlacli)
+  NCBI_generated_sources(mla_client.cpp mla_client_.cpp)
+  NCBI_uses_toolkit_libraries(mla xconnect)
+NCBI_end_lib()
+

@@ -1,0 +1,15 @@
+# $Id$
+
+# Meta-makefile
+#################################
+
+APP_PROJ = asn_assign asnwalk_read asnwalk_type asnwalk_write bss_info \
+           hooks_commented hooks_highest_se_objs \
+           hooks_copy_member hooks_copy_object hooks_copy_variant \
+           hooks_read_member hooks_read_object hooks_read_variant \
+           hooks_skip_member hooks_skip_object hooks_skip_variant \
+           hooks_write_member hooks_write_object hooks_write_variant \
+           seqannot_splicer
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

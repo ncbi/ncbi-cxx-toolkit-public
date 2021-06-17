@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_range_coll)
+  NCBI_sources(test_range_coll)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_app()
+

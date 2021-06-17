@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile ("cddalignview" program)
+#################################
+
+APP_PROJ = cddalignview
+PROJ_TAG = demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

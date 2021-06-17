@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(feattree_sample)
+  NCBI_sources(feattree_sample)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xobjutil)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()

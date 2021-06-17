@@ -1,0 +1,63 @@
+Seq-feat ::= {
+  data cdregion {
+    frame three,
+    code {
+      id 1
+    },
+    code-break {
+      {
+        loc int {
+          from 83132,
+          to 83134,
+          id gi 693495987
+        },
+        aa ncbieaa 77
+      }
+    }
+  },
+  partial TRUE,
+  product whole gi 693496029,
+  location mix {
+    int {
+      from 83133,
+      to 83199,
+      id gi 693495987,
+      fuzz-from lim lt
+    },
+    int {
+      from 83485,
+      to 84916,
+      id gi 693495987
+    }
+  },
+  dbxref {
+    {
+      db "GOA",
+      tag str "A0A096P9X2"
+    },
+    {
+      db "InterPro",
+      tag str "IPR005835"
+    },
+    {
+      db "InterPro",
+      tag str "IPR005836"
+    },
+    {
+      db "InterPro",
+      tag str "IPR011004"
+    },
+    {
+      db "InterPro",
+      tag str "IPR011831"
+    },
+    {
+      db "InterPro",
+      tag str "IPR029044"
+    },
+    {
+      db "UniProtKB/TrEMBL",
+      tag str "A0A096P9X2"
+    }
+  }
+}

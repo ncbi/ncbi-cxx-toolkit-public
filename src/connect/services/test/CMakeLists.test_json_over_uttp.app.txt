@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(test_json_over_uttp)
+  NCBI_sources(test_json_over_uttp)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xconnserv)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()
+

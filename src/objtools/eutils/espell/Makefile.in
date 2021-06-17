@@ -1,0 +1,6 @@
+# $Id$
+
+DTD_PROJ = espell
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

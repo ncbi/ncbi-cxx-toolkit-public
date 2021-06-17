@@ -1,0 +1,15 @@
+# $Id$
+
+SRC = adler32 crc32 deflate infback inffast inflate inftrees trees zutil \
+      ncbi_z_compress uncompr gzclose gzlib gzread gzwrite
+
+LIB = z
+
+CPPFLAGS = $(ORIG_CPPFLAGS) -I$(includedir)/util/compress/zlib
+
+CFLAGS   = $(FAST_CFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+WATCHERS = ivanov
+USES_LIBRARIES =  \
+    $(ORIG_LIBS)

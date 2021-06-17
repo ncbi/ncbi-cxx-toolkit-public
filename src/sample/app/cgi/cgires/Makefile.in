@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile ("hello" program)
+#################################
+
+APP_PROJ = hello fasthello
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

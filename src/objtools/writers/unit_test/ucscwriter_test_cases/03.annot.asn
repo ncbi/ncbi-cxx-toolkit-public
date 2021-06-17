@@ -1,0 +1,70 @@
+Seq-annot ::= {
+  desc {
+  },
+  data ftable {
+    {
+      data region "region: 2",
+      location pnt {
+        point 26131653,
+        id local str "1"
+      },
+      title "Line:2"
+    },
+    {
+      data region "region: 3",
+      location pnt {
+        point 26138261,
+        id local str "1"
+      },
+      title "Line:3"
+    },
+    {
+      data region "region: 4",
+      location pnt {
+        point 46655157,
+        id local str "1"
+      },
+      title "Line:4"
+    },
+    {
+      data region "region: 5",
+      location pnt {
+        point 47726086,
+        id local str "1"
+      },
+      title "Line:5"
+    },
+    {
+      data region "region: 6",
+      location pnt {
+        point 63881551,
+        id local str "1"
+      },
+      title "Line:6"
+    },
+    {
+      data region "region: 7",
+      location pnt {
+        point 197055924,
+        id local str "1"
+      },
+      title "Line:7"
+    },
+    {
+      data region "region: 8",
+      location pnt {
+        point 197070814,
+        id local str "1"
+      },
+      title "Line:8"
+    },
+    {
+      data region "region: 9",
+      location pnt {
+        point 197091536,
+        id local str "1"
+      },
+      title "Line:9"
+    }
+  }
+}

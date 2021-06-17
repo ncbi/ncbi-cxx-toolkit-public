@@ -1,0 +1,20 @@
+Line No    : 2
+Severity   : Error
+Message    : Bad data line: Invalid feature type "C_segment"
+
+Line No    : 4
+Severity   : Error
+Message    : Bad data line: Invalid feature type "Vregion"
+
+Line No    : 6
+Severity   : Error
+Message    : Bad data line: CDS record is missing mandatory Parent attribute.
+
+Line No    : 7
+Severity   : Error
+Message    : Bad data line: Invalid feature type "txxx"
+
+Line No    : 8
+Severity   : Error
+Message    : Bad data line: Invalid feature type "notafeature"
+

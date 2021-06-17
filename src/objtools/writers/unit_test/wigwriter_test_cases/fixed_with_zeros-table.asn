@@ -1,0 +1,56 @@
+Seq-annot ::= {
+  data seq-table {
+    feat-type 0,
+    num-rows 3,
+    columns {
+      {
+        header {
+          field-name "Seq-table location"
+        },
+        default loc int {
+          from 0,
+          to 49,
+          id local str "chr1"
+        }
+      },
+      {
+        header {
+          field-id location-id
+        },
+        default id local str "chr1"
+      },
+      {
+        header {
+          field-id location-from
+        },
+        data int {
+          0,
+          20,
+          40
+        }
+      },
+      {
+        header {
+          field-name "span"
+        },
+        default int 10
+      },
+      {
+        header {
+          field-name "value_gap"
+        },
+        default real { 0, 10, 0 }
+      },
+      {
+        header {
+          field-name "values"
+        },
+        data real {
+          { 0, 10, 0 },
+          { 0, 10, 0 },
+          { 12, 10, -1 }
+        }
+      }
+    }
+  }
+}

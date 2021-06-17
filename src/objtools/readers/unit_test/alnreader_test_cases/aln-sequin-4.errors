@@ -1,0 +1,5 @@
+Line No    : 19
+Severity   : Fatal
+Problem    : Alignment.MissingDataLine
+Message    : Missing data line. Expected sequence data for seqID "I_09_2i3"
+

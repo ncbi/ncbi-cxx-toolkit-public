@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(makeblastdb)
+  NCBI_sources(makeblastdb masked_range_set)
+  NCBI_uses_toolkit_libraries(blastinput writedb)
+  NCBI_add_definitions(NCBI_MODULE=BLASTDB)
+  NCBI_requires(-Cygwin)
+  NCBI_project_watchers(camacho fongah2)
+NCBI_end_app()
+

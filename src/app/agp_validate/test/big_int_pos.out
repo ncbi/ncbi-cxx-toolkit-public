@@ -1,0 +1,51 @@
+
+5:chr1	2521256	2521355	2	U	100	scaffold	yes	map
+	NOTE: assuming AGP version 2 since linkage evidence (column 9) is NOT empty
+
+10:chr1	4294967300	4294967306	7	W	PGSH01018958.1	1	6	+
+	ERROR, line skipped: object_beg (column 2) must not exceed 4294967294
+	ERROR, line skipped: object_end (column 3) must not exceed 4294967294
+
+11:chr1	2147385906	-2146453863	4221	W	PGSH01000058.1	1	1127528	+
+	ERROR, line skipped: object_end (column 3) must be a positive integer
+
+12:chr1	-2146453862	-2146453763	4222	U	100	scaffold	yes	map
+	ERROR, line skipped: object_beg (column 2) must be a positive integer
+	ERROR, line skipped: object_end (column 3) must be a positive integer
+
+5 errors, no warnings, 1 note.
+  Count Code  Description
+      3  e06  X must be a positive integer
+      2  e07  X must not exceed 4294967294
+      1  w58  assuming AGP version X
+
+NOTE: 3 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
+
+
+Objects                : 1
+- with single component: 0
+
+Scaffolds              : 1
+- with single component: 0
+
+Components                   : 4 (W)
+  orientation +              : 4
+  orientation -              : 0
+  orientation ? (formerly 0) : 0
+  orientation na             : 0
+
+Gaps                   : 3 (U)
+- do not break scaffold: 3
+  scaffold, linkage yes: 3
+- break it, linkage no : 0
+
+Linkage evidence:
+  map: 3
+
+Object names:  1
+  chr1      :  1
+
+Component names             :  4
+  PGSH[01018960..01099427].1:  4
+
+#Comment line count    : 3

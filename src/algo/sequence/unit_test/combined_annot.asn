@@ -1,0 +1,1200 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "COPG2",
+        desc "coatomer protein complex, subunit gamma 2",
+        syn {
+          "2-COP"
+        }
+      },
+      partial TRUE,
+      location int {
+        from 68178921,
+        to 68386440,
+        strand minus,
+        id other {
+          accession "NT_007933",
+          version 15
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 26958
+        },
+        {
+          db "HGNC",
+          tag id 2237
+        },
+        {
+          db "MIM",
+          tag id 604355
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "coatomer protein complex, subunit gamma 2"
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq transcript has 3 non-frameshifting indels compared
+ to this genomic sequence",
+      product whole other {
+        accession "NM_012133",
+        version 4
+      },
+      location packed-int {
+        {
+          from 68386314,
+          to 68386440,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181343,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179958,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68178921,
+          to 68179487,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_012133.4"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "coatomer protein complex, subunit gamma 2"
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq transcript has 17 substitutions, 3 frameshifts, 8
+ non-frameshifting indels compared to this genomic sequence",
+      product whole other {
+        accession "NM_012133",
+        version 4
+      },
+      location packed-int {
+        {
+          from 68386314,
+          to 68386440,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68320191,
+          to 68320199,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68309996,
+          to 68310008,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68306565,
+          to 68306573,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68302047,
+          to 68302055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68288030,
+          to 68288038,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181362,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68178921,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_012133.4"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "coatomer protein complex, subunit gamma 2"
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq transcript has 17 substitutions, 3 frameshifts, 8
+ non-frameshifting indels compared to this genomic sequence",
+      product whole other {
+        accession "NM_012133",
+        version 4
+      },
+      location packed-int {
+        {
+          from 68386314,
+          to 68386440,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68320191,
+          to 68320199,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68309996,
+          to 68310008,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68306565,
+          to 68306573,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68302047,
+          to 68302055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68288030,
+          to 68288038,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181362,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68178921,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_012133.4"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      product whole gi 109134349,
+      location packed-int {
+        {
+          from 68386314,
+          to 68386350,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181343,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179958,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68179359,
+          to 68179487,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_036265.3"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "coatomer subunit gamma-2"
+            }
+          }
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq protein has 3 frameshifts, 1 non-frameshifting indel
+ compared to this genomic sequence",
+      product whole gi 109134349,
+      location packed-int {
+        {
+          from 68386314,
+          to 68386350,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68320191,
+          to 68320199,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68309996,
+          to 68310008,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68306565,
+          to 68306573,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68302047,
+          to 68302055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68288030,
+          to 68288038,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181362,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179359,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_036265.3"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "coatomer subunit gamma-2"
+            }
+          }
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq protein has 3 frameshifts, 1 non-frameshifting indel
+ compared to this genomic sequence",
+      product whole gi 109134349,
+      location packed-int {
+        {
+          from 68386314,
+          to 68386350,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68320191,
+          to 68320199,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68309996,
+          to 68310008,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68306565,
+          to 68306573,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68302047,
+          to 68302055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68288030,
+          to 68288038,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181362,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179359,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_036265.3"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "coatomer subunit gamma-2"
+            }
+          }
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    }
+  }
+}

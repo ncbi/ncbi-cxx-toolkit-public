@@ -1,0 +1,21 @@
+# $Id$
+
+LIB = bamread
+SRC = bamread bamgraph bgzf bamindex vdbfile
+
+ASN_DEP = seq seqset
+
+REQUIRES = objects
+
+LIB_OR_DLL = both
+DLL_LIB = $(SOBJMGR_LDEP) $(BAM_LIBS) xcompress $(CMPRS_LIB)
+LIBS = $(SRA_SDK_SYSLIBS) $(ORIG_LIBS)
+POST_LINK = $(VDB_POST_LINK)
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE) -DNCBI_BAMREAD_EXPORTS
+
+WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    $(SRA_LIBS) $(SRA_SDK_SYSLIBS) seqset

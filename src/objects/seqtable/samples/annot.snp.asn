@@ -1,0 +1,169 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "Annot:SNP",
+      tag id 6912644
+    }
+  },
+  inst {
+    repr delta,
+    mol aa,
+    length 293,
+    topology not-set,
+    ext delta {
+      loc int {
+        from 0,
+        to 292,
+        id gi 6912644
+      }
+    }
+  },
+  annot {
+    {
+      db other,
+      name "Annot:SNP",
+      data ftable {
+        {
+          data imp {
+            key "variation"
+          },
+          location pnt {
+            point 152,
+            strand plus,
+            id gi 6912644
+          },
+          qual {
+            {
+              qual "replace",
+              val "D"
+            },
+            {
+              qual "replace",
+              val "N"
+            }
+          },
+          ext {
+            type str "dbSnpSynonymyData",
+            data {
+              {
+                label str "weight",
+                data int 1
+              }
+            }
+          },
+          dbxref {
+            {
+              db "dbSNP",
+              tag id 183854
+            }
+          }
+        },
+        {
+          data imp {
+            key "variation"
+          },
+          location pnt {
+            point 171,
+            strand plus,
+            id gi 6912644
+          },
+          qual {
+            {
+              qual "replace",
+              val "I"
+            },
+            {
+              qual "replace",
+              val "V"
+            }
+          },
+          ext {
+            type str "dbSnpSynonymyData",
+            data {
+              {
+                label str "weight",
+                data int 1
+              }
+            }
+          },
+          dbxref {
+            {
+              db "dbSNP",
+              tag id 2232534
+            }
+          }
+        },
+        {
+          data imp {
+            key "variation"
+          },
+          location pnt {
+            point 209,
+            strand plus,
+            id gi 6912644
+          },
+          qual {
+            {
+              qual "replace",
+              val "S"
+            },
+            {
+              qual "replace",
+              val "T"
+            }
+          },
+          ext {
+            type str "dbSnpSynonymyData",
+            data {
+              {
+                label str "weight",
+                data int 1
+              }
+            }
+          },
+          dbxref {
+            {
+              db "dbSNP",
+              tag id 2232535
+            }
+          }
+        },
+        {
+          data imp {
+            key "variation"
+          },
+          location pnt {
+            point 54,
+            strand plus,
+            id gi 6912644
+          },
+          qual {
+            {
+              qual "replace",
+              val "R"
+            },
+            {
+              qual "replace",
+              val "G"
+            }
+          },
+          ext {
+            type str "dbSnpSynonymyData",
+            data {
+              {
+                label str "weight",
+                data int 1
+              }
+            }
+          },
+          dbxref {
+            {
+              db "dbSNP",
+              tag id 2232532
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+                Warning:
+Problem:        The following modifier is unsupported in this context and will be ignored: topology.
+Code:           1.7
+SeqId:          lcl|seq_id
+Line:           1
+QualifierName:  topology
+QualifierValue: linear
+
+

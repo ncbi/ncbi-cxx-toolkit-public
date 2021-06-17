@@ -1,0 +1,73 @@
+INSTRUCTIONS FOR BUILDING DUSTMASKER APPLICATIONS IN UNIX/LINUX ENVIRONMENT
+
+1. Getting the NCBI C++ Toolkit distribution.
+
+The distribution is available from ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/CURRENT/.
+The file name is ncbi_cxx--<date>.tar.gz.
+
+2. Unpacking.
+
+Enter the directory containing NCBI C++ Toolkit archive downloaded in the previous 
+step. Unpack the distribution using the following command:
+
+        gunzip -c ncbi_cxx--<date>.tar.gz | tar xvf -
+
+This will create a directory named ncbi_cxx--<date>/ and the Toolkit distribution
+will be unpacked into that directory.
+
+*************************
+At this point there are 2 ways to proceed. One could use an included dependency listing
+to build only the dustmasker application and its dependencies. Alternatively one could
+build the complete toolkit. In the following description the items related to the first
+method are marked with subscript 'a' and the items related to the second method are marked
+with subscript 'b'.
+*************************
+
+3a. Configuration to build only dustmasker and its dependencies.
+
+Enter the toolkit distribution directory:
+
+        cd ncbi_cxx--<date>
+
+Configure the toolkit with the following command:
+
+        ./configure --without-debug --with-optimization --with-projects=src/app/dustmasker/dustmasker.lst
+
+The configure script will create the build tree under <your_compiler_version>-Release/.
+
+3b. Configuration to build the complete toolkit.
+
+Enter the toolkit distribution directory:
+
+        cd ncbi_cxx--<date>
+
+Configure the toolkit with the following command:
+
+        ./configure --without-debug --with-optimization --without-odbc
+
+The configure script will create the build tree under <your_compiler_version>-Release/.
+
+4a. Build of the dustmasker application and its dependencies.
+
+Enter the build directory:
+
+        cd <your_compiler_version>-Release/build
+
+Build the dustmasker:
+
+        make all_p
+
+4b. Build of the complete toolkit.
+
+Enter the build directory:
+
+        cd <your_compiler_version>-Release/build
+
+Build the NCBI C++ Toolkit:
+
+        make all_r
+
+5. The dustmasker executable can be found in directory:
+
+<your_compiler_version>-Release/bin/
+

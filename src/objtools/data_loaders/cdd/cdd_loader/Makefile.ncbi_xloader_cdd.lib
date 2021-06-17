@@ -1,0 +1,25 @@
+# $Id$
+
+# Build library "ncbi_xloader_cdd"
+###############################
+
+LIB = ncbi_xloader_cdd
+SRC = cdd_loader
+
+REQUIRES = objects
+
+ASN_DEP = id2 cdd_access seq
+
+LIB_OR_DLL = both
+
+DLL_LIB = cdd_access $(SOBJMGR_LIBS) $(CMPRS_LIB)
+LIBS = $(ORIG_LIBS)
+
+CPPFLAGS = -DNCBI_XLOADER_CDD_EXPORTS $(ORIG_CPPFLAGS)
+
+WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    id2 seq cdd_access $(SOBJMGR_LIBS)
+    

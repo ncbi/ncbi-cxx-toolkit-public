@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(coretest)
+  NCBI_sources(coretest)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_add_test()
+  NCBI_project_watchers(vakatov)
+NCBI_end_app()
+

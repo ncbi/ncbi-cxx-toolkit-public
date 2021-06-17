@@ -1,0 +1,153 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local str "gene_1",
+      data gene {
+      },
+      location int {
+        from 3630,
+        to 5898,
+        strand plus,
+        id local str "Chr1"
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01010"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "cds_1"
+        }
+      }
+    },
+    {
+      id local str "mrna_1",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 3630,
+          to 3912,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 3995,
+          to 4275,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 4485,
+          to 4604,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 4705,
+          to 5094,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 5173,
+          to 5325,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 5438,
+          to 5898,
+          strand plus,
+          id local str "Chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01010"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01010.1"
+        }
+      },
+      xref {
+        {
+          id local str "cds_1"
+        },
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "cds_1",
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 3759,
+          to 3912,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 3995,
+          to 4275,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 4485,
+          to 4604,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 4705,
+          to 5094,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 5173,
+          to 5325,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 5438,
+          to 5629,
+          strand plus,
+          id local str "Chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01010"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01010.1"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "gene_1"
+        }
+      }
+    }
+  }
+}

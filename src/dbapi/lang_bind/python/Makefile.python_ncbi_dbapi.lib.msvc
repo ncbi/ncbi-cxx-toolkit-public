@@ -1,0 +1,2 @@
+[AddToProject]
+HeadersInSrc = *.hpp pythonpp/*.hpp

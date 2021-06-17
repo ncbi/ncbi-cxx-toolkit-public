@@ -1,0 +1,5 @@
+Line No    : 18
+Severity   : Fatal
+Problem    : Alignment.BadDataCount
+Message    : The expected number of characters per sequence specified by nChar in the Nexus file is 46. The actual number of characters counted for the first sequence is 48. The expected number of characters must equal the actual number of characters.
+

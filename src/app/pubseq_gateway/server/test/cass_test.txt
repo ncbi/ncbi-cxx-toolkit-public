@@ -1,0 +1,34 @@
+1.
+- All the claster members are off
+- Start PSG
+- Bring up claster members
+- Run tests
+
+FAILED: ID-5739
+Fixed and retested on Jul 30: PASSED
+
+2.
+- No quorum in the claster
+- Start PSG
+- Bring up claster members
+- Run tests
+
+PASSED
+
+3.
+- Claster is OK
+- Start PSG
+- Down some members so that there is no quorum
+- Bring up some members so the the quorum is back
+- Run tests
+
+PASSED
+
+4.
+- Claster is OK
+- Start PSG
+- Down all the claster members
+- Bring up all the claster members
+- Run tests
+
+PASSED

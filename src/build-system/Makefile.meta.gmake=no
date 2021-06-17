@@ -1,0 +1,20 @@
+# $Id$
+
+ECHO  = /bin/echo
+GMAKE = gmake
+
+more_shims_ = $(top_srcdir)/src/build-system/Makefile.flat_shims
+more_shims_recursive = /dev/null
+more_shims = $(more_shims_$(abs_top_srcdir:%=recursive))
+
+include $(more_shims)
+
+all sources libs clean purge clean_sources purge_sources check check_add:
+	@$(ECHO) "Falling back to GNU Make ($(GMAKE))"
+	@+$(GMAKE) --version >/dev/null 2>&1
+	+$(GMAKE) $(MFLAGS) $@
+
+%_l %_r %_p %_f %_fd %.usr %.nonusr %.locked %.real:
+	@$(ECHO) "Falling back to GNU Make ($(GMAKE))"
+	@+$(GMAKE) --version >/dev/null 2>&1
+	+$(GMAKE) $(MFLAGS) $@

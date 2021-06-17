@@ -1,0 +1,10 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(test_sra)
+  NCBI_sources(test_sra)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_csra ncbi_xloader_genbank)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
+

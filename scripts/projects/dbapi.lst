@@ -1,0 +1,13 @@
+corelib$
+util$
+util/bitset$
+util/compress
+util/regexp$
+util/xregexp$
+util/cache$
+connect$
+connect/ext$
+connect/mbedtls
+dbapi
+misc/third_party
+misc/third_party_static

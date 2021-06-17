@@ -1,0 +1,46 @@
+# Note:
+# Blank lines and lines starting with '#' are ignored.
+# All other lines are interpreted as test entries.
+# Test entries consist of the following:
+#	a (more or less) descriptive test label,
+#	a ':',
+#	the name of the input file (located in the input directory),
+#	a white space separated list of additional reader parameters, expressed
+#	  using feat_import conventions.
+
+# GTF:
+rw-100: rw-100.gtf
+rw-153: rw-153.gtf
+rw-451: rw-451.gtf
+gene-mrna-exon-cds: gene-mrna-exon-cds.gtf
+exon-cds: exon-cds.gtf
+uud-3s: uud-3s.gtf
+test-only-cds: test-only-cds.gtf
+test-classified-exons: test-classified-exons.gtf
+test-unclassified-exons: test-unclassified-exons.gtf
+
+# GFF3
+test-basic: test-basic.gff3
+test-gene-cds: test-gene-cds.gff3
+test-multi-rna: test-multi-rna.gff3
+test-so-types: test-so-types.gff3
+test-pseudo-features: test-pseudo-features.gff3
+test-inference: test-inference.gff3
+test-transcript: test-transcript.gff3
+test-split-cds: test-split-cds.gff3
+rw-234: rw-234.gff3
+rw-288: rw-288.gff3
+
+# BED:
+test-12-col: test-12-col.bed
+test-9-col: test-9-col.bed
+test-3-col: test-3-col.bed
+test-error-column-count: test-error-column-count.bed
+test-error-trackline: test-error-trackline.bed
+test-color-itemrgb: test-color-itemrgb.bed
+test-color-usescore: test-color-usescore.bed
+test-color-bystrand: test-color-bystrand.bed
+test-color-none: test-color-none.bed
+
+# TBL:
+gb-7002: gb-7002.5col

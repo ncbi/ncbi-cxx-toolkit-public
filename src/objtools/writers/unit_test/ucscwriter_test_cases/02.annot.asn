@@ -1,0 +1,123 @@
+Seq-annot ::= {
+  desc {
+  },
+  data ftable {
+    {
+      data region "region: 1",
+      location int {
+        from 111170592,
+        to 111171176,
+        strand plus,
+        id other {
+          accession "NC_018912",
+          version 2
+        }
+      },
+      title "Line:1"
+    },
+    {
+      data region "region: 2",
+      location int {
+        from 145771579,
+        to 145772098,
+        strand plus,
+        id other {
+          accession "NC_018912",
+          version 2
+        }
+      },
+      title "Line:2"
+    },
+    {
+      data region "region: 3",
+      location int {
+        from 173540456,
+        to 173540853,
+        strand minus,
+        id other {
+          accession "NC_018912",
+          version 2
+        }
+      },
+      title "Line:3"
+    },
+    {
+      data region "region: 4",
+      location int {
+        from 181531409,
+        to 181531797,
+        strand plus,
+        id other {
+          accession "NC_018912",
+          version 2
+        }
+      },
+      title "Line:4"
+    },
+    {
+      data region "region: 5",
+      location int {
+        from 207739378,
+        to 207740136,
+        strand minus,
+        id other {
+          accession "NC_018912",
+          version 2
+        }
+      },
+      title "Line:5"
+    },
+    {
+      data region "region: 6",
+      location int {
+        from 240460426,
+        to 240460834,
+        strand minus,
+        id other {
+          accession "NC_018912",
+          version 2
+        }
+      },
+      title "Line:6"
+    },
+    {
+      data region "region: 7",
+      location int {
+        from 74214580,
+        to 74214912,
+        strand plus,
+        id other {
+          accession "NC_018912",
+          version 2
+        }
+      },
+      title "Line:7"
+    },
+    {
+      data region "region: 8",
+      location int {
+        from 79759387,
+        to 79759981,
+        strand minus,
+        id other {
+          accession "NC_018912",
+          version 2
+        }
+      },
+      title "Line:8"
+    },
+    {
+      data region "region: 9",
+      location int {
+        from 92030531,
+        to 92031233,
+        strand minus,
+        id other {
+          accession "NC_018912",
+          version 2
+        }
+      },
+      title "Line:9"
+    }
+  }
+}

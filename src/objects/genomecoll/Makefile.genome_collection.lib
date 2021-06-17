@@ -1,0 +1,10 @@
+# $Id$
+
+LIB = genome_collection
+SRC = genome_collection__ genome_collection___
+
+WATCHERS = dicuccio smithrg zherikov
+
+
+USES_LIBRARIES =  \
+    $(SEQ_LIBS) pub

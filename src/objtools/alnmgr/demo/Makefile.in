@@ -1,0 +1,9 @@
+# $Id$
+
+
+APP_PROJ = alnvwr alnmrg aln_build aln_test
+PROJ_TAG = demo
+SUB_PROJ =
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

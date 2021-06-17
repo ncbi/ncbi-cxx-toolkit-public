@@ -1,0 +1,5 @@
+APP_PROJ = test_id1_client
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

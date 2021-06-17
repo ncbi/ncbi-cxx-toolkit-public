@@ -1,0 +1,646 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 0
+        },
+        {
+          label str "warnings",
+          data int 3
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    },
+    title "Clone Paired Reads 1",
+    name "pairedReads1",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "description",
+          data str "Clone Paired Reads 1"
+        },
+        {
+          label str "name",
+          data str "pairedReads1"
+        }
+      }
+    },
+    user {
+      type str "NCBI_BED_COLUMN_COUNT",
+      data {
+        {
+          label str "NCBI_BED_COLUMN_COUNT",
+          data int 6
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 1,
+      data region "cloneB",
+      location int {
+        from 2000,
+        to 2099,
+        strand minus,
+        id local str "chr22"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 4,
+      data region "cloneB",
+      location int {
+        from 2200,
+        to 2299,
+        strand minus,
+        id local str "chr22"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "22 33 44"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 7,
+      data region "cloneB",
+      location int {
+        from 2400,
+        to 2499,
+        strand minus,
+        id local str "chr22"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "209 164 121"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 10,
+      data region "cloneB",
+      location int {
+        from 2600,
+        to 2699,
+        strand minus,
+        id local str "chr22"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "34 136 204"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 13,
+      data region "cloneB",
+      location int {
+        from 2800,
+        to 2899,
+        strand minus,
+        id local str "chr22"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "51 170 255"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 16,
+      data region "cloneB",
+      location int {
+        from 3000,
+        to 3099,
+        strand minus,
+        id local str "chr22"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 19,
+      data region "cloneB",
+      location int {
+        from 3200,
+        to 3299,
+        strand minus,
+        id local str "chr22"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 22,
+      data region "cloneB",
+      location int {
+        from 3400,
+        to 3499,
+        strand minus,
+        id local str "chr22"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 0
+        },
+        {
+          label str "warnings",
+          data int 6
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    },
+    title "Clone Paired Reads 2",
+    name "pairedReads2",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "description",
+          data str "Clone Paired Reads 2"
+        },
+        {
+          label str "name",
+          data str "pairedReads2"
+        }
+      }
+    },
+    user {
+      type str "NCBI_BED_COLUMN_COUNT",
+      data {
+        {
+          label str "NCBI_BED_COLUMN_COUNT",
+          data int 6
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 1,
+      data region "cloneA",
+      location int {
+        from 2000,
+        to 2099,
+        strand minus,
+        id local str "chr20"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 4,
+      data region "cloneA",
+      location int {
+        from 2200,
+        to 2299,
+        strand minus,
+        id local str "chr20"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "22 33 44"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 7,
+      data region "cloneA",
+      location int {
+        from 2400,
+        to 2499,
+        strand minus,
+        id local str "chr20"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "209 164 121"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 10,
+      data region "cloneA",
+      location int {
+        from 2600,
+        to 2699,
+        strand minus,
+        id local str "chr20"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "34 136 204"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 13,
+      data region "cloneA",
+      location int {
+        from 2800,
+        to 2899,
+        strand minus,
+        id local str "chr20"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "51 170 255"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 16,
+      data region "cloneA",
+      location int {
+        from 3000,
+        to 3099,
+        strand minus,
+        id local str "chr20"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 19,
+      data region "cloneA",
+      location int {
+        from 3200,
+        to 3299,
+        strand minus,
+        id local str "chr20"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 22,
+      data region "cloneA",
+      location int {
+        from 3400,
+        to 3499,
+        strand minus,
+        id local str "chr20"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    }
+  }
+}

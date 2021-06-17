@@ -1,0 +1,10 @@
+March 30, 2010
+* First release
+
+April 22, 2010
+* 2.0.0 release
+* Changed notation for key library variable names to one that better
+  resembles these in publications.
+* Renamed library diagnostics class.
+* Renamed diagnostic application options: -params --> -indiags
+  and -paramsout --> -outdiags

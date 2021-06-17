@@ -1,0 +1,8 @@
+# $Id$
+
+PROJ_TAG = test
+
+APP_PROJ = sra_test vdb_test wgs_test csra_test_mt graph_test snp_test csra_span_check
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

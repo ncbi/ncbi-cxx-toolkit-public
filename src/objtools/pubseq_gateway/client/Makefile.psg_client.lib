@@ -1,0 +1,15 @@
+# $Id$
+
+SRC = psg_client psg_client_transport
+LIB = psg_client
+
+ASN_DEP = id2 seqsplit seq seqset
+
+DLL_LIB = xconnserv xxconnect2
+LIBS = $(PSG_CLIENT_LIBS) 
+
+CPPFLAGS = $(LIBUV_INCLUDE) $(NGHTTP2_INCLUDE) $(ORIG_CPPFLAGS)
+
+WATCHERS = sadyrovr saprykin
+
+USES_LIBRARIES = xxconnect2

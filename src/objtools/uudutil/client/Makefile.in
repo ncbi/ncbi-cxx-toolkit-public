@@ -1,0 +1,8 @@
+# $Id: 
+# Author:  Liangshou Wu
+#
+
+APP_PROJ = fetch_gbproject
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

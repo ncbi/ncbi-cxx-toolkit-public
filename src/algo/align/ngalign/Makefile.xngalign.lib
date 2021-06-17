@@ -1,0 +1,23 @@
+# $Id$
+
+WATCHERS = boukn dicuccio
+
+ASN_DEP = xnetblast
+
+DLL_LIB = xalgoalignnw xalgoalignutil xmergetree blastinput
+
+SRC = result_set  sequence_set   \
+      alignment_filterer  alignment_scorer  \
+      blast_aligner  banded_aligner  merge_aligner  inversion_merge_aligner   \
+      unordered_spliter \
+      ngalign  
+
+LIB = xngalign
+
+CXXFLAGS = $(FAST_CXXFLAGS) -I./. 
+LDFLAGS  = $(FAST_LDFLAGS)
+
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
+USES_LIBRARIES =  \
+    $(BLAST_INPUT_LIBS) xalgoalignnw xalgoalignutil xmergetree

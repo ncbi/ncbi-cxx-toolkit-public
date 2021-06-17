@@ -1,0 +1,12 @@
+# $Id$
+
+DLL = pkg_sequence
+
+HOSTED_LIBS    = pkg_sequence
+
+DEPENDENCIES   = ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_general \
+                 gui_objects gui_core gui_utils gui_widgets gui_widgets_seq gui_widgets_misc \
+                 gui_config ncbi_trackmgr
+
+
+

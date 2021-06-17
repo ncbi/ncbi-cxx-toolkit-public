@@ -1,0 +1,78 @@
+#include "ptb_gui.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include <windows.h>
+#undef APSTUDIO_HIDDEN_SYMBOLS
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+ncbilogo ICON "ncbilogo.ico"
+
+IDD_PTB_GUI_DIALOG DIALOGEX 0, 0, 377, 297
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "Project Tree Builder"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Subtree to build, or LST file",IDC_STATIC_SUBTREE,5,5,
+                    120,10,SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_SUBTREE,130,5,240,12,ES_AUTOHSCROLL
+    LTEXT           "Allowed project tags",IDC_STATIC_PROJTAG,5,25,120,10,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_PROJTAG,130,25,240,12,ES_AUTOHSCROLL
+    CONTROL         "Use dynamic libraries (DLLs)",IDC_CHECK_DLL,"Button",
+                    BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,5,45,365,10
+    LTEXT           "Configuration customization file",IDC_STATIC_PTBINI2,5,
+                    65,120,10,SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_PTBINI2,130,65,240,12,ES_AUTOHSCROLL | 
+                    ES_READONLY
+    LTEXT           "Root directory of 3rd-party libraries",IDC_STATIC_3PARTY,5,
+                    85,120,10,SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_3PARTY,130,85,240,12,ES_AUTOHSCROLL
+    LTEXT           "Path to the NCBI C Toolkit",IDC_STATIC_CNCBI,5,105,120,
+                    10,SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_CNCBI,130,105,240,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_STATIC_FRAME,"Static",SS_BLACKFRAME,5,125,365,1,
+                    WS_EX_STATICEDGE
+    LTEXT           "Root directory of the build tree",IDC_STATIC_ROOT,5,136,
+                    120,10,SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_ROOT,130,136,240,12,ES_AUTOHSCROLL
+    LTEXT           "MSVC solution to generate",IDC_STATIC_SLN,5,155,120,10,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_SLN,130,155,240,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_STATIC_FRAME2,"Static",SS_BLACKFRAME,5,175,365,1,
+                    WS_EX_STATICEDGE
+    LTEXT           "Add configurations tweaked for VTune:",IDC_STATIC_VTUNE,5,185,
+                    190,10,SS_CENTERIMAGE
+    CONTROL         "Release",IDC_CHECK_VTUNER,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,205,185,80,10
+    CONTROL         "Debug",IDC_CHECK_VTUNED,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,290,185,80,10
+    CONTROL         "",IDC_STATIC_FRAME3,"Static",SS_BLACKFRAME,5,205,365,1,
+                    WS_EX_STATICEDGE
+    CONTROL         "Exclude 'Build PTB' step from CONFIGURE project",
+                    IDC_CHECK_NOPTB,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,
+                    215,365,10
+    CONTROL         "Use external libraries instead of missing in-tree ones",
+                    IDC_CHECK_EXT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,
+                    235,190,10
+    EDITTEXT        IDC_EDIT_EXTROOT,200,235,170,12,ES_AUTOHSCROLL
+    CONTROL         "Do not scan the whole source tree for missing project dependencies",
+                    IDC_CHECK_NWT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,
+                    255,365,10
+    DEFPUSHBUTTON   "OK",IDOK,105,275,100,14
+    PUSHBUTTON      "Cancel",IDCANCEL,221,275,50,14
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////

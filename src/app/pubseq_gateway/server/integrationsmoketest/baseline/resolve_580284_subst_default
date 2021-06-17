@@ -1,0 +1,20 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": {
+        "id": "gi|580284",
+        "type": 12
+    },
+    "molecule_type": "aa",
+    "length": 26,
+    "seq_state": 0,
+    "state": 0,
+    "blob_id": {
+        "id": "0.1002462"
+    },
+    "tax_id": 9606,
+    "hash": -875318888,
+    "date_changed": "05/24/1995 00:39:33",
+    "gi": 580284
+}
+]

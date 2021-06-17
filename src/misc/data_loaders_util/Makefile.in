@@ -1,0 +1,9 @@
+# $Id$
+##################################
+
+LIB_PROJ = data_loaders_util
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+REQUIRES = 

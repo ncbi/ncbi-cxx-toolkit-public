@@ -1,0 +1,261 @@
+/*********************************** 
+ Commom styles
+************************************/
+
+/*
+  NOTE:
+    Please, don't use it in the documentation. This styles need only for compatibility
+    with old documentation and must be replaced to personal styles for each term.
+*/
+
+PRE     { font-family: Courier; font-size: 11pt; color: #008080; }
+XMP     { font-family: Courier; font-size: 11pt; color: #008080; }
+TT.code { font-family: Courier; font-size: 11pt; color: #008080; }
+VAR     { font-style:italic;}
+EM      { font-style:normal; font-weight:bold;}
+
+
+
+/*********************************** 
+ Path, project, module, ... 
+************************************/
+
+/* file name */
+.ncbi_file      { font-style: italic; }
+
+/* directory name */
+.ncbi_dir       { font-style: italic; }
+
+/* source code (big chunk) */
+.ncbi_code      { color: #008080; font-family: Courier,monospace;
+                  font-size: 100%; }
+
+/* source code (small font) */
+.ncbi_code_sm   { color: #008080; font-family: Courier,monospace;
+                  font-size: 80%; }
+
+/* app/command/script output */
+.ncbi_output    { color: #008080; font-family: Courier,monospace;
+                  font-size: 100%; }
+
+/* program name */
+.ncbi_app       { font-family: monospace; font-size: 100%;}
+
+/* program argument*/
+.ncbi_app_a     { font-style: italic; }
+
+/* library name */
+.ncbi_lib       { font-family: monospace; font-size: 100%; }
+
+/* project name (all_core, xutil, ...) */
+.ncbi_proj      { font-family: monospace; font-size: 100%; }
+
+/* system utilities */
+.ncbi_util      { font-style: italic; }
+
+/* URL or mail address */
+.ncbi_url       { color: blue; }
+
+/* CGI script */
+.ncbi_cgi       { font-family: monospace; font-size: 100%; }
+
+/* API or Interface name */
+.ncbi_interface { font-family: monospace; font-size: 100%; }
+
+
+
+/***********************************
+ Registry 
+***********************************/
+
+/* section name */
+.ncbi_reg       { font-style: italic; }
+
+/* entry name */
+.ncbi_reg_var   { font-style: italic; }
+
+
+
+/***********************************
+ Scripts and commands 
+***********************************/
+
+/* script name */
+.ncbi_script    { font-weight: bold; font-style: italic; font-size: 100%; }
+
+/* script argument */
+.ncbi_script_a  { font-style: italic; }
+
+/* command, script source code */
+.ncbi_cmd       { color: #a00000; font-family: Courier,monospace;
+                  font-size: 100%;}
+
+/* command, script source code (small font) */
+.ncbi_cmd_sm    { color: #a00000; font-family: Courier,monospace;
+                  font-size: 80%; }
+
+/* environment variable */
+.ncbi_env       { font-family: monospace; font-size: 100%; }
+
+
+
+/***********************************
+ AUTOCONF 
+***********************************/
+           
+/* configurable variable (@incdir@) */
+.ncbi_conf_var  { font-family: monospace; font-size: 100%; }
+
+/* configure flag (--with-foo) */
+.ncbi_conf_flag { font-style: italic; }
+
+
+
+/***********************************
+ MAKE
+***********************************/
+
+/* makefile variable (macro) */
+.ncbi_make_var  { font-family: monospace; font-size: 100%; }
+
+/* makefile flag (all_r) */
+.ncbi_make_flag { font-style: italic; }
+
+
+
+/***********************************
+ CVS 
+***********************************/
+
+/* CVS path */
+.ncbi_cvs_path  { font-style: italic; }
+
+/* File revision */
+.ncbi_cvs_rev   { font-style: italic; }
+
+/* last file modification date */
+.ncbi_cvs_date  { font-style: italic; }
+
+
+
+/***********************************
+ C/C++ code
+***********************************/
+
+/* class */
+.ncbi_class     { font-weight: bold; font-style: italic; }
+
+/* function */
+.ncbi_func      { font-weight: bold; font-style: italic; }
+
+/* type */
+.ncbi_type      { font-weight: bold; font-style: italic; }
+
+/* variable */
+.ncbi_var       { font-family: monospace; font-size: 100%; }
+
+/* macro */
+.ncbi_macro     { font-family: monospace; font-size: 100%; }
+
+/* source code (short inline chunk) */
+.ncbi_ccode     { font-style: italic; font-size: 100%; }
+
+
+
+/***********************************
+ Others 
+***********************************/
+
+/* OS name (MS Windows, UNIX, Solaris) */
+.ncbi_os        { font-family: monospace; font-size: 100%; }
+
+/* Platform name (sun-solaris, sun-intel)*/
+.ncbi_platform  { black; font-family: monospace; font-size: 100%; }
+
+/* Compiler name */
+.ncbi_compiler  { font-family: monospace; font-size: 100%; }
+
+/* Configuration name (Debug, Release) */
+.ncbi_config    { font-family: monospace; font-size: 100%; }
+
+/* Term */
+.ncbi_term      { font-style: italic; }
+
+/* Note, caution, warning title */
+.ncbi_note      { font-weight: bold; }
+
+/* Some value (true/false, number, ...) */
+.ncbi_value     { font-style: italic; }
+
+/* Program menu/button name */
+.ncbi_menu      { font-style: italic;}
+
+/* Keyword */
+.ncbi_keyword   { font-style: italic; }
+
+
+
+
+
+/* OL/UL.bold and OL/UL.normal are used in concert for nested lists.
+   (see libs.html).
+
+   <ol class=bold>...<ul class=normal>
+   will bold the outer ordered list elements, but keep a normal font
+   weight for the nested unordered list elements.  */
+
+OL.normal   { font-weight: normal; font-style: normal; }
+OL.bold     { font-weight: bold; font-style: normal; }
+
+UL.normal   { font-weight: normal; font-style: normal; }
+UL.bold     { font-weight: bold; font-style: normal; }
+
+OL UL       { font-weight: normal; font-style: normal; }
+
+
+/* Used primarily in the top navbar of the C++ toolkit doc pages */
+
+.teal        { background: #336699; }   /* NCBI logo teal */
+.NAVBAR      {color: #000000; font-weight: normal; font-size: 8pt; }
+A.NAVBAR     {color: #0033CC; font-weight: normal; font-size: 8pt; }
+A.NAVBARBOLD {color: #000000; font-weight: bold;}
+
+
+/* Used to make internal document navigation-link style text (i.e. [Top],
+   and links to source files in the library reference).
+    *   font-size (relative or absolute) doesn't work w/ NS4.78;
+    *   With ABSOLUTE size specifications use the redundant
+        <font size=...><tag class=absolute-size-changing-class>...</tag></font>
+        to ensure there is an effect in NS4 browsers; <font> ignored if browser
+        can apply tag's style.
+    *   With RELATIVE-size changing classes, the font tag WILL be applied after tag's affect.
+    *   relative font-sizes w/in <hN> tags aren't always handled as expected on NS6.0  */
+
+A.nava       { font-weight: normal; font-size: 7pt; }
+A.navr       { font-weight: normal; font-size: smaller; }
+
+SPAN.nava    { font-weight: normal; font-size: 7pt; }
+SPAN.navait  { font-weight: normal; font-size: 8pt; font-style: italic;}
+SPAN.navr    { font-weight: normal; font-size: smaller; }
+
+
+
+/* Used to shade rows in a table  */
+
+TR.head  { background: #ccccff; }   /* lavender */
+TR.shade { background: #cccccc; }   /*     grey */
+TD.shade { background: #cccccc; }   /*     grey */
+
+
+/* Search form */
+
+INPUT.search_text   { background-color: #f5f5f5; }
+INPUT.search_start  { font-weight: bold; }
+
+
+/* Used to highlight text during internal documentation review  */
+
+SPAN.red    { background: red; }
+
+
+

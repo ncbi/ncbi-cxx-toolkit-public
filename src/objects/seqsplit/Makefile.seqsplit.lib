@@ -1,0 +1,8 @@
+LIB = seqsplit
+SRC = seqsplit__ seqsplit___
+
+WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    seqset

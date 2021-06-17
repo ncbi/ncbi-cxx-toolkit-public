@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xcache_bdb SHARED)
+  NCBI_hosts_projects(
+    db/bdb/ncbi_xcache_bdb
+  )
+  NCBI_add_definitions(NCBI_BDB_CACHE_EXPORTS)
+NCBI_end_lib()

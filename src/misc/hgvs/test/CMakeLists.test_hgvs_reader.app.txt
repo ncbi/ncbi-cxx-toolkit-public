@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(test_hgvs_reader)
+  NCBI_sources(test_hgvs_reader)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(gencoll_client hgvs)
+  NCBI_add_test()
+  NCBI_project_watchers(ludwigf meric)
+NCBI_end_app()
+

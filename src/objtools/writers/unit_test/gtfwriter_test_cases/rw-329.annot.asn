@@ -1,0 +1,189 @@
+Seq-annot ::= {
+  id {
+    local str "Zv8_NA7"
+  },
+  data ftable {
+    {
+      id local str "gene|1",
+      data gene {
+      },
+      location int {
+        from 67957,
+        to 88252,
+        strand minus,
+        id local str "Zv8_NA7"
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "ENSDART00000076400"
+        }
+      }
+    },
+    {
+      id local str "cds|2",
+      data cdregion {
+      },
+      location mix {
+        int {
+          from 88160,
+          to 88252,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 86373,
+          to 86420,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 85731,
+          to 85936,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 83833,
+          to 83953,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 83076,
+          to 83157,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 79150,
+          to 79256,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 76805,
+          to 76877,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 74582,
+          to 74677,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 72548,
+          to 72609,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 67957,
+          to 68379,
+          strand minus,
+          id local str "Zv8_NA7"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "ENSDART00000076400"
+        },
+        {
+          qual "transcript_id",
+          val "xxENSDART00000076400"
+        }
+      },
+      xref {
+        {
+          id local str "gene|1"
+        }
+      }
+    },
+    {
+      id local str "mrna|3",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 88160,
+          to 88252,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 86373,
+          to 86420,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 85731,
+          to 85936,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 83833,
+          to 83953,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 83076,
+          to 83157,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 79150,
+          to 79256,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 76805,
+          to 76877,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 74582,
+          to 74677,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 72548,
+          to 72609,
+          strand minus,
+          id local str "Zv8_NA7"
+        },
+        int {
+          from 67957,
+          to 68379,
+          strand minus,
+          id local str "Zv8_NA7"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "ENSDART00000076400"
+        },
+        {
+          qual "transcript_id",
+          val "xxENSDART00000076400"
+        }
+      },
+      xref {
+        {
+          id local str "gene|1"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,122 @@
+#!/bin/sh
+
+# $Id$
+# Author: Aaron Ucko, NCBI
+
+linker=$1
+os=`uname`
+case "$os:`basename $1`" in
+    SunOS:CC ) style=WorkShop; dryrun="-dryrun" ;;
+    SunOS:cc ) style=WorkShop; dryrun="-###"    ;;
+    SunOS:[gc]* | Linux:[gc]* ) style=GCC ;;
+    *)
+        echo "$0: warning: unrecognized platform; not interfering"
+        exec "$@"
+        ;;
+esac
+
+case "$os" in
+    SunOS ) AWK=nawk ;;
+    * )     AWK=awk  ;;
+esac
+
+
+FindLib() {
+    found_static=false
+    found_dynamic=false
+    lib=`echo x$1 | sed -e 's/^x-l/lib/'`
+    oldIFS="${IFS-
+	 }"
+    IFS="$oldIFS:"
+    for dir in $2; do
+        [ -f "$dir/$lib.so" ] && found_dynamic=true
+        [ -f "$dir/$lib.a"  ] && found_static=true && break
+    done
+    IFS=$oldIFS
+    case $found_dynamic:$found_static in
+        true:true)   echo both    ;;
+        true:false)  echo dynamic ;;
+        false:true)  echo static  ;;
+        false:false) echo none    ;; # warn on stderr?
+    esac
+}
+
+
+new_cmd=
+user=
+mode=dynamic
+extra_libs=
+
+case $style in
+    WorkShop )
+        eval set `"$@" $dryrun 2>&1 | $AWK '$1 ~ /\/ld$/ { sub(">&[^ ]*", ""); print }'`
+        sys0=$LD_LIBRARY_PATH
+        sys=/usr/lib
+        flag=-B
+        ;;
+    GCC )
+        gcc_ver=`$1 -dumpversion`
+        case "$gcc_ver" in
+            3.[1-9]* )
+                shift
+                set "$linker" -static "$@"
+                eval set `"$@" '-###' 2>&1 | $AWK '/\/ld"/ || /\/collect/'`
+                sys=/usr/lib
+                flag=-B
+                ;;
+            *)
+                # No dry-run option, but --print-search-dirs helps.
+                sys=`$1 --print-search-dirs | $AWK '/^libraries: / { print $2 }'`
+                flag="-Wl,-B"
+                extra_libs="-lc -lgcc"
+                ;;
+        esac
+        case "$gcc_ver" in
+            3.0* ) set "$@" -static-libgcc ;;
+        esac
+        ;;
+esac
+
+    
+while [ $# -gt 0 ]; do
+    mode2=$mode
+    case "$1" in
+        -l* )
+            case `FindLib $1 $user:$sys0:$sys` in
+                both)    mode2=static  ;;
+                dynamic) mode2=dynamic ;;
+            esac
+            ;;
+        -L* ) user="$user:`echo x$1 | sed -e 's/^x-L//'`" ;;
+        -Y  ) case "$2" in P,*) sys=`echo $2 | sed -e 's/^P,//'` ;; esac ;;
+    esac
+    [ $mode2 = $mode ] || new_cmd="$new_cmd $flag$mode2"
+    mode=$mode2
+    new_cmd="$new_cmd $1"
+    shift
+done
+
+
+if test -n "$extra_libs"; then
+    need_dynamic=false
+    want_static=false
+    for x in $extra_libs; do
+        case `FindLib $x $user:$sys` in
+            both)    want_static=true  ;;
+            dynamic) need_dynamic=true ;;
+        esac
+    done
+    if [ $need_dynamic = true -a $mode = static ]; then
+        new_cmd="$new_cmd ${flag}dynamic"
+    elif [ $want_static = true -a $mode = dynamic ]; then
+        new_cmd="$new_cmd ${flag}static"
+    fi
+fi
+
+
+echo "$new_cmd" >&2
+case "$linker" in
+    */CC) $new_cmd 2>&1 | `dirname $linker`/c++filt -stderr ;;
+    CC)   $new_cmd 2>&1 | c++filt -stderr ;;
+    *)    exec $new_cmd ;;
+esac

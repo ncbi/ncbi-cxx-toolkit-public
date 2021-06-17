@@ -1,0 +1,31 @@
+# $Id$
+
+SRC = cass_util cass_blob_op cass_conv cass_driver cass_factory lbsm_resolver SyncObj cass_query_list blob_record \
+    blob_task/insert_extended blob_task/delete blob_task/load \
+    blob_task/load_blob blob_task/delete_expired blob_task/fetch_split_history blob_storage \
+    fullscan/plan fullscan/seg_plan fullscan/runner fullscan/worker changelog/record changelog/writer \
+    nannot/record nannot_task/insert nannot_task/delete nannot_task/fetch \
+    id2_split_task/insert \
+    si2csi/record si2csi_task/fetch si2csi_task/update si2csi_task/delete \
+    bioseq_info/record bioseq_info_task/fetch bioseq_info_task/update bioseq_info_task/delete \
+    status_history/insert status_history/delete status_history/get_public_comment status_history/fetch \
+    acc_ver_hist/insert
+LIB = psg_cassandra
+
+LIBS = $(CASSANDRA_LIBS)
+
+#COVERAGE_FLAGS=-fprofile-arcs -ftest-coverage
+CPPFLAGS = $(ORIG_CPPFLAGS) $(CASSANDRA_INCLUDE) $(COVERAGE_FLAGS)
+LDFLAGS = $(ORIG_LDFLAGS) $(COVERAGE_FLAGS)
+
+REQUIRES = CASSANDRA MT Linux
+
+WATCHERS = satskyse saprykin belyi
+
+#PEDANTIC = -pedantic -Werror -Wextra -Wno-type-limits
+#EXTRA=-fno-omit-frame-pointer -fsanitize=address
+#LOCAL_CPPFLAGS += $(EXTRA) 
+#LOCAL_CPPFLAGS += $(PEDANTIC) 
+#user_homedir = $(shell readlink -e ~)
+#LOCAL_CPPFLAGS = -I$(user_homedir)/trunk/c++/include
+

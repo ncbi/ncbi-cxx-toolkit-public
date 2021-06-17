@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(seq_c_compat_unit_test)
+  NCBI_requires(NCBI_C)
+  NCBI_sources(seq_c_compat_unit_test)
+  NCBI_uses_toolkit_libraries(seq test_boost xxconnect)
+  NCBI_add_test()
+  NCBI_project_watchers(ucko)
+NCBI_end_app()
+

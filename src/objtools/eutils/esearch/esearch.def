@@ -1,0 +1,12 @@
+[-]
+_export = NCBI_EUTILS_EXPORT
+_namespace = esearch
+
+[ESearchResult]
+CE._class = C_Data
+CE.CR._class = C_Info
+CE.CR.RRQWITTQ._class = C_Content
+CE.CR.RRQWITTQ._type = C_Content
+
+[TranslationStack]
+E._class = C_Data

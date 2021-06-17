@@ -1,0 +1,8 @@
+# $Id$
+
+SUB_PROJ = cache pubseq id2 id1 pubseq2 gicache test
+
+LIB_PROJ = ncbi_xreader ncbi_xloader_genbank
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

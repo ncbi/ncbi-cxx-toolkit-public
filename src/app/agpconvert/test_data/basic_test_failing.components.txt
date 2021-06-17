@@ -1,0 +1,36 @@
+Bioseq-set ::= {
+    seq-set {
+        seq {
+            id { genbank { accession "U54469", version 1 } },
+            inst {
+                repr virtual,
+                mol dna,
+                length 90
+            }
+        },
+        seq {
+            id { local str "irrelevant" },
+            inst {
+                repr virtual,
+                mol dna,
+                length 10
+            }
+        },
+        seq {
+            id { local str "foo" },
+            inst {
+                repr virtual,
+                mol dna,
+                length 90
+            }
+        },
+        seq {
+            id { local str "U54470.1" },
+            inst {
+                repr virtual,
+                mol dna,
+                length 500
+            }
+        }
+    }
+}

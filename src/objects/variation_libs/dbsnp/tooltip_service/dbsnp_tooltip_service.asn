@@ -1,0 +1,143 @@
+-- This schema defines the reply format for the dbSNP Tooltip
+-- service, which returns the DbsnpTooltipServiceReply object
+-- serialized as JSON.
+--
+-- Here are a couple of examples of possible service responses:
+--
+-- ... on success:
+--
+-- {
+--   "DbsnpTooltipServiceReply": {
+--     "tooltip_data": [
+--       {
+--         "values": [
+--           {
+--             "key": "Variation ID",
+--             "value": "rs268",
+--             "url": "http://value1"
+--           },
+--           {
+--             "key": "Variant Type",
+--             "value": "TypeSNP, length 1"
+--           },
+--           {
+--             "key": "Alleles",
+--             "value": "A/G"
+--           }
+--         ]
+--       },
+--       {
+--         "section": "Genomic locations",
+--         "values": [
+--           {
+--             "key": "GRCh38.p7",
+--             "value": "NC_000008.11 @ 19956018",
+--             "url": "/projects/sviewer/?id=NC_000008.11&v=19956018:19956018&mk=19956018|rs268|008000"
+--           },
+--           {
+--             "key": "GRCh37.p13",
+--             "value": "NC_000008.10 @ 19813529",
+--             "url": "/projects/sviewer/?id=NC_000008.10&v=19813529:19813539&mk=19813529|rs268|008000"
+--           }
+--         ]
+--       },
+--       {
+--         "section": "Links & Tools",
+--         "values": [
+--           {
+--             "key": "SNP summary",
+--             "value": "rs268",
+--             "url": "https://www.ncbi.nlm.nih.gov/snp/rs268"
+--           },
+--           {
+--             "key": "Genotype information",
+--             "value": "rs268",
+--             "url": "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=268#Diversity"
+--           },
+--           {
+--             "key": "OMIM information",
+--             "value": "rs268",
+--             "url": "https://www.ncbi.nlm.nih.gov/projects/SNP/snp_redirect.cgi?snp_id=268"
+--           },
+--           {
+--             "key": "SNP3D Page",
+--             "value": "rs268",
+--             "url": "https://www.ncbi.nlm.nih.gov/projects/SNP/snp3D.cgi?rsnum=268"
+--           },
+--           {
+--             "key": "Variation viewer",
+--             "value": "rs268 (LPL)",
+--             "url": "https://www.ncbi.nlm.nih.gov/sites/varvu?rs=268&gene=LPL"
+--           }
+--         ]
+--       }
+--     ]
+--   }
+-- }
+--
+-- ... in case of an error:
+--
+-- {
+--   "DbsnpTooltipServiceReply": {
+--     "error": {
+--       "message": "Database access error",
+--       "http_status_code": 500
+--     }
+--   }
+-- }
+--
+-- For limitations please check: https://confluence.ncbi.nlm.nih.gov/display/VAR/SViewer+Tooltips
+
+NCBI-dbsnp-tooltips DEFINITIONS ::=
+BEGIN
+
+EXPORTS DbsnpTooltipServiceReply;
+
+-- Payload of the tooltip service.
+DbsnpTooltipData ::= SEQUENCE OF DbsnpTooltipSection
+
+DbsnpTooltipSectionValue ::= SEQUENCE {
+
+    -- Short description of the value.
+    key VisibleString,
+
+    -- The value as text.
+    value VisibleString,
+
+    -- Optional URL that points to additional information
+    -- about the value.
+    url VisibleString OPTIONAL
+}
+
+DbsnpTooltipSection ::= SEQUENCE {
+
+    -- Section name.
+    -- Some of section have predefined names
+    -- for details please check https://confluence.ncbi.nlm.nih.gov/display/VAR/SViewer+Tooltips
+    section VisibleString OPTIONAL,
+
+    -- A list of values pertaining to this section.
+    values SEQUENCE OF DbsnpTooltipSectionValue
+}
+
+-- In case of an error, the service will return this object.
+DbsnpTooltipServiceError ::= SEQUENCE {
+
+    -- Error description.
+    message VisibleString,
+
+    -- For client convenience, HTTP status code is duplicated here.
+    http-status-code INTEGER
+}
+
+-- Service reply format definition.
+DbsnpTooltipServiceReply ::= CHOICE {
+
+    -- On success, tooltip fields will be placed here.
+    tooltip-data DbsnpTooltipData,
+
+    -- On failure, error details will be placed here.
+    error DbsnpTooltipServiceError
+}
+
+END

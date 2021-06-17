@@ -1,0 +1,18 @@
+# $Id$
+
+LIB = ncbi_xloader_blastdb
+SRC = bdbloader cached_sequence local_blastdb_adapter
+
+DLL_LIB = seqdb
+
+CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS)
+
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
+ASN_DEP = blastdb seqset
+
+WATCHERS = camacho fongah2
+
+
+USES_LIBRARIES =  \
+    seqdb

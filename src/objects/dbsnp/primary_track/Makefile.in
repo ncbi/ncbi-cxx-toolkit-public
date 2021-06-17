@@ -1,0 +1,10 @@
+# $Id$
+
+PROTOBUF_PROJ = dbsnp
+LIB_PROJ = 
+SUB_PROJ = test
+
+REQUIRES = $(GRPC_OPT)
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

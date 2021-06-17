@@ -1,0 +1,32 @@
+# -*- makefile-gmake -*-
+# $Id$
+
+### Requirements handling (at the subtree level)
+
+# reqs = $(patsubst %,$(status_dir)/%.enabled,$(sort $(REQUIRES)))
+reqs = $(REQUIRES:%=$(status_dir)/%.enabled)
+requirements: $(reqs)
+
+ifdef base_req_needers
+  req_needers = $(base_req_needers:%=%.needs-reqs)
+  missing_reqs = $(filter-out $(wildcard $(reqs)),$(reqs))
+  ifeq "" "$(filter %_r %_p,$(MAKECMDGOALS))"
+    mark_as_disabled=mark-as-disabled
+  else
+    ifneq "" "$(filter %_p,$(MAKECMDGOALS))"
+      mark_as_disabled=mark-as-disabled_p
+    else
+      mark_as_disabled=mark-as-disabled_r
+    endif
+  endif
+  ifeq "$(missing_reqs)" ""
+    $(req_needers): %.needs-reqs: %.real ;
+  else
+    $(req_needers): %.needs-reqs:
+	@/bin/echo 'NOTE: Skipping project $(notdir $(CURDIR)) due to unmet requirements:'
+	@$(foreach r,$(missing_reqs),/bin/echo $(r:$(status_dir)/%.enabled=%);)
+	@$(MAKE) $(MFLAGS) $(mark_as_disabled) \
+	    INHERITED_REQUIREMENTS='$(INHERITED_REQUIREMENTS) $(REQUIRES)'
+  endif
+  .PHONY: $(base_req_needers) $(req_needers)
+endif

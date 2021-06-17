@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(test_objmgr)
+  NCBI_sources(test_objmgr test_helper)
+  NCBI_uses_toolkit_libraries(xobjmgr)
+  NCBI_add_test()
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
+

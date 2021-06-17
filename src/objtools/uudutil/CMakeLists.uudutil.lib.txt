@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(uudutil)
+  NCBI_sources(project_storage)
+  NCBI_uses_toolkit_libraries(gbproj xcompress xconnserv)
+  NCBI_project_watchers(shkeda)
+NCBI_end_lib()
+

@@ -1,0 +1,3636 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 1,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "other"
+        }
+      },
+      location int {
+        from 40324,
+        to 40609,
+        strand minus,
+        id local str "Ga0365360_01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_01_40325_40610"
+        },
+        {
+          qual "accession",
+          val "5_ureB_sRNA"
+        },
+        {
+          qual "e-value",
+          val "1e-40"
+        },
+        {
+          qual "model",
+          val "RF02514"
+        },
+        {
+          qual "model_end",
+          val "292"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "ncRNA_class",
+          val "other"
+        },
+        {
+          qual "product",
+          val "5' ureB small RNA"
+        }
+      }
+    },
+    {
+      id local id 2,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 122038,
+        to 122122,
+        strand plus,
+        id local str "Ga0365360_01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_01_122039_122123"
+        },
+        {
+          qual "codon",
+          val "TTA"
+        },
+        {
+          qual "product",
+          val "tRNA_Leu_TAA"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 3,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "other"
+        }
+      },
+      location int {
+        from 299813,
+        to 299874,
+        strand plus,
+        id local str "Ga0365360_01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_01_299814_299875"
+        },
+        {
+          qual "accession",
+          val "Betaproteobacteria_toxic_sRNA"
+        },
+        {
+          qual "e-value",
+          val "3.7e-12"
+        },
+        {
+          qual "model",
+          val "RF02278"
+        },
+        {
+          qual "model_end",
+          val "64"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "ncRNA_class",
+          val "other"
+        },
+        {
+          qual "product",
+          val "toxic small RNA"
+        }
+      }
+    },
+    {
+      id local id 4,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 515322,
+        to 515396,
+        strand plus,
+        id local str "Ga0365360_01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_01_515323_515397"
+        },
+        {
+          qual "codon",
+          val "GTG"
+        },
+        {
+          qual "product",
+          val "tRNA_Val_CAC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 5,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 648898,
+        to 648984,
+        strand plus,
+        id local str "Ga0365360_01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_01_648899_648985"
+        },
+        {
+          qual "codon",
+          val "CTA"
+        },
+        {
+          qual "product",
+          val "tRNA_Leu_TAG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 6,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 655792,
+        to 655867,
+        strand plus,
+        id local str "Ga0365360_01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_01_655793_655868"
+        },
+        {
+          qual "codon",
+          val "GTA"
+        },
+        {
+          qual "product",
+          val "tRNA_Val_TAC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 7,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 655903,
+        to 655979,
+        strand plus,
+        id local str "Ga0365360_01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_01_655904_655980"
+        },
+        {
+          qual "codon",
+          val "GAC"
+        },
+        {
+          qual "product",
+          val "tRNA_Asp_GTC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 8,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 656007,
+        to 656083,
+        strand plus,
+        id local str "Ga0365360_01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_01_656008_656084"
+        },
+        {
+          qual "codon",
+          val "GAC"
+        },
+        {
+          qual "product",
+          val "tRNA_Asp_GTC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 9,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 752755,
+        to 752829,
+        strand plus,
+        id local str "Ga0365360_01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_01_752756_752830"
+        },
+        {
+          qual "codon",
+          val "Pseudo"
+        },
+        {
+          qual "product",
+          val "tRNA_Xxx"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 10,
+      data imp {
+        key "misc_feature"
+      },
+      location int {
+        from 1155345,
+        to 1155457,
+        strand plus,
+        id local str "Ga0365360_01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_01_1155346_1155458"
+        },
+        {
+          qual "accession",
+          val "ykkC-yxkD"
+        },
+        {
+          qual "e-value",
+          val "2.8e-19"
+        },
+        {
+          qual "model",
+          val "RF00442"
+        },
+        {
+          qual "model_end",
+          val "108"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "ykkC-yxkD leader"
+        }
+      }
+    },
+    {
+      id local id 11,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 1331895,
+        to 1331993,
+        strand plus,
+        id local str "Ga0365360_01"
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "riboswitch"
+        },
+        {
+          qual "ID",
+          val "Ga0365360_01_1331896_1331994"
+        },
+        {
+          qual "accession",
+          val "Glycine"
+        },
+        {
+          qual "bound_moiety",
+          val "glycine"
+        },
+        {
+          qual "e-value",
+          val "2.6e-11"
+        },
+        {
+          qual "model",
+          val "RF00504"
+        },
+        {
+          qual "model_end",
+          val "94"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "glycine riboswitch"
+        }
+      }
+    },
+    {
+      id local id 12,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 1331999,
+        to 1332107,
+        strand plus,
+        id local str "Ga0365360_01"
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "riboswitch"
+        },
+        {
+          qual "ID",
+          val "Ga0365360_01_1332000_1332108"
+        },
+        {
+          qual "accession",
+          val "Glycine"
+        },
+        {
+          qual "bound_moiety",
+          val "glycine"
+        },
+        {
+          qual "e-value",
+          val "2.5e-09"
+        },
+        {
+          qual "model",
+          val "RF00504"
+        },
+        {
+          qual "model_end",
+          val "94"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "glycine riboswitch"
+        }
+      }
+    },
+    {
+      id local id 13,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 1374913,
+        to 1374989,
+        strand minus,
+        id local str "Ga0365360_01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_01_1374914_1374990"
+        },
+        {
+          qual "codon",
+          val "GTC"
+        },
+        {
+          qual "product",
+          val "tRNA_Val_GAC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 14,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 1375047,
+        to 1375123,
+        strand minus,
+        id local str "Ga0365360_01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_01_1375048_1375124"
+        },
+        {
+          qual "codon",
+          val "GTC"
+        },
+        {
+          qual "product",
+          val "tRNA_Val_GAC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 15,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 144880,
+        to 144955,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_144881_144956"
+        },
+        {
+          qual "codon",
+          val "GGC"
+        },
+        {
+          qual "product",
+          val "tRNA_Gly_GCC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 16,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 200639,
+        to 200736,
+        strand plus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "riboswitch"
+        },
+        {
+          qual "ID",
+          val "Ga0365360_02_200640_200737"
+        },
+        {
+          qual "accession",
+          val "Glycine"
+        },
+        {
+          qual "bound_moiety",
+          val "glycine"
+        },
+        {
+          qual "e-value",
+          val "4.9e-13"
+        },
+        {
+          qual "model",
+          val "RF00504"
+        },
+        {
+          qual "model_end",
+          val "94"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "glycine riboswitch"
+        }
+      }
+    },
+    {
+      id local id 17,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 200744,
+        to 200846,
+        strand plus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "riboswitch"
+        },
+        {
+          qual "ID",
+          val "Ga0365360_02_200745_200847"
+        },
+        {
+          qual "accession",
+          val "Glycine"
+        },
+        {
+          qual "bound_moiety",
+          val "glycine"
+        },
+        {
+          qual "e-value",
+          val "4.5e-06"
+        },
+        {
+          qual "model",
+          val "RF00504"
+        },
+        {
+          qual "model_end",
+          val "94"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "glycine riboswitch"
+        }
+      }
+    },
+    {
+      id local id 18,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 390120,
+        to 390195,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_390121_390196"
+        },
+        {
+          qual "codon",
+          val "GGC"
+        },
+        {
+          qual "product",
+          val "tRNA_Gly_GCC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 19,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 390213,
+        to 390286,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_390214_390287"
+        },
+        {
+          qual "codon",
+          val "TGC"
+        },
+        {
+          qual "product",
+          val "tRNA_Cys_GCA"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 20,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 390341,
+        to 390416,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_390342_390417"
+        },
+        {
+          qual "codon",
+          val "GGC"
+        },
+        {
+          qual "product",
+          val "tRNA_Gly_GCC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 21,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 390461,
+        to 390536,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_390462_390537"
+        },
+        {
+          qual "codon",
+          val "GGC"
+        },
+        {
+          qual "product",
+          val "tRNA_Gly_GCC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 22,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 390602,
+        to 390677,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_390603_390678"
+        },
+        {
+          qual "codon",
+          val "GGC"
+        },
+        {
+          qual "product",
+          val "tRNA_Gly_GCC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 23,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 446330,
+        to 446406,
+        strand plus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_446331_446407"
+        },
+        {
+          qual "codon",
+          val "ATG"
+        },
+        {
+          qual "product",
+          val "tRNA_fMet_CAT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 24,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 467627,
+        to 467702,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_467628_467703"
+        },
+        {
+          qual "codon",
+          val "GAA"
+        },
+        {
+          qual "product",
+          val "tRNA_Glu_TTC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 25,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 467742,
+        to 467817,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_467743_467818"
+        },
+        {
+          qual "codon",
+          val "GAA"
+        },
+        {
+          qual "product",
+          val "tRNA_Glu_TTC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 26,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 467958,
+        to 468033,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_467959_468034"
+        },
+        {
+          qual "codon",
+          val "GAA"
+        },
+        {
+          qual "product",
+          val "tRNA_Glu_TTC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 27,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 468056,
+        to 468131,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_468057_468132"
+        },
+        {
+          qual "codon",
+          val "GCC"
+        },
+        {
+          qual "product",
+          val "tRNA_Ala_GGC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 28,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 468196,
+        to 468271,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_468197_468272"
+        },
+        {
+          qual "codon",
+          val "GAA"
+        },
+        {
+          qual "product",
+          val "tRNA_Glu_TTC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 29,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 468307,
+        to 468382,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_468308_468383"
+        },
+        {
+          qual "codon",
+          val "GCC"
+        },
+        {
+          qual "product",
+          val "tRNA_Ala_GGC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 30,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 468417,
+        to 468492,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_468418_468493"
+        },
+        {
+          qual "codon",
+          val "GAA"
+        },
+        {
+          qual "product",
+          val "tRNA_Glu_TTC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 31,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 468526,
+        to 468601,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_468527_468602"
+        },
+        {
+          qual "codon",
+          val "GCC"
+        },
+        {
+          qual "product",
+          val "tRNA_Ala_GGC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 32,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 578622,
+        to 578720,
+        strand plus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "riboswitch"
+        },
+        {
+          qual "ID",
+          val "Ga0365360_02_578623_578721"
+        },
+        {
+          qual "accession",
+          val "TPP"
+        },
+        {
+          qual "bound_moiety",
+          val "TPP"
+        },
+        {
+          qual "e-value",
+          val "1.9e-11"
+        },
+        {
+          qual "model",
+          val "RF00059"
+        },
+        {
+          qual "model_end",
+          val "105"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "TPP riboswitch"
+        }
+      }
+    },
+    {
+      id local id 33,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 666251,
+        to 666335,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_666252_666336"
+        },
+        {
+          qual "codon",
+          val "CTC"
+        },
+        {
+          qual "product",
+          val "tRNA_Leu_GAG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 34,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 710006,
+        to 710101,
+        strand plus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_710007_710102"
+        },
+        {
+          qual "codon",
+          val "TGA"
+        },
+        {
+          qual "product",
+          val "tRNA_SeC_TCA"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 35,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 794311,
+        to 794386,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_794312_794387"
+        },
+        {
+          qual "codon",
+          val "AAC"
+        },
+        {
+          qual "product",
+          val "tRNA_Asn_GTT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 36,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 798406,
+        to 798481,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_798407_798482"
+        },
+        {
+          qual "codon",
+          val "AAC"
+        },
+        {
+          qual "product",
+          val "tRNA_Asn_GTT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 37,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 802854,
+        to 802929,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_802855_802930"
+        },
+        {
+          qual "codon",
+          val "AAC"
+        },
+        {
+          qual "product",
+          val "tRNA_Asn_GTT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 38,
+      data imp {
+        key "misc_feature"
+      },
+      location int {
+        from 875646,
+        to 875730,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_875647_875731"
+        },
+        {
+          qual "accession",
+          val "sucA"
+        },
+        {
+          qual "e-value",
+          val "7.1e-16"
+        },
+        {
+          qual "model",
+          val "RF01070"
+        },
+        {
+          qual "model_end",
+          val "83"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "SucA RNA motif"
+        }
+      }
+    },
+    {
+      id local id 39,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 931340,
+        to 931416,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_02_931341_931417"
+        },
+        {
+          qual "codon",
+          val "CCC"
+        },
+        {
+          qual "product",
+          val "tRNA_Pro_GGG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 40,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 1008716,
+        to 1008936,
+        strand minus,
+        id local str "Ga0365360_02"
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "riboswitch"
+        },
+        {
+          qual "ID",
+          val "Ga0365360_02_1008717_1008937"
+        },
+        {
+          qual "accession",
+          val "Cobalamin"
+        },
+        {
+          qual "bound_moiety",
+          val "cobalamin"
+        },
+        {
+          qual "e-value",
+          val "8.6e-20"
+        },
+        {
+          qual "model",
+          val "RF00174"
+        },
+        {
+          qual "model_end",
+          val "191"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "cobalamin riboswitch"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 41,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 218470,
+        to 218554,
+        strand minus,
+        id local str "Ga0365360_03"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_03_218471_218555"
+        },
+        {
+          qual "codon",
+          val "TTG"
+        },
+        {
+          qual "product",
+          val "tRNA_Leu_CAA"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 42,
+      data imp {
+        key "misc_feature"
+      },
+      location int {
+        from 361497,
+        to 361604,
+        strand minus,
+        id local str "Ga0365360_03"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_03_361498_361605"
+        },
+        {
+          qual "accession",
+          val "mraW"
+        },
+        {
+          qual "e-value",
+          val "5.6e-12"
+        },
+        {
+          qual "model",
+          val "RF01746"
+        },
+        {
+          qual "model_end",
+          val "108"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "mraW RNA"
+        }
+      }
+    },
+    {
+      id local id 43,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 477812,
+        to 477888,
+        strand minus,
+        id local str "Ga0365360_03"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_03_477813_477889"
+        },
+        {
+          qual "codon",
+          val "ATG"
+        },
+        {
+          qual "product",
+          val "tRNA_Met_CAT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 44,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 526430,
+        to 526508,
+        strand plus,
+        id local str "Ga0365360_03"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_03_526431_526509"
+        },
+        {
+          qual "codon",
+          val "ATG"
+        },
+        {
+          qual "product",
+          val "tRNA_Ile2_CAT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 45,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 632448,
+        to 632523,
+        strand plus,
+        id local str "Ga0365360_03"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_03_632449_632524"
+        },
+        {
+          qual "codon",
+          val "ACG"
+        },
+        {
+          qual "product",
+          val "tRNA_Thr_CGT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 46,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "other"
+        }
+      },
+      location int {
+        from 803646,
+        to 803826,
+        strand plus,
+        id local str "Ga0365360_03"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_03_803647_803827"
+        },
+        {
+          qual "accession",
+          val "6S"
+        },
+        {
+          qual "e-value",
+          val "6.4e-14"
+        },
+        {
+          qual "model",
+          val "RF00013"
+        },
+        {
+          qual "model_end",
+          val "188"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "ncRNA_class",
+          val "other"
+        },
+        {
+          qual "product",
+          val "6S / SsrS RNA"
+        }
+      }
+    },
+    {
+      id local id 47,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 868489,
+        to 868564,
+        strand minus,
+        id local str "Ga0365360_03"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_03_868490_868565"
+        },
+        {
+          qual "codon",
+          val "AAA"
+        },
+        {
+          qual "product",
+          val "tRNA_Lys_TTT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 48,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 671,
+        to 745,
+        strand minus,
+        id local str "Ga0365360_04"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_04_672_746"
+        },
+        {
+          qual "codon",
+          val "ACC"
+        },
+        {
+          qual "product",
+          val "tRNA_Thr_GGT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 49,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 799,
+        to 872,
+        strand minus,
+        id local str "Ga0365360_04"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_04_800_873"
+        },
+        {
+          qual "codon",
+          val "GGA"
+        },
+        {
+          qual "product",
+          val "tRNA_Gly_TCC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 50,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 931,
+        to 1014,
+        strand minus,
+        id local str "Ga0365360_04"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_04_932_1015"
+        },
+        {
+          qual "codon",
+          val "TAC"
+        },
+        {
+          qual "product",
+          val "tRNA_Tyr_GTA"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 51,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 48936,
+        to 49004,
+        strand minus,
+        id local str "Ga0365360_04"
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "riboswitch"
+        },
+        {
+          qual "ID",
+          val "Ga0365360_04_48937_49005"
+        },
+        {
+          qual "accession",
+          val "SAH_riboswitch"
+        },
+        {
+          qual "bound_moiety",
+          val "SAM"
+        },
+        {
+          qual "e-value",
+          val "3.8e-09"
+        },
+        {
+          qual "model",
+          val "RF01057"
+        },
+        {
+          qual "model_end",
+          val "78"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "SAM riboswitch"
+        }
+      }
+    },
+    {
+      id local id 52,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 92704,
+        to 92779,
+        strand plus,
+        id local str "Ga0365360_04"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_04_92705_92780"
+        },
+        {
+          qual "codon",
+          val "ACA"
+        },
+        {
+          qual "product",
+          val "tRNA_Thr_TGT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 53,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "other"
+        }
+      },
+      location int {
+        from 212858,
+        to 212919,
+        strand minus,
+        id local str "Ga0365360_04"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_04_212859_212920"
+        },
+        {
+          qual "accession",
+          val "Betaproteobacteria_toxic_sRNA"
+        },
+        {
+          qual "e-value",
+          val "2.9e-11"
+        },
+        {
+          qual "model",
+          val "RF02278"
+        },
+        {
+          qual "model_end",
+          val "64"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "ncRNA_class",
+          val "other"
+        },
+        {
+          qual "product",
+          val "toxic small RNA"
+        }
+      }
+    },
+    {
+      id local id 54,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 213318,
+        to 213393,
+        strand minus,
+        id local str "Ga0365360_04"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_04_213319_213394"
+        },
+        {
+          qual "codon",
+          val "CGG"
+        },
+        {
+          qual "product",
+          val "tRNA_Arg_CCG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 55,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 343632,
+        to 343706,
+        strand plus,
+        id local str "Ga0365360_04"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_04_343633_343707"
+        },
+        {
+          qual "codon",
+          val "ACC"
+        },
+        {
+          qual "product",
+          val "tRNA_Thr_GGT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 56,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 484081,
+        to 484157,
+        strand plus,
+        id local str "Ga0365360_04"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_04_484082_484158"
+        },
+        {
+          qual "codon",
+          val "CCA"
+        },
+        {
+          qual "product",
+          val "tRNA_Pro_TGG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 57,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 618743,
+        to 618819,
+        strand minus,
+        id local str "Ga0365360_04"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_04_618744_618820"
+        },
+        {
+          qual "codon",
+          val "GAC"
+        },
+        {
+          qual "product",
+          val "tRNA_Asp_GTC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 58,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 618842,
+        to 618917,
+        strand minus,
+        id local str "Ga0365360_04"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_04_618843_618918"
+        },
+        {
+          qual "codon",
+          val "GTA"
+        },
+        {
+          qual "product",
+          val "tRNA_Val_TAC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 59,
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 194,
+        to 306,
+        strand plus,
+        id local str "Ga0365360_05"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_05_195_307"
+        },
+        {
+          qual "accession",
+          val "5S_rRNA"
+        },
+        {
+          qual "e-value",
+          val "4.3e-12"
+        },
+        {
+          qual "model",
+          val "RF00001"
+        },
+        {
+          qual "model_end",
+          val "119"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "product",
+          val "5S ribosomal RNA"
+        }
+      }
+    },
+    {
+      id local id 60,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 61424,
+        to 61499,
+        strand minus,
+        id local str "Ga0365360_05"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_05_61425_61500"
+        },
+        {
+          qual "codon",
+          val "AAA"
+        },
+        {
+          qual "product",
+          val "tRNA_Lys_TTT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 61,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 61513,
+        to 61588,
+        strand minus,
+        id local str "Ga0365360_05"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_05_61514_61589"
+        },
+        {
+          qual "codon",
+          val "AAA"
+        },
+        {
+          qual "product",
+          val "tRNA_Lys_TTT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 62,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 68026,
+        to 68163,
+        strand plus,
+        id local str "Ga0365360_05"
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "riboswitch"
+        },
+        {
+          qual "ID",
+          val "Ga0365360_05_68027_68164"
+        },
+        {
+          qual "accession",
+          val "ZMP-ZTP"
+        },
+        {
+          qual "bound_moiety",
+          val "ZMP/ZTP"
+        },
+        {
+          qual "e-value",
+          val "4.1e-07"
+        },
+        {
+          qual "model",
+          val "RF01750"
+        },
+        {
+          qual "model_end",
+          val "91"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "ZMP/ZTP riboswitch"
+        }
+      }
+    },
+    {
+      id local id 63,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "other"
+        }
+      },
+      location int {
+        from 86607,
+        to 86705,
+        strand plus,
+        id local str "Ga0365360_05"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_05_86608_86706"
+        },
+        {
+          qual "accession",
+          val "Bacteria_small_SRP"
+        },
+        {
+          qual "e-value",
+          val "1.7e-16"
+        },
+        {
+          qual "model",
+          val "RF00169"
+        },
+        {
+          qual "model_end",
+          val "97"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "ncRNA_class",
+          val "SRP_RNA"
+        },
+        {
+          qual "product",
+          val "small signal recognition particle RNA"
+        }
+      }
+    },
+    {
+      id local id 64,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 112799,
+        to 112888,
+        strand plus,
+        id local str "Ga0365360_05"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_05_112800_112889"
+        },
+        {
+          qual "codon",
+          val "TCA"
+        },
+        {
+          qual "product",
+          val "tRNA_Ser_TGA"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 65,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 261163,
+        to 261252,
+        strand plus,
+        id local str "Ga0365360_05"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_05_261164_261253"
+        },
+        {
+          qual "codon",
+          val "TCG"
+        },
+        {
+          qual "product",
+          val "tRNA_Ser_CGA"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 66,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 261283,
+        to 261372,
+        strand plus,
+        id local str "Ga0365360_05"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_05_261284_261373"
+        },
+        {
+          qual "codon",
+          val "TCG"
+        },
+        {
+          qual "product",
+          val "tRNA_Ser_CGA"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 67,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 473054,
+        to 473130,
+        strand plus,
+        id local str "Ga0365360_05"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_05_473055_473131"
+        },
+        {
+          qual "codon",
+          val "CCA"
+        },
+        {
+          qual "product",
+          val "tRNA_Pro_TGG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 68,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 473205,
+        to 473281,
+        strand plus,
+        id local str "Ga0365360_05"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_05_473206_473282"
+        },
+        {
+          qual "codon",
+          val "AGA"
+        },
+        {
+          qual "product",
+          val "tRNA_Arg_TCT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 69,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 527010,
+        to 527094,
+        strand minus,
+        id local str "Ga0365360_05"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_05_527011_527095"
+        },
+        {
+          qual "codon",
+          val "CTG"
+        },
+        {
+          qual "product",
+          val "tRNA_Leu_CAG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 70,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 527286,
+        to 527370,
+        strand minus,
+        id local str "Ga0365360_05"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_05_527287_527371"
+        },
+        {
+          qual "codon",
+          val "CTG"
+        },
+        {
+          qual "product",
+          val "tRNA_Leu_CAG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 71,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 529224,
+        to 529308,
+        strand minus,
+        id local str "Ga0365360_05"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_05_529225_529309"
+        },
+        {
+          qual "codon",
+          val "CTG"
+        },
+        {
+          qual "product",
+          val "tRNA_Leu_CAG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 72,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 551651,
+        to 551743,
+        strand plus,
+        id local str "Ga0365360_05"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_05_551652_551744"
+        },
+        {
+          qual "codon",
+          val "AGC"
+        },
+        {
+          qual "product",
+          val "tRNA_Ser_GCT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 73,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 31550,
+        to 31626,
+        strand plus,
+        id local str "Ga0365360_06"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_06_31551_31627"
+        },
+        {
+          qual "codon",
+          val "ATG"
+        },
+        {
+          qual "product",
+          val "tRNA_fMet_CAT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 74,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 19819,
+        to 19895,
+        strand plus,
+        id local str "Ga0365360_07"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_07_19820_19896"
+        },
+        {
+          qual "codon",
+          val "CCG"
+        },
+        {
+          qual "product",
+          val "tRNA_Pro_CGG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 75,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "other"
+        }
+      },
+      location int {
+        from 173132,
+        to 173475,
+        strand minus,
+        id local str "Ga0365360_07"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_07_173133_173476"
+        },
+        {
+          qual "accession",
+          val "RNaseP_bact_a"
+        },
+        {
+          qual "e-value",
+          val "8.6e-67"
+        },
+        {
+          qual "model",
+          val "RF00010"
+        },
+        {
+          qual "model_end",
+          val "367"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "ncRNA_class",
+          val "RNase_P_RNA"
+        },
+        {
+          qual "product",
+          val "RNase P class A"
+        }
+      }
+    },
+    {
+      id local id 76,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 301741,
+        to 301846,
+        strand minus,
+        id local str "Ga0365360_07"
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "riboswitch"
+        },
+        {
+          qual "ID",
+          val "Ga0365360_07_301742_301847"
+        },
+        {
+          qual "accession",
+          val "TPP"
+        },
+        {
+          qual "bound_moiety",
+          val "TPP"
+        },
+        {
+          qual "e-value",
+          val "7.1e-12"
+        },
+        {
+          qual "model",
+          val "RF00059"
+        },
+        {
+          qual "model_end",
+          val "105"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "TPP riboswitch"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 77,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "other"
+        }
+      },
+      location int {
+        from 14749,
+        to 14812,
+        strand minus,
+        id local str "Ga0365360_08"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_08_14750_14813"
+        },
+        {
+          qual "accession",
+          val "Betaproteobacteria_toxic_sRNA"
+        },
+        {
+          qual "e-value",
+          val "1.6e-09"
+        },
+        {
+          qual "model",
+          val "RF02278"
+        },
+        {
+          qual "model_end",
+          val "64"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "ncRNA_class",
+          val "other"
+        },
+        {
+          qual "product",
+          val "toxic small RNA"
+        }
+      }
+    },
+    {
+      id local id 78,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 209293,
+        to 209462,
+        strand plus,
+        id local str "Ga0365360_08"
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "riboswitch"
+        },
+        {
+          qual "ID",
+          val "Ga0365360_08_209294_209463"
+        },
+        {
+          qual "accession",
+          val "Cobalamin"
+        },
+        {
+          qual "bound_moiety",
+          val "cobalamin"
+        },
+        {
+          qual "e-value",
+          val "3.9e-12"
+        },
+        {
+          qual "model",
+          val "RF00174"
+        },
+        {
+          qual "model_end",
+          val "191"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "cobalamin riboswitch"
+        }
+      }
+    },
+    {
+      id local id 79,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 258316,
+        to 258390,
+        strand minus,
+        id local str "Ga0365360_08"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_08_258317_258391"
+        },
+        {
+          qual "codon",
+          val "AGG"
+        },
+        {
+          qual "product",
+          val "tRNA_Arg_CCT"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 80,
+      data imp {
+        key "misc_feature"
+      },
+      location int {
+        from 314593,
+        to 314959,
+        strand minus,
+        id local str "Ga0365360_08"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_08_314594_314960"
+        },
+        {
+          qual "accession",
+          val "cspA"
+        },
+        {
+          qual "e-value",
+          val "4.7e-21"
+        },
+        {
+          qual "model",
+          val "RF01766"
+        },
+        {
+          qual "model_end",
+          val "428"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "cspA thermoregulator"
+        }
+      }
+    },
+    {
+      id local id 81,
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 366407,
+        to 366485,
+        strand plus,
+        id local str "Ga0365360_08"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_08_366408_366486"
+        },
+        {
+          qual "accession",
+          val "SSU_rRNA_bacteria"
+        },
+        {
+          qual "e-value",
+          val "4.7e-15"
+        },
+        {
+          qual "model",
+          val "RF00177"
+        },
+        {
+          qual "model_end",
+          val "79"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "product",
+          val "16S ribosomal RNA"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 82,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 69652,
+        to 69728,
+        strand plus,
+        id local str "Ga0365360_09"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_09_69653_69729"
+        },
+        {
+          qual "codon",
+          val "CAA"
+        },
+        {
+          qual "product",
+          val "tRNA_Gln_TTG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 83,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "other"
+        }
+      },
+      location int {
+        from 73639,
+        to 73738,
+        strand minus,
+        id local str "Ga0365360_09"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_09_73640_73739"
+        },
+        {
+          qual "accession",
+          val "MIR1846"
+        },
+        {
+          qual "e-value",
+          val "1.2e-05"
+        },
+        {
+          qual "model",
+          val "RF02000"
+        },
+        {
+          qual "model_end",
+          val "86"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "ncRNA_class",
+          val "miRNA"
+        },
+        {
+          qual "product",
+          val "microRNA MIR1846"
+        }
+      }
+    },
+    {
+      id local id 84,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 269455,
+        to 269564,
+        strand minus,
+        id local str "Ga0365360_09"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_09_269456_269565"
+        },
+        {
+          qual "codon",
+          val "TTC"
+        },
+        {
+          qual "note",
+          val "pseudo"
+        },
+        {
+          qual "product",
+          val "tRNA_Phe_GAA"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 85,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 271666,
+        to 271741,
+        strand minus,
+        id local str "Ga0365360_09"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_09_271667_271742"
+        },
+        {
+          qual "codon",
+          val "TTC"
+        },
+        {
+          qual "product",
+          val "tRNA_Phe_GAA"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 86,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 324385,
+        to 324456,
+        strand minus,
+        id local str "Ga0365360_09"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_09_324386_324457"
+        },
+        {
+          qual "codon",
+          val "TCG"
+        },
+        {
+          qual "note",
+          val "pseudo"
+        },
+        {
+          qual "product",
+          val "tRNA_Ser_CGA"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 87,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 337850,
+        to 337925,
+        strand minus,
+        id local str "Ga0365360_09"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_09_337851_337926"
+        },
+        {
+          qual "codon",
+          val "TTC"
+        },
+        {
+          qual "product",
+          val "tRNA_Phe_GAA"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 88,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 127032,
+        to 127107,
+        strand minus,
+        id local str "Ga0365360_10"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_10_127033_127108"
+        },
+        {
+          qual "codon",
+          val "CAC"
+        },
+        {
+          qual "product",
+          val "tRNA_His_GTG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 89,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 132631,
+        to 132721,
+        strand plus,
+        id local str "Ga0365360_10"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_10_132632_132722"
+        },
+        {
+          qual "codon",
+          val "TCC"
+        },
+        {
+          qual "product",
+          val "tRNA_Ser_GGA"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 90,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 8749,
+        to 8822,
+        strand minus,
+        id local str "Ga0365360_11"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_11_8750_8823"
+        },
+        {
+          qual "codon",
+          val "GGG"
+        },
+        {
+          qual "product",
+          val "tRNA_Gly_CCC"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 91,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "other"
+        }
+      },
+      location int {
+        from 48696,
+        to 48758,
+        strand plus,
+        id local str "Ga0365360_11"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_11_48697_48759"
+        },
+        {
+          qual "accession",
+          val "Betaproteobacteria_toxic_sRNA"
+        },
+        {
+          qual "e-value",
+          val "1.1e-09"
+        },
+        {
+          qual "model",
+          val "RF02278"
+        },
+        {
+          qual "model_end",
+          val "64"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "ncRNA_class",
+          val "other"
+        },
+        {
+          qual "product",
+          val "toxic small RNA"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 92,
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 0,
+        to 62,
+        strand minus,
+        id local str "Ga0365360_12"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_12_1_63"
+        },
+        {
+          qual "accession",
+          val "SSU_rRNA_bacteria"
+        },
+        {
+          qual "e-value",
+          val "1.1e-13"
+        },
+        {
+          qual "model",
+          val "RF00177"
+        },
+        {
+          qual "model_end",
+          val "63"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "product",
+          val "16S ribosomal RNA"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 93,
+      data imp {
+        key "misc_feature"
+      },
+      location int {
+        from 64670,
+        to 64853,
+        strand plus,
+        id local str "Ga0365360_13"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_13_64671_64854"
+        },
+        {
+          qual "accession",
+          val "yybP-ykoY"
+        },
+        {
+          qual "e-value",
+          val "6.8e-13"
+        },
+        {
+          qual "model",
+          val "RF00080"
+        },
+        {
+          qual "model_end",
+          val "175"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "yybP-ykoY leader"
+        }
+      }
+    },
+    {
+      id local id 94,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 98436,
+        to 98511,
+        strand minus,
+        id local str "Ga0365360_13"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_13_98437_98512"
+        },
+        {
+          qual "codon",
+          val "TGG"
+        },
+        {
+          qual "product",
+          val "tRNA_Trp_CCA"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 95,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "other"
+        }
+      },
+      location int {
+        from 15066,
+        to 15127,
+        strand minus,
+        id local str "Ga0365360_14"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_14_15067_15128"
+        },
+        {
+          qual "accession",
+          val "Betaproteobacteria_toxic_sRNA"
+        },
+        {
+          qual "e-value",
+          val "3.2e-12"
+        },
+        {
+          qual "model",
+          val "RF02278"
+        },
+        {
+          qual "model_end",
+          val "64"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "ncRNA_class",
+          val "other"
+        },
+        {
+          qual "product",
+          val "toxic small RNA"
+        }
+      }
+    },
+    {
+      id local id 96,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 15704,
+        to 15780,
+        strand plus,
+        id local str "Ga0365360_14"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_14_15705_15781"
+        },
+        {
+          qual "codon",
+          val "CGT"
+        },
+        {
+          qual "product",
+          val "tRNA_Arg_ACG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 97,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 15918,
+        to 15994,
+        strand plus,
+        id local str "Ga0365360_14"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_14_15919_15995"
+        },
+        {
+          qual "codon",
+          val "CGT"
+        },
+        {
+          qual "product",
+          val "tRNA_Arg_ACG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    },
+    {
+      id local id 98,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 16520,
+        to 16596,
+        strand plus,
+        id local str "Ga0365360_14"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_14_16521_16597"
+        },
+        {
+          qual "codon",
+          val "CGT"
+        },
+        {
+          qual "product",
+          val "tRNA_Arg_ACG"
+        },
+        {
+          qual "used_search_mode",
+          val "Bacterial"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 99,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 2722,
+        to 2954,
+        strand plus,
+        id local str "Ga0365360_16"
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "riboswitch"
+        },
+        {
+          qual "ID",
+          val "Ga0365360_16_2723_2955"
+        },
+        {
+          qual "accession",
+          val "Cobalamin"
+        },
+        {
+          qual "bound_moiety",
+          val "cobalamin"
+        },
+        {
+          qual "e-value",
+          val "3.7e-21"
+        },
+        {
+          qual "model",
+          val "RF00174"
+        },
+        {
+          qual "model_end",
+          val "191"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "note",
+          val "cobalamin riboswitch"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 100,
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 32,
+        to 2972,
+        strand minus,
+        id local str "Ga0365360_20"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_20_33_2973"
+        },
+        {
+          qual "accession",
+          val "LSU_rRNA_bacteria"
+        },
+        {
+          qual "e-value",
+          val "0"
+        },
+        {
+          qual "model",
+          val "RF02541"
+        },
+        {
+          qual "model_end",
+          val "2925"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "product",
+          val "23S ribosomal RNA"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 101,
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 0,
+        to 997,
+        strand minus,
+        id local str "Ga0365360_24"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0365360_24_1_998"
+        },
+        {
+          qual "accession",
+          val "SSU_rRNA_bacteria"
+        },
+        {
+          qual "e-value",
+          val "0"
+        },
+        {
+          qual "model",
+          val "RF00177"
+        },
+        {
+          qual "model_end",
+          val "997"
+        },
+        {
+          qual "model_start",
+          val "1"
+        },
+        {
+          qual "product",
+          val "16S ribosomal RNA"
+        }
+      }
+    }
+  }
+}

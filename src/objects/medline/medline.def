@@ -1,0 +1,10 @@
+[-]
+_export = NCBI_MEDLINE_EXPORT
+
+[Medline-entry]
+uid._type = ncbi::TEntrezId
+uid._storage_type = ncbi::TIntId
+
+[DocRef]
+uid._type = ncbi::TEntrezId
+uid._storage_type = ncbi::TIntId

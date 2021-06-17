@@ -1,0 +1,144 @@
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 35538
+    },
+    {
+      id str "e_value",
+      value real { 0, 10, 0 }
+    },
+    {
+      id str "bit_score",
+      value real { 656273556390171, 10, -10 }
+    },
+    {
+      id str "num_ident",
+      value int 35633
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 11,
+    ids {
+      genbank {
+        accession "AC055713",
+        version 29
+      },
+      genbank {
+        accession "AC145423",
+        version 8
+      }
+    },
+    starts {
+      86129,
+      161877,
+      -1,
+      162006,
+      86099,
+      162008,
+      86097,
+      -1,
+      86055,
+      162038,
+      86052,
+      -1,
+      86051,
+      162080,
+      86050,
+      -1,
+      86030,
+      162081,
+      -1,
+      162101,
+      50584,
+      162103
+    },
+    lens {
+      129,
+      2,
+      30,
+      2,
+      42,
+      3,
+      1,
+      1,
+      20,
+      2,
+      35446
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 32337
+    },
+    {
+      id str "e_value",
+      value real { 0, 10, 0 }
+    },
+    {
+      id str "bit_score",
+      value real { 597162301018835, 10, -10 }
+    },
+    {
+      id str "num_ident",
+      value int 32343
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC055713",
+        version 29
+      },
+      genbank {
+        accession "AC145423",
+        version 8
+      }
+    },
+    starts {
+      85966,
+      45394
+    },
+    lens {
+      32346
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}

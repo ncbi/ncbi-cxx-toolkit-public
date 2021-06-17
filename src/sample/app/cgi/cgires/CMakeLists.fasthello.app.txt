@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(fasthello.fcgi)
+  NCBI_sources(helloapp hellores hellocmd)
+  NCBI_uses_toolkit_libraries(xfcgi xhtml)
+  NCBI_requires(unix)
+NCBI_end_app()

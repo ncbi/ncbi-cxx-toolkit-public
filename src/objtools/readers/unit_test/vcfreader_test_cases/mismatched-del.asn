@@ -1,0 +1,89 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Track Data",
+      data {
+      }
+    },
+    user {
+      type str "vcf-meta-info",
+      data {
+        {
+          label str "meta-information",
+          num 1,
+          data strs {
+            "fileformat=VCFv4.0"
+          }
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs143255646"
+        },
+        variant-prop {
+          version 5,
+          resource-link 0,
+          gene-location 0,
+          effect no-change,
+          mapping 0,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "AA"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type delins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location int {
+        from 10228,
+        to 10229,
+        id local id 1
+      }
+    }
+  }
+}

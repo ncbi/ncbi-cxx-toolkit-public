@@ -1,0 +1,71 @@
+Is Reference Correct? : 0 . A . G
+Check Variation type: 3
+Ref/Alt : A - T
+Seq-feat ::= {
+  data variation {
+    data set {
+      type package,
+      variations {
+        {
+          data instance {
+            type snv,
+            delta {
+              {
+                seq literal {
+                  length 1,
+                  seq-data iupacna "T"
+                }
+              }
+            }
+          }
+        },
+        {
+          data instance {
+            type identity,
+            delta {
+              {
+                seq literal {
+                  length 1,
+                  seq-data iupacna "G"
+                }
+              }
+            },
+            observation reference
+          }
+        },
+        {
+          data instance {
+            type snv,
+            delta {
+              {
+                seq literal {
+                  length 1,
+                  seq-data iupacna "A"
+                }
+              }
+            },
+            observation 5
+          }
+        }
+      }
+    }
+  },
+  location pnt {
+    point 68910540,
+    id other {
+      accession "NC_000001",
+      version 10
+    }
+  },
+  exts {
+    {
+      type str "Reference Allele Change",
+      data {
+        {
+          label str "Reference Changed",
+          data bool TRUE
+        }
+      }
+    }
+  }
+}

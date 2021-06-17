@@ -1,0 +1,20 @@
+[-]
+_export = NCBI_SEQLOC_EXPORT
+
+[Seq-id]
+gi._type = ncbi::TGi
+gi._storage_type = ncbi::TIntId
+
+[Seq-interval]
+from._type = TSeqPos
+to._type   = TSeqPos
+
+[Seq-point]
+point._type = TSeqPos
+
+[Packed-seqpnt]
+points._type   = vector
+points.E._type = TSeqPos
+
+[Na-strand]
+_packedtype = unsigned char

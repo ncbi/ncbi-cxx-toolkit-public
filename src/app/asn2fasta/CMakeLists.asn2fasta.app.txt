@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(asn2fasta)
+  NCBI_sources(asn2fasta)
+  NCBI_uses_toolkit_libraries(data_loaders_util xcleanup xobjwrite)
+  NCBI_project_watchers(ludwigf foleyjp)
+NCBI_end_app()
+

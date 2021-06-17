@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = ncbi_xcache_sqlite3
+
+HOSTED_LIBS    = ncbi_xcache_sqlite3
+
+DEPENDENCIES   = ncbi_core
+
+CPPFLAGS = -DNCBI_SQLITE3_CACHE_EXPORTS
+

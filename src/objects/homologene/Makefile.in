@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile ("homologene" library)
+#################################
+
+ASN_PROJ = homologene
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

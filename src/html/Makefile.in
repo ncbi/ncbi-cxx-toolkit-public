@@ -1,0 +1,13 @@
+#################################
+# $Id$
+#################################
+
+# Meta-makefile ("html" project)
+#################################
+
+LIB_PROJ = html
+SUB_PROJ = test demo
+PROJ_TAG = web
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

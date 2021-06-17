@@ -1,0 +1,18 @@
+# $Id$
+
+# Build library "XFCGI" -- the FastCGI version of library "XCGI"
+# NOTE:  see also makefile for lib "XCGI" -- these two should be kept in-sync!
+#################################
+
+SRC = ncbicgi cgiapp cgictx ncbicgir ncbires ref_args cgi_util cgi_serial \
+      $(FASTCGI_OBJS) fcgi_run cgi_session cgi_exception cgiapp_cached \
+      cgi_entry_reader user_agent
+LIB = xfcgi
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE) -DNCBI_XFCGI_EXPORTS
+
+WATCHERS = vakatov
+
+
+USES_LIBRARIES =  \
+    $(FASTCGI_LIBS) xutil

@@ -1,0 +1,7 @@
+LIB = seqset
+SRC = seqset__ seqset___ gb_release_file
+
+DLL_LIB = $(SEQ_LIBS)
+
+USES_LIBRARIES =  \
+    $(SEQ_LIBS) pub

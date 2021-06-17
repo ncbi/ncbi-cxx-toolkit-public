@@ -1,0 +1,2 @@
+[Compiler]
+AdditionalOptions=/experimental:preprocessor /Zc:preprocessor /wd5105

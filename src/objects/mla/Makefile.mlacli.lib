@@ -1,0 +1,9 @@
+ASN_DEP = mla
+
+LIB = mlacli
+SRC = mla_client mla_client_
+
+DLL_LIB = mla pubmed medlars xconnect
+
+USES_LIBRARIES =  \
+    mla xconnect

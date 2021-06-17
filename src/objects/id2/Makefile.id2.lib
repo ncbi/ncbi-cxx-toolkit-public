@@ -1,0 +1,7 @@
+LIB = id2
+SRC = id2__ id2___
+
+WATCHERS = vasilche
+
+USES_LIBRARIES =  \
+    seqsplit

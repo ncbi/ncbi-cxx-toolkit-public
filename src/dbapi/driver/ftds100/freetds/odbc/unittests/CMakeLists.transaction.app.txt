@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc100_transaction)
+  NCBI_sources(transaction common)
+  NCBI_add_test(test-odbc100 --no-auto odbc100_transaction)
+NCBI_end_app()
+

@@ -1,0 +1,25 @@
+# $Id$
+
+all: sources
+
+include $(builddir)/Makefile.mk
+
+sources:
+	+status=0 ; \
+	MAKE="$(MAKE) $(MFLAGS)"; \
+	export MAKE; \
+	for x in mmdb1 mmdb2 mmdb3; do \
+	    d=$(srcdir)/../$$x ; \
+	    (cd $$d  &&  $(builddir)/new_module.sh) || status=9 ; \
+	    test -f $${x}__.cpp  ||  \
+	        echo "#include \"../$$x/$${x}__.cpp\""  > $${x}__.cpp ; \
+	    test -f $${x}___.cpp  ||  \
+	        echo "#include \"../$$x/$${x}___.cpp\"" > $${x}___.cpp ; \
+	done ; \
+	exit $$status
+	@if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
+	    touch $(status_dir)/.mmdb.files; \
+	fi
+
+clean:;
+purge:;

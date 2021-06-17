@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(lang_query)
+  NCBI_sources(lang_query)
+  NCBI_uses_toolkit_libraries(dbapi_sample_base)
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_set_test_timeout(400)
+  NCBI_add_test(test_lang_query.sh)
+NCBI_end_app()
+

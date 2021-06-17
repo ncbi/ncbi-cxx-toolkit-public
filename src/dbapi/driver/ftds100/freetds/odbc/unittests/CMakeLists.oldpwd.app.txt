@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_app(odbc100_oldpwd)
+  NCBI_sources(oldpwd common)
+NCBI_end_app()
+

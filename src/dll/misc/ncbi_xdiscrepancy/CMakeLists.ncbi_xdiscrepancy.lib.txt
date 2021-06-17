@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xdiscrepancy SHARED)
+  NCBI_hosts_projects(
+    misc/discrepancy/discrepancy
+  )
+  NCBI_add_definitions(NCBI_DISCREPANCY_EXPORTS)
+NCBI_end_lib()

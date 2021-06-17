@@ -1,0 +1,78 @@
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Microsoft FrontPage 5.0">
+<TITLE>Sequence Window : View</TITLE>
+</HEAD>
+<BODY>
+<H2>Sequence Window : View Commands</H2>
+<ul>
+  <li><A href="#titles">Show titles</a></li>
+  <li><A href="#geometry">Show geometry violations</a></li>
+  <li><A href="#pattern">Find pattern</a></li>
+  <li><A href="#cache">Cache highlights</a></li>
+  <li><A href="#restore">Restore cached highlights</a></li>
+  <li><A href="#showhide">Show / hide rows</a></li>
+  <li><A href="#scores">Show PSSM + contact scores</a></li>
+  <li><A href="#selfhit">Show self-hits</a></li>
+  <li><a href="#export">Export</a></li>
+  <li><A href="#taxonomy">Show taxonomy</a></li>
+  <li><A href="#blocks">Highlight blocks</a></li>
+  <li><A href="#expand">Expand highlights to aligned columns</a></li>
+  <li><A href="#restrict">Restrict highlights to row</a></li>
+  <li><A href="#clear">Clear highlights</a></li>
+</ul>
+<h3><a name="titles"></a>Show titles</h3>
+Causes the titles for each sequence to be displayed on the left side of the window.
+These are on by default, but can be turned off by double-clicking the black separator
+bar.
+<h3><a name="geometry"></a>Show geometry violations</h3>
+Shows in green background the places where a loop between aligned blocks is calculated
+to be too short to span the distance between the the ends of these blocks, based
+on the coordinates of the first structure of the alignment.
+<h3><a name="pattern"></a>Find pattern</h3>
+Finds and highlights all non-overlapping occurrences of a residue pattern. This
+search uses ProSite syntax, described in detail at http://www.expasy.ch/prosite/
+- see the description of the PA (pattern) syntax. For example, to search for lysine
+separated by two to four residues from histidine, enter "k-x(2,4)-h";
+unlike ProSite, the letters are case-insensitive, and a trailing period is not
+required.
+<h3><a name="cache"></a>Cache highlights</h3>
+Store the current set of highlights in a transient cache. The highlights will be remembered while the current file is being edited, but will not be saved in an output file and will not persist after Cn3D is exited.
+<h3><a name="restore"></a>Restore cached highlights</h3>
+Restore the highlights from the transient cache, removing any existing highlights.
+<h3><a name="showhide"></a>Show / hide rows</h3>
+Show or hide specific rows of the alignment. All rows selected in the dialog will
+be displayed. Note that because of the way Cn3D combines pairwise alignments,
+especially when these alignments are very different (like from a VAST "multiple"
+alignment of three or more proteins), when you hide rows the alignment of the
+other rows may change. See the Cn3D Tutorial for more on this topic.
+<h3><a name="scores"></a>Show PSSM + contact scores</h3>
+Calculate and display scores for each row based on alignment (PSSM) and contact
+potential (structure-based) scores. You can specify what balance between PSSM
+and contact potential to use. These values will then be displayed in the status
+line at the bottom of the window when you move the mouse over each row.
+<h3><a name="selfhit"></a>Show self-hits</h3>
+Calculates a BLAST alignment for each sequence in the current alignment, using
+the PSSM constructed from the alignment, and restricting the alignment of each
+sequence to its currently aligned range. Shows scores for each row, and
+the percentage of rows that score significantly with the alignment's PSSM.
+<h3><a name="export"></a>Export</h3>
+<p>Used to export the current alignment in one of several formats: <b>FASTA</b> 
+(with gaps), <b>a2m FASTA</b>, <b>text</b>, <b>HTML</b> (with color), or <b>PSSM</B>. The <b>PSSM</B> format is suitable for use with PSI-BLAST or RPS-BLAST.</p>
+<h3><a name="taxonomy"></a>Show taxonomy</h3>
+Connects to the NCBI taxonomy server, and constructs the subset of the global 
+taxonomy tree that includes all sequences from the current alignment. In the 
+resulting taxonomy tree window, selecting a node and pressing space or return
+will cause that node to be completely collapsed or expanded. Double-clicking
+on a sequence node will highlight that sequence in the sequence window.
+<h3><a name="blocks"></a>Highlight blocks</h3>
+Highlight all the aligned blocks of the current alignment.
+<h3><a name="expand"></a>Expand highlights to aligned columns</h3>
+If there are any highlights in an aligned column, then expand the highlights to all rows of that column.
+<h3><a name="restrict"></a>Restrict highlights to row</h3>
+Narrow down highlights to a selected row.
+<h3><a name="clear"></a>Clear highlights</h3>
+Remove all highlighting.
+</BODY>
+</HTML>

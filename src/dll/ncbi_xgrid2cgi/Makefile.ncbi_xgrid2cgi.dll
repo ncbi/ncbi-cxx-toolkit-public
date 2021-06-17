@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = ncbi_xgrid2cgi
+
+HOSTED_LIBS    = xgridcgi
+
+DEPENDENCIES   = ncbi_core ncbi_web
+
+CPPFLAGS = -DNCBI_XGRIDCGI_EXPORTS
+

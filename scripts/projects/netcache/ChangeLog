@@ -1,0 +1,265 @@
+Dec 15, 2008
+Added application logging - start and stop of each request from client
+are logged.
+Rewritten protocol parser. Optional additions to protocol are now allowed.
+Transactions checkpoints frequency is now configurable from ini-file and
+is greater by default.
+Better recovery of database in case of unclean exit.
+
+
+Sept 26, 2008
+Enhanced logging and monitoring facilities.
+Fixed bugs of not writing empty blobs, writing blobs twice and
+leaking of resources if connection closed during writing of blob
+into it.
+Added logging of ClientIP and SessionID came from NetCache API client.
+
+Added tests to release to be able to test NetCache after releasing.
+
+
+Apr 04, 2008
+Initial release using a release procedure
+
+...
+
+April 11, 2013
+version 6.6.1
+Fixed synchronization of PURGE data.
+Added re-initialization of database, when Netcache was not terminated properly.
+Fixed bug, when NC was sending confirmation which client did not expect.
+Added maximal time-to-live setting for blobs.
+Fixed bug in READPART command, when invalid data was returned under certain conditions.
+
+
+July 23, 2013
+version 6.6.2
+Corrected problem with belated socket closing.
+Corrected handling of purged blobs on HASB command.
+Added journaling and reporting of initial and periodic synchronizations.
+
+
+September 20, 2013
+version 6.6.3
+Fixed bug that leads to occasional communication blocking.
+Introduced lifespan_ttl - an absolute maximum of blob life duration.
+Modified SHUTDOWN command by adding drain option (wait untill all blobs are gone).
+
+November 20, 2013
+version 6.6.4
+Added age parameter into blob read commands; corrected prolonging version life to use version ttl.
+Added calculating and reporting blob size forwarded to another server.
+Corrected logging to log connection ID when establishing new connection.
+Corrected logging to make sure to add end-of-line when starting new message.
+Changed log messages to show peer name and port.
+Changed format of VERSION command reply.
+
+August 06, 2014
+version 6.7.0
+Added option to use different write-back timeouts during and after initial synchronization.
+Added options into GETCONF command to get detailed information about specific parts of configuration only.
+Modified behavior on disk spaceshortage: do not start periodic sync, forward incoming blobs to mirrors, request initial sync to be done when disk space is again available.
+Added possibility of storing blob keys for which blob data was not received successfully.
+Added limit size of blobs to store, or to mirror.
+Added primitive HTTP support (POST/PUT/GET/HEAD/DELETE commands).
+Added periodic check for changed IP address when failing to connect to peer.
+Reviewed and corrected blob storage code, corrected thread synchronization, reduced lock time on data collection.
+Added support for encoded keys (v3).
+Corrected calculation and modification of blob dead times, speed up blob removal in  case it is not mirrored.
+In SETVALID command, added reporting current blob version on version conflict.
+Added blob update notifications.
+Added version check when connecting to another instance of NC.
+Added into statistics count of peer connections and mirroring-related data.
+
+September 04, 2014
+version 6.8.0
+Added possibility of re-configuring blob mirroring on the fly, without stopping the server.
+
+October 06, 2014
+version 6.8.1
+Changed the way periodic sync is made to lower priority of initial sync and to sync all available servers for a given slot.
+Added report of peer servers state.
+
+November 13, 2014
+version 6.8.2
+Implemented peer to peer handshake and blob filtering when communicating with other NC servers - to avoid sending to old servers data which they do not understand.
+Implemented recovery in several problem scenarios to avoid crashes; modified mechanism of termination on unrecoverable errors to post log messages which explain the problem.
+
+December 08, 2014
+version 6.8.3
+Bug fix: re-enable blob keys that are not in CNetCacheKey format.
+
+December 18, 2014
+version 6.8.4
+Fixed bug in SHUTDOWN.
+
+February 04, 2015
+version 6.8.5
+Added support of 'version' and 'help' command line arguments
+On startup, added duplication of error messages into the standard output.
+Added monitoring  of periodic synchronization activity and aborting it when it appears stalled.
+Tweaked initial synchronization sequence of actions and corrected resetting synchronization data.
+
+May 13, 2015
+version 6.8.6
+Added alert mechanism.
+Enhanced status reporting, added more report types.
+Corrected storage and search of un-synchronized blobs, and blobs not found locally.
+Fixed errors in peer-to-peer communications.
+
+May 19, 2015
+version 6.8.7
+Corrected format of alert reports.
+
+June 19, 2015
+version 6.8.8
+Bug fix release
+
+June 26, 2015
+version 6.8.9
+Added report of estimated draining end.
+Reviewed and corrected error reporting and command confirmations.
+Added report of synchronization state, corrected synchronization algorithm.
+Modified synchronization in 'drain' state to allow updating of existing blobs.
+
+July 10, 2015
+version 6.8.10
+Corrected synchronization report to hide currently inactive peers.
+Changed way memory and socket statistics is calculated.
+
+July 31, 2015
+version 6.8.11 (CXX-6216)
+Changed way memory and socket statistics is calculated; corrected synchronization reporting to hide currently inactive peers;
+Corrected synchronization of access to database configuration data, blob synchronization finalization, mirror event handling, storage data access.
+Added error checks during synchronization. 
+Added database state report. 
+Added option of reloading some storage configuration parameters.
+
+September 29, 2015
+version 6.9.0 (CXX-7396)
+Modified periodic sync logic to avoid deadlocks and enhance speed, corrected error handling.
+Added blob enumeration command.
+Reviewed and corrected configuration defaults.
+
+December 02, 2015
+version 6.9.1 (CXX-7583)
+Added reporting of expired blob deletion.
+Added DB files error checks and recovery when handling data blobs and shrinking database.
+
+December 10, 2015
+version 6.9.2 (CXX-7646)
+bug fixes
+
+January 21, 2015
+version 6.9.3 (CXX-7681)
+Added configuration report, corrected meaning of setup priority.
+Redesigned periodic syncronization algorithm.
+
+February 16, 2016
+version 6.9.4 (CXX-7839)
+Changed to do mirroring after quorum requirement is met.
+
+March 01, 2016
+version 6.9.5 (CXX-7908)
+Changed to do blob synchronization after quorum requirement is met.
+
+June 13, 2016
+version 6.9.6 (CXX-8233)
+Corrected task scheduling.
+
+June 17, 2016
+version 6.9.7 (CXX-8248)
+Corrected periodic synchronization bugs.
+
+September 21, 2016
+version 6.9.8 (CXX-8613)
+Fixed handling of SearchOnRead setting.
+
+October 13, 2016
+version 6.10.0 (CXX-8706)
+Implemented server credentials configuration.
+Made visible log severity configurable.
+Removed unstructured information from applog.
+
+November 10, 2016
+version 6.11.0 (CXX-8801)
+Added option to re-cache blob without prolonging its life.
+Added ncbi_role info into logs.
+Added option to enumerate blobs in a given cache using various metadata filters.
+Corrected blob caching information.
+
+November 17, 2016
+version 6.11.1 (CXX-8817)
+Changed blob filtering conditions.
+Changed data separator in BLIST2 command output.
+Changed to treat cache and key names as precise matches in BLIST2 command.
+
+November 21, 2016
+version 6.11.2 (CXX-8832)
+Corrected blob list separator and filters.
+
+November 29, 2016
+version 6.11.3 (CXX-8842)
+Introduced SoftFatal log severity
+
+December 14, 2016
+version 6.11.4 (CXX-8898)
+Changed memory allocation algorithm.
+
+December 19, 2016
+version 6.11.5 (CXX-8912)
+Added other memory managers
+
+January 11, 2017
+version 6.11.6 (CXX-8957)
+Bug fixes
+
+February 01, 2017
+version 6.12.0 (CXX-9005)
+Added option to purge all blobs with a given key in a cache.
+Implemented delayed removal of purged blobs.
+Switch to SC-18
+Switch to GCC 4.9.3
+
+March 17, 2017
+version 6.12.1 (CXX-9128)
+Added reporting of time consumed by different parts of command processing.
+Added option to report and reload task_server settings.
+
+April 11, 2017
+version 6.13.0 (CXX-9179)
+Modified reporting to add EXE path and command line.
+Corrected re-initialization of periodic synchronization after disk space problems.
+
+May 08, 2017
+version 6.14.0 (CXX-9253)
+Added noCreate flag, modified handling of noProlong one.
+
+May 11, 2017
+version 6.14.1 (CXX-9271)
+Fixed calculation of blob coordinates.
+
+June 29, 2017
+version 6.14.2 (CXX-9380)
+Corrected logic of blob mirroring between servers with different trust level.
+
+September 5, 2017
+version 6.14.3 (CXX-9548)
+Added protection against failed memory allocations.
+Corrected errors in handling missing database files.
+Fixed error in thread synchronization.
+Added prioritization of certain tasks to reduce CPU consumption and improve responce time.
+
+June 01, 2018
+version 6.14.4 (CXX-10058)
+Added missing optional arguments into some commands
+Added extraction from HTTP header and logging of ip,sid, phid parameters.
+Fixed problem in handling consequent POST commands.
+
+September 17, 2018
+version 6.14.5 (CXX-10242)
+Added printing immediate client IP on request start.
+Lowered priorities of blob maintenance tasks, made them configurable.
+
+November 02, 2018
+version 6.14.6 (CXX-10317)
+When writing app setup, changed code to avoid buffer overflow.

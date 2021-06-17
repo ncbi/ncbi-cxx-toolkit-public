@@ -1,0 +1,140 @@
+Interface to windowmasker masking library involves the class CSeqMasker
+constructor and operator().
+
+I. CSeqMasker constructor.
+
+
+    /**
+     **\brief Object constructor.
+     **
+     ** Parameters to the constructor determine the behaviour of the
+     ** window based masking procedure.
+     **
+     **\param lstat_name the name of the file containing length statistics
+     **\param arg_window_size the window size in bps
+     **\param arg_window_step the window step
+     **\param arg_unit_step the unit step
+     **\param arg_textend the score above which it is allowed to keep masking
+     **\param arg_cutoff_score the unit score triggering the masking
+     **\param arg_max_score maximum allowed unit score
+     **\param arg_min_score minimum allowed unit score
+     **\param arg_set_max_score score to use for units exceeding max_score
+     **\param arg_set_min_score score to use for units below min_score
+     **\param arg_merge_pass whether or not to perform an interval merging pass
+     **\param arg_merge_cutoff_score combined average score at which intervals
+     **                              should be merged
+     **\param arg_abs_merge_cutoff_dist maximum distance between intervals
+     **                                 at which they can be merged 
+     **                                 unconditionally
+     **\param arg_mean_merge_cutoff_dist maximum distance between intervals
+     **                                  at which they can be merged if they
+     **                                  satisfy arg_merge_cutoff_score 
+     **                                  threshold
+     **\param arg_merge_unit_step unit step to use for interval merging
+     **\param arg_trigger determines which method to use to trigger masking
+     **\param tmin_count if arg_trigger is "min" then determines how many of
+     **                  the units in a window should be above the score
+     **                  threshold in order to trigger masking
+     **\param arg_discontig whether or not to use discontiguous units
+     **\param arg_pattern base pattern to form discontiguous units
+     **\param arg_use_ba use bit array optimization, if available
+     **
+     **/
+    CSeqMasker( const string & lstat_name,
+                Uint1 arg_window_size,
+                Uint4 arg_window_step,
+                Uint1 arg_unit_step,
+                Uint4 arg_textend,
+                Uint4 arg_cutoff_score,
+                Uint4 arg_max_score,
+                Uint4 arg_min_score,
+                Uint4 arg_set_max_score,
+                Uint4 arg_set_min_score,
+                bool arg_merge_pass,
+                Uint4 arg_merge_cutoff_score,
+                Uint4 arg_abs_merge_cutoff_dist,
+                Uint4 arg_mean_merge_cutoff_dist,
+                Uint1 arg_merge_unit_step,
+                const string & arg_trigger,
+                Uint1 tmin_count,
+                bool arg_discontig,
+                Uint4 arg_pattern,
+                bool arg_use_ba );
+
+Many parameters are not used in production anymore and are retained only 
+for the purpose of experimenting with the algorithm. The meaning of the
+parameters and possible values are described below (except for lstat_name
+which is obvious).
+
+arg_window_size - window length in bases. The statistics file provides
+frequencies of words (called units) in the genome. Window size must be
+greater than the unit size (which is computed individually per genome).
+If arg_window_size == 0, then by defule the window size is taken to be
+unit size + 4.
+
+arg_window_step is not used in production and should always be set to 1.
+
+arg_unit_step is not used in production and should always be set to 1.
+
+arg_textend - see description of -T_extend parameter to windowmasker app.
+              If the value is 0, then it is taken from the statistics file.
+
+arg_cutoff_score - see description of -T_threshold parameter to windowmasker
+                   app. If the value is 0, then it is taken from the 
+                   statistics file.
+
+arg_max_score - see description of -T_high parameter to windowmasker app.
+                If the value is 0, then it is taken from the statistics file.
+
+arg_min_score - see description of -T_low parameter to windowmasker app.
+                If the value is 0, then it is taken from the statistics file.
+
+arg_set_max_score - the score value to use for units with score > arg_max_score.
+                    If the value is 0, then arg_max_score is used.
+
+arg_set_min_score - the score value to use for units with score < arg_min_score.
+                    If the value is 0, then (arg_min_score + 1)/2 is used.
+
+arg_merge_pass is not used in production and should always be set to false.
+
+arg_merge_cutoff_score
+arg_abs_merge_cutoff_dist
+arg_mean_merge_cutoff_dist
+arg_merge_unit_step
+
+4 parameters above are not used in production and should always be set to 0.
+
+arg_trigger   is not used in production and should always be set to "mean".
+tmin_count    is not used in production and should always be set to 0.
+arg_discontig is not used in production and should always be set to false.
+arg_pattern   is not used in production and should always be set to 0.
+
+arg_use_ba - see description of -use_ba parameter to windowmasker app.
+             It only makes sense when the statistics format is "obinary",
+             and can in some cases improve performance. It is safe to
+             always use true for this parameter.
+
+II. Using CSeqMasker objects.
+
+    /**
+     **\brief Sequence masking operator.
+     **
+     ** seq_masker objects are function objects with. Main
+     ** processing is done by () operator.
+     **
+     **\param data the original sequence data in iupacna format
+     **\return pointer to the list of masked intervals
+     **
+     **/
+    TMaskList * operator()( const objects::CSeqVector & data ) const;
+
+Masks a sequence in 'data' parameter and returns a list of masked intervals.
+Type TMaskList is defined as:
+
+typedef std::pair< TSeqPos, TSeqPos > TMaskedInterval;
+typedef std::vector< TMaskedInterval > TMaskList;
+
+The first member of TMaskedInterval is the left end of the masked
+interval (base 0), the second member is one past the right end of the
+masked interval.
+

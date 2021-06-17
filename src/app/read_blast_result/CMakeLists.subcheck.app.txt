@@ -1,0 +1,13 @@
+# $Id$
+
+NCBI_begin_app(subcheck)
+  NCBI_sources(
+    read_blast_result tbl read_blast_result_lib read_tag_map
+    read_parents read_trna read_blast read_rrna collect_simple
+    overlaps missing copy_loc problems locations
+    analyze fit_blast match shortcuts short_proteins
+  )
+  NCBI_uses_toolkit_libraries(xobjutil xregexp)
+  NCBI_project_watchers(badrazat)
+NCBI_end_app()
+

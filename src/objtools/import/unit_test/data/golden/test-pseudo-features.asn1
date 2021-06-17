@@ -1,0 +1,134 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local str "gene_1",
+      data gene {
+        locus-tag "A271_CLEC026002"
+      },
+      comment "Gap in scaffold at 5 end of conserved domain,Partial GTPX
+ conserved domain at 5 end of model near gap in scaffold. Premature
+ stop-codons are probably remnants of the pseudogene.",
+      location int {
+        from 12504878,
+        to 12518543,
+        strand plus,
+        id local str "Scaffold7"
+      },
+      qual {
+        {
+          qual "ID",
+          val "CLEC026002"
+        },
+        {
+          qual "Name",
+          val "Partial-Glutathion Peroxidase"
+        },
+        {
+          qual "date_last_modified",
+          val "2014-05-3"
+        },
+        {
+          qual "symbol",
+          val "GTPX 2-Pseudogene"
+        },
+        {
+          qual "owner",
+          val "agondhalekar"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "cds_1"
+        }
+      },
+      pseudo TRUE
+    },
+    {
+      id local str "mrna_1",
+      data imp {
+        key "misc_RNA"
+      },
+      comment "Gap in scaffold at 5 end of conserved domain,Partial GTPX
+ conserved domain at 5 end of model near gap in scaffold. Premature
+ stop-codons are probably remnants of the pseudogene.",
+      location int {
+        from 12504878,
+        to 12518543,
+        strand plus,
+        id local str "Scaffold7"
+      },
+      qual {
+        {
+          qual "ID",
+          val "CLEC026002-RA"
+        },
+        {
+          qual "Name",
+          val "Glutathion Peroxidase 2- Pseudogene"
+        },
+        {
+          qual "Parent",
+          val "CLEC026002"
+        },
+        {
+          qual "date_last_modified",
+          val "2014-05-3"
+        },
+        {
+          qual "symbol",
+          val "Glutathion Peroxidase 2- Pseudogene"
+        },
+        {
+          qual "transcript_id",
+          val "CLEC026002-RA"
+        },
+        {
+          qual "owner",
+          val "agondhalekar"
+        }
+      },
+      xref {
+        {
+          id local str "gene_1"
+        },
+        {
+          id local str "cds_1"
+        }
+      },
+      pseudo TRUE
+    },
+    {
+      id local str "cds_1",
+      data cdregion {
+      },
+      location int {
+        from 12504878,
+        to 12518543,
+        strand plus,
+        id local str "Scaffold7"
+      },
+      qual {
+        {
+          qual "ID",
+          val "CLEC026002-RA-CDS"
+        },
+        {
+          qual "Parent",
+          val "CLEC026002-RA"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "gene_1"
+        }
+      },
+      pseudo TRUE
+    }
+  }
+}

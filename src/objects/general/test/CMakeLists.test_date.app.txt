@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(test_date)
+  NCBI_sources(test_date)
+  NCBI_uses_toolkit_libraries(general)
+  NCBI_project_watchers(ucko)
+NCBI_end_app()

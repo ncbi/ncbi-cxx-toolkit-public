@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_lib(xalgoseq)
+  NCBI_sources(
+    adapter_search cpg nuc_prop orf prot_prop regexp_loc seq_match
+    restriction antigenic coiled_coil signal_seq make_cdr_prods find_pattern
+    gene_model project_exons transform_align annot_compare compare_feats
+    align_group masking_delta align_cleanup util gap_analysis internal_stops
+	micro_introns
+  )
+  NCBI_uses_toolkit_libraries(taxon1 xalnmgr xregexp)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_lib()
+

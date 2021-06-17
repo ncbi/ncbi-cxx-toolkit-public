@@ -1,0 +1,16 @@
+#
+# Filename: Manifest
+#
+# $Id
+#
+# Author: Alexey Rafanovich
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+APP: lbsbd
+
+DEFAULT_CONFIGURATIONS:  Linux64-Centos:GCC
+
+Linux64-Centos  : GCC   : GCC.sh 4.4.2   --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile

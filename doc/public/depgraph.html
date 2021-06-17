@@ -1,0 +1,70 @@
+<!--#set var="TITLE" value="NCBI C++ Library Dependency Graph" -->
+<!--#set var="DOCROOT" value="." -->
+<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
+
+All new changes are being made to the Toolkit Book
+at the following locations:
+<ul>
+<li>
+<i>Official Release:</i> <a href="http://ncbi.github.io/cxx-toolkit/">
+    C++ Toolkit Book</a>.
+</li>
+<li>
+<i>Development Version:</i> (URL currently not available)
+
+    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
+
+<hr>
+<!--EOW-->
+
+<h1>NCBI C++ Library Dependency Graph</h1>
+
+<img src="depgraph.gif">
+
+This graph was obtained by building the full toolkit and then
+running the following commands:
+<pre class="ncbi_cmd">
+.../bin/depgraph .../lib/lib* > depgraph.out
+.../bin/depgraph2dot -simplify -in depgraph.out -out depgraph.dot
+dot -Tps -o depgraph.ps depgraph.dot
+convert -density 100 depgraph.ps PPM:- | ppmtogif > depgraph.gif
+</pre>
+where <span class="ncbi_util">dot</span> comes from AT&amp;T's
+<a href="http://www.research.att.com/sw/tools/graphviz/">Graphviz</a>
+package.  If you are at NCBI, you can find the source to
+<span class="ncbi_app">depgraph</span> and <span class="ncbi_app">depgraph2dot</span>
+<a href="http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/source/src/internal/util/depgraph/">here.</a>
+Dashed lines represent containment.
+<p>
+Alternatively, you may wish to consult the <a href="libdeps.txt">list</a>
+of each library's dependencies.  The format of each line is
+<span class="ncbi_var">libname: LIB / LIBS</span>, where everything in
+<span class="ncbi_var">LIB</span> must follow
+<span class="ncbi_var">libname</span> in your makefile's LIB setting and
+everything in <span>LIBS</span> must appear in your makefile's LIBS
+setting.
+<p>
+
+You can find NCBI C++ Library Dependency Graphs
+<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/depgraphs/">here</a>.
+<!-- Removed dead links and added a link to the main NCBI C++ Library Dependency Graphs page -->
+
+
+<!--
+You can find a version of the graph which includes internal projects
+<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/depgraphs/">here</a>, and a corresponding list
+<a href="internal/full-libdeps.txt">here</a>.
+-->
+<!-- produced as follows:
+* \ls $NCBI/c++/Release/lib > all-libs
+* pick a single member of each static/dynamic triplet
+  (libfoo.a, libfoo.so, libfoo-static.a)
+* depgraph `cat all-libs` $NCBI/altlib/libncbi* /usr/lib/libm.a > depgraph-full.out
+* egrep -v 'altlib|/usr/lib' depgraph-full.out > depgraph-full.out2
+* depgraph2dot -landscape -simplify < depgraph-full.out2 > depgraph-full.dot
+* remove "; rotate = 90" from depgraph-full.dot
+* dot -Tps -o depgraph-full.out depgraph-full.dot
+* distall -pagesize 11 8.5 in depgraph-full.ps
+-->
+<br><br>
+

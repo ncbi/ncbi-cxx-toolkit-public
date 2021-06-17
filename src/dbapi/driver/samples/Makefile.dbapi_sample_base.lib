@@ -1,0 +1,12 @@
+# $Id$
+
+SRC = dbapi_sample_base
+LIB = dbapi_sample_base
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(SYBASE_INCLUDE)
+
+WATCHERS = ucko satskyse
+
+
+USES_LIBRARIES =  \
+    $(XCONNEXT) dbapi_driver xconnect xutil

@@ -1,0 +1,61 @@
+# $Id$
+
+# Meta-makefile("APP" project)
+#################################
+
+REQUIRES = objects algo
+
+LIB_PROJ = blast_app_util
+
+APP_PROJ = \
+blastp \
+blastn \
+blastx \
+tblastn \
+tblastx \
+psiblast \
+rpsblast \
+rpstblastn \
+blast_formatter \
+blast_report \
+deltablast \
+seedtop 
+
+USR_PROJ = legacy_blast update_blastdb get_species_taxids cleanup-blastdb-volumes
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+.PHONY: all $(APP_PROJ)
+
+lib:
+	${MAKE} ${MFLAGS} -f Makefile.blast_app_util_lib
+blastn: lib
+	${MAKE} ${MFLAGS} -f Makefile.blastn_app
+blastp: lib
+	${MAKE} ${MFLAGS} -f Makefile.blastp_app
+blastx: lib
+	${MAKE} ${MFLAGS} -f Makefile.blastx_app
+tblastn: lib
+	${MAKE} ${MFLAGS} -f Makefile.tblastn_app
+tblastx: lib
+	${MAKE} ${MFLAGS} -f Makefile.tblastx_app
+psiblast: lib
+	${MAKE} ${MFLAGS} -f Makefile.psiblast_app
+rpsblast: lib
+	${MAKE} ${MFLAGS} -f Makefile.rpsblast_app
+rpstblastn: lib
+	${MAKE} ${MFLAGS} -f Makefile.rpstblastn_app
+igblastn: lib
+	${MAKE} ${MFLAGS} -f Makefile.igblastn_app
+igblastp: lib
+	${MAKE} ${MFLAGS} -f Makefile.igblastp_app
+blast_formatter: lib
+	${MAKE} ${MFLAGS} -f Makefile.blast_formatter_app
+blast_report: lib
+	${MAKE} ${MFLAGS} -f Makefile.blast_report_app
+seedtop: lib
+	${MAKE} ${MFLAGS} -f Makefile.seedtop_app
+deltablast: lib
+	${MAKE} ${MFLAGS} -f Makefile.deltablast_app
+

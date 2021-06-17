@@ -1,0 +1,50 @@
+Homo sapiens (human),9606
+Mus musculus (mouse),10090
+Saccharomyces cerevisiae (yeast),4932
+Aeropyrum pernix,56636
+Agrobacterium tumefaciens,358
+Anopheles gambiae,7165
+Aquifex aeolicus,63363
+Arabidopsis thaliana,3702
+Bacillus subtilis,1423
+Borrelia burgdorferi,139
+Bos taurus (cow),9913
+Caenorhabditis elegans,6239
+Campylobacter jejuni,197
+Canis familiaris (dog),9615
+Chlamydomonas reinhardtii,3055
+Danio rerio,7955
+Dictyostelium discoideum,44689
+Drosophila melanogaster,7227
+Equus caballus (horse),9796
+Escherichia coli,562
+Gallus gallus (chicken),9031
+Giardia lamblia ATCC 50803,184922
+Hordeum vulgare (barley),4513
+L. interrogans serovar Lai,189518
+Magnaporthe grisea,148305
+Methanococcus jannaschii,2190
+Mycobacterium smegmatis,1772
+Mycobacterium tuberculosis,1773
+Mycoplasma genitalium,2097
+Neurospora crassa,5141
+Oryctolagus cuniculus,9986
+Oryza sativa,4530
+Ovis aries,9940
+Plasmodium falciparum,5833
+Pneumocystis carinii,4754
+Rattus norvegicus (rat),10116
+Salmonella enterica,28901
+Schizosaccharomyces pombe,4896
+Solanum tuberosum (potato),4113
+Streptococcus pneumoniae,1313
+Streptomyces coelicolor,1902
+Sus scrofa,9823
+Synechocystis PCC6803,1148
+Takifugu rubripes,31033
+Triticum aestivum (wheat),4565
+Trypanosoma cruzi strain CL Brener,353153
+Toxoplasma gondii,5811
+Xenopus laevis,8355
+Xenopus tropicalis,8364
+Zea mays,4577

@@ -1,0 +1,4 @@
+ASN_PROJ = taxon1
+LIB_PROJ = local_taxon
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

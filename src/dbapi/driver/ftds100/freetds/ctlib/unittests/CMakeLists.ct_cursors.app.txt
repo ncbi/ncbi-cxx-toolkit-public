@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(ct100_ct_cursors)
+  NCBI_sources(ct_cursors common)
+  NCBI_add_test(test-ct100 ct100_ct_cursors)
+NCBI_end_app()
+

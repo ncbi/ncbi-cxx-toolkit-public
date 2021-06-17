@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db100_pending)
+  NCBI_sources(pending common)
+  NCBI_set_test_assets(pending.sql)
+  NCBI_add_test(test-db100 db100_pending)
+NCBI_end_app()
+

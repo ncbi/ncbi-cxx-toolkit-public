@@ -1,0 +1,16 @@
+@script_shell@
+# $Id$
+
+command=$1
+shift
+case "$command" in
+    tl )
+        lines=$1
+        shift
+        exec @TAIL_N@$lines ${1+"$@"}
+        ;;
+    * )
+        echo "$0: Unrecognized command $command"
+        exit 1
+        ;;
+esac

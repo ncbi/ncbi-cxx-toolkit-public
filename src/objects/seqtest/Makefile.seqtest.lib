@@ -1,0 +1,10 @@
+# $Id$
+
+ASN = seqtest
+
+LIB = seqtest
+SRC = $(ASN:%=%__) $(ASN:%=%___)
+
+
+USES_LIBRARIES =  \
+    $(SEQ_LIBS) pub

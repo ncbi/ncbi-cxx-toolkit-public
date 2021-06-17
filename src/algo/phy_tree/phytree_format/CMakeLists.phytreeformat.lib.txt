@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(phytree_format)
+  NCBI_sources(phytree_format phytree_simplify)
+  NCBI_uses_toolkit_libraries(align_format xalgophytree blastdb scoremat)
+  NCBI_project_watchers(boratyng)
+NCBI_end_lib()
+

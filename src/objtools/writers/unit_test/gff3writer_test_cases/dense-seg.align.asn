@@ -1,0 +1,61 @@
+Seq-align ::= {
+  type partial,
+  segs denseg {
+    numseg 9,
+    ids {
+      gi 425626948,
+      gi 56411841
+    },
+    starts {
+      6,
+      18566731,
+      -1,
+      18566728,
+      24,
+      18566569,
+      183,
+      -1,
+      198,
+      18566545,
+      -1,
+      18566536,
+      222,
+      18566473,
+      285,
+      -1,
+      294,
+      18566311
+    },
+    lens {
+      18,
+      3,
+      159,
+      15,
+      24,
+      9,
+      63,
+      9,
+      162
+    },
+    strands {
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus
+    }
+  }
+}

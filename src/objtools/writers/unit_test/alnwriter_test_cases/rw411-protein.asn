@@ -1,0 +1,100 @@
+Seq-align ::=    
+{
+    type partial,
+    dim 2,
+    score {
+        {
+            id str "score",
+            value int 771
+        },
+        {
+            id str "blast_score",
+            value int 771
+        },
+        {
+            id str "e_value",
+            value real { 975977486966582, 10, -118 }
+        },
+        {
+            id str "bit_score",
+            value real { 301597105312323, 10, -12 }
+        },
+        {
+            id str "num_ident",
+            value int 147
+        },
+        {
+            id str "comp_adjustment_method",
+            value int 2
+        },
+        {
+            id str "num_positives",
+            value int 147
+        },
+        {
+            id str "hsp_percent_coverage",
+            value real { 1, 10, 2 }
+        },
+        {
+            id str "pc_ident",
+            value real { 1, 10, 0 }
+        },
+        {
+            id str "seq_evalue",
+            value real { 975977486966582, 10, -118 }
+        },
+        {
+            id str "seq_bit_score",
+            value real { 301597105312323, 10, -12 }
+        },
+        {
+            id str "seq_total_bit_score",
+            value real { 301597105312323, 10, -12 }
+        },
+        {
+            id str "seq_percent_coverage",
+            value int 100
+        },
+        {
+            id str "seq_percent_identity",
+            value int 100
+        },
+        {
+            id str "seq_hspnum",
+            value int 1
+        },
+        {
+            id str "seq_align_totlen",
+            value real { 147, 10, 0 }
+        },
+        {
+            id str "pct_identity_gap",
+            value real { 1, 10, 2 }
+        },
+        {
+            id str "num_mismatch",
+            value int 0
+        }
+    },
+    segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+            other {
+                accession "NP_000509"
+            },
+            gi 60833497
+        },
+        starts {
+            0,
+            0
+        },
+        lens {
+            147
+        },
+        strands {
+            unknown,
+            unknown
+        }
+    }
+}

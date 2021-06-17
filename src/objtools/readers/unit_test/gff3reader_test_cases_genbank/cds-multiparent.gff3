@@ -1,0 +1,32 @@
+##gff-version 3
+##sequence-region   ctg123 1 1497228
+
+#Expected conversion:
+# one gene,
+# one imp,
+# one mrna mRNA00001 consisting of 4 pieces
+# one mrna mRNA00002 consisting of 4 pieces
+# one mrna mRNA00003 consisting of 3 pieces
+# one cds consisting of 4 pieces, child of mRNA0001
+# one cds consisting of 4 pieces, child of mRNA0002
+# one cds consisting of 3 pieces, child of mRNA0002
+# one cds consisting of 3 pieces, child of mRNA0003
+
+ctg123 . gene            1000  9000  .  +  .  ID=gene00001;Name=EDEN
+ctg123 . TF_binding_site 1000  1012  .  +  .  Parent=gene00001
+ctg123 . mRNA            1050  9000  .  +  .  ID=mRNA00001;Parent=gene00001
+ctg123 . mRNA            1050  9000  .  +  .  ID=mRNA00002;Parent=gene00001
+ctg123 . mRNA            1020  9000  .  +  .  ID=mRNA00003;Parent=gene00001
+ctg123 . CDS             1201  1500  .  +  0  ID=cds00001;Parent=mRNA00001,mRNA00002
+ctg123 . CDS             3000  3902  .  +  0  ID=cds00001;Parent=mRNA00001,mRNA00002
+ctg123 . CDS             5000  5500  .  +  0  ID=cds00001;Parent=mRNA00001,mRNA00002
+ctg123 . CDS             7000  7600  .  +  0  ID=cds00001;Parent=mRNA00001,mRNA00002
+ctg123 . CDS             1201  1500  .  +  0  ID=cds00002;Parent=mRNA00002,mRNA00003
+ctg123 . CDS             5000  5500  .  +  0  ID=cds00002;Parent=mRNA00002,mRNA00003
+ctg123 . CDS		     7000  7600  .  +  0  ID=cds00002;Parent=mRNA00002,mRNA00003
+ctg123 . CDS		     8000  8100  .  +  0  ID=cds00005
+ctg123 . CDS		     8200  8300  .  +  0  ID=cds00005
+ctg123 . CDS		     8400  8500  .  +  0  ID=cds00005
+ctg123 . CDS		     9000  9100  .  +  0  Note=No ID, no Parent
+ctg123 . CDS		     9200  9300  .  +  0  Note=No ID, no Parent
+ctg123 . CDS		     9400  9500  .  +  0  Note=No ID, no Parent

@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(deployable_cgi.cgi)
+  NCBI_sources(sample process)
+  NCBI_uses_toolkit_libraries(xcgi xhtml)
+  NCBI_project_watchers(fukanchi)
+NCBI_end_app()

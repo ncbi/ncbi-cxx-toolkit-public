@@ -1,0 +1,13 @@
+# $Id$
+
+# Meta-makefile("ALGO" project)
+#################################
+
+SUB_PROJ = test
+
+LIB_PROJ = xalgovmerge
+
+REQUIRES = BerkeleyDB
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

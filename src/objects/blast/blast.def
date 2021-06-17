@@ -1,0 +1,12 @@
+[-]
+_export = NCBI_BLAST_EXPORT
+clients = blastclient
+
+[blastclient]
+class   = CBlast4Client
+service = blast4
+request = Blast4-request.body
+reply   = Blast4-reply.body
+
+[NCBI-Blast4.Blast4-get-windowmasked-taxids-reply]
+_type = set

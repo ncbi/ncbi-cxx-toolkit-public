@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_app(asn_cleanup)
+  NCBI_sources(asn_cleanup read_hooks bigfile_processing)
+  NCBI_uses_toolkit_libraries(
+    data_loaders_util
+    xcleanup xobjedit xvalidate taxon1
+  )
+  NCBI_project_watchers(bollin)
+NCBI_end_app()
+

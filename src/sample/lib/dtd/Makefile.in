@@ -1,0 +1,4 @@
+DTD_PROJ = dtd_sample_lib
+REQUIRES = serial
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

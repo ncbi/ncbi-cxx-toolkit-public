@@ -1,0 +1,2 @@
+MODULE_PATH = objects/scoremat
+MODULE_IMPORT = objects/seqset/seqset objects/general/general

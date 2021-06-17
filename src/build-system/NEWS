@@ -1,0 +1,25 @@
+Changes requiring reconfiguration since September 2008:
+
+2008-09-25: new setup introduced to avoid insisting that everyone
+reconfigure after minor changes.
+
+2011-03-18: new @DBAPI_DRIVER@ variable for the sake of --without-dbapi builds.
+
+2011-05-17: new @ncbi_java@ variable for --with-jni builds.
+
+2011-10-05: new @FEATURES@ variable for the unit test framework.
+
+2012-02-27: new @TOUCH@ variable to avoid hard-coded paths.
+
+2014-07-30: new @SED@ variable to avoid PATH lookup.
+
+2015-03-30: new @VDB_*@ variables to allow use of external SRA/VDB
+installations.
+
+2015-06-01: additional @VDB_*@ variables @VDB_REQ@ and @VDB_POST_LINK@.
+
+2015-12-17: new variables for FreeTDS 0.95.
+
+2016-06-20: variables for libraries dependent on SRA/VDB.
+
+2017-05-01: new variables for FreeTDS 1.0.

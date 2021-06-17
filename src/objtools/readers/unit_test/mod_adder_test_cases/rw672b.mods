@@ -1,0 +1,14 @@
+SRA sra1,sra2
+sra SRA3
+biosample biosample1;biosample2
+bioproject bioproject1
+BioSample biosample2    biosample3
+comment comment1
+project 1,2
+project 3
+primary-accession  BK000554.2
+tech EST
+completedness complete
+pmid 1234
+pmid 5678
+keywords keyword1;keyword2

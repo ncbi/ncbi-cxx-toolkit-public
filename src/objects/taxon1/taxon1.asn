@@ -1,0 +1,110 @@
+--$Revision$
+--**********************************************************************
+--
+--  NCBI Taxonomy Server
+--  by James Ostell, 1995
+--  Version 1.0 - July 1995
+--
+--**********************************************************************
+
+
+
+NCBI-Taxon1 DEFINITIONS ::=
+BEGIN
+
+IMPORTS Org-ref FROM NCBI-Organism;
+
+                          -- Requests to the Taxon server
+Taxon1-req ::= CHOICE {
+	init		NULL,		-- initialize the server
+	findname	VisibleString,	-- find orgnames match string
+	getdesignator 	VisibleString,	-- find designator
+	getunique     	VisibleString,	-- get taxid for unique name
+	getidbyorg    	Org-ref,	-- get taxid matches orgref
+	getorgnames   	INTEGER,	-- get all organism names
+	getcde		NULL,		-- get name classes
+	getranks	NULL,		-- get ranks
+	getdivs		NULL,		-- get divisions
+	getgcs		NULL,		-- get gencodes
+	getlineage      INTEGER,        -- get lineage for org
+	getchildren	INTEGER,	-- get children
+	getbyid		INTEGER,  	-- get Org-ref by TaxonID
+	lookup		Org-ref,  	-- lookup by data
+	getorgmod	Taxon1-info,  	-- lookup for OrgMod
+	fini    	NULL,    	-- close the server
+	id4gi		INTEGER,  	-- get taxid by gi
+	taxachildren	INTEGER,	-- get children
+	taxalineage     INTEGER,        -- get extended lineage for org
+        maxtaxid        NULL,           -- get max taxid
+        getproptypes    NULL,           -- get property types
+        getorgprop      Taxon1-info,    -- get properties for organism
+        searchname      Taxon1-info,    -- fancy search (token set, wild card)
+        dumpnames4class INTEGER,        -- all names of certain name class
+        getdomain       VisibleString}  -- get domain description and values
+
+Taxon1-resp ::= CHOICE {
+	error		Taxon1-error,	-- sent on any error
+	init    	NULL,		-- sent by successful initiation
+	findname	SET OF Taxon1-name,
+	getdesignator	INTEGER,
+	getunique	INTEGER,
+	getidbyorg	INTEGER,
+	getorgnames	SET OF Taxon1-name,
+	getcde		SET OF Taxon1-info,
+	getranks	SET OF Taxon1-info,
+	getdivs		SET OF Taxon1-info,
+	getgcs		SET OF Taxon1-info,
+	getlineage	SET OF Taxon1-info,
+	getchildren	SET OF Taxon1-info,
+	getbyid 	Taxon1-data,
+	lookup  	Taxon1-data,
+	getorgmod	SET OF Taxon1-info,  
+	fini    	NULL,
+	id4gi           INTEGER,
+	taxabyid	Taxon2-data,
+	taxachildren	SEQUENCE OF Taxon1-name,
+	taxalineage	SEQUENCE OF Taxon1-name,
+        maxtaxid        INTEGER,
+	getproptypes    SET OF Taxon1-info,
+        getorgprop      SET OF Taxon1-info,
+        searchname      SET OF Taxon1-name,
+        dumpnames4class SET OF Taxon1-name,
+        getdomain       SEQUENCE OF Taxon1-info} -- [0]:id,nof_fields,name, [1..nof_fields]:field_no,val_type,field_name, [:nof_fields]:val_id,int_val or str_len(-1 for null),str_val
+
+Taxon1-info ::= SEQUENCE {
+	ival1	INTEGER,
+	ival2	INTEGER,
+	sval	VisibleString OPTIONAL}
+
+Taxon1-name ::= SEQUENCE {
+	taxid	INTEGER,
+	cde	INTEGER,
+	oname	VisibleString OPTIONAL,
+	uname	VisibleString OPTIONAL }
+
+Taxon1-error ::= SEQUENCE {
+	level ENUMERATED {
+		none (0) ,    -- not an error, just a message
+		info (1) ,    -- informational error
+		warn (2) ,
+		error (3) ,
+		fatal (4) } ,
+	msg VisibleString OPTIONAL }
+
+Taxon1-data ::= SEQUENCE {
+	org Org-ref OPTIONAL,    -- Org-ref with Org-name and db filled in
+	div VisibleString ,  -- GenBank division
+	embl-code VisibleString OPTIONAL,     -- 2 letter EMBL code
+	is-species-level BOOLEAN }   -- species level or below
+
+Taxon2-data ::= SEQUENCE {
+	org Org-ref OPTIONAL,    -- Org-ref with Org-name and db filled in
+	blast-name SEQUENCE OF VisibleString OPTIONAL,  -- inherited blast name
+	is-uncultured BOOLEAN ,     -- belongs to environmental bin
+	is-species-level BOOLEAN }   -- species level or below
+
+END
+
+
+
+

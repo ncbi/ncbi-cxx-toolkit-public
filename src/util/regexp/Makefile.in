@@ -1,0 +1,9 @@
+# $Id$
+
+REQUIRES = LocalPCRE
+
+LIB_PROJ = regexp
+APP_PROJ = test_pcre
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

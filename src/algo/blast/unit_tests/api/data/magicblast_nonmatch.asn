@@ -1,0 +1,18 @@
+Bioseq-set ::= {
+  seq-set {
+    seq {
+      id {
+        local str "test"
+      },
+      descr {
+        title "test query"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 49,
+        seq-data iupacna "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      }
+    }
+  }
+}

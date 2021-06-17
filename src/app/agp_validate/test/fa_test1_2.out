@@ -1,0 +1,63 @@
+2 component_ids and lengths loaded from FASTA.
+No runs of Ns longer than 10 bp found in FASTA sequences.
+	WARNING: all objects are singletons with component_beg=1 and component_end = length of sequence
+
+No errors, 2 warnings.
+  Count Code  Description
+      1  w65  all objects are singletons with component_beg=1
+      -   -   no gap lines
+
+
+Objects                : 2
+- with single component: 2
+
+Scaffolds              : 2
+- with single component: 2
+
+Components                   : 2 (W)
+  orientation +              : 2
+  orientation -              : 0
+  orientation ? (formerly 0) : 0
+  orientation na             : 0
+
+Gaps                   : 0
+
+Object names         :  2
+  LACBIscaffold_[1,2]:  2
+
+Component names        :  2
+  LACBIscaffold_extra  :  1
+  LACBIscaffold_1_Cont1:  1
+=====================================================
+2 component_ids and lengths loaded from FASTA.
+No runs of Ns longer than 10 bp found in FASTA sequences.
+	WARNING: all objects are singletons with component_beg=1 (not all component_end = length of sequence)
+
+No errors, 2 warnings.
+  Count Code  Description
+      1  w65  all objects are singletons with component_beg=1
+      -   -   no gap lines
+
+
+Objects                : 2
+- with single component: 2
+
+Scaffolds              : 2
+- with single component: 2
+
+Components                   : 2 (W)
+  orientation +              : 2
+  orientation -              : 0
+  orientation ? (formerly 0) : 0
+  orientation na             : 0
+
+Gaps                   : 0
+
+Object names         :  2
+  LACBIscaffold_[1,2]:  2
+
+Component names        :  2
+  LACBIscaffold_extra  :  1
+  LACBIscaffold_1_Cont1:  1
+
+#Comment line count    : 1

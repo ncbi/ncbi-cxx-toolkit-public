@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(ngalign_app)
+  NCBI_sources(ngalign_app)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_asn_cache xngalign seq)
+  NCBI_project_watchers(boukn)
+NCBI_end_app()
+

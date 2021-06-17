@@ -1,0 +1,10 @@
+# $Id$
+
+ASN_DEP = seq taxon1
+
+LIB = local_taxon
+SRC = local_taxon
+
+CPPFLAGS= $(ORIG_CPPFLAGS) $(SQLITE3_INCLUDE)
+LIBS    = $(SQLITE3_LIBS) $(ORIG_LIBS)
+REQUIRES = SQLITE3

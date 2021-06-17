@@ -1,0 +1,2559 @@
+Seq-entry ::= set {
+  seq-set {
+    seq {
+      id {
+        gi 0500
+      },
+      inst {
+        repr delta,
+        mol dna,
+        ext delta {
+          literal {
+            length 1000
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+{
+  data region "0500: 300-599",
+  location int {
+    from 300,
+    to 599,
+    id gi 0500
+  }
+},
+{
+  data region "0500: 200-699",
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 0500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 0500
+   }
+  }
+},
+{
+  data region "0500: 300-599 minus",
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 0500
+  }
+},
+{
+  data region "0500: 200-699 minus",
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 0500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 0500
+   }
+  }
+},
+{
+  data region "0500: 300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 0500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "0500: 200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 0500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 0500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "0500: 300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 0500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "0500: 200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 0500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 0500
+   }
+  }
+},
+{
+  data region "0500: +300-599",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 0500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "0500: +200-699",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 0500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 0500
+   }
+  }
+},
+{
+  data region "0500: +300-599 minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 0500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "0500: +200-699 minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 0500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 0500
+,   fuzz-from lim lt
+   }
+  }
+},
+{
+  data region "0500: +300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 0500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "0500: +200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 0500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 0500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "0500: +300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 0500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "0500: +200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 0500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 0500
+,   fuzz-from lim lt
+   }
+  }
+},
+            {
+              data region "dummy",
+              location null NULL
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 1500
+      },
+      inst {
+        repr delta,
+        mol dna,
+        ext delta {
+          literal {
+            length 1000
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+{
+  data region "1500: 300-599",
+  location int {
+    from 300,
+    to 599,
+    id gi 1500
+  }
+},
+{
+  data region "1500: 200-699",
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 1500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 1500
+   }
+  }
+},
+{
+  data region "1500: 300-599 minus",
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 1500
+  }
+},
+{
+  data region "1500: 200-699 minus",
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 1500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 1500
+   }
+  }
+},
+{
+  data region "1500: 300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 1500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "1500: 200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 1500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 1500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "1500: 300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 1500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "1500: 200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 1500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 1500
+   }
+  }
+},
+{
+  data region "1500: +300-599",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 1500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "1500: +200-699",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 1500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 1500
+   }
+  }
+},
+{
+  data region "1500: +300-599 minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 1500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "1500: +200-699 minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 1500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 1500
+,   fuzz-from lim lt
+   }
+  }
+},
+{
+  data region "1500: +300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 1500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "1500: +200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 1500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 1500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "1500: +300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 1500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "1500: +200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 1500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 1500
+,   fuzz-from lim lt
+   }
+  }
+},
+            {
+              data region "dummy",
+              location null NULL
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 2500
+      },
+      inst {
+        repr delta,
+        mol dna,
+        ext delta {
+          literal {
+            length 1000
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+{
+  data region "2500: 300-599",
+  location int {
+    from 300,
+    to 599,
+    id gi 2500
+  }
+},
+{
+  data region "2500: 200-699",
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 2500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 2500
+   }
+  }
+},
+{
+  data region "2500: 300-599 minus",
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 2500
+  }
+},
+{
+  data region "2500: 200-699 minus",
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 2500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 2500
+   }
+  }
+},
+{
+  data region "2500: 300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 2500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "2500: 200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 2500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 2500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "2500: 300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 2500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "2500: 200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 2500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 2500
+   }
+  }
+},
+{
+  data region "2500: +300-599",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 2500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "2500: +200-699",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 2500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 2500
+   }
+  }
+},
+{
+  data region "2500: +300-599 minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 2500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "2500: +200-699 minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 2500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 2500
+,   fuzz-from lim lt
+   }
+  }
+},
+{
+  data region "2500: +300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 2500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "2500: +200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 2500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 2500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "2500: +300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 2500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "2500: +200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 2500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 2500
+,   fuzz-from lim lt
+   }
+  }
+},
+            {
+              data region "dummy",
+              location null NULL
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 3500
+      },
+      inst {
+        repr delta,
+        mol dna,
+        ext delta {
+          literal {
+            length 1000
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+{
+  data region "3500: 300-599",
+  location int {
+    from 300,
+    to 599,
+    id gi 3500
+  }
+},
+{
+  data region "3500: 200-699",
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 3500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 3500
+   }
+  }
+},
+{
+  data region "3500: 300-599 minus",
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 3500
+  }
+},
+{
+  data region "3500: 200-699 minus",
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 3500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 3500
+   }
+  }
+},
+{
+  data region "3500: 300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 3500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "3500: 200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 3500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 3500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "3500: 300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 3500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "3500: 200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 3500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 3500
+   }
+  }
+},
+{
+  data region "3500: +300-599",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 3500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "3500: +200-699",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 3500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 3500
+   }
+  }
+},
+{
+  data region "3500: +300-599 minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 3500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "3500: +200-699 minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 3500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 3500
+,   fuzz-from lim lt
+   }
+  }
+},
+{
+  data region "3500: +300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 3500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "3500: +200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 3500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 3500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "3500: +300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 3500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "3500: +200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 3500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 3500
+,   fuzz-from lim lt
+   }
+  }
+},
+            {
+              data region "dummy",
+              location null NULL
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 4500
+      },
+      inst {
+        repr delta,
+        mol dna,
+        ext delta {
+          literal {
+            length 1000
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+{
+  data region "4500: 300-599",
+  location int {
+    from 300,
+    to 599,
+    id gi 4500
+  }
+},
+{
+  data region "4500: 200-699",
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 4500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 4500
+   }
+  }
+},
+{
+  data region "4500: 300-599 minus",
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 4500
+  }
+},
+{
+  data region "4500: 200-699 minus",
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 4500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 4500
+   }
+  }
+},
+{
+  data region "4500: 300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 4500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "4500: 200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 4500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 4500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "4500: 300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 4500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "4500: 200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 4500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 4500
+   }
+  }
+},
+{
+  data region "4500: +300-599",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 4500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "4500: +200-699",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 4500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 4500
+   }
+  }
+},
+{
+  data region "4500: +300-599 minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 4500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "4500: +200-699 minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 4500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 4500
+,   fuzz-from lim lt
+   }
+  }
+},
+{
+  data region "4500: +300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 4500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "4500: +200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 4500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 4500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "4500: +300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 4500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "4500: +200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 4500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 4500
+,   fuzz-from lim lt
+   }
+  }
+},
+            {
+              data region "dummy",
+              location null NULL
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 5500
+      },
+      inst {
+        repr delta,
+        mol dna,
+        ext delta {
+          literal {
+            length 1000
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+{
+  data region "5500: 300-599",
+  location int {
+    from 300,
+    to 599,
+    id gi 5500
+  }
+},
+{
+  data region "5500: 200-699",
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 5500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 5500
+   }
+  }
+},
+{
+  data region "5500: 300-599 minus",
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 5500
+  }
+},
+{
+  data region "5500: 200-699 minus",
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 5500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 5500
+   }
+  }
+},
+{
+  data region "5500: 300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 5500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "5500: 200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 5500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 5500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "5500: 300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 5500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "5500: 200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 5500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 5500
+   }
+  }
+},
+{
+  data region "5500: +300-599",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 5500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "5500: +200-699",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 5500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 5500
+   }
+  }
+},
+{
+  data region "5500: +300-599 minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 5500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "5500: +200-699 minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 5500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 5500
+,   fuzz-from lim lt
+   }
+  }
+},
+{
+  data region "5500: +300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 5500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "5500: +200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 5500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 5500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "5500: +300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 5500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "5500: +200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 5500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 5500
+,   fuzz-from lim lt
+   }
+  }
+},
+            {
+              data region "dummy",
+              location null NULL
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 6500
+      },
+      inst {
+        repr delta,
+        mol dna,
+        ext delta {
+          literal {
+            length 1000
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+{
+  data region "6500: 300-599",
+  location int {
+    from 300,
+    to 599,
+    id gi 6500
+  }
+},
+{
+  data region "6500: 200-699",
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 6500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 6500
+   }
+  }
+},
+{
+  data region "6500: 300-599 minus",
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 6500
+  }
+},
+{
+  data region "6500: 200-699 minus",
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 6500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 6500
+   }
+  }
+},
+{
+  data region "6500: 300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 6500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "6500: 200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 6500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 6500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "6500: 300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 6500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "6500: 200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 6500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 6500
+   }
+  }
+},
+{
+  data region "6500: +300-599",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 6500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "6500: +200-699",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 6500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 6500
+   }
+  }
+},
+{
+  data region "6500: +300-599 minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 6500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "6500: +200-699 minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 6500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 6500
+,   fuzz-from lim lt
+   }
+  }
+},
+{
+  data region "6500: +300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 6500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "6500: +200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 6500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 6500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "6500: +300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 6500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "6500: +200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 6500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 6500
+,   fuzz-from lim lt
+   }
+  }
+},
+            {
+              data region "dummy",
+              location null NULL
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 7500
+      },
+      inst {
+        repr delta,
+        mol dna,
+        ext delta {
+          literal {
+            length 1000
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+{
+  data region "7500: 300-599",
+  location int {
+    from 300,
+    to 599,
+    id gi 7500
+  }
+},
+{
+  data region "7500: 200-699",
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 7500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 7500
+   }
+  }
+},
+{
+  data region "7500: 300-599 minus",
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 7500
+  }
+},
+{
+  data region "7500: 200-699 minus",
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 7500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 7500
+   }
+  }
+},
+{
+  data region "7500: 300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 7500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "7500: 200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 7500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 7500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "7500: 300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 7500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "7500: 200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 7500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 7500
+   }
+  }
+},
+{
+  data region "7500: +300-599",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 7500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "7500: +200-699",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 7500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 7500
+   }
+  }
+},
+{
+  data region "7500: +300-599 minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 7500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "7500: +200-699 minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 7500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 7500
+,   fuzz-from lim lt
+   }
+  }
+},
+{
+  data region "7500: +300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 7500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "7500: +200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 7500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 7500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "7500: +300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 7500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "7500: +200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 7500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 7500
+,   fuzz-from lim lt
+   }
+  }
+},
+            {
+              data region "dummy",
+              location null NULL
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 8500
+      },
+      inst {
+        repr delta,
+        mol dna,
+        ext delta {
+          literal {
+            length 1000
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+{
+  data region "8500: 300-599",
+  location int {
+    from 300,
+    to 599,
+    id gi 8500
+  }
+},
+{
+  data region "8500: 200-699",
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 8500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 8500
+   }
+  }
+},
+{
+  data region "8500: 300-599 minus",
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 8500
+  }
+},
+{
+  data region "8500: 200-699 minus",
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 8500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 8500
+   }
+  }
+},
+{
+  data region "8500: 300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 8500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "8500: 200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 8500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 8500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "8500: 300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 8500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "8500: 200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 8500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 8500
+   }
+  }
+},
+{
+  data region "8500: +300-599",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 8500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "8500: +200-699",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 8500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 8500
+   }
+  }
+},
+{
+  data region "8500: +300-599 minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 8500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "8500: +200-699 minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 8500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 8500
+,   fuzz-from lim lt
+   }
+  }
+},
+{
+  data region "8500: +300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 8500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "8500: +200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 8500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 8500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "8500: +300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 8500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "8500: +200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 8500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 8500
+,   fuzz-from lim lt
+   }
+  }
+},
+            {
+              data region "dummy",
+              location null NULL
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 9500
+      },
+      inst {
+        repr delta,
+        mol dna,
+        ext delta {
+          literal {
+            length 1000
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+{
+  data region "9500: 300-599",
+  location int {
+    from 300,
+    to 599,
+    id gi 9500
+  }
+},
+{
+  data region "9500: 200-699",
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 9500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 9500
+   }
+  }
+},
+{
+  data region "9500: 300-599 minus",
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 9500
+  }
+},
+{
+  data region "9500: 200-699 minus",
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 9500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 9500
+   }
+  }
+},
+{
+  data region "9500: 300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 9500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "9500: 200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 9500
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 9500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "9500: 300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 9500
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "9500: 200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 9500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 9500
+   }
+  }
+},
+{
+  data region "9500: +300-599",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 9500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "9500: +200-699",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 9500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 9500
+   }
+  }
+},
+{
+  data region "9500: +300-599 minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 9500
+,   fuzz-from lim lt
+  }
+},
+{
+  data region "9500: +200-699 minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 9500
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 9500
+,   fuzz-from lim lt
+   }
+  }
+},
+{
+  data region "9500: +300-599+",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    id gi 9500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "9500: +200-699+",
+  partial TRUE,
+  location mix {
+   int {
+    from 200,
+    to 299,
+    id gi 9500
+,   fuzz-from lim lt
+   },
+   int {
+    from 600,
+    to 699,
+    id gi 9500
+,   fuzz-to lim gt
+   }
+  }
+},
+{
+  data region "9500: +300-599+ minus",
+  partial TRUE,
+  location int {
+    from 300,
+    to 599,
+    strand minus,
+    id gi 9500
+,   fuzz-from lim lt
+,   fuzz-to lim gt
+  }
+},
+{
+  data region "9500: +200-699+ minus",
+  partial TRUE,
+  location mix {
+   int {
+    from 600,
+    to 699,
+    strand minus,
+    id gi 9500
+,   fuzz-to lim gt
+   },
+   int {
+    from 200,
+    to 299,
+    strand minus,
+    id gi 9500
+,   fuzz-from lim lt
+   }
+  }
+},
+            {
+              data region "dummy",
+              location null NULL
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        other {
+          accession "MASTER",
+          version 1
+        },
+        gi 1
+      },
+      inst {
+        repr seg,
+        mol dna,
+        topology circular,
+        ext seg {
+          int { -- 0
+            from 500,
+            to 999,
+            id gi 9500
+          },
+          int { -- 500
+            from 0,
+            to 999,
+            id gi 0500
+          },
+          int { -- 1500
+            from 0,
+            to 999,
+            strand minus,
+            id gi 1500
+          },
+          int { -- 2500
+            from 0,
+            to 499,
+            id gi 2500
+          },
+          int { -- 3000
+            from 0,
+            to 499,
+            strand minus,
+            id gi 3500
+          },
+          int { -- 3500
+            from 500,
+            to 999,
+            id gi 4500
+          },
+          int { -- 4000
+            from 500,
+            to 999,
+            strand minus,
+            id gi 5500
+          },
+          int { -- 4500
+            from 450,
+            to 549,
+            id gi 6500
+          },
+          int { -- 4600
+            from 450,
+            to 549,
+            strand minus,
+            id gi 7500
+          },
+          int { -- 4700
+            from 0,
+            to 999,
+            id gi 8500
+          },
+          int { -- 5700
+            from 0,
+            to 499,
+            id gi 9500
+          }     -- 6200
+        }
+      }
+    }
+  }
+}

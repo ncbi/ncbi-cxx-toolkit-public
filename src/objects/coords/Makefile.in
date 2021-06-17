@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("hgvs" project)
+#################################
+
+ASN_PROJ = objcoords
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

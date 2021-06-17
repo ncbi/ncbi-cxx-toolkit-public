@@ -1,0 +1,59 @@
+--$Revision$
+--**********************************************************************
+--
+--  NCBI ASN.1 structured comment validation rule specifications
+--
+--  by Colleen Bollin, 2009
+--
+--**********************************************************************
+
+NCBI-Structured-comment-validation DEFINITIONS ::=
+BEGIN
+
+EXPORTS Severity-level, Field-rule, Field-set, Dependent-field-rule , Dependent-field-set ,Comment-rule, Comment-set;
+
+Severity-level ::= ENUMERATED {
+    none (0) ,
+    info (1) ,
+    warning (2) ,
+    error (3) ,
+    reject (4) ,
+    fatal (5)
+}
+
+Field-rule ::= SEQUENCE {
+    field-name VisibleString ,
+    match-expression VisibleString OPTIONAL ,
+    required BOOLEAN DEFAULT FALSE ,
+    severity Severity-level DEFAULT warning
+}
+
+Field-set ::= SET OF Field-rule
+
+Dependent-field-rule ::= SEQUENCE {
+    match-name VisibleString ,
+    value-constraint VisibleString OPTIONAL ,
+    invert-match BOOLEAN DEFAULT FALSE ,
+    other-fields Field-set OPTIONAL ,
+    disallowed-fields Field-set OPTIONAL
+}
+
+Dependent-field-set ::= SET OF Dependent-field-rule    
+
+Phrase-list ::= SET OF VisibleString
+
+Comment-rule ::= SEQUENCE {
+    prefix VisibleString ,
+    updated BOOLEAN DEFAULT FALSE ,
+    fields Field-set ,
+    require-order BOOLEAN DEFAULT TRUE ,
+    allow-unlisted BOOLEAN DEFAULT FALSE ,
+    dependent-rules Dependent-field-set OPTIONAL ,
+    forbidden-phrases Phrase-list OPTIONAL
+}
+
+Comment-set ::= SET OF Comment-rule
+
+
+END
+

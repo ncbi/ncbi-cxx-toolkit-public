@@ -1,0 +1,2665 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "SLC37A1",
+        desc "solute carrier family 37 member 1",
+        syn {
+          "G3PP"
+        }
+      },
+      location int {
+        from 914182,
+        to 995990,
+        strand plus,
+        id other {
+          accession "NT_011515",
+          version 12
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 54020
+        },
+        {
+          db "HGNC",
+          tag str "HGNC:11024"
+        },
+        {
+          db "HPRD",
+          tag id 10479
+        },
+        {
+          db "MIM",
+          tag id 608094
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      product whole gi 49619231,
+      location packed-int {
+        {
+          from 933005,
+          to 933060,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 940326,
+          to 940407,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 949248,
+          to 949380,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 950022,
+          to 950100,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 954062,
+          to 954197,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 956954,
+          to 957030,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 957986,
+          to 958152,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 961653,
+          to 961690,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 968612,
+          to 968692,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 973508,
+          to 973639,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 976628,
+          to 976718,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 978365,
+          to 978427,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 979258,
+          to 979343,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 980377,
+          to 980425,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 981535,
+          to 981608,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 982910,
+          to 982988,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 989368,
+          to 989465,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 994286,
+          to 994350,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        {
+          from 994895,
+          to 994910,
+          strand plus,
+          id other {
+            accession "NT_011515",
+            version 12
+          }
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "glucose-6-phosphate exchanger SLC37A1"
+            }
+          }
+        }
+      },
+      dbxref {
+        {
+          db "CCDS",
+          tag str "CCDS13689.1"
+        }
+      }
+    },
+    {
+      data gene {
+        locus "COL18A1",
+        desc "collagen, type XVIII, alpha 1",
+        syn {
+          "KNO",
+          "KNO1",
+          "KS"
+        }
+      },
+      partial TRUE,
+      location int {
+        from 3819537,
+        to 3928074,
+        strand plus,
+        id gi 224514634,
+        fuzz-from lim lt
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 80781
+        },
+        {
+          db "HGNC",
+          tag str "HGNC:2195"
+        },
+        {
+          db "MIM",
+          tag id 120328
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "collagen, type XVIII, alpha 1, transcript variant 2"
+      },
+      except TRUE,
+      comment "The RefSeq transcript has 1 non-frameshifting indel compared to
+ this genomic sequence",
+      product whole gi 110611232,
+      location packed-int {
+        {
+          from 3819537,
+          to 3819596,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3819734,
+          to 3819828,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3882596,
+          to 3883140,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3888249,
+          to 3888335,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3889830,
+          to 3889889,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3890705,
+          to 3890834,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3891765,
+          to 3891841,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3892104,
+          to 3892319,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3892681,
+          to 3892707,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894256,
+          to 3894318,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894424,
+          to 3894510,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894821,
+          to 3894874,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3895054,
+          to 3895212,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3896317,
+          to 3896379,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3897149,
+          to 3897175,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3901215,
+          to 3901346,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3901801,
+          to 3901863,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3902772,
+          to 3902798,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3903840,
+          to 3903875,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3904629,
+          to 3904700,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3905190,
+          to 3905225,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3905579,
+          to 3905668,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3906889,
+          to 3906918,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907041,
+          to 3907067,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907517,
+          to 3907579,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907855,
+          to 3907929,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3908899,
+          to 3908925,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3909216,
+          to 3909269,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3909712,
+          to 3909786,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3910854,
+          to 3910922,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3911404,
+          to 3911446,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3911953,
+          to 3912015,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3918365,
+          to 3918408,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3918770,
+          to 3918910,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3919488,
+          to 3919632,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3919712,
+          to 3919785,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3920192,
+          to 3920320,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3921915,
+          to 3921947,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3923710,
+          to 3923955,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3924418,
+          to 3924615,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3925465,
+          to 3925580,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3926542,
+          to 3928074,
+          strand plus,
+          id gi 224514634
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_130445.2"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      except TRUE,
+      comment "isoform 2 precursor is encoded by transcript variant 2; The
+ RefSeq protein has 1 non-frameshifting indel compared to this genomic sequence",
+      product whole gi 110611233,
+      location packed-int {
+        {
+          from 3819586,
+          to 3819596,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3819734,
+          to 3819828,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3882596,
+          to 3883140,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3888249,
+          to 3888335,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3889830,
+          to 3889889,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3890705,
+          to 3890834,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3891765,
+          to 3891841,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3892104,
+          to 3892319,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3892681,
+          to 3892707,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894256,
+          to 3894318,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894424,
+          to 3894510,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894821,
+          to 3894874,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3895054,
+          to 3895212,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3896317,
+          to 3896379,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3897149,
+          to 3897175,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3901215,
+          to 3901346,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3901801,
+          to 3901863,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3902772,
+          to 3902798,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3903840,
+          to 3903875,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3904629,
+          to 3904700,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3905190,
+          to 3905225,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3905579,
+          to 3905668,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3906889,
+          to 3906918,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907041,
+          to 3907067,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907517,
+          to 3907579,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907855,
+          to 3907929,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3908899,
+          to 3908925,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3909216,
+          to 3909269,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3909712,
+          to 3909786,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3910854,
+          to 3910922,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3911404,
+          to 3911446,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3911953,
+          to 3912015,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3918365,
+          to 3918408,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3918770,
+          to 3918910,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3919488,
+          to 3919632,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3919712,
+          to 3919785,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3920192,
+          to 3920320,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3921915,
+          to 3921947,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3923710,
+          to 3923955,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3924418,
+          to 3924615,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3925465,
+          to 3925580,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3926542,
+          to 3926752,
+          strand plus,
+          id gi 224514634
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_569712.2"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "collagen alpha-1(XVIII) chain isoform 2 precursor"
+            }
+          }
+        }
+      },
+      dbxref {
+        {
+          db "CCDS",
+          tag str "CCDS42971.1"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data gene {
+        locus "smg6"
+      },
+      location int {
+        from 195029,
+        to 196310,
+        strand minus,
+        id gi 258441149
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "partial mRNA for SMG6 homolog nonsense mediated mRNA decay
+ factor (C. elegans)cds (smg6 gene)"
+      },
+      product whole gi 240248230,
+      location int {
+        from 195029,
+        to 196310,
+        strand minus,
+        id gi 258441149
+      }
+    },
+    {
+      data cdregion {
+        frame two,
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      product whole gi 240248231,
+      location int {
+        from 195029,
+        to 196310,
+        strand plus,
+        id gi 258441149,
+        fuzz-from lim lt,
+        fuzz-to lim gt
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "SMG6 homolog nonsense mediated mRNA decay factor (C. elegans)cds"
+            }
+          }
+        }
+      },
+      dbxref {
+        {
+          db "GOA",
+          tag str "C5J7W9"
+        },
+        {
+          db "UniProtKB/TrEMBL",
+          tag str "C5J7W9"
+        },
+        {
+          db "ZFIN",
+          tag str "ZDB-GENE-081107-52"
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "collagen, type XVIII, alpha 1, transcript variant 2"
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq transcript has 2 non-frameshifting indels and aligns
+ at 99% coverage compared to this genomic sequence",
+      product whole gi 110611232,
+      location packed-int {
+        {
+          from 3819582,
+          to 3819596,
+          strand plus,
+          id gi 224514634,
+          fuzz-from lim lt
+        },
+        {
+          from 3819734,
+          to 3819828,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3882596,
+          to 3883140,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3888249,
+          to 3888335,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3889830,
+          to 3889889,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3890705,
+          to 3890834,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3891765,
+          to 3891841,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3892104,
+          to 3892319,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3892681,
+          to 3892707,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894256,
+          to 3894318,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894424,
+          to 3894510,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894821,
+          to 3894874,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3895054,
+          to 3895212,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3896317,
+          to 3896379,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3897149,
+          to 3897175,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3901215,
+          to 3901346,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3901801,
+          to 3901863,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3902772,
+          to 3902798,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3903840,
+          to 3903875,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3904629,
+          to 3904700,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3905190,
+          to 3905225,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3905579,
+          to 3905668,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3906889,
+          to 3906918,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907041,
+          to 3907067,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907517,
+          to 3907579,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907855,
+          to 3907929,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3908899,
+          to 3908925,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3909216,
+          to 3909269,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3909712,
+          to 3909786,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3910854,
+          to 3910922,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3911404,
+          to 3911446,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3911953,
+          to 3912015,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3918365,
+          to 3918408,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3918770,
+          to 3918910,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3919488,
+          to 3919632,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3919712,
+          to 3919785,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3920192,
+          to 3920320,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3921915,
+          to 3921947,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3923710,
+          to 3923955,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3924418,
+          to 3924615,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3925465,
+          to 3925580,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3926542,
+          to 3928074,
+          strand plus,
+          id gi 224514634
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_130445.2"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        },
+        code-break {
+          {
+            loc int {
+              from 3819583,
+              to 3819585,
+              strand plus,
+              id gi 224514634
+            },
+            aa ncbieaa 77
+          }
+        }
+      },
+      except TRUE,
+      comment "isoform 2 precursor is encoded by transcript variant 2; The
+ RefSeq protein has 2 substitutions, 2 non-frameshifting indels compared to
+ this genomic sequence",
+      product whole gi 110611233,
+      location packed-int {
+        {
+          from 3819583,
+          to 3819596,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3819734,
+          to 3819828,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3882596,
+          to 3883140,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3888249,
+          to 3888335,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3889830,
+          to 3889889,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3890705,
+          to 3890834,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3891765,
+          to 3891841,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3892104,
+          to 3892319,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3892681,
+          to 3892707,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894256,
+          to 3894318,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894424,
+          to 3894510,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3894821,
+          to 3894874,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3895054,
+          to 3895212,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3896317,
+          to 3896379,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3897149,
+          to 3897175,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3901215,
+          to 3901346,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3901801,
+          to 3901863,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3902772,
+          to 3902798,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3903840,
+          to 3903875,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3904629,
+          to 3904700,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3905190,
+          to 3905225,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3905579,
+          to 3905668,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3906889,
+          to 3906918,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907041,
+          to 3907067,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907517,
+          to 3907579,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3907855,
+          to 3907929,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3908899,
+          to 3908925,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3909216,
+          to 3909269,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3909712,
+          to 3909786,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3910854,
+          to 3910922,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3911404,
+          to 3911446,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3911953,
+          to 3912015,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3918365,
+          to 3918408,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3918770,
+          to 3918910,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3919488,
+          to 3919632,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3919712,
+          to 3919785,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3920192,
+          to 3920320,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3921915,
+          to 3921947,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3923710,
+          to 3923955,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3924418,
+          to 3924615,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3925465,
+          to 3925580,
+          strand plus,
+          id gi 224514634
+        },
+        {
+          from 3926542,
+          to 3926752,
+          strand plus,
+          id gi 224514634
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_569712.2"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "collagen alpha-1(XVIII) chain isoform 2 precursor"
+            }
+          }
+        }
+      },
+      dbxref {
+        {
+          db "CCDS",
+          tag str "CCDS42971.1"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data gene {
+        locus "COPG2",
+        desc "coatomer protein complex, subunit gamma 2",
+        syn {
+          "2-COP"
+        }
+      },
+      partial TRUE,
+      location int {
+        from 68178921,
+        to 68386440,
+        strand minus,
+        id other {
+          accession "NT_007933",
+          version 15
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 26958
+        },
+        {
+          db "HGNC",
+          tag id 2237
+        },
+        {
+          db "MIM",
+          tag id 604355
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "coatomer protein complex, subunit gamma 2"
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq transcript has 17 substitutions, 3 frameshifts, 2
+ non-frameshifting indels and aligns at 58% coverage compared to this genomic
+ sequence",
+      product whole other {
+        accession "NM_012133",
+        version 4
+      },
+      location packed-int {
+        {
+          from 68386314,
+          to 68386440,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68320191,
+          to 68320199,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68309996,
+          to 68310008,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68306565,
+          to 68306573,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68302047,
+          to 68302055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68288030,
+          to 68288038,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181362,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68178921,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_012133.4"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq protein has 3 frameshifts, 1 non-frameshifting indel
+ and aligns at 50% coverage compared to this genomic sequence",
+      product whole gi 109134349,
+      location packed-int {
+        {
+          from 68386314,
+          to 68386350,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68320191,
+          to 68320199,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68309996,
+          to 68310008,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68306565,
+          to 68306573,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68302047,
+          to 68302055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68288030,
+          to 68288038,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181362,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179359,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_036265.3"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "coatomer subunit gamma-2"
+            }
+          }
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "coatomer protein complex, subunit gamma 2"
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq transcript has 17 substitutions, 3 frameshifts, 2
+ non-frameshifting indels and aligns at 59% coverage compared to this genomic
+ sequence",
+      product whole other {
+        accession "NM_012133",
+        version 4
+      },
+      location packed-int {
+        {
+          from 68386314,
+          to 68386440,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68320191,
+          to 68320199,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68309996,
+          to 68310008,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68306565,
+          to 68306573,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68302047,
+          to 68302055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68288030,
+          to 68288038,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181362,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68178921,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_012133.4"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq protein has 3 frameshifts, 1 non-frameshifting indel
+ and aligns at 50% coverage compared to this genomic sequence",
+      product whole gi 109134349,
+      location packed-int {
+        {
+          from 68386314,
+          to 68386350,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68320191,
+          to 68320199,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68309996,
+          to 68310008,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68306565,
+          to 68306573,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68302047,
+          to 68302055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 68288030,
+          to 68288038,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68186540,
+          to 68186560,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68185146,
+          to 68185170,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181362,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179957,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179359,
+          to 68179489,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_036265.3"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "coatomer subunit gamma-2"
+            }
+          }
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "coatomer protein complex, subunit gamma 2"
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq transcript has 1 non-frameshifting indel and aligns
+ at 54% coverage compared to this genomic sequence",
+      product whole other {
+        accession "NM_012133",
+        version 4
+      },
+      location packed-int {
+        {
+          from 68386314,
+          to 68386440,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181343,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179958,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68178921,
+          to 68179487,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_012133.4"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq protein aligns at 45% coverage compared to this
+ genomic sequence",
+      product whole gi 109134349,
+      location packed-int {
+        {
+          from 68386314,
+          to 68386350,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68385164,
+          to 68385216,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68384531,
+          to 68384611,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68380649,
+          to 68380720,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68370551,
+          to 68370630,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68334703,
+          to 68334778,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68331257,
+          to 68331349,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68329865,
+          to 68329951,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68328668,
+          to 68328823,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68181245,
+          to 68181343,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        },
+        {
+          from 68180368,
+          to 68180506,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          }
+        },
+        {
+          from 68179958,
+          to 68180055,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 68179359,
+          to 68179487,
+          strand minus,
+          id other {
+            accession "NT_007933",
+            version 15
+          },
+          fuzz-to lim gt
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_036265.3"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "coatomer subunit gamma-2"
+            }
+          }
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    }
+  }
+}

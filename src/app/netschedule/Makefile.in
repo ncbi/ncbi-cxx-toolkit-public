@@ -1,0 +1,5 @@
+APP_PROJ = netscheduled
+SUB_PROJ = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

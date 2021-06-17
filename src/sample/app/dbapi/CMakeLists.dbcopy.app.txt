@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(dbcopy)
+  NCBI_sources(dbcopy)
+  NCBI_uses_toolkit_libraries(dbapi)
+  NCBI_project_watchers(ucko)
+NCBI_end_app()

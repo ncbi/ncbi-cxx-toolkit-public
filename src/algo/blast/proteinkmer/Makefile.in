@@ -1,0 +1,10 @@
+LIB_PROJ = proteinkmer
+SUB_PROJ = unit_test 
+#SUB_PROJ = unit_test demo
+
+REQUIRES = algo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+WATCHERS = madden boratyng

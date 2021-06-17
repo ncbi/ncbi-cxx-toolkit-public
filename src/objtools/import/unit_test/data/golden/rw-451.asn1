@@ -1,0 +1,130 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local str "gene_1",
+      data gene {
+        locus-tag "XNAG_00001"
+      },
+      location int {
+        from 10834,
+        to 11663,
+        strand minus,
+        id local str "chr1"
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "CNAG_00001"
+        },
+        {
+          qual "protein_id",
+          val "CNAG_00001T0"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "cds_1"
+        }
+      }
+    },
+    {
+      id local str "mrna_1",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 11637,
+          to 11663,
+          strand minus,
+          id local str "chr1"
+        },
+        int {
+          from 11422,
+          to 11572,
+          strand minus,
+          id local str "chr1"
+        },
+        int {
+          from 11006,
+          to 11306,
+          strand minus,
+          id local str "chr1"
+        },
+        int {
+          from 10834,
+          to 10922,
+          strand minus,
+          id local str "chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "CNAG_00001"
+        },
+        {
+          qual "transcript_id",
+          val "CNAG_00001T0"
+        },
+        {
+          qual "protein_id",
+          val "CNAG_00001T0"
+        }
+      },
+      xref {
+        {
+          id local str "cds_1"
+        },
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "cds_1",
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 11422,
+          to 11500,
+          strand minus,
+          id local str "chr1"
+        },
+        int {
+          from 11059,
+          to 11306,
+          strand minus,
+          id local str "chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "CNAG_00001"
+        },
+        {
+          qual "transcript_id",
+          val "CNAG_00001T0"
+        },
+        {
+          qual "protein_id",
+          val "CNAG_00001T0"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "gene_1"
+        }
+      }
+    }
+  }
+}

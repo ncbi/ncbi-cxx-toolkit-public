@@ -1,0 +1,59 @@
+--$Revision$
+--**********************************************************************
+--
+--  NCBI Validator Errors
+--  by Robert Smith
+--
+--**********************************************************************
+
+NCBI-ValErrors DEFINITIONS ::=
+BEGIN
+
+EXPORTS ValidErrItem, ValidError;
+
+ValidErrItem ::= SEQUENCE {
+    sev         INTEGER {
+        info (0),
+        warning (1),
+        error (2),
+        critical (3),
+        fatal (4),
+        trace (5)
+    },
+    errIndex    INTEGER,
+    msg         VisibleString,
+    objDesc     VisibleString,
+    accession   VisibleString,
+    featureId   VisibleString OPTIONAL,
+    seqOffset   INTEGER OPTIONAL,
+    objectType  INTEGER {
+        seqentry (1),
+        bioseq (2),
+        bioseqset (3),
+        seqdesc (4),
+        seqannot (5),
+        annotdesc (6),
+        seqfeat (7),
+        seqalign (8),
+        seqgraph (9),
+        seqsub (10),
+        submitblock (11)
+    } OPTIONAL,
+    errorName   VisibleString OPTIONAL,
+    errorGroup  VisibleString OPTIONAL,
+    accnver     VisibleString OPTIONAL,
+    version     INTEGER OPTIONAL,
+    location    VisibleString OPTIONAL,
+    product-loc VisibleString OPTIONAL,
+    bioseq      VisibleString OPTIONAL,
+    locus-tag   VisibleString OPTIONAL,
+    obj-content VisibleString OPTIONAL
+}
+
+
+ValidError ::= SEQUENCE {
+    errs SET OF ValidErrItem
+}
+
+END
+

@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc100_wchar)
+  NCBI_sources(wchar common)
+  NCBI_add_test(test-odbc100 odbc100_wchar)
+NCBI_end_app()
+

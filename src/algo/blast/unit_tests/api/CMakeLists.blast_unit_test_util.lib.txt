@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_lib(blast_unit_test_util)
+  NCBI_sources(test_objmgr blast_test_util)
+  NCBI_uses_toolkit_libraries(
+    blastdb xnetblast
+    blast ncbi_xloader_genbank test_boost
+    xobjutil
+  )
+  NCBI_project_watchers(camacho madden fongah2)
+NCBI_end_lib()
+

@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(tds100_dynamic1)
+  NCBI_sources(dynamic1 common)
+  NCBI_add_test(test-tds100 tds100_dynamic1)
+NCBI_end_app()
+

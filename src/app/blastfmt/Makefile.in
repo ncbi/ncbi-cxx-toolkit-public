@@ -1,0 +1,7 @@
+# $Id$
+
+REQUIRES = objects
+APP_PROJ = guidetree
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

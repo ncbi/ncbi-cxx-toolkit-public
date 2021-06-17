@@ -1,0 +1,26 @@
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs std {
+    {
+      dim 2,
+      ids {
+        gi 408227868,
+        gi 353645737
+      },
+      loc {
+        int {
+          from 1363,
+          to 1395,
+          id gi 408227868
+        },
+        int {
+          from 0,
+          to 100,
+          strand minus,
+          id gi 353645737
+        }
+      }
+    }
+  }
+}

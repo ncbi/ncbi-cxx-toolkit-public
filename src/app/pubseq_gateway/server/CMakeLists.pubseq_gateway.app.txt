@@ -1,0 +1,22 @@
+#############################################################################
+#  $Id$
+#############################################################################
+
+NCBI_begin_app(pubseq_gateway)
+  NCBI_sources(
+    pubseq_gateway pending_operation http_server_transport pubseq_gateway_exception
+    uv_extra pubseq_gateway_utils pubseq_gateway_stat pubseq_gateway_handlers
+    pubseq_gateway_convert_utils pubseq_gateway_cache_utils cass_fetch psgs_reply
+    exclude_blob_cache alerts timing
+    cass_monitor id2info insdc_utils introspection psgs_request getblob_processor
+    cass_processor_base cass_blob_base tse_chunk_processor resolve_processor
+    resolve_base async_resolve_base async_bioseq_info_base annot_processor
+    get_processor psgs_dispatcher cass_blob_id ipsgs_processor
+    osg_connection osg_mapper osg_caller osg_fetch osg_processor osg_processor_base
+    osg_resolve_base osg_resolve osg_getblob_base osg_getblob osg_annot cdd_processor
+    psgs_io_callbacks accession_blob_history_processor
+  )
+  NCBI_uses_toolkit_libraries(cdd_access xregexp id2 seq psg_cassandra psg_protobuf psg_cache xconnext connext xconnserv xconnect)
+  NCBI_requires(OpenSSL CASSANDRA MT Linux H2O LMDB UV PROTOBUF connext -ICC)
+  NCBI_project_watchers(satskyse)
+NCBI_end_app()

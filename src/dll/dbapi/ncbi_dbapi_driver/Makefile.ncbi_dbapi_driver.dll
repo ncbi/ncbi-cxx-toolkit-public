@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = ncbi_dbapi_driver
+
+HOSTED_LIBS    = dbapi_driver
+
+DEPENDENCIES   = ncbi_core
+
+CPPFLAGS = -DNCBI_DBAPIDRIVER_EXPORTS
+

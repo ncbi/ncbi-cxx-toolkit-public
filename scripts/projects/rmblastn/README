@@ -1,0 +1,84 @@
+
+RMBLAST Release Notes 
+   ( NCBI 2.2.28+ )
+
+ Overview
+ ========
+ RMBlast is a RepeatMasker compatible version of the standard
+ NCBI BLAST suite.  The primary difference between this 
+ distribution and the NCBI distribution is the addition of a new
+ program "rmblastn" for use with RepeatMasker and RepeatModeler.
+
+ RMBlast supports RepeatMasker searches by adding a few 
+ necessary features to the stock NCBI blastn program.  These
+ include:
+
+   - Support for custom matrices ( without KA-Statistics ).
+   - Support for cross_match-like complexity adjusted scoring.
+     ( Cross_match is Phil Green's seeded smith-waterman search 
+       algorithm: www.phrap.org ) 
+   - Support for cross_match-like masklevel filtering.
+ 
+ Caveats
+ =======
+ Changes to the core ncbi algorithms were minimized and attempts were 
+ made to shield the other standard NCBI programs included in this distrubtion
+ from these changes.  However, we recommend that this package 
+ be installed in a distinct directory from the standard NCBI 
+ distribution on your system.  This will minimize the chance that
+ packages other than RepeatMasker or RepeatModeler use this installation.
+ This distribution is only intended for use with RepeatMasker/RepeatModeler.
+
+ Credits
+ =======
+ Arian Smit - Institute for Systems Biology
+ Robert Hubley <rhubley@systemsbiology.org>  - Institute for Systems Biology
+ 
+ National Center for Biotechnology Information ( NCBI )
+ 
+ And special thanks to:
+   Tom Madden,
+   Denis Vakatov,
+   Aaron Ucko,
+   Ning Ma, and
+   George Coulouris 
+ at NCBI for allowing me to bug them with questions about
+ the BLAST source code, assistance with finding resources,
+ and lending an ear to a tired programmer.
+
+ This work is funded by NHGRI grant # RO1 HG002939-07
+
+ Installation
+ ============
+ Binary Distribution:
+   Download the binary distribution appropriate for your computer
+   platform and extract the contents:
+
+   % tar zxvf ncbi-blast-2.2.28+-x64-linux.tar.gz
+  
+   
+ Source Distribution:
+   Unpack the source distribution and run configure.  The following
+   example configures rmblast for multi-threaded use ( required by
+   RepeatMasker ), turns off debugging code generation, and sets
+   the installation path to be /usr/local/rmblast.  NOTE: This will
+   install the programs in /usr/local/rmblast/bin, /usr/local/rmblast/lib
+   and so on:
+  
+    % tar zxvf rmblast-1.0-ncbi-blast-2.2.28+.tar.gz
+    % cd rmblast-1.0-ncbi-blast-2.2.28+-src/c++/
+    % ./configure --with-mt --prefix=/usr/local/rmblast --without-debug
+
+   Build the programs:
+
+    % make
+
+   Install the programs:
+
+    % make install
+
+
+ Feedback
+ ========
+ Please visit www.repeatmasker.org to submit questions or feedback
+ for us.

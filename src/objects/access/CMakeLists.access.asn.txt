@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(access)
+  NCBI_dataspecs(access.asn)
+  NCBI_uses_toolkit_libraries(xser)
+NCBI_end_lib()
+

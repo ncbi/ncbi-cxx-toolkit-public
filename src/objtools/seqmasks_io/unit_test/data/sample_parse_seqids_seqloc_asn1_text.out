@@ -1,0 +1,5 @@
+Seq-loc ::= int {
+  from 78,
+  to 89,
+  id gi 555
+}

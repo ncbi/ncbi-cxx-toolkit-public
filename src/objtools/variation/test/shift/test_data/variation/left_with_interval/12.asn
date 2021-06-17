@@ -1,0 +1,44 @@
+Variation ::= {
+  name "NM_004638.3:c.-284_-283insTGGGAGG",
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc pnt {
+              point 0,
+              strand plus,
+              id gi 314122240
+            },
+            mol unknown
+          }
+        },
+        data instance {
+          type ins,
+          delta {
+            {
+              seq literal {
+                length 7,
+                seq-data iupacna "AGGTGGG"
+              },
+              action ins-before
+            }
+          }
+        }
+      }
+    }
+  },
+  ext {
+    {
+      type str "Variation Normalization",
+      data {
+        {
+          label str "Left Interval Shifted",
+          data bool TRUE
+        }
+      }
+    }
+  }
+}
+Test Fully Shifted : 0

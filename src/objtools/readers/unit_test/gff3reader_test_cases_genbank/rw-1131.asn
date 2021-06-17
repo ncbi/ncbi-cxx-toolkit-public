@@ -1,0 +1,104 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 1,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 381,
+        to 483,
+        strand plus,
+        id local str "Scaffold10"
+      },
+      qual {
+        {
+          qual "ID",
+          val "tRNA-Lys1_tRNA"
+        },
+        {
+          qual "codon_recognized",
+          val "ttt"
+        },
+        {
+          qual "product",
+          val "tRNA-Lys"
+        }
+      }
+    },
+    {
+      id local id 2,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 487,
+        to 559,
+        strand plus,
+        id local str "Scaffold10"
+      },
+      qual {
+        {
+          qual "ID",
+          val "tRNA-Lys4_tRNA"
+        },
+        {
+          qual "codon_recognized",
+          val "ttt"
+        },
+        {
+          qual "product",
+          val "tRNA-Lys"
+        }
+      }
+    },
+    {
+      id local id 3,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 597,
+        to 678,
+        strand plus,
+        id local str "Scaffold10"
+      },
+      qual {
+        {
+          qual "ID",
+          val "tRNA-Leu1_tRNA"
+        },
+        {
+          qual "codon_recognized",
+          val "gag"
+        },
+        {
+          qual "product",
+          val "tRNA-Leu"
+        }
+      }
+    },
+    {
+      id local id 4,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 697,
+        to 778,
+        strand plus,
+        id local str "Scaffold10"
+      },
+      qual {
+        {
+          qual "ID",
+          val "tRNA-Leu2_tRNA"
+        },
+        {
+          qual "product",
+          val "tRNA-Leu"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+# $Id$
+
+APP_PROJ = asnval
+srcdir = @srcdir@
+
+include @builddir@/Makefile.meta

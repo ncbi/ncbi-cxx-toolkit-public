@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xgrid2cgi SHARED)
+  NCBI_hosts_projects(
+    misc/grid_cgi/xgridcgi
+  )
+  NCBI_add_definitions(NCBI_XGRIDCGI_EXPORTS)
+NCBI_end_lib()

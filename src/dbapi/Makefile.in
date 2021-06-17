@@ -1,0 +1,11 @@
+# $Id$
+
+SUB_PROJ = driver simple lang_bind test
+LIB_PROJ = dbapi
+
+REQUIRES = dbapi
+
+WATCHERS = ucko satskyse
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,175 @@
+Release 1.10.0 (2020-07-10)
+
+    * PSG: add anti recursion flag (CXX-11438)
+    * PSG: create and use a high level Reply object at the very beginning
+      (CXX-11425)
+    * PSG server MaxDebug configuration segfault (CXX-11402)
+    * PSG server get_na processor filter (CXX-11401)
+    * PSG: incorrect handling of the CHttpReply<> instance (CXX-11397)
+    * PSG - add API to retrieve biodata from other (non-Cassandra/LMDB) sources
+      (CXX-11312)
+
+Release 1.9.0 (2020-04-09)
+
+    * Updated libuv 1.35.0, datastax 2.15.1, lmdb 0.9.24 (CXX-11268)
+
+Release 1.8.7 (2020-03-18)
+
+    * PSG - if no path is specified then send back a help page (CXX-11225)
+    * PSG -- for counters and other metrics also send a detailed explanation
+      (CXX-11224)
+    * PSG: identify the source of ResolutionError (CXX-11173)
+    * CNcbiApplication -- use package version (if any) if the app version
+      is not specified (CXX-11166)
+
+Release 1.8.6 (2020-01-30)
+
+    * PSG (Statistics) -- allow to specify the time period (CXX-11013)
+    * PSG (Statistics) -- replace CHistogram with CHistogramTimeSeries
+      (CXX-11014)
+    * PSG (Statistics) -- allow to retrieve histogram(s) for specified
+      parameter(s) within a specified time period (CXX-11015)
+    * PSG - on error, use original (non-altered) seq-id in the error message
+      (CXX-11118)
+    * PSG -add tests for PDB resolutions (CXX-11133)
+    * PSG -- LMDB API fails to open cache for sat 11 through 47 (CXX-11167)
+
+
+Release 1.8.4 (2019-12-30)
+
+    * PSG -- log client request errors (4XX) as Warnings rather than Errors
+      (CXX-11098)
+    * PSG -- optimize performance (server side) (CXX-11091)
+    * PSG -- add in-server tracing (CXX-11067)
+
+Release 1.8.3 (2019-12-12)
+
+    * PSG -- add in-server tracing (CXX-11067)
+    * PSG -- crashes if service port is already occupied by another process
+      (CXX-11066)
+    * PSG server - to stop using primary OSLT id in SI2CSI lookup (CXX-11062)
+
+Release 1.8.2 (2019-12-02)
+
+    * PSG - allow to resolve accessions with wrong types (INSDC ones only)
+      (CXX-11031)
+    * PSG -- if primary id is substituted, then move it to "seq_ids"
+      (CXX-11029)
+    * PSG: adjust bioseq accession in case of protobuf src and protobuf dst
+      (CXX-11025)
+    * PSG -- in "get_na", also send back full bioseq info (CXX-11021)
+    * PSG -- BIOSEQ_INFO += "name" field (CXX-10990)
+    * PSG -- avoid duplication when substituting primary id with a secondary id
+      (CXX-10981)
+    * PSG -- substitute seq_id_type when substituting primary seq-ids
+      (CXX-10980)
+
+Release 1.8.1 (2019-10-09)
+
+    * CCassBlobWaiter trace output affect performance (ID-5874)
+
+Release 1.8.0 (2019-10-09)
+
+    * PSG - to resolve the currently "ACC.VER-less" (and/or "ACC.VER-twerked")
+      seq-ids (CXX-10728)
+
+Release 1.7.3 (2019-09-17)
+
+    * PSG -- handling accession-less multi-GI blob chains (CXX-10896)
+
+Release 1.7.2 (2019-09-12)
+
+    * PSG: set alerts if the LMDB cache reported any errors on opening
+      (CXX-10906)
+    * PSG -- fails to lookup OSLT in BIOSEQ_INFO if OSLT is taken from name (or
+      locus) rather than accession (CXX-10901)
+    * PSG -- handling accession-less multi-GI blob chains (CXX-10896)
+    * PSG - ID/get_tse_chunk - do not fail if ID2_INFO is empty in the
+      requested blob (CXX-10892)
+    * PSG -- use "User-Agent:" HTTP header to pass client's name (and to log)
+      (CXX-10890)
+    * PSG -- allow to run if the cache is absent or invalid (CXX-10889)
+    * Server hangs on get_tse_chunk request (CXX-10882)
+    * PSG Stats -- collect timing on full resolution processsing (CXX-10872)
+
+Release 1.7.1 (2019-08-15)
+
+    * CPubseqGatewayCacheBlobProp::LookupBySatKey() modifies last_modified in
+      case of an exception (ID-5791)
+
+Release 1.7.0 (2019-08-13)
+
+    * PSG -- use client IP from X-Forwarded-For (CXX-10823)
+    * PSG - to start even if Cassandra is down (CXX-10782)
+    * Move PSG server project into a sub-dir "server/" (CXX-10807)
+    * PSG: timing statistics total count to include anomalies (CXX-10772)
+    * PSG - ID/get_tse_chunk - to get an Nth chunk (ID2-split wise) of the
+      given split ver of the blob (CXX-10638)
+
+Release 1.6.0 (2019-06-27)
+
+    * PSG -- add op stats collection (and reporting) (CXX-10722)
+    * PSG: introduce configuration alerts (CXX-10736)
+
+Release 1.5.0 (2019-06-05)
+
+    * PSG -- add "server alerts" mechanism (CXX-10682)
+    * PSG: SigTerm may delay the graceful shutdown (CXX-10681)
+    * Allow encrypted [ADMIN].auth_token (CXX-10674)
+
+Release 1.4.0 (2019-05-17)
+
+    * PSG -- termination with command and signals (CXX-10592)
+    * PSG: when reply in JSON, use the standard JSON strings (CXX-10664)
+
+Release 1.3.1 (2019-05-08)
+
+    * PSG -- add counter for TEST/io requests (CXX-10646)
+
+Release 1.3.0 (2019-05-07)
+
+    * PSG - add "exclude_blobs" parameter (for "ID/get" command) (CXX-10596)
+    * PSG - per-client cache of already returned data blobs (CXX-10597)
+    * PSG (server and client) -- new command TEST/io (to test performance)
+      (CXX-10619)
+    * PSG - send blob related errors in blobs (CXX-10642)
+    * PSG -- "eSlimTSE" to send back smaller original blobs (CXX-10635)
+
+Release 1.2.0
+
+    * PSG -- use schema type 4 for blob sat mapping (CXX-10524)
+    * Blob retrieval by bio_seq: convert to asyncronous (CXX-10055)
+
+Release 1.1.10
+
+    * UV-1.25.0, DATASTAX-2.11.0, H2O-2.2.5
+    * PSG -- also send the data blob's SAT with the NA metainfo (JIRA:
+      CXX-10491)
+    * PSG: incorrect request counter in get_na requests (JIRA: CXX-10494)
+    * PSG core dump in LMDB cache lookup (JIRA: CXX-10510)
+    * PSG -- make sure to catch all exceptions (JIRA: CXX-10517)
+    * PSG - always provide "Content-Type" HTTP header (JIRA: CXX-10518)
+
+Release 1.1.2 (2019-02-12)
+
+    * PSG -- to accumulate smaller responses (RESOLVE, GET_NA) data, send it in
+      one op (JIRA: CXX-10474)
+    * PSG -- improve NamedAnnot metainfo retrieval latency (now around 45ms)
+      (JIRA: CXX-10467)
+    * Add annot_info to the get_na request
+
+Release 1.1.1 (2019-02-05)
+
+    * Unified JSON dictionary keys style
+    * Async NA retrieval improvement: proper handling of non-first page
+      timeouts
+
+Release 1.1.0 (2019-02-04)
+
+    * Implementation of ID/get_na
+    * Adjustments to the changed DB scheme
+    * Various bug fixes
+
+Release 1.0.0 (2018-10-18)
+
+    * Initial release based on TRUNK

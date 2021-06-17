@@ -1,0 +1,2 @@
+MODULE_PATH = objects/mmdb3
+MODULE_IMPORT = objects/general/general objects/pub/pub objects/mmdb1/mmdb1 objects/mmdb2/mmdb2

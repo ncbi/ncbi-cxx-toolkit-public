@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xloader_patcher SHARED)
+  NCBI_hosts_projects(
+    objtools/data_loaders/patcher/ncbi_xloader_patcher
+  )
+  NCBI_add_definitions(NCBI_XLOADER_PATCHER_EXPORTS)
+NCBI_end_lib()

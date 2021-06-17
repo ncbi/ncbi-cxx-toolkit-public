@@ -1,0 +1,13 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xreader SHARED)
+  NCBI_sources(
+    dispatcher reader writer processors wgsmaster
+    reader_snp seqref blob_id request_result
+    reader_id1_base reader_id2_base reader_service incr_time info_cache
+  )
+  NCBI_add_definitions(NCBI_XREADER_EXPORTS)
+  NCBI_uses_toolkit_libraries(id1 id2 xcompress xconnect xobjmgr)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+

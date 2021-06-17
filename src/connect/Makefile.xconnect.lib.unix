@@ -1,0 +1,3 @@
+# $Id$
+include $(srcdir)/Makefile.connect.lib.unix
+include $(srcdir)/Makefile.xxconnect.lib.unix

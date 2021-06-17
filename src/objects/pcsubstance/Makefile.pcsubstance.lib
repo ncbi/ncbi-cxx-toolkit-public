@@ -1,0 +1,6 @@
+LIB = pcsubstance
+SRC = pcsubstance__ pcsubstance___
+
+
+USES_LIBRARIES =  \
+    pub

@@ -1,0 +1,26 @@
+//
+
+                                  1                                                   50
+                        MF109352  ATGGGTGCGA GAGCGTCGGT ACTAAGCGGG GGAAAATTAG ATGCATGGGA
+                        MF109391  ATGGGTGCGA GAGCGTCAGT ATTAAGCGGG GGAAAATTAG ATACATGGGA
+                        MF109560  ATGGGTGCGA GAGCGTCAGT ATTAAGAGGC GGAAAATTAG ATAAATGGGA
+                        MF109354  .......... .......... .......... .......... ..........
+                        MF109358  ATGGGTGCGA GAGCGTCAGT ATTAACTGGG GGAAAATTAG ATGCATGGGA
+                       Consensus  ATGGGTGCGA GAGCGTCagT aTTaag.GGg GgAaAATTaG Ata.aTGGGA
+
+                                  51                                                 100
+                        MF109352  AAAAATTCGG TTGAGGCCCG GGGGAAAGAA ACAATATAAA ATGAAACATT
+                        MF109391  AAAAATTCGG TTAAGGCCAG GGGGAAAGAA AAAATATAGA CTAAAACACC
+                        MF109560  GAAAATTAGG TTAAGGCCAG GAGGAAAGAA ACGCTATAGG CTAAAACACC
+                        MF109354  .......... .......... .......... .......... ..........
+                        MF109358  AAAAATTCGG TTACGGCCAG GAGGAAAGAA AAAATATAGG CTTAAACATA
+                       Consensus  aAaaATTcgG tTaaGGCCAG GgGGaAagAA AaaaTAta.a .TaAAaCAt.
+
+                                  101              119
+                        MF109352  ...A...... .........
+                        MF109391  .......... .........
+                        MF109560  ...GGGG... .........
+                        MF109354  GCTGA..... .........
+                        MF109358  .......... .........
+                       Consensus  .......... .........
+

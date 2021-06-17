@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(bamindex_test)
+  NCBI_sources(bamindex_test bam_test_common)
+  NCBI_uses_toolkit_libraries(bamread xobjreadex)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
+

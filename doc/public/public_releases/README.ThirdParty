@@ -1,0 +1,67 @@
+
+     Easy-build bundle of 3rd-party packages used by the NCBI C++ Toolkit.
+
+
+                      ----------------------
+
+Some parts of the C++ Toolkit (notably the GUI ones) just cannot be built
+without 3rd-party libraries (such as FLTK), and other parts of the
+Toolkit will work more efficiently or provide more functionality if some
+3rd-party packages (such as BerkeleyDB which is used for local data cache and
+for local data storage) are available.
+
+To facilitate the building of these 3rd-party libraries, there is an archive
+that bundles together source code of the 3rd-party packages, plus a MSVC++.NET
+"solution" to build all (or any combination) of them.
+
+All of the libraries in this archive feature open-source licenses, but
+the exact licensing terms vary from library to library; please see the
+individual libraries' documentation for details.
+
+                      ----------------------
+HOWTO:
+
+1. Download the bundle from:
+     ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/2006/Aug_14_2006/ThirdParty/ncbi_ThirdParty_win--Aug_14_2006.zip  (or *.exe).
+
+2. Expand the archive (e.g. in "U:\").
+
+3. Load the following "solution" to MSVC++ .NET:
+     U:\ncbi_ThirdParty_win--Aug_14_2006\third_party_libs.sln
+
+4. Set up the needed configuration(s) (e.g. ReleaseDLL) and build project
+   "-BUILD-ALL-" (or, you can build individual packages if you want to).
+
+5. As a result, you will have the requested 3rd-party packages built and
+   installed "NCBI-wise", meaning that you should now be able to use them
+   to build the NCBI C++ Toolkit.
+   NOTE:  Remember to rebuild "-CONFIGURE-" project of the C++ Toolkit
+          solution after you build and install any new configuration of
+          any of these package.
+
+6. To "tune" the NCBI C++ Toolkit build framework to use the 3rd-party libs
+   installed at [other than  the default "U:\ncbi_ThirdParty_win--Aug_14_2006"]
+   location, edit paths in:
+     ncbi_cxx_win--Aug_14_2006\compilers\msvc710_prj\project_tree_builder.ini
+   before (re)running the "-CONFIGURE-" project of a C++ Toolkit's solution.
+
+!) If you see a lot of fatal build errors in the 3rd-party dependent NCBI
+   projects, then make sure you really did built the 3rd-party libs for the
+   configuration(s) you are trying to build the Toolkit with!
+
+
+                      ----------------------
+PROBLEMS:
+    There are some 3rd-party (mostly optional) libs which we just cannot
+    distribute (such as Sybase ones), so you 'd have to have them installed
+    and tune the Toolkit to use them (see [6] above) if you really need it. 
+
+
+                      ----------------------
+
+Just FYI, the full list of the packages with the original versions, patches
+and download URLs:
+
+  ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/2006/Aug_14_2006/ThirdParty/package_list
+
+We are also planning to compose a similar bundle for UNIX.

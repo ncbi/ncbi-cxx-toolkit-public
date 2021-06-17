@@ -1,0 +1,9 @@
+# $Id$
+
+REQUIRES = objects
+
+LIB_PROJ = objmgr
+SUB_PROJ = test util split
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

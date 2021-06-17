@@ -1,0 +1,23 @@
+# $Id$
+
+WATCHERS = boratyng dicuccio 
+
+SRC_CXX = blast cobalt dist hit hitlist phi prog \
+          resfreq rps seg seq seqalign traceback tree kmercounts clusterer patterns options \
+          links
+    
+SRC   = $(SRC_CXX)
+
+LIB = cobalt
+
+ASN_DEP = seq seqset biotree xnetblast blastdb
+
+CXXFLAGS  = $(FAST_CXXFLAGS)
+LDFLAGS = $(FAST_LDFLAGS)
+
+DLL_LIB = $(BLAST_LIBS) xalgoalignnw xalgophytree fastme
+
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
+USES_LIBRARIES =  \
+    $(BLAST_LIBS) xalgoalignnw xalgophytree

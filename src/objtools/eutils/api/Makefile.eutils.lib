@@ -1,0 +1,18 @@
+# $Id$
+
+SRC = eutils efetch einfo esearch egquery epost elink esummary espell \
+      ehistory
+
+LIB = eutils
+DLL_LIB = einfo esearch egquery epost elink esummary espell uilist ehistory
+
+# sic; applies equally well to DTDs
+ASN_DEP = einfo esearch egquery epost elink esummary espell uilist \
+          ehistory
+
+WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    egquery ehistory einfo elink epost esearch espell esummary uilist \
+    xconnect

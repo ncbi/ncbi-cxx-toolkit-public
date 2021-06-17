@@ -1,0 +1,10 @@
+# $Id$
+
+LIB = sequtil
+SRC = sequtil sequtil_convert sequtil_convert_imp sequtil_manip sequtil_tables sequtil_shared
+
+WATCHERS = grichenk ucko
+
+
+USES_LIBRARIES =  \
+    xncbi

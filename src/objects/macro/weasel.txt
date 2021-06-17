@@ -1,0 +1,11 @@
+/\bcandidate\b/i
+/\bhypothetical\b/i
+/\bnovel\b/i
+/\bpossible\b/i
+/\bpotential\b/i
+/\bpredicted\b/i
+/\bprobable\b/i
+/\bputative\b/i
+/\buncharacterized\b/i
+/\bunique\b/i
+/\s/

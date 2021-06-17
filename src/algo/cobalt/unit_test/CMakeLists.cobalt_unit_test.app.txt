@@ -1,0 +1,17 @@
+# $Id$
+
+NCBI_begin_app(cobalt_unit_test)
+  NCBI_sources(
+    cobalt_unit_test options_unit_test kmer_unit_test clusterer_unit_test
+    links_unit_test seq_unit_test cobalt_test_util
+  )
+  NCBI_uses_toolkit_libraries(cobalt)
+
+  NCBI_set_test_assets(cobalt_unit_test.ini data)
+  NCBI_set_test_timeout(400)
+  NCBI_add_test()
+
+  NCBI_project_watchers(boratyng)
+
+NCBI_end_app()
+

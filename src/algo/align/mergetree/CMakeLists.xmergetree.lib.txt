@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(xmergetree)
+  NCBI_sources(merge_tree merge_tree_core equiv_range)
+  NCBI_uses_toolkit_libraries(xobjmgr seqset)
+  NCBI_project_watchers(boukn)
+NCBI_end_lib()
+

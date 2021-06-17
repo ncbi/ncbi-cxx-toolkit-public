@@ -1,0 +1,10 @@
+[AddToProject]
+ResourceFiles=cn3d.rc
+
+[Linker]
+SubSystem=2
+AdditionalOptions=comctl32.lib Rpcrt4.lib
+LinkIncremental=2
+OptimizeReferences=0
+EnableCOMDATFolding=0
+

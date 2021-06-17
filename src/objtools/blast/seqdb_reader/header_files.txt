@@ -1,0 +1,110 @@
+
+Author:  Kevin Bealer
+Updated: April 2008
+
+----- Header Files -----
+
+Naming:   <any-name>.[np]hr
+Encoding: binary
+Style:    concatenated Blast-def-line-set binary ASN.1 objects
+
+  Header files provide meta-data about sequences such as the sequence
+  title and taxonomic ID, and information about other NCBI resources
+  associated with each sequence, such as the "linkout bits".
+
+--- Format ---
+
+  For each sequence of letters (strand or sequence data) object, the
+  BlastDB volume stores binary-ASN.1-encoded meta-data conforming to
+  the "Blast-def-line" schema.  "Non-redundant" databases can use
+  several of these objects for each sequence, therefore the actual
+  object stored for each sequence is actually a Blast-def-line-set.
+
+  In BlastDB jargon the word "sequence" can mean either a specific
+  defline and the associated strand data, or the strand data plus all
+  of the associated deflines.  There is one defline stored for each
+  sequence (sense 1), and one Blast-def-line-set object for each
+  sequence (sense 2).
+
+  Blast-def-line-set objects are packed in the header file without
+  padding or any indication of where one defline set ends and the next
+  starts.  To find header data for a given OID, the library (SeqDB or
+  readdb) looks in the index file to find the offsets of the desired
+  object and the one following it, then parses the intervening binary
+  ASN.1 data.  Code wishing to process all header data objects in OID
+  order can parse each one directly from the header file, since each
+  parse can start at the end point of the previous parse, however this
+  is not normally done (and is not a supported technique).
+  
+  (Various encodings exist for binary ASN.1 objects.  NCBI uses the
+  `BER' encoding.  This publication has more information on BER:
+  http://www.itu.int/ITU-T/studygroups/com17/languages/X.690-0207.pdf.)
+
+--- Defline Data ---
+  
+  Each Blast-def-line (called a "defline" for short), encodes meta
+  data about one sequence (sense 1).  For a precise definition of this
+  ASN.1 type, see the definition in the C++ toolkit in the file
+  src/objects/blastdb/blast.asn.  Here are some notes on how BlastDB
+  uses the fields of this type:
+
+    title:
+        A human-readable text description of the purpose, family,
+        biological role, and/or origin (species) of the sequence.
+
+    seqid:
+        A list of sequence identifiers for this defline.  When a BLAST
+        database volume is constructed, ids found in this field are
+        usually indexed in the ISAM indices associated with the
+        volume.  (See also The indexing technique is configurable, allowing the
+        user to choose different configurations of how many variations
+        of these ids should be stored.)
+
+    taxid:
+        A taxonomic ID for this sequence, or 0 if none is known.  This
+        field is optional, but some older code treats it as mandatory,
+        so a zero is usually encoded if the taxonomic ID is not known,
+        rather than not setting the field at all.
+
+    memberships:
+        This field describes the membership of this defline in several
+        OID-mask filtered subsets.  If this field is used, then for
+        each bit defined here, there are (potentially) corresponding
+        OID mask files and alias files that provide filtering at both
+        sequence and defline level for this volume.  This is only done
+        for a few special volumes.
+
+        Membership bits can be enabled by selected an alias file that
+        specifies one or more of them.  If enabled, when a user asks
+        for a Bioseq or sequence headers for this OID, they will only
+        get deflines where the enabled membership bits match the
+        membership bits found in those deflines.
+
+        For more information on membership bit filtering, see also the
+        file alias_files.txt.  For information on the encoding of OID
+        masks, see the file oid_masks.txt.
+
+    links:
+        These are the "linkout bits".  Each bit found here indicates
+        that some other NCBI resource contains additional information
+        about the sequence associated with this defline.
+
+    other-info:
+        This is an `extension' field, allowing additional information
+        to be provided for each defline without changing the ASN.1
+        type definitions.  The additional information must be stored
+        as numeric values.  Currently, the only use of this field is
+        to store the "Protein Group Identifier", or "PIG" value.  The
+        PIG is not considered a "real" sequence ID, as it is specific
+        to the uniquely spelled sequence (strand) data, rather than to
+        a defline, and because it is for internal NCBI purposes rather
+        than for communication with other facilities.
+
+        PIG values are only used with protein data.  If no PIG exists,
+        other-info should be empty, or (if more applications of this
+        field are defined in the future) zero should be used for the
+        first field to indicate the lack of a PIG.
+
+  For definitions of linkout bit values, see the C++ toolkit file
+  include/objects/blastdb/defline_extra.hpp.
+

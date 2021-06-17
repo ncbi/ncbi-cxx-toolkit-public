@@ -1,0 +1,9 @@
+# $Id$
+#################################
+
+
+LIB_PROJ = xbma_refiner xbma_refiner_gui
+SUB_PROJ = bma_refiner_app
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

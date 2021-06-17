@@ -1,0 +1,11 @@
+/*named-content*/
+.ncbi-class , .ncbi-type, .ncbi-func {font-weight:bold;font-style:italic; white-space:pre;}
+.ncbi-app , .ncbi-lib ,  .ncbi-macro , .ncbi-monospace , .ncbi-var, .ncbi-cmd , .ncbi-code, .ncbi-path {font-family: monospace; font-size: 1.2296em; white-space:pre;}
+.nctnt-pre{font-size:1em; white-space:pre;}
+.ncbi-cmd  {color:#985735; white-space:pre;}
+.ncbi-code{color:#59331F; white-space:pre;}
+.ncbi-path {color:#777777; white-space:pre;}
+.pageobject{font-weight:bold;color:#985735; white-space:pre;}
+.highlight{background-color:yellow;font-weight:bold;}
+
+

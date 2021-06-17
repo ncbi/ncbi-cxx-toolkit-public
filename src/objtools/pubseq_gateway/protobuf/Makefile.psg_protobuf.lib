@@ -1,0 +1,13 @@
+# $Id$
+
+LIB = psg_protobuf
+
+SRC = psg_protobuf.pb
+
+CPPFLAGS = $(PROTOBUF_INCLUDE) $(ORIG_CPPFLAGS)
+LIBS = $(PROTOBUF_LIBS) $(ORIG_LIBS)
+
+WATCHERS = satskyse saprykin
+
+REQUIRES = MT PROTOBUF
+

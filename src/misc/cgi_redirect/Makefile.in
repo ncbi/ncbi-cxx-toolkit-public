@@ -1,0 +1,14 @@
+######################################################
+# $Id$
+# Author:  Vladimir Ivanov (ivanov@ncbi.nlm.nih.gov)
+######################################################
+
+# Meta-makefile -- CGI redirect lib and app
+######################################################
+
+APP_PROJ = cgi_redirect
+LIB_PROJ = cgi_redirect
+PROJ_TAG = web
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

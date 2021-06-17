@@ -1,0 +1,44 @@
+[OPTIONS]
+Compatibility=1.1
+Full-text search=Yes
+Contents file=Cn3D_Commands.hhc
+Compiled file=Cn3D_Commands.chm
+Default Window=Help
+Default topic=Contents.htm
+Charset=utf-8
+Index file=Cn3D_Commands.hhk
+Title=Cn3D Commands
+
+[WINDOWS]
+Help=,"Cn3D_Commands.hhc","Cn3D_Commands.hhk","Contents.htm",,,,,,0x2420,,0x380e,,,,,0,,,
+
+[FILES]
+StructureWindow.htm
+SW_File.htm
+SW_View.htm
+SW_ShowHide.htm
+SW_Style.htm
+SW_Windows.htm
+SW_CDD.htm
+SequenceWindow.htm
+AW_View.htm
+AW_Edit.htm
+AW_Mouse.htm
+AW_Unaligned.htm
+AW_Update.htm
+refinerHelp.htm
+UpdateWindow.htm
+UW_View.htm
+UW_Edit.htm
+UW_Mouse.htm
+UW_Unaligned.htm
+UW_Algorithms.htm
+UW_Alignments.htm
+KeysAndMouse.htm
+Contents.htm
+
+[ALIAS]
+#include "Cn3D_Commands_alias.h"
+
+[MAP]
+#include "Cn3D_Commands_ids.h"

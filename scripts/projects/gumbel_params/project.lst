@@ -1,0 +1,15 @@
+corelib$
+corelib/hash_impl$
+corelib/impl$
+algo$
+algo/blast$
+algo/blast/gumbel_params
+util$
+util/tables$
+util/bitset$
+util/regexp
+util/xregexp$
+objects$
+serial$
+serial/impl$
+serial/datatool$

@@ -1,0 +1,12 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+##sequence-region NW_007566280.1 1 419
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=3656
+NW_007566280.1	RefSeq	region	1	419	.	+	.	ID=NW_007566280.1:1..419;Dbxref=taxon:3656;Name=Unknown;chromosome=Unknown;cultivar=DHL92;gbkey=Src;genome=genomic;mol_type=genomic DNA
+NW_007566280.1	BestRefSeq	gene	243	415	.	-	.	ID=gene-MIR156I;Dbxref=GeneID:103318442,miRBase:MI0023209;Name=MIR156I;description=microRNA MIR156i;gbkey=Gene;gene=MIR156I;gene_biotype=miRNA;gene_synonym=cme-MIR156i
+NW_007566280.1	BestRefSeq	primary_transcript	243	415	.	-	.	ID=rna-NR_120723.1;Parent=gene-MIR156I;Dbxref=GeneID:103318442,Genbank:NR_120723.1,miRBase:MI0023209;Name=NR_120723.1;gbkey=precursor_RNA;gene=MIR156I;product=microRNA MIR156i;transcript_id=NR_120723.1
+NW_007566280.1	BestRefSeq	exon	243	415	.	-	.	ID=exon-NR_120723.1-1;Parent=rna-NR_120723.1;Dbxref=GeneID:103318442,Genbank:NR_120723.1,miRBase:MI0023209;gbkey=precursor_RNA;gene=MIR156I;product=microRNA MIR156i;transcript_id=NR_120723.1
+NW_007566280.1	BestRefSeq	miRNA	339	358	.	-	.	ID=rna-MIR156I;Parent=rna-NR_120723.1;Dbxref=GeneID:103318442,miRBase:MIMAT0026105,miRBase:MI0023209;gbkey=ncRNA;gene=MIR156I;product=cme-miR156i
+NW_007566280.1	BestRefSeq	exon	339	358	.	-	.	ID=exon-MIR156I-1;Parent=rna-MIR156I;Dbxref=GeneID:103318442,miRBase:MIMAT0026105,miRBase:MI0023209;gbkey=ncRNA;gene=MIR156I;product=cme-miR156i
+###

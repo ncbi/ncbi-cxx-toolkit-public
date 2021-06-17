@@ -1,0 +1,4 @@
+This directory contains ui images copied from the ui download directory, which is at:
+/core/jig/n/ui ..
+
+We had to copy it here so that the references to images from the CSS files remain in intact. Better to copy this directory here than pollute the ui install directory.

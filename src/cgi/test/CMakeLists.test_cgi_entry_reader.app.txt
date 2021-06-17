@@ -1,0 +1,15 @@
+# $Id$
+
+NCBI_begin_app(test_cgi_entry_reader)
+
+  NCBI_sources(test_cgi_entry_reader)
+  NCBI_uses_toolkit_libraries(xcgi)
+  NCBI_begin_test(test_cgi_entry_reader)
+    NCBI_set_test_command(test_cgi_entry_reader.sh test_cgi_entry_reader.dat)
+    NCBI_set_test_assets(test_cgi_entry_reader.sh test_cgi_entry_reader.dat)
+  NCBI_end_test()
+
+  NCBI_project_watchers(ucko)
+
+NCBI_end_app()
+

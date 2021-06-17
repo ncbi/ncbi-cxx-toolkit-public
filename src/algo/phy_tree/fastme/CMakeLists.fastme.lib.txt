@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(fastme)
+  NCBI_sources(NNI bNNI bme fastme gme graph heap inputs newickstring traverse)
+  NCBI_uses_external_libraries(${ORIG_LIBS})
+  NCBI_project_watchers(jcherry gorelenk)
+NCBI_end_lib()
+

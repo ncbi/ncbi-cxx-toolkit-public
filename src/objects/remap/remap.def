@@ -1,0 +1,9 @@
+[-]
+_export = NCBI_REMAP_EXPORT
+clients = remap_client
+
+[remap_client]
+class   = CRemapClient
+service = REMAP
+request = Remap-request.request
+reply   = Remap-reply.reply

@@ -1,0 +1,7 @@
+# $Id$
+
+APP_PROJ = dbapi_testspeed
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

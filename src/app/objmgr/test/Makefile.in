@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile("CACHE" project)
+#################################
+
+APP_PROJ = objmgr_perf_test
+SUB_PROJ = 
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(pepXML)
+  NCBI_dataspecs(pepXML.xsd)
+  NCBI_uses_toolkit_libraries(xser)
+  NCBI_project_watchers(lewisg slottad)
+NCBI_end_lib()
+

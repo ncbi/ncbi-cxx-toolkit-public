@@ -1,0 +1,6 @@
+# $Id$
+
+DLL_PROJ = pkg_proteus
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

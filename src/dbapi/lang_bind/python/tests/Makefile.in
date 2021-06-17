@@ -1,0 +1,11 @@
+# $Id$
+
+UNIX_USR_PROJ = symlink
+
+APP_PROJ = python_ncbi_dbapi_test
+PROJ_TAG = test
+
+EXTRA_CONFIGURABLES = Makefile.symlink
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

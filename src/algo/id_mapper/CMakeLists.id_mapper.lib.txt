@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(xid_mapper)
+  NCBI_sources(id_mapper)
+  NCBI_uses_toolkit_libraries(xobjmgr seqset sqlitewrapp)
+  NCBI_project_watchers(boukn meric)
+NCBI_end_lib()
+

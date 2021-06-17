@@ -1,0 +1,37 @@
+Web-Env ::= {
+  queries {
+    {
+      seqNumber 1,
+      time unix 929130371,
+      command search {
+        db "medline",
+        term "cat",
+        field "",
+        count 211903
+      }
+    },
+    {
+      seqNumber 2,
+      time full {
+        year 1999,
+        month 12,
+        day 15,
+        hour 20,
+        minute 5,
+        second 0
+      },
+      command related {
+        base select {
+          db "medline",
+          items {
+            items '0123456789'H,
+            count 5
+          }
+        },
+        relation "link",
+        db "protein",
+        items itemCount -20
+      }
+    }
+  }
+}

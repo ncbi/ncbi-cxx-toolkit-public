@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db100_cancel)
+  NCBI_sources(cancel common)
+  NCBI_set_test_assets(cancel.sql)
+  NCBI_add_test(test-db100 db100_cancel)
+NCBI_end_app()
+

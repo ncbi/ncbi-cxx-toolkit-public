@@ -1,0 +1,41 @@
+# $Id$
+
+ASN_DEP = blastdb
+
+SRC = seqdb \
+seqdbbitset \
+seqdbfilter \
+seqdbatlas \
+seqdbalias \
+seqdbcommon \
+seqdbfile \
+seqdbimpl \
+seqdbvol \
+seqdbvolset \
+seqdboidlist \
+seqdbisam \
+seqdbtax \
+seqdbgilistset \
+seqdbexpert \
+seqdbblob \
+seqdbcol \
+seqdbgimask \
+seqdbobj \
+seqdb_lmdb \
+seqdblmdbset \
+seqidlist_reader
+
+LIB = seqdb
+DLL_LIB = blastdb $(SOBJMGR_LIBS) $(LMDB_LIB)
+LIBS = $(BLAST_THIRD_PARTY_LIBS)
+
+CFLAGS   = $(FAST_CFLAGS)
+CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS) $(BLAST_THIRD_PARTY_INCLUDE) 
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+WATCHERS = camacho fongah2
+
+
+USES_LIBRARIES =  \
+    $(DL_LIBS) $(SOBJMGR_LIBS) blastdb

@@ -1,0 +1,16 @@
+NCBI BDB library is a C++ library on top of Berkeley DB C API v 4.1.xx.
+It works with b-tree based Berkeley DB files.
+
+NCBI BDB library implements several key features:
+  - integration with NCBI C++ Toolkit, error handling and diagnistics
+  - object oriented wrapper on top of Berkeley DB
+  - extendable set of basic scalar datatypes
+  - improved record management
+
+ Berkeley DB is a compact small footprint embedded data management system.
+ It does not provide any database specific query language, instead it has a
+ C language API to manipulate directly on database records, create cursors for
+ key based or sequential data access.
+
+ Berkeley DB is an open source product developed and supported by 
+ Sleepycat Software (www.sleepycat.com).

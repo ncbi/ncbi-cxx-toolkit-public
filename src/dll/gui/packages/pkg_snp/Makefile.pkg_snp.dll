@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = pkg_snp
+
+HOSTED_LIBS    = pkg_snp
+
+DEPENDENCIES   = ncbi_core ncbi_seq ncbi_seqext \
+                 gui_objects gui_core gui_utils gui_widgets \
+                 muparser snp gui_widgets_seq
+

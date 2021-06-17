@@ -1,0 +1,23 @@
+# $Id$
+
+# Meta-makefile ("cn3d" program)
+#################################
+
+APP_PROJ = cn3d cn3d_nowin
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+macapp: cn3d
+	rm -rf Cn3D.app
+	mkdir -p Cn3D.app/Contents/MacOS
+	cp Cn3D Cn3D.app/Contents/MacOS
+	cp $(srcdir)/Info.plist Cn3D.app/Contents
+	echo -n "APPLCn3D" > Cn3D.app/Contents/PkgInfo
+	mkdir Cn3D.app/Contents/Resources
+	cp $(srcdir)/mac-cn3dApp.icns Cn3D.app/Contents/Resources/cn3dApp.icns
+	cp $(srcdir)/mac-cn3dDoc.icns Cn3D.app/Contents/Resources/cn3dDoc.icns
+	cp $(srcdir)/HelpBlocks/Cn3D_Commands.htb Cn3D.app/Contents/Resources/cn3d_commands.htb
+	mkdir Cn3D.app/Contents/Resources/data
+	cp $(srcdir)/data/* Cn3D.app/Contents/Resources/data/
+

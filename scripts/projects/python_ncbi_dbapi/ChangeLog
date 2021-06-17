@@ -1,0 +1,150 @@
+Version 1.23.0 (2021-03-04):
+* Advance to version 25.0 of the stable C++ Toolkit components.
+* Update Python version coverage, substituting 3.9 for 3.6 (and keeping
+  3.7 and 3.8).
+* Correct reported parameter style to quoted, because our named style
+  uses a non-standard prefix from the specification's perspective.
+* Clean up deprecation warnings.
+
+Version 1.22.0 (2021-01-05):
+* Advance to version 24.0 of the stable C++ Toolkit components.
+* Correct error reporting, particularly in cases of internal exception
+  conversion (as when passing non-string arguments to connect).
+
+Version 1.21.0 (2020-02-25):
+* Advance to version 23.0 of the stable C++ Toolkit components, with
+  FreeTDS 1.0 ("ftds100") now the default "ftds" and 0.95 ("ftds95")
+  still available by explicit request (but 0.64 ["ftds64"] gone).
+* Update Python version coverage, substituting 3.8 for 2.7 (and
+  keeping 3.6 and 3.7).
+
+Version 1.20.1 (2019-07-12):
+* Clean up a stray dependency on libconnect.so.
+
+Version 1.20.0 (2019-07-11):
+* Advance to version 22.0 of the stable C++ Toolkit components and GCC 7.3,
+  with FreeTDS 1.0 (ftds100) available by explicit request.
+* Modernize Python version coverage, substituting 3.6 and 3.7 for 3.4
+  (and keeping 2.7 for now).
+* Fix AttributeError reporting under Python 3.
+
+Version 1.19.4 (2018-02-05):
+* Work around a Python limitation that could lead to crashes at exit.
+
+Version 1.19.3 (2017-11-20):
+* Properly distinguish text and binary values for the sake of Python 3
+  users and Python 2 users who've explicitly opted into Unicode.
+
+Version 1.19.2 (2017-09-06):
+* Fix Python type object initialization code, addressing bogus
+  reported type names and more possible Python 3 crashes.
+
+Version 1.19.1 (2017-09-05):
+* Avoid crashing at exit under Python 3.
+
+Version 1.19.0 (2017-08-31):
+* Advance to version 20.0 of the stable C++ Toolkit components, with
+  mbed TLS favored over GNUTLS but the latter kept around for
+  compatibility (linked statically, as before).
+* Log via the standard Python logging module.
+
+Version 1.18.0 (2016-10-13):
+* Advance to version 18.0 of the stable C++ Toolkit components, with
+  ftds95 as default ftds and support for contacting dispd over HTTPS.
+
+Version 1.17.0 (2016-06-23):
+* Advance to version 17.0 of the stable C++ Toolkit components, complete
+  with an ftds95 driver in addition to ftds(64).
+
+Version 1.16.1 (2016-01-15):
+* Cover Python 3.4 in addition to 2.7.
+
+Version 1.16.0 (2015-09-22):
+* Advance to version 16.1 of the stable C++ Toolkit components, and
+  GCC 4.8.1.
+
+Version 1.15.2 (2015-09-21):
+* Produce wheels for decentralized installation, not tarballs for
+  centralized installation.
+
+Version 1.15.1 (2013-02-06):
+* Rework exception translation to follow PEP 249 more closely.
+
+Version 1.15.0 (2012-11-09):
+* Optionally release Python's global interpreter lock around blocking
+  DBAPI calls.
+* Advance to version 11.0 of the stable C++ Toolkit components.
+
+Version 1.14.0 (2012-09-04):
+* Improve thread safety.
+* Build against stable C++ Toolkit components (version 10.1 at present).
+
+Version 1.13.3 (2012-03-16):
+* Make compatible with Python 2.7.
+
+Version 1.13.2 (2012-02-13):
+* Restore support for passing fractional seconds, accidentally lost earlier.
+
+Version 1.13.1 (2011-10-06):
+* Bug fixes for 1.13.0, notably addressing a memory leak.
+
+Version 1.13.0 (2011-10-04):
+* Allow cursor, connection, and transaction objects to work as "with"
+  statement context managers/guards.
+* Further extend cursors to support iteration and properly advertise
+  description and row count metadata.
+* Force use of compatible support libraries, regardless of LD_LIBRARY_PATH.
+
+Version 1.12.6 (2010-05-14):
+* Permit calling stored procedures whose names start with SQL verbs.
+
+Version 1.12.5 (2010-04-22):
+* Ensure correct output types even when filling in NULLs.
+* Properly report error text from stored procedures.
+
+Version 1.12.4 (2010-02-25):
+* Optionally return all strings as unicode objects.
+
+Version 1.12.3 (2010-02-12):
+* Support Python datetime and unicode objects.
+* Allow binding by position (to tuples and lists, not just dictionaries).
+* Support Sybase stored procedures with numeric output parameters.
+
+Version 1.12.2 (2009-02-27):
+* Support connecting to Sybase OpenServer instances.
+
+Version 1.12.1 (2009-02-25):
+* Support mirror pairs whose primary side can switch back and forth.
+
+Version 1.12.0 (2009-01-08):
+* Initial release using a release procedure.
+* Don't raise exceptions for info-level messages from the server.
+* Recognize stored procedures' return codes even when no row result sets
+  precede them.
+* Supply cursor.description metadata.
+
+Version 1.11.0 (2008-09-03):
+* Support passing driver-specific parameters, such as text encoding.
+* Handle server-side errors gracefully, and make specific details available.
+
+Version 1.10.0 (2008-08-06):
+* Update per changes to the C++ Toolkit's exception-handling framework.
+
+Version 1.9.0 (2008-06-10):
+* Map Python None objects to SQL NULLs.
+
+Version 1.8.0 (2008-06-04):
+* Introduce a dbapi.Binary constructor for IMAGE fields.
+
+Version 1.7.0 (2008-06-02):
+* Retrieve stored procedures' output parameters (caching row results to do so).
+* Translate C++ exceptions into Python errors.
+
+Version 1.6.0 (2008-02-08):
+* Describe SQL statement input and output parameters.
+
+Version 1.5.1 (2007-10-25):
+* Fix builds against Python 2.4 on 64-bit platforms.
+
+Version 1.5 (2007-10-17):
+* First internal production release.

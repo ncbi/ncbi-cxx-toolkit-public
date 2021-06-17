@@ -1,0 +1,16 @@
+# $Id$
+
+NCBI_begin_lib(xblastformat)
+  NCBI_sources(
+    blastfmtutil blastxml_format blastxml2_format blast_format
+    data4xmlformat data4xml2format build_archive vecscreen_run sam blast_async_format
+  )
+  NCBI_add_definitions(NCBI_MODULE=BLASTFORMAT)
+  NCBI_uses_toolkit_libraries(
+    blastxml blastxml2
+    align_format blastxml blastxml2
+    xblast xformat
+  )
+  NCBI_project_watchers(jianye zaretska madden camacho fongah2)
+NCBI_end_lib()
+

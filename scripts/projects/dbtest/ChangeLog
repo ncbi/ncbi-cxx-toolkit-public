@@ -1,0 +1,25 @@
+1.5.9 (05/03/2021)
+    - Add application lock on MSSQL DB to prevent races on loading results. CXX-11875 
+
+1.5.8 (09/30/2020)
+
+    - ??? CXX-11533, CXX-11539
+
+1.5.2 (09/18/2017)
+    - Call ncbi_applog directly to load test results into Applog, instead of generating .sh files. CXX-9502
+
+
+1.3.7 (May 28, 2013)
+    - Ignoring "Unicode_" profixes in the platform identifiers to avoid rejecting unicode builds results loading
+
+
+September 23, 2008
+Add support for timed out and skipped tests and for timed out units.
+
+
+September 5. 2008
+Speed up database queries for cgi-interface.
+
+
+Jul 28, 2008
+First test release using the release procedure

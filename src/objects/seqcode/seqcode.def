@@ -1,0 +1,10 @@
+[-]
+_export = NCBI_SEQCODE_EXPORT
+
+[Seq-map-table]
+E.table._type = ncbi::TEntrezId
+E.table._storage_type = ncbi::TIntId
+
+[Seq-code-table]
+E.comps._type = ncbi::TEntrezId
+E.comps._storage_type = ncbi::TIntId

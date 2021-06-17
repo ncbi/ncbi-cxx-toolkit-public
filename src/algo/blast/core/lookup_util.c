@@ -1,0 +1,204 @@
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ */
+
+/** @file lookup_util.c
+ *  Utility functions for lookup table generation.
+ */
+
+#include <algo/blast/core/lookup_util.h>
+
+static void fkm_output(Int4 * a,
+                       Int4 n,
+                       Int4 p,
+                       Uint1 * output,
+                       Int4 * cursor,
+                       Uint1 * alphabet);
+static void fkm(Int4 * a,
+                Int4 n,
+                Int4 k,
+                Uint1 * output,
+                Int4 * cursor,
+                Uint1 * alphabet);
+
+Int4
+iexp(Int4 x,
+     Int4 n)
+{
+    Int4 r, y;
+
+    r = 1;
+    y = x;
+
+    if (n == 0)
+        return 1;
+    if (x == 0)
+        return 0;
+
+    while (n > 1) {
+        if ((n % 2) == 1)
+            r *= y;
+        n = n >> 1;
+        y = y * y;
+    }
+    r = r * y;
+    return r;
+}
+
+Int4
+ilog2(Int8 x)
+{
+    Int4 lg = 0;
+
+    if (x == 0)
+        return 0;
+
+    while ((x = x >> 1))
+        lg++;
+
+    return lg;
+}
+
+/** Output a Lyndon word as part of a de Bruijn sequence.
+ *
+ *if the length of a lyndon word is divisible by n, print it. 
+ * @param a the shift register
+ * @param p
+ * @param n
+ * @param output the output sequence
+ * @param cursor current location in the output sequence
+ * @param alphabet optional translation alphabet
+ */
+
+static void
+fkm_output(Int4 * a,
+           Int4 n,
+           Int4 p,
+           Uint1 * output,
+           Int4 * cursor,
+           Uint1 * alphabet)
+{
+    Int4 i;
+
+    if (n % p == 0)
+        for (i = 1; i <= p; i++) {
+            if (alphabet != NULL)
+                output[*cursor] = alphabet[a[i]];
+            else
+                output[*cursor] = a[i];
+            *cursor = *cursor + 1;
+        }
+}
+
+/**
+ * iterative fredricksen-kessler-maiorana algorithm
+ * to generate de bruijn sequences.
+ *
+ * generates all lyndon words, in lexicographic order.
+ * the concatenation of all lyndon words whose length is 
+ * divisible by n yields a de bruijn sequence.
+ *
+ * further, the sequence generated is of shortest lexicographic length.
+ *
+ * references: 
+ * http://mathworld.wolfram.com/deBruijnSequence.html
+ * http://www.theory.csc.uvic.ca/~cos/inf/neck/NecklaceInfo.html
+ * http://www.cs.usyd.edu.au/~algo4301/ , chapter 7.2
+ * http://citeseer.nj.nec.com/ruskey92generating.html
+ *
+ * @param a the shift register
+ * @param n the number of letters in each word
+ * @param k the size of the alphabet
+ * @param output the output sequence
+ * @param cursor the current location in the output sequence
+ * @param alphabet optional translation alphabet
+ */
+
+static void
+fkm(Int4 * a,
+    Int4 n,
+    Int4 k,
+    Uint1 * output,
+    Int4 * cursor,
+    Uint1 * alphabet)
+{
+    Int4 i, j;
+
+    fkm_output(a, n, 1, output, cursor, alphabet);
+
+    i = n;
+
+    do {
+        a[i] = a[i] + 1;
+
+        for (j = 1; j <= n - i; j++)
+            a[j + i] = a[j];
+
+        fkm_output(a, n, i, output, cursor, alphabet);
+
+        i = n;
+
+        while (a[i] == k - 1)
+            i--;
+    }
+    while (i > 0);
+}
+
+void
+debruijn(Int4 n,
+         Int4 k,
+         Uint1 * output,
+         Uint1 * alphabet)
+{
+    Int4 *a;
+    Int4 cursor = 0;
+
+    /* n+1 because the array is indexed from one, not zero */
+    a = (Int4 *) calloc((n + 1), sizeof(Int4));
+
+    /* compute the (n,k) de Bruijn sequence and store it in output */
+
+    fkm(a, n, k, output, &cursor, alphabet);
+
+    sfree(a);
+    return;
+}
+
+Int4
+EstimateNumTableEntries(BlastSeqLoc * location, Int4 *max_off)
+{
+    Int4 num_entries = 0;
+    Int4 curr_max = 0;
+    BlastSeqLoc *loc = location;
+
+    while (loc) {
+        num_entries += loc->ssr->right - loc->ssr->left;
+        curr_max = MAX(curr_max, loc->ssr->right);
+        loc = loc->next;
+    }
+
+    *max_off = curr_max;
+    return num_entries;
+}

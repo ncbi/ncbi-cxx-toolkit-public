@@ -1,0 +1,8 @@
+# $Id$
+
+APP_PROJ = test_ctransition test_ctransition_nlmzip
+
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

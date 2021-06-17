@@ -1,0 +1,9 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+##sequence-region AJ965727.1 1 48
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=3888
+AJ965727.1	EMBL	region	1	48	.	+	.	ID=AJ965727.1:1..48;Dbxref=taxon:3888;clone=1006-R11;gbkey=Src;mol_type=genomic DNA;strain=JI1006
+AJ965727.1	EMBL	repeat_region	1	5	.	+	.	ID=id-AJ965727.1:1..5;Note=right terminal repeat%3B~target site for PDR1 retrotransposon%3B~terminal sequence duplication%2C TSD;gbkey=repeat_region;partial=true;rpt_type=TERMINAL;start_range=.,1
+AJ965727.1	EMBL	mobile_genetic_element	1	5	.	+	.	ID=id-AJ965727.1:1..5-2;gbkey=mobile_element;mobile_element_type=transposon:PDR1;partial=true;start_range=.,1
+###

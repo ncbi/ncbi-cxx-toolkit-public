@@ -1,0 +1,5 @@
+APP_PROJ = netstoraged
+SUB_PROJ = utils
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

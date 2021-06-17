@@ -1,0 +1,31 @@
+
+<!-- USER LIST FORM START -->
+
+<h2>User List</h2>    
+
+<table border="1" cellspacing="0" bgcolor="#E8E8E8" cellpadding="10"><tr><td>
+
+    <table border="2" width="0" cellspacing="0" cellpadding="2">
+      <tr>
+        <th><br></th>
+        <th>Handle</th>
+        <th>User Name</th>
+        <th>Administrator</th>
+        <th>Books</th>
+      </tr>
+      <@USER_LIST@>
+    </table> 
+    
+    <br>
+    <input type="hidden" name="cmd" value="user_ops">
+    <input type="submit" name="opt" value="New User">&nbsp;
+    <input type="submit" name="opt" value="Delete">&nbsp;
+    <input type="submit" name="opt" value="Back">
+
+</td></tr>
+</table>	 
+
+<br><small>* Click on User Name or Handle to edit User's Access Rights.</small>
+	 
+	 
+<!-- USER LIST FORM END -->

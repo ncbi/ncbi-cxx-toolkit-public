@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = ncbi_xloader_blastdb
+
+HOSTED_LIBS    = ncbi_xloader_blastdb
+
+DEPENDENCIES   = ncbi_core ncbi_pub ncbi_seq ncbi_seqext seqdb
+
+CPPFLAGS = -DNCBI_XLOADER_BLASTDB_EXPORTS
+

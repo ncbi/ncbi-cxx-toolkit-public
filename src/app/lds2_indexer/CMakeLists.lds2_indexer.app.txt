@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(lds2_indexer)
+  NCBI_sources(lds2_indexer)
+  NCBI_uses_toolkit_libraries(lds2)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()
+

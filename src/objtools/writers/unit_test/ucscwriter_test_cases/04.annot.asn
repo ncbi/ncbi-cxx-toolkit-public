@@ -1,0 +1,18 @@
+Seq-annot ::= {
+  desc {
+  },
+  data ftable {
+    {
+      data region "region: 1",
+      location int {
+        from 700244,
+        to 714067,
+        id other {
+          accession "NC_000001",
+          version 10
+        }
+      },
+      title "Line:1"
+    }
+  }
+}

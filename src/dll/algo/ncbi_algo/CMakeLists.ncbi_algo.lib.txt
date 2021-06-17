@@ -1,0 +1,34 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_algo SHARED)
+  NCBI_hosts_projects(
+    algo/phy_tree/fastme/fastme
+    algo/align/contig_assembly/xalgocontig_assembly
+    algo/dustmask/xalgodustmask
+    algo/gnomon/gnomon
+    algo/phy_tree/xalgophytree
+    algo/sequence/xalgoseq
+    algo/seqqa/xalgoseqqa
+    algo/text/xalgotext
+    algo/segmask/xalgosegmask
+    algo/winmask/xalgowinmask
+    algo/id_mapper/id_mapper
+
+    algo/align/prosplign/prosplign
+    algo/align/nw/xalgoalignnw
+    algo/align/splign/xalgoalignsplign
+    algo/align/util/xalgoalignutil
+
+#    algo/blast/core/blast
+    algo/cobalt/cobalt
+    algo/blast/composition_adjustment/composition_adjustment
+    algo/phy_tree/phytree_format/phytreeformat
+    algo/blast/proteinkmer/proteinkmer
+    algo/blast/dbindex/xalgoblastdbindex
+    algo/blast/format/xblastformat
+    algo/blast/api/xblast
+    algo/primer/xprimer
+  )
+  NCBI_hosts_virtual_projects(blast)
+  NCBI_add_definitions(NCBI_XALGO_EXPORTS)
+NCBI_end_lib()

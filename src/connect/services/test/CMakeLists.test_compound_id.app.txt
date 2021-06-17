@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_compound_id)
+  NCBI_sources(test_compound_id)
+  NCBI_uses_toolkit_libraries(xconnserv)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()
+

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(hfilter)
+  NCBI_sources(hitfilter_app)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoalignutil)
+  NCBI_project_watchers(badrazat)
+NCBI_end_app()
+

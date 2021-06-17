@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = ncbi_xreader_pubseqos
+
+HOSTED_LIBS    = ncbi_xreader_pubseqos
+
+DEPENDENCIES   = ncbi_core ncbi_dbapi ncbi_dbapi_driver \
+                 ncbi_pub  ncbi_seq   ncbi_seqext  ncbi_xreader
+
+CPPFLAGS = -DNCBI_XREADER_PUBSEQOS_EXPORTS
+

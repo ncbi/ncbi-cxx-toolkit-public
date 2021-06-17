@@ -1,0 +1,5 @@
+ASN_PROJ = id1
+LIB_PROJ = id1cli
+SUB_PROJ = test
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

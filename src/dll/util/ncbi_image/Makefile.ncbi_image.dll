@@ -1,0 +1,9 @@
+# $Id$
+
+DLL = ncbi_image
+
+HOSTED_LIBS    = ximage
+DEPENDENCIES   = ncbi_core
+
+CPPFLAGS = -DNCBI_XIMAGE_EXPORTS
+

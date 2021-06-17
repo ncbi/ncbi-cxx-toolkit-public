@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_lib(gumbelparams)
+  NCBI_sources(
+    gumbel_params pvalues general_score_matrix sls_alp sls_alp_data
+    sls_alp_regression sls_alp_sim sls_pvalues njn_localmaxstatmatrix
+    njn_localmaxstat njn_localmaxstatutil njn_ioutil njn_matrix
+    njn_stringutil njn_dynprogprob njn_dynprogproblim njn_dynprogprobproto
+    sls_normal_distr_array
+  )
+  NCBI_uses_toolkit_libraries(tables xutil)
+  NCBI_project_watchers(boratyng madden camacho)
+NCBI_end_lib()
+

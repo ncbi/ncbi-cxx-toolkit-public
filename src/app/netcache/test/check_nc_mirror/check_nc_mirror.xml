@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <defaults>
+    <read_test_freq>10</read_test_freq>
+    <write_test_freq>300</write_test_freq>
+    <outdated>500</outdated>
+  </defaults>
+  <mirrors>
+    <mirror id="test-mirror">
+      <defaults>
+        <read_test_freq>15</read_test_freq>
+      </defaults>
+      <!--<clients>
+        <client host="service10"/>
+        <client host="service11"/>
+        <client host="service32"/>
+        <client host="service33"/>
+      </clients>-->
+      <servers>
+        <domain name="be-md">
+          <server host="service12" port="9100"/>
+          <server host="service12" port="9101">
+            <read_test_freq>20</read_test_freq>
+          </server>
+          <server host="service13" port="9100"/>
+          <server host="service13" port="9101"/>
+        </domain>
+        <domain name="st-va">
+          <server host="service32" port="9100"/>
+          <server host="service32" port="9101"/>
+          <server host="service33" port="9100"/>
+          <server host="service33" port="9101"/>
+        </domain>
+      </servers>
+      <services>
+        <netcache>
+          <service id="NC_FOO"/>
+          <service id="NC_BAR"/>
+        </netcache>
+        <icache>
+          <service id="IC_FOO"/>
+          <service id="IC_BAR"/>
+        </icache>
+      </services>
+    </mirror>
+    <mirror id="test-mirror-local">
+      <!--<clients>
+        <client host="gizmo4"/>
+      </clients>-->
+      <servers>
+        <domain name="be-md">
+          <server host="service10" port="9000"/>
+          <server host="service11" port="9000"/>
+        </domain>
+      </servers>
+      <services>
+        <netcache>
+          <service id="NC_FOO_LOCAL"/>
+          <service id="NC_BAR_LOCAL"/>
+        </netcache>
+        <icache>
+          <service id="IC_FOO_LOCAL"/>
+          <service id="IC_BAR_LOCAL"/>
+        </icache>
+      </services>
+    </mirror>
+  </mirrors>
+</configuration>

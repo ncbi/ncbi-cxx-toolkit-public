@@ -1,0 +1,13 @@
+# $Id$
+
+NCBI_begin_lib(xalgoalignutil)
+  NCBI_sources(
+    align_shadow blast_tabular score_builder score_lookup align_filter
+    genomic_compart patch_sequence align_compare align_sort
+    depth_filter tabular_fmt collection_score named_collection_score_impl
+    best_placement
+  )
+  NCBI_uses_toolkit_libraries(xalgoseq xblast xqueryparse)
+  NCBI_project_watchers(kapustin dicuccio)
+NCBI_end_lib()
+

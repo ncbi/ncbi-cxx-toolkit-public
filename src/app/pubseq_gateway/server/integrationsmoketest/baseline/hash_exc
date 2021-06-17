@@ -1,0 +1,25 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": {
+        "id": "gb|U83448.1|RCU83448",
+        "type": 5
+    },
+    "other_ids": [
+        {
+            "id": "gi|1778878",
+            "type": 12
+        }
+    ],
+    "molecule_type": "dna",
+    "length": 3182,
+    "seq_state": 10,
+    "state": 10,
+    "blob_id": {
+        "id": "4.66360584"
+    },
+    "tax_id": 781,
+    "date_changed": "03/06/2012 17:18:00",
+    "gi": 1778878
+}
+]

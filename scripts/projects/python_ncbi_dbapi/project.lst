@@ -1,0 +1,35 @@
+corelib$
+util$
+util/bitset$
+util/cache update-only
+util/checksum
+connect$
+connect/ext$
+connect/mbedtls
+dll
+dbapi$
+dbapi/driver$
+dbapi/driver/impl$
+dbapi/driver/samples
+dbapi/driver/util$ update-only
+dbapi/driver/odbc/unix_odbc$ update-only
+dbapi/driver/ctlib$
+dbapi/driver/ftds95$
+dbapi/driver/ftds95/impl$ update-only
+dbapi/driver/ftds95/freetds$
+dbapi/driver/ftds95/freetds/freetds$ update-only
+dbapi/driver/ftds95/freetds/tds$
+dbapi/driver/ftds95/freetds/replacements$
+dbapi/driver/ftds95/freetds/ctlib$
+dbapi/driver/ftds95/ctlib$
+dbapi/driver/ftds100$
+dbapi/driver/ftds100/impl$ update-only
+dbapi/driver/ftds100/freetds$
+dbapi/driver/ftds100/freetds/freetds$ update-only
+dbapi/driver/ftds100/freetds/tds$
+dbapi/driver/ftds100/freetds/replacements$
+dbapi/driver/ftds100/freetds/ctlib$
+dbapi/driver/ftds100/ctlib$
+dbapi/driver/ftds-default$
+dbapi/lang_bind$
+dbapi/lang_bind/python

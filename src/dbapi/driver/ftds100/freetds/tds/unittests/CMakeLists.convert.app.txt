@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(tds100_convert)
+  NCBI_sources(convert)
+  NCBI_add_include_directories(${NCBI_CURRENT_SOURCE_DIR}/..)
+  NCBI_add_test()
+NCBI_end_app()
+

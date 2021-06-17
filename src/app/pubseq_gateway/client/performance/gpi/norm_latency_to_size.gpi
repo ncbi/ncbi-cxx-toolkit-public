@@ -1,0 +1,4 @@
+set output 'norm_latency_to_size.png'
+set terminal pngcairo size 1800,500
+set logscale xy
+plot '<grep true norm_latency.txt |awk "{print \$6, \$4}"' with dots title 'latency/rounded\_size to size'

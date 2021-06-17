@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(netstorage_gc)
+  NCBI_sources(netstorage_gc netstorage_gc_database netstorage_gc_exception)
+  NCBI_uses_toolkit_libraries(netstorage sdbapi)
+  NCBI_project_watchers(satskyse)
+NCBI_end_app()
+

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_image SHARED)
+  NCBI_hosts_projects(
+    util/image/image
+  )
+  NCBI_add_definitions(NCBI_XIMAGE_EXPORTS)
+NCBI_end_lib()

@@ -1,0 +1,15 @@
+# $Id$
+
+# Adjust ICC flags to avoid problematic references to proprietary functions.
+CORE = .core_
+CORE_SRCDIR = .
+include $(srcdir)/../core/Makefile.blast.lib.unix
+
+ifeq "$(COMPILER)-$(DEBUG_SFX)" "icc-Release"
+  blast_setup_cxx.o: $(srcdir)/blast_setup_cxx.cpp
+	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL:-O3=-O2) $< -o $@ $(CXX_FILTER)
+
+  psiblast_aux_priv.o pssm_engine.o: %.o: $(srcdir)/%.cpp
+	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) -fno-builtin-log $< -o $@ \
+	    $(CXX_FILTER)
+endif

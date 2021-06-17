@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xdbapi_odbc SHARED)
+  NCBI_hosts_projects(
+    dbapi/driver/odbc/ncbi_xdbapi_odbc
+  )
+  NCBI_add_definitions(NCBI_DBAPIDRIVER_ODBC_EXPORTS)
+NCBI_end_lib()

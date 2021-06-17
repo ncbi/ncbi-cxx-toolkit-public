@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(dbapi_advanced_features)
+  NCBI_sources(dbapi_advanced_features)
+  NCBI_optional_components(connext)
+  NCBI_uses_toolkit_libraries(dbapi)
+  NCBI_project_watchers(ucko)
+NCBI_end_app()

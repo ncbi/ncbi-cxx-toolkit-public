@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(vecscreen)
+  NCBI_sources(vecscreen_app)
+  NCBI_uses_toolkit_libraries(blastinput xblastformat)
+  NCBI_project_watchers(camacho madden)
+NCBI_end_app()
+

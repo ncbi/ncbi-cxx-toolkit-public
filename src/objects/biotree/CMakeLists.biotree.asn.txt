@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(biotree)
+  NCBI_dataspecs(biotree.asn)
+  NCBI_uses_toolkit_libraries(general)
+NCBI_end_lib()
+

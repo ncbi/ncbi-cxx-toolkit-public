@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(tds100_numeric)
+  NCBI_sources(numeric)
+  NCBI_add_test()
+NCBI_end_app()
+

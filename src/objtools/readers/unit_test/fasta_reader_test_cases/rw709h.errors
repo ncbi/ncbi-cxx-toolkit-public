@@ -1,0 +1,6 @@
+                Error:
+Problem:        Near line 1, the accession is too long.  Its length is 31 but the maximum allowed accession length is 30.  Please find and correct all accessions that are too long.
+SeqId:          ABABABABABABABABABABABABABABABA
+Line:           1
+
+

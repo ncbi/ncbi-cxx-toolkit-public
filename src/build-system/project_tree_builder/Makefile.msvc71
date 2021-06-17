@@ -1,0 +1,15 @@
+DATATOOL  = $(builddir)/../bin/datatool
+InputName = msvc71_project
+InputPath = $(srcdir)/$(InputName).dtd
+
+		 
+STAMP  = $(srcdir)/$(InputName).files
+
+$(STAMP): $(srcdir)/$(InputName).dtd
+	$(DATATOOL) -oex "" -pch ncbi_pch.hpp -m $(InputPath) -oA -oc $(InputName) -od $(srcdir)/$(InputName).def -ocvs -or app/project_tree_builder/ -oR $(srcdir)/../../../
+	
+all:    $(STAMP)
+
+purge:  clean
+clean:
+	-rm $(STAMP)

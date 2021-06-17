@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(ncbi_applog)
+  NCBI_sources(ncbi_applog ncbi_applog_url)
+  NCBI_uses_toolkit_libraries(clog xconnect xregexp)
+  NCBI_project_watchers(ivanov)
+NCBI_end_app()
+

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(seqsplit)
+  NCBI_dataspecs(seqsplit.asn)
+  NCBI_uses_toolkit_libraries(seqset)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+

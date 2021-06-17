@@ -1,0 +1,545 @@
+#!/bin/sh
+
+# This script is based on "Autotools-style wrapper for CMake",
+# Modifications made:
+# 1. configuration parameters specific for C++ toolkit and Gpipe
+# 2. --without-<lib> arguments support
+# 3. custom root directory
+# etc
+
+# Autotools-style (./configure) wrapper for CMake
+# <https://github.com/nemequ/configure-cmake>
+#
+#   *** IMPORTANT ***
+#
+#   You must include the GNUInstallDirs module (which comes with
+#   CMake) in your project.  Just put "include (GNUInstallDirs)" in
+#   you CMakeLists.txt and you should be good.
+#
+# This script was originally written for Squash
+# <https://quixdb.github.io/squash/> by Evan Nemerson
+# <evan@nemerson.com>, but has been spun off into a separate
+# repository.  Please feel free to copy it into your own repository,
+# though I would appreciate it if you would post improvements, bugs,
+# feature requests, etc. to the issue tracker at
+# <https://github.com/nemequ/configure-cmake/issues>.
+#
+# To the extent possible under law, the author(s) hereby waive all
+# copyright and related or neighboring rights to this work.  For
+# details, see <https://creativecommons.org/publicdomain/zero/1.0/>
+
+TOP_SRCDIR="$(dirname $0)"
+
+if [ "${CMAKE_CMD}" = "" ]; then
+    CMAKE_CMD="cmake"
+fi
+
+if [ -z "$CC" ]; then
+    CC=`which gcc`
+fi
+if [ -z "$CXX" ]; then
+    CXX=`which g++`
+fi
+BUILD_TYPE="Debug"
+BUILD_SHARED_LIBS= # NOTE: By default, not set and neither ON nor OFF!
+PREFIX=/usr/local
+LIBDIR=
+CMAKE_ARGS=
+#CMAKE_ARGS=-DNCBI_EXPERIMENTAL=ON
+
+if [ -e "${TOP_SRCDIR}/configure-custom.sh" ]; then
+    . "${TOP_SRCDIR}/configure-custom.sh"
+fi
+
+quote() {
+    echo "$1" | sed -e "s|'|'\\\\''|g; 1s/^/'/; \$s/\$/'/"
+}
+
+extract_var_string() {
+    VAR_NAME=$1
+    VAR_NAME=$(echo $1 | sed -e 's/[ \t]*$//')
+    if [ "x$2" != "x" ]; then
+        VAR_VALUE=$2
+    else
+        VAR_VALUE=yes
+    fi
+
+    if [ "x$3" != "x" ]; then
+        VAR_UC_NAME=$3
+    else
+        VAR_UC_NAME=$(echo "$1" | tr '[:lower:]' '[:upper:]' | tr -c '[:alnum:]' '_' | sed 's/_$//g')
+    fi
+}
+
+set_config_var() {
+    is_with=n
+    case "$1" in
+        "--enable-"*)
+            name="${1#--enable-}"
+            cfg="${ENABLE_VARS}"
+            ;;
+        "--disable-"*)
+            name="${1#--disable-}";
+            cfg="${DISABLE_VARS}";
+            ;;
+        "--with-"*)
+            # IFS="=" read -ra WITHARGS <<< "${1}"
+            name="${1#--with-}"
+            cfg="${WITH_VARS}"
+            is_with=y
+            ;;
+        "--without-"*)
+            # IFS="=" read -ra WITHARGS <<< "${1}"
+            name="${1#--without-}"
+            cfg="${WITH_VARS}"
+            is_without=y
+            ;;
+    esac
+
+    found=n
+    for varstring in $cfg; do
+        extract_var_string $(echo "${varstring}" | tr '|' ' ')
+        if [ "x$VAR_NAME" = "x$name" ]; then
+            found=y
+            break;
+        fi
+    done
+
+    if [ "$found" = "y" ]; then
+        if [ "x$is_without" = "xy" ]; then
+            CMAKE_ARGS="$CMAKE_ARGS -D${VAR_UC_NAME}_DISABLED=yes"
+        elif [ "x$is_with" = "xy" ]; then
+            CMAKE_ARGS="$CMAKE_ARGS -D${VAR_UC_NAME}=$(quote "$2")"
+        else
+            CMAKE_ARGS="$CMAKE_ARGS -D${VAR_UC_NAME}=$(quote "${VAR_VALUE}")"
+        fi
+    else
+        echo "Unknown parameter: ${1}"
+        exit 1
+    fi
+}
+
+prefix_to_offset() {
+    expr $(echo "${1}" | awk '{ print length }') + 1
+}
+
+print_help() {
+    cat <<EOF
+GPipe Predefined Settings:
+  --gpipe-prod            for production use (--with-dll --without-debug)
+  --gpipe-dev             for development and debugging (--with-dll)
+  --gpipe-cgi             for deployment of web CGIs (--without-debug)
+  --gpipe-distrib         for external distribution to the public.
+
+ NOTE: The above will also set --with-build-root=...
+
+Options:
+   --with-debug            build debug versions of libs and apps
+   --with-symbols          build with full debug info even in release
+   --with-max-debug        enable extra runtime checks (esp. of STL usage)
+   --without-debug         build non-debug versions of libs and apps
+   --with-dll              build all libraries as DLLs
+   --with-static           build all libraries statically
+   --without-dll           build all libraries statically
+   --with-build-root=DIR   specify a non-default build directory name
+   --with-ccache           use ccache if available
+   --with-distcc           use distcc if available
+   --with-xcode            generate XCode project
+   --with-ninja            use ninja instead of make
+   --trace                 print CMake trace to stdout
+
+   --fake-linking          compilation without linking to use with cmake_dependencies_generator
+
+  -h, --help              display this help and exit
+  --pass-thru             pass remaining arguments through to CMake
+  --prefix=PREFIX         install architecture-independent files in PREFIX [$PREFIX]
+  --bindir=DIR            user executables [PREFIX/bin]
+  --sbindir=DIR           system admin executables [PREFIX/sbin]
+  --libexecdir=DIR        program executables [PREFIX/libexec]
+  --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
+  --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
+  --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --libdir=DIR            object code libraries [PREFIX/lib]
+  --includedir=DIR        C header files [PREFIX/include]
+  --oldincludedir=DIR     C header files for non-gcc [/usr/include]
+  --datarootdir=DIR       read-only arch.-independent data root [PREFIX/share]
+  --datadir=DIR           read-only architecture-independent data [DATAROOTDIR]
+  --infodir=DIR           info documentation [DATAROOTDIR/info]
+  --localedir=DIR         locale-dependent data [DATAROOTDIR/locale]
+  --mandir=DIR            man documentation [DATAROOTDIR/man]
+  --docdir=DIR            documentation root [DATAROOTDIR/doc/PROJECT_NAME]
+
+Third-party libraries configuration:
+EOF
+
+    first=y
+    for varstring in ${ENABLE_VARS}; do
+        if [ $first = 'y' ]; then
+            echo ""
+            first=n
+        fi
+        extract_var_string $(echo "${varstring}" | tr '|' ' ')
+        var_doc_name="ENABLE_${VAR_UC_NAME}_DOC"
+        eval "docstring=\$$var_doc_name"
+        if [ "x${docstring}" = "x" ]; then
+            printf "  --enable-%-14s enable %s support\n" "${VAR_NAME}" "$(echo -n "${VAR_NAME}" | tr '-' ' ')"
+        else
+            printf "  --enable-%-14s %s\n" "${VAR_NAME}" "$docstring"
+        fi
+    done
+
+    first=y
+    for varstring in ${DISABLE_VARS}; do
+        if [ $first = 'y' ]; then
+            echo ""
+            first=n
+        fi
+        extract_var_string $(echo "${varstring}" | tr '|' ' ')
+        var_doc_name="DISABLE_${VAR_UC_NAME}_DOC"
+        eval "docstring=\$$var_doc_name"
+        if [ "x${docstring}" = "x" ]; then
+            printf "  --disable-%-13s disable %s support\n" "${VAR_NAME}" "$(echo -n "${VAR_NAME}" | tr '-' ' ')"
+        else
+            printf "  --disable-%-13s %s\n" "${VAR_NAME}" "$docstring"
+        fi
+    done
+
+    first=y
+    for varstring in ${WITH_VARS}; do
+        if [ $first = 'y' ]; then
+            echo ""
+            first=n
+        fi
+        extract_var_string $(echo "${varstring}" | tr '|' ' ')
+        var_doc_name="WITH_${VAR_UC_NAME}_DOC"
+        eval "docstring=\$$var_doc_name"
+        paraminfo="${VAR_NAME}=${VAR_VALUE}"
+        if [ "x${docstring}" = "x" ]; then
+            printf "  --with-%-16s enable %s support\n" "$paraminfo" "$(echo -n "${VAR_NAME}" | tr '-' ' ')"
+        else
+            printf "  --with-%-16s %s\n" "$paraminfo" "$docstring"
+        fi
+        var_doc_name="WITHOUT_${VAR_UC_NAME}_DOC"
+        eval "docstring=\$$var_doc_name"
+        paraminfo="${VAR_NAME}"
+        if [ "x${docstring}" = "x" ]; then
+            printf "  --without-%-13s disable %s support\n" "$paraminfo" "$(echo -n "${VAR_NAME}" | tr '-' ' ')"
+        else
+            printf "  --without-%-13s %s\n" "$paraminfo" "$docstring"
+        fi
+    done
+
+    exit 0
+}
+
+#Gpipe specific function
+add_gpipe_warnings() {
+    export CFLAGS="${CFLAGS:-}${CFLAGS:+ }-Wmissing-prototypes"
+    export CXXFLAGS="${CXXFLAGS:-}${CXXFLAGSf:+ }-Wnon-virtual-dtor -Wall -Wextra -Wconversion -Wdeprecated-declarations -Wlogical-op -Wmissing-declarations -Wpedantic -Wshadow -Wsuggest-attribute=format -Wswitch -Wpointer-arith -Wcast-align -Wmissing-include-dirs -Winvalid-pch -Wmissing-format-attribute"
+}
+
+#MAIN
+
+DISTCC_OPTS="-DCMAKE_USE_DISTCC=ON"
+
+while [ $# != 0 ]; do
+    case "$1" in
+        "--prefix="*)
+            PREFIX="${1#*=}";;
+        "--prefix")
+            PREFIX="${2}"; shift;;
+        "--bindir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_BINDIR=$(quote "${1#*=}")";;
+        "--bindir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_BINDIR=$(quote "$2")"; shift;;
+        "--sbindir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_SBINDIR=$(quote "${1#*=}")";;
+        "--sbindir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_SBINDIR=$(quote "$2")"; shift;;
+        "--libexecdir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_LIBEXECDIR=$(quote "${1#*=}")";;
+        "--libexecdir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_LIBEXECDIR=$(quote "$2")"; shift;;
+        "--sysconfdir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_SYSCONFDIR=$(quote "${1#*=}")";;
+        "--sysconfdir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_SYSCONFDIR=$(quote "$2")"; shift;;
+        "--sharedstatedir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_SHAREDSTATEDIR=$(quote "${1#*=}")";;
+        "--sharedstatedir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_SHAREDSTATEDIR=$(quote "$2")"; shift;;
+        "--localstatedir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_LOCALSTATEDIR=$(quote "${1#*=}")";;
+        "--localstatedir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_LOCALSTATEDIR=$(quote "$2")"; shift;;
+        "--libdir="*)
+            LIBDIR="${1#*=}";;
+        "--libdir")
+            LIBDIR="${2}"; shift;;
+        "--includedir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_INCLUDEDIR=$(quote "${1#*=}")";;
+        "--includedir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_INCLUDEDIR=$(quote "$2")"; shift;;
+        "--oldincludedir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_OLDINCLUDEDIR=$(quote "${1#*=}")";;
+        "--oldincludedir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_OLDINCLUDEDIR=$(quote "$2")"; shift;;
+        "--datarootdir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_DATAROOTDIR=$(quote "${1#*=}")";;
+        "--datarootdir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_DATAROOTDIR=$(quote "$2")"; shift;;
+        "--datadir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_DATADIR=$(quote "${1#*=}")";;
+        "--datadir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_DATADIR=$(quote "$2")"; shift;;
+        "--infodir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_INFODIR=$(quote "${1#*=}")";;
+        "--infodir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_INFODIR=$(quote "$2")"; shift;;
+        "--localedir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_LOCALEDIR=$(quote "${1#*=}")";;
+        "--localedir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_LOCALEDIR=$(quote "$2")"; shift;;
+        "--mandir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_MANDIR=$(quote "${1#*=}")";;
+        "--mandir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_MANDIR=$(quote "$2")"; shift;;
+        "--docdir="*)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_DOCDIR=$(quote "${1#*=}")";;
+        "--docdir")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_DOCDIR=$(quote "$2")"; shift;;
+
+        "CC="*)
+            CC="${1#*=}";;
+
+        "CXX="*)
+            CXX="${1#*=}";;
+
+        "CFLAGS="*)
+            CFLAG="${1#*=}";;
+
+        "CXXFLAGS="*)
+            CXXFLAGS="${1#*=}";;
+
+        "LDFLAGS="*)
+            LDFLAGS="$LDFLAGS ${1#*=}";;
+
+        "--help")
+            print_help;;
+        "-h")
+            print_help;;
+
+        --with-ninja)
+            NINJA_FLAGS="-GNinja"
+            ;;
+
+        #NCBI C++ Toolkit specific configuration flags
+        "--with-static"|"--without-dll")
+            BUILD_SHARED_LIBS=OFF
+            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
+            ;;
+
+        "--with-dll")
+            BUILD_SHARED_LIBS=ON
+            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
+            ;;
+
+        "--with-debug")
+            BUILD_TYPE="Debug";;
+
+        "--with-max-debug")
+            BUILD_TYPE="Debug"
+            MAX_DEBUG="yes"
+            ;;
+
+        "--without-debug")
+            BUILD_TYPE="Release";;
+
+        "--with-symbols")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_DEBUG_SYMBOLS=ON";;
+
+        "--with-ccache")
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_CCACHE=ON";;
+
+        "--with-distcc")
+            ;;
+
+        "--without-distcc")
+           DISTCC_OPTS="";;
+
+        "--with-xcode")
+            CMAKE_ARGS="$CMAKE_ARGS -G Xcode";;
+
+        #Gpipe specific configuration flags
+        "--gpipe-prod")
+            EXPERIMENTAL=Int8GI
+            BUILD_TYPE="Release"
+            BUILD_SHARED_LIBS=ON
+            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
+            GPIPEROOT="Release"
+            add_gpipe_warnings
+            ;;
+
+        "--gpipe-dev")
+            EXPERIMENTAL=StrictGI
+            BUILD_TYPE="Debug"
+            BUILD_SHARED_LIBS=ON
+            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
+            GPIPEROOT="Debug"
+            add_gpipe_warnings
+            ;;
+
+        "--gpipe-cgi")
+            EXPERIMENTAL=Int8GI
+            BUILD_TYPE="Release"
+            BUILD_SHARED_LIBS=OFF
+            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
+            GPIPEROOT="Static"
+            add_gpipe_warnings
+            ;;
+
+        "--gpipe-distrib")
+            BUILD_TYPE="Release"
+            BUILD_SHARED_LIBS=OFF
+            CMAKE_ARGS="$CMAKE_ARGS -DUSE_LOCAL_PCRE=True -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
+            GPIPEROOT="Distrib"
+            add_gpipe_warnings
+            ;;
+
+        "--with-build-root="*)
+            ROOT="${1#*=}";;
+
+        "--with-build-root")
+            ROOT="$2"
+            shift
+            ;;
+
+        "--with-experimental-cmake")
+            CMAKE_ARGS="$CMAKE_ARGS -DNCBI_EXPERIMENTAL=Yes"
+            ;;
+
+        "--with-experimental="*)
+            EXPERIMENTAL="${1#*=}";;
+
+        "--with-experimental")
+            EXPERIMENTAL="${2}"; shift;;
+
+        "--pass-thru")
+            shift;
+            while [ $# != 0 ]; do
+                CMAKE_ARGS="$CMAKE_ARGS $(quote "${1}")";
+                shift;
+            done;;
+
+        "--trace")
+            TRACE_CMAKE="${TRACE_CMAKE} --trace";;
+
+        "--debug-trycompile")
+            TRACE_CMAKE="${TRACE_CMAKE} --debug-trycompile";;
+
+        "--fake-linking")
+            BUILD_SHARED_LIBS=OFF
+            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS -DCMAKE_LINKER=/bin/touch -DCMAKE_CXX_LINK_EXECUTABLE=\"<CMAKE_LINKER> <TARGET>\""
+            ;;
+
+        "--enable-"*)
+            set_config_var "$1"
+            ;;
+
+        "--disable-"*)
+            set_config_var "$1"
+            ;;
+
+        "--with-"*)
+            name=$(echo "${1#--with-}" | awk '{split($1,v,"="); print v[1]}')
+            case "${1}" in
+                "--with-${name}="*)
+                    set_config_var "--with-${name}" "${1#--with-${name}=}";;
+                "--with-${name}")
+                    set_config_var "$1" "$2";
+                    shift;;
+            esac
+            ;;
+
+        "--without-"*)
+            set_config_var "$1"
+            ;;
+
+        *)
+            echo "$0: error: unrecognized option: \`$1'" >&2
+            echo "Try \`$0 --help' for more information" >&2
+            exit -1
+    esac;
+    shift
+done
+
+if [ "x${LIBDIR}" = "x" ]; then
+    LIBDIR="${PREFIX}/lib"
+fi
+
+CMAKE_ARGS="$CMAKE_ARGS $DISTCC_OPTS"
+
+# Unlike CFLAGS/CXXFLAGS/CC/CXX, LDFLAGS isn't handled by CMake, so we
+# need to parse it here.
+if [ "x${LDFLAGS}" != "x" ]; then
+    for varname in EXE MODULE SHARED; do
+        CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_${varname}_LINKER_FLAGS=$(quote "$LDFLAGS")"
+    done
+fi
+
+if [ -z "$ROOT" ]; then
+    if [ -z "$GPIPEROOT" ]; then
+        ROOT="CMake-$BUILD_TYPE"
+        case "$BUILD_SHARED_LIBS" in
+        ON)  ROOT="$ROOT"DLL ;;
+        OFF) ROOT="$ROOT"Static ;;
+        esac
+    else
+        ROOT=`cd "${TOP_SRCDIR}/../../../" && /bin/pwd` || exit 1
+        ROOT=`/usr/bin/dirname "$ROOT"` || exit 1
+        ROOT=$ROOT/$GPIPEROOT
+    fi
+fi
+
+if [ ! -z "$MAX_DEBUG" ]; then
+    CXXFLAGS="${CXXFLAGS:-}${CXXFLAGS:+ }-D_GLIBCXX_DEBUG"
+fi
+
+if [ ! -z "$EXPERIMENTAL" ]; then
+    for x in `echo $EXPERIMENTAL | tr , ' '`; do
+        case "$x" in
+            ChaosMonkey )
+                CPPFLAGS="$CPPFLAGS -DNCBI_MONKEY"
+                ;;
+            Int8GI )
+                CPPFLAGS="$CPPFLAGS -DNCBI_INT8_GI"
+                NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
+                ;;
+            StrictGI )
+                CPPFLAGS="$CPPFLAGS -DNCBI_STRICT_GI"
+                NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
+                ;;
+            * )
+                echo "cmake-configure: error: unrecognized experimental feature \"$x\"." >&2
+                exit 1;;
+        esac
+    done
+fi
+
+CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_COMPILER=$(quote "$CXX")"
+CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_COMPILER=$(quote "$CC")"
+CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_FLAGS=$(quote "$CFLAGS")"
+CXXFLAGS="${CXXFLAGS:-}${CXXFLAGS:+ }${CPPFLAGS:-}${CPPFLAGS:+ }"
+CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_FLAGS=$(quote "$CXXFLAGS")"
+
+mkdir -p $ROOT/build
+ROOT_SOURCE_PATH=`pwd`
+cd $ROOT/build
+
+#we need to do this because CMake caches configuration parameters, and if you run ./cmake-configure for existing build directory
+#but with another parameters, CMake will use old values for paramers you omit (not default ones)
+if [ -e CMakeCache.txt ]; then
+   rm CMakeCache.txt
+fi
+
+eval "${CMAKE_CMD}" ${TRACE_CMAKE} ${NINJA_FLAGS} "${TOP_SRCDIR}/../../" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DCMAKE_INSTALL_LIBDIR="${LIBDIR}" ${CMAKE_ARGS}

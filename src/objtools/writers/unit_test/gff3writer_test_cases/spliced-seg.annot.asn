@@ -1,0 +1,575 @@
+Seq-annot ::= {
+  desc {
+    name "Gnomon Alignments",
+    create-date std {
+      year 2011,
+      month 7,
+      day 20
+    }
+  },
+  data align {
+    {
+      type partial,
+      score {
+        {
+          id str "rank",
+          value int 1
+        }
+      },
+      segs spliced {
+        product-id gi 340708591,
+        genomic-id gi 339751252,
+        product-strand plus,
+        genomic-strand plus,
+        product-type transcript,
+        exons {
+          {
+            product-start nucpos 0,
+            product-end nucpos 88,
+            genomic-start 891792,
+            genomic-end 891880,
+            parts {
+              match 89
+            },
+            donor-after-exon {
+              bases "gt"
+            }
+          },
+          {
+            product-start nucpos 89,
+            product-end nucpos 184,
+            genomic-start 900126,
+            genomic-end 900221,
+            parts {
+              match 96
+            },
+            acceptor-before-exon {
+              bases "ag"
+            },
+            donor-after-exon {
+              bases "gt"
+            }
+          },
+          {
+            product-start nucpos 185,
+            product-end nucpos 380,
+            genomic-start 900309,
+            genomic-end 900504,
+            parts {
+              match 196
+            },
+            acceptor-before-exon {
+              bases "ag"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 381,
+            product-end nucpos 1038,
+            genomic-start 901243,
+            genomic-end 901900,
+            parts {
+              match 658
+            },
+            acceptor-before-exon {
+              bases "ag"
+            },
+            donor-after-exon {
+              bases "Gt"
+            }
+          },
+          {
+            product-start nucpos 1039,
+            product-end nucpos 1426,
+            genomic-start 902310,
+            genomic-end 902697,
+            parts {
+              match 388
+            },
+            acceptor-before-exon {
+              bases "ag"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 1427,
+            product-end nucpos 1738,
+            genomic-start 902769,
+            genomic-end 903080,
+            parts {
+              match 312
+            },
+            acceptor-before-exon {
+              bases "AG"
+            },
+            donor-after-exon {
+              bases "gt"
+            }
+          },
+          {
+            product-start nucpos 1739,
+            product-end nucpos 2155,
+            genomic-start 903234,
+            genomic-end 903649,
+            parts {
+              match 70,
+              product-ins 1,
+              match 346
+            },
+            acceptor-before-exon {
+              bases "ag"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 2156,
+            product-end nucpos 2992,
+            genomic-start 903737,
+            genomic-end 904573,
+            parts {
+              match 837
+            },
+            acceptor-before-exon {
+              bases "ag"
+            }
+          }
+        },
+        product-length 2993
+      },
+      ext {
+        {
+          class "Gnomon",
+          type str "AlignmentAttributes",
+          data {
+            {
+              label str "Is [re]constructed alignment",
+              data bool TRUE
+            }
+          }
+        },
+        {
+          type str "ModelEvidence",
+          data {
+          }
+        }
+      }
+    },
+    {
+      type partial,
+      score {
+        {
+          id str "rank",
+          value int 1
+        }
+      },
+      segs spliced {
+        product-id gi 340708500,
+        genomic-id gi 339751252,
+        product-strand plus,
+        genomic-strand plus,
+        product-type transcript,
+        exons {
+          {
+            product-start nucpos 0,
+            product-end nucpos 974,
+            genomic-start 500007,
+            genomic-end 500981,
+            parts {
+              match 975
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 975,
+            product-end nucpos 1016,
+            genomic-start 501087,
+            genomic-end 501128,
+            parts {
+              match 42
+            },
+            acceptor-before-exon {
+              bases "ag"
+            },
+            donor-after-exon {
+              bases "gt"
+            }
+          },
+          {
+            product-start nucpos 1017,
+            product-end nucpos 1121,
+            genomic-start 501193,
+            genomic-end 501297,
+            parts {
+              match 105
+            },
+            acceptor-before-exon {
+              bases "ag"
+            },
+            donor-after-exon {
+              bases "gt"
+            }
+          },
+          {
+            product-start nucpos 1122,
+            product-end nucpos 1253,
+            genomic-start 501377,
+            genomic-end 501508,
+            parts {
+              match 132
+            },
+            acceptor-before-exon {
+              bases "ag"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 1254,
+            product-end nucpos 1444,
+            genomic-start 501747,
+            genomic-end 501936,
+            parts {
+              match 83,
+              product-ins 1,
+              match 107
+            },
+            acceptor-before-exon {
+              bases "AG"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 1445,
+            product-end nucpos 1576,
+            genomic-start 502030,
+            genomic-end 502161,
+            parts {
+              match 132
+            },
+            acceptor-before-exon {
+              bases "ag"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 1577,
+            product-end nucpos 1738,
+            genomic-start 502261,
+            genomic-end 502422,
+            parts {
+              match 162
+            },
+            acceptor-before-exon {
+              bases "ag"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 1739,
+            product-end nucpos 2139,
+            genomic-start 502480,
+            genomic-end 502880,
+            parts {
+              match 401
+            },
+            acceptor-before-exon {
+              bases "AG"
+            },
+            donor-after-exon {
+              bases "gt"
+            }
+          },
+          {
+            product-start nucpos 2140,
+            product-end nucpos 2993,
+            genomic-start 503002,
+            genomic-end 503855,
+            parts {
+              match 854
+            },
+            acceptor-before-exon {
+              bases "ag"
+            }
+          }
+        },
+        product-length 2994
+      },
+      ext {
+        {
+          class "Gnomon",
+          type str "AlignmentAttributes",
+          data {
+            {
+              label str "Is [re]constructed alignment",
+              data bool TRUE
+            }
+          }
+        },
+        {
+          type str "ModelEvidence",
+          data {
+          }
+        }
+      }
+    },
+    {
+      type partial,
+      score {
+        {
+          id str "rank",
+          value int 1
+        }
+      },
+      segs spliced {
+        product-id gi 340708508,
+        genomic-id gi 339751252,
+        product-strand plus,
+        genomic-strand plus,
+        product-type transcript,
+        exons {
+          {
+            product-start nucpos 0,
+            product-end nucpos 193,
+            genomic-start 471156,
+            genomic-end 471349,
+            parts {
+              match 194
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 194,
+            product-end nucpos 362,
+            genomic-start 471432,
+            genomic-end 471600,
+            parts {
+              match 169
+            },
+            acceptor-before-exon {
+              bases "AG"
+            },
+            donor-after-exon {
+              bases "At"
+            }
+          },
+          {
+            product-start nucpos 363,
+            product-end nucpos 448,
+            genomic-start 471670,
+            genomic-end 471755,
+            parts {
+              match 86
+            },
+            acceptor-before-exon {
+              bases "AC"
+            },
+            donor-after-exon {
+              bases "gt"
+            }
+          },
+          {
+            product-start nucpos 449,
+            product-end nucpos 804,
+            genomic-start 472569,
+            genomic-end 472923,
+            parts {
+              match 281,
+              product-ins 1,
+              match 74
+            },
+            acceptor-before-exon {
+              bases "ag"
+            },
+            donor-after-exon {
+              bases "gt"
+            }
+          },
+          {
+            product-start nucpos 805,
+            product-end nucpos 1420,
+            genomic-start 473181,
+            genomic-end 473796,
+            parts {
+              match 616
+            },
+            acceptor-before-exon {
+              bases "ag"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 1421,
+            product-end nucpos 1696,
+            genomic-start 473864,
+            genomic-end 474139,
+            parts {
+              match 276
+            },
+            acceptor-before-exon {
+              bases "AG"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 1697,
+            product-end nucpos 3419,
+            genomic-start 474207,
+            genomic-end 475929,
+            parts {
+              match 1723
+            },
+            acceptor-before-exon {
+              bases "ag"
+            }
+          }
+        },
+        product-length 3420
+      },
+      ext {
+        {
+          class "Gnomon",
+          type str "AlignmentAttributes",
+          data {
+            {
+              label str "Is [re]constructed alignment",
+              data bool TRUE
+            }
+          }
+        },
+        {
+          type str "ModelEvidence",
+          data {
+          }
+        }
+      }
+    },
+    {
+      type partial,
+      score {
+        {
+          id str "rank",
+          value int 1
+        }
+      },
+      segs spliced {
+        product-id gi 340708509,
+        genomic-id gi 339751252,
+        product-strand plus,
+        genomic-strand minus,
+        product-type transcript,
+        exons {
+          {
+            product-start nucpos 0,
+            product-end nucpos 471,
+            genomic-start 472030,
+            genomic-end 472501,
+            parts {
+              match 472
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 472,
+            product-end nucpos 551,
+            genomic-start 471674,
+            genomic-end 471753,
+            parts {
+              match 80
+            },
+            acceptor-before-exon {
+              bases "aG"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 552,
+            product-end nucpos 713,
+            genomic-start 471441,
+            genomic-end 471602,
+            parts {
+              match 162
+            },
+            acceptor-before-exon {
+              bases "ag"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 714,
+            product-end nucpos 937,
+            genomic-start 471128,
+            genomic-end 471351,
+            parts {
+              match 224
+            },
+            acceptor-before-exon {
+              bases "ag"
+            },
+            donor-after-exon {
+              bases "gt"
+            }
+          },
+          {
+            product-start nucpos 938,
+            product-end nucpos 1431,
+            genomic-start 470559,
+            genomic-end 471050,
+            parts {
+              match 34,
+              product-ins 2,
+              match 458
+            },
+            acceptor-before-exon {
+              bases "ag"
+            }
+          }
+        },
+        product-length 1432
+      },
+      ext {
+        {
+          class "Gnomon",
+          type str "AlignmentAttributes",
+          data {
+            {
+              label str "Is [re]constructed alignment",
+              data bool TRUE
+            }
+          }
+        },
+        {
+          type str "ModelEvidence",
+          data {
+          }
+        }
+      }
+    }
+  }
+}

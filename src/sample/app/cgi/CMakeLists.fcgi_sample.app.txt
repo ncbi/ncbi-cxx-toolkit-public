@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(fcgi_sample.cgi)
+  NCBI_sources(cgi_sample)
+  NCBI_uses_toolkit_libraries(xfcgi xhtml xconnect)
+  NCBI_requires(unix)
+  NCBI_project_watchers(vakatov)
+NCBI_end_app()

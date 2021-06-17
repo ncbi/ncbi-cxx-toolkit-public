@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xcache_netcache SHARED)
+  NCBI_sources(neticache_client)
+  NCBI_add_definitions(NCBI_NET_CACHE_EXPORTS)
+  NCBI_uses_toolkit_libraries(xconnserv)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_lib()
+

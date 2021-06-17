@@ -1,0 +1,35 @@
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Microsoft FrontPage 5.0">
+<TITLE>Sequence Window : Import</TITLE>
+</HEAD>
+<BODY>
+<H2>Sequence Window : Import Commands</H2>
+<ul>
+  <li><a href="#updates">Show imports</a></li>
+  <li><a href="#individual">Realign individual rows</a></li>
+  <li><a href="#list">Realign rows from list</a></li>
+  <li><a href="#highlighted">Realign highlighted rows</a></li>
+  <li><a href="#mark">Mark block</a></li>
+  <li><a href="#clear">Clear marks</a></li>
+</ul>
+<h3><a name="updates"></a>Show imports</h3>
+Display the <a href="UpdateWindow.htm">import window</a> for this alignment.
+<h3><a name="individual"></a>Realign individual rows</h3>
+Select this item then click on any row(s) of the alignment. These rows will be
+removed from the multiple alignment and placed in the import window.
+<h3><a name="list"></a>Realign rows from list</h3>
+Select this item to pick sequences from a list. The selected sequences will be
+removed from the multiple alignment and placed in the import window.
+<h3><a name="highlighted"></a>Realign highlighted rows</h3>
+Select this item to remove from the multiple alignment any sequences with highlights, and place them in the import window.
+<h3><a name="mark"></a>Mark block</h3>
+When realigning particular blocks via the import window, it is often convenient
+to automatically remove an aligned block when a sequence is moved to the import
+window. Use this item to mark any number of aligned blocks to be removed upon
+realignment of a sequence.
+<h3><a name="clear"></a>Clear marks</h3>
+Removes all <a href="#mark">marks</a> from aligned blocks.
+</BODY>
+</HTML>

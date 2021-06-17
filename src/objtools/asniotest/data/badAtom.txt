@@ -1,0 +1,4 @@
+Atom ::= {
+    name "no id",
+    element pt
+}

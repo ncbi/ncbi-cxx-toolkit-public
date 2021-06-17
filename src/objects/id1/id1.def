@@ -1,0 +1,39 @@
+[-]
+_export = NCBI_ID1_EXPORT
+clients = id1_client
+
+[id1_client]
+class                 = CID1Client
+service               = ID1
+request               = ID1server-request
+reply                 = ID1server-back
+reply.getgi           = gotgi
+reply.getsefromgi     = gotseqentry
+reply.getseqidsfromgi = ids
+reply.getgihist       = gihist
+reply.getgirev        = girevhist
+reply.getgistate      = gistate
+reply.getsewithinfo   = gotsewithinfo
+reply.getblobinfo     = gotblobinfo
+
+[ID1server-back]
+gotgi._type = ncbi::TGi
+gotgi._storage_type = ncbi::TIntId
+
+[ID1server-maxcomplex]
+gi._type = ncbi::TGi
+gi._storage_type = ncbi::TIntId
+
+[ID1server-request]
+getseqidsfromgi._type = ncbi::TGi
+getgihist._type = ncbi::TGi
+getgirev._type = ncbi::TGi
+getgistate._type = ncbi::TGi
+getseqidsfromgi._storage_type = ncbi::TIntId
+getgihist._storage_type = ncbi::TIntId
+getgirev._storage_type = ncbi::TIntId
+getgistate._storage_type = ncbi::TIntId
+
+[ID1blob-info]
+gi._type = ncbi::TGi
+gi._storage_type = ncbi::TIntId

@@ -1,0 +1,3614 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors: Christiam Camacho
+ *
+ */
+
+/** @file blast_unit_test.cpp
+ * Unit tests for the CBl2Seq class
+ */
+
+#include <ncbi_pch.hpp>
+#include <corelib/test_boost.hpp>
+#include <algo/blast/api/bl2seq.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/Std_seg.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Score.hpp>
+#include <objects/general/Object_id.hpp>
+
+#include <serial/serial.hpp>
+#include <serial/iterator.hpp>
+#include <serial/objostr.hpp>
+
+#include <algo/blast/api/tblastn_options.hpp>
+#include <algo/blast/format/blastfmtutil.hpp>
+
+#include <algo/blast/api/blast_options_handle.hpp>
+#include <algo/blast/api/blast_prot_options.hpp>
+#include <algo/blast/api/blastx_options.hpp>
+#include <algo/blast/api/tblastn_options.hpp>
+#include <algo/blast/api/blast_nucl_options.hpp>
+#include <algo/blast/api/disc_nucl_options.hpp>
+#include <algo/blast/api/local_blast.hpp>       // for CLocalBlast
+#include <algo/blast/api/local_db_adapter.hpp>  // for CLocalDbAdapter
+#include <algo/blast/api/objmgr_query_data.hpp> // for CObjMgr_QueryFactory
+#include <algo/blast/blastinput/blast_input.hpp>
+#include <algo/blast/blastinput/blast_fasta_input.hpp>
+#include <algo/blast/api/windowmask_filter.hpp>
+
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/simple/simple_om.hpp>        // for CSimpleOM
+#include <objtools/readers/fasta.hpp>           // for CFastaReader
+#include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/sequence.hpp>
+
+#include "test_objmgr.hpp"
+
+#include <util/random_gen.hpp>
+
+#include <corelib/test_boost.hpp>
+
+#ifndef SKIP_DOXYGEN_PROCESSING
+
+USING_NCBI_SCOPE;
+USING_SCOPE(blast);
+USING_SCOPE(objects);
+
+BOOST_AUTO_TEST_SUITE(bl2seq)
+
+CRef<CSeq_loc> s_MakePackedInt2(CRef<CSeq_id> id, vector<TSeqRange>& range_vec)
+{
+     CRef<CSeq_loc> retval(new CSeq_loc());
+     NON_CONST_ITERATE(vector<TSeqRange>, itr, range_vec)
+     {
+          retval->SetPacked_int().AddInterval(*id, (*itr).GetFrom(), (*itr).GetTo());
+     }
+     return retval;
+}
+
+BOOST_AUTO_TEST_CASE(NucleotideMultipleSeqLocs1) {
+
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 224514841));
+    CRef<CScope> scope(CSimpleOM::NewScope());
+    TSeqLocVector query;
+
+    vector<TSeqRange> range_vec;
+
+    range_vec.push_back(TSeqRange(73011288, 73011591));
+    range_vec.push_back(TSeqRange(73080052, 73080223));
+    range_vec.push_back(TSeqRange(73096483, 73096589));
+    range_vec.push_back(TSeqRange(73097765, 73097864));
+    range_vec.push_back(TSeqRange(73113762, 73113809));
+    range_vec.push_back(TSeqRange(73119266, 73119340));
+    range_vec.push_back(TSeqRange(73168955, 73169141));
+    range_vec.push_back(TSeqRange(73178294, 73178376));
+    range_vec.push_back(TSeqRange(73220818, 73220920));
+    range_vec.push_back(TSeqRange(73223091, 73223365));
+
+    CRef<CSeq_loc> temp_loc1 = s_MakePackedInt2(id, range_vec);
+ofstream o1("temploc1.out.asn");
+o1 << MSerial_AsnText << *temp_loc1 ;
+    query.push_back(SSeqLoc(temp_loc1, scope));
+
+    TSeqLocVector subjects;
+    CRef<CSeq_id> sid1(new CSeq_id(CSeq_id::e_Gi, 262050671));
+    CRef<CSeq_loc> ssl1(new CSeq_loc());
+    ssl1->SetWhole(*sid1);
+    SSeqLoc subj_seqloc(ssl1, scope);
+    subjects.push_back(subj_seqloc);
+
+    CBl2Seq bl2seq(query, subjects, eMegablast);
+    TSeqAlignVector sav(bl2seq.Run());
+    BOOST_CHECK_EQUAL(10, (int) sav.size());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+    int num_ident = 0;
+    sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
+    BOOST_CHECK_EQUAL((int)303, num_ident);
+    BOOST_CHECK_EQUAL((TSeqPos)73011288, sar->GetSeqStart(0));
+    BOOST_CHECK_EQUAL((TSeqPos)1, sar->GetSeqStart(1));
+    
+#if 1
+ofstream o("seqalign.out.asn");
+ITERATE(TSeqAlignVector, v, sav) {
+o << MSerial_AsnText << **v ;
+}
+o.close();
+#endif
+}
+
+
+BOOST_AUTO_TEST_CASE(ProteinBlastInvalidSeqIdSelfHit)
+{
+    CRef<CSeq_loc> loc(new CSeq_loc());
+    loc->SetWhole().SetGi(INVALID_GI);
+
+    CRef<CScope> scope(new CScope(CTestObjMgr::Instance().GetObjMgr()));
+    scope->AddDefaults();
+    SSeqLoc query(loc, scope);
+
+    TSeqLocVector subjects;
+    {
+        CRef<CSeq_loc> local_loc(new CSeq_loc());
+        local_loc->SetWhole().SetGi(INVALID_GI);
+
+        CScope* local_scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        local_scope->AddDefaults();
+        subjects.push_back(SSeqLoc(local_loc, local_scope));
+    }
+
+    // BLAST by concatenating all queries
+    CBl2Seq blaster4all(query, subjects, eBlastp);
+    TSeqAlignVector sas_v;
+    BOOST_CHECK_THROW(sas_v = blaster4all.Run(), CBlastException);
+}
+
+enum EBl2seqTest {
+    eBlastp_129295_129295 = 0,
+    eBlastn_555_555,
+    eMegablast_555_555,
+    eDiscMegablast_555_555,
+    eBlastx_555_129295,
+    eTblastn_129295_555,
+    eTblastn_129295_555_large_word,
+    eTblastx_555_555,
+    eTblastx_many_hits,
+    eBlastp_129295_7662354,
+    eBlastn_555_3090,
+    eBlastp_multi_q,
+    eBlastn_multi_q,
+    eBlastp_multi_q_s,
+    eTblastn_oof,
+    eBlastx_oof,
+    eDiscMegablast_U02544_U61969,
+    eMegablast_chrom_mrna
+};
+
+/* The following functions are used to test the functionality to interrupt
+ * CBl2Seq runs */
+
+/// Returns true so that the processing stops upon the first invocation of this
+/// callback
+extern "C" Boolean interrupt_immediately(SBlastProgress* /*progress_info*/)
+{
+    return TRUE;
+}
+
+/// Returns false so that the processing never stops in spite of a callback
+/// function to interrupt the process is provided
+extern "C" Boolean do_not_interrupt(SBlastProgress* /*progress_info*/)
+{
+    return FALSE;
+}
+
+/// This callback never interrupts the BLAST search, its only purpose is to
+/// count the number of times this is invoked for the given input. Also to be
+/// used in CBl2SeqTest::testInterruptXExitAtRandom.
+extern "C" Boolean callback_counter(SBlastProgress* progress_info)
+{
+    int& counter = *reinterpret_cast<int*>(progress_info->user_data);
+    counter++;
+    return FALSE;
+}
+
+/// This callback interrupts the BLAST search after the callback has been
+/// executed the requested number of times in the pair's second member.
+/// This is used in CBl2SeqTest::testInterruptXExitAtRandom.
+extern "C" Boolean interrupt_at_random(SBlastProgress* progress_info)
+{
+    pair<int, int>& progress_pair =
+        *reinterpret_cast< pair<int, int>* >(progress_info->user_data);
+
+    if (++progress_pair.first == progress_pair.second) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
+/// The interruption occurs after 3 invokations of this callback
+extern "C" Boolean interrupt_after3calls(SBlastProgress* /*progress_info*/)
+{
+    static int num_calls = 0;
+    if (++num_calls < 3) {
+        return FALSE;
+    } else {
+        return TRUE;
+    }
+}
+
+/// The interruption occurs after starting the traceback stage
+extern "C" Boolean interrupt_on_traceback(SBlastProgress* progress_info)
+{
+    if (progress_info->stage == eTracebackSearch) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
+void testRawCutoffs(CBl2Seq& blaster, EProgram program, 
+                    EBl2seqTest test_id)
+{
+    BlastRawCutoffs* raw_cutoffs = 
+        blaster.GetDiagnostics()->cutoffs;
+    int x_drop_ungapped;
+    int gap_trigger;
+
+    if (program == eBlastn || program == eDiscMegablast) {
+        x_drop_ungapped = 22;
+        gap_trigger = 16;
+    } else if (program == eMegablast) {
+        x_drop_ungapped = 8;
+        gap_trigger = 8;
+    } else {
+        x_drop_ungapped = 16;
+        gap_trigger = 41;
+    }
+
+    switch (test_id) {
+    case eBlastn_555_3090:
+        x_drop_ungapped = 22; 
+        gap_trigger = 18;
+        break;
+    case eBlastn_multi_q:
+        x_drop_ungapped = 22; 
+        gap_trigger = 18;
+        break;
+    case eMegablast_chrom_mrna: 
+        x_drop_ungapped = 7;
+        gap_trigger = 7; 
+        break;
+    case eDiscMegablast_U02544_U61969:
+        x_drop_ungapped = 22; 
+        gap_trigger = 20; 
+        break;
+    case eBlastp_multi_q:
+        gap_trigger = 23;
+        break;
+    case eBlastp_multi_q_s:
+        gap_trigger = 19;
+        break;
+    case eBlastp_129295_129295:
+        gap_trigger = 19; break;
+    case eTblastn_129295_555:
+        gap_trigger = 23; break;
+    case eTblastn_129295_555_large_word:
+        gap_trigger = 23; break;
+    case eBlastp_129295_7662354:
+        gap_trigger = 23; break;
+    case eBlastx_555_129295:
+        gap_trigger = 19; break;
+    case eTblastn_oof:
+        gap_trigger = 43;
+    default:
+        break;
+    }
+
+    switch (program) {
+    case eBlastn: case eDiscMegablast:
+        BOOST_CHECK_EQUAL(x_drop_ungapped, 
+                             raw_cutoffs->x_drop_ungapped);
+        BOOST_CHECK_EQUAL(33, raw_cutoffs->x_drop_gap);
+        // CC changed 08/07/08
+        //BOOST_CHECK_EQUAL(55, raw_cutoffs->x_drop_gap_final);
+        BOOST_CHECK_EQUAL(110, raw_cutoffs->x_drop_gap_final);
+        BOOST_CHECK_EQUAL(gap_trigger, raw_cutoffs->ungapped_cutoff);
+        break;
+    case eMegablast:
+        BOOST_CHECK_EQUAL(x_drop_ungapped, 
+                             raw_cutoffs->x_drop_ungapped);
+        BOOST_CHECK_EQUAL(13, raw_cutoffs->x_drop_gap);
+        // CC changed 08/07/08
+        //BOOST_CHECK_EQUAL(27, raw_cutoffs->x_drop_gap_final);
+        BOOST_CHECK_EQUAL(54, raw_cutoffs->x_drop_gap_final);
+        BOOST_CHECK_EQUAL(gap_trigger, raw_cutoffs->ungapped_cutoff);
+        break;
+    case eBlastp: case eBlastx: case eTblastn:
+        BOOST_CHECK_EQUAL(38, raw_cutoffs->x_drop_gap);
+        BOOST_CHECK_EQUAL(64, raw_cutoffs->x_drop_gap_final);
+        BOOST_CHECK_EQUAL(gap_trigger, raw_cutoffs->ungapped_cutoff);
+        /* No break intentional: next test is valid for all the above 
+           programs */
+    case eTblastx:
+        BOOST_CHECK_EQUAL(x_drop_ungapped,
+                             raw_cutoffs->x_drop_ungapped);
+        break;
+    default: break;
+    }
+}
+
+void testResultAlignments(size_t num_queries,
+                          size_t num_subjects,
+                          TSeqAlignVector result_alnvec)
+{
+    size_t num_total_alns = num_queries * num_subjects;
+
+    // test the number of resulting alignments
+    BOOST_REQUIRE_EQUAL(result_alnvec.size(), num_total_alns);
+
+    // test the correct ordering of resulting alignments
+    // (q1 s1 q1 s2 ... q2 s1 q2 s2 ...)
+
+    CConstRef<CSeq_id> id_query, id_prev_query;
+    CConstRef<CSeq_id> id_subject;
+    vector< CConstRef<CSeq_id> > id_prev_subjects;
+    id_prev_subjects.resize(num_subjects);
+
+    bool prev_query_available = false;
+    vector<bool> prev_subjects_available(num_subjects, false);
+
+    /* DEBUG OUTPUT
+    cerr << "................................................" << endl;
+    for (size_t i = 0; i < result_alnvec.size(); i++)
+        cerr << "\n<" << i << ">\n"
+            << MSerial_AsnText << result_alnvec[i].GetObject() << endl;
+    cerr << "................................................" << endl;
+    ------------ */
+
+    for (size_t i_query = 0; i_query < num_queries; i_query++)
+    {
+        prev_query_available = false;
+        for (size_t i_subject = 0; i_subject < num_subjects; i_subject++)
+        {
+            size_t i_lin_index = i_query * num_subjects + i_subject;
+            CRef<CSeq_align_set> aln_set = result_alnvec[i_lin_index];
+
+            // test if the alignment set is available (even if empty)
+            BOOST_REQUIRE(aln_set.NotNull());
+
+            // if the alignment set is not empty, take the first alignment
+            // and see if the ID's are in correct order
+            if (aln_set->Get().size() > 0)
+            {
+                CRef<CSeq_align> aln = aln_set->Get().front();
+                id_query.Reset(&(aln->GetSeq_id(0)));
+                id_subject.Reset(&(aln->GetSeq_id(1)));
+
+                // check if the query id was the same
+                // for the previous subject
+                if (i_subject > 0 &&
+                    prev_query_available)
+                {
+                    BOOST_REQUIRE(
+                        id_query->Match(
+                        id_prev_query.GetObject()));
+                }
+
+                // check if the subject id was the same
+                // on the same position for the previous query
+                if (i_query > 0 &&
+                    prev_subjects_available[i_subject])
+                {
+                    BOOST_REQUIRE(
+                        id_subject->Match(
+                        id_prev_subjects[i_subject].GetObject()));
+                }
+
+                // update the entry in previous subjects vector
+                prev_subjects_available[i_subject] = true;
+                id_prev_subjects[i_subject] = id_subject;
+
+                // update the previous query entry
+                prev_query_available = true;
+                id_prev_query = id_query;
+            }
+        }
+    }
+}
+
+void testBlastHitCounts(CBl2Seq& blaster, EBl2seqTest test_id)
+{
+    BlastUngappedStats* ungapped_stats = 
+        blaster.GetDiagnostics()->ungapped_stat;
+    BlastGappedStats* gapped_stats = 
+        blaster.GetDiagnostics()->gapped_stat;
+    
+    switch (test_id) {
+    case eBlastp_129295_129295:
+        BOOST_CHECK_EQUAL(314, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(3, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(1, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(1, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(1, gapped_stats->good_extensions);
+        break;
+    case eBlastn_555_555:
+        BOOST_CHECK_EQUAL(157, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(3, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(3, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(3, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(3, gapped_stats->good_extensions);
+        break;
+    case eMegablast_555_555:
+        BOOST_CHECK_EQUAL(30, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(1, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(1, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(1, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(1, gapped_stats->good_extensions);
+        break;
+    case eDiscMegablast_555_555:
+        BOOST_CHECK_EQUAL(582, (int)ungapped_stats->lookup_hits);
+        // CC changed 08/07/08
+        //BOOST_CHECK_EQUAL(32, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(1, ungapped_stats->init_extends);
+        // CC changed 08/07/08
+        //BOOST_CHECK_EQUAL(32, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(1, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(1, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(1, gapped_stats->good_extensions);
+        break;
+    case eBlastx_555_129295:
+        BOOST_CHECK_EQUAL(282, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(3, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(1, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(1, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(1, gapped_stats->good_extensions);
+        break;
+    case eTblastn_129295_555:
+        BOOST_CHECK_EQUAL(157, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(1, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(1, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(1, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(1, gapped_stats->good_extensions);
+        break;
+    case eTblastn_129295_555_large_word:
+        BOOST_CHECK_EQUAL(5, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(4, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(1, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(1, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(1, gapped_stats->good_extensions);
+        break;
+    case eTblastx_555_555:
+        BOOST_CHECK_EQUAL(2590, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(57, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(41, ungapped_stats->good_init_extends);
+        break;
+    case eTblastx_many_hits:
+        BOOST_CHECK_EQUAL(18587, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(348, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(66, ungapped_stats->good_init_extends);
+        break;
+    case eBlastp_129295_7662354:
+        BOOST_CHECK_EQUAL(210, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(10, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(3, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(3, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(3, gapped_stats->good_extensions);
+        break;
+    case eBlastn_555_3090:
+        BOOST_CHECK_EQUAL(15, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(2, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(2, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(2, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(2, gapped_stats->good_extensions);
+        break;
+    case eBlastp_multi_q:
+        BOOST_CHECK_EQUAL(2129, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(76, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(14, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(8, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(8, gapped_stats->good_extensions);
+        break;
+    case eBlastn_multi_q:
+        BOOST_CHECK_EQUAL(963, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(13, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(13, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(11, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(11, gapped_stats->good_extensions);
+        break;
+    case eBlastp_multi_q_s:
+#if 0
+        // The following 2 numbers are different in Release and Debug modes
+        // due to a minor discrepancy in locations masked by seg filtering.
+        // The latter is due to a tiny difference in values involved in 
+        // a comparison of real numbers inside the seg algorithm.
+        // In Debug mode:
+        BOOST_CHECK_EQUAL(3579, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(138, ungapped_stats->init_extends);
+        // In Release mode:
+        BOOST_CHECK_EQUAL(3580, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(140, ungapped_stats->init_extends);
+#endif
+        // Note: Seg is not enabled for this case anymore
+        // (changed blastp defaults)
+        BOOST_CHECK_EQUAL(3939, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(159, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(63, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(27, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(24, gapped_stats->good_extensions);
+        break;
+    case eTblastn_oof:
+        BOOST_CHECK_EQUAL(2666, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(50, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(4, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(2, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(2, gapped_stats->good_extensions);
+        break;
+    case eBlastx_oof:
+        BOOST_CHECK_EQUAL(5950, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(155, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(6, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(2, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(2, gapped_stats->good_extensions);
+        break;
+    case eDiscMegablast_U02544_U61969:
+        BOOST_CHECK_EQUAL(108, (int)ungapped_stats->lookup_hits);
+        // CC changed 08/07/08
+        //BOOST_CHECK_EQUAL(15, ungapped_stats->init_extends);
+        //BOOST_CHECK_EQUAL(15, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(3, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(3, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(3, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(3, gapped_stats->good_extensions);
+        break;
+    case eMegablast_chrom_mrna:
+        BOOST_CHECK_EQUAL(14, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(1, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(1, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(1, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(1, gapped_stats->good_extensions);
+        break;
+    default: break;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(ProteinBlastSelfHit)
+{
+    //const int kSeqLength = 232;
+    CSeq_id id("gi|129295");
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+
+    CBl2Seq blaster(*sl, *sl, eBlastp);
+    TSeqAlignVector sav(blaster.Run());
+    BOOST_REQUIRE(sav[0].NotEmpty());
+    BOOST_REQUIRE( !sav[0]->IsEmpty() );
+    BOOST_REQUIRE(sav[0]->Get().begin()->NotEmpty());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+    testBlastHitCounts(blaster, eBlastp_129295_129295);
+    testRawCutoffs(blaster, eBlastp, eBlastp_129295_129295);
+
+    // the number of identities is NOT calculated when composition based
+    // statistics is turned on (default for blastp)
+    int num_ident = 0;
+    sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
+#if 0
+    ofstream o("0.asn");
+    o << MSerial_AsnText << *sar ;
+    o.close();
+#endif
+    BOOST_CHECK_EQUAL(232, num_ident);
+
+    // calculate the number of identities using the BLAST formatter
+/*
+    double percent_identity = 
+        CBlastFormatUtil::GetPercentIdentity(*sar, *sl->scope, false);
+    BOOST_CHECK_EQUAL(1, (int) percent_identity);
+*/
+
+    // Check the ancillary results
+    CSearchResultSet::TAncillaryVector ancillary_data;
+    blaster.GetAncillaryResults(ancillary_data);
+    BOOST_CHECK_EQUAL((size_t)1, ancillary_data.size());
+    BOOST_CHECK( ancillary_data.front()->GetGappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetUngappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetSearchSpace() != (Int8)0 );
+
+}
+
+BOOST_AUTO_TEST_CASE(TBlastn2Seqs)
+{
+    CSeq_id qid("gi|129295");
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CSeq_id sid("gi|555");
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
+
+    CBl2Seq blaster(*query, *subj, eTblastn);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+
+#if 0
+    ofstream o("1.asn");
+    o << MSerial_AsnText << *sar ;
+    o.close();
+#endif
+
+    BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetStd().size());
+    testBlastHitCounts(blaster, eTblastn_129295_555);
+    testRawCutoffs(blaster, eTblastn, eTblastn_129295_555);
+
+    int score = 0, comp_adj = 0;
+    sar->GetNamedScore(CSeq_align::eScore_Score, score);
+    sar->GetNamedScore(CSeq_align::eScore_CompAdjMethod, comp_adj);
+    BOOST_CHECK_EQUAL(26, score);
+    BOOST_CHECK_EQUAL(2, comp_adj);
+
+    // Check the ancillary results
+    CSearchResultSet::TAncillaryVector ancillary_data;
+    blaster.GetAncillaryResults(ancillary_data);
+    BOOST_CHECK_EQUAL((size_t)1, ancillary_data.size());
+    BOOST_REQUIRE( ancillary_data.front().NotEmpty() );
+    BOOST_CHECK( ancillary_data.front()->GetGappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetUngappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetSearchSpace() != (Int8)0 );
+}
+
+BOOST_AUTO_TEST_CASE(TBlastn2SeqsRevStrand1)
+{
+    CSeq_id qid("gi|1945390");
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    pair<TSeqPos, TSeqPos> range(150000, 170000);
+    CSeq_id sid("gi|4755212");
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid, range, eNa_strand_minus));
+
+    CBl2Seq blaster(*query, *subj, eTblastn);
+    TSeqAlignVector sav(blaster.Run());
+    BOOST_CHECK_EQUAL(11, (int) sav[0]->Get().size());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetStd().size());
+    vector < CRef< CSeq_loc > > locs = sar->GetSegs().GetStd().front()->GetLoc();
+    BOOST_CHECK_EQUAL((int)eNa_strand_minus, (int)(locs[1])->GetStrand());
+    int num_ident = 0;
+    sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
+    BOOST_CHECK_EQUAL(161, num_ident);
+#if 0
+ofstream o("minus1.new.asn");
+ITERATE(TSeqAlignVector, v, sav) {
+o << MSerial_AsnText << **v ;
+}
+o.close();
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(TBlastn2SeqsRevStrand2)
+{
+    CSeq_id qid("gi|1945390");
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CSeq_id sid("gi|1945388");
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_minus));
+
+    CBl2Seq blaster(*query, *subj, eTblastn);
+    TSeqAlignVector sav(blaster.Run());
+    BOOST_CHECK_EQUAL(1, (int) sav[0]->Get().size());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetStd().size());
+    vector < CRef< CSeq_loc > > locs = sar->GetSegs().GetStd().front()->GetLoc();
+    BOOST_CHECK_EQUAL((int)eNa_strand_minus, (int)(locs[1])->GetStrand());
+    int num_ident = 0;
+    sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
+    BOOST_CHECK_EQUAL(11, num_ident);
+#if 0
+ofstream o("minus2.asn");
+o << MSerial_AsnText << *sar ;
+o.close();
+#endif
+}
+
+
+BOOST_AUTO_TEST_CASE(TBlastn2SeqsCompBasedStats)
+{
+    CSeq_id qid("gi|68737"); // "pir|A01243|DXCH"
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CSeq_id sid("gi|118086484");
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
+
+    CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eTblastn));
+    opts->SetOptions().SetCompositionBasedStats(eCompositionBasedStats);
+
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetStd().size());
+
+    int num_ident = 0;
+    sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
+    BOOST_CHECK_EQUAL(229, num_ident);
+#if 0
+ofstream o("2.asn");
+o << MSerial_AsnText << *sar ;
+o.close();
+#endif
+
+    // Check the ancillary results
+    CSearchResultSet::TAncillaryVector ancillary_data;
+    blaster.GetAncillaryResults(ancillary_data);
+    BOOST_CHECK_EQUAL((size_t)1, ancillary_data.size());
+    BOOST_CHECK( ancillary_data.front()->GetGappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetUngappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetSearchSpace() != (Int8)0 );
+}
+
+BOOST_AUTO_TEST_CASE(TBlastn2SeqsLargeWord)
+{
+    CSeq_id qid("gi|129295");
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CSeq_id sid("gi|555");
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
+
+    CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eTblastn));
+    opts->SetOptions().SetWordSize(6);
+    opts->SetOptions().SetLookupTableType(eCompressedAaLookupTable);
+    opts->SetOptions().SetWordThreshold(21.69);
+    opts->SetOptions().SetWindowSize(0);
+    opts->SetOptions().SetCompositionBasedStats(eNoCompositionBasedStats);
+
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    BOOST_CHECK_EQUAL(1, (int)sav[0]->Size());
+    testBlastHitCounts(blaster, eTblastn_129295_555_large_word);
+    testRawCutoffs(blaster, eTblastn, eTblastn_129295_555_large_word);
+
+    int num_ident = 0;
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
+#if 0
+ofstream o("3.asn");
+o << MSerial_AsnText << *sar ;
+o.close();
+#endif
+    BOOST_CHECK_EQUAL(5, num_ident);
+}
+
+BOOST_AUTO_TEST_CASE(IdenticalProteins)
+{
+    //const int kSeqLength = 377;
+    CSeq_id qid("gi|34810917");
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    CSeq_id sid("gi|34810916");
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+
+    CBl2Seq blaster(*query, *subj, eBlastp);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+    // the number of identities is NOT calculated when composition based
+    // statistics is turned on (default for blastp)
+    int num_ident = 0;
+    sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
+#if 0
+    ofstream o("4.asn");
+    o << MSerial_AsnText << *sar ;
+    o.close();
+#endif
+    BOOST_CHECK_EQUAL(377, num_ident);
+
+    // calculate the number of identities using the BLAST formatter
+/*
+    double percent_identity = 
+        CBlastFormatUtil::GetPercentIdentity(*sar, *query->scope, false);
+    BOOST_CHECK_EQUAL(1, (int) percent_identity);
+*/
+
+    // Check the ancillary results
+    CSearchResultSet::TAncillaryVector ancillary_data;
+    blaster.GetAncillaryResults(ancillary_data);
+    BOOST_CHECK_EQUAL((size_t)1, ancillary_data.size());
+    BOOST_CHECK( ancillary_data.front()->GetGappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetUngappedKarlinBlk() != NULL );
+    BOOST_CHECK( ancillary_data.front()->GetSearchSpace() != (Int8)0 );
+}
+
+BOOST_AUTO_TEST_CASE(UnsupportedOption) {
+    CDiscNucleotideOptionsHandle opts_handle;
+    BOOST_REQUIRE_THROW(opts_handle.SetTraditionalBlastnDefaults(),
+                        CBlastException);
+}
+
+BOOST_AUTO_TEST_CASE(PositiveMismatchOption) {
+    CSeq_id qid("gi|408478");  // zebrafish sequence U02544
+    CSeq_id sid("gi|1546012"); // mouse sequence U61969
+
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+
+    const int kMatch = 2;
+    const int kMismatch = 5;  // Positive mismatch not allowed.
+
+    CBlastNucleotideOptionsHandle nucl_options_handle;
+
+    nucl_options_handle.SetMatchReward(kMatch);
+    nucl_options_handle.SetMismatchPenalty(kMismatch);
+    CBl2Seq blaster(*query, *subj, nucl_options_handle);
+    try {
+       TSeqAlignVector sav(blaster.Run());
+    } catch (const CException& e) {
+        BOOST_REQUIRE(
+            !strcmp("BLASTN penalty must be negative",  
+                    e.GetMsg().c_str()));
+    }
+}
+
+// If a single query is fully masked, throw an exception (i.e.: an error)
+BOOST_AUTO_TEST_CASE(FullyMaskedSequence) {
+    CSeq_id qid("ref|NT_024524.13");
+    pair<TSeqPos, TSeqPos> range(27886902, 27886932);
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
+                                               eNa_strand_plus));
+    range.first = 2052;
+    range.second = 2082;
+    CSeq_id sid("emb|BX641126.1");
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
+                                               eNa_strand_minus));
+    CRef<CBlastNucleotideOptionsHandle> options(new CBlastNucleotideOptionsHandle);
+    options->SetTraditionalBlastnDefaults();
+    options->SetMismatchPenalty(-1);
+    options->SetMatchReward(1);
+    options->SetGapXDropoff(100);
+    options->SetMaskAtHash(false);
+    CBl2Seq blaster(*query, *subj, *options);
+    CRef<CSearchResultSet> results;
+    BOOST_REQUIRE_NO_THROW(results = blaster.RunEx());
+}
+
+// In the case of multiple queries and one being masked, only emit a warning
+// N.B.: this doesn't test the MT case as MT unit tests aren't supported
+BOOST_AUTO_TEST_CASE(MultipleQueries1FullyMasked) {
+    const bool kHasProteinQuery(true);
+    CBlastInputSourceConfig iconfig(kHasProteinQuery);
+    const CSearchDatabase dbinfo("data/nt.41646578", CSearchDatabase::eBlastDbIsNucleotide);
+    CRef<CBlastOptionsHandle> opts_handle(CBlastOptionsFactory::Create(eTblastn));
+
+    CNcbiIfstream infile("data/mult_queries_1fully_masked.fsa");
+    CRef<CScope> scope = CBlastScopeSource(kHasProteinQuery).NewScope();
+    CRef<CBlastFastaInputSource> fasta_src
+        (new CBlastFastaInputSource(infile, iconfig));
+    CRef<CBlastInput> input(new CBlastInput(&*fasta_src));
+    TSeqLocVector query_vec = input->GetAllSeqLocs(*scope);
+
+    // The first iteration runs the search *without* splitting, the second one
+    // forces to use query splitting
+    for (int env = 0; env < 2; env++) {
+
+        CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_vec));
+        unique_ptr<CAutoEnvironmentVariable> envvar1, envvar2;
+        if (env) {
+            envvar1.reset(new CAutoEnvironmentVariable("OVERLAP_CHUNK_SIZE", NStr::SizetToString(10)));
+            envvar2.reset(new CAutoEnvironmentVariable("CHUNK_SIZE", NStr::SizetToString(100)));
+        }
+        CLocalBlast blaster(queries, opts_handle, dbinfo);
+        CRef<CSearchResultSet> results;
+        BOOST_REQUIRE_NO_THROW(results = blaster.Run());
+        BOOST_REQUIRE_EQUAL(3U, results->size());
+        for (size_t query_idx = 0; query_idx < results->size(); query_idx++) {
+            const string& warnings((*results)[query_idx].GetWarningStrings());
+            const string& errors((*results)[query_idx].GetErrorStrings());
+
+            CNcbiOstrstream oss;
+            if (env) {
+                oss << "Forced splitting of queries: ";
+            } else {
+                oss << "No splitting of queries: ";
+            }
+
+            if (query_idx == 0 || query_idx == 2) {
+                oss << " expected no warnings/errors, got errors='" << errors << "'; "
+                    << "warnings='" << warnings << "'";
+                const string msg = CNcbiOstrstreamToString(oss);
+                BOOST_CHECK_MESSAGE(kEmptyStr == warnings, msg);
+                BOOST_CHECK_MESSAGE(kEmptyStr == errors, msg);
+            } else {
+                oss << " expected warnings to match '" << kBlastErrMsg_CantCalculateUngappedKAParams
+                    << "; instead got '" << warnings << "'";
+                const string msg = CNcbiOstrstreamToString(oss);
+                BOOST_CHECK_MESSAGE(warnings.find(kBlastErrMsg_CantCalculateUngappedKAParams) != NPOS, msg);
+            }
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(testInterruptBlastpExitImmediately) {
+    CSeq_id id("gi|129295");
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+
+    CBl2Seq blaster(*sl, *sl, eBlastp);
+    TInterruptFnPtr fnptr =
+        blaster.SetInterruptCallback(interrupt_immediately);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav;
+    try { sav = blaster.Run(); }
+    catch (...) {
+        BOOST_REQUIRE_EQUAL((size_t)0, sav.size());
+    }
+}
+
+// SB-814
+BOOST_AUTO_TEST_CASE(Tblastn2Seqs_PlusStrandOnly) {
+    // We expect only 1 hit between these two sequences in the plus strand
+    TSeqLocVector query_vec, subj_vec;
+    CSeq_id qid(CSeq_id::e_Gi, 7019569);
+    unique_ptr<SSeqLoc> ql(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    query_vec.push_back(*ql);
+    CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_vec));
+
+    const ENa_strand target_strand = eNa_strand_plus;
+    CSeq_id sid(CSeq_id::e_Gi, 17865806);
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(sid,
+                                                               target_strand));
+    subj_vec.push_back(*sl);
+    CRef<IQueryFactory> subjects(new CObjMgr_QueryFactory(subj_vec));
+
+    CRef<CBlastOptionsHandle> tblastn_opts(new CTBlastnOptionsHandle());
+    // N.B.: this setting is not applicable, instead the strand should be set
+    // in the subject seqlocs. FIXME: add a comment to this effect to
+    // SetStrandOption. 
+    // N.B.2: BLAST doesn't support setting the subject strand for a database
+    // search
+    //tblastn_opts->SetOptions().SetStrandOption(target_strand);
+    CRef<CLocalDbAdapter> db_adapter(new CLocalDbAdapter(subjects, tblastn_opts));
+
+    CLocalBlast blaster(queries, tblastn_opts, db_adapter);
+
+    CRef<CSearchResultSet> results = blaster.Run(); 
+    BOOST_REQUIRE_EQUAL(eSequenceComparison, results->GetResultType());
+    BOOST_CHECK_EQUAL((size_t)1, results->GetNumResults());
+    const CSearchResults& result = (*results)[0];
+    BOOST_CHECK(result.HasAlignments());
+    CConstRef<CSeq_align_set> alignment = result.GetSeqAlign();
+    BOOST_CHECK_EQUAL((size_t)1, alignment->Size());
+    ITERATE(CSeq_align_set::Tdata, aln, alignment->Get()) {
+        // check the query's strand (protein)
+        BOOST_CHECK_EQUAL(static_cast<int>(eNa_strand_unknown), static_cast<int>((*aln)->GetSeqStrand(0))); 
+        // check the subject's strand (nucleotide)
+        BOOST_CHECK_EQUAL(static_cast<int>(eNa_strand_plus), static_cast<int>((*aln)->GetSeqStrand(1)));
+    }
+}
+
+// SB-386
+BOOST_AUTO_TEST_CASE_TIMEOUT(testInterruptBlastSetup, 3);
+BOOST_AUTO_TEST_CASE(testInterruptBlastSetup) {
+    CSeq_id id("NC_000002.11");
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+
+    CBl2Seq blaster(*sl, *sl, eBlastn);
+    TInterruptFnPtr fnptr =
+        blaster.SetInterruptCallback(interrupt_immediately);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav;
+    try { sav = blaster.Run(); }
+    catch (...) {
+        BOOST_REQUIRE_EQUAL((size_t)0, sav.size());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(testInterruptBlastnExitImmediately) {
+    CSeq_id id("gi|555");
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+
+    CBl2Seq blaster(*sl, *sl, eBlastn);
+    TInterruptFnPtr fnptr =
+        blaster.SetInterruptCallback(interrupt_immediately);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav;
+    try { sav = blaster.Run(); }
+    catch (...) {
+        BOOST_REQUIRE_EQUAL((size_t)0, sav.size());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(testInterruptBlastxExitImmediately) {
+    CSeq_id query_id("gi|555");
+    unique_ptr<SSeqLoc> slq(CTestObjMgr::Instance().CreateSSeqLoc(query_id));
+    CSeq_id subj_id("gi|129295");
+    unique_ptr<SSeqLoc> sls(CTestObjMgr::Instance().CreateSSeqLoc(subj_id));
+
+    CBl2Seq blaster(*slq, *sls, eBlastx);
+    TInterruptFnPtr fnptr =
+        blaster.SetInterruptCallback(interrupt_immediately);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav;
+    try { sav = blaster.Run(); }
+    catch (...) {
+        BOOST_REQUIRE_EQUAL((size_t)0, sav.size());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(testInterruptTblastxExitImmediately) {
+    CSeq_id query_id("gi|555");
+    unique_ptr<SSeqLoc> slq(CTestObjMgr::Instance().CreateSSeqLoc(query_id));
+    CSeq_id subj_id("gi|555");
+    unique_ptr<SSeqLoc> sls(CTestObjMgr::Instance().CreateSSeqLoc(subj_id));
+
+    CBl2Seq blaster(*slq, *sls, eTblastx);
+    TInterruptFnPtr fnptr =
+        blaster.SetInterruptCallback(interrupt_immediately);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav;
+    try { sav = blaster.Run(); }
+    catch (...) {
+        BOOST_REQUIRE_EQUAL((size_t)0, sav.size());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(testInterruptTblastnExitImmediately) {
+    CSeq_id query_id("gi|129295");
+    unique_ptr<SSeqLoc> slq(CTestObjMgr::Instance().CreateSSeqLoc(query_id));
+    CSeq_id subj_id("gi|555");
+    unique_ptr<SSeqLoc> sls(CTestObjMgr::Instance().CreateSSeqLoc(subj_id));
+
+    CBl2Seq blaster(*slq, *sls, eTblastn);
+    TInterruptFnPtr fnptr =
+        blaster.SetInterruptCallback(interrupt_immediately);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav;
+    try { sav = blaster.Run(); }
+    catch (...) {
+        BOOST_REQUIRE_EQUAL((size_t)0, sav.size());
+    }
+}
+
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof(*a))
+static
+CRef<CBl2Seq> s_SetupWithMultipleQueriesAndSubjects(bool query_is_nucl,
+                                                    bool subj_is_nucl,
+                                                    EProgram program) {
+
+    TIntId protein_gis[] = { 6, 129295, 15606659, 4336138, 5556 };
+    TIntId nucl_gis[] = { 272208, 272217, 272211, 272247, 272227, 272236, 
+        272219 };
+
+    vector<TIntId> q_gis, s_gis;
+    if (query_is_nucl) {
+        copy(&nucl_gis[0],
+             &nucl_gis[ARRAY_SIZE(nucl_gis)],
+             back_inserter(q_gis));
+    } else {
+        copy(&protein_gis[0],
+             &protein_gis[ARRAY_SIZE(protein_gis)],
+             back_inserter(q_gis));
+    }
+
+    if (subj_is_nucl) {
+        copy(&nucl_gis[0],
+             &nucl_gis[ARRAY_SIZE(nucl_gis)],
+             back_inserter(s_gis));
+    } else {
+        copy(&protein_gis[0],
+             &protein_gis[ARRAY_SIZE(protein_gis)],
+             back_inserter(s_gis));
+    }
+
+
+    TSeqLocVector queries;
+    ITERATE(vector<TIntId>, itr, q_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        queries.push_back(SSeqLoc(loc, scope));
+    }
+
+    TSeqLocVector subjects;
+    ITERATE(vector<TIntId>, itr, s_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        subjects.push_back(SSeqLoc(loc, scope));
+    }
+
+    return CRef<CBl2Seq>(new CBl2Seq(queries, subjects, program));
+}
+
+BOOST_AUTO_TEST_CASE(testInterruptBlastpExitAtRandom) {
+
+    CRef<CBl2Seq> blaster = s_SetupWithMultipleQueriesAndSubjects(false,
+                                                                  false,
+                                                                  eBlastp);
+
+    int num_callbacks_executed(0);
+    TInterruptFnPtr fnptr =
+        blaster->SetInterruptCallback(callback_counter, 
+                                      (void*) &num_callbacks_executed);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav(blaster->Run()); // won't throw
+	CRandom r((CRandom::TValue)time(0));
+    int max_interrupt_callbacks = r.GetRand(1, num_callbacks_executed);
+    pair<int, int> progress_pair(make_pair(0, max_interrupt_callbacks));
+
+    fnptr = blaster->SetInterruptCallback(interrupt_at_random,
+                                          (void*)&progress_pair);
+    BOOST_REQUIRE(fnptr == callback_counter);
+    sav.clear();
+
+    try { sav = blaster->Run(); }
+    catch (...) {
+        BOOST_REQUIRE_EQUAL((size_t)0, sav.size());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(testInterruptBlastnExitAtRandom) {
+
+    CRef<CBl2Seq> blaster =
+        s_SetupWithMultipleQueriesAndSubjects(true, true, eBlastn);
+
+    int num_callbacks_executed(0);
+    TInterruptFnPtr fnptr =
+        blaster->SetInterruptCallback(callback_counter,
+                                      (void*)&num_callbacks_executed);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav(blaster->Run()); // won't throw
+    CRandom r((CRandom::TValue)time(0));
+    int max_interrupt_callbacks = r.GetRand(1, num_callbacks_executed);
+    pair<int, int> progress_pair(make_pair(0, max_interrupt_callbacks));
+
+    fnptr = blaster->SetInterruptCallback(interrupt_at_random,
+                                          (void*)&progress_pair);
+    BOOST_REQUIRE(fnptr == callback_counter);
+    sav.clear();
+
+    try { sav = blaster->Run(); }
+    catch (...) {
+        BOOST_REQUIRE_EQUAL((size_t)0, sav.size());
+    }
+}
+
+// interrupt_at_random.
+BOOST_AUTO_TEST_CASE(testInterruptBlastxExitAtRandom) {
+
+    CRef<CBl2Seq> blaster =
+        s_SetupWithMultipleQueriesAndSubjects(true, false, eBlastx);
+
+    int num_callbacks_executed(0);
+    TInterruptFnPtr fnptr =
+        blaster->SetInterruptCallback(callback_counter,
+                                      (void*) & num_callbacks_executed);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav(blaster->Run()); // won't throw
+    CRandom r((CRandom::TValue)time(0));
+    int max_interrupt_callbacks = r.GetRand(1, num_callbacks_executed);
+    pair<int, int> progress_pair(make_pair(0, max_interrupt_callbacks));
+
+    fnptr = blaster->SetInterruptCallback(interrupt_at_random,
+                                          (void*)&progress_pair);
+    BOOST_REQUIRE(fnptr == callback_counter);
+    sav.clear();
+
+    try { sav = blaster->Run(); }
+    catch (...) {
+        BOOST_REQUIRE_EQUAL((size_t)0, sav.size());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(testInterruptTblastnExitAtRandom) {
+
+    CRef<CBl2Seq> blaster =
+        s_SetupWithMultipleQueriesAndSubjects(false, true, eTblastn);
+
+    int num_callbacks_executed(0);
+    TInterruptFnPtr fnptr =
+        blaster->SetInterruptCallback(callback_counter,
+                                      (void*)&num_callbacks_executed);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav(blaster->Run()); // won't throw
+    CRandom r((CRandom::TValue)time(0));
+    int max_interrupt_callbacks = r.GetRand(1, num_callbacks_executed);
+    pair<int, int> progress_pair(make_pair(0, max_interrupt_callbacks));
+
+    fnptr = blaster->SetInterruptCallback(interrupt_at_random,
+                                          (void*)&progress_pair);
+    BOOST_REQUIRE(fnptr == callback_counter);
+    sav.clear();
+
+    try { sav = blaster->Run(); }
+    catch (...) {
+        BOOST_REQUIRE_EQUAL((size_t)0, sav.size());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(testInterruptTblastxExitAtRandom) {
+
+    CRef<CBl2Seq> blaster =
+        s_SetupWithMultipleQueriesAndSubjects(true, true, eTblastx);
+
+    int num_callbacks_executed(0);
+    TInterruptFnPtr fnptr =
+        blaster->SetInterruptCallback(callback_counter,
+                                      (void*) & num_callbacks_executed);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav(blaster->Run()); // won't throw
+    CRandom r((CRandom::TValue)time(0));
+    int max_interrupt_callbacks = r.GetRand(1, num_callbacks_executed);
+    pair<int, int> progress_pair(make_pair(0, max_interrupt_callbacks));
+
+    fnptr = blaster->SetInterruptCallback(interrupt_at_random,
+                                          (void*)&progress_pair);
+    BOOST_REQUIRE(fnptr == callback_counter);
+    sav.clear();
+
+    try { sav = blaster->Run(); }
+    catch (...) {
+        BOOST_REQUIRE_EQUAL((size_t)0, sav.size());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(testInterruptBlastpExitAfter3Callbacks) {
+    CSeq_id id("gi|129295");
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+
+    CBl2Seq blaster(*sl, *sl, eBlastp);
+    TInterruptFnPtr fnptr =
+        blaster.SetInterruptCallback(interrupt_after3calls);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav;
+    try { sav = blaster.Run(); }
+    catch (...) {
+        BOOST_REQUIRE_EQUAL((size_t)0, sav.size());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(testInterruptBlastxExitOnTraceback) {
+
+    CRef<CBl2Seq> blaster = s_SetupWithMultipleQueriesAndSubjects(true,
+                                                                  false,
+                                                                  eBlastx);
+    TInterruptFnPtr fnptr =
+        blaster->SetInterruptCallback(interrupt_on_traceback);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav;
+    try { sav = blaster->Run(); }
+    catch (...) {
+        BOOST_REQUIRE_EQUAL((size_t)0, sav.size());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(testInterruptTblastxExitOnTraceback) {
+
+    CRef<CBl2Seq> blaster = s_SetupWithMultipleQueriesAndSubjects
+        (true, true, eTblastx);
+    TInterruptFnPtr fnptr =
+        blaster->SetInterruptCallback(interrupt_on_traceback);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav;
+    try { sav = blaster->Run(); }
+    catch (...) {
+        BOOST_REQUIRE_EQUAL((size_t)0, sav.size());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(ProteinBlastMultipleQueriesWithInvalidSeqId) {
+    vector<TIntId> q_gis, s_gis;
+
+    // Setup the queries
+    q_gis.push_back(129295);
+    q_gis.push_back(-1);        // invalid seqid
+
+    // setup the subjects
+    s_gis.push_back(129295);
+    s_gis.push_back(4336138);   // no hits with gi 129295
+
+    TSeqLocVector queries;
+    ITERATE(vector<TIntId>, itr, q_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        queries.push_back(SSeqLoc(loc, scope));
+    }
+
+    TSeqLocVector subjects;
+    ITERATE(vector<TIntId>, itr, s_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        subjects.push_back(SSeqLoc(loc, scope));
+    }
+
+    // BLAST by concatenating all queries
+    CBl2Seq blaster4all(queries, subjects, eBlastp);
+    TSeqAlignVector sas_v = blaster4all.Run(); 
+
+    TSearchMessages m;
+    blaster4all.GetMessages(m);
+    BOOST_REQUIRE_EQUAL(subjects.size()*queries.size(), sas_v.size());
+
+    BOOST_REQUIRE(m[0].empty());
+    BOOST_REQUIRE(!m[1].empty());
+
+    // Verify the error message
+    TQueryMessages qm = m[1];
+    BOOST_REQUIRE(qm.front()->GetMessage().find("Cannot resolve") !=
+                   string::npos);
+
+    // Verify that the alignments corresponding to the 2nd query are indeed empty
+    // in older version this was sas_v[1], order has changed
+    BOOST_REQUIRE_EQUAL(0, (int) sas_v[2]->Size());
+
+    CRef<CSearchResultSet> res = blaster4all.RunEx();
+    BOOST_REQUIRE(res.NotEmpty());
+    BOOST_REQUIRE_EQUAL(q_gis.size()*s_gis.size(), res->GetNumResults());
+    BOOST_REQUIRE(res->GetResults(0,0).HasAlignments());
+    BOOST_REQUIRE(!res->GetResults(0,1).HasAlignments());
+    BOOST_REQUIRE(!res->GetResults(1,0).HasAlignments());
+    BOOST_REQUIRE(!res->GetResults(1,1).HasAlignments());
+}
+
+// JIRA:SB-1242
+BOOST_AUTO_TEST_CASE(ProteinBlastMultipleQueriesWithBadQuery) {
+    vector<TIntId> q_gis, s_gis;
+
+    // Setup the queries
+    q_gis.push_back(296863684);    // All X's
+    q_gis.push_back(129295);        
+
+    // setup the subjects
+    s_gis.push_back(129296);
+
+    TSeqLocVector queries;
+    ITERATE(vector<TIntId>, itr, q_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        queries.push_back(SSeqLoc(loc, scope));
+    }
+
+    TSeqLocVector subjects;
+    ITERATE(vector<TIntId>, itr, s_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        subjects.push_back(SSeqLoc(loc, scope));
+    }
+
+    // BLAST by concatenating all queries
+    CBl2Seq blaster4all(queries, subjects, eBlastp);
+    TSeqAlignVector sas_v = blaster4all.Run(); 
+
+    TSearchMessages m;
+    blaster4all.GetMessages(m);
+    BOOST_REQUIRE_EQUAL(subjects.size()*queries.size(), sas_v.size());
+
+    BOOST_REQUIRE(!m[0].empty());
+    BOOST_REQUIRE(m[1].empty());
+}
+
+BOOST_AUTO_TEST_CASE(NucleotideBlastMultipleQueriesWithInvalidSeqId) {
+    CRef<CSeq_id> id1(new CSeq_id(CSeq_id::e_Gi, 555));
+    unique_ptr<SSeqLoc> sl1(CTestObjMgr::Instance().CreateSSeqLoc(*id1));
+    CRef<CSeq_id> id2(new CSeq_id(CSeq_id::e_Gi, 556));
+    unique_ptr<SSeqLoc> sl2(CTestObjMgr::Instance().CreateSSeqLoc(*id2));
+
+    const TSeqPos kFakeBioseqLength = 12;
+    const char byte(0);   // string of 4 A's in ncbi2na
+    vector<char> na_data(kFakeBioseqLength/4, byte);
+
+    CRef<CSeq_id> fake_id(new CSeq_id("lcl|77"));
+    CRef<CBioseq> fake_bioseq(new CBioseq);
+    fake_bioseq->SetInst().SetLength(kFakeBioseqLength);
+    fake_bioseq->SetInst().SetSeq_data().SetNcbi2na().Set().swap(na_data);
+    fake_bioseq->SetInst().SetMol(CSeq_inst::eMol_na);
+    fake_bioseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    fake_bioseq->SetId().push_back(fake_id);
+    CRef<CSeq_loc> fake_loc(new CSeq_loc);
+    fake_loc->SetWhole(*fake_id);
+
+    CRef<CScope> scope(CSimpleOM::NewScope(false));
+    scope->AddBioseq(*fake_bioseq);
+    unique_ptr<SSeqLoc> sl_bad(new SSeqLoc(*fake_loc, *scope));
+
+    TSeqPos len = sequence::GetLength(*sl_bad->seqloc, sl_bad->scope);
+    BOOST_REQUIRE_EQUAL(kFakeBioseqLength, len);
+
+    TSeqLocVector queries;
+    queries.push_back(*sl1);
+    queries.push_back(*sl_bad);
+    queries.push_back(*sl2);
+
+    // All subjects have matches against this gi
+    CRef<CSeq_id> subj_id(new CSeq_id(CSeq_id::e_Gi, 555));
+    unique_ptr<SSeqLoc> subj_loc
+        (CTestObjMgr::Instance().CreateSSeqLoc(*subj_id));
+    TSeqLocVector subject;
+    subject.push_back(*subj_loc);;
+    
+    CRef<CBlastNucleotideOptionsHandle> opts_handle(new CBlastNucleotideOptionsHandle);
+    opts_handle->SetMaskAtHash(false);
+    CBl2Seq bl2seq(queries, subject, *opts_handle);
+    TSeqAlignVector sas_v = bl2seq.Run(); 
+    sas_v = bl2seq.Run(); 
+    TSearchMessages m;
+    bl2seq.GetMessages(m);
+    BOOST_REQUIRE_EQUAL(sas_v.size(), m.size());
+    BOOST_REQUIRE_EQUAL(queries.size(), sas_v.size());
+
+    BOOST_REQUIRE(m[0].empty());
+    BOOST_REQUIRE(!m[1].empty());
+    BOOST_REQUIRE(m[2].empty());
+
+    TQueryMessages qm = m[1];
+
+    // no duplicate messages for the contexts
+    BOOST_REQUIRE(qm.size() == 1); 
+    // Verify the error message
+    ITERATE(TQueryMessages, itr, qm) {
+        BOOST_REQUIRE((*itr)->GetMessage().find("Could not calculate "
+                                                 "ungapped Karlin-Altschul "
+                                                 "parameters") 
+                       != string::npos);
+    }
+    // Verify that the alignments corresponding to the 2nd query are indeed
+    // empty
+    ITERATE(CSeq_align_set::Tdata, alignments, sas_v[1]->Get()) {
+        BOOST_REQUIRE((*alignments)->GetSegs().IsDisc());
+        BOOST_REQUIRE((*alignments)->GetSegs().GetDisc().Get().empty());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(ProteinSelfHitWithMask) {
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 129295));
+    CRef<CSeq_loc> sl(new CSeq_loc());
+    sl->SetWhole(*id);
+    CRef<CSeq_loc> mask(new CSeq_loc(*id, 50, 100));
+    CRef<CScope> scope(CSimpleOM::NewScope());
+    SSeqLoc seqloc(sl, scope, mask);
+
+    CBl2Seq bl2seq(seqloc, seqloc, eBlastp);
+    TSeqAlignVector sav(bl2seq.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+}
+
+// Inspired by SB-285
+BOOST_AUTO_TEST_CASE(NucleotideMaskedLocation) {
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 83219349));
+    CRef<CSeq_loc> sl(new CSeq_loc());
+    sl->SetWhole(*id);
+    CRef<CSeq_loc> mask(new CSeq_loc(*id, 57, 484));
+    CRef<CScope> scope(CSimpleOM::NewScope());
+    SSeqLoc query_seqloc(sl, scope, mask);
+
+    CRef<CSeq_id> sid(new CSeq_id(CSeq_id::e_Gi, 88954065));
+    CRef<CSeq_loc> ssl(new CSeq_loc(*sid, 9909580-100, 9909607+100));
+    SSeqLoc subj_seqloc(ssl, scope);
+
+    CBl2Seq bl2seq(query_seqloc, subj_seqloc, eMegablast);
+    TSeqAlignVector sav(bl2seq.Run());
+    BOOST_REQUIRE_EQUAL(0U, sav[0]->Get().size());
+}
+
+// Inspired by SB-285
+BOOST_AUTO_TEST_CASE(NucleotideMaskedLocation_FromFile) {
+    CNcbiIfstream infile("data/masked.fsa");
+    const bool is_protein(false);
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetLowercaseMask(true);
+    CRef<CBlastFastaInputSource> fasta_src
+        (new CBlastFastaInputSource(infile, iconfig));
+    CRef<CBlastInput> input(new CBlastInput(&*fasta_src));
+    //CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    //scope->AddDefaults();
+    CRef<CScope> scope = CBlastScopeSource(is_protein).NewScope();
+
+    CRef<blast::CBlastQueryVector> seqs = input->GetNextSeqBatch(*scope);
+    CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*seqs));
+
+    TSeqLocVector subj_vec;
+    CRef<CSeq_id> sid(new CSeq_id(CSeq_id::e_Gi, 88954065));
+    CRef<CSeq_loc> ssl(new CSeq_loc(*sid, 9909580-100, 9909607+100));
+    subj_vec.push_back(SSeqLoc(ssl, scope));
+    CRef<IQueryFactory> subj_qf(new CObjMgr_QueryFactory(subj_vec));
+    CRef<CBlastOptionsHandle>
+        opts_handle(CBlastOptionsFactory::Create(eBlastn));
+    CRef<CLocalDbAdapter> subjects(new CLocalDbAdapter(subj_qf,
+                                                       opts_handle));
+
+    size_t num_queries = seqs->Size();
+    size_t num_subjects = subj_vec.size();
+    BOOST_REQUIRE_EQUAL((size_t)1, num_queries);
+    BOOST_REQUIRE_EQUAL((size_t)1, num_subjects);
+
+    // BLAST by concatenating all queries
+    CLocalBlast blaster(queries, opts_handle, subjects);
+    CRef<CSearchResultSet> results = blaster.Run();
+    BOOST_REQUIRE(results->GetResultType() == eSequenceComparison);
+    BOOST_REQUIRE_EQUAL((num_queries*num_subjects),
+                        results->GetNumResults());
+    BOOST_REQUIRE_EQUAL((num_queries*num_subjects), results->size());
+    BOOST_REQUIRE_EQUAL(num_queries, results->GetNumQueries());
+    BOOST_REQUIRE_EQUAL(num_subjects,
+                        results->GetNumResults()/results->GetNumQueries());
+
+    CSearchResults& res = (*results)[0];
+    BOOST_REQUIRE(res.HasAlignments() == false);
+}
+
+// JIRA SB-732
+BOOST_AUTO_TEST_CASE(InvalidMaskingAlgorithm) {
+    CRef<blast::CSearchDatabase> m_SearchDb;
+    m_SearchDb.Reset(new CSearchDatabase("nr",
+                                         CSearchDatabase::eBlastDbIsProtein));
+    m_SearchDb->SetFilteringAlgorithm(66, eSoftSubjMasking);
+    CRef<CLocalDbAdapter> subject_adapter(new CLocalDbAdapter(*m_SearchDb));
+    CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eBlastp));
+    vector<TIntId> q_gis;
+    // Setup the queries
+    CSeq_id seq_id("P01013.1");
+
+    TSeqLocVector queries;
+    CRef<CSeq_loc> loc(new CSeq_loc());
+    loc->SetWhole(seq_id);
+
+    CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+    scope->AddDefaults();
+    queries.push_back(SSeqLoc(loc, scope));
+
+    CRef<IQueryFactory> query_fact(new CObjMgr_QueryFactory(queries));
+    BOOST_REQUIRE_THROW(CLocalBlast blaster(query_fact, opts, subject_adapter),
+                        CBlastException);
+}
+
+// test for the case where the use of composition based
+// satistics should have deleted a hit but did not (used to crash)
+BOOST_AUTO_TEST_CASE(ProteinCompBasedStats) {
+
+    CRef<CObjectManager> kObjMgr = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*kObjMgr));
+    CRef<CSeq_entry> seq_entry1;
+    const string kFileName("data/blastp_compstats.fa");
+    ifstream in1(kFileName.c_str());
+    if ( !in1 )
+        throw runtime_error("Failed to open " + kFileName);
+    if ( !(seq_entry1 = CFastaReader(in1).ReadOneSeq()))
+        throw runtime_error("Failed to read sequence from " + kFileName);
+    scope->AddTopLevelSeqEntry(*seq_entry1);
+    CRef<CSeq_loc> seqloc1(new CSeq_loc);
+    const string kSeqIdString1("lcl|1");
+    CRef<CSeq_id> id1(new CSeq_id(kSeqIdString1));
+    seqloc1->SetWhole(*id1);
+    SSeqLoc ss1(seqloc1, scope);
+
+    CSeq_id id("gi|4503637");
+    unique_ptr<SSeqLoc> ss2(CTestObjMgr::Instance().CreateSSeqLoc(id));
+
+    CRef<CBlastProteinOptionsHandle> opts_handle (new CBlastProteinOptionsHandle);
+    opts_handle->SetWordSize(2);
+    opts_handle->SetEvalueThreshold(20000);
+    opts_handle->SetFilterString("F");/* NCBI_FAKE_WARNING */
+    opts_handle->SetMatrixName("PAM30");
+    opts_handle->SetGapOpeningCost(9);
+    opts_handle->SetGapExtensionCost(1);
+    opts_handle->SetOptions().SetCompositionBasedStats(
+                                          eCompositionBasedStats);
+
+    CBl2Seq blaster(ss1, *ss2, *opts_handle);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+}
+
+BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryBothStrands) {
+    CSeq_id qid("gi|555");
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
+    query->genetic_code_id = 1;
+
+    CSeq_id sid("gi|129295");
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+
+    CBl2Seq blaster(*query, *subj, eBlastx);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+            // cerr << "Align " << MSerial_AsnText << *sar << endl;
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetStd().size());
+    testBlastHitCounts(blaster, eBlastx_555_129295);
+    testRawCutoffs(blaster, eBlastx, eBlastx_555_129295);
+}
+
+BOOST_AUTO_TEST_CASE(NucleotideSelfHitWithSubjectMask) {
+    CRef<CSeq_id> query_id(new CSeq_id(CSeq_id::e_Gi, 148727250));
+    CRef<CSeq_id> subj_id(new CSeq_id(CSeq_id::e_Gi, 89059606));
+    CRef<CSeq_loc> qsl(new CSeq_loc(*query_id, 0, 1000));
+    CRef<CSeq_loc> ssl(new CSeq_loc(*subj_id, 0, 1000));
+    CPacked_seqint::TRanges mask_vector;
+    mask_vector.push_back(TSeqRange(0, 44));
+    mask_vector.push_back(TSeqRange(69, 582));
+    mask_vector.push_back(TSeqRange(610, 834));
+    mask_vector.push_back(TSeqRange(854, 1000));
+    CRef<CPacked_seqint> masks(new CPacked_seqint(*subj_id,
+                                                  mask_vector));
+    CRef<CSeq_loc> subj_mask(new CSeq_loc());
+    subj_mask->SetPacked_int(*masks);
+    CRef<CScope> scope(CSimpleOM::NewScope());
+    SSeqLoc query(qsl, scope);
+    unique_ptr<SSeqLoc> subject(new SSeqLoc(ssl, scope, subj_mask));
+    {
+        CBl2Seq bl2seq(query, *subject, eBlastn);
+        TSeqAlignVector sav(bl2seq.Run());
+        BOOST_REQUIRE_EQUAL((size_t)1, sav.front()->Get().size());
+    }
+
+    // Now compare the same sequences, without the subject masks
+    subject.reset(new SSeqLoc(ssl, scope));
+    {
+        CBl2Seq bl2seq(query, *subject, eBlastn);
+        TSeqAlignVector sav(bl2seq.Run());
+        BOOST_REQUIRE_EQUAL((size_t)4, sav.front()->Get().size());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(NucleotideBlastSelfHit) {
+    CSeq_id id("gi|555");
+    unique_ptr<SSeqLoc> sl(
+        CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
+
+    // Traditional blastn search
+    CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eBlastn));
+    CBl2Seq blaster(*sl, *sl, *opts);
+    TSeqAlignVector sav = blaster.Run();
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+    testBlastHitCounts(blaster, eBlastn_555_555);
+    testRawCutoffs(blaster, eBlastn, eBlastn_555_555);
+
+    // Change the options to megablast
+    opts.Reset(CBlastOptionsFactory::Create(eMegablast));
+    blaster.SetOptionsHandle() = *opts;
+    sav = blaster.Run();
+    BOOST_REQUIRE_EQUAL(1, (int)sav.size());
+    sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+    testBlastHitCounts(blaster, eMegablast_555_555);
+    testRawCutoffs(blaster, eMegablast, eMegablast_555_555);
+
+    // Change the options to discontiguous megablast
+    opts.Reset(CBlastOptionsFactory::Create(eDiscMegablast));
+    blaster.SetOptionsHandle() = *opts;
+    sav = blaster.Run();
+    sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+    testBlastHitCounts(blaster, eDiscMegablast_555_555);
+    testRawCutoffs(blaster, eDiscMegablast, eDiscMegablast_555_555);
+}
+
+BOOST_AUTO_TEST_CASE(MegablastGreedyTraceback) {
+    CSeq_id query_id("gi|2655203");
+    unique_ptr<SSeqLoc> ql(
+        CTestObjMgr::Instance().CreateSSeqLoc(query_id, 
+                                              eNa_strand_plus));
+
+    CSeq_id subject_id("gi|200811");
+    unique_ptr<SSeqLoc> sl(
+        CTestObjMgr::Instance().CreateSSeqLoc(subject_id, 
+                                              eNa_strand_minus));
+
+    // test a fix for a bug that corrupted the traceback
+    // in the one hit returned from this search
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalMegablastDefaults();
+    opts->SetMatchReward(1);
+    opts->SetMismatchPenalty(-2);
+    opts->SetGapOpeningCost(3);
+    opts->SetGapExtensionCost(1);
+    opts->SetWordSize(24);
+    opts->SetGapExtnAlgorithm(eGreedyScoreOnly);
+    opts->SetGapTracebackAlgorithm(eGreedyTbck);
+
+    CBl2Seq blaster(*ql, *sl, *opts);
+
+    CRef<CSearchResultSet> res = blaster.RunEx();
+    BOOST_REQUIRE_EQUAL(eSequenceComparison, res->GetResultType());
+    BOOST_REQUIRE_EQUAL(1U, res->size());
+    CConstRef<CSeq_align_set> sas = (*res)[0].GetSeqAlign();
+    BOOST_REQUIRE(sas.NotEmpty());
+    BOOST_REQUIRE_EQUAL(1U, sas->Get().size());
+    CRef<CSeq_align> sa = sas->Get().front();
+    int score = 0;
+    sa->GetNamedScore(CSeq_align::eScore_Score, score);
+    BOOST_REQUIRE_EQUAL(832, score);
+
+    TSeqAlignVector alignments = blaster.Run();
+    BOOST_REQUIRE_EQUAL(1U, alignments.size());
+    sa = alignments[0]->Get().front();
+    sa->GetNamedScore(CSeq_align::eScore_Score, score);
+    BOOST_REQUIRE_EQUAL(832, score);
+}
+
+
+BOOST_AUTO_TEST_CASE(MegablastGreedyTraceback2) {
+    CRef<CObjectManager> kObjMgr = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*kObjMgr));
+
+    CRef<CSeq_entry> seq_entry1;
+    ifstream in1("data/greedy1a.fsa");
+    if ( !in1 )
+        throw runtime_error("Failed to open file1");
+    if ( !(seq_entry1 = CFastaReader(in1).ReadOneSeq()))
+        throw runtime_error("Failed to read sequence from file1");
+    scope->AddTopLevelSeqEntry(*seq_entry1);
+    CRef<CSeq_loc> seqloc1(new CSeq_loc);
+    const string kSeqIdString1("lcl|1");
+    CRef<CSeq_id> id1(new CSeq_id(kSeqIdString1));
+    seqloc1->SetWhole(*id1);
+    SSeqLoc ss1(seqloc1, scope);
+
+    CRef<CSeq_entry> seq_entry2;
+    ifstream in2("data/greedy1b.fsa");
+    if ( !in2 )
+        throw runtime_error("Failed to open file2");
+    if ( !(seq_entry2 = CFastaReader(in2).ReadOneSeq()))
+        throw runtime_error("Failed to read sequence from file2");
+    scope->AddTopLevelSeqEntry(*seq_entry2);
+    CRef<CSeq_loc> seqloc2(new CSeq_loc);
+    const string kSeqIdString2("lcl|2");
+    CRef<CSeq_id> id2(new CSeq_id(kSeqIdString2));
+    seqloc2->SetWhole(*id2);
+    SSeqLoc ss2(seqloc2, scope);
+
+    CRef<CBlastNucleotideOptionsHandle> handle(new CBlastNucleotideOptionsHandle);
+    handle->SetGapOpeningCost(0);
+    handle->SetGapExtensionCost(0);
+    handle->SetDustFiltering(false);
+
+    // test multiple bug fixes in greedy gapped alignment
+
+    CBl2Seq blaster1(ss1, ss2, *handle);
+    TSeqAlignVector sav(blaster1.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sav[0]->Size());
+
+    const CSeq_align& seqalign1 = *sar;
+    BOOST_REQUIRE(seqalign1.IsSetScore());
+    ITERATE(CSeq_align::TScore, itr, seqalign1.GetScore()) {
+        BOOST_REQUIRE((*itr)->IsSetId());
+        if ((*itr)->GetId().GetStr() == "score") {
+            BOOST_REQUIRE_EQUAL(619, (*itr)->GetValue().GetInt());
+            break;
+        }
+    }
+
+    handle->SetMatchReward(10);
+    handle->SetMismatchPenalty(-25);
+    handle->SetGapXDropoff(100.0);
+    handle->SetGapXDropoffFinal(100.0);
+
+    CBl2Seq blaster2(ss1, ss2, *handle);
+    sav = blaster2.Run();
+    sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sav[0]->Size());
+
+    const CSeq_align& seqalign2 = *sar;
+    BOOST_REQUIRE(seqalign2.IsSetScore());
+    ITERATE(CSeq_align::TScore, itr, seqalign2.GetScore()) {
+        BOOST_REQUIRE((*itr)->IsSetId());
+        if ((*itr)->GetId().GetStr() == "score") {
+            BOOST_REQUIRE_EQUAL(6035, (*itr)->GetValue().GetInt());
+            break;
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(MegablastGreedyTracebackSelfHits) {
+    // the following tests are for JIRA SB-1041, where the greedy
+    // traceback may stop prematurely.
+    CSeq_id query_id("gi|56384585");
+    unique_ptr<SSeqLoc> ql(
+        CTestObjMgr::Instance().CreateSSeqLoc(query_id, 
+                                              eNa_strand_plus));
+
+    CSeq_id subject_id("gi|56384585");
+    unique_ptr<SSeqLoc> sl(
+        CTestObjMgr::Instance().CreateSSeqLoc(subject_id, 
+                                              eNa_strand_plus));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalMegablastDefaults();
+    opts->SetMatchReward(1);
+    opts->SetMismatchPenalty(-2);
+    opts->SetGapOpeningCost(0);
+    opts->SetGapExtensionCost(0);
+    opts->SetWordSize(28);
+    opts->SetGapExtnAlgorithm(eGreedyScoreOnly);
+    opts->SetGapTracebackAlgorithm(eGreedyTbck);
+
+    CBl2Seq blaster(*ql, *sl, *opts);
+
+    CRef<CSearchResultSet> res = blaster.RunEx();
+    BOOST_REQUIRE_EQUAL(eSequenceComparison, res->GetResultType());
+    BOOST_REQUIRE_EQUAL(1U, res->size());
+    CConstRef<CSeq_align_set> sas = (*res)[0].GetSeqAlign();
+    BOOST_REQUIRE(sas.NotEmpty());
+    CRef<CSeq_align> sa = sas->Get().front();
+    int score = 0;
+    sa->GetNamedScore(CSeq_align::eScore_Score, score);
+    BOOST_REQUIRE_EQUAL(3794584, score);
+}
+
+BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
+    CSeq_id qid("gi|555");
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_plus));
+
+    CSeq_id sid("gi|129295");
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+
+    CBl2Seq blaster(*query, *subj, eBlastx);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetStd().size());
+}
+
+BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryMinusStrand) {
+    CSeq_id qid("gi|555");
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_minus));
+
+    CSeq_id sid("gi|129295");
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+
+    CBl2Seq blaster(*query, *subj, eBlastx);
+    TSeqAlignVector sav(blaster.Run());
+    // No hits.  Empty CSeq_align_set returned.
+    BOOST_REQUIRE(sav[0]->IsEmpty() == true);
+}
+
+
+BOOST_AUTO_TEST_CASE(TBlastx2Seqs_QueryBothStrands) {
+    CSeq_id id("gi|555");
+    unique_ptr<SSeqLoc> sl(
+        CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
+
+    CBl2Seq blaster(*sl, *sl, eTblastx);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(39, (int)sar->GetSegs().GetStd().size());
+    testBlastHitCounts(blaster, eTblastx_555_555);
+    testRawCutoffs(blaster, eTblastx, eTblastx_555_555);
+}
+
+BOOST_AUTO_TEST_CASE(TBlastx2Seqs_QueryPlusStrand) {
+    CSeq_id id("gi|555");
+    unique_ptr<SSeqLoc> sl(
+        CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_plus));
+
+    CBl2Seq blaster(*sl, *sl, eTblastx);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(11, (int)sar->GetSegs().GetStd().size());
+}
+
+BOOST_AUTO_TEST_CASE(TBlastx2Seqs_QueryMinusStrand) {
+    CSeq_id id("gi|555");
+    unique_ptr<SSeqLoc> sl(
+        CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_minus));
+
+    CBl2Seq blaster(*sl, *sl, eTblastx);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(12, (int)sar->GetSegs().GetStd().size());
+}
+
+
+BOOST_AUTO_TEST_CASE(TblastxManyHits) {
+    const int total_num_hsps = 49;
+    const int num_hsps_to_check = 8;
+    const int score_array[num_hsps_to_check] = 
+        { 947, 125, 820, 113, 624, 221, 39, 778};
+    const int sum_n_array[num_hsps_to_check] = 
+        { 2, 2, 2, 2, 3, 3, 3, 0};
+    CSeq_id qid("gi|24719404");
+    unique_ptr<SSeqLoc> qsl(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
+    CSeq_id sid("gi|29807292");
+    pair<TSeqPos, TSeqPos> range(15185000, 15195000);
+    unique_ptr<SSeqLoc> ssl(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, range, eNa_strand_both));
+    CBl2Seq blaster(*qsl, *ssl, eTblastx);
+    blaster.SetOptionsHandle().SetMaxNumHspPerSequence(total_num_hsps);
+
+    TSeqAlignVector sav(blaster.Run());
+
+    testBlastHitCounts(blaster, eTblastx_many_hits);
+    testRawCutoffs(blaster, eTblastx, eTblastx_many_hits);
+
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    list< CRef<CStd_seg> >& segs = sar->SetSegs().SetStd();
+    BOOST_REQUIRE_EQUAL(total_num_hsps, (int)segs.size());
+    int index = 0;
+    ITERATE(list< CRef<CStd_seg> >, itr, segs) {
+        const vector< CRef< CScore > >& score_v = (*itr)->GetScores();
+        ITERATE(CSeq_align::TScore, sitr, score_v) {
+            BOOST_REQUIRE((*sitr)->IsSetId());
+            if ((*sitr)->GetId().GetStr() == "score") {
+                BOOST_REQUIRE_EQUAL(score_array[index], 
+                                     (*sitr)->GetValue().GetInt());
+            } else if ((*sitr)->GetId().GetStr() == "sum_n") {
+                BOOST_REQUIRE_EQUAL(sum_n_array[index], 
+                                     (*sitr)->GetValue().GetInt());
+            }
+        }
+        if (++index == num_hsps_to_check)
+            break;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(ProteinBlast2Seqs) {
+    CSeq_id id("gi|129295");
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(id));
+
+    id.SetGi(GI_CONST(7662354));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(id));
+
+    CBl2Seq blaster(*query, *subj, eBlastp);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+    testBlastHitCounts(blaster, eBlastp_129295_7662354);
+    testRawCutoffs(blaster, eBlastp, eBlastp_129295_7662354);
+}
+
+BOOST_AUTO_TEST_CASE(BlastnWithRepeatFiltering_InvalidDB) {
+    CSeq_id qid("gi|555");
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CBlastNucleotideOptionsHandle opts;
+    opts.SetTraditionalMegablastDefaults();
+    const string kRepeatDb("junk");
+    opts.SetRepeatFilteringDB(kRepeatDb.c_str());
+    bool is_repeat_filtering_on = opts.GetRepeatFiltering();
+    BOOST_REQUIRE(is_repeat_filtering_on);
+    string repeat_db(opts.GetRepeatFilteringDB() 
+                     ? opts.GetRepeatFilteringDB()
+                     : kEmptyStr);
+    BOOST_REQUIRE_EQUAL(kRepeatDb, repeat_db);
+
+    CBl2Seq blaster(*query, *query, opts);
+    BOOST_CHECK_THROW((void) blaster.Run(), CBlastException);
+    BOOST_CHECK_THROW((void) blaster.RunEx(), CBlastException);
+}
+
+BOOST_AUTO_TEST_CASE(BlastnWithRepeatFiltering) {
+    CSeq_id qid("gi|555");
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalMegablastDefaults();
+    opts->SetRepeatFiltering(true);
+    string repeat_db(opts->GetRepeatFilteringDB() 
+                     ? opts->GetRepeatFilteringDB()
+                     : kEmptyStr);
+    BOOST_REQUIRE_EQUAL(string(kDefaultRepeatFilterDb), repeat_db);
+    // it's harmless to set them both, but only the latter one will be used
+    const string kRepeatDb("repeat/repeat_9606");
+    opts->SetRepeatFilteringDB(kRepeatDb.c_str());
+    repeat_db.assign(opts->GetRepeatFilteringDB() 
+                     ? opts->GetRepeatFilteringDB()
+                     : kEmptyStr);
+    BOOST_REQUIRE_EQUAL(kRepeatDb, repeat_db);
+
+    bool is_repeat_filtering_on = opts->GetRepeatFiltering();
+    BOOST_REQUIRE(is_repeat_filtering_on);
+
+    CBl2Seq blaster(*query, *query, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE(sar.NotEmpty());
+    BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() >= 1);
+}
+
+BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_Db) {
+    CSeq_id qid("gi|555");
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalMegablastDefaults();
+    const string kWindowMaskerDb = WindowMaskerTaxidToDb(9606);
+    opts->SetWindowMaskerDatabase(kWindowMaskerDb.c_str());
+    string wmdb(opts->GetWindowMaskerDatabase()
+                ? opts->GetWindowMaskerDatabase() : kEmptyStr);
+    BOOST_REQUIRE_EQUAL(kWindowMaskerDb, wmdb);
+    BOOST_REQUIRE_EQUAL(0, opts->GetWindowMaskerTaxId());
+    CBl2Seq blaster(*query, *query, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE(sar.NotEmpty());
+    BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() >= 1);
+}
+
+BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_Taxid) {
+    CSeq_id qid("gi|555");
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalMegablastDefaults();
+    opts->SetWindowMaskerTaxId(9606);
+    CBl2Seq blaster(*query, *query, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE(sar.NotEmpty());
+    BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() >= 1);
+}
+
+BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_InvalidDb) {
+    CSeq_id qid("gi|555");
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CBlastNucleotideOptionsHandle opts;
+    opts.SetTraditionalMegablastDefaults();
+    const string kWindowMaskerDb("Dummydb");
+    opts.SetWindowMaskerDatabase(kWindowMaskerDb.c_str());
+    string wmdb(opts.GetWindowMaskerDatabase()
+                ? opts.GetWindowMaskerDatabase() : kEmptyStr);
+    BOOST_REQUIRE_EQUAL(kWindowMaskerDb, wmdb);
+    CBl2Seq blaster(*query, *query, opts);
+    BOOST_CHECK_THROW((void) blaster.Run(), CBlastException);
+    BOOST_CHECK_THROW((void) blaster.RunEx(), CBlastException);
+}
+
+BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_InvalidTaxid) {
+    CSeq_id qid("gi|555");
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CBlastNucleotideOptionsHandle opts;
+    opts.SetTraditionalMegablastDefaults();
+    const int kInvalidTaxId = -1;
+    opts.SetWindowMaskerTaxId(kInvalidTaxId);
+    BOOST_REQUIRE_EQUAL(kInvalidTaxId, opts.GetWindowMaskerTaxId());
+    CBl2Seq blaster(*query, *query, opts);
+    BOOST_CHECK_THROW((void) blaster.Run(), CBlastException);
+    BOOST_CHECK_THROW((void) blaster.RunEx(), CBlastException);
+}
+
+BOOST_AUTO_TEST_CASE(WindowMaskerPathInitInvalid) {
+    int rv = WindowMaskerPathInit(kEmptyStr);
+    BOOST_CHECK_EQUAL(1, rv);
+    rv = WindowMaskerPathInit("blast_unit_test");
+    BOOST_CHECK_EQUAL(1, rv);
+}
+
+BOOST_AUTO_TEST_CASE(WindowMaskerPathInitValid) {
+    int rv = WindowMaskerPathInit(CDir::GetCwd());
+    BOOST_CHECK_EQUAL(0, rv);
+    WindowMaskerPathReset();
+}
+
+BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_DbAndTaxid) {
+    CSeq_id qid("gi|555");
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalMegablastDefaults();
+    // if both are set, the database name will be given preference
+    opts->SetWindowMaskerDatabase(WindowMaskerTaxidToDb(9606).c_str());
+    opts->SetWindowMaskerTaxId(-1);
+    CBl2Seq blaster(*query, *query, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE(sar.NotEmpty());
+    BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() >= 1);
+}
+
+BOOST_AUTO_TEST_CASE(ConvertTaxIdToWindowMaskerDb) {
+    string path;
+    BOOST_CHECK_NO_THROW(path = WindowMaskerTaxidToDb(9606));
+    BOOST_REQUIRE(NStr::EndsWith(path, "wmasker.obinary") ||
+                  NStr::EndsWith(path, "wmasker.oascii") );
+}
+
+// Bug report from Alex Astashyn
+BOOST_AUTO_TEST_CASE(Alex) {
+    CSeq_id qid("NG_007092.2");
+    TSeqRange qr(0, 2311633);
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, qr, eNa_strand_plus));
+
+    CSeq_id sid("NT_007914.14");
+    TSeqRange sr(5233652, 9849919);
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, sr));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalMegablastDefaults();
+    opts->SetRepeatFiltering(true);
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE(sar.NotEmpty());
+    BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() >= 1);
+}
+
+BOOST_AUTO_TEST_CASE(NucleotideBlast2Seqs) {
+    CSeq_id qid("gi|555");
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
+
+    CSeq_id sid("gi|3090");
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalBlastnDefaults();
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(3, (int)sar->GetSegs().GetDenseg().GetNumseg());
+    testBlastHitCounts(blaster, eBlastn_555_3090);
+    testRawCutoffs(blaster, eBlastn, eBlastn_555_3090);
+}
+
+BOOST_AUTO_TEST_CASE(ProteinBlastChangeQuery) {
+    CSeq_id id("gi|129295");
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(id));
+
+    id.SetGi(GI_CONST(7662354));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(id));
+
+    // Run self hit first
+    CBl2Seq blaster(*subj, *subj, eBlastp);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+    // Change the query sequence (recreates the lookup table)
+    blaster.SetQuery(*query);
+    sav = blaster.Run();
+    sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+}
+
+BOOST_AUTO_TEST_CASE(ProteinBlastChangeSubject) {
+    CSeq_id qid("gi|129295");
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CSeq_id sid("gi|7662354");
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+
+    // Run self hit first
+    CBl2Seq blaster(*query, *query, eBlastp);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+    // Change the subject sequence
+    blaster.SetSubject(*subj);
+    sav = blaster.Run();
+    BOOST_REQUIRE_EQUAL(1, (int)sav.size());
+    sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+}
+
+BOOST_AUTO_TEST_CASE(NucleotideBlastChangeQuery) {
+    CSeq_id qid("gi|555");
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
+
+    CSeq_id sid("gi|3090");
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
+
+    // Run self hit first
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalBlastnDefaults();
+    CBl2Seq blaster(*subj, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+    // Change the query sequence (recreates the lookup table)
+    blaster.SetQuery(*query);
+    sav = blaster.Run();
+    BOOST_REQUIRE_EQUAL(2, (int)sav[0]->Size());
+    sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(3, (int)sar->GetSegs().GetDenseg().GetNumseg());
+}
+
+BOOST_AUTO_TEST_CASE(NucleotideBlastChangeSubject) {
+    CSeq_id qid("gi|555");
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
+
+    CSeq_id sid("gi|3090");
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
+
+    // Run self hit first
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalBlastnDefaults();
+    CBl2Seq blaster(*query, *query, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+    // Change the subject sequence
+    blaster.SetSubject(*subj);
+    sav = blaster.Run();
+    sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(3, (int)sar->GetSegs().GetDenseg().GetNumseg());
+}
+
+
+BOOST_AUTO_TEST_CASE(ProteinBlastMultipleQueries) {
+    TSeqLocVector sequences;
+
+    CSeq_id qid("gi|129295");
+    unique_ptr<SSeqLoc> sl1(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    sequences.push_back(*sl1);
+
+    CSeq_id sid("gi|7662354");
+    unique_ptr<SSeqLoc> sl2(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    sequences.push_back(*sl2);
+
+    CBl2Seq blaster(sequences, sequences, eBlastp);
+    TSeqAlignVector seqalign_v = blaster.Run();
+
+    /* DEBUG OUTPUT
+    for (size_t i = 0; i < seqalign_v.size(); i++)
+        cerr << "\n<" << i << ">\n"
+            << MSerial_AsnText << seqalign_v[i].GetObject() << endl;
+    */
+    
+    BOOST_REQUIRE_EQUAL(4, (int)seqalign_v.size());
+    BOOST_REQUIRE_EQUAL(2, (int)sequences.size());
+
+    CRef<CSeq_align> sar;
+    
+    BOOST_REQUIRE_EQUAL(1U, seqalign_v[0]->Get().size());
+    sar = *(seqalign_v[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL((CDense_seg::TNumseg)1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+    BOOST_REQUIRE_EQUAL((size_t)2, seqalign_v[1]->Get().size());
+    sar = *(seqalign_v[1]->Get().begin());
+    BOOST_REQUIRE_EQUAL((CDense_seg::TNumseg)1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+    sar = *(++(seqalign_v[1]->Get().begin()));
+    BOOST_REQUIRE_EQUAL((CDense_seg::TNumseg)1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+    BOOST_REQUIRE_EQUAL((size_t)3, seqalign_v[2]->Get().size());
+    sar = *(seqalign_v[2]->Get().begin());
+    BOOST_REQUIRE_EQUAL((CDense_seg::TNumseg)1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+    sar = *(++(seqalign_v[2]->Get().begin()));
+    BOOST_REQUIRE_EQUAL((CDense_seg::TNumseg)1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+    BOOST_REQUIRE_EQUAL((size_t)1, seqalign_v[3]->Get().size());
+    sar = *(seqalign_v[3]->Get().begin());
+    BOOST_REQUIRE_EQUAL((CDense_seg::TNumseg)1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+
+    testBlastHitCounts(blaster, eBlastp_multi_q);
+    testRawCutoffs(blaster, eBlastp, eBlastp_multi_q);
+
+    // test the order of queries and subjects:
+    testResultAlignments(sequences.size(), sequences.size(),
+                            seqalign_v);
+}
+
+BOOST_AUTO_TEST_CASE(NucleotideBlastMultipleQueries) {
+    TSeqLocVector sequences;
+
+    CSeq_id qid("gi|555");
+    unique_ptr<SSeqLoc> sl1(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
+    sequences.push_back(*sl1);
+    BOOST_REQUIRE(sl1->mask.Empty());
+
+    CSeq_id sid("gi|3090");
+    unique_ptr<SSeqLoc> sl2(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
+    sequences.push_back(*sl2);
+    BOOST_REQUIRE(sl2->mask.Empty());
+
+    CBl2Seq blaster(sequences, sequences, eBlastn);
+    TSeqAlignVector seqalign_v = blaster.Run();
+    BOOST_REQUIRE_EQUAL(2, (int)sequences.size());
+    BOOST_REQUIRE_EQUAL(4, (int)seqalign_v.size());
+
+    CRef<CSeq_align> sar = *(seqalign_v[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL((CDense_seg::TNumseg)1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+    // in older version this was seqalign_v[1], order has changed
+    sar = *(seqalign_v[2]->Get().begin());
+    BOOST_REQUIRE_EQUAL((CDense_seg::TNumseg)1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+    testBlastHitCounts(blaster, eBlastn_multi_q);
+    testRawCutoffs(blaster, eBlastn, eBlastn_multi_q);
+
+    // test the order of queries and subjects:
+    testResultAlignments(sequences.size(), sequences.size(),
+                            seqalign_v);
+}
+
+#if 0
+void DoSearchWordSize4(const char *file1, const char *file2) {
+    CRef<CObjectManager> kObjMgr = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*kObjMgr));
+
+    CRef<CSeq_entry> seq_entry1;
+    ifstream in1(file1);
+    if ( !in1 )
+        throw runtime_error("Failed to open file1");
+    if ( !(seq_entry1 = CFastaReader(in1).ReadOneSeq()))
+        throw runtime_error("Failed to read sequence from file1");
+    scope->AddTopLevelSeqEntry(*seq_entry1);
+    CRef<CSeq_loc> seqloc1(new CSeq_loc);
+    const string kSeqIdString1("lcl|1");
+    CRef<CSeq_id> id1(new CSeq_id(kSeqIdString1));
+    seqloc1->SetWhole(*id1);
+    SSeqLoc ss1(seqloc1, scope);
+
+    CRef<CSeq_entry> seq_entry2;
+    ifstream in2(file2);
+    if ( !in2 )
+        throw runtime_error("Failed to open file2");
+    if ( !(seq_entry2 = CFastaReader(in2).ReadOneSeq()))
+        throw runtime_error("Failed to read sequence from file2");
+    scope->AddTopLevelSeqEntry(*seq_entry2);
+    CRef<CSeq_loc> seqloc2(new CSeq_loc);
+    const string kSeqIdString2("lcl|2");
+    CRef<CSeq_id> id2(new CSeq_id(kSeqIdString2));
+    seqloc2->SetWhole(*id2);
+    SSeqLoc ss2(seqloc2, scope);
+
+    CBlastNucleotideOptionsHandle handle;
+    handle.SetTraditionalBlastnDefaults();
+    handle.SetWordSize(4);
+    handle.SetDustFiltering(false);
+    handle.SetMismatchPenalty(-1);
+    handle.SetMatchReward(1);
+    handle.SetEvalueThreshold(10000);
+
+    CBl2Seq blaster(ss1, ss2, handle);
+    blaster.RunWithoutSeqalignGeneration(); /* NCBI_FAKE_WARNING */
+    BlastHSPResults *results = blaster.GetResults(); /* NCBI_FAKE_WARNING */
+    BOOST_REQUIRE(results != NULL);
+    BOOST_REQUIRE(results->hitlist_array[0] != NULL);
+    BOOST_REQUIRE(results->hitlist_array[0]->hsplist_array[0] != NULL);
+    BlastHSPList *hsp_list = results->hitlist_array[0]->hsplist_array[0];
+    BOOST_REQUIRE(hsp_list->hspcnt > 0);
+    BOOST_REQUIRE(hsp_list->hsp_array[0] != NULL);
+
+    // verify that all hits are properly formed, and
+    // at least as long as the word size
+
+    for (int i = 0; i < hsp_list->hspcnt; i++) {
+        BlastHSP *hsp = hsp_list->hsp_array[i];
+        BOOST_REQUIRE(hsp != NULL);
+        BOOST_REQUIRE(hsp->query.offset < hsp->query.end);
+        BOOST_REQUIRE(hsp->subject.offset < hsp->subject.end);
+        BOOST_REQUIRE(hsp->query.gapped_start >= hsp->query.offset &&
+                       hsp->query.gapped_start < hsp->query.end);
+        BOOST_REQUIRE(hsp->subject.gapped_start >= hsp->subject.offset &&
+                       hsp->subject.gapped_start < hsp->subject.end);
+        BOOST_REQUIRE(hsp->query.end - hsp->query.offset >= 4);
+        BOOST_REQUIRE(hsp->subject.end - hsp->subject.offset >= 4);
+    }
+
+    CRef<CSearchResultSet> res = blaster.RunEx();
+    BOOST_REQUIRE_EQUAL(eSequenceComparison, res->GetResultType());
+    BOOST_REQUIRE_EQUAL(1, res->GetNumQueries());
+    BOOST_REQUIRE_EQUAL(1, res->GetNumResults());
+    BOOST_REQUIRE_EQUAL(1, res->size());
+    CSearchResults& r = res->GetResults(0, 0);
+    BOOST_REQUIRE(r.HasAlignments());
+    CConstRef<CSeq_align_set> a = r.GetSeqAlign();
+    cerr << MSerial_AsnText << * a<< endl;
+
+}
+
+BOOST_AUTO_TEST_CASE(NucleotideBlastWordSize4) {
+    DoSearchWordSize4("data/blastn_size4a.fsa",
+                      "data/blastn_size4b.fsa");
+}
+
+// test bug fix when size-4 seed falls at the end of
+// the subject sequence
+BOOST_AUTO_TEST_CASE(NucleotideBlastWordSize4_EOS) {
+    DoSearchWordSize4("data/blastn_size4c.fsa",
+                      "data/blastn_size4d.fsa");
+}
+#endif
+
+BOOST_AUTO_TEST_CASE(TblastnOutOfFrame) {
+    CSeq_id qid("NP_647642.2"); // Protein sequence
+    CSeq_id sid("BC042576.1");  // DNA sequence
+
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+
+    // Set the options
+    CRef<CTBlastnOptionsHandle> opts(new CTBlastnOptionsHandle);
+    opts->SetOutOfFrameMode();
+    opts->SetFrameShiftPenalty(10);
+    opts->SetFilterString("m;L");/* NCBI_FAKE_WARNING */
+    opts->SetEvalueThreshold(0.01);
+    opts->SetCompositionBasedStats(eNoCompositionBasedStats);
+
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    BOOST_REQUIRE_EQUAL(1, (int)sav.size());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(2, (int)sav[0]->Size());
+    testBlastHitCounts(blaster, eTblastn_oof);
+    testRawCutoffs(blaster, eTblastn, eTblastn_oof);
+}
+
+// test multiple fixes for OOF alignments on both subject strands
+BOOST_AUTO_TEST_CASE(TblastnOutOfFrame2) {
+    CSeq_id qid("gi|38111923"); // Protein sequence
+    CSeq_id sid("gi|6648925");  // DNA sequence
+
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+
+    // Set the options
+    CRef<CTBlastnOptionsHandle> opts(new CTBlastnOptionsHandle);
+    opts->SetOutOfFrameMode();
+    opts->SetFrameShiftPenalty(5);
+    opts->SetCompositionBasedStats(eNoCompositionBasedStats);
+    opts->SetFilterString("L");/* NCBI_FAKE_WARNING */
+
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(3, (int)sav[0]->Size());
+
+    // test fix for a bug generating OOF traceback
+
+    const CSeq_align& seqalign = *sar;
+    BOOST_REQUIRE(seqalign.IsSetScore());
+    ITERATE(CSeq_align::TScore, itr, seqalign.GetScore()) {
+        BOOST_REQUIRE((*itr)->IsSetId());
+        if ((*itr)->GetId().GetStr() == "num_ident") {
+            BOOST_REQUIRE_EQUAL(80, (*itr)->GetValue().GetInt());
+            break;
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(BlastxOutOfFrame) {
+    CSeq_id qid("BC042576.1");  // DNA sequence
+    CSeq_id sid("NP_647642.2"); // Protein sequence
+
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+
+    // Set the options
+    CRef<CBlastxOptionsHandle> opts(new CBlastxOptionsHandle);
+    opts->SetOutOfFrameMode();
+    opts->SetFrameShiftPenalty(10);
+    opts->SetCompositionBasedStats(eNoCompositionBasedStats);
+    opts->SetFilterString("m;L");/* NCBI_FAKE_WARNING */
+    opts->SetEvalueThreshold(0.01);
+
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(2, (int)sav[0]->Size());
+    testBlastHitCounts(blaster, eBlastx_oof);
+    testRawCutoffs(blaster, eBlastx, eBlastx_oof);
+}
+
+// test for a bug computing OOF sequence lengths during traceback
+
+BOOST_AUTO_TEST_CASE(BlastxOutOfFrame_DifferentFrames) {
+    CSeq_id qid("gi|27486285");  // DNA sequence
+    CSeq_id sid("gi|7331210"); // Protein sequence
+
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+
+    // Set the options
+    CRef<CBlastxOptionsHandle> opts(new CBlastxOptionsHandle);
+    opts->SetOutOfFrameMode();
+    opts->SetFrameShiftPenalty(10);
+    opts->SetFilterString("L");/* NCBI_FAKE_WARNING */
+    opts->SetCompositionBasedStats(eNoCompositionBasedStats);
+
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    BOOST_REQUIRE_EQUAL(5, (int)sav[0]->Size());
+}
+
+// The following 3 functions are for checking results in the strand 
+// combinations tests.
+
+void x_TestAlignmentQuerySubjStrandCombinations(TSeqAlignVector& sav, 
+                                                string aligned_strands) {
+
+    // Starting offsets in alignment as query/subject pairs
+    vector< pair<TSignedSeqPos, TSignedSeqPos> > starts;
+    starts.push_back(make_pair(7685759, 10));
+    starts.push_back(make_pair(7685758, -1));
+    starts.push_back(make_pair(7685718, 269));
+    starts.push_back(make_pair(7685717, -1));
+    starts.push_back(make_pair(7685545, 309));
+
+    const size_t kNumSegments(starts.size());
+
+    // Lengths of the aligned regions defined in starts vector
+    vector<TSeqPos> lengths;
+    lengths.reserve(kNumSegments);
+    lengths.push_back(259);
+    lengths.push_back(1);
+    lengths.push_back(40);
+    lengths.push_back(1);
+    lengths.push_back(172);
+
+    // Strands of the involved aligned segments as query/subject pairs
+    typedef vector< pair<ENa_strand, ENa_strand> > TStrandPairs;
+    TStrandPairs strands(kNumSegments, 
+                         make_pair(eNa_strand_minus, eNa_strand_plus));
+
+    // Reverse the contents of the vectors if necessary
+    if (aligned_strands == "plus-minus") {
+        reverse(starts.begin(), starts.end());
+        reverse(lengths.begin(), lengths.end());
+        NON_CONST_ITERATE(TStrandPairs, itr, strands) {
+            swap(itr->first, itr->second);
+        }
+    }
+    BOOST_REQUIRE_EQUAL(kNumSegments, lengths.size());
+    BOOST_REQUIRE_EQUAL(kNumSegments, strands.size());
+
+    // Obtain the data from the Seq-align's dense segs ...
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sav[0]->Size());
+    // BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+    const CDense_seg& ds = sar->GetSegs().GetDenseg();
+    // CTypeIterator<CDense_seg> segs_itr(Begin(*sar));
+    const size_t kNumDim(ds.GetDim());
+    vector< TSignedSeqPos > seg_starts = ds.GetStarts();
+    vector< TSeqPos> seg_lengths = ds.GetLens();
+    vector< ENa_strand> seg_strands = ds.GetStrands();
+    BOOST_REQUIRE_EQUAL(kNumSegments, seg_lengths.size());
+    BOOST_REQUIRE_EQUAL(kNumSegments*kNumDim, seg_starts.size());
+
+    // ... and compare it to what is expected
+    for (size_t index = 0; index < kNumSegments; ++index) {
+        ostringstream os;
+        os << "Segment " << index << ": expected " << lengths[index]
+           << " actual " << seg_lengths[index];
+        BOOST_REQUIRE_MESSAGE(lengths[index] == seg_lengths[index],
+                              os.str());
+
+        os.str("");
+        os << "Segment " << index << ": expected " << starts[index].first
+           << " actual " << seg_starts[2*index];
+        BOOST_REQUIRE_MESSAGE(starts[index].first == seg_starts[2*index],
+                              os.str());
+        os.str("");
+        os << "Segment " << index << ": expected " << starts[index].second
+           << " actual " << seg_starts[2*index];
+        BOOST_REQUIRE_MESSAGE(starts[index].second == seg_starts[2*index+1],
+                              os.str());
+        os.str("");
+        os << "Segment " << index << ": expected " << (int)strands[index].first
+           << " actual " << (int)seg_strands[2*index];
+        BOOST_REQUIRE_MESSAGE(strands[index].first == seg_strands[2*index],
+                              os.str());
+        os.str("");
+        os << "Segment " << index << ": expected " << (int)strands[index].second
+           << " actual " << (int)seg_strands[2*index];
+        BOOST_REQUIRE_MESSAGE(strands[index].second == seg_strands[2*index+1],
+                              os.str());
+    }
+}
+
+static void testIntervalWholeAlignment(TSeqAlignVector& sav)
+{
+    const int num_segs = 5;
+    const int num_starts = 10;
+    const int starts[num_starts] = { 7685759, 0, 7685758, -1, 7685718,
+                                     269, 7685717, -1, 7685545, 309 };
+    const int lengths[num_segs] = { 269, 1, 40, 1, 172 };
+    int index;
+
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sav[0]->Size());
+    CTypeIterator<CDense_seg> segs_itr(Begin(*sar));
+    vector< TSignedSeqPos > seg_starts = segs_itr->GetStarts();
+    vector< TSeqPos> seg_lengths = segs_itr->GetLens();
+    vector< ENa_strand> seg_strands = segs_itr->GetStrands();
+    BOOST_REQUIRE_EQUAL(num_segs, (int)seg_lengths.size());
+    BOOST_REQUIRE_EQUAL(num_starts, (int)seg_starts.size());
+    for (index = 0; index < num_segs; ++index) {
+        BOOST_REQUIRE_EQUAL(lengths[index], (int)seg_lengths[index]);
+        BOOST_REQUIRE_EQUAL(starts[2*index], (int)seg_starts[2*index]);
+        BOOST_REQUIRE_EQUAL(starts[2*index+1], (int)seg_starts[2*index+1]);
+        BOOST_REQUIRE(seg_strands[2*index] == eNa_strand_minus);
+        BOOST_REQUIRE(seg_strands[2*index+1] == eNa_strand_plus);
+    }
+}
+
+static void testWholeIntervalAlignment(TSeqAlignVector& sav)
+{
+    const int num_segs = 5;
+    const int num_starts = 10;
+    const int starts[num_starts] = { 309, 7685545, -1, 7685717, 269, 7685718,
+                                     -1, 7685758, 0, 7685759 };
+    const int lengths[num_segs] = { 172, 1, 40, 1, 269 };
+    int index;
+
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sav[0]->Size());
+    CTypeIterator<CDense_seg> segs_itr(Begin(*sar));
+    vector< TSignedSeqPos > seg_starts = segs_itr->GetStarts();
+    vector< TSeqPos> seg_lengths = segs_itr->GetLens();
+    vector< ENa_strand> seg_strands = segs_itr->GetStrands();
+    BOOST_REQUIRE_EQUAL(num_segs, (int)seg_lengths.size());
+    BOOST_REQUIRE_EQUAL(num_starts, (int)seg_starts.size());
+    for (index = 0; index < num_segs; ++index) {
+        BOOST_REQUIRE_EQUAL(lengths[index], (int)seg_lengths[index]);
+        BOOST_REQUIRE_EQUAL(starts[2*index], (int)seg_starts[2*index]);
+        BOOST_REQUIRE_EQUAL(starts[2*index+1], (int)seg_starts[2*index+1]);
+        BOOST_REQUIRE(seg_strands[2*index] == eNa_strand_minus);
+        BOOST_REQUIRE(seg_strands[2*index+1] == eNa_strand_plus);
+    }
+}
+
+// should find alignments
+BOOST_AUTO_TEST_CASE(Blastn_QueryBothStrands_SubjBothStrands) {
+    // Alignment in these sequences is from plus/minus strands
+    CSeq_id qid("NT_004487.15");
+    pair<TSeqPos, TSeqPos> range(7685545, 7686027);
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
+                                               eNa_strand_both));
+
+    CSeq_id sid("AA441981.1");
+    range.first = 10;
+    range.second = 480;
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
+                                               eNa_strand_both));
+
+    CBlastNucleotideOptionsHandle* opts = new CBlastNucleotideOptionsHandle;
+    opts->SetTraditionalBlastnDefaults();
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    x_TestAlignmentQuerySubjStrandCombinations(sav, "minus-plus");
+}
+
+// should find alignment
+BOOST_AUTO_TEST_CASE(Blastn_QueryBothStrands_SubjPlusStrand) {
+    // Alignment in these sequences is from plus/minus strands
+    CSeq_id qid("NT_004487.15");
+    pair<TSeqPos, TSeqPos> range(7685545, 7686027);
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
+                                               eNa_strand_both));
+
+    CSeq_id sid("AA441981.1");
+    range.first = 10;
+    range.second = 480;
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
+                                               eNa_strand_plus));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalBlastnDefaults();
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    x_TestAlignmentQuerySubjStrandCombinations(sav, "minus-plus");
+}
+
+// should find alignment
+BOOST_AUTO_TEST_CASE(Blastn_QueryBothStrands_SubjMinusStrand) {
+    // Alignment in these sequences is from plus/minus strands
+    CSeq_id qid("NT_004487.15");
+    pair<TSeqPos, TSeqPos> range(7685545, 7686027);
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
+                                               eNa_strand_both));
+
+    CSeq_id sid("AA441981.1");
+    range.first = 10;
+    range.second = 480;
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
+                                               eNa_strand_minus));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalBlastnDefaults();
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    x_TestAlignmentQuerySubjStrandCombinations(sav, "plus-minus");
+}
+
+// shouldn't find an alignment
+BOOST_AUTO_TEST_CASE(Blastn_QueryPlusStrand_SubjPlusStrand) {
+    // Alignment in these sequences is from plus/minus strands
+    CSeq_id qid("NT_004487.15");
+    pair<TSeqPos, TSeqPos> range(7685545, 7686027);
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
+                                               eNa_strand_plus));
+
+    CSeq_id sid("AA441981.1");
+    range.first = 10;
+    range.second = 480;
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
+                                               eNa_strand_plus));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalBlastnDefaults();
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    BOOST_REQUIRE(sav[0]->IsEmpty() == true);
+}
+
+// should find an alignment
+BOOST_AUTO_TEST_CASE(Blastn_QueryPlusStrand_SubjMinusStrand) {
+    // Alignment in these sequences is from plus/minus strands
+    CSeq_id qid("NT_004487.15");
+    pair<TSeqPos, TSeqPos> range(7685545, 7686027);
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
+                                               eNa_strand_plus));
+
+    CSeq_id sid("AA441981.1");
+    range.first = 10;
+    range.second = 480;
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
+                                               eNa_strand_minus));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalBlastnDefaults();
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    x_TestAlignmentQuerySubjStrandCombinations(sav, "plus-minus");
+}
+
+// should NOT find an alignment because we only search the plus strand of
+// the subject sequence
+BOOST_AUTO_TEST_CASE(Blastn_QueryPlusStrand_SubjBothStrands) {
+    // Alignment in these sequences is from plus/minus strands
+    CSeq_id qid("NT_004487.15");
+    pair<TSeqPos, TSeqPos> range(7685545, 7686027);
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
+                                               eNa_strand_plus));
+
+    CSeq_id sid("AA441981.1");
+    range.first = 10;
+    range.second = 480;
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
+                                               eNa_strand_both));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalBlastnDefaults();
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    BOOST_REQUIRE(sav[0]->IsEmpty() == true);
+}
+
+// should not find an alignment because alignment is on opposite strands
+BOOST_AUTO_TEST_CASE(Blastn_QueryMinusStrand_SubjMinusStrand) {
+    // Alignment in these sequences is from plus/minus strands
+    CSeq_id qid("NT_004487.15");
+    pair<TSeqPos, TSeqPos> range(7685545, 7686027);
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
+                                               eNa_strand_minus));
+
+    CSeq_id sid("AA441981.1");
+    range.first = 10;
+    range.second = 480;
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
+                                               eNa_strand_minus));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalBlastnDefaults();
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    BOOST_REQUIRE(sav[0]->IsEmpty() == true);
+}
+
+// should find alignment
+BOOST_AUTO_TEST_CASE(Blastn_QueryMinusStrand_SubjPlusStrand) {
+    // Alignment in these sequences is from plus/minus strands
+    CSeq_id qid("NT_004487.15");
+    pair<TSeqPos, TSeqPos> range(7685545, 7686027);
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
+                                               eNa_strand_minus));
+
+    CSeq_id sid("AA441981.1");
+    range.first = 10;
+    range.second = 480;
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
+                                               eNa_strand_plus));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalBlastnDefaults();
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    x_TestAlignmentQuerySubjStrandCombinations(sav, "minus-plus");
+}
+
+// should find alignment
+BOOST_AUTO_TEST_CASE(Blastn_QueryMinusStrand_SubjBothStrands) {
+    // Alignment in these sequences is from plus/minus strands
+    CSeq_id qid("NT_004487.15");
+    pair<TSeqPos, TSeqPos> range(7685545, 7686027);
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
+                                               eNa_strand_minus));
+
+    CSeq_id sid("AA441981.1");
+    range.first = 10;
+    range.second = 480;
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
+                                               eNa_strand_both));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalBlastnDefaults();
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    x_TestAlignmentQuerySubjStrandCombinations(sav, "minus-plus");
+}
+
+// Should properly find alignment
+BOOST_AUTO_TEST_CASE(Blastn_QueryWhole_SubjInterval)
+{
+    CRef<CSeq_id> qid(new CSeq_id("AA441981.1"));
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateWholeSSeqLoc(*qid));
+
+    CRef<CSeq_id> sid(new CSeq_id("NT_004487.15"));
+    pair<TSeqPos, TSeqPos> range(7685545, 7686027);
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(*sid, range, 
+                                               eNa_strand_both));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalBlastnDefaults();
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    testWholeIntervalAlignment(sav);
+}
+
+BOOST_AUTO_TEST_CASE(Blastn_QueryInterval_SubjWhole)
+{
+    CRef<CSeq_id> qid(new CSeq_id("NT_004487.15"));
+    pair<TSeqPos, TSeqPos> range(7685545, 7686027);
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(*qid, range, 
+                                               eNa_strand_both));
+
+    CRef<CSeq_id> sid(new CSeq_id("AA441981.1"));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateWholeSSeqLoc(*sid));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalBlastnDefaults();
+    CBl2Seq blaster(*query, *subj, *opts);
+    TSeqAlignVector sav(blaster.Run());
+    testIntervalWholeAlignment(sav);
+}
+
+BOOST_AUTO_TEST_CASE(BlastpMultipleQueries_MultipleSubjs) {
+    vector<TIntId> q_gis, s_gis;
+
+    // Setup the queries
+    q_gis.push_back(6);
+    q_gis.push_back(129295);
+    q_gis.push_back(15606659);
+
+    // setup the subjects
+    s_gis.push_back(129295);
+    s_gis.push_back(6);
+    s_gis.push_back(4336138); // no hits with gis 6 and 129295
+    s_gis.push_back(15606659);
+    s_gis.push_back(5556);
+
+    TSeqLocVector queries;
+    ITERATE(vector<TIntId>, itr, q_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        queries.push_back(SSeqLoc(loc, scope));
+    }
+
+    TSeqLocVector subjects;
+    ITERATE(vector<TIntId>, itr, s_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        subjects.push_back(SSeqLoc(loc, scope));
+    }
+
+    size_t num_queries = queries.size();
+    size_t num_subjects = subjects.size();
+
+    // BLAST by concatenating all queries
+    CBl2Seq blaster4all(queries, subjects, eBlastp);
+    TSeqAlignVector sas_v = blaster4all.Run();
+    BOOST_REQUIRE_EQUAL(num_queries*num_subjects, sas_v.size());
+    testBlastHitCounts(blaster4all, eBlastp_multi_q_s);
+    testRawCutoffs(blaster4all, eBlastp, eBlastp_multi_q_s);
+
+    // test the order of queries and subjects:
+    testResultAlignments(num_queries, num_subjects,
+                            sas_v);
+}
+
+BOOST_AUTO_TEST_CASE(BlastpMultipleQueries_MultipleSubjs_RunEx) {
+    vector<TIntId> q_gis, s_gis;
+
+    // Setup the queries
+    q_gis.push_back(6);
+    q_gis.push_back(129295);
+    q_gis.push_back(15606659);
+
+    // setup the subjects
+    s_gis.push_back(129295);
+    s_gis.push_back(6);
+    s_gis.push_back(4336138); // no hits with gis 6 and 129295
+    s_gis.push_back(15606659);
+    s_gis.push_back(5556);
+
+    TSeqLocVector queries;
+    ITERATE(vector<TIntId>, itr, q_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        queries.push_back(SSeqLoc(loc, scope));
+    }
+
+    TSeqLocVector subjects;
+    ITERATE(vector<TIntId>, itr, s_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        subjects.push_back(SSeqLoc(loc, scope));
+    }
+
+    size_t num_queries = queries.size();
+    size_t num_subjects = subjects.size();
+
+    // BLAST by concatenating all queries
+    CBl2Seq blaster4all(queries, subjects, eBlastp);
+    CRef<CSearchResultSet> results = blaster4all.RunEx();
+    BOOST_REQUIRE(results->GetResultType() == eSequenceComparison);
+    BOOST_REQUIRE_EQUAL((num_queries*num_subjects),
+                        results->GetNumResults());
+
+    // build the seqalign vector from the result set
+    TSeqAlignVector sas_v;
+    for (size_t i = 0; i < num_queries; i++)
+    {
+        for (size_t j = 0; j < num_subjects; j++)
+        {
+            CSearchResults& res_ij = results->GetResults(i, j);
+            CRef<CSeq_align_set> aln_set;
+            aln_set.Reset(const_cast<CSeq_align_set*>
+                          (res_ij.GetSeqAlign().GetPointer()));
+            sas_v.push_back(aln_set);
+        }
+    }
+    
+    // do the rest of the tests on sas_v as in the
+    // BlastpMultipleQueries_MultipleSubjs function:
+
+    BOOST_REQUIRE_EQUAL(num_queries*num_subjects, sas_v.size());
+    testBlastHitCounts(blaster4all, eBlastp_multi_q_s);
+    testRawCutoffs(blaster4all, eBlastp, eBlastp_multi_q_s);
+
+    // test the order of queries and subjects:
+    testResultAlignments(num_queries, num_subjects,
+                            sas_v);
+}
+
+// This closely resembles how the command line applications invoke bl2seq
+BOOST_AUTO_TEST_CASE(BlastpMultipleQueries_MultipleSubjs_CLocalBlast) {
+    vector<TIntId> q_gis, s_gis;
+
+    // Setup the queries
+    q_gis.push_back(6);
+    q_gis.push_back(129295);
+    q_gis.push_back(15606659);
+
+    // setup the subjects
+    s_gis.push_back(129295);
+    s_gis.push_back(6);
+    s_gis.push_back(4336138); // no hits with gis 6 and 129295
+    s_gis.push_back(15606659);
+    s_gis.push_back(5556);
+
+    TSeqLocVector query_vec;
+    ITERATE(vector<TIntId>, itr, q_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        query_vec.push_back(SSeqLoc(loc, scope));
+    }
+    CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_vec));
+
+    CRef<CBlastOptionsHandle>
+        opts_handle(CBlastOptionsFactory::Create(eBlastp));
+
+    TSeqLocVector subj_vec;
+    ITERATE(vector<TIntId>, itr, s_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        subj_vec.push_back(SSeqLoc(loc, scope));
+    }
+    CRef<IQueryFactory> subj_qf(new CObjMgr_QueryFactory(subj_vec));
+    CRef<CLocalDbAdapter> subjects(new CLocalDbAdapter(subj_qf,
+                                                       opts_handle));
+
+    BOOST_REQUIRE(subjects->IsDbScanMode() == false);
+    
+    size_t num_queries = query_vec.size();
+    size_t num_subjects = subj_vec.size();
+
+    // BLAST by concatenating all queries
+    CLocalBlast blaster(queries, opts_handle, subjects);
+    CRef<CSearchResultSet> results = blaster.Run();
+    BOOST_REQUIRE(results->GetResultType() == eSequenceComparison);
+    BOOST_REQUIRE_EQUAL((num_queries*num_subjects),
+                        results->GetNumResults());
+    BOOST_REQUIRE_EQUAL((num_queries*num_subjects), results->size());
+    BOOST_REQUIRE_EQUAL(num_queries, results->GetNumQueries());
+    BOOST_REQUIRE_EQUAL(num_subjects,
+                        results->GetNumResults()/results->GetNumQueries());
+
+    // build the seqalign vector from the result set
+    TSeqAlignVector sas_v;
+    for (size_t i = 0; i < num_queries; i++)
+    {
+        for (size_t j = 0; j < num_subjects; j++)
+        {
+            CSearchResults& res_ij = results->GetResults(i, j);
+            CRef<CSeq_align_set> aln_set;
+            aln_set.Reset(const_cast<CSeq_align_set*>
+                          (res_ij.GetSeqAlign().GetPointer()));
+            sas_v.push_back(aln_set);
+        }
+    }
+    
+    // do the rest of the tests on sas_v as in the
+    // BlastpMultipleQueries_MultipleSubjs function:
+    BOOST_REQUIRE_EQUAL(num_queries*num_subjects, sas_v.size());
+
+    // test the order of queries and subjects:
+    testResultAlignments(num_queries, num_subjects, sas_v);
+}
+
+BOOST_AUTO_TEST_CASE(Blastp_MultipleSubjs_SearchAsSet) {
+    vector<TIntId> q_gis, s_gis;
+
+    // Setup the queries
+    q_gis.push_back(816838863);
+
+    // setup the subjects
+    s_gis.push_back(16130156);
+    s_gis.push_back(15644111);
+    s_gis.push_back(126699345);
+    s_gis.push_back(504220075);
+    s_gis.push_back(21222553);
+    s_gis.push_back(24376189);
+    s_gis.push_back(15598078);
+    s_gis.push_back(15599919);
+    s_gis.push_back(15597767);
+    s_gis.push_back(16131833);
+    s_gis.push_back(15599742);
+    s_gis.push_back(15598387);
+    s_gis.push_back(15600358);
+    s_gis.push_back(24375949);
+    s_gis.push_back(126698248);
+    s_gis.push_back(24375956);
+    s_gis.push_back(24375382);
+    s_gis.push_back(126698598);
+
+    TSeqLocVector query_vec;
+    ITERATE(vector<TIntId>, itr, q_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        query_vec.push_back(SSeqLoc(loc, scope));
+    }
+    CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_vec));
+
+    CRef<CBlastOptionsHandle>
+        opts_handle(CBlastOptionsFactory::Create(eBlastp));
+
+    TSeqLocVector subj_vec;
+    ITERATE(vector<TIntId>, itr, s_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        subj_vec.push_back(SSeqLoc(loc, scope));
+    }
+    CRef<IQueryFactory> subj_qf(new CObjMgr_QueryFactory(subj_vec));
+    CRef<CLocalDbAdapter> subjects(new CLocalDbAdapter(subj_qf,
+                                                       opts_handle, true));
+
+    BOOST_REQUIRE(subjects->IsDbScanMode() == true);
+    
+    size_t num_queries = query_vec.size();
+    size_t num_subjects = subj_vec.size();
+
+    // BLAST by concatenating all queries
+    CLocalBlast blaster(queries, opts_handle, subjects);
+    CRef<CSearchResultSet> results = blaster.Run();
+    BOOST_REQUIRE(results->GetResultType() == eDatabaseSearch);
+    BOOST_REQUIRE_EQUAL(num_queries,
+                        results->GetNumResults());
+    BOOST_REQUIRE_EQUAL(num_queries, results->size());
+    BOOST_REQUIRE_EQUAL(num_queries, results->GetNumQueries());
+
+    // build the seqalign vector from the result set
+    CRef<CSeq_align_set> aln_set;
+    CSearchResults& res = (*results)[0];
+    aln_set.Reset(const_cast<CSeq_align_set*> 
+	(res.GetSeqAlign().GetPointer()));
+    // gi|15599742|ref|NP_253236.1|  has two alignments, all others have one.
+    BOOST_REQUIRE_EQUAL(num_subjects+1, aln_set->Size());
+    
+}
+
+BOOST_AUTO_TEST_CASE(BlastOptionsEquality) {
+    // Create options object through factory
+    unique_ptr<CBlastOptionsHandle> megablast_options_handle(
+        CBlastOptionsFactory::Create(eMegablast));
+    CBlastNucleotideOptionsHandle nucl_options_handle;
+    BOOST_REQUIRE(megablast_options_handle->GetOptions() == 
+                   nucl_options_handle.GetOptions());
+}
+
+BOOST_AUTO_TEST_CASE(BlastOptionsInequality) {
+    CBlastProteinOptionsHandle prot_options_handle;
+    CBlastNucleotideOptionsHandle nucl_options_handle;
+    BOOST_REQUIRE(prot_options_handle.GetOptions() != 
+                   nucl_options_handle.GetOptions());
+
+    // Blastn and Megablast are different
+    unique_ptr<CBlastOptionsHandle> blastn_options_handle(
+        CBlastOptionsFactory::Create(eBlastn));
+    BOOST_REQUIRE(blastn_options_handle->GetOptions() != 
+                   nucl_options_handle.GetOptions());
+
+    // Change the matrix and compare
+    CBlastProteinOptionsHandle prot_options_handle2;
+    prot_options_handle.SetMatrixName("pam30");
+    BOOST_REQUIRE(prot_options_handle.GetOptions() !=
+                   prot_options_handle2.GetOptions());
+}
+
+BOOST_AUTO_TEST_CASE(DiscontiguousMB) {
+    CSeq_id qid("gi|408478");  // zebrafish sequence U02544
+    CSeq_id sid("gi|1546012"); // mouse sequence U61969
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+
+    CBl2Seq blaster(*query, *subj, eDiscMegablast);
+    TSeqAlignVector sav(blaster.Run());
+    BOOST_REQUIRE_EQUAL(1, (int)sav.size());
+
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(13, (int)sar->GetSegs().GetDenseg().GetNumseg());
+    testBlastHitCounts(blaster, eDiscMegablast_U02544_U61969);
+    testRawCutoffs(blaster, eDiscMegablast, eDiscMegablast_U02544_U61969);
+}
+
+BOOST_AUTO_TEST_CASE(BlastnHumanChrom_MRNA) {
+    CSeq_id qid("NT_004487.16");
+    CSeq_id sid("AA621478.1");
+    pair<TSeqPos, TSeqPos> qrange(7868209-1, 7868602-1);
+    pair<TSeqPos, TSeqPos> srange(2-1, 397-1);
+    unique_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, 
+                                               qrange, eNa_strand_plus));
+    unique_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, 
+                                               srange, eNa_strand_plus));
+
+    CRef<CBlastNucleotideOptionsHandle> options(new CBlastNucleotideOptionsHandle);
+    CBl2Seq blaster(*query, *subj, *options);
+    TSeqAlignVector sav(blaster.Run());
+    BOOST_REQUIRE_EQUAL(1, (int)sav.size());
+
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(5, (int)sar->GetSegs().GetDenseg().GetNumseg());
+    testBlastHitCounts(blaster, eMegablast_chrom_mrna);
+    testRawCutoffs(blaster, eMegablast, eMegablast_chrom_mrna);
+}
+
+// Checks that results for multiple subjects are put in correct places
+// in the vector of Seq-aligns
+BOOST_AUTO_TEST_CASE(testOneSubjectResults2CSeqAlign)
+{
+    const int num_subjects = 15;
+    const int results_size[num_subjects] = 
+        { 1, 1, 0, 1, 1, 1, 2, 1, 2, 0, 0, 0, 0, 2, 1 };
+    const int query_gi = 7274302;
+    const int gi_diff = 28;
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, query_gi));
+    unique_ptr<SSeqLoc> sl(
+        CTestObjMgr::Instance().CreateSSeqLoc(*id, eNa_strand_both));
+    TSeqLocVector query;
+    query.push_back(*sl);
+    TSeqLocVector subjects;
+    int index;
+    for (index = 0; index < num_subjects; ++index) {
+        id.Reset(new CSeq_id(CSeq_id::e_Gi, (query_gi + gi_diff + index)));
+        //cerr << query_gi + gi_diff + index << endl;
+        sl.reset(CTestObjMgr::Instance().CreateSSeqLoc(*id, 
+                                                       eNa_strand_both));
+        subjects.push_back(*sl);
+    }
+    CBl2Seq blaster(query, subjects, eMegablast);
+    TSeqAlignVector seqalign_v = blaster.Run();
+    BOOST_REQUIRE_EQUAL(num_subjects, (int)seqalign_v.size());
+
+    index = 0;
+    ITERATE(TSeqAlignVector, itr, seqalign_v)
+    {
+        //cerr << index << endl;
+        BOOST_REQUIRE_EQUAL(results_size[index], (int) (*itr)->Get().size());
+        index++;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(testMultiSeqSearchSymmetry)
+{
+    const size_t num_seqs = 19;
+    const int gi_list[num_seqs] = 
+        { 1346057, 125527, 121064, 1711551, 125412, 128337, 2507199,
+          1170625, 1730070, 585365, 140977, 1730069, 20455504, 125206,
+          125319, 114152, 1706450, 1706307, 125565 };
+    const int score_cutoff = 70;
+
+    TSeqLocVector seq_vec;
+    size_t index;
+    for (index = 0; index < num_seqs; ++index) {
+        CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, gi_list[index]));
+        unique_ptr<SSeqLoc> sl(
+            CTestObjMgr::Instance().CreateSSeqLoc(*id, eNa_strand_both));
+        seq_vec.push_back(*sl);
+    }
+    
+    CRef<CBlastProteinOptionsHandle> prot_opts(new CBlastProteinOptionsHandle);
+    prot_opts->SetSegFiltering(false);
+    prot_opts->SetCutoffScore(score_cutoff);
+    CBl2Seq blaster(seq_vec, seq_vec, *prot_opts);
+#if 0
+    blaster.RunWithoutSeqalignGeneration(); /* NCBI_FAKE_WARNING */
+    BlastHSPResults* results = blaster.GetResults(); /* NCBI_FAKE_WARNING */
+
+    int qindex, sindex, qindex1, sindex1;
+    for (qindex = 0; qindex < num_seqs; ++qindex) {
+        for (sindex = 0; sindex < results->hitlist_array[qindex]->hsplist_count;
+             ++sindex) {
+            BlastHSPList* hsp_list1, *hsp_list2 = NULL;
+            hsp_list1 = results->hitlist_array[qindex]->hsplist_array[sindex];
+            qindex1 = hsp_list1->oid;
+            BlastHitList* hitlist = results->hitlist_array[qindex1];
+            for (sindex1 = 0; sindex1 < hitlist->hsplist_count; ++sindex1) {
+                if (hitlist->hsplist_array[sindex1]->oid == qindex) {
+                    hsp_list2 = hitlist->hsplist_array[sindex1];
+                    break;
+                }
+            }
+            BOOST_REQUIRE(hsp_list2 != NULL);
+            int hindex;
+            for (hindex = 0; hindex < hsp_list1->hspcnt; ++hindex) {
+                if (hsp_list1->hsp_array[hindex]->score <= score_cutoff)
+                    break;
+                BOOST_REQUIRE(hindex < hsp_list2->hspcnt);
+                BOOST_REQUIRE_EQUAL(hsp_list1->hsp_array[hindex]->score,
+                                     hsp_list2->hsp_array[hindex]->score);
+            }
+        }
+    }
+#endif
+
+    CRef<CSearchResultSet> res = blaster.RunEx();
+    BOOST_REQUIRE_EQUAL(eSequenceComparison, res->GetResultType());
+    BOOST_REQUIRE_EQUAL(num_seqs, res->GetNumQueries());
+    BOOST_REQUIRE_EQUAL(num_seqs*num_seqs, res->GetNumResults());
+    BOOST_REQUIRE_EQUAL(num_seqs*num_seqs, res->size());
+    typedef CSearchResultSet::size_type size_type;
+
+    for (size_type q = 0; q < res->GetNumQueries(); q++) {
+        for (size_type s = 0; s < res->GetNumQueries(); s++) {
+            const CSearchResults& results = res->GetResults(q, s);
+            if (q == s) {   // self-hit
+                BOOST_REQUIRE(results.HasAlignments());
+                CConstRef<CSeq_align_set> sas = results.GetSeqAlign();
+                BOOST_REQUIRE(sas.NotEmpty());
+                BOOST_REQUIRE_EQUAL((size_type)1, sas->Get().size());
+                CConstRef<CSeq_align> sa = sas->Get().front();
+                const CSeq_id& qid = sa->GetSeq_id(0);
+                const CSeq_id& sid = sa->GetSeq_id(1);
+                BOOST_REQUIRE(qid.Match(sid));
+                int num_ident = 0;
+                sa->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
+                int seqlen = (int)sequence::GetLength(*seq_vec[q].seqloc,
+                                                      &*seq_vec[q].scope);
+                BOOST_REQUIRE_EQUAL(seqlen, num_ident);
+            }
+            const CSearchResults& results2 = res->GetResults(s, q);
+            BOOST_REQUIRE_EQUAL(results.HasAlignments(),
+                                results2.HasAlignments());
+            if ( !results.HasAlignments() ) {
+                continue;
+            }
+
+            // Compare Q-S and S-Q hits
+            CConstRef<CSeq_align_set> sas1 = results.GetSeqAlign();
+            CConstRef<CSeq_align_set> sas2 = results2.GetSeqAlign();
+            BOOST_REQUIRE(sas1.NotEmpty());
+            BOOST_REQUIRE(sas2.NotEmpty());
+            //cerr << "Alignments1 " << MSerial_AsnText << *sas2 << endl;
+            //cerr << "Alignments2 " << MSerial_AsnText << *sas2 << endl;
+            BOOST_REQUIRE_EQUAL(sas1->Get().size(), sas2->Get().size());
+            CSeq_align_set::Tdata::const_iterator i1 = sas1->Get().begin(), 
+                                                  i2 = sas2->Get().begin();
+            for (; i1 != sas1->Get().end(); ++i1, ++i2) {
+                CConstRef<CSeq_align> al1 = *i1;
+                CConstRef<CSeq_align> al2 = *i2;
+                BOOST_REQUIRE(al1.NotEmpty());
+                BOOST_REQUIRE(al2.NotEmpty());
+                //cerr << "Align1 " << MSerial_AsnText << *al1 << endl;
+                //cerr << "Align2 " << MSerial_AsnText << *al2 << endl;
+
+                int score1 = 0, score2 = 0;
+                al1->GetNamedScore(CSeq_align::eScore_Score, score1);
+                al2->GetNamedScore(CSeq_align::eScore_Score, score2);
+                BOOST_REQUIRE_EQUAL(score1, score2);
+
+                double bit_score1 = .0, bit_score2 = .0;
+                al1->GetNamedScore(CSeq_align::eScore_BitScore, bit_score1);
+                al2->GetNamedScore(CSeq_align::eScore_BitScore, bit_score2);
+                BOOST_REQUIRE_CLOSE(bit_score1, bit_score2, 10e-2);
+
+                double evalue1 = .0, evalue2 = .0;
+                al1->GetNamedScore(CSeq_align::eScore_EValue, evalue1);
+                al2->GetNamedScore(CSeq_align::eScore_EValue, evalue2);
+                BOOST_REQUIRE_CLOSE(evalue1, evalue2, 10e-5);
+            }
+        }
+    }
+
+
+    // Repeat the tests above using the TSeqAlignVector
+    TSeqAlignVector alignments = blaster.Run();
+    BOOST_REQUIRE_EQUAL(num_seqs*num_seqs, alignments.size());
+    for (size_t q = 0; q < num_seqs; q++) {
+        for (size_t s = 0; s < num_seqs; s++) {
+            size_t idx1 = q*num_seqs + s;
+            CConstRef<CSeq_align_set> al1 = alignments[idx1];
+            if (idx1 == (q*num_seqs+q)) {  // self-hit
+                BOOST_REQUIRE(al1.NotEmpty());
+                BOOST_REQUIRE_EQUAL(1U, al1->Get().size());
+                CConstRef<CSeq_align> sa = al1->Get().front();
+                const CSeq_id& qid = sa->GetSeq_id(0);
+                const CSeq_id& sid = sa->GetSeq_id(1);
+                BOOST_REQUIRE(qid.Match(sid));
+                int num_ident = 0;
+                sa->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
+                int seqlen = (int)sequence::GetLength(*seq_vec[q].seqloc,
+                                                      &*seq_vec[q].scope);
+                BOOST_REQUIRE_EQUAL(seqlen, num_ident);
+                continue;
+            }
+            size_t idx2 = s*num_seqs + q;
+            CConstRef<CSeq_align_set> al2 = alignments[idx2];
+            if (al1.Empty() || al2.Empty()) {
+                BOOST_REQUIRE_EQUAL(al1.Empty(), al2.Empty());
+                continue;
+            }
+            BOOST_REQUIRE_EQUAL(al1.NotEmpty(), al2.NotEmpty());
+            // compare al1 with al2
+            {{
+            CConstRef<CSeq_align> sa1 = al1->Get().front();
+            CConstRef<CSeq_align> sa2 = al2->Get().front();
+            BOOST_REQUIRE(sa1.NotEmpty());
+            BOOST_REQUIRE(sa2.NotEmpty());
+            //cerr << "Align1 " << MSerial_AsnText << *sa1 << endl;
+            //cerr << "Align2 " << MSerial_AsnText << *sa2 << endl;
+
+            int score1 = 0, score2 = 0;
+            sa1->GetNamedScore(CSeq_align::eScore_Score, score1);
+            sa2->GetNamedScore(CSeq_align::eScore_Score, score2);
+            BOOST_REQUIRE_EQUAL(score1, score2);
+
+            double bit_score1 = .0, bit_score2 = .0;
+            sa1->GetNamedScore(CSeq_align::eScore_BitScore, bit_score1);
+            sa2->GetNamedScore(CSeq_align::eScore_BitScore, bit_score2);
+            BOOST_REQUIRE_CLOSE(bit_score1, bit_score2, 10e-2);
+
+            double evalue1 = .0, evalue2 = .0;
+            sa1->GetNamedScore(CSeq_align::eScore_EValue, evalue1);
+            sa2->GetNamedScore(CSeq_align::eScore_EValue, evalue2);
+            BOOST_REQUIRE_CLOSE(evalue1, evalue2, 10e-5);
+            }}
+        }
+    }
+
+}
+
+BOOST_AUTO_TEST_CASE(testInterruptCallbackWithNull) {
+    CSeq_id id("gi|129295");
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+
+    CBl2Seq blaster(*sl, *sl, eBlastp);
+    TInterruptFnPtr null_fnptr = 0;
+    TInterruptFnPtr fnptr = blaster.SetInterruptCallback(null_fnptr);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+
+    fnptr = blaster.SetInterruptCallback(interrupt_immediately);
+    // make sure we get the previous interrupt callback
+    BOOST_REQUIRE(fnptr == null_fnptr);
+
+    fnptr = blaster.SetInterruptCallback(null_fnptr);
+    // make sure we get the previous interrupt callback
+    BOOST_REQUIRE(fnptr == interrupt_immediately);
+
+    // Retry the search now that we've removed the interrupt callback
+    sav = blaster.Run();
+    BOOST_REQUIRE_EQUAL(1, (int)sav.size());
+    sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+}
+
+BOOST_AUTO_TEST_CASE(testInterruptCallbackDoNotInterrupt) {
+    CSeq_id id("gi|129295");
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+
+    CBl2Seq blaster(*sl, *sl, eBlastp);
+    TInterruptFnPtr fnptr = blaster.SetInterruptCallback(do_not_interrupt);
+    BOOST_REQUIRE(fnptr == NULL);
+
+    TSeqAlignVector sav(blaster.Run());
+    BOOST_REQUIRE_EQUAL(1, (int)sav.size());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+}
+
+#if SEQLOC_MIX_QUERY_OK
+BOOST_AUTO_TEST_CASE(MultiIntervalLoc) {
+    const size_t kNumInts = 20;
+    const size_t kStarts[kNumInts] = 
+        { 838, 1838, 6542, 7459, 9246, 10431, 14807, 16336, 19563, 
+          20606, 21232, 22615, 23822, 27941, 29597, 30136, 31287, 
+          31786, 33315, 35402 };
+    const size_t kEnds[kNumInts] = 
+        { 961, 2010, 6740, 7573, 9408, 10609, 15043, 16511, 19783, 
+          20748, 21365, 22817, 24049, 28171, 29839, 30348, 31362, 
+          31911, 33485, 37952 };
+    size_t index;
+
+    CSeq_id qid("gi|3417288");
+    CRef<CSeq_loc> qloc(new CSeq_loc());
+    for (index = 0; index < kNumInts; ++index) {
+        CRef<CSeq_loc> next_loc(new CSeq_loc());
+        next_loc->SetInt().SetFrom(kStarts[index]);
+        next_loc->SetInt().SetTo(kEnds[index]);
+        next_loc->SetInt().SetId(qid);
+        qloc->SetMix().Set().push_back(next_loc);
+    }
+
+    CRef<CScope> scope(new CScope(CTestObjMgr::Instance().GetObjMgr()));
+    scope->AddDefaults();
+
+    unique_ptr<SSeqLoc> query(new SSeqLoc(qloc, scope));
+
+    CSeq_id sid("gi|51511732");
+    pair<TSeqPos, TSeqPos> range(15595732, 15705419);
+    unique_ptr<SSeqLoc> subject(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, range, eNa_strand_both));
+    CBl2Seq blaster(*query, *subject, eBlastn);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE_EQUAL(60, (int)sar->GetSegs().GetDisc().Get().size());
+}
+#endif
+
+BOOST_AUTO_TEST_CASE(QueryMaskIgnoredInMiniExtension) {
+    CRef<CSeq_loc> qloc(new CSeq_loc());
+    qloc->SetWhole().SetGi(GI_CONST(4505696));
+    CSeq_id sid("gi|29809252");
+    pair<TSeqPos, TSeqPos> range(662070, 662129);
+
+    CRef<CScope> scope(new CScope(CTestObjMgr::Instance().GetObjMgr()));
+    scope->AddDefaults();
+
+    unique_ptr<SSeqLoc> query(new SSeqLoc(qloc, scope));
+    unique_ptr<SSeqLoc> subject(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, range, eNa_strand_both));
+
+    CBl2Seq blaster(*query, *subject, eMegablast);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align_set> sas = sav.front();
+    BOOST_REQUIRE(sas->Get().empty());
+}
+
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
+BOOST_AUTO_TEST_SUITE_END()

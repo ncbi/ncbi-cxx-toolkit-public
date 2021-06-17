@@ -1,0 +1,2037 @@
+Variation ::= {
+  name "NM_000138:c.8412_8417delTAAAAT",
+  description "",
+  placements {
+    {
+      loc int {
+        from 8727,
+        to 8732,
+        strand plus,
+        id other {
+          accession "NM_000138",
+          version 5
+        }
+      },
+      mol cdna,
+      seq {
+        length 6,
+        seq-data iupacna "TAAAAT"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 2200
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type del,
+          delta {
+            {
+              seq this NULL,
+              action del-at
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc int {
+                  from 2804,
+                  to 2805,
+                  strand plus,
+                  id other {
+                    accession "NP_000129",
+                    version 3
+                  }
+                },
+                mol protein,
+                seq {
+                  length 2,
+                  seq-data ncbieaa "KI"
+                }
+              },
+              {
+                loc int {
+                  from 8728,
+                  to 8733,
+                  strand plus,
+                  id other {
+                    accession "NM_000138",
+                    version 5
+                  }
+                },
+                mol cdna,
+                frame 2,
+                seq {
+                  length 6,
+                  seq-data iupacna "AAAATC"
+                }
+              }
+            },
+            data instance {
+              type del,
+              delta {
+                {
+                  seq this NULL,
+                  action del-at
+                }
+              }
+            },
+            so-terms {
+              1820
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 6,
+                seq-data iupacna "TAAAAT"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_000550.2:r.1790_1791insAACA",
+  description "",
+  placements {
+    {
+      loc int {
+        from 1789,
+        to 1790,
+        strand plus,
+        id other {
+          accession "NM_000550",
+          version 2
+        }
+      },
+      mol cdna,
+      seq {
+        length 2,
+        seq-data iupacna "TA"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 7306
+        }
+      },
+      gene-location 512
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location in-stop-codon
+  },
+  data instance {
+    type ins,
+    delta {
+      {
+        seq literal {
+          length 4,
+          seq-data iupacna "AACA"
+        },
+        action ins-before
+      }
+    }
+  },
+  consequence {
+    variation {
+      placements {
+        {
+          loc pnt {
+            point 537,
+            strand plus,
+            id other {
+              accession "NP_000541",
+              version 1
+            }
+          },
+          mol protein,
+          seq {
+            length 1,
+            seq-data ncbieaa "*"
+          }
+        },
+        {
+          loc int {
+            from 1789,
+            to 1791,
+            strand plus,
+            id other {
+              accession "NM_000550",
+              version 2
+            }
+          },
+          mol cdna,
+          frame 0,
+          seq {
+            length 3,
+            seq-data iupacna "TAA"
+          }
+        }
+      },
+      variant-prop {
+        version 5,
+        effect synonymous
+      },
+      data instance {
+        type prot-silent,
+        delta {
+          {
+            seq literal {
+              length 3,
+              seq-data iupacna "TAA"
+            }
+          }
+        }
+      },
+      so-terms {
+        1589
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_001136218.1:c.*-1G>A",
+  description "",
+  placements {
+    {
+      loc pnt {
+        point 1248,
+        strand plus,
+        id other {
+          accession "NM_001136218",
+          version 1
+        }
+      },
+      mol cdna,
+      seq {
+        length 1,
+        seq-data iupacna "G"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 55092
+        }
+      },
+      gene-location 512
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location in-stop-codon
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type snv,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "A"
+              }
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 253,
+                  strand plus,
+                  id other {
+                    accession "NP_001129690",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "*"
+                }
+              },
+              {
+                loc int {
+                  from 1247,
+                  to 1249,
+                  strand plus,
+                  id other {
+                    accession "NM_001136218",
+                    version 1
+                  }
+                },
+                mol cdna,
+                frame 1,
+                seq {
+                  length 3,
+                  seq-data iupacna "TGA"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect synonymous
+            },
+            data instance {
+              type prot-silent,
+              delta {
+                {
+                  seq literal {
+                    length 3,
+                    seq-data iupacna "TAA"
+                  }
+                }
+              }
+            },
+            so-terms {
+              1819
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "G"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NC_000009.11:g.12709181_12709182insAACA",
+  description "",
+  placements {
+    {
+      loc int {
+        from 12709180,
+        to 12709181,
+        strand plus,
+        id other {
+          accession "NC_000009",
+          version 11
+        }
+      },
+      mol genomic,
+      seq {
+        length 2,
+        seq-data iupacna "AA"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 7306
+        }
+      },
+      gene-location 512
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location in-stop-codon
+  },
+  data instance {
+    type ins,
+    delta {
+      {
+        seq literal {
+          length 4,
+          seq-data iupacna "AACA"
+        },
+        action ins-before
+      }
+    }
+  },
+  consequence {
+    variation {
+      placements {
+        {
+          loc pnt {
+            point 537,
+            strand plus,
+            id other {
+              accession "NP_000541",
+              version 1
+            }
+          },
+          mol protein,
+          seq {
+            length 1,
+            seq-data ncbieaa "*"
+          }
+        },
+        {
+          loc int {
+            from 12709179,
+            to 12709181,
+            strand plus,
+            id other {
+              accession "NC_000009",
+              version 11
+            }
+          },
+          mol genomic,
+          frame 1,
+          seq {
+            length 3,
+            seq-data iupacna "TAA"
+          }
+        }
+      },
+      variant-prop {
+        version 5,
+        effect synonymous
+      },
+      data instance {
+        type prot-silent,
+        delta {
+          {
+            seq literal {
+              length 3,
+              seq-data iupacna "TAA"
+            }
+          }
+        }
+      },
+      so-terms {
+        1589
+      }
+    },
+    variation {
+      placements {
+        {
+          loc pnt {
+            point 488,
+            strand plus,
+            id other {
+              accession "XP_005251631",
+              version 1
+            }
+          },
+          mol protein,
+          seq {
+            length 1,
+            seq-data ncbieaa "*"
+          }
+        },
+        {
+          loc int {
+            from 12709179,
+            to 12709181,
+            strand plus,
+            id other {
+              accession "NC_000009",
+              version 11
+            }
+          },
+          mol genomic,
+          frame 1,
+          seq {
+            length 3,
+            seq-data iupacna "TAA"
+          }
+        }
+      },
+      variant-prop {
+        version 5,
+        effect synonymous
+      },
+      data instance {
+        type prot-silent,
+        delta {
+          {
+            seq literal {
+              length 3,
+              seq-data iupacna "TAA"
+            }
+          }
+        }
+      },
+      so-terms {
+        1589
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_000222.2:c.2718_2720delCTGinsGTA",
+  description "",
+  placements {
+    {
+      loc int {
+        from 2804,
+        to 2806,
+        strand plus,
+        id other {
+          accession "NM_000222",
+          version 2
+        }
+      },
+      mol cdna,
+      seq {
+        length 3,
+        seq-data iupacna "CTG"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 3815
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type mnp,
+          delta {
+            {
+              seq literal {
+                length 3,
+                seq-data iupacna "GTA"
+              }
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc int {
+                  from 905,
+                  to 906,
+                  strand plus,
+                  id other {
+                    accession "NP_000213",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 2,
+                  seq-data ncbieaa "CW"
+                }
+              },
+              {
+                loc int {
+                  from 2802,
+                  to 2807,
+                  strand plus,
+                  id other {
+                    accession "NM_000222",
+                    version 2
+                  }
+                },
+                mol cdna,
+                frame 2,
+                seq {
+                  length 6,
+                  seq-data iupacna "TGCTGG"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect 132
+            },
+            data instance {
+              type prot-other,
+              delta {
+                {
+                  seq literal {
+                    length 6,
+                    seq-data iupacna "TGGTAG"
+                  }
+                }
+              }
+            },
+            so-terms {
+              1587
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 3,
+                seq-data iupacna "CTG"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_000021.3:c.1295T>A",
+  description "",
+  placements {
+    {
+      loc pnt {
+        point 1578,
+        strand plus,
+        id other {
+          accession "NM_000021",
+          version 3
+        }
+      },
+      mol cdna,
+      seq {
+        length 1,
+        seq-data iupacna "T"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 5663
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type snv,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "A"
+              }
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 431,
+                  strand plus,
+                  id other {
+                    accession "NP_000012",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "L"
+                }
+              },
+              {
+                loc int {
+                  from 1577,
+                  to 1579,
+                  strand plus,
+                  id other {
+                    accession "NM_000021",
+                    version 3
+                  }
+                },
+                mol cdna,
+                frame 1,
+                seq {
+                  length 3,
+                  seq-data iupacna "TTG"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect stop-gain
+            },
+            data instance {
+              type prot-nonsense,
+              delta {
+                {
+                  seq literal {
+                    length 3,
+                    seq-data iupacna "TAG"
+                  }
+                }
+              }
+            },
+            so-terms {
+              1587
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "T"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_022965.3:c.2084G>T",
+  description "",
+  placements {
+    {
+      loc pnt {
+        point 2339,
+        strand plus,
+        id other {
+          accession "NM_022965",
+          version 3
+        }
+      },
+      mol cdna,
+      seq {
+        length 1,
+        seq-data iupacna "G"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 2261
+        }
+      },
+      gene-location 512
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location in-stop-codon
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type snv,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "T"
+              }
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 694,
+                  strand plus,
+                  id other {
+                    accession "NP_075254",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "*"
+                }
+              },
+              {
+                loc int {
+                  from 2338,
+                  to 2340,
+                  strand plus,
+                  id other {
+                    accession "NM_022965",
+                    version 3
+                  }
+                },
+                mol cdna,
+                frame 1,
+                seq {
+                  length 3,
+                  seq-data iupacna "TGA"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect stop-loss
+            },
+            data instance {
+              type prot-missense,
+              delta {
+                {
+                  seq literal {
+                    length 3,
+                    seq-data iupacna "TTA"
+                  }
+                }
+              }
+            },
+            so-terms {
+              1578
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "G"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_001100818.1:c.650G>C",
+  description "",
+  placements {
+    {
+      loc pnt {
+        point 947,
+        strand plus,
+        id other {
+          accession "NM_001100818",
+          version 1
+        }
+      },
+      mol cdna,
+      seq {
+        length 1,
+        seq-data iupacna "G"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 55022
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type snv,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "C"
+              }
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 216,
+                  strand plus,
+                  id other {
+                    accession "NP_001094288",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "G"
+                }
+              },
+              {
+                loc int {
+                  from 946,
+                  to 948,
+                  strand plus,
+                  id other {
+                    accession "NM_001100818",
+                    version 1
+                  }
+                },
+                mol cdna,
+                frame 1,
+                seq {
+                  length 3,
+                  seq-data iupacna "GGC"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect missense
+            },
+            data instance {
+              type prot-missense,
+              delta {
+                {
+                  seq literal {
+                    length 3,
+                    seq-data iupacna "GCC"
+                  }
+                }
+              }
+            },
+            so-terms {
+              1583
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "G"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_174944.3:c.979_981delACG",
+  description "",
+  placements {
+    {
+      loc int {
+        from 1182,
+        to 1184,
+        strand plus,
+        id other {
+          accession "NM_174944",
+          version 3
+        }
+      },
+      mol cdna,
+      seq {
+        length 3,
+        seq-data iupacna "ACG"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 283629
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type del,
+          delta {
+            {
+              seq this NULL,
+              action del-at
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 327,
+                  strand plus,
+                  id other {
+                    accession "NP_777604",
+                    version 2
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "T"
+                }
+              },
+              {
+                loc int {
+                  from 1185,
+                  to 1187,
+                  strand plus,
+                  id other {
+                    accession "NM_174944",
+                    version 3
+                  }
+                },
+                mol cdna,
+                frame 0,
+                seq {
+                  length 3,
+                  seq-data iupacna "ACC"
+                }
+              }
+            },
+            data instance {
+              type del,
+              delta {
+                {
+                  seq this NULL,
+                  action del-at
+                }
+              }
+            },
+            so-terms {
+              1820
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 3,
+                seq-data iupacna "ACG"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_030785.3:c.2100_2101insGAGGAGGAGGAGGAGGGC",
+  description "",
+  placements {
+    {
+      loc int {
+        from 2270,
+        to 2271,
+        strand plus,
+        id other {
+          accession "NM_030785",
+          version 3
+        }
+      },
+      mol cdna,
+      seq {
+        length 2,
+        seq-data iupacna "AG"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 81492
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data instance {
+    type ins,
+    delta {
+      {
+        seq literal {
+          length 18,
+          seq-data iupacna "GAGGAGGAGGAGGAGGGC"
+        },
+        action ins-before
+      }
+    }
+  },
+  consequence {
+    variation {
+      placements {
+        {
+          loc int {
+            from 713,
+            to 714,
+            strand plus,
+            id other {
+              accession "NP_110412",
+              version 1
+            }
+          },
+          mol protein,
+          seq {
+            length 2,
+            seq-data ncbieaa "ET"
+          }
+        },
+        {
+          loc int {
+            from 2310,
+            to 2315,
+            strand plus,
+            id other {
+              accession "NM_030785",
+              version 3
+            }
+          },
+          mol cdna,
+          frame 2,
+          seq {
+            length 6,
+            seq-data iupacna "GAGACA"
+          }
+        }
+      },
+      data instance {
+        type ins,
+        delta {
+          {
+            seq literal {
+              length 18,
+              seq-data iupacna "GAGGAGGAGGGCGAGGAG"
+            },
+            action ins-before
+          }
+        }
+      },
+      so-terms {
+        1820
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_213622.2:c.1270C>T",
+  description "",
+  placements {
+    {
+      loc pnt {
+        point 1794,
+        strand plus,
+        id other {
+          accession "NM_213622",
+          version 2
+        }
+      },
+      mol cdna,
+      seq {
+        length 1,
+        seq-data iupacna "C"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 10617
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type snv,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "T"
+              }
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 423,
+                  strand plus,
+                  id other {
+                    accession "NP_998787",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "R"
+                }
+              },
+              {
+                loc int {
+                  from 1794,
+                  to 1796,
+                  strand plus,
+                  id other {
+                    accession "NM_213622",
+                    version 2
+                  }
+                },
+                mol cdna,
+                frame 0,
+                seq {
+                  length 3,
+                  seq-data iupacna "CGA"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect stop-gain
+            },
+            data instance {
+              type prot-nonsense,
+              delta {
+                {
+                  seq literal {
+                    length 3,
+                    seq-data iupacna "TGA"
+                  }
+                }
+              }
+            },
+            so-terms {
+              1587
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "C"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_000100.3:c.-210_-95CCCCGCCCCGCG(2_3)",
+  description "",
+  placements {
+    {
+      loc int {
+        from 0,
+        to 11,
+        strand plus,
+        id other {
+          accession "NM_000100",
+          version 3
+        }
+      },
+      mol cdna,
+      start-offset -104,
+      stop-offset -93,
+      seq {
+        length 23
+      },
+      exceptions {
+        {
+          code seqfetch-intronic,
+          message "Can't get sequence for an offset-based location"
+        }
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 1476
+        }
+      },
+      gene-location 66
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 66
+  },
+  data instance {
+    type microsatellite,
+    delta {
+      {
+        seq literal {
+          length 12,
+          seq-data iupacna "CCCCGCCCCGCG"
+        },
+        multiplier 2,
+        multiplier-fuzz range {
+          max 3,
+          min 2
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_013236.2:c.1173+54822_1173+54826ATTCT(10_32)",
+  description "",
+  placements {
+    {
+      loc int {
+        from 1429,
+        to 1429,
+        strand plus,
+        id other {
+          accession "NM_013236",
+          version 2
+        }
+      },
+      mol cdna,
+      start-offset 54822,
+      stop-offset 54826,
+      seq {
+        length 5
+      },
+      exceptions {
+        {
+          code seqfetch-intronic,
+          message "Can't get sequence for an offset-based location"
+        }
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 25814
+        }
+      },
+      gene-location 8
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location intron
+  },
+  data instance {
+    type microsatellite,
+    delta {
+      {
+        seq literal {
+          length 5,
+          seq-data iupacna "ATTCT"
+        },
+        multiplier 10,
+        multiplier-fuzz range {
+          max 32,
+          min 10
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  name "XM_005201013.1:c.401G>C",
+  description "",
+  placements {
+    {
+      loc pnt {
+        point 400,
+        strand plus,
+        id other {
+          accession "XM_005201013",
+          version 1
+        }
+      },
+      mol cdna,
+      seq {
+        length 1,
+        seq-data iupacna "G"
+      },
+      exceptions {
+        {
+          code bioseq-state,
+          message "Bioseq is suppressed or withdrawn"
+        }
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 100298892
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type snv,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "C"
+              }
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 133,
+                  strand plus,
+                  id other {
+                    accession "XP_005201070",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "X"
+                }
+              },
+              {
+                loc int {
+                  from 399,
+                  to 400,
+                  strand plus,
+                  id other {
+                    accession "XM_005201013",
+                    version 1
+                  },
+                  fuzz-to lim gt
+                },
+                mol cdna,
+                frame 1,
+                seq {
+                  length 2,
+                  seq-data iupacna "TG"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect missense
+            },
+            data instance {
+              type prot-missense,
+              delta {
+                {
+                  seq literal {
+                    length 2,
+                    seq-data iupacna "TC"
+                  }
+                }
+              }
+            },
+            so-terms {
+              1583
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "G"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  name "XM_006517486.1:c.543_546delTATC",
+  description "",
+  placements {
+    {
+      loc int {
+        from 542,
+        to 545,
+        strand plus,
+        id other {
+          accession "XM_006517486",
+          version 1
+        }
+      },
+      mol cdna,
+      seq {
+        length 4,
+        seq-data iupacna "TATC"
+      },
+      exceptions {
+        {
+          code bioseq-state,
+          message "Bioseq is suppressed or withdrawn"
+        }
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 102639338
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type del,
+          delta {
+            {
+              seq this NULL,
+              action del-at
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 192,
+                  strand plus,
+                  id other {
+                    accession "XP_006517549",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "S"
+                }
+              },
+              {
+                loc int {
+                  from 576,
+                  to 578,
+                  strand plus,
+                  id other {
+                    accession "XM_006517486",
+                    version 1
+                  }
+                },
+                mol cdna,
+                frame 2,
+                seq {
+                  length 3,
+                  seq-data iupacna "TCT"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect frameshift
+            },
+            data instance {
+              type del,
+              delta {
+                {
+                  seq this NULL,
+                  action del-at
+                }
+              }
+            },
+            frameshift {
+              phase 2
+            },
+            so-terms {
+              1589
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 4,
+                seq-data iupacna "TATC"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_004992.3:c.-98-?_377+?del",
+  description "",
+  placements {
+    {
+      loc int {
+        from 128,
+        to 602,
+        strand plus,
+        id other {
+          accession "NM_004992",
+          version 3
+        }
+      },
+      mol cdna,
+      start-offset 0,
+      start-offset-fuzz lim lt,
+      stop-offset 0,
+      stop-offset-fuzz lim gt,
+      seq {
+        length 475,
+        seq-data iupacna "GCTCCATAAAAATACAGACTCACCAGTTCCTGCTTTGATGTGACATGTGACT
+CCCCAGAATACACCTTGCTTCTGTAGACCAGCTCCAACAGGATTCCATGGTAGCTGGGATGTTAGGGCTCAGGGAAGA
+AAAGTCAGAAGACCAGGACCTCCAGGGCCTCAAGGACAAACCCCTCAAGTTTAAAAAGGTGAAGAAAGATAAGAAAGA
+AGAGAAAGAGGGCAAGCATGAGCCCGTGCAGCCATCAGCCCACCACTCTGCTGAGCCCGCAGAGGCAGGCAAAGCAGA
+GACATCAGAAGGGTCAGGCTCCGCCCCGGCTGTGCCGGAAGCTTCTGCCTCCCCCAAACAGCGGCGCTCCATCATCCG
+TGACCGGGGACCCATGTATGATGACCCCACCCTGCCTGAAGGCTGGACACGGAAGCTTAAGCAAAGGAAATCTGGCCG
+CTCTGCTGGGAAGTATGATGTGTATTTGATCAA"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 4204
+        }
+      },
+      gene-location 320
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 320
+  },
+  data instance {
+    type del,
+    delta {
+      {
+        seq this NULL,
+        action del-at
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_004992.3:c.27-?_378+?del",
+  description "",
+  placements {
+    {
+      loc int {
+        from 252,
+        to 603,
+        strand plus,
+        id other {
+          accession "NM_004992",
+          version 3
+        }
+      },
+      mol cdna,
+      start-offset 0,
+      start-offset-fuzz lim lt,
+      stop-offset 0,
+      stop-offset-fuzz lim gt,
+      seq {
+        length 352,
+        seq-data iupacna "GGAAGAAAAGTCAGAAGACCAGGACCTCCAGGGCCTCAAGGACAAACCCCTC
+AAGTTTAAAAAGGTGAAGAAAGATAAGAAAGAAGAGAAAGAGGGCAAGCATGAGCCCGTGCAGCCATCAGCCCACCAC
+TCTGCTGAGCCCGCAGAGGCAGGCAAAGCAGAGACATCAGAAGGGTCAGGCTCCGCCCCGGCTGTGCCGGAAGCTTCT
+GCCTCCCCCAAACAGCGGCGCTCCATCATCCGTGACCGGGGACCCATGTATGATGACCCCACCCTGCCTGAAGGCTGG
+ACACGGAAGCTTAAGCAAAGGAAATCTGGCCGCTCTGCTGGGAAGTATGATGTGTATTTGATCAAT"
+      },
+      exceptions {
+        {
+          code hgvs-exon-boundary,
+          message "HGVS exon-boundary position not represented in the
+ transcript annotation"
+        }
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 4204
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data instance {
+    type del,
+    delta {
+      {
+        seq this NULL,
+        action del-at
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NG_011646.1:g.1508delT",
+  description "",
+  placements {
+    {
+      loc pnt {
+        point 1507,
+        strand plus,
+        id other {
+          accession "NG_011646",
+          version 1
+        }
+      },
+      mol genomic,
+      seq {
+        length 1,
+        seq-data iupacna "T"
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type del,
+          delta {
+            {
+              seq this NULL,
+              action del-at
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 578,
+                  strand plus,
+                  id other {
+                    accession "NP_001157284",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "V"
+                }
+              },
+              {
+                loc int {
+                  from 1502,
+                  to 1504,
+                  strand minus,
+                  id other {
+                    accession "NG_011646",
+                    version 1
+                  }
+                },
+                mol genomic,
+                frame 0,
+                seq {
+                  length 3,
+                  seq-data iupacna "GTG"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect frameshift
+            },
+            data instance {
+              type prot-nonsense,
+              delta {
+                {
+                  seq literal {
+                    length 3,
+                    seq-data iupacna "TGA"
+                  }
+                }
+              }
+            },
+            frameshift {
+              phase 2
+            },
+            so-terms {
+              1587,
+              1589
+            }
+          },
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 124,
+                  strand plus,
+                  id other {
+                    accession "NP_001157286",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "V"
+                }
+              },
+              {
+                loc int {
+                  from 1502,
+                  to 1504,
+                  strand minus,
+                  id other {
+                    accession "NG_011646",
+                    version 1
+                  }
+                },
+                mol genomic,
+                frame 0,
+                seq {
+                  length 3,
+                  seq-data iupacna "GTG"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect frameshift
+            },
+            data instance {
+              type prot-nonsense,
+              delta {
+                {
+                  seq literal {
+                    length 3,
+                    seq-data iupacna "TGA"
+                  }
+                }
+              }
+            },
+            frameshift {
+              phase 2
+            },
+            so-terms {
+              1587,
+              1589
+            }
+          },
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 577,
+                  strand minus,
+                  id other {
+                    accession "NP_068602",
+                    version 2
+                  }
+                },
+                mol protein,
+                exceptions {
+                  {
+                    code inconsistent-consequence,
+                    message "Cannot infer consequence; projecting location only"
+                  }
+                }
+              },
+              {
+                loc int {
+                  from 1505,
+                  to 1507,
+                  strand plus,
+                  id other {
+                    accession "NG_011646",
+                    version 1
+                  }
+                },
+                mol genomic
+              }
+            },
+            method {
+              method {
+                computational
+              }
+            },
+            data unknown NULL,
+            so-terms {
+              1589
+            }
+          },
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 123,
+                  strand minus,
+                  id other {
+                    accession "NP_001355204",
+                    version 1
+                  }
+                },
+                mol protein,
+                exceptions {
+                  {
+                    code inconsistent-consequence,
+                    message "Cannot infer consequence; projecting location only"
+                  }
+                }
+              },
+              {
+                loc int {
+                  from 1505,
+                  to 1507,
+                  strand plus,
+                  id other {
+                    accession "NG_011646",
+                    version 1
+                  }
+                },
+                mol genomic
+              }
+            },
+            method {
+              method {
+                computational
+              }
+            },
+            data unknown NULL,
+            so-terms {
+              1589
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "T"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
+

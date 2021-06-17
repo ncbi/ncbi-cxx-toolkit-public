@@ -1,0 +1,12 @@
+[-]
+_export = NCBI_PCASSAY_EXPORT
+
+[PC-AssaySubmit]
+data._type = vector
+revoke._type = vector
+
+[PC-AssayResults]
+data._type = vector
+
+[PC-AssayDescription]
+results._type = vector

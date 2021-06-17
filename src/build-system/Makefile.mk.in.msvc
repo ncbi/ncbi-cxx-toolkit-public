@@ -1,0 +1,233 @@
+[Common]
+
+[Configuration]
+
+[Configuration.1200]
+PlatformToolset=v120
+
+[Configuration.1400]
+PlatformToolset=v140
+
+[Configuration.1500]
+PlatformToolset=v141
+ToolsVersion = 15.0
+VCProjectVersion = 15.0
+WindowsTargetPlatformVersion=10.0.17763.0
+
+[Configuration.1600]
+PlatformToolset=v142
+ToolsVersion = Current
+WindowsTargetPlatformVersion=10.0
+
+
+[Compiler]
+PreprocessorDefinitions=
+WarningLevel=3
+OptimizeForProcessor=0
+StructMemberAlignment=0
+UsePrecompiledHeader=0
+CallingConvention=0
+CompileAs=0
+IgnoreStandardIncludePath=false
+StringPooling=false
+ExceptionHandling=1
+BufferSecurityCheck=true
+RuntimeTypeInfo=true
+DisableSpecificWarnings=
+UndefinePreprocessorDefinitions=
+AdditionalOptions=/Zm150 /constexpr:steps1000000
+ProgramDataBaseFileName=$(IntDir)$(TargetName).pdb
+
+[Compiler.1200]
+PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
+
+[Compiler.1400]
+PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
+
+[Compiler.1500]
+PreprocessorDefinitions=_CRT_SECURE_NO_WARNINGS=1;%(PreprocessorDefinitions)
+
+[Compiler.1600]
+PreprocessorDefinitions=_CRT_SECURE_NO_WARNINGS=1;%(PreprocessorDefinitions)
+
+
+
+[Compiler.debug]
+DebugInformationFormat=3
+Optimization=0
+GlobalOptimizations=false
+InlineFunctionExpansion=0
+FavorSizeOrSpeed=0
+OmitFramePointers=false
+BasicRuntimeChecks=3
+BrowseInformation=0
+EnableFunctionLevelLinking=false
+AdditionalOptions=/bigobj /Zm150 /constexpr:steps1000000
+
+[Compiler.debug.DebugDLL]
+RuntimeLibrary=3
+
+[Compiler.debug.DebugMT]
+RuntimeLibrary=1
+
+
+[Compiler.release]
+DebugInformationFormat=0
+OptimizeForProcessor=3
+Optimization=2
+GlobalOptimizations=true
+InlineFunctionExpansion=2
+FavorSizeOrSpeed=1
+OmitFramePointers=true
+BasicRuntimeChecks=0
+BrowseInformation=0
+EnableFunctionLevelLinking=true
+
+[Compiler.release.ReleaseDLL]
+RuntimeLibrary=2
+
+[Compiler.release.ReleaseMT]
+RuntimeLibrary=0
+
+
+[Linker]
+TargetMachine=1
+LinkIncremental=1
+AdditionalLibraryDirectories=
+SubSystem=1
+AdditionalOptions=
+ProgramDatabaseFile=
+ImportLibrary=$(OutDir)$(TargetName).lib
+IgnoreAllDefaultLibraries=false
+IgnoreDefaultLibraryNames=
+GenerateManifest=true
+EmbedManifest=false
+FixedBaseAddress=0
+
+[Linker.1200]
+AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib shell32.lib
+# Remove next line if you dont link with any prebuild 3rd party libraries built with old/unknown compiler (like Sybase)
+ImageHasSafeExceptionHandlers=false
+
+[Linker.1400]
+ImageHasSafeExceptionHandlers=false
+
+[Linker.x64]
+TargetMachine=17
+
+[Linker.debug]
+GenerateDebugInformation=true
+OptimizeReferences=2
+EnableCOMDATFolding=1
+
+
+[Linker.release]
+GenerateDebugInformation=false
+OptimizeReferences=2
+EnableCOMDATFolding=2
+
+
+
+[Librarian]
+TargetMachine=1
+AdditionalOptions=
+IgnoreAllDefaultLibraries=false
+IgnoreDefaultLibraryNames=
+AdditionalLibraryDirectories=
+
+[Librarian.x64]
+TargetMachine=17
+
+
+[ResourceCompiler]
+AdditionalOptions=
+Culture=
+PreprocessorDefinitions=
+
+###############################################################################
+#  Conversions to MSVC2010 and later
+[Translate]
+
+Configuration_ConfigurationType_1  = Application
+Configuration_ConfigurationType_2  = DynamicLibrary
+Configuration_ConfigurationType_4  = StaticLibrary
+Configuration_ConfigurationType_10 = Generic
+Configuration_CharacterSet_0     = -
+Configuration_CharacterSet_1     = Unicode
+Configuration_CharacterSet_2     = MultiByte
+Configuration_RuntimeLibrary_0 = MultiThreaded
+Configuration_RuntimeLibrary_1 = MultiThreadedDebug
+Configuration_RuntimeLibrary_2 = MultiThreadedDLL
+Configuration_RuntimeLibrary_3 = MultiThreadedDebugDLL
+
+Compiler_BasicRuntimeChecks_0      = Default
+Compiler_BasicRuntimeChecks_3      = EnableFastChecks
+Compiler_BrowseInformation_0       = false
+Compiler_BrowseInformation_1       = true
+Compiler_CallingConvention_0       = Cdecl
+Compiler_CompileAs_0               = Default
+Compiler_DebugInformationFormat_0  = -
+Compiler_DebugInformationFormat_3  = ProgramDatabase
+Compiler_FavorSizeOrSpeed_0        = Neither
+Compiler_FavorSizeOrSpeed_1        = Speed
+Compiler_FavorSizeOrSpeed_2        = Size
+Compiler_InlineFunctionExpansion_0 = Default
+Compiler_InlineFunctionExpansion_1 = OnlyExplicitInline
+Compiler_InlineFunctionExpansion_2 = AnySuitable 
+Compiler_Optimization_0            = Disabled
+Compiler_Optimization_2            = MaxSpeed
+Compiler_RuntimeLibrary_0          = MultiThreaded
+Compiler_RuntimeLibrary_1          = MultiThreadedDebug
+Compiler_RuntimeLibrary_2          = MultiThreadedDLL
+Compiler_RuntimeLibrary_3          = MultiThreadedDebugDLL
+Compiler_UsePrecompiledHeader_0    = NotUsing
+Compiler_UsePrecompiledHeader_1    = Create
+Compiler_UsePrecompiledHeader_2    = Use
+Compiler_StructMemberAlignment_0   = Default
+Compiler_WarningLevel_1            = Level1
+Compiler_WarningLevel_2            = Level2
+Compiler_WarningLevel_3            = Level3
+Compiler_WarningLevel_4            = Level4
+
+Linker_EnableCOMDATFolding_0 = -
+Linker_EnableCOMDATFolding_1 = false
+Linker_EnableCOMDATFolding_2 = true
+Linker_FixedBaseAddress_0    = false
+Linker_FixedBaseAddress_1    = true
+Linker_LinkIncremental_1     = false
+Linker_LinkIncremental_2     = true
+Linker_OptimizeReferences_0  = -
+Linker_OptimizeReferences_1  = false
+Linker_OptimizeReferences_2  = true
+Linker_SubSystem_1           = Console
+Linker_SubSystem_2           = Windows
+Linker_TargetMachine_1       = MachineX86
+Linker_TargetMachine_17      = MachineX64
+Linker_LargeAddressAware_1   = false
+Linker_LargeAddressAware_2   = true
+
+Librarian_TargetMachine_1       = MachineX86
+Librarian_TargetMachine_17      = MachineX64
+
+Macro_InputPath = %(FullPath)
+Macro_InputDir = %(RootDir)%(Directory)
+Macro_InputName = %(Filename)
+Macro_InputFileName = %(Filename)%(Extension)
+
+
+###############################################################################
+# Precompiled headers
+
+[UsePch]
+UsePch         = TRUE
+PchUsageDefine = NCBI_USE_PCH
+DefaultPch     = ncbi_pch.hpp
+
+internal/structure/CDTree3               = cdtree_pch.hpp
+internal/structure/PubChem/PCView/PCView = PCView_pch.hpp
+internal/structure/PubChem/assay         = assay_pch.hpp
+internal/ID/utils                        = -
+
+DoNotUsePch = test_mt test_ncbidiag_p xmlwrapp
+
+

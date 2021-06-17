@@ -1,0 +1,8 @@
+#define TAGS mod_caf
+common$
+corelib$ update-only
+connect$
+connect/ext$
+connect/daemons$
+connect/daemons/mod$
+internal/signon3$ update-only

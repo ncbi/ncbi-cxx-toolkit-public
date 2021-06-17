@@ -1,0 +1,71 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioSample",
+          data strs {
+            "biosample_val"
+          }
+        }
+      }
+    },
+    source {
+      origin natural,
+      org {
+        db {
+          {
+            db "?",
+            tag str "tag1"
+          },
+          {
+            db "taxon",
+            tag id 1
+          }
+        }
+      }
+    },
+    genbank {
+      extra-accessions {
+        "M10101",
+        "M10102",
+        "Q8Y7J9"
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "dummy"
+      },
+      descr {
+        molinfo {
+          biomol mRNA
+        }
+      },
+      inst {
+        repr not-set,
+        mol rna,
+        topology circular,
+        strand mixed,
+        hist {
+          replaces {
+            ids {
+              genbank {
+                accession "M10101"
+              },
+              genbank {
+                accession "M10102"
+              },
+              swissprot {
+                accession "Q8Y7J9"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

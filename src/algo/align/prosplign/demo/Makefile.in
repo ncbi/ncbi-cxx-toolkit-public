@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile("ProSPLIGN demo" project)
+#################################
+
+APP_PROJ = prosplign_demo
+PROJ_TAG = demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

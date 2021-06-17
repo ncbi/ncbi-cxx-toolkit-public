@@ -1,0 +1,3 @@
+resinfo_password resource_info/some_user@some_server server_password
+resinfo_password2 resource_info/some_user@some_server server_password2 username=anyone&server=server_name
+resinfo_password resource_info2/another_user@another_server server_password username=onemore&server=server_name

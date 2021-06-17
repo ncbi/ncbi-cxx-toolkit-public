@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(demo_ncbi_clog)
+  NCBI_sources(demo_ncbi_clog)
+  NCBI_uses_toolkit_libraries(clog)
+  NCBI_project_watchers(ivanov)
+NCBI_end_app()
+

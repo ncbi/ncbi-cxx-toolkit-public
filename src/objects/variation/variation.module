@@ -1,0 +1,2 @@
+MODULE_PATH   = objects/variation
+MODULE_IMPORT = objects/seqfeat/seqfeat objects/general/general objects/seqloc/seqloc objects/pub/pub objects/seq/seq

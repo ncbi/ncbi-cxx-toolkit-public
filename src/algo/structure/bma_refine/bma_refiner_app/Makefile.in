@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile (block multiple alignment refiner)
+##################################################
+
+APP_PROJ = bma_refiner
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

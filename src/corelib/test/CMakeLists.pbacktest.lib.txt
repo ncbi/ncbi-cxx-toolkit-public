@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_lib(xpbacktest)
+  NCBI_sources(pbacktest.cpp)
+  NCBI_headers(pbacktest.hpp)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(lavr)
+NCBI_end_lib()
+

@@ -1,0 +1,4 @@
+ASN_PROJ = seqset
+SUB_PROJ = test
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

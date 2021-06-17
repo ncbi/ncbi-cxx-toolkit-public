@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_validator SHARED)
+  NCBI_hosts_projects(
+    objtools/validator/validator
+  )
+  NCBI_add_definitions(NCBI_VALIDATOR_EXPORTS)
+NCBI_end_lib()

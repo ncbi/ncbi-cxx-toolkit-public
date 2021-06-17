@@ -1,0 +1,4 @@
+corelib$
+internal$
+internal/cppcore$
+internal/cppcore/ncbi_panfs

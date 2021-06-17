@@ -1,0 +1,72 @@
+            "id": "bbm|164040",
+            "id": "bbs|65136",
+            "id": "gi|238806",
+            "type": 12
+            "type": 2
+            "type": 3
+        "id": "4.8091"
+        "id": "4.8091",
+        "id": "4.8091",
+        "id": "4.8091",
+        "id": "gb|AAA05806.1|",
+        "last_modified": 1000412801493
+        "last_modified": 1000412801493
+        "last_modified": 1000412801493
+        "type": 5
+        {
+        {
+        {
+        }
+        },
+        },
+    "blob_id": {
+    "canonical_id": {
+    "class": "nuc-prot",
+    "compression": "gzip",
+    "data": "eJy1VV1s22QUdZJ2bdPCuiFeLIE+qdLajcxK1G6ZNCEwSeukdUoSpykBLZKbuok1xzaOTZvCg4uE2Aua1mrihU5N0rXbyo+oJsYoPLdISEgIthdAIJg2tIdpYnubKq791Q3ZH+okbqT83O/63nPPOXYqpt+smV6XiyCWzIC5aJJqGh3nVZVHPhTNox42ENj/Ik7kCrwoo7d4TeTHJAFpQl5UZB8Si0VDVvKSMmZIcP5GwSjykGYEWSmKOR8K+v1I1o8dRbw8jnSNl0sSrwvjSNWUcSOnlwjic7MCMBZMt7vlW4KomG5XM0FU4aOF2IrVesUGrmjBFV6nYsU+D8Ay7qbmd6Y7CWJxK7NgkjNnQ5Ii85K1gsbndEETp3kd0CNlAukFAdmYYV8GQOrimDJehvVUQdMVUROQrqAILxQVtSBKRgmJ8oRkCPI0DydlVUBjSFWkconPWd3FcYFC0TSFUtBWEkolNKEJb0K5LpWRMKVqkILl0yzioXNBACxKXpAFxShReBO8aRXeSS+XU3TdF6MYinwqpAHTolzyhSmWIjtiuZBiaDr8GqXI1lDBkPM+KOvgAAXI4xuiBiiyLVUQhTHBl4SDhIVZkHz9VIwi21/noc7wRazWbcN8oQhTIhSxHVXAgPkDT7QPwk62zFIDyG1R1rEoHVgUl9OkYpKeQF/QypLuQIAgaibZ0uf3Bw8GeolHxBfQ01oerm22ZWk8XrZHYmQwy+M2P7Vne4jNoqM5uYs7fCjQ22sD2P5eqyNbgXrP4k8OSHvH0f/J9wRxAUAtARPxZBRPvIRpq6O537oOd6zFGXC3a0DMU8jewdq9kZGqfbnX5bause9k4MXt/tq6o6tm08xn5e7LyezI3ay+OXw3curg1fd+e//7puUP9mT/rP7w7HM94bnKkZWR+e7s+atnJpdTH/fcmHl+9p5++sD16N7sR3fO7Z5cf+bk7rXKq7c2b/0YHLzWdTkW+T35S8x4uxxcPRG5yDHXzrcPzm08/dL+m32zrkHztDo/9fP1ueS9l7/6hHvlm32zN3491XVnsr9vNhud6tqk/16/1Hmy8/axBHV7z2t7XSMH2rrWTkyfGemeN/74kPvL2asGlPhBmQX7c8FiDNS+iLnBFiC96X3H89pRS7JGxl7YgXTOwCVQAAtjjwAO16xeNqU1s8EzD4/6HWPbt5Wmaf+hI/7DDd7Dpt1wTKs6brxSd+OODWFhvvlvJP/9vHQ82IqPW3F28UmYu8+AHjzJsAitmLQRC8eS6TidYFmGhRhl4wydDNHRRCyV4OIcx3I0l2bCyXQqmgolaS7BRJPDYZYZzSQSQ3FmiI4PsWw0Q9NQmuCYdJxLDnCM9UqFB1JsKmrl4/3hATqVyYTYRDgznIk/3kTfYT5rWzw/kVse9ItLf8AuVx5nFyvOPRTfKsaHH4Pe+vP0LKQaGi+Zy/YfONaaeBf7lvjy0b51al3BLY9nd+ZxK/4B1rNjMw=="
+    "date_changed": "09/13/2001 20:26:41",
+    "division": "PRI",
+    "format": "asn.1",
+    "gi": 238806
+    "hash": -1400003729,
+    "hup_release_date": "",
+    "id": {
+    "id": {
+    "id": {
+    "id2_info": "",
+    "is_dead": false,
+    "is_suppressed": true,
+    "is_withdrawn": false,
+    "length": 117,
+    "molecule_type": "aa",
+    "n_chunks": 1
+    "original_load_date": "01/19/1994 00:54:27",
+    "other_ids": [
+    "owner": 2,
+    "reply": "BioseqInfo",
+    "reply": "BlobData",
+    "reply": "BlobInfo",
+    "reply": "PublicComment",
+    "seq_state": 10,
+    "size": 2101,
+    "state": 10,
+    "storage_size": 1114,
+    "tax_id": 0,
+    "text": "This record was removed from further distribution at the submitter's request. Contact info@ncbi.nlm.nih.gov for further information"
+    "username": "cavanaug",
+    ],
+    },
+    },
+    },
+    },
+    },
+[
+]
+{
+{
+{
+{
+}
+},
+},
+},

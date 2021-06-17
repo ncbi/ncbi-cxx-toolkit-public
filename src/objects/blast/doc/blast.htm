@@ -1,0 +1,539 @@
+<!doctype HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>ASN.1 Interface to BLAST</title>
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+
+<body>
+
+<h1>Introduction</h1>
+<p>This document describes blast4, an ASN.1 interface to BLAST. The National 
+Center for Biotechnology Information provides free BLAST services to the public 
+using this interface (over HTTP) and others. NCBI's BLAST source code is in the 
+public domain, so other organizations may choose to run their own BLAST servers.</p>
+<p>The functionality provided by this interface is similar to that provided by 
+the <a href="https://www.ncbi.nlm.nih.gov/BLAST/Doc/urlapi.html">URL API</a>. 
+Either interface will work for many applications, but application programmers 
+may find this interface to be more convenient.</p>
+<p>For more information on using NCBI's public BLAST servers using this 
+interface, please refer to <a href="#appendix-2">Appendix 2: Using NCBI's BLAST 
+Servers</a>.</p>
+<p>We welcome your suggestions, comments, and questions about this 
+specification. Please email them to us at
+<a href="mailto:toolbox@ncbi.nlm.nih.gov">toolbox@ncbi.nlm.nih.gov</a>. </p>
+<h1>Protocol</h1>
+<p>blast4 clients send <code>Blast4-request</code> objects and receive <code>
+Blast4-reply</code> objects. Each request is answered with one reply. The 
+particular encoding used for requests and replies depends on the communication 
+mechanism used and is not part of this specification. Depending on the 
+communication mechanism used, a session may consist of one request and one reply 
+or of multiple requests and their replies.</p>
+<h1>Requests</h1>
+<p>A <code>Blast4-request</code> consists of an optional <code>ident</code>, 
+which identifies the application sending the request, and a <code>body</code>, 
+which contains one of several specific requests:</p>
+<p></p>
+<pre>Blast4-request ::= SEQUENCE {
+    ident                   VisibleString OPTIONAL,
+    body                    Blast4-request-body
+}
+
+Blast4-request-body ::= CHOICE {
+    finish-params           Blast4-finish-params-request,
+    get-databases           NULL,
+    get-matrices            NULL,
+    get-parameters          NULL,
+    get-programs            NULL,
+    get-search-results      Blast4-get-search-results-request,
+    get-sequences           Blast4-get-sequences-request,
+    queue-search            Blast4-queue-search-request
+}
+</pre>
+<p>The structure of <code>Blast4-reply</code> is similar: </p>
+<pre>Blast4-reply ::= SEQUENCE {
+    errors                  SEQUENCE OF Blast4-error OPTIONAL,
+    body                    Blast4-reply-body
+}
+
+Blast4-reply-body ::= CHOICE {
+    finish-params           Blast4-finish-params-reply,
+    get-databases           Blast4-get-databases-reply,
+    get-matrices            Blast4-get-matrices-reply,
+    get-parameters          Blast4-get-parameters-reply,
+    get-programs            Blast4-get-programs-reply,
+    get-search-results      Blast4-get-search-results-reply,
+    get-sequences           Blast4-get-sequences-reply,
+    queue-search            Blast4-queue-search-reply
+}
+</pre>
+<p><code>errors</code> contains any informational, warning, or error messages 
+related to the processing of the request. Warnings indicate that the server 
+processed the request successfully, but that the results may be different than 
+the user anticipated. Errors indicate that the server was unable, in whole or in 
+part, to process the request.</p>
+<p>Although there are many requests, the <code>queue-search</code> and <code>
+get-search-results</code> requests are most important. </p>
+<h1 id="queue-search">queue-search</h1>
+<p>The <code>queue-search</code> request is used to initiate a BLAST search:</p>
+<pre>Blast4-queue-search-request ::= SEQUENCE {
+    program                 VisibleString,
+    service                 VisibleString,
+    queries                 Bioseq-set,
+    subject                 Blast4-subject,
+    paramset                VisibleString OPTIONAL,
+    params                  Blast4-parameters OPTIONAL
+}
+</pre>
+<p><code>program</code> and <code>service</code> select a program in the BLAST 
+family and a service offered by that program. The complete set of programs and 
+services offered is returned by the <code>get-programs</code> request.</p>
+<p><code>queries</code> specifies the sequences to be searched.</p>
+<p><code>subject</code> specifies the sequences against which the query 
+sequences will be searched. The sequences can be specified indirectly, through
+<code>databases</code>, or directly, through <code>sequences</code>:</p>
+<pre>Blast4-subject ::= CHOICE {
+    database                VisibleString,
+    sequences               SEQUENCE OF Bioseq
+}
+</pre>
+<p><code>paramset</code> is used to include a named set of parameters. Including 
+a named set of parameters is equivalent to prepending the parameters in the set 
+to <code>params</code>.</p>
+<p><code>params</code> is used to override default parameter settings selected 
+by the server or parameter settings included via <code>paramset</code>. There 
+are many parameters that can be specified, but none are required; the server 
+will attempt to set reasonable values for those that are not specified. For more 
+information, refer to <a href="#appendix-1">Appendix 1: Search Parameters</a>. 
+To learn more about default values set by the server, please refer to the
+<a href="#finish-params">finish-params</a> request.</p>
+<p>The reply to a <code>queue-search</code> request contains a <code>request-id</code>, 
+which can be used later to retrieve the results of the search:</p>
+<pre>Blast4-queue-search-reply ::= SEQUENCE {
+    request-id              VisibleString OPTIONAL
+}
+</pre>
+<h1 id="get-search-results">get-search-results</h1>
+<p>The <code>get-search-results</code> request is used to retrieve the results 
+of a BLAST search:</p>
+<pre>Blast4-get-search-results-request ::= SEQUENCE {
+    request-id              VisibleString
+}
+
+Blast4-get-search-results-reply ::= SEQUENCE {
+    alignments              Seq-align-set OPTIONAL,
+    phi-alignments          Blast4-phi-alignments OPTIONAL,
+    mask                    Blast4-mask OPTIONAL,
+    ka-blocks               SEQUENCE OF Blast4-ka-block OPTIONAL,
+    search-stats            SEQUENCE OF VisibleString OPTIONAL
+}
+</pre>
+<p>The elements returned are all optional; which ones are included depends on 
+the particular search.</p>
+<h1 id="finish-params">finish-params</h1>
+<p>With the <code>queue-search</code> request, the actual parameter values may 
+be different than those explicitly specified by the user; some may be read from 
+a parameter set (a paramset), while others may be set, by default, by the 
+server. For some applications and users, it may be important to know exactly 
+which values the server will use to execute a search. The <code>finish-params</code> 
+request takes arguments similar to those of the <code>queue-search</code> 
+request and returns a complete, or finished, set of parameters: </p>
+<pre>Blast4-finish-params-request ::= SEQUENCE {
+    program                 VisibleString,
+    service                 VisibleString,
+    paramset                VisibleString OPTIONAL,
+    params                  Blast4-parameters OPTIONAL
+}
+
+Blast4-finish-params-reply ::= Blast4-parameters
+
+Blast4-parameters ::= SEQUENCE OF Blast4-parameter
+</pre>
+<p>The <code>params</code> returned in the reply show the values of all search 
+parameters whose values are not zero, false, the empty string, or null.</p>
+<h1 id="get-databases">get-databases</h1>
+<p>The <code>get-databases</code> request is used to enumerate the names of 
+databases known to the server. These names are the domain of the <code>
+subject.database</code> element of a <code>queue-search</code> request. </p>
+<pre>Blast4-get-databases-reply ::= SEQUENCE OF Blast4-database-info
+
+Blast4-database-info ::= SEQUENCE {
+    database                Blast4-database,
+    description             VisibleString,
+    last-updated            VisibleString,
+    total-length            BigInt,
+    num-sequences           BigInt
+}</pre>
+<h1 id="get-matrices">get-matrices</h1>
+<p>The <code>get-matrices</code> request is used to enumerate the scoring 
+matrices known to the server. These are the matrices that can be specified by 
+name in the <a href="#param-matrix">matrix</a> search parameter.</p>
+<pre>Blast4-get-matrices-reply ::= SEQUENCE OF Blast4-matrix-id
+
+Blast4-matrix-id ::= SEQUENCE {
+    residue-type            Blast4-residue-type,
+    name                    VisibleString
+}</pre>
+<h1 id="get-parameters">get-parameters</h1>
+<p>The <code>get-parameters</code> request is used to enumerate the search 
+parameters known by the server. This request is not intended to be initiated 
+directly by an end user, and the results are not intended to be displayed to an 
+end user; rather, this request helps clients to construct a user interface 
+dynamically so they can accomodate changes in the set of known search parameters 
+without modification. Clients are not required to use this request; they may 
+choose instead to support just those search parameters that are known when they 
+are written.</p>
+<pre>Blast4-get-matrices-reply ::= SEQUENCE OF Blast4-matrix-id
+
+Blast4-matrix-id ::= SEQUENCE {
+    residue-type            Blast4-residue-type,
+    name                    VisibleString
+}</pre>
+<h1 id="get-paramsets">get-paramsets</h1>
+<p>The <code>get-paramsets</code> request is used to enumerate the named sets of 
+search parameters (the &quot;parsets&quot;) known to the server. Parsets may make it 
+easier for users to tailor their searches to achieve specific results, but they 
+are never required.</p>
+<pre>Blast4-get-paramsets-reply ::= SEQUENCE OF Blast4-paramset-info
+
+Blast4-paramset-info ::= SEQUENCE {
+    program                 VisibleString,
+    name                    VisibleString
+}
+</pre>
+<p>Names of paramsets are unique (within the scope of a particular program) and 
+are designed to be descriptive enough that no separate description is needed. 
+Names are not required to follow any particular form. </p>
+<h1 id="get-programs">get-programs</h1>
+<p>The <code>get-programs</code> request is used to enumerate the combinations 
+of <code>program</code> and <code>name</code> that may be specified in a <code>
+queue-search</code> request.</p>
+<pre>Blast4-program-info ::= SEQUENCE {
+    program                 VisibleString,
+    services                SEQUENCE OF VisibleString
+}
+</pre>
+<p>Names of paramsets are unique (within the scope of a particular program) and 
+are designed to be descriptive enough that users will be able to make reasonable 
+choices based on program and name alone. Names are not required to follow any 
+particular form and may be relatively long (perhaps 40 characters or more).</p>
+<h1 id="appendix-1">Appendix 1: Search Parameters</h1>
+<p>Search parameters are specified as name-value pairs: </p>
+<pre>Blast4-parameter ::= SEQUENCE {
+    name                    VisibleString,
+    value                   Blast4-value
+}
+
+Blast4-value ::= CHOICE {
+    <i>-- scalar types:</i>
+    big-integer             BigInt,
+    bioseq                  Bioseq,
+    boolean                 BOOLEAN,
+    cutoff                  Blast4-cutoff,
+    integer                 INTEGER,
+    matrix                  Blast4-matrix,
+    real                    REAL,
+    seq-align               Seq-align,
+    seq-id                  Seq-id,
+    seq-loc                 Seq-loc,
+    strand-type             Blast4-strand-type,
+    string                  VisibleString,
+    <i>-- lists of scalar types:</i>
+    big-integer-list        SEQUENCE OF BigInt,
+    bioseq-list             SEQUENCE OF Bioseq,
+    boolean-list            SEQUENCE OF BOOLEAN,
+    cutoff-list             SEQUENCE OF Blast4-cutoff,
+    integer-list            SEQUENCE OF INTEGER,
+    matrix-list             SEQUENCE OF Blast4-matrix,
+    real-list               SEQUENCE OF REAL,
+    seq-align-list          SEQUENCE OF Seq-align,
+    seq-id-list             SEQUENCE OF Seq-id,
+    seq-loc-list            SEQUENCE OF Seq-loc,
+    strand-type-list        SEQUENCE OF Blast4-strand-type,
+    string-list             SEQUENCE OF VisibleString,
+    <i>-- imported collection types:</i>
+    bioseq-set              Bioseq-set,
+    seq-align-set           Seq-align-set
+}
+</pre>
+<p>The following table shows the legal <code>name</code>'s and their 
+corresponding <code>value</code> types: </p>
+<table class="BODY" border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse" bordercolor="#111111" width="100%">
+  <tr>
+    <td><strong>parameter</strong></td>
+    <td><strong>type</strong></td>
+    <td><strong>description</strong></td>
+  </tr>
+  <tr>
+    <td>cutoff</td>
+    <td>cutoff</td>
+    <td>Only hits with e-values below the cutoff e-value or normalized scores 
+    above the cutoff score will be reported.</td>
+  </tr>
+  <tr>
+    <td>db-genetic-code</td>
+    <td>integer</td>
+    <td>Code used to translate database from nucleotide to protein. See
+    <a href="#table-of-genetic-codes">Table of Genetic Codes</a>.</td>
+  </tr>
+  <tr>
+    <td>culling</td>
+    <td>boolean</td>
+    <td>If true, hit lists are culled by keeping at most a certain number <i>
+    (hsp-range-max?)</i> of HSP's in a range. <i>(where is the size of the range 
+    set?)</i></td>
+  </tr>
+  <tr>
+    <td>ungapped-alignment</td>
+    <td>boolean</td>
+    <td>If true, ungapped alignments are allowed.</td>
+  </tr>
+  <tr>
+    <td>entrez-query</td>
+    <td>string</td>
+    <td>Used to construct an oid list. (which is used how?)</td>
+  </tr>
+  <tr>
+    <td>i-thresh</td>
+    <td>integer</td>
+    <td>E-value threshold for inclusion in a PSI-BLAST multiple alignment. (See
+    <a href="#gapped-blast-and-psi-blast">Gapped BLAST and PSI-BLAST: a new 
+    generation of protein database search programs</a> and
+    <a href="#improving-the-accuracy-of-psi-blast">Improving the accuracy of 
+    PSI-BLAST protein database searches with composition-based statistics and 
+    other refinements</a>.)</td>
+  </tr>
+  <tr>
+    <td>filter</td>
+    <td>string</td>
+    <td>A string that specifies when and how the query sequences are to be 
+    masked. Please refer to <a href="#appendix-3">Appendix 3: Filter Strings</a>.</td>
+  </tr>
+  <tr>
+    <td>first-db-seq,<br>
+    final-db-seq</td>
+    <td>integer</td>
+    <td>Only sequences with oid's between first-db-seq and final-db-seq will be 
+    searched.</td>
+  </tr>
+  <tr>
+    <td>gap-open,<br>
+    gap-extend</td>
+    <td>integer</td>
+    <td>Penalties applied for opening and extending gaps, respectively. The 
+    penalty for a gap of N residues is gap-open + N * gap-extend. Meaningful 
+    only if gapped-alignment is true.</td>
+  </tr>
+  <tr>
+    <td>gi-list</td>
+    <td>integer_list</td>
+    <td>collection of sequences, specified by a list of gi numbers, against 
+    which queries will be compared.</td>
+  </tr>
+  <tr>
+    <td>hitlist-size</td>
+    <td>integer</td>
+    <td>maximum number of database sequences for which to save hits.</td>
+  </tr>
+  <tr>
+    <td>hsp-range-max</td>
+    <td>integer</td>
+    <td>maximum number of HSP's to save in any region. Meaningful only when 
+    culling is true.</td>
+  </tr>
+  <tr>
+    <td id="param-matrix">matrix</td>
+    <td>string, matrix</td>
+    <td>Substitution matrix containing similarity scores for all possible pairs 
+    of residues, specified by either name or value. (See
+    <a href="#basic-local-alignment-search-tool">Basic local alignment search 
+    tool</a> and <a href="#table-of-genetic-codes">Table of Genetic Codes</a>.)</td>
+  </tr>
+  <tr>
+    <td>perc-ident</td>
+    <td>real</td>
+    <td>Only alignments in which at least this percentage of query residues are 
+    identical to the corresponding subject residues will be reported.</td>
+  </tr>
+  <tr>
+    <td>nucl-penalty,<br>
+    nucl-reward</td>
+    <td>integer</td>
+    <td>Penalty for a nucleotide mismatch and reward for a nucleotide match, 
+    respectively. Called the scores for mismatches and identities in DNA 
+    sequence comparisons in <a href="#basic-local-alignment-search-tool">Basic 
+    local alignment search tool</a>. </td>
+  </tr>
+  <tr>
+    <td>phi-pattern</td>
+    <td>string</td>
+    <td><i>TBD</i></td>
+  </tr>
+  <tr>
+    <td>pseudocount-weight</td>
+    <td>integer</td>
+    <td>Called &quot;beta&quot; in <a href="#gapped-blast-and-psi-blast">Gapped BLAST and 
+    PSI-BLAST: a new generation of protein database search programs</a>. (See 
+    Equation 5.)</td>
+  </tr>
+  <tr>
+    <td>genetic-code</td>
+    <td>integer</td>
+    <td>Code used to translate query from nucleotide to protein. (See
+    <a href="#table-of-genetic-codes">Table of Genetic Codes</a>.)</td>
+  </tr>
+  <tr>
+    <td>query-mask</td>
+    <td>seq_loc_list</td>
+    <td>Locations of query residues to be masked. Words spanning these locations 
+    are not included in the initial word table. With <a href="#hard-masking">
+    hard masking</a>, these locations are also treated as unknown residues 
+    during extension.</td>
+  </tr>
+  <tr>
+    <td>required-start,<br>
+    required-end</td>
+    <td>integer</td>
+    <td>Only alignments which contain this region will be reported.</td>
+  </tr>
+  <tr>
+    <td>searchsp-eff</td>
+    <td>real</td>
+    <td>User-specified search space; overrides value calculated by BLAST.</td>
+  </tr>
+  <tr>
+    <td>strand-option</td>
+    <td>strand_type</td>
+    <td>Specifies whether to search the forward strand, the reverse strand, or 
+    both strands of the query sequences.</td>
+  </tr>
+  <tr>
+    <td>template-length</td>
+    <td>integer</td>
+    <td>Length of a megablast discontiguous words template. Meaningful only for 
+    service=megablast.</td>
+  </tr>
+  <tr>
+    <td>template-type</td>
+    <td>integer</td>
+    <td>Type of a megablast discontiguous words template. Legal values are <i>
+    TBD</i>. Meaningful only for service=megablast.</td>
+  </tr>
+  <tr>
+    <td>use-comp-based-stats</td>
+    <td>boolean</td>
+    <td>If true, uses composition-based statistics as described in
+    <a href="#improving-the-accuracy-of-psi-blast">Improving the accuracy of 
+    PSI-BLAST protein database searches with composition-based statistics and 
+    other refinements</a></td>
+  </tr>
+  <tr>
+    <td>window-size</td>
+    <td>integer</td>
+    <td>Called &quot;w&quot; in <a href="#basic-local-alignment-search-tool">Basic local 
+    alignment search tool</a>, &quot;W&quot; in <a href="#gapped-blast-and-psi-blast">
+    Gapped BLAST and PSI-BLAST: a new generation of protein database search 
+    programs</a>.</td>
+  </tr>
+  <tr>
+    <td>word-threshold</td>
+    <td>integer</td>
+    <td>Called &quot;T&quot; in <a href="#basic-local-alignment-search-tool">Basic local 
+    alignment search tool</a>.</td>
+  </tr>
+</table>
+<h1 id="appendix-2">Appendix 2: Using NCBI's BLAST Servers</h1>
+<p>NCBI provides a C++ wrapper to this interface
+(<code>ncbi::blast::CRemoteBlast</code>, as part of the <code>xblast</code>
+ library). The C++ wrapper automatically encodes requests, decodes replies, 
+ and handles communication with the server. The C++ wrapper is the only 
+ supported way to use this interface.</p>
+<h1 id="appendix-3">Appendix 3: Filter Strings</h1>
+<p>Filter strings consist of any number of the following options, separated by 
+spaces or semicolons. For options that take parameters, parameters follow the 
+letter which specifies the option and are separated, from the option letter and 
+from each other, by spaces. Default values are shown in parentheses.</p>
+<p>Options:</p>
+<div style="margin-left: 4em">
+  <dl>
+    <dt>m</dt>
+    <dd>Soft masking: residues specified by query-mask are masked only while 
+    building initial words, not during extension. (The default is hard masking, 
+    in which residues are also masked during extension.)</dd>
+    <dt>F</dt>
+    <dd>No filtering.</dd>
+    <dt>T</dt>
+    <dd>Normal filtering (DUST for blastn, SEG for others).</dd>
+    <dt>C</dt>
+    <dd>Coiled-coiled filter, based on the work of Lupas et al. (Science, vol 
+    252, pp. 1162-4 (1991)) and written by John Kuzio (Wilson et al., J Gen 
+    Virol, vol. 76, pp. 2923-32 (1995)). Optional parameters: window (22), 
+    cutoff (40.0), linker (32). </dd>
+    <dt>S</dt>
+    <dd>SEG filter. Optional parameters: window (12), locut (2.2), hicut (2.5).
+    <p>Examples: </p>
+    <div style="margin-left: 4em">
+      <dl>
+        <dt>C 28 40.0 32</dt>
+        <dd>Coiled-coiled with window = 28, locut = 40.0, and hicut = 32.</dd>
+        <dt>C;S</dt>
+        <dd>SEG and coiled-coiled.</dd>
+        <dt>m S</dt>
+        <dd>SEG filter with default arguments masks query, but only while the 
+        initial words are being built.</dd>
+      </dl>
+    </div>
+    </dd>
+  </dl>
+</div>
+<h1 id="references">References</h1>
+<ul>
+  <li id="basic-local-alignment-search-tool" class="ref">
+  <a href="https://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=2231712&dopt=Abstract">
+  Basic local alignment search tool</a><br>
+  Altschul SF, Gish W, Miller W, Myers EW, Lipman DJ<br>
+  J Mol Biol. 1990 Oct 5;215(3):403-10.<br>
+  https://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&amp;db=PubMed&amp;list_uids=2231712&amp;dopt=Abstract</li>
+  </li>
+  <li id="gapped-blast-and-psi-blast" class="ref">
+  <a href="https://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=9254694&dopt=Abstract">
+  Gapped BLAST and PSI-BLAST: a new generation of protein database search 
+  programs</a><br>
+  Altschul SF, Madden TL, Schaffer AA, Zhang J, Zhang Z, Miller W, Lipman DJ<br>
+  Nucleic Acids Res. 1997 Sep 1;25(17):3389-402.<br>
+  https://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&amp;db=PubMed&amp;list_uids=9254694&amp;dopt=Abstract</li>
+  <li id="improving-the-accuracy-of-psi-blast" class="ref">
+  <a href="https://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=11452024&dopt=Abstract">
+  Improving the accuracy of PSI-BLAST protein database searches with 
+  composition-based statistics and other refinements</a><br>
+  Schaffer AA, Aravind L, Madden TL, Shavirin S, Spouge JL, Wolf YI, Koonin EV, 
+  Altschul SF<br>
+  Nucleic Acids Res. 2001 Jul 15;29(14):2994-3005.<br>
+  https://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&amp;db=PubMed&amp;list_uids=11452024&amp;dopt=Abstract</li>
+  <li id class="ref">
+  <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi?mode=c">Table 
+  of Genetic Codes</a><br>
+  https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi?mode=c</li>
+  <li id="table-of-genetic-codes" class="ref">
+  <a href="ftp://ftp.ncbi.nih.gov/blast/matrices/">Substitution Scoring Matrices
+&mdash;Data</a><br>
+  ftp://ftp.ncbi.nih.gov/blast/matrices</li>
+  <li id="ref-6" class="ref"><a href="http://www.asn1.org/">The ASN.1 Consortium</a><br>
+  http://www.asn1.org</li>
+  <li id="ref-7" class="ref"><a href="http://asn1.elibel.tm.fr/en/index.htm">ASN 
+  Information Site</a><br>
+  http://asn1.elibel.tm.fr/en/index.htm </li>
+  <li id="ref-8" class="ref">
+  <a href="ftp://ftp.rfc-editor.org/in-notes/rfc2616.pdf">RFC 2616: Hypertext 
+  Transfer Protocol&mdash;HTTP/1.1</a><br>
+  ftp://ftp.rfc-editor.org/in-notes/rfc2616.pdf </li>
+  </li>
+</ul>
+
+</body>
+
+</html>

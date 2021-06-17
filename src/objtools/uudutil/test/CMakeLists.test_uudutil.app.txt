@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_app(test_uudutil)
+  NCBI_sources(test_uudutil)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(uudutil)
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_set_test_assets(test_uudutil.ini test_align_annot.asn test_gbproject.gbp)
+  NCBI_add_test()
+NCBI_end_app()
+

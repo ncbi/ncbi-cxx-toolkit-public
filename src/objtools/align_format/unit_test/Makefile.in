@@ -1,0 +1,9 @@
+# $Id$
+
+APP_PROJ = align_format_unit_test
+PROJ_TAG = test
+
+REQUIRES = Boost.Test.Included
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

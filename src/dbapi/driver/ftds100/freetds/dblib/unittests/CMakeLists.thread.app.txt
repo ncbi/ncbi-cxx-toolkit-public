@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(db100_thread)
+  NCBI_sources(thread common)
+  NCBI_add_test(test-db100 --no-auto db100_thread)
+NCBI_end_app()
+

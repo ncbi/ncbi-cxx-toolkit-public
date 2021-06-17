@@ -1,0 +1,1 @@
+bash nt_sources.sh

@@ -1,0 +1,10 @@
+Line No    : 24
+Severity   : Warning
+Problem    : Alignment.UnterminatedCommand
+Message    : File format autocorrected to comply with Nexus rules. Unexpected "end;". Appending ';' to prior command. No action required.
+
+Line No    : 10
+Severity   : Fatal
+Problem    : Alignment.BadSequenceCount
+Message    : Inconsistent sequence_IDs in the data blocks. Each data block must contain the same set of sequence_IDs.
+

@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(tds100_utf8_2)
+  NCBI_sources(utf8_2 common)
+  NCBI_add_test(test-tds100 tds100_utf8_2)
+NCBI_end_app()
+

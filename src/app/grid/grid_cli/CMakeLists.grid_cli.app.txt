@@ -1,0 +1,19 @@
+# $Id$
+
+NCBI_begin_app(grid_cli)
+  NCBI_sources(
+    grid_cli nc_cmds ns_cmds adm_cmds ns_cmd_impl wn_cmds
+    misc_cmds automation nc_automation ns_automation wn_automation
+    nst_automation util nst_cmds
+  )
+  NCBI_uses_toolkit_libraries(netstorage xcgi)
+
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_set_test_assets(netcache_check.sh)
+  NCBI_set_test_timeout(350)
+  NCBI_add_test(netcache_check.sh)
+
+  NCBI_project_watchers(sadyrovr fukanchi)
+
+NCBI_end_app()
+

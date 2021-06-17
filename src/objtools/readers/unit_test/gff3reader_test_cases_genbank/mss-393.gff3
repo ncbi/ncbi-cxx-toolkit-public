@@ -1,0 +1,17 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+#!genome-build ASM1560v1
+#!genome-build-accession NCBI_Assembly:GCF_000015605.1
+##sequence-region NC_008836.1 1 3458208
+##species http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=412022
+NC_008836.1	RefSeq	gene	722382	723919	.	-	.	ID=gene649;Name=BMA10229_RS12890;gbkey=Gene;gene_biotype=rRNA;locus_tag=BMA10229_RS12890;old_locus_tag=BMA10229_A0702
+NC_008836.1	RefSeq	rRNA	722382	723919	.	-	.	ID=rna9;Parent=gene649;gbkey=rRNA;product=16S ribosomal RNA
+NC_008836.1	RefSeq	exon	722382	723919	.	-	.	ID=id29;Parent=rna9;gbkey=rRNA;product=16S ribosomal RNA
+NC_008836.1	RefSeq	gene	978037	978406	.	+	.	ID=gene891;Name=ssrA;gbkey=Gene;gene=ssrA;gene_biotype=misc_RNA;locus_tag=BMA10229_RS25505
+NC_008836.1	RefSeq	transcript	978037	978406	.	+	.	ID=rna11;Parent=gene891;gbkey=misc_RNA;gene=ssrA;product=10Sa RNA (tmRNA)
+NC_008836.1	RefSeq	exon	978037	978406	.	+	.	ID=id40;Parent=rna11;gbkey=misc_RNA;gene=ssrA;product=10Sa RNA (tmRNA)
+NC_008836.1	RefSeq	gene	1227238	1227649	.	-	.	ID=gene1111;Name=BMA10229_RS25510;gbkey=Gene;gene_biotype=RNase_P_RNA;locus_tag=BMA10229_RS25510
+NC_008836.1	cmsearch	ncRNA	1227238	1227649	.	-	.	ID=rna14;Parent=gene1111;gbkey=ncRNA;ncrna_class=RNase_P_RNA;product=bacterial RNase P
+NC_008836.1	cmsearch	exon	1227238	1227649	.	-	.	ID=id54;Parent=rna14;gbkey=ncRNA;ncrna_class=RNase_P_RNA;product=bacterial RNase P
+###

@@ -1,0 +1,9 @@
+# $Id$
+
+APP_PROJ = tls
+
+SUB_PROJ =
+
+srcdir = @srcdir@
+
+include @builddir@/Makefile.meta

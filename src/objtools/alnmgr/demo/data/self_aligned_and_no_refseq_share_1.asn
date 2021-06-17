@@ -1,0 +1,74 @@
+Seq-annot ::= {
+  desc {
+    name "First Pass Alignments",
+    title "First Pass Alignments"
+  },
+  data align {
+    {
+      type partial,
+      dim 2,
+      segs denseg {
+        numseg 1,
+        ids {
+          gi 42406306,
+          gi 42406306
+        },
+        starts {
+          11000,
+          11000
+        },
+        lens {
+          7286004
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      segs denseg {
+        numseg 1,
+        ids {
+          gi 42406306,
+          gi 42406306
+        },
+        starts {
+          8598198,
+          8598198
+        },
+        lens {
+          15825424
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      segs denseg {
+        numseg 1,
+        ids {
+          gi 51511461,
+          gi 89161185
+        },
+        starts {
+          45892628,
+          45953195
+        },
+        lens {
+          57683299
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    }
+  }
+}

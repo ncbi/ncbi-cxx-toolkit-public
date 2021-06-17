@@ -1,0 +1,13 @@
+# $Id$
+# Author:  Denis Vakatov, NCBI 
+
+include $(builddir)/Makefile.mk
+
+all:
+	-$(srcdir)/check.sh "$(signature)" $(MAKE) $(builddir) all   $(CHECK_ARG)
+
+clean:
+	 $(srcdir)/check.sh "$(signature)" $(MAKE) $(builddir) clean $(CHECK_ARG)
+
+purge: clean
+	 $(srcdir)/check.sh "$(signature)" $(MAKE) $(builddir) purge $(CHECK_ARG)

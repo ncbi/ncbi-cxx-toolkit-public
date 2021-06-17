@@ -1,0 +1,23 @@
+# $Id$
+
+SRC_CXX = igblast
+
+SRC = $(SRC_CXX)
+
+LIB = igblast
+
+DLL_LIB = $(BLAST_LIBS) xconnect $(SOBJMGR_LIBS)
+
+ASN_DEP = blastdb xnetblast
+
+CFLAGS   = $(FAST_CFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
+WATCHERS = madden camacho
+
+
+USES_LIBRARIES =  \
+    $(BLAST_LIBS)

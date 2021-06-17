@@ -1,0 +1,22 @@
+# $Id$
+
+# Build library "xobjutil"
+###############################
+
+ASN_DEP = submit
+
+SRC = weight sequence feature indexer seqtitle create_defline obj_sniff seq_loc_util seq_align_util seq_trimmer bioseqgaps_ci \
+        objutil feature_edit \
+        autodef autodef_feature_clause_base autodef_source_desc autodef_available_modifier \
+        autodef_mod_combo autodef_source_group autodef_feature_clause autodef_options
+
+LIB = xobjutil
+
+DLL_LIB = submit $(SOBJMGR_LIBS)
+
+WATCHERS = ucko vasilche
+
+
+
+USES_LIBRARIES =  \
+    $(DL_LIBS) $(SOBJMGR_LIBS)

@@ -1,0 +1,158 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      org {
+        taxname "Homo sapiens"
+      },
+      subtype {
+        {
+          subtype other,
+          name "val246_0"
+        }
+      }
+    },
+    genbank {
+      extra-accessions {
+        "dummy1",
+        "dummy2",
+        "dummy3"
+      },
+      keywords {
+        "keyword1",
+        "keyword2"
+      }
+    },
+    pub {
+      pub {
+        muid 1
+      }
+    },
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "Sequence Read Archive",
+          data strs {
+            "sra1",
+            "sra2",
+            "SRA3"
+          }
+        },
+        {
+          label str "BioProject",
+          data strs {
+            "bioproject1"
+          }
+        },
+        {
+          label str "BioSample",
+          data strs {
+            "biosample1",
+            "biosample2",
+            "biosample2",
+            "biosample3"
+          }
+        }
+      }
+    },
+    comment "comment1",
+    pub {
+      pub {
+        pmid 1234
+      }
+    },
+    pub {
+      pub {
+        pmid 5678
+      }
+    },
+    user {
+      type str "TpaAssembly",
+      data {
+        {
+          label id 0,
+          data fields {
+            {
+              label str "accession",
+              data str "BK000554.2"
+            }
+          }
+        }
+      }
+    },
+    user {
+      type str "GenomeProjectsDB",
+      data {
+        {
+          label id 0,
+          data fields {
+            {
+              label str "ProjectID",
+              data int 1
+            },
+            {
+              label str "ParentID",
+              data int 0
+            }
+          }
+        },
+        {
+          label id 0,
+          data fields {
+            {
+              label str "ProjectID",
+              data int 2
+            },
+            {
+              label str "ParentID",
+              data int 0
+            }
+          }
+        },
+        {
+          label id 0,
+          data fields {
+            {
+              label str "ProjectID",
+              data int 3
+            },
+            {
+              label str "ParentID",
+              data int 0
+            }
+          }
+        }
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "dummy"
+      },
+      descr {
+        molinfo {
+          biomol ncRNA,
+          tech est,
+          completeness complete
+        }
+      },
+      inst {
+        repr not-set,
+        mol rna,
+        topology circular,
+        strand mixed,
+        hist {
+          replaces {
+            ids {
+              swissprot {
+                accession "dummy"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

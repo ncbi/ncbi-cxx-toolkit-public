@@ -1,0 +1,11 @@
+# $Id$
+
+# Meta-makefile("CACHE" project)
+#################################
+
+APP_PROJ = test_validator
+PROJ_TAG = test
+SUB_PROJ = 
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

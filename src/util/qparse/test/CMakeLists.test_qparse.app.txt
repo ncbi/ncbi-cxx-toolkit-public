@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_qparse)
+  NCBI_sources(test_qparse)
+  NCBI_uses_toolkit_libraries(xqueryparse)
+  NCBI_project_watchers(kuznets)
+NCBI_end_app()
+

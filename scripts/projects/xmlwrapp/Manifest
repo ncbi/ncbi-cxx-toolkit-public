@@ -1,0 +1,52 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Sergey Satskiy
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+
+APP: event_parsing test_attributes test_document test_event test_namespace test_node
+APP: test_xslt tree_parsing xml_generation xslt_transformation
+
+LIB: libxmlwrapp.a
+SRC: src/misc/xmlwrapp/dtd.cpp
+
+DEFAULT_CONFIGURATIONS: Linux64-Centos:plain-GCC
+DEFAULT_CONFIGURE_FLAGS: --without-debug --with-mt
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+
+FreeBSD64                : plain          : Clang.sh         --without-debug --with-mt    --without-runpath --with-flat-makefile
+
+Linux64-Centos           : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+Linux64-Centos           : GCC-nomt       : GCC.sh           --without-debug --without-mt --without-runpath --with-flat-makefile
+Linux64-Centos           : ICC-17         : ICC.sh 17.0      --without-debug --with-mt    --without-runpath --with-flat-makefile
+Linux64-Centos           : plain-ICC      : ICC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+
+Linux64-Centos           : Release        : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+
+Linux64-Ubuntu           : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+Linux64-Ubuntu-Public    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+
+Cygwin64                 : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+
+Win64_17                 : 17-debug-64    : static 64 DebugDLL
+Win64_17                 : 17-static-64   : static 64 ReleaseDLL
+
+IntelMAC                 : clang          : Clang.sh         --without-debug --with-mt    --without-runpath --with-flat-makefile --with-3psw=system:netopt --without-ncbi-public
+IntelMAC                 : plain          : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile --with-3psw=system:netopt --without-ncbi-public
+IntelMAC                 : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+XCode                    : plain          : Xcode.sh 30
+
+

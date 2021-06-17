@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_lib(id2_split)
+  NCBI_sources(
+    blob_splitter blob_splitter_params split_blob blob_splitter_impl
+    blob_splitter_parser blob_splitter_maker id_range object_splitinfo
+    asn_sizer annot_piece chunk_info size split_exceptions
+  )
+  NCBI_uses_toolkit_libraries(xcompress xobjmgr)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+

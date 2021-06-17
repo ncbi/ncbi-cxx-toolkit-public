@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_lib(prosplign)
+  NCBI_sources(
+    prosplign scoring PSeq NSeq Ali AliSeqAlign Info nucprot intron
+    AlignInfo compartments
+  )
+  NCBI_uses_toolkit_libraries(xalgoalignutil)
+  NCBI_project_watchers(kiryutin chetvern)
+NCBI_end_lib()
+

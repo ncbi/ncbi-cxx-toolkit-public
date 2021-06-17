@@ -1,0 +1,48 @@
+#################################
+# $Id$
+# Author:  Aaron Ucko (ucko@ncbi.nlm.nih.gov)
+#################################
+
+# Tools, hardcoded for now
+METAL    = xcrun -sdk macosx metal
+METALLIB = xcrun -sdk macosx metallib
+
+OBJ = $(SRC:%=%.air)
+XLIB = $(LIB).metallib
+
+all: $(XLIB)
+
+clean:
+	$(RM) $(OBJ) $(XLIB)
+
+purge: clean deactivate
+
+deactivate unlink:
+ifneq "$(BINCOPY)" "@:"
+  ifneq "$(srcdir)" "."
+    ifneq "$(filter-out /.,$(wildcard $(libdir)/.))" ""
+	-$(RM) $(libdir)/$(XLIB)
+    endif
+  endif
+endif
+
+%.air: $(srcdir)/%.metal
+	$(METAL) -c $< -o $@
+
+$(XLIB): $(OBJ)
+	$(METALLIB) $(OBJ) -o $@
+ifneq "$(BINCOPY)" "@:"
+  ifneq "$(srcdir)" "."
+    ifneq "$(filter-out /.,$(wildcard $(libdir)/.))" ""
+	@if [ -w $(libdir) ]; then \
+	    echo $(BINCOPY) $(XLIB) $(libdir) && \
+	    $(BINCOPY) $(XLIB) $(libdir); \
+	fi
+    endif
+  endif
+endif
+
+# Requirements checking (cribbed from Makefile.rules.in)
+XREQLIB=$(patsubst %$(FORCE_STATIC),%,$(patsubst %$(DLL),%,$(XAPP_LIB) $(XDLL_LIBS)))
+include $(wildcard $(XREQLIB:%=$(status_dir)/.%.disabled))
+requirements:  $(REQUIRES:%=$(status_dir)/%.enabled)

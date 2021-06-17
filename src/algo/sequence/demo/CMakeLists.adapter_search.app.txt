@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(adapter_search)
+  NCBI_sources(adapter_search)
+  NCBI_uses_toolkit_libraries(xalgoseq)
+  NCBI_project_watchers(astashya)
+NCBI_end_app()
+

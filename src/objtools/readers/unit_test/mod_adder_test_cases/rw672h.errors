@@ -1,0 +1,42 @@
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: dosage.
+
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: old-name.
+
+                Error:
+Problem:        Invalid value: completeness=invalid_completeness_qual.
+
+                Error:
+Problem:        Invalid value: gcode=nonintegral. Integer value expected.
+
+                Warning:
+Problem:        Unrecognized modifier: invalid_mod_name.
+
+                Error:
+Problem:        Invalid value: location=invalid_location.
+
+                Error:
+Problem:        Invalid value: mgcode=nonintegral. Integer value expected.
+
+                Error:
+Problem:        Invalid value: mol-type=invalid_mol_type_qual.
+
+                Error:
+Problem:        Invalid value: molecule=invalid_molecule_qual.
+
+                Error:
+Problem:        Invalid value: origin=invalid_origin.
+
+                Error:
+Problem:        Invalid value: pgcode=nonintegral. Integer value expected.
+
+                Error:
+Problem:        Invalid value: strand=invalid_strand_qual.
+
+                Error:
+Problem:        Invalid value: tech=invalid_tech_qual.
+
+                Error:
+Problem:        Invalid value: transgenic=true_is_the_only_valid_value.
+

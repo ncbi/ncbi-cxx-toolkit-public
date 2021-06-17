@@ -1,0 +1,14 @@
+# $Id$
+
+add_executable(tds100_strtok_r-app
+    strtok_r
+)
+
+set_target_properties(tds100_strtok_r-app PROPERTIES OUTPUT_NAME tds100_strtok_r)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE})
+
+target_link_libraries(tds100_strtok_r-app
+    tds_ftds100
+)
+

@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(test_fix_feature_ids)
+  NCBI_sources(test_fix_feature_ids)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xcleanup seqset)
+  NCBI_set_test_assets(test_cases)
+  NCBI_add_test()
+  NCBI_project_watchers(filippov)
+NCBI_end_app()

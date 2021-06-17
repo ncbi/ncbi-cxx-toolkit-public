@@ -1,0 +1,6 @@
+# $Id$
+
+APP_PROJ = test_eutils_client
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

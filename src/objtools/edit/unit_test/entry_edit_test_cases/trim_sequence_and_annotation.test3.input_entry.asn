@@ -1,0 +1,718 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      genome genomic,
+      org {
+        taxname "Aeromonas caviae",
+        db {
+          {
+            db "taxon",
+            tag id 648
+          }
+        },
+        syn {
+          "Aeromonas dourgesi anaerogene",
+          "Aeromonas formicans",
+          "Aeromonas hydrophila anaerogenes",
+          "Aeromonas hydrophila subsp. anaerogenes",
+          "Aeromonas punctata caviae",
+          "Aeromonas punctata subsp. caviae",
+          "Aeromonas punctata subsp. punctata",
+          "Bacillus punctatus",
+          "Pseudomonas caviae",
+          "Pseudomonas punctata"
+        },
+        orgname {
+          name binomial {
+            genus "Aeromonas",
+            species "caviae"
+          },
+          mod {
+            {
+              subtype strain,
+              subname "M14"
+            }
+          },
+          lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Aeromonadales; Aeromonadaceae; Aeromonas",
+          gcode 11,
+          div "BCT"
+        }
+      },
+      subtype {
+        {
+          subtype isolation-source,
+          name "eel"
+        },
+        {
+          subtype other,
+          name "[cultured bacterial source]"
+        }
+      }
+    },
+    pub {
+      pub {
+        gen {
+          cit "Unpublished",
+          authors {
+            names std {
+              {
+                name name {
+                  last "Wu",
+                  first "Xiaomei",
+                  initials "X."
+                }
+              },
+              {
+                name name {
+                  last "Lin",
+                  first "Mao",
+                  initials "M."
+                }
+              }
+            }
+          },
+          title "The correlation of resistant integrons of pathogens and
+ normal flora of eel and environmental bacteria"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "TOTAL # OF SEQS:1"
+        },
+        {
+          label str "AdditionalComment",
+          data str "BankIt1760467"
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "SeriousSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 7
+        },
+        {
+          label str "month",
+          data int 9
+        },
+        {
+          label str "day",
+          data int 20
+        },
+        {
+          label str "year",
+          data int 2014
+        }
+      }
+    },
+    update-date std {
+      year 2014,
+      month 9,
+      day 20,
+      hour 4,
+      minute 27,
+      second 42
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Wu",
+                  first "Xiaomei",
+                  initials "X."
+                }
+              },
+              {
+                name name {
+                  last "Lin",
+                  first "Mao",
+                  initials "M."
+                }
+              }
+            },
+            affil std {
+              affil "Jimei University",
+              div "Fisheries College",
+              city "Xiamen",
+              sub "Fujian",
+              country "P.R.China",
+              street "Jimei District",
+              postal-code "361021"
+            }
+          },
+          medium email,
+          date std {
+            year 2014,
+            month 9,
+            day 20
+          }
+        }
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "Seq1",
+        general {
+          db "BankIt",
+          tag str "1760467/Seq1"
+        },
+        general {
+          db "TMSMART",
+          tag id 48119014
+        }
+      },
+      descr {
+        title "Aeromonas caviae strain M14 class 1 integron dihydrofolate
+ reductase (dfrB4), chloramphenicol acetyltransferase (catB3), beta-lactamase
+ resistance protein (blaOXA-10), and aminoglycoside adenylyltransferase
+ (aadA1) genes, complete cds",
+        molinfo {
+          biomol genomic,
+          completeness complete
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "Vecscreen Comment:Submitter says that this sequence
+ represents a Cloning Vector"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "LocalID:Seq1"
+            }
+          }
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 3036,
+        strand ds,
+        seq-data ncbi2na 'D3A7EF387BFFFB12DCE5DA9350924266F196EAD8EFE3BCE89241
+8EF1924A92D95C0102FA9F4522CD0BE589E98C17004F0022BF80E0E0A000E2B4B1F49E7A5AF64F
+54D01946FE5FAA8D9B19082DE99E7E92A993EDABAC791047C55E0A7196D8B5837454A74B523F35
+4E1E67E06AE9782D1AF80E459786940D39A45B512541CB675268E9F65959E270F6F21A40B44859
+A8DDF385071FE3255F40A4279FDE242E081543340BEA6B1273C77A71CD3A91D3D8E1E646B37BF5
+A16E386F8C2F8D36B2FDE7736A2EA9F5FCD3A7A434AA4DAC61EA4D37F56F7FCCE4A081793DD099
+1D8E5F50024AC31ED3E90E1BFA369DE290EB4E56834236A46B9AE329259DBEB84023BA25F19CDB
+E9A435670823C2019F458E280FD3E7DE88E8BAE83EB47A208D02690E54E7B9DB70CFBE97910B3E
+9D8BF96DC10F434258E59F6691A7CFD29BC945082B94E004FE5933B0F366EDFD8B1A4F27AF43C4
+8031B7E81022F7796096D0EBB7DB9FEC02C92C0D799C50E1F276E4D028337D493413F08D54190F
+3697201EBB4C0838934AFF40EA1A0250894E090EA0221F85F08AA4310BF49EF56CFD040D94882F
+A60B083B20317C003FD73A4148334BAE93E103DEBE82949F20FD64BC342E8BF722DDCCFC0C0FB4
+93702005270CB008A7FAC1A29A45E0CDCB93D001EBFF7AEEA078B40D7AED93AEAFABABE20A2122
+BF1FFD97F04E8CC84180B0BE59C200D4F54500D3A02E2A4D3EBA70040BC04D38A826B8D960B361
+D07348ACBE9B4D8994DD8161BE7A5B13FB1A7592E8E9A5E09444B8CF8FE7AF1AE16C29F8E01066
+989FE34185FFA01F69F55E888988F7599EC82D14FBEE46184D3D6E9BCD49C2660790FE88BA4990
+E13DF92B37D8949463613E37A737E7840242204C9BE5FACAD49A68A077F8D6BD78128DCFE299C0
+E017C19CE81D96561EA7A638980ECB9F1BED593FAC4992C16900D9960A3B67961EA43A265E5A54
+B3495B4C7E09C84A7CDFA108208D9FA5D599234BE820FEF471B80A623450ACB69030EDC10F6F42
+58659F6699A7C1D09BC8E4709130F9D12501CD2B42DE7FCF3FF09B930C2571'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data gene {
+                locus "dfrB4"
+              },
+              partial TRUE,
+              location int {
+                from 207,
+                to 443,
+                strand plus,
+                id local str "Seq1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            },
+            {
+              data gene {
+                locus "catB3"
+              },
+              partial TRUE,
+              location int {
+                from 582,
+                to 1214,
+                strand plus,
+                id local str "Seq1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            },
+            {
+              data gene {
+                locus "blaOXA-10"
+              },
+              partial TRUE,
+              location int {
+                from 1283,
+                to 2083,
+                strand plus,
+                id local str "Seq1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            },
+            {
+              data gene {
+                locus "aadA1"
+              },
+              partial TRUE,
+              location int {
+                from 2100,
+                to 2891,
+                strand plus,
+                id local str "Seq1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            },
+            {
+              data imp {
+                key "mobile_element"
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 3035,
+                strand plus,
+                id local str "Seq1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              },
+              qual {
+                {
+                  qual "mobile_element_type",
+                  val "integron:Class 1"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              partial TRUE,
+              comment "5'-CS",
+              location int {
+                from 0,
+                to 139,
+                strand plus,
+                id local str "Seq1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              partial TRUE,
+              comment "dfrB4 gene cassette",
+              location int {
+                from 140,
+                to 547,
+                strand plus,
+                id local str "Seq1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              partial TRUE,
+              comment "catB3 gene cassette",
+              location int {
+                from 548,
+                to 1262,
+                strand plus,
+                id local str "Seq1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              partial TRUE,
+              comment "blaOXA-10 gene cassette",
+              location int {
+                from 1263,
+                to 2089,
+                strand plus,
+                id local str "Seq1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              partial TRUE,
+              comment "aadA1 gene cassette",
+              location int {
+                from 2090,
+                to 2946,
+                strand plus,
+                id local str "Seq1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              partial TRUE,
+              comment "3'-CS",
+              location int {
+                from 2947,
+                to 3035,
+                strand plus,
+                id local str "Seq1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq1_prot_1",
+        general {
+          db "TMSMART",
+          tag id 48119015
+        }
+      },
+      descr {
+        title "dihydrofolate reductase, partial [Aeromonas caviae]",
+        molinfo {
+          biomol peptide,
+          completeness no-ends
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1_prot_1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 78,
+        seq-data ncbieaa "MNEGKNEVSTSAAGRFAFPSNATFALGDRVRKKSGAAWQGRIVGWYCTTLTP
+EGYAVESESHPGSVQIYPMTALERVA"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "dihydrofolate reductase"
+                },
+                desc "trimethoprim resistance"
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 77,
+                id local str "Seq1_prot_1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq1_prot_2",
+        general {
+          db "TMSMART",
+          tag id 48119016
+        }
+      },
+      descr {
+        title "chloramphenicol acetyltransferase, partial [Aeromonas caviae]",
+        molinfo {
+          biomol peptide,
+          completeness no-ends
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1_prot_2"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 210,
+        seq-data ncbieaa "MTNYFDSPFKGKLLSEQVKNPNIKVGRYSYYSGYYHGHSFDDCARYLFPDRD
+DVDKLIIGSFCSIGSGASFIMAGNQGHRYDWASSFPFFYMQEEPAFSSALDAFQKAGNTVIGNDVWIGSEAMVMPGIK
+IGHGAVIGSRSLVTKDVEPYAIVGGNPAKKIKKRFTDEEISLLLEMEWWNWSLEKIKAAMPMLCSSNIVGLHKYWLEF
+AV"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "chloramphenicol acetyltransferase"
+                },
+                desc "chloramphenicol resistance"
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 209,
+                id local str "Seq1_prot_2",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq1_prot_3",
+        general {
+          db "TMSMART",
+          tag id 48119017
+        }
+      },
+      descr {
+        title "beta-lactamase class D, partial [Aeromonas caviae]",
+        molinfo {
+          biomol peptide,
+          completeness no-ends
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1_prot_3"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 266,
+        seq-data ncbieaa "MKTFAAYVIIACLSSTALAGSITENTSWNKEFSAEAVNGVFVLCKSSSKSCA
+TNDLARASKEYLPASTFKIPNAIIGLETGVIKNEHQVFKWDGKPRAMKQWERDLTLRGAIQVSAVPVFQQIAREVGEV
+RMQKYLKKFSYGNQNISGGIDKFWLEGQLRISAVNQVEFLESLYLNKLSASKENQLIVKEALVTEAAPEYLVHSKTGF
+SGVGTESNPGVAWWVGWVEKETEVYFFAFNMDIDNESKLPLRKSIPTKIMESEGIIGG"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "beta-lactamase class D"
+                },
+                desc "beta-lactam resistance"
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 265,
+                id local str "Seq1_prot_3",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq1_prot_4",
+        general {
+          db "TMSMART",
+          tag id 48119018
+        }
+      },
+      descr {
+        title "aminoglycoside adenylyltransferase, partial [Aeromonas caviae]",
+        molinfo {
+          biomol peptide,
+          completeness no-ends
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1_prot_4"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 263,
+        seq-data ncbieaa "MREAVIAEVSTQLSEVVGVIERHLEPTLLAVHLYGSAVDGGLKPHSDIDLLV
+TVTVRLDETTRRALINDLLETSASPGESEILRAVEVTIVVHDDIIPWRYPAKRELQFGEWQRNDILAGIFEPATIDID
+LAILLTKAREHSVALVGPAAEELFDPVPEQDLFEALNETLTLWNSPPDWAGDERNVVLTLSRIWYSAITGKIAPKDVA
+ADWAIKRLPAQYQPVLLEAKQAYLGQKEDHLASRADHLEEFIRFVKGEIIKSVGK"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "aminoglycoside adenylyltransferase"
+                },
+                desc "streptomycin/spectinomycin resistance"
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 262,
+                id local str "Seq1_prot_4",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          product whole local str "Seq1_prot_1",
+          location int {
+            from 207,
+            to 443,
+            strand plus,
+            id local str "Seq1",
+            fuzz-from lim lt,
+            fuzz-to lim gt
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          product whole local str "Seq1_prot_2",
+          location int {
+            from 582,
+            to 1214,
+            strand plus,
+            id local str "Seq1",
+            fuzz-from lim lt,
+            fuzz-to lim gt
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          product whole local str "Seq1_prot_3",
+          location int {
+            from 1283,
+            to 2083,
+            strand plus,
+            id local str "Seq1",
+            fuzz-from lim lt,
+            fuzz-to lim gt
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          product whole local str "Seq1_prot_4",
+          location int {
+            from 2100,
+            to 2891,
+            strand plus,
+            id local str "Seq1",
+            fuzz-from lim lt,
+            fuzz-to lim gt
+          }
+        }
+      }
+    }
+  }
+}

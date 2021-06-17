@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_pub SHARED)
+  NCBI_hosts_projects(
+    objects/biblio/biblio
+    objects/medline/medline
+    objects/medlars/medlars
+    objects/mla/mla
+    objects/mla/mlacli
+    objects/pub/pub
+    objects/pubmed/pubmed
+  )
+  NCBI_add_definitions(NCBI_PUB_EXPORTS)
+NCBI_end_lib()

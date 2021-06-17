@@ -1,0 +1,26 @@
+# $Id$
+
+# Build library "xobjedit"
+###############################
+
+SRC = gene_utils seq_entry_edit promote autodef_with_tax \
+      field_handler apply_object string_constraint seqid_guesser dblink_field \
+      struc_comm_field text_desc_field gb_block_field \
+      link_cds_mrna cds_fix loc_edit mail_report \
+      feattable_edit gaps_edit source_edit rna_edit \
+      remote_updater parse_text_options publication_edit gap_trim \
+      external_annots feature_propagate text_object_description \
+      seq_edit pub_fix
+
+
+LIB    = xobjedit
+
+DLL_LIB = xobjutil taxon3 valid mlacli xlogging eutils $(SOBJMGR_LIBS)
+
+ASN_DEP = seqset valid
+
+WATCHERS = bollin gotvyans foleyjp
+
+
+USES_LIBRARIES =  \
+    taxon3 xobjutil xlogging eutils

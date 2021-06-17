@@ -1,0 +1,44 @@
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 3,
+    ids {
+      gi 114841177,
+      gi 568815306
+    },
+    starts {
+      400000,
+      80000000,
+      401000,
+      -1,
+      401200,
+      80001000
+    },
+    lens {
+      1000,
+      200,
+      1000
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 114841177,
+      gi 568815306
+    },
+    starts {
+      400000,
+      80000400
+    },
+    lens {
+      1400
+    }
+  }
+}

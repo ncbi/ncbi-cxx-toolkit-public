@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc100_blob1)
+  NCBI_sources(blob1 common)
+  NCBI_add_test(test-odbc100 --set-env TDSDUMP=/dev/null odbc100_blob1)
+NCBI_end_app()
+

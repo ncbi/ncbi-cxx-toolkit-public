@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package ncbi.grpcapi.dbsnp.primary_track;
+
+service DbSnpPrimaryTrack {
+  /**
+   * Return the primary track ID as PrimaryTrackReply that
+   * corresponds the specified input sequence ID or GI.
+   *
+   * The returned GRPC status code is OK if the track is found.
+   * Otherwise, the returned status code is NOT_FOUND without
+   * any supplemental error description.
+   *
+   * The status code is INVALID_ARGUMENT if neither sequence ID
+   * nor GI can be found in the input message.
+   */
+  rpc ForSeqId(SeqIdRequestStringAccverUnion) returns (PrimaryTrackReply);
+}
+
+/**
+ * The SeqId (gi or AccVer) for which the client would like
+ * to be told the primary track information.
+ */
+message SeqIdRequestStringAccverUnion {
+  oneof accver_or_gi {
+    string accver = 1;
+    uint64 gi = 2;
+  }
+}
+
+/**
+ * dbSNP primary track for a particular sequence
+ *
+ * dbSNP has many annotation tracks for both assembly and non-assembly
+ * sequences.  For the requested SeqId, this reply informs the client
+ * which track dbSNP treats as primary, and should be used as the
+ * general dbSNP annotation track.
+ *
+ * NB: The reply includes both NA AccVer#filter, a suitable opaque string
+ * identifier for interacting with OS Gateway directly, as well as a more
+ * general TMS Track ID, if the client wishes to interact with TMS.
+ */
+message PrimaryTrackReply {
+  // The NA Acc.Ver#Filter description of the
+  //  primary track
+  string na_track_acc_with_filter = 1;
+
+  // The TMS ID for the primary track
+  string tms_track_id = 2;
+}

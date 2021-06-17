@@ -1,0 +1,66 @@
+Seq-annot ::= {
+  desc {
+    region int {
+      from 0,
+      to 99999,
+      id gi 224514631
+    },
+    name "test-table.input",
+    title "sorted coverage graph"
+  },
+  data seq-table {
+    feat-type 0,
+    num-rows 4,
+    columns {
+      {
+        header {
+          field-name "Seq-table location"
+        },
+        default loc int {
+          from 0,
+          to 99999,
+          id gi 224514631
+        }
+      },
+      {
+        header {
+          field-id location-id
+        },
+        default id gi 224514631
+      },
+      {
+        header {
+          field-id location-from
+        },
+        data int {
+          99990,
+          99994,
+          99997,
+          99999
+        }
+      },
+      {
+        header {
+          field-name "span"
+        },
+        data int {
+          4,
+          3,
+          2,
+          1
+        }
+      },
+      {
+        header {
+          field-name "values"
+        },
+        data real {
+          { 5, 10, 0 },
+          { 4954, 10, -3 },
+          { 4906, 10, -3 },
+          { 4857, 10, -3 }
+        }
+      }
+    }
+  }
+}

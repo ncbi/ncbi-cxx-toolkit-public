@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_app(test_fasta_round_trip)
+  NCBI_sources(test_fasta_round_trip)
+  NCBI_uses_toolkit_libraries(xobjread xobjutil)
+
+  NCBI_begin_test(test_fasta_round_trip)
+    NCBI_set_test_command(test_fasta_round_trip.sh)
+    NCBI_set_test_assets(test_fasta_round_trip.sh test_fasta_round_trip_data)
+  NCBI_end_test()
+
+  NCBI_project_watchers(ucko gotvyans foleyjp)
+NCBI_end_app()
+

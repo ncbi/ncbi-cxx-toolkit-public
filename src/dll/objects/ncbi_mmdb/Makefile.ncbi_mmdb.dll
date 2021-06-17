@@ -1,0 +1,13 @@
+# $Id$
+
+DLL = ncbi_mmdb
+
+HOSTED_LIBS    = cdd      \
+                 cn3d     \
+                 ncbimime \
+                 mmdb
+
+DEPENDENCIES   = ncbi_core ncbi_general ncbi_pub ncbi_seq
+
+CPPFLAGS = -DNCBI_MMDB_EXPORTS
+

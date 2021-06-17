@@ -1,0 +1,82 @@
+Agricultutral
+Bacilllus
+Enviromental
+Insitiute
+Instutite
+Instutute
+P.R.Chian
+PRChian
+Scieces
+agricultral
+agriculturral
+biotechnlogy
+Biotechnlogy
+biotechnolgy
+biotechology
+caputre		// #WHOLE_WORD
+casette 	// #WHOLE_WORD
+catalize
+charaterization
+clonging
+consevered
+cotaining
+cytochome	// #WHOLE_WORD
+diveristy	// #WHOLE_WORD
+enivronment
+enviroment
+genone		// #WHOLE_WORD
+homologue	// #WHOLE_WORD
+hypotethical
+hypotetical
+hypothetcial
+hypothteical
+indepedent
+insititute
+insitute
+institue
+instute
+muesum		// #WHOLE_WORD
+musuem		// #WHOLE_WORD
+nuclear shutting	// #WHOLE_WORD
+phylogentic
+protien
+puatative
+putaitve
+putaive
+putataive
+putatitve
+putatuve
+putatvie
+pylogeny
+resaerch
+reseach
+reserach	// #WHOLE_WORD
+reserch
+ribosoml
+ribossomal
+scencies
+scinece
+simmilar
+structual
+subitilus
+sulfer
+technlogy
+technolgy
+Technlogy
+Veterinry
+Argricultural
+transcirbed
+transcirption	// #WHOLE_WORD
+uiniversity
+uinversity
+univercity
+univerisity
+univeristy
+univesity
+unversity	// #WHOLE_WORD
+uviversity
+anaemia
+haem
+haemagglutination
+heam
+mithocon

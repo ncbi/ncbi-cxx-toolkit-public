@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xblobstorage_netcache SHARED)
+  NCBI_hosts_projects(
+    connect/services/ncbi_xblobstorage_netcache
+  )
+  NCBI_add_definitions(NCBI_BLOBSTORAGE_NETCACHE_EXPORTS)
+NCBI_end_lib()

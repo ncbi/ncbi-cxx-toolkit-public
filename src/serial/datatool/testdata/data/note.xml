@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE note PUBLIC "-//NCBI//note/EN" "note.dtd">
+<note type="cheque" text="att list&#xa;&#x9; text" yesno="y">
+  <flags type="flags type"/>
+  <to type="TO type">
+    <name type="TO name1 attrib">TO name1</name>
+    <number type="TO name1 number1 attrib">TO name1 number1</number>
+    <address type="TO name1 address2 attrib">TO name1 address2</address>
+    <name type="">TO name2</name>
+    <address type="TO name2 address1 attrib">TO name2 address1</address>
+    <number type="TO name2 number2 attrib">TO name2 number2</number>
+  </to>
+  <from type="FROM type">
+    <name type="FROM name">FROM name</name>
+  </from>
+  <heading type="HEADING type">data heading</heading>
+  <body></body>
+</note>

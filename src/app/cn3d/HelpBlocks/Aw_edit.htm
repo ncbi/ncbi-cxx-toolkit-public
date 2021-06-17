@@ -1,0 +1,92 @@
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Windows Help Designer (http://www.visagesoft.com)">
+<TITLE>Sequence Window : Edit</TITLE>
+</HEAD>
+<BODY>
+<H2>Sequence Window : Edit Commands</H2>
+<ul>
+  <li><A href="#enable">Enable editor</A>
+  <li><A href="#undo">Undo</A>
+  <li><A href="#redo">Redo</A>
+  <li><A href="#split_block">Split block</A>
+  <li><A href="#merge_block">Merge block</A>
+  <li><A href="#create_block">Create block</A>
+  <li><A href="#delete_block">Delete block</A>
+  <li><A href="#sync">Sync structure colors</A>
+  <li><A href="#always_sync">Always sync structure colors</A>
+  <li><A href="#sort">Sort rows</A>
+  <li><A href="#delete_row">Delete row</A></li>
+  <li><A href="#refiner">Alignment refiner</A></li>
+</ul>
+<h3><a name="enable"></a>Enable editor</h3>
+Turns on the editor, allowing you to change the alignment.
+<h3><a name="undo"></a>Undo</h3>
+Undo the latest operation; Ctrl+Z has the same effect as this menu item. All operations
+(the items under this <b>Edit</b> menu) that change the alignment are undoable.
+<h3><a name="redo"></a>Redo</h3>
+Redo the last operation undone (Shift+Ctrl+Z).
+<h3><a name="split_block"></a>Split block</h3>
+To split an aligned block, select this item then move the mouse over the block
+to be split and click once. The block under the mouse will be split such that
+the new (rightmost) block will start at the column under the mouse.
+<h3><a name="merge_block"></a>Merge block</h3>
+To merge two or more adjacent aligned blocks, select this item then click and
+drag the mouse across the blocks to be merged. These blocks will then be joined
+into a single large block.
+<h3><a name="create_block"></a>Create block</h3>
+To create a new block, select this item then click and drag the mouse across columns
+of unaligned residues where you would like a new block to be created. Note that
+all columns of the alignment in the selected area must contain residues (no unaligned
+gaps).
+<h3><a name="delete_block"></a>Delete block</h3>
+To delete a block, select this item and then click on any aligned block. That
+block will be removed and the residues marked unaligned.
+<h3><a name="sync"></a>Sync structure colors</h3>
+<h3><a name="always_sync"></a>Always sync structure colors</h3>
+Because the alignments are color-coded, changes to the alignment can cause changes
+in color of structures in the alignment. By default, <b>Always sync structure
+colors</b> is on, which means this redrawing of structures will take place automatically.
+This can be turned off for slower computers where redraws take a long time; use
+<b>Sync structure colors </b> to manually redraw the structures with any new colors.
+<h3><a name="sort"></a>Sort rows</h3>
+<p>Use this item to sort all but the first row of the current alignment. The algorithms
+  available for sorting are:</p>
+<ul>
+  <li><b>By identifier</b>: sort so 
+  that all PDB identifiers are at the top of the list in alphabetical order, 
+  followed by all non-PDB's sorted by numerical order for gi's or alphabetical 
+  order for accessions. 
+  <li><b>By score</b>: sort by 
+  PSSM+contact score. You will be prompted for a weight between these two, then 
+  rows will be sorted with the highest scoring rows at the top. The scores will 
+  also be displayed in the status line when you move the mouse over each 
+  sequence. 
+  <li><b>Float PDBs</b>: simply moves 
+  all PDB sequences to the top of the alignment, but without otherwise changing 
+  the relative ordering of the PDB sequence or non-structured rows. 
+  <li><b>Float highlights</b>: floats any sequences that contain highlights
+  to the top of the alignment.
+  <li><b>Float geometry violations</b>: floats any sequences that contain 
+    <a href="AW_View.htm#geometry">geometry vioaltions</a>.
+  <li><b>Self-hit</b>: sorts by BLAST score between each sequence and the PSSM
+constructed from the current alignment.
+  <li><b>Proximity sort</b>: select this menu item and then click on any but the
+    first row to do a proximity sort. This will move the selected sequence
+    to a position in the alignment according to its relative sequence conservation
+    with the first row. Then the other sequences most similar to the selected
+    row will be clustered around it. This is useful for grouping similar sequences
+    together, and for automatically finding similar sequences in a large alignment.</li>
+  <li><b>By loop length</b>: select anyplace in an unaligned region, and this will
+    sort the sequences according to the number of residues in that region (highest
+    first).</li>
+</ul>
+<h3><a name="delete_row"></a>Delete row</h3>
+Select this item and then click on any but the first sequence to remove that
+row from the alignment.
+<h3><a name="refiner"></A>Alignment refiner</h3>
+The refiner algorithm is documented in a <a href="refinerHelp.htm">separate page</a>. See also Chakrabarti S. et. al., Nucleic Acids Res. 2006 May 17, 34(9):2598-606 
+(<a href="https://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=pubmed&cmd=Retrieve&dopt=AbstractPlus&list_uids=16707662">PMID 16707662</a>).
+</BODY>
+</HTML>

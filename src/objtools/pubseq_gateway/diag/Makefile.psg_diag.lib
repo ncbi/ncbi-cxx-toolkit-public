@@ -1,0 +1,8 @@
+# $Id$
+
+LIB = psg_diag
+SRC = AppLog AppPerf IdLogUtl AppLogWrap
+
+REQUIRES = MT Linux
+
+WATCHERS = satskyse saprykin

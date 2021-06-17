@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_app(streamtest)
+  NCBI_sources(streamtest)
+  NCBI_uses_toolkit_libraries(
+    ncbi_xloader_genbank ncbi_xloader_wgs prosplign
+    xmlwrapp xobjwrite xvalidate
+  )
+  NCBI_project_watchers(kans drozdov)
+NCBI_end_app()
+

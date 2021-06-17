@@ -1,0 +1,23 @@
+BioSource ::= {
+  genome nucleomorph ,
+  origin mut ,
+  org {
+    taxname "Homonculus horribilis" ,
+    common "golem" ,
+    db {
+      {
+        db "foo" ,
+        tag str "bar" } } ,
+    orgname {
+      mod {
+        {
+          subtype strain ,
+          subname "strain value" } ,
+        {
+          subtype nat-host ,
+          subname "Clay man" } } } } ,
+  subtype {
+    {
+      subtype clone ,
+      name "clone value" } } }
+

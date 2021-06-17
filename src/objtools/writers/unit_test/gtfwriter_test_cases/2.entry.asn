@@ -1,0 +1,422 @@
+Seq-entry ::= set {
+  level 1 ,
+  class nuc-prot ,
+  descr {
+    source {
+      org {
+        taxname "Drosophila melanogaster" ,
+        common "fruit fly" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 7227 } } ,
+        orgname {
+          name
+            binomial {
+              genus "Drosophila" ,
+              species "melanogaster" } ,
+          lineage "Eukaryota; Metazoa; Arthropoda; Hexapoda; Insecta;
+ Pterygota; Neoptera; Endopterygota; Diptera; Brachycera; Muscomorpha;
+ Ephydroidea; Drosophilidae; Drosophila; Sophophora" ,
+          gcode 1 ,
+          mgcode 5 ,
+          div "INV" } } ,
+      subtype {
+        {
+          subtype chromosome ,
+          name "3" } ,
+        {
+          subtype map ,
+          name "67A8-B2" } } } ,
+    pub {
+      pub {
+        article {
+          title {
+            name "Alternatively spliced transcripts from the Drosophila eIF4E
+ gene produce two different Cap-binding proteins." } ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Lavoie" ,
+                      initials "C.A." } } ,
+                {
+                  name
+                    name {
+                      last "Lachance" ,
+                      initials "P.E." } } ,
+                {
+                  name
+                    name {
+                      last "Sonenberg" ,
+                      initials "N." } } ,
+                {
+                  name
+                    name {
+                      last "Lasko" ,
+                      initials "P." } } } ,
+            affil
+              str "Department of Biology, McGill University, Montreal, Quebec,
+ Canada H3A 1B1." } ,
+          from
+            journal {
+              title {
+                iso-jta "J. Biol. Chem." ,
+                ml-jta "J Biol Chem" ,
+                issn "0021-9258" ,
+                name "The Journal of biological chemistry." } ,
+              imp {
+                date
+                  std {
+                    year 1996 ,
+                    month 7 ,
+                    day 5 } ,
+                volume "271" ,
+                issue "27" ,
+                pages "16393-16398" ,
+                language "eng" } } ,
+          ids {
+            pubmed 8663200 ,
+            medline 96279193 } } ,
+        muid 96279193 ,
+        pmid 8663200 } } ,
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Lasko" ,
+                      initials "P.F." } } } ,
+            affil
+              str "Paul F. Lasko, Biology, McGill University, 1205 Avenue
+ Docteur Penfield, Montreal, QC H3A 1B1, Canada" } ,
+          medium other ,
+          date
+            std {
+              year 1996 ,
+              month 4 ,
+              day 9 } } } } ,
+    create-date
+      std {
+        year 1996 ,
+        month 5 ,
+        day 17 } ,
+    update-date
+      std {
+        year 1998 ,
+        month 2 ,
+        day 22 } } ,
+  seq-set {
+    seq {
+      id {
+        genbank {
+          name "DMU54469" ,
+          accession "U54469" ,
+          version 1 } ,
+        gi 1322283 } ,
+      descr {
+        title "Drosophila melanogaster eukaryotic initiation factor 4E (eIF4E)
+ gene, alternative splice products, complete cds." ,
+        molinfo {
+          biomol genomic } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 2881 ,
+        seq-data
+          ncbi2na '6BE7EAFF304D2D2E1293F522F95EF410D8C9E5FE94500D501F0F020F030
+F60C30F0952C171927E2E6C163372CC4FD8C4D80D3ACBBE886882B08638C8698964EAF63F99E25
+BA4A8104004ABEF9108AA298CB6268022E4BE9BA7134D3EEF458F3FFE443E7C33C3EC7E4673EDC
+6D3273674DDEDEDDCD09CDDDFD9AD1DBDDFFF775FD93F931931446FF4BBDD9DDDDDFB42136666E
+EEEAEEDDC913313032889A221033A020E0022E0F1E43C14B6604BC0D33FFB694F92C0C05BE9FD5
+D7D1FD45D7F7E1BC3FFD2F0D99679FE0760460FF25904C0300D0B077F0743300410D437D04A437
+BBFF3B48C6266EEEEEE7B0F53655FD8F58BDBCA0493CBD973FCB2C972D63FC2E01284750453319
+0C3CBC5151D0531241042FC18BFFECF34F1F2FFFAF0C31042E08981E4AA2628CD18043500D4444
+740480D009F6777644446450507341CD101166122222690B83469836016358151D6896002078D7
+14D019350C04696504E48987F44838207F943542D4EF40B0C774B997B670942509C370DF78F55F
+54D4F94DF7564852655491624AB6D6814507DA79265658A70A3B425428A1512887AE0524A411E4
+1471E75E5A618E7B991624FCC4045674E0EDE867BAC5F8018DAD42D7A8A139006234527D8C5B62
+87DE89731051342554D223427AB2E1C7673D08204F6BABF9EFF3E43F7142305FC7078CDD3E4B54
+EEA28E4941012A6B6FAB4F15F0402750858DE8C173A763BAC2E440818BAF228EDCF32E0EC4F7E0
+3900332032BB38FF92CC0F307CC803349C00C672EF27FEDF2813D0CB89F334C0CDFD9338B07107
+BFE5F5279DE5E3E98A5F634758D2379A67BCC04F66908904233B0BFD1911507D2683D7FBF04F0D
+FD494DE87961A0106282795F88FAD109E66397E6DEA19041D9E4B34BE4428463AD092A7506E036
+3711FECA69C307A59D7C76B58D51123CBFB7F4FCFCDBCC2412C98F0DB873EDC2159B0601601A05
+57FBCD0036930CC037359FFECB47B430E8F21A00B33C3001713C01680'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  rna {
+                    type mRNA ,
+                    ext
+                      name "eukaryotic initiation factor 4E-I" } ,
+                location
+                  mix {
+                    int {
+                      from 79 ,
+                      to 223 ,
+                      id
+                        gi 1322283 } ,
+                    int {
+                      from 1128 ,
+                      to 1457 ,
+                      id
+                        gi 1322283 } ,
+                    int {
+                      from 1549 ,
+                      to 1919 ,
+                      id
+                        gi 1322283 } ,
+                    int {
+                      from 1985 ,
+                      to 2084 ,
+                      id
+                        gi 1322283 } ,
+                    int {
+                      from 2316 ,
+                      to 2403 ,
+                      id
+                        gi 1322283 } ,
+                    int {
+                      from 2465 ,
+                      to 2880 ,
+                      id
+                        gi 1322283 } } } ,
+              {
+                data
+                  rna {
+                    type mRNA ,
+                    ext
+                      name "eukaryotic initiation factor 4E-II" } ,
+                location
+                  mix {
+                    int {
+                      from 79 ,
+                      to 223 ,
+                      id
+                        gi 1322283 } ,
+                    int {
+                      from 1549 ,
+                      to 1919 ,
+                      id
+                        gi 1322283 } ,
+                    int {
+                      from 1985 ,
+                      to 2084 ,
+                      id
+                        gi 1322283 } ,
+                    int {
+                      from 2316 ,
+                      to 2403 ,
+                      id
+                        gi 1322283 } ,
+                    int {
+                      from 2465 ,
+                      to 2880 ,
+                      id
+                        gi 1322283 } } } ,
+              {
+                data
+                  rna {
+                    type mRNA ,
+                    ext
+                      name "eukaryotic initiation factor 4E-I" } ,
+                location
+                  mix {
+                    int {
+                      from 79 ,
+                      to 223 ,
+                      id
+                        gi 1322283 } ,
+                    int {
+                      from 891 ,
+                      to 1457 ,
+                      id
+                        gi 1322283 } ,
+                    int {
+                      from 1549 ,
+                      to 1919 ,
+                      id
+                        gi 1322283 } ,
+                    int {
+                      from 1985 ,
+                      to 2084 ,
+                      id
+                        gi 1322283 } ,
+                    int {
+                      from 2316 ,
+                      to 2403 ,
+                      id
+                        gi 1322283 } ,
+                    int {
+                      from 2465 ,
+                      to 2880 ,
+                      id
+                        gi 1322283 } } } ,
+              {
+                data
+                  gene {
+                    locus "eIF4E" } ,
+                location
+                  int {
+                    from 79 ,
+                    to 2880 ,
+                    id
+                      gi 1322283 } } } } } } ,
+    seq {
+      id {
+        genbank {
+          accession "AAC03524" ,
+          version 1 } ,
+        gi 1322284 } ,
+      descr {
+        title "eukaryotic initiation factor 4E-II [Drosophila melanogaster]" ,
+        molinfo {
+          biomol peptide ,
+          tech both } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 248 ,
+        seq-data
+          ncbieaa "MVVLETEKTSAPSTEQGRPEPPTSAAAPAEAKDVKPKEDPQETGEPAGNTATTTAPAGD
+DAVRTEHLYKHPLMNVWTLWYLENDRSKSWEDMQNEITSFDTVEDFWSLYNHIKPPSEIKLGSDYSLFKKNIRPMWED
+AANKQGGRWVITLNKSSKTDLDNLWLDVLLCLIGEAFDHSDQICGAVINIRGKSNKISIWTADGNNEEAALEIGHKLR
+DALRLGRNNSLQYQLHKDTMVKQGSNVKSIYTL" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "eukaryotic initiation factor 4E-II" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 247 ,
+                    id
+                      gi 1322284 } } } } } } ,
+    seq {
+      id {
+        genbank {
+          accession "AAC03525" ,
+          version 1 } ,
+        gi 1322285 } ,
+      descr {
+        title "eukaryotic initiation factor 4E-I [Drosophila melanogaster]" ,
+        molinfo {
+          biomol peptide ,
+          tech both } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 259 ,
+        seq-data
+          ncbieaa "MQSDFHRMKNFANPKSMFKTSAPSTEQGRPEPPTSAAAPAEAKDVKPKEDPQETGEPAG
+NTATTTAPAGDDAVRTEHLYKHPLMNVWTLWYLENDRSKSWEDMQNEITSFDTVEDFWSLYNHIKPPSEIKLGSDYSL
+FKKNIRPMWEDAANKQGGRWVITLNKSSKTDLDNLWLDVLLCLIGEAFDHSDQICGAVINIRGKSNKISIWTADGNNE
+EAALEIGHKLRDALRLGRNNSLQYQLHKDTMVKQGSNVKSIYTL" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "eukaryotic initiation factor 4E-I" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 258 ,
+                    id
+                      gi 1322285 } } } } } } } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              cdregion {
+                frame one ,
+                code {
+                  id 1 } } ,
+            product
+              whole
+                gi 1322284 ,
+            location
+              mix {
+                int {
+                  from 200 ,
+                  to 223 ,
+                  id
+                    gi 1322283 } ,
+                int {
+                  from 1549 ,
+                  to 1919 ,
+                  id
+                    gi 1322283 } ,
+                int {
+                  from 1985 ,
+                  to 2084 ,
+                  id
+                    gi 1322283 } ,
+                int {
+                  from 2316 ,
+                  to 2403 ,
+                  id
+                    gi 1322283 } ,
+                int {
+                  from 2465 ,
+                  to 2628 ,
+                  id
+                    gi 1322283 } } } ,
+          {
+            data
+              cdregion {
+                frame one ,
+                code {
+                  id 1 } } ,
+            comment "two alternatively spliced transcripts both encode 4E-I" ,
+            product
+              whole
+                gi 1322285 ,
+            location
+              mix {
+                int {
+                  from 1401 ,
+                  to 1457 ,
+                  id
+                    gi 1322283 } ,
+                int {
+                  from 1549 ,
+                  to 1919 ,
+                  id
+                    gi 1322283 } ,
+                int {
+                  from 1985 ,
+                  to 2084 ,
+                  id
+                    gi 1322283 } ,
+                int {
+                  from 2316 ,
+                  to 2403 ,
+                  id
+                    gi 1322283 } ,
+                int {
+                  from 2465 ,
+                  to 2628 ,
+                  id
+                    gi 1322283 } } } } } } }

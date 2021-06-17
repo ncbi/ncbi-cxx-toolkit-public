@@ -1,0 +1,16 @@
+>seq1 [organism=val1][fwd_primer-seq=val1]
+--GCAAGCATGCATGCAAAA
+TTTTGCGGCCCATGCATG--
+ATGCATGC
+>seq2 [organism=val1][fwd primer-seq=val1]
+AT--ATGGATGCATGCAAAA
+TTTTGGGCCCCATGCATGCC
+--GCATGC
+>seq3 [organism=val1][rev-primer-seq=val1]
+ATGC--GCAAGCATGCAAAA
+TTTTGGGGCGCATGCATGCC
+AT--ATGC
+>seq4 [organism=val1][rev_primer-seq=val1]
+ATGCAT--ATGGATGCAAAA
+TTTTGGGGCCCTTGCATGCC
+ATGC--GC

@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile ("query parser" project)
+#################################
+
+LIB_PROJ = xqueryparse
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

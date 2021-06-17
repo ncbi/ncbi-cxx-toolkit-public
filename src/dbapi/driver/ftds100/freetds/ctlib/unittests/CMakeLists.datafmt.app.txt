@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(ct100_datafmt)
+  NCBI_sources(datafmt common)
+  NCBI_add_test(test-ct100 ct100_datafmt)
+NCBI_end_app()
+

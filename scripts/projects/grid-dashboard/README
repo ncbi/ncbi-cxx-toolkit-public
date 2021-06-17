@@ -1,0 +1,9 @@
+GRID dashboard is an internal NCBI tool for convenient
+monitoring of the GRID services related to
+- NetSchedule servers
+- NetCache servers
+- Worker nodes
+
+It might be extended in the future with some other resources
+like NetStorage servers
+

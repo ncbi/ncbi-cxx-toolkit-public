@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(demo_genomic_compart)
+  NCBI_sources(demo_genomic_compart)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoalignutil)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_app()
+

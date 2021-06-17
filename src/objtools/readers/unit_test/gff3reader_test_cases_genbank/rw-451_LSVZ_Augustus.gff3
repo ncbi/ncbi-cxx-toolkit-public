@@ -1,0 +1,19 @@
+##sequence-region	scaffold12159	1	8501
+scaffold12159	AUGUSTUS	gene	434	982	.	-	.	ID=scaffold12159.g1.t1;
+scaffold12159	AUGUSTUS	stop_codon	434	436	.	-	0	Parent=scaffold12159.g1.t1;product=dtw domain-containing protein 2;
+scaffold12159	AUGUSTUS	CDS	434	982	.	-	0	ID=scaffold12159.g1.t1.cds;Parent=scaffold12159.g1.t1;product=dtw domain-containing protein 2;
+scaffold12159	AUGUSTUS	start_codon	980	982	.	-	0	Parent=scaffold12159.g1.t1;product=dtw domain-containing protein 2;
+scaffold12159	AUGUSTUS	gene	3820	4329	.	+	.	ID=scaffold12159.g2.t1;
+scaffold12159	AUGUSTUS	stop_codon	4327	4329	.	+	0	Parent=scaffold12159.g2.t1;product=dtw domain-containing protein 22;
+scaffold12159	AUGUSTUS	CDS	3820	4200	.	+	0	ID=scaffold12159.g2.t1.cds;Parent=scaffold12159.g2.t1;product=dtw domain-containing protein 22;
+scaffold12159	AUGUSTUS	CDS	4240	4329	.	+	0	ID=scaffold12159.g2.t1.cds;Parent=scaffold12159.g2.t1;product=dtw domain-containing protein 22;
+scaffold12159	AUGUSTUS	start_codon	3820	3822	.	+	0	Parent=scaffold12159.g2.t1;product=dtw domain-containing protein 22;
+##sequence-region	scaffold12160	1	8784
+scaffold12160	AUGUSTUS	gene	646	8053	.	+	.	ID=scaffold12160.g1.t1;
+scaffold12160	AUGUSTUS	start_codon	646	648	.	+	0	Parent=scaffold12160.g1.t1;product=pyruvate dehydrogenase phosphatase regulatory mitochondrial;
+scaffold12160	AUGUSTUS	CDS	646	687	.	+	0	ID=scaffold12160.g1.t1.cds;Parent=scaffold12160.g1.t1;product=pyruvate dehydrogenase phosphatase regulatory mitochondrial;
+scaffold12160	AUGUSTUS	CDS	1056	1180	.	+	0	ID=scaffold12160.g1.t1.cds;Parent=scaffold12160.g1.t1;product=pyruvate dehydrogenase phosphatase regulatory mitochondrial;
+scaffold12160	AUGUSTUS	CDS	5017	5129	.	+	1	ID=scaffold12160.g1.t1.cds;Parent=scaffold12160.g1.t1;product=pyruvate dehydrogenase phosphatase regulatory mitochondrial;
+scaffold12160	AUGUSTUS	CDS	5485	5579	.	+	2	ID=scaffold12160.g1.t1.cds;Parent=scaffold12160.g1.t1;product=pyruvate dehydrogenase phosphatase regulatory mitochondrial;
+scaffold12160	AUGUSTUS	CDS	7649	8053	.	+	0	ID=scaffold12160.g1.t1.cds;Parent=scaffold12160.g1.t1;product=pyruvate dehydrogenase phosphatase regulatory mitochondrial;
+scaffold12160	AUGUSTUS	stop_codon	8051	8053	.	+	0	Parent=scaffold12160.g1.t1;product=pyruvate dehydrogenase phosphatase regulatory mitochondrial;

@@ -1,0 +1,46 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author:
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+USE_COMPONENTS
+
+TAG_PRE_COMMIT: tagprecommit/use_embedded_ptb.py
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+
+Win64_17        : MSVC17-64-dll : dll    64 ReleaseDLL
+Win64_17        : MSVC17-64     : static 64 ReleaseMT
+
+Cygwin64        : GCC       : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
+
+Linux64-Centos  : GCC481    : GCC.sh 4.8.1 --without-debug --without-flat-makefile --without-ncbi-c
+Linux64-Centos  : GCC493d   : GCC.sh 4.9.3 --with-debug --with-mt --with-flat-makefile --without-ncbi-c
+Linux64-Centos  : GCC510    : GCC.sh 5.1.0 --without-debug --with-mt --with-flat-makefile --without-ncbi-c
+Linux64-Centos  : GCC530    : GCC.sh 5.3.0 --without-debug --with-mt --with-flat-makefile --without-ncbi-c
+Linux64-Centos  : ICC170    : ICC.sh 17.0  --without-debug --with-mt --with-dll --with-runpath --without-ncbi-c
+Linux64-Centos  : ICC170d   : ICC.sh 17.0  --with-debug --with-mt --with-3psw=system --with-runpath --without-ncbi-c
+Linux64-Centos  : Clang     : Clang.sh 3.8.0 --with-debug --with-mt --with-flat-makefile --without-ncbi-c
+
+Linux64-Ubuntu         : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
+Linux64-Ubuntu-Public  : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
+
+FreeBSD64              : plain     : Clang.sh --without-debug --with-mt --with-flat-makefile --with-runpath --without-ncbi-c --with-gnutls=/usr/local
+
+IntelMAC               : Debug     : Clang.sh --with-debug    --with-dll --with-mt --with-flat-makefile --without-gcrypt --without-mysql --without-pcre --without-ncbi-c
+IntelMAC               : Release   : Clang.sh --without-debug --with-dll --with-mt --with-flat-makefile --without-gcrypt --without-mysql --without-pcre --without-ncbi-c
+
+XCode                  : plain     : Xcode.sh 30 --without-debug --with-64 --without-ncbi-c
+

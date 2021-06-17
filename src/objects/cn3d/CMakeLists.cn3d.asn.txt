@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(cn3d)
+  NCBI_dataspecs(cn3d.asn)
+  NCBI_uses_toolkit_libraries(mmdb)
+NCBI_end_lib()
+

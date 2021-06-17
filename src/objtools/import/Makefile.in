@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile (object utilities)
+##################################
+
+LIB_PROJ = xobjimport
+SUB_PROJ = unit_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

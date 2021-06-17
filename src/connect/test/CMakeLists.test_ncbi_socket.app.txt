@@ -1,0 +1,16 @@
+# $Id$
+
+NCBI_begin_app(test_ncbi_socket)
+
+  NCBI_sources(test_ncbi_socket)
+  NCBI_uses_toolkit_libraries(connect)
+
+  NCBI_begin_test(test_ncbi_socket)
+    NCBI_set_test_command(test_ncbi_socket.sh)
+    NCBI_set_test_assets(test_ncbi_socket.sh)
+  NCBI_end_test()
+
+  NCBI_project_watchers(lavr)
+
+NCBI_end_app()
+

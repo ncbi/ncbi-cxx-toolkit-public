@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(image_info)
+  NCBI_sources(image_info)
+  NCBI_uses_toolkit_libraries(ximage)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_app()
+

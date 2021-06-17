@@ -1,0 +1,12 @@
+# $Id$
+
+WATCHERS = jianye
+
+ASN_DEP = seqset
+
+LIB = xalntool
+SRC = alngraphic
+
+
+USES_LIBRARIES =  \
+    xhtml xobjutil

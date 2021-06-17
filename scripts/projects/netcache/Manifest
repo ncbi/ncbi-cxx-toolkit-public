@@ -1,0 +1,35 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Sergey Satskiy
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+APP: netcached test_ic_client test_netcache_api test_nc_stress
+ETC: src/app/netcache/netcached.ini
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+Linux64-Centos : O2-BAD   : GCC.sh 4.9.3 --without-debug --with-mt --without-downloaded-vdb
+Linux64-Centos : O2g-BAD  : GCC.sh 4.9.3 --without-debug --with-mt --with-symbols --without-downloaded-vdb
+Linux64-Centos : d-BAD    : GCC.sh 4.9.3 --without-debug --with-mt --with-symbols --without-optimization --without-downloaded-vdb
+
+Linux64-Centos : O2std    : GCC.sh 4.9.3 <ENV>NETCACHE_MEMORY_MAN_MODEL=-DNETCACHE_MEMORY_MAN_STD</ENV> --without-debug --with-mt --without-downloaded-vdb
+Linux64-Centos : O2gstd   : GCC.sh 4.9.3 <ENV>NETCACHE_MEMORY_MAN_MODEL=-DNETCACHE_MEMORY_MAN_STD</ENV> --without-debug --with-mt --with-symbols --without-downloaded-vdb
+Linux64-Centos : dstd     : GCC.sh 4.9.3 <ENV>NETCACHE_MEMORY_MAN_MODEL=-DNETCACHE_MEMORY_MAN_STD</ENV> --without-debug --with-mt --with-symbols --without-optimization --without-downloaded-vdb
+
+Linux64-Centos : O2tcm          : GCC.sh 4.9.3 <ENV>NETCACHE_MEMORY_MAN_MODEL=-DNETCACHE_MEMORY_MAN_TCM</ENV> LIBS=-ltcmalloc --without-debug --with-mt --without-downloaded-vdb
+Linux64-Centos : O2gtcm-DEPLOY  : GCC.sh 4.9.3 <ENV>NETCACHE_MEMORY_MAN_MODEL=-DNETCACHE_MEMORY_MAN_TCM</ENV> LIBS=-ltcmalloc --without-debug --with-mt --with-symbols --without-downloaded-vdb
+Linux64-Centos : dtcm           : GCC.sh 4.9.3 <ENV>NETCACHE_MEMORY_MAN_MODEL=-DNETCACHE_MEMORY_MAN_TCM</ENV> LIBS=-ltcmalloc --without-debug --with-mt --with-symbols --without-optimization --without-downloaded-vdb
+
+USE_COMPONENTS
+

@@ -1,0 +1,9 @@
+[
+{
+    "reply": "BioseqInfo",
+    "status": "NotFound",
+    "errors": [
+        "Could not resolve seq_id pdb|1VU9_AA"
+    ]
+}
+]

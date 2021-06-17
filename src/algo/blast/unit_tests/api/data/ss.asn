@@ -1,0 +1,63 @@
+Blast4-request ::= {
+  body queue-search {
+    program "blastn",
+    service "megablast",
+    queries seq-loc-list {
+      int {
+        from 0,
+        to 623,
+        strand both,
+        id gi 555
+      }
+    },
+    subject database "nt",
+    algorithm-options {
+      {
+        name "EvalueThreshold",
+        value cutoff e-value { 1, 10, 1 }
+      },
+      {
+        name "MaskAtHash",
+        value boolean TRUE
+      },
+      {
+        name "DustFilteringLevel",
+        value integer 20
+      },
+      {
+        name "DustFilteringWindow",
+        value integer 64
+      },
+      {
+        name "DustFilteringLinker",
+        value integer 1
+      },
+      {
+        name "UngappedMode",
+        value boolean FALSE
+      },
+      {
+        name "Culling",
+        value integer 0
+      },
+      {
+        name "HitlistSize",
+        value integer 500
+      }
+    },
+    program-options {
+      {
+        name "RequiredStart",
+        value integer 0
+      },
+      {
+        name "RequiredEnd",
+        value integer 623
+      },
+      {
+        name "DbFilteringAlgorithmId",
+        value integer 40
+      }
+    }
+  }
+}

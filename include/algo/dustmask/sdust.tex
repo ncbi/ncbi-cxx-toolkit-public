@@ -1,0 +1,759 @@
+\documentclass{article}
+
+\usepackage{program}
+\usepackage{latexsym}
+
+\title{Symmetric Version of DUST Algorithm}
+\author{Aleksandr Morgulis}
+
+\newcommand{\al}[1]{\alpha_{#1}}
+\newcommand{\sq}[2]{\al{#1}\ldots\al{#2}}
+\newcommand{\cala}{{\cal A}}
+\newcommand{\cals}{{\cal S}}
+
+\newcommand{\OF}{\ \keyword{of}\ }
+\newcommand{\RET}{\keyword{return}\ }
+\newcommand{\VARP}{\keyword{var}\ }
+\newcommand{\LIST}{\keyword{list}\ }
+\newcommand{\TUPLE}{\keyword{tuple}}
+\newcommand{\NIL}{\ \keyword{nil}\ }
+\newcommand{\TYPE}{\keyword{type}\ }
+\newcommand{\DODO}{\keyword{do}\tab}
+\newcommand{\DOWHILE}{\untab\keyword{while}\ }
+
+\newtheorem{lemma}{Lemma}
+
+\setlength{\parskip}{1ex}
+\setlength{\parindent}{0mm}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\section*{NOTE}
+
+The code has been restructured recently. Everything in this text is still
+valid, but the pseudocode does not closely correspond to the C++ code 
+anymore. This situation will be fixed in the future.
+
+\section{Definitions and Notation}
+
+Let ${\cal S} = \sq{0}{N-1}$  be a sequence of $N$ letters from $4$-letter 
+alphabet $\cala = \{ \mathbf A, \mathbf C, \mathbf G, \mathbf T \}$.
+
+A {\em triplet} is a sequence of length $3$. Any sequence $\cals = \sq{0}{N-1}$ 
+of length $N > 2$ contains as subsequences exactly $N-2$ triplets, that are 
+denoted $t_{0},\ldots,t_{N-3}$, where $t_i = \al{i}\al{i+1}\al{i+2}$.
+
+We define a mapping $d$ from $\cala$ to the subset of integers 
+$\{0, 1, 2, 3\}$ in the following way: $d(\mathbf A) = 0$; $d(\mathbf C) = 1$; 
+$d(\mathbf G) = 2$; $d(\mathbf T) = 3$.
+
+To any triplet $t = \al{i}\al{i+1}\al{i+2}$ we assign an integer 
+{\em triplet value} $v(t) = 16d(\al{i}) + 4d(\al{i+1}) + d(\al{i+2})$. This 
+defines a one-to-one mapping from $64$ possible 3-letter sequences to the subset 
+$\{0..63\}$ of integers.  In this text the triplets and their values are used 
+interchangeably.
+
+We assign a {\em score} $S(\cals)$ to any sequence $\cals$ of length $N > 3$ in 
+the following way. Let $k_t :\ 0 \le t \le 63$ be the number of times a triplet 
+with value $t$ appears in $\cals$. We define
+$$
+S(\cals) = \frac{\sum_{t=0}^{63}{k_t(k_t - 1)}}{2(l - 1)} \rm{\ ,}
+$$
+where $l = N - 2$ is the number of triplets in $\cals$. In other words, each
+triplet value $t$ contributes $1 + 2 + \cdots + (k_t - 1)$ to the score.
+
+Given an input nucleotide sequence $S$, window length $W$, and score threshold
+$T$, let $|LC|(S)$ denote a set of subsequences of $S$ of length at most $W$ with
+score greater than $T$. Both the original and the new DUST algorithms mask a subset 
+of $|LC|(S)$. The bases masked by the new algorithm form a superset of those masked 
+by the original one.
+
+The algorithms below are presented in Pascal-like pseudocode. All undeclared
+functions and types are described in section \ref{secpseudo}. Keyword \VARP
+is used to declare local variables in procedure/function. When used in
+the procedure/function parameter list it means that the corresponding parameter
+is passed by reference, rather than by value.
+
+\section{Original Algorithm}
+
+The original DUST algorithm looks at all subsequences, called {\em windows},
+of fixed length $W$ (subsequences of length less than $W$ are considered at 
+the beginning and at the end of the input sequence) of the input nucleotide 
+sequence.  For each such subsequence $\cals$ it finds the high scoring prefix 
+$\cals'$ with the largest score (ties are resolved in favor of the leftmost
+such prefix). If the score of the selected prefix is greater than a given
+threshold value $T$ then the algorithm finds a subsequence $\cals''$ of $\cals'$ 
+with the maximum score (again the ties are resolved in favor of the leftmost 
+subsequence). The algorithm then masks the union of all such $\cals''$ over 
+all the windows in the input sequence.
+
+Below is the original DUST algorithm in pseudocode.
+
+\NumberProgramstrue
+\begin{program}
+\BEGIN
+\TYPE |prefix_info| := \TUPLE ( |end| : |int|,\ |score| : |real| );
+\COMMENT{ The first argument to |best\_prefix|() is used for both input }
+\COMMENT{ and output. The caller passes the input sequence, which }
+\COMMENT{ is modified by the function to contain its highest scoring }
+\COMMENT{ prefix. The actual score of the highest scoring prefix is }
+\COMMENT{ the return value of the function. }
+\FUNCT |best_prefix|( |Seq|:|sequence|) : |prefix_info| \BODY
+    \BEGIN
+    \VARP i, t, |i_max|, |sum| : |int|;
+    \VARP |result| : |prefix_info|;
+    \VARP |max| : |real|;
+    \VARP |counts| : \ARRAY [0..63] \OF |int|;
+    \FOR i:=0 \TO 63 \DO |counts|[i] := 0 \OD;
+    |i_max| := 0;
+    |max|   := 0;
+    |sum|   := 0;
+    \FOR i:=0 \TO |length|(|Seq|) - 3 \DO
+        t           := |triplet|(|Seq|, i);
+        |sum|       := |sum| + |counts|[t];
+        |counts|[t] := |counts|[t] + 1;
+        \IF i>0 \AND |sum|/i > |max| 
+        \THEN |max|   := |sum|/i;
+              |i_max| := i;
+        \FI
+    \OD;
+    |Seq| := |subsequence|(|Seq|, 0, |i_max|);
+    |result|.|end|   := |i_max|;
+    |result|.|score| := |max|;
+    \RET |result|;
+    \END
+\ENDFUNCT
+\PROC |dust|( |Seq| : |sequence|,\ |Tres| : |real|,\ |Wsize| : |int|,
+             \VARP |Res| : |list_of_integer_pairs| )\BODY
+    \COMMENT{ Results are returned in |Res|. }
+    \BEGIN
+    \VARP i, j, a, b, |start|, |end|, |lim| : |int|;
+    \VARP |score|, |suffix_score| : |real|;
+    \VARP |window|, |suffix| : |sequence|;
+    \VARP |winprefix|, |prefix| : |prefix_info|;
+    \FOR i:=3 \TO |length|(|Seq|) + |Wsize| - 4 \DO
+        \COMMENT{In the first and last $|Wsize| - 4$ iterations}
+        \COMMENT{windows that are shorter than |Wsize| bases}
+        \COMMENT{long are considered. Those are the windows}
+        \COMMENT{at the beginning and the end of the sequence.}
+        a           := |max|(i-|Wsize| + 1,0);
+        b           := |min|(i,|length|(|Seq|)-1);
+        |window|    := |subsequence|(|Seq|,a,b);
+        |winprefix| := |best_prefix|(|window|);
+        \IF |winprefix|.|score|>|Tres| 
+        \THEN |start| := 0;
+              |end|   := |winprefix|.|end|;
+              |lim|   := |end|;
+              \FOR j := 0 \TO |lim|-3 \DO
+                |suffix| := |subsequence|(|window|,j,|lim|);
+                |prefix| := |best_prefix|(|suffix|);
+                \IF |prefix|.|score| > |score|
+                \THEN |score| := |prefix|.|score|;
+                      |start| := j;
+                      |end|   := j + |prefix|.|end|;
+                \FI
+              \OD;
+              |append|(|Res|,(a + |start|,a + |end|))
+        \FI
+    \OD
+    \END
+\ENDPROC
+\END
+\end{program}
+
+\section{New Algorithm}
+
+The original DUST algorithm is not symmetric with respect to taking reverse
+complements. The new algorithm is symmetric and in all our tests, it masks 
+no more than 1.7\% more bases than the original DUST.
+
+Any interval selected by the original algorithm for masking has 
+the following properies:
+
+\begin{enumerate}
+\item its length is less than or equal to the window length $W$;
+\item its score is greater than the score threshold $T$;
+\item scores of all its subintervals are at most as high as its own score.
+\end{enumerate}
+
+From now on, intervals of the input sequence satisfying properties 1--3 above
+are called {\em perfect}.
+
+The new symmetric DUST algorithm finds and masks {\em all} perfect intervals in the input 
+sequence. First a simple algorithm to find all perfect intervals is described.
+The next section presents some optimizations that result in significant 
+performance improvement.
+
+The new algorithm maintains the following data structures:
+
+\begin{itemize}
+\item a sliding window (subsequence) of length $W$ (or less if at the 
+      beginning of the sequence);
+\item a list $P$ of all perfect intervals within the sliding window and 
+      their scores, sorted by their left ends.
+\end{itemize}
+
+When the sliding window shifts by one character the following steps are 
+performed (note that any new perfect interval must be a suffix of the 
+sliding window):
+
+\begin{enumerate}
+\item remove from $P$ all items that are not in the sliding window (all of them
+      are in the beginning of $P$);
+\item for each suffix of the sliding window with the score $S$ higher than $T$,
+      if $S$ is larger than the maximum of the scores of elements in $P$ covered 
+      by that suffix, then add the suffix to $P$, since it is necessarily a 
+      new perfect interval.
+\end{enumerate}
+
+Below is the new algorithm in pseudocode.
+
+\begin{program}
+\BEGIN
+\TYPE |perfect| := \TUPLE ( |start| : |int|,\ |end| : |int|,\ |score| : |real| );
+\PROC |process_window|( 
+    \tab |window|     : |sequence|,
+         |Tres|       : |real|, 
+         |wstart|     : |int|,
+         \VARP |Perf| : \LIST \OF |perfect| ) \untab\BODY
+    \BEGIN
+    \VARP |counts|           : \ARRAY [0..63] \OF |int|;
+    \VARP i, t, |len|, |sum| : |int|;
+    \VARP |max_score|        : |real|;
+    \VARP |curr_perfect|     : |list_iter|;
+    \VARP |elem|             : |perfect|;
+    \FOR i:=0 \TO 63 \DO |counts|[i] := 0 \OD;
+    |curr_perfect| := |last_iter|(|Perf|);
+    |max_score|    := 0;
+    |len|          := 0;
+    |sum|          := 0;
+    \FOR i := |length|(|window|) - 3 \TO 0 \STEP -1 \DO
+        t           := |triplet|(|window|, i);
+        |sum|       := |sum| + |counts|[t];
+        |counts|[t] := |counts|[t] + 1;
+        \IF |len| > 0 \AND |sum|/|len| > |Tres|
+        \THEN
+            \WHILE |curr_perfect| \ne \NIL 
+                   \AND |list_elem|(|curr_perfect|).|start| \ge i + |wstart| \DO
+                |elem| := |list_elem|(|curr_perfect|);
+                \IF |max_score| < |elem|.|score| 
+                \THEN |max_score|       := |elem|.|score|;
+                \FI
+                |current_prefect| := |prev|(|curr_perfect|)
+            \OD
+            \COMMENT{In the following comparison it is important}
+            \COMMENT{to consider the intervals with the score}
+            \COMMENT{equal to |max\_score|. The definition of a}
+            \COMMENT{perfect interval allows for proper}
+            \COMMENT{subintervals of equal score.}
+            \IF |sum|/|len| \ge |max_score|
+            \THEN |max_score|    := |sum|/|len|;
+                  |curr_perfect| := |insert|(
+                    \qquad|curr_perfect|,
+                    \qquad(
+                    \qquad\ \quad i + |wstart|,
+                    \qquad\ \quad|length|(|window|) - 1 + |wstart|,
+                    \qquad\ \quad|max_score|
+                    \qquad))
+            \FI
+        \FI
+        |len| := |len| + 1
+    \OD
+    \END
+\ENDPROC
+\PROC |sdust|(
+    \tab |Seq|       : |sequence|,
+         |Tres|      : |real|,
+         |Wsize|     : |int|,
+         \VARP |Res| : |list_of_integer_pairs| )\untab\BODY
+    \COMMENT{ Results are returned in |Res|. }
+    \COMMENT{ |Perf| is initially empty. }
+    \BEGIN
+    \VARP |Perf|     : \LIST \OF |perfect|;
+    \VARP i, |start| : |int|;
+    \VARP |window|   : |sequence|;
+    \FOR i:=3 \TO |length|(|Seq|) - 1 \DO
+        |start|  := |max|(i-|Wsize|+1,0);
+        |window| := |subsequence|(|Seq|, |start|, i);
+        \WHILE \NOT |empty|(|Perf|) \AND |head|(|Perf|).|start| < |start| \DO
+            |append|(|Res|,|head|(|Perf|).|start|,|head|(|Perf|).|end|);
+            |pop_front|(|Perf|)
+        \OD
+        |process_window|( |window|, |Tres|, |start|, |Perf| )
+    \OD
+    \END
+\ENDPROC
+\END
+\end{program}
+
+\section{Optimization}
+
+For the long-used current threshold of 20, window size of 64, and genomic test 
+sets we have considered it is possible to partially or completely eliminate 
+score computation for most windows.  To do this we estimate the length of the 
+longest suffix of the window that is guaranteed to be free of perfect intervals. 
+Then using the length of such suffix we can find a sufficient condition for the 
+whole window to be free of perfect intervals.
+
+Let |w| be a window of length $l+2$. For each $i \ge 0$, let $n_i$ be the number 
+of triplet values that occur $i$ times in |w|. Let $|maxocc(w)|$ be the largest positive 
+integer, such that there is a triplet value that occurs $|maxocc(w)|$ times in |w|.  Then 
+the following equalities hold.
+\begin{equation}\label{eql}
+l = \sum_{i=0}^{|maxocc(w)|}{n_ii}
+\end{equation}
+\begin{equation}\label{eqS}
+(l-1)S(|w|) = \sum_{i=0}^{|maxocc(w)|}{n_i\frac{i(i-1)}{2}}
+\end{equation}
+
+We are looking for the largest integer |threshocc| such that if $|maxocc(w)| \le |threshocc|$
+then we can guarantee that
+\begin{equation}\label{eqcond}
+S(|w|) \le T{\rm.}
+\end{equation}
+
+Using (\ref{eql}) and (\ref{eqS}), (\ref{eqcond}) can be rewritten in the following
+form:
+\begin{equation}\label{eqcondone}
+T \le \sum_{i=0}^k{n_i\left(\frac{(2T+1)i - i^2}{2}\right)}{\rm .}
+\end{equation}
+
+\begin{lemma}\label{lemmaone}
+Let |w| be a window and |maxocc(w)| defined as above. If 
+
+\begin{equation}\label{eqsuff}
+|maxocc(w)| \le 2T
+\end{equation}
+for some $T \ge 1$ then $S(|w|) \le T$.
+\end{lemma}
+
+\proof Let $M = |maxocc(w)|$. We can assume that $M > 1$, because if every triplet appears at most once 
+in |w|, then $S(|w|) = 0$. If $M \le 2T$ then 
+$(2T + 1)i - i^2 = i( 2T + 1 - i ) \ge i \ge 0$ for every $i \le M$ . So every
+element of the sum in the right side of (\ref{eqcondone}) is non negative.
+Also $n_M \ge 1$ by definition of M. Therefore the right side of 
+(\ref{eqcondone}) is greater or equal to 
+${1\over2}n_M\left((2T + 1)M - M^2\right)$, and, to prove the lemma, it is 
+sufficient to show that ${1\over2}\left((2T + 1)M - M^2\right) \ge T$ or,
+equivalently, $(2T + 1)M - M^2 - 2T \ge 0$. The left side of the last inequality
+can be written as $(M - 1)(2T - M)$ and, since $M > 1$ and $M \le 2T$, it is
+indeed non negative. $\Box$
+
+The bound in Lemma \ref{lemmaone} is tight. If |w| consists of $2T + 1$
+identical triplets, then $|maxocc(w)| = |threshocc| + 1$ and $S(|w|) = T + 1 > T$.
+This means that $|threshocc| = 2T$.
+
+Previous discussion suggests one optimization of the symmetric DUST algorithm.
+If, for each window |w|, we could maintain its longest suffix $|w|_1$ such that
+(\ref{eqsuff}) holds for $|w|_1$, then we could skip partial score computations
+for that suffix.
+
+For a window |w| containing $l$ triplets, let $L(|w|)$ be the number of triplets 
+in the longest suffix of |w| that satisfies~(\ref{eqsuff}). We want to find a 
+condition (in terms of $L(|w|)$) such that processing of |w| can be omitted in the 
+symmetric DUST procedure. In order to do this it is sufficient to make sure that 
+inequality $S(|w|_j) \le T$ holds for every suffix $|w|_j$ of |w| containing $j$ 
+triplets ($L(|w|) < j \le l$) or, equivalently
+\begin{equation}\label{eqsuffone}
+\sum_{t=0}^{63}{\frac{m_{t,j}(m_{t,j} - 1)}{2}} \le T(j - 1),%
+\quad \forall j : L(|w|) < j \le l,
+\end{equation}
+where $m_{t,j}$ is the number of times the triplet value $t$ appears in 
+$|w|_j$. We call the left parts of inequalities (\ref{eqsuffone}) $s_j$.
+
+\begin{lemma}\label{lemmatwo}
+If $s_l \le L(|w|)T$ then $S(|w|) \le T$.
+\end{lemma}
+
+\proof It is enough to show that if $s_l \le L(|w|)T$ then inequalities
+(\ref{eqsuffone}) hold true. 
+
+From the definition of $m_{t,j}$ it is clear that 
+$m_{t,j} \le m_{t,l}$ for all triplet values $t$ and all $j \le l$. Therefore
+$s_j \le s_l$ for $j \le l$. On the other hand $T(j-1) \ge TL(|w|)$ for 
+$L(|w|) < j \le l$. So if $s_l \le L(|w|)T$, then for all $j$ such that 
+$L(|w|) < j \le l$ the following is true
+$$
+\sum_{t=0}^{63}{\frac{m_{t,j}(m_{t,j} - 1)}{2}} = s_j \le s_l \le L(|w|)T \le T(j-1)
+$$
+which means that inequalities (\ref{eqsuffone}) hold. $\Box$
+
+\subsection{Maintaining Window Suffix Information}
+
+The following information is maintained by the symmetric DUST algorithm
+implementation in order to implement the optimizations described above:
+
+\begin{itemize}
+\item the window suffix |suff|(|w|) of the current window |w| defined as
+follows: let $k = \lfloor 2T \rfloor$ as before, then |suff|(|w|) is the
+longest suffix such that every triplet appears no more than
+$k$ times in |suff|(|w|).
+\item $s_l$ and $s_L$ for each window |w|, where $l$ is the number of triplets 
+in |w|, $L$ is the number of triplets in |suff|(|w|) defined above; these values 
+are called {\em outer\_sum} and {\em inner\_sum} in the code;
+\item the counts of each triplet value in |w| and |suff|(|w|); in the code these 
+values are called, correspondingly, {\em outer\_counts} and {\em inner\_counts}.
+\end{itemize}
+
+Every time a window slides one letter to the right |push_triplet|() and
+|pop_triplet|() functions are called. These functions keep the the data 
+structures consistent when adding or removing a triplet from the window. In the 
+following code $|thresocc| = \lfloor 2T \rfloor$, and |sf| is the position of the start 
+of the window suffix.
+
+\begin{program}
+\BEGIN
+\TYPE |counts_type| := \ARRAY[0..63] \OF |int|;
+\PROC |push_triplet|( 
+    \tab |wstart|, |threshocc|                : |int|,
+         \VARP |sf|, |outer_sum|, |inner_sum| : |int|,
+         \VARP |triplets|                     : |dequeue| \OF |int|, 
+         \VARP |outer_counts|, |inner_counts| : |counts_type| ) \untab\BODY
+    \BEGIN
+    \VARP t : |int|;
+    t                 := |last|(|triplets|);
+    |outer_sum|       := |outer_sum| + |outer_counts|[t];
+    |outer_counts|[t] := |outer_counts|[t] + 1;
+    |add_thres_info|(|triplets|,t,|thresocc|,|wstart|,|sf|,|inner_sum|,|inner_counts|)
+    \END
+\ENDPROC
+\PROC |pop_triplet|( 
+    \tab\VARP |triplets|                     : |dequeue| \OF |int|, 
+        \VARP |outer_sum|, |inner_sum|       : |int|,
+        \VARP |outer_counts|, |inner_counts| : |counts_type| ) \untab\BODY
+    \BEGIN
+    \VARP t : |int|;
+    t := |triplets|[0];
+    \IF |inner_counts|[t] = |outer_counts|[t] 
+    \THEN |rem_thres_info|(t, |inner_sum|, |inner_counts| )
+    \FI
+    |outer_counts|[t] := |outer_counts|[t] - 1;
+    |outer_sum|       := |outer_sum| - |outer_counts|[t]
+    \END
+\ENDPROC
+\END
+\end{program}
+
+Procedures |add_thres_info|() and |rem_thres_info|() are responsible for maintaining
+the |inner_sum| and |inner_counts|. 
+
+\begin{program}
+\BEGIN
+\TYPE |counts_type| := \ARRAY[0..63] \OF |int|;
+\PROC |add_thres_info|(
+    \tab|triplets|              : |dequeue| \OF |int|, 
+        t, |thresocc|, |wstart|          : |int|,
+        \VARP |sf|, |inner_sum| : |int|, 
+        \VARP |inner_counts|    : |counts_type|) \untab\BODY
+    \BEGIN
+    \VARP |offset| : |int|;
+    |inner_sum|       := |inner_sum| + |inner_counts|[t];
+    |inner_counts|[t] := |inner_counts|[t] + 1;
+    |offset|          := |sf| - |wstart|;
+    \IF |inner_counts|[t] > |thresocc|
+    \THEN
+        \COMMENT{Updating the current suffix. The following}
+        \COMMENT{loop removes all triplets from the front of the}
+        \COMMENT{suffix up to and including the first triplet with}
+        \COMMENT{value |t|. This makes the internal count of |t| less}
+        \COMMENT{than |threshocc|.}
+        \DODO
+            |rem_thres_info|(t, |inner_sum|, |inner_counts|);
+            |sf|     := |sf| + 1;
+            |offset| := |offset| + 1
+        \DOWHILE |triplets|[|offset| - 1] \not= t
+    \FI
+    \END
+\ENDPROC
+\PROC |rem_thres_info|( 
+    \tab t                    : |int|, 
+         \VARP |inner_sum|    : |int|, 
+         \VARP |inner_counts| : |counts_type| ) \untab\BODY
+    \BEGIN
+    |inner_counts|[t] := |inner_counts|[t] - 1;
+    |inner_sum|       := |inner_sum| - |inner_counts|[t]
+    \END
+\ENDPROC
+\END
+\end{program}
+
+\subsection{Optimized Algorithm}
+
+Below is the pseudocode of the optimized algorithm. 
+
+\begin{program}
+\BEGIN
+\TYPE |perfect|     := \TUPLE ( |start| : |int|,\ |end| : |int|,\ |score| : |real| );
+\TYPE |counts_type| := \ARRAY[0..63] \OF |int|;
+\PROC |process_window|( 
+\tab \VARP |triplets|                     : |dequeue| \OF |int|,
+     |Tres|                               : |real|,
+     |Wsize|, |wstart|                    : |int|,
+     \VARP |sf|, |outer_sum|, |inner_sum| : |int|,
+     \VARP |outer_counts|, |inner_counts| : |counts_type|,
+     \VARP |Perf|                         : \LIST \OF |perfect| )\untab\BODY
+    \BEGIN
+    \VARP |counts|                         : |counts_type|;
+    \VARP i, |threshocc|, |len|, |sum|, |suffix_len| : |int|;
+    \VARP |curr_perfect|                   : |list_iter|;
+    \VARP |elem|                           : |perfect|;
+    |threshocc| := |floor|(2*|Tres|);
+    \IF |length|(|triplets|) > |Wsize| - 1
+    \THEN |pop_triplet|( 
+        \qquad |triplets|, 
+        \qquad |outer_sum|, |inner_sum|, 
+        \qquad |outer_counts|, |inner_counts| )
+    \FI
+    |push_triplet|(
+        \qquad |wstart|, |threshocc|, |sf|, 
+        \qquad |outer_sum|, |inner_sum|, 
+        \qquad |triplets|, 
+        \qquad |outer_counts|, |inner_counts| );
+    |suffix_len| := |length|(|triplets|) - (|sf|-|wstart|);
+    \IF |outer_sum| > |suffix_len|*|Tres|
+    \THEN
+        \FOR i:=0 \TO 63 \DO |counts|[i] := |inner_counts|[i] \OD;
+        |curr_perfect| := |last_iter|(|Perf|);
+        |max_score|    := 0
+        |len|          := |suffix_len|;
+        |sum|          := |inner_sum|;
+        \FOR i := |length|(|triplets|) - 1 - |suffix_len| \TO 0 \STEP -1 \DO
+            t           := |triplets|[i];
+            |sum|       := |sum| + |counts|[t];
+            |counts|[t] := |counts|[t] + 1;
+            \IF |sum|/|len| > |Tres|
+            \THEN
+                \WHILE |curr_perfect| \ne \NIL 
+                       \AND |list_elem|(|curr_perfect|).|start| \ge i + |wstart| \DO
+                    |elem| := |list_elem|(|curr_perfect|);
+                    \IF |max_score| < |elem|.|score| 
+                    \THEN |max_score|       := |elem|.|score|;
+                    \FI
+                    |current_prefect| := |prev|(|curr_perfect|)
+                \OD
+                \COMMENT{In the following comparison it is important}
+                \COMMENT{to consider the intervals with the score}
+                \COMMENT{equal to |max\_score|. The definition of a}
+                \COMMENT{perfect interval allows for proper}
+                \COMMENT{subintervals of equal score.}
+                \IF |sum|/|len| \ge |max_score|
+                \THEN |max_score| := |sum|/|len|;
+                      |curr_perfect| := |insert|(
+                          \qquad|curr_perfect|,
+                          \qquad(
+                          \qquad\ \quad i + |wstart|,
+                          \qquad\ \quad|length|(|triplets|) + 1 + |wstart|,
+                          \qquad\ \quad|max_score|
+                          \qquad))
+                \FI
+            \FI
+            |len| := |len| + 1
+        \OD
+    \FI
+    \END
+\ENDPROC
+\PROC |sdust|(
+    \tab |Seq|       : |sequence|,
+         |Tres|      : |real|,
+         |Wsize|     : |int|,
+         \VARP |Res| : |list_of_integer_pairs| )\untab\BODY
+    \COMMENT{ Results are returned in |Res|. }
+    \COMMENT{ |Res| is initially empty. }
+    \BEGIN
+    \VARP i, |sf|, |start|, |outer_sum|, |inner_sum| : |int|;
+    \VARP |outer_counts|, |inner_counts|             : |counts_type|;
+    \VARP |Perf|                                     : \LIST \OF |perfect|;
+    \VARP |triplets|                                 : |dequeue| \OF |int|;
+    |sf|        := 0;
+    |inner_sum| := 0;
+    |outer_sum| := 0;
+    \FOR i := 0 \TO 63 \DO
+        |inner_counts|[i] := 0;
+        |outer_counts|[i] := 0
+    \OD
+    \FOR i:=2 \TO |length|(|Seq|) - 1 \DO
+        |start|        := |max|(i-|Wsize|+1,0);
+        |push_back|( |triplets|, |triplet|(|Seq|, i-2) );
+        \WHILE \NOT |empty|(|Perf|) \AND |head|(|Perf|).|start| < |start| \DO
+            |append|(|Res|,(|head|(|Perf|).|start|,|head|(|Perf|).|end|));
+            |pop_front|(|Perf|)
+        \OD
+        |process_window|( |triplets|, |Tres|, |Wsize|, |start|, |sf|, 
+        \qquad |outer_sum|, |inner_sum|, |outer_counts|, |inner_counts|, |Perf| )
+    \OD
+    \END
+\ENDPROC
+\END
+\end{program}
+
+\section{Performance}
+
+All tests were performed on a dual Pentium 4 Xeon 3.2 Ghz
+Linux workstation with 4 Gb of RAM running Linux kernel 2.4.23.
+Applications were compiled with GNU C/C++ compilers 
+version 3.4.0 with full optimization (-O3 -fomit-frame-pointer -ffast-math).
+
+The following table shows running times in seconds of the original DUST
+and optimized symmetric DUST when masking genomes of {\it Drosophila melanogaster}
+and {\it Homo sapiens}.
+For each test 3 runs were performed and the average time is reported
+in the table.
+
+\vskip 1cm
+\begin{tabular}{|l|r|r|r|}
+\hline
+ & original & symmetric & ratio of symmetric DUST time\\
+ & DUST\hfill\hfill     & DUST\hfill\hfill      & to original DUST time \hfill\hfill \\
+\hline
+{\it D. melanogaster} & 113.27   & 32.47 & .2870 \\
+\hline
+{\it H. sapiens} chr1  & 231.86 & 65.73 & .2835 \\
+{\it H. sapiens} chr2  & 245.16 & 68.36 & .2788 \\
+{\it H. sapiens} chr3  & 195.81 & 54.58 & .2787 \\
+{\it H. sapiens} chr4  & 210.38 & 53.65 & .2550 \\
+{\it H. sapiens} chr5  & 197.54 & 50.30 & .2546 \\
+{\it H. sapiens} chr6  & 184.34 & 47.90 & .2598 \\
+{\it H. sapiens} chr7  & 162.33 & 45.05 & .2775 \\
+{\it H. sapiens} chr8  & 156.36 & 40.98 & .2621 \\
+{\it H. sapiens} chr9  & 130.81 & 33.84 & .2587 \\
+{\it H. sapiens} chr10 & 144.12 & 38.02 & .2638 \\
+{\it H. sapiens} chr11 & 133.29 & 36.61 & .2747 \\
+{\it H. sapiens} chr12 & 135.87 & 37.60 & .2767 \\
+{\it H. sapiens} chr13 & 101.65 & 27.24 & .2680 \\
+{\it H. sapiens} chr14 & 92.81  & 24.90 & .2683 \\
+{\it H. sapiens} chr15 & 85.92  & 24.01 & .2794 \\
+{\it H. sapiens} chr16 & 104.46 & 24.99 & .2392 \\
+{\it H. sapiens} chr17 & 102.5  & 25.55 & .2493 \\
+{\it H. sapiens} chr18 & 76.56  & 22.70 & .2965 \\
+{\it H. sapiens} chr19 & 68.59  & 19.02 & .2773 \\
+{\it H. sapiens} chr20 & 62.44  & 17.13 & .2743 \\
+{\it H. sapiens} chr21 & 37.12  & 10.09 & .2718 \\
+{\it H. sapiens} chr22 & 38.21  & 10.18 & .2664 \\
+{\it H. sapiens} chrX  & 167.67 & 62.98 & .3756 \\
+{\it H. sapiens} chrY  & 32.91  & 8.33  & .2531 \\
+%d.{\it melanogaster} & 113.27   & 90.17 & 32.47 & 71.3\% \\
+%run 1 & 1m52.839s & 1m29.546s & 0m32.335s & \\
+%run 2 & 1m53.221s & 1m30.962s & 0m32.686s & \\
+%run 3 & 1m53.750s & 1m30.006s & 0m32.380s & \\
+\hline
+\end{tabular}
+
+\vskip 1cm
+The next table shows the number of bases masked by each algorithm
+in genomes of d.{\it melanogaster} and h.{\it sapiens}.
+
+\begin{tabular}{|l|r|r|r|}
+\hline
+ & original DUST & symmetric DUST & percentage of increase \\
+\hline
+{\it D. melanogaster} & 5278484 & 5368015 & 1.70 \% \\
+\hline
+{\it H. sapiens} chr1  & 9827477  & 9962990  & 1.39 \% \\
+{\it H. sapiens} chr2  & 10396020 & 10534797 & 1.33 \% \\
+{\it H. sapiens} chr3  & 8174058  & 8291266  & 1.43 \% \\
+{\it H. sapiens} chr4  & 8501155  & 8612129  & 1.31 \% \\
+{\it H. sapiens} chr5  & 7606117  & 7711431  & 1.38 \% \\
+{\it H. sapiens} chr6  & 7327405  & 7429406  & 1.39 \% \\
+{\it H. sapiens} chr7  & 7134998  & 7231658  & 1.35 \% \\
+{\it H. sapiens} chr8  & 6209036  & 6292534  & 1.34 \% \\
+{\it H. sapiens} chr9  & 5181032  & 5251123  & 1.35 \% \\
+{\it H. sapiens} chr10 & 6008077  & 6086515  & 1.31 \% \\
+{\it H. sapiens} chr11 & 5467439  & 5539418  & 1.32 \% \\
+{\it H. sapiens} chr12 & 5815186  & 5895050  & 1.37 \% \\
+{\it H. sapiens} chr13 & 4319532  & 4377601  & 1.34 \% \\
+{\it H. sapiens} chr14 & 3775868  & 3828803  & 1.40 \% \\
+{\it H. sapiens} chr15 & 3539237  & 3587821  & 1.37 \% \\
+{\it H. sapiens} chr16 & 3899069  & 3946925  & 1.23 \% \\
+{\it H. sapiens} chr17 & 3766104  & 3817441  & 1.36 \% \\
+{\it H. sapiens} chr18 & 3259307  & 3303535  & 1.36 \% \\
+{\it H. sapiens} chr19 & 3326872  & 3368114  & 1.24 \% \\
+{\it H. sapiens} chr20 & 2619954  & 2654471  & 1.32 \% \\
+{\it H. sapiens} chr21 & 1631269  & 1651742  & 1.26 \% \\
+{\it H. sapiens} chr22 & 1630297  & 1651307  & 1.29 \% \\
+{\it H. sapiens} chrX  & 6954440  & 7044967  & 1.30 \% \\
+{\it H. sapiens} chrY  & 1534226  & 1547697  & 0.88 \% \\
+\hline
+\end{tabular}
+
+\section{Type and Function definitions}\label{secpseudo}
+
+\subsection{Types}
+
+|int| is the type used to represent integers
+
+|real| is the type used to represent real numbers
+
+|vector| is a sequence of elements of the same type. It is different from
+\ARRAY in that |vector| can have variable length. |vector| supports random
+access of its elements by index. Indices start at $0$.
+
+|dequeue| is a variable length sequence of elements of the same type supporting
+efficient random access of its elements as well as efficient append/remove to/from
+both ends of the sequence.
+
+|tuple| is a sequence of elements of possibly different types that has a fixed
+length. Elements of a tuple are named. If |tup| is a tuple with an element named
+|start|, then that element can be accessed as |tup|.|start|. In the pseudocode
+an instance of a tuple having, e.g. 3 elements |a|, |b|, and |c| is written
+as (|a|, |b|, |c|).
+
+|list| is a doubly linked list of elements of the same type. The number of
+elements in |list| is not fixed. |list| does not support random access of its
+elements, but supports efficient forward and backwards traversal.
+
+|list_iter| iterator type used to traverse a list.
+
+\TYPE |sequence| : |vector| \OF $\{ \mathbf{A}, \mathbf{C}, \mathbf{G}, \mathbf{T} \}$
+
+\TYPE |integer_pair| : |tuple|( |first| : |int|, |second| : |int| )
+
+\TYPE |list_of_integer_pairs| : |list| \OF |integer_pair|
+
+\subsection{Functions and Procedures}
+
+\PROC |append|( |L| : |list| \OF |elem_type|, |elem| : |elem_type| ) \ENDPROC \\
+Appends a new element to the back of the list.
+
+\FUNCT |floor|( |r| : |real| ) : |int| \ENDFUNCT \\
+Returns $\lfloor r \rfloor$.
+
+\FUNCT |head|( |L| : |list| \OF |elem_type| ) : |elem_type| \ENDFUNCT \\
+Returns the first element of the list.
+
+\PROC |insert|( |iter| : |list_iter|, |elem| : |elem_type| ) \ENDPROC \\
+Inserts a new element into the list in front of the one pointed to by the iterator.
+
+\FUNCT |last_iter|( |L| : |list| ) : |list_iter| \ENDFUNCT \\
+Returns an iterator pointing to the last element of the list.
+
+\FUNCT |length|( |C| : |container_type| ) : |int| \ENDFUNCT\\
+Generic function that returns the number of elements in a container
+(e.g. vector, sequence, etc.).
+
+\FUNCT |list_elem|( |iter| : |list_iter| ) : |elem_type| \ENDFUNCT \\
+Returns the element of the list pointed to by the iterator.
+
+\FUNCT |max|( |a| : |int|, |b| : |int| ) : |int| \ENDFUNCT \\
+Returns tha maximum of two integer values.
+
+\PROC |pop_front|( |C| : |container_type| ) \ENDPROC \\
+Removes the first element from sequential container.
+
+\FUNCT |prev|( |iter| : |list_iter| ) : |list_iter| \ENDFUNCT \\
+Gets the list iterator preceding the given iterator.
+
+\PROC |push_back|( |C| : |container_type|, |elem| : |elem_type| ) \ENDPROC \\
+Appends an element to a sequential container.
+
+\FUNCT |subsequence|( |S| : |sequence|, |start| : |int|, |end| : |int| ) : |sequence| \ENDFUNCT\\
+Returns a subsequence of |S|. |start| is the index of the first element of
+the subsequence. |end| is the index of the last element of the subsequence.
+
+\FUNCT |triplet|( |S| : |sequence|, |i| : |int| ) : |int|\ENDFUNCT\\
+Returns a triplet value of the triplet that starts at index |i| in |S|.
+
+\end{document}
+

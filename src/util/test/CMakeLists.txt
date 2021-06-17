@@ -1,0 +1,57 @@
+# $Id$
+
+NCBI_project_tags(test)
+NCBI_disable_pch()
+NCBI_headers("")
+NCBI_add_app(
+    example_value_convert
+    formatguess_unit_test
+    test_align
+    test_buffer_writer
+    test_cache_mt
+    test_checksum
+    test_compress
+    test_compress_mt
+    test_compress_archive
+    test_tar
+    test_id_mux
+    test_floating_point_comparison
+    test_get_console_password
+    test_queue_mt
+    test_math
+    test_logrotate
+    test_line_reader
+    test_porter_stemming
+    test_range_coll
+    test_rangemap
+    test_regexp
+    test_xregexp
+    test_resize_iter
+    test_scheduler
+    test_staticmap
+    test_strsearch
+    test_table
+    test_transmissionrw
+    test_thread_pool
+    test_thread_pool_old
+    test_utf8
+    test_uttp
+    test_value_convert
+    test_histogram
+    test_histogram_mt
+    test_histogram_time_series
+    test_histogram_binning
+    test_table_printer
+    test_random
+    test_timsort
+    test_metaphone
+    test_row_reader
+    test_row_reader_performance
+    test_row_reader_iana_tsv
+    test_row_reader_iana_csv
+    test_row_reader_ncbi_tsv
+    test_row_reader_excel_csv
+    test_limited_map
+    test_compile_time
+)
+

@@ -1,0 +1,85 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        local str "03_TAJ"
+      },
+      descr {
+        title "HIV-1 isolate 03_TAJ from Tajikistan integrase (pol) gene,
+ partial cds."
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 12,
+        seq-data ncbi2na '02AFD5'H
+      }
+    },
+    seq {
+      id {
+        local str "04_TAJ"
+      },
+      descr {
+        title "[organism=ia io] [topology=circular] HIV-1 isolate 04_TAJ from
+ Tajikistan integrase (pol) gene, partial cds."
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 15,
+        seq-data ncbi2na '02A57F00'H
+      }
+    },
+    seq {
+      id {
+        local str "08_TAJ"
+      },
+      descr {
+        title "HIV-1 isolate 08_TAJ from Tajikistan integrase (pol) gene,
+ partial cds."
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 18,
+        seq-data ncbi2na '1B1B1B1BF0'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 3,
+          segs denseg {
+            dim 3,
+            numseg 3,
+            ids {
+              local str "03_TAJ",
+              local str "04_TAJ",
+              local str "08_TAJ"
+            },
+            starts {
+              0,
+              0,
+              0,
+              -1,
+              12,
+              12,
+              -1,
+              -1,
+              15
+            },
+            lens {
+              12,
+              3,
+              3
+            }
+          }
+        }
+      }
+    }
+  }
+}

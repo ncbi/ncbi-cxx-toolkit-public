@@ -1,0 +1,16 @@
+# $Id$
+
+NCBI_begin_app(test_ncbi_lbos_mt)
+  NCBI_sources(test_ncbi_lbos_mt)
+  NCBI_add_definitions(LBOS_TEST_MT)
+  NCBI_uses_toolkit_libraries(test_mt xconnect)
+if(OFF)
+  NCBI_begin_test(test_ncbi_lbos_mt)
+    NCBI_set_test_command(test_ncbi_lbos_mt -repeats=2 -threads=10 lbosdev01.be-md.ncbi.nlm.nih.gov:8080)
+    NCBI_set_test_requires(in-house-resources)
+    NCBI_set_test_assets(test_ncbi_lbos_mt.ini)
+    NCBI_set_test_timeout(600)
+  NCBI_end_test()
+endif()
+NCBI_end_app()
+

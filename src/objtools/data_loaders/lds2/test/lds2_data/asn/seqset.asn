@@ -1,0 +1,90 @@
+Bioseq-set ::= {
+  level 1,
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        gi 5,
+        local str "gi5"
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 1136,
+        seq-data ncbi2na '52676DF9EFAAFDDE51BE7364A1817954252389C5BFD46BAF51E0
+1A173895AA248CB7DD79496A71BB56A8A8D69AFC4E56744A1DE9534119E03939522CED7FE7A8DF
+200681AC673106FE2CD5045349FF7E511AAFF3780A272F7900E478A0A82E895217D7B7B957305E
+5751454C542FE42DD26FC425BE9EA041D7DCE924292DFC2E7E5114663BFA03845BC5E46813A81E
+864BE520E4A82C23953D534214843ABFB814D790352E771CC2845945FE9E53806CF5FA3A16820B
+20E4903DA01EB7912509EC0937EC2F373C02271EE333828888B27352040FC20E839E4E9402BF7F
+7DE424C28020B92711208E74B9321A453623D5039F428912F7F27F7A0068E4DE1B00539C27AFF4
+47803C0ED39F33BB7B788378E806800C088783F16ED08000'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data imp {
+                key "lds_seq(seq)"
+              },
+              product whole gi 6,
+              location whole gi 5
+            },
+            {
+              data imp {
+                key "lds_seq(seq)"
+              },
+              product whole gi 7,
+              location whole local str "gi5"
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 6,
+        local str "gi6"
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 1136,
+        seq-data ncbi2na '52676DF9EFAAFDDE51BE7364A1817954252389C5BFD46BAF51E0
+1A173895AA248CB7DD79496A71BB56A8A8D69AFC4E56744A1DE9534119E03939522CED7FE7A8DF
+200681AC673106FE2CD5045349FF7E511AAFF3780A272F7900E478A0A82E895217D7B7B957305E
+5751454C542FE42DD26FC425BE9EA041D7DCE924292DFC2E7E5114663BFA03845BC5E46813A81E
+864BE520E4A82C23953D534214843ABFB814D790352E771CC2845945FE9E53806CF5FA3A16820B
+20E4903DA01EB7912509EC0937EC2F373C02271EE333828888B27352040FC20E839E4E9402BF7F
+7DE424C28020B92711208E74B9321A453623D5039F428912F7F27F7A0068E4DE1B00539C27AFF4
+47803C0ED39F33BB7B788378E806800C088783F16ED08000'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data imp {
+                key "lds_seq(seq)"
+              },
+              product whole local str "seq-gi",
+              location whole gi 6
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data imp {
+            key "lds_seq(entry)"
+          },
+          product whole local str "seq-set-gi",
+          location whole gi 5
+        }
+      }
+    }
+  }
+}

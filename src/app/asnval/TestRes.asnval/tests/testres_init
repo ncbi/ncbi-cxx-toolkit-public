@@ -1,0 +1,17 @@
+#!/bin/sh
+#Init method for the template test
+#Test waits sec before reporting success
+
+#Environment variables provided by the framework:
+#$NCBI_TESTRES_INIT_SUP_DIR         Where to take init results from upper level script
+#$NCBI_TESTRES_INIT_DIR             Where to place init scripts results
+#$NCBI_TESRES_TREE_PATH             Tree path of the test
+
+RESULTS="$NCBI_TESTRES_INIT_DIR/init_file"
+
+echo "Initializing!">"$RESULTS"
+echo "$NCBI_TESTRES_TREE_PATH" >>"$RESULTS"
+echo "Init Superdir is $TESTRES_INIT_SUP_DIR" >>"$RESUTLS"
+date 1>>"$RESULTS"
+
+exit 0

@@ -1,0 +1,10 @@
+# $Id$
+#################################
+
+XSD_PROJ = soap_dataobj
+SUB_PROJ = server client
+
+REQUIRES = serial
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

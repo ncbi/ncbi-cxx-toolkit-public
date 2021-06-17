@@ -1,0 +1,193 @@
+Jun 19, 2008
+First test release using the release procedure
+
+April 21, 2009
+version 1.9.2
+Added possibility to override command line arguments in a DEF file.
+Added generation and skipping of 'AUTOMATIC TAGS' TagDefault in ASN specifications
+Added support of long type (BigInt) attributes in Schema
+Fixed several bugs in Schema parsing, and code generation.
+
+March 15, 2010
+version 2.0.0
+Added WSDL lexer, parser and client code generation.
+Corrected documentation tag parsing.
+Corrected code generation for Schema enumeration.
+Added option to generate sample DEF file.
+
+
+June 02, 2010
+version 2.1.0
+Modified C++ code generation to use NORETURN attribute in relevant functions
+and to modify combined files.
+When processing XML schema specifications, corrected documentation parsing,
+setting default types of elements and attributes, skipping byte order marks.
+
+July 08, 2010
+version 2.1.1
+Enhanced processing of type extension definitions.
+Added processing of anySimpleType element type.
+
+July 30, 2010
+version 2.2.0
+Added possibility to use packed enum types in generated code.
+Corrected code generation to avoid identical names of nested classes.
+
+August 02, 2010
+version 2.2.1
+Enhanced to handle long path names.
+
+September 02, 2010
+version 2.2.2
+Corrected code generation of choice data objects, added ResetSelection? method.
+Corrected generation of WSDL client code. 
+
+October 26, 2010
+version 2.3.0
+Added support of sequences of elements with a default in XML schema.
+Fixed handling of default values of long and double element types.
+Corrected initialization of wrapper class objects.
+Corrected code generation for elements of type vector<char> with attributes.
+
+November 15, 2010
+version 2.3.1
+Optimized working with program registry when parsing data specification.
+
+September 19, 2011
+version 2.4.0
+Added traversal code generation.
+Added support of pseudo namespace prefixes in DTD.
+Added support of namespace qualified elements and attributes in XML.
+Fixed problem with parsing recursive element definitions in Schema.
+Modified code generation to make serialization error messages more informative.
+Corrected processing of UTF8 strings.
+
+September 22, 2011
+version 2.4.1
+Bug fix release (related to internal type names).
+
+January 23, 2012
+version 2.4.2
+Added possibility to match ASN binary data against known data types.
+Corrected code generation for SET OF SEQUENCE data type.
+When converting multiple data objects from one format to another, added data type verification.
+Added generation of serialization operators for Alias type objects.
+
+January 25, 2012
+version 2.4.3
+Bug fix release
+
+February 23, 2012
+version 2.4.4
+In XML Schema generation, corrected elementFormDefault attribute.
+
+May 18, 2012
+version 2.5.0
+Fixed bug in matching ASN binary data against known data types.
+
+
+August 09, 2012
+version 2.6.0
+Enhanced code generation of SOAP clients: keep track of element, attribute
+and type definition namespaces, analyze name clashes, define C++ subnamespaces if needed.
+Added rudimentary support of union and list type schema elements.
+
+December 04, 2012
+version 2.7.0
+Added possibiity of creating 'full alias' classes - to avoid creating multiple
+classes for the same XML type.
+Added possibility to redefine enums as strings.
+Corrected schema parser to recognize anyType type and to allow missing XMLDecl.
+Added possibility to use custom comparison in generated set class.
+Corrected initialization of UTF8 strings.
+
+December 18, 2012
+version 2.8.0
+Changed code generation to use custom type info description for CStringUTF8 data.
+
+January 18, 2013
+version 2.9.0
+Changed code generation to allow mandatory sequence members with default values.
+
+March 26, 2013
+version 2.10.0
+Added handling of XML elements with default on reading, writing, copying and skipping.
+Added processing of JSON data.
+When generating C++ code, corrected conversion of enum data defaults. 
+Fixed bug in data type guessing.
+
+October 22, 2013
+version 2.11.0
+Added support of XML nillable elements.
+Added support for tag class and implicit tagging in ASN specifications.
+Added support for component inclusion (COMPONENTS OF) in ASN specification.
+Added hint-level support of bit-fields semantics for named INTEGERs.
+Corrected code generation and serialiation of XML elements with default.
+Corrected code generation for alias to alias ASN data types.
+Corrected argument processing to not load same data specification twice.
+Modified code generation behavior to delete generated files on specification parsing error.
+
+January 07, 2015
+version 2.12.0
+Added support for optional choice variants (in XML).
+Corrected to allow blanks in XML attribute definition.
+Fixed bug in XML schema generation.
+Fixed bug in renaming nested classes.
+Changed to allow different data types when converting data file.
+
+May 27, 2015
+version 2.13.1,  CXX-5867
+Fixed code generation and serialization of sequences of base64binary elements.
+Use HTML entities in Identifier names if needed and possible.
+Added possibility to rename enum values from DEF file.
+Fixed bugs in schema parsing .
+
+June 29, 2015
+version 2.14.0,  CXX-6104
+Added option to selectively write named integers by value only.
+
+March 21, 2016
+version 2.15.0, CXX-7948
+Added mapping of certain data types to strings.
+Fixed delayed buffer in choice variants.
+Changed to print schema comments using documentation tag.
+
+July 21, 2016
+Version 2.16.0, CXX-8385
+Added option to distinguish BigInt and Int8 in ASN binary serialization.
+
+October 10, 2017
+version 2.17.0, CXX-9646
+Added generation of C++ code for global types and reusing it when defining elements of such types.
+Added generation of C++ code from JSON schema.
+Added generation of JSON schema from other specifications.
+Added support of data value restrictions.
+Added class member bitset to reference members not using their names.
+
+December 22, 2017
+version 2.18.0, CXX-9818
+Fixed problem in RPC client generator.
+
+February 15, 2018
+version 2.18.1, CXX-9904
+Fixed SOAP code generation
+
+August 31, 2018
+version 2.18.2, CXX-10216
+Fixed bugs in handling JSON schema.
+
+October 19, 2018
+version 2.19.0, CXX-10288
+Added support of named bit list in ASN.1 BIT STRING.
+
+March 27, 2019
+version 2.20.0, CXX-10563
+Corrected code generation for elements and attributes with various XML form defaults.
+Added code generation for CStringId64 data type.
+
+January 28, 2021
+version 2.21.0, CXX-11695
+Added support of CStrictId
+Corrected RPC client code generation to fully honor named reply types
+Fixed processing line endings in data specifications comments on Cygwin.
+Corrected reading JSON data files.

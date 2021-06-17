@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(unit_test_format_guess)
+  NCBI_sources(unit_test_format_guess)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xutil)
+  NCBI_add_test()
+  NCBI_project_watchers(kachalos)
+NCBI_end_app()
+

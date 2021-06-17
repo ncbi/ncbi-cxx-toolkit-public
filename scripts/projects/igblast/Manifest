@@ -1,0 +1,49 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Christiam Camacho
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+# The APP: statement describes binaries
+# The LIB: statement describes libraries
+# The DLL: statement describes shared objects
+# The ETC: statement describes configuration files
+# It is allowed to have more than one of each statements
+APP: igblastp igblastn makeblastdb blastdbcmd
+
+COPY: $srcdir/src/app/igblast/edit_imgt_file.pl $installdir/bin
+COPY: $srcdir/src/app/igblast/internal_data  $installdir
+COPY: $srcdir/src/app/igblast/optional_file  $installdir
+
+POSTBUILD: $srcdir/scripts/projects/igblast/post_build/make_installers.py -v $version $platform $installdir "$tarball" $bindir
+
+#VDB_PATH=/net/snowman/vol/projects/trace_software/vdb/vdb-versions/cxx_toolkit/2
+
+DEFAULT_CONFIGURE_FLAGS:  --without-debug --with-strip --with-openmp --with-mt --with-vdb --with-static-vdb --with-build-root=$srcdir/ReleaseMT
+
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+
+# ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
+# that. The build-root is needed so that rpmbuild can find the proper directories
+# to copy the binaries from
+Linux64-Centos   : icc : ICC.sh 19.0       --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --with-vdb=/panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt --with-nghttp2=/netopt/ncbi_tools64/nghttp2-1.40.0
+
+DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
+
+Win64    : plain : static  64  ReleaseDLL <ENV>NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-INT8-GI=1</ENV>
+
+IntelMAC    : clang : Clang.sh    --with-bin-release --without-debug --without-pcre --without-openmp --with-mt --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-vdb=/net/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt --with-libuv=/netopt/ncbi_tools/libuv-1.35.0 --with-nghttp2=/netopt/ncbi_tools/nghttp2-1.40.0
+
+USE_COMPONENTS

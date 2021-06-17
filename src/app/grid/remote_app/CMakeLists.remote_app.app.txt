@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(remote_app)
+  NCBI_sources(remote_app_wn exec_helpers)
+  NCBI_uses_toolkit_libraries(xconnserv)
+  NCBI_project_tags(grid)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()

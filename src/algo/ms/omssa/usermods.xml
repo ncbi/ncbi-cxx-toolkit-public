@@ -1,0 +1,457 @@
+<?xml version="1.0"?>
+<MSModSpecSet
+    xmlns="http://www.ncbi.nlm.nih.gov"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
+    xs:schemaLocation="http://www.ncbi.nlm.nih.gov OMSSA.xsd"
+>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod1">119</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 1</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod2">120</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 2</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod3">121</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 3</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod4">122</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 4</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod5">123</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 5</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod6">124</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 6</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod7">125</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 7</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod8">126</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 8</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod9">127</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 9</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod10">128</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 10</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod11">142</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 11</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod12">143</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 12</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod13">144</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 13</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod14">145</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 14</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod15">146</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 15</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod16">147</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 16</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod17">148</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 17</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod18">149</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 18</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod19">150</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 19</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="usermod20">151</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>User modification 20</MSModSpec_name>
+    <MSModSpec_monomass>0</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>X</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="usermod21">152</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>User modification 21</MSModSpec_name>
+     <MSModSpec_monomass>0</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>X</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+   <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="usermod22">153</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>User modification 22</MSModSpec_name>
+     <MSModSpec_monomass>0</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>X</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+   <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="usermod23">154</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>User modification 23</MSModSpec_name>
+     <MSModSpec_monomass>0</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>X</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+   <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="usermod24">155</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>User modification 24</MSModSpec_name>
+     <MSModSpec_monomass>0</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>X</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+   <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="usermod25">156</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>User modification 25</MSModSpec_name>
+     <MSModSpec_monomass>0</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>X</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+   <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="usermod26">157</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>User modification 26</MSModSpec_name>
+     <MSModSpec_monomass>0</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>X</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+   <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="usermod27">158</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>User modification 27</MSModSpec_name>
+     <MSModSpec_monomass>0</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>X</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+   <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="usermod28">159</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>User modification 28</MSModSpec_name>
+     <MSModSpec_monomass>0</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>X</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+   <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="usermod29">160</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>User modification 29</MSModSpec_name>
+     <MSModSpec_monomass>0</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>X</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+   <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="usermod30">161</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>User modification 30</MSModSpec_name>
+     <MSModSpec_monomass>0</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>X</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+</MSModSpecSet>

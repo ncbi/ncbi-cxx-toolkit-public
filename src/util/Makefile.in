@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile ("UTIL" project)
+#################################
+
+LIB_PROJ = util
+SUB_PROJ = regexp xregexp compress diff image tables sequtil bitset qparse lmdb lmdbxx test demo profile
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

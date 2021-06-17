@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_lib(xalgognomon)
+  NCBI_dataspecs(gnomon.asn)
+  NCBI_sources(
+    gnomon_engine gnomon_objmgr score gnomon_model parse hmm gnomon_seq asn1 chainer id_handler
+    annot select_alignments_alt aligncollapser glb_align
+  )
+  NCBI_uses_toolkit_libraries(xalgoseq)
+  NCBI_project_watchers(chetvern souvorov)
+NCBI_end_lib()
+

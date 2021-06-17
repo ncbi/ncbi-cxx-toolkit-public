@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(blast_services)
+  NCBI_sources(blast_services)
+  NCBI_uses_toolkit_libraries(xnetblastcli)
+  NCBI_project_watchers(madden camacho)
+NCBI_end_lib()
+

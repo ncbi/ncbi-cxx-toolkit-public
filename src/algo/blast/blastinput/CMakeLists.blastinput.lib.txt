@@ -1,0 +1,18 @@
+# $Id$
+
+NCBI_begin_lib(blastinput)
+  NCBI_sources(
+    blast_input blast_fasta_input blast_scope_src blast_args cmdline_flags
+    blast_input_aux blastp_args blastn_args rmblastn_args blastx_args
+    tblastn_args tblastx_args psiblast_args rpsblast_args rpstblastn_args
+    igblastn_args igblastp_args deltablast_args magicblast_args kblastp_args
+    blast_asn1_input
+  )
+  NCBI_add_definitions(NCBI_MODULE=BLAST)
+  NCBI_uses_toolkit_libraries(
+    seqset xnetblast
+    align_format ncbi_xloader_blastdb_rmt xblast
+  )
+  NCBI_project_watchers(madden camacho fongah2 boratyng)
+NCBI_end_lib()
+

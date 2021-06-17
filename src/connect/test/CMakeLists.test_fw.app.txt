@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_fw)
+  NCBI_sources(test_fw)
+  NCBI_uses_toolkit_libraries(connect)
+  NCBI_project_watchers(lavr)
+NCBI_end_app()
+

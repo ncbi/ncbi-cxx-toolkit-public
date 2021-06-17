@@ -1,0 +1,71 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbSNP",
+          tag str "rs7"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location 0,
+          effect no-change,
+          mapping 0,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                },
+                observation reference
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 2338270,
+        id other {
+          accession "NC_000001",
+          version 10
+        }
+      },
+      exts {
+        {
+          type str "Variation Normalization",
+          data {
+            {
+              label str "Left Interval Shifted",
+              data bool TRUE
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Test Fully Shifted : 0

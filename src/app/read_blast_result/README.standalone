@@ -1,0 +1,190 @@
+<-- README -->
+
+README for NCBI Microbial Genome Submission Check Tool
+
+This is a DEVELOPMENT/BETA project and will undergo numerous revisions.
+_________________________________________________________________________
+
+       
+       National Center for Biotechnology Information (NCBI)
+             National Library of Medicine
+             National Institutes of Health
+             8600 Rockville Pike
+             Bethesda, MD 20894, USA
+             tel: (301) 496-2475
+             fax: (301) 480-9241
+             email: info@ncbi.nlm.nih.gov (for general questions)
+             email: genomes@ncbi.nlm.nih.gov (for specific questions)
+             
+_________________________________________________________________________
+
+=========================================================================
+
+
+Microbial Genome Submission Check Tool
+
+Command line version
+
+Microbial Genome Submission Check Tool (subcheck) is for the validation of
+genome records prior to submission to GenBank. It utilizes a series of
+self-consistency checks as well as comparison of submitted annotations to
+computed annotations. Some of specified computed annotations could be
+pre-computed using BLAST and its modifications and tRNAscanSE. Currently
+there is no specific tool for predicting rRNA annotations. Please use the
+format specified in documentation
+
+DOWNLOAD
+
+Download the tarballs from FTP location ftp:/ftp.ncbi.nlm.nih.gov/...
+
+INSTALL
+
+Copy the downloaded tarballs to the directory you wish to install the tool.
+Change directory to the installation directory and install the tool by typing
+the command:
+
+tar xvzf <tarball_name>
+
+for the chosen tarballs.
+
+Format of command line:
+
+<full_path>/subcheck [-h] [-help] -in input_asn [-out output_asn]
+    [-inblast blast_res_proteins] [-inblastcdd blast_res_cdd]
+    [-intrna input_trna] [-inrrna input_rrna]
+    [-parentacc parent_genome_accession] [-inparents InputParentsFile]
+
+REQUIRED ARGUMENTS
+ -in <File_In>
+   input file in the ASN.1 format, must be either Seq-entry or Seq-submit
+
+OPTIONAL ARGUMENTS
+ -h
+   Print USAGE and DESCRIPTION;  ignore other arguments
+ -help
+   Print USAGE, DESCRIPTION and ARGUMENTS description;  ignore other arguments
+ -out <File_Out>
+   output file in the ASN.1 format, of the same type (Seq-entry or Seq-submit)
+ -inblast <File_In>
+   input file which contains the standard BLAST output results (ran with -IT
+   option) for all query proteins sequences specified in the input genome
+   against a protein database (recommended: bact_prot database of Refseq
+   proteins supplied with the distributed standalone version of this tool)
+ -inblastcdd <File_In>
+   input file which contains the standard BLAST output results for all query
+   proteins sequences specified in input_asn against the CDD database
+ -intrna <File_In>
+   input tRNAscan predictions in default output format, default value is <-in
+   parameter>.nfsa.tRNA
+ -inrrna <File_In>
+   input ribosomal RNA predictions (5S, 16S, 23S), see the manual for format,
+   default value is <-in parameter>.nfsa.rRNA
+ -parentacc <String>
+   Refseq accession of the genome which protein annotations need to be
+   excluded from BLAST output results
+ -inparents <File_In>
+   contains a list of all protein accessions/GIs for each Refseq accession/GI
+
+RESULTS
+
+The script creates several files with the results. Most of the file names are based on 
+the input file name (input_asn):
+
+<input_asn>.<problem_type>.problems.log
+
+where "problem_type" is one of the seven problem types:
+complete.overlap - Completely overlapping genes (on both strands) are reported. 
+  Annotations of this type are suspicious and should be manually inspected.
+overlap - Partial overlaps are any type of overlap above the distance of 30 
+  bases. Overlaps of this type do occur in genome annotations and are reported 
+  here for manual inspection. Many overlaps or overlaps of significant length 
+  might indicate annotation problems.
+rna.overlap - Overlaps between RNA and other features (RNA and CDS) are 
+  reported. Annotations of this type are rare and should be manually inspected.
+frameshifts - Adjacent genes on the same strand are analyzed for hits against 
+  the same subject (common BLAST hit) by comparing BLAST results. Since gene 
+  fusions/splits occur in prokaryotic genes the BLAST hits are analyzed for any 
+  subject (not the common BLAST hit) that covers 90% of the query protein, in 
+  which case the frameshift is not reported under the assumption that this gene 
+  is "real". Any pair of genes failing to meet that criteria are reported as 
+  potential frameshifts and should be manually inspected.
+partial - The results from the RPS-BLAST against conserved domains are analyzed 
+  for situations when the conserved domain is only partially covered by the 
+  query. Potential truncations will be reported (domain must cover at least 90% 
+  of the protein, whereas protein covers 80% or less of the domain). The results 
+  should be manually inspected for incorrectly annotated start sites (N-terminal 
+  truncation), frameshifts (C-terminal truncations), or any other type of 
+  potential problem.
+tRNA.missing - RNA annotations are checked with tRNAscanSE for tRNAs, and an 
+  internal ribosomal RNA database for structural RNAs. Completely missing tRNAs 
+  above a score of 60.0 and missing high-scoring ribosomal RNAs are reported. 
+  These should be examined to see if they can be added to the genome. This 
+  extension (and some others) is kept for historical reasons and will be changed 
+  to "RNA.missing" in a future revision.
+tRNA.bad.strand - Occasionally RNAs are incorrectly annotated on the wrong 
+  strand (which is difficult to do with protein coding genes). When overlapping 
+  computed and submitted RNA annotations have opposite strands they are reported 
+  and should be examined to see if the incorrect strand was used in the genome 
+  annotation.
+
+The formats of those files are described in MANUAL.standalone
+
+OPTIONAL REQUIREMENTS
+
+You might want to use following tools to generate input files:
+
+tbl2asn - often used for genome submission.
+
+http://www.ncbi.nlm.nih.gov/Genbank/tbl2asn2.html
+
+asn2all - to extract nucleotide and protein sequences from the input ASN.1 file. 
+
+ftp://ftp.ncbi.nih.gov/asn1-converters/by_program/asn2all/
+
+  Recommended command-line parameters:
+
+  To generate nucleotide sequence:
+
+  asn2all -ff -i <input_sqn> -o <nucleotide_fasta_file>
+
+  To generate protein sequences:
+
+  asn2all -ff -i <input_sqn> -v <proteins_fasta_file>
+
+BLAST - either standalone or web-based tool, both available at NCBI - to run 
+  protein sequences against a database of existing proteins. We recommend to 
+  use the refseq_protein database on the website or more rigorous database on our
+  FTP site (ftp://ftp.ncbi.nlm.nih.gov/genomes/Bacteria/all.faa.tar.gz). Instructions
+  for creating BLAST databases can be found in the BLAST documents. BLAST output
+  must be formatted with the -IT option in order to have subcheck read the results. 
+  For our internal subcheck calculations we use the following parameters:
+  -FT -IT -e 1e-06 -z 500000000
+
+RPSBLAST - either standalone (rpsblast) or web-based 
+  (http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi) tool, both available at 
+  NCBI - to run protein sequences against CDD (conserved domain database: 
+  ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd). 
+
+tRNAscan-SE - tRNA prediction tool (http://lowelab.ucsc.edu/tRNAscan-SE/) - to
+  predict tRNA locations given your nucleotide sequence.
+
+cmsearch - RNA prediction tool (http://www.sanger.ac.uk/Software/Rfam/) - to
+  predict 5S rRNA locations given your nucleotide sequence. The INFERNAL software
+  package contains cmsearch. (http://infernal.janelia.org/).
+
+You can predict 16S and 23S rRNAs by running BLAST of your nucleotide sequence 
+against databases in our package in the lib/ directory (RibosomXS, where X is 
+16S or 23S) and format the output in a format described in MANUAL.standalone
+
+-----------------------------
+
+Microbial Genome Submission Check Tool runs on Linux computers.
+
+
+
+Edited. Jan 15, 2008. NCBI
+
+
+<-- End of File -->
+
+

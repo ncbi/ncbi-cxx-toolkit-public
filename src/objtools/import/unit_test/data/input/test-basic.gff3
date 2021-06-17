@@ -1,0 +1,4 @@
+chr1	test	CDS	834	935	.	+	0	ID=chr1-cds;Parent=chr1-mrna;
+chr1	test	exon	834	935	.	+	.	ID=chr1-exon;Parent=chr1-mrna;
+chr1	test	gene	834	935	.	+	.	ID=chr1-gene;Name=the-gene;
+chr1	test	mRNA	834	935	.	+	.	ID=chr1-mrna;Parent=chr1-gene;Name=the-mrna;

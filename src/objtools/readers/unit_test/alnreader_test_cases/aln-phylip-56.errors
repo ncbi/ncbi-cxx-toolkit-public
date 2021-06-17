@@ -1,0 +1,5 @@
+Line No    : 22
+Severity   : Fatal
+Problem    : Alignment.IllegalDataLine
+Message    : Deflines were detected in your file, however some lines are missing the '>' character at the beginning of the line. Each defline must begin with '>'.
+

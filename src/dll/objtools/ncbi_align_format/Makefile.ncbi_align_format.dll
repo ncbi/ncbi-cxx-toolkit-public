@@ -1,0 +1,12 @@
+# $Id$
+
+DLL = ncbi_align_format
+
+HOSTED_LIBS    = align_format
+
+DEPENDENCIES   = ncbi_core ncbi_general \
+                 ncbi_seq ncbi_seqext ncbi_xloader_genbank \
+                 ncbi_web
+
+CPPFLAGS = -DNCBI_ALIGN_FORMAT_EXPORTS
+

@@ -1,0 +1,8 @@
+# $Id$
+
+LIB = biotree
+SRC = biotree__ biotree___
+
+
+USES_LIBRARIES =  \
+    general

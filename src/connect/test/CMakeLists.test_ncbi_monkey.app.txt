@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_app(test_ncbi_monkey)
+  NCBI_sources(test_ncbi_monkey)
+  NCBO_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xconnect test_boost)
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_set_test_assets(test_ncbi_monkey.ini)
+  NCBI_add_test()
+NCBI_end_app()
+
+

@@ -1,0 +1,13 @@
+# $Id$
+
+NCBI_begin_lib(xalnmgr)
+  NCBI_sources(
+    aln_builders aln_converters aln_generators aln_seqid aln_serial alndiag
+    alnmap alnmapprint alnmatch alnmerger alnmix alnpos_ci alnsegments
+    alnseq alnvec alnvec_iterator alnvecprint pairwise_aln sparse_aln
+    sparse_ci alntext score_builder_base aln_container
+  )
+  NCBI_uses_toolkit_libraries(tables xobjutil seqset)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()
+

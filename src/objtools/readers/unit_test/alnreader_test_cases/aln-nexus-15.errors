@@ -1,0 +1,15 @@
+Line No    : 24
+Severity   : Warning
+Problem    : Alignment.UnterminatedCommand
+Message    : File format autocorrected to comply with Nexus rules. Unexpected "end;". Appending ';' to prior command. No action required.
+
+Line No    : 31
+Severity   : Warning
+Problem    : Alignment.UnterminatedCommand
+Message    : File format autocorrected to comply with Nexus rules. Unexpected "end;". Appending ';' to prior command. No action required.
+
+Line No    : None (Encountered during pre or post processing)
+Severity   : Error
+Problem    : Alignment.InsufficientDeflineInfo
+Message    : Expected 5 deflines but finding 4. If deflines are used, each sequence must have a corresponding defline. Note that deflines are optional.
+

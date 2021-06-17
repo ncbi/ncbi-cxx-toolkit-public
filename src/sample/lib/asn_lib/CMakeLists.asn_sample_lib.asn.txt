@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_lib(asn_sample_lib)
+  NCBI_dataspecs(asn_sample_lib.asn)
+  NCBI_uses_toolkit_libraries(xser)
+NCBI_end_lib()

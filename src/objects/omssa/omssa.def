@@ -1,0 +1,17 @@
+[-]
+_export = NCBI_OMSSA_EXPORT
+
+[MSSpectrum]
+mz._type=vector
+abundance._type=vector
+
+[MSHitSet]
+hits._type=vector
+
+[MSResponse]
+hitsets._type=vector
+
+
+[MSPepHit]
+gi._type=ncbi::TGi
+gi._storage_type=ncbi::TIntId

@@ -1,0 +1,31 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+
+# Standard template to build an application
+###########################################
+
+builddir = @builddir@
+
+
+# Configured makefile variables:
+#   tools, flags, paths
+#
+include $(builddir)/Makefile.mk
+
+
+# Project definition:
+#   code sources, libraries, application name, project-specific flags and tools
+#
+include $(srcdir)/Makefile.$(TMPL).app
+
+
+# Standard rules to build an application
+#
+include $(builddir)/Makefile.$(APP_OR_NULL)
+
+
+# If the makefile's changed, we probably at least need to relink.
+#
+$(XAPP): $(srcdir)/Makefile.$(TMPL).app

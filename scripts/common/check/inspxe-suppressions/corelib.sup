@@ -1,0 +1,144 @@
+suppression = {
+	name = "ncbienv.cpp - CNcbiEnvironment::Reset() - access to _environ after putenv()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			!!!;
+			src=ncbienv.cpp,func=Reset;
+		}
+	}
+}
+suppression = {
+	name = "ncbimtx.cpp - InitializeCriticalSection - InitializeHandle"
+	type = {kernel_handle_leak}
+	stacks = {
+		allocation={
+			!!!;
+			func=InitializeHandle,src=ncbimtx.cpp;
+		}
+	}
+}
+suppression = {
+	name = "ncbimtx.cpp - InitializeCriticalSection - InitializeDynamic"
+	type = {kernel_handle_leak}
+	stacks = {
+		allocation={
+			...;
+			func=InitializeDynamic,src=ncbimtx.cpp;
+		}
+	}
+}
+suppression = {
+	name = "ncbimtx.cpp - SSytemFastMutex - resource leak (1)"
+	type = {kernel_handle_leak}
+	stacks = {
+		allocation={
+			!!!;
+			func=InitializeStatic,src=ncbimtx.cpp;
+		}
+	}
+}
+suppression = {
+	name = "ncbimtx.cpp - SSytemFastMutex - resource leak (2)"
+	type = {kernel_handle_leak}
+	stacks = {
+		allocation={
+			!!!;
+			func=InitializeStatic,src=ncbimtx.cpp;
+		}
+	}
+}
+suppression = {
+	name = "ncbimtx.cpp - CInternalRWLock mutex creation"
+	type = {kernel_handle_leak}
+	stacks = {
+		allocation={
+			!!!;
+			mod=test_ncbi_system.exe,func=CInternalRWLock,src=ncbimtx.cpp;
+		}
+	}
+}
+suppression = {
+	name = "ncbimtx.cpp - CInternalRWLock - synchronization object handle problem"
+	type = {kernel_handle_leak}
+	stacks = {
+		allocation={
+			!!!;
+			src=ncbimtx.cpp,func=CInternalRWLock;
+		}
+	}
+}
+suppression = {
+	name = "ncbimtx.cpp - InitializeCriticalSection - memory leak"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=InitializeHandle,src=ncbimtx.cpp;
+		}
+	}
+}
+suppression = {
+	name = "ncbi_safe_static.hpp - CSafeStaticRef::x_Init()"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=x_Init,src=ncbi_safe_static.hpp;
+		}
+	}
+}
+suppression = {
+	name = "ncbidiag.cpp - SetDiagStream()"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=SetDiagStream,src=ncbidiag.cpp;
+		}
+	}
+}
+suppression = {
+	name = "ncbiobj"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func="operator new",src=ncbiobj.cpp;
+		}
+	}
+}
+suppression = {
+	name = "ncbi_safe_static.hpp - CSafeStatic::x_Init() - memory leak"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=x_Init,src=ncbi_safe_static.hpp;
+		}
+	}
+}
+suppression = {
+	name = "False positive in basic_string::assign() called from CNcbiEnvironment constructor"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			func=assign,src=xstring;
+			func=Reset,src=ncbienv.cpp;
+			func=CNcbiEnvironment,src=ncbienv.cpp;
+		}
+	}
+}
+suppression = {
+	name = "False positive in basic_string::assign() called from CNcbiEnvironment constructor"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=assign,src=xstring;
+			func=Reset,src=ncbienv.cpp;
+			func=CNcbiEnvironment,src=ncbienv.cpp;
+		}
+	}
+}

@@ -1,0 +1,8 @@
+Line No    : 16
+Severity   : Error
+Message    : Bad data line: Invalid feature type "TF_binding_site"
+
+Line No    : 20
+Severity   : Fatal
+Message    : Multiparented features are not supported in Genbank mode
+

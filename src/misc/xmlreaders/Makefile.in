@@ -1,0 +1,7 @@
+# $Id$
+
+LIB_PROJ = xmlreaders
+REQUIRES = LIBXML LIBXSLT
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,17 @@
+# $Id$
+
+# Carefully crafted setup to distinguish GNU Make from Solaris Make,
+# so as to be able to take advantage of the former's extensions as
+# appropriate.  This setup revolves around the two implementations'
+# widely different semantics for the := operator.  Specifically, GNU
+# Make interprets the second line as assigning the variable is_gmake
+# the value gmake=yes (with any variable references, none in this
+# case, immediately expanded).  Solaris Make, however, interprets it
+# as assigning the variable gmake the value yes in the context of
+# building the (fictitious) is_gmake target, retaining the assignment
+# of gmake=no to is_gmake.  After including this makefile, one can
+# proceed to use $(is_gmake) in a computed include directive (such as
+# "include $(top_srcdir)/src/build-system/Makefile.meta.$(is_gmake)").
+
+is_gmake  = gmake=no
+is_gmake := gmake=yes

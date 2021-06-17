@@ -1,0 +1,13 @@
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+
+# Test suite for library "xconnect"
+#################################
+
+LIB_PROJ =
+
+APP_PROJ = check_nc_mirror
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

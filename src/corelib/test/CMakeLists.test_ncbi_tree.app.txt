@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(test_ncbi_tree)
+  NCBI_sources(test_ncbi_tree)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_add_test()
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()
+

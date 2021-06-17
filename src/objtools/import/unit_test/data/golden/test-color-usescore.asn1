@@ -1,0 +1,649 @@
+Seq-annot ::= {
+  desc {
+    title "track1",
+    name "test-color-usescore",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "description",
+          data str "track1"
+        },
+        {
+          label str "name",
+          data str "test-color-usescore"
+        },
+        {
+          label str "usescore",
+          data str "1"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local str "gene_1",
+      data region "cloneB",
+      location int {
+        from 2000,
+        to 12100,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "cds_1"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_1",
+      data region "cloneB",
+      location mix {
+        int {
+          from 2000,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 5601,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_1"
+        },
+        {
+          id local str "cds_1"
+        }
+      }
+    },
+    {
+      id local str "cds_1",
+      data region "cloneB",
+      location mix {
+        int {
+          from 5601,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 2000,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_1"
+        },
+        {
+          id local str "mrna_1"
+        }
+      }
+    },
+    {
+      id local str "gene_2",
+      data region "cloneC",
+      location int {
+        from 2000,
+        to 12300,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_2"
+        },
+        {
+          id local str "cds_2"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "129 129 129"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_2",
+      data region "cloneC",
+      location mix {
+        int {
+          from 2000,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 5601,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_2"
+        },
+        {
+          id local str "cds_2"
+        }
+      }
+    },
+    {
+      id local str "cds_2",
+      data region "cloneC",
+      location mix {
+        int {
+          from 5601,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 2000,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_2"
+        },
+        {
+          id local str "mrna_2"
+        }
+      }
+    },
+    {
+      id local str "gene_3",
+      data region "cloneD",
+      location int {
+        from 2000,
+        to 12500,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_3"
+        },
+        {
+          id local str "cds_3"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "255 255 255"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_3",
+      data region "cloneD",
+      location mix {
+        int {
+          from 2000,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 5601,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_3"
+        },
+        {
+          id local str "cds_3"
+        }
+      }
+    },
+    {
+      id local str "cds_3",
+      data region "cloneD",
+      location mix {
+        int {
+          from 5601,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 2000,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_3"
+        },
+        {
+          id local str "mrna_3"
+        }
+      }
+    },
+    {
+      id local str "gene_4",
+      data region "cloneE",
+      location int {
+        from 2000,
+        to 12700,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_4"
+        },
+        {
+          id local str "cds_4"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "245 245 245"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_4",
+      data region "cloneE",
+      location mix {
+        int {
+          from 2000,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 5601,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_4"
+        },
+        {
+          id local str "cds_4"
+        }
+      }
+    },
+    {
+      id local str "cds_4",
+      data region "cloneE",
+      location mix {
+        int {
+          from 5601,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 2000,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_4"
+        },
+        {
+          id local str "mrna_4"
+        }
+      }
+    },
+    {
+      id local str "gene_5",
+      data region "cloneF",
+      location int {
+        from 2000,
+        to 12900,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_5"
+        },
+        {
+          id local str "cds_5"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_5",
+      data region "cloneF",
+      location mix {
+        int {
+          from 2000,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 5601,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_5"
+        },
+        {
+          id local str "cds_5"
+        }
+      }
+    },
+    {
+      id local str "cds_5",
+      data region "cloneF",
+      location mix {
+        int {
+          from 5601,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 2000,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_5"
+        },
+        {
+          id local str "mrna_5"
+        }
+      }
+    },
+    {
+      id local str "gene_6",
+      data region "cloneG",
+      location int {
+        from 3000,
+        to 13100,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_6"
+        },
+        {
+          id local str "cds_6"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_6",
+      data region "cloneG",
+      location mix {
+        int {
+          from 3000,
+          to 3433,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 6601,
+          to 7000,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_6"
+        },
+        {
+          id local str "cds_6"
+        }
+      }
+    },
+    {
+      id local str "cds_6",
+      data region "cloneG",
+      location int {
+        from 3000,
+        to 3433,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "gene_6"
+        },
+        {
+          id local str "mrna_6"
+        }
+      }
+    },
+    {
+      id local str "gene_7",
+      data region "cloneH",
+      location int {
+        from 3000,
+        to 13300,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_7"
+        },
+        {
+          id local str "cds_7"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_7",
+      data region "cloneH",
+      location mix {
+        int {
+          from 3000,
+          to 3433,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 6601,
+          to 7000,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_7"
+        },
+        {
+          id local str "cds_7"
+        }
+      }
+    },
+    {
+      id local str "cds_7",
+      data region "cloneH",
+      location int {
+        from 3000,
+        to 3433,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "gene_7"
+        },
+        {
+          id local str "mrna_7"
+        }
+      }
+    },
+    {
+      id local str "gene_8",
+      data region "cloneI",
+      location int {
+        from 3000,
+        to 13500,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_8"
+        },
+        {
+          id local str "cds_8"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "255 255 255"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_8",
+      data region "cloneI",
+      location mix {
+        int {
+          from 3000,
+          to 3433,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 6601,
+          to 7000,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_8"
+        },
+        {
+          id local str "cds_8"
+        }
+      }
+    },
+    {
+      id local str "cds_8",
+      data region "cloneI",
+      location int {
+        from 3000,
+        to 3433,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "gene_8"
+        },
+        {
+          id local str "mrna_8"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+# $Id$
+
+DTD_PROJ = esummary
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

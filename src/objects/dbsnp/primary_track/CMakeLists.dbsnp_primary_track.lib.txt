@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_lib(dbsnp_ptis STATIC)
+  NCBI_dataspecs(dbsnp.proto)
+  NCBI_optional_components(PROTOBUF GRPC Z)
+  NCBI_sources(snpptis)
+  NCBI_disable_pch()
+  NCBI_uses_external_libraries(${ORIG_LIBS})
+  NCBI_uses_toolkit_libraries(seq grpc_integration)
+NCBI_end_lib()

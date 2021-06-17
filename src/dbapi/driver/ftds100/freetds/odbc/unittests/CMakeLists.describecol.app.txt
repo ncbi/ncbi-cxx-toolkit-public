@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(odbc100_describecol)
+  NCBI_sources(describecol common parser)
+  NCBI_add_definitions(NEED_FREETDS_SRCDIR)
+  NCBI_set_test_assets(odbc.ini describecol.in)
+  NCBI_add_test(test-odbc100 odbc100_describecol)
+NCBI_end_app()
+

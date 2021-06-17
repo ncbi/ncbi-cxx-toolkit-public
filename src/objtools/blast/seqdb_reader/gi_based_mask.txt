@@ -1,0 +1,152 @@
+
+Author:  Ning Ma
+Updated: Nov. 2009
+
+----- Background -----
+
+It is sometimes convenient to have mask info stored and retrieved 
+based on sequence's GI number.   The advantage is that, unlike OID 
+which may change over the time during DB updates, GI is more stable.
+Another usage is to have volume independent mask info stored along
+with alias database, so that different mask algos created on the same
+set of volume DB files do not interfere.
+
+In case where both GI-based and OID-based mask files for a given 
+BlastDB are available, GI-based masks will be used in place of OID-
+based masks if the following two conditions are simultaneously met:
+
+ - a single alias BlastDB name is passed to CSeqDB constructor
+ - within that alias file, a field named MASKLIST is found
+
+If either condition is not met, CSeqDB falls back to the OID-based 
+masks scheme.
+
+
+
+----- GI Lookup File Format -----
+
+Naming:   <any-name>.[np]og
+Encoding: binary
+
+To retrieve the mask info, GI must first be looked up for the sequence.  
+The GI lookup file  (*.[pn]og) is designed to help with this process.  
+If this file is not available, CSeqDB will parse the ASN1 header 
+file for GI (a more expensive procedure).
+
+Using the existing column data file scheme to store OID->GI lookup 
+data is possible, however, it is not efficient since GIs are fixed 
+in length and we do not need a separate index file to record the offsets.
+Instead, we design a new file format specifically for OID->GI lookup.  
+The file format could be potentially useful for any OID->X mapping 
+so long as X is fixed in size. 
+
+
+  Offset    Type    Fieldname         Notes
+  ------    ----    ---------         -----
+  0         Int4    version           The format version this
+                                      volume uses -- currently 1.
+  4         Int4    file-type         0 for OID->GI lookup
+  8         Int4    data-size         Size of each GI record (4 or 8) 
+  12        Int4    num-oid           Total number of records
+  16-32                               (currently) unused field.
+  32        Int4[]  GI[oid]           
+  32        Int8[]  GI[oid]
+
+
+
+----- GI Based Mask Files -----
+
+The GI-based mask data with different configurations (algorithm + options)
+are separately stored.  The advantage is performance gain (no need to 
+skip data when retrieving masks) and flexibility (one may easily add 
+or remove masks to an alias BlastDB without touching the rest).
+
+The mask data with each configuration is stored in the following three files:
+
+    * mask_name.g[mn]i contains the (GI, offset) pairs for every 256th GI
+    * mask_name.g[mn]o contains the (GI, offset) pairs for all GIs
+    * mask_name.g[mn]d contains the actual masks as ranges
+
+Each of these files will have binary data encoded either as large endian 
+(.gm?) or little endian (.gn?).
+
+In addition, a field named MASKLIST is added to the alias DB file format to 
+specify what GI-based mask_names are available for that BlastDB.  The order 
+of the appearance of these mask_names is significant, as the index (algo_id)
+can be used in place of mask_name to specify the database mask.
+
+
+
+----- GI Mask Index File Format -----
+
+Naming:   <mask-name>.g[mn]i
+Encoding: binary
+
+The index file includes a 32-byte header that specifies version number, 
+format type, as well as other data describing the structure of the index 
+and offset files, followed by the GI index array and their associated 
+vol/offset array.
+
+
+  Offset    Type       Fieldname         Notes
+  ------    ----       ---------         -----
+  0         Int4       version           The format version this
+                                         volume uses -- currently 1.
+  4         Int4       num-volumes       Number of volume files
+  8         Int4       GI-size           Size of each GI (in byte)
+  12        Int4       offset-size       Size of each offset (in byte)
+  16        Int4       page-size         Number of GI within each page
+  20        Int4       num-index         Number of indexed GI
+  24        Int4       num-GI            Number of GI
+  28        Int4       index-start       The starting offset of index
+  32        String(V)  algo-descr        The description of masking algo
+  --        String(V)  date              The date of file creation
+  --        PAD(z)     --                Pad to align offset array
+  --        Int4[]     GI-array          GI array
+  --        2*Int4[]   vol/offset-array  vol,offset pair array
+
+The algo-descr is a "10:The mask of Zorro" type of string that identifies 
+the algo and option used to create this mask.
+
+
+
+---- GI Mask Offset File Format -----
+
+Naming:   <mask-name>.g[mn]o
+Encoding: binary
+
+The offset file contains GI array/offset arrays arranged by pages.   Each 
+page by default has 512 GI records, followed by their corresponding offset 
+array.   The last page may have fewer records.
+
+In case of non-redundant database where one OID may map to multiple GIs,
+all GIs will be indexed in offset file and have the same offset entry to
+the data file, thus saving disk space.
+
+  Offset    Type       Fieldname         Notes
+  ------    ----       ---------         -----
+  0         Int4[]     GI-array          GI array for page 0
+  --        2*Int4[]   vol/offset-array  vol,offset pair array for page 0
+  --                                     repeat of 1 and 2 for page 1,2,...
+  
+
+---- GI Mask Data File Format -----
+
+Naming:   <mask-name>.g[mn]d
+Encoding: binary
+
+The actual mask data are stored in this file.  Each record starts with 
+an integer num_ranges to tell how many mask ranges are there, followed by
+the ranges represented by two integers.
+
+If the data of masking file exceeds the file size limit (defaults to 1G), the
+data is split into multiple volume files.  In the latter case, the name of each
+file would be <mask-name>.[0-9][0-9].g[mn]d.  
+
+
+  Offset    Type       Fieldname         Notes
+  ------    ----       ---------         -----
+  0         Int4       num_ranges        Number of masks this sequence has
+  4         Int4[]     range-array       masks stored as range array
+  --                                     repeat of 1 and 2 for more sequences
+

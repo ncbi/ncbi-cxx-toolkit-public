@@ -1,0 +1,6 @@
+[Linker]
+AdditionalOptions = mpr.lib
+
+
+
+

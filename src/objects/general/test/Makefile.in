@@ -1,0 +1,7 @@
+# $Id$
+
+APP_PROJ = test_date test_uoconv test_userfield
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

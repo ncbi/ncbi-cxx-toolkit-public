@@ -1,0 +1,437 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "Annot:STS",
+      tag id 30240931
+    }
+  },
+  inst {
+    repr delta,
+    mol rna,
+    length 3482,
+    topology not-set,
+    ext delta {
+      loc int {
+        from 0,
+        to 3481,
+        id gi 30240931
+      }
+    }
+  },
+  annot {
+    {
+      db other,
+      name "Annot:STS",
+      data ftable {
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 3307,
+            to 3433,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "SHGC-31898"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 14622
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 1838,
+            to 2070,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "REN56726"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 381526
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 1591,
+            to 1857,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "REN56727"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 381527
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 2038,
+            to 2742,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "ECD06594"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 287654
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 2058,
+            to 2305,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "REN56725"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 381525
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 1345,
+            to 1601,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "REN56728"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 381528
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 3318,
+            to 3430,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "G32275"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 116873
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 2726,
+            to 2977,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "REN56722"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 381522
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 2283,
+            to 2531,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "REN56724"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 381524
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 910,
+            to 1147,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "REN56749"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 381549
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 250,
+            to 490,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "REN56824"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 381624
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 3318,
+            to 3430,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "A005R01"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 11215
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 1353,
+            to 2108,
+            strand plus,
+            id gi 30240931
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 468401
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 2968,
+            to 3221,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "REN56721"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 381521
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 2507,
+            to 2752,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "REN56723"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 381523
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 50,
+            to 275,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "REN56825"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 381625
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 1923,
+            to 2116,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "STS-AA040336"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 53135
+            }
+          }
+        },
+        {
+          data imp {
+            key "STS"
+          },
+          location int {
+            from 3202,
+            to 3411,
+            strand plus,
+            id gi 30240931
+          },
+          qual {
+            {
+              qual "standard_name",
+              val "STS-W49531"
+            }
+          },
+          dbxref {
+            {
+              db "UniSTS",
+              tag id 66390
+            }
+          }
+        }
+      }
+    }
+  }
+}

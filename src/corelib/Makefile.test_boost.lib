@@ -1,0 +1,15 @@
+# $Id$
+
+SRC = test_boost teamcity_messages
+LIB = test_boost
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+
+REQUIRES = Boost.Test.Included
+
+WATCHERS = vakatov satskyse
+PROJ_TAG = test
+
+
+USES_LIBRARIES =  \
+    xncbi

@@ -1,0 +1,80 @@
+Manual testing of the DB connectivity
+-------------------------------------
+
+
+./test_netstorage_rpc -> ./netstoraged -> ./netcat -> MSSQL
+
+
+1. Detect the MS SQL address via executing in MS SQL Server Studio:
+   select @@SERVERNAME
+   and then, e.g.
+   $ host mssql113
+
+2. Have GNU netcat e.g. 0.7.1 at hand to create a proxy:
+   $ ./netcat -L mssql113.ncbi.nlm.nih.gov:1433 -p 1433
+
+   Attention: port 1433 is vitally important. Simple DB API will not work if
+   the port number is anything but 1433
+
+   Presence or absence of a DB connection is imitated via running/killing netcat
+
+3. netstoraged.ini must have a service pointing to netcat, e.g.
+
+   [database]
+   service=localhost:1433
+   user_name=netstorage_write
+   password=allowed_write
+   database=NETSTORAGE
+
+4. netstoraged.ini must have an api_key for filetrack, e.g.
+
+   [netstorage_api]
+   netcache=netcache_api
+   filetrack=filetrack
+   [filetrack]
+   api_key=bqyMqDEHsQ3foORxBO87FMNhXjv9LxuzF9Rbs4HLuiaf2pHOku7D9jDRxxyiCtp2
+
+5. netstoraged.ini must have a service configured for test_netstorage_rpc the
+   way it uses for connecting, e.g.
+
+   [metadata_conf]
+   service_name_01=iebdev11.be-md.ncbi.nlm.nih.gov:9822
+
+6. netstoraged.ini server port must match the one from the metadata config
+   service, e.g.
+
+   [server]
+   port=9822
+
+7. test_netstorage_rpc should be manually tweaked to have a direct connection
+   to the server:
+
+   connect/services/test/test_netstorage_rpc.cpp:
+
+   #define NETSTORAGE_SERVICE_NAME "iebdev11.be-md.ncbi.nlm.nih.gov:9822"
+
+
+Checking that the things are going as expected could be done via looking at
+- top -> to control the threads
+- MS SQL Server Studio -> to control records in the DB
+- tail -f netstoraged.log -> to control incoming commands
+
+
+
+List of tests for the DB connections:
+
+No connection at start
+----------------------
+1. Connection appears, data
+2. Data, connection appears, data
+
+There is a connection at start
+------------------------------
+1. Connection disappears, connection appears, data
+2. Data, connection disappears, connection appears, data
+3. Data, connection disappears, data, connection disappears, data
+4. Connection disappears, data, connection appears, data
+5. Data, connection disappears, connection appears, connection disappears, connection appears, data
+6. Connection disappears, data, data,·connection appears, data
+
+

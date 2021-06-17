@@ -1,0 +1,59 @@
+Is Reference Correct? : 0 . G . A
+Check Variation type: 3
+Ref/Alt : G - T
+Seq-feat ::= {
+  data variation {
+    name "NM_000426.3:c.9212-1G>T",
+    data set {
+      type package,
+      variations {
+        {
+          data instance {
+            type snv,
+            delta {
+              {
+                seq literal {
+                  length 1
+                },
+                multiplier -1,
+                action offset
+              },
+              {
+                seq literal {
+                  length 1,
+                  seq-data iupacna "T"
+                }
+              }
+            }
+          }
+        },
+        {
+          data instance {
+            type identity,
+            delta {
+              {
+                seq literal {
+                  length 1
+                },
+                multiplier -1,
+                action offset
+              },
+              {
+                seq literal {
+                  length 1,
+                  seq-data iupacna "G"
+                }
+              }
+            },
+            observation asserted
+          }
+        }
+      }
+    }
+  },
+  location pnt {
+    point 9316,
+    strand plus,
+    id gi 119466530
+  }
+}

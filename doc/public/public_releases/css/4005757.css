@@ -1,0 +1,1371 @@
+/******  Styles for new header ******/
+
+#toolkit_header {
+	color:white;
+	font-family: times new roman;
+    	font-size: 1.8em;
+    	line-height: 1.5;
+}
+
+
+.search{
+	width:50%;
+}
+
+.search table{border-collapse:separate;}
+
+.header{
+	padding-bottom:5px;
+}
+
+
+.search td {border-style:none;}
+.search tr {border-style:none;}
+tr.option {color:white;}
+
+#search_box{
+    border-top:thin solid  #e5e5e5;
+    border-right:thin solid #e5e5e5;
+    border-bottom:0;
+    border-left:thin solid  #e5e5e5;
+    box-shadow:0px 1px 1px 1px #e5e5e5;
+    float:left;
+    height:16px;
+    margin:.8em 0 0 .8em; 
+    outline:0;
+    padding:.4em 0 .4em .6em; 
+    width:70%; 
+    min-width:150px;
+    max-width:400px;
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+#google_search {
+	margin-left:1.2em;
+}  
+#button-holder{
+    background-color:#f1f1f1;
+    border-top:thin solid #e5e5e5;
+    box-shadow:1px 1px 1px 1px #e5e5e5;
+    cursor:pointer;
+    float:left;
+    height:27px;
+    margin:0.8em 0 0 0;
+    text-align:center;
+    width:50px;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+  
+#button-holder img{
+    margin:4px;
+    width:20px; 
+}
+
+.ncbi_logo{
+	position:absolute; right:10px;
+	max-height: 24px;
+    	padding: 2.2em;
+}
+
+.nvgtn {
+	padding-top:15px;
+}
+
+#tkb_public {padding-top:20px;}
+
+/******  END - Styles for new header ******/
+
+/******  Footer styling  *******/
+.footer_title {padding:5px;}
+.footer_title H1 {color: #724128;}
+
+/******** Make large tables in <div class="container"> scrollable like in the old book *******/
+
+/*
+div.container tbody {
+    	overflow: auto;
+	max-width: none;
+	max-height: 500px;	
+}
+*/
+/********************************************************************/
+/*  ComponentID=3734262 /sandbox/cfm/Components/BESetSelectorFormCSS@1.2  */
+
+div#besetsel-form h3 {
+  color: white;
+}
+
+div.besetsel-body {
+  margin-left: 1em;
+}
+
+div#besetsel-form div {
+  margin-bottom: .5em;
+}
+
+div#besetsel-form a {
+  color:white;
+}
+div#besetsel-form a:hover {
+  background-color: #666;
+}
+
+/* 
+  Styles for the sidecontent.  These were adapted from the jQuery sidecontent
+  plugin documentation:  http://www.stevefenton.co.uk/Content/Jquery-Side-Content/  
+*/
+
+.sidecontentpullout {
+	background-color: #c00;
+	color: white;
+	padding: 4px 3px;
+	-moz-border-radius-bottomleft: 1em;
+	-moz-border-radius-topleft: 1em;
+	-webkit-border-bottom-left-radius: 1em;
+	-webkit-border-top-left-radius: 1em;
+	border-bottom-left-radius: 1em;
+	border-top-left-radius: 1em;
+	font-size: 1.2em;
+	opacity: 1 !important;
+}
+
+.sidecontentpullout:hover {
+	background-color: #444444;
+	color: white;
+	opacity: 1 !important;
+}
+
+.sidecontent {
+    font-size: 1.2em;
+	background-color: black;
+	color: white;
+	-moz-border-radius-bottomleft: 1em;
+	-webkit-border-bottom-left-radius: 1em;
+	border-bottom-left-radius: 1em;
+	zoom: 1;
+	z-index: 10000 !important;
+}
+
+.sidecontent > div > div {
+	padding-left: 10px;
+	padding-right: 40px;
+}
+
+.sidecontent h2 { color: white; }
+.sidecontent a { color: white; display: block; margin: 0; padding: 2px 5px;}
+.sidecontent a:hover { background-color: #666;}
+
+.sidecontent, .sidecontentpullout { position: fixed !important; }
+
+.sctable td { border: none; padding-right: 5px;}
+
+/********************************************************************/
+/*  ComponentID=3974050 /projects/standards/standard_base_css@3.9  */
+
+/* typography */
+body{font:62.5%/1.3846 arial,helvetica,clean,sans-serif;background-color:#ccc;margin:0}
+.grid{font-size: 1.3em}
+.content {
+    font-size: 1.09em;
+    line-height: 1.45em;
+}
+
+
+/*general*/
+img{border:0}
+abbr,acronym{cursor:help;border-bottom:1px dotted #000;}
+blockquote{margin:1.3846em 1em;}
+p,table,pre,fieldset,dl{margin: 0.6923em 0;}
+ol,ul{margin: 0.6923em 1em 0.6923em inherit}
+dl dd{margin-left:1em;}
+table{border-collapse:collapse; margin:1.3846em 0;}
+thead{border-bottom:1px solid #eee;}
+tfoot{border-top:1px solid #eee;}
+th{text-align:center;background-color:#f0f0f0;}
+th,td{padding:0.2em;border:1px solid #ddd;}
+caption{margin-bottom:.5em;text-align:center;}
+fieldset {border: 0;}
+
+button{cursor:pointer;}
+input,button,textarea{margin:2px;}
+input[type="checkbox"] {margin: 3px 3px 3px 4px;}
+textarea {font-family: monospace; font-size: 1.2296em; *font-size:1em; vertical-align:baseline;}
+
+/* header typography */
+/* all should be used in the context of 13px font-size, try to add to multiple of 18px for consistent vertical rhythm */
+h1,.h1{font-size: 1.3846em; line-height:1.5; margin:1em 0 .5em; } /* font-size of 18px, line-height of 27px */
+h2,.h2{font-size: 1.2307em; line-height:1.125; margin:1.125em 0 .5625em;} /* font-size of 16px, line-height of 18px */
+h3,.h3{font-size: 1.0769em; line-height:1.2857; margin:1.2856em 0 .6428em; } /* font-size of 14px, line-height of 18px */
+
+h4,h5,h6,h3.inline{font-size: 1em; margin:1.3846em 0 .6923em; } /* line-height of 18px */
+h5,.h5{font-style:italic;font-weight:normal;}
+h6, .h6 {font-weight: normal;}
+
+h4,.h4{color:#59331f;}
+h3,.h3{color:#724128;}
+h2,.h2{color:#985735;}
+h1,.h1{color:#000;}
+
+
+h2, .h2 {
+    margin: 2.6em 0px 1em;
+}
+h3, .h3 {
+    margin: 2em 0px .5em;
+}
+h4, .h4 {
+    margin: 1.6em 0px .2em;
+}
+
+
+h2 { 
+    border-top: 1px solid rgb(151, 176, 200);
+    padding-top: .9em;
+}
+
+/*InlineHeaders*/
+h3.inline,h4.inline,h5.inline,h6.inline{display:inline;float:left;margin:0 0 -0.125em;padding-right:.3em}
+
+
+/* typography helpers */
+/* use in context of 13px font-size */
+.whole_rhythm {margin: 1.3846em 0} /* 18px margin */
+.half_rhythm {margin: .6923em 0} /* 9px margin */
+.no_top_margin{margin-top:0}
+.no_bottom_margin{margin-bottom:0}
+.no_margin{margin:0}
+
+/* proposed link colors */
+.content a{color:#2f4a8b}
+.content a:hover,.content a:active{color:#985735}
+.content a:visited{color:#642a8f}
+
+/*.no_bullets{list-style-type:none}*/
+.inline_list,.inline_list_right{list-style-type:none;margin:0;padding:0}
+.inline_list li{display:inline;margin-right:.3em}     /* needs to be a standard distance here and the next. */
+.inline_list_right li{display:inline;margin-left:.4em;}
+.column_list{list-style-type:none;margin:0;padding:0}
+.column_list li{float:left;width:8em}
+.offscreen{text-indent:-9999px}
+.offscreen_noflow{float:left;text-indent:-9999em;_display:block;margin:0;padding:0;/*safari bugfix:*/height:0;}
+.left{float:left}
+.right{float:right}
+.align_right{text-align:right}
+.hidden{display:none}
+.nowrap{white-space:nowrap}
+.noborder{border:0}
+body .no_max_width{max-width:none;overflow:auto}
+.inline_block{display:-moz-inline-box;display:inline-block;*display:inline;zoom:1;}
+.clearfix:before,.clearfix:after{content:"";display:table}.clearfix:after{clear:both}.clearfix{zoom:1}
+
+.small,sup,sub{font-size:.8461em; line-height: 1.6363em;} /*11px font-size */
+.small sup,.small sub{font-size:1em}
+sup,sub{position:relative;vertical-align:baseline;}
+sup{top:-.5em}
+sub{top:.25em}
+
+.shadow {-webkit-box-shadow: 0.4em 0.4em 0.5em rgba(0,0,0,.3);-moz-box-shadow: 0.4em 0.4em 0.5em rgba(0,0,0,.3);box-shadow: 0.4em 0.4em 0.5em rgba(0,0,0,.3)}
+
+/*icon blocks*/
+.iconblock{overflow:hidden}
+.icnblk_img{text-decoration:none;float:left;margin-right:1em;cursor:pointer}
+.icnblk_img_right { float: right; margin-right: 0; margin-left: 1em;}
+.icnblk_cntnt{display:table-cell;vertical-align:top;*zoom:1}
+.icnblk_cntnt h1,.icnblk_cntnt h2,.icnblk_cntnt h3,.icnblk_cntnt h4{margin:0 0 .6923em}
+
+
+/********************************************************************/
+/*  ComponentID=3917732 /projects/standards/standard_grid_css@1.6  */
+
+.grid{ min-width:800px; max-width:1200px; width:100%; clear:both; margin:0 auto; text-align:left;overflow:hidden }
+
+.col { margin-right: 1%; float: left; background-color: #fff; overflow:hidden; }
+.last { *zoom:1; *margin-right:0; _margin-right:-6px;  }
+.col.last {float:right;}
+.one_col { width: 7.3333%; }
+.two_col { width: 15.6664%; }
+.three_col { width: 23.9999%; }
+.four_col { width: 32.3333%; }
+.five_col { width: 40.6666%; }
+.six_col { width: 48.9999% }
+.seven_col { width: 57.3333%; }
+.eight_col { width: 65.6666%; }
+.nine_col { width: 73.9999%; }
+.ten_col { width: 82.3333%; }
+.eleven_col { width: 90.6666%; }
+.twelve_col { width: 98.9999%; }
+
+@media screen and (max-width: 1200px) {
+	body > .grid > .twelve_col { width: 100%; }
+}
+
+/********************************************************************/
+/*  ComponentID=3394943 /projects/PAF/BaseComponents/Support/PAFRestyleDebugConsoleCSS@1.3  */
+
+/* Make portal debug console suck slightly less */
+body div.portal-debug-location#portal-debug-console,
+body div#portal-debug-console  {
+    font-family: Arial, Sans-Serif;
+}
+
+div.portal-debug-attribute-value {
+    font-family: Courier, Monospace;
+    font-size: 1.2em;
+    line-height: 1.5;
+    width: 90%;
+    padding: 0;
+    margin-left: 2px;
+    color: #222;
+}
+
+body div.portal-debug-location#portal-debug-console {
+    border: solid 1px #aaa;    
+    margin: 0;
+    padding: 2px;
+    background-color: #fff;
+    width: 96.5%;
+    overflow: scroll;
+    margin: 2em;
+    height: 600px;
+    font-family: arial, helvetica, sans-serif;
+}
+
+span.pagefixtures { width:100%; display:block; clear:both;}
+
+body div#portaldata {
+font-size: 1.3em;
+}
+
+body div.portal-debug-message {
+    margin: 5px;
+    background-color: #fff;
+    border: none;
+    border: solid 1px #ccc;
+    border-width: 1px 0 0 1px;
+}
+
+body div.portal-debug-error {
+    color: #c00;
+    background-color: #fcc;
+    font-family: Courier, Monospace;
+    font-size: 1.2em;
+    padding: 6px;
+}
+
+body div.portal-debug-location#portal-debug-console div.portal-debug-text {
+font-family: Courier, Monospace;
+padding: 6px;
+}
+
+body div.portal-debug-location {
+    font-size: 1.2em;
+    font-weight: normal;
+    background-color: #ddddd0;
+    border: none;
+    border-top: solid 1px #aaa;
+    color: #222;
+    margin:0;
+    padding: 3px;
+}
+
+body div.portal-debug-header {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin:0;
+    padding:3px 0 0 3px;
+    color: #444;
+}
+
+body div.portal-debug-warning {
+   padding: 3px; 
+   background-color: #ee8;
+}
+
+
+body div.portal-debug-xslttime,
+body div.portal-debug-backendtime {
+    font-family: Courier;
+    font-size: 1.2em;
+    width: 90%;
+    margin-left: 16em;
+    padding: 2px 0 0 0;
+    color: #00f;
+}
+
+#debug_call_times div.portal-debug-header {
+width: 16em;
+float: left;
+}
+#debug_call_times div.portal-debug-backendtime,
+#debug_call_tiems div.portal-debug-xslttime {
+margin-top: 3px;
+}
+
+#portal-debug-console div.red { background-color: red; }
+#portal-debug-console div.orange { background-color: orange; }
+#portal-debug-console div.yellow { background-color: yellow; }
+#portal-debug-console div.green { background-color: lime; }
+#portal-debug-console div.blue { background-color: dodgerblue; }
+#portal-debug-console div.purple { background-color: mediumpurple; }
+#portal-debug-console div.pink { background-color: hotpink; }
+#portal-debug-console div.gray { background-color: silver; }
+#portal-debug-console div.gold { background-color: gold; }
+#portal-debug-console div.white { background-color: white; }
+
+
+dl#portaldata,
+dl#portaldata pre {
+font-family: Courier;
+font-size: 10pt;
+margin: 2em;
+padding: 1em 1em 1em 0;
+background-color: white;
+border: solid 1px #ccc;
+}
+
+dl#portaldata dt,
+dl#portaldata dd {
+margin-bottom: 0.5em;
+min-height: 1.8em;
+font-family: courier, fixed, monospace;
+}
+
+dl#portaldata dd pre { white-space: pre; }
+
+dl#portaldata dd.empty {
+background-color: transparent;
+}
+
+dl#portaldata dt {
+float: left;
+width: 14em;
+text-align: right;
+clear: left;
+}
+
+dl#portaldata dd {
+margin-left: 14.5em;
+border-left: solid 1px #ccc;
+padding-left: 0.5em;
+background-color: #eeeee0;
+}
+
+dl#paf-debug dd pre {
+    font-size: 1em;
+}
+
+/********************************************************************/
+/*  ComponentID=251717 /projects/PAF/BaseComponents/Support/PAFAppResourcesLogoImageCSS@1.1  */
+
+h1.res_name a.imglogo {
+    background: transparent url(/portal/portal3rc.fcgi/4048106/img/251741) no-repeat scroll 0% 0%;
+    display: block;
+    height: 45px;
+    text-indent: -9999px;
+    width: 165px;
+}
+
+/********************************************************************/
+/*  ComponentID=3624516 /projects/cppdocs/cppdocs/AppCSS@1.2  */
+
+/* Use this file for CSS rules that should be on every page. */
+.dbheader .headerimage { background-image: url(/portal/portal3rc.fcgi/4048106/img/1099791); }
+.charmap fieldset { border: solid 1px #c00 !important; padding: 5px; }
+img[src^='img/'] { max-width: 100%; }
+
+#maincontent.content .col1 { margin:0 1.231em 2em 1.231em; }
+#maincontent.content.content { padding-left: 0; }
+
+
+/********************************************************************/
+/*  ComponentID=14534 /projects/PAF/BaseComponents/Support/PAFJSCheckCSS@1.2  */
+
+noscript p.nojs {
+	background: #ffb url(/portal/portal3rc.fcgi/4048106/img/67327) no-repeat 5px center;
+	padding: 4px;
+	padding-left: 28px;
+	margin:0;	
+}
+
+/********************************************************************/
+/*  ComponentID=3534283 /projects/PAF/Pages/SimpleStaticPage/PAFSimpleStaticPageCSS@1.8  */
+
+.last-updated {text-align: right; margin-right: 1em; color: #777; }
+
+body.paf-nav .col1 { float: left; width: 70%;}
+body.paf-nav .col2 { width: 28%; margin-left: 72%;}
+#paf-nav .portlet ul li a.paf-nav-current { text-decoration: none; color: black; font-weight: bold; }
+
+/* Print style rules for "last updated" at bottom of last page */
+@media print {
+   html, body { height: 100%; }
+   div.page > div.container { min-height: 100%; margin-bottom: -20px; padding-bottom: 52px; position: relative;  }
+   p.last-updated { position: relative; bottom: 0;  right: 0; height: 24px; color: black; }
+
+}
+
+@page { margin: 0.75in; }
+
+
+/********************************************************************/
+/*  ComponentID=4024054 /projects/standards/standard_portlet_css@1.35  */
+
+.portlet { border-top: .4em solid #97b0c8; padding-top: .461em; margin: .769em 0 2.154em 0; overflow: visible; line-height: 1.231em; zoom:1; }
+.portlet h1, .portlet h2, .portlet h3, .portlet h4, .portlet h5, .portlet h6 {color: #985735; font-weight: bold; display: inline;  }
+.portlet .whatsthis {color: #14376c; white-space: nowrap; margin-left: .3em;}
+.portlet ul { margin: 0; padding: 0; }
+.portlet ul li { list-style-type: none; margin-top: .461em; border-bottom: 1px dotted #CCC; padding-bottom: 1px; position: relative; overflow: visible; zoom:1; /*_height:1.6em;_overflow:hidden;*/ }
+.portlet .portlet_list li { border-bottom: 0; }
+.portlet ul li a { font-weight: normal; color: #14376c; text-decoration: none; }
+.portlet ul li a:hover,.portlet ul li a:active{border-bottom:0}
+.portlet ul a { _display: block; _float: left; _clear: left; }
+.portlet .seemore { display: block; text-align: right; color: #14376c; font-size: .923em; text-decoration: none; margin-top: .8em; }
+.portlet .portlet_section_header { text-decoration: none; font-weight: bold; color: #000; border-bottom:0 } /* Will style both links and spans */
+
+.portlet li.two_line { height: 2.461em; height\0: 2.361em; overflow: hidden; }
+.portlet .two_line a { max-height: 2.453em; overflow: hidden; display: block; }
+.portlet .long_info, .portlet p, .portlet .two_line .source, .portlet .one_line_source, .portlet_content .image .desc, .portlet ul li .desc a { color: #777;}
+.portlet .two_line .source, .portlet .one_line_source { white-space: nowrap; position: absolute; right: 0; background-color: white; padding-left: .3em; }
+.portlet .two_line .source { top: 1.231em; }
+.portlet .two_line .tertiary { font-size: .769em; color: #777; position: absolute; right:0; background-color: white; padding: .1em 0 0 .3em; top: 1.6em; top\0: 1.5em; }
+
+.portlet .portlet_content p { margin: .8em 0; }
+.portlet .buttonwrap { float: left; position: relative; top: -.1em; overflow: visible; }
+.portlet .invert { color: #fff; background-color: #14376c; padding: 0 .2em; }
+.portlet .tertiary { color: #777; text-align: right; line-height: 1.4em; position: relative; top: .1em; }
+
+.portlet_content { position: relative; margin: 0; }
+.portlet_content textarea { margin: 0 0 .9em; }
+.portlet_content img { margin: .3em 1.4em .7em 0;}
+.portlet_content .image { display: block; overflow: auto; overflow:hidden\0; }
+.portlet_content .image .img_link { float: left; }
+
+.portlet_shutter { background: url(/portal/portal3rc.fcgi/4048106/img/32197) no-repeat scroll left top;  display: block; float: right; width: 15px; height: 15px; position: absolute; top: -.2em; margin-left: .6em; right: 0; }
+.shutter_closed { background-position: left bottom; }
+.portlet .related li { border-bottom: 0; }
+.portlet .right { text-align: right; }
+
+.ra_qry, .ra_rcd { padding-left: 2em; }
+.ra_qry { background: transparent url(/portal/portal3rc.fcgi/4048106/img/32182) no-repeat scroll 0 1px; }
+.ra_rcd { background: transparent url(/portal/portal3rc.fcgi/4048106/img/32183) no-repeat scroll 0 1px; }
+
+.sensor {border:1px solid #97B0C8;background-color:#FEFEFF;padding:0;margin:1em 0}
+.sensor_inner {border:3px solid #D7E2EC;background-color:#FEFEFF;padding:0 1em 1em;margin:0}
+.sensor .sensor_head { margin-bottom: 0; position: relative}
+.sensor .sensor_head h3 { font-weight: normal; }
+.sensor h3,.sensor h4,.sensor h5,.sensor h6{margin:.6923em 0 0}
+.sensor .sensor_content{margin-bottom:1.1em}
+.sensor p{margin:0}
+.sensor .portlet_shutter { display: none; }
+.no_p_margins{margin:0}
+
+/*shared*/
+.portlet_head{margin-bottom:.461em;position: relative}
+.portlet_title,.sensor_title{margin-right: 2em}
+.portlet_title h3 { line-height: inherit; }
+
+/********************************************************************/
+/*  ComponentID=1778801 /projects/PAF/Pages/SimpleStaticPage/PAFSimpleStaticPageDevCSS@1.1  */
+
+
+
+.sidecontentpullout {
+	background-color: #c00;
+	color: white;
+	padding: 4px 3px;
+	-moz-border-radius-bottomleft: 1em;
+	-moz-border-radius-topleft: 1em;
+	-webkit-border-bottom-left-radius: 1em;
+	-webkit-border-top-left-radius: 1em;
+	border-bottom-left-radius: 1em;
+	border-top-left-radius: 1em;
+	font-size: 1.2em;
+	opacity: 1 !important;
+}
+
+.sidecontentpullout:hover {
+	background-color: #444444;
+	color: white;
+	opacity: 1 !important;
+}
+
+.sidecontent {
+    font-size: 1.2em;
+	background-color: black;
+	color: white;
+	-moz-border-radius-bottomleft: 1em;
+	-webkit-border-bottom-left-radius: 1em;
+	border-bottom-left-radius: 1em;
+	zoom: 1;
+	z-index: 10000 !important;
+}
+
+.sidecontent > div > div {
+	padding-left: 10px;
+	padding-right: 40px;
+}
+
+.sidecontent h2 { color: white; }
+.sidecontent a { color: white; display: block; margin: 0; padding: 2px 5px;}
+.sidecontent a:hover { background-color: #666;}
+
+.sidecontent, .sidecontentpullout { position: fixed !important; }
+
+.sctable td { border: none; padding-right: 5px;}
+
+/********************************************************************/
+/*  ComponentID=36060 /imported/WebDesign/historyportletCSS@3.3  */
+
+/******************************************/
+/* historyportletCSS */
+/******************************************/
+
+div#HTDisplay ul li a.hidden {
+    display:none;
+}
+
+
+div#HTDisplay div.action {    
+    overflow:hidden;  
+    width: 100%; /*IE 6*/
+}
+
+div#HTDisplay div.action a {
+    margin: 0em .5em .25em .5em;
+    float: right;    
+    color:#14376C;
+    font-size:1.1em;    
+}
+
+div#HTDisplay p {
+    clear: both;
+    /*font-size:85%;*/
+    color:#14376C;
+    font-size:1.2em; 
+    margin: 1.2em 0em 0.6em 0.5em;
+}
+
+div#HTDisplay p a {   
+    color:#14376C;
+}
+
+
+
+/*************************************************
+* show and hide messages and Turn on/off links
+*
+**************************************************/
+div#HTDisplay p, div#HTDisplay .action a.HTOff, div#HTDisplay.HTOff .action a.HTOn {
+    display:none;
+}
+
+div#HTDisplay.HTOff p.HTOff, div#HTDisplay.HTOn p.HTOn {
+    display:block;
+}
+
+div#HTDisplay.HTOff .action a.HTOff, div#HTDisplay.HTOn .action a.HTOn {
+    display:block;
+}
+
+div#HTDisplay ul.hide {
+    display:none;
+}
+
+div#HTDisplay p.Err {
+    display:block;
+}
+
+div#HTDisplay.HTOff a.seemore, div#HTDisplay.HTOn a.seemore {
+    display:none;
+}
+
+
+/*------------------------------------  Popup History Window -------------------------------------------*/
+body .popper {font-size: 1.2em;} /*moved from Entrez_PageLayout_css (coz other poppers are using jig now)*/
+
+div.popper p {
+/*margin-top: 0;
+margin-bottom: .25em;*/
+margin: 0 0 0.25em 0;
+}
+/*---*/
+
+p#htbpcit,
+p.pmid {
+font-size: 85%;
+display: block;
+}
+
+p#htbpcit {
+font-style: italic;
+}
+
+#htbpopper.hidden {
+display: none;
+}
+
+
+/********************************************************************/
+/*  ComponentID=35809 /projects/entrez/core/Entrez_DiscoveryLinks_CSS@1.3  */
+
+#content ul.DiscoverySection, .content ul.DiscoverySectionc{
+}
+
+#content li.DiscoverySectionTitle, .content li.DiscoverySectionTitle{
+    color:#1356D8;;
+    font-weight:bold;
+    border-bottom:1px solid #CCCCCC;
+    padding-top: 1em;
+    padding-bottom: 0.2em;
+}
+
+#content li.DiscoveryItem, .content li.DiscoveryItem {
+   background: url(/portal:img/ra_red) no-repeat top left;
+   padding-left: 1.2em;
+   padding-bottom: 0.3em; 
+   font-size:0.9em;
+}
+
+#content li.DiscoveryItem a, .content li.DiscoveryItem a {
+    color:#232323;
+    border-bottom: none;
+}
+
+#content li.DiscoveryItem a: hover, .content li.DiscoveryItem a: hover {
+    text-decoration: underline;
+}
+
+#content li.DiscoveryAllLinks, .content li.DiscoveryAllLinks {
+    text-align:right;
+    font-size:0.9em;
+    border-bottom:1px solid #CCCCCC;
+    padding-bottom: 0.3em; 
+}
+
+#content li.DiscoveryAllLinks a, .content li.DiscoveryAllLinks a {
+    color: #CC0000;
+    text-decoration: underline;
+}
+
+/********************************************************************/
+/*  ComponentID=9685 /imported/WebDesign/LinkListPageSection_Css@1.3  */
+
+div.port li.item em.linklist.error{
+    color:#CC0000;
+    font-size: 1.2em;
+    background-color:#EAEBC8;
+}
+
+div.port.norender {
+    font-family: Arial,Lucida Sans,Trebuchet,Sans-Serif;
+}
+
+/********************************************************************/
+/*  ComponentID=452438 /imported/WebDesign/BriefLinkPageSection@2.5  */
+
+.brieflinkpopdesc { font-size: 0.95em; margin-top: 0.4em; }
+.supplemental .portlet .brieflinkpop { font-size: 1.2em; }
+.supplemental .portlet .brieflinkpop a {font-size: 1em;}
+
+/********************************************************************/
+/*  ComponentID=36029 /projects/entrez/pubmed/src/PubMedCitationDiscoveryAd_CSS@1.4  */
+
+div.brieflinkpop em.cit{
+    /*font-style:italic;
+    font-size: .85em;*/
+    display:block;
+    margin-top: 0.5em;
+}
+
+div.brieflinkpop em.author{ 
+   /* font-style:normal;
+    font-size: .85em;*/
+    display:block;
+    margin-top: 0.5em;
+    margin-bottom: -0.3em;
+}
+
+/* hide the review label in popper*/
+div.brieflinkpop span.invert {
+    display:none;
+}
+
+/********************************************************************/
+/*  ComponentID=2279 /projects/entrez/core/DiscoveryDbLinks_css@1.5  */
+
+/* override style from BriefLink */
+div.section.brieflink.window div.DiscoveryDbLinks{
+    margin-top: 0;
+    *margin-top: 0.75em; /* for IE6, 7 */
+    padding-top: 0;
+    border-top: none;
+}
+
+
+div.brieflink.window ul li.item{
+    height: auto;
+}
+
+/********************************************************************/
+/*  ComponentID=1872054 /projects/books/components/PBooksBookNavCSS@1.8  */
+
+.navwrap-bottom {
+  margin-top: 2em;
+  margin-bottom: 10px;
+  /*margin-bottom: -1em;*/
+}
+.navwrap-top {
+  margin-top: 2px;
+  margin-bottom: .5em;
+}
+
+.navigation-toc {
+  max-width: 600px;
+  max-height: 500px;
+  overflow: auto;
+}
+
+/*****************************************************/
+/* The 'Contents v' label that controls the popper.  */
+
+/*
+  I stole this from Entrez 3.15, Entrez_DisplayBarStyle css v. 1.7.
+  The following was designed for 12px font with 18px line-height 
+*/
+.source-contents-label {
+  font-size: 1em;
+  background:transparent url(/portal/portal3rc.fcgi/4048106/img/27532) no-repeat 100% 100%; 
+  padding-right: 17px; 
+}
+.source-contents-label:active {
+  background:transparent url(/portal/portal3rc.fcgi/4048106/img/27532) no-repeat 100% 58%; 
+  padding-right: 17px; 
+}
+
+/**********************************/
+/* The "Contents" hyperlink       */
+
+div.content div.navigation-wrap a.navtrig {
+  color:  #336699;
+  text-decoration: none;
+  border-bottom: none;
+  margin: 2px 1.7em 2px 2px;
+}
+
+/************************************/
+/* The "Printer Friendly View" link */
+
+.print-link {
+  float: right;
+  margin-right: 1.7em;
+}
+
+/**********************************/
+/* The TOC popper area itself.    */
+
+.navigation-toc {
+  background-color: white;
+  -moz-box-shadow: 0.4em 0.4em 0.5em #999999;
+  padding: 0 2em 0 0;
+}
+
+.navigation-toc ul.toc-toggle {
+  padding-left: 3em;
+}
+.navigation-toc ul.toc-no-toggle {
+  padding-left: 2em;
+}
+
+.navigation-toc ul.toc ul.toc {
+  padding-left: 3em;
+  margin-top: 3px;
+}
+
+.navigation-toc li {
+  padding: 2px 0;
+}
+
+.navigation-toc a.toc-link {
+  color: #336699;
+  text-decoration: none;
+  padding: 1px;
+  border: 1px solid white;
+}
+.navigation-toc a.toc-link:hover {
+  background-color: #369; 
+  color: #fff; 
+  /*border: 1px solid #888;*/ 
+}
+.navigation-toc a.current-toc-entry {
+  color: #336699;
+  font-weight: bold;
+  padding: 2px;
+  /* took out the dark border, because it looks bad when the entry
+    is multi-line */
+  /*border: 1px solid #285078;*/
+  border: 1px solid white;
+}
+
+/***********************************************************/
+/* "Table of Contents Page" link at the top of the popper. */
+
+.toc-page-link {
+  float: right;
+  margin-top: 9px;
+  font-size: 110%;
+  /*font-style: italic;*/
+  /*font-weight: bold;*/
+}
+
+
+/********************/
+/* Glossary Control
+
+span.glossary-control {
+  margin-left: 2.4em;
+} */
+
+/*******************************/
+/* Prev and Next page buttons  */
+
+
+/* These styles were copied from PubMed search results */
+
+div.pagination {
+  font-size:0.916em;
+}
+
+/* They use <h3> for a pseudo-button in the middle that identifies the current
+  page number.  We don't have that.  */
+div.pagination h3  { font-size: 1em; }
+div.pagination h3 { font-weight: normal; }
+div.pagination h3 { display: inline; }
+
+div.pagination { 
+  white-space: nowrap; 
+  float: right; 
+  margin-top: 2px; 
+  margin-bottom: 2px;
+}
+
+div.pagination .page_link { 
+  padding: 1px 6px; 
+  zoom:1; 
+}
+div.pagination span.inactive { 
+  color: #ccc; 
+}
+div.pagination a.active { 
+  border: 1px solid #ddd; 
+  color: #336699; 
+  padding: 2px 6px; 
+  *padding: 0px 4px; 
+  white-space: nowrap; 
+  text-decoration: none; 
+}
+div.pagination a:hover { 
+  background-color: #369; 
+  color: #fff; 
+  border: 1px solid #888; 
+}
+div.pagination .prev { 
+  margin-right: .6em; 
+  margin-left: .2em; 
+}
+div.pagination .next { 
+  margin-left: .6em; 
+  margin-right: .2em; 
+}
+
+
+
+
+
+
+
+/********************************************************************/
+/*  ComponentID=1778673 /projects/books/components/PBooksPageTocHeaderCSS@1.4  */
+
+.page-toc-head {
+  border-top: 1px solid #C0C0C0;
+}
+
+h2.has-page-navigation, h3.has-page-navigation, h4.has-page-navigation {
+  margin-bottom: 0;
+}
+
+.page-toc-top-link {
+  float: right;
+}
+
+.content .page-toc-head a.page-toc-label, 
+.content .page-toc-head a.top-link
+{
+  text-decoration: none;
+  border-bottom: none;
+  color: #808080;
+}
+
+/*****************************************************/
+/* The 'Contents v' label that controls the popper.  */
+
+/*
+  This is the same as is in PBooksBookNavCSS.
+  I stole this from Entrez 3.15, Entrez_DisplayBarStyle css v. 1.7.
+  The following was designed for 12px font with 18px line-height 
+*/
+.page-toc-label {
+  font-size: 1em;
+  background:transparent url(/portal/portal3rc.fcgi/4048106/img/27532) no-repeat 100% 100%; 
+  padding-right: 17px; 
+  margin-right: 3px;
+}
+.page-toc-label:active {
+  background:transparent url(/portal/portal3rc.fcgi/4048106/img/27532) no-repeat 100% 58%; 
+  padding-right: 17px; 
+  margin-right: 3px;
+}
+
+/**********************************/
+/* The page-toc popper area itself.    */
+
+.page-toc-popper {
+  background-color: white;
+  -moz-box-shadow: 0.4em 0.4em 0.5em #999999;
+  padding: 0 2em 0 0;
+  max-height: 35em;
+  overflow: auto
+}
+
+.page-toc-popper ul {
+  list-style-type: none;
+}
+
+/********************************************************************/
+/*  ComponentID=67324 /projects/entrez/core/Entrez_MessagesStyle@1.11  */
+
+div.messagearea {
+    margin:0; 
+    padding: 0; 
+    border-bottom: solid 1px #888; 
+    clear:both;
+} 
+#messagearea.empty {border: none; clear:both;} 
+ul.messages {
+    font-family: Arial;
+    margin: 0; 
+    padding: 0; 
+    list-style-type:none;
+    list-style-image:none;
+}
+ul.messages li {
+    font-size: 1em;
+    margin:0.22em 0 0.22em;
+    padding: 0.25em 0.25em 0.25em 28px;
+    background-position: 0.5em 0.3em;
+    background-repeat: no-repeat;
+    background-color: transparent;
+}
+ul.messages li.success {
+    background-image: url(/portal/portal3rc.fcgi/4048106/img/67325);
+}
+ul.messages li.error {
+    background-image: url(/portal/portal3rc.fcgi/4048106/img/67326);
+}
+ul.messages li.warn {
+    background-image: url(/portal/portal3rc.fcgi/4048106/img/67327);
+}
+ul.messages li.info {
+    background-image: url(/portal/portal3rc.fcgi/4048106/img/67328);
+}
+ul.messages li.suggest {
+    background-image: url(/portal/portal3rc.fcgi/4048106/img/26044);
+}
+ul.messages li.hi_warn {
+    background-image: url(/portal/portal3rc.fcgi/4048106/img/67327);
+    font-weight: bold;
+}
+div#messagearea ul.messages li.hi_warn { margin: 2.5em 0; }
+ul.messages li.hi_warn em.detail{
+    font-weight: normal;
+    font-style: normal;
+    padding-left: 0.5em;
+}
+
+/********************************************************************/
+/*  ComponentID=4054478 /projects/cppdocs/cppdocs/CppTkbPageCSS@1.12  */
+
+
+/*named-content*/
+.ncbi-class , .ncbi-type, .ncbi-func {font-weight:bold;font-style:italic; white-space:pre;}
+.ncbi-app , .ncbi-lib ,  .ncbi-macro , .ncbi-monospace , .ncbi-var, .ncbi-cmd , .ncbi-code, .ncbi-path {font-family: monospace; font-size: 1.2296em; white-space:pre;}
+.nctnt-pre{white-space:pre;}
+.ncbi-cmd  {color:#985735; white-space:pre;}
+.ncbi-code{color:#59331F; white-space:pre;}
+.ncbi-path {color:#777777; white-space:pre;}
+.pageobject{font-weight:bold;color:#985735;}
+.highlight{background-color:yellow;font-weight:bold;}
+
+/* Search bar */
+.search_extras label { margin-right:1em;font-size: 1.1em; }
+.search_extras strong { font-size: 150%; color: #888; margin-right: 0.5em}
+
+/* Temporary fix for wide tables (adding scroll bars (CXX-3856)) */
+div.table-scroll {
+    overflow: auto;
+    max-width: none;
+    max-height: 500px;
+    line-height: 1.3em;
+    font-size: .9em;
+}
+/* Added top space for tables to display consecutive tables better (CXX-4144)) */
+div.table {
+    padding-top: 0.5em;
+}
+
+
+.grid{ min-width:800px; max-width:none; width:100%; clear:both; margin:0 auto; text-align:left }
+
+/* remove indentation for definition lists (CXX-3856) */
+.labeled-list{}
+.labeled-list dt{float:left;margin-right:.8em}
+.labeled-list dd{vertical-align:top;display:table-cell;*display:inline-block}
+
+/* change highlight color from brown to yellow (CXX-3856) */
+.highlight{background-color:yellow;font-weight:bold;}
+
+/*Fixing the alignment in Entez search bar at the top of the pages*/
+div.search {
+   padding-bottom: 15px;
+}
+
+/*labels in headings*/
+.label{margin-right:1em;}
+
+/* style used for pale grey square brackets*/
+.internal-link-marker{color:#BDBDBD}
+
+/*******************************/
+/* PDF link  */
+
+div.pdf-link {
+  white-space: nowrap;
+  float: right;
+}
+
+/* Added padding for the sidebar top division */
+#source-branding {
+margin-top: 1.2em;
+}
+
+/* Added style to box-ed pieces of text */
+
+.box{
+font-family: arial,helvetica,clean,sans-serif;
+font-size: 13px;
+font-size-adjust: none;
+font-stretch: normal;
+font-style: normal;
+font-variant: normal;
+font-weight: 400;
+line-height: 18px;
+text-align: left;
+}
+
+/* Added style and scroll bars to preformatted pieces of text */
+pre.highlight {
+  background: #eee;
+  border: 1px solid #C0C0C0;
+  overflow: auto;
+  max-width: none;
+  max-height: 500px;
+  font-family: Courier, Monospace;
+  padding: 10px;
+}
+
+pre.highlight code {
+  font-weight: 400;
+  line-height: 1.4em;
+  font-size: 1.1em;
+}
+
+code.highlighter-rouge {
+  background-color: #eee;
+  padding: 3px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}
+
+/* Remove underline for 'Go To' link and for the items from the drop down list (see CXX-4213) */
+
+a.jig-ncbiinpagenav-goto-heading, a.jig-ncbiinpagenav-goto-heading:hover  {
+    border: 0 none;
+    text-decoration: none;
+ }
+ul.ui-ncbibasicmenu li a, ul.ui-ncbibasicmenu li a:hover {
+    border: 0 none;
+    text-decoration: none;
+}
+
+/* Remove H3 element to make HTML valid */
+.portlet_title { margin-right: 2em; font-size: 1.4em; color: #985735; font-weight: bold; display: inline;}
+
+/* Style for scrolling images (CXX-5457) */
+
+a.img_link {
+	border: 0 none;
+}
+
+
+
+
+/********************************************************************/
+/*  ComponentID=3871380 /projects/standards/standard_searchbar_css@1.16  */
+
+.header{background:#d5d5d5 url(/portal/portal3rc.fcgi/4048106/img/2375536) repeat-x scroll left bottom; position: relative;margin-bottom: 1.231em;z-index:20 } 
+/* .header{background:#d5d5d5 url(/portal/portal3rc.fcgi/4048106/img/2375536) repeat-x scroll left bottom; position: relative;margin-bottom: 1.231em;z-index:20 } */
+
+.header{background:#205081;}
+.header a{text-decoration:none}
+.header a:hover{text-decoration:underline}
+
+.search{margin:0 0 0 13.539em; padding:1.2em 0 .7em}
+.search_form{*zoom:1}
+.search_form select,.search_form .jig-ncbiclearbutton-wrap,.search_form button{margin-right:.2em;font-family:arial,helvetica,sans-serif;}
+.search_form select{font-size: 1.077em; width:8.5em;margin-right:.3em;*vertical-align: middle; position: relative; bottom: 1px;}
+.search_form select optgroup {font-style: normal; color: #555; padding-left: 0.2em;} /*FF is the only one to recognize optgroup and option padding, which is nice because it's the only one that screws it up.*/
+.search_form select optgroup option {color: #000}
+.search_form input{font-size: 1.1543em; width:48%;display:inline-block;_width:100%}
+.search_form div.nowrap {*height: 100%; }
+.search_form button.nowrap {*vertical-align: middle; }
+.search_form div.nowrap div.nowrap {*height: 100%; *vertical-align: middle; }
+.search_form .nowrap{display:inline;*zoom:1}
+.searchlinks{margin:.2em 0 0 9.6em;_zoom:1}
+.searchlinks li{margin-right:1.2em;zoom:1}
+.searchlinks .help{position:absolute;right:1em;margin-right:0;_margin-top:-.1em}
+.searchlinks .hidden{display:none}
+.searchlinks .visible{display:inline}
+.search_form .wrap{position:relative;display:inline;_width:70%}
+#cl{position:absolute;right:8px;top:-3px;top:-12px\9;*top:5px}
+
+.search_form button{border:0 none;cursor:pointer;overflow:visible;width:auto;background-color:#ddd;padding:.2em .4em;*padding:.2em .6em;_padding:.2em .4em;margin:0 .2em;*margin:0 .3em;*height:2em; -moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;text-shadow:.1em .1em .1em rgba(0,0,0,.5);-moz-box-shadow:.1em .1em .1em rgba(0,0,0,.5);-webkit-box-shadow:.1em .1em .1em rgba(0,0,0,.5);box-shadow:.1em .1em .1em rgba(0,0,0,.5)}
+.search_form button.button_search{background-color:#47a;font-weight:bold;color:#fff;*margin-left:.5em;font-size:inherit;}
+.search_form button.button_search:active{background-color:#4c96df}
+.search_form button.button_preview{background-color:#A64D48;font-weight:bold;color:#fff}
+.search_form button.button_preview:active{background-color:#F27069}
+
+.search_form input:focus{-moz-box-shadow:0 0 .3em rgba(211,186,44,.8)}
+
+.search_form .jig-ncbiclearbutton-wrap { width: 64%; *display: inline; border:1px solid #999; }
+.search_form .jig-ncbiclearbutton-wrap input { width: 100%; *width: 50%; }
+.search_form .jig-ncbiclearbutton-wrap a.reset { margin-left: 0; top: 50%; margin-top: -7px; }
+
+.rss_icon{position:relative;top:3px;margin-right:.3em}
+
+.rss_menu{z-index:1001;display:none;}
+.rss_menu legend{font-weight:bold;margin:2px 0 0 3px}
+.rss_menu ul{margin:0;padding:0;list-style-type:none;padding-top:5px}
+.rss_menu ul li{margin-bottom:.4em}
+.rss_menu span,.rss_menu label{margin-right:.5em}
+.rss_menu ul input{top:0}
+.rss_menu dd{margin-left:0;margin-bottom:1em}
+.rss_menu #rss_name{width:15em}
+.rss_menu button{margin-top:.5em}
+.rss_menu label{display:block}
+
+.db_logo{background:transparent url() no-repeat scroll left top;display:block;height:36px;width:100px;text-indent:-9999px}
+
+.res_logo{width:25em;left:1.231em;padding-top:.4em;position:absolute}
+.res_logo h1{font-weight:normal;margin:0}
+/*sibling of res_logo*/
+.long{padding:.5em 0}
+.long h1{line-height:1.15}
+
+.res_logo h1 a{color:#333;display:block;padding:.3em 0;text-shadow:1px 1px 1px rgba(240,240,240,.9)}
+.res_tagline{display:none}
+.res_logo h1 a,.res_logo h1 a:hover,.res_logo h1 a:visited{text-decoration:none}
+
+h1.img_logo{margin:0}
+h1.img_logo a{padding:0}
+
+/********************************************************************/
+/*  ComponentID=4005757 /projects/PAF/BaseComponents/PAFLocalNavCSS@1.5  */
+
+div.page div.header { margin-bottom: 0;}
+
+
+
+/********************************************************************/
+/*  ComponentID=3398175 /projects/PAF/BaseComponents/Support/PAFDebugConsoleCSS@1.3  */
+
+
+div.paf-debug-wrap {
+display: block;
+margin: 1em 2em;
+color: black;
+background-color: white;
+clear:both;
+}
+
+div.paf-debug-content {
+max-height: 300px;
+margin:auto;
+overflow: auto;
+border: solid 1px #ccc;
+font-family: Courier, Monospace;
+font-size: 10pt;
+}
+
+div.paf-debug-wrap h3 {
+background-color: #ccc;
+color: #444;
+font-size: 110%;
+margin: 0;
+padding: 5px;
+}
+
+ul#paf-debug-trace {
+margin:0;
+padding:0;
+padding-left: 1em;
+margin-left: 1em;
+}
+
+ul#paf-debug-trace li {
+list-style-type: disc;
+}
+
+
+dl#paf-debug dt,
+dl#paf-debug dd {
+margin-bottom: 0.5em;
+min-height: 1.8em;
+font-family: courier, fixed, monospace;
+}
+
+dl#paf-debug dd pre { white-space: pre; }
+
+dl#paf-debug dd.empty {
+background-color: transparent;
+}
+
+dl#paf-debug dt {
+float: left;
+width: 14em;
+text-align: right;
+clear: left;
+}
+
+dl#paf-debug dd {
+
+margin-left: 14.5em;
+border-left: solid 1px #ccc;
+padding-left: 0.5em;
+background-color: #eeeee0;
+color: black;
+}
+
+dl#paf-debug pre {
+margin:0;
+}

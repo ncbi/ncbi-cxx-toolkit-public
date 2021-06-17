@@ -1,0 +1,50 @@
+SUMMARY:
+-------------------   -------------------   -------------------
+Gap Length            #Seqs with Any Kind   # of Any Kind      
+-------------------   -------------------   -------------------
+                  1                     1                     4
+                  2                     1                     1
+                  3                     1                     1
+                  4                     1                     2
+                  5                     2                     2
+                  8                     1                     1
+                  9                     1                     1
+                 16                     1                     1
+
+-------------------   -------------------   -------------------
+SEQ-IDS FOR EACH GAP-LENGTH:
+	Seq-ids with a gap of length 1:
+		Any Kind:
+			lcl|Seq1
+	Seq-ids with a gap of length 2:
+		Any Kind:
+			lcl|Seq1
+	Seq-ids with a gap of length 3:
+		Any Kind:
+			lcl|Seq1
+	Seq-ids with a gap of length 4:
+		Any Kind:
+			lcl|Seq1
+	Seq-ids with a gap of length 5:
+		Any Kind:
+			lcl|Seq1
+			lcl|Seq3
+	Seq-ids with a gap of length 8:
+		Any Kind:
+			lcl|Seq1
+	Seq-ids with a gap of length 9:
+		Any Kind:
+			lcl|Seq1
+	Seq-ids with a gap of length 16:
+		Any Kind:
+			lcl|Seq1
+
+HISTOGRAM FOR Any Kind:
+---------------------------------------   -------------------
+Range                                     Number in Range    
+---------------------------------------   -------------------
+1-1                                                         4
+2-4                                                         4
+5-8                                                         3
+9-16                                                        2
+---------------------------------------   -------------------

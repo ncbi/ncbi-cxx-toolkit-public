@@ -1,0 +1,5 @@
+Line No    : 6
+Severity   : Fatal
+Problem    : Alignment.IllegalDataLine
+Message    : Unexpected token. "#NEXUS" should appear once at the beginnng of the file.
+

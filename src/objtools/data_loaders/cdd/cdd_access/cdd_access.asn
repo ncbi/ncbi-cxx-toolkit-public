@@ -1,0 +1,134 @@
+--$Revision$
+--*********************************************************************
+--
+--  cdd_access.asn
+--
+--     Data types for CDD annotations server access
+--
+--*********************************************************************
+
+NCBI-CDDAccess DEFINITIONS ::=
+BEGIN
+
+IMPORTS Seq-id                 FROM NCBI-Seqloc
+        Seq-annot              FROM NCBI-Sequence
+        ID2-Blob-Id            FROM NCBI-ID2Access;
+
+
+--*********************************************************************
+-- request
+--*********************************************************************
+
+-- Requests are sent in packets to allow sending several requests at once
+-- to avoid network latency, without possibility of deadlock with server.
+-- Server will not start sending replies until it will read the whole packet.
+
+CDD-Request-Packet ::= SEQUENCE OF CDD-Request
+
+CDD-Request ::= SEQUENCE {
+        -- request's serial number, can be used in asynchronous clients
+        -- server should copy it to corresponding field in reply
+        serial-number  INTEGER OPTIONAL,
+
+        request CHOICE {
+		
+                -- get blob-id for the seq-id
+                get-blob-id           Seq-id,
+
+                -- get data for the blob-id
+                get-blob              ID2-Blob-Id,
+
+                -- get one blob for one seq-id
+                get-blob-by-seq-id    Seq-id,
+                
+                -- get one blob for multiple seq-ids
+                get-blob-by-seq-ids   SEQUENCE OF Seq-id
+        }
+}
+
+--*********************************************************************
+-- reply types
+--*********************************************************************
+
+-- Replies are sent one-by-one, each reply contains serial number from
+-- the original request. Replies for a packet of requests may be sent
+-- in any order, the last reply must have end-of-reply flag set.
+-- If the flag is set before sending all replies, any pending requests
+-- should be discarded.
+-- Error reply may be sent for a single request or for the whole packet
+-- (or all remaining requests from the packet) - in this case the error
+-- reply must have end-of-reply flag set.
+
+CDD-Reply ::= SEQUENCE {
+
+        -- request's serial number, copy from request
+        serial-number  INTEGER OPTIONAL,
+
+        error          CDD-Error OPTIONAL,
+
+        -- true if this reply is the last one for the request
+        -- false if more replies will follow
+        end-of-reply   NULL OPTIONAL,
+
+        reply CHOICE {
+
+                -- no data found for the request
+                empty                 NULL,
+
+                -- return blob-id for get-blob-id request
+                get-blob-id           CDD-Reply-Get-Blob-Id,
+
+                -- return Seq-annot for get-blob request
+                get-blob              Seq-annot,
+
+                -- return (Seq-annot + blob-id) for get-blob-by-seq-id OR get-blob-by-seq-ids request
+                get-blob-by-seq-id    CDD-Reply-Get-Blob-By-Seq-Id
+        }
+}
+
+-- Reply to the get-blob-by-seq-id request.
+-- Reply is a composite of get-blob-id + get-blob replies.
+CDD-Reply-Get-Blob-By-Seq-Id ::= SEQUENCE {
+
+        -- return Seq-annot (like a get-blob request)
+        blob       Seq-annot,
+        
+        -- return blob-id (like a get-blob-id request)
+        blob-id    CDD-Reply-Get-Blob-Id
+}
+
+-- Reply to get-blob-id request.
+CDD-Reply-Get-Blob-Id ::= SEQUENCE {
+
+        -- seq-id used in the CDD annotation
+        seq-id         Seq-id,
+
+        -- resulting blob-id
+        blob-id        ID2-Blob-Id,
+
+        -- types and subtypes of features in the blob
+        feat-types     SET OF CDD-Feat-type OPTIONAL
+}
+
+CDD-Feat-type ::= SEQUENCE {
+        type            INTEGER,
+        subtype         INTEGER OPTIONAL
+}
+
+-- Error reply
+CDD-Error ::= SEQUENCE {
+        message        UTF8String,
+
+        code           INTEGER,
+
+        severity       INTEGER {
+                trace          (0),
+                info           (1),
+                warning        (2),
+                error          (3),
+                critical       (4),
+                fatal          (5)
+        }
+}
+
+END

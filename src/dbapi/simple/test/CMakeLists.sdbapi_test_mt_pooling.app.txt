@@ -1,0 +1,10 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(sdbapi_test_mt_pooling)
+  NCBI_sources(sdbapi_test_mt_pooling)
+  NCBI_uses_toolkit_libraries(sdbapi test_mt)
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_add_test()
+NCBI_end_app()

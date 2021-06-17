@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(basic_sample)
+  NCBI_sources(basic_sample)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(vakatov)
+NCBI_end_app()

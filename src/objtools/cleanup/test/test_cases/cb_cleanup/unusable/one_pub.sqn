@@ -1,0 +1,52 @@
+Pubdesc ::= {
+      pub {
+        gen {
+          cit "This is a cit-gen without authors.  It should trigger a validator error." ,
+          authors {
+            names
+              str {
+                "?" } } ,
+          serial-number 42 ,
+          title "This is a cit-gen without authors.  It should trigger a validator error." } } } ,
+Pubdesc ::= {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "  Bollin  " ,
+                      first "  Colleen  " ,
+                      initials "  C.J.  " } } } } } } }
+Pubdesc ::= {
+      pub {
+        gen {
+          cit "Unpublished" ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "  Bollin  " ,
+                      first "  Colleen  " ,
+                      initials "  C.J.  " } } } ,
+            affil
+              std {
+                affil "<applet" ,
+                div "  dept  " ,
+                city "  city  " ,
+                sub "  state  " ,
+                country "  country  " ,
+                street "  address  " ,
+                email "  email  " ,
+                fax "  fax  " ,
+                phone "  phone  " ,
+                postal-code "  code  " } } ,
+          serial-number 42 ,
+          title "  one unpublished pub  " } } ,
+      name "  pubdesc has a name;,;,  " ,
+      comment "  pubdesc;; has a comment;,;,  " }
+ 

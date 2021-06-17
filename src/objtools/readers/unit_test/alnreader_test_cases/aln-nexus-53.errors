@@ -1,0 +1,15 @@
+Line No    : 24
+Severity   : Warning
+Problem    : Alignment.UnterminatedCommand
+Message    : File format autocorrected to comply with Nexus rules. Unexpected "end;". Appending ';' to prior command. No action required.
+
+Line No    : 31
+Severity   : Warning
+Problem    : Alignment.UnterminatedCommand
+Message    : File format autocorrected to comply with Nexus rules. Unexpected "end;". Appending ';' to prior command. No action required.
+
+Line No    : 27
+Severity   : Fatal
+Problem    : Alignment.IllegalDataLine
+Message    : Deflines were detected in your file, however some lines are missing the '>' character at the beginning of the line. Each defline must begin with '>'.
+

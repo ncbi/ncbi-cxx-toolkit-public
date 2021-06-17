@@ -1,0 +1,48 @@
+This is how-to to run tests.
+
+1. Source code / binary
+
+The tests are developed for the NetStorage API, not specifically for the server.
+They however could be used to test the server. The source code could be found
+here:
+https://svn.ncbi.nlm.nih.gov/viewvc/toolkit/trunk/c++/src/misc/netstorage/test/
+
+A binary could be taken from regular builds, e.g.:
+/netopt/ncbi_tools64/c++.current/GCC-Release/bin/test_netstorage.gz
+
+
+2. Setup and running
+
+Do an svn export:
+svn export https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++/src/misc/netstorage/test/
+
+there re two files there which are of interest:
+- test_netstorage.ini
+- test_netstorage_server.bash
+
+Copy both of them to the directory where the tes_netstorage binary is sitting.
+They will trick the binary to substitute the service properly to test a locally
+running server.
+Then run as follows:
+
+./test_netstorage_server.bash ST_Test iebdev13:9800
+
+where:
+- ST_Test is a service name used to send to the server
+- iebdev13:9800 is a locally running server
+
+
+
+
+
+Tip: how to time a query in MS SQL Server Management Studio
+
+DECLARE @StartTime datetime,@EndTime datetime   
+SELECT @StartTime=GETDATE() 
+
+-- Your query comes here, e.g. call the GetStatInfo stored procedure
+EXEC GetStatInfo
+
+SELECT @EndTime=GETDATE()   
+SELECT DATEDIFF(ms,@StartTime,@EndTime) AS [Duration in milliseconds]  
+

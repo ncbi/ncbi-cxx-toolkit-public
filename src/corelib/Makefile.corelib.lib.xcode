@@ -1,0 +1,3 @@
+[AddToProject]
+HeadersInInclude = *.hpp *.h hash_impl/*.h
+SourceFiles = ncbi_os_unix

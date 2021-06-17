@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(nmer_repeats)
+  NCBI_sources(nmer_repeats)
+  NCBI_uses_toolkit_libraries(xalgoseq xobjread)
+  NCBI_project_watchers(ludwigf)
+NCBI_end_app()
+

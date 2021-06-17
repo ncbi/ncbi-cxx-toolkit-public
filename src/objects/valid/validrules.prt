@@ -1,0 +1,1612 @@
+Comment-set ::= {
+  {
+    prefix "##MIGS-Data-START##" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^\(eukaryote\|bacteria_archaea\|plasmid\|virus\|orga
+nelle\)$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "depth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "alt_elev" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "country" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "environment" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "isol_growth_condt" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "sequencing_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly" ,
+        required TRUE ,
+        severity info } } ,
+    require-order FALSE ,
+    allow-unlisted TRUE ,
+    dependent-rules {
+      {
+        match-name "investigation_type" ,
+        value-constraint "^eukaryote$" ,
+        other-fields {
+          {
+            field-name "ploidy" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "num_replicons" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "estimated_size" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "trophic_level" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "finishing_strategy" ,
+            required TRUE ,
+            severity info } } } ,
+      {
+        match-name "investigation_type" ,
+        value-constraint "^bacteria_archaea$" ,
+        other-fields {
+          {
+            field-name "num_replicons" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "ref_biomaterial" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "biotic_relationship" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "trophic_level" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "rel_to_oxygen" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "finishing_strategy" ,
+            required TRUE ,
+            severity info } } } ,
+      {
+        match-name "investigation_type" ,
+        value-constraint "^plasmid$" ,
+        other-fields {
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } } } ,
+      {
+        match-name "investigation_type" ,
+        value-constraint "^virus$" ,
+        other-fields {
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } } } } } ,
+  {
+    prefix "##MIMS-Data-START##" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^metagenome$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "depth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "alt_elev" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "country" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "environment" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "samp_size" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "sequencing_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly" ,
+        required TRUE ,
+        severity info } } ,
+    require-order FALSE ,
+    allow-unlisted TRUE } ,
+  {
+    prefix "##MIENS-Data-START##" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^\(miens-survey\|miens-culture\)$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "depth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "alt_elev" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "country" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "environment" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "target_gene" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "sequencing_meth" ,
+        required TRUE ,
+        severity info } } ,
+    require-order FALSE ,
+    allow-unlisted TRUE ,
+    dependent-rules {
+      {
+        match-name "investigation_type" ,
+        value-constraint "^miens-survey$" ,
+        other-fields {
+          {
+            field-name "project_name" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "collection_date" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "lat_lon" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "depth" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "alt_elev" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "country" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "environment" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "samp_size" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "target_gene" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "sequencing_meth" ,
+            required TRUE ,
+            severity info } } } ,
+      {
+        match-name "investigation_type" ,
+        value-constraint "^miens-culture$" ,
+        other-fields {
+          {
+            field-name "project_name" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "collection_date" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "lat_lon" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "depth" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "alt_elev" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "country" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "environment" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "biotic_relationship" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "trophic_level" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "rel_to_oxygen" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "isol_growth_condt" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "target_gene" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "sequencing_meth" ,
+            required TRUE ,
+            severity info } } } } } ,
+  {
+    prefix "##MIGS:3.0-Data-START##" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^\(eukaryote\|bacteria_archaea\|plasmid\|virus\|orga
+nelle\)$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "biome" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "feature" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "material" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_package" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "isol_growth_condt" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly" ,
+        required TRUE ,
+        severity info } } ,
+    require-order FALSE ,
+    allow-unlisted TRUE ,
+    dependent-rules {
+      {
+        match-name "investigation_type" ,
+        value-constraint "^eukaryote$" ,
+        other-fields {
+          {
+            field-name "num_replicons" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "ploidy" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "estimated_size" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "finishing_strategy" ,
+            required TRUE ,
+            severity info } } } ,
+      {
+        match-name "investigation_type" ,
+        value-constraint "^bacteria_archaea$" ,
+        other-fields {
+          {
+            field-name "num_replicons" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "ref_biomaterial" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "finishing_strategy" ,
+            required TRUE ,
+            severity info } } } ,
+      {
+        match-name "investigation_type" ,
+        value-constraint "^plasmid$" ,
+        other-fields {
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } } } ,
+      {
+        match-name "investigation_type" ,
+        value-constraint "^virus$" ,
+        other-fields {
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } } } } } ,
+  {
+    prefix "##MIMS:3.0-Data-START##" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^metagenome$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "biome" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "feature" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "material" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_package" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly" ,
+        required TRUE ,
+        severity info } } ,
+    require-order FALSE ,
+    allow-unlisted TRUE } ,
+  {
+    prefix "##MIMARKS:3.0-Data-START##" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^\(mimarks-survey\|mimarks-culture\|mimarks-specimen\)$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "biome" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "feature" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "material" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_package" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "target_gene" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } } ,
+    require-order FALSE ,
+    allow-unlisted TRUE ,
+    dependent-rules {
+      {
+        match-name "investigation_type" ,
+        value-constraint "^mimarks-culture$" ,
+        other-fields {
+          {
+            field-name "isol_growth_condt" ,
+            required TRUE ,
+            severity info } } } } } ,
+  {
+    prefix "##MIGS:4.0-Data-START##" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^\(eukaryote\|bacteria_archaea\|plasmid\|virus\|orga
+nelle\)$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_biome" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_feature" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_material" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_package" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "isol_growth_condt" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly" ,
+        required TRUE ,
+        severity info } } ,
+    require-order FALSE ,
+    allow-unlisted TRUE ,
+    dependent-rules {
+      {
+        match-name "investigation_type" ,
+        value-constraint "^eukaryote$" ,
+        other-fields {
+          {
+            field-name "num_replicons" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "ploidy" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "estimated_size" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "finishing_strategy" ,
+            required TRUE ,
+            severity info } } } ,
+      {
+        match-name "investigation_type" ,
+        value-constraint "^bacteria_archaea$" ,
+        other-fields {
+          {
+            field-name "num_replicons" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "ref_biomaterial" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "finishing_strategy" ,
+            required TRUE ,
+            severity info } } } ,
+      {
+        match-name "investigation_type" ,
+        value-constraint "^plasmid$" ,
+        other-fields {
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } } } ,
+      {
+        match-name "investigation_type" ,
+        value-constraint "^virus$" ,
+        other-fields {
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } } } } } ,
+  {
+    prefix "##MIMS:4.0-Data-START##" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^metagenome$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_biome" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_feature" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_material" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_package" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly" ,
+        required TRUE ,
+        severity info } } ,
+    require-order FALSE ,
+    allow-unlisted TRUE } ,
+  {
+    prefix "##MIMARKS:4.0-Data-START##" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^\(mimarks-survey\|mimarks-culture\|mimarks-specimen\)$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_biome" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_feature" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_material" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_package" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "target_gene" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } } ,
+    require-order FALSE ,
+    allow-unlisted TRUE ,
+    dependent-rules {
+      {
+        match-name "investigation_type" ,
+        value-constraint "^mimarks-culture$" ,
+        other-fields {
+          {
+            field-name "isol_growth_condt" ,
+            required TRUE ,
+            severity info } } } } } ,
+  {
+    prefix "##Genome-Assembly-Data-START##" ,
+    fields {
+      {
+        field-name "Assembly Provider" } ,
+      {
+        field-name "Finishing Goal" ,
+        match-expression "^\([Ss][Tt][Aa][Nn][Dd][Aa][Rr][Dd] [Dd][Rr][Aa][Ff][Tt]\|[Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\|[Ii][Mm][Pp][Rr][Oo][Vv][Ee][Dd] [Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\|Annotation-Directed Improvement\|Noncontiguous Finished\|Finished\)$" ,
+        severity error } ,
+      {
+        field-name "Current Finishing Status" ,
+        match-expression "^\([Ss][Tt][Aa][Nn][Dd][Aa][Rr][Dd] [Dd][Rr][Aa][Ff][Tt]\|[Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\|[Ii][Mm][Pp][Rr][Oo][Vv][Ee][Dd] [Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\|Annotation-Directed Improvement\|Noncontiguous Finished\|Finished\)$" ,
+        severity error } ,
+      {
+        field-name "Assembly Date" ,
+        match-expression "^\(\(\(0\|1\|2\|3\)\(0\|1\|2\|3\|4\|5\|6\|7\|8\|9\)-
+\(JAN\|FEB\|MAR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|
+1\|2\|3\|4\|5\|6\|7\|8\|9\)\(0\|1\|2\|3\|4\|5\|6\|7\|8\|9\)\)\|\(\(JAN\|FEB\|M
+AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
+\|6\|7\|8\|9\)\(0\|1\|2\|3\|4\|5\|6\|7\|8\|9\)\)\|\(\(19\|20\)\(0\|1\|2\|3\|4\
+|5\|6\|7\|8\|9\)\(0\|1\|2\|3\|4\|5\|6\|7\|8\|9\)\)\)$" ,
+        severity error } ,
+      {
+        field-name "Assembly Method" ,
+        match-expression ".+ v\. .+",
+        required TRUE } ,
+      {
+        field-name "Polishing Method" } ,
+      {
+        field-name "Assembly Name",
+        match-expression "^[A-Za-z0-9 _#\-\.]*$" } ,
+      {
+        field-name "Long Assembly Name" } ,
+      { 
+        field-name "Diploid" ,
+        match-expression "^\([Pp][Rr][Ii][Nn][Cc][Ii][Pp][Aa][Ll] [Pp][Ss][Ee][Uu][Dd][Oo][Hh][Aa][Pp][Ll][Oo][Tt][Yy][Pp][Ee]\|[Aa][Ll][Tt][Ee][Rr][Nn][Aa][Tt][Ee] [Pp][Ss][Ee][Uu][Dd][Oo][Hh][Aa][Pp][Ll][Oo][Tt][Yy][Pp][Ee]\|[Uu][Nn][Rr][Ee][Ss][Oo][Ll][Vv][Ee][Dd]\)$" } ,
+      {
+        field-name "Genome Representation" ,
+        match-expression "^\([Ff][Uu][Ll][Ll]\|[Pp][Aa][Rr][Tt][Ii][Aa][Ll]\)$" ,
+        required FALSE } ,
+      {
+        field-name "Expected Final Version" ,
+        match-expression "^\([Yy][Ee][Ss]\|[Nn][Oo]\)$" ,
+        required FALSE } ,
+      {
+        field-name "Reference-guided Assembly" } ,
+      {
+        field-name "Single-cell Amplification" } ,
+      {
+        field-name "Corresponding 16S rRNA" ,
+        match-expression "^[A-Z]+[0-9]+\.\(0\|1\|2\|3\|4\|5\|6\|7\|8\|9\)+$",
+        required FALSE } ,
+      {
+        field-name "Genome Coverage" ,
+        required TRUE } ,
+      {
+        field-name "Sequencing Technology" ,
+        required TRUE } } ,
+    dependent-rules {
+      {
+        match-name "Finishing Goal" ,
+        value-constraint "^[Ss][Tt][Aa][Nn][Dd][Aa][Rr][Dd] [Dd][Rr][Aa][Ff][Tt]$" ,
+        other-fields {
+          {
+            field-name "Current Finishing Status" ,
+            match-expression "^[Ss][Tt][Aa][Nn][Dd][Aa][Rr][Dd] [Dd][Rr][Aa][Ff][Tt]$" } } } ,
+      {
+        match-name "Finishing Goal" ,
+        value-constraint "^[Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]$" ,
+        other-fields {
+          {
+            field-name "Current Finishing Status" ,
+            match-expression "^\(Standard [Dd][Rr][Aa][Ff][Tt]\|[Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\)$" } } } ,
+      {
+        match-name "Finishing Goal" ,
+        value-constraint "^[Ii][Mm][Pp][Rr][Oo][Vv][Ee][Dd] [Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]$" ,
+        other-fields {
+          {
+            field-name "Current Finishing Status" ,
+            match-expression "^\([Ss][Tt][Aa][Nn][Dd][Aa][Rr][Dd] [Dd][Rr][Aa][Ff][Tt]\|[Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\|[Ii][Mm][Pp][Rr][Oo][Vv][Ee][Dd]
+ [Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\)$" } } } ,
+      {
+        match-name "Finishing Goal" ,
+        value-constraint "^Annotation-Directed Improvement$" ,
+        other-fields {
+          {
+            field-name "Current Finishing Status" ,
+            match-expression "^\([Ss][Tt][Aa][Nn][Dd][Aa][Rr][Dd] [Dd][Rr][Aa][Ff][Tt]\|[Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\|[Ii][Mm][Pp][Rr][Oo][Vv][Ee][Dd]
+ [Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\|Annotation-Directed Improvement\)$" } } } ,
+      {
+        match-name "Finishing Goal" ,
+        value-constraint "^Noncontiguous Finished$" ,
+        other-fields {
+          {
+            field-name "Current Finishing Status" ,
+            match-expression "^\([Ss][Tt][Aa][Nn][Dd][Aa][Rr][Dd] [Dd][Rr][Aa][Ff][Tt]\|[Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\|[Ii][Mm][Pp][Rr][Oo][Vv][Ee][Dd]
+ [Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\|Annotation-Directed Improvement\|Noncontiguous
+ Finished\)$" } } } ,
+      {
+        match-name "Finishing Goal" ,
+        value-constraint "^Finished$" ,
+        other-fields {
+          {
+            field-name "Current Finishing Status" ,
+            match-expression "^\([Ss][Tt][Aa][Nn][Dd][Aa][Rr][Dd] [Dd][Rr][Aa][Ff][Tt]\|[Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\|[Ii][Mm][Pp][Rr][Oo][Vv][Ee][Dd]
+ [Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\|Annotation-Directed Improvement\|Noncontiguous
+ Finished\|Finished\)$" } } } ,
+      {
+        match-name "Sequencing Technology" ,
+        value-constraint "^\(w\|W\)\(g\|G\)\(s\|S\)$" ,
+        other-fields {
+          {
+            field-name "Assembly Date" ,
+            required TRUE ,
+            severity warning } } } } ,
+    forbidden-phrases {
+      "Affymetrix",
+      "Affy" } } ,
+  {
+    prefix "##Assembly-Data-START##" ,
+    fields {
+      {
+        field-name "Assembly Method" ,
+        required FALSE } ,
+      {
+        field-name "Assembly Name" ,
+        required FALSE } ,
+      {
+        field-name "Coverage" ,
+        required FALSE } ,
+      {
+        field-name "Sequencing Technology" ,
+        required TRUE } } ,
+    allow-unlisted TRUE ,
+    dependent-rules {
+      {
+        match-name "Sequencing Technology" ,
+        value-constraint "\(Sanger dideoxy sequencing\|ABI\|ABI 3730\|ABI3730XL\|ABI 3730XL Genetic Analyzer\|ABI 3500\|ABI 3500 Dx Genetic Analyzer CS2\|ABI PRISM\|Sanger\|Sanger sequencing\)",
+        invert-match TRUE ,
+        other-fields {
+          {
+            field-name "Assembly Method" ,
+            required TRUE } } } } ,
+    forbidden-phrases {
+      "Affymetrix",
+      "Affy" } } ,
+  {
+    prefix "##International Barcode of Life (iBOL)Data-START##" ,
+    fields {
+      {
+        field-name "Barcode Index Number" ,
+        required FALSE } ,
+      {
+        field-name "Order Assignment" ,
+        required FALSE } ,
+      {
+        field-name "iBOL Working Group" ,
+        required FALSE } ,
+      {
+        field-name "iBOL Release Status" ,
+        required FALSE } ,
+      { field-name "Tentative Name" ,
+        required FALSE } } ,
+    allow-unlisted TRUE } ,
+  {
+    prefix "##Genome-Annotation-Data-START##" ,
+    fields {
+      {
+        field-name "Annotation Provider" ,
+        required TRUE } ,
+      {
+        field-name "Annotation Status" ,
+        required FALSE } ,
+      {
+        field-name "Annotation Version" ,
+        required FALSE } ,
+      {
+        field-name "Annotation Date" ,
+        required FALSE } ,
+      {
+        field-name "Annotation Pipeline" ,
+        required FALSE } ,
+      {
+        field-name "Annotation Method" ,
+        required FALSE } ,
+      {
+        field-name "Annotation Software Version" ,
+        required FALSE } ,
+      {
+        field-name "Features Annotated" ,
+        required FALSE } ,
+      {
+        field-name "Update Version" ,
+        required FALSE } ,
+      {
+        field-name "Input Data" ,
+        required FALSE } ,
+      { 
+        field-name "URL" ,
+        required FALSE } } ,
+    require-order FALSE ,
+    allow-unlisted TRUE } ,
+  {
+    prefix "##RefSeq-Attributes-START##" ,
+    fields {
+      {
+        field-name "Transcript_exon_combination_evidence" ,
+        required FALSE } } ,
+    allow-unlisted TRUE } ,
+  {
+    prefix "##BWP:1.0-START##" ,
+    fields {
+      {
+        field-name "chainOfCustody" ,
+        required FALSE } , 
+      {
+        field-name "typeStatus" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "basisOfIdentification" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "identificationConfidence" ,
+        match-expression "^\([Hh]igh\|[Mm]edium\|[Pp]reliminary\)$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "identificationDate" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "coordinatePrecision" ,
+        required FALSE } } ,
+    require-order FALSE ,
+    allow-unlisted TRUE } ,
+  {
+    prefix "##Taxonomic-Update-Statistics-START##" ,
+    fields {
+      {
+        field-name "This Genome (query)" ,
+        required TRUE } ,
+      { 
+        field-name "Current Name" ,
+        required TRUE } ,
+      {
+        field-name "Previous Name" ,
+        required TRUE } ,
+      {
+        field-name "Date Updated" ,
+        required TRUE } ,
+      {
+        field-name "Analysis Type" ,
+        required TRUE } ,
+      {
+        field-name "Analysis 1 (A1)" ,
+        required TRUE } ,
+      {
+        field-name "A1 Genome (subject)" ,
+        required TRUE } ,
+      {
+        field-name "A1 Name" ,
+        required TRUE } ,
+      {
+        field-name "A1 ANI" ,
+        required TRUE } ,
+      {
+        field-name "A1 Query Coverage" ,
+        required TRUE } ,
+      {
+        field-name "A1 Subject Coverage" ,
+        required TRUE } ,
+      {
+        field-name "Analysis 2 (A2)" ,
+        required TRUE } ,
+      {
+        field-name "A2 Genome (subject)" ,
+        required TRUE } ,
+      {
+        field-name "A2 Name" ,
+        required TRUE } ,
+      {
+        field-name "A2 ANI" ,
+        required TRUE } ,
+      {
+        field-name "A2 Query Coverage" ,
+        required TRUE } ,
+      {
+        field-name "A2 Subject Coverage" ,
+        required TRUE }
+    } ,
+    require-order TRUE ,
+    allow-unlisted FALSE 
+  },
+  {
+    prefix "##HumanSTR-START##" ,
+    fields {
+      {
+        field-name "STR locus name" ,
+        required TRUE } ,
+      {
+        field-name "STR locus alt. name" ,
+        required FALSE } ,
+      {
+        field-name "Length-based allele" ,
+        required TRUE } ,
+      {
+        field-name "Bracketed repeat" ,
+        required TRUE } ,
+      {
+        field-name "Sequencing technology" ,
+        required FALSE } ,
+      {
+        field-name "Sequencing assay code" ,
+        required FALSE } ,
+      {
+        field-name "Coverage" ,
+        required FALSE } ,
+      {
+        field-name "Length-based tech." ,
+        required FALSE } ,
+      {
+        field-name "Assembly" ,
+        required FALSE } ,
+      {
+        field-name "Chromosome" ,
+        required FALSE } ,
+      {
+        field-name "RefSeq Accession" ,
+        required FALSE } ,
+      {
+        field-name "Chrom. Location" ,
+        required FALSE } ,
+      {
+        field-name "Repeat Location" ,
+        required FALSE } ,
+      {
+        field-name "Cytogenetic Location" ,
+        required FALSE }
+    } ,
+    require-order TRUE ,
+    allow-unlisted FALSE
+  },
+  {
+    prefix "##SymbiotaSpecimenReference-START##" ,
+    fields {
+      {
+        field-name "Source Record URL" ,
+        match-expression "^\(HTTP://\|HTTPS://\|http://\|https://)",
+        required FALSE },
+      {
+        field-name "Occurrence ID (GUID)" ,
+        required FALSE },
+      {
+        field-name "Record ID" ,
+        required FALSE },
+      {
+        field-name "Institution Code" ,
+        required FALSE },
+      {
+        field-name "Collection Code" ,
+        required FALSE },
+      {
+        field-name "Catalog Number" ,
+        required FALSE },
+      {
+        field-name "Other Catalog Numbers" ,
+        required FALSE }
+    }
+  },
+  {
+    prefix "##Evidence-For-Name-Assignment-START##" ,
+    fields {
+      {
+        field-name "Evidence Category" ,
+        required TRUE ,
+        severity error } ,
+      {
+        field-name "Evidence Accession" ,
+        required TRUE ,
+        severity error } ,
+      {
+        field-name "Evidence Source" ,
+        required TRUE ,
+        severity error } ,
+      {
+        field-name "Source Identifier" ,
+        required FALSE } ,
+      {
+        field-name "Comment" ,
+        required FALSE }
+    } ,
+    require-order FALSE ,
+    allow-unlisted TRUE
+  },
+  {
+    prefix "MIMARKS:5.0-Data-START" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^mimarks-survey\|mimarks-specimen\|$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_broad_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_local_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_medium" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "target_gene" ,
+        required TRUE ,
+        severity info }
+    } ,
+    require-order FALSE ,
+    allow-unlisted TRUE ,
+    dependent-rules {
+      {
+        match-name "investigation_type" ,
+        value-constraint "^mimarks-specimen$" ,
+        other-fields {
+          {
+            field-name "isol_growth_condt" ,
+            required TRUE ,
+            severity info } 
+        }
+      }
+    } 
+  },
+  {
+    prefix "MIMS:5.0-Data-START" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^metagenome$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_broad_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_local_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_medium" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info }
+    } ,
+    require-order FALSE ,
+    allow-unlisted TRUE
+  },
+  {
+    prefix "MISAG:5.0-Data-START" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^misag$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_broad_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_local_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_medium" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly_qual" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "tax_ident" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly_software" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "compl_score" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "compl_software" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "contam_score" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "sort_tech" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "single_cell_lysis_appr" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "wga_amp_appr" ,
+        required TRUE ,
+        severity info }
+    } ,
+    require-order FALSE ,
+    allow-unlisted TRUE
+  },
+  {
+    prefix "MIGS:5.0-Data-START" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^eukaryote\|bacteria_archaea\|plasmid\|virus\|organelle\|$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_broad_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_local_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_medium" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "isol_growth_condt" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly_software" ,
+        required TRUE ,
+        severity info }
+    } ,
+    require-order FALSE ,
+    allow-unlisted TRUE ,
+    dependent-rules {
+      {
+        match-name "investigation_type" ,
+        value-constraint "^eukaryote$" ,
+        other-fields {
+          {
+            field-name "assembly_qual" ,
+            required TRUE ,
+            severity info }  ,
+          {
+            field-name "number_contig" ,
+            required TRUE ,
+            severity info } 
+        }
+      },
+      {
+        match-name "investigation_type" ,
+        value-constraint "^bacteria_archaea$" ,
+        other-fields {
+          {
+            field-name "num_replicons" ,
+            required TRUE ,
+            severity info }  ,
+          {
+            field-name "ref_biomaterial" ,
+            required TRUE ,
+            severity info }  ,
+          {
+            field-name "assembly_qual" ,
+            required TRUE ,
+            severity info }  ,
+          {
+            field-name "number_contig" ,
+            required TRUE ,
+            severity info } 
+        }
+      },
+      {
+        match-name "investigation_type" ,
+        value-constraint "^plasmid$" ,
+        other-fields {
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } 
+        }
+      },
+      {
+        match-name "investigation_type" ,
+        value-constraint "^virus$" ,
+        other-fields {
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } 
+        }
+      }
+    } 
+  },
+  {
+    prefix "MIUVIG:5.0-Data-START" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^miuvig$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_broad_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_local_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_medium" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly_qual" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "source_uvig" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "virus_enrich_appr" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly_software" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "number_contig" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "vir_ident_software" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "pred_genome_type" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "pred_genome_struc" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "detec_type" ,
+        required TRUE ,
+        severity info }
+    } ,
+    require-order FALSE ,
+    allow-unlisted TRUE
+  },
+  {
+    prefix "MIMAG:5.0-Data-START" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^mimag$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_broad_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_local_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_medium" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly_qual" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "tax_ident" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly_software" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "compl_score" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "compl_software" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "contam_score" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "bin_param" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "bin_software" ,
+        required TRUE ,
+        severity info }
+    } ,
+    require-order FALSE ,
+    allow-unlisted TRUE
+  }
+}
+

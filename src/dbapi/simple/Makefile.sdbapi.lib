@@ -1,0 +1,11 @@
+# $Id$
+
+SRC = sdbapi
+LIB = sdbapi
+
+WATCHERS = ucko satskyse
+
+
+
+USES_LIBRARIES = ncbi_xdbapi_ftds ncbi_xdbapi_ftds100 \
+                 dbapi $(XCONNEXT) xconnect

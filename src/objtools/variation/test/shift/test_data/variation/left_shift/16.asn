@@ -1,0 +1,52 @@
+Variation ::= {
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc pnt {
+              point 22845780,
+              id other {
+                accession "NC_000022",
+                version 10
+              }
+            },
+            mol genomic
+          }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "TT"
+                    },
+                    action ins-before
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  ext {
+    {
+      type str "Variation Normalization",
+      data {
+        {
+          label str "Left Shifted",
+          data bool TRUE
+        }
+      }
+    }
+  }
+}
+Test Fully Shifted : 0

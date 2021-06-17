@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(pcassay)
+  NCBI_dataspecs(pcassay.asn)
+  NCBI_uses_toolkit_libraries(seq pcsubstance)
+NCBI_end_lib()
+

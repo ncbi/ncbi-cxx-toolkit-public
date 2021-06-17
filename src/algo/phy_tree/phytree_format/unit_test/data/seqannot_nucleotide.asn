@@ -1,0 +1,4146 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type
+        str "Hist Seqalign" ,
+      data {
+        {
+          label
+            str "Hist Seqalign" ,
+          data
+            bool TRUE } } } ,
+    user {
+      type
+        str "Blast Type" ,
+      data {
+        {
+          label
+            id 0 ,
+          data
+            int 0 } } } ,
+    user {
+      type
+        str "BLAST database title" ,
+      data {
+        {
+          label
+            str "human build 37 genome database (reference GRCh37 assembly
+ only)" ,
+          data
+            bool TRUE } } } } ,
+  data
+    align {
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 2562 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 473224, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 2577 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 9 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 167466174 } ,
+            starts {
+              6 ,
+              75 ,
+              -1 ,
+              1505 ,
+              1436 ,
+              1507 ,
+              -1 ,
+              1508 ,
+              1437 ,
+              1509 ,
+              -1 ,
+              2269 ,
+              2197 ,
+              2270 ,
+              2198 ,
+              -1 ,
+              2199 ,
+              2271 } ,
+            lens {
+              1430 ,
+              2 ,
+              1 ,
+              1 ,
+              760 ,
+              1 ,
+              1 ,
+              1 ,
+              386 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 2517 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 464914, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 2577 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 15 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 167466176 } ,
+            starts {
+              6 ,
+              75 ,
+              -1 ,
+              1077 ,
+              1008 ,
+              1080 ,
+              -1 ,
+              1083 ,
+              1011 ,
+              1084 ,
+              -1 ,
+              1085 ,
+              1012 ,
+              1098 ,
+              -1 ,
+              1099 ,
+              1013 ,
+              1100 ,
+              -1 ,
+              1521 ,
+              1434 ,
+              1524 ,
+              -1 ,
+              2287 ,
+              2197 ,
+              2288 ,
+              2198 ,
+              -1 ,
+              2199 ,
+              2289 } ,
+            lens {
+              1002 ,
+              3 ,
+              3 ,
+              1 ,
+              1 ,
+              13 ,
+              1 ,
+              1 ,
+              421 ,
+              3 ,
+              763 ,
+              1 ,
+              1 ,
+              1 ,
+              386 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1694 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 312934, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1876 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 23 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514673 } ,
+            starts {
+              14 ,
+              22767378 ,
+              -1 ,
+              22767384 ,
+              20 ,
+              22767385 ,
+              1183 ,
+              -1 ,
+              1186 ,
+              22768548 ,
+              1201 ,
+              -1 ,
+              1203 ,
+              22768563 ,
+              -1 ,
+              22768796 ,
+              1436 ,
+              22768798 ,
+              -1 ,
+              22768800 ,
+              1438 ,
+              22768801 ,
+              -1 ,
+              22769114 ,
+              1751 ,
+              22769115 ,
+              1752 ,
+              -1 ,
+              1753 ,
+              22769116 ,
+              1780 ,
+              -1 ,
+              1781 ,
+              22769143 ,
+              -1 ,
+              22769242 ,
+              1880 ,
+              22769243 ,
+              1881 ,
+              -1 ,
+              1882 ,
+              22769244 ,
+              1899 ,
+              -1 ,
+              1900 ,
+              22769261 } ,
+            lens {
+              6 ,
+              1 ,
+              1163 ,
+              3 ,
+              15 ,
+              2 ,
+              233 ,
+              2 ,
+              2 ,
+              1 ,
+              313 ,
+              1 ,
+              1 ,
+              1 ,
+              27 ,
+              1 ,
+              99 ,
+              1 ,
+              1 ,
+              1 ,
+              17 ,
+              1 ,
+              71 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1694 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 312934, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1876 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 23 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157811953 } ,
+            starts {
+              1900 ,
+              16675824 ,
+              1899 ,
+              -1 ,
+              1882 ,
+              16675895 ,
+              1881 ,
+              -1 ,
+              1880 ,
+              16675912 ,
+              -1 ,
+              16675913 ,
+              1781 ,
+              16675914 ,
+              1780 ,
+              -1 ,
+              1753 ,
+              16676013 ,
+              1752 ,
+              -1 ,
+              1751 ,
+              16676040 ,
+              -1 ,
+              16676041 ,
+              1438 ,
+              16676042 ,
+              -1 ,
+              16676355 ,
+              1436 ,
+              16676356 ,
+              -1 ,
+              16676358 ,
+              1203 ,
+              16676360 ,
+              1201 ,
+              -1 ,
+              1186 ,
+              16676593 ,
+              1183 ,
+              -1 ,
+              20 ,
+              16676608 ,
+              -1 ,
+              16677771 ,
+              14 ,
+              16677772 } ,
+            lens {
+              71 ,
+              1 ,
+              17 ,
+              1 ,
+              1 ,
+              1 ,
+              99 ,
+              1 ,
+              27 ,
+              1 ,
+              1 ,
+              1 ,
+              313 ,
+              1 ,
+              2 ,
+              2 ,
+              233 ,
+              2 ,
+              15 ,
+              3 ,
+              1163 ,
+              1 ,
+              6 } ,
+            strands {
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1691 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 31238, 10, -1 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1877 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 27 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157698039 } ,
+            starts {
+              1882 ,
+              408254 ,
+              1881 ,
+              -1 ,
+              1880 ,
+              408343 ,
+              -1 ,
+              408344 ,
+              1868 ,
+              408345 ,
+              -1 ,
+              408357 ,
+              1753 ,
+              408358 ,
+              1752 ,
+              -1 ,
+              1751 ,
+              408473 ,
+              -1 ,
+              408474 ,
+              1461 ,
+              408475 ,
+              -1 ,
+              408765 ,
+              1458 ,
+              408766 ,
+              1457 ,
+              -1 ,
+              1434 ,
+              408769 ,
+              -1 ,
+              408792 ,
+              1229 ,
+              408795 ,
+              1227 ,
+              -1 ,
+              1226 ,
+              409000 ,
+              1225 ,
+              -1 ,
+              614 ,
+              409001 ,
+              -1 ,
+              409612 ,
+              612 ,
+              409613 ,
+              611 ,
+              -1 ,
+              20 ,
+              409615 ,
+              -1 ,
+              410206 ,
+              14 ,
+              410207 } ,
+            lens {
+              89 ,
+              1 ,
+              1 ,
+              1 ,
+              12 ,
+              1 ,
+              115 ,
+              1 ,
+              1 ,
+              1 ,
+              290 ,
+              1 ,
+              3 ,
+              1 ,
+              23 ,
+              3 ,
+              205 ,
+              2 ,
+              1 ,
+              1 ,
+              611 ,
+              1 ,
+              2 ,
+              1 ,
+              591 ,
+              1 ,
+              6 } ,
+            strands {
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1679 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 310165, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1872 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 27 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157702221 } ,
+            starts {
+              14 ,
+              542489 ,
+              -1 ,
+              542495 ,
+              20 ,
+              542497 ,
+              326 ,
+              -1 ,
+              327 ,
+              542803 ,
+              -1 ,
+              543132 ,
+              656 ,
+              543133 ,
+              658 ,
+              -1 ,
+              659 ,
+              543135 ,
+              771 ,
+              -1 ,
+              772 ,
+              543247 ,
+              -1 ,
+              543692 ,
+              1217 ,
+              543693 ,
+              1219 ,
+              -1 ,
+              1220 ,
+              543695 ,
+              -1 ,
+              543893 ,
+              1418 ,
+              543894 ,
+              -1 ,
+              543901 ,
+              1425 ,
+              543902 ,
+              1460 ,
+              -1 ,
+              1461 ,
+              543937 ,
+              -1 ,
+              543940 ,
+              1464 ,
+              543941 ,
+              -1 ,
+              544357 ,
+              1880 ,
+              544358 ,
+              1881 ,
+              -1 ,
+              1882 ,
+              544359 } ,
+            lens {
+              6 ,
+              2 ,
+              306 ,
+              1 ,
+              329 ,
+              1 ,
+              2 ,
+              1 ,
+              112 ,
+              1 ,
+              445 ,
+              1 ,
+              2 ,
+              1 ,
+              198 ,
+              1 ,
+              7 ,
+              1 ,
+              35 ,
+              1 ,
+              3 ,
+              1 ,
+              416 ,
+              1 ,
+              1 ,
+              1 ,
+              89 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1665 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 307579, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1867 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 17 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157698078 } ,
+            starts {
+              1434 ,
+              112799 ,
+              -1 ,
+              113336 ,
+              1253 ,
+              113339 ,
+              -1 ,
+              113520 ,
+              1252 ,
+              113521 ,
+              1251 ,
+              -1 ,
+              659 ,
+              113522 ,
+              658 ,
+              -1 ,
+              656 ,
+              114114 ,
+              -1 ,
+              114116 ,
+              614 ,
+              114117 ,
+              -1 ,
+              114159 ,
+              612 ,
+              114160 ,
+              611 ,
+              -1 ,
+              20 ,
+              114162 ,
+              -1 ,
+              114753 ,
+              14 ,
+              114755 } ,
+            lens {
+              537 ,
+              3 ,
+              181 ,
+              1 ,
+              1 ,
+              1 ,
+              592 ,
+              1 ,
+              2 ,
+              1 ,
+              42 ,
+              1 ,
+              2 ,
+              1 ,
+              591 ,
+              2 ,
+              6 } ,
+            strands {
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1663 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 30721, 10, -1 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1868 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 25 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157701491 } ,
+            starts {
+              1882 ,
+              25150 ,
+              1881 ,
+              -1 ,
+              1880 ,
+              25239 ,
+              -1 ,
+              25240 ,
+              1468 ,
+              25241 ,
+              -1 ,
+              25653 ,
+              1461 ,
+              25654 ,
+              1460 ,
+              -1 ,
+              1438 ,
+              25661 ,
+              -1 ,
+              25683 ,
+              1436 ,
+              25684 ,
+              -1 ,
+              25686 ,
+              1419 ,
+              25688 ,
+              1418 ,
+              -1 ,
+              750 ,
+              25705 ,
+              -1 ,
+              26373 ,
+              749 ,
+              26374 ,
+              748 ,
+              -1 ,
+              551 ,
+              26375 ,
+              -1 ,
+              26572 ,
+              20 ,
+              26574 ,
+              -1 ,
+              27105 ,
+              19 ,
+              27106 ,
+              -1 ,
+              27107 ,
+              14 ,
+              27108 } ,
+            lens {
+              89 ,
+              1 ,
+              1 ,
+              1 ,
+              412 ,
+              1 ,
+              7 ,
+              1 ,
+              22 ,
+              1 ,
+              2 ,
+              2 ,
+              17 ,
+              1 ,
+              668 ,
+              1 ,
+              1 ,
+              1 ,
+              197 ,
+              2 ,
+              531 ,
+              1 ,
+              1 ,
+              1 ,
+              5 } ,
+            strands {
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1654 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 305548, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1860 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 11 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514650 } ,
+            starts {
+              1652 ,
+              12456 ,
+              1650 ,
+              -1 ,
+              1461 ,
+              12775 ,
+              1460 ,
+              -1 ,
+              1437 ,
+              12964 ,
+              -1 ,
+              12987 ,
+              1436 ,
+              12988 ,
+              -1 ,
+              12989 ,
+              20 ,
+              12991 ,
+              -1 ,
+              14407 ,
+              14 ,
+              14408 } ,
+            lens {
+              319 ,
+              2 ,
+              189 ,
+              1 ,
+              23 ,
+              1 ,
+              1 ,
+              2 ,
+              1416 ,
+              1 ,
+              6 } ,
+            strands {
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1654 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 305548, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1860 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 11 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157703081 } ,
+            starts {
+              1652 ,
+              941 ,
+              1650 ,
+              -1 ,
+              1461 ,
+              1260 ,
+              1460 ,
+              -1 ,
+              1437 ,
+              1449 ,
+              -1 ,
+              1472 ,
+              1436 ,
+              1473 ,
+              -1 ,
+              1474 ,
+              20 ,
+              1476 ,
+              -1 ,
+              2892 ,
+              14 ,
+              2893 } ,
+            lens {
+              319 ,
+              2 ,
+              189 ,
+              1 ,
+              23 ,
+              1 ,
+              1 ,
+              2 ,
+              1416 ,
+              1 ,
+              6 } ,
+            strands {
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1609 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 297238, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1848 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 33 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157702226 } ,
+            starts {
+              14 ,
+              224013 ,
+              -1 ,
+              224019 ,
+              20 ,
+              224020 ,
+              181 ,
+              -1 ,
+              182 ,
+              224181 ,
+              668 ,
+              -1 ,
+              669 ,
+              224667 ,
+              671 ,
+              -1 ,
+              672 ,
+              224669 ,
+              673 ,
+              -1 ,
+              676 ,
+              224670 ,
+              677 ,
+              -1 ,
+              680 ,
+              224671 ,
+              681 ,
+              -1 ,
+              682 ,
+              224672 ,
+              684 ,
+              -1 ,
+              687 ,
+              224674 ,
+              771 ,
+              -1 ,
+              772 ,
+              224758 ,
+              -1 ,
+              225404 ,
+              1418 ,
+              225405 ,
+              -1 ,
+              225412 ,
+              1425 ,
+              225413 ,
+              1469 ,
+              -1 ,
+              1470 ,
+              225457 ,
+              -1 ,
+              225737 ,
+              1750 ,
+              225738 ,
+              1751 ,
+              -1 ,
+              1752 ,
+              225739 ,
+              -1 ,
+              225867 ,
+              1880 ,
+              225868 ,
+              1881 ,
+              -1 ,
+              1882 ,
+              225869 } ,
+            lens {
+              6 ,
+              1 ,
+              161 ,
+              1 ,
+              486 ,
+              1 ,
+              2 ,
+              1 ,
+              1 ,
+              3 ,
+              1 ,
+              3 ,
+              1 ,
+              1 ,
+              2 ,
+              3 ,
+              84 ,
+              1 ,
+              646 ,
+              1 ,
+              7 ,
+              1 ,
+              44 ,
+              1 ,
+              280 ,
+              1 ,
+              1 ,
+              1 ,
+              128 ,
+              1 ,
+              1 ,
+              1 ,
+              89 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1604 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 296315, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1839 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 17 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 51477765 } ,
+            starts {
+              1905 ,
+              736673 ,
+              1904 ,
+              -1 ,
+              1438 ,
+              736739 ,
+              -1 ,
+              737205 ,
+              1436 ,
+              737206 ,
+              -1 ,
+              737208 ,
+              1414 ,
+              737210 ,
+              1413 ,
+              -1 ,
+              1121 ,
+              737232 ,
+              -1 ,
+              737524 ,
+              1120 ,
+              737525 ,
+              1119 ,
+              -1 ,
+              1015 ,
+              737526 ,
+              1014 ,
+              -1 ,
+              512 ,
+              737630 ,
+              511 ,
+              -1 ,
+              21 ,
+              738132 } ,
+            lens {
+              66 ,
+              1 ,
+              466 ,
+              1 ,
+              2 ,
+              2 ,
+              22 ,
+              1 ,
+              292 ,
+              1 ,
+              1 ,
+              1 ,
+              104 ,
+              1 ,
+              502 ,
+              1 ,
+              490 } ,
+            strands {
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1603 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 29613, 10, -1 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1847 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 31 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157701949 } ,
+            starts {
+              1882 ,
+              136558 ,
+              1881 ,
+              -1 ,
+              1880 ,
+              136647 ,
+              -1 ,
+              136648 ,
+              1495 ,
+              136649 ,
+              1494 ,
+              -1 ,
+              1492 ,
+              137034 ,
+              -1 ,
+              137036 ,
+              1438 ,
+              137037 ,
+              -1 ,
+              137091 ,
+              1436 ,
+              137092 ,
+              -1 ,
+              137094 ,
+              1233 ,
+              137096 ,
+              1232 ,
+              -1 ,
+              1231 ,
+              137299 ,
+              1230 ,
+              -1 ,
+              1229 ,
+              137300 ,
+              1228 ,
+              -1 ,
+              760 ,
+              137301 ,
+              759 ,
+              -1 ,
+              758 ,
+              137769 ,
+              -1 ,
+              137770 ,
+              537 ,
+              137771 ,
+              536 ,
+              -1 ,
+              203 ,
+              137992 ,
+              -1 ,
+              138325 ,
+              99 ,
+              138326 ,
+              98 ,
+              -1 ,
+              20 ,
+              138430 ,
+              -1 ,
+              138508 ,
+              14 ,
+              138509 } ,
+            lens {
+              89 ,
+              1 ,
+              1 ,
+              1 ,
+              385 ,
+              1 ,
+              2 ,
+              1 ,
+              54 ,
+              1 ,
+              2 ,
+              2 ,
+              203 ,
+              1 ,
+              1 ,
+              1 ,
+              1 ,
+              1 ,
+              468 ,
+              1 ,
+              1 ,
+              1 ,
+              221 ,
+              1 ,
+              333 ,
+              1 ,
+              104 ,
+              1 ,
+              78 ,
+              1 ,
+              6 } ,
+            strands {
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1569 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 289851, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1826 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 19 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157698036 } ,
+            starts {
+              1905 ,
+              652646 ,
+              1904 ,
+              -1 ,
+              1438 ,
+              652712 ,
+              -1 ,
+              653178 ,
+              1436 ,
+              653179 ,
+              -1 ,
+              653181 ,
+              1414 ,
+              653183 ,
+              1413 ,
+              -1 ,
+              1121 ,
+              653205 ,
+              -1 ,
+              653497 ,
+              1120 ,
+              653498 ,
+              1119 ,
+              -1 ,
+              1015 ,
+              653499 ,
+              1014 ,
+              -1 ,
+              512 ,
+              653603 ,
+              511 ,
+              -1 ,
+              122 ,
+              654105 ,
+              -1 ,
+              654494 ,
+              21 ,
+              654499 } ,
+            lens {
+              66 ,
+              1 ,
+              466 ,
+              1 ,
+              2 ,
+              2 ,
+              22 ,
+              1 ,
+              292 ,
+              1 ,
+              1 ,
+              1 ,
+              104 ,
+              1 ,
+              502 ,
+              1 ,
+              389 ,
+              5 ,
+              101 } ,
+            strands {
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1397 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 258089, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1791 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 37 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514641 } ,
+            starts {
+              1872 ,
+              140145 ,
+              1871 ,
+              -1 ,
+              1868 ,
+              140244 ,
+              -1 ,
+              140247 ,
+              1760 ,
+              140248 ,
+              -1 ,
+              140356 ,
+              1759 ,
+              140357 ,
+              -1 ,
+              140358 ,
+              1757 ,
+              140359 ,
+              -1 ,
+              140361 ,
+              1617 ,
+              140363 ,
+              1616 ,
+              -1 ,
+              1615 ,
+              140503 ,
+              -1 ,
+              140504 ,
+              1435 ,
+              140505 ,
+              -1 ,
+              140685 ,
+              1434 ,
+              140686 ,
+              -1 ,
+              140687 ,
+              975 ,
+              140689 ,
+              974 ,
+              -1 ,
+              972 ,
+              141148 ,
+              -1 ,
+              141150 ,
+              968 ,
+              141151 ,
+              -1 ,
+              141155 ,
+              967 ,
+              141157 ,
+              -1 ,
+              141158 ,
+              965 ,
+              141159 ,
+              -1 ,
+              141161 ,
+              610 ,
+              141163 ,
+              -1 ,
+              141518 ,
+              536 ,
+              141521 ,
+              -1 ,
+              141595 ,
+              376 ,
+              141597 ,
+              -1 ,
+              141757 ,
+              20 ,
+              141760 ,
+              -1 ,
+              142116 ,
+              14 ,
+              142117 } ,
+            lens {
+              99 ,
+              1 ,
+              3 ,
+              1 ,
+              108 ,
+              1 ,
+              1 ,
+              1 ,
+              2 ,
+              2 ,
+              140 ,
+              1 ,
+              1 ,
+              1 ,
+              180 ,
+              1 ,
+              1 ,
+              2 ,
+              459 ,
+              1 ,
+              2 ,
+              1 ,
+              4 ,
+              2 ,
+              1 ,
+              1 ,
+              2 ,
+              2 ,
+              355 ,
+              3 ,
+              74 ,
+              2 ,
+              160 ,
+              3 ,
+              356 ,
+              1 ,
+              6 } ,
+            strands {
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1368 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 252734, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1747 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 27 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 239747132 } ,
+            starts {
+              58 ,
+              0 ,
+              -1 ,
+              318 ,
+              376 ,
+              321 ,
+              -1 ,
+              555 ,
+              610 ,
+              558 ,
+              -1 ,
+              915 ,
+              967 ,
+              916 ,
+              -1 ,
+              917 ,
+              968 ,
+              919 ,
+              -1 ,
+              923 ,
+              972 ,
+              924 ,
+              974 ,
+              -1 ,
+              975 ,
+              926 ,
+              -1 ,
+              1385 ,
+              1434 ,
+              1387 ,
+              -1 ,
+              1388 ,
+              1435 ,
+              1389 ,
+              -1 ,
+              1569 ,
+              1615 ,
+              1570 ,
+              1616 ,
+              -1 ,
+              1617 ,
+              1571 ,
+              -1 ,
+              1710 ,
+              1756 ,
+              1713 ,
+              -1 ,
+              1825 ,
+              1868 ,
+              1826 ,
+              1871 ,
+              -1 ,
+              1872 ,
+              1829 } ,
+            lens {
+              318 ,
+              3 ,
+              234 ,
+              3 ,
+              357 ,
+              1 ,
+              1 ,
+              2 ,
+              4 ,
+              1 ,
+              2 ,
+              1 ,
+              459 ,
+              2 ,
+              1 ,
+              1 ,
+              180 ,
+              1 ,
+              1 ,
+              1 ,
+              139 ,
+              3 ,
+              112 ,
+              1 ,
+              3 ,
+              1 ,
+              99 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 584 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 107956, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 700 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 17 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157702408 } ,
+            starts {
+              14 ,
+              5437 ,
+              -1 ,
+              5443 ,
+              20 ,
+              5444 ,
+              185 ,
+              -1 ,
+              186 ,
+              5609 ,
+              -1 ,
+              5996 ,
+              573 ,
+              5997 ,
+              576 ,
+              -1 ,
+              577 ,
+              6000 ,
+              673 ,
+              -1 ,
+              677 ,
+              6096 ,
+              678 ,
+              -1 ,
+              681 ,
+              6097 ,
+              682 ,
+              -1 ,
+              686 ,
+              6098 ,
+              687 ,
+              -1 ,
+              688 ,
+              6099 } ,
+            lens {
+              6 ,
+              1 ,
+              165 ,
+              1 ,
+              387 ,
+              1 ,
+              3 ,
+              1 ,
+              96 ,
+              4 ,
+              1 ,
+              3 ,
+              1 ,
+              4 ,
+              1 ,
+              1 ,
+              78 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 521 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 963225, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 568 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 239758106 } ,
+            starts {
+              27 ,
+              0 ,
+              328 ,
+              -1 ,
+              329 ,
+              301 } ,
+            lens {
+              301 ,
+              1 ,
+              289 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 521 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 963225, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 568 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 239750228 } ,
+            starts {
+              27 ,
+              0 ,
+              328 ,
+              -1 ,
+              329 ,
+              301 } ,
+            lens {
+              301 ,
+              1 ,
+              289 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 214 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 138366, 10, -113 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 396303, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 214 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              1757 ,
+              10488666 } ,
+            lens {
+              214 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 212 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 178988, 10, -112 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 39261, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 212 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              1226 ,
+              10493744 } ,
+            lens {
+              212 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 212 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 178988, 10, -112 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 39261, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 212 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              688 ,
+              10508430 } ,
+            lens {
+              212 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 173 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 85665, 10, -90 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 320591, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 173 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              1434 ,
+              10493369 } ,
+            lens {
+              173 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 159 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 519231, 10, -83 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 294738, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 159 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              2288 ,
+              10473961 } ,
+            lens {
+              159 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 158 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 186749, 10, -82 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 292891, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 158 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              531 ,
+              10508746 } ,
+            lens {
+              158 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 154 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 312497, 10, -80 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 285504, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 154 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              1606 ,
+              10490255 } ,
+            lens {
+              154 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 151 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 145391, 10, -78 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 279964, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 151 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              159 ,
+              10523433 } ,
+            lens {
+              151 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 138 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 245017, 10, -71 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 255958, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 138 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              2447 ,
+              10472397 } ,
+            lens {
+              138 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 126 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 114805, 10, -64 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 233798, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 126 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              309 ,
+              10521434 } ,
+            lens {
+              126 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 123 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 534134, 10, -63 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 228258, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 128 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 5 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              2199 ,
+              10480910 ,
+              2198 ,
+              -1 ,
+              2197 ,
+              10480926 ,
+              -1 ,
+              10480927 ,
+              2086 ,
+              10480928 } ,
+            lens {
+              16 ,
+              1 ,
+              1 ,
+              1 ,
+              111 } ,
+            strands {
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 121 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 690946, 10, -62 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 224565, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 121 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              1967 ,
+              10483772 } ,
+            lens {
+              121 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 117 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 11562, 10, -58 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 217178, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 117 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              898 ,
+              10506189 } ,
+            lens {
+              117 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 115 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 149564, 10, -58 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 213485, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 115 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              1013 ,
+              10503323 } ,
+            lens {
+              115 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 101 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 906532, 10, -51 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 187632, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 101 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              434 ,
+              10509721 } ,
+            lens {
+              101 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 100 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 326047, 10, -50 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 185785, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 102 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              1126 ,
+              10495399 } ,
+            lens {
+              103 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 80 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 427778, 10, -39 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 148852, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 80 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              6 ,
+              10540662 } ,
+            lens {
+              80 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 79 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 153856, 10, -38 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 147006, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 79 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              2213 ,
+              10475401 } ,
+            lens {
+              79 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 79 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 153856, 10, -38 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 147006, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 79 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 224514953 } ,
+            starts {
+              82 ,
+              10533079 } ,
+            lens {
+              79 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 214 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 138366, 10, -113 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 396303, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 214 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              1757 ,
+              460527 } ,
+            lens {
+              214 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 212 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 178988, 10, -112 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 39261, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 212 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              1226 ,
+              465605 } ,
+            lens {
+              212 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 212 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 178988, 10, -112 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 39261, 10, -2 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 212 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              688 ,
+              480348 } ,
+            lens {
+              212 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 173 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 85665, 10, -90 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 320591, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 173 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              1434 ,
+              465230 } ,
+            lens {
+              173 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 159 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 519231, 10, -83 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 294738, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 159 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              2288 ,
+              444974 } ,
+            lens {
+              159 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 158 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 186749, 10, -82 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 292891, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 158 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              531 ,
+              480664 } ,
+            lens {
+              158 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 154 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 312497, 10, -80 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 285504, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 154 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              1606 ,
+              462116 } ,
+            lens {
+              154 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 151 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 145391, 10, -78 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 279964, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 151 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              159 ,
+              495356 } ,
+            lens {
+              151 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 135 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 113995, 10, -69 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 250418, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 137 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              2447 ,
+              443411 } ,
+            lens {
+              138 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 126 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 114805, 10, -64 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 233798, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 126 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              309 ,
+              493357 } ,
+            lens {
+              126 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 123 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 534134, 10, -63 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 228258, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 128 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 5 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              2199 ,
+              451938 ,
+              2198 ,
+              -1 ,
+              2197 ,
+              451954 ,
+              -1 ,
+              451955 ,
+              2086 ,
+              451956 } ,
+            lens {
+              16 ,
+              1 ,
+              1 ,
+              1 ,
+              111 } ,
+            strands {
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 121 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 690946, 10, -62 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 224565, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 121 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              1967 ,
+              455631 } ,
+            lens {
+              121 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 117 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 11562, 10, -58 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 217178, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 117 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              898 ,
+              478107 } ,
+            lens {
+              117 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 101 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 906532, 10, -51 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 187632, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 104 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              1028 ,
+              475187 ,
+              -1 ,
+              475287 ,
+              1024 ,
+              475288 } ,
+            lens {
+              100 ,
+              1 ,
+              4 } ,
+            strands {
+              minus ,
+              plus ,
+              minus ,
+              plus ,
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 101 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 906532, 10, -51 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 187632, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 101 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              434 ,
+              481643 } ,
+            lens {
+              101 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 100 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 326047, 10, -50 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 185785, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 102 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              1126 ,
+              467260 } ,
+            lens {
+              103 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 80 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 427778, 10, -39 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 148852, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 80 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              6 ,
+              512575 } ,
+            lens {
+              80 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 79 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 153856, 10, -38 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 147006, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 79 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              2213 ,
+              446413 } ,
+            lens {
+              79 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 79 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 153856, 10, -38 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 147006, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 79 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u00001" } ,
+              gi 157697786 } ,
+            starts {
+              82 ,
+              504991 } ,
+            lens {
+              79 } ,
+            strands {
+              minus ,
+              plus } } } } }
+
+
+
+

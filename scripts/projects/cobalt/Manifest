@@ -1,0 +1,50 @@
+#
+# Filename: Manifest
+#
+# $Id $
+#
+# Author: Christiam Camacho, Greg Boratyn
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+# The APP: statement describes binaries
+# The LIB: statement describes libraries
+# The DLL: statement describes shared objects
+# The ETC: statement describes configuration files
+# It is allowed to have more than one of each statements
+# NOTE: When applications are added/removed from this list, please update
+# the application listings in post_build/win/{make_win.py,ncbi-blast.nsi},
+# post_build/macosx/ncbi-blast.sh, and post_build/rpm/ncbi-blast.spec
+APP: cobalt
+
+POSTBUILD: $srcdir/scripts/projects/cobalt/post_build/make_installers.py -v $version $platform $installdir "$tarball"
+
+DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --with-build-root=$srcdir/ReleaseMT --without-vdb
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+
+# ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
+# that. The build-root is needed so that rpmbuild can find the proper directories
+# to copy the binaries from
+Linux64-Centos     : icc : ICC.sh           --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --without-vdb --without-gnutls --without-gcrypt
+#Linux64-Centos     : gcc : GCC.sh           --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --without-vdb --without-gnutls --without-gcrypt
+#Linux64-Centos     : gcc-debug : GCC.sh                        --with-strip --with-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --without-vdb
+
+DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
+#DEFAULT_CONFIGURATIONS: Linux64-Centos:gcc
+
+Win64         : plain : static  64  ReleaseDLL <ENV>NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-INT8-GI=1</ENV>
+
+#IntelMAC            : gcc : GCC.sh   --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --without-vdb --without-gnutls --without-gcrypt
+#IntelMAC            : clang     : Clang.sh          --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --without-vdb --without-gnutls --without-gcrypt
+IntelMAC    : clang     : Clang.sh           --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --without-vdb --without-gnutls --without-gcrypt
+
+USE_COMPONENTS

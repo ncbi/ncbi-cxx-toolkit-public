@@ -1,0 +1,26 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(sdbapi_unit_test)
+
+  NCBI_sources(
+    sdbapi_unit_test sdbapi_unit_test_object sdbapi_unit_test_bcp
+    sdbapi_unit_test_proc sdbapi_unit_test_stmt
+    sdbapi_unit_test_connection sdbapi_unit_test_common
+    sdbapi_unit_test_lob sdbapi_unit_test_xact_abort
+  )
+
+  NCBI_requires(Boost.Test.Included)
+  NCBI_set_pch_header(sdbapi_unit_test_pch.hpp)
+  NCBI_uses_toolkit_libraries(sdbapi)
+
+  NCBI_set_test_requires(connext in-house-resources)
+  NCBI_set_test_assets(sdbapi_unit_test.ini)
+  NCBI_set_test_timeout(600)
+  NCBI_add_test(sdbapi_unit_test -dr ftds100 -S MsSql)
+  NCBI_add_test(sdbapi_unit_test -dr ftds100 -S MsSql -V 7.4)
+  NCBI_add_test(sdbapi_unit_test -dr ftds100 -S Sybase)
+  NCBI_add_test(sdbapi_unit_test -dr ftds100 -S DBAPI_DEV16_16K -T Sybase)
+NCBI_end_app()
+

@@ -1,0 +1,10 @@
+# $Id$
+
+LIB = esummary
+SRC = esummary__ esummary___
+
+WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    xser

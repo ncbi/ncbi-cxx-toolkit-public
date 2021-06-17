@@ -1,0 +1,31 @@
+[-]
+_export = NCBI_PCSUBSTANCE_EXPORT
+
+[PC-InfoData]
+value.bvec._type = vector
+value.bvec.E._type = char
+value.ivec._type = vector
+value.fvec._type = vector
+
+[PC-Coordinates]
+type._type = vector
+aid._type = vector
+
+[PC-Conformer]
+x._type = vector
+y._type = vector
+z._type = vector
+
+[PC-DrawAnnotations]
+annotation._type = vector
+aid1._type = vector
+aid2._type = vector
+
+[PC-Atoms]
+aid._type = vector
+element._type = vector
+
+[PC-Bonds]
+aid1._type = vector
+aid2._type = vector
+order._type = vector

@@ -1,0 +1,64 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": {
+        "id": "ref|NW_003285567.1|",
+        "type": 10
+    },
+    "other_ids": [
+        {
+            "id": "gnl|ASM:GCF_000004345.1|C59236869",
+            "type": 11
+        },
+        {
+            "id": "gi|295720530",
+            "type": 12
+        },
+        {
+            "id": "gpp|GPS_000535975.1",
+            "type": 19
+        }
+    ],
+    "molecule_type": "dna",
+    "length": 112,
+    "seq_state": 10,
+    "state": 10,
+    "blob_id": {
+        "id": "4.185301617"
+    },
+    "tax_id": 9646,
+    "hash": 1226768067,
+    "date_changed": "06/01/2020 01:19:00",
+    "gi": 295720530
+},
+{
+    "reply": "BlobInfo",
+    "id": {
+        "id": "4.185301617",
+        "last_modified": 1483032049380
+    },
+    "compression": "gzip",
+    "format": "asn.1",
+    "storage_size": 2076,
+    "size": 7154,
+    "is_dead": false,
+    "is_suppressed": false,
+    "is_withdrawn": false,
+    "hup_release_date": "",
+    "owner": 21,
+    "original_load_date": "12/29/2016 17:20:49",
+    "class": "not-set",
+    "division": "CON",
+    "username": "gpipe",
+    "id2_info": "",
+    "n_chunks": 1
+},
+{
+    "reply": "BlobData",
+    "id": {
+        "id": "4.185301617",
+        "last_modified": 1483032049380
+    },
+    "data": "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"
+}
+]

@@ -1,0 +1,55 @@
+
+<!-- IDXCODEBLOCK_START_ELEMENTS -->
+<!ELEMENT Abstract		(#PCDATA)>
+<!ELEMENT Database		(#PCDATA)>
+<!ELEMENT EntrezDate		(#PCDATA)>
+<!ELEMENT Filter		(#PCDATA)>
+<!ELEMENT PubDate		(#PCDATA)>
+<!ELEMENT Text		(#PCDATA)>
+<!ELEMENT Title		(#PCDATA)>
+<!ELEMENT Uid		(#PCDATA)>
+
+<!-- IDXCODEBLOCK_END_ELEMENTS -->
+
+
+<!-- Books structural entities -->
+<!ELEMENT IdxDocumentSet (IdxDocument+)>
+
+<!ELEMENT IdxDocument   (
+                        IdxUid, 
+                        IdxKeyFields, 
+                        IdxDisplayFields, 
+                        IdxSearchFields*
+,Seq1
+,Seq2
+,Seq3*
+                        )>
+
+<!ELEMENT Seq1 (Text,Title)*>
+<!ELEMENT Seq2 (Text,Title)>
+<!ELEMENT Seq3 (Text,Title)>
+
+
+<!ELEMENT IdxUid (#PCDATA)>
+
+<!-- IDXCODEBLOCK_START_SECTIONS -->
+<!ELEMENT IdxKeyFields		(
+				PubDate
+				| EntrezDate
+				)*>
+<!ELEMENT IdxDisplayFields	(
+				Title
+				| Abstract
+				)>
+<!ELEMENT IdxSearchFields	(
+				Uid
+				| Filter
+				| Database
+				| Title
+				| Text
+				| PubDate
+				| EntrezDate
+				)>
+<!-- IDXCODEBLOCK_END_SECTIONS -->
+
+<!-- EOF -->

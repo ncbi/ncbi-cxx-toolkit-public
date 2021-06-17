@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(xnetblastcli)
+  NCBI_generated_sources(blastclient.cpp blastclient_.cpp)
+  NCBI_uses_toolkit_libraries(xconnect xnetblast)
+NCBI_end_lib()
+

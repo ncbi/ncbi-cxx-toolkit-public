@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_lib(xregexp_template_tester)
+  NCBI_sources(regexp_template_tester)
+  NCBI_uses_toolkit_libraries(xregexp)
+  NCBI_project_tags(test)
+  NCBI_project_watchers(ivanov)
+NCBI_end_lib()
+

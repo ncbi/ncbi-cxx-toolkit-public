@@ -1,0 +1,10 @@
+Bioseq ::= {
+  id { local str "foo" },
+  inst {
+    repr raw,
+    mol dna,
+    length 42,
+    topology linear,
+    seq-data iupacna "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  }
+}

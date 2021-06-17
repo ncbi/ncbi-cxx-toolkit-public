@@ -1,0 +1,62 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbSNP",
+          tag str "rs398122889"
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 9,
+                      seq-data iupacna "TCCGACCGC"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location int {
+        from 2229045,
+        to 2229053,
+        id other {
+          accession "NC_000001",
+          version 11
+        }
+      },
+      exts {
+        {
+          type str "Variation Normalization",
+          data {
+            {
+              label str "Left Interval Shifted",
+              data bool TRUE
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Test Fully Shifted : 0

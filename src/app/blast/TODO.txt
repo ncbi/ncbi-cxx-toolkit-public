@@ -1,0 +1,22 @@
+* psi-tblastn implementation (see tblastn_app.cpp)
+* in_msa option to PSI-BLAST
+
+* Alignment results: Dense-seg vs. disc (fails for remote blast)
+* Remote searches: obtaining BLAST database information for formatter
+* BlastOptions: setting of extra parameters
+
+* Support PSSM checkpointing in psiblast (+tests)
+* Make sure that proper error checking is done when recovering from saved
+  search strategies, ie.: blastn search strategy provided to blastp
+
+* remote PSI-BLAST
+blast4 issues
+* LongestIntronLength for translated searches
+* DustFilteringparams for blastn
+* SegFilteringWindow
+
+
+
+Deferred items
+* Should C toolkit checkpoint files be accepted? Provide conversion tool?
+* Should we port patseed[pn]?

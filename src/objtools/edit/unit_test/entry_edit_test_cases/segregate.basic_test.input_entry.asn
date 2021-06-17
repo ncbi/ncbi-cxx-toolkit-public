@@ -1,0 +1,601 @@
+Seq-entry ::= set {
+  class phy-set ,
+  descr {
+    pub {
+      pub {
+        gen {
+          cit "Unpublished" ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "TESTING" ,
+                      first "TESTING" ,
+                      initials "T." } } } } ,
+          title "BankIt/GenBank Original PhySet Feature Table Validation 
+1078205" } } } ,
+    user {
+      type
+        str "Submission" ,
+      data {
+        {
+          label
+            str "SmartComment" ,
+          data
+            str "TOTAL # OF SEQS:7" } ,
+        {
+          label
+            str "AdditionalComment" ,
+          data
+            str "bankit1592831" } } } ,
+    user {
+      type
+        str "Submission" ,
+      data {
+        {
+          label
+            str "SmartComment" ,
+          data
+            str "TOTAL # OF SETS:1" } } } ,
+    user {
+      type
+        str "Submission" ,
+      data {
+        {
+          label
+            str "AdditionalComment" ,
+          data
+            str "BankIt ID:1592831" } } } ,
+    user {
+      type
+        str "NcbiCleanup" ,
+      data {
+        {
+          label
+            str "method" ,
+          data
+            str "SeriousSeqEntryCleanup" } ,
+        {
+          label
+            str "version" ,
+          data
+            int 7 } ,
+        {
+          label
+            str "month" ,
+          data
+            int 2 } ,
+        {
+          label
+            str "day" ,
+          data
+            int 26 } ,
+        {
+          label
+            str "year" ,
+          data
+            int 2013 } } } ,
+    update-date
+      std {
+        year 2013 ,
+        month 2 ,
+        day 26 ,
+        hour 23 ,
+        minute 28 ,
+        second 34 } ,
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "TESTING" ,
+                      first "TESTING" ,
+                      initials "T." } } } ,
+            affil
+              std {
+                affil "NCBI" ,
+                div "IEBQA" ,
+                city "Bethesda" ,
+                sub "MD" ,
+                country "USA" ,
+                street "Center Dr" ,
+                postal-code "20892" } } ,
+          medium email ,
+          date
+            std {
+              year 2013 ,
+              month 2 ,
+              day 26 } } } } } ,
+  seq-set {
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome mitochondrion ,
+          org {
+            taxname "Carpodacus mexicanus" ,
+            common "house finch" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 30427 } } ,
+            syn {
+              "Burrica mexicana" ,
+              "California linnet" ,
+              "Fringilla mexicana" ,
+              "Haemorhous mexicanus" } ,
+            orgname {
+              name
+                binomial {
+                  genus "Carpodacus" ,
+                  species "mexicanus" } ,
+              lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Archosauria; Dinosauria; Saurischia; Theropoda; Coelurosauria;
+ Aves; Neognathae; Passeriformes; Passeroidea; Fringillidae; Carduelinae;
+ Carpodacus" ,
+              gcode 1 ,
+              mgcode 2 ,
+              div "VRT" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "Seq1" ,
+            general {
+              db "BankIt" ,
+              tag
+                str "1592831/Seq1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 5470169 } } ,
+          descr {
+            title "defline_seq1" ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:Seq1" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 695 ,
+            strand ds ,
+            seq-data
+              iupacna "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "cox1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 669 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq1" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type mRNA } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 664 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq1" ,
+                        fuzz-from
+                          lim lt } } } } } } ,
+        seq {
+          id {
+            local
+              str "Seq1_prot_1" ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 5470170 } } ,
+          descr {
+            title "cox1 (mitochondrion) [Carpodacus mexicanus]" ,
+            molinfo {
+              biomol peptide } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 117 ,
+            seq-data
+              ncbieaa "-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "cox1" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 116 ,
+                        id
+                          local
+                            str "Seq1_prot_1" } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 2 } } ,
+                comment "This is a test" ,
+                product
+                  whole
+                    local
+                      str "Seq1_prot_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 353 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq1" } } } } } } ,
+    seq {
+      id {
+        local
+          str "Seq2" ,
+        general {
+          db "BankIt" ,
+          tag
+            str "1592831/Seq2" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 5470171 } } ,
+      descr {
+        user { class "objtools.edit.unit_test.segregate", type id 0, data { }} ,
+        source {
+          genome mitochondrion ,
+          org {
+            taxname "Vireo solitarius" ,
+            common "solitary vireo" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 34950 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Vireo" ,
+                  species "solitarius" } ,
+              lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Archosauria; Dinosauria; Saurischia; Theropoda; Coelurosauria;
+ Aves; Neognathae; Passeriformes; Corvoidea; Vireonidae; Vireoninae; Vireo" ,
+              gcode 1 ,
+              mgcode 2 ,
+              div "VRT" } } } ,
+        molinfo {
+          biomol genomic } ,
+        user {
+          type
+            str "Submission" ,
+          data {
+            {
+              label
+                str "AdditionalComment" ,
+              data
+                str "LocalID:Seq2" } } } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 661 ,
+        strand ds ,
+        seq-data
+          iupacna "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  imp {
+                    key "exon" } ,
+                partial TRUE ,
+                location
+                  int {
+                    from 0 ,
+                    to 399 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq2" ,
+                    fuzz-from
+                      lim lt } ,
+                qual {
+                  {
+                    qual "number" ,
+                    val "1" } } ,
+                xref {
+                  {
+                    data
+                      gene {
+                        locus "tgene" } } } } } } } } ,
+    seq {
+      id {
+        local
+          str "Seq3" ,
+        general {
+          db "BankIt" ,
+          tag
+            str "1592831/Seq3" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 5470172 } } ,
+      descr {
+        source {
+          genome mitochondrion ,
+          org {
+            taxname "Dendroica tigrina" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 92123 } } ,
+            syn {
+              "Cape May warbler" } ,
+            orgname {
+              name
+                binomial {
+                  genus "Dendroica" ,
+                  species "tigrina" } ,
+              lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Archosauria; Dinosauria; Saurischia; Theropoda; Coelurosauria;
+ Aves; Neognathae; Passeriformes; Passeroidea; Fringillidae; Emberizinae;
+ Parulini; Dendroica" ,
+              gcode 1 ,
+              mgcode 2 ,
+              div "VRT" } } } ,
+        molinfo {
+          biomol genomic } ,
+        user {
+          type
+            str "Submission" ,
+          data {
+            {
+              label
+                str "AdditionalComment" ,
+              data
+                str "LocalID:Seq3" } } } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 694 ,
+        strand ds ,
+        seq-data
+          iupacna "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG" } } ,
+    seq {
+      id {
+        local
+          str "Seq4" ,
+        general {
+          db "BankIt" ,
+          tag
+            str "1592831/Seq4" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 5470173 } } ,
+      descr {
+        user { class "objtools.edit.unit_test.segregate", type id 0, data { }} ,
+        source {
+          genome mitochondrion ,
+          org {
+            taxname "Vireo gilvus" ,
+            common "warbling vireo" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 34945 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Vireo" ,
+                  species "gilvus" } ,
+              lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Archosauria; Dinosauria; Saurischia; Theropoda; Coelurosauria;
+ Aves; Neognathae; Passeriformes; Corvoidea; Vireonidae; Vireoninae; Vireo" ,
+              gcode 1 ,
+              mgcode 2 ,
+              div "VRT" } } } ,
+        molinfo {
+          biomol genomic } ,
+        user {
+          type
+            str "Submission" ,
+          data {
+            {
+              label
+                str "AdditionalComment" ,
+              data
+                str "LocalID:Seq4" } } } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 674 ,
+        strand ds ,
+        seq-data
+          iupacna "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+ } } ,
+    seq {
+      id {
+        local
+          str "Seq5" ,
+        general {
+          db "BankIt" ,
+          tag
+            str "1592831/Seq5" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 5470174 } } ,
+      descr {
+        user { class "objtools.edit.unit_test.segregate", type id 0, data { }} ,
+        source {
+          genome mitochondrion ,
+          org {
+            taxname "Dendroica castanea" ,
+            common "bay-breasted warbler" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 231568 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Dendroica" ,
+                  species "castanea" } ,
+              lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Archosauria; Dinosauria; Saurischia; Theropoda; Coelurosauria;
+ Aves; Neognathae; Passeriformes; Passeroidea; Fringillidae; Emberizinae;
+ Parulini; Dendroica" ,
+              gcode 1 ,
+              mgcode 2 ,
+              div "VRT" } } } ,
+        molinfo {
+          biomol genomic } ,
+        user {
+          type
+            str "Submission" ,
+          data {
+            {
+              label
+                str "AdditionalComment" ,
+              data
+                str "LocalID:Seq5" } } } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 694 ,
+        strand ds ,
+        seq-data
+          iupacna "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+ } } ,
+    seq {
+      id {
+        local
+          str "Seq6" ,
+        general {
+          db "BankIt" ,
+          tag
+            str "1592831/Seq6" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 5470175 } } ,
+      descr {
+        source {
+          genome mitochondrion ,
+          org {
+            taxname "XYZ ABC" } } ,
+        molinfo {
+          biomol genomic } ,
+        user {
+          type
+            str "Submission" ,
+          data {
+            {
+              label
+                str "AdditionalComment" ,
+              data
+                str "LocalID:Seq6" } } } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 674 ,
+        strand ds ,
+        seq-data
+          iupacna "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" } } ,
+    seq {
+      id {
+        local
+          str "Seq7" ,
+        general {
+          db "BankIt" ,
+          tag
+            str "1592831/Seq7" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 5470176 } } ,
+      descr {
+        source {
+          genome mitochondrion ,
+          org {
+            taxname "Pelecanus erythrorhynchos" ,
+            common "American white pelican" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 33618 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Pelecanus" ,
+                  species "erythrorhynchos" } ,
+              lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Archosauria; Dinosauria; Saurischia; Theropoda; Coelurosauria;
+ Aves; Neognathae; Pelecaniformes; Pelecanidae; Pelecanus" ,
+              gcode 1 ,
+              mgcode 2 ,
+              div "VRT" } } } ,
+        molinfo {
+          biomol genomic } ,
+        user {
+          type
+            str "Submission" ,
+          data {
+            {
+              label
+                str "AdditionalComment" ,
+              data
+                str "LocalID:Seq7" } } } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 662 ,
+        strand ds ,
+        seq-data
+          iupacna "TAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" } } } }

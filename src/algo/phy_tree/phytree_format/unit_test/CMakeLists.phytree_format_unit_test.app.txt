@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(phytree_format_unit_test)
+  NCBI_sources(phytree_format_unit_test)
+  NCBI_uses_toolkit_libraries(phytree_format)
+  NCBI_set_test_assets(data phytree_format_unit_test.ini)
+  NCBI_add_test()
+  NCBI_project_watchers(blastsoft)
+NCBI_end_app()
+

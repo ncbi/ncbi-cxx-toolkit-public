@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_app(test_ncbi_null)
+  NCBI_sources(test_ncbi_null)
+  NCBI_uses_toolkit_libraries(xconnect)
+  NCBI_begin_test(test_ncbi_null)
+    NCBI_set_test_command(test_ncbi_null 'http://www.ncbi.nlm.nih.gov/Service/dispd.cgi?service=bounce')
+  NCBI_end_test()
+  NCBI_project_watchers(lavr)
+NCBI_end_app()
+

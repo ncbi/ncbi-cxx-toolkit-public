@@ -1,0 +1,62 @@
+Bioseq ::= {
+  id {
+    local str "Seq92",
+    general {
+      db "BankIt",
+      tag str "1666838/Seq92"
+    },
+    general {
+      db "TMSMART",
+      tag id 42107105
+    },
+    genbank {
+      accession "KF927036"
+    }
+  },
+  descr {
+    title "Drosophila maculifrons isolate caj3 cytochrome oxidase subunit I
+ gene, partial cds; mitochondrial.",
+    molinfo {
+      biomol genomic,
+      completeness partial
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "AdditionalComment",
+          data str "LocalID:Seq92"
+        }
+      }
+    },
+    user {
+      type str "OrginalID",
+      data {
+        {
+          label str "LocalId",
+          data str "Seq92"
+        }
+      }
+    }
+  },
+  inst {
+    repr delta,
+    mol dna,
+    length 682,
+    strand ds,
+    ext delta {
+      literal {
+        length 679,
+        seq-data ncbi2na '896832FA04DFC20FF0F62783CAD35E89FC3EA8E340FCC3B0FB07
+9D19FF3CC3FFFCCB0E5CF30FA2BF6A0F87EF5FC33CA275E3327F5760C0C330BFF877C5D79FC1FC
+F3CB482CCBE00E896812BE07BF15157349283E44EBAA4D2F8FC90FF77F11F27A0FDF73FCAE5B03
+FCF107B0F0CC6341E83C4F2160C5FCFEFE34BEC3C797CF3CF3CDFC52FF27A273C731FF078DB0FC
+0C7D3FFE1527A28AE15CFF31411F3FE3FFE84D482FCCFF0F7D4A3C'H
+      },
+      literal {
+        length 3,
+        seq-data ncbi4na 'FFF0'H
+      }
+    }
+  }
+}

@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD>
+<meta name="GENERATOR" content="HelpBlocks">
+<!-- Sitemap 1.0 -->
+</HEAD><BODY>
+<OBJECT type="text/site properties">
+</OBJECT>
+<UL>
+  <LI><OBJECT type="text/sitemap">
+      <param name="Name" value="Structure Window Menus">
+      <param name="Local" value="StructureWindow.htm">
+      </OBJECT>
+  <UL>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Structure Window : File">
+        <param name="Local" value="SW_File.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Structure Window : View">
+        <param name="Local" value="SW_View.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Structure Window : Select">
+        <param name="Local" value="SW_ShowHide.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Structure Window : Style">
+        <param name="Local" value="SW_Style.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Structure Window : Window">
+        <param name="Local" value="SW_Windows.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Structure Window : CDD">
+        <param name="Local" value="SW_CDD.htm">
+        </OBJECT>
+  </UL>
+  <LI><OBJECT type="text/sitemap">
+      <param name="Name" value="Sequence Window Menus">
+      <param name="Local" value="SequenceWindow.htm">
+      </OBJECT>
+  <UL>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Sequence Window : View">
+        <param name="Local" value="AW_View.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Sequence Window : Edit">
+        <param name="Local" value="AW_Edit.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Sequence Window : Mouse Mode">
+        <param name="Local" value="AW_Mouse.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Sequence Window : Unaligned Justification">
+        <param name="Local" value="AW_Unaligned.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Sequence Window : Import">
+        <param name="Local" value="AW_Update.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Sequence Window : Refiner">
+        <param name="Local" value="refinerHelp.htm">
+        </OBJECT>
+  </UL>
+  <LI><OBJECT type="text/sitemap">
+      <param name="Name" value="Import Window Menus">
+      <param name="Local" value="UpdateWindow.htm">
+      </OBJECT>
+  <UL>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Import Window : View">
+        <param name="Local" value="UW_View.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Import Window : Edit">
+        <param name="Local" value="UW_Edit.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Import Window : Mouse Mode">
+        <param name="Local" value="UW_Mouse.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Import Window : Unaligned Justification">
+        <param name="Local" value="UW_Unaligned.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Import Window : Algorithms">
+        <param name="Local" value="UW_Algorithms.htm">
+        </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Import Window : Alignments">
+        <param name="Local" value="UW_Alignments.htm">
+        </OBJECT>
+  </UL>
+  <LI><OBJECT type="text/sitemap">
+      <param name="Name" value="Key and Mouse Actions">
+      <param name="Local" value="KeysAndMouse.htm">
+      </OBJECT>
+</UL>
+</BODY></HTML>

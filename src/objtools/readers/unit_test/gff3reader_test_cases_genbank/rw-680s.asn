@@ -1,0 +1,3459 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+      },
+      location int {
+        from 0,
+        to 182,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_100006781"
+        }
+      },
+      xref {
+        {
+          id local id 2
+        }
+      }
+    },
+    {
+      id local id 2,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 0,
+        to 182,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_100006781"
+        },
+        {
+          qual "product",
+          val "hypothetical protein"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_100006781"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    },
+    {
+      id local id 3,
+      data gene {
+      },
+      location int {
+        from 241,
+        to 1665,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_100006782"
+        }
+      },
+      xref {
+        {
+          id local id 4
+        }
+      }
+    },
+    {
+      id local id 4,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 241,
+        to 1665,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_100006782"
+        },
+        {
+          qual "ec",
+          val "5.4.4.2"
+        },
+        {
+          qual "product",
+          val "menaquinone-specific isochorismate synthase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_100006782"
+        }
+      },
+      xref {
+        {
+          id local id 3
+        }
+      }
+    },
+    {
+      id local id 5,
+      data gene {
+      },
+      location int {
+        from 1662,
+        to 3419,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_100006783"
+        }
+      },
+      xref {
+        {
+          id local id 6
+        }
+      }
+    },
+    {
+      id local id 6,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1662,
+        to 3419,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_100006783"
+        },
+        {
+          qual "ec",
+          val "2.2.1.9"
+        },
+        {
+          qual "product",
+          val "2-succinyl-5-enolpyruvyl-6-hydroxy-3-cyclohexene-1-carboxylate
+ synthase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_100006783"
+        }
+      },
+      xref {
+        {
+          id local id 5
+        }
+      }
+    },
+    {
+      id local id 7,
+      data gene {
+      },
+      location int {
+        from 3463,
+        to 5346,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_100006784"
+        }
+      },
+      xref {
+        {
+          id local id 8
+        }
+      }
+    },
+    {
+      id local id 8,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 3463,
+        to 5346,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_100006784"
+        },
+        {
+          qual "product",
+          val "KUP system potassium uptake protein"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_100006784"
+        }
+      },
+      xref {
+        {
+          id local id 7
+        }
+      }
+    },
+    {
+      id local id 9,
+      data gene {
+      },
+      location int {
+        from 5490,
+        to 6323,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_100006785"
+        }
+      },
+      xref {
+        {
+          id local id 10
+        }
+      }
+    },
+    {
+      id local id 10,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 5490,
+        to 6323,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_100006785"
+        },
+        {
+          qual "ec",
+          val "4.1.3.36"
+        },
+        {
+          qual "product",
+          val "naphthoate synthase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_100006785"
+        }
+      },
+      xref {
+        {
+          id local id 9
+        }
+      }
+    },
+    {
+      id local id 11,
+      data gene {
+      },
+      location int {
+        from 6402,
+        to 7631,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_100006786"
+        }
+      },
+      xref {
+        {
+          id local id 12
+        }
+      }
+    },
+    {
+      id local id 12,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 6402,
+        to 7631,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_100006786"
+        },
+        {
+          qual "product",
+          val "Cysteine protease, C1A family"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_100006786"
+        }
+      },
+      xref {
+        {
+          id local id 11
+        }
+      }
+    },
+    {
+      id local id 13,
+      data gene {
+      },
+      location int {
+        from 7656,
+        to 8606,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_100006787"
+        }
+      },
+      xref {
+        {
+          id local id 14
+        }
+      }
+    },
+    {
+      id local id 14,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 7656,
+        to 8606,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_100006787"
+        },
+        {
+          qual "ec",
+          val "4.1.2.13"
+        },
+        {
+          qual "product",
+          val "fructose-bisphosphate aldolase, class II"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_100006787"
+        }
+      },
+      xref {
+        {
+          id local id 13
+        }
+      }
+    },
+    {
+      id local id 15,
+      data gene {
+      },
+      location int {
+        from 8728,
+        to 9681,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_100006788"
+        }
+      },
+      xref {
+        {
+          id local id 16
+        }
+      }
+    },
+    {
+      id local id 16,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 8728,
+        to 9681,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_100006788"
+        },
+        {
+          qual "product",
+          val "hypothetical protein"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_100006788"
+        }
+      },
+      xref {
+        {
+          id local id 15
+        }
+      }
+    },
+    {
+      id local id 17,
+      data gene {
+      },
+      location int {
+        from 9791,
+        to 12610,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_100006789"
+        }
+      },
+      xref {
+        {
+          id local id 18
+        }
+      }
+    },
+    {
+      id local id 18,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 9791,
+        to 12610,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_100006789"
+        },
+        {
+          qual "ec",
+          val "5.99.1.2"
+        },
+        {
+          qual "product",
+          val "DNA topoisomerase-3"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_100006789"
+        }
+      },
+      xref {
+        {
+          id local id 17
+        }
+      }
+    },
+    {
+      id local id 19,
+      data gene {
+      },
+      location int {
+        from 12768,
+        to 13886,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067810"
+        }
+      },
+      xref {
+        {
+          id local id 20
+        }
+      }
+    },
+    {
+      id local id 20,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 12768,
+        to 13886,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067810"
+        },
+        {
+          qual "product",
+          val "aspartate aminotransferase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067810"
+        }
+      },
+      xref {
+        {
+          id local id 19
+        }
+      }
+    },
+    {
+      id local id 21,
+      data gene {
+      },
+      location int {
+        from 13885,
+        to 15153,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067811"
+        }
+      },
+      xref {
+        {
+          id local id 22
+        }
+      }
+    },
+    {
+      id local id 22,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 13885,
+        to 15153,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067811"
+        },
+        {
+          qual "ec",
+          val "2.7.1.130"
+        },
+        {
+          qual "product",
+          val "tetraacyldisaccharide 4'-kinase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067811"
+        }
+      },
+      xref {
+        {
+          id local id 21
+        }
+      }
+    },
+    {
+      id local id 23,
+      data gene {
+      },
+      location int {
+        from 15231,
+        to 16349,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067812"
+        }
+      },
+      xref {
+        {
+          id local id 24
+        }
+      }
+    },
+    {
+      id local id 24,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 15231,
+        to 16349,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067812"
+        },
+        {
+          qual "ec",
+          val "3.4.11.-"
+        },
+        {
+          qual "product",
+          val "aminopeptidase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067812"
+        }
+      },
+      xref {
+        {
+          id local id 23
+        }
+      }
+    },
+    {
+      id local id 25,
+      data gene {
+      },
+      location int {
+        from 16440,
+        to 17432,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067813"
+        }
+      },
+      xref {
+        {
+          id local id 26
+        }
+      }
+    },
+    {
+      id local id 26,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 16440,
+        to 17432,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067813"
+        },
+        {
+          qual "ec",
+          val "3.5.4.4"
+        },
+        {
+          qual "product",
+          val "adenosine deaminase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067813"
+        }
+      },
+      xref {
+        {
+          id local id 25
+        }
+      }
+    },
+    {
+      id local id 27,
+      data gene {
+      },
+      location int {
+        from 17496,
+        to 18422,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067814"
+        }
+      },
+      xref {
+        {
+          id local id 28
+        }
+      }
+    },
+    {
+      id local id 28,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 17496,
+        to 18422,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067814"
+        },
+        {
+          qual "ec",
+          val "5.4.99.23"
+        },
+        {
+          qual "product",
+          val "23S rRNA pseudouridine1911/1915/1917 synthase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067814"
+        }
+      },
+      xref {
+        {
+          id local id 27
+        }
+      }
+    },
+    {
+      id local id 29,
+      data gene {
+      },
+      location int {
+        from 18452,
+        to 19387,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067815"
+        }
+      },
+      xref {
+        {
+          id local id 30
+        }
+      }
+    },
+    {
+      id local id 30,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 18452,
+        to 19387,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067815"
+        },
+        {
+          qual "ec",
+          val "3.6.1.11, 3.6.1.40"
+        },
+        {
+          qual "product",
+          val "exopolyphosphatase / guanosine-5'-triphosphate,3'-diphosphate
+ pyrophosphatase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067815"
+        }
+      },
+      xref {
+        {
+          id local id 29
+        }
+      }
+    },
+    {
+      id local id 31,
+      data gene {
+      },
+      location int {
+        from 19390,
+        to 20112,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067816"
+        }
+      },
+      xref {
+        {
+          id local id 32
+        }
+      }
+    },
+    {
+      id local id 32,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 19390,
+        to 20112,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067816"
+        },
+        {
+          qual "ec",
+          val "2.1.1.198"
+        },
+        {
+          qual "product",
+          val "16S rRNA (cytidine1402-2'-O)-methyltransferase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067816"
+        }
+      },
+      xref {
+        {
+          id local id 31
+        }
+      }
+    },
+    {
+      id local id 33,
+      data gene {
+      },
+      location int {
+        from 20408,
+        to 21997,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067817"
+        }
+      },
+      xref {
+        {
+          id local id 34
+        }
+      }
+    },
+    {
+      id local id 34,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 20408,
+        to 21997,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067817"
+        },
+        {
+          qual "ec",
+          val "5.3.1.9"
+        },
+        {
+          qual "product",
+          val "glucose-6-phosphate isomerase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067817"
+        }
+      },
+      xref {
+        {
+          id local id 33
+        }
+      }
+    },
+    {
+      id local id 35,
+      data gene {
+      },
+      location int {
+        from 22104,
+        to 22913,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067818"
+        }
+      },
+      xref {
+        {
+          id local id 36
+        }
+      }
+    },
+    {
+      id local id 36,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 22104,
+        to 22913,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067818"
+        },
+        {
+          qual "product",
+          val "segregation and condensation protein B"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067818"
+        }
+      },
+      xref {
+        {
+          id local id 35
+        }
+      }
+    },
+    {
+      id local id 37,
+      data gene {
+      },
+      location int {
+        from 22910,
+        to 23944,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067819"
+        }
+      },
+      xref {
+        {
+          id local id 38
+        }
+      }
+    },
+    {
+      id local id 38,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 22910,
+        to 23944,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067819"
+        },
+        {
+          qual "product",
+          val "Predicted dehydrogenase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067819"
+        }
+      },
+      xref {
+        {
+          id local id 37
+        }
+      }
+    },
+    {
+      id local id 39,
+      data gene {
+      },
+      location int {
+        from 24300,
+        to 24539,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067820"
+        }
+      },
+      xref {
+        {
+          id local id 40
+        }
+      }
+    },
+    {
+      id local id 40,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 24300,
+        to 24539,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067820"
+        },
+        {
+          qual "product",
+          val "large subunit ribosomal protein L27"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067820"
+        }
+      },
+      xref {
+        {
+          id local id 39
+        }
+      }
+    },
+    {
+      id local id 41,
+      data gene {
+      },
+      location int {
+        from 24552,
+        to 24866,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067821"
+        }
+      },
+      xref {
+        {
+          id local id 42
+        }
+      }
+    },
+    {
+      id local id 42,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 24552,
+        to 24866,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067821"
+        },
+        {
+          qual "product",
+          val "large subunit ribosomal protein L21"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067821"
+        }
+      },
+      xref {
+        {
+          id local id 41
+        }
+      }
+    },
+    {
+      id local id 43,
+      data gene {
+      },
+      location int {
+        from 24940,
+        to 26346,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067822"
+        }
+      },
+      xref {
+        {
+          id local id 44
+        }
+      }
+    },
+    {
+      id local id 44,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 24940,
+        to 26346,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067822"
+        },
+        {
+          qual "product",
+          val "Predicted arabinose efflux permease, MFS family"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067822"
+        }
+      },
+      xref {
+        {
+          id local id 43
+        }
+      }
+    },
+    {
+      id local id 45,
+      data gene {
+      },
+      location int {
+        from 26460,
+        to 27230,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067823"
+        }
+      },
+      xref {
+        {
+          id local id 46
+        }
+      }
+    },
+    {
+      id local id 46,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 26460,
+        to 27230,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067823"
+        },
+        {
+          qual "product",
+          val "Protein of unknown function (DUF3108)"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067823"
+        }
+      },
+      xref {
+        {
+          id local id 45
+        }
+      }
+    },
+    {
+      id local id 47,
+      data gene {
+      },
+      location int {
+        from 27244,
+        to 28245,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067824"
+        }
+      },
+      xref {
+        {
+          id local id 48
+        }
+      }
+    },
+    {
+      id local id 48,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 27244,
+        to 28245,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067824"
+        },
+        {
+          qual "ec",
+          val "6.5.1.1, 6.5.1.6, 6.5.1.7"
+        },
+        {
+          qual "product",
+          val "putative mRNA 3-end processing factor/DNA ligase-1"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067824"
+        }
+      },
+      xref {
+        {
+          id local id 47
+        }
+      }
+    },
+    {
+      id local id 49,
+      data gene {
+      },
+      location int {
+        from 28288,
+        to 30615,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067825"
+        }
+      },
+      xref {
+        {
+          id local id 50
+        }
+      }
+    },
+    {
+      id local id 50,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 28288,
+        to 30615,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067825"
+        },
+        {
+          qual "product",
+          val "hypothetical protein"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067825"
+        }
+      },
+      xref {
+        {
+          id local id 49
+        }
+      }
+    },
+    {
+      id local id 51,
+      data gene {
+      },
+      location int {
+        from 30617,
+        to 31600,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067826"
+        }
+      },
+      xref {
+        {
+          id local id 52
+        }
+      }
+    },
+    {
+      id local id 52,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 30617,
+        to 31600,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067826"
+        },
+        {
+          qual "product",
+          val "Uncharacterized protein"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067826"
+        }
+      },
+      xref {
+        {
+          id local id 51
+        }
+      }
+    },
+    {
+      id local id 53,
+      data gene {
+      },
+      location int {
+        from 31686,
+        to 33044,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067827"
+        }
+      },
+      xref {
+        {
+          id local id 54
+        }
+      }
+    },
+    {
+      id local id 54,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 31686,
+        to 33044,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067827"
+        },
+        {
+          qual "product",
+          val "Protein of unknown function (DUF1329)"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067827"
+        }
+      },
+      xref {
+        {
+          id local id 53
+        }
+      }
+    },
+    {
+      id local id 55,
+      data gene {
+      },
+      location int {
+        from 33064,
+        to 35043,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067828"
+        }
+      },
+      xref {
+        {
+          id local id 56
+        }
+      }
+    },
+    {
+      id local id 56,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 33064,
+        to 35043,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067828"
+        },
+        {
+          qual "product",
+          val "Protein of unknown function (DUF1302)"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067828"
+        }
+      },
+      xref {
+        {
+          id local id 55
+        }
+      }
+    },
+    {
+      id local id 57,
+      data gene {
+      },
+      location int {
+        from 35234,
+        to 38077,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067829"
+        }
+      },
+      xref {
+        {
+          id local id 58
+        }
+      }
+    },
+    {
+      id local id 58,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 35234,
+        to 38077,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067829"
+        },
+        {
+          qual "product",
+          val "excinuclease ABC subunit A"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067829"
+        }
+      },
+      xref {
+        {
+          id local id 57
+        }
+      }
+    },
+    {
+      id local id 59,
+      data gene {
+      },
+      location int {
+        from 38141,
+        to 39355,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067830"
+        }
+      },
+      xref {
+        {
+          id local id 60
+        }
+      }
+    },
+    {
+      id local id 60,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 38141,
+        to 39355,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067830"
+        },
+        {
+          qual "ec",
+          val "2.7.7.7"
+        },
+        {
+          qual "product",
+          val "DNA polymerase-4"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067830"
+        }
+      },
+      xref {
+        {
+          id local id 59
+        }
+      }
+    },
+    {
+      id local id 61,
+      data gene {
+      },
+      location int {
+        from 39328,
+        to 40065,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067831"
+        }
+      },
+      xref {
+        {
+          id local id 62
+        }
+      }
+    },
+    {
+      id local id 62,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 39328,
+        to 40065,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067831"
+        },
+        {
+          qual "product",
+          val "hypothetical protein"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067831"
+        }
+      },
+      xref {
+        {
+          id local id 61
+        }
+      }
+    },
+    {
+      id local id 63,
+      data gene {
+      },
+      location int {
+        from 40200,
+        to 41009,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067832"
+        }
+      },
+      xref {
+        {
+          id local id 64
+        }
+      }
+    },
+    {
+      id local id 64,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 40200,
+        to 41009,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067832"
+        },
+        {
+          qual "ec",
+          val "3.1.3.25"
+        },
+        {
+          qual "product",
+          val "myo-inositol-1(or 4)-monophosphatase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067832"
+        }
+      },
+      xref {
+        {
+          id local id 63
+        }
+      }
+    },
+    {
+      id local id 65,
+      data gene {
+      },
+      location int {
+        from 41006,
+        to 42364,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067833"
+        }
+      },
+      xref {
+        {
+          id local id 66
+        }
+      }
+    },
+    {
+      id local id 66,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 41006,
+        to 42364,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067833"
+        },
+        {
+          qual "product",
+          val "RNA processing exonuclease, beta-lactamase fold, Cft2 family"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067833"
+        }
+      },
+      xref {
+        {
+          id local id 65
+        }
+      }
+    },
+    {
+      id local id 67,
+      data gene {
+      },
+      location int {
+        from 42379,
+        to 42762,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067834"
+        }
+      },
+      xref {
+        {
+          id local id 68
+        }
+      }
+    },
+    {
+      id local id 68,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 42379,
+        to 42762,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067834"
+        },
+        {
+          qual "product",
+          val "ApaG protein"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067834"
+        }
+      },
+      xref {
+        {
+          id local id 67
+        }
+      }
+    },
+    {
+      id local id 69,
+      data gene {
+      },
+      location int {
+        from 42748,
+        to 44421,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067835"
+        }
+      },
+      xref {
+        {
+          id local id 70
+        }
+      }
+    },
+    {
+      id local id 70,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 42748,
+        to 44421,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067835"
+        },
+        {
+          qual "ec",
+          val "2.1.2.3, 3.5.4.10"
+        },
+        {
+          qual "product",
+          val "phosphoribosylaminoimidazolecarboxamide formyltransferase / IMP
+ cyclohydrolase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067835"
+        }
+      },
+      xref {
+        {
+          id local id 69
+        }
+      }
+    },
+    {
+      id local id 71,
+      data gene {
+      },
+      location int {
+        from 44484,
+        to 45860,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067836"
+        }
+      },
+      xref {
+        {
+          id local id 72
+        }
+      }
+    },
+    {
+      id local id 72,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 44484,
+        to 45860,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067836"
+        },
+        {
+          qual "product",
+          val "Acetylornithine deacetylase/Succinyl-diaminopimelate
+ desuccinylase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067836"
+        }
+      },
+      xref {
+        {
+          id local id 71
+        }
+      }
+    },
+    {
+      id local id 73,
+      data gene {
+      },
+      location int {
+        from 45976,
+        to 46512,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067837"
+        }
+      },
+      xref {
+        {
+          id local id 74
+        }
+      }
+    },
+    {
+      id local id 74,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 45976,
+        to 46512,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067837"
+        },
+        {
+          qual "product",
+          val "peptidoglycan-associated lipoprotein"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067837"
+        }
+      },
+      xref {
+        {
+          id local id 73
+        }
+      }
+    },
+    {
+      id local id 75,
+      data gene {
+      },
+      location int {
+        from 46610,
+        to 47263,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067838"
+        }
+      },
+      xref {
+        {
+          id local id 76
+        }
+      }
+    },
+    {
+      id local id 76,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 46610,
+        to 47263,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067838"
+        },
+        {
+          qual "product",
+          val "DNA-binding response regulator, NarL/FixJ family, contains REC
+ and HTH domains"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067838"
+        }
+      },
+      xref {
+        {
+          id local id 75
+        }
+      }
+    },
+    {
+      id local id 77,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 47374,
+        to 47445,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0133913_1000067839"
+        },
+        {
+          qual "codon",
+          val "TTT"
+        },
+        {
+          qual "product",
+          val "tRNA_Lys_TTT"
+        }
+      }
+    },
+    {
+      id local id 78,
+      data gene {
+      },
+      location int {
+        from 47568,
+        to 48218,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067840"
+        }
+      },
+      xref {
+        {
+          id local id 79
+        }
+      }
+    },
+    {
+      id local id 79,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 47568,
+        to 48218,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067840"
+        },
+        {
+          qual "product",
+          val "RNA polymerase sigma-70 factor, ECF subfamily"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067840"
+        }
+      },
+      xref {
+        {
+          id local id 78
+        }
+      }
+    },
+    {
+      id local id 80,
+      data gene {
+      },
+      location int {
+        from 48215,
+        to 48874,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067841"
+        }
+      },
+      xref {
+        {
+          id local id 81
+        }
+      }
+    },
+    {
+      id local id 81,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 48215,
+        to 48874,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067841"
+        },
+        {
+          qual "product",
+          val "hypothetical protein"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067841"
+        }
+      },
+      xref {
+        {
+          id local id 80
+        }
+      }
+    },
+    {
+      id local id 82,
+      data gene {
+      },
+      location int {
+        from 48877,
+        to 49488,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067842"
+        }
+      },
+      xref {
+        {
+          id local id 83
+        }
+      }
+    },
+    {
+      id local id 83,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 48877,
+        to 49488,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067842"
+        },
+        {
+          qual "ec",
+          val "3.6.4.12"
+        },
+        {
+          qual "product",
+          val "holliday junction DNA helicase RuvA"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067842"
+        }
+      },
+      xref {
+        {
+          id local id 82
+        }
+      }
+    },
+    {
+      id local id 84,
+      data gene {
+      },
+      location int {
+        from 49485,
+        to 50177,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067843"
+        }
+      },
+      xref {
+        {
+          id local id 85
+        }
+      }
+    },
+    {
+      id local id 85,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 49485,
+        to 50177,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067843"
+        },
+        {
+          qual "ec",
+          val "1.17.1.8"
+        },
+        {
+          qual "product",
+          val "4-hydroxy-tetrahydrodipicolinate reductase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067843"
+        }
+      },
+      xref {
+        {
+          id local id 84
+        }
+      }
+    },
+    {
+      id local id 86,
+      data gene {
+      },
+      location int {
+        from 50222,
+        to 51112,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067844"
+        }
+      },
+      xref {
+        {
+          id local id 87
+        }
+      }
+    },
+    {
+      id local id 87,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 50222,
+        to 51112,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067844"
+        },
+        {
+          qual "ec",
+          val "4.3.3.7"
+        },
+        {
+          qual "product",
+          val "4-hydroxy-tetrahydrodipicolinate synthase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067844"
+        }
+      },
+      xref {
+        {
+          id local id 86
+        }
+      }
+    },
+    {
+      id local id 88,
+      data gene {
+      },
+      location int {
+        from 51191,
+        to 52285,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067845"
+        }
+      },
+      xref {
+        {
+          id local id 89
+        }
+      }
+    },
+    {
+      id local id 89,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 51191,
+        to 52285,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067845"
+        },
+        {
+          qual "product",
+          val "twitching motility protein PilT"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067845"
+        }
+      },
+      xref {
+        {
+          id local id 88
+        }
+      }
+    },
+    {
+      id local id 90,
+      data gene {
+      },
+      location int {
+        from 52285,
+        to 53187,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067846"
+        }
+      },
+      xref {
+        {
+          id local id 91
+        }
+      }
+    },
+    {
+      id local id 91,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 52285,
+        to 53187,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067846"
+        },
+        {
+          qual "product",
+          val "hypothetical protein"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067846"
+        }
+      },
+      xref {
+        {
+          id local id 90
+        }
+      }
+    },
+    {
+      id local id 92,
+      data gene {
+      },
+      location int {
+        from 53233,
+        to 54138,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067847"
+        }
+      },
+      xref {
+        {
+          id local id 93
+        }
+      }
+    },
+    {
+      id local id 93,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 53233,
+        to 54138,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067847"
+        },
+        {
+          qual "ec",
+          val "2.3.1.39"
+        },
+        {
+          qual "product",
+          val "[acyl-carrier-protein] S-malonyltransferase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067847"
+        }
+      },
+      xref {
+        {
+          id local id 92
+        }
+      }
+    },
+    {
+      id local id 94,
+      data gene {
+      },
+      location int {
+        from 54253,
+        to 55941,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067848"
+        }
+      },
+      xref {
+        {
+          id local id 95
+        }
+      }
+    },
+    {
+      id local id 95,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 54253,
+        to 55941,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067848"
+        },
+        {
+          qual "product",
+          val "GTP-binding protein LepA"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067848"
+        }
+      },
+      xref {
+        {
+          id local id 94
+        }
+      }
+    },
+    {
+      id local id 96,
+      data gene {
+      },
+      location int {
+        from 55954,
+        to 57282,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067849"
+        }
+      },
+      xref {
+        {
+          id local id 97
+        }
+      }
+    },
+    {
+      id local id 97,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 55954,
+        to 57282,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067849"
+        },
+        {
+          qual "ec",
+          val "3.4.21.89"
+        },
+        {
+          qual "product",
+          val "signal peptidase I"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067849"
+        }
+      },
+      xref {
+        {
+          id local id 96
+        }
+      }
+    },
+    {
+      id local id 98,
+      data gene {
+      },
+      location int {
+        from 57382,
+        to 58332,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067850"
+        }
+      },
+      xref {
+        {
+          id local id 99
+        }
+      }
+    },
+    {
+      id local id 99,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 57382,
+        to 58332,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067850"
+        },
+        {
+          qual "ec",
+          val "3.8.1.5"
+        },
+        {
+          qual "product",
+          val "haloalkane dehalogenase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067850"
+        }
+      },
+      xref {
+        {
+          id local id 98
+        }
+      }
+    },
+    {
+      id local id 100,
+      data gene {
+      },
+      location int {
+        from 58326,
+        to 59360,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067851"
+        }
+      },
+      xref {
+        {
+          id local id 101
+        }
+      }
+    },
+    {
+      id local id 101,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 58326,
+        to 59360,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067851"
+        },
+        {
+          qual "ec",
+          val "2.3.1.180"
+        },
+        {
+          qual "product",
+          val "3-oxoacyl-[acyl-carrier-protein] synthase-3"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067851"
+        }
+      },
+      xref {
+        {
+          id local id 100
+        }
+      }
+    },
+    {
+      id local id 102,
+      data gene {
+      },
+      location int {
+        from 59367,
+        to 60179,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067852"
+        }
+      },
+      xref {
+        {
+          id local id 103
+        }
+      }
+    },
+    {
+      id local id 103,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 59367,
+        to 60179,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067852"
+        },
+        {
+          qual "ec",
+          val "1.3.1.10, 1.3.1.9"
+        },
+        {
+          qual "product",
+          val "enoyl-[acyl-carrier protein] reductase I"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067852"
+        }
+      },
+      xref {
+        {
+          id local id 102
+        }
+      }
+    },
+    {
+      id local id 104,
+      data gene {
+      },
+      location int {
+        from 60176,
+        to 60613,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067853"
+        }
+      },
+      xref {
+        {
+          id local id 105
+        }
+      }
+    },
+    {
+      id local id 105,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 60176,
+        to 60613,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067853"
+        },
+        {
+          qual "ec",
+          val "4.2.1.59"
+        },
+        {
+          qual "product",
+          val "3-hydroxyacyl-[acyl-carrier-protein] dehydratase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067853"
+        }
+      },
+      xref {
+        {
+          id local id 104
+        }
+      }
+    },
+    {
+      id local id 106,
+      data gene {
+      },
+      location int {
+        from 60621,
+        to 62078,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067854"
+        }
+      },
+      xref {
+        {
+          id local id 107
+        }
+      }
+    },
+    {
+      id local id 107,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 60621,
+        to 62078,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067854"
+        },
+        {
+          qual "product",
+          val "Phytoene dehydrogenase-related protein/Phytoene
+ dehydrogenase-related protein"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067854"
+        }
+      },
+      xref {
+        {
+          id local id 106
+        }
+      }
+    },
+    {
+      id local id 108,
+      data gene {
+      },
+      location int {
+        from 62128,
+        to 63552,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067855"
+        }
+      },
+      xref {
+        {
+          id local id 109
+        }
+      }
+    },
+    {
+      id local id 109,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 62128,
+        to 63552,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067855"
+        },
+        {
+          qual "product",
+          val "Predicted flavoprotein CzcO associated with the cation
+ diffusion facilitator CzcD"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067855"
+        }
+      },
+      xref {
+        {
+          id local id 108
+        }
+      }
+    },
+    {
+      id local id 110,
+      data gene {
+      },
+      location int {
+        from 63671,
+        to 63925,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067856"
+        }
+      },
+      xref {
+        {
+          id local id 111
+        }
+      }
+    },
+    {
+      id local id 111,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 63671,
+        to 63925,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067856"
+        },
+        {
+          qual "product",
+          val "Acyl carrier protein"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067856"
+        }
+      },
+      xref {
+        {
+          id local id 110
+        }
+      }
+    },
+    {
+      id local id 112,
+      data gene {
+      },
+      location int {
+        from 63939,
+        to 65177,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067857"
+        }
+      },
+      xref {
+        {
+          id local id 113
+        }
+      }
+    },
+    {
+      id local id 113,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 63939,
+        to 65177,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067857"
+        },
+        {
+          qual "ec",
+          val "2.3.1.179"
+        },
+        {
+          qual "product",
+          val "3-oxoacyl-[acyl-carrier-protein] synthase II"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067857"
+        }
+      },
+      xref {
+        {
+          id local id 112
+        }
+      }
+    },
+    {
+      id local id 114,
+      data gene {
+      },
+      location int {
+        from 65244,
+        to 66236,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067858"
+        }
+      },
+      xref {
+        {
+          id local id 115
+        }
+      }
+    },
+    {
+      id local id 115,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 65244,
+        to 66236,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067858"
+        },
+        {
+          qual "ec",
+          val "5.1.3.2"
+        },
+        {
+          qual "product",
+          val "UDP-glucose 4-epimerase"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067858"
+        }
+      },
+      xref {
+        {
+          id local id 114
+        }
+      }
+    },
+    {
+      id local id 116,
+      data gene {
+      },
+      location int {
+        from 66281,
+        to 67642,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067859"
+        }
+      },
+      xref {
+        {
+          id local id 117
+        }
+      }
+    },
+    {
+      id local id 117,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 66281,
+        to 67642,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067859"
+        },
+        {
+          qual "product",
+          val "two-component system, NtrC family, nitrogen regulation response
+ regulator GlnG"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067859"
+        }
+      },
+      xref {
+        {
+          id local id 116
+        }
+      }
+    },
+    {
+      id local id 118,
+      data gene {
+      },
+      location int {
+        from 67924,
+        to 69726,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067860"
+        }
+      },
+      xref {
+        {
+          id local id 119
+        }
+      }
+    },
+    {
+      id local id 119,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 67924,
+        to 69726,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067860"
+        },
+        {
+          qual "product",
+          val "Choline dehydrogenase/Dehydrogenase (flavoprotein)"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067860"
+        }
+      },
+      xref {
+        {
+          id local id 118
+        }
+      }
+    },
+    {
+      id local id 120,
+      data gene {
+      },
+      location int {
+        from 69723,
+        to 70379,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067861"
+        }
+      },
+      xref {
+        {
+          id local id 121
+        }
+      }
+    },
+    {
+      id local id 121,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 69723,
+        to 70379,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067861"
+        },
+        {
+          qual "product",
+          val "Gluconate 2-dehydrogenase subunit 3"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067861"
+        }
+      },
+      xref {
+        {
+          id local id 120
+        }
+      }
+    },
+    {
+      id local id 122,
+      data gene {
+      },
+      location int {
+        from 70390,
+        to 71535,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067862"
+        }
+      },
+      xref {
+        {
+          id local id 123
+        }
+      }
+    },
+    {
+      id local id 123,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 70390,
+        to 71535,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067862"
+        },
+        {
+          qual "product",
+          val "GDSL-like Lipase/Acylhydrolase family protein/N-terminus of
+ Esterase_SGNH_hydro-type"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067862"
+        }
+      },
+      xref {
+        {
+          id local id 122
+        }
+      }
+    },
+    {
+      id local id 124,
+      data gene {
+      },
+      location int {
+        from 72150,
+        to 73592,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "geneGa0133913_1000067863"
+        }
+      },
+      xref {
+        {
+          id local id 125
+        }
+      }
+    },
+    {
+      id local id 125,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 72150,
+        to 73592,
+        strand plus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cdsGa0133913_1000067863"
+        },
+        {
+          qual "product",
+          val "hypothetical protein"
+        },
+        {
+          qual "Parent",
+          val "geneGa0133913_1000067863"
+        }
+      },
+      xref {
+        {
+          id local id 124
+        }
+      }
+    },
+    {
+      id local id 126,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 73635,
+        to 73707,
+        strand minus,
+        id local str "Ga0133913_10000678"
+      },
+      qual {
+        {
+          qual "ID",
+          val "Ga0133913_1000067864"
+        },
+        {
+          qual "codon",
+          val "GGC"
+        },
+        {
+          qual "product",
+          val "tRNA_Ala_GGC"
+        }
+      }
+    }
+  }
+}

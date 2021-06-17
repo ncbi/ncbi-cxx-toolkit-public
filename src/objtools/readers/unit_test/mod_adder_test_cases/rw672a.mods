@@ -1,0 +1,7 @@
+molecule    dna
+topology    linear
+topology    circular
+strand      other
+secondary-accession  M10101 M10102
+secondary-accession  Q8Y7J9
+mol-type    mRNA

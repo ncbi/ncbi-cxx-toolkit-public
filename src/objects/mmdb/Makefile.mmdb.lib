@@ -1,0 +1,15 @@
+# $Id$
+
+WATCHERS = ucko
+
+ASN = mmdb1 mmdb2 mmdb3
+
+CPPFLAGS = -I$(srcdir) -I$(top_srcdir)/src/objects/mmdb $(ORIG_CPPFLAGS)
+
+LIB = mmdb
+SRC = $(ASN:%=%__) $(ASN:%=%___)
+
+DLL_LIB = $(SEQ_LIBS)
+
+USES_LIBRARIES =  \
+    $(SEQ_LIBS) pub

@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_app(unit_test_gap_analysis)
+  NCBI_sources(unit_test_gap_analysis)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoseq)
+
+  NCBI_set_test_assets(gap_analysis.seq.asn gap_with_letters.seq.asn mixed_gap_type_data.seq.asn)
+  NCBI_add_test(unit_test_gap_analysis -basic-data gap_analysis.seq.asn -in-letter-gap-data gap_with_letters.seq.asn -mixed-gap-type-data mixed_gap_type_data.seq.asn)
+
+  NCBI_project_watchers(drozdov)
+
+NCBI_end_app()
+

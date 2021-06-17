@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(speedtest)
+  NCBI_sources(speedtest)
+  NCBI_uses_toolkit_libraries(prosplign xcleanup xobjedit)
+NCBI_end_app()
+

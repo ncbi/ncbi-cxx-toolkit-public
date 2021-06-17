@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db100_numeric)
+  NCBI_sources(numeric common)
+  NCBI_set_test_assets(numeric.sql numeric_2.sql)
+  NCBI_add_test(test-db100 --no-auto db100_numeric)
+NCBI_end_app()
+

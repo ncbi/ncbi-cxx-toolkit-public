@@ -1,0 +1,5 @@
+Line No    : 4
+Severity   : Fatal
+Problem    : Alignment.IllegalDataLine
+Message    : Data line does not follow the expected pattern of sequence_ID followed by sequence data. Each data line in the first block should conform to this pattern.
+

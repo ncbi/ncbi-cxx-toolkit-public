@@ -1,0 +1,25 @@
+[-]
+_export = NCBI_ENTREZ2_EXPORT
+clients = entrez2_client
+
+[entrez2_client]
+class   = CEntrez2Client
+service = ENTREZ2S
+request = Entrez2-request.request
+reply   = Entrez2-reply.reply
+
+[Entrez2-id]
+uid._type = ncbi::TEntrezId
+uid._storage_type = ncbi::TIntId
+
+[Entrez2-hier-query]
+txid._type = ncbi::TEntrezId
+txid._storage_type = ncbi::TIntId
+
+[Entrez2-docsum]
+uid._type = ncbi::TEntrezId
+uid._storage_type = ncbi::TIntId
+
+[Entrez2-term]
+txid._type = ncbi::TEntrezId
+txid._storage_type = ncbi::TIntId

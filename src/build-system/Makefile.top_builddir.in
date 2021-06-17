@@ -1,0 +1,44 @@
+# $Id$
+
+# Master (top-level) makefile for all NCBI C++ projects
+##################################################################
+
+include ./Makefile.mk
+
+
+#################################
+#  More or less standard meta-makefile
+#################################
+
+
+SUB_PROJ = corelib util connect cgi html build-system \
+           serial db dbapi objects objmgr objtools ctools \
+           sra algo misc gui app sample internal
+
+EXPENDABLE_SUB_PROJ = @check@
+
+srcdir = @top_srcdir@/src
+bspath = /build-system
+include ./Makefile.meta
+
+##################################################
+#  Special rules (logic now farmed out to scripts)
+##################################################
+
+
+#
+# Prepare for install:   get rid of everything not needed for the install
+# and move aside internal libraries we plan to stop installing altogether
+#
+
+compress_tests:
+	+$(abs_top_srcdir)/scripts/common/impl/compress_tests.sh \
+	     --$(DEBUG_SFX) ../bin
+
+sfi=$(abs_top_srcdir)/scripts/common/impl/strip_for_install.sh
+strip_for_install-%:
+	$(sfi) --$* $(COMPILER)-$(DEBUG_SFX) $(SUB_PROJ) check dll wrappers
+	$(sfi) --bin $(abs_top_srcdir) ../bin
+	$(sfi) --lib $(abs_top_srcdir) ../lib ../status
+
+strip_for_install: strip_for_install-dirs

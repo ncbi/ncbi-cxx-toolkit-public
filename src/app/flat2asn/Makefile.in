@@ -1,0 +1,14 @@
+# $Id$
+#
+# Makefile:  for C++ discrepancy report
+# Author: Sema
+#
+
+APP_PROJ = flat2asn
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+REQUIRES = LIBXSLT 
+
+WATCHERS = kachalos foleyjp

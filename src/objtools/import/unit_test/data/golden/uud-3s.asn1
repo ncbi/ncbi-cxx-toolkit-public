@@ -1,0 +1,251 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local str "gene_1",
+      data gene {
+      },
+      location int {
+        from 22600,
+        to 29774,
+        strand plus,
+        id local id 8
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "ENSG00000253896"
+        },
+        {
+          qual "exon_id",
+          val "ENSE00002121323"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        },
+        {
+          qual "gene_name",
+          val "AC144568.2"
+        },
+        {
+          qual "transcript_name",
+          val "AC144568.2-001"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_2"
+        },
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "cds_2"
+        },
+        {
+          id local str "cds_1"
+        }
+      }
+    },
+    {
+      id local str "mrna_1",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 22600,
+          to 22672,
+          strand plus,
+          id local id 8
+        },
+        int {
+          from 28904,
+          to 29774,
+          strand plus,
+          id local id 8
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "ENSG00000253896"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000522481"
+        },
+        {
+          qual "exon_id",
+          val "ENSE00002121323"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        },
+        {
+          qual "gene_name",
+          val "AC144568.2"
+        },
+        {
+          qual "transcript_name",
+          val "AC144568.2-001"
+        }
+      },
+      xref {
+        {
+          id local str "cds_1"
+        },
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "cds_1",
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 28904,
+        to 29092,
+        strand plus,
+        id local id 8
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "ENSG00000253896"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000522481"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        },
+        {
+          qual "gene_name",
+          val "AC144568.2"
+        },
+        {
+          qual "protein_id",
+          val "ENSP00000433726"
+        },
+        {
+          qual "transcript_name",
+          val "AC144568.2-001"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "mrna_2",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 22616,
+          to 22700,
+          strand plus,
+          id local id 8
+        },
+        int {
+          from 28904,
+          to 29243,
+          strand plus,
+          id local id 8
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "ENSG00000253896"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000518652"
+        },
+        {
+          qual "exon_id",
+          val "ENSE00002126135"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        },
+        {
+          qual "gene_name",
+          val "AC144568.2"
+        },
+        {
+          qual "transcript_name",
+          val "AC144568.2-002"
+        }
+      },
+      xref {
+        {
+          id local str "cds_2"
+        },
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "cds_2",
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 28904,
+        to 29092,
+        strand plus,
+        id local id 8
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "ENSG00000253896"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000518652"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        },
+        {
+          qual "gene_name",
+          val "AC144568.2"
+        },
+        {
+          qual "protein_id",
+          val "ENSP00000436534"
+        },
+        {
+          qual "transcript_name",
+          val "AC144568.2-002"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_2"
+        },
+        {
+          id local str "gene_1"
+        }
+      }
+    }
+  }
+}

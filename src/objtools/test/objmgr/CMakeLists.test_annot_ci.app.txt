@@ -1,0 +1,13 @@
+# $Id$
+
+NCBI_begin_app(test_annot_ci)
+  NCBI_sources(test_annot_ci)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank)
+
+  NCBI_set_test_assets(test_annot_ci.ini test_annot_entries.asn test_annot_res.asn)
+  NCBI_add_test()
+
+  NCBI_project_watchers(grichenk)
+
+NCBI_end_app()
+

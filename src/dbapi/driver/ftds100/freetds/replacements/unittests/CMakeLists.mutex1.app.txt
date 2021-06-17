@@ -1,0 +1,14 @@
+# $Id$
+
+add_executable(tds100_mutex1-app
+    mutex1
+)
+
+set_target_properties(tds100_mutex1-app PROPERTIES OUTPUT_NAME tds100_mutex1)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE})
+
+target_link_libraries(tds100_mutex1-app
+    tds_ftds100
+)
+

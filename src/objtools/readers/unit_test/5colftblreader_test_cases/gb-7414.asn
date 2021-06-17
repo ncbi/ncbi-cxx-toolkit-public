@@ -1,0 +1,321 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "HA"
+      },
+      location int {
+        from 18,
+        to 1718,
+        strand plus,
+        id genbank {
+          accession "KU761507"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 18,
+        to 1718,
+        strand plus,
+        id genbank {
+          accession "KU761507"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "hemagglutinin"
+            },
+            activity {
+              "receptor binding and fusion protein"
+            }
+          }
+        },
+        {
+          data gene {
+            locus "HA"
+          }
+        }
+      }
+    },
+    {
+      data prot {
+        processed signal-peptide
+      },
+      location int {
+        from 18,
+        to 68,
+        strand plus,
+        id genbank {
+          accession "KU761507"
+        }
+      }
+    },
+    {
+      data prot {
+        name {
+          "HA1"
+        },
+        processed mature
+      },
+      location int {
+        from 69,
+        to 1049,
+        strand plus,
+        id genbank {
+          accession "KU761507"
+        }
+      }
+    },
+    {
+      data prot {
+        name {
+          "HA2"
+        },
+        processed mature
+      },
+      location int {
+        from 1050,
+        to 1715,
+        strand plus,
+        id genbank {
+          accession "KU761507"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "NA"
+      },
+      location int {
+        from 5,
+        to 1414,
+        strand plus,
+        id genbank {
+          accession "KU761508"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 5,
+        to 1414,
+        strand plus,
+        id genbank {
+          accession "KU761508"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "neuraminidase"
+            }
+          }
+        },
+        {
+          data gene {
+            locus "NA"
+          }
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "M1"
+      },
+      location int {
+        from 10,
+        to 768,
+        strand plus,
+        id genbank {
+          accession "KU761509"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 10,
+        to 768,
+        strand plus,
+        id genbank {
+          accession "KU761509"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "matrix protein 1"
+            }
+          }
+        },
+        {
+          data gene {
+            locus "M1"
+          }
+        }
+      }
+    },
+    {
+      data gene {
+        locus "M2"
+      },
+      partial TRUE,
+      location int {
+        from 10,
+        to 990,
+        strand plus,
+        id genbank {
+          accession "KU761509"
+        },
+        fuzz-to lim gt
+      }
+    },
+    {
+      data cdregion {
+      },
+      partial TRUE,
+      location mix {
+        int {
+          from 10,
+          to 35,
+          strand plus,
+          id genbank {
+            accession "KU761509"
+          }
+        },
+        int {
+          from 724,
+          to 990,
+          strand plus,
+          id genbank {
+            accession "KU761509"
+          },
+          fuzz-to lim gt
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "matrix protein 2"
+            }
+          }
+        },
+        {
+          data gene {
+            locus "M2"
+          }
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "HA"
+      },
+      location int {
+        from 18,
+        to 1718,
+        strand plus,
+        id genbank {
+          accession "KU761510"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 18,
+        to 1718,
+        strand plus,
+        id genbank {
+          accession "KU761510"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "hemagglutinin"
+            },
+            activity {
+              "receptor binding and fusion protein"
+            }
+          }
+        },
+        {
+          data gene {
+            locus "HA"
+          }
+        }
+      }
+    },
+    {
+      data prot {
+        processed signal-peptide
+      },
+      location int {
+        from 18,
+        to 68,
+        strand plus,
+        id genbank {
+          accession "KU761510"
+        }
+      }
+    },
+    {
+      data prot {
+        name {
+          "HA1"
+        },
+        processed mature
+      },
+      location int {
+        from 69,
+        to 1049,
+        strand plus,
+        id genbank {
+          accession "KU761510"
+        }
+      }
+    },
+    {
+      data prot {
+        name {
+          "HA2"
+        },
+        processed mature
+      },
+      location int {
+        from 1050,
+        to 1715,
+        strand plus,
+        id genbank {
+          accession "KU761510"
+        }
+      }
+    }
+  }
+}

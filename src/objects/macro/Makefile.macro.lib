@@ -1,0 +1,13 @@
+# $Id$
+
+LIB = macro
+SRC = macro__ macro___
+
+DLL_LIB = $(SEQ_LIBS)
+
+WATCHERS = bollin kans
+
+ASN_DEP = genome_collection seqset
+
+USES_LIBRARIES =  \
+    $(SEQ_LIBS) pub

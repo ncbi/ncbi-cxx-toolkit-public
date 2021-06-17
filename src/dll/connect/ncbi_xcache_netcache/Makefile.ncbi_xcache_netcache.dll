@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = ncbi_xcache_netcache
+
+HOSTED_LIBS    = ncbi_xcache_netcache
+
+DEPENDENCIES   = ncbi_core
+
+CPPFLAGS = -DNCBI_NET_CACHE_EXPORTS
+

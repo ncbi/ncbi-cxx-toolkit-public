@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_app(hooks_commented)
+  NCBI_sources(hooks_commented)
+  NCBI_uses_toolkit_libraries(seqset)
+NCBI_end_app()

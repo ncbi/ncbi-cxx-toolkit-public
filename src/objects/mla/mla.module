@@ -1,0 +1,2 @@
+MODULE_PATH   = objects/mla
+MODULE_IMPORT = objects/biblio/biblio objects/medline/medline objects/medlars/medlars objects/pubmed/pubmed objects/pub/pub

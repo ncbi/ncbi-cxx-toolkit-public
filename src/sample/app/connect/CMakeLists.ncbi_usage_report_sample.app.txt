@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(ncbi_usage_report_sample)
+  NCBI_sources(ncbi_usage_report_sample)
+  NCBI_uses_toolkit_libraries(xconnect xncbi)
+  NCBI_project_watchers(ivanov)
+NCBI_end_app()

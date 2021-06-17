@@ -1,0 +1,315 @@
+Seq-annot ::= {
+  desc {
+    region int {
+      from 127471195,
+      to 127495719,
+      strand unknown,
+      id local str "chr7"
+    },
+    title "Color by strand demonstration",
+    name "ColorByStrandDemo",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "colorByStrand",
+          data str """255,0,0 0,0,255"""
+        },
+        {
+          label str "visibility",
+          data str "2"
+        }
+      }
+    },
+    user {
+      type str "NCBI_BED_COLUMN_COUNT",
+      data {
+        {
+          label str "NCBI_BED_COLUMN_COUNT",
+          data int 6
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 1,
+      data region "chr7",
+      location int {
+        from 127471196,
+        to 127472362,
+        strand plus,
+        id local str "chr7"
+      },
+      title "Pos1",
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 4,
+      data region "chr7",
+      location int {
+        from 127472363,
+        to 127473529,
+        strand plus,
+        id local str "chr7"
+      },
+      title "Pos2",
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 7,
+      data region "chr7",
+      location int {
+        from 127473530,
+        to 127474696,
+        strand plus,
+        id local str "chr7"
+      },
+      title "Pos3",
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 10,
+      data region "chr7",
+      location int {
+        from 127474697,
+        to 127475863,
+        strand plus,
+        id local str "chr7"
+      },
+      title "Pos4",
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 13,
+      data region "chr7",
+      location int {
+        from 127475864,
+        to 127477030,
+        strand minus,
+        id local str "chr7"
+      },
+      title "Neg1",
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 16,
+      data region "chr7",
+      location int {
+        from 127477031,
+        to 127478197,
+        strand minus,
+        id local str "chr7"
+      },
+      title "Neg2",
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 19,
+      data region "chr7",
+      location int {
+        from 127478198,
+        to 127479364,
+        strand minus,
+        id local str "chr7"
+      },
+      title "Neg3",
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 22,
+      data region "chr7",
+      location int {
+        from 127479365,
+        to 127480531,
+        strand plus,
+        id local str "chr7"
+      },
+      title "Pos5",
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 25,
+      data region "chr7",
+      location int {
+        from 127480532,
+        to 127481698,
+        strand minus,
+        id local str "chr7"
+      },
+      title "Neg4",
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    }
+  }
+}

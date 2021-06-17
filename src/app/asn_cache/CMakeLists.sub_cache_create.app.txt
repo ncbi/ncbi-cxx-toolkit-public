@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(sub_cache_create)
+  NCBI_sources(sub_cache_create)
+  NCBI_uses_toolkit_libraries(data_loaders_util xobjutil)
+  NCBI_project_watchers(mozese2)
+NCBI_end_app()
+

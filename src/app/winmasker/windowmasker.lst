@@ -1,0 +1,24 @@
+corelib$
+corelib/hash_impl update-only
+util
+serial
+connect$
+connect/ext$
+objects
+objmgr
+objtools/blast/seqdb_reader$
+objtools/blast/seqdb_reader/impl update-only
+objtools/data_loaders/genbank
+objtools/readers$
+objtools/seqmasks_io$
+dbapi/driver$
+dbapi/driver/odbc update-only
+dbapi/driver/util update-only
+algo/blast/composition_adjustment
+algo/blast/core
+algo/dustmask
+algo/winmask
+app/winmasker
+-.*/demo
+-.*/test
+-.*/unit_test

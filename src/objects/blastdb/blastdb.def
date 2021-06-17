@@ -1,0 +1,6 @@
+[-]
+_export = NCBI_BLASTDB_EXPORT
+
+[Blast-def-line]
+taxid._type = ncbi::TTaxId
+taxid._storage_type = int

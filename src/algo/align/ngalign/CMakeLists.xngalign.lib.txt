@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_lib(xngalign)
+  NCBI_sources(
+    result_set sequence_set alignment_filterer alignment_scorer
+    blast_aligner banded_aligner merge_aligner inversion_merge_aligner
+    unordered_spliter ngalign
+  )
+  NCBI_uses_toolkit_libraries(blastinput xalgoalignnw xalgoalignutil xmergetree)
+  NCBI_project_watchers(boukn dicuccio)
+NCBI_end_lib()
+

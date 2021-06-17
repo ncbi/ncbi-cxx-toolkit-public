@@ -1,0 +1,342 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      genome plasmid,
+      org {
+        taxname "Escherichia coli",
+        db {
+          {
+            db "taxon",
+            tag id 562
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Escherichia",
+            species "coli"
+          },
+          mod {
+            {
+              subtype strain,
+              subname "R10"
+            },
+            {
+              subtype nat-host,
+              subname "Homo sapiens"
+            }
+          },
+          lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Enterobacteriales; Enterobacteriaceae; Escherichia",
+          gcode 11,
+          div "BCT"
+        }
+      },
+      subtype {
+        {
+          subtype plasmid-name,
+          name "unnamed"
+        },
+        {
+          subtype country,
+          name "Egypt"
+        },
+        {
+          subtype isolation-source,
+          name "sputum from patient with respiratory tract infection"
+        }
+      }
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Shaker",
+                  first "Amr",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Aboshanab",
+                  first "Khaled",
+                  initials "K.M."
+                }
+              },
+              {
+                name name {
+                  last "Abouelwafa",
+                  first "Mohammad",
+                  initials "M.M."
+                }
+              },
+              {
+                name name {
+                  last "Hassouna",
+                  first "Nadia",
+                  initials "N.A."
+                }
+              }
+            },
+            affil std {
+              affil "Faculty of Pharmacy, Ain Shams University",
+              div "Microbiology and Immunology",
+              city "Cairo",
+              country "Egypt",
+              street "Organization of African Unity St., POB: 11566, Abbassia",
+              postal-code "11566"
+            }
+          },
+          medium email,
+          date std {
+            year 2014,
+            month 4,
+            day 15
+          }
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "ALT EMAIL:aboshanab2012@pharma.asu.edu.eg"
+        },
+        {
+          label str "AdditionalComment",
+          data str "BankIt1717834"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "TOTAL # OF SEQS:1"
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "SequinCleanup"
+        },
+        {
+          label str "version",
+          data int 7
+        },
+        {
+          label str "month",
+          data int 7
+        },
+        {
+          label str "day",
+          data int 2
+        },
+        {
+          label str "year",
+          data int 2014
+        }
+      }
+    },
+    update-date std {
+      year 2014,
+      month 7,
+      day 2
+    },
+    user {
+      type str "NcbiAutofix",
+      data {
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "BankIt1717834",
+        general {
+          db "BankIt",
+          tag str "1717834"
+        },
+        general {
+          db "TMSMART",
+          tag id 44751187
+        },
+        genbank {
+          accession "KJ710358"
+        }
+      },
+      descr {
+        title "Escherichia coli strain R10 plasmid 23S rRNA methylase (ermB)
+ gene, partial cds.",
+        molinfo {
+          biomol genomic,
+          completeness partial
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "Sanger dideoxy sequencing"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "Vecscreen Comment:Submitter says Vecscreen match is
+ due to: this gene is located on plasmid isolated from Escherichia coli
+ isolate R10 from patient suffering from respiratory tract infection"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "LocalID:BankIt1717834"
+            }
+          }
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "BankIt1717834"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 74,
+        strand ds,
+        seq-data ncbi2na '00044E702E403F0B1EF1F3810BBCDCCFC3D370'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data gene {
+                locus "ermB"
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 73,
+                strand plus,
+                id genbank {
+                  accession "KJ710358"
+                },
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "BankIt1717834_prot_1",
+        general {
+          db "TMSMART",
+          tag id 44751188
+        },
+        genbank {
+          accession "AIE40076"
+        }
+      },
+      descr {
+        title "23S rRNA methylase, partial [Escherichia coli]",
+        molinfo {
+          biomol peptide,
+          completeness no-ends
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "BankIt1717834_prot_1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 25,
+        seq-data ncbieaa "KKHMLKCKI*VLLLMNKCYLYLIHL"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "23S rRNA methylase"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 24,
+                id local str "BankIt1717834_prot_1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          product whole local str "BankIt1717834_prot_1",
+          location int {
+            from 0,
+            to 73,
+            strand plus,
+            id genbank {
+              accession "KJ710358"
+            },
+            fuzz-from lim lt,
+            fuzz-to lim gt
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+# $Id$
+
+LIB_PROJ = sdbapi
+
+SUB_PROJ = test
+
+REQUIRES = FreeTDS
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

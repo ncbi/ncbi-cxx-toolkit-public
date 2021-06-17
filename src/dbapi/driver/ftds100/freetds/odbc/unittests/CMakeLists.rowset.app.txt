@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc100_rowset)
+  NCBI_sources(rowset common)
+  NCBI_add_test(test-odbc100 odbc100_rowset)
+NCBI_end_app()
+

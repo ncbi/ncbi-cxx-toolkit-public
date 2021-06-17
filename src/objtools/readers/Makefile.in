@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile ("objtools/readers" project)
+############################################
+
+LIB_PROJ = xobjread xobjreadex
+SUB_PROJ = app test unit_test 
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

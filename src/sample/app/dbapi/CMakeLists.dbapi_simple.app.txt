@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(dbapi_simple)
+  NCBI_sources(dbapi_simple)
+  NCBI_optional_components(connext)
+  NCBI_uses_toolkit_libraries(dbapi ncbi_xdbapi_ftds dbapi_util_blobstore)
+  NCBI_project_watchers(ucko mcelhany)
+NCBI_end_app()

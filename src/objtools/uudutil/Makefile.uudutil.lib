@@ -1,0 +1,14 @@
+# $Id$
+
+ASN_DEP = gbproj
+
+SRC = project_storage
+
+LIB = uudutil
+
+CPPFLAGS = $(LZO_INCLUDE) $(ORIG_CPPFLAGS)
+
+WATCHERS = shkeda
+
+USES_LIBRARIES =  \
+    $(COMPRESS_LIBS) gbproj xconnserv

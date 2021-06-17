@@ -1,0 +1,72 @@
+# $Id$
+
+ALL_SUB_PROJ = $(SUB_PROJ) $(POTENTIAL_SUB_PROJ) $(EXPENDABLE_SUB_PROJ)
+LOCAL_CONFIGURABLES = Makefile $(ALL_SUB_PROJ:%=%/Makefile) $(EXTRA_CONFIGURABLES)
+
+SUB_MF_IN = $(ALL_SUB_PROJ:%=$(srcdir)/%/Makefile.in)
+
+COPY  = /bin/cp -p
+
+# XXX - we have to wildcard under $(builddir) rather than
+# $(abs_top_srcdir), so explicitly list any new root configurables to
+# ensure they get picked up properly.
+ROOT_CONFIGURABLES  = $(builddir)/Makefile* $(builddir)/*.sh \
+                      $(builddir)/run_with_cd_reporter.py
+CONFIGURABLES = $(ROOT_CONFIGURABLES) $(LOCAL_CONFIGURABLES)
+
+UPDATE_CONFIGURABLE = $(abs_top_srcdir)/scripts/common/impl/update_configurable.sh $(build_root)
+
+config_status = $(build_root)/status/config.status
+
+build_sys_dir = $(abs_top_srcdir)/src/build-system
+
+# config_status_deps = $(build_sys_dir)/configure $(build_sys_dir)/config.h.in
+config_status_deps = $(build_sys_dir)/NEWS
+
+configurables: $(CONFIGURABLES)
+
+# If this is just a normal single-colon rule, gmake ignores it for
+# some targets (such as ncbicfg.c).
+%:: $(srcdir)$(bspath)/%.in $(config_status)
+	$(UPDATE_CONFIGURABLE) $@
+
+# Meanwhile, Solaris make ignores the above rule for the local Makefile
+# and requires an explicit one.  (Sigh.)
+Makefile: $(srcdir)/Makefile.in $(config_status)
+	$(UPDATE_CONFIGURABLE) $@
+
+%/Makefile: $(srcdir)/%/Makefile.in $(config_status)
+	$(UPDATE_CONFIGURABLE) $@
+
+$(SUB_MF_IN):
+	$(MKDIR) -p `/usr/bin/dirname $@`
+	test -f $@  ||  $(COPY) $(build_sys_dir)/Makefile.in.skel $@
+
+$(builddir)/Makefile%: $(build_sys_dir)/Makefile%.in $(config_status)
+	$(UPDATE_CONFIGURABLE) $@
+
+$(builddir)/%.sh: $(build_sys_dir)/%.sh.in $(config_status)
+	$(UPDATE_CONFIGURABLE) $@
+
+$(builddir)/%.py: $(build_sys_dir)/%.py.in $(config_status)
+	$(UPDATE_CONFIGURABLE) $@
+
+$(builddir)/%: $(abs_top_srcdir)/src/%.in $(config_status)
+	$(UPDATE_CONFIGURABLE) $@
+
+# Some versions of Solaris make seem to need an explicit rule here too.
+$(builddir)/Makefile.meta: $(build_sys_dir)/Makefile.meta.in $(config_status)
+	$(UPDATE_CONFIGURABLE) $@
+
+$(config_status): $(config_status_deps)
+	$(abs_top_srcdir)/scripts/common/impl/maybe_reconfigure.sh $(builddir)
+
+-include $(builddir)/Makefile.mk.d
+
+.PHONY: configurables
+.PRECIOUS: $(CONFIGURABLES) $(SUB_MF_IN)
+# .SUFFIXES: .in
+
+# Necessary to keep Solaris make from trying to rebuild everything for
+# no good reason.
+.POSIX:

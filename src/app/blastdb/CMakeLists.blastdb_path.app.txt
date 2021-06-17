@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(blastdb_path)
+  NCBI_sources(blastdb_path)
+  NCBI_add_definitions(NCBI_MODULE=BLASTDB)
+  NCBI_uses_toolkit_libraries(blastdb_format blastinput)
+  NCBI_project_watchers(camacho fongah2)
+NCBI_end_app()

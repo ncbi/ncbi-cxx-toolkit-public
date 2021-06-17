@@ -1,0 +1,15 @@
+# $Id$
+
+SRC = sqlitewrapp
+LIB = sqlitewrapp
+
+CPPFLAGS= $(ORIG_CPPFLAGS) $(SQLITE3_INCLUDE)
+LIBS    = $(SQLITE3_LIBS) $(ORIG_LIBS)
+
+REQUIRES = SQLITE3
+
+WATCHERS = vakatov
+
+
+USES_LIBRARIES =  \
+    $(SQLITE3_LIBS) xncbi

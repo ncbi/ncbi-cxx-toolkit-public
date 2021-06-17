@@ -1,0 +1,9 @@
+# $Id$
+
+# General sequence converter
+############################
+
+APP_PROJ = convert_seq
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

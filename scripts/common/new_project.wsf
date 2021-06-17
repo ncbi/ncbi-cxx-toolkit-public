@@ -1,0 +1,846 @@
+<package>
+    <job id="new-project-wsh-js">
+    
+        <script language="VBScript">
+        Function VbAskData(prompt, title, defvalue)
+            VbAskData = InputBox(prompt, title, defvalue) 
+        End Function
+
+        Function VbAskQuestionYNC(prompt, title)
+            Dim reply
+            reply = MsgBox(prompt, vbYesNoCancel, title)
+            If reply = vbYes Then
+                VbAskQuestionYNC = "yes"
+            End If
+            If reply = vbNo Then
+                VbAskQuestionYNC = "no"
+            End If
+        End Function
+
+        Function VbAskQuestionYN(prompt, title)
+            Dim reply
+            reply = MsgBox(prompt, vbYesNo, title)
+            If reply = vbYes Then
+                VbAskQuestionYN = "yes"
+            End If
+            If reply = vbNo Then
+                VbAskQuestionYN = "no"
+            End If
+        End Function
+
+        Function VbInfoMessage(prompt, title)
+            Dim reply
+            reply = MsgBox(prompt, vbOKOnly, title)
+            VbInfoMessage = "ok"
+        End Function
+        </script>
+
+        <script language="JScript" src="project_utilits.js">
+        </script>
+
+        <script language="JScript">
+        // Framework
+        
+        function InputData(prompt, defvalue)
+        {
+            var answer = VbAskData(prompt, WScript.ScriptFullName, defvalue);
+            if ((typeof(answer) == "undefined") || answer.length == 0) {
+                WScript.Quit(1);
+            }
+            return answer;
+        }
+        function InputFlagYNC(prompt)
+        {
+            var answer = VbAskQuestionYNC(prompt, WScript.ScriptFullName);
+            if ((typeof(answer) == "undefined") || answer.length == 0) {
+                WScript.Quit(1);
+            }
+            return answer == "yes";
+        }
+        function InputFlagYN(prompt)
+        {
+            var answer = VbAskQuestionYN(prompt, WScript.ScriptFullName);
+            if ((typeof(answer) == "undefined") || answer.length == 0) {
+                WScript.Quit(1);
+            }
+            return answer == "yes";
+        }
+        function ShowMessage(prompt)
+        {
+            var answer = VbInfoMessage(prompt, WScript.ScriptFullName);
+            return answer == "ok";
+        }
+        // Verify command line arguments
+        function VerifyArguments(oArgs)
+        {
+            if (oArgs.Length < 2) {
+                return false;
+            }
+            var name = GetPositionalValue(oArgs, 0);
+            if (name == "") {
+                return false;
+            }
+/*
+            if (oArgs.Length > 6) {
+                return false;
+            }
+*/
+            
+            return true;
+        }
+        // Verify task object
+        function VerifyTask(oShell, oTask)
+        {
+            var err = false;
+            // Project name
+            var oRe = /^[a-zA-Z]([a-zA-Z]|\d|[_]|[-]|[\.])*$/g;
+            if (oTask.ProjectName.match(oRe) == null) {
+                WScript.Echo("ERROR: Invalid project name: \"" + oTask.ProjectName + "\"");
+                WScript.Echo("       Project name should start with a lower-case character");
+                WScript.Echo("       and contain lower-case character(s), underscore(s), or digit(s)");
+                err = true;
+            }
+            // Project type
+            if ((typeof(oTask.ProjectTemplate) == "undefined") || oTask.ProjectTemplate.length == 0) {
+                WScript.Echo("ERROR: Invalid project type: \"" + oTask.ProjectType + "\"");
+                WScript.Echo("       Supported project types are:");
+                var keys = (new VBArray(oTask.TemplatesDict.Keys())).toArray();
+                for(var key_ind in keys) {
+                    WScript.Echo( "         " + keys[key_ind] );
+                }
+                err = true;
+            }
+            
+            // Path to C++ Toolkit
+            var oFso = new ActiveXObject("Scripting.FileSystemObject");
+            if ( !oFso.FolderExists(oTask.ToolkitPath) ||
+                 (!(!oTask.DllBuild && oFso.FolderExists(oTask.ToolkitPath + "\\static\\bin")) &&
+                  !( oTask.DllBuild && oFso.FolderExists(oTask.ToolkitPath + "\\dll\\bin")) &&
+                  !oFso.FolderExists(oTask.ToolkitPath + "\\bin"))) {
+                WScript.Echo("ERROR: Pre-built NCBI C++ toolkit is not found in:\n\"" + oTask.ToolkitPath + "\"");
+                if (oTask.DllBuild) {
+                    if (oFso.FolderExists(oTask.ToolkitPath + "\\static\\bin")) {
+                        WScript.Echo("\nConsider using static build - do not specify -dll flag");
+                    }
+                } else {
+                    if (oFso.FolderExists(oTask.ToolkitPath + "\\dll\\bin")) {
+                        WScript.Echo("\nConsider using DLL build - specify -dll flag");
+                    }
+                }
+                err = true;
+            }
+            if ( !oFso.FolderExists(oTask.ToolkitSrcPath) ||
+                 !oFso.FolderExists(oTask.ToolkitSrcPath + "\\include") ||
+                 !oFso.FolderExists(oTask.ToolkitSrcPath + "\\src")) {
+                WScript.Echo("ERROR: Pre-built NCBI C++ toolkit sources are not found in:\n\"" + oTask.ToolkitPath + "\"");
+                err = true;
+            }
+            if (err) {
+                WScript.Quit(1);    
+            }
+        }
+        // Create usage string
+        function Usage()
+        {
+            var usage_str;
+            //usage_str  = "Usage:\n";
+            //usage_str += "cscript new_project.wsf <project-name> <project-template> <path-to-pre-built-toolkit> [-dll]";
+            usage_str  = "USAGE: cscript new_project.wsf <name> <type> [builddir] [-msvc nn] [-dll] [-b] [-v] [-noopen] [-ams yes|no]\n";
+            usage_str += "SYNOPSIS:\n";
+            usage_str += "    Create new MSVC application project from sample template:\n";
+            usage_str += "      Create local build tree structure. Fill-in the local tree.\n";
+            usage_str += "      Copy and adjust sample code.\n";
+//            usage_str += "      Add to project_tree_builder.ini entries for pre-built NCBI C++ toolkit.\n";
+            usage_str += "      Run project tree builder on local build tree.\n";
+            usage_str += "      Open created solution in MSVC IDE.\n";
+            usage_str += "ARGUMENTS:\n";
+            usage_str += "    <name>      -- name of the project\n";
+            usage_str += "    <type>      -- one of the following:\n";
+            usage_str += "                   app[/basic]        a simple application\n";
+            usage_str += "                   app/multicmd       a simple command-based application\n";
+            usage_str += "                   app/alnmgr         an application that uses Alignment Manager\n";
+            usage_str += "                   app/asn            an application that uses ASN.1 specification\n";
+            usage_str += "                   app/blast          a BLAST application\n";
+            usage_str += "                   app/cgi            a CGI application\n";
+            usage_str += "                   app/deployable_cgi a CD-deployable CGI application\n";
+            usage_str += "                   app/dbapi          a DBAPI application\n";
+            usage_str += "                   app/sdbapi         a Simple-DBAPI application\n";
+            usage_str += "                   app/eutils         an eUtils client application\n";
+            usage_str += "                   app/http_session   an application that uses CHttpSession\n";
+            usage_str += "                   app/lds            an application that uses local data store\n";
+            usage_str += "                   app/netcache       an application that uses NetCache\n";
+            usage_str += "                   app/netschedule    an NCBI GRID (NetSchedule) application\n";
+            usage_str += "                   app/objects        an application that uses ASN.1 objects\n";
+            usage_str += "                   app/objmgr         an application that uses Object Manager\n";
+            usage_str += "                   app/serial         a data serialization application\n";
+            usage_str += "                   app/soap/client    a SOAP client\n";
+            usage_str += "                   app/soap/server    a SOAP server\n";
+            usage_str += "                   app/unit_test      a Boost-based unit test application\n";
+            usage_str += "                   lib[/basic]        a simple static library\n";
+            usage_str += "                   lib/asn            a static library from ASN.1 specification\n";
+            usage_str += "                   lib/dtd            a static library from DTD specification\n";
+            usage_str += "                   lib/xsd            a static library from XML Schema specification\n";
+            usage_str += "                   lib/jsd            a static library from JSON Schema specification\n";
+            usage_str += "    [builddir]  -- path to the pre-built NCBI C++ toolkit\n";
+            usage_str += "                       default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
+            usage_str += "                       you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
+            usage_str += "    [-msvc nn]  -- MSVC version: 140, 140x64, 150, 150x64; default is " + GetDefaultMsvcVer() + "\n";
+            usage_str += "    [-dll]      -- use  NCBI C++ toolkit DLLs' instead of static libraries\n";
+            usage_str += "    [-b]        -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
+            usage_str += "    [-v]        -- show details about what is being made\n";
+            usage_str += "    [-i]        -- enter the data interactively\n";
+            usage_str += "    [-noopen]   -- do not open generated solution in IDE\n";
+            usage_str += "    [-ams yes|no]  -- automatically map network drive S:\n";
+            usage_str += "        Generated solution uses libraries from a network location:\n";
+            usage_str += "            " + GetDefaultLibFolder() + "\n";
+            usage_str += "        It is recommended that this location is mapped to drive S:\n";
+            usage_str += "EXAMPLES:\n";
+            usage_str += "    cscript new_project.wsf my_app app/basic\n";
+            usage_str += "    cscript new_project.wsf my_app app/basic -dll -v\n";
+            usage_str += "    cscript new_project.wsf my_app app/basic cxx.potluck -dll\n";
+            usage_str += "    cscript new_project.wsf my_app app/basic " + GetDefaultCXX_ToolkitFolder() + "\\cxx.current -dll\n";
+            
+            return usage_str;
+        }
+        // Task object constructor
+        function Task()
+        {
+            var toolkit_path;
+            var oArgs = WScript.Arguments;
+            SetMsvcVer(oArgs, "-msvc");
+            SetOpenSolution(oArgs, "-noopen", false);
+            var run_interactive = GetFlagValue(oArgs, "-i", false);
+            if ( !run_interactive && VerifyArguments(oArgs) ) {
+                SetVerbose(oArgs, "-v", false);
+                this.ProjectName = GetPositionalValue(oArgs, 0);
+                this.ProjectType = GetPositionalValue(oArgs, 1);
+                this.DllBuild    = GetFlagValue(oArgs, "-dll", false);
+                if ( this.DllBuild ) {
+                    this.CopyDlls    = GetFlagValue(oArgs, "-b", false);
+                } else {
+                    this.CopyDlls    = false;
+                }
+                this.AutoMapS = GetFlaggedValue(oArgs, "-ams", "ask")
+                toolkit_path     = GetOptionalPositionalValue(oArgs, 2, 
+                    GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder());
+            } else {
+                this.AutoMapS = "ask";
+                WScript.Echo(Usage());
+                if (!run_interactive) {
+                    var oFso = new ActiveXObject("Scripting.FileSystemObject");
+                    var scripthost = oFso.GetBaseName(WScript.FullName);
+                    run_interactive = (scripthost == "cscript");
+                    if (run_interactive) {
+                        run_interactive = InputFlagYN("Do you want to enter the data interactively?");
+                    }
+                    if (!run_interactive) {
+                        WScript.Quit(1);
+                    }
+                }
+            }
+            if (run_interactive) {
+                var prompt, answer, footer;
+                prompt = "Enter Project Name";
+//                footer = "\n\nPress Cancel to abort the script";
+                footer="";
+                this.ProjectName = InputData(prompt+footer, "test");
+                prompt = "Enter Project Type\n";
+                prompt += "This can be one of the following:\n";
+                prompt += "\tapp\n";
+                prompt += "\tapp/basic\n";
+                prompt += "\tapp/multicmd\n";
+                prompt += "\tapp/alnmgr\n";
+                prompt += "\tapp/asn\n";
+                prompt += "\tapp/blast\n";
+                prompt += "\tapp/cgi\n";
+                prompt += "\tapp/deployable_cgi\n";
+                prompt += "\tapp/dbapi\n";
+                prompt += "\tapp/sdbapi\n";
+                prompt += "\tapp/eutils\n";
+                prompt += "\tapp/http_session\n";
+                prompt += "\tapp/lds\n";
+                prompt += "\tapp/netcache\n";
+                prompt += "\tapp/netschedule\n";
+                prompt += "\tapp/objects\n";
+                prompt += "\tapp/objmgr\n";
+                prompt += "\tapp/serial\n";
+                prompt += "\tapp/soap/client\n";
+                prompt += "\tapp/soap/server\n";
+                prompt += "\tapp/unit_test\n";
+                prompt += "\tlib\n";
+                prompt += "\tlib/basic\n";
+                prompt += "\tlib/asn\n";
+                prompt += "\tlib/dtd\n";
+                prompt += "\tlib/xsd\n";
+                prompt += "\tlib/jsd\n";
+                this.ProjectType = InputData(prompt+footer, "app/basic");
+                prompt = "Enter path to the pre-built NCBI C++ toolkit";
+                toolkit_path = InputData(prompt+footer,
+                    GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder());
+                prompt = "Use NCBI C++ toolkit DLLs?";
+                this.DllBuild = InputFlagYNC(prompt+footer);
+                prompt = "Copy NCBI C++ toolkit DLLs into local directories?";
+                this.CopyDlls = InputFlagYNC(prompt+footer);
+                prompt = "Use verbose output?"
+                SetVerboseFlag( InputFlagYNC(prompt+footer));
+            }
+            this.ProjectFolder = this.ProjectName;
+
+            this.TemplatesDict = new ActiveXObject("Scripting.Dictionary");
+            this.TemplatesDict.Add("app",         "sample/app/basic");
+            this.TemplatesDict.Add("app/basic",   "sample/app/basic");
+            this.TemplatesDict.Add("app/multicmd",   "sample/app/multicmd");
+            this.TemplatesDict.Add("app/alnmgr",  "sample/app/alnmgr");
+            this.TemplatesDict.Add("app/asn",     "sample/app/asn");
+            this.TemplatesDict.Add("app/blast",   "sample/app/blast");
+            this.TemplatesDict.Add("app/cgi",     "sample/app/cgi");
+            this.TemplatesDict.Add("app/deployable_cgi",    "sample/app/deployable_cgi");
+            this.TemplatesDict.Add("app/dbapi",   "sample/app/dbapi");
+            this.TemplatesDict.Add("app/sdbapi",  "sample/app/sdbapi");
+            this.TemplatesDict.Add("app/eutils",  "sample/app/eutils");
+            this.TemplatesDict.Add("app/http_session",      "sample/app/http_session");
+            this.TemplatesDict.Add("app/lds",     "sample/app/lds");
+            this.TemplatesDict.Add("app/netcache",    "sample/app/netcache");
+            this.TemplatesDict.Add("app/netschedule", "sample/app/netschedule");
+            this.TemplatesDict.Add("app/objects",     "sample/app/objects");
+            this.TemplatesDict.Add("app/objmgr",      "sample/app/objmgr");
+            this.TemplatesDict.Add("app/serial",      "sample/app/serial");
+            this.TemplatesDict.Add("app/soap/client", "sample/app/soap/client");
+            this.TemplatesDict.Add("app/soap/server", "sample/app/soap/server");
+            this.TemplatesDict.Add("app/unit_test",   "sample/app/unit_test");
+            this.TemplatesDict.Add("lib",         "sample/lib/basic");
+            this.TemplatesDict.Add("lib/basic",   "sample/lib/basic");
+            this.TemplatesDict.Add("lib/asn",     "sample/lib/asn_lib");
+            this.TemplatesDict.Add("lib/dtd",     "sample/lib/asn_lib");
+            this.TemplatesDict.Add("lib/xsd",     "sample/lib/asn_lib");
+            this.TemplatesDict.Add("lib/jsd",     "sample/lib/asn_lib");
+            if (this.TemplatesDict.Exists(this.ProjectType)) {
+                this.ProjectTemplate = this.TemplatesDict.Item(this.ProjectType);
+            }
+
+            if (toolkit_path.indexOf("\\\\") == 0 || toolkit_path.indexOf(":\\") == 1) {
+                this.ToolkitPath = toolkit_path;
+            } else {
+                this.ToolkitPath = GetDefaultCXX_ToolkitFolder() + "\\" + toolkit_path;    
+            }
+            var oFso = new ActiveXObject("Scripting.FileSystemObject");
+            var src_root = this.ToolkitPath;
+            var src_path = src_root + "\\src";
+            while (!oFso.FolderExists(src_path)) {
+                src_root = oFso.GetParentFolderName(src_root)
+                if (src_root == "") {
+                    break;
+                }
+                src_path = src_root + "\\src";
+            }
+            this.ToolkitSrcPath = src_root;
+        }
+        // Diagnostic dump of task object
+        function DumpTask(oTask)
+        {
+            WScript.Echo("ProjectName     = " + oTask.ProjectName);
+            WScript.Echo("ProjectFolder   = " + oTask.ProjectFolder);
+            WScript.Echo("ProjectType     = " + oTask.ProjectType);
+            WScript.Echo("ProjectTemplate = " + oTask.ProjectTemplate);
+            WScript.Echo("ToolkitPath     = " + oTask.ToolkitPath);
+            WScript.Echo("ToolkitSrcPath  = " + oTask.ToolkitSrcPath);
+            WScript.Echo("DllBuild        = " + oTask.DllBuild.toString());
+            WScript.Echo("CopyDlls        = " + oTask.CopyDlls.toString());
+            WScript.Echo("AutoMapS        = " + oTask.AutoMapS);
+        }
+        
+        // Fill local tree
+        function FillTree(oShell, oTree)
+        {
+            FillTreeStructure(oShell, oTree);
+        }
+
+        function ConvertDataSpec(oShell, oTree, oTask)
+        {
+            var oFso = new ActiveXObject("Scripting.FileSystemObject");
+            if ( oFso.FolderExists(oTree.SrcProjectBranch) ) {
+	            var dir = oFso.GetFolder(oTree.SrcProjectBranch);
+	            var dir_files = new Enumerator(dir.files);
+	            for ( ; !dir_files.atEnd(); dir_files.moveNext()) {
+	                if (oFso.GetExtensionName(dir_files.item()) == "asn") {
+	                    var cmd = oTask.Datatool + " -m " + dir_files.item() + " -sxo";
+	                    var file_out = oTree.SrcProjectBranch + "\\" + oFso.GetBaseName(dir_files.item());
+	                    if (oTask.ProjectType == "lib/dtd") {
+	                        cmd += " -fx " + file_out + ".dtd";
+	                    } else if (oTask.ProjectType == "lib/xsd") {
+	                        cmd += " -fxs " + file_out + ".xsd";
+	                    } else {
+	                        cmd += " -fjs " + file_out + ".jsd";
+			    }
+                        execute(oShell,cmd);
+	                }
+	            }
+            }
+        }
+        
+        // Copy project template from CVS/SVN
+        function CopyProjectTemplate(oShell, oTree, oTask)
+        {
+//            var src = "/src/" + oTask.ProjectTemplate + "/*.*";
+//            GetFileFromTree(oShell, oTree, oTask, src, oTree.SrcProjectBranch)
+            GetSubtreeFromTree(oShell, oTree, oTask, "src/" + oTask.ProjectTemplate, oTree.SrcProjectBranch);
+            if (oTask.ProjectType == "lib" ||
+                oTask.ProjectType == "lib/basic") {
+                GetSubtreeFromTree(oShell, oTree, oTask, "include/" + oTask.ProjectTemplate, oTree.IncludeProjectBranch);
+            }
+
+            var rm0 = new Array (
+                "*.files"
+                );
+            var rm = rm0;
+            if (oTask.ProjectType == "lib/asn" ||
+                oTask.ProjectType == "lib/dtd" ||
+                oTask.ProjectType == "lib/xsd" ||
+                oTask.ProjectType == "lib/jsd") {
+                var rm1 = new Array (
+                    "*.lib"
+                    );
+                rm = rm0.concat(rm1);
+
+                if (typeof(oTask.Datatool) != "undefined" && (
+                    oTask.ProjectType == "lib/dtd" ||
+                    oTask.ProjectType == "lib/xsd" ||
+                    oTask.ProjectType == "lib/jsd")) {
+                    ConvertDataSpec(oShell, oTree, oTask);
+                    rm[rm.length] = "*.asn";
+                }
+            }
+            for (var i = 0; i < rm.length; ++i) {
+                var cmd = "if exist " + oTree.SrcProjectBranch + "\\" + rm[i] +
+                              " del " + oTree.SrcProjectBranch + "\\" + rm[i];
+                execute(oShell,cmd);
+            }
+        }
+
+        function AdjustDataSpecProject(oShell, oTree, oTask)
+        {
+            var oFso = new ActiveXObject("Scripting.FileSystemObject");
+            
+            var filename = oTree.SrcProjectBranch + "\\Makefile.in";
+            var modelname = filename + ".old";
+
+            // Makefile.in
+            VerboseEcho("Modifying      " + filename);
+            oFso.CopyFile(filename, modelname);
+            var old_file = oFso.OpenTextFile(modelname, 1);
+            var new_file = oFso.CreateTextFile(filename, true);
+            while( !old_file.AtEndOfStream ) {
+                var old_line = old_file.ReadLine();
+                if (old_line.indexOf("ASN_PROJ") == 0) {
+                    if (oTask.ProjectType == "lib/asn") {
+                        new_file.WriteLine("ASN_PROJ = " + oTask.ProjectName);
+                    } else if (oTask.ProjectType == "lib/dtd") {
+                        new_file.WriteLine("DTD_PROJ = " + oTask.ProjectName);
+                    } else if (oTask.ProjectType == "lib/xsd") {
+                        new_file.WriteLine("XSD_PROJ = " + oTask.ProjectName);
+                    } else if (oTask.ProjectType == "lib/jsd") {
+                        new_file.WriteLine("JSD_PROJ = " + oTask.ProjectName);
+                    }
+                } else {
+                    new_file.WriteLine(old_line);
+                }
+            }
+            old_file.Close();
+            new_file.Close();
+            oFso.DeleteFile(modelname, true);
+
+            // Makefile.projname.lib
+            filename = oTree.SrcProjectBranch + "\\Makefile." + oTask.ProjectName + ".lib";
+            VerboseEcho("Creating       " + filename);
+            new_file = oFso.CreateTextFile(filename, true);
+            new_file.WriteLine("LIB = " + oTask.ProjectName);
+            new_file.WriteLine("SRC = " + oTask.ProjectName + "__ " + oTask.ProjectName + "___ ");
+            new_file.Close();
+
+            //dataspec
+            var dir = oFso.GetFolder(oTree.SrcProjectBranch);
+            var dir_files = new Enumerator(dir.files);
+            for ( ; !dir_files.atEnd(); dir_files.moveNext()) {
+                var ext = oFso.GetExtensionName(dir_files.item());
+                var file_out = oTree.SrcProjectBranch + "\\" + oTask.ProjectName;
+                if (oTask.ProjectType == "lib/asn") {
+                    if (ext == "asn") {
+                        oFso.MoveFile(dir_files.item(),file_out+".asn");
+                        break;
+                    }
+                } else if (oTask.ProjectType == "lib/dtd") {
+                    if (ext == "dtd") {
+                        oFso.MoveFile(dir_files.item(),file_out+".dtd");
+                        break;
+                    }
+                } else if (oTask.ProjectType == "lib/xsd") {
+                    if (ext == "xsd") {
+                        oFso.MoveFile(dir_files.item(),file_out+".xsd");
+                        break;
+                    }
+                } else if (oTask.ProjectType == "lib/jsd") {
+                    if (ext == "jsd") {
+                        oFso.MoveFile(dir_files.item(),file_out+".jsd");
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Change Makefile.in and Makefile.*.app
+        function AdjustProject(oShell, oTree, oTask)
+        {
+            if (oTask.ProjectType == "lib/asn" ||
+                oTask.ProjectType == "lib/dtd" ||
+                oTask.ProjectType == "lib/xsd" ||
+                oTask.ProjectType == "lib/jsd") {
+                AdjustDataSpecProject(oShell, oTree, oTask)
+                return;
+            }
+            var XX_PROJ = "APP_PROJ";
+            var XX_EXT  = "app";
+            var XX_APP  = "APP";
+            if (oTask.ProjectType == "lib" ||
+                oTask.ProjectType == "lib/basic") {
+                XX_PROJ = "LIB_PROJ";
+                XX_EXT  = "lib";
+                XX_APP  = "LIB"
+            }
+            
+            var oFso = new ActiveXObject("Scripting.FileSystemObject");
+            
+            var filename = oTree.SrcProjectBranch + "\\Makefile.in";
+            var modelname = filename + ".old";
+            var samplename = "";
+            var sourcename = "";
+            var subtype = oTask.ProjectType.split("/");
+            if (subtype.length > 1) {
+                subtype = subtype[1];
+            } else {
+                subtype = "basic";
+            }
+            var standard_sample_found = false;
+
+
+            // Makefile.in
+            VerboseEcho("Modifying      " + filename);
+            oFso.CopyFile(filename, modelname);
+            var old_file = oFso.OpenTextFile(modelname, 1);
+            var new_file = oFso.CreateTextFile(filename, true);
+            while( !old_file.AtEndOfStream ) {
+                var old_line = old_file.ReadLine();
+                if (old_line.indexOf( XX_PROJ ) == 0) {
+                    var subproj = old_line.split(" ");
+                    var new_line = "";
+                    for (var i = 0; i < subproj.length; i++) {
+                        if (subproj[i] == subtype + "_sample") {
+                            standard_sample_found = true;
+                            sourcename = subproj[i];
+                            new_line += oTask.ProjectName + " ";
+                        } else {
+                            new_line += subproj[i] + " ";
+                        }
+                    }
+                    new_file.WriteLine(new_line);
+                } else {
+                    new_file.WriteLine(old_line);
+                }
+            }
+            old_file.Close();
+            new_file.Close();
+            oFso.DeleteFile(modelname, true);
+
+            if (!standard_sample_found) {
+                return;
+            }
+            
+            modelname = oTree.SrcProjectBranch + "\\" + "Makefile." + sourcename + "." + XX_EXT;
+            if (sourcename == "" || !oFso.FileExists(modelname)) {
+                // Makefile.*.app
+                // lookup file name
+                var type = oTask.ProjectType;
+                type = type.replace(/[/]/g, ".");
+                type = oFso.GetExtensionName(type);
+                if (type == "") {
+                    type = "basic";
+                }
+                var src_folder = oFso.GetFolder(oTree.SrcProjectBranch);
+                var src_folder_contents = new Enumerator(src_folder.files);
+                modelname = "";
+                for( ; !src_folder_contents.atEnd() && modelname == ""; src_folder_contents.moveNext()) {
+                    var src_file = src_folder_contents.item();
+                    if (oFso.GetExtensionName(src_file) == XX_EXT) {
+                        var t1 = oFso.GetFileName(src_file).replace(/_/g, ".");
+                        var t2 = oFso.GetBaseName(t1);
+                        while ( t1 != t2 ) {
+                            if ( oFso.GetExtensionName( t1 ) == type) {
+                                modelname = src_file;
+                                break;
+                            }
+                            t1 = t2;
+                            t2 = oFso.GetBaseName(t1);
+                        }
+                    }
+                }
+                if ( modelname == "") {
+                    src_folder_contents.moveFirst();
+                    for( ; !src_folder_contents.atEnd(); src_folder_contents.moveNext()) {
+                        var src_file = src_folder_contents.item();
+                        if (oFso.GetExtensionName(src_file) == XX_EXT) {
+                            modelname = src_file;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            samplename = oFso.GetExtensionName( oFso.GetBaseName(modelname) );
+            if (XX_EXT == "lib") {
+                ReplaceInFile( oFso, oTree.SrcProjectBranch, "app", samplename, oTask.ProjectName);
+                ReplaceInFile( oFso, oTree.SrcProjectBranch, "cpp", oTask.ProjectTemplate, oTask.ProjectName);
+            }
+            filename = oTree.SrcProjectBranch + "\\Makefile." + oTask.ProjectName + "." + XX_EXT;
+            VerboseEcho("Converting model file " + modelname + " into " + filename);
+            // open for reading
+            var old_makefile = oFso.OpenTextFile(modelname, 1);
+            // Create new makefile with new project name
+            var new_makefile = oFso.CreateTextFile(filename, true);
+            while( !old_makefile.AtEndOfStream ) {
+                var old_line = old_makefile.ReadLine();
+                if (old_line.indexOf( XX_APP ) == 0) {
+                    if (sourcename != "") {
+                        if (old_line.indexOf(sourcename) >= 0) {
+                            var tt = old_line.replace(sourcename,oTask.ProjectName);
+                            old_line = tt;
+                        }
+                        new_makefile.WriteLine(old_line);
+                    } else {
+                        new_makefile.WriteLine(XX_APP + " = " + oTask.ProjectName);
+                    }
+                }
+/*
+// rename source file ?
+                else if (old_line.indexOf("SRC") == 0) {
+                    var subproj = old_line.split(" ");
+                    var new_line = "";
+                    for (var i = 0; i < subproj.length; i++) {
+                        if (i == 2) {
+                            filename = oTree.SrcProjectBranch + "\\" + subproj[2] + ".cpp";
+                            if (oFso.FileExists(filename)) {
+                                oFso.MoveFile(filename, oTree.SrcProjectBranch + "\\" + oTask.ProjectName + ".cpp");
+                                new_line += oTask.ProjectName + " ";
+                            } else {
+                                new_line += subproj[i] + " ";
+                            }
+                        } else {
+                            new_line += subproj[i] + " ";
+                        }
+                    }
+                    new_makefile.WriteLine(new_line);
+                }
+*/
+                else {
+                    if (old_line.indexOf(oTask.ProjectTemplate) >= 0) {
+                        var tt = old_line.replace(oTask.ProjectTemplate,oTask.ProjectName);
+                        old_line = tt;
+                    }
+                    if (old_line.indexOf("#") == 0 && old_line.indexOf(sourcename) > 0) {
+                        var tt = old_line.replace(sourcename,oTask.ProjectName);
+                        old_line = tt;
+                    }
+                    new_makefile.WriteLine(old_line);
+                }
+            }
+            old_makefile.Close();
+            new_makefile.Close();
+            oFso.DeleteFile(modelname, true);
+
+// MSVC customisation
+            modelname += ".msvc";
+            filename += ".msvc";
+            if (oFso.FileExists(modelname)) {
+                oFso.MoveFile(modelname, filename);
+            }
+        }
+        function ReplaceInFile(oFso, srcdir, srcext, findtxt, replacetxt)
+        {
+            var src_folder = oFso.GetFolder(srcdir);
+            var src_folder_contents = new Enumerator(src_folder.files);
+            var src_file;
+            for( ; !src_folder_contents.atEnd(); src_folder_contents.moveNext()) {
+                src_file = src_folder_contents.item();
+                if (oFso.GetExtensionName(src_file) == srcext) {
+//                    break;
+                    var old_name = src_file;
+                    var new_name = src_file+"new";
+                    oFso.CopyFile(old_name, new_name);
+                    old_name = src_file;
+                    var old_makefile = oFso.OpenTextFile(new_name, 1);
+                    var new_makefile = oFso.CreateTextFile(old_name, true);
+                    while( !old_makefile.AtEndOfStream ) {
+                        var old_line = old_makefile.ReadLine();
+                        var tt = old_line.replace(findtxt,replacetxt);
+                        old_line = tt;
+                        new_makefile.WriteLine(old_line);
+                    }
+                    old_makefile.Close();
+                    new_makefile.Close();
+                    oFso.DeleteFile(new_name, true);
+                }
+            }
+        }
+        // Run project tree builder
+        function RunPtb(oShell, oTree, oTask)
+        {
+            var ptb_platform = GetTargetPlatform();
+            var sln_path;
+            if ( oTask.DllBuild ) {
+                sln_path = oTree.CompilersBranchDll   + "\\build\\" + oTask.ProjectName + ".sln";
+            } else {
+                sln_path = oTree.CompilersBranchStatic + "\\build\\" + oTask.ProjectName + ".sln";
+            }
+            var ptb_path;
+            var conf = GetConfigs(oTask)[0];
+            if (oTask.DllBuild) {
+                ptb_path = oTree.BinPathDll;
+            } else {
+                ptb_path = oTree.BinPathStatic;
+            }
+            ptb_path += "\\" + conf;
+            var ptb_flags;
+            ptb_flags = "";
+            if ( oTask.DllBuild ) {
+                ptb_flags += " -dll";
+            }
+            if (GetVerbose()) {
+                ptb_flags += " -cfg";
+            }
+            ptb_flags += " -nobuildptb";
+            ptb_flags += " -ext -nws -extroot \"";
+            var lib_dir = oTask.ToolkitPath + "\\lib\\";
+            if ( oTask.DllBuild ) {
+                lib_dir += "dll";
+            } else {
+                lib_dir += "static";
+            }
+            var oFso = new ActiveXObject("Scripting.FileSystemObject");
+            if (!oFso.FolderExists(lib_dir)) {
+                lib_dir = oTask.ToolkitPath + "\\";
+                if ( oTask.DllBuild ) {
+                    lib_dir += "dll";
+                } else {
+                    lib_dir += "static";
+                }
+                lib_dir += "\\lib";
+            }
+            ptb_flags += lib_dir + "\"";
+            var sysenv = oShell.Environment("PROCESS");
+            sysenv("PTB_PLATFORM") = ptb_platform;
+            sysenv("PTB_FLAGS") = ptb_flags;
+            sysenv("PTB_PATH") = ptb_path;
+            sysenv("SLN_PATH") = sln_path;
+            sysenv("TREE_ROOT") = oTree.TreeRoot;
+            sysenv("BUILD_TREE_ROOT") = oTree.CompilersBranch;
+            sysenv("PTB_PROJECT_REQ") = "src\\";
+
+            var ptb_command_line;
+            ptb_command_line = "\"" + oTree.CompilersBranch + "\\ptb.bat\"";
+            if (!GetVerbose()) {
+                WScript.Echo(ptb_command_line);
+            }
+            if ( execute(oShell, ptb_command_line) != 0) {
+                WScript.Echo("ERROR: project_tree_builder failed");
+                WScript.Quit(1);
+            }
+        }
+        function AutoMountS(oTask)
+        {
+            var check = CheckNetworkDrive();
+            if (check == "ok") {
+                return;
+            }
+            var message = "\n";
+            message += "Generated solution uses libraries from a network location:\n";
+            message += "        " + GetDefaultLibFolder() + "\n";
+            message += "It is recommended that this location is mapped to drive S:\n";
+            if (check == "wrong") {
+                message += "\nDisk S: is now mapped to a wrong location!\n";
+                if (oTask.AutoMapS == "ask") {
+                    ShowMessage(message);
+                } else {
+                    WScript.Echo(message);
+                }
+                return;
+            }
+            if (oTask.AutoMapS == "ask") {
+                message += "\nDo you want to map the network drive?\n";
+                if (InputFlagYN(message)) {
+                    MapNetworkDrive();
+                }
+            } else {
+                if (oTask.AutoMapS == "yes") {
+                    MapNetworkDrive();
+                } else {
+                    WScript.Echo(message);
+                }
+            }
+        }
+        // Open generated solution in  MSVC IDE
+        function LoadSolution(oShell, oTree, oTask)
+        {
+            AutoMountS(oTask);
+            if ( GetFlagValue(WScript.Arguments, "-noopen", false)) {
+                return;
+            }
+            var sln_path = " \"";
+            if ( oTask.DllBuild ) {
+                sln_path += oTree.CompilersBranchDll;
+            } else {
+                sln_path += oTree.CompilersBranchStatic;
+            }
+            sln_path += "\\build\\" + oTask.ProjectName + ".sln\"";
+
+            WScript.Echo("Generated solution: " + sln_path);
+            if (GetOpenSolution()) {
+                execute(oShell, "start \"\" " + sln_path);
+            }
+        }
+        
+        </script>
+        
+        <script language="JScript">
+        WScript.Echo(WScript.ScriptFullName);
+        var oShell = WScript.CreateObject("WScript.shell");
+        
+        var oTask  = new Task();
+        VerifyTask(oShell, oTask);
+        WScript.Echo("========================= Task ========================================");
+        DumpTask(oTask);
+        
+        var oTree  = new Tree(oShell, oTask);
+        VerboseEcho("========================= Tree ========================================");
+        DumpTree(oTree);
+        
+        WScript.Echo("========================= CreateTreeStructure =========================");
+        CreateTreeStructure(oTree, oTask);
+        WScript.Echo("========================= FillTree ====================================");
+        FillTree           (oShell, oTree);
+        WScript.Echo("========================= CopyPtb =====================================");
+        CopyPtb            (oShell, oTree, oTask);
+        WScript.Echo("========================= CopyDatatool ================================");
+        CopyDatatool       (oShell, oTree, oTask);
+        VerboseEcho("========================= CopyDlls ====================================");
+        CopyDlls           (oShell, oTree, oTask);
+        WScript.Echo("========================= CopyProjectTemplate =========================");
+        CopyProjectTemplate(oShell, oTree, oTask);
+        WScript.Echo("========================= AdjustProject ===============================");
+        AdjustProject      (oShell, oTree, oTask);
+        WScript.Echo("========================= RunPtb ======================================");
+        RunPtb             (oShell, oTree, oTask);
+        WScript.Echo("========================= LoadSolution ================================");
+        LoadSolution       (oShell, oTree, oTask);
+        WScript.Echo("========================= done ========================================");
+         </script>
+    </job>
+</package>
+ 

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(elink)
+  NCBI_dataspecs(elink.dtd)
+  NCBI_uses_toolkit_libraries(xser)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()
+

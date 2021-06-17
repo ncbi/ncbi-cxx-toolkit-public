@@ -1,0 +1,24 @@
+# $Id$
+
+# Build library "xobjimport"
+###############################
+
+SRC =	import_error import_progress import_message_handler \
+		id_resolver id_resolver_canonical id_resolver_prefix \
+		annot_import_data \
+		feat_importer \
+		ftable/feat_util ftable/gff_util \
+		ftable/feat_import_data ftable/feat_line_reader ftable/feat_annot_assembler \
+		ftable/gtf_importer ftable/gtf_import_data ftable/gtf_line_reader ftable/gtf_annot_assembler \
+		ftable/gff3_importer ftable/gff3_import_data ftable/gff3_line_reader ftable/gff3_annot_assembler \
+		ftable/bed_importer ftable/bed_import_data ftable/bed_line_reader ftable/bed_annot_assembler \
+		ftable/5col_importer ftable/5col_import_data ftable/5col_line_reader ftable/5col_annot_assembler
+		
+
+LIB =	xobjimport
+
+DLL_LIB = xobjutil $(SOBJMGR_LIBS)
+
+WATCHERS = ludwigf
+
+USES_LIBRARIES = xobjutil

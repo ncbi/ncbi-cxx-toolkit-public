@@ -1,0 +1,333 @@
+abdomen	abdomen
+abdominal fluid	abdominal fluid
+acne	acne
+activated sludge	activated sludge
+adductor muscle	adductor muscle
+agricultural soil	agricultural soil
+air	air
+amniotic fluid	amniotic fluid
+Animal	animal
+Animal-Cattle-Beef Cow	animal-cattle-beef cow
+Animal-Cattle-Dairy Cow	animal-cattle-dairy cow
+Animal-Cattle-Heifer	animal-cattle-heifer
+Animal-Cattle-Steer	animal-cattle-steer
+Animal-Chicken-Young Chicken	animal-chicken-young chicken
+Animal-Swine-Market Swine	animal-swine-market swine
+Animal-Swine-Sow	animal-swine-sow
+antenna	antenna
+aquaculture water	aquaculture water
+aquifer sediment	aquifer sediment
+aspirate	aspirate
+Beef	beef
+bile	bile
+biofilm	biofilm
+bitumen	bitumen
+BLOOD	blood
+blood cells	blood cells
+blood sample	blood sample
+Bodily fluid	bodily fluid
+body fluid	body fluid
+bone	bone
+bone marrow	bone marrow
+Bovine (feces)	bovine feces
+bovine feces	bovine feces
+bovine milk	bovine milk
+Brain	brain
+brain abscess	brain abscess
+brain biopsy	brain biopsy
+brain tissue	brain tissue
+branch	branch
+bronchial mucosa	bronchial mucosa
+bronchoalveolar lavage	bronchoalveolar lavage
+buccal epithelial cells	buccal epithelial cells
+buccal mucosa	buccal mucosa
+buccal swab	buccal swab
+buffy coat	buffy coat
+bursa	bursa
+cabbage leaves	cabbage leaves
+callus	callus
+catfish	catfish
+cave sediment	cave sediment
+cave sediments	cave sediments
+cerebellum	cerebellum
+cerebrospinal fluid	cerebrospinal fluid
+cervix	cervix
+Channel catfish	Channel catfish
+cheese	cheese
+Chicken	chicken
+Chicken Breast	chicken breast
+Chicken Carcass	chicken carcass
+Clinical	clinical
+clinical isolate	clinical isolate
+clinical isolates	clinical isolates
+clinical sample	clinical sample
+clinical samples	clinical samples
+cloaca	cloaca
+cloacal swab	cloacal swab
+Comminuted Beef	comminuted beef
+Comminuted Chicken	comminuted chicken
+compost	compost
+compost soil	compost soil
+coral reef	coral reef
+corn rhizosphere	corn rhizosphere
+cornea	cornea
+cotton rhizosphere	cotton rhizosphere
+creek water	creek water
+crown	crown
+CSF	CSF
+Cucumbers	cucumbers
+culture	culture
+curd sample	curd sample
+dairy cow rumen	dairy cow rumen
+dairy farm soil	dairy farm soil
+distillery	distillery
+drinking water	drinking water
+ear	ear
+egg	egg
+embryogenic callus	embryogenic callus
+Environmental	environmental
+environmental sample	environmental sample
+Environmental Swab	environmental swab
+Environmental Swabs	environmental swabs
+Environmental: non-food-contact surface	environmental: non-food-contact surface
+epithelium	epithelium
+esophageal mucosa	esophageal mucosa
+estuarine water	estuarine water
+estuarine waters	estuarine waters
+Excreted bodily substance	excreted bodily substance
+eye	eye
+Faeces	feces
+farm environment	farm environment
+farm soil	farm soil
+fecal	feces
+fecal sample	fecal sample
+fecal samples	fecal samples
+Feces	feces
+fermented food	fermented food
+fermented soybeans	fermented soybeans
+fetal brain	fetal brain
+field soil	field soil
+fin	fin
+fin wound	fin wound
+fish eggs	fish eggs
+fish intestine	fish intestine
+flooded rice soil	flooded rice soil
+flower	flower
+Food	food
+food product	food product
+food sample	food sample
+food samples	food samples
+forest	forest
+forest soil	forest soil
+freshwater	freshwater
+freshwater stream	freshwater stream
+fruit	fruit
+fruit body	fruit body
+fruitbody	fruitbody
+fruiting body	fruiting body
+gastric mucosa	gastric mucosa
+gastrointestinal tract	gastrointestinal tract
+genital cells	genital cells
+genitals	genitals
+gill	gill
+gills	gills
+goat milk	goat milk
+Ground Chicken	ground chicken
+Ground Turkey	ground turkey
+groundwater	groundwater
+head	head
+head kidney	head kidney
+heart	heart
+heart blood	heart blood
+hemocyte	hemocyte
+hepatic bile duct	hepatic bile duct
+hepatic biliary duct	hepatic biliary duct
+hepatocyte	hepatocyte
+hepatopancreas	hepatopancreas
+horse	horse
+Hospital	hospital
+hot marine salterns	hot marine salterns
+hot spring	hot spring
+hot springs	hot springs
+Human	human
+human plasma	human plasma
+human skin	human skin
+infected leaf	infected leaf
+inflorescence	inflorescence
+intestinal mucosa	intestinal mucosa
+intestine	intestine
+intestines	intestines
+kidney	kidney
+kimchi	kimchi
+lake	lake
+lake isolate	lake isolate
+lake mud	lake mud
+lake sediment	lake sediment
+lake soil	lake soil
+lake water	lake water
+leaf	leaf
+leaves	leaves
+lentil	lentil
+liver	liver
+liver abscess	liver abscess
+lung	lung
+lymph node	lymph node
+lymphocyte	lymphocyte
+maize	maize
+mammary gland	mammary gland
+mangrove sediment	mangrove sediment
+mangrove sediments	mangrove sediments
+mangrove soil	mangrove soil
+manure	manure
+marine environment	marine environment
+marine sediment	marine sediment
+marine sediments	marine sediments
+marine water	marine water
+mature leaf	mature leaf
+meat	meat
+midgut	midgut
+Milk	milk
+Missing	missing
+mitral valve	mitral valve
+mouth wound	mouth wound
+mucosa	mucosa
+mucus	mucus
+muscle	muscle
+muscle tissue	muscle tissue
+mycelium	mycelium
+Nares	nares
+nasal	nasal
+nasal mucosa	nasal mucosa
+nasal sample	nasal sample
+nasal samples	nasal samples
+nasal swab	nasal swab
+nasopharyngeal aspirate	nasopharyngeal aspirate
+nasopharyngeal swab	nasopharyngeal swab
+nasopharynx	nasopharynx
+nest	nest
+neuroblast	neuroblast
+nodule	nodule
+nodules	nodules
+nose swab	nose swab
+Not Applicable	not applicable
+Not known	not known
+olfactory mucosa	olfactory mucosa
+oral fluid	oral fluid
+oral lexion	oral lexion
+oral mucosa	oral mucosa
+Other	other
+ovary	ovary
+oviduct	oviduct
+paddy soil	paddy soil
+papaya	papaya
+parietal cortex	parietal cortex
+patient	patient
+patient with urinary tract infection	patient with urinary tract infection
+pericardial	pericardial
+pharnyx	pharnyx
+placenta	placenta
+plasma	plasma
+pleopod	pleopod
+pleopods	pleopods
+pleura	pleura
+pod	pod
+pond sediment	pond sediment
+pond water	pond water
+porcine Pleural Cavity	porcine pleural cavity
+poultry farm soil	poultry farm soil
+product-eggs-raw-whole	product-eggs-raw-whole
+Product-Raw-Intact-Beef	product-raw-intact-beef
+purulent fluid	purulent fluid
+Raw Intact Chicken	raw intact chicken
+Respiratory	respiratory
+Respiratory system	respiratory system
+respiratory tract	respiratory tract
+Retail Deli	retail deli
+Retail Meat	retail meat
+rhizosphere	rhizosphere
+rhizosphere soil	rhizosphere soil
+rice rhizosphere	rice rhizosphere
+rice soil	rice soil
+river sand	river sand
+river sediment	river sediment
+river sediments	river sediments
+river water	river water
+root	root
+root nodule	root nodule
+root nodules	root nodules
+root tip	root tip
+root tips	root tips
+roots	roots
+rumen	rumen
+saline lake	saline lake
+saliva	saliva
+salivary gland	salivary gland
+saltern soil	saltern soil
+seafood	seafood
+seawater	seawater
+sediment	sediment
+sediments	sediments
+seedling	seedling
+seedling roots	seedling roots
+sera	sera
+serum	serum
+sesame seeds	sesame seeds
+sewage sludge	sewage sludge
+shrimp pond	shrimp pond
+skeletal muscle	skeletal muscle
+skin	skin
+skin lesion	skin lesion
+sludge	sludge
+soda lake	soda lake
+Soil	soil
+soil rhizosphere	soil rhizosphere
+soil sample	soil sample
+solar saltern	solar saltern
+solar salterns	solar salterns
+spindle leaf	spindle leaf
+spleen	spleen
+Sputum	sputum
+stem	stem
+stem base	stem base
+stems	stems
+stomach	stomach
+Stool	stool
+stool sample	stool sample
+stool samples	stool samples
+Stool/Fecal	stool/fecal
+strawberry	strawberry
+sulphur spring	sulphur spring
+surface water	surface water
+swab	swab
+swamp soil	swamp soil
+tail	tail
+tannery waste	tannery waste
+tannery waste effluent	tannery waste effluent
+tentacle	tentacle
+testes	testes
+testis	testis
+textile wastewater	textile wastewater
+throat	throat
+throat swab	throat swab
+throat wash	throat wash
+thymus	thymus
+tissue biopsy	tissue biopsy
+trachea	trachea
+tracheal aspirate	tracheal aspirate
+tracheal swab	tracheal swab
+turfgrass	turfgrass
+twig	twig
+underground water	underground water
+Unknown	unknown
+urethra	urethra
+Urine	urine
+uterine mucosa	uterine mucosa
+vegetable	vegetable
+vegetables	vegetables
+wastewater	wastewater
+Water	water
+white clover	white clover
+whole blood	whole blood
+whole cell/tissue lysate	whole cell/tissue lysate
+WOUND	wound
+yogurt	yogurt

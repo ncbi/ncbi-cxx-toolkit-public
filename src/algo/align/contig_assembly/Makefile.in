@@ -1,0 +1,12 @@
+# $Id$
+
+# Meta-makefile (algo/align/contig_assembly)
+#################################
+
+LIB_PROJ = xalgocontig_assembly
+SUB_PROJ = demo
+
+REQUIRES = objects
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

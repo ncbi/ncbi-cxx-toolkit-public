@@ -1,0 +1,143 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        genbank {
+          accession "MF109352"
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 101,
+        seq-data ncbi2na '3AB9889B6B1C26AA00F2393A8003DAF8A56AA02010CC03804F00
+'H
+      }
+    },
+    seq {
+      id {
+        genbank {
+          accession "MF109391"
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 100,
+        seq-data ncbi2na '3AB9889B4B3C26AA00F2313A8003DAF0A52AA02000CC870045'H
+      }
+    },
+    seq {
+      id {
+        genbank {
+          accession "MF109560"
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 104,
+        seq-data ncbi2na '3AB9889B4B3C229A00F2303A8803CAF0A528A02019CCA70045AA
+'H
+      }
+    },
+    seq {
+      id {
+        genbank {
+          accession "MF109354"
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 5,
+        seq-data ncbi2na '9E00'H
+      }
+    },
+    seq {
+      id {
+        genbank {
+          accession "MF109358"
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 100,
+        seq-data ncbi2na '3AB9889B4B3C1EAA00F2393A8003DAF1A528A02000CCA7C04C'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 5,
+          segs denseg {
+            dim 5,
+            numseg 6,
+            ids {
+              genbank {
+                accession "MF109352"
+              },
+              genbank {
+                accession "MF109391"
+              },
+              genbank {
+                accession "MF109560"
+              },
+              genbank {
+                accession "MF109354"
+              },
+              genbank {
+                accession "MF109358"
+              }
+            },
+            starts {
+              0,
+              0,
+              0,
+              -1,
+              0,
+              -1,
+              -1,
+              -1,
+              0,
+              -1,
+              100,
+              -1,
+              100,
+              3,
+              -1,
+              -1,
+              -1,
+              101,
+              4,
+              -1,
+              -1,
+              -1,
+              102,
+              -1,
+              -1,
+              -1,
+              -1,
+              -1,
+              -1,
+              -1
+            },
+            lens {
+              100,
+              3,
+              1,
+              1,
+              2,
+              12
+            }
+          }
+        }
+      }
+    }
+  }
+}

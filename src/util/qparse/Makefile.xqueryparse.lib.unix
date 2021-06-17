@@ -1,0 +1,10 @@
+# $Id$
+
+# Adjust ICC flags to avoid problematic references to
+# __intel_sse2_stpcpy (as of ICC [20]13)
+
+ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
+  parser.o: $(srcdir)/parser.cpp
+	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) -fno-builtin-stpcpy $< -o $@ \
+	    $(CXX_FILTER)
+endif

@@ -1,0 +1,10 @@
+# $Id$
+
+LIB = hydra_client
+SRC = hydra_client
+
+DLL_LIB = xmlwrapp
+
+WATCHERS = grichenk choi
+
+USES_LIBRARIES = xconnect xmlwrapp

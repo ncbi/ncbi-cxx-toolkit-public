@@ -1,0 +1,68 @@
+
+    NCBI C Toolkit distributive for this release of NCBI C++ Toolkit.
+
+
+Some parts of the C++ Toolkit still may need some of the NCBI C Toolkit
+functionality. This directory contains source archives of the NCBI C Toolkit
+buildable under MS Windows and UNIX, which also match this particular
+version of the NCBI C++ Toolkit.
+
+
+
+                                UNIX
+                  ---------------------------------
+
+Archives:
+
+ - ncbi_c--Aug_14_2006.tar.Z
+ - ncbi_c--Aug_14_2006.tar.gz
+
+Build:
+
+  gunzip -c ncbi_c--Aug_14_2006.tar.gz | tar xf -
+  mv ncbi_c--Aug_14_2006 ncbi
+  ./ncbi/make/makedis.csh
+
+
+
+                     MS WINDOWS (MSVS 6.0 or 7.1)
+                  ----------------------------------
+
+Archives:
+
+ - ncbi_c--Aug_14_2006.zip
+ - ncbi_c--Aug_14_2006.exe
+
+
+Build:
+
+ 1. Expand the source archive (e.g. in "U:\").
+
+ 2. Load the following "solution" to MSVC++ .NET:
+     U:\ncbi_c--Aug_14_2006\make\msvc_prj\ncbi.dsw
+
+ 3. If you use MSVS 7.1 it will offer to convert your projects into
+    its new format. Agree "Yes to All".
+
+ 4. Set up the needed configuration(s) (e.g. ReleaseDLL) and build project
+    "all".
+
+ 5. Go to "U:\ncbi_c--Aug_14_2006\make\msvc_prj" and run script "install.bat".
+
+ 6. As a result, you will have the requested configurations of the 3rd-party
+    packages built and installed "NCBI-wise". Now, you can use them to build
+    the NCBI C++ Toolkit.
+    NOTE:  Remember to rebuild "-CONFIGURE-" project of the C++ Toolkit
+           solution after you build and install any new configuration of
+           the C Toolkit.
+
+ 7. To tune the NCBI C++ Toolkit build framework to use the C Toolkit libs
+    installed at other than  the default "U:\ncbi_c--Aug_14_2006"
+    location, edit paths in:
+      ncbi_cxx_win--Aug_14_2006\compilers\msvc710_prj\project_tree_builder.ini
+    before (re)building project "-CONFIGURE-" in the C++ Toolkit solution.
+
+ !) When building the C++ Toolkit, if you see a lot of fatal build errors
+    in the projects that depend on the NCBI C Toolkit libs, make sure that
+    you really did built the NCBI C Toolkit libs for the configuration(s)
+    that you are trying to build the C++ Toolkit with!

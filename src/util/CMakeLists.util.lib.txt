@@ -1,0 +1,21 @@
+# $Id$
+
+NCBI_begin_lib(xutil)
+  NCBI_sources(
+        random_gen utf8 checksum checksum_cityhash checksum_farmhash bytesrc 
+        strbuffer itree smalldns
+        thread_pool_old ddump_viewer strsearch logrotate
+        format_guess ascii85 md5 file_obsolete unicode dictionary
+        dictionary_util thread_nonstop sgml_entity static_set
+        transmissionrw miscmath mutex_pool ncbi_cache line_reader
+        util_exception uttp multi_writer itransaction thread_pool
+        thread_pool_ctrl scheduler distribution rangelist util_misc
+        histogram_binning table_printer retry_ctx stream_source file_manifest
+        cache_async multipattern_search crc32_sse
+  )
+  NCBI_headers(*.hpp cache/*.hpp *.inl)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_tags(core)
+  NCBI_project_watchers(vakatov)
+NCBI_end_lib()
+

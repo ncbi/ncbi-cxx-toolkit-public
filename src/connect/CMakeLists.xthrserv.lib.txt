@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_lib(xthrserv)
+  NCBI_sources(threaded_server server server_monitor connection_pool)
+  NCBI_headers(
+    threaded_server.hpp server.hpp server_monitor.hpp server_connection.hpp
+    thread_pool_for_server.hpp connection_pool.hpp
+  )
+  NCBI_enable_pch()
+  NCBI_uses_toolkit_libraries(xconnect xutil)
+  NCBI_project_tags(core)
+  NCBI_project_watchers(vakatov)
+NCBI_end_lib()
+

@@ -1,0 +1,6 @@
+Cn3d-color ::= {
+    scale-factor 17,
+    red 64,
+    green 128,
+    blue 0
+}

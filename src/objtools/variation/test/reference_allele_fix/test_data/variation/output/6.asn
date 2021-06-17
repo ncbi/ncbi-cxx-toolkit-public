@@ -1,0 +1,83 @@
+Check Variation type: 6
+Ref/Alt : TACGACCGC - 
+Variation ::= {
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc int {
+              from 2229045,
+              to 2229053,
+              id other {
+                accession "NC_000001",
+                version 11
+              }
+            },
+            mol genomic,
+            seq {
+              length 9,
+              seq-data iupacna "TCCGACCGC"
+            }
+          }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 9,
+                      seq-data iupacna "TCCGACCGC"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type mnp,
+                delta {
+                  {
+                    seq literal {
+                      length 9,
+                      seq-data iupacna "TACGACCGC"
+                    }
+                  }
+                },
+                observation 5
+              }
+            }
+          }
+        },
+        ext {
+          {
+            type str "Reference Allele Change",
+            data {
+              {
+                label str "Reference Changed",
+                data bool TRUE
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

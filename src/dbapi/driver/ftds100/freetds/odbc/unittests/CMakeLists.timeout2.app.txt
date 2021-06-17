@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc100_timeout2)
+  NCBI_sources(timeout2 common)
+  NCBI_add_test(test-odbc100 odbc100_timeout2)
+NCBI_end_app()
+

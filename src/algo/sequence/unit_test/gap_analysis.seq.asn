@@ -1,0 +1,53 @@
+Seq-entry ::= set {
+    class genbank,
+    seq-set {
+        seq {
+            id { local str "Seq_no_gaps" },
+            inst { 
+                repr raw,
+                mol dna,
+                length 100,
+                seq-data iupacna "AAAAAAAAAAAAAAAACCCCCCAAATTTTTTTTTTTTTTTTAAAAAAAAAAAAGGGGGGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAA"
+            }
+        },
+        seq {
+            id { local str "Seq_misc_seq_gaps_and_raw_bases" },
+            inst {
+                repr delta,
+                mol dna,
+                length 3000,
+                ext delta {
+                    loc whole genbank { accession "U54469", version 1 },
+                    literal { length 19, seq-data iupacna "GATTACAAAAAAAAAAAAA" },
+                    literal { length 10, seq-data gap { type unknown } },
+                    literal { length 40, seq-data gap { type unknown } },
+                    literal { length 45, seq-data iupacna "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAG" },
+                    literal { length 5, seq-data gap { type unknown } }
+                }
+            }
+        },
+        seq {
+            id { local str "Seq_just_one_seq_gap_of_len_101" },
+            inst {
+                repr delta,
+                mol dna,
+                length 101,
+                ext delta {
+                    literal { length 101, seq-data gap { type unknown } }
+                }
+            }
+        },
+        seq {
+            id { local str "Seq_just_two_seq_gaps_of_len_101" },
+            inst {
+                repr delta,
+                mol dna,
+                length 202,
+                ext delta {
+                    literal { length 101, seq-data gap { type unknown } },
+                    literal { length 101, seq-data gap { type unknown } }
+                }
+            }
+        }
+    }
+}

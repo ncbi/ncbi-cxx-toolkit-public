@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_align_format SHARED)
+  NCBI_hosts_projects(
+    objtools/align_format/align_format
+  )
+  NCBI_add_definitions(NCBI_ALIGN_FORMAT_EXPORTS)
+NCBI_end_lib()

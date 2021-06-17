@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(snp_test)
+  NCBI_sources(snp_test)
+  NCBI_uses_toolkit_libraries(sraread)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
+

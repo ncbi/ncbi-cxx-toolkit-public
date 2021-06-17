@@ -1,0 +1,29 @@
+Dense-seg ::= {
+  dim 3,
+  numseg 2,
+  ids {
+    local id 0,
+    local id 1,
+    local id 1
+  },
+  starts {
+    0,
+    0,
+    -1,
+    10,
+    -1,
+    95
+  },
+  lens {
+    10,
+    6
+  },
+  strands {
+    plus,
+    plus,
+    minus,
+    plus,
+    plus,
+    minus
+  }
+}

@@ -1,0 +1,6 @@
+# $Id$
+
+EXPENDABLE_APP_PROJ = unit_test_discrepancy
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

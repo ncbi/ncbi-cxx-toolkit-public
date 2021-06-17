@@ -1,0 +1,162 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        local str "seq1"
+      },
+      descr {
+        source {
+          org {
+            taxname "val1"
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '909393900FF9A54E4E3939'H
+      }
+    },
+    seq {
+      id {
+        local str "seq2"
+      },
+      descr {
+        source {
+          org {
+            orgname {
+              mod {
+                {
+                  subtype strain,
+                  subname "val1"
+                }
+              }
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '33A393900FFA954E4E5939'H
+      }
+    },
+    seq {
+      id {
+        local str "seq3"
+      },
+      descr {
+        title "[organism=val1] [organism=val2]"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '399093900FFAA64E4E5339'H
+      }
+    },
+    seq {
+      id {
+        local str "seq4"
+      },
+      descr {
+        source {
+          org {
+            taxname "val1",
+            orgname {
+              mod {
+                {
+                  subtype strain,
+                  subname "val1"
+                }
+              }
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '3933A3900FFAA57E4E5399'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 4,
+          segs denseg {
+            dim 4,
+            numseg 10,
+            ids {
+              local str "seq1",
+              local str "seq2",
+              local str "seq3",
+              local str "seq4"
+            },
+            starts {
+              -1,
+              0,
+              0,
+              0,
+              0,
+              -1,
+              2,
+              2,
+              2,
+              2,
+              -1,
+              4,
+              4,
+              4,
+              4,
+              -1,
+              6,
+              6,
+              6,
+              6,
+              -1,
+              36,
+              36,
+              36,
+              36,
+              -1,
+              38,
+              38,
+              38,
+              38,
+              -1,
+              40,
+              40,
+              40,
+              40,
+              -1,
+              42,
+              42,
+              42,
+              42
+            },
+            lens {
+              2,
+              2,
+              2,
+              2,
+              30,
+              2,
+              2,
+              2,
+              2,
+              2
+            }
+          }
+        }
+      }
+    }
+  }
+}

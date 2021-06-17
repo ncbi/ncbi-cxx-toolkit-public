@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_histogram)
+  NCBI_sources(test_histogram)
+  NCBI_uses_toolkit_libraries(xutil)
+  NCBI_add_test()
+  NCBI_project_watchers(ivanov)
+NCBI_end_app()

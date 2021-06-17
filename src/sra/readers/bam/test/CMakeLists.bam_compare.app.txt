@@ -1,0 +1,30 @@
+# $Id$
+
+NCBI_begin_app(bam_compare)
+  NCBI_sources(bam_compare samtools bam_test_common)
+  NCBI_requires(Linux SAMTOOLS)
+  NCBI_uses_toolkit_libraries(bamread xobjreadex xobjsimple)
+
+  NCBI_begin_test(bam_compare)
+    NCBI_set_test_command(bam_compare -raw -q MT:10000-20000)
+  NCBI_end_test()
+  NCBI_begin_test(bam_compare_none)
+    NCBI_set_test_command(bam_compare -raw -q GL000207.1:1-2)
+  NCBI_end_test()
+  NCBI_begin_test(bam_compare_none2)
+    NCBI_set_test_command(bam_compare -file 1k.unaligned.bam)
+  NCBI_end_test()
+  NCBI_begin_test(bam_compare_none3)
+    NCBI_set_test_command(bam_compare -file header-only.bam)
+  NCBI_end_test()
+  NCBI_begin_test(bam_compare_q_none)
+    NCBI_set_test_command(bam_compare -file 1k.unaligned.bam -q GL000207.1:1-2)
+  NCBI_end_test()
+  NCBI_begin_test(bam_compare_q_none2)
+    NCBI_set_test_command(bam_compare -file header-only.bam -q GL000207.1:1-2)
+  NCBI_end_test()
+
+  NCBI_project_watchers(vasilche ucko)
+
+NCBI_end_app()
+

@@ -1,0 +1,16 @@
+# $Id$
+
+NCBI_begin_app(cgitest)
+
+  NCBI_sources(cgitest)
+  NCBI_uses_toolkit_libraries(xcgi)
+
+  NCBI_begin_test(cgitest)
+    NCBI_set_test_command(cgitest.sh)
+    NCBI_set_test_assets(cgitest.sh)
+  NCBI_end_test()
+
+  NCBI_project_watchers(grichenk)
+
+NCBI_end_app()
+

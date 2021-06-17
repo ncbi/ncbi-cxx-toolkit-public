@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(test_histogram_binning)
+  NCBI_sources(test_histogram_binning)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xutil)
+  NCBI_add_test()
+  NCBI_project_watchers(kornbluh)
+NCBI_end_app()
+

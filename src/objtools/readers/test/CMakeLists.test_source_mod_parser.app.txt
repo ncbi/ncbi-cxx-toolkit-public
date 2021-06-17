@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_source_mod_parser)
+  NCBI_sources(test_source_mod_parser)
+  NCBI_uses_toolkit_libraries(xobjreadex)
+  NCBI_project_watchers(ucko gotvyans)
+NCBI_end_app()
+

@@ -1,0 +1,50 @@
+Variation ::= {
+  name "NM_006042.1:c.-798delC",
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc pnt {
+              point 0,
+              strand plus,
+              id gi 5174464
+            },
+            mol unknown
+          }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                },
+                observation asserted
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

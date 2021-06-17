@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(bioseq_edit_sample)
+  NCBI_sources(bioseq_edit_sample file_db_engine)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_patcher ncbi_xloader_genbank xconnect)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()

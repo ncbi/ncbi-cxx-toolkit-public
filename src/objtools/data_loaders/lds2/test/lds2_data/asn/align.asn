@@ -1,0 +1,109 @@
+Seq-align ::= {
+-- orphan alignment for gi 3
+-- external alignment for gi 5
+  type global,
+  dim 2,
+  score {
+    {
+      id str "weighted_identity",
+      value real { 992704, 10, -6 }
+    },
+    {
+      id str "rank",
+      value int 1
+    },
+    {
+      id str "locus_rank",
+      value int 1
+    }
+  },
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 523,
+        product-end nucpos 542,
+        genomic-start 1060444,
+        genomic-end 1060464,
+        parts {
+          mismatch 1,
+          match 6,
+          product-ins 1,
+          match 4,
+          genomic-ins 2,
+          match 8
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 10297, 10, -3 }
+          },
+          {
+            id str "idty",
+            value real { 818182, 10, -6 }
+          }
+        },
+        acceptor-before-exon {
+          bases "CA"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 602,
+        product-end nucpos 700,
+        genomic-start 1055898,
+        genomic-end 1055996,
+        parts {
+          match 99
+        },
+        scores {
+          {
+            id str "splign",
+            value real { 99, 10, 0 }
+          },
+          {
+            id str "idty",
+            value real { 1, 10, 0 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AT"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      }
+    },
+    product-length 2226
+  },
+  bounds {
+    int {
+      from 1049731,
+      to 1069104,
+      strand minus,
+      id gi 4
+    }
+  },
+  ext {
+    {
+      type str "lxr_data",
+      data {
+        {
+          label str "locus_id",
+          data int 984
+        },
+        {
+          label str "is_refseq",
+          data int 1
+        }
+      }
+    }
+  }
+}
+

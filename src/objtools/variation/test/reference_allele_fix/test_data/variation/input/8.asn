@@ -1,0 +1,55 @@
+Variation ::= {
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc int {
+              from 123122,
+              to 123123,
+              strand plus,
+              id other {
+                accession "NC_000001",
+                version 11
+              }
+            },
+            mol genomic
+          }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type mnp,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "GC"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "AT"
+                    }
+                  }
+                },
+                observation asserted
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+[-]
+_export = NCBI_PUB_EXPORT
+
+[Pub]
+muid._type = ncbi::TEntrezId
+muid._storage_type = ncbi::TIntId

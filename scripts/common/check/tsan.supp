@@ -1,0 +1,152 @@
+# False positive: CXX-10523
+race:^ncbi::ncbi_namespace_mutex_mt::SSystemMutex::Lock(
+race:^ncbi::CSafeStatic<ncbi::CParam
+
+
+################################################################
+# grichenk
+
+# false positive CXX-10544
+race:^ncbi::CSafeStatic<ncbi::CTls
+race:^ncbi::CTlsBase::x_SetValue
+
+# error, just not important - ignore (whole test) CXX-10544
+race:corelib/test/test_ncbidiag_mt.cpp
+
+# This one is actually a race, the only possible consequence is 
+# an additional message about temporary suspending log output. 
+# So suppress this and leave the code as-is.
+# CXX-10544
+race:^ncbi::CDiagContext::ApproveMessage(ncbi::SDiagMessage&,
+
+# The only danger here is to calculate and cache the same value several times. CXX-10544
+race:^ncbi::objects::CSeq_loc::x_UpdateTotalRange()
+
+# ncbi_url.cpp default encoder. Leave as is. CXX-10543
+race:^ncbi::CSafeStatic<ncbi::CDefaultUrlEncoder, ncbi::CSafeStatic_Callbacks<ncbi::CDefaultUrlEncoder> >::x_Init()$
+
+# There's no actual race, the variable is read while executing ~CSeq_id_Mapper when no other threads are using it. CXX-10543
+race:^ncbi::objects::CSeq_id_Textseq_Tree::Empty()
+
+# This is actually a race, but harmless. CXX-10546
+race:^s_ResetInstance$
+race:^ncbi::objects::CSeq_id_Which_Tree::DropInfo
+
+
+################################################################
+# ivanov
+
+# It is unsafe to use CTime::AsString() in exit print handler,
+# because it allocates memory, that is not signal-safe.
+# NOTE: ThreadSanitizer doesn't work with test_ncbi_system,
+#       that have limits tests that incompatible with sanitizer. 
+signal:corelib/test/test_ncbi_system.cpp
+
+
+################################################################
+# vasilche CXX-10546
+
+# error, just not important - ignore (whole test)
+race:corelib/test/test_tls_object.cpp
+
+# false positive -- last CRef release
+race:^ncbi::CPoolOfThreads_ForServer::AcceptRequest
+
+
+################################################################
+# lavr CXX-11285
+
+# test_ncbi_trigger -- confirmed false-positive by Anton (emails)
+race:^TRIGGER_Reset
+
+# thread leak in test_ncbi_trigger, probably can be rewritten
+thread:test_ncbi_trigger
+
+# Setting the shutdown flag doesn't need to be protected (by vakatov)
+race:^ncbi::CTestServer::ShutdownRequested()
+
+# This is for statistics purposes only. /connect/ncbi_socket.c
+race:^s_Create$
+
+# Debugging aid. For lock check consistency /connect/ncbi_socket.c
+race:^g_NCBI_CoreCheckLock$
+
+# Pre-check followed by lock-and-check-and-modify. /connect/ncbi_socket.c
+race:^ncbi::CConnIniter::CConnIniter()
+race:^s_InitAPI_$
+
+# This is a debugging aid, code sanity check. /connect/ncbi_core.c
+race:^MT_LOCK_AddRef$
+
+
+
+################################################################
+# ucko CXX-11303
+
+# the race is real, but AFAICT harmless in this context
+race:^tds_socket_write$
+race:^tds_socket_read$
+
+
+################################################################
+# satskyse CXX-11282
+
+# It has already been checked by the original developer long ago,
+# see the SVN revision 347572 (false positive) CSyncQueue<...>
+race:>::x_GuardedUnlock() const$
+race:>::x_IsGuarded() const$
+
+# It has already been checked by the original developer long ago,
+# see the SVN revision 347572 (false positives) CThreadPool...
+race:^ncbi::CThreadPool_Task::x_SetStatus(ncbi::CThreadPool_Task::EStatus)$
+
+# this is rather timing (CSyncQueue<...>)
+race:>::GetSize() const$
+
+# this is rather timing
+race:^ncbi::CThreadPool_Task::GetStatus() const$
+race:^ncbi::CThreadPool_Task::IsCancelRequested() const$
+race:^ncbi::CThreadPool_Task::IsFinished() const$
+race:^ncbi::CThreadPool_Task::x_RequestToCancel()$
+race:^ncbi::CThreadPool_ThreadImpl::RequestToFinish()$
+race:^ncbi::CThreadPool_ThreadImpl::CancelCurrentTask()$
+race:^ncbi::CThreadPool_ServiceThread::IsFinished()$
+race:^ncbi::CThreadPool_ServiceThread::RequestToFinish()$
+race:^ncbi::CThreadPool_Impl::x_NoNewTaskAllowed() const$
+race:^ncbi::CThreadPool_Impl::RequestSuspend(unsigned int)$
+race:^ncbi::CThreadPool_Impl::ResumeWork()$
+
+# The complain is for the case when a task is cancelled. The cancelling is done
+# via CThreadPool_Impl::CancelTask(), i.e. the pool exists and m_Pool is set.
+race:^ncbi::CThreadPool_Task::GetPool() const$
+
+# False positive: a CRef<> task is used from different threads and the
+# destruction logic in CRef<> does not use anything like mutex but an atomic
+# counter.
+race:^CTerminator_Task::~CTerminator_Task()$
+race:^CSentinelThreadPool_Task::~CSentinelThreadPool_Task()$
+
+# CRefs are set to NULL so GCC thread sanitizer does not like it
+race:^ncbi::CThreadPool_Impl::DestroyReference()$
+
+# The test works with tasks consequently moving from one state to another so
+# the CRef to the task are good and may not be in conflict
+race:^CThreadPoolTester::Thread_Run(int)$
+
+
+################################################################
+# satskyse CXX-11623
+# Formally suppress complains on libuv and datastax
+race:^uv__writev$
+race:^uv_mutex_lock$
+race:^uv_mutex_unlock$
+race:^uv_mutex_destroy$
+race:^uv_export_wait$
+race:^uv_export_wait$
+race:^cass_prepared_bind$
+race:^datastax::internal::core::Session::execute(datastax::internal::SharedRefPtr<datastax::internal::core::Request const> const&)$
+race:^datastax::internal::core::Buffer::copy(datastax::internal::core::Buffer const&)$
+race:^datastax::internal::core::Buffer::copy(unsigned long, char const*, unsigned long)$
+race:^datastax::internal::Memory::free(void*)$
+race:^std::__cxx11::basic_string<char, std::char_traits<char>, datastax::internal::Allocator<char> >::compare(std::__cxx11::basic_string<char, std::char_traits<char>, datastax::internal::Allocator<char> > const&) const$
+

@@ -1,0 +1,18 @@
+Seq-entry ::= set {
+    class genbank,
+    seq-set {
+        seq {
+            id { local str "Seq_two_internal_N_gaps_of_len_8_and_23_and_one_seq_gap_of_len_23_plus_ignored_edge_N_runs" },
+            inst {
+                repr delta,
+                mol dna,
+                length 111,
+                ext delta {
+                    literal { length 41, seq-data iupacna "NNNAAAAAAAAAAAAAAAAAAAAAANNNNNNNNCCCCCCCC" },
+                    literal { length 23, seq-data gap { type unknown } },
+                    literal { length 47, seq-data iupacna "NNNNNNNNNNNNNNNNNNNNNNNTTTTTTTTTTTTTTTTTTTTTTNN" }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,6 @@
+# $Id$
+
+DTD_PROJ = ehistory
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,8 @@
+#################################
+# $Id$
+#################################
+
+DLL_PROJ = dbapi_util_blobstore
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

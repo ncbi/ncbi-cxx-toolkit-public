@@ -1,0 +1,26 @@
+# $Id$
+# Author:  Paul Thiessen
+
+# Build library "xstruct_util"
+#################################
+
+WATCHERS = lanczyck 
+
+REQUIRES = objects
+LIB = xstruct_util
+
+ASN_DEP = seqset scoremat
+
+SRC = aaa_dummy_pch \
+	struct_util \
+	su_alignment_set \
+	su_block_multiple_alignment \
+	su_pssm \
+	su_sequence_set
+
+DLL_LIB = $(BLAST_LIBS) xstruct_dp
+
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
+USES_LIBRARIES =  \
+    $(BLAST_LIBS) xstruct_dp

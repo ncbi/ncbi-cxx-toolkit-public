@@ -1,0 +1,382 @@
+
+
+  Configuration of SeqDB
+
+
+This file attempts to address issues related to the configuration and
+usage of the SeqDB library, especially "hidden" aspects of SeqDB's
+behavior that impact the user in some way.
+
+
+Table of Contents:
+
+ * Database Name
+ * Sequence Type
+ * GI Lists, Negative GI Lists, and ID Sets
+ * OID Begin, End Range
+ * Memory Bounds
+ * Database Search Order
+    * Protein versus Nucleotide
+    * Directories and Paths
+    * Alias Files and Volumes
+    * Group Alias Files
+    * SeqDB Search Order Example
+
+
+Details:
+
+ * Database Name
+
+   The database name is a string, indicating a database to open.  The
+   name is interpreted as a space-delimited list of names.  However,
+   if the list contains a double quote character, SeqDB stops parsing
+   spaces until it encounters another double quote character.  The
+   quotes are discarded.  This allows quoted names to include space
+   characters, as is commonly found on some operating systems.
+
+   Example:
+
+    "C:\My Documents\Blast Database From Last March" nr nt
+
+   These free (non-method) functions are designed to properly pack up
+   vectors of individual database name strings into a single string to
+   provide to the constructor of SeqDB, and to decode such a packed-up
+   string into a vector of individual names:
+
+   void SeqDB_CombineAndQuote(const vector<string> & dbs,
+                              string               & dbname);
+
+   void SeqDB_SplitQuoted(const string        & dbname,
+                          vector<CTempString> & dbs);
+
+ * Sequence Type
+
+   The sequence type of each database is either Protein, Nucleotide.
+   It may be specified as either of these, or as "Unknown", which will
+   cause SeqDB to look for a Protein database, then (if that fails)
+   for a Nucleotide database.  For more on how this works, see the
+   Database Search Order write-up below.
+
+
+ * GI Lists, Negative GI Lists, and ID Sets
+
+   GI lists express a list of GIs that should be included in the
+   database.  Negative GI lists express a list of GIs that should NOT
+   be included (all GIs *not* found in the list should be included.)
+   The GI list and Negative GI list can also express Trace-IDs (also
+   known as "TIs", and written as "gnl|ti|..."), also in both positive
+   and negative forms.  The GI list (but not the Negative GI list) can
+   also include Seq-ids.
+
+   Except for the ability to include Seq-ids, the functionality of
+   both of these lists is included by that of the CSeqDBIdSet, which
+   also has the ability to perform (boolean) math on these lists of
+   identifiers.  If the list of string identifiers was added to the ID
+   set, the GI list and Negative GI list could soon[*] be deprecated in
+   favor of the ID Set, which is superior in several ways.
+
+   ID Set arithmetic makes it possible to take several lists of IDs
+   (of the same type), and compute boolean operations over them, for
+   instance, including all elements from set A not in set B, and all
+   elements from set C not in set D.  Arbitrary boolean arithmetic can
+   be done in this way, including any operation constructed of AND,
+   OR, NOT, and XOR (formally, the Intersection, Union, Negation and
+   Symmetric Difference, since these are set operations.)
+
+   [*] Regarding the word `soon', note that "time is relative".
+
+
+ * OID Begin, End Range
+
+   The SeqDB constructor can also accept a range of OIDs, expressed as
+   two integers (begin and end).  The first OID returned by iteration
+   will be at least begin, and the last OID returned will be at most
+   one less than end, formally [begin,end).
+
+   This feature makes it easier to do partial iteration of a database.
+   Partial iteration is useful for dividing work done on a database
+   into parts that can be handled by different processes (possibly on
+   different machines) and then combined.
+
+   If a BlastDB database is constructed such that different ranges of
+   OIDs have sequences of different kinds, then this feature can be
+   used to iterate over sequences of different types.  However, it is
+   not common (at least, at the NCBI) to construct such databases.
+
+
+ * Memory Bounds
+
+   Another aspect of SeqDB configuration is the establishment of the
+   "global memory bound".  All SeqDB objects in the system share one
+   memory bound, which is a limit on the total amount of memory they
+   may (cumulatively) acquire via both memory mapping and allocation
+   of large objects (many small objects are created by SeqDB but these
+   are not counted).
+
+   When too much memory is consumed, the application can crash on a
+   memory allocation, so SeqDB attempts to limit its own consumption
+   by unmapping memory mapped areas when it thinks that too much
+   memory has been allocated at one time.  The memory bound is a value
+   that helps it to determine this.  However, SeqDB never returns an
+   error due to insufficient memory due to the memory bound.  Instead,
+   in cases where SeqDB needs to choose between allocating more memory
+   and sacrificing correctness, it always "accepts the risk" and
+   allocates more memory.
+
+   Setting the memory bound too high is only a problem if your process
+   is in danger of running out of address space (which is common in 32
+   bit systems when working with large BlastDB databases).  Setting
+   the memory bound lower is safer from this kind of memory exhaustion
+   but risks a "thrashing" behavior, where parts of memory are
+   unmapped and remapped repeatedly in order to conform to the memory
+   bound heuristic.  "Thrashing" does not impact correctness but can
+   significantly impact SeqDB's performance.
+
+   If the memory bound is not set, SeqDB attempts to pick a reasonable
+   limit based on the pointer size (32 or 64 bit) and attempts to
+   interrogate the environment for other possible limits on address
+   space.  If SeqDB detects allocation failures, it may attempt to
+   reduce the memory bound.
+
+   All code working with memory bounds concerns itself with address
+   space consumption (rather than trying to limit the size of the
+   "resident set" for example).
+
+   Note: This is considered something of an "expert" feature.
+
+
+ * Database Search Order
+
+   When SeqDB is given the name of a database to open (either by the
+   user or via an alias file), there are several places in which the
+   named object might be found.  SeqDB searches through these paths in
+   a specified order, and uses the first solution it finds.  If there
+   are several valid solutions, it is important to understand the
+   order in which SeqDB considers each option.
+
+    * Protein versus Nucleotide
+
+      SeqDB allows the user to select Protein, Nucleotide, or Unknown
+      as the sequence type when opening a database.  If Protein or
+      Nucleotide is selected, only that type will be opened, but if
+      "Unknown" is used, SeqDB must decide which type of database
+      matches the provided name.
+
+      The method SeqDB uses is to attempt to open the database as a
+      protein database.  If this works, protein is assumed to be the
+      correct sequence type.  If the operation fails (for any reason),
+      SeqDB will try to open the database again as a nucleotide
+      database.  In each of these attempts, the attempt is done as if
+      the sequence type was precisely specified; therefore the protein
+      phase of the search will examine all directories in the search
+      path before failing and allowing the nucleotide option to be
+      considered.  Having nucleotide databases in an "earlier" or
+      higher priority path does not affect the search unless the
+      protein attempt fails completely.
+      
+      If several names are provided to SeqDB at once using an Unknown
+      sequence type, all names must be found with protein, or all with
+      nucleotide.  It is impossible to mix protein and nucleotide
+      database volumes so if any failure occurs during protein
+      database resolution, the entire list will be retried with
+      nucleotide, even if several names were resolved successfully.
+
+      Some databases are affected by this ordering; there are both
+      protein and nucleotide databases named "nr", but "nr" is
+      normally used to mean the protein one.  In practice, its usually
+      better to specify the sequence type if it is known.
+      
+      The protein/nucleotide ordering does not affect names found in
+      alias files because those are always typed by their extension; a
+      name found in a "*.pal" file will always be treated as a protein
+      database and vice versa.
+
+
+    * Directories and Paths
+      
+      Given the sequence type, SeqDB searches for the database in a
+      list of directories called the "blast database search path", or
+      "search path" for short.  The path is the concatenation of three
+      sources of path information.  First is the "current" directory,
+      then any directories in the BLASTDB environment variable, and
+      finally directories specified in the NCBI configuration file.
+
+      The definition of the "current" directory depends on the source
+      of the database name.  In the case of names passed to the CSeqDB
+      constructor, the current directory is the working directory of
+      the application itself.  In the case of names found in alias
+      files, the current directory is the directory the alias file
+      itself is in.  [The application's working directory is given by
+      the CDir::GetCwd() method.]
+
+      The directories in the BLASTDB path are the second component.
+      If this path is non-empty, it is expected to contain a list of
+      directories, separated by a delimiter.  The delimiter is ":" on
+      Unix-like systems, but ";" on other systems.  This is to avoid
+      conflicts with other usage of these characters, for example on
+      systems using drive letters.  [More precisely, systems where the
+      symbol NCBI_OS_UNIX is defined use ":", others use ";".]
+
+      The final source of path information is the NCBI configuration
+      file.  On Unix-like systems this is named ".ncbirc".  Windows
+      systems use "ncbi.ini".  If multiple directories are needed, the
+      same delimiter should be used as with BLASTDB (":" or ";").  In
+      the NCBI configuration file, the search path information should
+      be specified in the [BLAST] section, with the configuration key
+      "BLASTDB".  An NCBI configuration file might look like this:
+
+        [BLAST]
+          BLASTDB=/local/dbs/blast:/home/jleno/dbs:/net/dbserver/dbs
+
+      The concatenation described above is used to determine the order
+      in which paths are tried to find a database.  So, if two valid
+      databases exist, and one of them is earlier in the search path,
+      the earlier database will be opened rather than the later one.
+
+      This means that a database found in the local directory will be
+      preferred to one found in a directory mentioned in the $BLASTDB
+      path, and a database found in that path will be preferred to one
+      found in the .ncbirc path.  In the case of the BLASTDB or NCBI
+      configuration file path, databases mentioned earlier in the path
+      will be tried before databases found later in the path.
+
+      When a directory is considered, SeqDB will look for both alias
+      files and volume files before moving on to the next directory.
+      This means that any alias file or volume found in a directory in
+      the path will be preferred over any alias file or volume found
+      in a directory found later in the path.
+
+
+    * Alias Files and Volumes
+
+      When looking for a database in a specific path, SeqDB will look
+      for an alias file first, then a volume.  If both of these exist,
+      the alias file will be preferred.
+
+      One special exception exists -- if the name for which SeqDB is
+      searching is from an alias file, and the name found in the alias
+      file matches the name of the alias file itself, then SeqDB's
+      search path algorithm would be certain to find the *same* alias
+      file.  In this case, the search will ignore the alias file in
+      question, and look for a volume in the same directory.  If there
+      is no such volume, the search ends with a "cyclicality" error,
+      in other words, there is a cycle in the alias file inclusion
+      graph (which is illegal).
+
+      All other cases where an alias file resolves to a component
+      already found in its own ancestry (its parent, grandparent,
+      great-grandparent, etc.), will be considered to be a cyclicality
+      error and will cause the search to terminate.  A search that
+      encounters a cyclicality error will terminate without examining
+      any other components of the search path.  If the search was for
+      an "unknown" sequence type, a "cyclicality" errors (like any
+      other error) occurring while exploring the protein option, will
+      will cause the search to retry with the nucleotide option.
+
+
+    * Group Alias Files
+
+      Before opening or even checking for the existence of any alias
+      file, SeqDB will look for a file called "index.alx".  This file
+      is called the "Group Alias File".  If it does exist, it should
+      include the contents of all other alias files found in the same
+      directory, both nucleotide and protein; each file's contents
+      should be preceded by a line starting with "ALIAS_FILE".  For
+      more information about this, see the file alias_files.txt.
+
+      For the purpose of search paths and ordering, the group alias
+      file is treated exactly as the individual alias files are, and
+      can best be viewed as a more (or less, depending) efficient way
+      to open the other alias files.  However, since it is searched
+      for first, if it is found in any component of the search path,
+      it will be used instead of individual alias files found in any
+      other component of the search path.
+
+
+    * SeqDB Search Order Example
+
+      Given this configuration:
+
+        BLASTDB=/one/two:/four/seven
+
+        -----.ncbirc--------
+        [BLAST]
+            BLASTDB=/local/dbs/blast:/home/jleno/dbs:/net/dbserver/dbs
+        --------------------
+
+      And this instantiation of SeqDB:
+
+        CSeqDB db("flugle", CSeqDB::eUnknown);
+
+      The following series of files will be opened (or checked for).
+      The symbol <CWD> means the current working directory of the
+      process.  If any of the searches in this list are successful,
+      the process stops and uses that file; if any are unsuccessful,
+      the process continues.  An index.alx file does not stop the
+      search unless it contains an entry for the given name.
+
+      The search for Unknown starts by trying to open the database as
+      a protein database:
+
+      1. The .ncbirc or ncbi.ini files will be opened (if any exist)
+         to read the BLAST/BLASTDB entry.  (Several paths are checked
+         to find these files; this process is outside the control of
+         SeqDB, but the current version of this code begins with the
+         process's current working directory.)
+
+      2. The file "index.alx" is looked for at these locations:
+
+         a. <CWD>/index.alx
+         b. /one/two/index.alx
+         c. /four/seven/index.alx
+         d. /local/dbs/blast/index.alx
+         e. /home/jleno/dbs/index.alx
+         f. /net/dbserver/dbs/index.alx
+
+      3. The database "flugle" is looked for using this paths (note
+         the alternation between ".pal" and ".pin")
+
+         a. <CWD>/flugle.pal
+         b. <CWD>/flugle.pin
+         c. /one/two/flugle.pal
+         d. /one/two/flugle.pin
+         e. /four/seven/flugle.pal
+         f. /four/seven/flugle.pin
+         g. /local/dbs/blast/flugle.pal
+         h. /local/dbs/blast/flugle.pin
+         i. /home/jleno/dbs/flugle.pal
+         j. /home/jleno/dbs/flugle.pin
+         k. /net/dbserver/dbs/flugle.pal
+         l. /net/dbserver/dbs/flugle.pin
+
+      At this point, if no database has been found, the search for
+      protein has failed; the search repeats for nucleotide as
+      follows:
+
+      4. The "index.alx" search from step #2 is repeated (the results
+         of the first one were lost when the protein attempt failed.)
+
+      5. The database "flugle" is looked for again, but this time
+         using nucleotide filenames (.nal and .nin)
+
+         a. <CWD>/flugle.nal
+         b. <CWD>/flugle.nin
+         c. /one/two/flugle.nal
+         d. /one/two/flugle.nin
+         e. /four/seven/flugle.nal
+         f. /four/seven/flugle.nin
+         g. /local/dbs/blast/flugle.nal
+         h. /local/dbs/blast/flugle.nin
+         i. /home/jleno/dbs/flugle.nal
+         j. /home/jleno/dbs/flugle.nin
+         k. /net/dbserver/dbs/flugle.nal
+         l. /net/dbserver/dbs/flugle.nin
+
+      6. If we got to this point without finding an index.alx file
+         with the appropriate entry, or an alias or volume that
+         matches the given name, the search fails.
+
+May 2008
+Kevin Bealer
+
+

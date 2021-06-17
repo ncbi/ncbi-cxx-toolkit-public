@@ -1,0 +1,3 @@
+  [CRawWiggleRecord id="lcl|chr1" start=0 stop=9 value=0]
+  [CRawWiggleRecord id="lcl|chr1" start=20 stop=29 value=0]
+  [CRawWiggleRecord id="lcl|chr1" start=40 stop=49 value=1.2]

@@ -1,0 +1,1051 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 77
+        }
+      },
+      location int {
+        from 0,
+        to 68,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data gene {
+        locus "ND2"
+      },
+      location int {
+        from 69,
+        to 1094,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 5
+        }
+      },
+      product whole genbank {
+        accession "ARW59264"
+      },
+      location int {
+        from 69,
+        to 1094,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "protein_id",
+          val "gb|ARW59264|"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "NADH dehydrogenase subunit 2"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 87
+        }
+      },
+      location int {
+        from 1095,
+        to 1164,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 67
+        }
+      },
+      location int {
+        from 1164,
+        to 1230,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 89
+        }
+      },
+      location int {
+        from 1231,
+        to 1298,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data gene {
+        locus "COX1"
+      },
+      location int {
+        from 1297,
+        to 2833,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 5
+        }
+      },
+      comment "start codon not determined; TAA stop codon is completed by the
+ addition of 3' A residues to the mRNA",
+      product whole genbank {
+        accession "ARW59265"
+      },
+      location int {
+        from 1297,
+        to 2833,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "transl_except",
+          val "(pos:2834,aa:TERM)"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59265|"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "cytochrome c oxidase subunit I"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 76,
+          codon {
+            2,
+            3
+          }
+        }
+      },
+      location int {
+        from 2834,
+        to 2900,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data gene {
+        locus "COX2"
+      },
+      location int {
+        from 2902,
+        to 3586,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 5
+        }
+      },
+      comment "TAA stop codon is completed by the addition of 3' A residues to
+ the mRNA",
+      product whole genbank {
+        accession "ARW59266"
+      },
+      location int {
+        from 2902,
+        to 3586,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "transl_except",
+          val "(pos:3587,aa:TERM)"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59266|"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "cytochrome c oxidase subunit II"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 75
+        }
+      },
+      location int {
+        from 3587,
+        to 3657,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 68
+        }
+      },
+      location int {
+        from 3674,
+        to 3742,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data gene {
+        locus "ATP8"
+      },
+      location int {
+        from 3743,
+        to 3904,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 5
+        }
+      },
+      product whole genbank {
+        accession "ARW59267"
+      },
+      location int {
+        from 3743,
+        to 3904,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "protein_id",
+          val "gb|ARW59267|"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "ATP synthase F0 subunit 8"
+            }
+          }
+        }
+      }
+    },
+    {
+      data gene {
+        locus "ATP6"
+      },
+      location int {
+        from 3898,
+        to 4578,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 5
+        }
+      },
+      product whole genbank {
+        accession "ARW59268"
+      },
+      location int {
+        from 3898,
+        to 4578,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "protein_id",
+          val "gb|ARW59268|"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "ATP synthase F0 subunit 6"
+            }
+          }
+        }
+      }
+    },
+    {
+      data gene {
+        locus "COX3"
+      },
+      location int {
+        from 4582,
+        to 5369,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 5
+        }
+      },
+      comment "TAA stop codon is completed by the addition of 3' A residues to
+ the mRNA",
+      product whole genbank {
+        accession "ARW59269"
+      },
+      location int {
+        from 4582,
+        to 5369,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "transl_except",
+          val "(pos:5369..5370,aa:TERM)"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59269|"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "cytochrome c oxidase subunit III"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 71
+        }
+      },
+      location int {
+        from 5370,
+        to 5436,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data gene {
+        locus "ND3"
+      },
+      location int {
+        from 5461,
+        to 5789,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 5
+        }
+      },
+      comment "TAA stop codon is completed by the addition of 3' A residues to
+ the mRNA",
+      product whole genbank {
+        accession "ARW59270"
+      },
+      location int {
+        from 5461,
+        to 5789,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "transl_except",
+          val "(pos:5789..5790,aa:TERM)"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59270|"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "NADH dehydrogenase subunit 3"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 82
+        }
+      },
+      location int {
+        from 5790,
+        to 5849,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 65
+        }
+      },
+      location int {
+        from 5854,
+        to 5922,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 78
+        }
+      },
+      location int {
+        from 5924,
+        to 5993,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 83,
+          codon {
+            44,
+            45,
+            46,
+            47
+          }
+        }
+      },
+      location int {
+        from 5995,
+        to 6061,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 69
+        }
+      },
+      location int {
+        from 6074,
+        to 6139,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 70
+        }
+      },
+      location int {
+        from 6138,
+        to 6204,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data gene {
+        locus "ND5"
+      },
+      location int {
+        from 6212,
+        to 7954,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 5
+        }
+      },
+      product whole genbank {
+        accession "ARW59271"
+      },
+      location int {
+        from 6212,
+        to 7954,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "protein_id",
+          val "gb|ARW59271|"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "NADH dehydrogenase subunit 5"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 72
+        }
+      },
+      location int {
+        from 7955,
+        to 8020,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data gene {
+        locus "ND4"
+      },
+      location int {
+        from 8026,
+        to 9369,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 5
+        }
+      },
+      product whole genbank {
+        accession "ARW59272"
+      },
+      location int {
+        from 8026,
+        to 9369,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "protein_id",
+          val "gb|ARW59272|"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "NADH dehydrogenase subunit 4"
+            }
+          }
+        }
+      }
+    },
+    {
+      data gene {
+        locus "ND4L"
+      },
+      location int {
+        from 9363,
+        to 9659,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 5
+        }
+      },
+      product whole genbank {
+        accession "ARW59273"
+      },
+      location int {
+        from 9363,
+        to 9659,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "protein_id",
+          val "gb|ARW59273|"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "NADH dehydrogenase subunit 4L"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 84
+        }
+      },
+      location int {
+        from 9662,
+        to 9727,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 80
+        }
+      },
+      location int {
+        from 9728,
+        to 9794,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data gene {
+        locus "ND6"
+      },
+      location int {
+        from 9797,
+        to 10318,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 5
+        }
+      },
+      product whole genbank {
+        accession "ARW59274"
+      },
+      location int {
+        from 9797,
+        to 10318,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "protein_id",
+          val "gb|ARW59274|"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "NADH dehydrogenase subunit 6"
+            }
+          }
+        }
+      }
+    },
+    {
+      data gene {
+        locus "CYTB"
+      },
+      location int {
+        from 10322,
+        to 11456,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 5
+        }
+      },
+      comment "TAA stop codon is completed by the addition of 3' A residues to
+ the mRNA",
+      product whole genbank {
+        accession "ARW59275"
+      },
+      location int {
+        from 10322,
+        to 11456,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "transl_except",
+          val "(pos:11457,aa:TERM)"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59275|"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "cytochrome b"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 83,
+          codon {
+            4,
+            5,
+            6,
+            7
+          }
+        }
+      },
+      location int {
+        from 11457,
+        to 11522,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data gene {
+        locus "ND1"
+      },
+      location int {
+        from 11546,
+        to 12487,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 5
+        }
+      },
+      product whole genbank {
+        accession "ARW59276"
+      },
+      location int {
+        from 11546,
+        to 12487,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "protein_id",
+          val "gb|ARW59276|"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "NADH dehydrogenase subunit 1"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 76,
+          codon {
+            16,
+            17,
+            18,
+            19
+          }
+        }
+      },
+      location int {
+        from 12497,
+        to 12564,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type rRNA,
+        ext name "16S ribosomal RNA"
+      },
+      comment "16S ribosomal RNA",
+      location int {
+        from 12565,
+        to 13898,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 86
+        }
+      },
+      location int {
+        from 13900,
+        to 13971,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type rRNA,
+        ext name "12S ribosomal RNA"
+      },
+      location int {
+        from 13972,
+        to 14658,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 76
+        }
+      },
+      location int {
+        from 14788,
+        to 14839,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 73
+        }
+      },
+      location int {
+        from 16607,
+        to 16673,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA,
+        ext tRNA {
+          aa ncbieaa 81
+        }
+      },
+      location int {
+        from 16676,
+        to 16744,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      }
+    }
+  }
+}

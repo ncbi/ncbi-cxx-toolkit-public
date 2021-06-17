@@ -1,0 +1,28 @@
+SUMMARY:
+-------------------   -------------------   -------------------
+Gap Length            #Seqs with Any Kind   # of Any Kind      
+-------------------   -------------------   -------------------
+                  1                     1                     1
+                 42                     1                     1
+                100                     1                     5
+
+-------------------   -------------------   -------------------
+SEQ-IDS FOR EACH GAP-LENGTH:
+	Seq-ids with a gap of length 1:
+		Any Kind:
+			lcl|Seq1
+	Seq-ids with a gap of length 42:
+		Any Kind:
+			lcl|Seq1
+	Seq-ids with a gap of length 100:
+		Any Kind:
+			lcl|Seq1
+
+HISTOGRAM FOR Any Kind:
+---------------------------------------   -------------------
+Range                                     Number in Range    
+---------------------------------------   -------------------
+1-1                                                         1
+42-42                                                       1
+100-100                                                     5
+---------------------------------------   -------------------

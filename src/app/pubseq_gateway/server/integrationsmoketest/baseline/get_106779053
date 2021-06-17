@@ -1,0 +1,56 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": {
+        "id": "gb|EC097430.1|",
+        "type": 5
+    },
+    "other_ids": [
+        {
+            "id": "gi|106779053",
+            "type": 12
+        }
+    ],
+    "molecule_type": "rna",
+    "length": 793,
+    "seq_state": 10,
+    "state": 10,
+    "blob_id": {
+        "id": "4.268180274"
+    },
+    "tax_id": 35845,
+    "hash": 1977665744,
+    "date_changed": "08/26/2020 15:06:27",
+    "gi": 106779053
+},
+{
+    "reply": "BlobInfo",
+    "id": {
+        "id": "4.268180274",
+        "last_modified": 1598454387226
+    },
+    "compression": "gzip",
+    "format": "asn.1",
+    "storage_size": 885,
+    "size": 1378,
+    "is_dead": false,
+    "is_suppressed": false,
+    "is_withdrawn": false,
+    "hup_release_date": "",
+    "owner": 116,
+    "original_load_date": "01/12/2019 11:48:19",
+    "class": "not-set",
+    "division": "EST",
+    "username": "gbupdate",
+    "id2_info": "",
+    "n_chunks": 1
+},
+{
+    "reply": "BlobData",
+    "id": {
+        "id": "4.268180274",
+        "last_modified": 1598454387226
+    },
+    "data": "eJyNU01sE0cUnnhDgCTgIhVQt0UZIUIvwV6TQIKTivhPCEgsp3bKoYFqvJ7EI8a7q901rSvqLgj1VIkLFyQOtgmEX4kfCdQbVJVCqBBqy6/4ObQ9FaRAU0BAFDrjXQcHEcGTVjNv5pv33ve9twVLsgqWzzpWXsU5qWQkngCgyBxXrWtgzXXg2DADFC1xXiQkrWtva5UAOGi5amrsy+MMXLe176TtFVm8YUuMBQIRidtaXwcMyNhEySxFOkEQOU42A6OqskpR9Qyi5FucmhUmh6MBDwDnWBElu9Kls0B5evHDDGYhSepTA35NFAyHKDIMXrHPfjw3EcSGGQ5yMIM7FG0FTPSNqjgKCODHOWDaDpUfF+wQjdX5y0nrq4uoKCHONzQsk0GCUzy/SCLZ7UjPqSbqhF8QnaSIRpFiItwJQ2mq6qqWzvG7frqDb2XMbxKhYBjKFKXYPoyMHN8iio1OGFNpjsEMZANn1jTMGlTHyy736bAlCrGeKAAjzG94zeog48MZlQ9Zwa3xQG9UknxrpNaOtvfsG6iy8040gUdz1bgqE2LPmaNeQ7+iZZOUGGn+uDgtLF+LTo82Y0yJMsR5iLUxzyYPeIuNOHCXa+6NytlRS0w4DYZfpk1T83u9ZpL5qaQnKWc82YyqmDpG1CMjr4GRLqex4aXqEFE8WlrbOhvpmZlPln8IJlhdONhDlO38rDRNQZwfJGocZTSK7UEo96BkHWb3YmO1xG8yYn3a9UOIVYhk0w8dHvkw1pBu4gxWTJjCkAWX0yRDcAvsV8gOrBvExPyi16GWr2xaYAgpbFzyEfZDUD90hFglZ3Vkqnp3Uk7PECQfo8jEfuhb7VsHwOkZ8hbtgSq9bisAZ96JqAhTsOr5YdFeGMQlfMSns96ezpJVu2v0FbNJ9oH1f774eVD45fdgvDC+50zjv08kd78k3NKabm+4uPBl+8OBsxevPWsznv29+kgodK8h2/2d7tbj7Xe7Fvz2x8CFsZVTn+9/uTv04IBwaePgPwPdbc/Hxl90CbR5/dUToOPXr4Kb5XP5bcGdu69+0NPiXfE8fL+5uHzxkonoGHi6SLgS+W/UdzM2AT971OJ2X5jc+WqL+1oiN34nfnPv4xVdf0n5qUmgfT/SfPnUJ93+p00H+pZFph5P+PoWfTyyb/SnJqua+v/37r8H"
+}
+]

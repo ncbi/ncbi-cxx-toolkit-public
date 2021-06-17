@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(srcchk)
+  NCBI_sources(srcchk)
+  NCBI_uses_toolkit_libraries(data_loaders_util xobjwrite)
+  NCBI_project_watchers(ludwigf foleyjp)
+NCBI_end_app()
+

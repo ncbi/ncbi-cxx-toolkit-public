@@ -1,0 +1,4 @@
+Global-id ::= {
+  accession "whatever",
+  version 37
+}

@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(blastn)
+  NCBI_sources(blastn_node blastn_app)
+  NCBI_uses_toolkit_libraries(blast_app_util)
+  NCBI_add_definitions(NCBI_MODULE=BLAST)
+  NCBI_requires(-Cygwin)
+  NCBI_project_tags(gbench)
+NCBI_end_app()
+

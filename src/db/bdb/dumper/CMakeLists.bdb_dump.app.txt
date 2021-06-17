@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(bdb_dump)
+  NCBI_sources(bdb_dumper)
+  NCBI_uses_toolkit_libraries(bdb)
+  NCBI_project_watchers(kuznets)
+NCBI_end_app()
+

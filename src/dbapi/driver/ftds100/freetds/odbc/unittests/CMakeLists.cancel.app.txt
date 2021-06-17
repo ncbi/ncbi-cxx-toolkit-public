@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc100_cancel)
+  NCBI_sources(cancel common)
+  NCBI_add_test(test-odbc100 --no-auto odbc100_cancel)
+NCBI_end_app()
+

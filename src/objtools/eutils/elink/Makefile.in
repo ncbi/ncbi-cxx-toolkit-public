@@ -1,0 +1,6 @@
+# $Id$
+
+DTD_PROJ = elink
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

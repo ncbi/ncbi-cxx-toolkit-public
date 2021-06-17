@@ -1,0 +1,14 @@
+# $Id$
+
+SRC = test_mt
+LIB    = test_mt
+
+# REQUIRES = MT
+
+USE_PCH = no
+WATCHERS = grichenk
+PROJ_TAG = test
+
+
+USES_LIBRARIES =  \
+    xncbi

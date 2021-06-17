@@ -1,0 +1,5 @@
+CFeatureImportError:
+  Severity = Fatal
+  Message = "Invalid column count"
+  LineNumber = 3
+

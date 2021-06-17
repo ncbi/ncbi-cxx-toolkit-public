@@ -1,0 +1,5 @@
+Line No    : None (Encountered during pre or post processing)
+Severity   : Fatal
+Problem    : Alignment.BadSequenceCount
+Message    : The final sequence block in the Phylip file is incomplete. It contains data for just 4 sequences, but 5 sequences are expected.
+

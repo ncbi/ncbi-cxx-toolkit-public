@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(test_ncbi_clog_templates)
+  NCBI_sources(test_ncbi_clog_templates)
+  NCBI_uses_toolkit_libraries(xregexp_template_tester xregexp xncbi clog)
+  NCBI_set_test_assets(clog-test-templates)
+  NCBI_add_test()
+  NCBI_project_watchers(ivanov)
+NCBI_end_app()
+

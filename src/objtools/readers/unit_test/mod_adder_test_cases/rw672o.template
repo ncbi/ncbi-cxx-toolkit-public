@@ -1,0 +1,25 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "dummy"
+      },
+      inst {
+        repr not-set,
+        mol rna,
+        topology circular,
+        strand mixed,
+        hist {
+          replaces {
+            ids {
+              swissprot {
+                accession "dummy"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

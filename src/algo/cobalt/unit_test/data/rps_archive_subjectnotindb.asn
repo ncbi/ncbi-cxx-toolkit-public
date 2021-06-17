@@ -1,0 +1,229 @@
+Blast4-archive ::= {
+  request {
+    ident "",
+    body queue-search {
+      program "blastp",
+      service "rpsblast",
+      queries seq-loc-list {
+          whole local str "1buc_A",
+          whole local str "Q8jzn5",
+          whole gi 129295,
+          whole gi 71897377
+      },
+      subject database "data/cddtest",
+      algorithm-options {
+        {
+          name "EvalueThreshold",
+          value cutoff e-value { 1, 10, 1 }
+        },
+        {
+          name "MaskAtHash",
+          value boolean FALSE
+        },
+        {
+          name "SegFilteringWindow",
+          value integer 12
+        },
+        {
+          name "SegFilteringLocut",
+          value real { 22, 10, -1 }
+        },
+        {
+          name "SegFilteringHicut",
+          value real { 25, 10, -1 }
+        },
+        {
+          name "HitlistSize",
+          value integer 250
+        },
+        {
+          name "MatrixName",
+          value string "BLOSUM62"
+        },
+        {
+          name "GapOpeningCost",
+          value integer 11
+        },
+        {
+          name "GapExtensionCost",
+          value integer 1
+        },
+        {
+          name "EffectiveSearchSpace",
+          value big-integer 345308
+        }
+      }
+    }
+  },
+  results {
+    alignments {
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 1414
+          },
+          {
+            id str "e_value",
+            value real { 307798820763006, 10, -174 }
+          },
+          {
+            id str "bit_score",
+            value real { 548407295574813, 10, -12 }
+          },
+          {
+            id str "num_ident",
+            value int 209
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 5,
+          ids {
+            local str "1buc_A",
+            general {
+              db "CDD",
+              tag id 273847
+            }
+          },
+          starts {
+            6,
+            0,
+            65,
+            -1,
+            68,
+            59,
+            149,
+            -1,
+            150,
+            140
+          },
+          lens {
+            59,
+            3,
+            81,
+            1,
+            233
+          },
+          strands {
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 1779
+          },
+          {
+            id str "e_value",
+            value real { 0, 10, 0 }
+          },
+          {
+            id str "bit_score",
+            value real { 689205483079942, 10, -12 }
+          },
+          {
+            id str "num_ident",
+            value int 268
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 3,
+          ids {
+            local str "Q8jzn5",
+            general {
+              db "CDD",
+              tag id 273850
+            }
+          },
+          starts {
+            41,
+            0,
+            -1,
+            29,
+            70,
+            30
+          },
+          lens {
+            29,
+            1,
+            379
+          },
+          strands {
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown
+          }
+        }
+      }
+    },
+    masks {
+      {
+        locations {
+          packed-int {
+            {
+              from 59,
+              to 67,
+              id local str "1buc_A"
+            },
+            {
+              from 248,
+              to 266,
+              id local str "1buc_A"
+            }
+          }
+        },
+        frame notset
+      },
+      {
+        locations {
+          packed-int {
+            {
+              from 10,
+              to 19,
+              id local str "Q8jzn5"
+            }
+          }
+        },
+        frame notset
+      }
+    },
+    ka-blocks {
+      {
+        lambda { 317402000735556, 10, -15 },
+        k { 134826717614236, 10, -15 },
+        h { 381947261940342, 10, -15 },
+        gapped FALSE
+      },
+      {
+        lambda { 267, 10, -3 },
+        k { 65360484, 10, -9 },
+        h { 14, 10, -2 },
+        gapped TRUE
+      }
+    },
+    search-stats {
+      "Effective search space: 345308",
+      "Effective search space used: 345308"
+    }
+  }
+}

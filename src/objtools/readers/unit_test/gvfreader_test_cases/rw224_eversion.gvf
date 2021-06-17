@@ -1,0 +1,11 @@
+##gff-version 3
+##gvf-version 1.07
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
+##genome-build NCBI GRCh37
+##file-date 2016-07-13
+# assembly-name GRCh37  (hg19)
+# assembly-accession GCF_000001405.13
+# Study_accession: Combined studies on GRCh37
+# Display_name: Combined studies on GRCh37
+# Study_description: Combined studies on GRCh37
+NC_000003.11	dbVar	tandem_duplication	147685294	147685504	.	.	.	ID=4625786;Name=esv3302440;Alias=P2_PM_3_3801_TD;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3302440;cipos=-100,100;ciend=-100,100;remapScore=1;Variant_seq=~,.;Reference_seq=~

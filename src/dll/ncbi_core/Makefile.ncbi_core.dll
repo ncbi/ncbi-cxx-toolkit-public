@@ -1,0 +1,22 @@
+# $Id$
+
+DLL = ncbi_core
+
+HOSTED_LIBS    = xncbi     \
+                 xcompress \
+                 tables    \
+                 sequtil   \
+                 xregexp   \
+                 xdiff     \
+                 xutil     \
+                 xthrserv  \
+                 xconnserv \
+                 xxconnect \
+                 xconnect  \
+                 connect   \
+                 connssl   \
+                 xser      \
+                 xqueryparse
+
+CPPFLAGS = -DNCBI_CORE_EXPORTS
+

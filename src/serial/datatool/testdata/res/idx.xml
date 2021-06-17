@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!DOCTYPE IdxDocumentSet PUBLIC "-//NCBI//idx/EN" "idx.dtd">
+<IdxDocumentSet>
+  <IdxDocument>
+    <IdxUid>doc1 IdxUid</IdxUid>
+    <IdxKeyFields>
+      <PubDate>doc1 key1 PubDate</PubDate>
+      <PubDate>doc1 key2 PubDate</PubDate>
+      <EntrezDate>doc1 key3 EntrezDate</EntrezDate>
+    </IdxKeyFields>
+    <IdxDisplayFields>
+      <Title>doc1 dis1 Title</Title>
+    </IdxDisplayFields>
+    <IdxSearchFields>
+      <Title>doc1 sea1 Title</Title>
+    </IdxSearchFields>
+    <IdxSearchFields>
+      <Text>doc1 sea2 Text</Text>
+    </IdxSearchFields>
+    <Seq1>
+      <Text>doc1 s111 Text</Text>
+      <Title>doc1 s111 Title</Title>
+      <Text>doc1 s112 Text</Text>
+      <Title>doc1 s112 Title</Title>
+    </Seq1>
+    <Seq2>
+      <Text>doc1 seq2 Text</Text>
+      <Title>doc1 seq2 Title</Title>
+    </Seq2>
+    <Seq3>
+      <Text>doc1 s311 Text</Text>
+      <Title>doc1 s311 Title</Title>
+    </Seq3>
+    <Seq3>
+      <Text>doc1 s312 Text</Text>
+      <Title>doc1 s312 Title</Title>
+    </Seq3>
+  </IdxDocument>
+</IdxDocumentSet>

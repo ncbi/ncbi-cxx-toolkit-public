@@ -1,0 +1,38 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        name "NM_004584.2:c.-91_-90insGCGGGG",
+        data instance {
+          type ins,
+          delta {
+            {
+              seq literal {
+                length 6,
+                seq-data iupacna "GGGGCG"
+              },
+              action ins-before
+            }
+          }
+        }
+      },
+      location pnt {
+        point 0,
+        strand plus,
+        id gi 19924112
+      },
+      exts {
+        {
+          type str "Variation Normalization",
+          data {
+            {
+              label str "Left Interval Shifted",
+              data bool TRUE
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Test Fully Shifted : 0

@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_lib(xctools)
+  NCBI_sources(ctools asn_connection)
+  NCBI_requires(NCBI_C)
+  NCBI_uses_toolkit_libraries(connect xncbi)
+  NCBI_project_watchers(gouriano)
+NCBI_end_lib()
+

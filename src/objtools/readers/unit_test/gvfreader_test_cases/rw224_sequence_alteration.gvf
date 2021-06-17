@@ -1,0 +1,12 @@
+##gff-version 3
+##gvf-version 1.07
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
+##genome-build NCBI GRCh37
+##file-date 2016-07-13
+# assembly-name GRCh37  (hg19)
+# assembly-accession GCF_000001405.13
+# Study_accession: Combined studies on GRCh37
+# Display_name: Combined studies on GRCh37
+# Study_description: Combined studies on GRCh37
+NC_000001.10	dbVar	sequence_alteration	2553012	2553029	.	.	.	ID=1328546;Name=nssv8641638;Alias=chr1_1007_ref;parent=nsv1398873;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1398873;sample_name=Unknown;phenotype=not_reported;Variant_seq=~,.;Reference_seq=~
+NC_000010.10	dbVar	sequence_alteration	127513407	127513687	.	.	.	ID=4605973;Name=essv27189;Alias=745;parent=esv4748;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv4748;Start_range=127513407,.;End_range=.,127513687;remapScore=1;sample_name=YH;phenotype=not_reported;gender=M;Variant_seq=~,.;Reference_seq=~

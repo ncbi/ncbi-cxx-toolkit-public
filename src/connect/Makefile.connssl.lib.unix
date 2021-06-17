@@ -1,0 +1,8 @@
+# $Id$
+
+# Adjust ICC flags to avoid problematic references to
+# __intel_sse2_str* functions (as of ICC [20]15)
+
+ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
+  mbedtls/x509_create.o: CFLAGS += -fno-builtin-strncmp
+endif

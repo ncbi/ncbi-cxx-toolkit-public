@@ -1,0 +1,107 @@
+suppression = {
+	name = "tds_vasprintf_ver95 - 1"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=vasprintf_ver95,src=vasprintf.c;
+			func=asprintf_ver95,src=asprintf.c;
+		}
+		allocation={
+			...;
+		}
+	}
+}
+suppression = {
+	name = "tds_vasprintf_ver95 - 2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=_stdio_common_vsprintf;
+			func=vasprintf_ver95,src=vasprintf.c;
+			func=asprintf_ver95,src=asprintf.c;
+		}
+	}
+}
+suppression = {
+	name = "tds_vasprintf_ver95 - 3"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=_stdio_common_vsprintf;
+			func=vasprintf_ver95;
+			func=asprintf_ver95;
+		}
+		allocation={
+			...;
+			func=tds_get_homedir_ver100;
+		}
+	}
+}
+suppression = {
+	name = "tds_vasprintf_ver100 - 1"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=tds_vasprintf_ver100,src=vasprintf.c;
+			func=tds_asprintf_ver100,src=asprintf.c;
+		}
+		allocation={
+			...;
+		}
+	}
+}
+suppression = {
+	name = "tds_vasprintf_ver100 - 2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=_stdio_common_vsprintf;
+			func=tds_vasprintf_ver100;
+		}
+		allocation={
+			...;
+			func=tds_get_homedir_ver100;
+		}
+	}
+}
+suppression = {
+	name = "tds_vasprintf_ver100 - 3"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=tds_vasprintf_ver100;
+			func=tds_asprintf_ver100;
+		}
+	}
+}
+suppression = {
+	name = "tds_vasprintf_ver100 - all"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=vasprintf.c,func=tds_vasprintf_ver100;
+		}
+	}
+}
+suppression = {
+	name = "read_login_info/snprintf"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=snprintf;
+			func=read_login_info,src=common.c;
+		}
+		allocation={
+			...;
+			func=read_login_info,src=common.c;
+		}
+	}
+}

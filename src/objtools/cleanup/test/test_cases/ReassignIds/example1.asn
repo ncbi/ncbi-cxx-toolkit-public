@@ -1,0 +1,1336 @@
+Seq-entry ::= set {
+  class genbank,
+  seq-set {
+    set {
+      class genbank,
+      descr {
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 8078481
+            }
+          }
+        }
+      },
+      seq-set {
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Mycobacterium gordonae",
+                db {
+                  {
+                    db "taxon",
+                    tag id 1778
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Mycobacterium",
+                    species "gordonae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "Q3"
+                    }
+                  },
+                  lineage "Bacteria; Actinobacteria; Actinobacteridae;
+ Actinomycetales; Corynebacterineae; Mycobacteriaceae; Mycobacterium",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Japan"
+                },
+                {
+                  subtype isolation-source,
+                  name "hospital water faucet"
+                },
+                {
+                  subtype lat-lon,
+                  name "35.54 N 139.52 W"
+                },
+                {
+                  subtype collection-date,
+                  name "09-Mar-2011"
+                },
+                {
+                  subtype collected-by,
+                  name "Kenji Marumo"
+                },
+                {
+                  subtype other,
+                  name "[cultured bacterial source]"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "accaacgatggtgtgtccat",
+                      name "tb11"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cttgtcgaaccgcataccct",
+                      name "tb12"
+                    }
+                  }
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Ikegaya",
+                          first "Noriaki",
+                          initials "N."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Marumo",
+                          first "Kenji",
+                          initials "K."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Kondo",
+                          first "Emiko",
+                          initials "E."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Nakamura",
+                          first "Hisako",
+                          initials "H."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Kazumi",
+                          first "Yuko",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Hayashi",
+                          first "Munetaka",
+                          initials "M."
+                        }
+                      }
+                    }
+                  },
+                  title "Hsp65 gene sequence of Mycobacterium gordonae
+ isolated from water faucet of a Japanese hospital environment."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Marumo",
+                          first "Kenji",
+                          initials "K."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Showa University",
+                      div "Microbiology and Immunology, School of Medicine",
+                      city "Shinagawa",
+                      sub "Tokyo",
+                      country "Japan",
+                      street "1-5-8 Hatanodai",
+                      postal-code "142-8555"
+                    }
+                  },
+                  medium email,
+                  date std {
+                    year 2013,
+                    month 9,
+                    day 12
+                  }
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "SmartComment",
+                  data str "TOTAL # OF SEQS:1"
+                },
+                {
+                  label str "AdditionalComment",
+                  data str "BankIt1656067"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 7
+                },
+                {
+                  label str "month",
+                  data int 9
+                },
+                {
+                  label str "day",
+                  data int 25
+                },
+                {
+                  label str "year",
+                  data int 2013
+                }
+              }
+            },
+            update-date std {
+              year 2013,
+              month 8,
+              day 22,
+              hour 9,
+              minute 14,
+              second 56
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "seq1",
+                general {
+                  db "BankIt",
+                  tag str "1656067/seq1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 40037933
+                },
+                genbank {
+                  accession "KF667478"
+                }
+              },
+              descr {
+                title "Mycobacterium gordonae strain Q3 65 kDa heat shock
+ protein (hsp65) gene, partial cds.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "Submission",
+                  data {
+                    {
+                      label str "AdditionalComment",
+                      data str "LocalID:seq1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 441,
+                strand ds,
+                seq-data ncbi2na '1418EBBB53650A23627A2856C6208DA6589EB4282D94
+2085861B65AE1A45186945B9E99299EB4282979906D925AE50567A97826693620A5BA20AD19215
+E775DA50A1B621428923669459A9375929852D8DAE178D96298E842B69062A6D345B628B5045F6
+97927627458AB39AF61080'H
+              }
+            },
+            seq {
+              id {
+                local str "seq1_prot_1",
+                general {
+                  db "TMSMART",
+                  tag id 40037934
+                }
+              },
+              descr {
+                title "heat shock protein 65 kDa (hsp65), partial
+ [Mycobacterium gordonae]",
+                molinfo {
+                  biomol peptide,
+                  completeness no-left
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 147,
+                seq-data ncbieaa "TNDGVSIAKEIELEDPYEKIGAELVKEVAKKTDDVAGDGTTTAT
+VLAQALVKEGLRNVAAGANPLGLKRGIEKAVEKVTQTLLSSAKDVETKEQIAATAGISAGDQSIGDLIAEAMDKVGNE
+GVITVEESNTFGLQLELTEGMRFDK"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "heat shock protein 65 kDa (hsp65)"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 146,
+                        id local str "seq1_prot_1",
+                        fuzz-from lim lt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 11
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "seq1_prot_1",
+                  location int {
+                    from 0,
+                    to 440,
+                    strand plus,
+                    id local str "seq1",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Mycobacterium phocaicum",
+                db {
+                  {
+                    db "taxon",
+                    tag id 319706
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Mycobacterium",
+                    species "phocaicum"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "Q10"
+                    }
+                  },
+                  lineage "Bacteria; Actinobacteria; Actinobacteridae;
+ Actinomycetales; Corynebacterineae; Mycobacteriaceae; Mycobacterium",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Japan"
+                },
+                {
+                  subtype isolation-source,
+                  name "a hospital water faucet"
+                },
+                {
+                  subtype lat-lon,
+                  name "35.54 N 139.52 W"
+                },
+                {
+                  subtype collection-date,
+                  name "09-Mar-2011"
+                },
+                {
+                  subtype collected-by,
+                  name "Kenji Marumo"
+                },
+                {
+                  subtype other,
+                  name "[cultured bacterial source]"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "accaacgatggtgtgtccat",
+                      name "tb11"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cttgtcgaaccgcataccct",
+                      name "tb12"
+                    }
+                  }
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Ikegaya",
+                          first "Noriaki",
+                          initials "N."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Marumo",
+                          first "Kenji",
+                          initials "K."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Kondo",
+                          first "Emiko",
+                          initials "E."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Nakamura",
+                          first "Hisako",
+                          initials "H."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Kazumi",
+                          first "Yuko",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Hayashi",
+                          first "Munetaka",
+                          initials "M."
+                        }
+                      }
+                    }
+                  },
+                  title "Hsp 65 gene sequence of Mycobacterium phocaicum
+ isolated from a Japanese hospital environment."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Marumo",
+                          first "Kenji",
+                          initials "K."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Showa University",
+                      div "Microbiology and Immunology, School of Medicine",
+                      city "Shinagawa",
+                      sub "Tokyo",
+                      country "Japan",
+                      street "1-5-8 Hatanodai",
+                      postal-code "142-8555"
+                    }
+                  },
+                  medium email,
+                  date std {
+                    year 2013,
+                    month 9,
+                    day 12
+                  }
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "SmartComment",
+                  data str "TOTAL # OF SEQS:1"
+                },
+                {
+                  label str "AdditionalComment",
+                  data str "BankIt1661032"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 7
+                },
+                {
+                  label str "month",
+                  data int 9
+                },
+                {
+                  label str "day",
+                  data int 25
+                },
+                {
+                  label str "year",
+                  data int 2013
+                }
+              }
+            },
+            update-date std {
+              year 2013,
+              month 9,
+              day 12,
+              hour 22,
+              minute 15,
+              second 20
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "seq1",
+                general {
+                  db "BankIt",
+                  tag str "1661032/seq1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 40038455
+                },
+                genbank {
+                  accession "KF667479"
+                }
+              },
+              descr {
+                title "Mycobacterium phocaicum strain Q10 65 kDa heat shock
+ protein (hsp65) gene, partial cds.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "Submission",
+                  data {
+                    {
+                      label str "AdditionalComment",
+                      data str "LocalID:seq1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 400,
+                strand ds,
+                seq-data ncbi2na 'A15B18823699E27AD0A0BE50821A186D9E9869145165
+16E7A54A57AF660A5E641B6696994159DA5E099A4D88296D8A7B450AB79E9F59428AD8850A248D
+965165ACDDA5AE14B536B85E3658A53A10ADA418ABB4D16D8A224117DA5E49E89D162ACE6BD842
+'H
+              }
+            },
+            seq {
+              id {
+                local str "seq1_prot_1",
+                general {
+                  db "TMSMART",
+                  tag id 40038456
+                }
+              },
+              descr {
+                title "heat shock protein 65 kDa (hsp65), partial
+ [Mycobacterium phocaicum]",
+                molinfo {
+                  biomol peptide,
+                  completeness no-left
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 133,
+                seq-data ncbieaa "DPYEKIGAELVKEVAKKTDDVAGDGTTTATVLAQALVREGLRNV
+AAGANPLGLKRGIEKAVEAVTKGLLASAKEVETKEQIAATAGISAGDQSIGDLIAEAMDKVGNEGVITVEESNTFGLQ
+LELTEGMRFDK"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "heat shock protein 65 kDa (hsp65)"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 132,
+                        id local str "seq1_prot_1",
+                        fuzz-from lim lt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame two,
+                    code {
+                      id 11
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "seq1_prot_1",
+                  location int {
+                    from 0,
+                    to 399,
+                    strand plus,
+                    id local str "seq1",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Mycobacterium phocaicum",
+                db {
+                  {
+                    db "taxon",
+                    tag id 319706
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Mycobacterium",
+                    species "phocaicum"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "Q11"
+                    }
+                  },
+                  lineage "Bacteria; Actinobacteria; Actinobacteridae;
+ Actinomycetales; Corynebacterineae; Mycobacteriaceae; Mycobacterium",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Japan"
+                },
+                {
+                  subtype isolation-source,
+                  name "a hospital water faucet"
+                },
+                {
+                  subtype lat-lon,
+                  name "35.54 N 139.52 W"
+                },
+                {
+                  subtype collection-date,
+                  name "09-Mar-2011"
+                },
+                {
+                  subtype collected-by,
+                  name "Kenji Marumo"
+                },
+                {
+                  subtype other,
+                  name "[cultured bacterial source]"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "accaacgatggtgtgtccat",
+                      name "tb11"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cttgtcgaaccgcataccct",
+                      name "tb12"
+                    }
+                  }
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Ikegaya",
+                          first "Noriaki",
+                          initials "N."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Marumo",
+                          first "Kenji",
+                          initials "K."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Kondo",
+                          first "Emiko",
+                          initials "E."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Nakamura",
+                          first "Hisako",
+                          initials "H."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Kazumi",
+                          first "Yuko",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Hayashi",
+                          first "Munetaka",
+                          initials "M."
+                        }
+                      }
+                    }
+                  },
+                  title "Hsp65 gene sequence of Mycobacterium phocaicum
+ isolated from water faucet of a Japanese hospital environment."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Marumo",
+                          first "Kenji",
+                          initials "K."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Showa University",
+                      div "Microbiology and Immunology, School of Medicine",
+                      city "Shinagawa",
+                      sub "Tokyo",
+                      country "Japan",
+                      street "1-5-8 Hatanodai",
+                      postal-code "142-8555"
+                    }
+                  },
+                  medium email,
+                  date std {
+                    year 2013,
+                    month 9,
+                    day 12
+                  }
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "SmartComment",
+                  data str "TOTAL # OF SEQS:1"
+                },
+                {
+                  label str "AdditionalComment",
+                  data str "BankIt1661041"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 7
+                },
+                {
+                  label str "month",
+                  data int 9
+                },
+                {
+                  label str "day",
+                  data int 25
+                },
+                {
+                  label str "year",
+                  data int 2013
+                }
+              }
+            },
+            update-date std {
+              year 2013,
+              month 9,
+              day 12,
+              hour 22,
+              minute 42,
+              second 8
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "seq1",
+                general {
+                  db "BankIt",
+                  tag str "1661041/seq1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 40038468
+                },
+                genbank {
+                  accession "KF667480"
+                }
+              },
+              descr {
+                title "Mycobacterium phocaicum strain Q11 65 kDa heat shock
+ protein (hsp65) gene, partial cds.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "Submission",
+                  data {
+                    {
+                      label str "AdditionalComment",
+                      data str "LocalID:seq1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 441,
+                strand ds,
+                seq-data ncbi2na '1418EBBB53650A23627A2856C6208DA6589EB4282D94
+2085861B65AE1A45186945B9E99299EB4282979906D925AE50567A97826693620A5BA20AD19215
+E775DA50A1B621428923669459A9375929852D8DAE178D96298E842B69062A6D345B628B5045F6
+97927627458AB39AF61080'H
+              }
+            },
+            seq {
+              id {
+                local str "seq1_prot_1",
+                general {
+                  db "TMSMART",
+                  tag id 40038469
+                }
+              },
+              descr {
+                title "heat shock protein 65 kDa (hsp65), partial
+ [Mycobacterium phocaicum]",
+                molinfo {
+                  biomol peptide,
+                  completeness no-left
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 147,
+                seq-data ncbieaa "TNDGVSIAKEIELEDPYEKIGAELVKEVAKKTDDVAGDGTTTAT
+VLAQALVKEGLRNVAAGANPLGLKRGIEKAVEKVTQTLLSSAKDVETKEQIAATAGISAGDQSIGDLIAEAMDKVGNE
+GVITVEESNTFGLQLELTEGMRFDK"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "heat shock protein 65 kDa (hsp65)"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 146,
+                        id local str "seq1_prot_1",
+                        fuzz-from lim lt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 11
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "seq1_prot_1",
+                  location int {
+                    from 0,
+                    to 440,
+                    strand plus,
+                    id local str "seq1",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Mycobacterium gadium",
+                db {
+                  {
+                    db "taxon",
+                    tag id 1794
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Mycobacterium",
+                    species "gadium"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "Q12"
+                    }
+                  },
+                  lineage "Bacteria; Actinobacteria; Actinobacteridae;
+ Actinomycetales; Corynebacterineae; Mycobacteriaceae; Mycobacterium",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Japan"
+                },
+                {
+                  subtype isolation-source,
+                  name "a hospital water faucet"
+                },
+                {
+                  subtype lat-lon,
+                  name "35.54 N 139.52 W"
+                },
+                {
+                  subtype collection-date,
+                  name "09-Mar-2011"
+                },
+                {
+                  subtype collected-by,
+                  name "Kenji Marumo"
+                },
+                {
+                  subtype other,
+                  name "[cultured bacterial source]"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "accaacgatggtgtgtccat",
+                      name "tb11"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "cttgtcgaaccgcataccct",
+                      name "tb12"
+                    }
+                  }
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Marumo",
+                          first "Kenji",
+                          initials "K."
+                        }
+                      }
+                    }
+                  },
+                  title "Hsp65 gene sequence of Mycobacterium gadium isolated
+ from a water faucet in a Japanese hospital environment."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Marumo",
+                          first "Kenji",
+                          initials "K."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Showa University",
+                      div "Microbiology and Immunology, School of Medicine",
+                      city "Shinagawa",
+                      sub "Tokyo",
+                      country "Japan",
+                      street "1-5-8 Hatanodai",
+                      postal-code "142-8555"
+                    }
+                  },
+                  medium email,
+                  date std {
+                    year 2013,
+                    month 9,
+                    day 12
+                  }
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "SmartComment",
+                  data str "TOTAL # OF SEQS:1"
+                },
+                {
+                  label str "AdditionalComment",
+                  data str "BankIt1661047"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 7
+                },
+                {
+                  label str "month",
+                  data int 9
+                },
+                {
+                  label str "day",
+                  data int 25
+                },
+                {
+                  label str "year",
+                  data int 2013
+                }
+              }
+            },
+            update-date std {
+              year 2013,
+              month 9,
+              day 12,
+              hour 22,
+              minute 45,
+              second 6
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "seq1",
+                general {
+                  db "BankIt",
+                  tag str "1661047/seq1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 40038482
+                },
+                genbank {
+                  accession "KF667481"
+                }
+              },
+              descr {
+                title "Mycobacterium gadium strain Q12 65 kDa heat shock
+ protein (hsp65) gene, partial cds.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "Submission",
+                  data {
+                    {
+                      label str "AdditionalComment",
+                      data str "LocalID:seq1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 441,
+                strand ds,
+                seq-data ncbi2na '1418EBBB53650A23627A2856C6208DA6789EB408AD94
+2085863B66A61A45145945B5E9D291DBD98AB79906E964A650567697826693620A5B6208D16219
+E782DA50A2B6214289236794596537596B86D48DAE278D96294E842B69062AED345B628B5045F6
+97927A27458AB39AF61080'H
+              }
+            },
+            seq {
+              id {
+                local str "seq1_prot_1",
+                general {
+                  db "TMSMART",
+                  tag id 40038483
+                }
+              },
+              descr {
+                title "heat shock protein 65 kDa (hsp65), partial
+ [Mycobacterium gadium]",
+                molinfo {
+                  biomol peptide,
+                  completeness no-left
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 141,
+                seq-data ncbieaa "GVSIAKEIELEDPYEKIGAELVKEVAKKTDDVAGDGTTTATVLA
+QALVREGLRNVAAGANPLGLKRGIEKAVEKITETLLKSAKEVETKEQIAATAAISAGDVQIGELIAEAMDKVGNEGVI
+TVEESNTFGLQLELTEGMR"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "heat shock protein 65 kDa (hsp65)"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 140,
+                        id local str "seq1_prot_1",
+                        fuzz-from lim lt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 11
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "seq1_prot_1",
+                  location int {
+                    from 9,
+                    to 431,
+                    strand plus,
+                    id local str "seq1",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

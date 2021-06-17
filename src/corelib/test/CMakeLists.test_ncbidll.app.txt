@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(test_ncbidll)
+  NCBI_sources(test_ncbidll)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_set_test_requires(DLL)
+  NCBI_add_test()
+  NCBI_project_watchers(ivanov)
+NCBI_end_app()
+

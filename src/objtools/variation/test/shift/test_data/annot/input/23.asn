@@ -1,0 +1,43 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "CC"
+                    },
+                    action ins-before
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 842387,
+        id other {
+          accession "NC_000001",
+          version 10
+        }
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          }
+        }
+      }
+    }
+  }
+}

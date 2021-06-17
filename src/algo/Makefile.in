@@ -1,0 +1,12 @@
+# $Id$
+
+# Meta-makefile("ALGO" project)
+#################################
+
+SUB_PROJ = dustmask winmask sequence blast segmask align structure gnomon \
+           tree phy_tree seqqa cobalt text volume_merge primer id_mapper
+
+REQUIRES = objects algo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

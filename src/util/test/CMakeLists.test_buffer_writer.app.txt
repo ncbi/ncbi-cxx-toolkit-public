@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(test_buffer_writer)
+  NCBI_sources(test_buffer_writer)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_add_test()
+  NCBI_project_watchers(satskyse)
+NCBI_end_app()
+

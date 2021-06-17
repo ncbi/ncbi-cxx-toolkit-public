@@ -1,0 +1,7 @@
+Bioseq ::= {
+  id { local str "foo" },
+  inst {
+    repr virtual,
+    mol dna
+  }
+}

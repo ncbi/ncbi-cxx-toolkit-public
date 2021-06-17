@@ -1,0 +1,45 @@
+# $Id$
+
+DLL = _ncbi
+
+HOSTED_LIBS    = _ncbi
+
+DEPENDENCIES   = ncbi_xdbapi_ctlib    \
+                 ncbi_xdbapi_mysql    \
+                 ncbi_xdbapi_odbc     \
+                 ncbi_algo             \
+                 ncbi_algo_ms          \
+                 ncbi_bdb              \
+                 ncbi_xcache_bdb       \
+                 ncbi_core             \
+                 ncbi_dbapi            \
+                 ncbi_xcache_dbapi     \
+                 ncbi_dbapi_driver     \
+                 ncbi_general          \
+                 ncbi_image            \
+                 ncbi_lds2             \
+                 ncbi_misc             \
+                 ncbi_mmdb             \
+                 ncbi_pub              \
+                 ncbi_seq              \
+                 ncbi_seqext           \
+                 ncbi_validator        \
+                 ncbi_web              \
+                 ncbi_xblastformat     \
+                 ncbi_xblobstorage_netcache \
+                 ncbi_xcache_netcache \
+                 ncbi_xloader_blastdb  \
+                 ncbi_xloader_cdd      \
+                 ncbi_xloader_genbank  \
+                 ncbi_xloader_lds2     \
+                 ncbi_xloader_trace    \
+                 ncbi_xobjsimple       \
+                 ncbi_xreader          \
+                 ncbi_xreader_id1      \
+                 ncbi_xreader_id2      \
+                 ncbi_xreader_pubseqos \
+                 ncbi_xreader_pubseqos2\
+                 ncbi_xreader_cache    \
+                 dbapi_util_blobstore \
+                 \
+                 gui_objects gui_core gui_utils gui_config gui_graph

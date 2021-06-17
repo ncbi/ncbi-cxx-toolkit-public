@@ -1,0 +1,21 @@
+# $Id$
+
+function(edit_imgt_file_definition)
+  set(SCRIPT_NAME "${NCBI_CURRENT_SOURCE_DIR}/edit_imgt_file.pl")
+  if(WIN32 OR XCODE)
+    set(DEST_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>")
+  else()
+    set(DEST_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+  endif()
+
+  add_custom_target(edit_imgt_file
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SCRIPT_NAME}" "${DEST_DIR}"
+    DEPENDS ${SCRIPT_NAME}
+    SOURCES ${SCRIPT_NAME})
+endfunction()
+
+NCBI_begin_custom_target(edit_imgt_file)
+  NCBI_custom_target_definition(edit_imgt_file_definition)
+NCBI_end_custom_target()
+
+

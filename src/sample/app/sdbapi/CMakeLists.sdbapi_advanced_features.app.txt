@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(sdbapi_advanced_features)
+  NCBI_sources(sdbapi_advanced_features)
+  NCBI_uses_toolkit_libraries(sdbapi xconnect)
+  NCBI_project_watchers(ucko mcelhany)
+NCBI_end_app()

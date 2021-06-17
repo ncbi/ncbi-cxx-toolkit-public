@@ -1,0 +1,22 @@
+# $Id$
+
+# Meta-makefile ("objtools/writers" project)
+############################################
+
+APP_PROJ = \
+	unit_test_gtfwriter \
+	unit_test_gff3writer \
+	unit_test_gff3flybasewriter \
+	unit_test_vcfwriter \
+	unit_test_wigwriter \
+	unit_test_bedwriter \
+	unit_test_bedgraphwriter \
+	unit_test_ucscwriter \
+	unit_test_srcwriter \
+	unit_test_alnwriter \
+	unit_test_pslwriter
+
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

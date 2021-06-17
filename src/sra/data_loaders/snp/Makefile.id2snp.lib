@@ -1,0 +1,26 @@
+# $Id$
+
+# Build plug-in library "ncbi_id2proc_snp", implementation of CID2Processor.
+###############################
+
+PROJ_TAG = gbench,lib,public
+
+LIB = ncbi_id2proc_snp
+SRC = id2snp id2snp_impl
+
+REQUIRES = objects
+
+ASN_DEP = id2 seqset seq
+
+LIB_OR_DLL = both
+
+DLL_LIB = $(SOBJMGR_LIBS) sraread$(STATIC) $(SRAREAD_LDEP) $(CMPRS_LIB)
+LIBS = $(SRA_SDK_SYSLIBS) $(ORIG_LIBS)
+POST_LINK = $(VDB_POST_LINK)
+
+CPPFLAGS = $(SRA_INCLUDE) $(ORIG_CPPFLAGS) -DNCBI_ID2PROC_SNP_EXPORTS
+
+WATCHERS = vasilche
+
+USES_LIBRARIES =  \
+    $(SRAREAD_LIBS) $(SRA_SDK_SYSLIBS) id2 seqset

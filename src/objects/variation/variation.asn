@@ -1,0 +1,302 @@
+--$Revision$
+--**********************************************************************
+--
+--  NCBI Variation container
+--  by Variation Working Group, 2011
+--
+--  The Variation type describes a sequence change at location(s),
+--  or a hierarchical combination thereof.
+--
+--  Related location-centric type is SeqFeatData.Variation-ref
+--
+--**********************************************************************
+
+NCBI-VariationPackage DEFINITIONS ::=
+BEGIN
+
+EXPORTS Variation, VariantPlacement;
+
+IMPORTS Int-fuzz, Dbtag, User-object, Object-id FROM NCBI-General
+        Population-data, Phenotype, Variation-inst, VariantProperties FROM NCBI-Variation
+        Seq-loc FROM NCBI-Seqloc
+        SubSource FROM NCBI-BioSource
+        Seq-literal, Bioseq FROM NCBI-Sequence
+        Pub-set FROM NCBI-Pub;
+
+ 
+VariationException ::= SEQUENCE
+{
+    code INTEGER {
+        hgvs-parsing (1), --invalid hgvs expression
+        hgvs-exon-boundary (2), --anchor position in an intronic HGVS expression is not at an exon boundary
+                
+    
+        inconsistent-consequence (3), --consequence protein variation attached to precursor variation's consequence
+                                      --could not be derived from it.
+                                      
+        inconsistent-asserted-allele (4), --asserted allele is inconsistent with the reference
+        
+        no-mapping (5),      --could not remap
+        partial-mapping (6), --mapped location is shorter than the query
+        split-mapping (7),   --a source interval maps to multiple non-abutting intervals.
+        mismatches-in-mapping (8), --the source sequence differs from sequence at mapped loc
+        inconsistent-asserted-moltype (9), --asserted mol-type is inconsistent with seq-id (e.g. NM_12345.6:g.)
+        bioseq-state (10),
+        ambiguous-sequence (11),
+        ref-same-as-variant (12), --reference sequence at the location is same as variant sequence in the variation
+        seqfetch-too-long (13), --can't fetch sequence because location is longer than specified threshold
+        seqfetch-intronic (14), --can't fetch sequence for an intronic (anchor+offset)-based location
+        seqfetch-invalid (15),   --can't fetch sequence because location is invalid (e.g. extends past the end)
+        no-mapping-from-newer-version (16), --have mapping from older version of a sequence, but not from newer
+        source-location-overhang (17), --The source location overhangs the alignment by at least 5kb (VAR-1307)
+        hgvs-exon-boundary-induced (18)  --Similar to (2), except induced by 5'/3'-terminal or an exon extension (VAR-1309)
+    } OPTIONAL,
+    
+    message VisibleString
+}   
+
+VariantPlacement ::= SEQUENCE
+{
+    -- actual concrete placement we are considering
+    loc Seq-loc,
+
+    mol INTEGER {
+        unknown(0),
+        genomic(1),      --"g." coordinates in HGVS
+        cdna(2),         --"c." coordinates in HGVS
+        rna(3),          --"n." coordinates in HGVS
+        protein(4),      --"p." coordinates in HGVS
+        mitochondrion(5) --"mt." coordinates in HGVS
+    },
+
+    -- location flags
+    placement-method INTEGER {
+        projected(1),
+        asserted(2),
+        aligned(3)
+    } OPTIONAL,
+
+    -- location refinements, describing offsets into introns from product coordinates.
+    -- Biological semantics: start-offset/stop-offset apply to bio-start/bio-stop respectively.
+    -- positive = downstream; negative = upstream.
+    start-offset INTEGER OPTIONAL,
+    start-offset-fuzz Int-fuzz OPTIONAL,
+    stop-offset INTEGER OPTIONAL,
+    stop-offset-fuzz Int-fuzz OPTIONAL,
+
+    -- 0-based position of bio-start relative to containing codon
+    frame INTEGER OPTIONAL,
+
+    -- for situations in which a raw location isn't sufficient
+    seq Seq-literal OPTIONAL, 
+
+    -- reference to the assembly (GenColl ID) for this location
+    assembly Dbtag OPTIONAL,
+
+    hgvs-name VisibleString OPTIONAL,
+
+    -- the reference location for this variant
+    comment VisibleString OPTIONAL,
+
+    exceptions SET OF VariationException OPTIONAL,
+
+    dbxrefs SET OF Dbtag OPTIONAL, --e.g. rs#, that are placement-specific
+
+    ext SET OF User-object OPTIONAL, --for process-specific placement tags/labels
+
+    gene-location INTEGER OPTIONAL, --Same semantics as VariantProperties.gene-location, except placement-specific
+
+    id Object-id OPTIONAL,
+    parent-id Object-id OPTIONAL, --id of the placement from which this one was derived
+
+    so-terms SEQUENCE OF INTEGER OPTIONAL --Sequence Ontology terms for this placement
+}
+
+VariationMethod ::= SEQUENCE
+{
+    -- sequencing / acuisition method
+    method SET OF INTEGER {
+        unknown             (0),
+        bac-acgh            (1),
+        computational       (2),
+        curated             (3),
+        digital-array       (4),
+        expression-array    (5),
+        fish                (6),
+        flanking-sequence   (7),
+        maph                (8),
+        mcd-analysis        (9),
+        mlpa                (10),
+        oea-assembly        (11),
+        oligo-acgh          (12),
+        paired-end          (13),
+        pcr                 (14),
+        qpcr                (15),
+        read-depth          (16),
+        roma                (17),
+        rt-pcr              (18),
+        sage                (19),
+        sequence-alignment  (20),
+        sequencing          (21),
+        snp-array           (22),
+        snp-genoytyping     (23),
+        southern            (24),
+        western             (25),
+        optical-mapping     (26),
+
+        other               (255)
+    },
+
+    -- if sequence-based validation methods are used,
+    -- what reference sequence location validated the presence of this?
+    reference-location Seq-loc OPTIONAL
+}
+
+
+Variation ::= SEQUENCE
+{
+    -- ids (i.e., SNP rsid / ssid, dbVar nsv/nssv)
+    -- expected values include 'dbSNP|rs12334', 'dbSNP|ss12345', 'dbVar|nsv1'
+    --
+    -- we relate three kinds of IDs here:
+    --  - our current object's id
+    --  - the id of this object's parent, if it exists
+    --  - the sample ID that this item originates from
+    id        Dbtag OPTIONAL,
+    parent-id Dbtag OPTIONAL,
+    sample-id SET OF Object-id OPTIONAL,
+    other-ids SET OF Dbtag OPTIONAL,
+
+    -- names and synonyms
+    -- some variants have well-known canonical names and possible accepted
+    -- synonyms
+    name VisibleString OPTIONAL,
+    synonyms SET OF VisibleString OPTIONAL,
+
+    -- tag for comment and descriptions
+    description VisibleString OPTIONAL,
+
+    -- where this beast is seen
+    -- note that this is a set of locations, and there are no restrictions to
+    -- the contents to this set. 
+    placements SEQUENCE OF VariantPlacement OPTIONAL,
+
+    -- phenotype
+    phenotype SET OF Phenotype OPTIONAL,
+
+    -- sequencing / acuisition method
+    method VariationMethod OPTIONAL,
+
+    -- Note about SNP representation and pretinent fields: allele-frequency,
+    -- population, quality-codes:
+    -- The case of multiple alleles for a SNP would be described by
+    -- parent-feature of type Variation-set.diff-alleles, where the child
+    -- features of type Variation-inst, all at the same location, would
+    -- describe individual alleles.
+
+    -- population data
+    population-data SET OF Population-data OPTIONAL,
+
+    -- variant properties bit fields
+    variant-prop VariantProperties OPTIONAL,
+
+    -- publication support; same type as in seq-feat
+    pub Pub-set OPTIONAL,
+
+    -- References to external 
+    clinical-test Dbtag OPTIONAL,
+
+    data CHOICE {
+        unknown NULL,
+        note    VisibleString, --free-form
+        uniparental-disomy NULL,
+
+        -- actual sequence-edit at feat.location
+        instance        Variation-inst,
+
+        -- Set of related Variations.
+        -- Location of the set equals to the union of member locations
+        set SEQUENCE {
+            type INTEGER {
+                unknown     (0),
+                compound    (1), -- complex change at the same location on the
+                                 -- same molecule
+                products    (2), -- different products arising from the same
+                                 -- variation in a precursor, e.g. r.[13g>a,
+                                 -- 13_88del]
+                haplotype   (3), -- changes on the same allele, e.g
+                                 -- r.[13g>a;15u>c]
+                genotype    (4), -- changes on different alleles in the same
+                                 -- genotype, e.g. g.[476C>T]+[476C>T]
+                mosaic      (5), -- different genotypes in the same individual
+                individual  (6), -- same organism; allele relationship unknown,
+                                 -- e.g. g.[476C>T(+)183G>C]
+                population  (7), -- population
+                alleles     (8), -- set represents a set of observed alleles
+                package     (9), -- set represents a package of observations at
+                                 -- a given location, generally containing
+                                 -- asserted + reference
+                chimeric    (10), -- e.g. c.[1C>T//2G>T]
+                other       (255)
+            },
+            variations SET OF Variation,
+            name  VisibleString OPTIONAL
+        },
+
+        -- variant is a complex and undescribed change at the location
+        -- This type of variant is known to occur in dbVar submissions
+        complex NULL,
+
+        seq Bioseq -- Sequnece as it exists post-alteration
+    },
+
+    consequence SET OF CHOICE {
+        unknown     NULL,
+        splicing    NULL, --some effect on splicing
+        note        VisibleString,  --freeform
+
+        -- Describe resulting variation in the product, e.g. missense,
+        -- nonsense, silent, neutral, etc in a protein, that arises from
+        -- THIS variation.
+        variation   Variation,
+
+        loss-of-heterozygosity SEQUENCE {
+            -- In germline comparison, it will be reference genome assembly
+            -- (default) or reference/normal population. In somatic mutation,
+            -- it will be a name of the normal tissue.
+            reference VisibleString OPTIONAL,
+
+            -- Name of the testing subject type or the testing tissue.
+            test VisibleString OPTIONAL
+        }
+    } OPTIONAL,
+
+    -- Frameshift-related info. Applies only to protein-level variations.
+    -- see http://www.hgvs.org/mutnomen/recs-prot.html
+    frameshift SEQUENCE {
+       phase INTEGER OPTIONAL,
+       x-length INTEGER OPTIONAL
+    } OPTIONAL,
+
+    -- Additional undescribed extensions
+    ext             SET OF User-object OPTIONAL,
+
+    somatic-origin SET OF SEQUENCE {
+        -- description of the somatic origin itself
+        source SubSource OPTIONAL,
+        -- condition related to this origin's type
+        condition SEQUENCE {
+            description VisibleString OPTIONAL,
+            -- reference to BioTerm / other descriptive database
+            object-id SET OF Dbtag OPTIONAL
+        } OPTIONAL
+    } OPTIONAL,
+
+    exceptions SET OF VariationException OPTIONAL,
+
+    so-terms SET OF INTEGER OPTIONAL
+}
+
+
+END
+

@@ -1,0 +1,91 @@
+
+1:chr22	1	11330000	1	N	11330000	short_arm	no
+	NOTE: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+2:chr22	11330001	13570000	2	N	2240000	centromere	no
+	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+
+1304:chr22	18718881	18718887	1304	N	7	contig	no
+	NOTE: gap shorter than 10 bp
+
+2178:chr22	22290994	22291002	2178	N	9	contig	no
+	NOTE: gap shorter than 10 bp
+
+8082:chr22	46284893	46284901	8082	N	9	contig	no
+	NOTE: gap shorter than 10 bp
+
+8171:scaffold1.1|size2787216	1	509	1	W	Contig_1	1	509	+
+	ERROR: invalid use of "|" character in object_id (column 1)
+
+8180:gnl|AAJN|scaffold_1	1	256777	1	W	AAJN01000001	1	256777	+
+	WARNING: "gnl|" prefix in object_id (column 1) is deprecated inside AGP files (no "prefix|" is best)
+
+8183:gnl|AAJN|scaffold_1|gb|CH476594	1	256777	1	W	AAJN02000001	1	256777	+
+	WARNING: "gnl|" prefix in object_id (column 1) is deprecated inside AGP files (no "prefix|" is best)
+
+8186:gnl|AAJN|scaffold_1|gb|CH476594|extra	1	256777	1	W	AAJN03000001	1	256777	+
+	WARNING: "gnl|" prefix in object_id (column 1) is deprecated inside AGP files (no "prefix|" is best)
+
+8187:gnl|AAJN|scaffold_1|gb	1	256777	1	W	AAJN04000001	1	256777	+
+	WARNING: "gnl|" prefix in object_id (column 1) is deprecated inside AGP files (no "prefix|" is best)
+
+8189:
+	ERROR, line skipped: empty line
+
+2 errors, 5 warnings, 4 notes.
+  Count Code  Description
+      1  e03  empty line
+      1  e25  invalid use of "|" character
+      1  w33  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+      3  w52  gap shorter than 10 bp
+         (Use -show w52 to print lines with short gaps.)
+      1  w58  assuming AGP version X
+      4  w66  "gnl|" prefix in X is deprecated inside AGP files (no "prefix|" is best)
+
+NOTE: 1 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
+
+
+Objects                :    7
+- with single component:    3
+
+Scaffolds              :  355
+- with single component:   57
+
+Components                   : 4096 (W:4095, F:1)
+  orientation +              : 2675
+  orientation -              : 1421
+  orientation ? (formerly 0) :    0
+  orientation na             :    0
+
+Gaps                   : 4092 (N)
+- do not break scaffold: 3741
+  clone   , linkage yes:    4
+  fragment, linkage yes: 3737 (943 or 25.2% of N gaps have length=10)
+- break it, linkage no :  351
+	contig         :  348 (136 or 39.1% of N gaps have length=100)
+	centromere     :    1
+	short_arm      :    1
+	telomere       :    1
+
+Most frequent N gap_length (23.1% or 944 lines):   10
+
+Object names                           :  7
+  scaffold1.1|size2787216              :  1
+  gnl|AAJN|scaffold_1|gb|CH476594|extra:  1
+  gnl|AAJN|scaffold_1|gb|CH476594      :  1
+  gnl|AAJN|scaffold_1|gb               :  1
+  gnl|AAJN|scaffold_1                  :  1
+  chr22                                :  1
+  10                                   :  1
+
+Component names                      :  4096
+--------------- Nucleotide accessions:     7
+  AAJN[01000001..04000001]           :     6
+  CU633885.4                         :     1
+--------------- OTHER identifiers    :  4089
+  ABGA[01001503..01404031].[1,111111]:  4055 (some local or misspelled)
+  ABGA[01409238..01410146].1.1       :    26 (local or misspelled)
+  Contig_[1..4]                      :     4 (local or misspelled)
+  AAA[00027,28].1                    :     2 (some look like protein accessions)
+  Contig_5|test5                     :     1 (local or misspelled)
+  .1                                 :     1 (local or misspelled)
+Use -g or "-show all" to print lines with suspicious accessions.

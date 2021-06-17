@@ -1,0 +1,21 @@
+# $Id$
+
+SRC = ait_impl document event_parser node_iterator \
+      xml_init attributes node node_manip stylesheet utility     \
+      xslt_init namespace xpath_expression node_set document_impl schema errors dtd \
+      document_proxy libxml2_xmlwrapp deref_impl xpath_object extension_function \
+      extension_element https_input_impl
+
+
+LIB = xmlwrapp
+DLL_LIB = xconnect xncbi
+LIBS = $(NETWORK_LIBS) $(LIBXSLT_LIBS) $(LIBXML_LIBS)
+CPPFLAGS= $(ORIG_CPPFLAGS) $(LIBXML_INCLUDE) $(LIBXSLT_INCLUDE)
+
+REQUIRES = LIBXML LIBXSLT
+LIB_OR_DLL = lib
+
+USE_PCH = no
+WATCHERS = satskyse
+USES_LIBRARIES =  \
+    $(LIBXML_LIBS) $(LIBXSLT_LIBS) $(ORIG_LIBS)

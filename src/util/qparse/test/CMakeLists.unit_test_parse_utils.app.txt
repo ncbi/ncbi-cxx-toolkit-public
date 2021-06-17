@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_app(unit_test_parse_utils)
+  NCBI_sources(unit_test_parse_utils)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xqueryparse)
+  NCBI_set_test_timeout(3000)
+  NCBI_add_test()
+  NCBI_project_watchers(asztalos)
+NCBI_end_app()
+

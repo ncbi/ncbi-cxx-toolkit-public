@@ -1,0 +1,11 @@
+# $Id$
+
+# Meta-makefile("TEST_SERIAL" project)
+#################################
+
+ASN_PROJ = we_cpp
+APP_PROJ = test_serial test_serial_io
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

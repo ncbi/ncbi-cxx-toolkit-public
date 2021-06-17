@@ -1,0 +1,30 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": {
+        "id": "gb|S68524.1|S68524S1",
+        "type": 5
+    },
+    "other_ids": [
+        {
+            "id": "bbs|143076",
+            "type": 2
+        },
+        {
+            "id": "gi|544844",
+            "type": 12
+        }
+    ],
+    "molecule_type": "rna",
+    "length": 84,
+    "seq_state": 7,
+    "state": 0,
+    "blob_id": {
+        "id": "4.10429564"
+    },
+    "tax_id": 8292,
+    "hash": -979631841,
+    "date_changed": "08/26/2016 00:36:00",
+    "gi": 544844
+}
+]

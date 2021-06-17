@@ -1,0 +1,11 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(ncbi_xloader_blastdb_rmt)
+  NCBI_sources(bdbloader_rmt remote_blastdb_adapter)
+  NCBI_add_definitions(NCBI_MODULE=BLASTDB)
+  NCBI_uses_toolkit_libraries(blast_services ncbi_xloader_blastdb)
+  NCBI_project_watchers(camacho)
+NCBI_end_lib()
+

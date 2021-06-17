@@ -1,0 +1,704 @@
+Release 4.42.2 based on SC-25 (2021-02-04)
+
+    * NetSchedule should allow anyone to read its configuraion (CXX-11655)
+
+Release 4.42.1 cloned from 4.41.0 (2020-09-21)
+
+    * NetSchedule: cannot start with string to unsigned int conversion
+      (CXX-11350)
+    * NetSchedule: update program name when a client changes its session
+      (CXX-11283)
+
+Release 4.42.0 cloned from 4.41.0 (2020-02-11)
+
+    * NetSchedule: extend DUMP command (CXX-10344)
+    * NetSchedule to limit running slots by remote client IP (CXX-11138)
+    * NetSchedule -- if a job id is provided, then look for the job in all
+      scopes (CXX-11174)
+
+Release 4.41.0 based on SC-22 (2018-11-01)
+
+    * Adding [server]/diskless configuration option
+
+Release 4.40.0 based on SC-22 (2018-10-29)
+
+    * First release without BerkeleyDB (all the jobs are in memory)
+
+
+Release 4.32.0 based on SC-22 (2018-10-10)
+
+Improvements:
+    * Replace the 'status' parameter with 'job_status' when logging the
+      incoming command (JIRA: CXX-10158)
+    * Update stable components to SC-22 (includes updated bit vector library)
+
+
+Release 4.31.0 cloned from 4.30.1 (2017-11-22)
+
+Improvements:
+    * GRID Dashboard -- all server pages (NC, NS, OSG) to list paths and args
+      (JIRA: CXX-9139)
+    * NetSchedule improvements for GRID Dashboard (JIRA: CXX-9583)
+    * NetSchedule queue length logging -- not to piggiback on the
+      "exec_time_msec" anymore? (JIRA: CXX-9648)
+    * NetSchedule -- LISTEN to also allow to listen to progress messages,
+      stolen LISTENs, etc. (JIRA: CXX-9673)
+    * NetSchedule: BDB warning (JIRA: CXX-9760)
+    * NetSchedule -- provide backward- and forward-compatibility of the job
+      dump (flat files) (JIRA: CXX-9754)
+
+
+Release 4.30.1 cloned from 4.30.0 (2017-08-15)
+
+Improvements:
+    * NetSchedule: restore refuse submits and pause queue states after restart
+      (JIRA: CXX-9155)
+    * GRID debugging - send a job to a specific node (JIRA: CXX-5324)
+
+Release 4.30.0 cloned from 4.29.0 (2017-05-11)
+
+Improvements:
+    * Pass submitter's job status notification host and port to the WN.
+      (JIRA: CXX-9272)
+
+
+Release 4.29.0 cloned from 4.28.3 (2017-05-10)
+
+Improvements:
+    * log timings for socket write errors (JIRA: CXX-9209)
+    * NetSchedule: qname to be replaced with _queue (JIRA: CXX-9241)
+    * NetSchedule -- allow to run in "memory-only" mode (JIRA: CXX-9245)
+
+
+Release 4.28.3 cloned from 4.28.2 (2017-04-24)
+
+Improvements:
+    * Printing socket timing in case of socket write errors (JIRA: CXX-9209)
+
+Release 4.28.2 cloned from 4.28.1 (2016-10-31)
+
+Improvements:
+    * Extra '0' in STAT output (JIRA: CXX-8768)
+
+
+Release 4.28.1 cloned from 4.28.0 (2016-10-26)
+
+Improvements:
+    * netschedule socket leak (JIRA: CXX-8727)
+    * NetSchedule: tries to write into a socket when it is already closed
+      (JIRA: CXX-8740)
+    * NetSchedule: incorrect logging of the timed out connections
+      (JIRA: CXX-8754)
+
+
+Release 4.28.0 cloned from 4.27.0 (2016-10-14)
+
+Improvements:
+    * NetSchedule: new performance record Pending_Deleted (JIRA: CXX-8643)
+    * NS -- Allow to (re)run a job (JIRA: CXX-8694)
+    * NetSchedule: remove AFLS command support (JIRA: CXX-5216)
+
+
+Release 4.27.0 cloned from 4.26.0 (2016-09-19)
+
+Improvements:
+    * NetSchedule: let prioritized affinities work together with any affinity
+      flag (JIRA: CXX-8587)
+    * NetSchedule: shutdown sockets on client close (JIRA: CXX-8286)
+    * NetSchedule: extend with IServer_ConnectionHandler::OnError() callback
+      (JIRA: CXX-8287)
+    * NS -- use status code 404 (NotFound) for non-existing jobs
+      (JIRA: CXX-8251)
+    * NS -- log connection ID on establishing the connection; change method of
+      ID creation (JIRA: CXX-8253)
+    * NetSchedule: not initialized member (JIRA: CXX-8359)
+
+
+Release 4.26.0 cloned from 4.25.0 (2016-05-04)
+
+Improvements:
+    * NetSchedule: [server]/wst_cache_size parameter could not be reconfigured
+      (JIRA: CXX-7986)
+    * Scope attribute for jobs (JIRA: CXX-8034)
+    * NetSchedule: performance degradation after millions of jobs
+      (JIRA: CXX-8074)
+
+
+Release 4.25.0 based on SC-17.0 (2016-03-24)
+
+Improvements:
+    * Configure which queues should log state transition performance records
+      (JIRA: CXX-7958)
+    * NetSchedule: scope feature (JIRA: CXX-7856)
+    * NetSchedule: changing the PHID generation for logging (JIRA: CXX-7651)
+
+
+Release 4.24.0 cloned from 4.23.2 (2015-11-30)
+
+Improvements:
+    * NetSchedule: queue name case insensitivity (JIRA: CXX-7536)
+    * NetSchedule: remove [server]/reinit parameter (JIRA: CXX-7466)
+    * NetSchedule: WST/WST2 overheads (JIRA: CXX-4826)
+
+
+Release 4.23.2 cloned from 4.23.1 (2015-10-19)
+
+Improvements:
+    * NetSchedule: deadlock (JIRA: CXX-7453)
+    * NetSchedule: internal error for the command test (JIRA: CXX-7450)
+    * NetSchedule: DUMP may lead to an internal error report (JIRA: CXX-7448)
+    * Turn DB_LOG_AUTOREMOVE on BDB (JIRA: CXX-7443)
+    * NetSchedule: logging shutdown in case of a signal (JIRA: CXX-7412)
+
+
+Release 4.23.1 based on SC-16.1 (2015-08-28)
+
+Improvements:
+    * NetSchedule: conversion from a list to a bit vector done twice
+      (JIRA: CXX-7254)
+    * NetSchedule: long shutdown (JIRA: CXX-7274)
+
+
+Release 4.23.0 based on SC-16.1 (2015-08-20)
+
+Improvements:
+    * NetSchedule: way too long graceful shutdown (JIRA: CXX-2617)
+    * NetSchedule can't execute SHUTDOWN drain=1 (JIRA: CXX-6186)
+    * NetSchedule: GET2/READ/READ2 to accept a list of groups (JIRA: CXX-6247)
+
+Release 4.22.0 based on SC-16.1 (2015-07-06)
+
+Improvements:
+    * NetSchedule: fresh Berkley DB version (JIRA: CXX-6094)
+    * NetSchedule: RDRB to have blacklist option (JIRA: CXX-6077)
+    * NetSchedule: new GET2/READ2 flag (JIRA: CXX-6054)
+    * NetSchedule -- change default behavior of READ/READ2 with affinity and/or
+      group restriction (JIRA: CXX-5989)
+    * NetSchedule: encrypted admin names support (JIRA: CXX-5809)
+    * NetStorage & NetSchedule: reconfigurable on-the-fly CServer parameters
+      (JIRA: CXX-5580)
+    * NetSchedule -- job lifetime performance metrics (JIRA: CXX-4581)
+
+
+Release 4.21.2 cloned from 4.21.1 (2015-04-21)
+
+Improvements:
+    * NetSchedule: incorrect connection request context resetting
+      (JIRA: CXX-5896)
+    * Log NetSchedule queue statistics to AppLog (JIRA: CXX-5872)
+    * NetSchedule: automatic acknowledge of the ConfigOutOfSync alert after
+      RECO (JIRA: CXX-5868)
+
+
+Release 4.21.1 cloned from 4.21.0 (2015-04-06)
+
+Improvements:
+    * NetSchedule: get rid of CAsyncDiagHandler (JIRA: CXX-5850)
+    * grid_cli sometimes can not parse RECO response from NS (JIRA: CXX-5847)
+    * NetSchedule: improper usage of the connection request context
+      (JIRA: CXX-5846)
+    * QINF2 does not return queue's linked_section (JIRA: CXX-5845)
+    * NetSchedule: max_connection parameter limits (JIRA: CXX-5816)
+
+
+Release 4.21.0 cloned from 4.20.3 (2015-03-23)
+
+Improvements:
+    * NetSchedule: new alert counter - since the last acknowledge
+      (JIRA: CXX-5794)
+    * NetSchedule: debug mode only features to support failure imitation
+      (JIRA: CXX-5445)
+    * NetSchedule: SUBMIT rollback timestamps in the error message
+      (JIRA: CXX-5427)
+    * NetSchedule: ability to specify a client type explicitly
+      (JIRA: CXX-5326)
+
+Release 4.20.3 cloned from 4.20.2 (2015-03-17)
+
+Improvements:
+    * Bug fix: reliable prevention of using a UDP socket from many threads
+      (JIRA: CXX-5789)
+
+Release 4.20.2 cloned from 4.20.1 (2015-03-16)
+
+Improvements:
+    * CServer does not abort if a socket to be closed is not of an expected
+      type (log message is produced) (JIRA: CXX-5770)
+
+
+Release 4.20.1 cloned from 4.20.0 (2014-10-21)
+
+Improvements:
+    * NetSchedule: CANCEL/STAT in case of unknown group and/or affinity
+      (JIRA: CXX-5256)
+    * NetSchedule: incorrect value for the client_registry_timeout_worker_node
+      parameter (JIRA: CXX-5288)
+    * NetSchedule: a textual message for alerts (JIRA: CXX-5289)
+    * NetSchedule: wrong execution watcher thread interval (JIRA: CXX-5292)
+    * NetSchedule: 100% CPU of the notification thread (JIRA: CXX-5293)
+    * NetSchedule: config file alert split (JIRA: CXX-5297)
+    * NetSchedule - monitor config file, raise an alert when it's out-of-sync
+      with the process (JIRA: CXX-5298)
+
+
+Release 4.20.0 based on SC-15 (2014-09-19)
+
+Improvements:
+    * NetSchedule: read blacklist (JIRA: CXX-4993)
+    * NetSchedule: READ to support affinities; +READ2 (JIRA: CXX-4994)
+    * NetSchedule: READ-group commands checks (JIRA: CXX-5004)
+    * NetSchedule: run_timeout_precision (JIRA: CXX-5014)
+    * NetSchedule: GC for the clients registry (JIRA: CXX-5024)
+    * NetSchedule -- an option to cancel only the pending jobs (JIRA: CXX-5103)
+    * NetSchedule -- allow WN to ultimately fail a job (FPUT2 no_retries)
+      (JIRA: CXX-5151)
+    * NetSchedule: separate setting for read retries (JIRA: CXX-5161)
+    * NetSchedule: CANCEL to report the number of canceled jobs
+      (JIRA: CXX-5168)
+    * NetSchedule: more robust handling of the first job number
+      (JIRA: CXX-5169)
+    * NetSchedule: SHUTDOWN after drained SHUTDOWN (JIRA: CXX-5177)
+    * NetSchedule: infinite loop while processing READ notifications
+      (JIRA: CXX-5212)
+    * NetSchedule: max timeout before a job is given for reading
+      (JIRA: CXX-5223)
+
+
+Release 4.19.0 cloned from 4.18.0 (2014-06-12)
+
+Improvements:
+    * NetSchedule -- new cmd RESCHEDULE (JIRA: CXX-5021)
+
+
+Release 4.18.0 cloned from 4.17.1 (2014-06-10)
+
+Improvements:
+    * NetSchedule: incorrect RDRB if a job was in the FAILED state
+      (JIRA: CXX-4986)
+    * NetSchedule -- READ change; +CWREAD, JDREX cmds (JIRA: CXX-4981)
+    * NetSchedule: warning codes (JIRA: CXX-4941)
+    * NetSchedule: admin clients recognition (JIRA: CXX-4922)
+    * NetSchedule -- CANCEL to work for jobs with a given affinity (a la that
+      for group) (JIRA: CXX-4911)
+    * NetSchedule: garbage collector can steal a job group before notification
+      is triggered (JIRA: CXX-4909)
+
+
+Release 4.17.1 cloned from 4.17.0 (2014-05-01)
+
+Improvements:
+    * NetSchedule -- GET2 to understand "job groups" (JIRA: CXX-4800)
+    * NetSchedule: incorrect affinity handling (JIRA: CXX-4888)
+    * New worker node state: cleared (JIRA: CXX-4892)
+
+
+Release 4.17.0 based on TRUNK (2014-04-09)
+
+Improvements:
+    * NetSchedule -- make SID, IP and HID an attribute of a job
+      (JIRA: CXX-4803)
+    * NetSchedule -- accept and log (P)HID (JIRA: CXX-4799)
+    * NetSchedule: job status where a list of jobs is provided (JIRA: CXX-4556)
+    * NetSchedule to provide the same information for QINF2 as it does for
+      GETP2 (JIRA: CXX-4575)
+    * NetSchedule QINF2 to return client-side queue configuration by an
+      associated with it service name (JIRA: CXX-4576)
+    * NetSchedule: max_input_size and max_output_size do not respect 'k' and
+     'M' suffixes (JIRA: CXX-4592)
+    * Changes in NetSchedule significant error handling (JIRA: CXX-4606)
+    * NetSchedule: crash detect to reinit the DB (JIRA: CXX-4648)
+    * Implement NetSchedule feature to stop/resume processing jobs in a queue
+      without deleting them (JIRA: CXX-4721)
+    * NetSchedule: dynamic queues and reconfiguring (JIRA: CXX-4725)
+    * NS -- pause, resume and pullback jobs (JIRA: CXX-4744)
+    * NetSchedule: transient client data (JIRA: CXX-4780)
+    * STAT ALERTS introduced
+    * A few alerts introduced
+
+
+Release 4.16.11 based on SC-11 (2013-11-25)
+
+Improvements:
+    * NetSchedule: client peer address is not updated when the same client
+      comes from another host (JIRA: CXX-4472)
+    * NetSchedule -- to wrap each queue's (as well as total) logged stats into
+      its own request (JIRA: CXX-4488)
+
+
+Release 4.16.10 based on SC-11 (2013-09-16)
+
+Improvements:
+    * NetSchedule: GETCONF extension (JIRA: CXX-4251)
+    * NetSchedule: new queue parameter "scramble_job_keys" to generate and use
+      keys in CCompoundID format (JIRA: CXX-4319)
+    * NetSchedule: check size limit for error and progress messages (JIRA: CXX-4358)
+    * NetSchedule: FRED does not save error message (JIRA: CXX-4361)
+
+
+Release 4.16.9 based on SC-11 (2013-07-23)
+
+Improvements and bug fixes
+    * NetSchedule: Implement the HEALTH command (JIRA: CXX-2131)
+    * Allow to specify (and communicate to the client) the "overflow NC server"
+      in the NS configuration (JIRA: CXX-4113)
+
+
+Release 4.16.8 based on SC-11 (2013-04-26)
+
+Improvements and bug fixes
+    * NetSchedule: performance tweaks (JIRA: CXX-4021)
+    * NetSchedule: non efficient handling session id and client ip in logging
+      (JIRA: CXX-4001)
+    * NetSchedule: new run_timeout_precision default value (3600sec -> 3sec)
+      (JIRA: CXX-3991)
+    * NetSchedule: Incorrect display of running and reading job expiration time
+      (JIRA: CXX-3982)
+    * NetSchedule -- to use nanosecond (or at least ms) precision for job event
+      timestamps. (JIRA: CXX-3940)
+    * NetSchedule: queue access restrictions for read-only commands
+      (JIRA: CXX-3885)
+    * NetSchedule: better logging in case of garbage input
+      (JIRA: CXX-3877)
+    * NetSchedule: marking clients as worker nodes
+      (JIRA: CXX-3839)
+
+
+Release 4.16.7 based on SC-11 (2013-04-10)
+
+Improvements and bug fixes
+    * NetSchedule: NetSchedule: incorrect 'exclusive new affinities' handling
+      (JIRA: CXX-3959)
+
+
+Release 4.16.6 based on SC-11 (2013-04-10)
+
+Improvements and bug fixes
+    * NetSchedule: logging preferred affinities (JIRA: CXX-3948)
+
+
+Release 4.16.5 based on SC-11 (2013-02-11)
+
+Improvements and bug fixes
+    * NetSchedule: log the fact that a client session was reset
+      (JIRA: CXX-3828)
+    * NetSchedule: incorrect applog message length (JIRA: CXX-3827)
+    * NetSchedule: QINF2 to provide jobs per status as well
+      (JIRA: CXX-3824)
+    * NetSchedule: remove obsolete commands (JIRA: CXX-3791)
+    * NetSchedule: pidfile must not be updated till the successfull start of
+      the server (JIRA: CXX-3729)
+    * NetSchedule: The SETQUEUE command does not register client and does not
+      check restrictions (JIRA: CXX-3727)
+    * NetSchedule: more info about clients (registration time, last session
+      start time) (JIRA: CXX-3720)
+    * NetSchedule: blacklisted jobs cleanup (JIRA: CXX-3698)
+    * NetSchedule: non-rollbacked changes in the data structures in case of
+      disconnected client (JIRA: CXX-3300)
+    * Modify Job Id to include queue identification to facilitate issue
+      investigation. (JIRA: CXX-117)
+
+
+Release 4.16.4 based on SC-11 (2012-12-28)
+
+Improvements and bug fixes
+    * NetSchedule: client in affinity registry (JIRA: CXX-3694)
+    * Introduce a new command to reset the list of worker node affinities
+      (JIRA: CXX-3676)
+    * NetSchedule: core dump when finishing (JIRA: CXX-3671)
+
+
+Release 4.16.3 based on SC-11 (2012-12-17)
+
+Improvements and bug fixes
+    * NS -- randomize and delay "job-to-do" notifications UDP sendouts (all but
+      one) to distribute jobs more uniformly among WN's (JIRA: CXX-3662)
+    * NetSchedule: STAT CLIENTS VERBOSE: print blacklisted jobs timeout
+      (JIRA: CXX-3660)
+    * NetSchedule: add queue=ZZZ value to each command log record
+      (JIRA: CXX-3659)
+    * NetSchedule: collect per client info of communicating errors
+      (JIRA: CXX-3641)
+    * Bug fix: the server node identifier sometimes was not initialized
+
+
+Release 4.16.2 based on SC-11 (2012-12-06)
+
+Improvements and bug fixes
+    * NetSchedule: 0 status in request stops (JIRA: CXX-3649)
+    * NetSchedule: timeout for blacklisted jobs (JIRA: CXX-2689)
+
+
+Release 4.16.1 based on SC-11 (2012-11-30)
+
+Improvements and bug fixes
+    * NetSchedule: close connection explicitly if writing to socket failed
+      (JIRA: CXX-3624)
+    * NetSchedule: accept job result in FAILED state (JIRA: CXX-3632)
+    * Improved logging
+    * Bug fix: sending a message to a client could read out of a buffer in
+      case of an empty message.
+    * Bug fix: Failed to Failed total transition counter did not work properly.
+
+
+Release 4.16.0 based on SC-11 (2012-11-14)
+
+Improvements
+    * NetSchedule: add pidfile command line argument (JIRA: CXX-3603)
+
+
+Release 4.15.0 based on SC-10 (2012-11-13)
+
+Improvements
+
+    * NetSchedule: VERSION command output to include PID (JIRA: CXX-3506)
+    * NetSchedule: STAT QUEUES and QINF2 commands (JIRA: CXX-3509)
+    * NetSchedule: incorrect counters for timeouted jobs (JIRA: CXX-3515)
+    * NetSchedule RECO: comma omitted in logging parameter changes
+      (JIRA: CXX-3566)
+    * CServer: destroy queues if all threads have finished successfully.
+    * NetSchedule: bug fix in the logging parameters initialization
+
+
+Release 4.14.0 based on SC-10 (2012-08-29)
+
+Improvements
+
+    * NetSchedule: log what was taken into account after the RECO command
+      (JIRA: CXX-2716)
+    * NetSchedule -- to log session ID and client IP (per command)
+      (JIRA: CXX-2732)
+    * NetSchedule: new command (LISTEN) to wait for job termination
+      (JIRA: CXX-3412)
+    * NetSchedule: changes in handling config files (JIRA: CXX-3446)
+    * SJobDB -- increase sizes of input/output fields; decrease sizes of
+      client_ip and client_sid fields (JIRA: CXX-3449)
+
+
+Release 4.13.0 based on SC-10 (2012-06-13)
+
+Improvments and bug fixes
+
+    * Timeout for the jobs that are waiting too long for a WN with the "right"
+      affinity (JIRA: CXX-3223)
+    * Fixed output for notifications registry
+    * Fixed picking job algorithm for the case when a worker node asked for a
+      job considering its preferred affinities while none were in the list of
+      the preferred affinities.
+    * NetSchedule: collect statistics separately of how a job was picked for WN
+      (JIRA: CXX-3345)
+
+
+Release 4.12.0 based on SC-10 (2012-06-01)
+
+Improvements and bug fixes
+
+    * NetSchedule: borrow NC implementation of the log writer in a separate
+      thread (JIRA: CXX-2859)
+    * NetSchedule: new command to switch the current queue (JIRA: CXX-3249)
+    * NetSchedule: timeout for jobs in Pending state (JIRA: CXX-3289)
+    * NetSchedule: make selection of a pending job parallel (JIRA: CXX-3299)
+    * Custom thread names
+
+
+Release 4.11.0 based on SC-10 (2012-05-18)
+
+Improvements and bug fixes
+
+    * Leak of Worker Node internal structures (JIRA: CXX-804)
+    * Netschedule: SST and SST2 (fast status) does not change timestamp
+      (JIRA: CXX-2229)
+    * NetSchedule: new output of the SST2/WST2/STATUS2 commands to return the
+      updated job expiration time (JIRA: CXX-2380)
+    * NetSchedule: the new REFUSESUBMITS command (JIRA: CXX-2416)
+    * NetSchedule: MGET to advance the job last access time (JIRA: CXX-2653)
+    * NetSchedule: close connection in case of a wrong command (JIRA: CXX-3156)
+    * NetSchedule: error_message field in the events database (JIRA: CXX-3160)
+    * NetSchedule: wipe out JXCG2 command (JIRA: CXX-3192)
+    * Enhancement over GET2 affinity handling (JIRA: CXX-3206)
+    * NetSchedule: move the peer address from parameters to client IP field in
+      the connection start request (JIRA: CXX-3216)
+    * NetSchedule GET2 to return output in URL-encoded format (JIRA: CXX-3217)
+    * NetSchedule: extension to the SHUTDOWN command -- added drain option (JIRA: CXX-3237)
+    * NetSchedule: STAT to produce additional output (JIRA: CXX-3242)
+    * NetSchedule: changes in the ACNT command (JIRA: CXX-3253)
+    * NetSchedule: Extend STAT JOBS with ability to print info with and without
+      a queue (JIRA: CXX-3266)
+    * NetSchedule to print peer control port in STAT CLIENTS output
+      (JIRA: CXX-3279)
+    * NetSchedule to print client host in STAT CLIENTS output (JIRA: CXX-3283)
+    * NetSchedule: improved algorithm for picking a job considering preferred
+      affinities. (JIRA: CXX-3290)
+
+
+Release 4.10.0 based on TRUNK (2012-03-20)
+
+Improvements and bug fixes
+
+    * Many non-ticketed performance/output/cosmetic changes
+    * error messages (JIRA: CXX-2232 duplicate)
+    * second INIT within one connection session (JIRA: CXX-2233)
+    * SST/WST (fast status) reports incorrect state for jobs in various states
+      (JIRA: CXX-2251)
+    * FRES does not reschedule a job (JIRA: CXX-2252)
+    * Eliminate excessive/duplicate logging of events (JIRA: CXX-2403)
+    * wrong job status after run expiration (JIRA: CXX-2405)
+    * Delay job expiration (JDEX) for a job in the 'Pending' state
+      (JIRA: CXX-2422)
+    * remove obsolete commands REGC and URGC (JIRA: CXX-2429)
+    * fix CLRN implementation (duplicate registration records, no actual
+      unregistration) (JIRA: CXX-2432)
+    * fix worker node registration algorithm (the INIT command)
+      (JIRA: CXX-2433)
+    * GET with affinity for the case when there is no such a job
+      (JIRA: CXX-2437)
+    * job status after getting previously timeouted job (JIRA: CXX-2438)
+    * incorrect version report for -version and -version-full options
+      (JIRA: CXX-2505)
+    * run_counter (JIRA: CXX-2514)
+    * infinite loop for timeouted job runs (JIRA: CXX-2517)
+    * remove FRES command (JIRA: CXX-2518)
+    * make CANCEL working for any state (JIRA: CXX-2519)
+    * CFRM and FRED for cancelled jobs (JIRA: CXX-2520)
+    * rename "attempt*" fields with "event*" fields in the DUMP output
+      (JIRA: CXX-2525)
+    * split records in the job history where 2 events are written as one
+      (JIRA: CXX-2526)
+    * RETURN output (JIRA: CXX-2528)
+    * job events info (JIRA: CXX-2530)
+    * job run fields (JIRA: CXX-2531)
+    * introduce read_counter (JIRA: CXX-2533)
+    * reading group may be destroyed while it should not be (JIRA: CXX-2542)
+    * infinite Reading state (JIRA: CXX-2543)
+    * infinite loop for timeouted job reading (JIRA: CXX-2545)
+    * Introduce new field 'event' in jobs history (JIRA: CXX-2549)
+    * may crash when JDEX is received (JIRA: CXX-2554)
+    * remove the event_count field from the DUMP <job key> command output
+      (JIRA: CXX-2555)
+    * accept job results given in JXCG even if there was a problem of providing
+      a new job (JIRA: CXX-2556)
+    * JXCG for Confrmed/ReadFailed job (JIRA: CXX-2559)
+    * PUT/JXCG for a job in Reading state (JIRA: CXX-2560)
+    * GET/WGET does not provide a job even though there are some available
+      (JIRA: CXX-2565)
+    * Add security token and run-counter for jobs that are given away for
+      executing or reading (JIRA: CXX-2568)
+    * DROJ command to be replaced with CANCEL and retired later
+      (JIRA: CXX-2570)
+    * introduce reduced fetch for jobs (JIRA: CXX-2572)
+    * introduce new CANCELQ command (JIRA: CXX-2573)
+    * remove 'time_submit', 'subm_addr' and 'subm_port' fields from the job
+      DUMP and replace them with an event record. (JIRA: CXX-2575)
+    * a partial job input/output could be provided (JIRA: CXX-2577)
+    * strip tags support (JIRA: CXX-2578)
+    * DB error while getting a job leaves the job in the Running state
+      (JIRA: CXX-2581)
+    * client identification (JIRA: CXX-2584)
+    * daemonization parameters (JIRA: CXX-2611)
+    * non-existing queue during handshaking (JIRA: CXX-2630)
+    * skip the version checking for SST and WST commands (JIRA: CXX-2636)
+    * memorizing the jobs which have ever been given for running and reading
+      (JIRA: CXX-2649)
+    * race condition in GETP (JIRA: CXX- 2663)
+    * notification in case a job is cancelled (JIRA: CXX-2667)
+    * notifications for clients which used WGET command. (JIRA: CXX-2668)
+    * remove the [server]:udp_port parameter from the .ini file
+      (JIRA: CXX-2679)
+    * job status notification message format - should use job key instead of
+      job number (JIRA: CXX-2680)
+    * changes in serving affinities (JIRA: CXX-2697)
+    * Changes in the job available message format (NCBI_JSQ_) (JIRA: CXX-2701)
+    * remove support of the 'affp' in batch submit (JIRA: CXX-2702)
+    * QERY and QSEL are deleted (JIRA: CXX-2709)
+    * 'delete_done' queue attribute to eliminate (JIRA: CXX-2726)
+    * the queue notif_timeout parameter (JIRA: CXX-2728)
+    * incorrect output for DUMP and DUMP <job key> (JIRA: CXX-2757)
+    * configuration parameters for the speed of deleting jobs from BerkleyDB
+      (JIRA: CXX-2758)
+    * unnecessery fetch from BerkleyDB when fetching a job
+      (JIRA: CXX-2760)
+    * DUMP implementation improvement (JIRA: CXX-2763)
+    * periodic statistics logging (JIRA: CXX-2780)
+    * log output false positive for JDEX (JIRA: CXX-2781)
+    * Replace "Job not found" with "eJobNotFound" in the output
+      (JIRA: CXX-2801)
+    * incorrect pending job garbage collecting (JIRA: CXX-2805)
+    * worker node affinity storage on the server side (JIRA: CXX-2807)
+    * introduce the new GETCONF command (JIRA: CXX-2819)
+    * add a job to the clients blacklist if running/reading timeout is
+      detected. (JIRA: CXX-2835)
+    * Affinity registry garbage collector (JIRA: CXX-2838)
+    * limit the max timeout for the WGET command (JIRA: CXX-2851)
+    * introduce CWGET command (JIRA: CXX-2857)
+    * More specific WGET/GET2 notifications (JIRA: CXX-2863)
+    * notifications to to send to WGET listeners for
+      returned/failed/timeouted jobs (JIRA: CXX-2865)
+    * introduce the new STAT NOTIFICATIONS command (JIRA: CXX-2870)
+    * introduce the new 'STAT AFFINITIES' command (JIRA: CXX-2871)
+    * DROPQ to send notifications that a job has changed its state
+      (JIRA: CXX-2882)
+    * logging client IP in case of socket writing errors (JIRA: CXX-2883)
+    * DUMP parameters to return a part of the queue (JIRA: CXX-2889)
+    * GET2/JXCG2 to be extended with optional port and timeout parameters
+      (JIRA: CXX-2895)
+    * Do not keep history of the running and reading jobs for clients
+      (JIRA: CXX-2898)
+    * improving job expiration detection for garbage collector and picking
+      pending job (JIRA: CXX-2900)
+    * Get rid of the 'daemon' parameter from a config file (JIRA: CXX-2911)
+    * Extended STAT output; it also works for all the queues (JIRA: CXX-2925)
+    * RECO is now allowed for admins only (JIRA: CXX-2944)
+    * Admin identifiers are now configurable (JIRA: CXX-2945)
+    * Extending AFLS output format (JIRA: CXX-2953)
+    * GET2/JXCG2 accepting affinity related parameters (wnode_aff, any_aff)
+      (JIRA: CXX-2968)
+    * STAT CLIENTS/AFFINITIES/NOTIFICATIONS are introduced (JIRA: CXX-2976)
+    * HTTP respecting stop request status codes in logs (JIRA: CXX-3019)
+    * ns_node is sent with SUBMIT notifications (JIRA: CXX-3023)
+    * ns_node and queue are sent with GET2 notifications (JIRA: CXX-3024)
+    * DUMP now has an optional status=... argument (JIRA: CXX-3032)
+    * Job groups are introduced. Some commands have been extended with the
+      group=... optional parameter (JIRA: CXX-3034)
+    * The progress_message parameter is deleted from the SUBMIT command
+      (JIRA: CXX-3036)
+    * The ns_node identifier is generated/used stored at the startup
+      (JIRA: CXX-3041)
+    * The STSN command is deleted; STAT JOBS aff=... is introduced instead
+      (JIRA: CXX-3103)
+    * The QPRT command is deleted (JIRA: CXX-3104)
+    * Garbage collector: the speed of deletion from the DB is wrong
+      (JIRA: CXX-3138)
+    * introduce SST2/WST2/STATUS2 commands (JIRA: CXX-3147)
+
+
+Release 4.9.0 based on SC 8.0 (2011-07-11)
+
+Improvements and bug fixes
+
+    * Job dump provides a full information about each attempt to run a job and
+      also provides the job expiration time (JIRA: CXX-2228)
+    * NetSchedule ignores HTTP GET probes and closes the opened connection
+      (JIRA: CXX-2407)
+    * Fine-grain control of what service threads should generate log records
+      and whether to log batch submit as a single log record or each job in the
+      batch separately (JIRA: CXX-2414)
+    * Pick up logging settings upon the RECO command (JIRA: CXX-2476)
+    * Do not reserve file descriptors at the very beginning (JIRA: CXX-2487)
+    * Jobs will not disappear after netschedule restart (JIRA: CXX-2493)
+    * Job runs are deleted when a job is deleted (JIRA: CXX-2499)
+
+
+Release 4.8.0 based on SC 8.0 (2011-05-24)
+
+Improvements
+
+    * Application level logging (JIRA: CXX-2146)
+    * Excessively long input is not accepted any more. The client will get an
+      error message. (JIRA: CXX-2361)
+    * The netschedule output is now unified. Each line starts with the 'OK:' or
+      'ERR:' regardless of what command the output is for. (JIRA: CXX-2254)
+    * The job dump output now also has job tags. (JIRA: CXX-2245)
+    * Batch submit does not accept wrong input anymore and resets the command
+      handler to the initial state if there are errors. (JIRA: CXX-2240)
+    * The client name is now logged as well as some other parameters
+      (JIRA: CXX-1978)
+

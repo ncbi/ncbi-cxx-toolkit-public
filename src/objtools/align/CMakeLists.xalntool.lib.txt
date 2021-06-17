@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(xalntool)
+  NCBI_sources(alngraphic)
+  NCBI_uses_toolkit_libraries(align_format)
+  NCBI_project_watchers(jianye)
+NCBI_end_lib()
+

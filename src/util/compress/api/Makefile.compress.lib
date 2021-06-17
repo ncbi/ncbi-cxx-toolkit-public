@@ -1,0 +1,17 @@
+# $Id$
+
+SRC = compress stream streambuf stream_util bzip2 zlib lzo \
+      reader_zlib tar archive archive_ archive_zip
+
+LIB = xcompress
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(CMPRS_INCLUDE)
+
+DLL_LIB =  $(BZ2_LIB)  $(Z_LIB)  $(LZO_LIB)
+LIBS    =  $(BZ2_LIBS) $(Z_LIBS) $(LZO_LIBS) $(ORIG_LIBS)
+
+WATCHERS = ivanov
+
+
+USES_LIBRARIES =  \
+    $(CMPRS_LIB) $(CMPRS_LIBS) xutil

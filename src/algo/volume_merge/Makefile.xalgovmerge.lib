@@ -1,0 +1,16 @@
+# $Id$
+
+WATCHERS = dicuccio
+
+
+LIB = xalgovmerge
+
+SRC = volume_merge
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+
+
+USES_LIBRARIES =  \
+    xncbi

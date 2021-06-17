@@ -1,0 +1,15 @@
+test, demo
+core
+web
+structure_cdtree
+gbench
+perf
+mod_loadinfo
+mod_caf
+fwdaemon
+grid
+auto_sv_libs
+auto_sv
+auto_msa
+auto_tv
+auto_uud

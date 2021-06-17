@@ -1,0 +1,10 @@
+# $Id$
+
+SUB_PROJ =  \
+    ncbi_algo \
+    ncbi_algo_ms \
+    ncbi_algo_structure \
+    ncbi_blastinput
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

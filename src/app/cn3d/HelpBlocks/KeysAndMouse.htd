@@ -1,0 +1,195 @@
+
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Windows Help Designer (http://www.visagesoft.com)">
+<TITLE>Key and Mouse Actions</TITLE>
+</HEAD>
+<BODY>
+<H2>Key and Mouse Actions</H2>
+<UL>
+  <LI>
+  <DIV><A href="#keyboard">Keyboard
+  Shortcuts</A> </DIV>
+  <LI>
+  <DIV><A href="#mouse">Mouse
+  Actions</A> </DIV></LI></UL>
+<H3><A name=keyboard></A>Keyboard Shortcuts</H3>
+<P>There are keyboard shortcuts for a few specific <A href="StructureWindow.htm">Structure
+  Window</A> and <A href="SequenceWindow.htm">Sequence
+  Window</A> commands in Cn3D. These shortcuts may not available on all
+  platforms, but the equivalent menu items are always present. "Ctrl/Meta" means that on
+  some platforms, the 'control' key is used (PC and UNIX), and on others the 'meta'
+  key is used (Macintosh).</P>
+<P>&nbsp;</P>
+<table width="75%" border="1">
+  <tr>
+    <td colspan="2">
+      <div align="center"><b>Keyboard shorcuts in the Structure Window</b></div>
+    </td>
+  </tr>
+  <tr>
+    <td>Open</td>
+    <td>Ctrl/Meta + O</td>
+  </tr>
+  <tr>
+    <td>Network load</td>
+    <td>Ctrl/Meta + N</td>
+  </tr>
+  <tr>
+    <td>Save</td>
+    <td>Ctrl/Meta + S</td>
+  </tr>
+  <tr>
+    <td>Zoom in</td>
+    <td>Z</td>
+  </tr>
+  <tr>
+    <td>Zoom out</td>
+    <td>X</td>
+  </tr>
+  <tr>
+    <td>Show next frame</td>
+    <td>Right Arrow</td>
+  </tr>
+  <tr>
+    <td>Show previous frame</td>
+    <td>Left Arrow</td>
+  </tr>
+  <tr>
+    <td>Show first frame</td>
+    <td>Down Arrow</td>
+  </tr>
+  <tr>
+    <td>Show last frame</td>
+    <td>Up Arrow</td>
+  </tr>
+  <tr>
+    <td>Show all frames</td>
+    <td>A</td>
+  </tr>
+  <tr>
+    <td>Animate: play frames</td>
+    <td>P</td>
+  </tr>
+  <tr>
+    <td>Animate: spin</td>
+    <td>N</td>
+  </tr>
+  <tr>
+    <td>Stop animation</td>
+    <td>S</td>
+  </tr>
+  <tr>
+    <td>Show everything</td>
+    <td>E</td>
+  </tr>
+  <tr>
+    <td>Show aligned domains</td>
+    <td>D</td>
+  </tr>
+  <tr>
+    <td>Select molecule</td>
+    <td>M</td>
+  </tr>
+</table>
+<P>&nbsp;</P>
+<table width="75%" border="1">
+  <tr>
+    <td colspan="2">
+      <div align="center"><b>Keyboard shorcuts in the Sequence Windows</b></div>
+    </td>
+  </tr>
+  <tr>
+    <td>Undo</td>
+    <td>Ctrl + Z</td>
+  </tr>
+  <tr>
+    <td>Redo</td>
+    <td>Shift + Ctrl + Z</td>
+  </tr>
+  <tr>
+    <td>Select rectangle</td>
+    <td>S</td>
+  </tr>
+  <tr>
+    <td>Select columns</td>
+    <td>C</td>
+  </tr>
+  <tr>
+    <td>Select blocks</td>
+    <td>B</td>
+  </tr>
+  <tr>
+    <td>Select rows</td>
+    <td>R</td>
+  </tr>
+  <tr>
+    <td>Horizontal drag</td>
+    <td>H</td>
+  </tr>
+</table>
+<p>&nbsp;</p><H3><A name=mouse></A>Mouse Actions</H3>
+<P>The following tables tell how to interact with Cn3D using the mouse and keyboard together.
+  There are two tables: one for the <A href="StructureWindow.htm">Structure
+  Window</A>, and one for the <A href="SequenceWindow.htm">Sequence
+  Window</A>. "Left-drag" here means hold down the left button (or the only button,
+  on a Macintosh) and drag the mouse. "Shift + drag" means hold down
+  the 'shift' key while dragging the mouse. </P>
+<P>&nbsp;</P>
+<table width="75%" border="1">
+  <tr>
+    <td colspan="2">
+      <div align="center"><a name="mouse_structure"></a><b>Mouse actions in the
+        Structure Window</b></div>
+    </td>
+  </tr>
+  <tr>
+    <td>Rotate</td>
+    <td>Left-drag</td>
+  </tr>
+  <tr>
+    <td>Translate</td>
+    <td>Shift + left-drag</td>
+  </tr>
+  <tr>
+    <td>Zoom</td>
+    <td>Ctrl + left-drag</td>
+  </tr>
+  <tr>
+    <td>Select residue</td>
+    <td>Double-click</td>
+  </tr>
+  <tr>
+    <td>Set rotation center</td>
+    <td>Ctrl/Meta + double-click</td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<table width="75%" border="1">
+  <tr>
+    <td colspan="2">
+      <div align="center"><a name="mouse_sequence"></a><b>Mouse actions in Sequence
+        and Import Windows</b></div>
+    </td>
+  </tr>
+  <tr>
+    <td>Set selection</td>
+    <td>Left-drag</td>
+  </tr>
+  <tr>
+    <td>Extend selection</td>
+    <td>Shift + left-drag</td>
+  </tr>
+  <tr>
+    <td>Invert selection</td>
+    <td>Ctrl/Meta + left-drag</td>
+  </tr>
+  <tr>
+    <td>Browse Entrez</td>
+    <td>Left-click on title/identifier</td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+</BODY>
+</HTML>

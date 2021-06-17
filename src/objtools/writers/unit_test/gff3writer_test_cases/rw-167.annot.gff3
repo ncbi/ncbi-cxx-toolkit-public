@@ -1,0 +1,25 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+U00096.3	Genbank	region	1	4641652	.	+	.	ID=id-U00096.3:1..4641652;Is_circular=true;gbkey=chromosome
+U00096.3	Genbank	gene	190	255	.	+	.	ID=gene0;Dbxref=EcoGene:EG11277;Name=thrL;gbkey=Gene;gene=thrL;gene_biotype=other;gene_synonym=ECK0001,JW4367;locus_tag=b0001
+U00096.3	Genbank	attenuator	301	310	.	+	.	ID=id1;Parent=gene0;gbkey=regulatory;regulatory_class=attenuator
+U00096.3	Genbank	CAAT_signal	311	320	.	+	.	ID=id2;Parent=gene0;gbkey=regulatory;regulatory_class=CAAT_signal
+U00096.3	Genbank	enhancer	321	330	.	+	.	ID=id3;Parent=gene0;gbkey=regulatory;regulatory_class=enhancer
+U00096.3	Genbank	enhancer_blocking_element	331	340	.	+	.	ID=id4;Parent=gene0;gbkey=regulatory;regulatory_class=enhancer_blocking_element
+U00096.3	Genbank	GC_rich_promoter_region	341	350	.	+	.	ID=id5;Parent=gene0;gbkey=regulatory;regulatory_class=GC_signal
+U00096.3	Genbank	insulator	351	360	.	+	.	ID=id6;Parent=gene0;gbkey=regulatory;regulatory_class=insulator
+U00096.3	Genbank	locus_control_region	361	370	.	+	.	ID=id7;Parent=gene0;gbkey=regulatory;regulatory_class=locus_control_region
+U00096.3	Genbank	minus_35_signal	371	380	.	+	.	ID=id8;Parent=gene0;gbkey=regulatory;regulatory_class=minus_35_signal
+U00096.3	Genbank	minus_10_signal	381	390	.	+	.	ID=id9;Parent=gene0;gbkey=regulatory;regulatory_class=minus_10_signal
+U00096.3	Genbank	polyA_signal_sequence	391	400	.	+	.	ID=id10;Parent=gene0;gbkey=regulatory;regulatory_class=polyA_signal_sequence
+U00096.3	Genbank	promoter	401	410	.	+	.	ID=id11;Parent=gene0;gbkey=regulatory;regulatory_class=promoter
+U00096.3	Genbank	ribosome_entry_site	411	420	.	+	.	ID=id12;Parent=gene0;gbkey=regulatory;regulatory_class=ribosome_binding_site
+U00096.3	Genbank	riboswitch	421	430	.	+	.	ID=id13;Parent=gene0;gbkey=regulatory;regulatory_class=riboswitch
+U00096.3	Genbank	silencer	431	440	.	+	.	ID=id14;Parent=gene0;gbkey=regulatory;regulatory_class=silencer
+U00096.3	Genbank	TATA_box	441	450	.	+	.	ID=id15;Parent=gene0;gbkey=regulatory;regulatory_class=TATA_box
+U00096.3	Genbank	imprinting_control_region	451	460	.	+	.	ID=id16;Parent=gene0;gbkey=regulatory;regulatory_class=imprinting_control_region
+U00096.3	Genbank	response_element	461	470	.	+	.	ID=id17;Parent=gene0;gbkey=regulatory;regulatory_class=response_element
+U00096.3	Genbank	regulatory_region	471	480	.	+	.	ID=id18;Parent=gene0;gbkey=regulatory;regulatory_class=other
+U00096.3	Genbank	terminator	481	490	.	+	.	ID=id19;Parent=gene0;gbkey=regulatory;regulatory_class=terminator
+###

@@ -1,0 +1,25 @@
+@@ -1,0 +1,6 @@
++This is an important
++notice! It should
++therefore be located at
++the beginning of this
++document!
++
+@@ -8,2 +14,1 @@
+-compress the size of the
+-changes.
++compress anything.
+@@ -11,5 +16,0 @@
+-This paragraph contains
+-text that is outdated.
+-It will be deleted in the
+-near future.
+-
+@@ -17,1 +17,1 @@
+-check this dokument. On
++check this document. On
+@@ -25,0 +25,4 @@
++
++This paragraph contains
++important new additions
++to this document.

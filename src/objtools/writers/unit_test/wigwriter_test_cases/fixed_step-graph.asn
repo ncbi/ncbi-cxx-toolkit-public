@@ -1,0 +1,124 @@
+Seq-annot ::= {
+  desc {
+    comment "fixedStep format",
+    name "fixedStep2",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "autoScale",
+          data str "off"
+        },
+        {
+          label str "color",
+          data str "0,200,100"
+        },
+        {
+          label str "graphType",
+          data str "points"
+        },
+        {
+          label str "maxHeightPixels",
+          data str "100:50:20"
+        },
+        {
+          label str "priority",
+          data str "20"
+        },
+        {
+          label str "viewLimits",
+          data str "0:1000"
+        },
+        {
+          label str "visibility",
+          data str "full"
+        }
+      }
+    }
+  },
+  data graph {
+    {
+      title "fixedStep2",
+      loc int {
+        from 1499,
+        to 4498,
+        id other {
+          accession "AC_000017",
+          version 1
+        }
+      },
+      comp 300,
+      a { 352941176470588, 10, -14 },
+      b { 1, 10, 2 },
+      numval 10,
+      graph byte {
+        max 255,
+        min 0,
+        axis 0,
+        values 'FFE3C6AA8E7155391C00'H
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    comment "fixedStep format",
+    name "fixedStep2",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "autoScale",
+          data str "off"
+        },
+        {
+          label str "color",
+          data str "0,200,100"
+        },
+        {
+          label str "graphType",
+          data str "points"
+        },
+        {
+          label str "maxHeightPixels",
+          data str "100:50:20"
+        },
+        {
+          label str "priority",
+          data str "20"
+        },
+        {
+          label str "viewLimits",
+          data str "0:1000"
+        },
+        {
+          label str "visibility",
+          data str "full"
+        }
+      }
+    }
+  },
+  data graph {
+    {
+      title "fixedStep2",
+      loc int {
+        from 1499,
+        to 4498,
+        id other {
+          accession "AC_000018",
+          version 1
+        }
+      },
+      comp 300,
+      a { 352941176470588, 10, -14 },
+      b { 1, 10, 2 },
+      numval 10,
+      graph byte {
+        max 255,
+        min 0,
+        axis 0,
+        values 'FFE3C6AA8E7155391C00'H
+      }
+    }
+  }
+}

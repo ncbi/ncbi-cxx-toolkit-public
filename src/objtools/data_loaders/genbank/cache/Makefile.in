@@ -1,0 +1,6 @@
+# $Id$
+
+LIB_PROJ = ncbi_xreader_cache
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

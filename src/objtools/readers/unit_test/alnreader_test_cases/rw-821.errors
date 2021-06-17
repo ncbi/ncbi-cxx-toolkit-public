@@ -1,0 +1,6 @@
+SeqID      : lcl|08_TAJ
+Line No    : None (Encountered during pre or post processing)
+Severity   : Error
+Problem    : Alignment.InconsistentMolType
+Message    : Invalid Mol Type: U and T cannot appear in the same nucleotide sequence. Reinterpreting as protein.
+

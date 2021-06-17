@@ -1,0 +1,30 @@
+# W_ObjEqCompId
+ps1010rel4_chr1	1	1889	1	W	ps1010rel4_chr1	1	1889	+
+ps1010rel4_chr100000	1	433	1	W	ps1010rel4_chr100000	1	433	+
+ps1010rel4_chr100002	1	138	1	W	ps1010rel4_chr100002	1	138	+
+ps1010rel4_chr100003	1	146	1	W	ps1010rel4_chr100003	1	146	+
+ps1010rel4_chr100004	1	248	1	W	ps1010rel4_chr100004	1	248	+
+ps1010rel4_chr100014	1	158	1	W	ps1010rel4_chr100014	1	158	+
+ps1010rel4_chr100016	1	318	1	W	ps1010rel4_chr100016_1	1	318	+
+ps1010rel4_chr100016	319	364	2	N	46	fragment	yes
+ps1010rel4_chr100016	365	668	3	W	ps1010rel4_chr100016_2	1	304	+
+ps1010rel4_chr100019	1	301	1	W	ps1010rel4_chr100019_1	1	301	+
+ps1010rel4_chr100019	302	395	2	N	94	fragment	yes
+ps1010rel4_chr100019	396	1438	3	W	ps1010rel4_chr100019_2	1	1043	+
+ps1010rel4_chr100019	1439	1540	4	N	102	fragment	yes
+ps1010rel4_chr100019	1541	10357	5	W	ps1010rel4_chr100019_3	1	8817	+
+ps1010rel4_chr100019	10358	10395	6	N	38	fragment	yes
+ps1010rel4_chr100019	10396	17301	7	W	ps1010rel4_chr100019_4	1	6906	+
+ps1010rel4_chr100022	1	249	1	W	ps1010rel4_chr100022_1	1	249	+
+ps1010rel4_chr100022	250	389	2	N	140	fragment	yes
+ps1010rel4_chr100022	390	1084	3	W	ps1010rel4_chr100022_2	1	695	+
+# W_GapSizeNot100, W_BreakingGapSameCompId
+LACBIscaffold_1	1	1103	1	W	LACBIscaffold_1_Cont1	1	1103	+
+LACBIscaffold_1	1104	3435	2	U	2332	fragment	yes
+LACBIscaffold_1	3436	4636	3	W	LACBIscaffold_1_Cont2	1	1201	+
+LACBIscaffold_1	4637	5256	4	N	620	contig	no
+LACBIscaffold_1	5257	6500	5	W	LACBIscaffold_1_Cont2	1202	2445	+
+# W_UnSingleOriNotPlus, W_UnSingleCompNotInFull
+LACBIscaffold_2	1	1103	1	W	LACBIscaffold_2_Cont1	1	1103	-
+scaffold_0	1	2106	1	W	AAGU02000001.1	1	2106	+#OK line
+LACBIscaffold_3	1	1103	1	W	LACBIscaffold_3_Cont1	1	1103	-

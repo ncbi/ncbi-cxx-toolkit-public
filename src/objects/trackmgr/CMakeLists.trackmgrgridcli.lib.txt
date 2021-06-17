@@ -1,0 +1,15 @@
+# $Id$
+
+NCBI_begin_lib(trackmgrgridcli)
+  NCBI_sources(
+    tms_exception blast_client displaytrack_client
+    createusertrack_client createremotetrack_client removeusertrack_client
+    item_resolver_client switch_context_client track_attrvalue_client
+    trackset_client createtrackset_client
+    supported_assemblies_client
+  )
+  NCBI_uses_toolkit_libraries(trackmgr xcompress xconnserv)
+  NCBI_requires(LZO)
+  NCBI_project_watchers(meric clausen)
+NCBI_end_lib()
+

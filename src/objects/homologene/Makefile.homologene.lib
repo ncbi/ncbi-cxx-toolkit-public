@@ -1,0 +1,10 @@
+#################################
+# $Id$
+#################################
+
+LIB = homologene
+SRC = homologene__ homologene___
+
+
+USES_LIBRARIES =  \
+    $(SEQ_LIBS) pub

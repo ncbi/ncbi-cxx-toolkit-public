@@ -1,0 +1,12 @@
+# $Id$
+
+DLL = gui_view_align
+
+HOSTED_LIBS    = gui_view_align
+
+DEPENDENCIES   = ncbi_core ncbi_seq ncbi_seqext ncbi_algo \
+                 gui_objects gui_core gui_utils gui_widgets \
+				 gui_widgets_aln gui_config ncbi_trackmgr
+
+CPPFLAGS = -DNCBI_GUIVIEW_ALIGN_EXPORTS
+

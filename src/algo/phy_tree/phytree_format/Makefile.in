@@ -1,0 +1,9 @@
+# Meta-makefile("ALGO" project)
+#################################
+
+LIB_PROJ = phytreeformat
+
+SUB_PROJ = unit_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

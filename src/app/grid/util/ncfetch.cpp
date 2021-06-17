@@ -1,0 +1,202 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Mike Dicuccio, Anatoliy Kuznetsov, Dmitry Kazimirov
+ *
+ * File Description:
+ *     BLOB (image) fetch from NetCache.
+ *     Takes three CGI arguments:
+ *       key=NETCACHE_KEY_OR_NETSTORAGE_LOCATOR
+ *       fmt=mime/type  (default: "image/png")
+ *       filename=Example.pdf
+ *
+ */
+
+#include <ncbi_pch.hpp>
+
+#include <cgi/cgiapp.hpp>
+#include <cgi/cgictx.hpp>
+#include <cgi/cgi_exception.hpp>
+
+#include <connect/services/netcache_api_expt.hpp>
+#include <misc/netstorage/netstorage.hpp>
+#include <connect/services/grid_app_version_info.hpp>
+
+#include <corelib/reader_writer.hpp>
+#include <corelib/rwstream.hpp>
+#include <corelib/ncbiargs.hpp>
+
+#define GRID_APP_NAME "ncfetch.cgi"
+
+USING_NCBI_SCOPE;
+
+#define NETSTORAGE_IO_BUFFER_SIZE (64 * 1024)
+
+/// NetCache BLOB/image fetch application
+///
+class CNetCacheBlobFetchApp : public CCgiApplication
+{
+protected:
+    virtual int ProcessRequest(CCgiContext& ctx);
+    virtual int OnException(std::exception& e, CNcbiOstream& os);
+
+private:
+    string x_GetInitString(const string& key);
+};
+
+string CNetCacheBlobFetchApp::x_GetInitString(const string& key)
+{
+    try {
+        if (CNetStorageObjectLoc(CCompoundIDPool(), key).HasSubKey()) {
+            return "mode=direct";
+        }
+    }
+    catch (...) {
+    }
+
+    return GetConfig().Get("ncfetch", "netstorage");
+}
+
+void s_WriteHeader(const CCgiRequest& request, CCgiResponse& reply)
+{
+    bool is_found;
+
+    string fmt = request.GetEntry("fmt", &is_found);
+    if (fmt.empty() || !is_found)
+        fmt = "image/png";
+
+    string filename(request.GetEntry("filename", &is_found));
+    if (is_found && !filename.empty()) {
+        string is_inline(request.GetEntry("inline", &is_found));
+
+        reply.SetHeaderValue("Content-Disposition",
+                (is_found && NStr::StringToBool(is_inline) ?
+                        "inline; filename=" : "attachment; filename=") +
+                filename);
+    }
+
+    reply.SetContentType(fmt);
+    reply.WriteHeader();
+}
+
+int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
+{
+    const CCgiRequest& request = ctx.GetRequest();
+    CCgiResponse&      reply   = ctx.GetResponse();
+
+    bool is_found;
+
+    string key = request.GetEntry("key", &is_found);
+    if (key.empty() || !is_found) {
+        NCBI_THROW(CArgException, eNoArg, "CGI entry 'key' is missing");
+    }
+
+    CCombinedNetStorage netstorage(x_GetInitString(key));
+    CNetStorageObject netstorage_object(netstorage.Open(key));
+
+    char buffer[NETSTORAGE_IO_BUFFER_SIZE];
+    size_t total_bytes_written = 0;
+
+    while (!netstorage_object.Eof()) {
+        size_t bytes_read = netstorage_object.Read(buffer, sizeof(buffer));
+
+        if (!bytes_read) continue;
+        if (!total_bytes_written) s_WriteHeader(request, reply);
+
+        reply.out().write(buffer, bytes_read);
+        total_bytes_written += bytes_read;
+    }
+
+    netstorage_object.Close();
+
+    if (!total_bytes_written) s_WriteHeader(request, reply);
+    LOG_POST(Info << "retrieved data: " << total_bytes_written << " bytes");
+
+    return 0;
+}
+
+int CNetCacheBlobFetchApp::OnException(std::exception& e, CNcbiOstream& os)
+{
+    string status_str;
+    string message;
+
+    if (auto arg_exception = dynamic_cast<CArgException*>(&e)) {
+        status_str = "400 Bad Request";
+        message = arg_exception->GetMsg();
+        SetHTTPStatus(CRequestStatus::e400_BadRequest);
+    } else if (auto nc_exception = dynamic_cast<CNetStorageException*>(&e)) {
+        switch (nc_exception->GetErrCode()) {
+        case CNetStorageException::eAuthError:
+            status_str = "403 Forbidden";
+            message = nc_exception->GetMsg();
+            SetHTTPStatus(CRequestStatus::e403_Forbidden);
+            break;
+        case CNetStorageException::eNotExists:
+            status_str = "404 Not Found";
+            message = nc_exception->GetMsg();
+            SetHTTPStatus(CRequestStatus::e404_NotFound);
+            break;
+        default:
+            return CCgiApplication::OnException(e, os);
+        }
+    } else
+        return CCgiApplication::OnException(e, os);
+
+    // Don't try to write to a broken output
+    if (!os.good()) {
+        return -1;
+    }
+
+    try {
+        // HTTP header
+        os << "Status: " << status_str << HTTP_EOL <<
+                "Content-Type: text/plain" HTTP_EOL HTTP_EOL <<
+                "ERROR:  " << status_str << " " HTTP_EOL HTTP_EOL <<
+                NStr::HtmlEncode(message) << HTTP_EOL;
+
+        // Check for problems in sending the response
+        if (!os.good()) {
+            ERR_POST("CNetCacheBlobFetchApp::OnException() "
+                    "failed to send error page back to the client");
+            return -1;
+        }
+    }
+    catch (exception& ex) {
+        NCBI_REPORT_EXCEPTION("(CGI) CNetCacheBlobFetchApp::OnException", ex);
+    }
+
+    return 0;
+}
+
+int main(int argc, const char* argv[])
+{
+    GRID_APP_CHECK_VERSION_ARGS();
+
+    SetSplitLogFile(true);
+    GetDiagContext().SetOldPostFormat(false);
+
+    CNetCacheBlobFetchApp app;
+    return app.AppMain(argc, argv);
+}

@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(clusterer)
+  NCBI_sources(cobalt_app_util clusterer_app)
+  NCBI_requires(-Cygwin)
+  NCBI_uses_toolkit_libraries(align_format cobalt)
+  NCBI_project_watchers(boratyng)
+NCBI_end_app()
+

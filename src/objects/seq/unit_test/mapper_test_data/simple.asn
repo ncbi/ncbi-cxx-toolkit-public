@@ -1,0 +1,333 @@
+-- ======================================
+-- ! Basic mapping and truncaction test !
+-- ======================================
+
+-- Basic mapping and truncaction test: source
+Seq-loc ::= int {
+  from 11,
+  to 97,
+  id gi 4
+}
+-- Basic mapping and truncaction test: destination on plus
+Seq-loc ::= int {
+  from 113,
+  to 199,
+  id gi 5
+}
+-- Simple mapping: destination on minus
+Seq-loc ::= int {
+  from 113,
+  to 199,
+  strand minus,
+  id gi 5
+}
+
+-- Simple interval: original
+Seq-loc ::= int {
+  from 17,
+  to 89,
+  id gi 4
+}
+-- Simple interval: expected
+Seq-loc ::= int {
+  from 119,
+  to 191,
+  id gi 5
+}
+-- Simple interval, reversed strand: expected
+Seq-loc ::= int {
+  from 121,
+  to 193,
+  strand minus,
+  id gi 5
+}
+
+-- Truncated on the right: original
+Seq-loc ::= int {
+  from 17,
+  to 109,
+  id gi 4
+}
+-- Truncated on the right: expected
+Seq-loc ::= int {
+  from 119,
+  to 199,
+  id gi 5,
+  fuzz-to lim gt
+}
+-- Truncated on the right, reversed strand: expected
+Seq-loc ::= int {
+  from 113,
+  to 193,
+  strand minus,
+  id gi 5,
+  fuzz-from lim lt
+}
+
+-- Truncated on the left: original
+Seq-loc ::= int {
+  from 7,
+  to 89,
+  id gi 4
+}
+-- Truncated on the left: expected
+Seq-loc ::= int {
+  from 113,
+  to 191,
+  id gi 5,
+  fuzz-from lim lt
+}
+-- Truncated on the left, reversed strand: expected
+Seq-loc ::= int {
+  from 121,
+  to 199,
+  strand minus,
+  id gi 5,
+  fuzz-to lim gt
+}
+
+-- Truncated on both ends: original
+Seq-loc ::= int {
+  from 7,
+  to 109,
+  id gi 4
+}
+-- Truncated on both ends: expected
+Seq-loc ::= int {
+  from 113,
+  to 199,
+  id gi 5,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+-- Truncated on both ends, reversed strand: expected
+Seq-loc ::= int {
+  from 113,
+  to 199,
+  strand minus,
+  id gi 5,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+
+-- Minus strand interval: original
+Seq-loc ::= int {
+  from 17,
+  to 89,
+  strand minus,
+  id gi 4
+}
+-- Minus strand interval: expected
+Seq-loc ::= int {
+  from 119,
+  to 191,
+  strand minus,
+  id gi 5
+}
+-- Minus strand interval, reversed strand: expected
+Seq-loc ::= int {
+  from 121,
+  to 193,
+  strand plus,
+  id gi 5
+}
+
+-- Minus strand interval, truncated on the right: original
+Seq-loc ::= int {
+  from 17,
+  to 109,
+  strand minus,
+  id gi 4
+}
+-- Minus strand interval, truncated on the right: expected
+Seq-loc ::= int {
+  from 119,
+  to 199,
+  strand minus,
+  id gi 5,
+  fuzz-to lim gt
+}
+-- Minus strand interval, truncated on the right, reversed strand: expected
+Seq-loc ::= int {
+  from 113,
+  to 193,
+  strand plus,
+  id gi 5,
+  fuzz-from lim lt
+}
+
+-- Minus strand interval, truncated on the left: original
+Seq-loc ::= int {
+  from 7,
+  to 89,
+  strand minus,
+  id gi 4
+}
+-- Minus strand interval, truncated on the left: expected
+Seq-loc ::= int {
+  from 113,
+  to 191,
+  strand minus,
+  id gi 5,
+  fuzz-from lim lt
+}
+-- Minus strand interval, truncated on the left, reversed strand: expected
+Seq-loc ::= int {
+  from 121,
+  to 199,
+  strand plus,
+  id gi 5,
+  fuzz-to lim gt
+}
+
+-- Minus strand interval, truncated on both ends: original
+Seq-loc ::= int {
+  from 7,
+  to 109,
+  strand minus,
+  id gi 4
+}
+-- Minus strand interval, truncated on both ends: expected
+Seq-loc ::= int {
+  from 113,
+  to 199,
+  strand minus,
+  id gi 5,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+-- Minus strand interval, truncated on both ends, reversed strand: expected
+Seq-loc ::= int {
+  from 113,
+  to 199,
+  strand plus,
+  id gi 5,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+
+-- ::::: Different seq-loc types
+
+-- Null seq-loc: original
+Seq-loc ::= null NULL
+-- Null seq-loc: expected
+Seq-loc ::= null NULL
+
+-- Empty seq-loc: original
+Seq-loc ::= empty gi 4
+-- Empty seq-loc: expected
+Seq-loc ::= empty gi 5
+
+-- Whole seq-loc: original
+Seq-loc ::= whole gi 4
+-- Whole seq-loc: expected
+Seq-loc ::= int {
+  from 113,
+  to 199,
+  id gi 5,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+-- Whole seq-loc, reversed strand: expected
+Seq-loc ::= int {
+  from 113,
+  to 199,
+  strand minus,
+  id gi 5,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+
+-- Point: original
+Seq-loc ::= pnt {
+  point 20,
+  id gi 4
+}
+-- Point: expected
+Seq-loc ::= pnt {
+  point 122,
+  id gi 5
+}
+-- Point, reversed strand: expected
+Seq-loc ::= pnt {
+  point 190,
+  strand minus,
+  id gi 5
+}
+
+-- Packed-points: original
+Seq-loc ::= packed-pnt {
+  id gi 4,
+  points { 20, 40 }
+}
+-- Packed-points: expected
+Seq-loc ::= mix {
+  pnt {
+    point 122,
+    id gi 5
+  },
+  pnt {
+    point 142,
+    id gi 5
+  }
+}
+-- Packed-points, reversed strand: expected
+Seq-loc ::= mix {
+  pnt {
+    point 190,
+    strand minus,
+    id gi 5
+  },
+  pnt {
+    point 170,
+    strand minus,
+    id gi 5
+  }
+}
+
+-- Bond: original
+Seq-loc ::= bond {
+  a {
+    point 20,
+    id gi 4
+  },
+  b {
+    point 40,
+    id gi 3
+  }
+}
+-- Bond: expected
+Seq-loc ::= bond {
+  a {
+    point 122,
+    id gi 5
+  },
+  b {
+    point 40,
+    id gi 3
+  }
+}
+
+-- Bond, reversed strand: original
+Seq-loc ::= bond {
+  a {
+    point 20,
+    id gi 3
+  },
+  b {
+    point 40,
+    id gi 4
+  }
+}
+-- Bond, reversed strand: expected
+Seq-loc ::= bond {
+  a {
+    point 20,
+    id gi 3
+  },
+  b {
+    point 170,
+    strand minus,
+    id gi 5
+  }
+}

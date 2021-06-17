@@ -1,0 +1,1088 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 1,
+        to 69,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Met"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 70,
+        to 1095,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "gene",
+          val "ND2"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 70,
+        to 1095,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "NADH dehydrogenase subunit 2"
+        },
+        {
+          qual "transl_table",
+          val "5"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59264|"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location mix {
+        int {
+          from 1096,
+          to 1165,
+          strand plus,
+          id genbank {
+            accession "MF194022"
+          }
+        },
+        int {
+          from 1175,
+          to 1265,
+          strand plus,
+          id genbank {
+            accession "MF194022"
+          }
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Cys"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 1232,
+        to 1299,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Tyr"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 1298,
+        to 2834,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "gene",
+          val "COX1"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 1298,
+        to 2834,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "cytochrome c oxidase subunit I"
+        },
+        {
+          qual "transl_except",
+          val "(pos:2834,aa:TERM)"
+        },
+        {
+          qual "transl_table",
+          val "5"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59265|"
+        },
+        {
+          qual "note",
+          val "start codon not determined; TAA stop codon is completed by the
+ addition of 3' A residues to the mRNA"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 2835,
+        to 2901,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Leu"
+        },
+        {
+          qual "codon_recognized",
+          val "UUR"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 2903,
+        to 3587,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "gene",
+          val "COX2"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 2903,
+        to 3587,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "cytochrome c oxidase subunit II"
+        },
+        {
+          qual "transl_except",
+          val "(pos:3587,aa:TERM)"
+        },
+        {
+          qual "transl_table",
+          val "5"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59266|"
+        },
+        {
+          qual "note",
+          val "TAA stop codon is completed by the addition of 3' A residues to
+ the mRNA"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 3588,
+        to 3658,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Lys"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 3675,
+        to 3743,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Asp"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 3744,
+        to 3905,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "gene",
+          val "ATP8"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 3744,
+        to 3905,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "ATP synthase F0 subunit 8"
+        },
+        {
+          qual "transl_table",
+          val "5"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59267|"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 3899,
+        to 4579,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "gene",
+          val "ATP6"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 3899,
+        to 4579,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "ATP synthase F0 subunit 6"
+        },
+        {
+          qual "transl_table",
+          val "5"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59268|"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 4583,
+        to 5370,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "gene",
+          val "COX3"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 4583,
+        to 5370,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "cytochrome c oxidase subunit III"
+        },
+        {
+          qual "transl_except",
+          val "(pos:5369..5370,aa:TERM)"
+        },
+        {
+          qual "transl_table",
+          val "5"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59269|"
+        },
+        {
+          qual "note",
+          val "TAA stop codon is completed by the addition of 3' A residues to
+ the mRNA"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 5371,
+        to 5437,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Gly"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 5462,
+        to 5790,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "gene",
+          val "ND3"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 5462,
+        to 5790,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "NADH dehydrogenase subunit 3"
+        },
+        {
+          qual "transl_except",
+          val "(pos:5789..5790,aa:TERM)"
+        },
+        {
+          qual "transl_table",
+          val "5"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59270|"
+        },
+        {
+          qual "note",
+          val "TAA stop codon is completed by the addition of 3' A residues to
+ the mRNA"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 5791,
+        to 5850,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Arg"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 5855,
+        to 5923,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Ala"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 5925,
+        to 5994,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Asn"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 5996,
+        to 6062,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Ser"
+        },
+        {
+          qual "codon_recognized",
+          val "AGN"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 6075,
+        to 6140,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Glu"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 6139,
+        to 6205,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Phe"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 6213,
+        to 7955,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "gene",
+          val "ND5"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 6213,
+        to 7955,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "NADH dehydrogenase subunit 5"
+        },
+        {
+          qual "transl_table",
+          val "5"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59271|"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 7956,
+        to 8021,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-His"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 8027,
+        to 9370,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "gene",
+          val "ND4"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 8027,
+        to 9370,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "NADH dehydrogenase subunit 4"
+        },
+        {
+          qual "transl_table",
+          val "5"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59272|"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 9364,
+        to 9660,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "gene",
+          val "ND4L"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 9364,
+        to 9660,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "NADH dehydrogenase subunit 4L"
+        },
+        {
+          qual "transl_table",
+          val "5"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59273|"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 9663,
+        to 9728,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Thr"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 9729,
+        to 9795,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Pro"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 9798,
+        to 10319,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "gene",
+          val "ND6"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 9798,
+        to 10319,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "NADH dehydrogenase subunit 6"
+        },
+        {
+          qual "transl_table",
+          val "5"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59274|"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 10323,
+        to 11457,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "gene",
+          val "CYTB"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 10323,
+        to 11457,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "cytochrome b"
+        },
+        {
+          qual "transl_except",
+          val "(pos:11457,aa:TERM)"
+        },
+        {
+          qual "transl_table",
+          val "5"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59275|"
+        },
+        {
+          qual "note",
+          val "TAA stop codon is completed by the addition of 3' A residues to
+ the mRNA"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 11458,
+        to 11523,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Ser"
+        },
+        {
+          qual "codon_recognized",
+          val "UCN"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 11547,
+        to 12488,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "gene",
+          val "ND1"
+        }
+      }
+    },
+    {
+      data cdregion {
+      },
+      location int {
+        from 11547,
+        to 12488,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "NADH dehydrogenase subunit 1"
+        },
+        {
+          qual "transl_table",
+          val "5"
+        },
+        {
+          qual "protein_id",
+          val "gb|ARW59276|"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 12498,
+        to 12565,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Leu"
+        },
+        {
+          qual "codon_recognized",
+          val "CUN"
+        }
+      }
+    },
+    {
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 12566,
+        to 13899,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "16S ribosomal RNA"
+        },
+        {
+          qual "note",
+          val "16S ribosomal RNA"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 13901,
+        to 13972,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Val"
+        }
+      }
+    },
+    {
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 13973,
+        to 14659,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "12S ribosomal RNA"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 14789,
+        to 14840,
+        strand minus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Leu"
+        }
+      }
+    },
+    {
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 16608,
+        to 16674,
+        strand plus,
+        id genbank {
+          accession "MF194022"
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "tRNA-Ile"
+        }
+      }
+    }
+  }
+}

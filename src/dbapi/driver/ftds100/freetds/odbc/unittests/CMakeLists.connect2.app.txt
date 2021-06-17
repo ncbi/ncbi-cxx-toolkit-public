@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc100_connect2)
+  NCBI_sources(connect2 common)
+  NCBI_add_test(test-odbc100 odbc100_connect2)
+NCBI_end_app()
+

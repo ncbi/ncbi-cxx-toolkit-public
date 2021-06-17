@@ -1,0 +1,33 @@
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Windows Help Designer (http://www.visagesoft.com)">
+<TITLE>Import Window : Alignments</TITLE>
+</HEAD>
+<BODY>
+<H2>Import Window : Alignments Commands</H2>
+<ul>
+  <li><a href="#merge_single">Merge single</a></li>
+  <li><a href="#merge_neighbor">Merge to neighbor</a></li>
+  <li><a href="#merge_all">Merge all</a></li>
+  <li><a href="#delete_single">Delete single</a></li>
+  <li><a href="#delete_all">Delete all</a></li>
+</ul>
+<h3><a name="merge_single"></a>Merge single</h3>
+Select this item and then click on an import sequence to merge it into the end of the multiple
+alignment. Note that the merge will succeed if and only if all blocks of the multiple
+alignment are contained in blocks of the import alignment, without insertions.
+An unmergeable import will be marked with a red background to indicate where the
+alignment is incompatible.
+<h3><a name="merge_neighbor"></a>Merge to neighbor</h3>
+Similar to <a href="#merge_single">merge single</a> except that the sequence is positioned in the multiple alignment
+right after its closest neighbor (by simple sum of BLOSUM62 scores).
+<h3><a name="merge_all"></a>Merge all</h3>
+Similar to <a href="#merge_single">merge single</a>, except all imports that are
+compatible with the multiple alignment are merged in.
+<h3><a name="delete_single"></a>Delete single</h3>
+Select this item and then click on an import to delete it.
+<h3><a name="delete_all"></a>Delete all</h3>
+Removes all import alignments from the window.
+</BODY>
+</HTML>

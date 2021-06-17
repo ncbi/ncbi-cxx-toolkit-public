@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_lib(xalgoalignsplign)
+  NCBI_sources(
+    splign splign_util splign_exon_trim splign_formatter splign_simple
+    splign_cmdargs compart_matching
+  )
+  NCBI_uses_toolkit_libraries(xalgoalignnw xalgoalignutil)
+  NCBI_project_watchers(kiryutin kapustin)
+NCBI_end_lib()
+

@@ -1,0 +1,6 @@
+# $Id$
+
+DLL_PROJ = ncbi_xcache_sqlite3
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

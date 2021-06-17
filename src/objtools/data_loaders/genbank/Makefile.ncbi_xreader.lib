@@ -1,0 +1,23 @@
+# $Id$
+
+SRC = dispatcher reader writer processors wgsmaster \
+    reader_snp seqref blob_id request_result \
+    reader_id1_base reader_id2_base reader_service incr_time info_cache
+
+ASN_DEP = id1 id2 seqsplit seqset seq general
+
+LIB = ncbi_xreader
+
+# Build shared version when possible
+LIB_OR_DLL = both
+
+# Dependencies for shared library
+DLL_LIB = $(GENBANK_READER_LDEP)
+
+LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+
+WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    $(COMPRESS_LIBS) $(DL_LIBS) $(SOBJMGR_LIBS) id1 id2 xconnect

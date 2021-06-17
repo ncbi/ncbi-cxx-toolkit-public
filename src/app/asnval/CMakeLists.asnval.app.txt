@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(asnvalidate)
+  NCBI_sources(asnval)
+  NCBI_uses_toolkit_libraries(data_loaders_util xmlwrapp xvalidate)
+  NCBI_project_watchers(bollin gotvyans)
+NCBI_end_app()
+

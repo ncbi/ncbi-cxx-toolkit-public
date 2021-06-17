@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(hgvs2variation)
+  NCBI_sources(hgvs2variation)
+  NCBI_uses_toolkit_libraries(hgvs)
+NCBI_end_app()
+

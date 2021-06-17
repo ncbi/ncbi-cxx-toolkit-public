@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(trackmgrcli)
+  NCBI_generated_sources(trackmgr_client.cpp trackmgr_client_.cpp)
+  NCBI_uses_toolkit_libraries(trackmgr xconnect)
+  NCBI_project_watchers(meric)
+NCBI_end_lib()
+

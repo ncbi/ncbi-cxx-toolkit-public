@@ -1,0 +1,21 @@
+[-]
+_export = NCBI_GENERAL_EXPORT
+
+[Int-fuzz]
+p-m._type       = TSeqPos
+range.max._type = TSeqPos
+range.min._type = TSeqPos
+alt.E._type     = TSeqPos
+
+[User-field]
+;data.int._type    = Int8
+;data.ints.E._type = Int8
+data.strs._type    = vector
+data.ints._type    = vector
+data.reals._type   = vector
+data.oss._type     = vector
+data.fields._type  = vector
+data.objects._type = vector
+
+[User-object]
+data._type      = vector

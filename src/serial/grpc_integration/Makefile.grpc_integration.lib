@@ -1,0 +1,7 @@
+# $Id$
+LIB = grpc_integration
+SRC = grpc_integration
+
+CPPFLAGS = $(GRPC_INCLUDE) $(ORIG_CPPFLAGS)
+DLL_LIB  = $(XCONNEXT) xconnect xutil
+LIBS     = $(GRPC_LIBS) $(ORIG_LIBS)

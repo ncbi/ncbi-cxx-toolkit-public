@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile (flat-file generator)
+##################################
+
+LIB_PROJ = xformat
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(xcgi_redirect)
+  NCBI_sources(redirect)
+  NCBI_uses_toolkit_libraries(xcgi xhtml)
+  NCBI_project_watchers(ivanov)
+NCBI_end_lib()

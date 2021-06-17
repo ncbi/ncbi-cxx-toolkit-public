@@ -1,0 +1,5 @@
+Line No    : 3
+Severity   : Fatal
+Problem    : Alignment.IllegalDataDescription
+Message    : Nexus file has invalid nChar setting: "X". nChar must be an integer.
+

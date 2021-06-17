@@ -1,0 +1,32 @@
+##gvf-version 1.06
+##feature-ontology www.sequenceontology.org/resources/obo_files/current_release.obo
+##genome-build NCBI B36.3
+##sequence-region chr16 1 88827254
+
+#ID1: Expecting
+# Identity instance, observation asserted.
+# "Insert T" instance, observation variant, homozygous.
+chr16	samtools	insertion	49291141	49291141	.	+	.	ID=ID1;Variant_seq=T;Reference_seq=-;
+
+#ID2: Expecting
+# Identity instance, observation asserted.
+# "Insert T" instance, observation variant, homozygous.
+# Note: That's the same as for ID1.
+chr16	samtools	insertion	49291241	49291241	.	+	.	ID=ID2;Variant_seq=T,T;Reference_seq=-;
+
+#ID3: Expecting
+# Identity instance, observation asserted+variant, heterogygous.
+# "Insert T" instance, observation variant, heterozygous.
+chr16	samtools	insertion	49291341	49291341	.	+	.	ID=ID3;Variant_seq=T,-;Reference_seq=-;
+
+#ID4: Expecting
+# Identity instance, observation asserted.
+# "Insert T" instance, observation variant, heterozygous.
+# "Insert A" instance, observation variant, heterozygous.
+chr16	samtools	insertion	49291441	49291441	.	+	.	ID=ID4;Variant_seq=T,A;Reference_seq=-;
+
+#ID5: Expecting
+# Identity instance, observation asserted.
+# "Insert TTT" instance, observation variant, homozygous.
+chr16	samtools	insertion	49291541	49291541	.	+	.	ID=ID5;Variant_seq=TTT;Reference_seq=-;
+

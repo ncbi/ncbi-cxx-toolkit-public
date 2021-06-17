@@ -1,0 +1,261 @@
+Seq-entry ::= set {
+  level 1 ,
+  class nuc-prot ,
+  descr {
+    update-date
+      std {
+        year 2001 ,
+        month 8 ,
+        day 1 } ,
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Chen" ,
+                      initials "T." } } } ,
+            affil
+              str "Chen T., School of Biomedical Sciences, University of
+ Ulster, Cromore Road, Coleraine, Northern Ireland, BT52 ISA, UNITED KINGDOM" } ,
+          medium other ,
+          date
+            std {
+              year 2001 ,
+              month 7 ,
+              day 27 } } } } ,
+    pub {
+      pub {
+        gen {
+          cit "Unpublished" ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Chen" ,
+                      initials "T." } } ,
+                {
+                  name
+                    name {
+                      last "ORourke" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Bjourson" ,
+                      initials "A.J." } } ,
+                {
+                  name
+                    name {
+                      last "McClean" ,
+                      initials "S." } } ,
+                {
+                  name
+                    name {
+                      last "Orr" ,
+                      initials "D.F." } } ,
+                {
+                  name
+                    name {
+                      last "Rao" ,
+                      initials "P." } } ,
+                {
+                  name
+                    name {
+                      last "Hirst" ,
+                      initials "D." } } ,
+                {
+                  name
+                    name {
+                      last "Shaw" ,
+                      initials "C." } } } } ,
+          title "Receptor alchemy: the Chinese toad and his kinin" } } } ,
+    source {
+      org {
+        taxname "Bombina maxima" ,
+        common "large-webbed bell toad" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 161274 } } ,
+        orgname {
+          name
+            binomial {
+              genus "Bombina" ,
+              species "maxima" } ,
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Amphibia; Batrachia; Anura; Archeobatrachia; Bombinatoridae;
+ Bombina" ,
+          gcode 1 ,
+          mgcode 2 ,
+          div "VRT" } } ,
+      subtype {
+        {
+          subtype tissue-type ,
+          name "skin" } ,
+        {
+          subtype dev-stage ,
+          name "adult" } ,
+        {
+          subtype country ,
+          name "China" } } } ,
+    create-date
+      std {
+        year 2001 ,
+        month 8 ,
+        day 1 } } ,
+  seq-set {
+    seq {
+      id {
+        embl {
+          name "BMA315488" ,
+          accession "AJ315488" ,
+          version 1 } ,
+        gi 15072747 } ,
+      descr {
+        title "Bombina maxima mRNA for kininogen-1" ,
+        molinfo {
+          biomol mRNA } ,
+        embl {
+          div vrt ,
+          creation-date
+            std {
+              year 2001 ,
+              month 8 ,
+              day 1 } ,
+          update-date
+            std {
+              year 2001 ,
+              month 8 ,
+              day 1 } ,
+          keywords {
+            "kininogen-1" } } } ,
+      inst {
+        repr raw ,
+        mol rna ,
+        length 631 ,
+        seq-data
+          ncbi2na '092EB041922C66A8D2EDEBE789D12F7B042F74BB47D49DEF4E21EEBDEDC
+2DDF4FB5EE5E893FD4A057A48E0283BD488B820007892F5E1A3F9708D05902851B516ABDD57FD8
+A00F5325215E6A3F9708D05902851B516ABDD57FD8A00F5325215E6A3F9708D05902851B516ABD
+D57FD8A00F53252D5E6A3F9708D05902851B51AABDD57FD8A00F53252D53B380D092F401E44686
+5458DE575AB810ED53FABE8'H } } ,
+    seq {
+      id {
+        embl {
+          accession "CAC48026" ,
+          version 1 } ,
+        gi 15072748 } ,
+      descr {
+        molinfo {
+          biomol peptide } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 152 ,
+        seq-data
+          ncbieaa "MRLWFCLSLFIVLCLEHFPGTLADERNVPESEEKTEQFLTDLPKINRKGPRPPGFSPFR
+GKFHSQTLRDLPKINRKGPRPPGFSPFRGKFHSQTLRDLPKINRKGPRPPGFSPFRGKFHSQSLRDLPKINRKGPRPR
+GFSPFRGKFHSQSHV" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "kininogen-1" } ,
+                    activity {
+                      "maximakinin precursor" } } ,
+                location
+                  whole
+                    gi 15072748 } ,
+              {
+                data
+                  prot {
+                    processed signal-peptide } ,
+                location
+                  int {
+                    from 0 ,
+                    to 20 ,
+                    id
+                      gi 15072748 } ,
+                qual {
+                  {
+                    qual "product" ,
+                    val "kininogen-1" } } } ,
+              {
+                data
+                  prot {
+                    name {
+                      "maxomakinin" } ,
+                    processed mature } ,
+                location
+                  int {
+                    from 40 ,
+                    to 58 ,
+                    id
+                      gi 15072748 } } ,
+              {
+                data
+                  prot {
+                    name {
+                      "maxomakinin" } ,
+                    processed mature } ,
+                location
+                  int {
+                    from 68 ,
+                    to 86 ,
+                    id
+                      gi 15072748 } } ,
+              {
+                data
+                  prot {
+                    name {
+                      "maxomakinin" } ,
+                    processed mature } ,
+                location
+                  int {
+                    from 96 ,
+                    to 114 ,
+                    id
+                      gi 15072748 } } ,
+              {
+                data
+                  prot {
+                    name {
+                      "maxomakinin" } ,
+                    processed mature } ,
+                location
+                  int {
+                    from 124 ,
+                    to 142 ,
+                    id
+                      gi 15072748 } } } } } } } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              cdregion {
+                frame one ,
+                code {
+                  id 1 } } ,
+            product
+              whole
+                gi 15072748 ,
+            location
+              int {
+                from 97 ,
+                to 555 ,
+                id
+                  gi 15072747 } ,
+            exp-ev experimental } } } } }

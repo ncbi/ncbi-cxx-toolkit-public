@@ -1,0 +1,3 @@
+ASN_PROJ = proj
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

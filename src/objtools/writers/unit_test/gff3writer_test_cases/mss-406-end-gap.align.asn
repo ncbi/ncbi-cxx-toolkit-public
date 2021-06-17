@@ -1,0 +1,120 @@
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      id str "pct_identity_gap",
+      value real { 959241706161137, 10, -13 }
+    },
+    {
+      id str "num_ident",
+      value int 1012
+    },
+    {
+      id str "num_mismatch",
+      value int 16
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 98443579766537, 10, -12 }
+    },
+    {
+      id str "gap_count",
+      value int 5
+    },
+    {
+      id str "pct_coverage",
+      value real { 126608453873079, 10, -17 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 126608453873079, 10, -17 }
+    },
+    {
+      id str "num_ident_quantized",
+      value int 3
+    },
+    {
+      id str "genomic_to_genomic",
+      value int 1
+    },
+    {
+      id str "chromosome_to_chromosome",
+      value int 1
+    },
+    {
+      id str "reciprocity",
+      value int 1
+    },
+    {
+      id str "best_on_subject",
+      value int 1
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 10,
+    ids {
+      gi 568815581,
+      gi 224589808
+    },
+    starts {
+      43298000,
+      41400246,
+      -1,
+      41400245,
+      43298480,
+      41400191,
+      -1,
+      41400184,
+      43298534,
+      41399854,
+      -1,
+      41399838,
+      43298864,
+      41399683,
+      -1,
+      41399682,
+      43299019,
+      41399673,
+      -1,
+      41399671
+    },
+    lens {
+      480,
+      1,
+      54,
+      7,
+      330,
+      16,
+      155,
+      1,
+      9,
+      2
+    },
+    strands {
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus
+    }
+  },
+  id {
+    str "401633bf-43f1-4b29-86bc-b1abf70f5040"
+  }
+}

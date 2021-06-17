@@ -1,0 +1,38 @@
+#  $Id$
+#  Makefile template for Xcode
+#######################################################################
+
+include ./Makefile.mk
+
+DEVSDK = /Developer/SDKs
+SDKDIR = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform
+# SDK = $(firstword $(wildcard $(DEVSDK)/*.sdk) $(wildcard $(SDKDIR)/*.sdk))
+SDK = $(SDKDIR)$(DEVSDK)/MacOSX.sdk
+ifneq "" "$(wildcard ${SDK})"
+  SDKFLAG = -sdk ${SDK}
+else
+  SDKFLAG =
+endif
+
+all :
+	xcodebuild -project ${SLN_NAME}.xcodeproj -target ${MTARGET} -configuration ${CONFIGURATION} ${SDKFLAG}
+	cd ..; echo ${BUILT_CFGS} > cfgs.log
+
+clean :
+	xcodebuild -project ${SLN_NAME}.xcodeproj -target ${MTARGET} -configuration ${CONFIGURATION} ${SDKFLAG} clean
+
+check :
+	@cd .. || exit $$?; ./check.sh run; status=$$?; \
+	if test -n "${NCBI_AUTOMATED_BUILD}"; then \
+	    ./check.sh concat_err; \
+	fi; \
+	exit $$status
+
+all_r : all
+all_p : all
+clean_r : clean
+clean_p : clean
+purge : clean
+check_r : check
+check_p : check
+

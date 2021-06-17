@@ -1,0 +1,7 @@
+# $Id$
+
+APP_PROJ = bm_sparse_sample
+PROJ_TAG = demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

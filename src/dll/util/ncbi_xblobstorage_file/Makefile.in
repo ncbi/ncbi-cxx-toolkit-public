@@ -1,0 +1,6 @@
+# $Id$
+
+DLL_PROJ = ncbi_xblobstorage_file
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

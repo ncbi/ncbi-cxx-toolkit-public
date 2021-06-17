@@ -1,0 +1,4 @@
+SUB_PROJ = pepxml
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

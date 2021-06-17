@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(scoremat)
+  NCBI_dataspecs(scoremat.asn)
+  NCBI_uses_toolkit_libraries(seqset)
+NCBI_end_lib()
+

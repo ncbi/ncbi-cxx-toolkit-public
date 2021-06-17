@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xreader_pubseqos2 SHARED)
+  NCBI_hosts_projects(
+    objtools/data_loaders/genbank/pubseq2/ncbi_xreader_pubseqos2
+  )
+  NCBI_add_definitions(NCBI_XREADER_PUBSEQOS2_EXPORTS)
+NCBI_end_lib()

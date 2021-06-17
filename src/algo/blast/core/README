@@ -1,0 +1,52 @@
+This directory contains the implementation of the core of the BLAST algorithm
+(also known as the BLAST engine). In the future, NCBI may provide a simple
+C API to access this implementation, in the meantime, working with these
+sources directly is possible, but not recommended unless one is very familiar
+with them.
+
+NOTE: By following this approach some features supported by the NCBI C++ toolkit
+such as BLAST database access, BLAST formatting, embedded logging, MT locking,
+and configuration support will be absent or only partially supported. 
+
+Getting the source code
+-----------------------
+Download the source distribution of BLAST+:
+ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-VERSION+-src.tar.gz
+
+Build instructions
+------------------
+Unpack the source archive in its installation directory and change working
+directory to ncbi-blast-VERSION+-src/c++.
+
+UNIX:
+To build these source files into a library without the rest of the NCBI BLAST+
+applications/libraries, one should use the following commands:
+
+./configure --with-projects=scripts/projects/blast_core_lib.lst \
+            --without-debug --with-mt --with-build-root=ReleaseMT
+cd ReleaseMT/build
+make all_p
+
+This will configure and build an optimized library called blast, which can then
+be referenced in makefiles as follows:
+
+NCBI_HOME=<installation directory of the NCBI C++ toolkit>
+-I$NCBI_HOME/c++/ReleaseMT/inc -I$NCBI_HOME/c++/include
+-L $NCBI_HOME/c++/ReleaseMT/lib
+
+Windows:
+1) Open the ncbi_cpp.sln project/solution file 
+   c++/compilers/msvc800_prj/static/build/ncbi_cpp.sln. 
+2) Right click on the -CONFIGURE-DIALOG- project on the Solution Explorer and
+   select "Build" from the context menu, which will bring up a window titled
+   "Project Tree Builder". 
+3) In the "Project Tree Builder" window's first text box, enter
+   scripts\projects\blast_core_lib.lst, click OK, and on the subsequent window
+   click "Reload". 
+4) After the environment reloads, right click on blast.lib and select "Build".
+
+The blast.lib library file will be found in
+c++\compilers\msvc800_prj\static\lib\CONF\blast.lib, where CONF represents the
+appropriate configuration (e.g.: debugdll, debugmt, releasedll, or releasemt),
+and the headers will be found in c++\compilers\msvc800_prj\static\inc and
+c++\include

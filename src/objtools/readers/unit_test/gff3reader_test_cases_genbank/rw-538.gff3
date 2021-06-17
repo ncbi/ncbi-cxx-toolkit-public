@@ -1,0 +1,11 @@
+##gff-version 3
+Contig001	img_core_v400	C_segment	08	1067	.	-	0	ID=2701068360	
+Contig001	img_core_v400	C_region	10	1067	.	-	0	ID=2701068361	
+Contig001	img_core_v400	Vregion	11	1067	.	-	0	ID=2701068362	
+Contig001	img_core_v400	region	1	1067	.	-	0	ID=2701068363									
+Contig001	img_core_v400	CDS	63	1067	.	-	0	ID=2701068364;product=hypothetical protein
+Contig001	img_core_v400	txxx	22680	22751	.	-	0	ID=2701068380;product=tRNA-Gly
+Contig001	img_core_v400	notafeature	90963	91051	.	-	0	ID=2701068450;product=tRNA-Ser
+Contig001	img_core_v400	tmRNA	154679	154963	.	-	0	ID=2701068507;product=transfer-messenger RNA
+Contig001	img_core_v400	tRNA	176534	176607	.	+	0	ID=2701068529;product=tRNA-Met
+Contig001	img_core_v400	rRNA	176657	177019	.	+	0	ID=2701068530;product=16S ribosomal RNA

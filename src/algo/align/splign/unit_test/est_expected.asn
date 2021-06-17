@@ -1,0 +1,423 @@
+Seq-align-set ::= {
+  {
+    type global,
+    dim 2,
+    segs spliced {
+      product-id gi 23838579,
+      genomic-id gi 224514737,
+      product-strand plus,
+      genomic-strand minus,
+      product-type transcript,
+      exons {
+        {
+          product-start nucpos 0,
+          product-end nucpos 378,
+          genomic-start 33702489,
+          genomic-end 33702867,
+          parts {
+            match 379
+          },
+          scores {
+            {
+              id str "splign",
+              value real { 379, 10, 0 }
+            },
+            {
+              id str "idty",
+              value real { 1, 10, 0 }
+            }
+          }
+        }
+      },
+      poly-a 379,
+      product-length 399
+    },
+    ext {
+      {
+        type str "origin",
+        data {
+          {
+            label str "algo",
+            data str "Splign:2.1.0"
+          }
+        }
+      }
+    }
+  }
+}
+Seq-align-set ::= {
+  {
+    type global,
+    dim 2,
+    segs spliced {
+      product-id gi 80514115,
+      genomic-id gi 224514737,
+      product-strand plus,
+      genomic-strand plus,
+      product-type transcript,
+      exons {
+        {
+          product-start nucpos 0,
+          product-end nucpos 576,
+          genomic-start 26955638,
+          genomic-end 26956214,
+          parts {
+            match 577
+          },
+          scores {
+            {
+              id str "splign",
+              value real { 577, 10, 0 }
+            },
+            {
+              id str "idty",
+              value real { 1, 10, 0 }
+            }
+          }
+        }
+      },
+      product-length 577
+    },
+    ext {
+      {
+        type str "origin",
+        data {
+          {
+            label str "algo",
+            data str "Splign:2.1.0"
+          }
+        }
+      }
+    }
+  }
+}
+Seq-align-set ::= {
+  {
+    type global,
+    dim 2,
+    segs spliced {
+      product-id gi 83248489,
+      genomic-id gi 224514737,
+      product-strand plus,
+      genomic-strand plus,
+      product-type transcript,
+      exons {
+        {
+          product-start nucpos 0,
+          product-end nucpos 52,
+          genomic-start 45884226,
+          genomic-end 45884278,
+          parts {
+            match 53
+          },
+          scores {
+            {
+              id str "splign",
+              value real { 53, 10, 0 }
+            },
+            {
+              id str "idty",
+              value real { 1, 10, 0 }
+            }
+          },
+          donor-after-exon {
+            bases "GT"
+          }
+        },
+        {
+          product-start nucpos 53,
+          product-end nucpos 196,
+          genomic-start 45884371,
+          genomic-end 45884514,
+          parts {
+            match 144
+          },
+          scores {
+            {
+              id str "splign",
+              value real { 144, 10, 0 }
+            },
+            {
+              id str "idty",
+              value real { 1, 10, 0 }
+            }
+          },
+          acceptor-before-exon {
+            bases "AG"
+          },
+          donor-after-exon {
+            bases "GT"
+          }
+        },
+        {
+          product-start nucpos 197,
+          product-end nucpos 306,
+          genomic-start 45884608,
+          genomic-end 45884717,
+          parts {
+            match 110
+          },
+          scores {
+            {
+              id str "splign",
+              value real { 11, 10, 1 }
+            },
+            {
+              id str "idty",
+              value real { 1, 10, 0 }
+            }
+          },
+          acceptor-before-exon {
+            bases "AG"
+          },
+          donor-after-exon {
+            bases "GT"
+          }
+        },
+        {
+          product-start nucpos 307,
+          product-end nucpos 389,
+          genomic-start 45885023,
+          genomic-end 45885105,
+          parts {
+            match 83
+          },
+          scores {
+            {
+              id str "splign",
+              value real { 83, 10, 0 }
+            },
+            {
+              id str "idty",
+              value real { 1, 10, 0 }
+            }
+          },
+          acceptor-before-exon {
+            bases "AG"
+          },
+          donor-after-exon {
+            bases "GT"
+          }
+        },
+        {
+          product-start nucpos 390,
+          product-end nucpos 478,
+          genomic-start 45885704,
+          genomic-end 45885792,
+          parts {
+            match 89
+          },
+          scores {
+            {
+              id str "splign",
+              value real { 89, 10, 0 }
+            },
+            {
+              id str "idty",
+              value real { 1, 10, 0 }
+            }
+          },
+          acceptor-before-exon {
+            bases "AG"
+          }
+        }
+      },
+      product-length 479
+    },
+    ext {
+      {
+        type str "origin",
+        data {
+          {
+            label str "algo",
+            data str "Splign:2.1.0"
+          }
+        }
+      }
+    }
+  }
+}
+Seq-align-set ::= {
+  {
+    type global,
+    dim 2,
+    segs spliced {
+      product-id gi 83109079,
+      genomic-id gi 224514737,
+      product-strand plus,
+      genomic-strand plus,
+      product-type transcript,
+      exons {
+        {
+          product-start nucpos 0,
+          product-end nucpos 531,
+          genomic-start 35218169,
+          genomic-end 35218700,
+          parts {
+            match 532
+          },
+          scores {
+            {
+              id str "splign",
+              value real { 532, 10, 0 }
+            },
+            {
+              id str "idty",
+              value real { 1, 10, 0 }
+            }
+          }
+        }
+      },
+      product-length 532
+    },
+    ext {
+      {
+        type str "origin",
+        data {
+          {
+            label str "algo",
+            data str "Splign:2.1.0"
+          }
+        }
+      }
+    }
+  }
+}
+Seq-align-set ::= {
+  {
+    type global,
+    dim 2,
+    segs spliced {
+      product-id gi 78274520,
+      genomic-id gi 224514737,
+      product-strand plus,
+      genomic-strand plus,
+      product-type transcript,
+      exons {
+        {
+          product-start nucpos 0,
+          product-end nucpos 567,
+          genomic-start 45766725,
+          genomic-end 45767292,
+          parts {
+            match 568
+          },
+          scores {
+            {
+              id str "splign",
+              value real { 568, 10, 0 }
+            },
+            {
+              id str "idty",
+              value real { 1, 10, 0 }
+            }
+          }
+        }
+      },
+      product-length 568
+    },
+    ext {
+      {
+        type str "origin",
+        data {
+          {
+            label str "algo",
+            data str "Splign:2.1.0"
+          }
+        }
+      }
+    }
+  }
+}
+Seq-align-set ::= {
+  {
+    type global,
+    dim 2,
+    segs spliced {
+      product-id gi 80779892,
+      genomic-id gi 224514737,
+      product-strand plus,
+      genomic-strand plus,
+      product-type transcript,
+      exons {
+        {
+          product-start nucpos 0,
+          product-end nucpos 576,
+          genomic-start 35624417,
+          genomic-end 35624993,
+          parts {
+            match 577
+          },
+          scores {
+            {
+              id str "splign",
+              value real { 577, 10, 0 }
+            },
+            {
+              id str "idty",
+              value real { 1, 10, 0 }
+            }
+          }
+        }
+      },
+      product-length 577
+    },
+    ext {
+      {
+        type str "origin",
+        data {
+          {
+            label str "algo",
+            data str "Splign:2.1.0"
+          }
+        }
+      }
+    }
+  }
+}
+Seq-align-set ::= {
+  {
+    type global,
+    dim 2,
+    segs spliced {
+      product-id gi 81166152,
+      genomic-id gi 224514737,
+      product-strand plus,
+      genomic-strand plus,
+      product-type transcript,
+      exons {
+        {
+          product-start nucpos 0,
+          product-end nucpos 303,
+          genomic-start 46579127,
+          genomic-end 46579430,
+          parts {
+            match 304
+          },
+          scores {
+            {
+              id str "splign",
+              value real { 304, 10, 0 }
+            },
+            {
+              id str "idty",
+              value real { 1, 10, 0 }
+            }
+          }
+        }
+      },
+      product-length 304
+    },
+    ext {
+      {
+        type str "origin",
+        data {
+          {
+            label str "algo",
+            data str "Splign:2.1.0"
+          }
+        }
+      }
+    }
+  }
+}

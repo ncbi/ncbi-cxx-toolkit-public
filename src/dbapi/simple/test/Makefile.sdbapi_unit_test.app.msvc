@@ -1,0 +1,4 @@
+; $Id$
+
+[UsePch]
+DefaultPch = sdbapi_unit_test_pch.hpp

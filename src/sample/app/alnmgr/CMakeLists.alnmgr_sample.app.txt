@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(alnmgr_sample)
+  NCBI_sources(alnmgr_sample)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalnmgr)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()

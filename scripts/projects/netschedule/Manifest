@@ -1,0 +1,41 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Sergey Satskiy
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+# The APP: statement describes binaries
+# The LIB: statement describes libraries
+# The DLL: statement describes shared objects
+# The ETC: statement describes configuration files
+# It is allowed to have more than one of each statements
+APP: netscheduled
+APP: test_netschedule_client+ test_netschedule_node+ test_netschedule_stress+ test_netschedule_stress_new+
+APP: test_netschedule_crash+
+APP: $srcdir/src/app/netschedule/test/ns.py+ $srcdir/src/app/netschedule/test/test_netschedule_bsub.py+
+APP: $srcdir/src/app/netschedule/utils/ns_health_check.py
+ETC: src/app/netschedule/netscheduled.ini
+
+DEFAULT_CONFIGURATIONS: Linux64-Centos:O2g
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+Linux64-Centos : Release  : GCC.sh 7.3.0 --without-debug                 --with-mt --with-flat-makefile
+Linux64-Centos : Debug    : GCC.sh 7.3.0 --with-debug                    --with-mt --with-flat-makefile
+Linux64-Centos : O2g      : GCC.sh 7.3.0 --without-debug  --with-symbols --with-mt --with-flat-makefile
+
+# --with-max-debug builds with a GCC sanitizer
+Linux64-Centos : MaxDebug : GCC.sh 7.3.0 --with-max-debug                --with-mt --with-flat-makefile
+
+USE_COMPONENTS
+

@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = xconnext
+
+HOSTED_LIBS    = xconnext
+
+DEPENDENCIES   = 
+
+CPPFLAGS = -D
+

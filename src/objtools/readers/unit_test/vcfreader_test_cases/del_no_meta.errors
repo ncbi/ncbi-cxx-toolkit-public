@@ -1,0 +1,4 @@
+                Warning
+Line:           1
+Problem:        CVcfReader::xProcessMetaLineFileFormat: Missing VCF version string. Assuming VCFv4.1. Proceed with care!
+

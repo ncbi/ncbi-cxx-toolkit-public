@@ -1,0 +1,315 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+        locus-tag "Solyc_00g005000"
+      },
+      location int {
+        from 16436,
+        to 18188,
+        strand plus,
+        id genbank {
+          accession "GL758201",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene:Solyc00g005000.2"
+        },
+        {
+          qual "Name",
+          val "Solyc00g005000.2"
+        },
+        {
+          qual "from_BOGAS",
+          val "1"
+        },
+        {
+          qual "length",
+          val "1753"
+        }
+      }
+    },
+    {
+      id local id 2,
+      data rna {
+        type mRNA
+      },
+      comment "Aspartic proteinase nepenthesin I contains Interpro domain(s) 
+ IPR001461  Peptidase A1",
+      location mix {
+        int {
+          from 16436,
+          to 17274,
+          strand plus,
+          id genbank {
+            accession "GL758201",
+            version 1
+          }
+        },
+        int {
+          from 17335,
+          to 18188,
+          strand plus,
+          id genbank {
+            accession "GL758201",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene:Solyc00g005000.2"
+        },
+        {
+          qual "ID",
+          val "mRNA:Solyc00g005000.2.1"
+        },
+        {
+          qual "Ontology_term",
+          val "GO:0006508"
+        },
+        {
+          qual "from_BOGAS",
+          val "1"
+        },
+        {
+          qual "interpro2go_term",
+          val "GO:0006508"
+        },
+        {
+          qual "length",
+          val "1753"
+        },
+        {
+          qual "nb_exon",
+          val "2"
+        },
+        {
+          qual "transcript_id",
+          val "gnl|KC|Solyc00g005000.2.1"
+        }
+      },
+      xref {
+        {
+          id local id 3
+        }
+      }
+    },
+    {
+      id local id 3,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 16479,
+          to 17274,
+          strand plus,
+          id genbank {
+            accession "GL758201",
+            version 1
+          }
+        },
+        int {
+          from 17335,
+          to 17939,
+          strand plus,
+          id genbank {
+            accession "GL758201",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "CDS:Solyc00g005000.2.1.1"
+        },
+        {
+          qual "from_BOGAS",
+          val "1"
+        },
+        {
+          qual "protein_id",
+          val "gnl|KC|Solyc00g005000.2.1.2"
+        },
+        {
+          qual "Parent",
+          val "mRNA:Solyc00g005000.2.1"
+        }
+      },
+      xref {
+        {
+          id local id 2
+        }
+      }
+    },
+    {
+      id local id 4,
+      data gene {
+        locus-tag "Solyc_00g005020"
+      },
+      location int {
+        from 68061,
+        to 68763,
+        strand plus,
+        id genbank {
+          accession "GL758201",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene:Solyc00g005020.1"
+        },
+        {
+          qual "Name",
+          val "Solyc00g005020.1"
+        },
+        {
+          qual "from_BOGAS",
+          val "1"
+        },
+        {
+          qual "length",
+          val "703"
+        }
+      }
+    },
+    {
+      id local id 5,
+      data rna {
+        type mRNA
+      },
+      comment "Unknown Protein (AHRD V1)",
+      location mix {
+        int {
+          from 68061,
+          to 68210,
+          strand plus,
+          id genbank {
+            accession "GL758201",
+            version 1
+          }
+        },
+        int {
+          from 68343,
+          to 68567,
+          strand plus,
+          id genbank {
+            accession "GL758201",
+            version 1
+          }
+        },
+        int {
+          from 68653,
+          to 68763,
+          strand plus,
+          id genbank {
+            accession "GL758201",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene:Solyc00g005020.1"
+        },
+        {
+          qual "ID",
+          val "mRNA:Solyc00g005020.1.1"
+        },
+        {
+          qual "eugene_evidence_code",
+          val "10F0H0E0IEG"
+        },
+        {
+          qual "from_BOGAS",
+          val "1"
+        },
+        {
+          qual "length",
+          val "703"
+        },
+        {
+          qual "nb_exon",
+          val "3"
+        },
+        {
+          qual "transcript_id",
+          val "gnl|KC|Solyc00g005020.1.1"
+        }
+      },
+      xref {
+        {
+          id local id 6
+        }
+      }
+    },
+    {
+      id local id 6,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 68061,
+          to 68210,
+          strand plus,
+          id genbank {
+            accession "GL758201",
+            version 1
+          }
+        },
+        int {
+          from 68343,
+          to 68567,
+          strand plus,
+          id genbank {
+            accession "GL758201",
+            version 1
+          }
+        },
+        int {
+          from 68653,
+          to 68763,
+          strand plus,
+          id genbank {
+            accession "GL758201",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "CDS:Solyc00g005020.1.1.1"
+        },
+        {
+          qual "from_BOGAS",
+          val "1"
+        },
+        {
+          qual "protein_id",
+          val "gnl|KC|Solyc00g005020.1.1.2|gb|AAC12345.1"
+        },
+        {
+          qual "Parent",
+          val "mRNA:Solyc00g005020.1.1"
+        }
+      },
+      xref {
+        {
+          id local id 5
+        }
+      }
+    }
+  }
+}

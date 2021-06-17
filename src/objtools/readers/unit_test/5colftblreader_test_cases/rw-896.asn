@@ -1,0 +1,24 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data imp {
+        key "stem_loop"
+      },
+      comment "3' stem-loop (3'SL)",
+      location int {
+        from 10644,
+        to 10722,
+        strand plus,
+        id genbank {
+          accession "MN100039"
+        }
+      },
+      xref {
+        {
+          data gene {
+          }
+        }
+      }
+    }
+  }
+}

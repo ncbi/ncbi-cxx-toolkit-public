@@ -1,0 +1,10 @@
+Line No    : 24
+Severity   : Warning
+Problem    : Alignment.UnterminatedCommand
+Message    : File format autocorrected to comply with Nexus rules. Unexpected "end;". Appending ';' to prior command. No action required.
+
+Line No    : 7
+Severity   : Fatal
+Problem    : Alignment.IllegalDataLine
+Message    : Data line does not follow the expected pattern of sequence_ID followed by sequence data. Each data line should conform to the same expected pattern.
+

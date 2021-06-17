@@ -1,0 +1,2 @@
+MODULE_PATH = objects/id2
+MODULE_IMPORT = objects/seqsplit/seqsplit objects/seqloc/seqloc

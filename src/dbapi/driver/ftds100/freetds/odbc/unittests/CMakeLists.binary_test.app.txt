@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc100_binary_test)
+  NCBI_sources(binary_test common)
+  NCBI_add_test(test-odbc100 odbc100_binary_test)
+NCBI_end_app()
+

@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_app(test_seqio)
+  NCBI_sources(test_seqio)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(seqset)
+
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_set_test_timeout(1200)
+  NCBI_add_test()
+
+  NCBI_project_watchers(vasilche gouriano)
+NCBI_end_app()
+

@@ -1,0 +1,60 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": {
+        "id": "gb|S68524.1|S68524S1",
+        "type": 5
+    },
+    "other_ids": [
+        {
+            "id": "bbs|143076",
+            "type": 2
+        },
+        {
+            "id": "gi|544844",
+            "type": 12
+        }
+    ],
+    "molecule_type": "rna",
+    "length": 84,
+    "seq_state": 7,
+    "state": 0,
+    "blob_id": {
+        "id": "4.10429564"
+    },
+    "tax_id": 8292,
+    "hash": -979631841,
+    "date_changed": "08/26/2016 00:36:00",
+    "gi": 544844
+},
+{
+    "reply": "BlobInfo",
+    "id": {
+        "id": "4.10429564",
+        "last_modified": 1477681923840
+    },
+    "compression": "gzip",
+    "format": "asn.1",
+    "storage_size": 1085,
+    "size": 2732,
+    "is_dead": true,
+    "is_suppressed": false,
+    "is_withdrawn": false,
+    "hup_release_date": "",
+    "owner": 2,
+    "original_load_date": "06/24/2005 19:58:25",
+    "class": "segset",
+    "division": "VRT",
+    "username": "hanzhen",
+    "id2_info": "",
+    "n_chunks": 1
+},
+{
+    "reply": "BlobData",
+    "id": {
+        "id": "4.10429564",
+        "last_modified": 1477681923840
+    },
+    "data": "eJzNVc1vG0UUn107sRs+UiGVtouQ5oIoKLa8G9tZi0s/aFWptRvFbYoURWJiT+yR7Z2wu7ZwEWgv3PgLEALbcZNItKAWVCROiBsfp0rce0BIHLggcYb58Ni7jlMqlQNz8O6++c17v/feb577QSbYDRY0HYC9wAyGgVG27DJ010rn4Hu5V980YZW2EHHgdhM5DeLUoItrhDre+3DjXGunTrYIWpLwVeT6BDWXoFkoQMeHFvRwrYUd39sE4H7QZ5F6ga4nfgSgH+jaMQAG7PEiGK17RyFOKsTnYt9kfPX43CeJPwAYjiy9wNjYWK13m7SGnS6k2xCNuMEt5OEqpA6s0NYOconHXtl+haWA3Q7bUiS51a9jOE7fw++0sVPBm2nOw3j7EhHuCXOKWtvMOYEOgtRzaAcxK/Rc1HHkfkN6Rz7pON1GHbYrdeT5DdqBO9Rr4io74eOmQz2fqHhX0jJJWYQe++VP+WU8v95E1W6ljh2vgQjiiRvxUrqcBuMVQieu4KrLQkjYtaNg86vYZzDl7HwINVkDQaUnpfFCkTbT8Dzhv2eK1GukXwPgdmAsMrswSysz7gfGsUzGyqfsgp0FgEU7xTC40W4S5DqI94XBaY3wZCZpjxXwg1TAM4pGPzB0a0X0QcsDsMvcm8uFbMrMZpYBOAiM2NqNMgB32Jk4AHcZXeFIS/KjM7xyXWnRqujas48HD9kD8HwPH9XB3098dlaVxdoVQtZjH9TWJsY704YHLMZANjCpLqCoz4KSvONJXwIz56N3qcMBnBisThzdFoDhSGi6FhPVDfmc8DLOXmw3kNulPnoDFrGPblH2cqFO3SripgsuuwDibR27Pt5yxfvFNtM4ZhqnLSIroMkKiFljxNbXrkcL8M2ISZzHFDC19sWO0mGGFZoRvZzJ5G07J8Gakqsem1tc4bNCj53+4idl5UcXeIp9OesYTtduccc9UU8OT65elWD5UQx/lCZcDkT8iFp/jrR7PNH6jK08fm12x/uj4RuPZsh8xfT0r2q8Gcly3s5Z2bIp+jwvvyJph+jLsOyy3nzqOW5n2RhfUgMSmnxCWpuz5rAMazw3Dmmm+LVnekpcIrU0NBGny/OLFkA1Rg83RrvO9TEI4ie2T15++NLeiU8Xv7/658N6L5mYO/OLr3owiPbgkexBUro4Pd2DsRamV7Tov6laFsPHj0h3cZyunUtZ+WWR8LxMWOXL9XxjOqZKW4voEXzFD3E9PIbg74dUYYVUkZuhilJEFW89/b+7mYvIwvpXWRwfx7Ty2dSynQkrYytUKdG+J1GIN1LIy527f9UffPnZQeGVsx9/+117ZWHHJKc+/Ojr4/ear4P/WCnhdSDm61Dky8eBnCJGUmU6oa/xbuwF++KqSz0ASaDMt4UIdoPIBeaGMFIH9w9Bi7OhmnsIWQJTi/Mdjsoa/z8TnV7/AOYyth4="
+}
+]

@@ -1,0 +1,4074 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Denis Vakatov
+ *
+ * File Description: NetStorage commands handler
+ *
+ */
+
+#include <ncbi_pch.hpp>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <signal.h>
+
+#include <corelib/resource_info.hpp>
+#include <connect/services/netstorage.hpp>
+#include <corelib/ncbi_message.hpp>
+#include <connect/services/impl/netstorage_impl.hpp>
+
+#include "nst_handler.hpp"
+#include "nst_server.hpp"
+#include "nst_protocol_utils.hpp"
+#include "nst_exception.hpp"
+#include "nst_version.hpp"
+#include "nst_application.hpp"
+#include "nst_warning.hpp"
+#include "nst_config.hpp"
+#include "nst_util.hpp"
+#include "error_codes.hpp"
+#include "nst_constants.hpp"
+
+
+USING_NCBI_SCOPE;
+using namespace std::placeholders;
+
+const size_t    kReadBufferSize = 1024 * 1024;
+const size_t    kWriteBufferSize = 16 * 1024;
+
+const string    kObjectExpired = "NetStorage object has expired";
+const string    kObjectNotFound = "NetStorage object is not found";
+
+
+CNetStorageHandler::SProcessorMap   CNetStorageHandler::sm_Processors[] =
+{
+    { "BYE",              & CNetStorageHandler::x_ProcessBye },
+    { "HELLO",            & CNetStorageHandler::x_ProcessHello },
+    { "INFO",             & CNetStorageHandler::x_ProcessInfo },
+    { "CONFIGURATION",    & CNetStorageHandler::x_ProcessConfiguration },
+    { "HEALTH",           & CNetStorageHandler::x_ProcessHealth },
+    { "ACKALERT",         & CNetStorageHandler::x_ProcessAckAlert },
+    { "RECONFIGURE",      & CNetStorageHandler::x_ProcessReconfigure },
+    { "SHUTDOWN",         & CNetStorageHandler::x_ProcessShutdown },
+    { "GETCLIENTSINFO",   & CNetStorageHandler::x_ProcessGetClientsInfo },
+    { "GETUSERSINFO",     & CNetStorageHandler::x_ProcessGetUsersInfo },
+    { "GETMETADATAINFO",  & CNetStorageHandler::x_ProcessGetMetadataInfo },
+    { "GETOBJECTINFO",    & CNetStorageHandler::x_ProcessGetObjectInfo },
+    { "GETATTRLIST",      & CNetStorageHandler::x_ProcessGetAttrList },
+    { "GETCLIENTOBJECTS", & CNetStorageHandler::x_ProcessGetClientObjects },
+    { "GETUSEROBJECTS",   & CNetStorageHandler::x_ProcessGetUserObjects },
+    { "GETATTR",          & CNetStorageHandler::x_ProcessGetAttr },
+    { "SETATTR",          & CNetStorageHandler::x_ProcessSetAttr },
+    { "DELATTR",          & CNetStorageHandler::x_ProcessDelAttr },
+    { "READ",             & CNetStorageHandler::x_ProcessRead },
+    { "CREATE",           & CNetStorageHandler::x_ProcessCreate },
+    { "WRITE",            & CNetStorageHandler::x_ProcessWrite },
+    { "DELETE",           & CNetStorageHandler::x_ProcessDelete },
+    { "RELOCATE",         & CNetStorageHandler::x_ProcessRelocate },
+    { "EXISTS",           & CNetStorageHandler::x_ProcessExists },
+    { "GETSIZE",          & CNetStorageHandler::x_ProcessGetSize },
+    { "SETEXPTIME",       & CNetStorageHandler::x_ProcessSetExpTime },
+    { "LOCKFTPATH",       & CNetStorageHandler::x_ProcessLockFTPath },
+    { "",                 NULL }
+};
+
+
+
+CRequestContextResetter::CRequestContextResetter()
+{}
+
+CRequestContextResetter::~CRequestContextResetter()
+{
+    CDiagContext::SetRequestContext(NULL);
+}
+
+CMessageListenerResetter::CMessageListenerResetter()
+{}
+
+CMessageListenerResetter::~CMessageListenerResetter()
+{
+    IMessageListener::PopListener();
+}
+
+
+
+CRelocateCallback::CRelocateCallback(
+                    CNetStorageHandler &  handler,
+                    const SCommonRequestArguments &  common_args,
+                    CDirectNetStorageObject &  object,
+                    bool  need_progress_report) :
+    m_Handler(handler), m_CommonArgs(common_args), m_Object(object),
+    m_NeedProgressReport(need_progress_report)
+{}
+
+
+void CRelocateCallback::Callback(CJsonNode  info)
+{
+    if (!m_NeedProgressReport)
+        return;
+
+    CJsonNode       reply = CreateResponseMessage(m_CommonArgs.m_SerialNumber);
+    reply.SetByKey("ProgressInfo", info);
+
+    // The x_SendSyncMessage() call will also close the client socket if
+    // it was an unsucessfull writing.
+    EIO_Status    status = m_Handler.x_SendSyncMessage(reply,
+                                        CNetStorageHandler::eTimeoutIsError);
+    switch (status) {
+        case eIO_Success:
+            return;
+        #if 0
+        // It is commented out for the time being.
+        // Now it is not clear what to do with the output buffers in case of a
+        // timeout. One of the options is to discard them. Another is to leave
+        // intact. When (and if) it becomes clear that ignoring of the timeout
+        // is really needed then this part should be uncommented. See the
+        // x_SendSyncMessage(...) call above as well.
+        case eIO_Timeout:   // It was decided to ignore the timeouts
+            ERR_POST(Warning << "Timeout writing a relocate progress info. "
+                                "Client socket: "
+                             << m_Handler.GetSocket().GetPeerAddress());
+            return;
+        #endif
+        default:
+            break;
+    }
+
+    // Some other unsuccessfull socket.write() return code
+    m_Object.CancelRelocate();
+}
+
+
+CNetStorageHandler::CNetStorageHandler(CNetStorageServer *  server)
+    : m_Server(server),
+      m_ReadBuffer(NULL),
+      m_ReadMode(CNetStorageHandler::eReadMessages),
+      m_WriteBuffer(NULL),
+      m_JSONWriter(m_UTTPWriter),
+      m_ObjectBeingWritten(eVoid),
+      m_DataMessageSN(-1),
+      m_MetadataOption(eMetadataNotSpecified),
+      m_DBClientID(-1),
+      m_ObjectSize(0),
+      m_ByeReceived(false),
+      m_FirstMessage(true),
+      m_WriteCreateNeedMetaDBUpdate(false)
+{
+    m_ReadBuffer = new char[ kReadBufferSize ];
+    try {
+        m_WriteBuffer = new char[ kWriteBufferSize ];
+    } catch (...) {
+        delete [] m_ReadBuffer;
+        throw;
+    }
+
+    m_UTTPWriter.Reset(m_WriteBuffer, kWriteBufferSize);
+}
+
+
+CNetStorageHandler::~CNetStorageHandler()
+{
+    delete [] m_WriteBuffer;
+    delete [] m_ReadBuffer;
+}
+
+
+EIO_Event
+CNetStorageHandler::GetEventsToPollFor(const CTime** /*alarm_time*/) const
+{
+    // This implementation is left to simplify the transition to
+    // asynchronous replies. Currently the m_OutputQueue is always
+    // empty so the only eIO_Read will be returned.
+    if (m_OutputQueue.empty())
+       return eIO_Read;
+    return eIO_ReadWrite;
+}
+
+
+void CNetStorageHandler::OnOpen(void)
+{
+    CSocket &       socket = GetSocket();
+    STimeout        to = {m_Server->GetNetworkTimeout(), 0};
+
+    socket.DisableOSSendDelay();
+    socket.SetTimeout(eIO_ReadWrite, &to);
+    x_SetQuickAcknowledge();
+
+    if (m_Server->IsLog()) {
+        CRequestContextResetter     context_resetter;
+        x_CreateConnContext();
+    }
+}
+
+
+void CNetStorageHandler::OnRead(void)
+{
+    CRequestContextResetter     context_resetter;
+    if (m_ConnContext.NotNull()) {
+        if (m_CmdContext.NotNull())
+            CDiagContext::SetRequestContext(m_CmdContext);
+        else
+            CDiagContext::SetRequestContext(m_ConnContext);
+    }
+
+
+    size_t              n_read;
+    CSocket &           socket = GetSocket();
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    EIO_Status          status = socket.Read(m_ReadBuffer, kReadBufferSize,
+                                             &n_read);
+    if (m_Server->IsLogTimingClientSocket())
+        m_Timing.Append("Client socket read", start);
+
+    switch (status) {
+    case eIO_Success:
+        break;
+    case eIO_Timeout:
+        this->OnTimeout();
+        return;
+    case eIO_Closed:
+        this->OnClose(IServer_ConnectionHandler::eClientClose);
+        return;
+    case eIO_Interrupt:
+        ERR_POST(Warning << "Error reading from the client socket ("
+                         << socket.GetPeerAddress() + "): "
+                         << "(" << static_cast<int>(status) << ")");
+        // Will be repeated again later?
+        return;
+    case eIO_NotSupported:
+        ERR_POST(Warning << "Error reading from the client socket ("
+                         << socket.GetPeerAddress() + "): "
+                         << "(" << static_cast<int>(status) << ")");
+        x_SetConnRequestStatus(eStatus_NotImplemented);
+        m_Server->CloseConnection(&GetSocket());
+        return;
+    default:
+        // eIO_InvalidArg, eIO_Unknown
+        ERR_POST(Warning << "Error reading from the client socket ("
+                         << socket.GetPeerAddress() + "): "
+                         << "(" << static_cast<int>(status) << ")");
+        x_SetConnRequestStatus(eStatus_ServerError);
+        m_Server->CloseConnection(&GetSocket());
+        return;
+    }
+
+    m_UTTPReader.SetNewBuffer(m_ReadBuffer, n_read);
+
+    if (m_ReadMode == eReadMessages || x_ReadRawData()) {
+        try {
+            while (m_JSONReader.ReadMessage(m_UTTPReader)) {
+
+                if (!m_JSONReader.GetMessage().IsObject()) {
+                    // All the incoming objects must be dictionaries
+                    x_SetConnRequestStatus(eStatus_BadRequest);
+                    m_Server->CloseConnection(&GetSocket());
+                    return;
+                }
+
+                x_OnMessage(m_JSONReader.GetMessage());
+                m_FirstMessage = false;
+                m_JSONReader.Reset();
+                if (m_ReadMode == eReadRawData && !x_ReadRawData())
+                    break;
+            }
+        }
+        catch (const CJsonOverUTTPException &  e) {
+            // Parsing error
+            if (!m_FirstMessage) {
+                // The systems try to attack all the servers and they send
+                // provocative messages. If the very first unparsable message
+                // received then it does not make sense even to log it to avoid
+                // excessive messages in AppLog.
+                ERR_POST("Incoming message parsing error. " << e <<
+                         " The connection will be closed.");
+                x_SetConnRequestStatus(eStatus_BadRequest);
+            } else {
+                x_SetConnRequestStatus(eStatus_Probe);
+            }
+            m_Server->CloseConnection(&GetSocket());
+        }
+        catch (const exception &  ex) {
+            ERR_POST("STL exception while processing incoming message: " <<
+                     ex);
+            x_SetConnRequestStatus(eStatus_ServerError);
+            m_Server->CloseConnection(&GetSocket());
+        }
+        catch (...) {
+            ERR_POST("Unknown exception while processing incoming message");
+            x_SetConnRequestStatus(eStatus_ServerError);
+            m_Server->CloseConnection(&GetSocket());
+        }
+    }
+}
+
+
+void CNetStorageHandler::OnWrite(void)
+{
+    // This implementation is left to simplify the transition to
+    // asynchronous replies. Currently this method will never be called
+    // because the GetEventsToPollFor(...) never returns anything but
+    // eIO_Read
+
+    for (;;) {
+        CJsonNode message;
+
+        {
+            CFastMutexGuard guard(m_OutputQueueMutex);
+
+            if (m_OutputQueue.empty())
+                break;
+
+            message = m_OutputQueue.front();
+            m_OutputQueue.erase(m_OutputQueue.begin());
+        }
+
+        if (!m_JSONWriter.WriteMessage(message))
+            do
+                x_SendOutputBuffer(eTimeoutIsError);
+            while (!m_JSONWriter.CompleteMessage());
+
+        x_SendOutputBuffer(eTimeoutIsError);
+    }
+}
+
+
+void CNetStorageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
+{
+    // m_ConnContext != NULL also tells that the logging is required
+    if (m_ConnContext.IsNull())
+        return;
+
+    switch (peer)
+    {
+        case IServer_ConnectionHandler::eOurClose:
+            // All the places where the server closes the connection make sure
+            // that the conn and cmd request statuses are set approprietly
+            break;
+        case IServer_ConnectionHandler::eClientClose:
+            // The only non-synchronous commands are WRITE/CREATE and when we
+            // are in the middle of them, the m_ObjectBeingWritten is not null
+            if (m_ObjectBeingWritten) {
+                m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
+                if (m_CmdContext.NotNull())
+                    m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
+            }
+            break;
+    }
+
+    // If a command has not finished its logging by some reasons - do it
+    // here as the last chance.
+    if (m_CmdContext.NotNull()) {
+        CDiagContext::SetRequestContext(m_CmdContext);
+        if (!m_Timing.Empty()) {
+            string      timing =  m_Timing.Serialize(GetDiagContext().Extra());
+            if (!timing.empty())
+                GetDiagContext().Extra().Print("timing", timing);
+        }
+        GetDiagContext().PrintRequestStop();
+        m_CmdContext.Reset();
+        CDiagContext::SetRequestContext(NULL);
+    }
+
+    CSocket &           socket = GetSocket();
+    TNCBI_BigCount      read_count  = socket.GetCount(eIO_Read);
+    TNCBI_BigCount      write_count = socket.GetCount(eIO_Write);
+
+    m_ConnContext->SetBytesRd(read_count);
+    m_ConnContext->SetBytesWr(write_count);
+
+    // Call the socket shutdown only if it was a client close and
+    // there was some data exchange over the connection.
+    // LBSMD - when it checks a connection point - opens and aborts the
+    // connection without any data transferring and in this scenario the
+    // socket.Shutdown() call returns non success.
+    if ((peer == IServer_ConnectionHandler::eClientClose) &&
+        (read_count > 0 || write_count > 0)) {
+
+        // The socket.Shutdown() call will fail if there is some not delivered
+        // data in the socket or if the connection was not closed properly on
+        // the client side.
+        EIO_Status  status = socket.Shutdown(EIO_Event::eIO_ReadWrite);
+        if (status != EIO_Status::eIO_Success) {
+            m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
+            ERR_POST(Warning << "Unsuccessful client socket shutdown. "
+                     "The socket may have data not delivered to the client. "
+                     "Error code: " << status << ": " << IO_StatusStr(status));
+        }
+    }
+
+    CDiagContext::SetRequestContext(m_ConnContext);
+    GetDiagContext().PrintRequestStop();
+    m_ConnContext.Reset();
+    CDiagContext::SetRequestContext(NULL);
+}
+
+
+void CNetStorageHandler::OnTimeout(void)
+{
+    if (m_ConnContext.NotNull())
+        m_ConnContext->SetRequestStatus(eStatus_Inactive);
+}
+
+
+void CNetStorageHandler::OnOverflow(EOverflowReason reason)
+{
+    CRequestContextResetter     context_resetter;
+    if (m_ConnContext.NotNull()) {
+        if (m_CmdContext.NotNull())
+            CDiagContext::SetRequestContext(m_CmdContext);
+        else
+            CDiagContext::SetRequestContext(m_ConnContext);
+    }
+
+    switch (reason) {
+        case eOR_ConnectionPoolFull:
+            ERR_POST("eCommunicationError:Connection pool full");
+            break;
+        case eOR_UnpollableSocket:
+            ERR_POST("eCommunicationError:Unpollable connection");
+            break;
+        case eOR_RequestQueueFull:
+            ERR_POST("eCommunicationError:Request queue full");
+            break;
+        default:
+            ERR_POST("eCommunicationError:Unknown overflow error");
+    }
+}
+
+
+bool CNetStorageHandler::x_ReadRawData()
+{
+    CUTTPReader::EStreamParsingEvent uttp_event;
+
+    while ((uttp_event = m_UTTPReader.GetNextEvent()) == CUTTPReader::eChunk ||
+            uttp_event == CUTTPReader::eChunkPart)
+        x_OnData(m_UTTPReader.GetChunkPart(), m_UTTPReader.GetChunkPartSize());
+
+    switch (uttp_event) {
+    case CUTTPReader::eEndOfBuffer:
+        return false;
+
+    case CUTTPReader::eControlSymbol:
+        if (m_UTTPReader.GetControlSymbol() == '\n') {
+            x_SendWriteConfirmation();
+            m_ReadMode = eReadMessages;
+            return true;
+        }
+        /* FALL THROUGH */
+
+    default:
+        ERR_POST("Data stream parsing error. The connection will be closed.");
+        x_SetConnRequestStatus(eStatus_BadRequest);
+        m_Server->CloseConnection(&GetSocket());
+        return false;
+    }
+}
+
+
+
+// x_OnMessage gets control when a command message is received.
+void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
+{
+    // Log all the message parameters
+    x_PrintMessageRequestStart(message);
+
+    // Extract message type and its serial number
+    SCommonRequestArguments     common_args;
+    try {
+        common_args = ExtractCommonFields(message);
+    }
+    catch (const CNetStorageServerException &  ex) {
+        ERR_POST("Error extracting mandatory fields: " << ex << ". "
+                 "The connection will be closed.");
+
+        CJsonNode   response = CreateErrorResponseMessage(
+                            common_args.m_SerialNumber,
+                            NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                            "Error extracting mandatory fields",
+                            ex.GetType(),
+                            CNetStorageServerException::eInvalidMessageHeader);
+
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        if (x_SendSyncMessage(response) == eIO_Success)
+            m_Server->CloseConnection(&GetSocket());
+        return;
+    }
+
+    // Shutting down analysis is here because it needs the command serial
+    // number to return it in the reply message.
+    if (m_Server->ShutdownRequested()) {
+        ERR_POST(Warning << "Server is shutting down. "
+                 "The connection will be closed.");
+
+        // Send response message with an error
+        CJsonNode   response = CreateErrorResponseMessage(
+                            common_args.m_SerialNumber,
+                            NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                            "Server is shutting down",
+                            kScopeLogic,
+                            CNetStorageServerException::eShuttingDown);
+
+        x_SetCmdRequestStatus(eStatus_ShuttingDown);
+        if (x_SendSyncMessage(response) == eIO_Success)
+            m_Server->CloseConnection(&GetSocket());
+        return;
+    }
+
+
+
+    if (m_ByeReceived) {
+        // BYE message has been received before. Send error response
+        // and close the connection.
+        ERR_POST(Warning << "Received a message after BYE. "
+                 "The connection will be closed.");
+
+        // Send response message with an error
+        CJsonNode   response = CreateErrorResponseMessage(
+                            common_args.m_SerialNumber,
+                            NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                            "No messages are allowed after BYE",
+                            kScopeLogic,
+                            CNetStorageServerException::eMessageAfterBye);
+
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        if (x_SendSyncMessage(response) == eIO_Success)
+            m_Server->CloseConnection(&GetSocket());
+        return;
+    }
+
+
+    bool          error = true;
+    unsigned int  http_error_code = eStatus_ServerError;
+    Int8          error_code = NCBI_ERRCODE_X_NAME(
+                                            NetStorageServer_ErrorCode);
+    string        error_client_message;
+    unsigned int  error_sub_code;
+    string        error_scope;
+
+    try {
+        m_Timing.Clear();
+
+        // Find the processor
+        FProcessor  processor = x_FindProcessor(common_args);
+        if (processor != &CNetStorageHandler::x_ProcessHello)
+            m_Server->GetClientRegistry().Touch(m_Client);
+
+        // Call the processor. It returns the number of bytes to expect
+        // after this message. If 0 then another message is expected.
+        (this->*processor)(message, common_args);
+        error = false;
+    }
+    catch (const CNetStorageServerException &  ex) {
+        error_sub_code = ex.GetErrCode();
+        if (error_sub_code !=
+                CNetStorageServerException::eNetStorageAttributeNotFound &&
+            error_sub_code !=
+                CNetStorageServerException::eNetStorageAttributeValueNotFound) {
+            // Choke the error printout for these specific cases, see CXX-5818
+            ERR_POST(ex);
+        }
+        http_error_code = ex.ErrCodeToHTTPStatusCode();
+        error_client_message = ex.what();
+        error_scope = ex.GetType();
+
+        // Note: eAccess alert is set at the point before an exception is
+        // thrown. This is done for a clean alert message.
+    }
+
+    catch (const CException &  ex) {
+        ERR_POST(ex);
+        error_client_message = ex.what();
+        if (GetReplyMessageProperties(ex, &error_scope,
+                                      &error_code,
+                                      &error_sub_code) == false) {
+            // The only case here is a CException so error_sub_code needs to be
+            // updated
+            error_sub_code = CNetStorageServerException::eInternalError;
+        }
+    }
+    catch (const std::exception &  ex) {
+        ERR_POST("STL exception: " << ex);
+        error_sub_code = CNetStorageServerException::eInternalError;
+        error_client_message = ex.what();
+        error_scope = kScopeStdException;
+    }
+    catch (...) {
+        ERR_POST("Unknown exception");
+        error_sub_code = CNetStorageServerException::eInternalError;
+        error_client_message = "Unknown exception";
+        error_scope = kScopeUnknownException;
+    }
+
+    if (error) {
+        x_SetCmdRequestStatus(http_error_code);
+
+        // Send response message with an error
+        CJsonNode   response = CreateErrorResponseMessage(
+                                    common_args.m_SerialNumber,
+                                    error_code,
+                                    error_client_message,
+                                    error_scope, error_sub_code);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+    }
+}
+
+
+// x_OnData gets control when raw data are received.
+void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
+{
+    if (!m_ObjectBeingWritten) {
+        if (data_size > 0) {
+            ERR_POST("Received " << data_size << " bytes after "
+                     "an error has been reported to the client");
+        }
+        return;
+    }
+
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        m_ObjectBeingWritten.Write(data, data_size);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI write (" +
+                            NStr::NumericToString(data_size) + ")", start);
+        start = 0.0;
+        m_Server->GetClientRegistry().AddBytesWritten(m_Client, data_size);
+        m_ObjectSize += data_size;
+
+        if (m_CmdContext.NotNull())
+            m_CmdContext->SetBytesWr(m_ObjectSize);
+    }
+    catch (const exception &  ex) {
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI writing error (" +
+                            NStr::NumericToString(data_size) +
+                            " bytes to write)", start);
+
+        string  message = "Error writing " + NStr::NumericToString(data_size) +
+                          " bytes into " + m_ObjectBeingWritten.GetLoc() +
+                          ": " + ex.what();
+
+        if (m_WriteCreateNeedMetaDBUpdate && !m_CreateRequest) {
+            // Prolong makes sense only for the WRITE operation
+            x_ProlongObjectOnFailure(eWriteOp,
+                                m_ObjectBeingWritten.Locator().GetUniqueKey(),
+                                m_WriteServiceProps);
+        }
+
+        m_ObjectBeingWritten = eVoid;
+        m_DataMessageSN = -1;
+
+        ERR_POST(message);
+
+        string          error_scope;
+        Int8            error_code;
+        unsigned int    error_sub_code;
+
+        if (GetReplyMessageProperties(ex, &error_scope,
+                                      &error_code, &error_sub_code) == false) {
+            // CException or std::exception
+            error_sub_code = CNetStorageServerException::eWriteError;
+        }
+
+        // Send response message with an error
+        CJsonNode   response = CreateErrorResponseMessage(
+                                    m_DataMessageSN,
+                                    NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                                    message, kScopeStdException,
+                                    CNetStorageServerException::eWriteError);
+        x_SendSyncMessage(response);
+
+    } catch (...) {
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI writing error (" +
+                            NStr::NumericToString(data_size) +
+                            " bytes to write)", start);
+
+        string  message = "Unknown exception while writing " +
+                          NStr::NumericToString(data_size) +
+                          " bytes into " + m_ObjectBeingWritten.GetLoc();
+
+        if (m_WriteCreateNeedMetaDBUpdate && !m_CreateRequest) {
+            // Prolong makes sense only for the WRITE operation
+            x_ProlongObjectOnFailure(eWriteOp,
+                                m_ObjectBeingWritten.Locator().GetUniqueKey(),
+                                m_WriteServiceProps);
+        }
+
+        m_ObjectBeingWritten = eVoid;
+        m_DataMessageSN = -1;
+
+        ERR_POST(message);
+
+        // Send response message with an error
+        CJsonNode   response = CreateErrorResponseMessage(
+                                    m_DataMessageSN,
+                                    NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                                    message, kScopeUnknownException,
+                                    CNetStorageServerException::eWriteError);
+        x_SendSyncMessage(response);
+    }
+}
+
+
+void CNetStorageHandler::x_SendWriteConfirmation()
+{
+    if (!m_ObjectBeingWritten) {
+        x_SetCmdRequestStatus(eStatus_ServerError);
+        x_PrintMessageRequestStop();
+        return;
+    }
+
+    CJsonNode           reply = CreateResponseMessage(m_DataMessageSN);
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        if (m_ObjectSize == 0) {
+            // This is the object of zero size i.e. there were no write()
+            // calls. Thus the remote object was not really created.
+            m_ObjectBeingWritten.Write("", 0);
+            if (m_Server->IsLogTimingNSTAPI())
+                m_Timing.Append("NetStorageAPI writing (0)", start);
+        }
+        start = CNSTPreciseTime::Current();
+        m_ObjectBeingWritten.Close();
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI closing", start);
+    } catch (const exception &  ex) {
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI finalizing error", start);
+
+        x_SetCmdRequestStatus(eStatus_ServerError);
+
+        string  message = "Error while finalizing " +
+                          m_ObjectBeingWritten.GetLoc() + ": " + ex.what();
+        ERR_POST(message);
+        x_PrintMessageRequestStop();
+
+        string          error_scope;
+        Int8            error_code;
+        unsigned int    error_sub_code;
+
+        if (GetReplyMessageProperties(ex, &error_scope, &error_code,
+                                      &error_sub_code) == false) {
+            // CException or std::exception
+            error_sub_code = CNetStorageServerException::eWriteError;
+        }
+
+        AppendError(reply, error_code, message, error_scope, error_sub_code);
+        x_SendSyncMessage(reply);
+
+        m_ObjectBeingWritten = eVoid;
+        m_DataMessageSN = -1;
+        return;
+    }
+
+    if (m_WriteCreateNeedMetaDBUpdate) {
+        // Update of the meta DB is required. It differs depending it was an
+        // object creation or writing into an existing one.
+        const CNetStorageObjectLoc &   object_loc_struct =
+                                                m_ObjectBeingWritten.Locator();
+        string                         locator = object_loc_struct.GetLocator();
+
+        if (m_CreateRequest) {
+            // It was creating an object.
+            bool        size_was_null = false;
+
+            try {
+                m_Server->GetDb().ExecSP_CreateObjectWithClientID(
+                        object_loc_struct.GetUniqueKey(),
+                        locator, m_ObjectSize, m_DBClientID, m_DBUserID,
+                        m_CreateTTL, size_was_null);
+            } catch (const exception &  ex) {
+                x_SetCmdRequestStatus(eStatus_ServerError);
+                string  message = "Error while updating meta info DB for " +
+                                  locator + " upon creation: " + ex.what();
+                ERR_POST(message);
+
+                string          error_scope;
+                Int8            error_code;
+                unsigned int    error_sub_code;
+
+                if (GetReplyMessageProperties(ex, &error_scope, &error_code,
+                                              &error_sub_code) == false) {
+                    // CException or std::exception
+                    error_sub_code = CNetStorageServerException::eDatabaseError;
+                }
+
+                AppendError(reply, error_code, message, error_scope,
+                            error_sub_code, false);
+            } catch (...) {
+                string  message = "Unknown error while updating meta info DB "
+                                  "for " + locator + " upon creation";
+                AppendError(reply,
+                            NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                            message, kScopeUnknownException,
+                            CNetStorageServerException::eUnknownError, false);
+                ERR_POST(message);
+            }
+
+            if (size_was_null)
+                x_OptionalExpirationUpdate(m_ObjectBeingWritten,
+                                           reply, "CREATE");
+        } else {
+            // It was writing into existing object or creating via writing
+            bool        size_was_null = false;
+
+            try {
+                // The object expiration could have been changed while the
+                // object was written so I need to get the expiration right
+                // here. It is not very convenient to calculate the new
+                // expiration time in MS SQL server so it is done in C++ via
+                // two requests which is technically not safe in multiple
+                // access scenario...
+                TNSTDBValue<CTime>  object_expiration;
+                TNSTDBValue<Int8>   individual_object_ttl;
+                string  object_key = object_loc_struct.GetUniqueKey();
+                m_Server->GetDb().ExecSP_GetObjectExpiration(
+                                            object_key, object_expiration,
+                                            individual_object_ttl);
+
+                // The record will be created if it does not exist
+                m_Server->GetDb().ExecSP_UpdateObjectOnWrite(
+                                object_key, locator, m_ObjectSize,
+                                m_DBClientID, m_DBUserID,
+                                m_WriteServiceProps.GetTTL(),
+                                m_WriteServiceProps.GetProlongOnWrite(
+                                                        individual_object_ttl),
+                                object_expiration, size_was_null);
+            } catch (const exception &  ex) {
+                string  message = "Error while updating meta info DB for " +
+                                  locator + " upon writing: " + ex.what();
+                ERR_POST(message);
+
+                string          error_scope;
+                Int8            error_code;
+                unsigned int    error_sub_code;
+
+                if (GetReplyMessageProperties(ex, &error_scope, &error_code,
+                                              &error_sub_code) == false) {
+                    // CException or std::exception
+                    error_sub_code = eDatabaseWarning;
+                }
+
+                AppendError(reply, error_code, message, error_scope,
+                            error_sub_code, false);
+            } catch (...) {
+                string  message = "Unknown error while updating meta info DB "
+                                  "for " + locator + " upon writing";
+                AppendError(reply,
+                            NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                            message, kScopeUnknownException,
+                            CNetStorageServerException::eUnknownError, false);
+                ERR_POST(message);
+            }
+
+            if (size_was_null)
+                x_OptionalExpirationUpdate(m_ObjectBeingWritten,
+                                           reply, "WRITE");
+        }
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+    m_ObjectBeingWritten = eVoid;
+    m_DataMessageSN = -1;
+}
+
+
+EIO_Status
+CNetStorageHandler::x_SendSyncMessage(const CJsonNode &    message,
+                                      ESocketTimeoutTreat  timeout_treat)
+{
+    if (!m_JSONWriter.WriteMessage(message))
+        do {
+            EIO_Status      status = x_SendOutputBuffer(timeout_treat);
+            if (status != eIO_Success)
+                return status;
+        } while (!m_JSONWriter.CompleteMessage());
+
+    return x_SendOutputBuffer(timeout_treat);
+}
+
+
+
+void CNetStorageHandler::x_SendAsyncMessage(const CJsonNode & par)
+{
+    // The current implementation does not use this.
+    // The code is left here to simplify transition to the asynchronous
+    // way of communicating.
+
+    {
+        CFastMutexGuard     guard(m_OutputQueueMutex);
+
+        m_OutputQueue.push_back(par);
+    }
+
+    m_Server->WakeUpPollCycle();
+}
+
+
+// Log what we can, set the status code and close the connection
+void  CNetStorageHandler::x_OnSocketWriteError(
+        EIO_Status  status, size_t  bytes_written,
+        const char * output_buffer, size_t  output_buffer_size)
+{
+    string  report =
+        "Error writing message to the client. "
+        "Peer: " +  GetSocket().GetPeerAddress() + ". "
+        "Socket write error status: " + IO_StatusStr(status) + ". "
+        "Written bytes: " + NStr::NumericToString(bytes_written) +
+        ". Message begins with: ";
+
+    if (output_buffer_size > 32) {
+        CTempString     buffer_head(output_buffer, 32);
+        report += NStr::PrintableString(buffer_head) + " (TRUNCATED)";
+    }
+    else {
+        CTempString     buffer_head(output_buffer, output_buffer_size);
+        report += NStr::PrintableString(buffer_head);
+    }
+
+    ERR_POST(report);
+
+    if (m_ConnContext.NotNull()) {
+        if (m_ConnContext->GetRequestStatus() == eStatus_OK)
+            m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
+        if (m_CmdContext.NotNull()) {
+            if (m_CmdContext->GetRequestStatus() == eStatus_OK)
+                m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
+        }
+    }
+
+    // Register the socket error with the client
+    m_Server->GetClientRegistry().RegisterSocketWriteError(m_Client);
+    m_Server->CloseConnection(&GetSocket());
+}
+
+
+EIO_Status
+CNetStorageHandler::x_SendOutputBuffer(ESocketTimeoutTreat  timeout_treat)
+{
+    const char *    output_buffer;
+    size_t          output_buffer_size;
+    size_t          bytes_written;
+
+    do {
+        m_JSONWriter.GetOutputBuffer(&output_buffer, &output_buffer_size);
+        while (output_buffer_size > 0) {
+            CNSTPreciseTime     start = CNSTPreciseTime::Current();
+            EIO_Status  status = GetSocket().Write(output_buffer,
+                                                   output_buffer_size,
+                                                   &bytes_written);
+            if (m_Server->IsLogTimingClientSocket())
+                m_Timing.Append("Client socket write (" +
+                                NStr::NumericToString(output_buffer_size) + ")",
+                                start);
+            if (status != eIO_Success) {
+                if (status == eIO_Timeout && timeout_treat == eTimeoutIsOK) {
+                    // It is up to the caller to log a message.
+                    // It is not clear what to do with the output buffers:
+                    // -- discard
+                    // -- leave not touched
+                    // So it is not recommended to use the eTimeoutIsOK here
+                    // till this is resolved.
+                    return status;
+                }
+
+                // Error writing to the socket. Log what we can and close the
+                // connection.
+                x_OnSocketWriteError(status, bytes_written,
+                                     output_buffer, output_buffer_size);
+                return status;
+            }
+
+            output_buffer += bytes_written;
+            output_buffer_size -= bytes_written;
+        }
+    } while (m_JSONWriter.NextOutputBuffer());
+
+    x_SetQuickAcknowledge();
+    return eIO_Success;
+}
+
+
+void CNetStorageHandler::x_SetQuickAcknowledge(void)
+{
+    int     fd = 0;
+    int     val = 1;
+
+    GetSocket().GetOSHandle(&fd, sizeof(fd));
+    setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, &val, sizeof(val));
+}
+
+
+string  CNetStorageHandler::x_GetConnRef(void)
+{
+    // See CXX-8252
+    return GetDiagContext().GetStringUID() + "_" +
+           NStr::NumericToString(m_ConnContext->GetRequestID());
+}
+
+
+void CNetStorageHandler::x_CreateConnContext(void)
+{
+    m_ConnContext.Reset(new CRequestContext());
+    m_ConnContext->SetRequestID();
+    m_ConnContext->SetClientIP(GetSocket().GetPeerAddress(eSAF_IP));
+
+    // Suppress phid for connections
+    // It makes no sense to have phid for connections
+    m_ConnContext->SetHitID("");
+
+    // Set the connection request as the current one and print request start
+    CDiagContext::SetRequestContext(m_ConnContext);
+    GetDiagContext().PrintRequestStart()
+                    .Print("_type", "conn")
+                    .Print("conn", x_GetConnRef());
+    m_ConnContext->SetRequestStatus(eStatus_OK);
+    CDiagContext::SetRequestContext(NULL);
+}
+
+
+unsigned int CNetStorageHandler::x_GetPeerAddress(void)
+{
+    unsigned int        peer_addr;
+
+    GetSocket().GetPeerAddress(&peer_addr, 0, eNH_NetworkByteOrder);
+
+    // always use localhost(127.0*) address for clients coming from
+    // the same net address (sometimes it can be 127.* or full address)
+    if (peer_addr == m_Server->GetHostNetAddr())
+        return CSocketAPI::GetLoopbackAddress();
+    return peer_addr;
+}
+
+
+
+CNetStorageHandler::FProcessor
+CNetStorageHandler::x_FindProcessor(
+                        const SCommonRequestArguments &  common_args)
+{
+    for (size_t  index = 0; sm_Processors[index].m_Processor != NULL; ++index)
+    {
+        if (sm_Processors[index].m_MessageType == common_args.m_MessageType)
+            return sm_Processors[index].m_Processor;
+    }
+    NCBI_THROW(CNetStorageServerException, eInvalidMessageType,
+               "Message type '" + common_args.m_MessageType +
+               "' is not supported");
+}
+
+
+void
+CNetStorageHandler::x_PrintMessageRequestStart(const CJsonNode &  message)
+{
+    if (m_ConnContext.NotNull()) {
+        if (m_CmdContext.IsNull()) {
+            m_CmdContext.Reset(new CRequestContext());
+            m_CmdContext->SetRequestStatus(eStatus_OK);
+            m_CmdContext->SetRequestID();
+        }
+        CDiagContext::SetRequestContext(m_CmdContext);
+
+        // The setting of the client session and IP
+        // must be done before logging.
+        SetSessionAndIPAndPHID(message, GetSocket());
+
+        CDiagContext_Extra    ctxt_extra =
+            GetDiagContext().PrintRequestStart()
+                            .Print("_type", "message")
+                            .Print("conn", x_GetConnRef());
+
+        for (CJsonIterator it = message.Iterate(); it; ++it) {
+            string      key = it.GetKey();
+
+            // ncbi_phid has been printed by PrintRequestStart() anyway
+            if (key == "ncbi_phid")
+                continue;
+            // ncbi_context is for serializing into the request context,
+            // not really for logging
+            if (key == "ncbi_context")
+                continue;
+            if (key == "SessionID" || key == "ClientIP")
+                continue;
+
+            ctxt_extra.Print(key,
+                             it.GetNode().Repr(CJsonNode::fVerbatimIfString));
+        }
+
+        ctxt_extra.Flush();
+
+        // Workaround:
+        // When extra of the GetDiagContext().PrintRequestStart() is destroyed
+        // or flushed it also resets the status to 0 so I need to set it here
+        // to 200 though it was previously set to 200 when the request context
+        // is created.
+        m_CmdContext->SetRequestStatus(eStatus_OK);
+    }
+}
+
+
+void
+CNetStorageHandler::x_PrintMessageRequestStop(void)
+{
+    if (m_CmdContext.NotNull()) {
+        CDiagContext::SetRequestContext(m_CmdContext);
+        if (!m_Timing.Empty()) {
+            string      timing =  m_Timing.Serialize(GetDiagContext().Extra());
+            if (!timing.empty())
+                GetDiagContext().Extra().Print("timing", timing);
+        }
+        GetDiagContext().PrintRequestStop();
+        m_CmdContext.Reset();
+        CDiagContext::SetRequestContext(NULL);
+    }
+}
+
+
+void
+CNetStorageHandler::x_ProcessBye(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    m_ByeReceived = true;
+    x_SendSyncMessage(CreateResponseMessage(common_args.m_SerialNumber));
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessHello(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    string      application;        // Optional field
+    string      ticket;             // Optional field
+    string      protocol_version;   // Optional field
+
+    if (!message.HasKey("Client")) {
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "Mandatory field 'Client' is missed");
+    }
+
+    string  client = NStr::TruncateSpaces(message.GetString("Client"));
+    if (client.empty()) {
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "Mandatory field 'Client' is empty");
+    }
+
+    // The following will throw an exception if the limit is broken
+    SNetStorage::SLimits::Check<SNetStorage::SLimits::SClientName>(client);
+    m_Client = client;
+
+
+    if (message.HasKey("Application"))
+        application = message.GetString("Application");
+    if (message.HasKey("Ticket"))
+        ticket = message.GetString("Ticket");
+    if (message.HasKey("ProtocolVersion")) {
+        // Some clients may send the protocol version as an integer
+        // See CXX-6157
+        CJsonNode               ver = message.GetByKey("ProtocolVersion");
+        CJsonNode::ENodeType    node_type = ver.GetNodeType();
+        if (node_type == CJsonNode::eString)
+            protocol_version = ver.AsString();
+        else if (node_type == CJsonNode::eInteger)
+            protocol_version = NStr::NumericToString(ver.AsInteger()) +
+                               ".0.0";
+        else
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Invalid type of the 'ProtocolVersion'. "
+                       "String is expected.");
+    }
+    if (message.HasKey("Service"))
+        m_Service = NStr::TruncateSpaces(message.GetString("Service"));
+    else
+        m_Service = "";
+    m_MetadataOption = x_ConvertMetadataArgument(message);
+
+    // Memorize the client in the registry
+    m_Server->GetClientRegistry().Touch(m_Client, application,
+                           ticket, m_Service, protocol_version,
+                           m_MetadataOption, x_GetPeerAddress());
+
+    // Send success response
+    x_SendSyncMessage(CreateResponseMessage(common_args.m_SerialNumber));
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessInfo(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("server info request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+    reply.SetString("ServerVersion", NETSTORAGED_VERSION);
+    reply.SetString("ProtocolVersion", NETSTORAGED_PROTOCOL_VERSION);
+    reply.SetInteger("PID", CDiagContext::GetPID());
+    reply.SetString("BuildDate", NETSTORAGED_BUILD_DATE);
+    reply.SetString("StartDate",
+                    NST_FormatPreciseTime(m_Server->GetStartTime()));
+    reply.SetString("ServerSession", m_Server->GetSessionID());
+    reply.SetString("ServerBinaryPath",
+                    CNcbiApplication::Instance()->GetProgramExecutablePath());
+    reply.SetString("ServerCommandLine", m_Server->GetCommandLine());
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessConfiguration(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("configuration request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
+
+    CNcbiOstrstream             conf;
+    CNcbiOstrstreamToString     converter(conf);
+
+    CNcbiApplication::Instance()->GetConfig().Write(conf);
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+    reply.SetString("Configuration", string(converter));
+    reply.SetString("ConfigurationFilePath",
+                    CNcbiApplication::Instance()->GetConfigPath());
+    reply.SetByKey("BackendConfiguration", m_Server->GetBackendConfiguration());
+    reply.SetDouble("DBExecuteSPTimeout",
+                    m_Server->GetDb().GetExecuteSPTimeout().GetAsDouble());
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessHealth(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("health request");
+
+    // GRID dashboard needs this command to be executed regardless of the
+    // configuration settings, so the requirement of being an admin is
+    // removed
+    // if (!m_Server->IsAdminClientName(m_Client)) {
+    //     string      msg = "Only administrators can request server health";
+    //     m_Server->RegisterAlert(eAccess, msg);
+    //     NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
+    // }
+
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
+
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+    reply.SetByKey("Alerts", m_Server->SerializeAlerts());
+
+    // Generic database info
+    CJsonNode       db_stat_node(CJsonNode::NewObjectNode());
+    bool            connected = m_Server->GetDb().IsConnected();
+
+    db_stat_node.SetBoolean("connected", connected);
+    if (connected) {
+        try {
+            map<string, string>   db_stat = m_Server->GetDb().
+                                            ExecSP_GetGeneralDBInfo();
+            for (map<string, string>::const_iterator  k = db_stat.begin();
+                 k != db_stat.end(); ++k)
+                db_stat_node.SetString(k->first, k->second);
+
+            db_stat = m_Server->GetDb().ExecSP_GetStatDBInfo();
+            for (map<string, string>::const_iterator  k = db_stat.begin();
+                 k != db_stat.end(); ++k)
+                db_stat_node.SetString(k->first, k->second);
+        } catch (const exception &  ex) {
+            // Health must not fail if there is no meta DB connection
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                          ex.what(), kScopeStdException, eDatabaseWarning);
+        } catch (...) {
+            // Health must not fail if there is no meta DB connection
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                          "Unknown metainfo DB access error",
+                          kScopeUnknownException, eDatabaseWarning);
+        }
+    }
+    reply.SetByKey("MetainfoDB", db_stat_node);
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessAckAlert(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("alert acknowledging");
+
+    if (!m_Server->IsAdminClientName(m_Client)) {
+        string      msg = "Only administrators can acknowledge alerts";
+        m_Server->RegisterAlert(eAccess, msg);
+        NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
+    }
+
+    if (!message.HasKey("Name"))
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "Mandatory argument Name is not supplied "
+                   "in ACKALERT command");
+    if (!message.HasKey("User"))
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "Mandatory argument User is not supplied "
+                   "in ACKALERT command");
+
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
+
+    EAlertAckResult ack_result = m_Server->AcknowledgeAlert(
+                                                    message.GetString("Name"),
+                                                    message.GetString("User"));
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+    switch (ack_result) {
+        case eAcknowledged:
+            // No warning needed, everything is fine
+            break;
+        case eNotFound:
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                          "Alert has not been found", kScopeLogic,
+                          eAlertNotFoundWarning);
+            break;
+        case eAlreadyAcknowledged:
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                          "Alert has already been acknowledged", kScopeLogic,
+                          eAlertAlreadyAcknowledgedWarning);
+            break;
+        default:
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                          "Unknown acknowledge result", kScopeLogic,
+                          eAlertUnknownAcknowledgeResultWarning);
+    }
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessReconfigure(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("server reconfiguration");
+
+    if (!m_Server->AnybodyCanReconfigure()) {
+        if (!m_Server->IsAdminClientName(m_Client)) {
+            string      msg = "Only administrators can reconfigure server "
+                              "(client: " + m_Client + ")";
+            m_Server->RegisterAlert(eAccess, msg);
+            NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
+        }
+    }
+
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
+
+    // Unconditionally reload the decryptor in case if the key files are
+    // changed
+    CNcbiEncrypt::Reload();
+
+    CJsonNode           reply = CreateResponseMessage(
+                                            common_args.m_SerialNumber);
+    CNcbiApplication *  app = CNcbiApplication::Instance();
+
+    // Validate the configuration file first without reloading the application
+    // config.
+    string              config_path = app->GetConfigPath();
+    CNcbiIfstream       config_stream(config_path.c_str());
+    CNcbiRegistry       candidate_reg(config_stream);
+    vector<string>      config_warnings;
+    CJsonNode           backend_conf;
+
+    NSTValidateConfigFile(candidate_reg, config_warnings,
+                          false);       // false -> no exc on bad port
+    backend_conf = NSTGetBackendConfiguration(candidate_reg, m_Server,
+                                              config_warnings);
+
+    if (!config_warnings.empty()) {
+        string      msg;
+        string      alert_msg;
+        for (vector<string>::const_iterator k = config_warnings.begin();
+             k != config_warnings.end(); ++k) {
+            ERR_POST(*k);
+            if (!msg.empty()) {
+                msg += "; ";
+                alert_msg += "\n";
+            }
+            msg += *k;
+            alert_msg += *k;
+        }
+        m_Server->RegisterAlert(eReconfigure, alert_msg);
+        NCBI_THROW(CNetStorageServerException, eInvalidConfig,
+                   "Configuration file is not well formed; " + msg);
+    }
+
+    // Check that the decryption of the sensitive items works
+    SNetStorageServerParameters     params;
+    string                          decrypt_warning;
+    params.Read(candidate_reg, "server", decrypt_warning);
+
+    if (!decrypt_warning.empty()) {
+        ERR_POST(decrypt_warning);
+        m_Server->RegisterAlert(eDecryptAdminNames, decrypt_warning);
+        NCBI_THROW(CNetStorageServerException, eInvalidConfig, decrypt_warning);
+    }
+
+
+    // Here: the configuration has been validated and could be loaded
+
+    bool                reloaded = app->ReloadConfig(
+                                            CMetaRegistry::fReloadIfChanged);
+
+    // The !m_Server->AnybodyCanReconfigure() part is needed because the
+    // file might not be changed but the encryption keys could.
+    if (!reloaded && !m_Server->AnybodyCanReconfigure()) {
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                      "Configuration file has not been changed, "
+                      "RECONFIGURE ignored", kScopeLogic,
+                      eConfigNotChangedWarning);
+        x_SendSyncMessage(reply);
+        x_PrintMessageRequestStop();
+        return;
+    }
+
+    // Update the config file checksum in memory
+    vector<string>  config_checksum_warnings;
+    string          config_checksum = NST_GetConfigFileChecksum(
+                            app->GetConfigPath(), config_checksum_warnings);
+    if (config_checksum_warnings.empty()) {
+        m_Server->SetRAMConfigFileChecksum(config_checksum);
+        m_Server->SetDiskConfigFileChecksum(config_checksum);
+    } else {
+        for (vector<string>::const_iterator
+                k = config_checksum_warnings.begin();
+                k != config_checksum_warnings.end(); ++k)
+            ERR_POST(*k);
+    }
+
+
+    // Reconfigurable at runtime:
+    // [server]: logging, admin name list, max connections, network timeout
+    // [metadata_conf]
+    const CNcbiRegistry &           reg = app->GetConfig();
+
+    CJsonNode   server_diff = m_Server->SetParameters(params, true);
+    CJsonNode   metadata_diff = m_Server->ReadMetadataConfiguration(reg);
+    CJsonNode   backend_diff = m_Server->GetBackendConfDiff(backend_conf);
+    CJsonNode   db_diff = m_Server->GetDb().SetParameters(reg);
+
+    m_Server->SetBackendConfiguration(backend_conf);
+
+    m_Server->AcknowledgeAlert(eReconfigure, "NSTAcknowledge");
+    m_Server->AcknowledgeAlert(eStartupConfig, "NSTAcknowledge");
+    m_Server->AcknowledgeAlert(eConfigOutOfSync, "NSTAcknowledge");
+    m_Server->SetAnybodyCanReconfigure(false);
+
+
+    if (server_diff.IsNull() &&
+        metadata_diff.IsNull() &&
+        backend_diff.IsNull() &&
+        db_diff.IsNull()) {
+        if (m_ConnContext.NotNull())
+             GetDiagContext().Extra().Print("accepted_changes", "none");
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                      "No changeable parameters were identified "
+                      "in the new configuration file",
+                      kScopeLogic, eConfigNotChangedWarning);
+        reply.SetByKey("What", CJsonNode::NewObjectNode());
+        x_SendSyncMessage(reply);
+        x_PrintMessageRequestStop();
+        return;
+    }
+
+    CJsonNode   total_changes = CJsonNode::NewObjectNode();
+    if (!server_diff.IsNull())
+        total_changes.SetByKey("server", server_diff);
+    if (!metadata_diff.IsNull())
+        total_changes.SetByKey("metadata_conf", metadata_diff);
+    if (!backend_diff.IsNull())
+        total_changes.SetByKey("backend_conf", backend_diff);
+    if (!db_diff.IsNull())
+        total_changes.SetByKey("db_conf", db_diff);
+
+    reply.SetByKey("What", total_changes);
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessShutdown(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("server shutdown");
+
+    if (!m_Server->IsAdminClientName(m_Client)) {
+        string      msg = "Only administrators can shutdown server";
+        m_Server->RegisterAlert(eAccess, msg);
+        NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
+    }
+
+    if (!message.HasKey("Mode")) {
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "Mandatory field 'Mode' is missed");
+    }
+
+    string  mode;
+    mode = message.GetString("Mode");
+    if (mode != "hard" && mode != "soft") {
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "Allowed 'Mode' values are 'soft' and 'hard'");
+    }
+
+    if (mode == "hard")
+        exit(1);
+
+    m_Server->SetShutdownFlag(SIGTERM);
+
+    // Send success response
+    x_SendSyncMessage(CreateResponseMessage(common_args.m_SerialNumber));
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessGetClientsInfo(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("clients info request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
+
+    // First part is always there: in-memory clients
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+    reply.SetByKey("Clients", m_Server->GetClientRegistry().Serialize());
+
+    // Second part might be here
+    bool    db_access = (m_MetadataOption == eMetadataMonitoring ||
+                     m_Server->InMetadataServices(m_Service) == eMetadataOn);
+    if (db_access) {
+        try {
+            vector<string>      client_names;
+            int     status = m_Server->GetDb().ExecSP_GetClients(client_names);
+            if (status != kSPStatusOK) {
+                reply.SetString("DBClients", "MetadataAccessWarning");
+                AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                              "Stored procedure return code is non zero",
+                              kScopeLogic, eDatabaseWarning);
+            } else {
+                CJsonNode   db_clients_node(CJsonNode::NewArrayNode());
+                for (vector<string>::const_iterator
+                       k = client_names.begin(); k != client_names.end(); ++k) {
+                    db_clients_node.AppendString(*k);
+                }
+                reply.SetByKey("DBClients", db_clients_node);
+            }
+        } catch (const exception &  ex) {
+            reply.SetString("DBClients", "MetadataAccessWarning");
+            string          error_scope;
+            Int8            error_code;
+            unsigned int    error_sub_code;
+
+            if (GetReplyMessageProperties(ex, &error_scope, &error_code,
+                                          &error_sub_code) == false)
+                error_sub_code = eDatabaseWarning;
+
+            AppendWarning(reply, error_code,
+                          "Error while getting a list of clients "
+                          "in the metainfo DB: " + string(ex.what()),
+                          error_scope, error_sub_code);
+        } catch (...) {
+            reply.SetString("DBClients", "MetadataAccessWarning");
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                          "Unknown error while getting a list of clients "
+                          "in the metainfo DB",
+                          kScopeUnknownException, eDatabaseWarning);
+        }
+    } else {
+        reply.SetString("DBClients", "NoMetadataAccess");
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessGetUsersInfo(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("users info request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
+
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+    try {
+        vector< pair<string, string> >      users;
+        int     status = m_Server->GetDb().ExecSP_GetUsers(users);
+        if (status != kSPStatusOK) {
+            AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                        "Error executing stored procedure - return code is "
+                        "non zero", kScopeLogic, eDatabaseWarning);
+        } else {
+            CJsonNode       u_list(CJsonNode::NewArrayNode());
+            for (vector< pair<string, string> >::const_iterator
+                    k = users.begin(); k != users.end(); ++k) {
+                CJsonNode       a_user(CJsonNode::NewObjectNode());
+                a_user.SetString("Name", (*k).first);
+                a_user.SetString("Namespace", (*k).second);
+                u_list.Append(a_user);
+            }
+            reply.SetByKey("Users", u_list);
+        }
+    } catch (const exception &  ex) {
+        AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                    ex.what(), kScopeStdException, eDatabaseWarning);
+    } catch (...) {
+        AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                    "Unknown error while getting a list of users "
+                    "in the metainfo DB",
+                    kScopeUnknownException, eDatabaseWarning);
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessGetMetadataInfo(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("metadata configuration request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
+
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    reply.SetByKey("Services", m_Server->SerializeMetadataInfo());
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessGetObjectInfo(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("object info request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eReader);
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+    bool                        need_db_access = true;
+    CNSTServiceProperties       service_properties;     // not used here
+    if (m_MetadataOption != eMetadataMonitoring)
+        need_db_access = x_DetectMetaDBNeedOnGetObjectInfo(message,
+                                                           service_properties);
+    CDirectNetStorageObject     direct_object = x_GetObject(message); 
+    // First source of data - MS SQL database at hand
+    TNSTDBValue<string>     user_namespace;
+    TNSTDBValue<string>     user_name;
+    if (need_db_access) {
+        try {
+            TNSTDBValue<CTime>  expiration;
+            TNSTDBValue<CTime>  creation;
+            TNSTDBValue<CTime>  obj_read;
+            TNSTDBValue<CTime>  obj_write;
+            TNSTDBValue<CTime>  attr_read;
+            TNSTDBValue<CTime>  attr_write;
+            TNSTDBValue<Int8>   read_count;
+            TNSTDBValue<Int8>   write_count;
+            TNSTDBValue<string> client_name;
+            TNSTDBValue<Int8>   obj_ttl;
+
+            // The parameters are output only (from the SP POV) however the
+            // integer values should be initialized to avoid valgrind complains
+            read_count.m_Value = 0;
+            write_count.m_Value = 0;
+            int                 status = m_Server->GetDb().
+                                    ExecSP_GetObjectFixedAttributes(
+                                        direct_object.Locator().GetUniqueKey(),
+                                        expiration, creation,
+                                        obj_read, obj_write,
+                                        attr_read, attr_write,
+                                        read_count, write_count,
+                                        client_name,
+                                        user_namespace, user_name,
+                                        obj_ttl);
+
+            if (status != kSPStatusOK) {
+                // The record in the meta DB for the object is not found
+                x_FillObjectInfo(reply, "NoMetadataFound");
+            } else {
+                // The record in the meta DB for the object is found
+                if (expiration.m_IsNull) {
+                    reply.SetString("ExpirationTime", "NotSet");
+                    reply.SetString("Expired", "False");
+                } else {
+                    reply.SetString("ExpirationTime",
+                                    expiration.m_Value.AsString());
+                    if (expiration.m_Value < CurrentTime())
+                        reply.SetString("Expired", "True");
+                    else
+                        reply.SetString("Expired", "False");
+                }
+                x_SetObjectInfoReply(reply, "CreationTime", creation);
+                x_SetObjectInfoReply(reply, "ObjectReadTime", obj_read);
+                x_SetObjectInfoReply(reply, "ObjectWriteTime", obj_write);
+                x_SetObjectInfoReply(reply, "AttrReadTime", attr_read);
+                x_SetObjectInfoReply(reply, "AttrWriteTime", attr_write);
+                x_SetObjectInfoReply(reply, "ObjectReadCount", read_count);
+                x_SetObjectInfoReply(reply, "ObjectWriteCount", write_count);
+                x_SetObjectInfoReply(reply, "ClientName", client_name);
+                x_SetObjectInfoReply(reply, "UserNamespace", user_namespace);
+                x_SetObjectInfoReply(reply, "UserName", user_name);
+
+                if (obj_ttl.m_IsNull) {
+                    if (service_properties.GetTTL().m_IsNull)
+                        reply.SetString("TTL", "infinity");
+                    else
+                        reply.SetString("TTL", service_properties.
+                                                GetTTL().m_Value.
+                                                AsSmartString(kTimeSpanFlags));
+                } else {
+                    CTimeSpan   ttl(static_cast<long>(obj_ttl.m_Value));
+                    reply.SetString("TTL", ttl.AsSmartString(kTimeSpanFlags));
+                }
+            }
+        } catch (const CNetStorageServerException &  ex) {
+            // eDatabaseError => no connection or MS SQL error
+            x_FillObjectInfo(reply, "MetadataAccessWarning");
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                          ex.what(), ex.GetType(), ex.GetErrCode());
+        } catch (const exception &  ex) {
+            x_FillObjectInfo(reply, "MetadataAccessWarning");
+            string          error_scope;
+            Int8            error_code;
+            unsigned int    error_sub_code;
+
+            if (GetReplyMessageProperties(ex, &error_scope, &error_code,
+                                          &error_sub_code) == false)
+                error_sub_code = eDatabaseWarning;
+
+            AppendWarning(reply, error_code,
+                          "Error while gettingobject fixed attributes: " +
+                          string(ex.what()), error_scope, error_sub_code);
+        } catch (...) {
+            x_FillObjectInfo(reply, "MetadataAccessWarning");
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                          "Unknown error while getting object fixed attributes",
+                          kScopeUnknownException, eDatabaseWarning);
+        }
+    } else {
+        x_FillObjectInfo(reply, "NoMetadataAccess");
+    }
+
+
+    // Second source of data - remote object info
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    bool                remote_info_error = true;
+    try {
+        CJsonNode         object_info = direct_object.GetInfo().ToJSON();
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI GetInfo", start);
+        start = 0.0;
+
+        for (CJsonIterator it = object_info.Iterate(); it; ++it) {
+            string      key = it.GetKey();
+            if (key != "CreationTime")
+                reply.SetByKey(it.GetKey(), it.GetNode());
+        }
+        remote_info_error = false;
+    } catch (const exception &  ex) {
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI GetInfo exception", start);
+
+        ERR_POST(ex);
+
+        string          error_scope;
+        Int8            error_code;
+        unsigned int    error_sub_code;
+
+        if (GetReplyMessageProperties(ex, &error_scope, &error_code,
+                                      &error_sub_code) == false)
+            error_sub_code = eRemoteObjectInfoWarning;
+
+        AppendError(reply, error_code,
+                    "Error while getting remote object info: " +
+                    string(ex.what()), error_scope, error_sub_code);
+    } catch (...) {
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI GetInfo exception", start);
+
+        string          msg = "Unknown error while getting remote object info";
+
+        ERR_POST(msg);
+        AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                    msg, kScopeUnknownException, eRemoteObjectInfoWarning);
+    }
+
+    bool        need_client_update = false;
+    CNSTUserID  remote_client;
+    if (need_db_access && user_name.m_IsNull && remote_info_error == false) {
+        // The object owner is not known in the DB however the
+        // remote storage may have it. See CXX-8023
+
+        try {
+            pair<string, string>    ns_and_name = direct_object.GetUserInfo();
+            remote_client.SetNamespace(ns_and_name.first);
+            remote_client.SetName(ns_and_name.second);
+
+            reply.SetString("UserNamespace", ns_and_name.first);
+            reply.SetString("UserName", ns_and_name.second);
+
+            need_client_update = true;
+        } catch (const exception &  ex) {
+            ERR_POST("Error retrieving user name and "
+                     "user namespace from a remote storage: " << ex);
+        } catch (...) {
+            ERR_POST("Unknown error retrieving user name and "
+                     "user namespace from a remote storage");
+        }
+    }
+
+    x_SendSyncMessage(reply);
+
+    if (need_client_update) {
+        try {
+            Int8    user_id = x_GetUserID(remote_client);
+            m_Server->GetDb().ExecSP_UpdateUserIDForObject(
+                                        direct_object.Locator().GetUniqueKey(),
+                                        user_id);
+        } catch (const exception &  ex) {
+            ERR_POST("Error updating the user ID "
+                     "after getting the object info: " << ex);
+        } catch (...) {
+            ERR_POST("Unknown error updating the user ID "
+                     "after getting the object info");
+        }
+    }
+
+    x_PrintMessageRequestStop();
+}
+
+
+void CNetStorageHandler::x_FillObjectInfo(CJsonNode &  reply,
+                                          const string &  val)
+{
+    reply.SetString("ExpirationTime", val);
+    reply.SetString("Expired", val);
+    reply.SetString("CreationTime", val);
+    reply.SetString("ObjectReadTime", val);
+    reply.SetString("ObjectWriteTime", val);
+    reply.SetString("AttrReadTime", val);
+    reply.SetString("AttrWriteTime", val);
+    reply.SetString("ObjectReadCount", val);
+    reply.SetString("ObjectWriteCount", val);
+    reply.SetString("ClientName", val);
+    reply.SetString("UserName", val);
+    reply.SetString("UserNamespace", val);
+    reply.SetString("TTL", val);
+}
+
+
+void
+CNetStorageHandler::x_SetObjectInfoReply(CJsonNode &  reply,
+                                         const string &  name,
+                                         const TNSTDBValue<CTime> &  value)
+{
+    if (value.m_IsNull)
+        reply.SetString(name, "NotSet");
+    else
+        reply.SetString(name, value.m_Value.AsString());
+}
+
+
+void
+CNetStorageHandler::x_SetObjectInfoReply(CJsonNode &  reply,
+                                         const string &  name,
+                                         const TNSTDBValue<Int8> &  value)
+{
+    if (value.m_IsNull)
+        reply.SetString(name, "NotSet");
+    else
+        reply.SetString(name, NStr::NumericToString(value.m_Value));
+}
+
+
+void
+CNetStorageHandler::x_SetObjectInfoReply(CJsonNode &  reply,
+                                         const string &  name,
+                                         const TNSTDBValue<string> &  value)
+{
+    if (value.m_IsNull)
+        reply.SetString(name, "NotSet");
+    else
+        reply.SetString(name, value.m_Value);
+}
+
+
+void
+CNetStorageHandler::x_ProcessGetAttrList(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("attributes list request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eReader);
+
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "GETATTRLIST message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
+
+    if (m_MetadataOption == eMetadataDisabled)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "DB access is restricted in HELLO");
+
+    if (m_MetadataOption == eMetadataNotSpecified ||
+        m_MetadataOption == eMetadataRequired)
+        x_ValidateWriteMetaDBAccess(message);
+
+    if (m_MetadataOption != eMetadataMonitoring)
+        x_CreateClient();
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
+
+    // Note: object expiration is checked in a stored procedure
+    vector<string>  attr_names;
+    int             status = m_Server->GetDb().ExecSP_GetAttributeNames(
+                                        object_key, attr_names);
+
+    if (status == kSPStatusOK) {
+        // Everything is fine, the attribute is found
+        CJsonNode       names(CJsonNode::NewArrayNode());
+        for (vector<string>::const_iterator  k = attr_names.begin();
+             k != attr_names.end(); ++k)
+            names.AppendString(*k);
+        reply.SetByKey("AttributeNames", names);
+    } else {
+        x_CheckExpirationStatus(status);
+        x_CheckExistanceStatus(status);
+        NCBI_THROW(CNetStorageServerException, eInternalError,
+                   "Unknown GetAttributeNames status");
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessGetClientObjects(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("client objects request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eReader);
+
+    if (!message.HasKey("ClientName"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "GETCLIENTOBJECTS message must have ClientName.");
+    string  client_name = NStr::TruncateSpaces(message.GetString("ClientName"));
+
+    TNSTDBValue<Int8>  limit;
+    limit.m_IsNull = true;
+    limit.m_Value = 0;
+    if (message.HasKey("Limit")) {
+        try {
+            limit.m_Value = message.GetInteger("Limit");
+            limit.m_IsNull = false;
+        } catch (...) {
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "GETCLIENTOBJECTS message Limit argument "
+                       "must be an integer.");
+        }
+        if (limit.m_Value <= 0)
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "GETCLIENTOBJECTS message Limit argument "
+                       "must be > 0.");
+    }
+
+    if (m_MetadataOption == eMetadataDisabled)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "DB access is restricted in HELLO");
+
+    if (m_MetadataOption == eMetadataNotSpecified ||
+        m_MetadataOption == eMetadataRequired) {
+        // false => do not expect an object
+        x_ValidateWriteMetaDBAccess(message, false);
+    }
+
+    if (m_MetadataOption != eMetadataMonitoring)
+        x_CreateClient();
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    vector<string>  locators;
+    Int8            total_client_objects;
+    int             status = m_Server->GetDb().ExecSP_GetClientObjects(
+                                        client_name, limit,
+                                        total_client_objects, locators);
+
+    if (status == kSPStatusOK) {
+        // Everything is fine, the object is found
+        CJsonNode       locators_node(CJsonNode::NewArrayNode());
+        for (vector<string>::const_iterator  k = locators.begin();
+             k != locators.end(); ++k)
+            locators_node.AppendString(*k);
+        reply.SetByKey("ObjectLocators", locators_node);
+        reply.SetInteger("TotalClientObjects", total_client_objects);
+    } else {
+        if (status == -1) {
+            // Client is not found
+            NCBI_THROW(CNetStorageServerException, eNetStorageClientNotFound,
+                       "NetStorage client '" + client_name + "' is not found");
+        } else {
+            // Unknown status
+            NCBI_THROW(CNetStorageServerException, eInternalError,
+                       "Unknown GetClientObjects status");
+        }
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessGetUserObjects(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("user objects request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eReader);
+
+    if (!message.HasKey("UserName"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "GETUSEROBJECTS message must have UserName.");
+    string  user_name = NStr::TruncateSpaces(message.GetString("UserName"));
+    user_name = NStr::ToLower(user_name);
+
+    if (!message.HasKey("UserNamespace"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "GETUSEROBJECTS message must have UserNamespace.");
+    string  user_namespace = NStr::TruncateSpaces(
+                                    message.GetString("UserNamespace"));
+    user_namespace = NStr::ToLower(user_namespace);
+
+    TNSTDBValue<Int8>  limit;
+    limit.m_IsNull = true;
+    limit.m_Value = 0;
+    if (message.HasKey("Limit")) {
+        try {
+            limit.m_Value = message.GetInteger("Limit");
+            limit.m_IsNull = false;
+        } catch (...) {
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "GETUSEROBJECTS message Limit argument "
+                       "must be an integer.");
+        }
+        if (limit.m_Value <= 0)
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "GETUSEROBJECTS message Limit argument "
+                       "must be > 0.");
+    }
+
+    if (m_MetadataOption == eMetadataDisabled)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "DB access is restricted in HELLO");
+
+    if (m_MetadataOption == eMetadataNotSpecified ||
+        m_MetadataOption == eMetadataRequired) {
+        // false => do not expect an object
+        x_ValidateWriteMetaDBAccess(message, false);
+    }
+
+    if (m_MetadataOption != eMetadataMonitoring)
+        x_CreateClient();
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    vector<string>  locators;
+    Int8            total_client_objects;
+    int             status = m_Server->GetDb().ExecSP_GetUserObjects(
+                                        user_name, user_namespace, limit,
+                                        total_client_objects, locators);
+
+    if (status == kSPStatusOK) {
+        // Everything is fine, the object is found
+        CJsonNode       locators_node(CJsonNode::NewArrayNode());
+        for (vector<string>::const_iterator  k = locators.begin();
+             k != locators.end(); ++k)
+            locators_node.AppendString(*k);
+        reply.SetByKey("ObjectLocators", locators_node);
+        reply.SetInteger("TotalUserObjects", total_client_objects);
+    } else {
+        if (status == -1) {
+            // Client is not found
+            NCBI_THROW(CNetStorageServerException, eNetStorageClientNotFound,
+                       "NetStorage user is not found");
+        } else {
+            // Unknown status
+            NCBI_THROW(CNetStorageServerException, eInternalError,
+                       "Unknown GetUserObjects status");
+        }
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessGetAttr(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("attribute value request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eReader);
+
+    if (!message.HasKey("AttrName"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "Mandatory field 'AttrName' is missed");
+
+    string      attr_name = message.GetString("AttrName");
+    if (attr_name.empty())
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "Attribute name must not be empty");
+
+    // CXX-7977: the names are lowercased...
+    attr_name = NStr::ToLower(attr_name);
+
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "GETATTR message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
+
+    if (m_MetadataOption == eMetadataDisabled)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "DB access is restricted in HELLO");
+
+    if (m_MetadataOption == eMetadataNotSpecified ||
+        m_MetadataOption == eMetadataRequired)
+        x_ValidateWriteMetaDBAccess(message);
+
+
+    if (m_MetadataOption != eMetadataMonitoring)
+        x_CreateClient();
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
+
+    string      value;
+    int         status = m_Server->GetDb().ExecSP_GetAttribute(
+                                        object_key, attr_name,
+                                        m_MetadataOption != eMetadataMonitoring,
+                                        value);
+
+    if (status == kSPStatusOK) {
+        // Everything is fine, the attribute is found
+        reply.SetString("AttrValue", value);
+    } else {
+        x_CheckExistanceStatus(status);
+        x_CheckExpirationStatus(status);
+        if (status == -2) {
+            // Attribute is not found
+            NCBI_THROW(CNetStorageServerException, eNetStorageAttributeNotFound,
+                       "NetStorage attribute is not found");
+        }
+        if (status == -3) {
+            // Attribute value is not found
+            NCBI_THROW(CNetStorageServerException,
+                   eNetStorageAttributeValueNotFound,
+                   "NetStorage attribute value is not found");
+        }
+        // Unknown status
+        NCBI_THROW(CNetStorageServerException, eInternalError,
+                   "Unknown GetAttributeValue status");
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessSetAttr(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("attribute value setting");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eWriter);
+
+    if (!message.HasKey("AttrName"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "Mandatory field 'AttrName' is missed");
+
+    string      attr_name = message.GetString("AttrName");
+    SNetStorage::SLimits::Check<SNetStorage::SLimits::SAttrName>(attr_name);
+
+    // CXX-7977: the names are lowercased...
+    attr_name = NStr::ToLower(attr_name);
+
+    if (!message.HasKey("AttrValue"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "Mandatory field 'AttrValue' is missed");
+
+    string      value = message.GetString("AttrValue");
+    SNetStorage::SLimits::Check<SNetStorage::SLimits::SAttrValue>(value);
+
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "SETATTR message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
+
+    if (m_MetadataOption == eMetadataDisabled ||
+        m_MetadataOption == eMetadataMonitoring)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "State changing operations are restricted in HELLO");
+
+    bool    create_if_not_found = true;     // default
+    if (message.HasKey("CreateIfNotFound"))
+        create_if_not_found = message.GetBoolean("CreateIfNotFound");
+
+
+    // The only options left are NotSpecified and Required
+    x_ValidateWriteMetaDBAccess(message);
+
+    x_CreateClient();
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
+    string                      object_loc =
+                                        direct_object.Locator().GetLocator();
+
+    TNSTDBValue<CTimeSpan>      ttl;
+    m_Server->GetServiceTTL(m_Service, ttl);
+
+    // The SP will throw an exception if an error occured
+    int         status = m_Server->GetDb().ExecSP_AddAttribute(
+                                          object_key, object_loc,
+                                          attr_name, value,
+                                          m_DBClientID, create_if_not_found,
+                                          ttl);
+    x_CheckExistanceStatus(status);
+    x_CheckExpirationStatus(status);
+    if (status != kSPStatusOK) {
+        // Unknown status
+        NCBI_THROW(CNetStorageServerException, eInternalError,
+                   "Unknown AddAttribute status");
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessDelAttr(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("attribute deletion");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eWriter);
+
+    if (!message.HasKey("AttrName"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "Mandatory field 'AttrName' is missed");
+
+    string      attr_name = message.GetString("AttrName");
+    if (attr_name.empty())
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                    "Attribute name must not be empty");
+
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "DELATTR message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
+
+    if (m_MetadataOption == eMetadataDisabled ||
+        m_MetadataOption == eMetadataMonitoring)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "State changing operations are restricted in HELLO");
+
+    // The only options left are NotSpecified and Required
+    x_ValidateWriteMetaDBAccess(message);
+
+    x_CreateClient();
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
+
+    int         status = m_Server->GetDb().ExecSP_DelAttribute(
+                                            object_key, attr_name);
+
+    x_CheckExpirationStatus(status);
+    if (status == kSPObjectNotFound) {
+        // Object is not found
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                      kObjectNotFound,
+                      kScopeLogic, eObjectNotFoundWarning);
+    } else if (status == -2) {
+        // Attribute is not found
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                      "NetStorage attribute is not found",
+                      kScopeLogic, eAttributeNotFoundWarning);
+    } else if (status == -3) {
+        // Attribute value is not found
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                      "NetStorage attribute value is not found",
+                      kScopeLogic, eAttributeValueNotFoundWarning);
+    } else if (status != kSPStatusOK) {
+        // Unknown status
+        NCBI_THROW(CNetStorageServerException, eInternalError,
+                   "Unknown DelAttributeValue status");
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessCreate(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("object creation");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eWriter);
+
+    if (m_MetadataOption == eMetadataMonitoring)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "State changing operations are restricted in HELLO");
+
+    TNetStorageFlags    flags = ExtractStorageFlags(message);
+    SICacheSettings     icache_settings = ExtractICacheSettings(message);
+
+    x_CheckICacheSettings(icache_settings);
+
+    // The DB update depends on the command flags, on the HELLO
+    // metadata option and may depend on the HELLO service
+    m_WriteCreateNeedMetaDBUpdate = x_DetectMetaDBNeedOnCreate(flags);
+
+    if (m_WriteCreateNeedMetaDBUpdate) {
+        // Meta information is required so check the DB
+        x_CreateClient();
+
+        // This call will extract the user info from the context and create the
+        // user in DB if needed
+        x_CreateUser();
+    }
+
+    // Create the object stream depending on settings
+    m_ObjectBeingWritten = x_CreateObjectStream(icache_settings, flags);
+
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+    string          locator = m_ObjectBeingWritten.GetLoc();
+
+    reply.SetString("ObjectLoc", locator);
+    x_SendSyncMessage(reply);
+
+    if (m_ConnContext.NotNull() && !message.HasKey("ObjectLoc")) {
+        GetDiagContext().Extra()
+            .Print("ObjectLoc", locator)
+            .Print("ObjectKey", m_ObjectBeingWritten.Locator().GetUniqueKey());
+    }
+
+    // Inform the message receiving loop that raw data are to follow
+    m_ReadMode = eReadRawData;
+    m_DataMessageSN = common_args.m_SerialNumber;
+    m_CreateRequest = true;
+    m_ObjectSize = 0;
+    m_Server->GetClientRegistry().AddObjectsWritten(m_Client, 1);
+}
+
+
+void
+CNetStorageHandler::x_ProcessWrite(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("writing into an object");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eWriter);
+
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "WRITE message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
+
+    if (m_MetadataOption == eMetadataMonitoring)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "State changing operations are restricted in HELLO");
+
+    // If it was eMetadataDisabled then updates are not required
+    m_WriteCreateNeedMetaDBUpdate = false;
+    if (m_MetadataOption == eMetadataRequired ||
+        m_MetadataOption == eMetadataNotSpecified)
+        m_WriteCreateNeedMetaDBUpdate = x_DetectMetaDBNeedUpdate(
+                                                message, m_WriteServiceProps);
+
+    if (m_WriteCreateNeedMetaDBUpdate) {
+        // Meta information is required so check the DB
+        x_CreateClient();
+        x_CreateUser();
+    }
+
+    CJsonNode           reply = CreateResponseMessage(
+                                                common_args.m_SerialNumber);
+
+    // This will also log the object key and object locator if needed
+    m_ObjectBeingWritten = x_GetObject(message, true);
+
+    const CNetStorageObjectLoc &    object_locator =
+                                                m_ObjectBeingWritten.Locator();
+    string              object_key = object_locator.GetUniqueKey();
+    string              locator = object_locator.GetLocator();
+
+    if (m_WriteCreateNeedMetaDBUpdate) {
+        bool    create_if_not_found = true;   // default
+        if (message.HasKey("CreateIfNotFound")) {
+            create_if_not_found = message.GetBoolean("CreateIfNotFound");
+        }
+
+        if (create_if_not_found == false) {
+            // The DoesObjectExist procedure will check the object expiration as
+            // well.
+            int  status = m_Server->GetDb().ExecSP_DoesObjectExist(object_key);
+            x_CheckExpirationStatus(status);
+            x_CheckExistanceStatus(status);
+        }
+    }
+
+    reply.SetString("ObjectLoc", locator);
+    x_SendSyncMessage(reply);
+
+    // Inform the message receiving loop that raw data are to follow
+    m_ReadMode = eReadRawData;
+    m_DataMessageSN = common_args.m_SerialNumber;
+    m_CreateRequest = false;
+    m_ObjectSize = 0;
+    m_Server->GetClientRegistry().AddObjectsWritten(m_Client, 1);
+}
+
+
+
+void
+CNetStorageHandler::x_ProcessRead(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("reading an object");
+
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eReader);
+
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "READ message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
+
+    // For eMetadataMonitoring and eMetadataDisabled there must be no updates
+    // in the meta info DB
+    bool                    need_meta_db_update = false;
+    CNSTServiceProperties   service_properties;
+    if (m_MetadataOption == eMetadataRequired ||
+        m_MetadataOption == eMetadataNotSpecified)
+        need_meta_db_update = x_DetectMetaDBNeedUpdate(message,
+                                                       service_properties);
+
+
+    CJsonNode           reply = CreateResponseMessage(
+                                                common_args.m_SerialNumber);
+    CDirectNetStorageObject         direct_object = x_GetObject(message);
+    const CNetStorageObjectLoc &    object_locator = direct_object.Locator();
+    string                          object_key = object_locator.GetUniqueKey();
+    string                          locator = object_locator.GetLocator();
+
+    bool                            allow_backend_fallback = true;  // default
+    if (message.HasKey("AllowBackendFallback")) {
+        allow_backend_fallback = message.GetBoolean("AllowBackendFallback");
+    }
+
+    if (need_meta_db_update) {
+        // Meta information is required so check the DB
+        x_CreateClient();
+
+        // The DoesObjectExist procedure will check the object expiration as
+        // well.
+        int  status = m_Server->GetDb().ExecSP_DoesObjectExist(object_key);
+
+        x_CheckExpirationStatus(status);
+        if (status == kSPObjectNotFound) {
+            // Here: object does not exist
+            if (allow_backend_fallback == false) {
+                NCBI_THROW(CNetStorageServerException,
+                           eNetStorageObjectNotFound, kObjectNotFound);
+            }
+        }
+    }
+
+    x_SendSyncMessage(reply);
+
+    m_Server->GetClientRegistry().AddObjectsRead(m_Client, 1);
+
+    char                buffer[kReadBufferSize];
+    size_t              bytes_read;
+    Int8                total_bytes = 0;
+    CNSTPreciseTime     start = 0.0;
+
+    try {
+        while (!direct_object.Eof()) {
+            start = CNSTPreciseTime::Current();
+            bytes_read = direct_object.Read(buffer, sizeof(buffer));
+            if (m_Server->IsLogTimingNSTAPI())
+                m_Timing.Append("NetStorageAPI read", start);
+            start = 0.0;
+
+            m_UTTPWriter.SendChunk(buffer, bytes_read, false);
+
+            if (x_SendOverUTTP() != eIO_Success)
+                return;
+
+            m_Server->GetClientRegistry().AddBytesRead(m_Client, bytes_read);
+            total_bytes += bytes_read;
+
+            if (m_CmdContext.NotNull())
+                m_CmdContext->SetBytesRd(total_bytes);
+        }
+
+        start = CNSTPreciseTime::Current();
+        direct_object.Close();
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Close", start);
+        start = 0.0;
+
+        reply = CreateResponseMessage(common_args.m_SerialNumber);
+    } catch (const exception &  ex) {
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI read (exception)", start);
+
+        string          error_scope;
+        Int8            error_code;
+        unsigned int    error_sub_code;
+        string          message = "Object read error: " + string(ex.what());
+
+        if (GetReplyMessageProperties(ex, &error_scope, &error_code,
+                                      &error_sub_code) == false)
+            error_sub_code = CNetStorageServerException::eReadError;
+
+        reply = CreateErrorResponseMessage(common_args.m_SerialNumber,
+                        error_code, message, error_scope, error_sub_code);
+        ERR_POST(message);
+
+        if (need_meta_db_update)
+            x_ProlongObjectOnFailure(eReadOp, object_key, service_properties);
+
+        // Prevent creation of an object in the database if there was none.
+        // NB: the object TTL will not be updated if there was an object
+        need_meta_db_update = false;
+    } catch (...) {
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI read (unknown exception)", start);
+        m_UTTPWriter.SendControlSymbol('\n');
+
+        if (need_meta_db_update)
+            x_ProlongObjectOnFailure(eReadOp, object_key, service_properties);
+        throw;
+    }
+
+    m_UTTPWriter.SendControlSymbol('\n');
+
+    if (x_SendOverUTTP() != eIO_Success)
+        return;
+
+    if (need_meta_db_update) {
+        // The errors must not affect the response overall status
+        bool    size_was_null = false;
+        try {
+            // The object expiration could have been changed while the object
+            // was read so I need to get the expiration right here.
+            // It is not very convenient to calculate the new expiration
+            // time in MS SQL server so it is done in C++ via two requests
+            // which is technically not safe in multiple access scenario...
+            TNSTDBValue<CTime>              object_expiration;
+            TNSTDBValue<Int8>               individual_object_ttl;
+            m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
+                                                         object_expiration,
+                                                         individual_object_ttl);
+
+            m_Server->GetDb().ExecSP_UpdateObjectOnRead(
+                    object_key, locator, total_bytes, m_DBClientID,
+                    service_properties.GetTTL(),
+                    service_properties.GetProlongOnRead(individual_object_ttl),
+                    object_expiration, size_was_null);
+        } catch (const exception &  ex) {
+            ERR_POST(ex);
+
+            string          error_scope;
+            Int8            error_code;
+            unsigned int    error_sub_code;
+
+            if (GetReplyMessageProperties(ex, &error_scope, &error_code,
+                                          &error_sub_code) == false)
+                error_sub_code = CNetStorageServerException::eDatabaseError;
+            // false -> do not change response to ERROR
+            AppendError(reply, error_code, ex.what(), error_scope,
+                        error_sub_code, false);
+        } catch (...) {
+            // Append error however the overall reply must be OK
+            string  msg = "Unknown metainfo DB update error on object read";
+            ERR_POST(msg);
+            // false -> do not change response to ERROR
+            AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                        msg, kScopeUnknownException,
+                        CNetStorageServerException::eDatabaseError, false);
+        }
+
+        if (size_was_null)
+            x_OptionalExpirationUpdate(direct_object, reply, "READ");
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProlongObjectOnFailure(
+                                EOp  op,
+                                const string &  object_key,
+                                const CNSTServiceProperties &  service_props)
+{
+    string      operation;
+    switch (op) {
+        case eReadOp:       operation = "READ"; break;
+        case eWriteOp:      operation = "WRITE"; break;
+        case eRelocateOp:   operation = "RELOCATE"; break;
+        default:
+            ERR_POST("Internal error: unknown operation in "
+                     "x_ProlongObjectOnFailure: " << op);
+            return;
+    }
+
+    try {
+        TNSTDBValue<CTime>              object_expiration;
+        TNSTDBValue<Int8>               individual_object_ttl;
+        m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
+                                                     object_expiration,
+                                                     individual_object_ttl);
+
+        if (!object_expiration.m_IsNull) {
+            TNSTDBValue<CTimeSpan>      prolong;
+            switch (op) {
+                case eReadOp:
+                    prolong = service_props.GetProlongOnRead(individual_object_ttl);
+                    break;
+                case eWriteOp:
+                    prolong = service_props.GetProlongOnWrite(individual_object_ttl);
+                    break;
+                case eRelocateOp:
+                    prolong = service_props.GetProlongOnRelocate(individual_object_ttl);
+                    break;
+                default:
+                    ERR_POST("Internal error: unknown operation in "
+                             "x_ProlongObjectOnFailure: " << op);
+                    return;
+            }
+
+            m_Server->GetDb().UpdateExpirationIfExists(
+                                    object_key, service_props.GetTTL(),
+                                    prolong, object_expiration);
+        }
+    } catch (const std::exception &  ex) {
+        ERR_POST("Error updating object expiration on " << operation <<
+                 " failure. Ignore and continue. " << ex);
+    } catch (...) {
+        ERR_POST("Unknown error updating object expiration on " <<
+                 operation << " failure. Ignore and continue.");
+    }
+}
+
+
+void
+CNetStorageHandler::x_ProcessDelete(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("object deletion");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eWriter);
+
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "DELETE message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
+
+    if (m_MetadataOption == eMetadataMonitoring)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "State changing operations are restricted in HELLO");
+
+    CNSTServiceProperties       service_properties;
+
+    // If it was eMetadataDisabled then updates are not required
+    bool        need_meta_db_update = false;
+    if (m_MetadataOption == eMetadataRequired ||
+        m_MetadataOption == eMetadataNotSpecified)
+        need_meta_db_update = x_DetectMetaDBNeedUpdate(message,
+                                                       service_properties);
+
+    CJsonNode                   reply = CreateResponseMessage(
+                                                common_args.m_SerialNumber);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    bool                        allow_backend_fallback = true;  // default
+    if (message.HasKey("AllowBackendFallback")) {
+        allow_backend_fallback = message.GetBoolean("AllowBackendFallback");
+    }
+
+    int                         status = kSPStatusOK;
+
+    if (need_meta_db_update) {
+        x_CreateClient();
+
+        // Meta information is required so delete from the DB first
+        status = m_Server->GetDb().ExecSP_RemoveObject(
+                    direct_object.Locator().GetUniqueKey());
+
+        x_CheckExpirationStatus(status);
+        if (status == kSPObjectNotFound) {
+            if (allow_backend_fallback == false) {
+                // It is forbidden to consult to the backend so pretend that
+                // the object does not exist there either
+                reply.SetBoolean("NotFound", true);
+
+                x_SendSyncMessage(reply);
+                x_PrintMessageRequestStop();
+                return;
+            }
+        }
+    }
+
+    ENetStorageRemoveResult     result = eNSTRR_NotFound;
+    CNSTPreciseTime             start = CNSTPreciseTime::Current();
+    try {
+        result = direct_object.Remove();
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Remove", start);
+    } catch (...) {
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Remove exception", start);
+        throw;
+    }
+
+    m_Server->GetClientRegistry().AddObjectsDeleted(m_Client, 1);
+
+    // Explicitly tell if the object:
+    // - was not found in the backend storage
+    // - was found and deleted in the backend storage
+    reply.SetBoolean("NotFound", result == eNSTRR_NotFound);
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessRelocate(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("object reloacation");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eWriter);
+
+    // Take the arguments
+    if (!message.HasKey("NewLocation")) {
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "NewLocation argument is not found");
+    }
+
+    if (m_MetadataOption == eMetadataMonitoring)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "State changing operations are restricted in HELLO");
+
+    CNSTServiceProperties       service_properties;
+
+    // If it was eMetadataDisabled then updates are not required
+    bool        need_meta_db_update = false;
+    if (m_MetadataOption == eMetadataRequired ||
+        m_MetadataOption == eMetadataNotSpecified)
+        need_meta_db_update = x_DetectMetaDBNeedUpdate(message,
+                                                       service_properties);
+
+
+    CJsonNode           new_location = message.GetByKey("NewLocation");
+    TNetStorageFlags    new_location_flags = ExtractStorageFlags(new_location);
+    SICacheSettings     new_location_icache_settings =
+                                ExtractICacheSettings(new_location);
+
+    x_CheckICacheSettings(new_location_icache_settings);
+
+    CJsonNode                   reply = CreateResponseMessage(
+                                                    common_args.m_SerialNumber);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
+
+    bool                        create_if_not_found = true; // default
+    if (message.HasKey("CreateIfNotFound")) {
+        create_if_not_found = message.GetBoolean("CreateIfNotFound");
+    }
+
+    bool                        need_progress_report = false;  // default
+    if (message.HasKey("NeedProgressReport")) {
+        need_progress_report = message.GetBoolean("NeedProgressReport");
+    }
+
+    if (need_meta_db_update) {
+        // Meta information is required so check the DB
+        x_CreateClient();
+
+        // The DoesObjectExist procedure will check the object expiration as
+        // well.
+        int  status = m_Server->GetDb().ExecSP_DoesObjectExist(object_key);
+        x_CheckExpirationStatus(status);
+        if (status == kSPObjectNotFound) {
+            if (create_if_not_found == false) {
+                NCBI_THROW(CNetStorageServerException,
+                           eNetStorageObjectNotFound, kObjectNotFound);
+            }
+        }
+    }
+
+
+    string              new_object_loc;
+    CRelocateCallback   callback(*this, common_args, direct_object,
+                                 need_progress_report);
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        TNetStorageProgressCb   cb = std::bind(&CRelocateCallback::Callback,
+                                               &callback, _1);
+        new_object_loc = direct_object.Relocate(new_location_flags, cb);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Relocate", start);
+    } catch (const CNetStorageException &  ex) {
+        if (ex.GetErrCode() == CNetStorageException::eInterrupted) {
+            // Here: relocate was interrupted via a callback return value.
+            // That means that the client socket is closed and an error is
+            // registered for the client.
+            // So the rest is to log a message, print stop request and exit
+            if (m_Server->IsLogTimingNSTAPI())
+                m_Timing.Append("NetStorageAPI Relocate interrupt", start);
+            ERR_POST("NetStorageAPI Relocate interrupt: " << ex);
+            if (need_meta_db_update)
+                x_ProlongObjectOnFailure(eRelocateOp, object_key,
+                                         service_properties);
+
+            x_PrintMessageRequestStop();
+            return;
+        }
+
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Relocate exception", start);
+        if (need_meta_db_update)
+            x_ProlongObjectOnFailure(eRelocateOp, object_key,
+                                     service_properties);
+        throw;
+    } catch (...) {
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Relocate exception", start);
+        if (need_meta_db_update)
+            x_ProlongObjectOnFailure(eRelocateOp, object_key,
+                                     service_properties);
+        throw;
+    }
+
+    if (need_meta_db_update) {
+        try {
+            // The object expiration could have been changed while the object
+            // was read so I need to get the expiration right here.
+            // It is not very convenient to calculate the new expiration
+            // time in MS SQL server so it is done in C++ via two requests
+            // which is technically not safe in multiple access scenario...
+            TNSTDBValue<CTime>              object_expiration;
+            TNSTDBValue<Int8>               individual_object_ttl;
+            m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
+                                                         object_expiration,
+                                                         individual_object_ttl);
+
+            // The record is created if does not exist
+            m_Server->GetDb().ExecSP_UpdateObjectOnRelocate(
+                                object_key, new_object_loc,
+                                m_DBClientID, service_properties.GetTTL(),
+                                service_properties.GetProlongOnRelocate(
+                                                        individual_object_ttl),
+                                object_expiration);
+        } catch (const exception &  ex) {
+            // Append error however the overall reply must be OK
+            ERR_POST(ex);
+
+            string          error_scope;
+            Int8            error_code;
+            unsigned int    error_sub_code;
+
+            if (GetReplyMessageProperties(ex, &error_scope, &error_code,
+                                          &error_sub_code) == false)
+                error_sub_code = CNetStorageServerException::eDatabaseError;
+            AppendError(reply, error_code, ex.what(), error_scope,
+                        error_sub_code, false);
+
+        } catch (...) {
+            // Append error however the overall reply must be OK
+            string  msg = "Unknown metainfo DB update error "
+                          "on object relocation";
+            ERR_POST(msg);
+            AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                        msg, kScopeUnknownException,
+                        CNetStorageServerException::eDatabaseError, false);
+        }
+    }
+
+    m_Server->GetClientRegistry().AddObjectsRelocated(m_Client, 1);
+
+    reply.SetString("ObjectLoc", new_object_loc);
+    x_SendSyncMessage(reply);
+
+    if (m_ConnContext.NotNull()) {
+        GetDiagContext().Extra()
+            .Print("NewObjectLoc", new_object_loc);
+    }
+
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessExists(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("object existance request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eReader);
+
+    CJsonNode                   reply = CreateResponseMessage(
+                                                    common_args.m_SerialNumber);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    CNSTServiceProperties       service_properties; // not used here
+    bool        need_db_access =
+                        x_DetectMetaDBNeedOnGetObjectInfo(message,
+                                                          service_properties);
+    string      locator_from_db;
+
+    // Part I. MS SQL db access if needed
+    if (need_db_access) {
+        int             status = kSPStatusOK;
+        bool            db_error = true;
+        try {
+            TNSTDBValue<Int8>       object_size;
+            TNSTDBValue<string>     object_locator;
+
+            status = m_Server->GetDb().ExecSP_GetObjectSizeAndLocator(
+                                        direct_object.Locator().GetUniqueKey(),
+                                        object_size, object_locator);
+            db_error = false;
+
+            // status could be:
+            // - object expired
+            // - object not found
+            // - OK
+            if (status == kSPStatusOK)
+                if (!object_size.m_IsNull)
+                    if (!object_locator.m_IsNull)
+                        locator_from_db = object_locator.m_Value;
+        } catch (const exception &  ex) {
+            // No exception throwing because the backend will be called anyway
+            ERR_POST(ex);
+        } catch (...) {
+            // No exception throwing because the backend will be called anyway
+            ERR_POST("Unknown exception while getting an object "
+                     "size and a locator from the DB");
+        }
+
+        if (!db_error) {
+            // The check will throw an exception if the object is expired
+            x_CheckExpirationStatus(status);
+        }
+    }
+
+    // Part II. Calling the API
+    bool                exists = false;
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+
+    try {
+        if (message.HasKey("ObjectLoc")) {
+            CDirectNetStorage   storage(
+                                    CNcbiApplication::Instance()->GetConfig(),
+                                    m_Service, m_Server->GetCompoundIDPool());
+            exists = storage.Exists(locator_from_db,
+                                    message.GetString("ObjectLoc"));
+            if (m_Server->IsLogTimingNSTAPI())
+                m_Timing.Append("NetStorageAPI Exists", start);
+        } else {
+            SICacheSettings     icache_settings;
+            SUserKey            user_key;
+            TNetStorageFlags    flags;
+
+            x_GetStorageParams(message, &icache_settings, &user_key, &flags);
+
+            CDirectNetStorageByKey    storage(
+                                    CNcbiApplication::Instance()->GetConfig(),
+                                    m_Service, m_Server->GetCompoundIDPool(),
+                                    user_key.m_AppDomain);
+
+            exists = storage.Exists(locator_from_db,
+                                    user_key.m_UniqueID, flags);
+            if (m_Server->IsLogTimingNSTAPI())
+                m_Timing.Append("NetStorageAPI Exists", start);
+        }
+    } catch (...) {
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Exists exception", start);
+        throw;
+    }
+
+    reply.SetBoolean("Exists", exists);
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+
+void
+CNetStorageHandler::x_ProcessGetSize(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("object size request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eReader);
+
+    bool        consult_backend_if_no_db_record = true;  // default
+
+    if (message.HasKey("ConsultBackendIfNoDBRecord")) {
+        consult_backend_if_no_db_record =
+                            message.GetBoolean("ConsultBackendIfNoDBRecord");
+    }
+
+    CJsonNode         reply = CreateResponseMessage(common_args.m_SerialNumber);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
+
+    bool                        object_size_is_null = false;
+    CNSTServiceProperties       service_properties; // not used here
+    bool                        need_db_access =
+                        x_DetectMetaDBNeedOnGetObjectInfo(message,
+                                                          service_properties);
+
+    if (need_db_access) {
+        TNSTDBValue<Int8>   db_object_size;
+        int  status = m_Server->GetDb().ExecSP_GetObjectSize(
+                                    object_key, db_object_size);
+        x_CheckExpirationStatus(status);
+
+        if (status == kSPStatusOK) {
+            if (db_object_size.m_IsNull)
+                object_size_is_null = true;
+            else {
+                reply.SetInteger("Size", db_object_size.m_Value);
+                x_SendSyncMessage(reply);
+                x_PrintMessageRequestStop();
+                return;
+            }
+        }
+
+        // Another possible status is -1 which means the object is not found
+        // i.e. fall through to the backend consulting
+    }
+
+
+    Uint8               object_size = 0;
+    if (object_size_is_null || consult_backend_if_no_db_record) {
+        CNSTPreciseTime     start = CNSTPreciseTime::Current();
+        try {
+            object_size = direct_object.GetSize();
+            if (m_Server->IsLogTimingNSTAPI())
+                m_Timing.Append("NetStorageAPI GetSize", start);
+        } catch (...) {
+            if (m_Server->IsLogTimingNSTAPI())
+                m_Timing.Append("NetStorageAPI GetSize exception", start);
+            throw;
+        }
+        if (object_size_is_null) {
+            // Two things to be done to finalize the execution:
+            // - push infinity expiration time to the backend storage
+            // - update the size in the DB
+            // in case of errors on these operations only applog records are
+            // required, i.e. the user will not be informed
+            try {
+                direct_object.SetExpiration(CTimeout(CTimeout::eInfinite));
+            } catch (const exception &  ex) {
+                ERR_POST(ex);
+            } catch (...) {
+                ERR_POST("Unknown error updating the backend expiration time "
+                         "while processing the GETSIZE message");
+            }
+
+            try {
+                TNSTDBValue<Int8>   db_object_size;
+                db_object_size.m_IsNull = false;
+                db_object_size.m_Value = object_size;
+
+                int  status = m_Server->GetDb().ExecSP_UpdateObjectSizeIfNULL(
+                                    object_key, db_object_size);
+                if (status == kSPStatusOK) {
+                    object_size = db_object_size.m_Value;
+                }
+                // In other cases:
+                // -1 record not found
+                // -4 object expired
+                // do not update the object size
+            } catch (const exception &  ex) {
+                ERR_POST(ex);
+            } catch (...) {
+                ERR_POST("Unknown error updating the object size while "
+                         "processing the GETSIZE message");
+            }
+        }
+    }
+
+    reply.SetInteger("Size", object_size);
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessSetExpTime(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("expiration time setting");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eWriter);
+
+    if (!message.HasKey("TTL"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "Mandatory field 'TTL' is missed");
+
+    string                  arg_val = message.GetString("TTL");
+    TNSTDBValue<CTimeSpan>  ttl;
+
+    ttl.m_IsNull = NStr::EqualNocase(arg_val, "infinity");
+
+    if (!ttl.m_IsNull) {
+        try {
+            CTimeFormat     format("dTh:m:s");
+            ttl.m_Value = CTimeSpan(arg_val, format);
+        } catch (const exception &  ex) {
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "TTL format is not recognized: " + string(ex.what()));
+        } catch (...) {
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "TTL format is not recognized");
+        }
+
+        if (ttl.m_Value.GetSign() == eNegative || ttl.m_Value.IsEmpty())
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "TTL must be > 0");
+    }
+
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "SETEXPTIME message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
+
+
+    // The complicated logic of what and how should be done is described in the
+    // ticket CXX-7361 (see the attached pdf)
+
+    if (m_MetadataOption == eMetadataMonitoring)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "SETEXPTIME could not be used when the HELLO metadata "
+                   "option is set to Monitoring");
+
+    // Detect if the MS SQL update is required
+    bool        db_update = true;
+    if (m_MetadataOption == eMetadataDisabled)
+        db_update = false;
+    else {
+        CNSTServiceProperties       props;  // not used here
+        db_update = x_DetectMetaDBNeedUpdate(message, props);
+    }
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    // Part I. Update MS SQL if needed
+    bool        db_error = false;
+    int         status = kSPStatusOK;
+    if (db_update) {
+        string  object_key = direct_object.Locator().GetUniqueKey();
+        string  object_loc = direct_object.Locator().GetLocator();
+        bool    create_if_not_found = true; // default
+        if (message.HasKey("CreateIfNotFound"))
+            create_if_not_found = message.GetBoolean("CreateIfNotFound");
+
+        try {
+            x_CreateClient();
+
+            TNSTDBValue<Int8>   object_size;    // Not really used anymore
+
+            // The SP will throw an exception if an error occured
+            status = m_Server->GetDb().ExecSP_SetExpiration(object_key, ttl,
+                                                            create_if_not_found,
+                                                            object_loc,
+                                                            m_DBClientID,
+                                                            object_size);
+        } catch (const exception &  ex) {
+            string          error_scope;
+            Int8            error_code;
+            unsigned int    error_sub_code;
+
+            if (GetReplyMessageProperties(ex, &error_scope, &error_code,
+                                          &error_sub_code) == false)
+                error_sub_code = CNetStorageServerException::eDatabaseError;
+            AppendError(reply, error_code, ex.what(), error_scope,
+                        error_sub_code);
+            db_error = true;
+        } catch (...) {
+            AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                        "Unknown metainfo DB update error",
+                        kScopeUnknownException,
+                        CNetStorageServerException::eDatabaseError);
+            db_error = true;
+        }
+
+        // It was decided that we DO continue in case of logical errors in
+        // the meta info db
+        if (db_error == false)
+            x_CheckExpirationStatus(status);
+    }
+
+    // Part II. Call the remote object SetExpiration(...)
+    try {
+        CTimeout    timeout;
+        if (ttl.m_IsNull || (db_update && !db_error))
+            timeout.Set(CTimeout::eInfinite);
+        else
+            timeout.Set(ttl.m_Value);
+
+        direct_object.SetExpiration(timeout);
+    } catch (const CNetStorageException &  ex) {
+        CNetStorageException::TErrCode      err = ex.GetErrCode();
+        if (err == CNetStorageException::eNotSupported) {
+            // Thanks to the CDirectNetStorageObject interface: there is no way
+            // to test if the SetExpiration() is supported. Here it is not an
+            // error, it is just that it makes no sense to call SetExpiration()
+            // for the storage.
+            if (db_error || !db_update || status == kSPObjectNotFound)
+                AppendError(reply,
+                            NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                            ex.what(), ex.GetType(),
+                            CNetStorageServerException::eStorageError);
+        } else if (err == CNetStorageException::eNotExists) {
+            // Basically it is the same condition as for NotSupported case -
+            // see CXX-8215. It however has a distinctive nature to the
+            // NotSupported case so a separate branch is introduced.
+            if (db_error || !db_update || status == kSPObjectNotFound)
+                AppendError(reply,
+                            NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                            ex.what(), ex.GetType(),
+                            CNetStorageServerException::eStorageError);
+        } else {
+            // That's a real problem of setting the object expiration
+            AppendError(reply,
+                        NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                        ex.what(), ex.GetType(),
+                        CNetStorageServerException::eStorageError);
+        }
+    } catch (const exception &  ex) {
+        string          error_scope;
+        Int8            error_code;
+        unsigned int    error_sub_code;
+
+        if (GetReplyMessageProperties(ex, &error_scope, &error_code,
+                                      &error_sub_code) == false) {
+            error_sub_code = CNetStorageServerException::eStorageError;
+        }
+
+        AppendError(reply, error_code, ex.what(), error_scope,
+                    error_sub_code);
+    } catch (...) {
+        const string    msg = "Unknown remote storage SetExpiration error";
+        AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                    msg, kScopeUnknownException,
+                    CNetStorageServerException::eStorageError);
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessLockFTPath(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("FileTrack path locking");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eWriter);
+
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "LOCKFTPATH message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
+
+    if (m_MetadataOption == eMetadataMonitoring)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "LOCKFTPATH could not be used when the HELLO metadata "
+                   "option is set to Monitoring");
+
+    CJsonNode         reply = CreateResponseMessage(common_args.m_SerialNumber);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
+    CNSTServiceProperties       service_properties;
+
+    if (x_DetectMetaDBNeedOnGetObjectInfo(message, service_properties)) {
+        // The only required check in the DB is if the object is expired
+        TNSTDBValue<CTime>  object_expiration;
+        TNSTDBValue<Int8>   individual_object_ttl;
+        int  status = m_Server->GetDb().ExecSP_GetObjectExpiration(object_key,
+                                                        object_expiration,
+                                                        individual_object_ttl);
+        x_CheckExpirationStatus(status);
+
+        if (status == kSPStatusOK) {
+            // Only if the object exists and not expired its expiration time
+            // should be updated
+            if (!object_expiration.m_IsNull) {
+                try {
+                    m_Server->GetDb().UpdateExpirationIfExists(
+                                        object_key,
+                                        service_properties.GetTTL(),
+                                        service_properties.GetProlongOnRead(
+                                                        individual_object_ttl),
+                                        object_expiration);
+                } catch (const std::exception &  ex) {
+                    ERR_POST("Error updating object expiration on LOCKFTPATH. "
+                             "Ignore and continue. " << ex);
+                } catch (...) {
+                    ERR_POST("Unknown error updating object "
+                             "expiration on LOCKFTPATH.");
+                }
+            }
+        }
+    }
+
+
+    CMessageListener_Basic      warnings_listener;  // for collecting warnings
+    IMessageListener::PushListener(warnings_listener);
+
+    CMessageListenerResetter    listener_resetter;  // for reliable popping the
+                                                    // listener
+
+
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        string  lock_path = direct_object.FileTrack_Path();
+        reply.SetString("Path", lock_path);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI FileTrack_Path", start);
+    } catch (...) {
+        if (m_Server->IsLogTimingNSTAPI()) {
+            m_Timing.Append("NetStorageAPI FileTrack_Path exception", start);
+        }
+        throw;
+    }
+
+    // Append warnings if so
+    size_t      warn_count = warnings_listener.Count();
+    for (size_t  k = 0; k < warn_count; ++k) {
+        const IMessage &    warn = warnings_listener.GetMessage(k);
+
+        // As agreed when CXX-7622 is discussed, all the collected messages are
+        // warnings, regardless of their severity. The errors are supposed to
+        // be reported via the C++ exceptions mechanism.
+
+        AppendWarning(reply, warn.GetCode(), warn.GetText(),
+                      kScopeIMessage, warn.GetSubCode());
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+CDirectNetStorageObject
+CNetStorageHandler::x_GetObject(const CJsonNode &  message,
+                                bool  need_fake_write)
+{
+    CNcbiApplication *  app = CNcbiApplication::Instance();
+
+    if (message.HasKey("ObjectLoc")) {
+        string      object_loc = message.GetString("ObjectLoc");
+        x_CheckObjectLoc(object_loc);
+
+        try {
+            // There could be a decryption exception so there is this try {}
+            m_Server->ResetDecryptCacheIfNeed();
+            CDirectNetStorage   storage(
+                              app->GetConfig(),
+                              m_Service,
+                              m_Server->GetCompoundIDPool());
+            m_Server->ReportNetStorageAPIDecryptSuccess();
+
+            CDirectNetStorageObject object(storage.Open(object_loc));
+
+            if (need_fake_write) {
+                // This 'fake' call needs to be done to have the locator
+                // properly formed.
+                // See JIRA: CXX-8041
+                object.Write("", 0);
+            }
+
+            if (m_ConnContext.NotNull()) {
+                GetDiagContext().Extra()
+                    .Print("ObjectKey", object.Locator().GetUniqueKey());
+
+                // The locator could have been changed due to the fake write
+                // call above. If it was changed, then log it once again.
+                string  new_loc = object.Locator().GetLocator();
+                if (new_loc != object_loc)
+                    GetDiagContext().Extra()
+                        .Print("ObjectLoc", object.Locator().GetLocator());
+            }
+
+            return object;
+        } catch (const CRegistryException &  ex) {
+            if (ex.GetErrCode() == CRegistryException::eDecryptionFailed)
+                m_Server->RegisterNetStorageAPIDecryptError(ex.what());
+            throw;
+        }
+    }
+
+    // Take the arguments
+    SICacheSettings     icache_settings;
+    SUserKey            user_key;
+    TNetStorageFlags    flags;
+
+    x_GetStorageParams(message, &icache_settings, &user_key, &flags);
+
+    try {
+        // There could be a decryption exception so there is this try {}
+        m_Server->ResetDecryptCacheIfNeed();
+        CDirectNetStorageByKey    storage(app->GetConfig(), m_Service,
+                                          m_Server->GetCompoundIDPool(),
+                                          user_key.m_AppDomain);
+        m_Server->ReportNetStorageAPIDecryptSuccess();
+
+        CDirectNetStorageObject   object(storage.Open(user_key.m_UniqueID,
+                                                      flags));
+        if (need_fake_write) {
+            // This 'fake' call needs to be done to have the locator
+            // properly formed.
+            // See JIRA: CXX-8041
+            object.Write("", 0);
+        }
+
+        // Log if needed
+        if (m_ConnContext.NotNull()) {
+            GetDiagContext().Extra()
+                .Print("ObjectKey", object.Locator().GetUniqueKey())
+                .Print("ObjectLoc", object.Locator().GetLocator());
+        }
+
+        return object;
+    } catch (const CRegistryException &  ex) {
+        if (ex.GetErrCode() == CRegistryException::eDecryptionFailed)
+            m_Server->RegisterNetStorageAPIDecryptError(ex.what());
+        throw;
+    }
+}
+
+
+void
+CNetStorageHandler::x_CheckObjectLoc(const string &  object_loc) const
+{
+    if (object_loc.empty()) {
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "Object locator must not be an empty string");
+    }
+}
+
+
+void
+CNetStorageHandler::x_CheckICacheSettings(
+                            const SICacheSettings &  icache_settings)
+{
+    if (!icache_settings.m_ServiceName.empty()) {
+        // CacheName is mandatory in this case
+        if (icache_settings.m_CacheName.empty()) {
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "CacheName is required if ServiceName is provided");
+        }
+    }
+}
+
+
+void
+CNetStorageHandler::x_CheckUserKey(const SUserKey &  user_key)
+{
+    if (!user_key.m_UniqueID.empty()) {
+        // AppDomain is mandatory in this case
+        if (user_key.m_AppDomain.empty()) {
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "AppDomain is required if UniqueKey is provided");
+        }
+    }
+}
+
+
+void
+CNetStorageHandler::x_GetStorageParams(
+                        const CJsonNode &   message,
+                        SICacheSettings *   icache_settings,
+                        SUserKey *          user_key,
+                        TNetStorageFlags *  flags)
+{
+    *icache_settings = ExtractICacheSettings(message);
+    *user_key = ExtractUserKey(message);
+
+    // Check the parameters validity
+    x_CheckICacheSettings(*icache_settings);
+    x_CheckUserKey(*user_key);
+
+    *flags = ExtractStorageFlags(message);
+}
+
+
+CDirectNetStorageObject
+CNetStorageHandler::x_CreateObjectStream(
+                    const SICacheSettings &  icache_settings,
+                    TNetStorageFlags         flags)
+{
+    try {
+        // There could be a decryption exception so there is this try {}
+        CNcbiApplication *  app = CNcbiApplication::Instance();
+
+        m_Server->ResetDecryptCacheIfNeed();
+        CDirectNetStorage   net_storage(app->GetConfig(), m_Service,
+                                        m_Server->GetCompoundIDPool());
+        m_Server->ReportNetStorageAPIDecryptSuccess();
+
+        return net_storage.Create(m_Service, flags);
+    } catch (const CRegistryException &  ex) {
+        if (ex.GetErrCode() == CRegistryException::eDecryptionFailed)
+            m_Server->RegisterNetStorageAPIDecryptError(ex.what());
+        throw;
+    }
+}
+
+
+EIO_Status
+CNetStorageHandler::x_SendOverUTTP()
+{
+    const char *    output_buffer;
+    size_t          output_buffer_size;
+    size_t          written;
+
+    do {
+        m_UTTPWriter.GetOutputBuffer(&output_buffer, &output_buffer_size);
+        if (output_buffer_size > 0) {
+            // Write to the socket as a single transaction
+            CNSTPreciseTime     start = CNSTPreciseTime::Current();
+            EIO_Status result =
+                GetSocket().Write(output_buffer, output_buffer_size, &written);
+            if (m_Server->IsLogTimingClientSocket())
+                m_Timing.Append("Client socket write (" +
+                                NStr::NumericToString(output_buffer_size) + ")",
+                                start);
+            if (result != eIO_Success) {
+                // Error writing to the socket. Log what we can and close the
+                // connection.
+                x_OnSocketWriteError(result, written,
+                                     output_buffer, output_buffer_size);
+                return result;
+            }
+        }
+    } while (m_UTTPWriter.NextOutputBuffer());
+
+    return eIO_Success;
+}
+
+
+
+EMetadataOption
+CNetStorageHandler::x_ConvertMetadataArgument(const CJsonNode &  message) const
+{
+    if (!message.HasKey("Metadata"))
+        return eMetadataNotSpecified;
+
+    string  value = message.GetString("Metadata");
+    value = NStr::TruncateSpaces(value);
+    value = NStr::ToLower(value);
+    EMetadataOption result = g_IdToMetadataOption(value);
+
+    if (result == eMetadataUnknown) {
+        vector<string>      valid = g_GetSupportedMetadataOptions();
+        string              message = "Optional field 'Metadata' value is not "
+                                      "recognized. Supported values are: ";
+        for (vector<string>::const_iterator  k = valid.begin();
+             k != valid.end(); ++k) {
+            if (k != valid.begin())
+                message += ", ";
+            message += *k;
+        }
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument, message);
+    }
+
+    if (result == eMetadataRequired) {
+        switch (m_Server->InMetadataServices(m_Service))
+        {
+            case eMetadataOn:
+                break;  // all good
+            case eUnknownService:
+                NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                           "Invalid metadata option. It cannot be required "
+                           "for not configured service");
+            case eMetadataExplicitOff:
+                NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                           "Invalid metadata option. It cannot be required "
+                           "for a service which has metadata explicitly "
+                           "switched off");
+            case eMetadataDefaultOff:
+                NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                           "Invalid metadata option. It cannot be required "
+                           "for a service which has metadata "
+                           "switched off (by default)");
+        }
+    }
+    return result;
+}
+
+
+void
+CNetStorageHandler::x_ValidateWriteMetaDBAccess(
+                                            const CJsonNode &  message,
+                                            bool  expect_object) const
+{
+    if (expect_object && message.HasKey("ObjectLoc")) {
+        // Object locator has a metadata flag and a service name
+        string  object_loc = message.GetString("ObjectLoc");
+        x_CheckObjectLoc(object_loc);
+
+        CNetStorageObjectLoc  object_loc_struct(m_Server->GetCompoundIDPool(),
+                                                object_loc);
+
+        bool    no_metadata = object_loc_struct.IsMetaDataDisabled();
+
+        if (no_metadata)
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "DB access requested for an object which was created "
+                       "with no metadata flag");
+
+        string      service = object_loc_struct.GetServiceName();
+        if (service.empty())
+            service = m_Service;
+
+        switch (m_Server->InMetadataServices(service))
+        {
+            case eMetadataOn:
+                break;  // all good
+            case eUnknownService:
+                NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                           "Effective object service (" + service +
+                           ") is not configured. Metainfo DB access declined.");
+            case eMetadataExplicitOff:
+                NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                           "Effective object service (" + service +
+                           ") has metadata explicitly switched off. "
+                           "Metainfo DB access declined.");
+            case eMetadataDefaultOff:
+                NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                           "Effective object service (" + service +
+                           ") has metadata switched off (by default). "
+                           "Metainfo DB access declined.");
+        }
+
+        return;
+    }
+
+    if (expect_object) {
+        // This is user key identification
+        TNetStorageFlags    flags = ExtractStorageFlags(message);
+        if (flags & fNST_NoMetaData) {
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Storage flags forbid access to the metainfo DB. "
+                       "Metainfo DB access declined.");
+        }
+    }
+
+    // There is no knowledge of the service and metadata request from the
+    // object identifier, so the HELLO service is used
+    switch (m_Server->InMetadataServices(m_Service))
+    {
+        case eMetadataOn:
+            break;  // all good
+        case eUnknownService:
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Service provided in HELLO (" + m_Service +
+                       ") is not configured. Metainfo DB access declined.");
+        case eMetadataExplicitOff:
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Service provided in HELLO (" + m_Service +
+                       ") has metadata explicitly switched off. "
+                       "Metainfo DB access declined.");
+        case eMetadataDefaultOff:
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Service provided in HELLO (" + m_Service +
+                       ") has metadata switched off (by default). "
+                       "Metainfo DB access declined.");
+    }
+}
+
+
+// Detects if the meta information DB should be updated
+bool
+CNetStorageHandler::x_DetectMetaDBNeedUpdate(
+                                    const CJsonNode &  message,
+                                    CNSTServiceProperties &  props) const
+{
+    if (m_MetadataOption == eMetadataDisabled)
+        return false;
+
+    if (message.HasKey("ObjectLoc")) {
+        // Object locator has a metadata flag and a service name
+        string  object_loc = message.GetString("ObjectLoc");
+        x_CheckObjectLoc(object_loc);
+
+        CNetStorageObjectLoc  object_loc_struct(m_Server->GetCompoundIDPool(),
+                                                object_loc);
+
+        bool    no_metadata = object_loc_struct.IsMetaDataDisabled();
+
+        if (no_metadata)
+            return false;
+
+        string  service = object_loc_struct.GetServiceName();
+        if (service.empty())
+            service = m_Service;
+
+        bool    service_configured = m_Server->GetServiceProperties(service,
+                                                                    props);
+        if (m_MetadataOption == eMetadataNotSpecified)
+            return service_configured;
+
+        // This is the eMetadataRequired option: the check below is needed
+        // because the list of services could be reconfigured on the fly
+        if (!service_configured)
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Effective object service (" + service +
+                       ") is not in the list of "
+                       "configured services. Metainfo DB access declined.");
+        return true;
+    }
+
+    // This is user key identification
+    TNetStorageFlags    flags = ExtractStorageFlags(message);
+    if (flags & fNST_NoMetaData)
+        return false;
+
+    // There is no knowledge of the service and metadata request from the
+    // object identifier
+    bool    service_configured = m_Server->GetServiceProperties(m_Service,
+                                                                props);
+    if (m_MetadataOption == eMetadataRequired) {
+        // The service list could be reconfigured on the fly
+        if (!service_configured)
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Service provided in HELLO (" + m_Service +
+                       ") is not in the list of "
+                       "configured services. Metainfo DB access declined.");
+    }
+    return service_configured;
+}
+
+
+bool
+CNetStorageHandler::x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags)
+{
+    if ((flags & fNST_NoMetaData) != 0)
+        return false;
+    if (m_MetadataOption == eMetadataDisabled)
+        return false;
+
+    bool    service_configured = m_Server->GetServiceTTL(m_Service,
+                                                         m_CreateTTL);
+    if (m_MetadataOption == eMetadataRequired) {
+        // The services could be reconfigured on the fly so the presence of the
+        // service in the list of configured must be done here again
+        if (!service_configured)
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Service provided in HELLO (" + m_Service +
+                       ") is not in the list of "
+                       "configured services. Metainfo DB access declined.");
+    }
+    return service_configured;
+}
+
+
+// Returns true if the metainfo DB should be accessed
+bool
+CNetStorageHandler::x_DetectMetaDBNeedOnGetObjectInfo(
+                                    const CJsonNode & message,
+                                    CNSTServiceProperties &  props) const
+{
+    if (m_MetadataOption == eMetadataDisabled)
+        return false;
+
+    if (message.HasKey("ObjectLoc")) {
+        // Object locator has a metadata flag and a service name
+        string  object_loc = message.GetString("ObjectLoc");
+        x_CheckObjectLoc(object_loc);
+
+        CNetStorageObjectLoc  object_loc_struct(m_Server->GetCompoundIDPool(),
+                                                object_loc);
+
+        bool    no_metadata = object_loc_struct.IsMetaDataDisabled();
+
+        if (no_metadata)
+            return false;
+
+        string  service = object_loc_struct.GetServiceName();
+        if (service.empty())
+            service = m_Service;
+
+        bool    service_configured = m_Server->GetServiceProperties(service,
+                                                                    props);
+        return service_configured;
+    }
+
+    // This is user key identification
+    TNetStorageFlags    flags = ExtractStorageFlags(message);
+    if (flags & fNST_NoMetaData)
+        return false;
+
+    // There is no knowledge of the service and metadata request from the
+    // object identifier
+    bool    service_configured = m_Server->GetServiceProperties(m_Service,
+                                                                props);
+    return service_configured;
+}
+
+
+// Sets the m_DBClientID from in-memory cache or via referring to the DB
+void
+CNetStorageHandler::x_CreateClient(void)
+{
+    m_DBClientID = x_GetClientID(m_Client);
+}
+
+
+// Retrieves the client DB ID from the in-memory registry.
+// If the value is not there, then retrieves it (probably via creation) from
+// the DB
+Int8
+CNetStorageHandler::x_GetClientID(const string &  client)
+{
+    Int8        client_id = m_Server->GetClientRegistry().
+                                                GetDBClientID(client);
+    if (client_id != k_UndefinedClientID)
+        return client_id;   // It is cached and is at hand
+
+    // Need to refer to the DB:
+    // - create it or
+    // - retrieve it
+    m_Server->GetDb().ExecSP_CreateClient(client, client_id);
+    if (client_id != k_UndefinedClientID)
+        m_Server->GetClientRegistry().SetDBClientID(client, client_id);
+    return client_id;
+}
+
+
+void
+CNetStorageHandler::x_CreateUser(void)
+{
+    // The user comes from the context. The empty user is allowed too.
+    // See CXX-8023 for details
+    CNSTUserID  user;
+    string      user_name = CRequestContext_PassThrough().Get("my_ncbi_id");
+    if (!user_name.empty()) {
+        user.SetNamespace("my_ncbi_id");
+        user.SetName(NStr::ToLower(user_name));
+        user.Validate();
+    }
+
+    m_DBUserID = x_GetUserID(user);
+}
+
+
+
+Int8
+CNetStorageHandler::x_GetUserID(const CNSTUserID &  user)
+{
+    Int8        user_id = m_Server->GetUserCache().GetDBUserID(user);
+    if (user_id != k_UndefinedUserID)
+        return user_id;     // It is cached and is at hand
+
+    // Need to refer to the DB:
+    // - create it or
+    // - retrieve it
+    m_Server->GetDb().ExecSP_CreateUser(user, user_id);
+    if (user_id != k_UndefinedUserID)
+        m_Server->GetUserCache().SetDBUserID(user, user_id);
+    return user_id;
+}
+
+
+void
+CNetStorageHandler::x_OptionalExpirationUpdate(
+            CDirectNetStorageObject &  object,
+            CJsonNode &  reply,
+            const string &  user_message
+        )
+{
+    // Sends the infinite expiration to the backend storage.
+    // The errors are treated in a special way:
+    // - the overall reply status is not changed
+    // - an error is attached to the errors container
+
+    try {
+        object.SetExpiration(CTimeout(CTimeout::eInfinite));
+    } catch (const exception &  ex) {
+        // Thanks to the design of CDirectNetStorageObject: there is no way to
+        // check in fron if the operation is supported by the underlied
+        // storage. The only way to understand that is to try, catch exception
+        // and check an error code.
+        const CNetStorageException *   to_test_setexp_support =
+                dynamic_cast<const CNetStorageException *>(&ex);
+        if (to_test_setexp_support != 0)
+            if (to_test_setexp_support->GetErrCode() ==
+                        CNetStorageException::eNotSupported)
+                // This is not an error. SetExpiration() is not supported.
+                return;
+
+        // Here: this is an error. Log it and append an error to the reply
+        // message.
+        ERR_POST(ex);
+
+        string          error_scope;
+        Int8            error_code;
+        unsigned int    error_sub_code;
+
+        if (GetReplyMessageProperties(ex, &error_scope, &error_code,
+                                      &error_sub_code) == false)
+            error_sub_code = CNetStorageServerException::eDatabaseError;
+
+        // false -> do not change response to ERROR
+        AppendError(reply, error_code, ex.what(), error_scope,
+                    error_sub_code, false);
+    } catch (...) {
+        // Append error however the overall reply must be OK
+        string  msg = "Unknown error updating the backend expiration "
+                      " time while processing the " + user_message + " message";
+        ERR_POST(msg);
+
+        // false -> do not change response to ERROR
+        AppendError(reply,
+                    NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                    msg, kScopeUnknownException,
+                    CNetStorageServerException::eInternalError, false);
+    }
+}
+
+
+void CNetStorageHandler::x_CheckExistanceStatus(int  status)
+{
+    if (status == kSPObjectNotFound)
+        NCBI_THROW(CNetStorageServerException, eNetStorageObjectNotFound,
+                   kObjectNotFound);
+}
+
+
+void CNetStorageHandler::x_CheckExpirationStatus(int  status)
+{
+    if (status == kSPObjectExpired)
+        NCBI_THROW(CNetStorageServerException, eNetStorageObjectExpired,
+                   kObjectExpired);
+}
+
+
+void CNetStorageHandler::x_CheckNonAnonymousClient(const string &  op) const
+{
+    if (m_Client.empty()) {
+        NCBI_THROW(CNetStorageServerException, eHelloRequired,
+                   "Anonymous client cannot perform " + op);
+    }
+}
+

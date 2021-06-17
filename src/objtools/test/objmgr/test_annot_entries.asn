@@ -1,0 +1,2990 @@
+Seq-entry ::= set {
+  level 1,
+  class nuc-prot,
+  descr {
+    source {
+      org {
+        taxname "Homo sapiens",
+        common "human",
+        db {
+          {
+            db "taxon",
+            tag id 9606
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Homo",
+            species "sapiens"
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Catarrhini;
+ Hominidae; Homo",
+          gcode 1,
+          mgcode 2,
+          div "PRI"
+        }
+      },
+      subtype {
+        {
+          subtype map,
+          name "21q21.2"
+        }
+      }
+    },
+    pub {
+      pub {
+        gen {
+          serial-number 1
+        },
+        muid 90236318,
+        article {
+          title {
+            name "Genomic organization of the human amyloid beta-protein
+ precursor gene."
+          },
+          authors {
+            names std {
+              {
+                name name {
+                  last "Yoshikai",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Sasaki",
+                  initials "H."
+                }
+              },
+              {
+                name name {
+                  last "Doh-ura",
+                  initials "K."
+                }
+              },
+              {
+                name name {
+                  last "Furuya",
+                  initials "H."
+                }
+              },
+              {
+                name name {
+                  last "Sakaki",
+                  initials "Y."
+                }
+              }
+            },
+            affil str "Research Laboratory for Genetic Information, Faculty of
+ Medicine, Kyushu University, Fukuoka, Japan."
+          },
+          from journal {
+            title {
+              iso-jta "Gene",
+              ml-jta "Gene",
+              issn "0378-1119",
+              name "Gene."
+            },
+            imp {
+              date std {
+                year 1990,
+                month 3,
+                day 15
+              },
+              volume "87",
+              issue "2",
+              pages "257-263",
+              language "eng"
+            }
+          },
+          ids {
+            pubmed 2110105,
+            medline 90236318
+          }
+        },
+        pmid 2110105
+      },
+      reftype sites
+    },
+    update-date std {
+      year 2004,
+      month 12,
+      day 2
+    }
+  },
+  seq-set {
+    set {
+      level 2,
+      class segset,
+      descr {
+        title "Human amyloid-beta protein (APP) gene",
+        molinfo {
+          biomol genomic
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            genbank {
+              name "SEG_HUMAMYB",
+              accession "AH005295",
+              version 1
+            },
+            gi 178614
+          },
+          descr {
+            title "Homo sapiens amyloid-beta protein (APP) gene, complete cds,
+ alternatively spliced.",
+            create-date std {
+              year 1993,
+              month 4,
+              day 27
+            }
+          },
+          inst {
+            repr seg,
+            mol dna,
+            length 13140,
+            fuzz lim gt,
+            ext seg {
+              whole gi 178595,
+              null NULL,
+              whole gi 178596,
+              null NULL,
+              whole gi 178597,
+              null NULL,
+              whole gi 178598,
+              null NULL,
+              whole gi 178599,
+              null NULL,
+              whole gi 178600,
+              null NULL,
+              whole gi 178601,
+              null NULL,
+              whole gi 178602,
+              null NULL,
+              whole gi 178603,
+              null NULL,
+              whole gi 178604,
+              null NULL,
+              whole gi 178605,
+              null NULL,
+              whole gi 178606,
+              null NULL,
+              whole gi 178607,
+              null NULL,
+              whole gi 178608,
+              null NULL,
+              whole gi 178609,
+              null NULL,
+              whole gi 178610,
+              null NULL,
+              whole gi 178611,
+              null NULL,
+              whole gi 178612,
+              null NULL,
+              whole gi 178613
+            }
+          }
+        },
+        set {
+          level 3,
+          class parts,
+          seq-set {
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB01",
+                  accession "M34862",
+                  version 1
+                },
+                gi 178595
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 1.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1154,
+                strand ds,
+                seq-data ncbi2na '8DDD70FFD7DF550748E8EF13579F0410002155655900
+D44785155FC10040140040400CC202010054254815E7F42082C0EAFA59F7F94AD7997E75FEBDBD
+C08C80F52BE76E5E7FE1BEAAF000E2BFE7B741090200D73F5FC27D1DBDD3DDF5201979545DD405
+88800180E68C0064572492D7F3184556A2979AADA38F42746A8624A267761FF7225D26D728745F
+D5E35E45B5775E95487757547BD18254AE96DA5AA268AA99BAAE4A6994299E45EEA66A98A95756
+9989A992F55A699672AB7776AE589AAEA5A349E1D97A778956596676A75B4BF5DA49ACA6224668
+A26E66AA55A8869A6BA699A922428669A3547644926476B95664AB6639E56BFA479D79E965E869
+DA99E8AEAE59976829AAA29E46BAA198C555085F0542DFC3922096AAD6D0EA1570'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "protein_bind"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 483,
+                        to 489,
+                        id gi 178595
+                      },
+                      qual {
+                        {
+                          qual "bound_moiety",
+                          val "AP-1"
+                        }
+                      }
+                    },
+                    {
+                      data imp {
+                        key "protein_bind"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 788,
+                        to 794,
+                        id gi 178595
+                      },
+                      qual {
+                        {
+                          qual "bound_moiety",
+                          val "AP-1"
+                        }
+                      }
+                    },
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 833,
+                        to 1036,
+                        id gi 178595
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB02",
+                  accession "M34863",
+                  version 1
+                },
+                gi 178596
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 2.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 771,
+                strand ds,
+                seq-data ncbi2na 'D33A801BB03FF4E0C0F5FDACFAC3F5F77BFCB3008093
+E5F32BA708137B24C4C11F0DC0A2EF8216A78F5C3E20E2420C81DFFE32F357BDF5D425DE5FA273
+A31CC1C1E09F7DFD2B151E3AC39E979E9E05523E53BDEE921E04E44E0ED483A82EA3D23534A850
+05E4F8C50A0A4D792CF9420B0B5ED6BA7243D1BE8D1393FBFD000FC1F7ECFF934B3FC15C4B0037
+EBD70E3D14C53C333F3F93C5738CC4CC0EFFC03CE3B6CF385347012CBF08ED1247FFFFD7477B45
+4AFA2E4BA423CE9F1EC97E171EA740'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 278,
+                        to 445,
+                        id gi 178596
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "2"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB03",
+                  accession "M34864",
+                  version 1
+                },
+                gi 178597
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 3.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 604,
+                strand ds,
+                seq-data ncbi2na 'A2CFFA3FE87F5A3D48E7414B0B330E48EF700DA002D2
+217E0247DEB5424FFA30A847517B17C4BA29FBC8E7EC0E5255E5D0B043E3DFFEEE7754ADC5781E
+48D143BAC82505052E14D481EB909AA59092E42153551FEE3D5C59E7CAE25A5A5BAA7AEF8FAA97
+ADF8A8200228E75EF2B44C4487EF7D244F9477BBEC7BBFE877E4BC4F7B91E15CCA24B3FF8BD5E5
+D20E0FC54ABB33E03C40F5EA'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 229,
+                        to 358,
+                        id gi 178597
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "3"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB04",
+                  accession "M34865",
+                  version 1
+                },
+                gi 178598
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 4.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 249,
+                strand ds,
+                seq-data ncbi2na 'DF8FABE7CA4F00A7BF07EDF82DCDFD7E3B7DE6B0811E
+E3123A0E1A82EBFD7F7F4BEB8BFB0B8E57DDBD7842E40F7C45288A3A3BF98074DF47A445B65022
+B140'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 131,
+                        to 243,
+                        id gi 178598
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "4"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB05",
+                  accession "M34866",
+                  version 1
+                },
+                gi 178599
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 5.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 910,
+                strand ds,
+                seq-data ncbi2na '28FBC7780B814222D20FDCA30A4AD4EE2301F537B0A8
+ACA2E27AA3717A0E6443F7A31183C2520A4F0F77ACDEF452E8879C4DF3F543CBF53D4BEF6CC05D
+CF3304DBADF3C0C0C301F0830022C502EC1539C00035EFB03D1D00240C37FD7FB80FAF5C333EAD
+E4EF8F3FCEE8BFDF00E011371DC51D1EFF75F11FEC84E4B8822C507E4E1C693BE795E683E10BD6
+2AB22FEEEF951E9E080B843BA3DE78E68A28E1DA3B7AEA9A24844873923A8AC2BA5FEEF497488E
+7804DFB3A2CFECD7B03C37F7BF347802B77951D5348B79EF39003781CE0FFCE935EF83C30CD0D1
+53448BC3FC1CFC33C07EA0'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 485,
+                        to 678,
+                        id gi 178599
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "5"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB06",
+                  accession "M34867",
+                  version 1
+                },
+                gi 178600
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 6.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 745,
+                strand ds,
+                seq-data ncbi2na '79201C207B550A3003FF92151E27A8FCC7C85E783E0B
+FEAEEFDF740F9403D4CE861FF7FD7D5E03BBF0F87FF7BCFEEFE5F44B82102CB20B248A2820BA78
+AE8208209638E18A18E28EB8E2B228229E2815C608251222051493E5145145145122DEE822BAF6
+2B0D453F9FA3D5545542802026C3148BE80CD4572451E5F550D0013BFFFF500A7DF39FB80FFFEB
+F0424043F40C3B80DFCF312FEFFB17ECCE79FA40D50BC3DC421D65414ACB4DC3F840478BCAE1D7
+EB3D7FA4B8BBFBCCC0'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 199,
+                        to 401,
+                        id gi 178600
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "6"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB07",
+                  accession "M34868",
+                  version 1
+                },
+                gi 178601
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 7.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 669,
+                strand ds,
+                seq-data ncbi2na 'E22BB03772D7AE94BC0F5D2C0EFEB239E5C3014B52BE
+51EA28F0082C06ECC4E048884B97FD39C0EEBD544DD778F22BB9DE0425886A96E5890E37567AC7
+F8EE1E0A82EE553DFF1A68EE9A4168107F844822C793A5BBBA4994B0BA15F7D897A517F6DDDD94
+78779FFEC123E3FD7AF7EA0EA5EF9C51C144FDED47DDC3E748B7592CEF434E2445DD6DFD5E3024
+E94E8EEF77D727B244CEDF90D48A87FE2E7DDFF01027A2E9EFFB7DE480'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 184,
+                        to 351,
+                        id gi 178601
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "7"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB08",
+                  accession "M34869",
+                  version 1
+                },
+                gi 178602
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 8.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Kale",
+                              initials "L.C."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Higgins",
+                              initials "G.A."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 413,
+                strand ds,
+                seq-data ncbi2na '3BF33BD3FEBFEFA2A1405C2E2E3FEFEF2BEFFFED2E87
+6E4FD2534F54EFDDFFEFFCBCEF77CFFF532ED502FC7421C54A05DF9588D7BC06C6FB4F45E2A0A8
+22A8A28E79FAF44C1D4934D17DFE4EBFEEFDF8117B7CB00EFDF54F17E7EC3C4DE3FE52127E23BE
+A7081340'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "variation"
+                      },
+                      comment "g in one allele; gg in another allele",
+                      location pnt {
+                        point 268,
+                        id gi 178602
+                      },
+                      qual {
+                        {
+                          qual "replace",
+                          val "gg"
+                        }
+                      }
+                    },
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 158,
+                        to 214,
+                        id gi 178602
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "8"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB09",
+                  accession "M34870",
+                  version 1
+                },
+                gi 178603
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 9.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Kale",
+                              initials "L.C."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Higgins",
+                              initials "G.A."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 639,
+                strand ds,
+                seq-data ncbi2na 'DF49141EFFE77F939FBF6C081DC39CC3E403A14FF023
+FF5F4F7B1FA8BAE02135F1EE7912EDD3AEF77C0493C1B7ECE679FC703DDEF7880C1E00C69FDCF0
+18BA3CF7BEFBE9FFFF7405D7DDF71FCCBD71049252C55E396F842CDD8845EA8E20E04E54FD4809
+4088A7E29424588883B54AC2DE9DF534F495C633EA01789F977974B75512979E9FCD08DFC08EC0
+BDC3FC0EFC7BBA912FEEAFFF935D6E04E7972828D4'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 309,
+                        to 442,
+                        id gi 178603
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "9"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB10",
+                  accession "M34871",
+                  version 1
+                },
+                gi 178604
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 10.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 468,
+                strand ds,
+                seq-data ncbi2na 'AAC0008505F874009CCF5E43033813F3BF0CC79EE3C3
+CFCCD72EA2B40CF7D23282AB3B0C0FFF033700E1003228004C34D4D73C2DECF40A381E38FF03D0
+3BF5F0FCCAD38883A8229206D090207E5C09E308292F352B005E054FD71404D139492DFFC38BB7
+92BF17F379491746EE3EF4CB54E07D27BD'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 263,
+                        to 337,
+                        id gi 178604
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "10"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB11",
+                  accession "M34872",
+                  version 1
+                },
+                gi 178605
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 11.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 742,
+                strand ds,
+                seq-data ncbi2na 'FFFFC33B0CC22FD08B9333F3502F3CB40D25F4889738
+0C78FF43880B2BF8E2AFA22E4202E0B09CC01B20F2D0EFA0E1CE4B7F28C7FF24720803A0CA3B7F
+FC821F80F9E7D35C7CF4B553A133BBF38E924FD4A202E837FA04A092506221249EBA21113A522E
+82539D0E165965E95E881C4D1677929EF5D76ACADD9E4962F447D2B4491212C2AEA91EA07A094C
+400838A20397E247BCF48AF4157B53D4DF82B40AB44A92717510AD3771124AC7447D5448925212
+8754A8744F9095E0'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 316,
+                        to 474,
+                        id gi 178605
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "11"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB12",
+                  accession "M34873",
+                  version 1
+                },
+                gi 178606
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 12.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 488,
+                strand ds,
+                seq-data ncbi2na '77EE82E009258DC2C3C54F080A2CA203BF20A485E400
+AE1D12E6F44E168E4F2E8177054D943A0824BBFE4407E0022FFD3FD7544976D1BBD0CE7020B3B5
+992048284849115C093F624EE64EBA35420259D235AD52B09BAACC34DF7927F843528F7E7DFABE
+B84A354A4F75891732BBFD5CE9089DFC1F7AC0F7009F'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 207,
+                        to 335,
+                        id gi 178606
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "12"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB13",
+                  accession "M34874",
+                  version 1
+                },
+                gi 178607
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 13.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 413,
+                strand ds,
+                seq-data ncbi2na '75B7400002000202002053D7155213EF85E8BED35FE3
+92BCE11175BB8FCE264E0D2DDDD5E77106E5E4BA58A23D28E0BEB0B09EF7FE39E44E84ECFFD548
+A00F8A0B8BCDEFE2833A0BC32049F97FC63807B4A7A0727F725F243E0D2F7C5DD4C7EC21E8A0ED
+9787CA80'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "alternately spliced; G00-119-692",
+                      location int {
+                        from 92,
+                        to 191,
+                        id gi 178607
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "13"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB14",
+                  accession "M34875",
+                  version 1
+                },
+                gi 178608
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 13
+ and complete cds, alternatively spliced.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1037,
+                strand ds,
+                seq-data ncbi2na 'A35FF844400FF43F20B73FCD2FFF7FEE92F1CEB3ACDC
+A014FB58042BC418FCC5EF17DC22FFB2FF277C4BC0DFE3D3FC3FD333AEE2B22BF87F3DFF933033
+52ED52453FBE0021CF7E52B92E9D397B0F524FFA8A50AEA48E1F89520BD08523EA013A42144FDC
+4000F352938C1373FB2D5271D28A7BAEA28DD5897AAE9E29E4B897E346517A90C890857B74000A
+0800873CFD553E0EB7E91CF1100D0FB53230CEAFCFDF0F7CBDFF7F8DEEE5EE7C7B2C511EFF8F3E
+C9FECB03FE03490BB8B5BCDFEF7DFFD0CF1FE2CD68B77E4F104E0FF08DF5D155E554714FDE4000
+00000000002E68F93E8DEC8D3FEA833F3330EF0E2BFC0411FF371C81E33F976038F517E2553D28
+1BCB3FC0'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "alternately spliced; G00-119-692",
+                      location int {
+                        from 288,
+                        to 739,
+                        id gi 178608
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "13"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB15",
+                  accession "M34876",
+                  version 1
+                },
+                gi 178609
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 14.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 577,
+                strand ds,
+                seq-data ncbi2na '792D7949277EE27987F930B27E0E53B974BFD137B00A
+88E30EB173B4E9DC06634E46E024BE0B7E5E920B03AE9E79E79E7BEE3EFBC7450223AFFBFAFC8E
+279F480890073D2386DFA504E3CB81428D2F1A018E774E537F8580600516E89D7D5B83A22F497A
+18DD496E93DFFAA7877B94941120060AC22D5789490A9BDEA2B3331131306EEE422222F37FECEF
+7E2EB83FFFC0'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 241,
+                        to 462,
+                        id gi 178609
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "14"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB16",
+                  accession "M34877",
+                  version 1
+                },
+                gi 178610
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 15.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 534,
+                strand ds,
+                seq-data ncbi2na '9B35EB8A9FF3C801C289287A44D0C98C253F02EB9575
+EB5D8E76A3C1D1EEBDFF7A79D7FFEC1FBF3E4CE7FFD5E761CEFEA25187C537E3FB7EFE7F7BB57E
+7D7B952F897BE39595E79616287851D852B348167E1FB9775937EA5C2762486FB75FDE4FF09777
+43EC7C7922C83F82E17C80501FF003D57E1CF5F1DF4FD50BD62E038FFFFBF789FD50'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 258,
+                        to 311,
+                        id gi 178610
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "15"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB17",
+                  accession "M34878",
+                  version 1
+                },
+                gi 178611
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 16.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 553,
+                strand ds,
+                seq-data ncbi2na 'CB0F82FF0332ACD3FF7F08B4FCD0FF7DC1F4A5C8082F
+FAB29FEDF12EF3CFCE2C01C3EBED7931FC3CE3B0C4AF7ABE1033421A288DDE0B823A3920F584E1
+D28CE0BD34D003EB1B00C3F177F51C7BFB7E50385CF077AF4D7B9C80D03C2802300310E7E5CCA3
+C5380138200C0CA729E264B9D097B0D5247FA8A50A6AE8D18AD203D88525E9433AE0154DDC7000
+'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "amyloid-beta protein",
+                      location int {
+                        from 173,
+                        to 273,
+                        id gi 178611
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "16"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB18",
+                  accession "M34879",
+                  version 1
+                },
+                gi 178612
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 17.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 567,
+                strand ds,
+                seq-data ncbi2na 'FFFFFFFF02C24D033F85052FA9220CC7807FF3305D35
+03B55E4FC20380F7DC3E6FCC0FB03CCF93F203C03DFFDF0FEFF42BBDFE4823BABD0102B90D3E87
+4EBA9AEFB4C984B8DB4D17EB8E7820804B11353D34EBBAE8ACAC07E1E4EFD42EA0F08738883CA7
+C9FFE7081C9C2CDDFF00060D2EE7D4E39FABC4BEF7F7EFFAFF4F4F907C5B833DE742B3E22EEEFB
+CDD07C'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 194,
+                        to 340,
+                        id gi 178612
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "17"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                genbank {
+                  name "HUMAMYB19",
+                  accession "M33112",
+                  version 1
+                },
+                gi 178613
+              },
+              descr {
+                title "Homo sapiens amyloid-beta protein (APP) gene, exon 18
+ and complete cds, alternatively spliced.",
+                comment "Computer-readable sequence kindly submitted by
+ Y.Sakaki, 01-MAY-1992.",
+                genbank {
+                  keywords {
+                    "amyloid-beta protein"
+                  },
+                  entry-date std {
+                    year 1995,
+                    month 8,
+                    day 8
+                  }
+                },
+                pub {
+                  pub {
+                    gen {
+                      serial-number 2
+                    },
+                    gen {
+                      cit "Unpublished",
+                      authors {
+                        names std {
+                          {
+                            name name {
+                              last "Yoshioka",
+                              initials "K."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Izumi",
+                              initials "R."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Oishi",
+                              initials "N."
+                            }
+                          },
+                          {
+                            name name {
+                              last "Sakaki",
+                              initials "Y."
+                            }
+                          }
+                        }
+                      },
+                      date std {
+                        year 1992
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 1993,
+                  month 4,
+                  day 27
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1607,
+                strand ds,
+                seq-data ncbi2na 'BDE7508ED02EAA200F3ABBDC437E900822C7B1D7CDFF
+C79F753BD15F008F8FFCFFF1D2775DFBFF4AF8659ED1548A26517B508E492069C600D41710BDFE
+248E481C8556512497782FA124014F9F471536BB53F320C3BA8201015BFCE3F1D3CD97FE127B9E
+C110B239781F83C351134B0ECF73777F13FEB7731C4F3C3ABFEEC7B020FC9ECD01CB938323DDD7
+8F3F344C957C94BECCF3DFBAFEE150F0B5C7F1339FC20D8EAA39F4EE06EA2F49E7DDF970B3D7F5
+E347393FC0BC04FFC2CFD239FC888FFFF538793FC7B123E79F79CCFEE33283C228C446FEFDF6E5
+EFF3B9113CA4F887D09FF7FFFB51B37FAB7F8C08020D5EF4FB091FF1AA6AEA8AAE779EB7D0F142
+0F750043FDE4A38FB120D3E7CE138D9FDC47B3C4C0C0F0300C156A421FF7F828E1C484F030D82C
+3FEAEA8822923D0FF7F052DE0BF4FCE3100823803A0BA4330AA38A0A4E5E84057DFF08EEDF43FB
+300EBBFD3B030313DFA28914FB9EBB838F532C10DF853F1E1B1214B882DF64E0AB15117BEEDF0F
+90B78B282FAA504EEDD52E7A8033F4C85C3F12DFC7E37004FF9E533FE8'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data imp {
+                        key "exon"
+                      },
+                      comment "G00-119-692",
+                      location int {
+                        from 159,
+                        to 1379,
+                        id gi 178613
+                      },
+                      qual {
+                        {
+                          qual "number",
+                          val "18"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data gene {
+                    locus "APP"
+                  },
+                  location packed-int {
+                    {
+                      from 483,
+                      to 1153,
+                      id gi 178595
+                    },
+                    {
+                      from 0,
+                      to 770,
+                      id gi 178596
+                    },
+                    {
+                      from 0,
+                      to 603,
+                      id gi 178597
+                    },
+                    {
+                      from 0,
+                      to 248,
+                      id gi 178598
+                    },
+                    {
+                      from 0,
+                      to 909,
+                      id gi 178599
+                    },
+                    {
+                      from 0,
+                      to 744,
+                      id gi 178600
+                    },
+                    {
+                      from 0,
+                      to 668,
+                      id gi 178601
+                    },
+                    {
+                      from 0,
+                      to 412,
+                      id gi 178602
+                    },
+                    {
+                      from 0,
+                      to 638,
+                      id gi 178603
+                    },
+                    {
+                      from 0,
+                      to 467,
+                      id gi 178604
+                    },
+                    {
+                      from 0,
+                      to 741,
+                      id gi 178605
+                    },
+                    {
+                      from 0,
+                      to 487,
+                      id gi 178606
+                    },
+                    {
+                      from 0,
+                      to 412,
+                      id gi 178607
+                    },
+                    {
+                      from 0,
+                      to 1036,
+                      id gi 178608
+                    },
+                    {
+                      from 0,
+                      to 576,
+                      id gi 178609
+                    },
+                    {
+                      from 0,
+                      to 533,
+                      id gi 178610
+                    },
+                    {
+                      from 0,
+                      to 552,
+                      id gi 178611
+                    },
+                    {
+                      from 0,
+                      to 566,
+                      id gi 178612
+                    },
+                    {
+                      from 0,
+                      to 1379,
+                      id gi 178613
+                    }
+                  }
+                },
+                {
+                  data rna {
+                    type mRNA,
+                    ext name "amyloid-beta protein"
+                  },
+                  comment "alternatively transcribed; G00-119-692",
+                  location mix {
+                    int {
+                      from 833,
+                      to 1036,
+                      strand plus,
+                      id gi 178595
+                    },
+                    int {
+                      from 278,
+                      to 445,
+                      strand plus,
+                      id gi 178596
+                    },
+                    int {
+                      from 229,
+                      to 358,
+                      strand plus,
+                      id gi 178597
+                    },
+                    int {
+                      from 131,
+                      to 243,
+                      strand plus,
+                      id gi 178598
+                    },
+                    int {
+                      from 485,
+                      to 678,
+                      strand plus,
+                      id gi 178599
+                    },
+                    int {
+                      from 199,
+                      to 401,
+                      strand plus,
+                      id gi 178600
+                    },
+                    int {
+                      from 184,
+                      to 351,
+                      strand plus,
+                      id gi 178601
+                    },
+                    int {
+                      from 158,
+                      to 214,
+                      strand plus,
+                      id gi 178602
+                    },
+                    int {
+                      from 309,
+                      to 442,
+                      strand plus,
+                      id gi 178603
+                    },
+                    int {
+                      from 263,
+                      to 337,
+                      strand plus,
+                      id gi 178604
+                    },
+                    int {
+                      from 316,
+                      to 474,
+                      strand plus,
+                      id gi 178605
+                    },
+                    int {
+                      from 207,
+                      to 335,
+                      strand plus,
+                      id gi 178606
+                    },
+                    int {
+                      from 288,
+                      to 739,
+                      strand plus,
+                      id gi 178608
+                    }
+                  }
+                },
+                {
+                  data rna {
+                    type mRNA,
+                    ext name "amyloid-beta protein"
+                  },
+                  comment "G00-119-692",
+                  location mix {
+                    int {
+                      from 833,
+                      to 1036,
+                      strand plus,
+                      id gi 178595
+                    },
+                    int {
+                      from 278,
+                      to 445,
+                      strand plus,
+                      id gi 178596
+                    },
+                    int {
+                      from 229,
+                      to 358,
+                      strand plus,
+                      id gi 178597
+                    },
+                    int {
+                      from 131,
+                      to 243,
+                      strand plus,
+                      id gi 178598
+                    },
+                    int {
+                      from 485,
+                      to 678,
+                      strand plus,
+                      id gi 178599
+                    },
+                    int {
+                      from 199,
+                      to 401,
+                      strand plus,
+                      id gi 178600
+                    },
+                    int {
+                      from 184,
+                      to 351,
+                      strand plus,
+                      id gi 178601
+                    },
+                    int {
+                      from 158,
+                      to 214,
+                      strand plus,
+                      id gi 178602
+                    },
+                    int {
+                      from 309,
+                      to 442,
+                      strand plus,
+                      id gi 178603
+                    },
+                    int {
+                      from 263,
+                      to 337,
+                      strand plus,
+                      id gi 178604
+                    },
+                    int {
+                      from 316,
+                      to 474,
+                      strand plus,
+                      id gi 178605
+                    },
+                    int {
+                      from 207,
+                      to 335,
+                      strand plus,
+                      id gi 178606
+                    },
+                    int {
+                      from 92,
+                      to 191,
+                      strand plus,
+                      id gi 178607
+                    },
+                    int {
+                      from 241,
+                      to 462,
+                      strand plus,
+                      id gi 178609
+                    },
+                    int {
+                      from 258,
+                      to 311,
+                      strand plus,
+                      id gi 178610
+                    },
+                    int {
+                      from 173,
+                      to 273,
+                      strand plus,
+                      id gi 178611
+                    },
+                    int {
+                      from 194,
+                      to 340,
+                      strand plus,
+                      id gi 178612
+                    },
+                    int {
+                      from 159,
+                      to 1379,
+                      strand plus,
+                      id gi 178613
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        genbank {
+          accession "AAB59501",
+          version 1
+        },
+        gi 178615
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        title "amyloid-beta protein [Homo sapiens]",
+        create-date std {
+          year 1993,
+          month 4,
+          day 27
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 547,
+        seq-data ncbieaa "MLPGLALLLLAAWTARALEVPTDGNAGLLAEPQIAMFCGRLNMHMNVQNGKW
+DSDPSGTKTCIDTKEGILQYCQEVYPELQITNVVEANQPVTIQNWCKRGRKQCKTHPHFVIPYRCLVGEFVSDALLVP
+DKCKFLHQERMDVCETHLHWHTVAKETCSEKSTNLHDYGMLLPCGIDKFRGVEFVCCPLAEESDNVDSADAEEDDSDV
+WWGGADTDYADGSEDKVVEVAEEEEVAEVEEEEADDDEDDEDGDEVEEEAEEPYEEATERTTSIATTTTTTTESVEEV
+VREVCSEQAETGPCRAMISRWYFDVTEGKCAPFFYGGCGGNRNNFDTEEYCMAVCGSAMSQSLLKTTQEPLARDPVKL
+PTTAASTPDAVDKYLETPGDENEHAHFQKAKERLEAKHRERMSQVMREWEEAERQAKNLPKADKKAVIQHFQEKVESL
+EQEAANERQQLVETHMARVEAMLNDRRRLALENYITALQAVPPRPRHVFNMLKKYVRAEQKDRQHTLKHFEHVRMVDP
+KKAAQIRSQVQWLMPVIPAFWEAKVGR"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "amyloid-beta protein"
+                }
+              },
+              location int {
+                from 0,
+                to 546,
+                strand plus,
+                id gi 178615
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        genbank {
+          accession "AAB59502",
+          version 1
+        },
+        gi 178616
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          tech concept-trans
+        },
+        title "amyloid-beta protein [Homo sapiens]",
+        create-date std {
+          year 1993,
+          month 4,
+          day 27
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 770,
+        seq-data ncbieaa "MLPGLALLLLAAWTARALEVPTDGNAGLLAEPQIAMFCGRLNMHMNVQNGKW
+DSDPSGTKTCIDTKEGILQYCQEVYPELQITNVVEANQPVTIQNWCKRGRKQCKTHPHFVIPYRCLVGEFVSDALLVP
+DKCKFLHQERMDVCETHLHWHTVAKETCSEKSTNLHDYGMLLPCGIDKFRGVEFVCCPLAEESDNVDSADAEEDDSDV
+WWGGADTDYADGSEDKVVEVAEEEEVAEVEEEEADDDEDDEDGDEVEEEAEEPYEEATERTTSIATTTTTTTESVEEV
+VREVCSEQAETGPCRAMISRWYFDVTEGKCAPFFYGGCGGNRNNFDTEEYCMAVCGSAMSQSLLKTTQEPLARDPVKL
+PTTAASTPDAVDKYLETPGDENEHAHFQKAKERLEAKHRERMSQVMREWEEAERQAKNLPKADKKAVIQHFQEKVESL
+EQEAANERQQLVETHMARVEAMLNDRRRLALENYITALQAVPPRPRHVFNMLKKYVRAEQKDRQHTLKHFEHVRMVDP
+KKAAQIRSQVMTHLRVIYERMNQSLSLLYNVPAVAEEIQDEVDELLQKEQNYSDDVLANMISEPRISYGNDALMPSLT
+ETKTTVELLPVNGEFSLDDLQPWHSFGADSVPANTENEVEPVDARPAADRGLTTRPGSGLTNIKTEEISEVKMDAEFR
+HDSGYEVHHQKLVFFAEDVGSNKGAIIGLMVGGVVIATVIVITLVMLKKKQYTSIHHGVVEVDAAVTPEERHLSKMQQ
+NGYENPTYKFFEQMQN"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "amyloid-beta protein"
+                }
+              },
+              location whole gi 178616
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          comment "alternate amyloid-beta protein",
+          product whole gi 178615,
+          location mix {
+            int {
+              from 980,
+              to 1036,
+              strand plus,
+              id gi 178595
+            },
+            int {
+              from 278,
+              to 445,
+              strand plus,
+              id gi 178596
+            },
+            int {
+              from 229,
+              to 358,
+              strand plus,
+              id gi 178597
+            },
+            int {
+              from 131,
+              to 243,
+              strand plus,
+              id gi 178598
+            },
+            int {
+              from 485,
+              to 678,
+              strand plus,
+              id gi 178599
+            },
+            int {
+              from 199,
+              to 401,
+              strand plus,
+              id gi 178600
+            },
+            int {
+              from 184,
+              to 351,
+              strand plus,
+              id gi 178601
+            },
+            int {
+              from 158,
+              to 214,
+              strand plus,
+              id gi 178602
+            },
+            int {
+              from 309,
+              to 442,
+              strand plus,
+              id gi 178603
+            },
+            int {
+              from 263,
+              to 337,
+              strand plus,
+              id gi 178604
+            },
+            int {
+              from 316,
+              to 474,
+              strand plus,
+              id gi 178605
+            },
+            int {
+              from 207,
+              to 335,
+              strand plus,
+              id gi 178606
+            },
+            int {
+              from 288,
+              to 344,
+              strand plus,
+              id gi 178608
+            }
+          },
+          dbxref {
+            {
+              db "GDB",
+              tag str "G00-119-692"
+            }
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole gi 178616,
+          location mix {
+            int {
+              from 980,
+              to 1036,
+              id gi 178595
+            },
+            int {
+              from 278,
+              to 445,
+              id gi 178596
+            },
+            int {
+              from 229,
+              to 358,
+              id gi 178597
+            },
+            int {
+              from 131,
+              to 243,
+              id gi 178598
+            },
+            int {
+              from 485,
+              to 678,
+              id gi 178599
+            },
+            int {
+              from 199,
+              to 401,
+              id gi 178600
+            },
+            int {
+              from 184,
+              to 351,
+              id gi 178601
+            },
+            int {
+              from 158,
+              to 214,
+              id gi 178602
+            },
+            int {
+              from 309,
+              to 442,
+              id gi 178603
+            },
+            int {
+              from 263,
+              to 337,
+              id gi 178604
+            },
+            int {
+              from 316,
+              to 474,
+              id gi 178605
+            },
+            int {
+              from 207,
+              to 335,
+              id gi 178606
+            },
+            int {
+              from 92,
+              to 191,
+              id gi 178607
+            },
+            int {
+              from 241,
+              to 462,
+              id gi 178609
+            },
+            int {
+              from 258,
+              to 311,
+              id gi 178610
+            },
+            int {
+              from 173,
+              to 273,
+              id gi 178611
+            },
+            int {
+              from 194,
+              to 340,
+              id gi 178612
+            },
+            int {
+              from 159,
+              to 260,
+              id gi 178613
+            }
+          },
+          dbxref {
+            {
+              db "GDB",
+              tag str "G00-119-692"
+            }
+          }
+        }
+      }
+    },
+    {
+      data align {
+        {
+          type partial,
+          dim 2,
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              gi 178601,
+              gi 178602
+            },
+            starts {
+              1,
+              1
+            },
+            lens {
+              8
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              gi 178601,
+              gi 178602
+            },
+            starts {
+              1,
+              1
+            },
+            lens {
+              0
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-entry ::= seq {
+  id {
+    gi 2
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 194,
+    seq-data ncbi2na '0F4E6D687DE5D8965B11EA5790276CD35BC7DC439029297BB485F6CC
+69AF96E709B041F40D66821E606C7E6BAD7CB027E0'H
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data rna {
+            type mRNA,
+            ext name "amyloid-beta protein"
+          },
+          location int {
+            from 1,
+            to 12,
+            strand plus,
+            id gi 2
+          }
+        },
+        {
+          data rna {
+            type mRNA,
+            ext name "amyloid-beta protein"
+          },
+          location int {
+            from 13,
+            to 24,
+            strand minus,
+            id gi 2
+          }
+        }
+      }
+    }
+  }
+}

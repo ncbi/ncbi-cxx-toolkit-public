@@ -1,0 +1,15 @@
+CFeatureImportError:
+  Severity = Warning
+  Message = "Invalid track value: Bad itemRgb value --- ignored"
+  LineNumber = 1
+
+CFeatureImportError:
+  Severity = Warning
+  Message = "Invalid track value: Bad colorByStrand value --- ignored"
+  LineNumber = 1
+
+CFeatureImportError:
+  Severity = Critical
+  Message = "Track line out of order"
+  LineNumber = 9
+

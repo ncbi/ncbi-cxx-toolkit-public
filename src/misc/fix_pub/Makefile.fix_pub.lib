@@ -1,0 +1,16 @@
+# $Id$
+
+# Build library "fix_pub"
+###############################
+
+WATCHERS = dobronad foleyjp
+
+ASN_DEP = genome_collection mla
+SRC = fix_pub
+
+LIB = fix_pub
+
+DLL_LIB = xmlwrapp $(OBJEDIT_LIBS)     
+
+USES_LIBRARIES =  \
+    xmlwrapp $(OBJEDIT_LIBS)

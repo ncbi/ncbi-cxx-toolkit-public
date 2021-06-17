@@ -1,0 +1,57 @@
+---
+--- Find-Replace Variant schema declaration
+---
+
+NCBI-search-by-rsid DEFINITIONS ::=
+BEGIN
+
+EXPORTS SearchByRsIdReply;
+
+IMPORTS TMgr-DTrackId FROM NCBI-TrackManager;
+
+-- Placement definition.
+Placement ::= SEQUENCE {
+
+    -- Id of RefSnp in string format. For example "rs268".
+    rsid VisibleString,
+
+    -- The sequence identifier in accession.version format.
+    -- For example, "NC_000018.10"
+    acc-ver VisibleString,
+
+    -- Start position on reference seq of the variation (0-based)
+    from INTEGER (0..MAXINT),
+    
+    -- Length of the variant deletion interval.
+    length INTEGER  (0..MAXINT),
+
+    -- Assembly id in accession.version format.
+    -- For example, "GCF_000001405.33".
+    assembly-acc VisibleString OPTIONAL,
+
+    -- List of related TMS tracks-ids.
+    -- For example "T709990".
+    tracks SET OF TMgr-DTrackId
+}
+
+-- In case of error service will return this object.
+Error ::= SEQUENCE {
+
+    -- Error description. 
+    message VisibleString,
+
+    -- Error code. Which is also be copied to HTTP return code.
+    error-code INTEGER
+}
+
+-- Service reply format definition.
+SearchByRsIdReply ::= CHOICE {
+
+    -- On success list of placements will be placed here.
+	placements SET OF Placement,
+
+    -- On failure error details will be placed here,
+    error Error
+}
+
+END

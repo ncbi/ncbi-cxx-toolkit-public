@@ -1,0 +1,6 @@
+SeqID      : FOSB_MOUSE
+Line No    : 4
+Severity   : Fatal
+Problem    : Alignment.BadDataChars
+Message    : At ID 'FOSB_MOUSE': Bad character [F] found at data position 1.
+

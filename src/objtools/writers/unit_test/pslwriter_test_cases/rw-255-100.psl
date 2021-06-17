@@ -1,0 +1,2692 @@
+matches     : 5238
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 13
+tBaseInsert : 43501
+strand      : -
+qName       : NM_015075.1
+qSize       : 5248
+qStart      : 0
+qEnd        : 5238
+tName       : NC_000023.11
+tSize       : 156040895
+tStart      : 53232875
+tEnd        : 53281614
+blockCount  : 14
+blockSizes  : 2309, 174, 162, 100, 126
+              140, 167, 123, 162, 896
+              402, 262, 96, 119
+qStarts     : 10, 2319, 2493, 2655, 2755
+              2881, 3021, 3188, 3311, 3473
+              4369, 4771, 5033, 5129
+tStarts     : 53232875, 53236321, 53238144, 53239194, 53241783
+              53243331, 53246968, 53248113, 53248720, 53250278
+              53254529, 53255799, 53279563, 53281495
+
+matches     : 3401
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 9
+tBaseInsert : 26837
+strand      : +
+qName       : NM_001024736.1
+qSize       : 3419
+qStart      : 0
+qEnd        : 3401
+tName       : NC_000015.10
+tSize       : 101991189
+tStart      : 73684280
+tEnd        : 73714518
+blockCount  : 10
+blockSizes  : 180, 133, 339, 315, 339
+              297, 135, 42, 36, 1585
+qStarts     : 0, 180, 313, 652, 967
+              1306, 1603, 1738, 1780, 1816
+tStarts     : 73684280, 73699585, 73702254, 73702771, 73703658
+              73704175, 73708338, 73709647, 73711134, 73712933
+
+matches     : 2359
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 9
+tBaseInsert : 41004
+strand      : -
+qName       : NM_002766.2
+qSize       : 2359
+qStart      : 0
+qEnd        : 2359
+tName       : NC_000017.11
+tSize       : 83257441
+tStart      : 76310786
+tEnd        : 76354149
+blockCount  : 10
+blockSizes  : 914, 147, 71, 146, 56
+              116, 173, 67, 53, 616
+qStarts     : 0, 914, 1061, 1132, 1278
+              1334, 1450, 1623, 1690, 1743
+tStarts     : 76310786, 76312869, 76313820, 76328716, 76330042
+              76330550, 76332262, 76344670, 76348528, 76353533
+
+matches     : 1130
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 2
+tBaseInsert : 341
+strand      : -
+qName       : NR_026822.1
+qSize       : 1130
+qStart      : 0
+qEnd        : 1130
+tName       : NC_000009.12
+tSize       : 138394717
+tStart      : 34393
+tEnd        : 35864
+blockCount  : 3
+blockSizes  : 564, 205, 361
+qStarts     : 0, 564, 769
+tStarts     : 34393, 35059, 35503
+
+matches     : 5944
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 0
+tBaseInsert : 0
+strand      : -
+qName       : NR_026891.1
+qSize       : 5944
+qStart      : 0
+qEnd        : 5944
+tName       : NC_000015.10
+tSize       : 101991189
+tStart      : 50348935
+tEnd        : 50354879
+blockCount  : 1
+blockSizes  : 5944
+qStarts     : 0
+tStarts     : 50348935
+
+matches     : 6573
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 16
+tBaseInsert : 207551
+strand      : +
+qName       : NM_021115.4
+qSize       : 6573
+qStart      : 0
+qEnd        : 6573
+tName       : NC_000022.11
+tSize       : 50818468
+tStart      : 26169473
+tEnd        : 26383597
+blockCount  : 17
+blockSizes  : 290, 741, 134, 193, 186
+              166, 167, 195, 139, 197
+              195, 192, 195, 33, 115
+              103, 3332
+qStarts     : 0, 290, 1031, 1165, 1358
+              1544, 1710, 1877, 2072, 2211
+              2408, 2603, 2795, 2990, 3023
+              3138, 3241
+tStarts     : 26169473, 26292405, 26294291, 26296887, 26298983
+              26305978, 26310669, 26311767, 26313763, 26340435
+              26347718, 26351051, 26365371, 26373450, 26375574
+              26377672, 26380265
+
+matches     : 2024
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 9
+tBaseInsert : 30702
+strand      : -
+qName       : NM_001198855.1
+qSize       : 2024
+qStart      : 0
+qEnd        : 2024
+tName       : NC_000010.11
+tSize       : 133797422
+tStart      : 95036771
+tEnd        : 95069497
+blockCount  : 10
+blockSizes  : 538, 142, 188, 142, 177
+              161, 150, 163, 62, 301
+qStarts     : 0, 538, 680, 868, 1010
+              1187, 1348, 1498, 1661, 1723
+tStarts     : 95036771, 95038896, 95042889, 95045809, 95058334
+              95064799, 95067207, 95067528, 95068566, 95069196
+
+matches     : 3579
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 16
+tBaseInsert : 286692
+strand      : -
+qName       : NM_001204301.1
+qSize       : 3594
+qStart      : 0
+qEnd        : 3579
+tName       : NC_000021.9
+tSize       : 46709983
+tStart      : 25880549
+tEnd        : 26170820
+blockCount  : 17
+blockSizes  : 1222, 147, 101, 222, 100
+              129, 159, 75, 134, 57
+              168, 203, 194, 113, 130
+              168, 257
+qStarts     : 15, 1237, 1384, 1485, 1707
+              1807, 1936, 2095, 2170, 2304
+              2361, 2529, 2732, 2926, 3039
+              3169, 3337
+tStarts     : 25880549, 25891721, 25897572, 25911740, 25954589
+              25955626, 25975069, 25975953, 25982343, 25997359
+              26000014, 26021839, 26050999, 26053235, 26089942
+              26111978, 26170563
+
+matches     : 5816
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 21
+tBaseInsert : 796925
+strand      : +
+qName       : NM_175566.2
+qSize       : 5816
+qStart      : 0
+qEnd        : 5816
+tName       : NC_000011.10
+tSize       : 135086622
+tStart      : 99556144
+tEnd        : 100358885
+blockCount  : 22
+blockSizes  : 125, 124, 176, 96, 204
+              103, 182, 137, 130, 151
+              128, 176, 121, 159, 150
+              71, 235, 110, 187, 113
+              169, 2769
+qStarts     : 0, 125, 249, 425, 521
+              725, 828, 1010, 1147, 1277
+              1428, 1556, 1732, 1853, 2012
+              2162, 2233, 2468, 2578, 2765
+              2878, 3047
+tStarts     : 99556144, 99844851, 99845086, 99916053, 99956805
+              100002033, 100061211, 100070423, 100071704, 100074143
+              100191125, 100193487, 100224691, 100255759, 100271091
+              100297624, 100299161, 100308358, 100340462, 100341092
+              100350701, 100356116
+
+matches     : 2665
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 7
+tBaseInsert : 48576
+strand      : +
+qName       : NM_033339.4
+qSize       : 2681
+qStart      : 0
+qEnd        : 2665
+tName       : NC_000010.11
+tSize       : 133797422
+tStart      : 113679668
+tEnd        : 113730909
+blockCount  : 8
+blockSizes  : 310, 74, 110, 137, 129
+              176, 130, 1599
+qStarts     : 0, 310, 384, 494, 631
+              760, 936, 1066
+tStarts     : 113679668, 113691996, 113697493, 113721031, 113721650
+              113725361, 113726304, 113729310
+
+matches     : 11939
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 5
+tBaseInsert : 181877
+strand      : +
+qName       : NM_001270623.1
+qSize       : 11939
+qStart      : 0
+qEnd        : 11939
+tName       : NC_000012.12
+tSize       : 133275309
+tStart      : 59596039
+tEnd        : 59789855
+blockCount  : 6
+blockSizes  : 197, 99, 247, 144, 819
+              10433
+qStarts     : 0, 197, 296, 543, 687
+              1506
+tStarts     : 59596039, 59655151, 59704771, 59771218, 59774656
+              59779422
+
+matches     : 725
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 2
+tBaseInsert : 9500
+strand      : +
+qName       : NR_073460.1
+qSize       : 725
+qStart      : 0
+qEnd        : 725
+tName       : NC_000014.9
+tSize       : 107043718
+tStart      : 19306689
+tEnd        : 19316914
+blockCount  : 3
+blockSizes  : 323, 88, 314
+qStarts     : 0, 323, 411
+tStarts     : 19306689, 19309105, 19316600
+
+matches     : 1887
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 5
+tBaseInsert : 3354
+strand      : +
+qName       : NM_001276312.1
+qSize       : 1915
+qStart      : 0
+qEnd        : 1887
+tName       : NC_000016.10
+tSize       : 90338345
+tStart      : 67170496
+tEnd        : 67175737
+blockCount  : 6
+blockSizes  : 78, 306, 185, 303, 324
+              691
+qStarts     : 0, 78, 384, 569, 872
+              1196
+tStarts     : 67170496, 67171151, 67173861, 67174161, 67174620
+              67175046
+
+matches     : 2407
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 6
+tBaseInsert : 19777
+strand      : +
+qName       : NR_126580.1
+qSize       : 2423
+qStart      : 0
+qEnd        : 2407
+tName       : NC_000010.11
+tSize       : 133797422
+tStart      : 46109494
+tEnd        : 46131678
+blockCount  : 7
+blockSizes  : 349, 70, 69, 35, 36
+              52, 1796
+qStarts     : 0, 349, 419, 488, 523
+              559, 611
+tStarts     : 46109494, 46110212, 46112579, 46115294, 46125863
+              46129194, 46129882
+
+matches     : 3101
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 2
+tBaseInsert : 45254
+strand      : +
+qName       : NR_130138.1
+qSize       : 3117
+qStart      : 0
+qEnd        : 3101
+tName       : NC_000017.11
+tSize       : 83257441
+tStart      : 14301049
+tEnd        : 14349404
+blockCount  : 3
+blockSizes  : 1023, 675, 1403
+qStarts     : 0, 1023, 1698
+tStarts     : 14301049, 14345027, 14348001
+
+matches     : 17448
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 48
+tBaseInsert : 25738
+strand      : +
+qName       : NM_001304359.1
+qSize       : 17474
+qStart      : 0
+qEnd        : 17448
+tName       : NC_000011.10
+tSize       : 135086622
+tStart      : 1157952
+tEnd        : 1201138
+blockCount  : 49
+blockSizes  : 120, 78, 60, 262, 115
+              91, 110, 214, 126, 118
+              139, 111, 70, 138, 165
+              95, 127, 256, 53, 101
+              152, 139, 114, 180, 240
+              157, 129, 163, 44, 189
+              10371, 200, 175, 251, 184
+              268, 179, 88, 104, 32
+              172, 102, 38, 123, 99
+              120, 70, 115, 701
+qStarts     : 0, 120, 198, 258, 520
+              635, 726, 836, 1050, 1176
+              1294, 1433, 1544, 1614, 1752
+              1917, 2012, 2139, 2395, 2448
+              2549, 2701, 2840, 2954, 3134
+              3374, 3531, 3660, 3823, 3867
+              4056, 14427, 14627, 14802, 15053
+              15237, 15505, 15684, 15772, 15876
+              15908, 16080, 16182, 16220, 16343
+              16442, 16562, 16632, 16747
+tStarts     : 1157952, 1160611, 1161526, 1161906, 1162531
+              1162954, 1163881, 1164105, 1164406, 1165301
+              1165621, 1167876, 1168482, 1168641, 1168861
+              1172428, 1174495, 1174881, 1175217, 1176150
+              1176513, 1176927, 1177230, 1177453, 1178443
+              1179091, 1180021, 1180353, 1181138, 1181270
+              1182154, 1192782, 1193484, 1194109, 1194486
+              1195011, 1195875, 1196387, 1196616, 1196876
+              1197467, 1197902, 1198267, 1198873, 1199086
+              1199370, 1199694, 1199854, 1200437
+
+matches     : 393
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 1
+tBaseInsert : 8135
+strand      : -
+qName       : XR_929479.1
+qSize       : 393
+qStart      : 0
+qEnd        : 393
+tName       : NC_000009.12
+tSize       : 138394717
+tStart      : 11610221
+tEnd        : 11618749
+blockCount  : 2
+blockSizes  : 139, 254
+qStarts     : 0, 139
+tStarts     : 11610221, 11618495
+
+matches     : 3543
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 1
+tBaseInsert : 6085
+strand      : -
+qName       : NM_001326475.1
+qSize       : 3555
+qStart      : 0
+qEnd        : 3543
+tName       : NC_000012.12
+tSize       : 133275309
+tStart      : 8056843
+tEnd        : 8066471
+blockCount  : 2
+blockSizes  : 3349, 194
+qStarts     : 12, 3361
+tStarts     : 8056843, 8066277
+
+matches     : 9427
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 22
+tBaseInsert : 250484
+strand      : +
+qName       : XM_017015486.1
+qSize       : 9427
+qStart      : 0
+qEnd        : 9427
+tName       : NC_000010.11
+tSize       : 133797422
+tStart      : 121994631
+tEnd        : 122254542
+blockCount  : 23
+blockSizes  : 79, 78, 60, 113, 5313
+              114, 126, 135, 137, 1312
+              61, 202, 62, 116, 172
+              141, 144, 77, 44, 161
+              107, 121, 552
+qStarts     : 0, 79, 157, 217, 330
+              5643, 5757, 5883, 6018, 6155
+              7467, 7528, 7730, 7792, 7908
+              8080, 8221, 8365, 8442, 8486
+              8647, 8754, 8875
+tStarts     : 121994631, 122021936, 122033093, 122050437, 122082646
+              122088477, 122132608, 122143571, 122195039, 122210396
+              122215390, 122216626, 122224725, 122226365, 122227836
+              122229345, 122237394, 122237960, 122241957, 122248642
+              122249049, 122249543, 122253990
+
+matches     : 4258
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 23
+tBaseInsert : 137797
+strand      : -
+qName       : XM_017018998.1
+qSize       : 4258
+qStart      : 0
+qEnd        : 4258
+tName       : NC_000012.12
+tSize       : 133275309
+tStart      : 57253763
+tEnd        : 57395818
+blockCount  : 24
+blockSizes  : 1350, 154, 98, 148, 170
+              101, 155, 161, 127, 243
+              102, 173, 233, 32, 96
+              109, 141, 60, 79, 127
+              87, 42, 200, 70
+qStarts     : 0, 1350, 1504, 1602, 1750
+              1920, 2021, 2176, 2337, 2464
+              2707, 2809, 2982, 3215, 3247
+              3343, 3452, 3593, 3653, 3732
+              3859, 3946, 3988, 4188
+tStarts     : 57253763, 57255989, 57256413, 57257989, 57258889
+              57266730, 57268302, 57268921, 57269322, 57269751
+              57272452, 57280357, 57283823, 57289008, 57292571
+              57295398, 57296410, 57297327, 57298089, 57299351
+              57300094, 57303175, 57310263, 57395748
+
+matches     : 5749
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 23
+tBaseInsert : 68386
+strand      : +
+qName       : XM_017021561.1
+qSize       : 5749
+qStart      : 0
+qEnd        : 5749
+tName       : NC_000014.9
+tSize       : 107043718
+tStart      : 58299598
+tEnd        : 58373733
+blockCount  : 24
+blockSizes  : 93, 63, 111, 66, 91
+              80, 95, 133, 80, 77
+              167, 73, 95, 98, 232
+              251, 198, 85, 202, 1152
+              105, 207, 147, 1848
+qStarts     : 0, 93, 156, 267, 333
+              424, 504, 599, 732, 812
+              889, 1056, 1129, 1224, 1322
+              1554, 1805, 2003, 2088, 2290
+              3442, 3547, 3754, 3901
+tStarts     : 58299598, 58299797, 58301579, 58304943, 58306021
+              58318541, 58318710, 58323484, 58328236, 58329527
+              58330002, 58344694, 58346410, 58347019, 58347646
+              58351072, 58353657, 58359131, 58360900, 58364169
+              58365517, 58366023, 58366882, 58371885
+
+matches     : 1012
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 2
+tBaseInsert : 2771
+strand      : +
+qName       : XR_001751429.1
+qSize       : 1012
+qStart      : 0
+qEnd        : 1012
+tName       : NC_000015.10
+tSize       : 101991189
+tStart      : 22145477
+tEnd        : 22149260
+blockCount  : 3
+blockSizes  : 188, 286, 538
+qStarts     : 0, 188, 474
+tStarts     : 22145477, 22145750, 22148722
+
+matches     : 1559
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 11
+tBaseInsert : 7712
+strand      : +
+qName       : XM_017022859.1
+qSize       : 1559
+qStart      : 0
+qEnd        : 1559
+tName       : NC_000016.10
+tSize       : 90338345
+tStart      : 31108380
+tEnd        : 31117651
+blockCount  : 12
+blockSizes  : 99, 372, 69, 111, 48
+              120, 99, 74, 129, 90
+              159, 189
+qStarts     : 0, 99, 471, 540, 651
+              699, 819, 918, 992, 1121
+              1211, 1370
+tStarts     : 31108380, 31109046, 31109510, 31109672, 31110076
+              31110204, 31110400, 31110687, 31111090, 31111299
+              31111868, 31117462
+
+matches     : 2707
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 5
+tBaseInsert : 2086
+strand      : -
+qName       : XM_011522447.2
+qSize       : 2707
+qStart      : 0
+qEnd        : 2707
+tName       : NC_000016.10
+tSize       : 90338345
+tStart      : 1221661
+tEnd        : 1226454
+blockCount  : 6
+blockSizes  : 435, 146, 266, 905, 27
+              928
+qStarts     : 0, 435, 581, 847, 1752
+              1779
+tStarts     : 1221661, 1222195, 1222651, 1223422, 1224601
+              1225526
+
+matches     : 2916
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 8
+tBaseInsert : 40493
+strand      : -
+qName       : XM_011523774.2
+qSize       : 2916
+qStart      : 0
+qEnd        : 2916
+tName       : NC_000017.11
+tSize       : 83257441
+tStart      : 2260427
+tEnd        : 2303836
+blockCount  : 9
+blockSizes  : 139, 213, 111, 79, 107
+              111, 193, 1759, 204
+qStarts     : 0, 139, 352, 463, 542
+              649, 760, 953, 2712
+tStarts     : 2260427, 2282646, 2283624, 2292551, 2292870
+              2297242, 2297862, 2298905, 2303632
+
+matches     : 696
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 3
+tBaseInsert : 17010
+strand      : -
+qName       : XR_934721.2
+qSize       : 696
+qStart      : 0
+qEnd        : 696
+tName       : NC_000017.11
+tSize       : 83257441
+tStart      : 37798005
+tEnd        : 37815711
+blockCount  : 4
+blockSizes  : 231, 83, 227, 155
+qStarts     : 0, 231, 314, 541
+tStarts     : 37798005, 37798878, 37802100, 37815556
+
+matches     : 850
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 2
+tBaseInsert : 3999
+strand      : -
+qName       : XR_001754031.1
+qSize       : 850
+qStart      : 0
+qEnd        : 850
+tName       : NC_000019.10
+tSize       : 58617616
+tStart      : 28312511
+tEnd        : 28317360
+blockCount  : 3
+blockSizes  : 381, 379, 90
+qStarts     : 0, 381, 760
+tStarts     : 28312511, 28316505, 28317270
+
+matches     : 12417
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 6
+tBaseInsert : 76836
+strand      : +
+qName       : XM_005260273.3
+qSize       : 12417
+qStart      : 0
+qEnd        : 12417
+tName       : NC_000020.11
+tSize       : 64444167
+tStart      : 59169860
+tEnd        : 59259113
+blockCount  : 7
+blockSizes  : 2893, 84, 3774, 137, 152
+              161, 5216
+qStarts     : 0, 2893, 2977, 6751, 6888
+              7040, 7201
+tStarts     : 59169860, 59173333, 59190983, 59195868, 59206904
+              59252977, 59253897
+
+matches     : 5375
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 10
+tBaseInsert : 38271
+strand      : -
+qName       : XM_017028153.1
+qSize       : 5375
+qStart      : 0
+qEnd        : 5375
+tName       : NC_000020.11
+tSize       : 64444167
+tStart      : 4780022
+tEnd        : 4823668
+blockCount  : 11
+blockSizes  : 4320, 98, 122, 52, 102
+              161, 89, 152, 76, 91
+              112
+qStarts     : 0, 4320, 4418, 4540, 4592
+              4694, 4855, 4944, 5096, 5172
+              5263
+tStarts     : 4780022, 4786230, 4787632, 4788216, 4789595
+              4790450, 4792538, 4795814, 4798009, 4800971
+              4823556
+
+matches     : 4185
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 3
+tBaseInsert : 50301
+strand      : +
+qName       : XR_001754491.1
+qSize       : 4185
+qStart      : 0
+qEnd        : 4185
+tName       : NC_000020.11
+tSize       : 64444167
+tStart      : 9563022
+tEnd        : 9617508
+blockCount  : 4
+blockSizes  : 79, 147, 142, 3817
+qStarts     : 0, 79, 226, 368
+tStarts     : 9563022, 9607096, 9611705, 9613691
+
+matches     : 2402
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 4
+tBaseInsert : 20216
+strand      : -
+qName       : XR_001754987.1
+qSize       : 2402
+qStart      : 0
+qEnd        : 2402
+tName       : NC_000021.9
+tSize       : 46709983
+tStart      : 25496859
+tEnd        : 25519477
+blockCount  : 5
+blockSizes  : 1021, 213, 50, 72, 1046
+qStarts     : 0, 1021, 1234, 1284, 1356
+tStarts     : 25496859, 25512332, 25516405, 25518275, 25518431
+
+matches     : 3196
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 2
+tBaseInsert : 32013
+strand      : -
+qName       : XR_001755116.1
+qSize       : 3196
+qStart      : 0
+qEnd        : 3196
+tName       : NC_000021.9
+tSize       : 46709983
+tStart      : 6635306
+tEnd        : 6670515
+blockCount  : 3
+blockSizes  : 734, 98, 2364
+qStarts     : 0, 734, 832
+tStarts     : 6635306, 6666428, 6668151
+
+matches     : 6996
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 23
+tBaseInsert : 57799
+strand      : +
+qName       : XM_017012976.1
+qSize       : 6996
+qStart      : 0
+qEnd        : 6996
+tName       : NC_000008.11
+tSize       : 145138636
+tStart      : 24294068
+tEnd        : 24358863
+blockCount  : 24
+blockSizes  : 127, 104, 128, 77, 79
+              77, 193, 72, 72, 170
+              82, 131, 178, 90, 196
+              103, 160, 81, 79, 109
+              79, 66, 63, 4480
+qStarts     : 0, 127, 231, 359, 436
+              515, 592, 785, 857, 929
+              1099, 1181, 1312, 1490, 1580
+              1776, 1879, 2039, 2120, 2199
+              2308, 2387, 2453, 2516
+tStarts     : 24294068, 24299973, 24308640, 24309893, 24310162
+              24311360, 24313387, 24320235, 24321217, 24323833
+              24326553, 24329984, 24331149, 24332659, 24335445
+              24339465, 24341597, 24343100, 24343505, 24349863
+              24351231, 24351986, 24353769, 24354383
+
+matches     : 5177
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 23
+tBaseInsert : 208877
+strand      : -
+qName       : XM_005251247.2
+qSize       : 5177
+qStart      : 0
+qEnd        : 5177
+tName       : NC_000008.11
+tSize       : 145138636
+tStart      : 61500555
+tEnd        : 61714609
+blockCount  : 24
+blockSizes  : 2954, 134, 92, 136, 138
+              90, 99, 137, 151, 87
+              86, 42, 45, 57, 42
+              33, 48, 33, 75, 93
+              69, 45, 150, 341
+qStarts     : 0, 2954, 3088, 3180, 3316
+              3454, 3544, 3643, 3780, 3931
+              4018, 4104, 4146, 4191, 4248
+              4290, 4323, 4371, 4404, 4479
+              4572, 4641, 4686, 4836
+tStarts     : 61500555, 61517527, 61518031, 61525976, 61548070
+              61553030, 61555923, 61562743, 61567167, 61576771
+              61583943, 61618977, 61633682, 61637946, 61638321
+              61642887, 61643385, 61644599, 61651049, 61653567
+              61680967, 61682438, 61684038, 61714268
+
+matches     : 8938
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 18
+tBaseInsert : 118491
+strand      : -
+qName       : XR_001746346.1
+qSize       : 8938
+qStart      : 0
+qEnd        : 8938
+tName       : NC_000009.12
+tSize       : 138394717
+tStart      : 123109493
+tEnd        : 123236922
+blockCount  : 19
+blockSizes  : 6605, 134, 45, 124, 141
+              135, 159, 200, 93, 112
+              98, 112, 96, 92, 145
+              166, 221, 167, 93
+qStarts     : 0, 6605, 6739, 6784, 6908
+              7049, 7184, 7343, 7543, 7636
+              7748, 7846, 7958, 8054, 8146
+              8291, 8457, 8678, 8845
+tStarts     : 123109493, 123122192, 123128213, 123132844, 123136040
+              123136380, 123139528, 123146854, 123147777, 123158011
+              123158331, 123159095, 123160366, 123160976, 123169901
+              123173676, 123179006, 123184131, 123236829
+
+matches     : 797
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 4
+tBaseInsert : 58365
+strand      : -
+qName       : XR_929558.2
+qSize       : 797
+qStart      : 0
+qEnd        : 797
+tName       : NC_000009.12
+tSize       : 138394717
+tStart      : 32724142
+tEnd        : 32783304
+blockCount  : 5
+blockSizes  : 279, 69, 169, 114, 166
+qStarts     : 0, 279, 348, 517, 631
+tStarts     : 32724142, 32747193, 32761057, 32763949, 32783138
+
+matches     : 9033
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 8
+tBaseInsert : 834888
+strand      : +
+qName       : XM_011530913.2
+qSize       : 9033
+qStart      : 0
+qEnd        : 9033
+tName       : NC_000023.11
+tSize       : 156040895
+tStart      : 91779309
+tEnd        : 92623230
+blockCount  : 9
+blockSizes  : 375, 169, 106, 59, 584
+              2493, 81, 199, 4967
+qStarts     : 0, 375, 544, 650, 709
+              1293, 3786, 3867, 4066
+tStarts     : 91779309, 91809465, 91810472, 91811236, 91835460
+              91876780, 92201374, 92387734, 92618263
+
+matches     : 623
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 2
+tBaseInsert : 68854
+strand      : -
+qName       : XM_011531202.2
+qSize       : 623
+qStart      : 0
+qEnd        : 623
+tName       : NC_000023.11
+tSize       : 156040895
+tStart      : 150829240
+tEnd        : 150898717
+blockCount  : 3
+blockSizes  : 364, 63, 196
+qStarts     : 0, 364, 427
+tStarts     : 150829240, 150831230, 150898521
+
+matches     : 1615
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 4
+tBaseInsert : 1508
+strand      : -
+qName       : NR_138531.1
+qSize       : 1615
+qStart      : 0
+qEnd        : 1615
+tName       : NC_000012.12
+tSize       : 133275309
+tStart      : 6848807
+tEnd        : 6851930
+blockCount  : 5
+blockSizes  : 391, 91, 294, 130, 709
+qStarts     : 0, 391, 482, 776, 906
+tStarts     : 6848807, 6849322, 6849564, 6850466, 6851221
+
+matches     : 7799
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 5
+tBaseInsert : 34290
+strand      : -
+qName       : NM_001346131.1
+qSize       : 7799
+qStart      : 0
+qEnd        : 7799
+tName       : NC_000014.9
+tSize       : 107043718
+tStart      : 77335020
+tEnd        : 77377109
+blockCount  : 6
+blockSizes  : 6968, 306, 142, 130, 79
+              174
+qStarts     : 0, 6968, 7274, 7416, 7546
+              7625
+tStarts     : 77335020, 77343177, 77343696, 77346348, 77351672
+              77376935
+
+matches     : 3335
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 11
+tBaseInsert : 70699
+strand      : +
+qName       : NM_001346687.1
+qSize       : 3352
+qStart      : 0
+qEnd        : 3335
+tName       : NC_000021.9
+tSize       : 46709983
+tStart      : 45152529
+tEnd        : 45226563
+blockCount  : 12
+blockSizes  : 179, 75, 935, 115, 169
+              149, 120, 169, 182, 135
+              90, 1017
+qStarts     : 0, 179, 254, 1189, 1304
+              1473, 1622, 1742, 1911, 2093
+              2228, 2318
+tStarts     : 45152529, 45171609, 45175729, 45180329, 45182584
+              45183361, 45184473, 45184922, 45204554, 45220835
+              45222017, 45225546
+
+matches     : 3097
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 18
+tBaseInsert : 22722
+strand      : -
+qName       : NM_001349847.1
+qSize       : 3115
+qStart      : 0
+qEnd        : 3097
+tName       : NC_000022.11
+tSize       : 50818468
+tStart      : 21957024
+tEnd        : 21982843
+blockCount  : 19
+blockSizes  : 571, 202, 101, 150, 129
+              174, 147, 106, 155, 91
+              114, 157, 197, 75, 107
+              132, 168, 207, 114
+qStarts     : 18, 589, 791, 892, 1042
+              1171, 1345, 1492, 1598, 1753
+              1844, 1958, 2115, 2312, 2387
+              2494, 2626, 2794, 3001
+tStarts     : 21957024, 21958491, 21959131, 21959586, 21960320
+              21962428, 21962746, 21963922, 21964160, 21965284
+              21967602, 21968618, 21970209, 21971876, 21972611
+              21974356, 21975639, 21975980, 21982729
+
+matches     : 628
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 1
+tBaseInsert : 117
+strand      : +
+qName       : NR_147083.1
+qSize       : 628
+qStart      : 0
+qEnd        : 628
+tName       : NC_000020.11
+tSize       : 64444167
+tStart      : 58003903
+tEnd        : 58004648
+blockCount  : 2
+blockSizes  : 164, 464
+qStarts     : 0, 164
+tStarts     : 58003903, 58004184
+
+matches     : 5034
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 4
+tBaseInsert : 17571
+strand      : +
+qName       : NM_018656.3
+qSize       : 5051
+qStart      : 0
+qEnd        : 5034
+tName       : NC_000012.12
+tSize       : 133275309
+tStart      : 68746085
+tEnd        : 68768690
+blockCount  : 5
+blockSizes  : 694, 111, 159, 83, 3987
+qStarts     : 0, 694, 805, 964, 1047
+tStarts     : 68746085, 68747929, 68752031, 68759156, 68764703
+
+matches     : 2783
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 6
+tBaseInsert : 76432
+strand      : -
+qName       : XR_002957280.1
+qSize       : 2783
+qStart      : 0
+qEnd        : 2783
+tName       : NC_000012.12
+tSize       : 133275309
+tStart      : 42159033
+tEnd        : 42238248
+blockCount  : 7
+blockSizes  : 1793, 153, 100, 133, 384
+              126, 94
+qStarts     : 0, 1793, 1946, 2046, 2179
+              2563, 2689
+tStarts     : 42159033, 42161612, 42210354, 42210547, 42235613
+              42237598, 42238154
+
+matches     : 10253
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 13
+tBaseInsert : 385796
+strand      : -
+qName       : XR_001751812.2
+qSize       : 10253
+qStart      : 0
+qEnd        : 10253
+tName       : NC_000016.10
+tSize       : 90338345
+tStart      : 61640397
+tEnd        : 62036446
+blockCount  : 14
+blockSizes  : 7491, 183, 252, 118, 107
+              122, 137, 254, 188, 168
+              120, 295, 451, 367
+qStarts     : 0, 7491, 7674, 7926, 8044
+              8151, 8273, 8410, 8664, 8852
+              9020, 9140, 9435, 9886
+tStarts     : 61640397, 61653918, 61655469, 61713840, 61714177
+              61727093, 61789345, 61817478, 61820925, 61825011
+              61857118, 61901178, 62021151, 62036079
+
+matches     : 2325
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 8
+tBaseInsert : 4434
+strand      : +
+qName       : XR_002957786.1
+qSize       : 2325
+qStart      : 0
+qEnd        : 2325
+tName       : NC_000016.10
+tSize       : 90338345
+tStart      : 67192159
+tEnd        : 67198918
+blockCount  : 9
+blockSizes  : 203, 110, 162, 44, 62
+              295, 225, 313, 911
+qStarts     : 0, 203, 313, 475, 519
+              581, 876, 1101, 1414
+tStarts     : 67192159, 67192760, 67193008, 67193471, 67194397
+              67194685, 67195781, 67197598, 67198007
+
+matches     : 5930
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 38
+tBaseInsert : 82199
+strand      : -
+qName       : XR_001752402.2
+qSize       : 5930
+qStart      : 0
+qEnd        : 5930
+tName       : NC_000017.11
+tSize       : 83257441
+tStart      : 68867286
+tEnd        : 68955415
+blockCount  : 39
+blockSizes  : 897, 56, 80, 141, 120
+              95, 76, 161, 92, 118
+              121, 92, 66, 165, 120
+              114, 171, 108, 138, 134
+              167, 199, 120, 140, 91
+              139, 120, 176, 111, 59
+              169, 148, 186, 142, 227
+              104, 165, 205, 197
+qStarts     : 0, 897, 953, 1033, 1174
+              1294, 1389, 1465, 1626, 1718
+              1836, 1957, 2049, 2115, 2280
+              2400, 2514, 2685, 2793, 2931
+              3065, 3232, 3431, 3551, 3691
+              3782, 3921, 4041, 4217, 4328
+              4387, 4556, 4704, 4890, 5032
+              5259, 5363, 5528, 5733
+tStarts     : 68867286, 68868300, 68869699, 68875259, 68875613
+              68876459, 68876627, 68877518, 68881119, 68881862
+              68882598, 68883790, 68884330, 68884697, 68885195
+              68887016, 68887335, 68891488, 68894172, 68894879
+              68902712, 68903300, 68906043, 68907739, 68917360
+              68918046, 68918426, 68919300, 68921381, 68922241
+              68924700, 68927915, 68929048, 68929560, 68932287
+              68933167, 68936950, 68940757, 68955218
+
+matches     : 2557
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 17
+tBaseInsert : 31092
+strand      : -
+qName       : XM_017024694.2
+qSize       : 2557
+qStart      : 0
+qEnd        : 2557
+tName       : NC_000017.11
+tSize       : 83257441
+tStart      : 5386013
+tEnd        : 5419662
+blockCount  : 18
+blockSizes  : 256, 119, 127, 81, 66
+              126, 159, 102, 91, 99
+              148, 187, 177, 87, 126
+              170, 127, 309
+qStarts     : 0, 256, 375, 502, 583
+              649, 775, 934, 1036, 1127
+              1226, 1374, 1561, 1738, 1825
+              1951, 2121, 2248
+tStarts     : 5386013, 5386707, 5386983, 5387385, 5387604
+              5387778, 5388801, 5391560, 5394890, 5399551
+              5404098, 5405056, 5408732, 5410702, 5414008
+              5416512, 5418014, 5419353
+
+matches     : 8617
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 15
+tBaseInsert : 288779
+strand      : +
+qName       : XM_024450830.1
+qSize       : 8617
+qStart      : 0
+qEnd        : 8617
+tName       : NC_000017.11
+tSize       : 83257441
+tStart      : 66513347
+tEnd        : 66810743
+blockCount  : 16
+blockSizes  : 34, 146, 112, 129, 157
+              135, 97, 138, 174, 92
+              63, 139, 81, 108, 141
+              6871
+qStarts     : 0, 34, 180, 292, 421
+              578, 713, 810, 948, 1122
+              1214, 1277, 1416, 1497, 1605
+              1746
+tStarts     : 66513347, 66514320, 66641354, 66645382, 66687110
+              66688301, 66688950, 66732687, 66735488, 66738763
+              66741658, 66742621, 66773986, 66786866, 66788838
+              66803872
+
+matches     : 6439
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 2
+tBaseInsert : 16333
+strand      : +
+qName       : XR_001752982.2
+qSize       : 6439
+qStart      : 0
+qEnd        : 6439
+tName       : NC_000017.11
+tSize       : 83257441
+tStart      : 68166524
+tEnd        : 68189296
+blockCount  : 3
+blockSizes  : 388, 122, 5929
+qStarts     : 0, 388, 510
+tStarts     : 68166524, 68181550, 68183367
+
+matches     : 4446
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 27
+tBaseInsert : 101670
+strand      : -
+qName       : XM_006722420.4
+qSize       : 4446
+qStart      : 0
+qEnd        : 4446
+tName       : NC_000018.10
+tSize       : 80373285
+tStart      : 31837012
+tEnd        : 31943128
+blockCount  : 28
+blockSizes  : 96, 146, 102, 174, 59
+              69, 97, 148, 443, 155
+              127, 75, 131, 195, 109
+              225, 132, 106, 101, 151
+              116, 260, 94, 154, 175
+              90, 195, 521
+qStarts     : 0, 96, 242, 344, 518
+              577, 646, 743, 891, 1334
+              1489, 1616, 1691, 1822, 2017
+              2126, 2351, 2483, 2589, 2690
+              2841, 2957, 3217, 3311, 3465
+              3640, 3730, 3925
+tStarts     : 31837012, 31839311, 31846715, 31849565, 31852445
+              31852594, 31853848, 31855659, 31857539, 31864626
+              31866848, 31867401, 31870371, 31870925, 31873429
+              31874479, 31890734, 31897785, 31900924, 31907459
+              31908302, 31908753, 31909666, 31913368, 31916271
+              31917577, 31931328, 31942607
+
+matches     : 6444
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 15
+tBaseInsert : 173874
+strand      : -
+qName       : XM_005266749.4
+qSize       : 6444
+qStart      : 0
+qEnd        : 6444
+tName       : NC_000018.10
+tSize       : 80373285
+tStart      : 55223446
+tEnd        : 55403764
+blockCount  : 16
+blockSizes  : 4584, 141, 230, 163, 136
+              204, 77, 79, 68, 133
+              134, 106, 50, 130, 65
+              144
+qStarts     : 0, 4584, 4725, 4955, 5118
+              5254, 5458, 5535, 5614, 5682
+              5815, 5949, 6055, 6105, 6235
+              6300
+tStarts     : 55223446, 55228220, 55228846, 55232508, 55234547
+              55254496, 55257314, 55259948, 55261465, 55269830
+              55275618, 55279550, 55350358, 55350873, 55403453
+              55403620
+
+matches     : 5522
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 33
+tBaseInsert : 95757
+strand      : +
+qName       : XM_024451664.1
+qSize       : 5522
+qStart      : 0
+qEnd        : 5522
+tName       : NC_000019.10
+tSize       : 58617616
+tStart      : 10960998
+tEnd        : 11062277
+blockCount  : 34
+blockSizes  : 176, 253, 133, 405, 99
+              259, 127, 174, 174, 168
+              51, 131, 58, 122, 151
+              164, 67, 111, 243, 114
+              108, 87, 47, 167, 164
+              228, 78, 219, 263, 109
+              102, 133, 143, 494
+qStarts     : 0, 176, 429, 562, 967
+              1066, 1325, 1452, 1626, 1800
+              1968, 2019, 2150, 2208, 2330
+              2481, 2645, 2712, 2823, 3066
+              3180, 3288, 3375, 3422, 3589
+              3753, 3981, 4059, 4278, 4541
+              4650, 4752, 4885, 5028
+tStarts     : 10960998, 10984120, 10985272, 10986188, 10986904
+              10987665, 10989316, 10991149, 10994827, 10996212
+              10996493, 11003028, 11003339, 11007901, 11010380
+              11012948, 11018956, 11019590, 11021724, 11023517
+              11024330, 11025421, 11026299, 11027783, 11030729
+              11033289, 11034122, 11034913, 11041297, 11058254
+              11058787, 11059752, 11060044, 11061783
+
+matches     : 1318
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 5
+tBaseInsert : 12412
+strand      : -
+qName       : XM_005260192.2
+qSize       : 1318
+qStart      : 0
+qEnd        : 1318
+tName       : NC_000020.11
+tSize       : 64444167
+tStart      : 63240779
+tEnd        : 63254509
+blockCount  : 6
+blockSizes  : 727, 61, 198, 81, 138
+              113
+qStarts     : 0, 727, 788, 986, 1067
+              1205
+tStarts     : 63240779, 63244023, 63247577, 63248814, 63249934
+              63254396
+
+matches     : 1353
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 8
+tBaseInsert : 184809
+strand      : +
+qName       : XM_017012981.2
+qSize       : 1353
+qStart      : 0
+qEnd        : 1353
+tName       : NC_000008.11
+tSize       : 145138636
+tStart      : 30384540
+tEnd        : 30570702
+blockCount  : 9
+blockSizes  : 618, 78, 39, 63, 151
+              131, 137, 70, 66
+qStarts     : 0, 618, 696, 735, 798
+              949, 1080, 1217, 1287
+tStarts     : 30384540, 30474778, 30477798, 30479314, 30504285
+              30544493, 30556657, 30558886, 30570636
+
+matches     : 2412
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 0
+tBaseInsert : 0
+strand      : +
+qName       : NM_032098.1
+qSize       : 2412
+qStart      : 0
+qEnd        : 2412
+tName       : NC_000005.10
+tSize       : 181538259
+tStart      : 141387884
+tEnd        : 141390296
+blockCount  : 1
+blockSizes  : 2412
+qStarts     : 0
+tStarts     : 141387884
+
+matches     : 3098
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 6
+tBaseInsert : 11829
+strand      : +
+qName       : NM_001004358.1
+qSize       : 3115
+qStart      : 0
+qEnd        : 3098
+tName       : NC_000004.12
+tSize       : 190214555
+tStart      : 1011971
+tEnd        : 1026898
+blockCount  : 7
+blockSizes  : 16, 95, 273, 81, 285
+              354, 1994
+qStarts     : 0, 16, 111, 384, 465
+              750, 1104
+tStarts     : 1011971, 1012469, 1022202, 1023640, 1023816
+              1024310, 1024904
+
+matches     : 2672
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 2
+tBaseInsert : 4507
+strand      : +
+qName       : NM_001123041.2
+qSize       : 2689
+qStart      : 0
+qEnd        : 2672
+tName       : NC_000003.12
+tSize       : 198295559
+tStart      : 46353743
+tEnd        : 46360922
+blockCount  : 3
+blockSizes  : 434, 992, 1246
+qStarts     : 0, 434, 1426
+tStarts     : 46353743, 46357476, 46359676
+
+matches     : 2953
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 3
+tBaseInsert : 7975
+strand      : -
+qName       : NM_001134870.1
+qSize       : 2969
+qStart      : 0
+qEnd        : 2953
+tName       : NC_000006.12
+tSize       : 170805979
+tStart      : 30676388
+tEnd        : 30687316
+blockCount  : 4
+blockSizes  : 900, 211, 1639, 203
+qStarts     : 16, 916, 1127, 2766
+tStarts     : 30676388, 30679178, 30684407, 30687113
+
+matches     : 3552
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 7
+tBaseInsert : 68028
+strand      : -
+qName       : NR_028039.1
+qSize       : 3562
+qStart      : 0
+qEnd        : 3552
+tName       : NC_000007.14
+tSize       : 159345973
+tStart      : 100200652
+tEnd        : 100272232
+blockCount  : 8
+blockSizes  : 1951, 601, 87, 124, 129
+              194, 71, 395
+qStarts     : 10, 1961, 2562, 2649, 2773
+              2902, 3096, 3167
+tStarts     : 100200652, 100211393, 100213046, 100222596, 100223569
+              100223881, 100233603, 100271837
+
+matches     : 10627
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 11
+tBaseInsert : 114144
+strand      : +
+qName       : NM_133263.3
+qSize       : 10642
+qStart      : 0
+qEnd        : 10627
+tName       : NC_000005.10
+tSize       : 181538259
+tStart      : 149730251
+tEnd        : 149855022
+blockCount  : 12
+blockSizes  : 169, 174, 213, 117, 1123
+              37, 65, 811, 76, 122
+              155, 7565
+qStarts     : 0, 169, 343, 556, 673
+              1796, 1833, 1898, 2709, 2785
+              2907, 3062
+tStarts     : 149730251, 149820432, 149826672, 149830766, 149832655
+              149834673, 149835300, 149836262, 149840040, 149842255
+              149845759, 149847457
+
+matches     : 7898
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 46
+tBaseInsert : 121586
+strand      : +
+qName       : NM_015255.2
+qSize       : 7898
+qStart      : 0
+qEnd        : 7898
+tName       : NC_000006.12
+tSize       : 170805979
+tStart      : 42564021
+tEnd        : 42693505
+blockCount  : 47
+blockSizes  : 376, 260, 79, 114, 131
+              139, 63, 121, 108, 89
+              99, 164, 100, 129, 184
+              62, 111, 66, 123, 64
+              125, 53, 103, 49, 155
+              103, 110, 81, 179, 200
+              94, 162, 104, 79, 149
+              56, 97, 68, 136, 91
+              131, 109, 57, 78, 171
+              102, 2474
+qStarts     : 0, 376, 636, 715, 829
+              960, 1099, 1162, 1283, 1391
+              1480, 1579, 1743, 1843, 1972
+              2156, 2218, 2329, 2395, 2518
+              2582, 2707, 2760, 2863, 2912
+              3067, 3170, 3280, 3361, 3540
+              3740, 3834, 3996, 4100, 4179
+              4328, 4384, 4481, 4549, 4685
+              4776, 4907, 5016, 5073, 5151
+              5322, 5424
+tStarts     : 42564021, 42573733, 42592150, 42594190, 42603587
+              42605720, 42606588, 42612170, 42615070, 42616001
+              42617239, 42632551, 42632804, 42635417, 42637010
+              42640208, 42641581, 42642415, 42644213, 42644472
+              42645465, 42648117, 42650283, 42652022, 42652490
+              42655620, 42658023, 42658239, 42658645, 42659655
+              42662183, 42663257, 42665408, 42666166, 42670091
+              42670659, 42673790, 42674125, 42676055, 42676782
+              42678538, 42679723, 42683054, 42684793, 42688215
+              42689568, 42691031
+
+matches     : 6026
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 17
+tBaseInsert : 112268
+strand      : -
+qName       : NM_001990.3
+qSize       : 6040
+qStart      : 0
+qEnd        : 6026
+tName       : NC_000001.11
+tSize       : 248956422
+tStart      : 27970343
+tEnd        : 28088637
+blockCount  : 18
+blockSizes  : 4203, 101, 122, 115, 161
+              59, 90, 84, 140, 184
+              86, 138, 137, 67, 80
+              44, 101, 114
+qStarts     : 14, 4217, 4318, 4440, 4555
+              4716, 4775, 4865, 4949, 5089
+              5273, 5359, 5497, 5634, 5701
+              5781, 5825, 5926
+tStarts     : 27970343, 27978373, 27988534, 27989696, 27993399
+              27997319, 27999959, 28004335, 28010946, 28013110
+              28017153, 28027788, 28035543, 28038838, 28042570
+              28048382, 28057993, 28088523
+
+matches     : 1736
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 7
+tBaseInsert : 19871
+strand      : -
+qName       : NM_016135.3
+qSize       : 1761
+qStart      : 0
+qEnd        : 1736
+tName       : NC_000006.12
+tSize       : 170805979
+tStart      : 36366193
+tEnd        : 36387800
+blockCount  : 8
+blockSizes  : 569, 101, 143, 231, 126
+              165, 136, 265
+qStarts     : 25, 594, 695, 838, 1069
+              1195, 1360, 1496
+tStarts     : 36366193, 36366874, 36368928, 36371329, 36373452
+              36375870, 36385533, 36387535
+
+matches     : 80
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 0
+tBaseInsert : 0
+strand      : -
+qName       : NR_039949.1
+qSize       : 80
+qStart      : 0
+qEnd        : 80
+tName       : NC_000002.12
+tSize       : 242193529
+tStart      : 239943014
+tEnd        : 239943094
+blockCount  : 1
+blockSizes  : 80
+qStarts     : 0
+tStarts     : 239943014
+
+matches     : 2714
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 12
+tBaseInsert : 84963
+strand      : +
+qName       : NM_005048.3
+qSize       : 2734
+qStart      : 0
+qEnd        : 2714
+tName       : NC_000002.12
+tSize       : 242193529
+tStart      : 208406829
+tEnd        : 208494506
+blockCount  : 13
+blockSizes  : 289, 103, 111, 122, 98
+              190, 154, 61, 67, 95
+              139, 42, 1243
+qStarts     : 0, 289, 392, 503, 625
+              723, 913, 1067, 1128, 1195
+              1290, 1429, 1471
+tStarts     : 208406829, 208428200, 208437536, 208437759, 208442363
+              208443347, 208444733, 208450748, 208459894, 208481069
+              208489011, 208490638, 208493263
+
+matches     : 4712
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 6
+tBaseInsert : 14808
+strand      : +
+qName       : NM_001010853.2
+qSize       : 4720
+qStart      : 0
+qEnd        : 4712
+tName       : NC_000006.12
+tSize       : 170805979
+tStart      : 89146049
+tEnd        : 89165569
+blockCount  : 7
+blockSizes  : 560, 149, 143, 155, 136
+              108, 3461
+qStarts     : 0, 560, 709, 852, 1007
+              1143, 1251
+tStarts     : 89146049, 89149264, 89153042, 89154747, 89158324
+              89161782, 89162108
+
+matches     : 3115
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 2
+tBaseInsert : 40116
+strand      : +
+qName       : NR_103730.1
+qSize       : 3115
+qStart      : 0
+qEnd        : 3115
+tName       : NC_000002.12
+tSize       : 242193529
+tStart      : 100208253
+tEnd        : 100251484
+blockCount  : 3
+blockSizes  : 567, 127, 2421
+qStarts     : 0, 567, 694
+tStarts     : 100208253, 100247111, 100249063
+
+matches     : 486
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 1
+tBaseInsert : 21863
+strand      : -
+qName       : NR_126417.1
+qSize       : 499
+qStart      : 0
+qEnd        : 486
+tName       : NC_000006.12
+tSize       : 170805979
+tStart      : 41523894
+tEnd        : 41546243
+blockCount  : 2
+blockSizes  : 331, 155
+qStarts     : 13, 344
+tStarts     : 41523894, 41546088
+
+matches     : 614
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 4
+tBaseInsert : 6584
+strand      : -
+qName       : NM_001302825.1
+qSize       : 638
+qStart      : 0
+qEnd        : 614
+tName       : NC_000003.12
+tSize       : 198295559
+tStart      : 10285749
+tEnd        : 10292947
+blockCount  : 5
+blockSizes  : 145, 109, 117, 137, 106
+qStarts     : 24, 169, 278, 395, 532
+tStarts     : 10285749, 10286703, 10289761, 10290072, 10292841
+
+matches     : 6170
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 8
+tBaseInsert : 60689
+strand      : +
+qName       : NM_001308045.1
+qSize       : 6186
+qStart      : 0
+qEnd        : 6170
+tName       : NC_000003.12
+tSize       : 198295559
+tStart      : 196867855
+tEnd        : 196934714
+blockCount  : 9
+blockSizes  : 218, 1544, 106, 139, 48
+              78, 84, 51, 3902
+qStarts     : 0, 218, 1762, 1868, 2007
+              2055, 2133, 2217, 2268
+tStarts     : 196867855, 196885150, 196899665, 196899923, 196900364
+              196903532, 196927795, 196929632, 196930812
+
+matches     : 3142
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 20
+tBaseInsert : 185028
+strand      : +
+qName       : XR_001737097.1
+qSize       : 3142
+qStart      : 0
+qEnd        : 3142
+tName       : NC_000001.11
+tSize       : 248956422
+tStart      : 244452186
+tEnd        : 244640356
+blockCount  : 21
+blockSizes  : 148, 77, 74, 70, 68
+              25, 78, 107, 493, 478
+              443, 59, 76, 53, 51
+              34, 80, 87, 158, 54
+              429
+qStarts     : 0, 148, 225, 299, 369
+              437, 462, 540, 647, 1140
+              1618, 2061, 2120, 2196, 2249
+              2300, 2334, 2414, 2501, 2659
+              2713
+tStarts     : 244452186, 244457492, 244477540, 244477905, 244479716
+              244490446, 244499001, 244518591, 244552321, 244560667
+              244572329, 244581795, 244583863, 244588481, 244591680
+              244593394, 244593498, 244610239, 244617528, 244635488
+              244639927
+
+matches     : 6160
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 4
+tBaseInsert : 7401
+strand      : +
+qName       : XM_017002755.1
+qSize       : 6160
+qStart      : 0
+qEnd        : 6160
+tName       : NC_000001.11
+tSize       : 248956422
+tStart      : 180265421
+tEnd        : 180278982
+blockCount  : 5
+blockSizes  : 832, 203, 155, 172, 4798
+qStarts     : 0, 832, 1035, 1190, 1362
+tStarts     : 180265421, 180266391, 180271379, 180271834, 180274184
+
+matches     : 2934
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 8
+tBaseInsert : 73375
+strand      : +
+qName       : XM_017003771.1
+qSize       : 2934
+qStart      : 0
+qEnd        : 2934
+tName       : NC_000002.12
+tSize       : 242193529
+tStart      : 218270484
+tEnd        : 218346793
+blockCount  : 9
+blockSizes  : 118, 169, 116, 113, 59
+              93, 164, 116, 1986
+qStarts     : 0, 118, 287, 403, 516
+              575, 668, 832, 948
+tStarts     : 218270484, 218271380, 218339782, 218340028, 218340727
+              218341533, 218341980, 218344454, 218344807
+
+matches     : 4994
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 2
+tBaseInsert : 7242
+strand      : +
+qName       : XR_923074.2
+qSize       : 4994
+qStart      : 0
+qEnd        : 4994
+tName       : NC_000002.12
+tSize       : 242193529
+tStart      : 94947783
+tEnd        : 94960019
+blockCount  : 3
+blockSizes  : 89, 97, 4808
+qStarts     : 0, 89, 186
+tStarts     : 94947783, 94954840, 94955211
+
+matches     : 2065
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 3
+tBaseInsert : 17538
+strand      : +
+qName       : XR_001739876.1
+qSize       : 2065
+qStart      : 0
+qEnd        : 2065
+tName       : NC_000002.12
+tSize       : 242193529
+tStart      : 216302996
+tEnd        : 216322599
+blockCount  : 4
+blockSizes  : 663, 71, 300, 1031
+qStarts     : 0, 663, 734, 1034
+tStarts     : 216302996, 216318077, 216319696, 216321568
+
+matches     : 2632
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 10
+tBaseInsert : 53018
+strand      : -
+qName       : XM_011531651.2
+qSize       : 2632
+qStart      : 0
+qEnd        : 2632
+tName       : NC_000004.12
+tSize       : 190214555
+tStart      : 140442256
+tEnd        : 140497906
+blockCount  : 11
+blockSizes  : 1188, 108, 131, 115, 76
+              114, 47, 134, 138, 159
+              422
+qStarts     : 0, 1188, 1296, 1427, 1542
+              1618, 1732, 1779, 1913, 2051
+              2210
+tStarts     : 140442256, 140451409, 140456588, 140459511, 140461928
+              140464895, 140471774, 140474812, 140479489, 140482326
+              140497484
+
+matches     : 2502
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 20
+tBaseInsert : 55320
+strand      : +
+qName       : XR_001741312.1
+qSize       : 2502
+qStart      : 0
+qEnd        : 2502
+tName       : NC_000004.12
+tSize       : 190214555
+tStart      : 39182493
+tEnd        : 39240315
+blockCount  : 21
+blockSizes  : 70, 92, 66, 126, 116
+              116, 81, 113, 174, 71
+              173, 115, 107, 123, 150
+              148, 205, 160, 147, 110
+              39
+qStarts     : 0, 70, 162, 228, 354
+              470, 586, 667, 780, 954
+              1025, 1198, 1313, 1420, 1543
+              1693, 1841, 2046, 2206, 2353
+              2463
+tStarts     : 39182493, 39185725, 39186538, 39189655, 39194543
+              39199477, 39203641, 39205153, 39205562, 39214600
+              39215840, 39216095, 39217133, 39217982, 39224883
+              39228209, 39228485, 39231796, 39232161, 39234765
+              39240276
+
+matches     : 5959
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 12
+tBaseInsert : 82689
+strand      : -
+qName       : XM_005248480.2
+qSize       : 5959
+qStart      : 0
+qEnd        : 5959
+tName       : NC_000005.10
+tSize       : 181538259
+tStart      : 74777739
+tEnd        : 74866387
+blockCount  : 13
+blockSizes  : 4269, 204, 157, 151, 40
+              113, 129, 180, 172, 86
+              100, 135, 223
+qStarts     : 0, 4269, 4473, 4630, 4781
+              4821, 4934, 5063, 5243, 5415
+              5501, 5601, 5736
+tStarts     : 74777739, 74782930, 74796029, 74800879, 74801589
+              74804492, 74805155, 74813839, 74834425, 74838964
+              74840073, 74841544, 74866164
+
+matches     : 5805
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 4
+tBaseInsert : 172239
+strand      : -
+qName       : XM_011537713.2
+qSize       : 5805
+qStart      : 0
+qEnd        : 5805
+tName       : NC_000005.10
+tSize       : 181538259
+tStart      : 139865631
+tEnd        : 140043675
+blockCount  : 5
+blockSizes  : 4087, 121, 119, 172, 1306
+qStarts     : 0, 4087, 4208, 4327, 4499
+tStarts     : 139865631, 139871720, 139880855, 139887339, 140042369
+
+matches     : 1349
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 6
+tBaseInsert : 287181
+strand      : -
+qName       : XR_001744046.1
+qSize       : 1349
+qStart      : 0
+qEnd        : 1349
+tName       : NC_000006.12
+tSize       : 170805979
+tStart      : 23337804
+tEnd        : 23626334
+blockCount  : 7
+blockSizes  : 455, 249, 164, 81, 108
+              91, 201
+qStarts     : 0, 455, 704, 868, 949
+              1057, 1148
+tStarts     : 23337804, 23339259, 23344872, 23457589, 23605942
+              23608662, 23626133
+
+matches     : 8173
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 14
+tBaseInsert : 77156
+strand      : +
+qName       : XM_011515394.2
+qSize       : 8173
+qStart      : 0
+qEnd        : 8173
+tName       : NC_000007.14
+tSize       : 159345973
+tStart      : 20330425
+tEnd        : 20415754
+blockCount  : 15
+blockSizes  : 186, 47, 86, 175, 247
+              166, 159, 96, 90, 135
+              406, 226, 110, 164, 5880
+qStarts     : 0, 186, 233, 319, 494
+              741, 907, 1066, 1162, 1252
+              1387, 1793, 2019, 2129, 2293
+tStarts     : 20330425, 20331976, 20363636, 20367011, 20379050
+              20380665, 20381726, 20391402, 20394895, 20398859
+              20401720, 20404627, 20406061, 20409614, 20409874
+
+matches     : 2921
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 11
+tBaseInsert : 20850
+strand      : +
+qName       : NM_001329444.1
+qSize       : 2973
+qStart      : 0
+qEnd        : 2921
+tName       : NC_000008.11
+tSize       : 145138636
+tStart      : 144478350
+tEnd        : 144502121
+blockCount  : 12
+blockSizes  : 203, 179, 993, 71, 146
+              104, 125, 126, 76, 130
+              166, 602
+qStarts     : 0, 203, 382, 1375, 1446
+              1592, 1696, 1821, 1947, 2023
+              2153, 2319
+tStarts     : 144478350, 144490033, 144496460, 144498769, 144498915
+              144500095, 144500266, 144500486, 144500685, 144500841
+              144501128, 144501519
+
+matches     : 1927
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 11
+tBaseInsert : 43420
+strand      : +
+qName       : NM_001345901.1
+qSize       : 1927
+qStart      : 0
+qEnd        : 1927
+tName       : NC_000004.12
+tSize       : 190214555
+tStart      : 184649612
+tEnd        : 184694959
+blockCount  : 12
+blockSizes  : 296, 78, 98, 148, 288
+              163, 89, 90, 109, 83
+              47, 438
+qStarts     : 0, 296, 374, 472, 620
+              908, 1071, 1160, 1250, 1359
+              1442, 1489
+tStarts     : 184649612, 184652022, 184659339, 184665916, 184672172
+              184678231, 184682247, 184685408, 184685575, 184691498
+              184691665, 184694521
+
+matches     : 8426
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 27
+tBaseInsert : 151631
+strand      : -
+qName       : NM_001202435.2
+qSize       : 8426
+qStart      : 0
+qEnd        : 8426
+tName       : NC_000002.12
+tSize       : 242193529
+tStart      : 165989159
+tEnd        : 166149216
+blockCount  : 28
+blockSizes  : 3263, 271, 105, 138, 54
+              282, 123, 174, 155, 121
+              483, 357, 174, 239, 133
+              381, 285, 207, 142, 64
+              270, 92, 129, 90, 119
+              313, 92, 170
+qStarts     : 0, 3263, 3534, 3639, 3777
+              3831, 4113, 4236, 4410, 4565
+              4686, 5169, 5526, 5700, 5939
+              6072, 6453, 6738, 6945, 7087
+              7151, 7421, 7513, 7642, 7732
+              7851, 8164, 8256
+tStarts     : 165989159, 165994145, 165996012, 165998037, 165999722
+              166002471, 166009718, 166012108, 166013743, 166015606
+              166036047, 166037775, 166039422, 166041230, 166042291
+              166043668, 166045042, 166046769, 166047626, 166048885
+              166051718, 166052851, 166054637, 166056410, 166058569
+              166073357, 166077709, 166149046
+
+matches     : 6951
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 15
+tBaseInsert : 673858
+strand      : -
+qName       : NR_148983.1
+qSize       : 6951
+qStart      : 0
+qEnd        : 6951
+tName       : NC_000004.12
+tSize       : 190214555
+tStart      : 23792020
+tEnd        : 24472829
+blockCount  : 16
+blockSizes  : 3905, 152, 122, 121, 105
+              916, 105, 46, 205, 123
+              195, 152, 104, 180, 65
+              455
+qStarts     : 0, 3905, 4057, 4179, 4300
+              4405, 5321, 5426, 5472, 5677
+              5800, 5995, 6147, 6251, 6431
+              6496
+tStarts     : 23792020, 23801729, 23802223, 23812746, 23813020
+              23813689, 23824279, 23824462, 23828399, 23829462
+              23831556, 23877713, 23884310, 23884751, 24258202
+              24472374
+
+matches     : 2203
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 5
+tBaseInsert : 3988
+strand      : -
+qName       : XR_002959324.1
+qSize       : 2203
+qStart      : 0
+qEnd        : 2203
+tName       : NC_000001.11
+tSize       : 248956422
+tStart      : 45493862
+tEnd        : 45500053
+blockCount  : 6
+blockSizes  : 1304, 128, 68, 85, 96
+              522
+qStarts     : 0, 1304, 1432, 1500, 1585
+              1681
+tStarts     : 45493862, 45495417, 45496555, 45497298, 45499344
+              45499531
+
+matches     : 1256
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 4
+tBaseInsert : 1359
+strand      : -
+qName       : XM_005273059.4
+qSize       : 1256
+qStart      : 0
+qEnd        : 1256
+tName       : NC_000001.11
+tSize       : 248956422
+tStart      : 228106684
+tEnd        : 228109299
+blockCount  : 5
+blockSizes  : 234, 202, 84, 585, 151
+qStarts     : 0, 234, 436, 520, 1105
+tStarts     : 228106684, 228107667, 228108234, 228108436, 228109148
+
+matches     : 3072
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 10
+tBaseInsert : 7360
+strand      : -
+qName       : XR_001737294.2
+qSize       : 3072
+qStart      : 0
+qEnd        : 3072
+tName       : NC_000001.11
+tSize       : 248956422
+tStart      : 248850329
+tEnd        : 248860761
+blockCount  : 11
+blockSizes  : 187, 100, 115, 79, 222
+              50, 49, 203, 32, 191
+              1844
+qStarts     : 0, 187, 287, 402, 481
+              703, 753, 802, 1005, 1037
+              1228
+tStarts     : 248850329, 248850681, 248853936, 248855379, 248855724
+              248856372, 248856513, 248857233, 248857827, 248858130
+              248858917
+
+matches     : 2217
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 3
+tBaseInsert : 22361
+strand      : -
+qName       : XR_002958459.1
+qSize       : 2217
+qStart      : 0
+qEnd        : 2217
+tName       : NC_000001.11
+tSize       : 248956422
+tStart      : 219409458
+tEnd        : 219434036
+blockCount  : 4
+blockSizes  : 809, 222, 52, 1134
+qStarts     : 0, 809, 1031, 1083
+tStarts     : 219409458, 219411717, 219427269, 219432902
+
+matches     : 3946
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 15
+tBaseInsert : 43501
+strand      : -
+qName       : XM_017004732.2
+qSize       : 3946
+qStart      : 0
+qEnd        : 3946
+tName       : NC_000002.12
+tSize       : 242193529
+tStart      : 130462244
+tEnd        : 130509691
+blockCount  : 16
+blockSizes  : 1900, 121, 182, 45, 71
+              71, 167, 45, 71, 71
+              138, 107, 174, 145, 614
+              24
+qStarts     : 0, 1900, 2021, 2203, 2248
+              2319, 2390, 2557, 2602, 2673
+              2744, 2882, 2989, 3163, 3308
+              3922
+tStarts     : 130462244, 130465651, 130474377, 130474906, 130476630
+              130482002, 130488031, 130489234, 130490669, 130496551
+              130499083, 130500535, 130503445, 130503749, 130508714
+              130509667
+
+matches     : 15101
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 21
+tBaseInsert : 111415
+strand      : +
+qName       : XM_017005575.2
+qSize       : 15101
+qStart      : 0
+qEnd        : 15101
+tName       : NC_000003.12
+tSize       : 198295559
+tStart      : 35667980
+tEnd        : 35794496
+blockCount  : 22
+blockSizes  : 11712, 174, 92, 167, 42
+              90, 145, 79, 60, 141
+              109, 102, 38, 60, 233
+              234, 185, 105, 261, 127
+              149, 796
+qStarts     : 0, 11712, 11886, 11978, 12145
+              12187, 12277, 12422, 12501, 12561
+              12702, 12811, 12913, 12951, 13011
+              13244, 13478, 13663, 13768, 14029
+              14156, 14305
+tStarts     : 35667980, 35679786, 35680825, 35681713, 35682847
+              35683725, 35687738, 35689306, 35690080, 35690864
+              35706973, 35708968, 35715438, 35717297, 35721604
+              35729302, 35737177, 35738213, 35739316, 35743838
+              35792381, 35793700
+
+matches     : 5729
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 3
+tBaseInsert : 417563
+strand      : +
+qName       : XM_017008272.2
+qSize       : 5729
+qStart      : 0
+qEnd        : 5729
+tName       : NC_000004.12
+tSize       : 190214555
+tStart      : 30719860
+tEnd        : 31143152
+blockCount  : 4
+blockSizes  : 4736, 217, 96, 680
+qStarts     : 0, 4736, 4953, 5049
+tStarts     : 30719860, 30920152, 30950119, 31142472
+
+matches     : 11662
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 7
+tBaseInsert : 263165
+strand      : -
+qName       : XM_005263150.5
+qSize       : 11662
+qStart      : 0
+qEnd        : 11662
+tName       : NC_000004.12
+tSize       : 190214555
+tStart      : 140859806
+tEnd        : 141134633
+blockCount  : 8
+blockSizes  : 8573, 211, 97, 83, 72
+              251, 66, 2309
+qStarts     : 0, 8573, 8784, 8881, 8964
+              9036, 9287, 9353
+tStarts     : 140859806, 140911143, 140925976, 140947653, 140949300
+              140967622, 141053665, 141132324
+
+matches     : 1859
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 13
+tBaseInsert : 384094
+strand      : -
+qName       : XM_024454310.1
+qSize       : 1859
+qStart      : 0
+qEnd        : 1859
+tName       : NC_000004.12
+tSize       : 190214555
+tStart      : 149429919
+tEnd        : 149815872
+blockCount  : 14
+blockSizes  : 110, 162, 135, 145, 199
+              68, 116, 89, 91, 265
+              83, 85, 38, 273
+qStarts     : 0, 110, 272, 407, 552
+              751, 819, 935, 1024, 1115
+              1380, 1463, 1548, 1586
+tStarts     : 149429919, 149433395, 149548454, 149553142, 149563691
+              149587929, 149621128, 149682117, 149686377, 149733243
+              149735375, 149742654, 149815310, 149815599
+
+matches     : 1092
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 7
+tBaseInsert : 194636
+strand      : -
+qName       : XM_011515101.3
+qSize       : 1092
+qStart      : 0
+qEnd        : 1092
+tName       : NC_000007.14
+tSize       : 159345973
+tStart      : 49897484
+tEnd        : 50093212
+blockCount  : 8
+blockSizes  : 168, 98, 178, 77, 219
+              126, 81, 145
+qStarts     : 0, 168, 266, 444, 521
+              740, 866, 947
+tStarts     : 49897484, 49901117, 49983341, 50018239, 50031091
+              50081773, 50089628, 50093067
+
+matches     : 1318
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 4
+tBaseInsert : 24011
+strand      : -
+qName       : XM_011516152.2
+qSize       : 1318
+qStart      : 0
+qEnd        : 1318
+tName       : NC_000007.14
+tSize       : 159345973
+tStart      : 151384563
+tEnd        : 151409892
+blockCount  : 5
+blockSizes  : 89, 200, 421, 142, 466
+qStarts     : 0, 89, 289, 710, 852
+tStarts     : 151384563, 151385087, 151395775, 151400099, 151409426
+
+matches     : 2444
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 9
+tBaseInsert : 6559
+strand      : -
+qName       : XR_001744737.2
+qSize       : 2444
+qStart      : 0
+qEnd        : 2444
+tName       : NC_000007.14
+tSize       : 159345973
+tStart      : 72996922
+tEnd        : 73005925
+blockCount  : 10
+blockSizes  : 1442, 115, 108, 40, 80
+              99, 124, 117, 86, 233
+qStarts     : 0, 1442, 1557, 1665, 1705
+              1785, 1884, 2008, 2125, 2211
+tStarts     : 72996922, 72998675, 72999054, 72999333, 72999470
+              72999760, 73000357, 73003020, 73003644, 73005692
+
+matches     : 3441
+misMatches  : 0
+repMatches  : 0
+nCount      : 0
+qNumInsert  : 0
+qBaseInsert : 0
+tNumInsert  : 14
+tBaseInsert : 37210
+strand      : -
+qName       : XR_001744891.2
+qSize       : 3441
+qStart      : 0
+qEnd        : 3441
+tName       : NC_000007.14
+tSize       : 159345973
+tStart      : 130164828
+tEnd        : 130205479
+blockCount  : 15
+blockSizes  : 1677, 74, 98, 115, 127
+              126, 97, 72, 176, 202
+              242, 132, 59, 137, 107
+qStarts     : 0, 1677, 1751, 1849, 1964
+              2091, 2217, 2314, 2386, 2562
+              2764, 3006, 3138, 3197, 3334
+tStarts     : 130164828, 130170399, 130173631, 130173824, 130175511
+              130178401, 130181622, 130184183, 130185191, 130192621
+              130201849, 130202531, 130203787, 130203973, 130205372
+

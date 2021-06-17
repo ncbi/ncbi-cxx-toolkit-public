@@ -1,0 +1,4 @@
+ASN_PROJ = asn_sample_lib
+REQUIRES = serial
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

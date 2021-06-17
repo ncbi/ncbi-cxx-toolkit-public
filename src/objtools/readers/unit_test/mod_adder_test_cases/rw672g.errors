@@ -1,0 +1,30 @@
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene.
+
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: allele.
+
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: Locus_Tag.
+
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene_syn.
+
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene-synonym.
+
+                Warning:
+Problem:        Duplicated modifier value detected, ignoring duplicate, no action required: topology=cirCular.
+
+                Warning:
+Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifier will be ignored: function
+
+                Warning:
+Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifier will be ignored: Ec_Number
+
+                Warning:
+Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifier will be ignored: protein
+
+                Warning:
+Problem:        Cannot apply protein modifier to nucleotide sequence. The following modifier will be ignored: protein-desc
+

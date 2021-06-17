@@ -1,0 +1,264 @@
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 378
+    },
+    {
+      id str "e_value",
+      value real { 0, 10, 0 }
+    },
+    {
+      id str "bit_score",
+      value real { 699153862817434, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 403
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 971084337349398, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 11
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 3,
+    ids {
+      genbank {
+        accession "AY074241",
+        version 1
+      },
+      other {
+        name "MM7_39473_37",
+        accession "NT_039433",
+        version 7
+      }
+    },
+    starts {
+      669,
+      21265343,
+      -1,
+      21265467,
+      379,
+      21265468
+    },
+    lens {
+      124,
+      1,
+      290
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 378
+    },
+    {
+      id str "e_value",
+      value real { 0, 10, 0 }
+    },
+    {
+      id str "bit_score",
+      value real { 699153862817434, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 404
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 971153846153846, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 9
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 7,
+    ids {
+      genbank {
+        accession "AY074241",
+        version 1
+      },
+      other {
+        name "MM7_39473_37",
+        accession "NT_039433",
+        version 7
+      }
+    },
+    starts {
+      671,
+      21286193,
+      -1,
+      21286315,
+      463,
+      21286316,
+      462,
+      -1,
+      459,
+      21286524,
+      -1,
+      21286527,
+      379,
+      21286528
+    },
+    lens {
+      122,
+      1,
+      208,
+      1,
+      3,
+      1,
+      80
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 307
+    },
+    {
+      id str "e_value",
+      value real { 438788586076573, 10, -175 }
+    },
+    {
+      id str "bit_score",
+      value real { 568041737501445, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 317
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 984472049689441, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 5
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AY074241",
+        version 1
+      },
+      other {
+        name "MM7_39473_37",
+        accession "NT_039433",
+        version 7
+      }
+    },
+    starts {
+      0,
+      21287591
+    },
+    lens {
+      322
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 298
+    },
+    {
+      id str "e_value",
+      value real { 441903817714273, 10, -170 }
+    },
+    {
+      id str "bit_score",
+      value real { 551421890630404, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 314
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 975155279503106, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 8
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AY074241",
+        version 1
+      },
+      other {
+        name "MM7_39473_37",
+        accession "NT_039433",
+        version 7
+      }
+    },
+    starts {
+      0,
+      21266741
+    },
+    lens {
+      322
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}

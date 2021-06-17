@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile ("xcddalignview" library)
+#################################
+
+LIB_PROJ = cddalignview
+SUB_PROJ = demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

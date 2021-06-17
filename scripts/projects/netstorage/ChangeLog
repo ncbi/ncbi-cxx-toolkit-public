@@ -1,0 +1,113 @@
+Release 2.2.0 based on SC-17.0 (XXXX-XX-XX)
+Requires DB version 3.8
+
+
+
+Release 2.1.3 based on SC-16.1 (2015-08-25)
+
+    * Bug fix: Implemented a workaround to overcome FileTrack write-once restriction.
+      (JIRA: CXX-6215)
+
+Release 2.1.2 based on SC-16.1 (2015-07-27)
+
+    * Bug fix: client protocol version update at the first HELLO
+      (JIRA: CXX-6162)
+    * Bug fix: Investigate premature closes of connections to FileTrack
+      (JIRA: CXX-5958)
+    * Bug fix: Investigation of suspicious error message in socket API
+      (JRIA: CXX-6179)
+
+Release 2.1.1 based on SC-16.1 (2015-07-14)
+
+Improvements and bug fixes:
+    * NST 2.1.0: can't parse grid_cli HELLO with ProtocolVersion
+      (JIRA: CXX-6157)
+
+
+Release 2.1.0 based on SC-16.1 (2015-07-09)
+
+Improvements and bug fixes:
+    * NetStorage API does not use ICache::fBestReliability for NetCache
+      (JIRA: CXX-6141)
+    * NetStorage: RECONFIGURE when admin names decryptor failed
+      (JIRA: CXX-6123)
+    * NetStorage: new flags for fine grain timing logging control
+      (JIRA: CXX-6041)
+    * NetStorage: protocol version from a client (JIRA: CXX-5992)
+    * NetStorage & NetSchedule: reconfigurable on-the-fly CServer parameters
+      (JIRA: CXX-5580)
+
+
+Improvements and bug fixes:
+    * Ability to change [server]/max_connections and [server]/network_timeout
+      at runtime via RECONFIGURE (JIRA: CXX-5580)
+
+
+Release 2.0.2 cloned from 2.0.1 (2015-05-06)
+
+Improvements and bug fixes:
+    * NetStorage: caching client ID (JIRA: CXX-5930)
+    * Increased client socket write buffer (1k -> 16k)
+    * Better exception logging in the READ command
+
+Release 2.0.1 based on SC-16 (2015-04-30)
+
+Improvements and bug fixes:
+    * NetStorage: timing information (JIRA: CXX-5917)
+    * NST upload error "No storages available for locator" (JIRA: CXX-5880)
+    * NetStorage server: two different ncbi_phids in one request
+      (JIRA: CXX-5860)
+
+
+Release 2.0.0 based on TRUNK (2015-03-31)
+
+Improvements and bug fixes:
+    * Develop mechanism to expire NetStorage data in FileTrack (JIRA: CXX-5331)
+    * NetStorage: monitoring support (JIRA: CXX-5408)
+    * NetStorage: new GETATTRLIST command (JIRA: CXX-5481)
+    * NetStorage: DB access from many threads (JIRA: CXX-5550)
+    * Recent changes in connect/services apparently cause netstorage to fail
+      (JIRA: CXX-5573)
+    * NetStorage API: Add precise location flags, change object locator
+      (JIRA: CXX-5610)
+    * NetStorage: LBSMD hardcoded service (JIRA: CXX-5640)
+    * NetStorage: use CNcbiEncrypt for DB password in .ini file
+      (JIRA: CXX-5671)
+    * Exception while removing backend object (JIRA: CXX-5687)
+    * NetStorage server is to work with objects instead of locators
+      (JIRA: CXX-5690)
+    * NetStorage: error messages in applog (JIRA: CXX-5818)
+    * NetStorage: incorrect request context switching (JIRA: CXX-5839)
+    * NetStorage API: Exception case on close during relocate needs fixing
+      (JIRA: CXX-5841)
+
+
+Release 1.1.0 based on SC-15 (2014-12-16)
+
+Improvements and bug fixes:
+    * NetStorage - Blob expiration (JIRA: CXX-5484)
+    * NetStorage: add attribute timestamps to GETOBJECTINFO (JIRA: CXX-5480)
+    * NetStorage: data read/write counters per object (JIRA: CXX-5437)
+    * Expiration of NetStorage objects (JIRA: CXX-5432)
+    * NST -- Working with metadata (JIRA: CXX-5372)
+    * NetStorage: config file changes watcher (JIRA: CXX-5362)
+
+
+Release 1.0.2 based on SC-15 (2014-11-06)
+
+Improvements and bug fixes:
+    * NetStorage: extend the server alerts with a text message (JIRA: CXX-5350)
+    * NetStorage: failure to restore a DB connection (JIRA: CXX-5340)
+
+
+Release 1.0.1 cloned from 1.0.0 (2014-10-27)
+
+Improvements and bug fixes:
+    * Exceptions not to reach CServer
+
+
+Release 1.0.0 based on TRUNK (2014-05-28)
+
+Improvements and bug fixes
+    * Initial release
+

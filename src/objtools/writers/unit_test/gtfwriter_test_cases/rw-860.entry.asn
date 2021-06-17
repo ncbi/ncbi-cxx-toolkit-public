@@ -1,0 +1,2914 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "ASM:GCF_000001315.2",
+      tag str "HSCHR6_1_CTG9"
+    },
+    other {
+      accession "NT_187557",
+      version 1
+    },
+    gpipe {
+      accession "GPS_003205950",
+      version 1
+    },
+    gi 568815455
+  },
+  descr {
+    title "Homo sapiens chromosome 6 genomic scaffold, GRCh38.p12 alternate
+ locus group ALT_REF_LOCI_1 HSCHR6_1_CTG9",
+    source {
+      genome genomic,
+      org {
+        taxname "Homo sapiens",
+        common "human",
+        db {
+          {
+            db "taxon",
+            tag id 9606
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Homo",
+            species "sapiens"
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+ Catarrhini; Hominidae; Homo",
+          gcode 1,
+          mgcode 2,
+          div "PRI"
+        }
+      },
+      subtype {
+        {
+          subtype chromosome,
+          name "6"
+        },
+        {
+          subtype map,
+          name "6q27"
+        }
+      }
+    },
+    molinfo {
+      biomol genomic
+    },
+    pub {
+      pub {
+        pmid 11237011,
+        article {
+          title {
+            name "Initial sequencing and analysis of the human genome."
+          },
+          authors {
+            names std {
+              {
+                name name {
+                  last "Lander",
+                  initials "E.S."
+                }
+              },
+              {
+                name name {
+                  last "Linton",
+                  initials "L.M."
+                }
+              },
+              {
+                name name {
+                  last "Birren",
+                  initials "B."
+                }
+              },
+              {
+                name name {
+                  last "Nusbaum",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Zody",
+                  initials "M.C."
+                }
+              },
+              {
+                name name {
+                  last "Baldwin",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Devon",
+                  initials "K."
+                }
+              },
+              {
+                name name {
+                  last "Dewar",
+                  initials "K."
+                }
+              },
+              {
+                name name {
+                  last "Doyle",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "FitzHugh",
+                  initials "W."
+                }
+              },
+              {
+                name name {
+                  last "Funke",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Gage",
+                  initials "D."
+                }
+              },
+              {
+                name name {
+                  last "Harris",
+                  initials "K."
+                }
+              },
+              {
+                name name {
+                  last "Heaford",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Howland",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Kann",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Lehoczky",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "LeVine",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "McEwan",
+                  initials "P."
+                }
+              },
+              {
+                name name {
+                  last "McKernan",
+                  initials "K."
+                }
+              },
+              {
+                name name {
+                  last "Meldrim",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Mesirov",
+                  initials "J.P."
+                }
+              },
+              {
+                name name {
+                  last "Miranda",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Morris",
+                  initials "W."
+                }
+              },
+              {
+                name name {
+                  last "Naylor",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Raymond",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Rosetti",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Santos",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Sheridan",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Sougnez",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Stange-Thomann",
+                  initials "N."
+                }
+              },
+              {
+                name name {
+                  last "Stojanovic",
+                  initials "N."
+                }
+              },
+              {
+                name name {
+                  last "Subramanian",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Wyman",
+                  initials "D."
+                }
+              },
+              {
+                name name {
+                  last "Rogers",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Sulston",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Ainscough",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Beck",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Bentley",
+                  initials "D."
+                }
+              },
+              {
+                name name {
+                  last "Burton",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Clee",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Carter",
+                  initials "N."
+                }
+              },
+              {
+                name name {
+                  last "Coulson",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Deadman",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Deloukas",
+                  initials "P."
+                }
+              },
+              {
+                name name {
+                  last "Dunham",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Dunham",
+                  initials "I."
+                }
+              },
+              {
+                name name {
+                  last "Durbin",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "French",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Grafham",
+                  initials "D."
+                }
+              },
+              {
+                name name {
+                  last "Gregory",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Hubbard",
+                  initials "T."
+                }
+              },
+              {
+                name name {
+                  last "Humphray",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Hunt",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Jones",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Lloyd",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "McMurray",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Matthews",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Mercer",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Milne",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Mullikin",
+                  initials "J.C."
+                }
+              },
+              {
+                name name {
+                  last "Mungall",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Plumb",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Ross",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Shownkeen",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Sims",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Waterston",
+                  initials "R.H."
+                }
+              },
+              {
+                name name {
+                  last "Wilson",
+                  initials "R.K."
+                }
+              },
+              {
+                name name {
+                  last "Hillier",
+                  initials "L.W."
+                }
+              },
+              {
+                name name {
+                  last "McPherson",
+                  initials "J.D."
+                }
+              },
+              {
+                name name {
+                  last "Marra",
+                  initials "M.A."
+                }
+              },
+              {
+                name name {
+                  last "Mardis",
+                  initials "E.R."
+                }
+              },
+              {
+                name name {
+                  last "Fulton",
+                  initials "L.A."
+                }
+              },
+              {
+                name name {
+                  last "Chinwalla",
+                  initials "A.T."
+                }
+              },
+              {
+                name name {
+                  last "Pepin",
+                  initials "K.H."
+                }
+              },
+              {
+                name name {
+                  last "Gish",
+                  initials "W.R."
+                }
+              },
+              {
+                name name {
+                  last "Chissoe",
+                  initials "S.L."
+                }
+              },
+              {
+                name name {
+                  last "Wendl",
+                  initials "M.C."
+                }
+              },
+              {
+                name name {
+                  last "Delehaunty",
+                  initials "K.D."
+                }
+              },
+              {
+                name name {
+                  last "Miner",
+                  initials "T.L."
+                }
+              },
+              {
+                name name {
+                  last "Delehaunty",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Kramer",
+                  initials "J.B."
+                }
+              },
+              {
+                name name {
+                  last "Cook",
+                  initials "L.L."
+                }
+              },
+              {
+                name name {
+                  last "Fulton",
+                  initials "R.S."
+                }
+              },
+              {
+                name name {
+                  last "Johnson",
+                  initials "D.L."
+                }
+              },
+              {
+                name name {
+                  last "Minx",
+                  initials "P.J."
+                }
+              },
+              {
+                name name {
+                  last "Clifton",
+                  initials "S.W."
+                }
+              },
+              {
+                name name {
+                  last "Hawkins",
+                  initials "T."
+                }
+              },
+              {
+                name name {
+                  last "Branscomb",
+                  initials "E."
+                }
+              },
+              {
+                name name {
+                  last "Predki",
+                  initials "P."
+                }
+              },
+              {
+                name name {
+                  last "Richardson",
+                  initials "P."
+                }
+              },
+              {
+                name name {
+                  last "Wenning",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Slezak",
+                  initials "T."
+                }
+              },
+              {
+                name name {
+                  last "Doggett",
+                  initials "N."
+                }
+              },
+              {
+                name name {
+                  last "Cheng",
+                  initials "J.F."
+                }
+              },
+              {
+                name name {
+                  last "Olsen",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Lucas",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Elkin",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Uberbacher",
+                  initials "E."
+                }
+              },
+              {
+                name name {
+                  last "Frazier",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Gibbs",
+                  initials "R.A."
+                }
+              },
+              {
+                name name {
+                  last "Muzny",
+                  initials "D.M."
+                }
+              },
+              {
+                name name {
+                  last "Scherer",
+                  initials "S.E."
+                }
+              },
+              {
+                name name {
+                  last "Bouck",
+                  initials "J.B."
+                }
+              },
+              {
+                name name {
+                  last "Sodergren",
+                  initials "E.J."
+                }
+              },
+              {
+                name name {
+                  last "Worley",
+                  initials "K.C."
+                }
+              },
+              {
+                name name {
+                  last "Rives",
+                  initials "C.M."
+                }
+              },
+              {
+                name name {
+                  last "Gorrell",
+                  initials "J.H."
+                }
+              },
+              {
+                name name {
+                  last "Metzker",
+                  initials "M.L."
+                }
+              },
+              {
+                name name {
+                  last "Naylor",
+                  initials "S.L."
+                }
+              },
+              {
+                name name {
+                  last "Kucherlapati",
+                  initials "R.S."
+                }
+              },
+              {
+                name name {
+                  last "Nelson",
+                  initials "D.L."
+                }
+              },
+              {
+                name name {
+                  last "Weinstock",
+                  initials "G.M."
+                }
+              },
+              {
+                name name {
+                  last "Sakaki",
+                  initials "Y."
+                }
+              },
+              {
+                name name {
+                  last "Fujiyama",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Hattori",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Yada",
+                  initials "T."
+                }
+              },
+              {
+                name name {
+                  last "Toyoda",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Itoh",
+                  initials "T."
+                }
+              },
+              {
+                name name {
+                  last "Kawagoe",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Watanabe",
+                  initials "H."
+                }
+              },
+              {
+                name name {
+                  last "Totoki",
+                  initials "Y."
+                }
+              },
+              {
+                name name {
+                  last "Taylor",
+                  initials "T."
+                }
+              },
+              {
+                name name {
+                  last "Weissenbach",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Heilig",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Saurin",
+                  initials "W."
+                }
+              },
+              {
+                name name {
+                  last "Artiguenave",
+                  initials "F."
+                }
+              },
+              {
+                name name {
+                  last "Brottier",
+                  initials "P."
+                }
+              },
+              {
+                name name {
+                  last "Bruls",
+                  initials "T."
+                }
+              },
+              {
+                name name {
+                  last "Pelletier",
+                  initials "E."
+                }
+              },
+              {
+                name name {
+                  last "Robert",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Wincker",
+                  initials "P."
+                }
+              },
+              {
+                name name {
+                  last "Smith",
+                  initials "D.R."
+                }
+              },
+              {
+                name name {
+                  last "Doucette-Stamm",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Rubenfield",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Weinstock",
+                  initials "K."
+                }
+              },
+              {
+                name name {
+                  last "Lee",
+                  initials "H.M."
+                }
+              },
+              {
+                name name {
+                  last "Dubois",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Rosenthal",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Platzer",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Nyakatura",
+                  initials "G."
+                }
+              },
+              {
+                name name {
+                  last "Taudien",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Rump",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Yang",
+                  initials "H."
+                }
+              },
+              {
+                name name {
+                  last "Yu",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Wang",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Huang",
+                  initials "G."
+                }
+              },
+              {
+                name name {
+                  last "Gu",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Hood",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Rowen",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Madan",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Qin",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Davis",
+                  initials "R.W."
+                }
+              },
+              {
+                name name {
+                  last "Federspiel",
+                  initials "N.A."
+                }
+              },
+              {
+                name name {
+                  last "Abola",
+                  initials "A.P."
+                }
+              },
+              {
+                name name {
+                  last "Proctor",
+                  initials "M.J."
+                }
+              },
+              {
+                name name {
+                  last "Myers",
+                  initials "R.M."
+                }
+              },
+              {
+                name name {
+                  last "Schmutz",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Dickson",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Grimwood",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Cox",
+                  initials "D.R."
+                }
+              },
+              {
+                name name {
+                  last "Olson",
+                  initials "M.V."
+                }
+              },
+              {
+                name name {
+                  last "Kaul",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Raymond",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Shimizu",
+                  initials "N."
+                }
+              },
+              {
+                name name {
+                  last "Kawasaki",
+                  initials "K."
+                }
+              },
+              {
+                name name {
+                  last "Minoshima",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Evans",
+                  initials "G.A."
+                }
+              },
+              {
+                name name {
+                  last "Athanasiou",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Schultz",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Roe",
+                  initials "B.A."
+                }
+              },
+              {
+                name name {
+                  last "Chen",
+                  initials "F."
+                }
+              },
+              {
+                name name {
+                  last "Pan",
+                  initials "H."
+                }
+              },
+              {
+                name name {
+                  last "Ramser",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Lehrach",
+                  initials "H."
+                }
+              },
+              {
+                name name {
+                  last "Reinhardt",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "McCombie",
+                  initials "W.R."
+                }
+              },
+              {
+                name name {
+                  last "de la Bastide",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Dedhia",
+                  initials "N."
+                }
+              },
+              {
+                name name {
+                  last "Blocker",
+                  initials "H."
+                }
+              },
+              {
+                name name {
+                  last "Hornischer",
+                  initials "K."
+                }
+              },
+              {
+                name name {
+                  last "Nordsiek",
+                  initials "G."
+                }
+              },
+              {
+                name name {
+                  last "Agarwala",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Aravind",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Bailey",
+                  initials "J.A."
+                }
+              },
+              {
+                name name {
+                  last "Bateman",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Batzoglou",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Birney",
+                  initials "E."
+                }
+              },
+              {
+                name name {
+                  last "Bork",
+                  initials "P."
+                }
+              },
+              {
+                name name {
+                  last "Brown",
+                  initials "D.G."
+                }
+              },
+              {
+                name name {
+                  last "Burge",
+                  initials "C.B."
+                }
+              },
+              {
+                name name {
+                  last "Cerutti",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Chen",
+                  initials "H.C."
+                }
+              },
+              {
+                name name {
+                  last "Church",
+                  initials "D."
+                }
+              },
+              {
+                name name {
+                  last "Clamp",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Copley",
+                  initials "R.R."
+                }
+              },
+              {
+                name name {
+                  last "Doerks",
+                  initials "T."
+                }
+              },
+              {
+                name name {
+                  last "Eddy",
+                  initials "S.R."
+                }
+              },
+              {
+                name name {
+                  last "Eichler",
+                  initials "E.E."
+                }
+              },
+              {
+                name name {
+                  last "Furey",
+                  initials "T.S."
+                }
+              },
+              {
+                name name {
+                  last "Galagan",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Gilbert",
+                  initials "J.G."
+                }
+              },
+              {
+                name name {
+                  last "Harmon",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Hayashizaki",
+                  initials "Y."
+                }
+              },
+              {
+                name name {
+                  last "Haussler",
+                  initials "D."
+                }
+              },
+              {
+                name name {
+                  last "Hermjakob",
+                  initials "H."
+                }
+              },
+              {
+                name name {
+                  last "Hokamp",
+                  initials "K."
+                }
+              },
+              {
+                name name {
+                  last "Jang",
+                  initials "W."
+                }
+              },
+              {
+                name name {
+                  last "Johnson",
+                  initials "L.S."
+                }
+              },
+              {
+                name name {
+                  last "Jones",
+                  initials "T.A."
+                }
+              },
+              {
+                name name {
+                  last "Kasif",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Kaspryzk",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Kennedy",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Kent",
+                  initials "W.J."
+                }
+              },
+              {
+                name name {
+                  last "Kitts",
+                  initials "P."
+                }
+              },
+              {
+                name name {
+                  last "Koonin",
+                  initials "E.V."
+                }
+              },
+              {
+                name name {
+                  last "Korf",
+                  initials "I."
+                }
+              },
+              {
+                name name {
+                  last "Kulp",
+                  initials "D."
+                }
+              },
+              {
+                name name {
+                  last "Lancet",
+                  initials "D."
+                }
+              },
+              {
+                name name {
+                  last "Lowe",
+                  initials "T.M."
+                }
+              },
+              {
+                name name {
+                  last "McLysaght",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Mikkelsen",
+                  initials "T."
+                }
+              },
+              {
+                name name {
+                  last "Moran",
+                  initials "J.V."
+                }
+              },
+              {
+                name name {
+                  last "Mulder",
+                  initials "N."
+                }
+              },
+              {
+                name name {
+                  last "Pollara",
+                  initials "V.J."
+                }
+              },
+              {
+                name name {
+                  last "Ponting",
+                  initials "C.P."
+                }
+              },
+              {
+                name name {
+                  last "Schuler",
+                  initials "G."
+                }
+              },
+              {
+                name name {
+                  last "Schultz",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Slater",
+                  initials "G."
+                }
+              },
+              {
+                name name {
+                  last "Smit",
+                  initials "A.F."
+                }
+              },
+              {
+                name name {
+                  last "Stupka",
+                  initials "E."
+                }
+              },
+              {
+                name name {
+                  last "Szustakowski",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Thierry-Mieg",
+                  initials "D."
+                }
+              },
+              {
+                name name {
+                  last "Thierry-Mieg",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Wagner",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Wallis",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Wheeler",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Williams",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Wolf",
+                  initials "Y.I."
+                }
+              },
+              {
+                name name {
+                  last "Wolfe",
+                  initials "K.H."
+                }
+              },
+              {
+                name name {
+                  last "Yang",
+                  initials "S.P."
+                }
+              },
+              {
+                name name {
+                  last "Yeh",
+                  initials "R.F."
+                }
+              },
+              {
+                name name {
+                  last "Collins",
+                  initials "F."
+                }
+              },
+              {
+                name name {
+                  last "Guyer",
+                  initials "M.S."
+                }
+              },
+              {
+                name name {
+                  last "Peterson",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Felsenfeld",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Wetterstrand",
+                  initials "K.A."
+                }
+              },
+              {
+                name name {
+                  last "Patrinos",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Morgan",
+                  initials "M.J."
+                }
+              },
+              {
+                name name {
+                  last "de Jong",
+                  initials "P."
+                }
+              },
+              {
+                name name {
+                  last "Catanese",
+                  initials "J.J."
+                }
+              },
+              {
+                name name {
+                  last "Osoegawa",
+                  initials "K."
+                }
+              },
+              {
+                name name {
+                  last "Shizuya",
+                  initials "H."
+                }
+              },
+              {
+                name name {
+                  last "Choi",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Chen",
+                  initials "Y.J."
+                }
+              },
+              {
+                name consortium "International Human Genome Sequencing
+ Consortium"
+              }
+            },
+            affil str "Whitehead Institute for Biomedical Research, Center for
+ Genome Research, Cambridge, Massachusetts 02142, USA. lander@genome.wi.mit.edu"
+          },
+          from journal {
+            title {
+              iso-jta "Nature",
+              ml-jta "Nature",
+              issn "0028-0836"
+            },
+            imp {
+              date std {
+                year 2001,
+                month 2,
+                day 15
+              },
+              volume "409",
+              issue "6822",
+              pages "860-921",
+              retract {
+                type in-error,
+                exp "Nature 2001 Aug 2;412(6846):565"
+              }
+            }
+          },
+          ids {
+            pubmed 11237011,
+            doi "10.1038/35057062"
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 15496913,
+        article {
+          title {
+            name "Finishing the euchromatic sequence of the human genome."
+          },
+          authors {
+            names std {
+              {
+                name consortium "International Human Genome Sequencing
+ Consortium"
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Nature",
+              ml-jta "Nature",
+              issn "1476-4687"
+            },
+            imp {
+              date std {
+                year 2004,
+                month 10,
+                day 21
+              },
+              volume "431",
+              issue "7011",
+              pages "931-945"
+            }
+          },
+          ids {
+            pii "nature03001",
+            doi "10.1038/nature03001",
+            pubmed 15496913
+          }
+        }
+      }
+    },
+    comment "An ALT_LOCI has been created to capture sequence from AC233714.2
+ present in the 1kG ph1 decoy but absent from the Reference assembly. ~Region:
+ REGION142",
+    comment "Assembly Name: GRCh38.p12 ALT_REF_LOCI_1~The DNA sequence is
+ composed of genomic sequence, primarily finished clones that were sequenced
+ as part of the Human Genome Project. PCR products and WGS shotgun sequence
+ have been added where necessary to fill gaps or correct errors. All such
+ additions are manually curated by GRC staff. For more information see:
+ https://genomereference.org",
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJNA168"
+          }
+        },
+        {
+          label str "Assembly",
+          num 1,
+          data strs {
+            "GCF_000001405.38"
+          }
+        }
+      }
+    },
+    user {
+      type str "FeatureFetchPolicy",
+      data {
+        {
+          label str "Policy",
+          data str "OnlyNearFeatures"
+        }
+      }
+    },
+    user {
+      type str "RefGeneTracking",
+      data {
+        {
+          label str "Status",
+          data str "Pipeline"
+        },
+        {
+          label str "IdenticalTo",
+          data fields {
+            {
+              label id 0,
+              data fields {
+                {
+                  label str "accession",
+                  data str "KI270802.1"
+                },
+                {
+                  label str "gi",
+                  data int 568335880
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Genome-Annotation-Data-START##"
+        },
+        {
+          label str "Annotation Provider",
+          data str "NCBI"
+        },
+        {
+          label str "Annotation Status",
+          data str "Full annotation"
+        },
+        {
+          label str "Annotation Name",
+          data str "Homo sapiens Annotation Release 109"
+        },
+        {
+          label str "Annotation Version",
+          data str "109"
+        },
+        {
+          label str "Annotation Pipeline",
+          data str "NCBI eukaryotic genome annotation pipeline"
+        },
+        {
+          label str "Annotation Software Version",
+          data str "8.0"
+        },
+        {
+          label str "Annotation Method",
+          data str "Best-placed RefSeq; Gnomon"
+        },
+        {
+          label str "Features Annotated",
+          data str "Gene; mRNA; CDS; ncRNA"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Genome-Annotation-Data-END##"
+        },
+        {
+          label str "Annotation Release Number",
+          data int 109
+        },
+        {
+          label str "Gpipe BuildRun ID",
+          data int 4269987
+        }
+      }
+    },
+    genbank {
+      keywords {
+        "ALTERNATE_LOCUS"
+      }
+    },
+    create-date std {
+      year 2014,
+      month 2,
+      day 3
+    },
+    update-date std {
+      year 2018,
+      month 3,
+      day 26
+    }
+  },
+  inst {
+    repr delta,
+    mol dna,
+    length 75005,
+    strand ds,
+    ext delta {
+      loc int {
+        from 80198,
+        to 119732,
+        strand minus,
+        id gi 14599397
+      },
+      loc int {
+        from 0,
+        to 35469,
+        strand plus,
+        id gi 218664525
+      }
+    }
+  },
+  annot {
+    {
+      desc {
+        title "Anchor Data for Homo sapiens GRC ALT_REF_LOCI_1",
+        name "Anchor Data for Homo sapiens GRC ALT_REF_LOCI_1",
+        user {
+          type str "AnnotSource",
+          data {
+            {
+              label str "Source",
+              data str "GenomicCollections"
+            },
+            {
+              label str "Annot",
+              data str "Regions"
+            }
+          }
+        }
+      },
+      data ftable {
+        {
+          id local id 1,
+          data imp {
+            key "misc_feature"
+          },
+          comment "Anchor sequence. This sequence is derived from alt loci or
+ patch scaffold components that are also components of the primary assembly
+ unit. It was included to ensure a robust alignment of this scaffold to the
+ primary assembly unit. Anchor component: AL121956.21",
+          location int {
+            from 0,
+            to 39534,
+            id gi 568815455
+          }
+        }
+      }
+    },
+    {
+      desc {
+        create-date std {
+          year 2018,
+          month 3,
+          day 23
+        },
+        user {
+          type str "AnnotSource",
+          data {
+            {
+              label str "Source",
+              data str "AnnotBuilder"
+            },
+            {
+              label str "Annot",
+              data str "Features"
+            }
+          }
+        }
+      },
+      data ftable {
+        {
+          id local id 2,
+          data gene {
+            locus "LOC101929297",
+            desc "uncharacterized LOC101929297"
+          },
+          location int {
+            from 16380,
+            to 16382,
+            strand plus,
+            id gi 568815455
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 353893
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "BestRefSeq"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_187557"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 568815455
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        16389,
+                        36367
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 3,
+              data rna {
+                type ncRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 101929297
+            }
+          }
+        },
+        {
+          id local id 3,
+          data rna {
+            type ncRNA,
+            ext gen {
+              class "lncRNA",
+              product "uncharacterized LOC101929297"
+            }
+          },
+          product whole gi 674779882,
+          location int {
+            from 16380,
+            to 16382,
+            strand plus,
+            id gi 568815455
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 353894
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "BestRefSeq"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_187557"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 568815455
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        16389,
+                        36367
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 2,
+              data gene {
+                locus "LOC101929297",
+                desc "uncharacterized LOC101929297"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 101929297
+            }
+          }
+        },
+        {
+          id local id 4,
+          data gene {
+            locus "GNG5P1",
+            desc "G protein subunit gamma 5 pseudogene 1",
+            syn {
+              "GNG5P"
+            }
+          },
+          location int {
+            from 19348,
+            to 19977,
+            strand minus,
+            id gi 568815455
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 353895
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Curated Genomic"
+                    },
+                    {
+                      label str "Source",
+                      data str "NG_006561.3"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_187557"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 568815455
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        19348,
+                        19977
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 5,
+              data imp {
+                key "exon"
+              }
+            },
+            {
+              id local id 6,
+              data imp {
+                key "exon"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 2789
+            },
+            {
+              db "HGNC",
+              tag str "HGNC:4409"
+            }
+          },
+          pseudo TRUE
+        },
+        {
+          id local id 5,
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 19348,
+            to 19553,
+            strand minus,
+            id gi 568815455
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 353897
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Curated Genomic"
+                    },
+                    {
+                      label str "Source",
+                      data str "NG_006561.3"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_187557"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 568815455
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        19348,
+                        19553
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 4,
+              data gene {
+                locus "GNG5P1",
+                desc "G protein subunit gamma 5 pseudogene 1"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 2789
+            }
+          }
+        },
+        {
+          id local id 6,
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 19676,
+            to 19977,
+            strand minus,
+            id gi 568815455
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 353896
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Curated Genomic"
+                    },
+                    {
+                      label str "Source",
+                      data str "NG_006561.3"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_187557"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 568815455
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        19676,
+                        19977
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 4,
+              data gene {
+                locus "GNG5P1",
+                desc "G protein subunit gamma 5 pseudogene 1"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 2789
+            }
+          }
+        },
+        {
+          id local id 7,
+          data gene {
+            locus "LOC107986668"
+          },
+          location int {
+            from 116380,
+            to 116382,
+            strand plus,
+            id gi 568815455
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 353898
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_187557"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 568815455
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        34106,
+                        38614
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 8,
+              data rna {
+                type ncRNA
+              }
+            },
+            {
+              id local id 9,
+              data rna {
+                type ncRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 107986668
+            }
+          }
+        },
+        {
+          id local id 8,
+          data rna {
+            type ncRNA,
+            ext gen {
+              class "lncRNA",
+              product "uncharacterized LOC107986668, transcript variant X1"
+            }
+          },
+          product whole gi 1034676761,
+          location int {
+            from 116380,
+            to 116382,
+            strand plus,
+            id gi 568815455
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 353899
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "NMD",
+                      data bool FALSE
+                    },
+                    {
+                      label str "avg_base_coverage",
+                      data real { 157425, 10, -3 }
+                    },
+                    {
+                      label str "avg_intron_coverage",
+                      data real { 36, 10, 0 }
+                    },
+                    {
+                      label str "coding_propensity",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "minimum_alignments_introns_same_species",
+                      data int 2
+                    },
+                    {
+                      label str "pct_ab_initio",
+                      data int 0
+                    },
+                    {
+                      label str "pct_introns_with_transcripts",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "protein_len",
+                      data int 0
+                    },
+                    {
+                      label str "rnaseq_base_coverage",
+                      data int 99
+                    },
+                    {
+                      label str "rnaseq_base_coverage_unambiguous",
+                      data int 99
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_full",
+                      data int 7
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_partial",
+                      data int 12
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_187557"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 568815455
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        34106,
+                        38614
+                      }
+                    },
+                    {
+                      label str "Counts",
+                      data fields {
+                        {
+                          label str "long SRA read",
+                          data int 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 7,
+              data gene {
+                locus "LOC107986668"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 107986668
+            }
+          }
+        },
+        {
+          id local id 9,
+          data rna {
+            type ncRNA,
+            ext gen {
+              class "lncRNA",
+              product "uncharacterized LOC107986668, transcript variant X2"
+            }
+          },
+          product whole gi 1370525418,
+          location int {
+            from 116380,
+            to 116382,
+            strand plus,
+            id gi 568815455
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 353900
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "NMD",
+                      data bool FALSE
+                    },
+                    {
+                      label str "avg_base_coverage",
+                      data real { 17578, 10, -2 }
+                    },
+                    {
+                      label str "avg_intron_coverage",
+                      data real { 6, 10, 1 }
+                    },
+                    {
+                      label str "coding_propensity",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "minimum_alignments_introns_same_species",
+                      data int 1
+                    },
+                    {
+                      label str "pct_ab_initio",
+                      data int 0
+                    },
+                    {
+                      label str "pct_introns_with_transcripts",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "protein_len",
+                      data int 0
+                    },
+                    {
+                      label str "rnaseq_base_coverage",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_base_coverage_unambiguous",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_full",
+                      data int 18
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_partial",
+                      data int 0
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_187557"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 568815455
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        34106,
+                        38491
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 7,
+              data gene {
+                locus "LOC107986668"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 107986668
+            }
+          }
+        },
+        {
+          id local id 10,
+          data gene {
+            locus "LOC105378118"
+          },
+          location int {
+            from 55292,
+            to 56488,
+            strand minus,
+            id gi 568815455
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 353901
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_187557"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 568815455
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        55292,
+                        56488
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 11,
+              data rna {
+                type ncRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 105378118
+            }
+          }
+        },
+        {
+          id local id 11,
+          data rna {
+            type ncRNA,
+            ext gen {
+              class "lncRNA",
+              product "uncharacterized LOC105378118"
+            }
+          },
+          product whole gi 1034676763,
+          location packed-int {
+            {
+              from 56392,
+              to 56488,
+              strand minus,
+              id gi 568815455
+            },
+            {
+              from 55625,
+              to 55739,
+              strand minus,
+              id gi 568815455
+            },
+            {
+              from 55292,
+              to 55360,
+              strand minus,
+              id gi 568815455
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 353902
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "NMD",
+                      data bool FALSE
+                    },
+                    {
+                      label str "avg_base_coverage",
+                      data real { 145516, 10, -4 }
+                    },
+                    {
+                      label str "avg_intron_coverage",
+                      data real { 8, 10, 0 }
+                    },
+                    {
+                      label str "coding_propensity",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "minimum_alignments_introns_same_species",
+                      data int 2
+                    },
+                    {
+                      label str "pct_ab_initio",
+                      data int 0
+                    },
+                    {
+                      label str "pct_introns_with_transcripts",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "protein_len",
+                      data int 0
+                    },
+                    {
+                      label str "rnaseq_base_coverage",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_base_coverage_unambiguous",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_full",
+                      data int 3
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_partial",
+                      data int 1
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_187557"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 568815455
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        55292,
+                        56488
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 10,
+              data gene {
+                locus "LOC105378118"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 105378118
+            }
+          }
+        }
+      }
+    },
+    {
+      desc {
+        name "NG Alignments",
+        create-date std {
+          year 2018,
+          month 3,
+          day 23
+        },
+        user {
+          type str "AnnotSource",
+          data {
+            {
+              label str "Source",
+              data str "AnnotBuilder"
+            },
+            {
+              label str "Annot",
+              data str "Features"
+            }
+          }
+        }
+      },
+      data align {
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 830
+            },
+            {
+              id str "blast_score",
+              value int 830
+            },
+            {
+              id str "e_value",
+              value real { 0, 10, 0 }
+            },
+            {
+              id str "bit_score",
+              value real { 154572, 10, -2 }
+            },
+            {
+              id str "num_ident",
+              value int 830
+            },
+            {
+              id str "hsp_percent_coverage",
+              value real { 1, 10, 2 }
+            },
+            {
+              id str "blast_aligner",
+              value int 1
+            },
+            {
+              id str "pct_identity_gap",
+              value real { 1, 10, 2 }
+            },
+            {
+              id str "num_mismatch",
+              value int 0
+            },
+            {
+              id str "pct_identity_ungap",
+              value real { 1, 10, 2 }
+            },
+            {
+              id str "gap_count",
+              value int 0
+            },
+            {
+              id str "pct_coverage",
+              value real { 1, 10, 2 }
+            },
+            {
+              id str "pct_coverage_hiqual",
+              value real { 1, 10, 2 }
+            },
+            {
+              id str "pct_identity_gapopen_only",
+              value real { 1, 10, 2 }
+            },
+            {
+              id str "common_component",
+              value int 1
+            },
+            {
+              id str "filter_score",
+              value int 0
+            },
+            {
+              id str "weighted_identity",
+              value real { 1, 10, 0 }
+            },
+            {
+              id str "rank",
+              value int 1
+            },
+            {
+              id str "assembly_bases_seq",
+              value int 830
+            },
+            {
+              id str "assembly_bases_aln",
+              value int 830
+            },
+            {
+              id str "for_remapping",
+              value int 1
+            },
+            {
+              id str "matched_bases",
+              value int 830
+            },
+            {
+              id str "matchable_bases",
+              value int 830
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              gi 1005261272,
+              gi 568815455
+            },
+            starts {
+              0,
+              19248
+            },
+            lens {
+              830
+            },
+            strands {
+              minus,
+              plus
+            }
+          },
+          id {
+            str "a6449131-9b0f-4a91-b957-f78808dc5d89"
+          },
+          ext {
+            {
+              type str "placement_data",
+              data {
+                {
+                  label str "gc_asm_id",
+                  data str "GCF_000001405.38"
+                },
+                {
+                  label str "gc_asm_chain_id",
+                  data int 1315
+                },
+                {
+                  label str "placement_id",
+                  data str "639a3d9d-2be1-4454-9f72-8a612848e0ae"
+                },
+                {
+                  label str "mappable_ids",
+                  num 1,
+                  data strs {
+                    "639a3d9d-2be1-4454-9f72-8a612848e0ae"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

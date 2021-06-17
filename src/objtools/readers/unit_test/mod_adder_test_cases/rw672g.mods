@@ -1,0 +1,14 @@
+gene        locus_value
+allele      allele_value
+Locus_Tag   locus_tag_value
+gene_syn    synonym1
+gene-synonym synonym2
+protein-desc protein_descriptor
+protein      protein_name1
+protein      protein_name2
+function     activity1
+activity     activity2
+Ec_Number    ec1
+EC-number    ec2
+topology     circular
+topology     cirCular

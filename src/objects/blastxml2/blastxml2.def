@@ -1,0 +1,7 @@
+[-]
+_export = NCBI_BLASTXML2_EXPORT
+_namespace = ncbi::objects::blastxml2
+
+[HitDescr]
+taxid._type = ncbi::TTaxId
+taxid._storage_type = int

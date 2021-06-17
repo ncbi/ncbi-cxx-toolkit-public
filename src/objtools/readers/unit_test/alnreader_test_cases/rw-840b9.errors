@@ -1,0 +1,5 @@
+Line No    : 9
+Severity   : Fatal
+Problem    : Alignment.UnexpectedSeqId
+Message    : Sequence_IDs are in different orders in the data blocks in your file. The sequences and sequence_IDs are expected to be in the same order in each block.
+

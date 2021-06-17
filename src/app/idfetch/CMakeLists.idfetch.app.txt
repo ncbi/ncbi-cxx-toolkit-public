@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(idfetch)
+  NCBI_sources(idfetch)
+  NCBI_uses_toolkit_libraries(data_loaders_util eutils_client xobjutil)
+NCBI_end_app()
+

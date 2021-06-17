@@ -1,0 +1,10 @@
+WATCHERS = jcherry
+
+ASN_DEP = remap
+
+LIB = remapcli
+SRC = remap_client remap_client_
+
+
+USES_LIBRARIES =  \
+    remap xconnect

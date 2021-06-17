@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(seqtest)
+  NCBI_dataspecs(seqtest.asn)
+  NCBI_uses_toolkit_libraries(seq)
+NCBI_end_lib()
+

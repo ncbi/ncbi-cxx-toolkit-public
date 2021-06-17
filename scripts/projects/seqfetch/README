@@ -1,0 +1,4 @@
+seqfetch.cgi - data patcher for viewer.fcgi
+
+Proxies requests to viewer.fcgi and patches the returned data stream
+according to the client's version.

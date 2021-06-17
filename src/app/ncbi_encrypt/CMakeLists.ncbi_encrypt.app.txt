@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(ncbi_encrypt)
+  NCBI_sources(ncbi_encrypt)
+  NCBI_uses_toolkit_libraries(xutil)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()
+

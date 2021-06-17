@@ -1,0 +1,1441 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type str "NCBI_BED_COLUMN_COUNT",
+      data {
+        {
+          label str "NCBI_BED_COLUMN_COUNT",
+          data int 12
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 1,
+      data region "uc010nzm.1",
+      location int {
+        from 3728652,
+        to 3773796,
+        strand minus,
+        id local str "chr1"
+      },
+      xref {
+        {
+          id local id 3
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 3,
+      data region "uc010nzm.1",
+      location packed-int {
+        {
+          from 3765171,
+          to 3765345,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3764038,
+          to 3764177,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3761852,
+          to 3761915,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3761470,
+          to 3761547,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3756171,
+          to 3756340,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3755527,
+          to 3755683,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3753855,
+          to 3754083,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3753058,
+          to 3753256,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3751488,
+          to 3751656,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3750425,
+          to 3750599,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3747609,
+          to 3747786,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3746354,
+          to 3746561,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3745829,
+          to 3745937,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3743271,
+          to 3743308,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3742933,
+          to 3743000,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3742321,
+          to 3742430,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3739987,
+          to 3740126,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3739737,
+          to 3739805,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3732843,
+          to 3732934,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3728652,
+          to 3729855,
+          strand minus,
+          id local str "chr1"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "block"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 4,
+      data region "uc010nzm.1",
+      location int {
+        from 3728652,
+        to 3773796,
+        strand minus,
+        id local str "chr1"
+      },
+      xref {
+        {
+          id local id 5
+        },
+        {
+          id local id 6
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 5,
+      data region "uc010nzm.1",
+      location pnt {
+        point 3728653,
+        strand minus,
+        id local str "chr1"
+      },
+      xref {
+        {
+          id local id 4
+        },
+        {
+          id local id 6
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "thick"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 6,
+      data region "uc010nzm.1",
+      location packed-int {
+        {
+          from 3768858,
+          to 3768985,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3765171,
+          to 3765345,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3764038,
+          to 3764177,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3761852,
+          to 3761915,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3761470,
+          to 3761547,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3756171,
+          to 3756340,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3755527,
+          to 3755683,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3753855,
+          to 3754083,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3753058,
+          to 3753256,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3751488,
+          to 3751656,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3750425,
+          to 3750599,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3747609,
+          to 3747786,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3746354,
+          to 3746561,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3745829,
+          to 3745937,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3743271,
+          to 3743308,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3742933,
+          to 3743000,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3742321,
+          to 3742430,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3739987,
+          to 3740126,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3739737,
+          to 3739805,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3732843,
+          to 3732934,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3728652,
+          to 3729855,
+          strand minus,
+          id local str "chr1"
+        }
+      },
+      xref {
+        {
+          id local id 4
+        },
+        {
+          id local id 5
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "block"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 7,
+      data region "uc010nzm.1",
+      location int {
+        from 3728652,
+        to 3773796,
+        strand minus,
+        id local str "chr1"
+      },
+      xref {
+        {
+          id local id 8
+        },
+        {
+          id local id 9
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 8,
+      data region "uc010nzm.1",
+      location int {
+        from 3728653,
+        to 3728654,
+        strand minus,
+        id local str "chr1"
+      },
+      xref {
+        {
+          id local id 7
+        },
+        {
+          id local id 9
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "thick"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 9,
+      data region "uc010nzm.1",
+      location packed-int {
+        {
+          from 3773452,
+          to 3773797,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3768858,
+          to 3768985,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3765171,
+          to 3765345,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3764038,
+          to 3764177,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3761852,
+          to 3761915,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3761470,
+          to 3761547,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3756171,
+          to 3756340,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3755527,
+          to 3755683,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3753855,
+          to 3754083,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3753058,
+          to 3753256,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3751488,
+          to 3751656,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3750425,
+          to 3750599,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3747609,
+          to 3747786,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3746354,
+          to 3746561,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3745829,
+          to 3745937,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3743271,
+          to 3743308,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3742933,
+          to 3743000,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3742321,
+          to 3742430,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3739987,
+          to 3740126,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3739737,
+          to 3739805,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3732843,
+          to 3732934,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr1"
+        },
+        {
+          from 3728652,
+          to 3729855,
+          strand minus,
+          id local str "chr1"
+        }
+      },
+      xref {
+        {
+          id local id 7
+        },
+        {
+          id local id 8
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "block"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 10,
+      data region "uc010nzm.1",
+      location int {
+        from 3728652,
+        to 3773796,
+        strand plus,
+        id local str "chr1"
+      },
+      xref {
+        {
+          id local id 12
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 12,
+      data region "uc010nzm.1",
+      location packed-int {
+        {
+          from 3728652,
+          to 3729855,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3730413,
+          to 3732081,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3732843,
+          to 3732934,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3739737,
+          to 3739805,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3739987,
+          to 3740126,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3742321,
+          to 3742430,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3742933,
+          to 3743000,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3743271,
+          to 3743308,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3745829,
+          to 3745937,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3746354,
+          to 3746561,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3747609,
+          to 3747786,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3750425,
+          to 3750599,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3751488,
+          to 3751656,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3753058,
+          to 3753256,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3753855,
+          to 3754083,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3755527,
+          to 3755683,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3756171,
+          to 3756340,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3761470,
+          to 3761547,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3761852,
+          to 3761915,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3764038,
+          to 3764177,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3765171,
+          to 3765345,
+          strand plus,
+          id local str "chr1"
+        }
+      },
+      xref {
+        {
+          id local id 10
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "block"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 13,
+      data region "uc010nzm.1",
+      location int {
+        from 3728652,
+        to 3773796,
+        strand plus,
+        id local str "chr1"
+      },
+      xref {
+        {
+          id local id 14
+        },
+        {
+          id local id 15
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 14,
+      data region "uc010nzm.1",
+      location pnt {
+        point 3728653,
+        strand plus,
+        id local str "chr1"
+      },
+      xref {
+        {
+          id local id 13
+        },
+        {
+          id local id 15
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "thick"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 15,
+      data region "uc010nzm.1",
+      location packed-int {
+        {
+          from 3728652,
+          to 3729855,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3730413,
+          to 3732081,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3732843,
+          to 3732934,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3739737,
+          to 3739805,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3739987,
+          to 3740126,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3742321,
+          to 3742430,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3742933,
+          to 3743000,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3743271,
+          to 3743308,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3745829,
+          to 3745937,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3746354,
+          to 3746561,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3747609,
+          to 3747786,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3750425,
+          to 3750599,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3751488,
+          to 3751656,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3753058,
+          to 3753256,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3753855,
+          to 3754083,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3755527,
+          to 3755683,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3756171,
+          to 3756340,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3761470,
+          to 3761547,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3761852,
+          to 3761915,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3764038,
+          to 3764177,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3765171,
+          to 3765345,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3768858,
+          to 3768985,
+          strand plus,
+          id local str "chr1"
+        }
+      },
+      xref {
+        {
+          id local id 13
+        },
+        {
+          id local id 14
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "block"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 16,
+      data region "uc010nzm.1",
+      location int {
+        from 3728652,
+        to 3773796,
+        strand plus,
+        id local str "chr1"
+      },
+      xref {
+        {
+          id local id 17
+        },
+        {
+          id local id 18
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 17,
+      data region "uc010nzm.1",
+      location int {
+        from 3728653,
+        to 3728654,
+        strand plus,
+        id local str "chr1"
+      },
+      xref {
+        {
+          id local id 16
+        },
+        {
+          id local id 18
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "thick"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 18,
+      data region "uc010nzm.1",
+      location packed-int {
+        {
+          from 3728652,
+          to 3729855,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3730413,
+          to 3732081,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3732843,
+          to 3732934,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3739737,
+          to 3739805,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3739987,
+          to 3740126,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3742321,
+          to 3742430,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3742933,
+          to 3743000,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3743271,
+          to 3743308,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3745829,
+          to 3745937,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3746354,
+          to 3746561,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3747609,
+          to 3747786,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3750425,
+          to 3750599,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3751488,
+          to 3751656,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3753058,
+          to 3753256,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3753855,
+          to 3754083,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3755527,
+          to 3755683,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3756171,
+          to 3756340,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3761470,
+          to 3761547,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3761852,
+          to 3761915,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3764038,
+          to 3764177,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3765171,
+          to 3765345,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3768858,
+          to 3768985,
+          strand plus,
+          id local str "chr1"
+        },
+        {
+          from 3773452,
+          to 3773797,
+          strand plus,
+          id local str "chr1"
+        }
+      },
+      xref {
+        {
+          id local id 16
+        },
+        {
+          id local id 17
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 0
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "block"
+            }
+          }
+        }
+      }
+    }
+  }
+}

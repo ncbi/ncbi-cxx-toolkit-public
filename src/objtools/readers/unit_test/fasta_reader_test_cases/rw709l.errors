@@ -1,0 +1,12 @@
+                Warning:
+Problem:        Fasta Reader: sequence id ends with 51 valid amino-acid characters.  Was the sequence accidentally placed in the definition line?
+SeqId:          thiscouldbeaproteinsequencebutitprobablyisntabcdefg
+Line:           1
+
+
+                Error:
+Problem:        Near line 1, the local id is too long.  Its length is 51 but the maximum allowed local id length is 50.  Please find and correct all local ids that are too long.
+SeqId:          thiscouldbeaproteinsequencebutitprobablyisntabcdefg
+Line:           1
+
+

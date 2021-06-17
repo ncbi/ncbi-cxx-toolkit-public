@@ -1,0 +1,13 @@
+# $Id$
+
+# Build library "XCGI_REDIRECT"
+#################################
+
+SRC = redirect
+LIB = xcgi_redirect
+
+WATCHERS = ivanov
+
+
+USES_LIBRARIES =  \
+    xcgi xhtml

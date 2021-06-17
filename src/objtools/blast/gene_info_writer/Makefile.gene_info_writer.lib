@@ -1,0 +1,13 @@
+# $Id$
+
+WATCHERS = camacho
+
+CPPFLAGS = -DNCBI_MODULE=GENEINFO $(ORIG_CPPFLAGS)
+LIB = gene_info_writer
+SRC = gene_info_writer
+
+ASN_DEP = blastdb
+
+
+USES_LIBRARIES =  \
+    gene_info seqdb

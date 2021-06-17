@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_app(odbc_lang)
+  NCBI_sources(odbc_lang)
+  NCBI_uses_toolkit_libraries(dbapi_driver xconnect)
+  NCBI_optional_components(connext)
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_set_test_assets(odbc_lang.ini)
+  NCBI_add_test()
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_app()
+

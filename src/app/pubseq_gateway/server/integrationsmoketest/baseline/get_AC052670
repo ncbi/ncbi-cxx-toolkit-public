@@ -1,0 +1,60 @@
+            "id": "gi|7575990",
+            "id": "gnl|MARBILAB|KJ3756SA",
+            "type": 11
+            "type": 12
+        "id": "4.1891974"
+        "id": "4.1891974",
+        "id": "4.1891974",
+        "id": "gb|AC052670.1|",
+        "last_modified": 1012100668803
+        "last_modified": 1012100668803
+        "type": 5
+        {
+        {
+        }
+        },
+    "blob_id": {
+    "canonical_id": {
+    "class": "not-set",
+    "compression": "gzip",
+    "data": "eJztVD9vGzcUt05ObLgBCh44EEKHu8MNXGLIcW0XyUSKhhnHclu4boBuZ4m1Dz7pjJOUxpt44MAtc7fYaVq0mdohXfohin6AfpSi7/7IFtIYQbeiCAGJR/L93vu9v8+n7enz6dr0p3JvLQ+i7ChOoqOFhYvpBZwf7a5vbWwesIV6fVfLsU57497mVruQmz+9mDqNRiX6auo0R9++rg4XYONVbeui3Itf8V/s1U2r+SgelApvHybRsD8uzLWcw9WFqzUnvNxNsywepcMKIYF1dl4iFuXqzk2YHsvGJ5OswrBhP1PfVBh2E+bWfvy0NnJrd5LEqmK1e4P0dnQaV9KL+2kWVcr3Vz9/u/hSJ0t7p6ris9RVSTwa1ZjuauftGHB1eJqoCrKTqeO09tu5wYPbMk36Vzbi3kmkkpmN7RvcOEiPazeWu/G4d6KSK8jeHGSW3Br2UTfK4qHyeJwmoKAXJd5edARhGJccQdvD3XSkzk5Koejc+yyaJF5HDccq875OM6+TDs4iEI+fKK+bJqo3gazW6s49qAlv+0maTMZxkZHLaWvlcZr2Rx44qIraazldVtJsHhYl+3LaurPldfmedzDOlIJ6+hEg7XsbH6/fXWuvbcz78KL2wXGWfi+YOo3FwoLT+PBNb4v18zulf3mnxK/Ve9EuxbNb3b6+vr2sgtraiaOsH0deEg2OEtjZF52Ot9H+pL1e0F6rMzaO6jIFdNP546trsi+veq2ouFpbmY07MUR+NI6HERTeTPyybkrHWfirlMIzAm9KV0ydqjce87udzetotu5vT06hI9Nx9MAT8VmSDtJh1I/7cJTqaTSIx/CtHniVclB69V02QBmB7yGTD/e/nM9Sza3RrFq4mk/zqZlNmdrfDw6HZxMI2+hE9QvIW8bO/2KS/KvZ+X7s/FfGDrxs1VV/34u8QdpXSUkpGvZiIOipuovinneshulAwUuUnI+u+/V6VQNjpbFc+LxSjRDHaf5WUFop+vSHadFAs8FUPFzCzWLe+FNQQYMcCcIx5twXSDAeShwi30ju4lAgPwhZQIIcE02EL1yMGTe+CH0jOPZzN6TGWsOspdIGVEppQo0/ldZnDHMhsLGCG6N9LlzpWuFTnzCSU2KJRj6SJNQClBJqrSAmN5wgX2viCy24tJqDaq2tplgzSzXNNUGuJoyDGmks0pLkOreSG2woNSFHxBjkYiR8ghBHVjKwnAMDRARYt9IgSaWbY+NjF+5cVwaUGFdgbXQYIIxCxDHhmhgNWojAAue+xQTEuQaeHNw2hvqYARuaE4QlRE8bnxgpkCsNC/2cUIkMCTQNNDiMBAcmVBosjAUol8XR9QGYW7CSUw7eYIo0ZjY0vuZEMkNcRIUh2HBktIA4YGbCwLXcd0luZA6ZwoFLuIVcacQgTpSwZ+gZygMkS3ryn6VSrL8BpwSvmQ=="
+    "date_changed": "01/27/2002 03:04:28",
+    "division": "HTG",
+    "format": "asn.1",
+    "gi": 7575990
+    "hash": -2096782024,
+    "hup_release_date": "",
+    "id": {
+    "id": {
+    "id2_info": "",
+    "is_dead": false,
+    "is_suppressed": false,
+    "is_withdrawn": false,
+    "length": 956,
+    "molecule_type": "dna",
+    "n_chunks": 1
+    "original_load_date": "04/15/2000 20:57:57",
+    "other_ids": [
+    "owner": 18,
+    "reply": "BioseqInfo",
+    "reply": "BlobData",
+    "reply": "BlobInfo",
+    "seq_state": 10,
+    "size": 2556,
+    "state": 10,
+    "storage_size": 1078,
+    "tax_id": 184922,
+    "username": "smartsvc",
+    ],
+    },
+    },
+    },
+    },
+[
+]
+{
+{
+{
+}
+},
+},

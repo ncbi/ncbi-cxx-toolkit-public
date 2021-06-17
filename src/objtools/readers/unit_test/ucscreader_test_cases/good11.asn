@@ -1,0 +1,366 @@
+Seq-annot ::= {
+  desc {
+  },
+  data ftable {
+    {
+      data region "region: 1",
+      location int {
+        from 5960131,
+        to 5960382,
+        id local str "chr1"
+      },
+      title "Line:1"
+    },
+    {
+      data region "region: 2",
+      location int {
+        from 5994986,
+        to 5995055,
+        id local str "chr1"
+      },
+      title "Line:2"
+    },
+    {
+      data region "region: 3",
+      location int {
+        from 5999897,
+        to 6000015,
+        id local str "chr1"
+      },
+      title "Line:3"
+    },
+    {
+      data region "region: 4",
+      location int {
+        from 6266735,
+        to 6266802,
+        id local str "chr1"
+      },
+      title "Line:4"
+    },
+    {
+      data region "region: 5",
+      location int {
+        from 6424953,
+        to 6425088,
+        id local str "chr1"
+      },
+      title "Line:5"
+    },
+    {
+      data region "region: 6",
+      location int {
+        from 6643287,
+        to 6643358,
+        id local str "chr1"
+      },
+      title "Line:6"
+    },
+    {
+      data region "region: 7",
+      location int {
+        from 6810058,
+        to 6810211,
+        id local str "chr1"
+      },
+      title "Line:7"
+    },
+    {
+      data region "region: 8",
+      location int {
+        from 6830483,
+        to 6830623,
+        id local str "chr1"
+      },
+      title "Line:8"
+    },
+    {
+      data region "region: 9",
+      location int {
+        from 6832110,
+        to 6833956,
+        id local str "chr1"
+      },
+      title "Line:9"
+    },
+    {
+      data region "region: 10",
+      location int {
+        from 6839668,
+        to 6839794,
+        id local str "chr1"
+      },
+      title "Line:10"
+    },
+    {
+      data region "region: 11",
+      location int {
+        from 1012573,
+        to 1012772,
+        id local str "chr2"
+      },
+      title "Line:11"
+    },
+    {
+      data region "region: 12",
+      location int {
+        from 1143152,
+        to 1143289,
+        id local str "chr2"
+      },
+      title "Line:12"
+    },
+    {
+      data region "region: 13",
+      location int {
+        from 1157278,
+        to 1157334,
+        id local str "chr2"
+      },
+      title "Line:13"
+    },
+    {
+      data region "region: 14",
+      location int {
+        from 1157435,
+        to 1157492,
+        id local str "chr2"
+      },
+      title "Line:14"
+    },
+    {
+      data region "region: 15",
+      location int {
+        from 1196484,
+        to 1196527,
+        id local str "chr2"
+      },
+      title "Line:15"
+    },
+    {
+      data region "region: 16",
+      location int {
+        from 1196630,
+        to 1196671,
+        id local str "chr2"
+      },
+      title "Line:16"
+    },
+    {
+      data region "region: 17",
+      location int {
+        from 1224449,
+        to 1224536,
+        id local str "chr2"
+      },
+      title "Line:17"
+    },
+    {
+      data region "region: 18",
+      location int {
+        from 1231729,
+        to 1231820,
+        id local str "chr2"
+      },
+      title "Line:18"
+    },
+    {
+      data region "region: 19",
+      location int {
+        from 1267727,
+        to 1267854,
+        id local str "chr2"
+      },
+      title "Line:19"
+    },
+    {
+      data region "region: 20",
+      location int {
+        from 1296341,
+        to 1296470,
+        id local str "chr2"
+      },
+      title "Line:20"
+    },
+    {
+      data region "region: 21",
+      location int {
+        from 1075092,
+        to 1075276,
+        id local str "chr3"
+      },
+      title "Line:21"
+    },
+    {
+      data region "region: 22",
+      location int {
+        from 1130066,
+        to 1130202,
+        id local str "chr3"
+      },
+      title "Line:22"
+    },
+    {
+      data region "region: 23",
+      location int {
+        from 1202826,
+        to 1202952,
+        id local str "chr3"
+      },
+      title "Line:23"
+    },
+    {
+      data region "region: 24",
+      location int {
+        from 1209957,
+        to 1210132,
+        id local str "chr3"
+      },
+      title "Line:24"
+    },
+    {
+      data region "region: 25",
+      location int {
+        from 1260486,
+        to 1260581,
+        id local str "chr3"
+      },
+      title "Line:25"
+    },
+    {
+      data region "region: 26",
+      location int {
+        from 1277678,
+        to 1277881,
+        id local str "chr3"
+      },
+      title "Line:26"
+    },
+    {
+      data region "region: 27",
+      location int {
+        from 1279966,
+        to 1280068,
+        id local str "chr3"
+      },
+      title "Line:27"
+    },
+    {
+      data region "region: 28",
+      location int {
+        from 1303711,
+        to 1303895,
+        id local str "chr3"
+      },
+      title "Line:28"
+    },
+    {
+      data region "region: 29",
+      location int {
+        from 1307876,
+        to 1308012,
+        id local str "chr3"
+      },
+      title "Line:29"
+    },
+    {
+      data region "region: 30",
+      location int {
+        from 1309518,
+        to 1309647,
+        id local str "chr3"
+      },
+      title "Line:30"
+    },
+    {
+      data region "region: 31",
+      location int {
+        from 4950733,
+        to 4950848,
+        id local str "chr4"
+      },
+      title "Line:31"
+    },
+    {
+      data region "region: 32",
+      location int {
+        from 5039321,
+        to 5039376,
+        id local str "chr4"
+      },
+      title "Line:32"
+    },
+    {
+      data region "region: 33",
+      location int {
+        from 5067655,
+        to 5067806,
+        id local str "chr4"
+      },
+      title "Line:33"
+    },
+    {
+      data region "region: 34",
+      location int {
+        from 5230595,
+        to 5230768,
+        id local str "chr4"
+      },
+      title "Line:34"
+    },
+    {
+      data region "region: 35",
+      location int {
+        from 5297591,
+        to 5297628,
+        id local str "chr4"
+      },
+      title "Line:35"
+    },
+    {
+      data region "region: 36",
+      location int {
+        from 5316229,
+        to 5316318,
+        id local str "chr4"
+      },
+      title "Line:36"
+    },
+    {
+      data region "region: 37",
+      location int {
+        from 5346056,
+        to 5346159,
+        id local str "chr4"
+      },
+      title "Line:37"
+    },
+    {
+      data region "region: 38",
+      location int {
+        from 5356190,
+        to 5356306,
+        id local str "chr4"
+      },
+      title "Line:38"
+    },
+    {
+      data region "region: 39",
+      location int {
+        from 5359486,
+        to 5359611,
+        id local str "chr4"
+      },
+      title "Line:39"
+    },
+    {
+      data region "region: 40",
+      location int {
+        from 5366086,
+        to 5366217,
+        id local str "chr4"
+      },
+      title "Line:40"
+    }
+  }
+}

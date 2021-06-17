@@ -1,0 +1,45 @@
+Variation ::= {
+  name "XR_159443.1:n.14_15insCTGATACATTCCAAGCATACA",
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc int {
+              from 13,
+              to 14,
+              strand plus,
+              id gi 397138319
+            },
+            mol unknown
+          }
+        },
+        data instance {
+          type ins,
+          delta {
+            {
+              seq literal {
+                length 21,
+                seq-data iupacna "CTGATACATTCCAAGCATACA"
+              },
+              action ins-before
+            }
+          }
+        }
+      }
+    }
+  },
+  ext {
+    {
+      type str "Variation Normalization",
+      data {
+        {
+          label str "Left Interval Shifted",
+          data bool TRUE
+        }
+      }
+    }
+  }
+}
+Test Fully Shifted : 0

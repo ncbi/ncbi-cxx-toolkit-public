@@ -1,0 +1,190 @@
+Bioseq-set ::= { seq-set {
+seq {
+  id {
+    local str "gb|U54475.1"
+  },
+  descr {
+    title "Drosophila melanogaster eukaryotic initiation factor 4E (eIF4E)
+ gene, alternative splice products, complete cds.",
+    molinfo {
+      biomol genomic
+    },
+    update-date std { year 2000 , month 1, day 1 },
+    create-date std { year 2000 , month 1, day 1 }
+  },
+  inst {
+    repr delta,
+    mol dna,
+    length 458,
+    ext delta {
+      loc int {
+        from 10,
+        to 87,
+        strand plus,
+        id local str "foo"
+      },
+      literal {
+        length 26
+      },
+      loc int {
+        from 103,
+        to 218,
+        strand minus,
+        id genbank {
+          accession "U54469",
+          version 1
+        }
+      },
+      literal {
+        length 100,
+        fuzz lim unk
+      },
+      loc int {
+        from 20,
+        to 47,
+        strand plus,
+        id genbank {
+          accession "U54470",
+          version 1
+        }
+      },
+      literal {
+        length 100
+      },
+      loc int {
+        from 5,
+        to 14,
+        strand plus,
+        id genbank {
+          accession "U54471",
+          version 1
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data rna {
+            type mRNA,
+            ext name "eukaryotic initiation factor 4E-I"
+          },
+          location mix {
+            int {
+              from 79,
+              to 223,
+              id gi 1322283
+            },
+            int {
+              from 1128,
+              to 1457,
+              id gi 1322283
+            },
+            int {
+              from 1549,
+              to 1919,
+              id gi 1322283
+            },
+            int {
+              from 1985,
+              to 2084,
+              id gi 1322283
+            },
+            int {
+              from 2316,
+              to 2403,
+              id gi 1322283
+            },
+            int {
+              from 2465,
+              to 2880,
+              id gi 1322283
+            }
+          }
+        },
+        {
+          data rna {
+            type mRNA,
+            ext name "eukaryotic initiation factor 4E-II"
+          },
+          location mix {
+            int {
+              from 79,
+              to 223,
+              id gi 1322283
+            },
+            int {
+              from 1549,
+              to 1919,
+              id gi 1322283
+            },
+            int {
+              from 1985,
+              to 2084,
+              id gi 1322283
+            },
+            int {
+              from 2316,
+              to 2403,
+              id gi 1322283
+            },
+            int {
+              from 2465,
+              to 2880,
+              id gi 1322283
+            }
+          }
+        },
+        {
+          data rna {
+            type mRNA,
+            ext name "eukaryotic initiation factor 4E-I"
+          },
+          location mix {
+            int {
+              from 79,
+              to 223,
+              id gi 1322283
+            },
+            int {
+              from 891,
+              to 1457,
+              id gi 1322283
+            },
+            int {
+              from 1549,
+              to 1919,
+              id gi 1322283
+            },
+            int {
+              from 1985,
+              to 2084,
+              id gi 1322283
+            },
+            int {
+              from 2316,
+              to 2403,
+              id gi 1322283
+            },
+            int {
+              from 2465,
+              to 2880,
+              id gi 1322283
+            }
+          }
+        },
+        {
+          data gene {
+            locus "eIF4E"
+          },
+          location int {
+            from 79,
+            to 2880,
+            id gi 1322283
+          }
+        }
+      }
+    }
+  }
+}} }

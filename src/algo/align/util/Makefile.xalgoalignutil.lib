@@ -1,0 +1,22 @@
+# $Id$
+
+WATCHERS = kapustin dicuccio
+
+SRC = align_shadow blast_tabular score_builder score_lookup align_filter \
+      genomic_compart patch_sequence align_compare align_sort \
+      depth_filter tabular_fmt collection_score named_collection_score_impl \
+      best_placement
+
+LIB = xalgoalignutil
+
+DLL_LIB = xqueryparse xalgoseq taxon1 xregexp $(BLAST_LIBS)
+
+ASN_DEP = seqset xnetblast
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
+USES_LIBRARIES =  \
+    $(BLAST_LIBS) xalgoseq xqueryparse

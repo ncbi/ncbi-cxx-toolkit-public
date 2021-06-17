@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(bm_sparse_sample)
+  NCBI_sources(bm_sparse_sample)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(kuznets)
+NCBI_end_app()
+

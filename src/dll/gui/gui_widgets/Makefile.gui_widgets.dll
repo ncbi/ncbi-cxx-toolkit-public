@@ -1,0 +1,16 @@
+# $Id$
+
+DLL = gui_widgets
+
+HOSTED_LIBS = \
+	w_wx \
+	w_gl \
+	w_data \
+	w_loaders \
+	w_aln_score \
+	w_feedback
+
+DEPENDENCIES   = gui_config gui_utils ncbi_seqext ncbi_image ncbi_core ncbi_general ncbi_trackmgr
+
+CPPFLAGS = -DNCBI_GUIWIDGETS_EXPORTS
+

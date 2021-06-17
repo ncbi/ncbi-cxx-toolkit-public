@@ -1,0 +1,182 @@
+Seq-submit ::= {
+  sub {
+    contact {
+      contact {
+        name
+          name {
+            last "q" ,
+            first "q" ,
+            initials "qq" } ,
+        affil
+          str "q" } } ,
+    cit {
+      authors {
+        names
+          std {
+            {
+              name
+                name {
+                  last "q" ,
+                  first "q" ,
+                  initials "qq." } } } ,
+        affil
+          str "q" } ,
+      date
+        std {
+          year 2009 ,
+          month 9 ,
+          day 17 } } ,
+    subtype new ,
+    tool "Sequin 9.70 - MS WINDOWS 2000/XP" } ,
+  data
+    entrys {
+      set {
+        class nuc-prot ,
+        descr {
+          source {
+            genome genomic ,
+            org {
+              taxname "Homo sapiens" ,
+              common "human" ,
+              db {
+                {
+                  db "taxon" ,
+                  tag
+                    id 9606 } } ,
+              orgname {
+                name
+                  binomial {
+                    genus "Homo" ,
+                    species "sapiens" } ,
+                lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+ Catarrhini; Hominidae; Homo" ,
+                gcode 1 ,
+                mgcode 2 ,
+                div "PRI" } } } ,
+          pub {
+            pub {
+              gen {
+                cit "Unpublished" ,
+                authors {
+                  names
+                    std {
+                      {
+                        name
+                          name {
+                            last "q" ,
+                            first "q" ,
+                            initials "qq." } } } ,
+                  affil
+                    str "q" } ,
+                title "q" } } } ,
+          user {
+            type
+              str "NcbiCleanup" ,
+            data {
+              {
+                label
+                  str "method" ,
+                data
+                  str "SequinCleanup" } ,
+              {
+                label
+                  str "version" ,
+                data
+                  int 4 } ,
+              {
+                label
+                  str "month" ,
+                data
+                  int 9 } ,
+              {
+                label
+                  str "day" ,
+                data
+                  int 17 } ,
+              {
+                label
+                  str "year" ,
+                data
+                  int 2009 } } } } ,
+        seq-set {
+          seq {
+            id {
+              local
+                str "SuspiciousFrameNoOther" } ,
+            descr {
+              title "complete genome",
+              molinfo {
+                biomol genomic } ,
+              create-date
+                std {
+                  year 2009 ,
+                  month 9 ,
+                  day 17 } } ,
+            inst {
+              repr raw ,
+              mol dna ,
+              length 48 ,
+              seq-data
+                ncbi2na '00000FFFFFFFEAAAAA955555'H } } ,
+          seq {
+            id {
+              local
+                str "SuspiciousFrameNoOther_1" } ,
+            descr {
+              molinfo {
+                biomol peptide ,
+                tech concept-trans ,
+                completeness no-right } } ,
+            inst {
+              repr raw ,
+              mol aa ,
+              length 16 ,
+              seq-data
+                ncbieaa "KKKFFFFFGGGGPPPP" } ,
+            annot {
+              {
+                data
+                  ftable {
+                    {
+                      data
+                        prot {
+                          name {
+                            "foo" } } ,
+                      partial TRUE ,
+                      location
+                        int {
+                          from 0 ,
+                          to 15 ,
+                          id
+                            local
+                              str "SuspiciousFrameNoOther_1" ,
+                          fuzz-to
+                            lim gt } } } } } } } ,
+        annot {
+          {
+            data
+              ftable {
+                {
+                  data
+                    cdregion {
+                      frame two ,
+                      code {
+                        id 1 } } ,
+                  partial TRUE ,
+                  except TRUE ,
+                  product
+                    whole
+                      local
+                        str "SuspiciousFrameNoOther_1" ,
+                  location
+                    int {
+                      from 0 ,
+                      to 47 ,
+                      strand plus ,
+                      id
+                        local
+                          str "SuspiciousFrameNoOther" ,
+                      fuzz-to
+                        lim gt } ,
+                  except-text "low-quality sequence region" } } } } } } }

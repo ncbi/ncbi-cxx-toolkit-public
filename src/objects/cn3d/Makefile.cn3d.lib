@@ -1,0 +1,7 @@
+ASN_DEP = mmdb
+LIB = cn3d
+SRC = cn3d__ cn3d___
+
+
+USES_LIBRARIES =  \
+    mmdb

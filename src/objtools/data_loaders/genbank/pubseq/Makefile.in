@@ -1,0 +1,9 @@
+# $Id$
+
+REQUIRES = PubSeqOS
+
+LIB_PROJ = ncbi_xreader_pubseqos
+SUB_PROJ =
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

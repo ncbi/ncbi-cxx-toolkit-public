@@ -1,0 +1,30 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": {
+        "id": "gb|AC052670.1|",
+        "type": 5
+    },
+    "other_ids": [
+        {
+            "id": "gnl|MARBILAB|KJ3756SA",
+            "type": 11
+        },
+        {
+            "id": "gi|7575990",
+            "type": 12
+        }
+    ],
+    "molecule_type": "dna",
+    "length": 956,
+    "seq_state": 10,
+    "state": 10,
+    "blob_id": {
+        "id": "4.1891974"
+    },
+    "tax_id": 184922,
+    "hash": -2096782024,
+    "date_changed": "01/27/2002 03:04:28",
+    "gi": 7575990
+}
+]

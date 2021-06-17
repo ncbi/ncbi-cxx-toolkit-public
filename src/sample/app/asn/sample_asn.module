@@ -1,0 +1,3 @@
+MODULE_ASN = sample_asn.asn
+MODULE_PATH = sample/app/asn
+MODULE_IMPORT = objects/general/general

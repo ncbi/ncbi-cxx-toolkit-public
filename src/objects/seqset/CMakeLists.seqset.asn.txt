@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(seqset)
+  NCBI_dataspecs(seqset.asn)
+  NCBI_sources(gb_release_file)
+  NCBI_uses_toolkit_libraries(seq)
+NCBI_end_lib()
+

@@ -1,0 +1,5 @@
+Line No    : 4
+Severity   : Fatal
+Problem    : Alignment.UnexpectedSeqId
+Message    : Duplicate ID: "seq1" has already appeared in this block, on line 3.
+

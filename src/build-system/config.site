@@ -1,0 +1,27 @@
+#!/bin/sh
+# $Id$
+
+# Customize configure's default behavior; see config.site.ex or
+# config.site.ncbi for examples of how to do so.
+
+if [ -r $srcdir/src/build-system/config.site.ncbi ] && [ -d "$NCBI" ]; then
+    . $srcdir/src/build-system/config.site.ncbi
+elif [ -r /usr/local/etc/config.site ]; then
+    . /usr/local/etc/config.site
+else
+    echo >&2 <<EOF
+
+**********************************************************************
+
+Warning: unable to find config.site information.  If you would like to
+build the C++ Toolkit against third-party packages in non-standard
+locations or otherwise customize build settings, you may wish to edit
+
+    $srcdir/src/build-system/config.site
+
+using .../config.site.ex and .../config.site.ncbi as examples.
+
+**********************************************************************
+
+EOF
+fi

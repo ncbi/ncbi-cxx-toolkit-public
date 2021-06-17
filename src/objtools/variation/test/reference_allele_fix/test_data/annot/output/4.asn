@@ -1,0 +1,59 @@
+Is Reference Correct? : 1 .  . 
+Check Variation type: 7
+Ref/Alt :  - TGC
+Seq-feat ::= {
+  data variation {
+    id {
+      db "dbSNP",
+      tag str "rs6"
+    },
+    variant-prop {
+      version 5,
+      resource-link preserved,
+      gene-location 0,
+      effect no-change,
+      mapping 0,
+      frequency-based-validation 0,
+      genotype 0,
+      quality-check 0
+    },
+    data set {
+      type package,
+      variations {
+        {
+          data instance {
+            type ins,
+            delta {
+              {
+                seq literal {
+                  length 3,
+                  seq-data iupacna "TGC"
+                },
+                action ins-before
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  location int {
+    from 10689125,
+    to 10689145,
+    id other {
+      accession "NT_005612",
+      version 16
+    }
+  },
+  exts {
+    {
+      type str "Variation Normalization",
+      data {
+        {
+          label str "Fully Shifted",
+          data bool TRUE
+        }
+      }
+    }
+  }
+}

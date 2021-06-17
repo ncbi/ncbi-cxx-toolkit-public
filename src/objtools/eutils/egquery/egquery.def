@@ -1,0 +1,3 @@
+[-]
+_export = NCBI_EUTILS_EXPORT
+_namespace = egquery

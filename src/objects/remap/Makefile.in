@@ -1,0 +1,4 @@
+ASN_PROJ = remap
+LIB_PROJ = remapcli
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

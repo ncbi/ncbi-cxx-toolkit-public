@@ -1,0 +1,5 @@
+Line No    : 23
+Severity   : Fatal
+Problem    : Alignment.UnexpectedCommand
+Message    : Unexpected "Dummy" command inside "NCBI" block. The "NCBI" block must contain a "sequin" command and no other commands.
+

@@ -1,0 +1,80 @@
+[-]
+_export = NCBI_SEQALIGN_EXPORT
+
+[Seq-align]
+score._type    = vector
+
+[Dense-diag]
+starts.E._type = TSeqPos
+len._type      = TSeqPos
+; for consistency with Dense-seg.ids
+ids._type      = vector
+starts._type   = vector
+strands._type  = vector
+scores._type   = vector
+
+[Dense-seg]
+; may contain occurrences of -1
+starts.E._type = TSignedSeqPos
+lens.E._type   = TSeqPos
+; to support binary searching
+; to make binary searching on starts more useful
+ids._type      = vector
+lens._type     = vector
+starts._type   = vector
+strands._type  = vector
+scores._type   = vector
+
+[Packed-seg]
+starts.E._type = TSeqPos
+lens.E._type   = TSeqPos
+ids._type      = vector
+lens._type     = vector
+starts._type   = vector
+strands._type  = vector
+scores._type   = vector
+present._type  = vector
+
+[Std-seg]
+ids._type      = vector
+loc._type      = vector
+scores._type   = vector
+
+[Sparse-seg]
+rows._type = vector
+row-scores._type = vector
+ext._type = vector
+
+[Sparse-align]
+starts.E._type = TSeqPos
+lens.E._type   = TSeqPos
+first-starts._type      = vector
+second-starts._type     = vector
+lens._type     = vector
+second-strands._type  = vector
+seg-scores._type = vector
+
+[Spliced-seg]
+product-length._type = TSeqPos
+poly-a._type         = TSeqPos
+
+[Spliced-exon]
+genomic-start._type  = TSeqPos
+genomic-end._type    = TSeqPos
+
+[Product-pos]
+nucpos._type         = TSeqPos
+
+[Prot-pos]
+amin._type           = TSeqPos
+frame._type          = TSeqPos
+
+[Spliced-exon-chunk]
+match._type          = TSeqPos
+mismatch._type       = TSeqPos
+diag._type           = TSeqPos
+product-ins._type    = TSeqPos
+genomic-ins._type    = TSeqPos
+
+[Score]
+value._pointer       = false

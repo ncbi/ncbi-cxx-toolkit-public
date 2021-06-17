@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_row_reader_iana_tsv)
+  NCBI_sources(test_row_reader_iana_tsv)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_add_test()
+  NCBI_project_watchers(satskyse)
+NCBI_end_app()

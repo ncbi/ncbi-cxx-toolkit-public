@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xdbapi_odbc SHARED)
+  NCBI_sources(connection context cursor lang_cmd result rpc odbc_utils)
+  if (WIN32)
+    NCBI_sources(bcp)
+    NCBI_add_definitions(UCS2 NCBI_DBAPIDRIVER_ODBC_EXPORTS)
+  endif()
+  NCBI_uses_toolkit_libraries(dbapi_driver)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_lib()
+

@@ -1,0 +1,6 @@
+# $Id$
+
+DTD_PROJ = epost
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

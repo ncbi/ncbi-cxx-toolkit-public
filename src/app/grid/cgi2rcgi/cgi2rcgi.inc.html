@@ -1,0 +1,44 @@
+<@VIEW_JOB_SUBMITTED@>
+<p/>Job has been submitted.<br/>
+<INPUT TYPE="submit" NAME="Check Status" VALUE="Check Status">
+</@VIEW_JOB_SUBMITTED@>
+
+
+<@VIEW_JOB_PENDING@>
+<p/>Job is still in a queue...
+<br/>
+<INPUT TYPE="submit" NAME="Check Status" VALUE="Check">
+<INPUT TYPE="submit" NAME="Cancel" VALUE="Cancel the job">
+</@VIEW_JOB_PENDING@>
+
+<@VIEW_JOB_RUNNING@>
+<p/>Job is still runnig...
+<br/>
+Progress Message : <@PROGRESS_MSG@><br/>
+<INPUT TYPE="submit" NAME="Check Status" VALUE="Check">
+<INPUT TYPE="submit" NAME="Cancel" VALUE="Cancel the job">
+</@VIEW_JOB_RUNNING@>
+
+
+<@VIEW_JOB_CANCELED@>
+<p/>Job is canceled.<br/>
+<A HREF="<@REDIRECT_URL@>">Run again</A>
+</@VIEW_JOB_CANCELED@>
+
+
+<@VIEW_JOB_FAILED@>
+<p/>Job failed.<br/>
+Error Message : <@MSG@><br/>
+<A HREF="<@REDIRECT_URL@>">Run again</A>
+</@VIEW_JOB_FAILED@>
+
+
+<@VIEW_JOB_DONE@>
+<p/>Job is done.<br/>
+<A HREF="<@REDIRECT_URL@>">Get results</A>
+</@VIEW_JOB_DONE@>
+
+
+<@ELAPSED_TIME_MSG@>
+<P>You have been waiting for <@ELAPSED_TIME@> seconds</P>
+</@ELAPSED_TIME_MSG@>

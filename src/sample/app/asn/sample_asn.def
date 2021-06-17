@@ -1,0 +1,10 @@
+# $Id$
+# By D.Vakatov, NCBI
+#
+# Configuration file to be used by DATATOOL when it generates the source
+# code for the "sample_asn.asn" ASN.1 spec.
+
+
+[-]
+; Only if it's going into a DLL on MS-Windows
+;_export = NCBI_SAMPLE_ASN_EXPORT

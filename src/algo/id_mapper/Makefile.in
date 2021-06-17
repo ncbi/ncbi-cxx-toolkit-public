@@ -1,0 +1,9 @@
+# $Id$
+
+LIB_PROJ = id_mapper
+
+EXPENDABLE_SUB_PROJ = app unit_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+

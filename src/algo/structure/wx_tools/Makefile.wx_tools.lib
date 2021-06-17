@@ -1,0 +1,17 @@
+# $Id$
+#
+# GUI to set options for Block Multiple Alignment Refiner library
+#
+##########################################
+
+REQUIRES = wxWidgets
+
+LIB =   wx_tools
+
+SRC =   wx_tools
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(WXWIDGETS_INCLUDE)
+
+
+USES_LIBRARIES =  \
+    $(WXWIDGETS_LIBS) xncbi

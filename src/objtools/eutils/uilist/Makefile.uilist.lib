@@ -1,0 +1,10 @@
+# $Id$
+
+SRC = uilist__ uilist___
+LIB = uilist
+
+WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    xser

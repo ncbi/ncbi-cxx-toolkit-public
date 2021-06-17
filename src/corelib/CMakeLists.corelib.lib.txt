@@ -1,0 +1,32 @@
+# $Id$
+
+NCBI_begin_lib(xncbi)
+
+if (UNIX)
+    set(os_src ncbi_os_unix)
+elseif (WIN32)
+    set(os_src ncbi_os_mswin)
+endif(UNIX)
+
+set(cfgfile ${CMAKE_BINARY_DIR}/corelib/ncbicfg.c)
+NCBI_sources(
+    blob_storage ddumpable env_reg metareg ncbi_config
+    ncbi_param ncbi_process ncbi_safe_static ncbi_signal ncbi_stack
+    ncbi_system ncbiapp ncbiargs ncbiatomic ncbidbg ncbidiag
+    ncbidiag_p.cpp ncbidll ncbienv ncbiexec ncbiexpt ncbifile ncbimempool
+    ncbimtx ncbiobj ncbireg ncbistr ncbistre ncbithr ncbitime obj_store
+    plugin_manager plugin_manager_store rwstreambuf stream_utils syslog
+    version request_ctx request_control expr ncbi_strings resource_info
+    interprocess_lock ncbi_autoinit perf_log ncbi_toolkit ncbierror ncbi_url
+    ncbi_cookies guard ncbi_message request_status ncbi_fast ncbi_dbsvcmapper
+    ncbi_pool_balancer ${os_src} ${cfgfile}
+)
+NCBI_disable_pch_for(ncbi_strings ${cfgfile})
+NCBI_uses_external_libraries(${DL_LIBS} ${ORIG_LIBS})
+if(UNIX)
+  NCBI_optional_components(BACKWARD UNWIND)
+endif()
+
+NCBI_project_watchers(vakatov)
+
+NCBI_end_lib()

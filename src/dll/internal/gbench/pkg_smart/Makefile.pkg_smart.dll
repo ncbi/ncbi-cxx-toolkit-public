@@ -1,0 +1,13 @@
+# $Id$
+
+DLL = pkg_smart
+
+HOSTED_LIBS = pkg_smart
+
+DEPENDENCIES = gui_widgets_seq 
+
+
+
+
+
+

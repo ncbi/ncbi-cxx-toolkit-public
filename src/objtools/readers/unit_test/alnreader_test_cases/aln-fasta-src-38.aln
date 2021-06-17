@@ -1,0 +1,16 @@
+>seq1 [organism=val1][other=val1]
+--GCAAGCATGCATGCAAAA
+TTTTGCGGCCCATGCATG--
+ATGCATGC
+>seq2 [organism=val1][bioproject=val1]
+AT--ATGGATGCATGCAAAA
+TTTTGGGCCCCATGCATGCC
+--GCATGC
+>seq3 [organism=val1][biosample=val1]
+ATGC--GCAAGCATGCAAAA
+TTTTGGGGCGCATGCATGCC
+AT--ATGC
+>seq4 [organism=val1][strain=val1][substrain=val1][type=val1][subtype=val1][variety=val1][serotype=val1][serogroup=val1][serovar=val1][cultivar=val1][pathovar=val1][chemovar=val1][biovar=val1][biotype=val1][group=val1][subgroup=val1][isolate=val1][common=val1][acronym=val1][nat-host=val1][sub-species=val1][specimen-voucher=val1][authority=val1][forma=val1][forma-specialis=val1][ecotype=val1][synonym=val1][anamorph=val1][teleomorph=val1][breed=val1][gb-acronym=val1][gb-anamorph=val1][gb-synonym=val1][culture-collection=val1][bio-material=val1][metagenome-source=val1][type-material=val1][other=val1][chromosome=val1][map=val1][clone=val1][subclone=val1][haplotype=val1][genotype=val1][sex=val1][cell-line=val1][cell-type=val1][tissue-type=val1][clone-lib=val1][dev-stage=val1][frequency=val1][germline=val1][rearranged=val1][lab-host=val1][pop-variant=val1][tissue-lib=val1][plasmid-name=val1][country=val1][segment=val1][endogenous-virus-name=val1][transgenic=val1][environmental-sample=val1][isolation-source=val1][lat-lon=val1][collection-date=val1][collected-by=val1][identified-by=val1][fwd-primer-seq=val1][rev-primer-seq=val1][fwd-primer-name=val1][rev-primer-name=val1][metagenomic=val1][mating-type=val1][linkage-group=val1][haplogroup=val1][whole-replicon=val1][phenotype=val1][altitude=val1][other=val1][bioproject=val1][biosample=val1]
+ATGCAT--ATGGATGCAAAA
+TTTTGGGGCCCTTGCATGCC
+ATGC--GC

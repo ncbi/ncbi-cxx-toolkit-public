@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(entrez2client)
+  NCBI_sources(entrez2client)
+  NCBI_uses_toolkit_libraries(entrez2cli)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_app()
+

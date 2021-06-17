@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(unit_test_5colftblreader)
+  NCBI_sources(unit_test_5colftblreader)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xobjread xunittestutil)
+  NCBI_set_test_assets(5colftblreader_test_cases)
+  NCBI_add_test()
+  NCBI_project_watchers(foleyjp)
+NCBI_end_app()

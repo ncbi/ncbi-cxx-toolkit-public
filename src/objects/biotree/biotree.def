@@ -1,0 +1,6 @@
+[-]
+_export = NCBI_BIOTREE_EXPORT
+
+[DistanceMatrix]
+labels._type    = vector
+distances._type = vector

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db100_t0014)
+  NCBI_sources(t0014 common)
+  NCBI_set_test_assets(t0014.sql data.bin)
+  NCBI_add_test(test-db100 --ms-ver 7.1 --no-auto db100_t0014)
+NCBI_end_app()
+

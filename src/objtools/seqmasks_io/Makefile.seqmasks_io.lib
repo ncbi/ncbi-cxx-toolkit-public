@@ -1,0 +1,23 @@
+# $Id$
+
+LIB = seqmasks_io
+SRC = mask_cmdline_args \
+mask_bdb_reader \
+mask_fasta_reader \
+mask_writer \
+mask_writer_fasta \
+mask_writer_int \
+mask_writer_tab \
+mask_writer_seqloc \
+mask_writer_blastdb_maskinfo
+
+ASN_DEP = seqset
+DLL_LIB = seqdb blastdb
+
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
+WATCHERS = morgulis camacho
+
+
+USES_LIBRARIES =  \
+    $(OBJREAD_LIBS) seqdb xobjutil

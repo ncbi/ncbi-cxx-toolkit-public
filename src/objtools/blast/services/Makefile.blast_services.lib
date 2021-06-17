@@ -1,0 +1,22 @@
+# $Id$
+
+WATCHERS = madden camacho
+
+ASN_DEP = xnetblast
+
+SRC = blast_services
+
+LIB = blast_services
+
+DLL_LIB = xnetblastcli xnetblast
+
+CFLAGS   = $(FAST_CFLAGS)
+# -DNCBI_MODULE=NETBLAST moved to blast_services.*pp to avoid misnamed modules in DLL configurations
+CPPFLAGS = $(ORIG_CPPFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+
+
+USES_LIBRARIES =  \
+    xnetblastcli

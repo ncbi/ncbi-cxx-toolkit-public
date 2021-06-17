@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(ct100_cancel)
+  NCBI_sources(cancel common)
+  NCBI_add_test(test-ct100 ct100_cancel)
+NCBI_end_app()
+

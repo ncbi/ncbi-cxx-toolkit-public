@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_vmerge)
+  NCBI_sources(test_vmerge)
+  NCBI_uses_toolkit_libraries(xalgovmerge)
+  NCBI_project_watchers(kuznets)
+NCBI_end_app()
+

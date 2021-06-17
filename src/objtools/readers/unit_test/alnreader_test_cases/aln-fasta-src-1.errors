@@ -1,0 +1,7 @@
+SeqID      : lcl|seq3
+Line No    : 9
+Severity   : Error
+Problem    : Mods.ConflictingValues
+Message    : Conflicting modifiers detected. Provide one modifier with one value for: organism.
+Mod Name   : organism
+

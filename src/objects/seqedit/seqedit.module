@@ -1,0 +1,2 @@
+MODULE_PATH = objects/seqedit
+MODULE_IMPORT = objects/general/general objects/seqloc/seqloc objects/seqset/seqset objects/seq/seq objects/seqalign/seqalign objects/seqfeat/seqfeat objects/seqres/seqres 

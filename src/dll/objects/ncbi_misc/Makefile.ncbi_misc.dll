@@ -1,0 +1,28 @@
+# $Id$
+
+DLL = ncbi_misc
+
+HOSTED_LIBS    = access     \
+                 biotree    \
+                 docsum     \
+                 entrez2    \
+                 entrez2cli \
+                 entrezgene \
+                 featdef    \
+                 gbseq      \
+                 genesbyloc \
+                 insdseq    \
+                 mim        \
+                 objprt     \
+                 objcoords  \
+                 pcassay    \
+                 pcsubstance \
+                 proj       \
+                 remap      \
+                 remapcli   \
+                 tinyseq
+
+DEPENDENCIES   = ncbi_core ncbi_general ncbi_pub
+
+CPPFLAGS = -DNCBI_MISC_EXPORTS
+

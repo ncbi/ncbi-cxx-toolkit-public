@@ -1,0 +1,17 @@
+# $Id$
+
+NCBI_begin_lib(data_loaders_util)
+  NCBI_sources(data_loaders_util)
+  NCBI_uses_toolkit_libraries(
+    ncbi_xdbapi_ftds ncbi_xloader_asn_cache ncbi_xloader_blastdb
+    ncbi_xloader_genbank ncbi_xloader_lds2
+    ncbi_xreader_pubseqos ncbi_xreader_pubseqos2
+  )
+  if(HAVE_NCBI_VDB)
+    NCBI_uses_toolkit_libraries(
+      ncbi_xloader_csra ncbi_xloader_wgs
+  )
+  endif()
+  NCBI_project_watchers(whlavina)
+NCBI_end_lib()
+

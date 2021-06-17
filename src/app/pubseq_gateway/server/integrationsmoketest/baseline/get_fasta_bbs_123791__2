@@ -1,0 +1,64 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": {
+        "id": "gb|AAA13519.1|",
+        "type": 5
+    },
+    "other_ids": [
+        {
+            "id": "bbs|123791",
+            "type": 2
+        },
+        {
+            "id": "bbm|274977",
+            "type": 3
+        },
+        {
+            "id": "gi|264529",
+            "type": 12
+        }
+    ],
+    "molecule_type": "aa",
+    "length": 28,
+    "seq_state": 5,
+    "state": 0,
+    "blob_id": {
+        "id": "4.15971"
+    },
+    "tax_id": 0,
+    "hash": -1798355080,
+    "date_changed": "08/11/2005 13:45:00",
+    "gi": 264529
+},
+{
+    "reply": "BlobInfo",
+    "id": {
+        "id": "4.15971",
+        "last_modified": 1123767887386
+    },
+    "compression": "gzip",
+    "format": "asn.1",
+    "storage_size": 1291,
+    "size": 2256,
+    "is_dead": true,
+    "is_suppressed": false,
+    "is_withdrawn": false,
+    "hup_release_date": "",
+    "owner": 2,
+    "original_load_date": "01/19/1994 09:53:47",
+    "class": "nuc-prot",
+    "division": "PRI",
+    "username": "cavanaug",
+    "id2_info": "",
+    "n_chunks": 1
+},
+{
+    "reply": "BlobData",
+    "id": {
+        "id": "4.15971",
+        "last_modified": 1123767887386
+    },
+    "data": "eJxb2GDQsLiBi5GRgWFZg2HDkgYpr1A3f9v8vOT89NS8VIXqgqL83PyS1KJaheiM0tzEPB0F99S8/NzMZB0FI0MjI4W8klhrhcS8FIWSosS84pzEktQUBaCelNLkkmIGho0NC4EWLGhgYmI/ycCwsIGJkZWBYRGQ4mCAgk0YKpghKoRhKlaD5Q2BzmRiYe2NXMfAsAQqsqBByiAkI1UhHeIiheKSIqC1pUWpCvlpCiVACbCLFYAeUihKTU4tKMkv0oOYCbFzEZCU4g5OzijNqdJx1AvWk+IDcnJSM0sy8tPSdHz0pDjcEkuLS3R89aR4nBKLgF7M1XHWCwLyvICeLU7N0/HSC9djgINFQEMhTgMGJIc/NBCRrUT3LBNM68IGKUYLkAlSjEYMDIsbpNhMDSx1DY0ZcIBtQINA7gfqYwV7E1V6OdgeiFuAocnMYiQNtpCZ8XEfLACl2IJNjc0NLcCWw9nAYAalBkjIAzVyBsAcCPaVIcnJg4FhFdC6ZQ1SzAFBnhCztkNCAWEPegxDAlOKzS0zXU/BGOSoBdCA+6GDHhKLwDJcoKBcCEnJQA8zcXiBUvSiBpYmJuHgpSuFHgZO33BVtX7F0q4sj4vdl7qvtKq+dLR6IJp7J4BZgPlgld+uJ65vTD3ZvTgf7eoyqWP1Ul60z7szyUzVzj0obomAiuKruyDLWjyDFglkNy0t2BX0kEt9xfypj5ZM6gpeyanE1bJa45/8JUbd8vVz+BYxdbds0tRomtSruGrnK64la5oUTRZNYelZ+OfxxJzNIhsDBLWXckzSOFHqWXrdpeXKkiedsW5PGQW1Iha80PNUijjm5alcySOyUFA30EOjY9ILi0vL3SfF9t5feGH29ZJS1aun1VcEagpOeSy+nvuP/Qf5uhN9q+7q+bfqvi5jj1vulBwbWDc9hHve4iOLHn18FzZFoPi+bfAfjxcOFcu9NL3dn76ZKvTptUpVf0Dd2vDL2+LOv97qfyrXz+v/srcPet/dDdHRu+rXFxIy7W3p23va34Oak0pfVtXd03v7bqnO5KmV0VVby2dvr/wdM333bu+2O0rv3uUBwTsQuP42qTNJ6dEqPq6ARdOXr6qat+rFshVdyy4ufVTRtejF3hcL3h9VFFL1WOE5VSmkp6Mls6SqZKLX1vjQ0kulpVWhfxSUKq6X3v2xR7Tid9Cu0Jf3pq9b1uWwqtNrWQfXvhDdV3paXJpaOx9xZT5fqRT1kmt66NN5TzU19QJMV6m+mLeqa9oKz6iwytCrka9UPdnvaei/FLXKm/U0qG/J6rCquJ2/0ncuX7nTKtRrnZ7VyuuvJi0Gp+kV0CyElCuvQnIlB6QI4kZkTsMGUGZgmHQLMycuBkoaALPGAjC9AGQQMLvJQfRBkq0UMzDXgFM0Rz5KoQASY4QUvothbrgCdgMThzpIEpyeFzeg5EQIQFglD7EKlNrRHAk3lZEBaqgnsYaqQAxdgshcuNyrjd/opbD6BTdAFJrg8ozD0dHR0NjU0BKlMIKUYoqwUqwfVjwFIkcRceUIwmbCtQ/OsosDop4X4kho+AALSImSyqL84kxg4ZidmZdYnAqvemCuQSmtoNbJgEJ0YYOjjK9jeJBzQJCve1BYgI9juLOPo4+ze7ijs69jQBD+BKcMCYXF0DAg5A5scQlNJYzSGDEZiC/6QGAFVjfJQtwEqaeQEgHU4qXQFAs3n/RcgA4AJ66rtw=="
+}
+]

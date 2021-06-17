@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile("SERIAL" project)
+#################################
+
+APP_PROJ = datatool
+SUB_PROJ = 
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

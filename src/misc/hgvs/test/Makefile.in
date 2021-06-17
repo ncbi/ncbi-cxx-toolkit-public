@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile
+##################################
+
+APP_PROJ = hgvs2variation test_hgvs_parser test_hgvs_reader
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,31 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Sergey Satskiy
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+APP: test_diag_parser test_hash test_tempstr
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+
+# COPY: $libdir/xncbi.lib  $installdir/lib/
+# COPY: $libdir/libxncbi.a  $installdir/lib/
+POSTBUILD: echo FAKE postbuild COMMAND for $platform
+
+Linux64-Centos  : icc       : ICC.sh       --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux64-Centos  : icc_mtdll : ICC.sh       --without-debug --with-mt --with-dll --without-runpath --with-flat-makefile
+Linux64-Centos  : gcc       : GCC.sh       --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+
+FreeBSD64  : plain     : Clang.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+

@@ -1,0 +1,3918 @@
+--$Revision$
+--**********************************************************************
+--
+--  NCBI General Data elements
+--  by James Ostell, 1990
+--  Version 3.0 - June 1994
+--
+--**********************************************************************
+
+NCBI-General DEFINITIONS ::=
+BEGIN
+
+EXPORTS Date, Person-id, Object-id, Dbtag, Int-fuzz, User-object;
+
+-- StringStore is really a VisibleString.  It is used to define very
+--   long strings which may need to be stored by the receiving program
+--   in special structures, such as a ByteStore, but it's just a hint.
+--   AsnTool stores StringStores in ByteStore structures.
+-- OCTET STRINGs are also stored in ByteStores by AsnTool
+-- 
+-- typedef struct bsunit {             /* for building multiline strings */
+   -- Nlm_Handle str;            /* the string piece */
+   -- Nlm_Int2 len_avail,
+       -- len;
+   -- struct bsunit PNTR next; }       /* the next one */
+-- Nlm_BSUnit, PNTR Nlm_BSUnitPtr;
+-- 
+-- typedef struct bytestore {
+   -- Nlm_Int4 seekptr,       /* current position */
+      -- totlen,             /* total stored data length in bytes */
+      -- chain_offset;       /* offset in ByteStore of first byte in curchain */
+   -- Nlm_BSUnitPtr chain,       /* chain of elements */
+      -- curchain;           /* the BSUnit containing seekptr */
+-- } Nlm_ByteStore, PNTR Nlm_ByteStorePtr;
+--
+-- AsnTool incorporates this as a primitive type, so the definition
+--   is here just for completness
+-- 
+--  StringStore ::= [APPLICATION 1] IMPLICIT OCTET STRING
+--
+
+-- BigInt is really an INTEGER. It is used to warn the recieving code to expect
+--   a value bigger than Int4 (actually Int8). It will be stored in DataVal.bigintvalue
+--
+--   Like StringStore, AsnTool incorporates it as a primitive. The definition would be:
+--   BigInt ::= [APPLICATION 2] IMPLICIT INTEGER
+--
+
+-- Date is used to replace the (overly complex) UTCTtime, GeneralizedTime
+--  of ASN.1
+--  It stores only a date
+--
+
+Date ::= CHOICE {
+    str VisibleString ,        -- for those unparsed dates
+    std Date-std }             -- use this if you can
+
+Date-std ::= SEQUENCE {        -- NOTE: this is NOT a unix tm struct
+    year INTEGER ,             -- full year (including 1900)
+    month INTEGER OPTIONAL ,   -- month (1-12)
+    day INTEGER OPTIONAL ,     -- day of month (1-31)
+    season VisibleString OPTIONAL ,  -- for "spring", "may-june", etc
+    hour INTEGER OPTIONAL ,    -- hour of day (0-23)
+    minute INTEGER OPTIONAL ,  -- minute of hour (0-59)
+    second INTEGER OPTIONAL }  -- second of minute (0-59)
+
+-- Dbtag is generalized for tagging
+-- eg. { "Social Security", str "023-79-8841" }
+-- or  { "member", id 8882224 }
+
+Dbtag ::= SEQUENCE {
+    db VisibleString ,          -- name of database or system
+    tag Object-id }         -- appropriate tag
+
+-- Object-id can tag or name anything
+--
+
+Object-id ::= CHOICE {
+    id INTEGER ,
+    str VisibleString }
+
+-- Person-id is to define a std element for people
+--
+
+Person-id ::= CHOICE {
+    dbtag Dbtag ,               -- any defined database tag
+    name Name-std ,             -- structured name
+    ml VisibleString ,          -- MEDLINE name (semi-structured)
+                                --    eg. "Jones RM"
+    str VisibleString }         -- unstructured name
+
+Name-std ::= SEQUENCE { -- Structured names
+    last VisibleString ,
+    first VisibleString OPTIONAL ,
+    middle VisibleString OPTIONAL ,
+    full VisibleString OPTIONAL ,    -- full name eg. "J. John Poop, Esq"
+    initials VisibleString OPTIONAL,  -- first + middle initials
+    suffix VisibleString OPTIONAL ,   -- Jr, Sr, III
+    title VisibleString OPTIONAL }    -- Dr., Sister, etc
+
+--**** Int-fuzz **********************************************
+--*
+--*   uncertainties in integer values
+
+Int-fuzz ::= CHOICE {
+    p-m INTEGER ,                    -- plus or minus fixed amount
+    range SEQUENCE {                 -- max to min
+        max INTEGER ,
+        min INTEGER } ,
+    pct INTEGER ,                    -- % plus or minus (x10) 0-1000
+    lim ENUMERATED {                 -- some limit value
+        unk (0) ,                    -- unknown
+        gt (1) ,                     -- greater than
+        lt (2) ,                     -- less than
+        tr (3) ,                     -- space to right of position
+        tl (4) ,                     -- space to left of position
+        circle (5) ,                 -- artificial break at origin of circle
+        other (255) } ,              -- something else
+    alt SET OF INTEGER }             -- set of alternatives for the integer
+
+
+--**** User-object **********************************************
+--*
+--*   a general object for a user defined structured data item
+--*    used by Seq-feat and Seq-descr
+
+User-object ::= SEQUENCE {
+    class VisibleString OPTIONAL ,   -- endeavor which designed this object
+    type Object-id ,                 -- type of object within class
+    data SEQUENCE OF User-field }    -- the object itself
+
+User-field ::= SEQUENCE {
+    label Object-id ,                -- field label
+    num INTEGER OPTIONAL ,           -- required for strs, ints, reals, oss
+    data CHOICE {                    -- field contents
+        str VisibleString ,
+        int INTEGER ,
+        real REAL ,
+        bool BOOLEAN ,
+        os OCTET STRING ,
+        object User-object ,         -- for using other definitions
+        strs SEQUENCE OF VisibleString ,
+        ints SEQUENCE OF INTEGER ,
+        reals SEQUENCE OF REAL ,
+        oss SEQUENCE OF OCTET STRING ,
+        fields SEQUENCE OF User-field ,
+        objects SEQUENCE OF User-object } }
+
+
+
+END
+
+--$Revision$
+--****************************************************************
+--
+--  NCBI Bibliographic data elements
+--  by James Ostell, 1990
+--
+--  Taken from the American National Standard for
+--      Bibliographic References
+--      ANSI Z39.29-1977
+--  Version 3.0 - June 1994
+--  PubMedId added in 1996
+--  ArticleIds and eprint elements added in 1999
+--
+--****************************************************************
+
+NCBI-Biblio DEFINITIONS ::=
+BEGIN
+
+EXPORTS Cit-art, Cit-jour, Cit-book, Cit-pat, Cit-let, Id-pat, Cit-gen,
+        Cit-proc, Cit-sub, Title, Author, PubMedId;
+
+IMPORTS Person-id, Date, Dbtag FROM NCBI-General;
+
+    -- Article Ids
+
+ArticleId ::= CHOICE {         -- can be many ids for an article
+	pubmed PubMedId ,      -- see types below
+	medline MedlineUID ,
+	doi DOI ,
+	pii PII ,
+	pmcid PmcID ,
+	pmcpid PmcPid ,
+        pmpid PmPid ,
+        other Dbtag  }    -- generic catch all
+    
+PubMedId ::= INTEGER           -- Id from the PubMed database at NCBI
+MedlineUID ::= INTEGER         -- Id from MEDLINE
+DOI ::= VisibleString          -- Document Object Identifier
+PII ::= VisibleString          -- Controlled Publisher Identifier
+PmcID ::= INTEGER              -- PubMed Central Id
+PmcPid ::= VisibleString       -- Publisher Id supplied to PubMed Central
+PmPid ::= VisibleString        -- Publisher Id supplied to PubMed
+
+ArticleIdSet ::= SET OF ArticleId
+
+    -- Status Dates
+
+PubStatus ::= INTEGER {            -- points of publication
+    received  (1) ,            -- date manuscript received for review
+    accepted  (2) ,            -- accepted for publication
+    epublish  (3) ,            -- published electronically by publisher
+    ppublish  (4) ,            -- published in print by publisher
+    revised   (5) ,            -- article revised by publisher/author
+    pmc       (6) ,            -- article first appeared in PubMed Central
+    pmcr      (7) ,            -- article revision in PubMed Central
+    pubmed    (8) ,            -- article citation first appeared in PubMed
+    pubmedr   (9) ,            -- article citation revision in PubMed
+    aheadofprint (10),         -- epublish, but will be followed by print
+    premedline (11),           -- date into PreMedline status
+    medline    (12),           -- date made a MEDLINE record
+    other    (255) }
+
+PubStatusDate ::= SEQUENCE {   -- done as a structure so fields can be added
+    pubstatus PubStatus ,
+    date Date }                -- time may be added later
+
+PubStatusDateSet ::= SET OF PubStatusDate
+    
+    -- Citation Types
+
+Cit-art ::= SEQUENCE {                  -- article in journal or book
+    title Title OPTIONAL ,              -- title of paper (ANSI requires)
+    authors Auth-list OPTIONAL ,        -- authors (ANSI requires)
+    from CHOICE {                       -- journal or book
+        journal Cit-jour ,
+        book Cit-book ,
+        proc Cit-proc } ,
+    ids ArticleIdSet OPTIONAL }         -- lots of ids
+
+Cit-jour ::= SEQUENCE {             -- Journal citation
+    title Title ,                   -- title of journal
+    imp Imprint }
+
+Cit-book ::= SEQUENCE {              -- Book citation
+    title Title ,                    -- Title of book
+    coll Title OPTIONAL ,            -- part of a collection
+    authors Auth-list,               -- authors
+    imp Imprint }
+
+Cit-proc ::= SEQUENCE {             -- Meeting proceedings
+    book Cit-book ,                 -- citation to meeting
+    meet Meeting }                  -- time and location of meeting
+
+    -- Patent number and date-issue were made optional in 1997 to
+    --   support patent applications being issued from the USPTO
+    --   Semantically a Cit-pat must have either a patent number or
+    --   an application number (or both) to be valid
+
+Cit-pat ::= SEQUENCE {                  -- patent citation
+    title VisibleString ,
+    authors Auth-list,                  -- author/inventor
+    country VisibleString ,             -- Patent Document Country
+    doc-type VisibleString ,            -- Patent Document Type
+    number VisibleString OPTIONAL,      -- Patent Document Number
+    date-issue Date OPTIONAL,           -- Patent Issue/Pub Date
+    class SEQUENCE OF VisibleString OPTIONAL ,      -- Patent Doc Class Code 
+    app-number VisibleString OPTIONAL , -- Patent Doc Appl Number
+    app-date Date OPTIONAL ,            -- Patent Appl File Date
+    applicants Auth-list OPTIONAL ,     -- Applicants
+    assignees Auth-list OPTIONAL ,      -- Assignees
+    priority SEQUENCE OF Patent-priority OPTIONAL , -- Priorities
+    abstract VisibleString OPTIONAL }   -- abstract of patent
+
+Patent-priority ::= SEQUENCE {
+    country VisibleString ,             -- Patent country code
+    number VisibleString ,              -- number assigned in that country
+    date Date }                         -- date of application
+
+Id-pat ::= SEQUENCE {                   -- just to identify a patent
+    country VisibleString ,             -- Patent Document Country
+    id CHOICE {
+        number VisibleString ,          -- Patent Document Number
+        app-number VisibleString } ,    -- Patent Doc Appl Number
+    doc-type VisibleString OPTIONAL }   -- Patent Doc Type
+
+Cit-let ::= SEQUENCE {                  -- letter, thesis, or manuscript
+    cit Cit-book ,                      -- same fields as a book
+    man-id VisibleString OPTIONAL ,     -- Manuscript identifier
+    type ENUMERATED {
+        manuscript (1) ,
+        letter (2) ,
+        thesis (3) } OPTIONAL }
+                                -- NOTE: this is just to cite a
+                                -- direct data submission, see NCBI-Submit
+                                -- for the form of a sequence submission
+Cit-sub ::= SEQUENCE {               -- citation for a direct submission
+    authors Auth-list ,              -- not necessarily authors of the paper
+    imp Imprint OPTIONAL ,			 -- this only used to get date.. will go
+    medium ENUMERATED {              -- medium of submission
+        paper   (1) ,
+        tape    (2) ,
+        floppy  (3) ,
+        email   (4) ,
+        other   (255) } OPTIONAL ,
+    date Date OPTIONAL ,              -- replaces imp, will become required
+    descr VisibleString OPTIONAL }    -- description of changes for public view
+    
+Cit-gen ::= SEQUENCE {      -- NOT from ANSI, this is a catchall
+    cit VisibleString OPTIONAL ,     -- anything, not parsable
+    authors Auth-list OPTIONAL ,
+    muid INTEGER OPTIONAL ,      -- medline uid
+    journal Title OPTIONAL ,
+    volume VisibleString OPTIONAL ,
+    issue VisibleString OPTIONAL ,
+    pages VisibleString OPTIONAL ,
+    date Date OPTIONAL ,
+    serial-number INTEGER OPTIONAL ,   -- for GenBank style references
+    title VisibleString OPTIONAL ,     -- eg. cit="unpublished",title="title"
+	pmid PubMedId OPTIONAL }           -- PubMed Id
+    
+    
+    -- Authorship Group
+Auth-list ::= SEQUENCE {
+        names CHOICE {
+            std SEQUENCE OF Author ,        -- full citations
+            ml SEQUENCE OF VisibleString ,  -- MEDLINE, semi-structured
+            str SEQUENCE OF VisibleString } , -- free for all
+        affil Affil OPTIONAL }        -- author affiliation
+
+Author ::= SEQUENCE {
+    name Person-id ,                        -- Author, Primary or Secondary
+    level ENUMERATED {
+        primary (1),
+        secondary (2) } OPTIONAL ,
+    role ENUMERATED {                   -- Author Role Indicator
+        compiler (1),
+        editor (2),
+        patent-assignee (3),
+        translator (4) } OPTIONAL ,
+    affil Affil OPTIONAL ,
+    is-corr BOOLEAN OPTIONAL }          -- TRUE if corressponding author
+
+Affil ::= CHOICE {
+    str VisibleString ,                 -- unparsed string
+    std SEQUENCE {                      -- std representation
+    affil VisibleString OPTIONAL ,      -- Author Affiliation, Name
+    div VisibleString OPTIONAL ,        -- Author Affiliation, Division
+    city VisibleString OPTIONAL ,       -- Author Affiliation, City
+    sub VisibleString OPTIONAL ,        -- Author Affiliation, County Sub
+    country VisibleString OPTIONAL ,    -- Author Affiliation, Country
+    street VisibleString OPTIONAL ,    -- street address, not ANSI
+    email VisibleString OPTIONAL ,
+    fax VisibleString OPTIONAL ,
+    phone VisibleString OPTIONAL ,
+    postal-code VisibleString OPTIONAL }}
+
+    -- Title Group
+    -- Valid for = A = Analytic (Cit-art)
+    --             J = Journals (Cit-jour)
+    --             B = Book (Cit-book)
+                                                 -- Valid for:
+Title ::= SET OF CHOICE {
+    name VisibleString ,    -- Title, Anal,Coll,Mono    AJB
+    tsub VisibleString ,    -- Title, Subordinate       A B
+    trans VisibleString ,   -- Title, Translated        AJB
+    jta VisibleString ,     -- Title, Abbreviated        J
+    iso-jta VisibleString , -- specifically ISO jta      J
+    ml-jta VisibleString ,  -- specifically MEDLINE jta  J
+    coden VisibleString ,   -- a coden                   J
+    issn VisibleString ,    -- ISSN                      J
+    abr VisibleString ,     -- Title, Abbreviated         B
+    isbn VisibleString }    -- ISBN                       B
+
+Imprint ::= SEQUENCE {                  -- Imprint group
+    date Date ,                         -- date of publication
+    volume VisibleString OPTIONAL ,
+    issue VisibleString OPTIONAL ,
+    pages VisibleString OPTIONAL ,
+    section VisibleString OPTIONAL ,
+    pub Affil OPTIONAL,                     -- publisher, required for book
+    cprt Date OPTIONAL,                     -- copyright date, "    "   "
+    part-sup VisibleString OPTIONAL ,       -- part/sup of volume
+    language VisibleString DEFAULT "ENG" ,  -- put here for simplicity
+    prepub ENUMERATED {                     -- for prepublication citaions
+        submitted (1) ,                     -- submitted, not accepted
+        in-press (2) ,                      -- accepted, not published
+        other (255)  } OPTIONAL ,
+    part-supi VisibleString OPTIONAL ,      -- part/sup on issue
+    retract CitRetract OPTIONAL ,           -- retraction info
+    pubstatus PubStatus OPTIONAL ,          -- current status of this publication
+    history PubStatusDateSet OPTIONAL }     -- dates for this record
+
+CitRetract ::= SEQUENCE {
+    type ENUMERATED {                    -- retraction of an entry
+        retracted (1) ,               -- this citation retracted
+        notice (2) ,                  -- this citation is a retraction notice
+        in-error (3) ,                -- an erratum was published about this
+        erratum (4) } ,               -- this is a published erratum
+    exp VisibleString OPTIONAL }      -- citation and/or explanation
+
+Meeting ::= SEQUENCE {
+    number VisibleString ,
+    date Date ,
+    place Affil OPTIONAL }
+
+            
+END
+
+
+--$Revision$
+--**********************************************************************
+--
+--  MEDLINE data definitions
+--  James Ostell, 1990
+--
+--  enhanced in 1996 to support PubMed records as well by simply adding
+--    the PubMedId and making MedlineId optional
+--
+--**********************************************************************
+
+NCBI-Medline DEFINITIONS ::=
+BEGIN
+
+EXPORTS Medline-entry, Medline-si;
+
+IMPORTS Cit-art, PubMedId FROM NCBI-Biblio
+        Date FROM NCBI-General;
+
+                                -- a MEDLINE or PubMed entry
+Medline-entry ::= SEQUENCE {
+    uid INTEGER OPTIONAL ,      -- MEDLINE UID, sometimes not yet available if from PubMed
+    em Date ,                   -- Entry Month
+    cit Cit-art ,               -- article citation
+    abstract VisibleString OPTIONAL ,
+    mesh SET OF Medline-mesh OPTIONAL ,
+    substance SET OF Medline-rn OPTIONAL ,
+    xref SET OF Medline-si OPTIONAL ,
+    idnum SET OF VisibleString OPTIONAL ,  -- ID Number (grants, contracts)
+    gene SET OF VisibleString OPTIONAL ,
+    pmid PubMedId OPTIONAL ,               -- MEDLINE records may include the PubMedId
+    pub-type SET OF VisibleString OPTIONAL, -- may show publication types (review, etc)
+    mlfield SET OF Medline-field OPTIONAL ,  -- additional Medline field types
+    status INTEGER {
+	publisher (1) ,      -- record as supplied by publisher
+        premedline (2) ,     -- premedline record
+        medline (3) } DEFAULT medline }  -- regular medline record
+
+Medline-mesh ::= SEQUENCE {
+    mp BOOLEAN DEFAULT FALSE ,       -- TRUE if main point (*)
+    term VisibleString ,                   -- the MeSH term
+    qual SET OF Medline-qual OPTIONAL }    -- qualifiers
+
+Medline-qual ::= SEQUENCE {
+    mp BOOLEAN DEFAULT FALSE ,       -- TRUE if main point
+    subh VisibleString }             -- the subheading
+
+Medline-rn ::= SEQUENCE {       -- medline substance records
+    type ENUMERATED {           -- type of record
+        nameonly (0) ,
+        cas (1) ,               -- CAS number
+        ec (2) } ,              -- EC number
+    cit VisibleString OPTIONAL ,  -- CAS or EC number if present
+    name VisibleString }          -- name (always present)
+
+Medline-si ::= SEQUENCE {       -- medline cross reference records
+    type ENUMERATED {           -- type of xref
+        ddbj (1) ,              -- DNA Data Bank of Japan
+        carbbank (2) ,          -- Carbohydrate Structure Database
+        embl (3) ,              -- EMBL Data Library
+        hdb (4) ,               -- Hybridoma Data Bank
+        genbank (5) ,           -- GenBank
+        hgml (6) ,              -- Human Gene Map Library
+        mim (7) ,               -- Mendelian Inheritance in Man
+        msd (8) ,               -- Microbial Strains Database
+        pdb (9) ,               -- Protein Data Bank (Brookhaven)
+        pir (10) ,              -- Protein Identification Resource
+        prfseqdb (11) ,         -- Protein Research Foundation (Japan)
+        psd (12) ,              -- Protein Sequence Database (Japan)
+        swissprot (13) ,        -- SwissProt
+        gdb (14) } ,            -- Genome Data Base
+    cit VisibleString OPTIONAL }    -- the citation/accession number
+
+Medline-field ::= SEQUENCE {
+    type INTEGER {              -- Keyed type
+	other (0) ,             -- look in line code
+	comment (1) ,           -- comment line
+        erratum (2) } ,         -- retracted, corrected, etc
+    str VisibleString ,         -- the text
+    ids SEQUENCE OF DocRef OPTIONAL }  -- pointers relevant to this text
+
+DocRef ::= SEQUENCE {           -- reference to a document
+    type INTEGER {
+        medline (1) ,
+        pubmed (2) ,
+        ncbigi (3) } ,
+    uid INTEGER }
+
+END
+
+--$Revision$
+--**********************************************************************
+--
+--  MEDLARS data definitions
+--  Grigoriy Starchenko, 1997
+--
+--**********************************************************************
+
+NCBI-Medlars DEFINITIONS ::=
+BEGIN
+
+EXPORTS Medlars-entry, Medlars-record;
+
+IMPORTS PubMedId FROM NCBI-Biblio;
+
+Medlars-entry ::= SEQUENCE {     -- a MEDLARS entry
+    pmid PubMedId,               -- All entries in PubMed must have it
+    muid INTEGER OPTIONAL,       -- Medline(OCCS) id
+    recs SET OF Medlars-record   -- List of Medlars records
+}
+
+Medlars-record ::= SEQUENCE {
+    code INTEGER,                -- Unit record field type integer form
+    abbr VisibleString OPTIONAL, -- Unit record field type abbreviation form
+    data VisibleString           -- Unit record data
+}
+
+END
+--$Revision$
+--********************************************************************
+--
+--  Publication common set
+--  James Ostell, 1990
+--
+--  This is the base class definitions for Publications of all sorts
+--
+--  support for PubMedId added in 1996
+--********************************************************************
+
+NCBI-Pub DEFINITIONS ::=
+BEGIN
+
+EXPORTS Pub, Pub-set, Pub-equiv;
+
+IMPORTS Medline-entry FROM NCBI-Medline
+        Cit-art, Cit-jour, Cit-book, Cit-proc, Cit-pat, Id-pat, Cit-gen,
+        Cit-let, Cit-sub, PubMedId FROM NCBI-Biblio;
+
+Pub ::= CHOICE {
+    gen Cit-gen ,        -- general or generic unparsed
+    sub Cit-sub ,        -- submission
+    medline Medline-entry ,
+    muid INTEGER ,       -- medline uid
+    article Cit-art ,
+    journal Cit-jour ,
+    book Cit-book ,
+    proc Cit-proc ,      -- proceedings of a meeting
+    patent Cit-pat ,
+    pat-id Id-pat ,      -- identify a patent
+    man Cit-let ,        -- manuscript, thesis, or letter
+    equiv Pub-equiv,     -- to cite a variety of ways
+	pmid PubMedId }      -- PubMedId
+
+Pub-equiv ::= SET OF Pub   -- equivalent identifiers for same citation
+
+Pub-set ::= CHOICE {
+    pub SET OF Pub ,
+    medline SET OF Medline-entry ,
+    article SET OF Cit-art ,
+    journal SET OF Cit-jour ,
+    book SET OF Cit-book ,
+    proc SET OF Cit-proc ,      -- proceedings of a meeting
+    patent SET OF Cit-pat }
+
+END
+
+--$Revision$
+--**********************************************************************
+--
+--  PUBMED data definitions
+--
+--**********************************************************************
+
+NCBI-PubMed DEFINITIONS ::=
+BEGIN
+
+EXPORTS Pubmed-entry, Pubmed-url;
+
+IMPORTS PubMedId FROM NCBI-Biblio
+        Medline-entry FROM NCBI-Medline;
+
+Pubmed-entry ::= SEQUENCE {        -- a PubMed entry
+    -- PUBMED records must include the PubMedId
+    pmid PubMedId,
+
+    -- Medline entry information
+    medent Medline-entry OPTIONAL,
+
+    -- Publisher name
+    publisher VisibleString OPTIONAL,
+
+    -- List of URL to publisher cite
+    urls SET OF Pubmed-url OPTIONAL,
+
+    -- Publisher's article identifier
+    pubid VisibleString OPTIONAL
+}
+
+Pubmed-url ::= SEQUENCE {
+    location VisibleString OPTIONAL, -- Location code
+    url VisibleString                -- Selected URL for location
+}
+
+END
+--$Revision$
+--**********************************************************************
+--
+--  NCBI Sequence location and identifier elements
+--  by James Ostell, 1990
+--
+--  Version 3.0 - 1994
+--
+--**********************************************************************
+
+NCBI-Seqloc DEFINITIONS ::=
+BEGIN
+
+EXPORTS Seq-id, Seq-loc, Seq-interval, Packed-seqint, Seq-point, Packed-seqpnt,
+        Na-strand, Giimport-id;
+
+IMPORTS Object-id, Int-fuzz, Dbtag, Date FROM NCBI-General
+        Id-pat FROM NCBI-Biblio
+        Feat-id FROM NCBI-Seqfeat;
+
+--*** Sequence identifiers ********************************
+--*
+
+Seq-id ::= CHOICE {
+    local Object-id ,      -- local use
+    gibbsq INTEGER ,         -- Geninfo backbone seqid
+    gibbmt INTEGER ,         -- Geninfo backbone moltype
+    giim Giimport-id ,       -- Geninfo import id
+    genbank Textseq-id ,
+    embl Textseq-id ,
+    pir Textseq-id ,
+    swissprot Textseq-id ,
+    patent Patent-seq-id ,
+    other Textseq-id ,       -- catch all
+    general Dbtag ,          -- for other databases
+    gi INTEGER ,             -- GenInfo Integrated Database
+    ddbj Textseq-id ,        -- DDBJ
+    prf Textseq-id ,         -- PRF SEQDB
+    pdb PDB-seq-id }         -- PDB sequence
+
+Patent-seq-id ::= SEQUENCE {
+    seqid INTEGER ,         -- number of sequence in patent
+    cit Id-pat }           -- patent citation
+
+Textseq-id ::= SEQUENCE {
+    name VisibleString OPTIONAL ,
+    accession VisibleString OPTIONAL ,
+    release VisibleString OPTIONAL ,
+    version INTEGER OPTIONAL }
+
+Giimport-id ::= SEQUENCE {
+    id INTEGER ,               -- the id to use here
+    db VisibleString OPTIONAL ,  -- dbase used in
+    release VisibleString OPTIONAL }   -- the release
+
+PDB-seq-id ::= SEQUENCE {
+    mol PDB-mol-id ,          -- the molecule name
+    chain INTEGER DEFAULT 32 ,-- a single ASCII character, chain id
+    rel Date OPTIONAL }   -- release date, month and year
+
+PDB-mol-id ::= VisibleString  -- name of mol, 4 chars
+    
+--*** Sequence locations **********************************
+--*
+
+Seq-loc ::= CHOICE {
+    null NULL ,           -- not placed
+    empty Seq-id ,        -- to NULL one Seq-id in a collection
+    whole Seq-id ,        -- whole sequence
+    int Seq-interval ,    -- from to
+    packed-int Packed-seqint ,
+    pnt Seq-point ,
+    packed-pnt Packed-seqpnt ,
+    mix Seq-loc-mix ,
+    equiv Seq-loc-equiv ,  -- equivalent sets of locations
+    bond Seq-bond ,
+    feat Feat-id }         -- indirect, through a Seq-feat
+    
+
+Seq-interval ::= SEQUENCE {
+    from INTEGER ,
+    to INTEGER ,
+    strand Na-strand OPTIONAL ,
+    id Seq-id ,    -- WARNING: this used to be optional
+    fuzz-from Int-fuzz OPTIONAL ,
+    fuzz-to Int-fuzz OPTIONAL }
+
+Packed-seqint ::= SEQUENCE OF Seq-interval
+
+Seq-point ::= SEQUENCE {
+    point INTEGER ,
+    strand Na-strand OPTIONAL ,
+    id Seq-id ,     -- WARNING: this used to be optional
+    fuzz Int-fuzz OPTIONAL }
+
+Packed-seqpnt ::= SEQUENCE {
+    strand Na-strand OPTIONAL ,
+    id Seq-id ,
+    fuzz Int-fuzz OPTIONAL ,
+    points SEQUENCE OF INTEGER }
+
+Na-strand ::= ENUMERATED {          -- strand of nucleid acid
+    unknown (0) ,
+    plus (1) ,
+    minus (2) ,               
+    both (3) ,                -- in forward orientation
+    both-rev (4) ,            -- in reverse orientation
+    other (255) }
+
+Seq-bond ::= SEQUENCE {         -- bond between residues
+    a Seq-point ,           -- connection to a least one residue
+    b Seq-point OPTIONAL }  -- other end may not be available
+
+Seq-loc-mix ::= SEQUENCE OF Seq-loc   -- this will hold anything
+
+Seq-loc-equiv ::= SET OF Seq-loc      -- for a set of equivalent locations
+
+END
+    
+
+--$Revision$
+--**********************************************************************
+--
+--  NCBI Sequence Alignment elements
+--  by James Ostell, 1990
+--
+--**********************************************************************
+
+NCBI-Seqalign DEFINITIONS ::=
+BEGIN
+
+EXPORTS Seq-align, Score, Score-set, Seq-align-set;
+
+IMPORTS Seq-id, Seq-loc , Na-strand FROM NCBI-Seqloc
+        Object-id FROM NCBI-General;
+
+--*** Sequence Alignment ********************************
+--*
+
+Seq-align-set ::= SET OF Seq-align
+
+Seq-align ::= SEQUENCE {
+    type ENUMERATED {
+        not-set (0) ,
+        global (1) ,
+        diags (2) ,		-- unbroken, but not ordered, diagonals
+        partial (3) ,           -- mapping pieces together
+	disc (4) ,              -- discontinuous alignment
+        other (255) } ,
+    dim INTEGER OPTIONAL ,     -- dimensionality
+    score SET OF Score OPTIONAL ,   -- for whole alignment
+    segs CHOICE {                   -- alignment data
+        dendiag SEQUENCE OF Dense-diag ,
+        denseg Dense-seg ,
+        std SEQUENCE OF Std-seg ,
+	packed Packed-seg ,
+	disc Seq-align-set } ,
+    bounds SET OF Seq-loc OPTIONAL }  -- regions of sequence over which align
+                                      --  was computed
+
+Dense-diag ::= SEQUENCE {         -- for (multiway) diagonals
+    dim INTEGER DEFAULT 2 ,    -- dimensionality
+    ids SEQUENCE OF Seq-id ,   -- sequences in order
+    starts SEQUENCE OF INTEGER ,  -- start OFFSETS in ids order
+    len INTEGER ,                 -- len of aligned segments
+    strands SEQUENCE OF Na-strand OPTIONAL ,
+    scores SET OF Score OPTIONAL }
+
+    -- Dense-seg: the densist packing for sequence alignments only.
+    --            a start of -1 indicates a gap for that sequence of
+    --            length lens.
+    --
+    -- id=100  AAGGCCTTTTAGAGATGATGATGATGATGA
+    -- id=200  AAGGCCTTTTAG.......GATGATGATGA
+    -- id=300  ....CCTTTTAGAGATGATGAT....ATGA
+    --
+    -- dim = 3, numseg = 6, ids = { 100, 200, 300 }
+    -- starts = { 0,0,-1, 4,4,0, 12,-1,8, 19,12,15, 22,15,-1, 26,19,18 }
+    -- lens = { 4, 8, 7, 3, 4, 4 }
+    --
+
+Dense-seg ::= SEQUENCE {          -- for (multiway) global or partial alignments
+    dim INTEGER DEFAULT 2 ,       -- dimensionality
+    numseg INTEGER ,              -- number of segments here
+    ids SEQUENCE OF Seq-id ,      -- sequences in order
+    starts SEQUENCE OF INTEGER ,  -- start OFFSETS in ids order within segs
+    lens SEQUENCE OF INTEGER ,    -- lengths in ids order within segs
+    strands SEQUENCE OF Na-strand OPTIONAL ,
+    scores SEQUENCE OF Score OPTIONAL }  -- score for each seg
+
+Packed-seg ::= SEQUENCE {         -- for (multiway) global or partial alignments
+    dim INTEGER DEFAULT 2 ,       -- dimensionality
+    numseg INTEGER ,              -- number of segments here
+    ids SEQUENCE OF Seq-id ,      -- sequences in order
+    starts SEQUENCE OF INTEGER ,  -- start OFFSETS in ids order for whole alignment
+    present OCTET STRING ,        -- Boolean if each sequence present or absent in
+                                  --   each segment
+    lens SEQUENCE OF INTEGER ,    -- length of each segment
+    strands SEQUENCE OF Na-strand OPTIONAL ,
+    scores SEQUENCE OF Score OPTIONAL }  -- score for each segment
+
+Std-seg ::= SEQUENCE {
+    dim INTEGER DEFAULT 2 ,       -- dimensionality
+    ids SEQUENCE OF Seq-id OPTIONAL ,
+    loc SEQUENCE OF Seq-loc ,
+    scores SET OF Score OPTIONAL }
+
+-- use of Score is discouraged for external ASN.1 specifications
+Score ::= SEQUENCE {
+    id Object-id OPTIONAL ,
+    value CHOICE {
+        real REAL ,
+        int INTEGER  } }
+
+-- use of Score-set is encouraged for external ASN.1 specifications
+Score-set ::= SET OF Score
+
+END 
+
+--$Revision$
+--*********************************************************************
+--
+-- 1990 - J.Ostell
+-- Version 3.0 - June 1994
+--
+--*********************************************************************
+--*********************************************************************
+--
+--  EMBL specific data
+--  This block of specifications was developed by Reiner Fuchs of EMBL
+--  Updated by J.Ostell, 1994
+--
+--*********************************************************************
+
+EMBL-General DEFINITIONS ::=
+BEGIN
+
+EXPORTS EMBL-dbname, EMBL-xref, EMBL-block;
+
+IMPORTS Date, Object-id FROM NCBI-General;
+
+EMBL-dbname ::= CHOICE {
+    code ENUMERATED {
+        embl(0),
+        genbank(1),
+        ddbj(2),
+        geninfo(3),
+        medline(4),
+        swissprot(5),
+        pir(6),
+        pdb(7),
+        epd(8),
+        ecd(9),
+        tfd(10),
+        flybase(11),
+        prosite(12),
+        enzyme(13),
+        mim(14),
+        ecoseq(15),
+        hiv(16) ,
+        other (255) } ,
+    name    VisibleString }
+
+EMBL-xref ::= SEQUENCE {
+    dbname EMBL-dbname,
+    id SEQUENCE OF Object-id }
+
+EMBL-block ::= SEQUENCE {
+    class ENUMERATED {
+        not-set(0),
+        standard(1),
+        unannotated(2),
+        other(255) } DEFAULT standard,
+    div ENUMERATED {
+        fun(0),
+        inv(1),
+        mam(2),
+        org(3),
+        phg(4),
+        pln(5),
+        pri(6),
+        pro(7),
+        rod(8),
+        syn(9),
+        una(10),
+        vrl(11),
+        vrt(12),
+        pat(13),
+        est(14),
+        sts(15),
+        other (255) } OPTIONAL,
+    creation-date Date,
+    update-date Date,
+    extra-acc SEQUENCE OF VisibleString OPTIONAL,
+    keywords SEQUENCE OF VisibleString OPTIONAL,
+    xref SEQUENCE OF EMBL-xref OPTIONAL }
+
+END
+
+--*********************************************************************
+--
+--  SWISSPROT specific data
+--  This block of specifications was developed by Mark Cavanaugh of
+--      NCBI working with Amos Bairoch of SWISSPROT
+--
+--*********************************************************************
+
+SP-General DEFINITIONS ::=
+BEGIN
+
+EXPORTS SP-block;
+
+IMPORTS Date, Dbtag FROM NCBI-General
+        Seq-id FROM NCBI-Seqloc;
+
+SP-block ::= SEQUENCE {         -- SWISSPROT specific descriptions
+    class ENUMERATED {
+        not-set (0) ,
+        standard (1) ,      -- conforms to all SWISSPROT checks
+        prelim (2) ,        -- only seq and biblio checked
+        other (255) } ,
+    extra-acc SET OF VisibleString OPTIONAL ,  -- old SWISSPROT ids
+    imeth BOOLEAN DEFAULT FALSE ,  -- seq known to start with Met
+    plasnm SET OF VisibleString OPTIONAL,  -- plasmid names carrying gene
+    seqref SET OF Seq-id OPTIONAL,         -- xref to other sequences
+    dbref SET OF Dbtag OPTIONAL ,          -- xref to non-sequence dbases
+    keywords SET OF VisibleString OPTIONAL , -- keywords
+    created Date OPTIONAL ,         -- creation date
+    sequpd Date OPTIONAL ,          -- sequence update
+    annotupd Date OPTIONAL }        -- annotation update
+
+END
+
+--*********************************************************************
+--
+--  PIR specific data
+--  This block of specifications was developed by Jim Ostell of
+--      NCBI
+--
+--*********************************************************************
+
+PIR-General DEFINITIONS ::=
+BEGIN
+
+EXPORTS PIR-block;
+
+IMPORTS Seq-id FROM NCBI-Seqloc;
+
+PIR-block ::= SEQUENCE {          -- PIR specific descriptions
+    had-punct BOOLEAN OPTIONAL ,      -- had punctuation in sequence ?
+    host VisibleString OPTIONAL ,
+    source VisibleString OPTIONAL ,     -- source line
+    summary VisibleString OPTIONAL ,
+    genetic VisibleString OPTIONAL ,
+    includes VisibleString OPTIONAL ,
+    placement VisibleString OPTIONAL ,
+    superfamily VisibleString OPTIONAL ,
+    keywords SEQUENCE OF VisibleString OPTIONAL ,
+    cross-reference VisibleString OPTIONAL ,
+    date VisibleString OPTIONAL ,
+    seq-raw VisibleString OPTIONAL ,  -- seq with punctuation
+    seqref SET OF Seq-id OPTIONAL }         -- xref to other sequences
+
+END
+
+--*********************************************************************
+--
+--  GenBank specific data
+--  This block of specifications was developed by Jim Ostell of
+--      NCBI
+--
+--*********************************************************************
+
+GenBank-General DEFINITIONS ::=
+BEGIN
+
+EXPORTS GB-block;
+
+IMPORTS Date FROM NCBI-General;
+
+GB-block ::= SEQUENCE {          -- GenBank specific descriptions
+    extra-accessions SEQUENCE OF VisibleString OPTIONAL ,
+    source VisibleString OPTIONAL ,     -- source line
+    keywords SEQUENCE OF VisibleString OPTIONAL ,
+    origin VisibleString OPTIONAL,
+    date VisibleString OPTIONAL ,       -- OBSOLETE old form Entry Date
+    entry-date Date OPTIONAL ,          -- replaces date
+    div VisibleString OPTIONAL ,        -- GenBank division
+    taxonomy VisibleString OPTIONAL }   -- continuation line of organism
+
+END
+
+--**********************************************************************
+-- PRF specific definition
+--    PRF is a protein sequence database crated and maintained by
+--    Protein Research Foundation, Minoo-city, Osaka, Japan.
+--
+--    Written by A.Ogiwara, Inst.Chem.Res. (Dr.Kanehisa's Lab),
+--            Kyoto Univ., Japan
+--
+--**********************************************************************
+
+PRF-General DEFINITIONS ::=
+BEGIN
+
+EXPORTS PRF-block;
+
+PRF-block ::= SEQUENCE {
+      extra-src       PRF-ExtraSrc OPTIONAL,
+      keywords        SEQUENCE OF VisibleString OPTIONAL
+}
+
+PRF-ExtraSrc ::= SEQUENCE {
+      host    VisibleString OPTIONAL,
+      part    VisibleString OPTIONAL,
+      state   VisibleString OPTIONAL,
+      strain  VisibleString OPTIONAL,
+      taxon   VisibleString OPTIONAL
+}
+
+END
+
+--*********************************************************************
+--
+--  PDB specific data
+--  This block of specifications was developed by Jim Ostell and
+--      Steve Bryant of NCBI
+--
+--*********************************************************************
+
+PDB-General DEFINITIONS ::=
+BEGIN
+
+EXPORTS PDB-block;
+
+IMPORTS Date FROM NCBI-General;
+
+PDB-block ::= SEQUENCE {          -- PDB specific descriptions
+    deposition Date ,         -- deposition date  month,year
+    class VisibleString ,
+    compound SEQUENCE OF VisibleString ,
+    source SEQUENCE OF VisibleString ,
+    exp-method VisibleString OPTIONAL ,  -- present if NOT X-ray diffraction
+    replace PDB-replace OPTIONAL } -- replacement history
+
+PDB-replace ::= SEQUENCE {
+    date Date ,
+    ids SEQUENCE OF VisibleString }   -- entry ids replace by this one
+
+END
+
+--$Revision$
+--**********************************************************************
+--
+--  NCBI Sequence Feature elements
+--  by James Ostell, 1990
+--  Version 3.0 - June 1994
+--
+--**********************************************************************
+
+NCBI-Seqfeat DEFINITIONS ::=
+BEGIN
+
+EXPORTS Seq-feat, Feat-id, Genetic-code;
+
+IMPORTS Gene-ref FROM NCBI-Gene
+        Prot-ref FROM NCBI-Protein
+        Org-ref FROM NCBI-Organism
+        BioSource FROM NCBI-BioSource
+        RNA-ref FROM NCBI-RNA
+        Seq-loc, Giimport-id FROM NCBI-Seqloc
+        Pubdesc, Numbering, Heterogen FROM NCBI-Sequence
+        Rsite-ref FROM NCBI-Rsite
+        Txinit FROM NCBI-TxInit
+        Pub-set FROM NCBI-Pub
+        Object-id, Dbtag, User-object FROM NCBI-General;
+
+--*** Feature identifiers ********************************
+--*
+
+Feat-id ::= CHOICE {
+    gibb INTEGER ,            -- geninfo backbone
+    giim Giimport-id ,        -- geninfo import
+    local Object-id ,         -- for local software use
+    general Dbtag }           -- for use by various databases
+
+--*** Seq-feat *******************************************
+--*  sequence feature generalization
+
+Seq-feat ::= SEQUENCE {
+    id Feat-id OPTIONAL ,
+    data SeqFeatData ,           -- the specific data
+    partial BOOLEAN OPTIONAL ,    -- incomplete in some way?
+    except BOOLEAN OPTIONAL ,     -- something funny about this?
+    comment VisibleString OPTIONAL ,
+    product Seq-loc OPTIONAL ,    -- product of process
+    location Seq-loc ,            -- feature made from
+    qual SEQUENCE OF Gb-qual OPTIONAL ,  -- qualifiers
+    title VisibleString OPTIONAL ,   -- for user defined label
+    ext User-object OPTIONAL ,    -- user defined structure extension
+    cit Pub-set OPTIONAL ,        -- citations for this feature
+    exp-ev ENUMERATED {           -- evidence for existence of feature
+        experimental (1) ,        -- any reasonable experimental check
+        not-experimental (2) } OPTIONAL , -- similarity, pattern, etc
+    xref SET OF SeqFeatXref OPTIONAL ,   -- cite other relevant features
+	dbxref SET OF Dbtag OPTIONAL ,  -- support for xref to other databases
+    pseudo BOOLEAN OPTIONAL ,     -- annotated on pseudogene?
+    except-text VisibleString OPTIONAL } -- explain if except=TRUE
+
+SeqFeatData ::= CHOICE {
+    gene Gene-ref ,
+    org Org-ref ,
+    cdregion Cdregion ,
+    prot Prot-ref ,
+    rna RNA-ref ,
+    pub Pubdesc ,              -- publication applies to this seq 
+    seq Seq-loc ,              -- to annotate origin from another seq
+    imp Imp-feat ,
+    region VisibleString,      -- named region (globin locus)
+    comment NULL ,             -- just a comment
+    bond ENUMERATED {
+        disulfide (1) ,
+        thiolester (2) ,
+        xlink (3) ,
+        thioether (4) ,
+        other (255) } ,
+    site ENUMERATED {
+        active (1) ,
+        binding (2) ,
+        cleavage (3) ,
+        inhibit (4) ,
+        modified (5),
+        glycosylation (6) ,
+        myristoylation (7) ,
+        mutagenized (8) ,
+        metal-binding (9) ,
+        phosphorylation (10) ,
+        acetylation (11) ,
+        amidation (12) ,
+        methylation (13) ,
+        hydroxylation (14) ,
+        sulfatation (15) ,
+        oxidative-deamination (16) ,
+        pyrrolidone-carboxylic-acid (17) ,
+        gamma-carboxyglutamic-acid (18) ,
+        blocked (19) ,
+        lipid-binding (20) ,
+        np-binding (21) ,
+        dna-binding (22) ,
+        signal-peptide (23) ,
+        transit-peptide (24) ,
+        transmembrane-region (25) ,
+        other (255) } ,
+    rsite Rsite-ref ,       -- restriction site  (for maps really)
+    user User-object ,      -- user defined structure
+    txinit Txinit ,         -- transcription initiation
+    num Numbering ,         -- a numbering system
+    psec-str ENUMERATED {   -- protein secondary structure
+        helix (1) ,         -- any helix
+        sheet (2) ,         -- beta sheet
+        turn  (3) } ,       -- beta or gamma turn
+    non-std-residue VisibleString ,  -- non-standard residue here in seq
+    het Heterogen ,         -- cofactor, prosthetic grp, etc, bound to seq
+    biosrc BioSource }
+
+SeqFeatXref ::= SEQUENCE {		 -- both optional because can have one or both
+    id Feat-id OPTIONAL ,        -- the feature copied
+    data SeqFeatData OPTIONAL }  -- the specific data
+    
+--*** CdRegion ***********************************************
+--*
+--*  Instructions to translate from a nucleic acid to a peptide
+--*    conflict means it's supposed to translate but doesn't
+--*
+
+
+Cdregion ::= SEQUENCE {
+    orf BOOLEAN OPTIONAL ,             -- just an ORF ?
+    frame ENUMERATED {
+        not-set (0) ,                  -- not set, code uses one
+        one (1) ,
+        two (2) ,
+        three (3) } DEFAULT not-set ,      -- reading frame
+    conflict BOOLEAN OPTIONAL ,        -- conflict
+    gaps INTEGER OPTIONAL ,            -- number of gaps on conflict/except
+    mismatch INTEGER OPTIONAL ,        -- number of mismatches on above
+    code Genetic-code OPTIONAL ,       -- genetic code used
+    code-break SEQUENCE OF Code-break OPTIONAL ,   -- individual exceptions
+    stops INTEGER OPTIONAL }           -- number of stop codons on above
+
+                    -- each code is 64 cells long, in the order where
+                    -- T=0,C=1,A=2,G=3, TTT=0, TTC=1, TCA=4, etc
+                    -- NOTE: this order does NOT corresspond to a Seq-data
+                    -- encoding.  It is "natural" to codon usage instead.
+                    -- the value in each cell is the AA coded for
+                    -- start= AA coded only if first in peptide
+                    --   in start array, if codon is not a legitimate start
+                    --   codon, that cell will have the "gap" symbol for
+                    --   that alphabet.  Otherwise it will have the AA
+                    --   encoded when that codon is used at the start.
+
+Genetic-code ::= SET OF CHOICE {
+    name VisibleString ,               -- name of a code
+    id INTEGER ,                       -- id in dbase
+    ncbieaa VisibleString ,            -- indexed to IUPAC extended
+    ncbi8aa OCTET STRING ,             -- indexed to NCBI8aa
+    ncbistdaa OCTET STRING ,           -- indexed to NCBIstdaa
+    sncbieaa VisibleString ,            -- start, indexed to IUPAC extended
+    sncbi8aa OCTET STRING ,             -- start, indexed to NCBI8aa
+    sncbistdaa OCTET STRING }           -- start, indexed to NCBIstdaa
+
+Code-break ::= SEQUENCE {              -- specific codon exceptions
+    loc Seq-loc ,                      -- location of exception
+    aa CHOICE {                        -- the amino acid
+        ncbieaa INTEGER ,              -- ASCII value of NCBIeaa code
+        ncbi8aa INTEGER ,              -- NCBI8aa code
+        ncbistdaa INTEGER } }           -- NCBIstdaa code
+
+Genetic-code-table ::= SET OF Genetic-code     -- table of genetic codes
+
+--*** Import ***********************************************
+--*
+--*  Features imported from other databases
+--*
+
+Imp-feat ::= SEQUENCE {
+    key VisibleString ,
+    loc VisibleString OPTIONAL ,         -- original location string
+    descr VisibleString OPTIONAL }       -- text description
+
+Gb-qual ::= SEQUENCE {
+    qual VisibleString ,
+    val VisibleString }
+
+END 
+
+--**********************************************************************
+--
+--  NCBI Restriction Sites
+--  by James Ostell, 1990
+--  version 0.8
+--
+--**********************************************************************
+
+NCBI-Rsite DEFINITIONS ::=
+BEGIN
+
+EXPORTS Rsite-ref;
+
+IMPORTS Dbtag FROM NCBI-General;
+
+Rsite-ref ::= CHOICE {
+    str VisibleString ,     -- may be unparsable
+    db  Dbtag }             -- pointer to a restriction site database
+
+END
+
+--**********************************************************************
+--
+--  NCBI RNAs
+--  by James Ostell, 1990
+--  version 0.8
+--
+--**********************************************************************
+
+NCBI-RNA DEFINITIONS ::=
+BEGIN
+
+EXPORTS RNA-ref, Trna-ext;
+
+IMPORTS Seq-loc FROM NCBI-Seqloc;
+
+--*** rnas ***********************************************
+--*
+--*  various rnas
+--*
+                         -- minimal RNA sequence
+RNA-ref ::= SEQUENCE {
+    type ENUMERATED {            -- type of RNA feature
+        unknown (0) ,
+        premsg (1) ,
+        mRNA (2) ,
+        tRNA (3) ,
+        rRNA (4) ,
+        snRNA (5) ,
+        scRNA (6) ,
+        other (255) } ,
+    pseudo BOOLEAN OPTIONAL ,  
+    ext CHOICE {
+        name VisibleString ,        -- for naming "other" type
+        tRNA Trna-ext } OPTIONAL }  -- for tRNAs
+
+Trna-ext ::= SEQUENCE {                -- tRNA feature extensions
+    aa CHOICE {                         -- aa this carries
+        iupacaa INTEGER ,
+        ncbieaa INTEGER ,
+        ncbi8aa INTEGER ,
+        ncbistdaa INTEGER } OPTIONAL ,
+    codon SET OF INTEGER OPTIONAL ,     -- codon(s) as in Genetic-code
+	anticodon Seq-loc OPTIONAL }        -- location of anticodon
+
+END
+
+--**********************************************************************
+--
+--  NCBI Genes
+--  by James Ostell, 1990
+--  version 0.8
+--
+--**********************************************************************
+
+NCBI-Gene DEFINITIONS ::=
+BEGIN
+
+EXPORTS Gene-ref;
+
+IMPORTS Dbtag FROM NCBI-General;
+
+--*** Gene ***********************************************
+--*
+--*  reference to a gene
+--*
+
+Gene-ref ::= SEQUENCE {
+    locus VisibleString OPTIONAL ,     -- Official gene symbol
+    allele VisibleString OPTIONAL ,    -- Official allele designation
+    desc VisibleString OPTIONAL ,      -- descriptive name
+    maploc VisibleString OPTIONAL ,    -- descriptive map location
+    pseudo BOOLEAN DEFAULT FALSE ,          -- pseudogene
+    db SET OF Dbtag OPTIONAL ,      -- ids in other dbases
+    syn SET OF VisibleString OPTIONAL }      -- synonyms for locus
+
+END
+
+
+--**********************************************************************
+--
+--  NCBI Organism
+--  by James Ostell, 1994
+--  version 3.0
+--
+--**********************************************************************
+
+NCBI-Organism DEFINITIONS ::=
+BEGIN
+
+EXPORTS Org-ref;
+
+IMPORTS Dbtag FROM NCBI-General;
+
+--*** Org-ref ***********************************************
+--*
+--*  Reference to an organism
+--*     defines only the organism.. lower levels of detail for biological
+--*     molecules are provided by the Source object
+--*
+
+Org-ref ::= SEQUENCE {
+    taxname VisibleString OPTIONAL ,   -- preferred formal name
+    common VisibleString OPTIONAL ,    -- common name
+    mod SET OF VisibleString OPTIONAL , -- unstructured modifiers
+    db SET OF Dbtag OPTIONAL ,         -- ids in taxonomic or culture dbases
+    syn SET OF VisibleString OPTIONAL ,  -- synonyms for taxname or common
+    orgname OrgName OPTIONAL }
+    
+
+OrgName ::= SEQUENCE {
+    name CHOICE {
+        binomial BinomialOrgName ,         -- genus/species type name
+        virus VisibleString ,              -- virus names are different
+        hybrid MultiOrgName ,              -- hybrid between organisms
+        namedhybrid BinomialOrgName ,      -- some hybrids have genus x species name
+        partial PartialOrgName } OPTIONAL , -- when genus not known
+    attrib VisibleString OPTIONAL ,        -- attribution of name
+    mod SEQUENCE OF OrgMod OPTIONAL ,
+    lineage VisibleString OPTIONAL ,       -- lineage with semicolon separators
+    gcode INTEGER OPTIONAL ,               -- genetic code (see CdRegion)
+    mgcode INTEGER OPTIONAL ,              -- mitochondrial genetic code
+	div VisibleString OPTIONAL }           -- GenBank division code
+    
+
+OrgMod ::= SEQUENCE {
+    subtype INTEGER {
+        strain (2) ,
+        substrain (3) ,
+        type (4) ,
+        subtype (5) ,
+        variety (6) ,
+        serotype (7) ,
+        serogroup (8) ,
+        serovar (9) ,
+        cultivar (10) ,
+        pathovar (11) ,
+        chemovar (12) ,
+        biovar (13) ,
+        biotype (14) ,
+        group (15) ,
+        subgroup (16) ,
+        isolate (17) ,
+        common (18) ,
+        acronym (19) ,
+        dosage (20) ,		-- chromosome dosage of hybrid
+        nat-host (21) ,		-- natural host of this specimen
+	sub-species (22) ,
+        specimen-voucher (23) ,
+	authority (24) ,
+	forma (25) ,
+	forma-specialis (26) ,
+	ecotype (27) ,
+	synonym (28) ,
+	anamorph (29) ,
+	teleomorph (30) ,
+	breed (31) ,
+	old-lineage (253) ,
+        old-name (254) ,
+        other (255) } ,         -- ASN5: old-name (254) will be added to next spec
+    subname VisibleString ,
+    attrib VisibleString OPTIONAL }  -- attribution/source of name
+
+BinomialOrgName ::= SEQUENCE {
+    genus VisibleString ,               -- required
+    species VisibleString OPTIONAL ,    -- species required if subspecies used
+    subspecies VisibleString OPTIONAL }
+
+MultiOrgName ::= SEQUENCE OF OrgName   -- the first will be used to assign division
+
+PartialOrgName ::= SEQUENCE OF TaxElement  -- when we don't know the genus
+
+TaxElement ::= SEQUENCE {
+    fixed-level INTEGER {
+       other (0) ,                     -- level must be set in string
+       family (1) ,
+       order (2) ,
+       class (3) } ,
+    level VisibleString OPTIONAL ,
+    name VisibleString }
+
+END
+
+
+--**********************************************************************
+--
+--  NCBI BioSource
+--  by James Ostell, 1994
+--  version 3.0
+--
+--**********************************************************************
+
+NCBI-BioSource DEFINITIONS ::=
+BEGIN
+
+EXPORTS BioSource;
+
+IMPORTS Org-ref FROM NCBI-Organism;
+
+--********************************************************************
+--
+-- BioSource gives the source of the biological material
+--   for sequences
+--
+--********************************************************************
+
+BioSource ::= SEQUENCE {
+    genome INTEGER {		 -- biological context
+        unknown (0) ,
+        genomic (1) ,
+        chloroplast (2) ,
+        chromoplast (3) ,
+        kinetoplast (4) ,
+        mitochondrion (5) ,
+        plastid (6) ,
+        macronuclear (7) ,
+        extrachrom (8) ,
+        plasmid (9) ,
+        transposon (10) ,
+        insertion-seq (11) ,
+	cyanelle (12) ,
+	proviral (13) ,
+	virion (14) ,
+	nucleomorph (15) ,
+	apicoplast (16) ,
+	leucoplast (17) ,
+	proplastid (18) ,
+	endogenous-virus (19)
+	 } DEFAULT unknown ,
+                                       -- 4 more genome values coming
+                                       -- nucleomorph (15)
+                                       -- apicoplast (16)
+                                       -- leucoplast (17)
+                                       -- proplastid (18)
+    origin INTEGER {
+      unknown (0) ,
+      natural (1) ,                    -- normal biological entity
+      natmut (2) ,                     -- naturally occurring mutant
+      mut (3) ,                        -- artificially mutagenized
+      artificial (4) ,                 -- artificially engineered
+      synthetic (5) ,                  -- purely synthetic
+      other (255) } DEFAULT unknown , 
+    org Org-ref ,
+    subtype SEQUENCE OF SubSource OPTIONAL ,
+    is-focus NULL OPTIONAL }   -- to distinguish biological focus
+
+SubSource ::= SEQUENCE {
+    subtype INTEGER {
+        chromosome (1) ,
+        map (2) ,
+        clone (3) ,
+        subclone (4) ,
+        haplotype (5) ,
+        genotype (6) ,
+        sex (7) ,
+        cell-line (8) ,
+        cell-type (9) ,
+        tissue-type (10) ,
+        clone-lib (11) ,
+        dev-stage (12) ,
+        frequency (13) ,
+        germline (14) ,
+        rearranged (15) ,
+        lab-host (16) ,
+        pop-variant (17) ,
+        tissue-lib (18) ,
+        plasmid-name (19) ,
+        transposon-name (20) ,
+        insertion-seq-name (21) ,
+        plastid-name (22) ,
+	country (23) ,
+	segment (24) ,
+	endogenous-virus-name (25) ,
+        other (255) } ,
+    name VisibleString ,
+    attrib VisibleString OPTIONAL }    -- attribution/source of this name
+        
+END
+
+--**********************************************************************
+--
+--  NCBI Protein
+--  by James Ostell, 1990
+--  version 0.8
+--
+--**********************************************************************
+
+NCBI-Protein DEFINITIONS ::=
+BEGIN
+
+EXPORTS Prot-ref;
+
+IMPORTS Dbtag FROM NCBI-General;
+
+--*** Prot-ref ***********************************************
+--*
+--*  Reference to a protein name
+--*
+
+Prot-ref ::= SEQUENCE {
+    name SET OF VisibleString OPTIONAL ,      -- protein name
+    desc VisibleString OPTIONAL ,      -- description (instead of name)
+    ec SET OF VisibleString OPTIONAL , -- E.C. number(s)
+    activity SET OF VisibleString OPTIONAL ,  -- activities
+    db SET OF Dbtag OPTIONAL ,         -- ids in other dbases
+    processed ENUMERATED {             -- processing status
+       not-set (0) ,
+       preprotein (1) ,
+       mature (2) ,
+	   signal-peptide (3) ,
+	   transit-peptide (4) } DEFAULT not-set }
+
+
+
+END 
+--********************************************************************
+--
+--  Transcription Initiation Site Feature Data Block
+--  James Ostell, 1991
+--  Philip Bucher, David Ghosh
+--  version 1.1
+--
+--  
+--
+--********************************************************************
+
+NCBI-TxInit DEFINITIONS ::=
+BEGIN
+
+EXPORTS Txinit;
+
+IMPORTS Gene-ref FROM NCBI-Gene
+        Prot-ref FROM NCBI-Protein
+        Org-ref FROM NCBI-Organism;
+
+Txinit ::= SEQUENCE {
+    name VisibleString ,    -- descriptive name of initiation site
+    syn SEQUENCE OF VisibleString OPTIONAL ,   -- synonyms
+    gene SEQUENCE OF Gene-ref OPTIONAL ,  -- gene(s) transcribed
+    protein SEQUENCE OF Prot-ref OPTIONAL ,   -- protein(s) produced
+    rna SEQUENCE OF VisibleString OPTIONAL ,  -- rna(s) produced
+    expression VisibleString OPTIONAL ,  -- tissue/time of expression
+    txsystem ENUMERATED {       -- transcription apparatus used at this site
+        unknown (0) ,
+        pol1 (1) ,      -- eukaryotic Pol I
+        pol2 (2) ,      -- eukaryotic Pol II
+        pol3 (3) ,      -- eukaryotic Pol III
+        bacterial (4) ,
+        viral (5) ,
+        rna (6) ,       -- RNA replicase
+        organelle (7) ,
+        other (255) } ,
+    txdescr VisibleString OPTIONAL ,   -- modifiers on txsystem
+    txorg Org-ref OPTIONAL ,  -- organism supplying transcription apparatus
+    mapping-precise BOOLEAN DEFAULT FALSE ,  -- mapping precise or approx
+    location-accurate BOOLEAN DEFAULT FALSE , -- does Seq-loc reflect mapping
+    inittype ENUMERATED {
+        unknown (0) ,
+        single (1) ,
+        multiple (2) ,
+        region (3) } OPTIONAL ,
+    evidence SET OF Tx-evidence OPTIONAL }
+
+Tx-evidence ::= SEQUENCE {
+    exp-code ENUMERATED {
+        unknown (0) ,    
+        rna-seq (1) ,   -- direct RNA sequencing
+        rna-size (2) ,  -- RNA length measurement
+        np-map (3) ,    -- nuclease protection mapping with homologous sequence ladder
+        np-size (4) ,   -- nuclease protected fragment length measurement
+        pe-seq (5) ,    -- dideoxy RNA sequencing 
+        cDNA-seq (6) ,  -- full-length cDNA sequencing
+        pe-map (7) ,    -- primer extension mapping with homologous sequence ladder    
+        pe-size (8) ,   -- primer extension product length measurement
+        pseudo-seq (9) , -- full-length processed pseudogene sequencing
+        rev-pe-map (10) ,   -- see NOTE (1) below
+        other (255) } ,
+    expression-system ENUMERATED {
+        unknown (0) ,
+        physiological (1) ,
+        in-vitro (2) ,
+        oocyte (3) ,
+        transfection (4) ,
+        transgenic (5) ,
+        other (255) } DEFAULT physiological ,
+    low-prec-data BOOLEAN DEFAULT FALSE ,
+    from-homolog BOOLEAN DEFAULT FALSE }     -- experiment actually done on
+                                             --  close homolog
+
+    -- NOTE (1) length measurement of a reverse direction primer-extension
+    --          product (blocked  by  RNA  5'end)  by  comparison with
+    --          homologous sequence ladder (J. Mol. Biol. 199, 587)
+
+    
+END
+
+--$Revision$
+--**********************************************************************
+--
+--  NCBI Sequence Analysis Results (other than alignments)
+--  by James Ostell, 1990
+--
+--**********************************************************************
+
+NCBI-Seqres DEFINITIONS ::=
+BEGIN
+
+EXPORTS Seq-graph;
+
+IMPORTS Seq-loc FROM NCBI-Seqloc;
+
+--*** Sequence Graph ********************************
+--*
+--*   for values mapped by residue or range to sequence
+--*
+
+Seq-graph ::= SEQUENCE {
+    title VisibleString OPTIONAL ,
+    comment VisibleString OPTIONAL ,
+    loc Seq-loc ,                       -- region this applies to
+    title-x VisibleString OPTIONAL ,    -- title for x-axis
+    title-y VisibleString OPTIONAL ,
+    comp INTEGER OPTIONAL ,             -- compression (residues/value)
+    a REAL OPTIONAL ,                   -- for scaling values
+    b REAL OPTIONAL ,                   -- display = (a x value) + b
+    numval INTEGER ,                    -- number of values in graph
+    graph CHOICE {
+        real Real-graph ,
+        int Int-graph ,
+        byte Byte-graph } }
+
+Real-graph ::= SEQUENCE {
+    max REAL ,                          -- top of graph
+    min REAL ,                          -- bottom of graph
+    axis REAL ,                         -- value to draw axis on
+    values SEQUENCE OF REAL }
+
+Int-graph ::= SEQUENCE {
+    max INTEGER ,
+    min INTEGER ,
+    axis INTEGER ,
+    values SEQUENCE OF INTEGER } 
+
+Byte-graph ::= SEQUENCE {              -- integer from 0-255
+    max INTEGER ,
+    min INTEGER ,
+    axis INTEGER ,
+    values OCTET STRING }
+
+END
+
+--$Revision$
+--**********************************************************************
+--
+--  NCBI Sequence Collections
+--  by James Ostell, 1990
+--
+--  Version 3.0 - 1994
+--
+--**********************************************************************
+
+NCBI-Seqset DEFINITIONS ::=
+BEGIN
+
+EXPORTS Bioseq-set, Seq-entry;
+
+IMPORTS Bioseq, Seq-annot, Seq-descr FROM NCBI-Sequence
+        Object-id, Dbtag, Date FROM NCBI-General;
+
+--*** Sequence Collections ********************************
+--*
+
+Bioseq-set ::= SEQUENCE {      -- just a collection
+    id Object-id OPTIONAL ,
+    coll Dbtag OPTIONAL ,          -- to identify a collection
+    level INTEGER OPTIONAL ,       -- nesting level
+    class ENUMERATED {
+        not-set (0) ,
+        nuc-prot (1) ,              -- nuc acid and coded proteins
+        segset (2) ,                -- segmented sequence + parts
+        conset (3) ,                -- constructed sequence + parts
+        parts (4) ,                 -- parts for 2 or 3
+        gibb (5) ,                  -- geninfo backbone
+        gi (6) ,                    -- geninfo
+        genbank (7) ,               -- converted genbank
+        pir (8) ,                   -- converted pir
+        pub-set (9) ,               -- all the seqs from a single publication
+        equiv (10) ,                -- a set of equivalent maps or seqs
+        swissprot (11) ,            -- converted SWISSPROT
+        pdb-entry (12) ,            -- a complete PDB entry
+        mut-set (13) ,              -- set of mutations
+        pop-set (14) ,              -- population study
+        phy-set (15) ,              -- phylogenetic study
+	eco-set (16) ,              -- ecological sample study
+        gen-prod-set (17) ,         -- genomic products, chrom+mRNa+protein  
+        other (255) } DEFAULT not-set ,
+    release VisibleString OPTIONAL ,
+    date Date OPTIONAL ,
+    descr Seq-descr OPTIONAL ,
+    seq-set SEQUENCE OF Seq-entry ,
+    annot SET OF Seq-annot OPTIONAL }
+
+Seq-entry ::= CHOICE {
+        seq Bioseq ,
+        set Bioseq-set } 
+
+END
+
+--$Revision$
+--**********************************************************************
+--
+--  NCBI Sequence elements
+--  by James Ostell, 1990
+--  Version 3.0 - June 1994
+--
+--**********************************************************************
+
+NCBI-Sequence DEFINITIONS ::=
+BEGIN
+
+EXPORTS Bioseq, Seq-annot, Pubdesc, Seq-descr, Seqdesc, Numbering, Heterogen,
+        Seq-hist, GIBB-mol;
+
+IMPORTS Date, Int-fuzz, Dbtag, Object-id, User-object FROM NCBI-General
+        Seq-align FROM NCBI-Seqalign
+        Seq-feat FROM NCBI-Seqfeat
+        Seq-graph FROM NCBI-Seqres
+        Pub-equiv FROM NCBI-Pub
+        Org-ref FROM NCBI-Organism
+        BioSource FROM NCBI-BioSource
+        Seq-id, Seq-loc FROM NCBI-Seqloc
+        GB-block FROM GenBank-General
+        PIR-block FROM PIR-General
+        EMBL-block FROM EMBL-General
+        SP-block FROM SP-General
+        PRF-block FROM PRF-General
+        PDB-block FROM PDB-General;
+
+--*** Sequence ********************************
+--*
+
+Bioseq ::= SEQUENCE {
+    id SET OF Seq-id ,            -- equivalent identifiers
+    descr Seq-descr OPTIONAL , -- descriptors
+    inst Seq-inst ,            -- the sequence data
+    annot SET OF Seq-annot OPTIONAL }
+
+--*** Descriptors *****************************
+--*
+
+Seq-descr ::= SET OF Seqdesc
+
+Seqdesc ::= CHOICE {
+    mol-type GIBB-mol ,          -- type of molecule
+    modif SET OF GIBB-mod ,             -- modifiers
+    method GIBB-method ,         -- sequencing method
+    name VisibleString ,         -- a name for this sequence
+    title VisibleString ,        -- a title for this sequence
+    org Org-ref ,                -- if all from one organism
+    comment VisibleString ,      -- a more extensive comment
+    num Numbering ,              -- a numbering system
+    maploc Dbtag ,               -- map location of this sequence
+    pir PIR-block ,              -- PIR specific info
+    genbank GB-block ,           -- GenBank specific info
+    pub Pubdesc ,                -- a reference to the publication
+    region VisibleString ,       -- overall region (globin locus)
+    user User-object ,           -- user defined object
+    sp SP-block ,                -- SWISSPROT specific info
+    dbxref Dbtag ,               -- xref to other databases
+    embl EMBL-block ,            -- EMBL specific information
+    create-date Date ,           -- date entry first created/released
+    update-date Date ,           -- date of last update
+    prf PRF-block ,              -- PRF specific information
+    pdb PDB-block ,              -- PDB specific information
+    het Heterogen ,              -- cofactor, etc associated but not bound
+    source BioSource ,           -- source of materials, includes Org-ref
+    molinfo MolInfo }            -- info on the molecule and techniques
+
+--******* NOTE:
+--*       mol-type, modif, method, and org are consolidated and expanded
+--*       in Org-ref, BioSource, and MolInfo in this specification. They
+--*       will be removed in later specifications. Do not use them in the
+--*       the future. Instead expect the new structures.
+--*
+--***************************
+
+--********************************************************************
+--
+-- MolInfo gives information on the
+-- classification of the type and quality of the sequence
+--
+-- WARNING: this will replace GIBB-mol, GIBB-mod, GIBB-method
+--
+--********************************************************************
+
+MolInfo ::= SEQUENCE {
+    biomol INTEGER {
+        unknown (0) ,
+        genomic (1) ,
+        pre-RNA (2) ,              -- precursor RNA of any sort really 
+        mRNA (3) ,
+        rRNA (4) ,
+        tRNA (5) ,
+        snRNA (6) ,
+        scRNA (7) ,
+        peptide (8) ,
+        other-genetic (9) ,      -- other genetic material
+        genomic-mRNA (10) ,      -- reported a mix of genomic and cdna sequence
+	cRNA (11) ,              -- viral RNA genome copy intermediate
+        other (255) } DEFAULT unknown ,
+    tech INTEGER {
+        unknown (0) ,
+        standard (1) ,          -- standard sequencing
+        est (2) ,               -- Expressed Sequence Tag
+        sts (3) ,               -- Sequence Tagged Site
+        survey (4) ,            -- one-pass genomic sequence
+        genemap (5) ,           -- from genetic mapping techniques
+        physmap (6) ,           -- from physical mapping techniques
+        derived (7) ,           -- derived from other data, not a primary entity
+        concept-trans (8) ,     -- conceptual translation
+        seq-pept (9) ,          -- peptide was sequenced
+        both (10) ,             -- concept transl. w/ partial pept. seq.
+        seq-pept-overlap (11) , -- sequenced peptide, ordered by overlap
+        seq-pept-homol (12) ,   -- sequenced peptide, ordered by homology
+        concept-trans-a (13) ,  -- conceptual transl. supplied by author
+        htgs-1 (14) ,           -- unordered High Throughput sequence contig
+        htgs-2 (15) ,           -- ordered High Throughput sequence contig
+        htgs-3 (16) ,           -- finished High Throughput sequence
+	fli-cdna (17) ,         -- full length insert cDNA
+	htgs-0 (18) ,           -- single genomic reads for coordination
+	htc (19) ,              -- high throughput cDNA
+        other (255) }           -- use Source.techexp
+               DEFAULT unknown ,
+    techexp VisibleString OPTIONAL ,   -- explanation if tech not enough
+    completeness INTEGER {
+      unknown (0) ,
+      complete (1) ,                   -- complete biological entity
+      partial (2) ,                    -- partial but no details given
+      no-left (3),                     -- missing 5' or NH3 end
+      no-right (4) ,                   -- missing 3' or COOH end
+      no-ends (5) ,                    -- missing both ends
+      other (255) } DEFAULT unknown }
+
+
+GIBB-mol ::= ENUMERATED {       -- type of molecule represented
+    unknown (0) ,
+    genomic (1) ,
+    pre-mRNA (2) ,              -- precursor RNA of any sort really 
+    mRNA (3) ,
+    rRNA (4) ,
+    tRNA (5) ,
+    snRNA (6) ,
+    scRNA (7) ,
+    peptide (8) ,
+    other-genetic (9) ,      -- other genetic material
+    genomic-mRNA (10) ,      -- reported a mix of genomic and cdna sequence
+    other (255) }
+    
+GIBB-mod ::= ENUMERATED {        -- GenInfo Backbone modifiers
+    dna (0) ,
+    rna (1) ,
+    extrachrom (2) ,
+    plasmid (3) ,
+    mitochondrial (4) ,
+    chloroplast (5) ,
+    kinetoplast (6) ,
+    cyanelle (7) ,
+    synthetic (8) ,
+    recombinant (9) ,
+    partial (10) ,
+    complete (11) ,
+    mutagen (12) ,    -- subject of mutagenesis ?
+    natmut (13) ,     -- natural mutant ?
+    transposon (14) ,
+    insertion-seq (15) ,
+    no-left (16) ,    -- missing left end (5' for na, NH2 for aa)
+    no-right (17) ,   -- missing right end (3' or COOH)
+    macronuclear (18) ,
+    proviral (19) ,
+    est (20) ,        -- expressed sequence tag
+    sts (21) ,        -- sequence tagged site
+    survey (22) ,     -- one pass survey sequence
+    chromoplast (23) ,
+    genemap (24) ,    -- is a genetic map
+    restmap (25) ,    -- is an ordered restriction map
+    physmap (26) ,    -- is a physical map (not ordered restriction map)
+    other (255) }
+
+GIBB-method ::= ENUMERATED {        -- sequencing methods
+    concept-trans (1) ,    -- conceptual translation
+    seq-pept (2) ,         -- peptide was sequenced
+    both (3) ,             -- concept transl. w/ partial pept. seq.
+    seq-pept-overlap (4) , -- sequenced peptide, ordered by overlap
+    seq-pept-homol (5) ,   -- sequenced peptide, ordered by homology
+    concept-trans-a (6) ,  -- conceptual transl. supplied by author
+    other (255) }
+    
+Numbering ::= CHOICE {           -- any display numbering system
+    cont Num-cont ,              -- continuous numbering
+    enum Num-enum ,              -- enumerated names for residues
+    ref Num-ref ,                -- by reference to another sequence
+    real Num-real }              -- supports mapping to a float system
+    
+Num-cont ::= SEQUENCE {          -- continuous display numbering system
+    refnum INTEGER DEFAULT 1,         -- number assigned to first residue
+    has-zero BOOLEAN DEFAULT FALSE ,  -- 0 used?
+    ascending BOOLEAN DEFAULT TRUE }  -- ascending numbers?
+
+Num-enum ::= SEQUENCE {          -- any tags to residues
+    num INTEGER ,                        -- number of tags to follow
+    names SEQUENCE OF VisibleString }    -- the tags
+
+Num-ref ::= SEQUENCE {           -- by reference to other sequences
+    type ENUMERATED {            -- type of reference
+        not-set (0) ,
+        sources (1) ,            -- by segmented or const seq sources
+        aligns (2) } ,           -- by alignments given below
+    aligns Seq-align OPTIONAL }
+
+Num-real ::= SEQUENCE {          -- mapping to floating point system
+    a REAL ,                     -- from an integer system used by Bioseq
+    b REAL ,                     -- position = (a * int_position) + b
+    units VisibleString OPTIONAL }
+
+Pubdesc ::= SEQUENCE {              -- how sequence presented in pub
+    pub Pub-equiv ,                 -- the citation(s)
+    name VisibleString OPTIONAL ,   -- name used in paper
+    fig VisibleString OPTIONAL ,    -- figure in paper
+    num Numbering OPTIONAL ,        -- numbering from paper
+    numexc BOOLEAN OPTIONAL ,       -- numbering problem with paper
+    poly-a BOOLEAN OPTIONAL ,       -- poly A tail indicated in figure?
+    maploc VisibleString OPTIONAL , -- map location reported in paper
+    seq-raw StringStore OPTIONAL ,  -- original sequence from paper
+    align-group INTEGER OPTIONAL ,  -- this seq aligned with others in paper
+    comment VisibleString OPTIONAL, -- any comment on this pub in context
+	reftype INTEGER {           -- type of reference in a GenBank record
+		seq (0) ,               -- refers to sequence
+		sites (1) ,             -- refers to unspecified features
+		feats (2) ,             -- refers to specified features
+		no-target (3) }         -- nothing specified (EMBL)
+		DEFAULT seq }
+
+Heterogen ::= VisibleString       -- cofactor, prosthetic group, inibitor, etc
+
+--*** Instances of sequences *******************************
+--*
+
+Seq-inst ::= SEQUENCE {            -- the sequence data itself
+    repr ENUMERATED {              -- representation class
+        not-set (0) ,              -- empty
+        virtual (1) ,              -- no seq data
+        raw (2) ,                  -- continuous sequence
+        seg (3) ,                  -- segmented sequence
+        const (4) ,                -- constructed sequence
+        ref (5) ,                  -- reference to another sequence
+        consen (6) ,               -- consensus sequence or pattern
+        map (7) ,                  -- ordered map of any kind
+        delta (8) ,              -- sequence made by changes (delta) to others
+        other (255) } ,
+    mol ENUMERATED {               -- molecule class in living organism
+        not-set (0) ,              --   > cdna = rna
+        dna (1) ,
+        rna (2) ,
+        aa (3) ,
+        na (4) ,                   -- just a nucleic acid
+        other (255) } ,
+    length INTEGER OPTIONAL ,      -- length of sequence in residues
+    fuzz Int-fuzz OPTIONAL ,       -- length uncertainty
+    topology ENUMERATED {          -- topology of molecule
+        not-set (0) ,
+        linear (1) ,
+        circular (2) ,
+        tandem (3) ,               -- some part of tandem repeat
+        other (255) } DEFAULT linear ,
+    strand ENUMERATED {            -- strandedness in living organism
+        not-set (0) ,
+        ss (1) ,                   -- single strand
+        ds (2) ,                   -- double strand
+        mixed (3) ,
+        other (255) } OPTIONAL ,   -- default ds for DNA, ss for RNA, pept
+    seq-data Seq-data OPTIONAL ,   -- the sequence
+    ext Seq-ext OPTIONAL ,         -- extensions for special types
+    hist Seq-hist OPTIONAL }       -- sequence history
+
+--*** Sequence Extensions **********************************
+--*  for representing more complex types
+--*  const type uses Seq-hist.assembly
+
+Seq-ext ::= CHOICE {
+    seg Seg-ext ,        -- segmented sequences
+    ref Ref-ext ,        -- hot link to another sequence (a view)
+    map Map-ext ,        -- ordered map of markers
+    delta Delta-ext }
+
+Seg-ext ::= SEQUENCE OF Seq-loc
+
+Ref-ext ::= Seq-loc
+
+Map-ext ::= SEQUENCE OF Seq-feat
+
+Delta-ext ::= SEQUENCE OF Delta-seq
+
+Delta-seq ::= CHOICE {
+    loc Seq-loc ,       -- point to a sequence
+    literal Seq-literal }   -- a piece of sequence
+
+Seq-literal ::= SEQUENCE {
+    length INTEGER ,         -- must give a length in residues
+    fuzz Int-fuzz OPTIONAL , -- could be unsure
+    seq-data Seq-data OPTIONAL } -- may have the data
+
+--*** Sequence History Record ***********************************
+--** assembly = records how seq was assembled from others
+--** replaces = records sequences made obsolete by this one
+--** replaced-by = this seq is made obsolete by another(s)
+
+Seq-hist ::= SEQUENCE {
+    assembly SET OF Seq-align OPTIONAL ,-- how was this assembled?
+    replaces Seq-hist-rec OPTIONAL ,    -- seq makes these seqs obsolete
+    replaced-by Seq-hist-rec OPTIONAL , -- these seqs make this one obsolete
+    deleted CHOICE {
+        bool BOOLEAN ,
+        date Date } OPTIONAL }
+
+Seq-hist-rec ::= SEQUENCE {
+    date Date OPTIONAL ,
+    ids SET OF Seq-id }
+    
+--*** Various internal sequence representations ************
+--*      all are controlled, fixed length forms
+
+Seq-data ::= CHOICE {              -- sequence representations
+    iupacna IUPACna ,              -- IUPAC 1 letter nuc acid code
+    iupacaa IUPACaa ,              -- IUPAC 1 letter amino acid code
+    ncbi2na NCBI2na ,              -- 2 bit nucleic acid code
+    ncbi4na NCBI4na ,              -- 4 bit nucleic acid code
+    ncbi8na NCBI8na ,              -- 8 bit extended nucleic acid code
+    ncbipna NCBIpna ,              -- nucleic acid probabilities
+    ncbi8aa NCBI8aa ,              -- 8 bit extended amino acid codes
+    ncbieaa NCBIeaa ,              -- extended ASCII 1 letter aa codes
+    ncbipaa NCBIpaa ,              -- amino acid probabilities
+    ncbistdaa NCBIstdaa }          -- consecutive codes for std aas
+
+
+IUPACna ::= StringStore       -- IUPAC 1 letter codes, no spaces
+IUPACaa ::= StringStore       -- IUPAC 1 letter codes, no spaces
+NCBI2na ::= OCTET STRING      -- 00=A, 01=C, 10=G, 11=T
+NCBI4na ::= OCTET STRING      -- 1 bit each for agct
+                              -- 0001=A, 0010=C, 0100=G, 1000=T/U
+                              -- 0101=Purine, 1010=Pyrimidine, etc
+NCBI8na ::= OCTET STRING      -- for modified nucleic acids
+NCBIpna ::= OCTET STRING      -- 5 octets/base, prob for a,c,g,t,n
+                              -- probabilities are coded 0-255 = 0.0-1.0
+NCBI8aa ::= OCTET STRING      -- for modified amino acids
+NCBIeaa ::= StringStore       -- ASCII extended 1 letter aa codes
+                              -- IUPAC codes + U=selenocysteine
+NCBIpaa ::= OCTET STRING      -- 25 octets/aa, prob for IUPAC aas in order:
+                              -- A-Y,B,Z,X,(ter),anything
+                              -- probabilities are coded 0-255 = 0.0-1.0
+NCBIstdaa ::= OCTET STRING    -- codes 0-25, 1 per byte
+
+--*** Sequence Annotation *************************************
+--*
+
+Annot-id ::= CHOICE {
+    local Object-id ,
+    ncbi INTEGER ,
+    general Dbtag }
+    
+Annot-descr ::= SET OF Annotdesc
+
+Annotdesc ::= CHOICE {
+    name VisibleString ,         -- a short name for this collection
+    title VisibleString ,        -- a title for this collection
+    comment VisibleString ,      -- a more extensive comment
+    pub Pubdesc ,                -- a reference to the publication
+    user User-object ,           -- user defined object
+    create-date Date ,           -- date entry first created/released
+    update-date Date ,           -- date of last update
+    src Seq-id ,                 -- source sequence from which annot came
+    align Align-def,             -- definition of the SeqAligns
+    region Seq-loc }             -- all contents cover this region
+
+Align-def ::= SEQUENCE {
+    align-type INTEGER {         -- class of align Seq-annot
+      ref (1) ,                  -- set of alignments to the same sequence
+      alt (2) ,                  -- set of alternate alignments of the same seqs
+      blocks (3) ,               -- set of aligned blocks in the same seqs
+      other (255) } ,
+    ids SET OF Seq-id OPTIONAL } -- used for the one ref seqid for now
+
+Seq-annot ::= SEQUENCE {
+    id SET OF Annot-id OPTIONAL ,
+    db INTEGER {                 -- source of annotation
+        genbank (1) ,
+        embl (2) ,
+        ddbj (3) ,
+        pir  (4) ,
+        sp   (5) ,
+        bbone (6) ,
+        pdb   (7) ,
+        other (255) } OPTIONAL ,
+    name VisibleString OPTIONAL ,-- source if "other" above
+    desc Annot-descr OPTIONAL ,  -- used only for stand alone Seq-annots
+    data CHOICE {
+        ftable SET OF Seq-feat ,
+        align SET OF Seq-align ,
+        graph SET OF Seq-graph ,
+        ids SET OF Seq-id ,        -- used for communication between tools
+        locs SET OF Seq-loc } }    -- used for communication between tools
+
+END
+
+
+--$Revision$
+--********************************************************************
+--
+--  Direct Submission of Sequence Data
+--  James Ostell, 1991
+--
+--  This is a trial specification for direct submission of sequence
+--    data worked out between NCBI and EMBL
+--  Later revised to reflect work with GenBank and Integrated database
+--
+--  Version 3.0, 1994
+--    This is the official NCBI sequence submission format now.
+--
+--********************************************************************
+
+NCBI-Submit DEFINITIONS ::=
+BEGIN
+
+EXPORTS Seq-submit, Contact-info;
+
+IMPORTS Cit-sub, Author FROM NCBI-Biblio
+        Date, Object-id FROM NCBI-General
+        Seq-annot FROM NCBI-Sequence
+        Seq-id FROM NCBI-Seqloc
+        Seq-entry FROM NCBI-Seqset;
+
+Seq-submit ::= SEQUENCE {
+    sub Submit-block ,
+    data CHOICE {
+        entrys  SET OF Seq-entry ,  -- sequence(s)
+        annots  SET OF Seq-annot ,  -- annotation(s)
+        delete  SET OF Seq-id } } -- deletions of entries
+
+Submit-block ::= SEQUENCE {
+    contact Contact-info ,        -- who to contact
+    cit Cit-sub ,                 -- citation for this submission
+    hup BOOLEAN DEFAULT FALSE ,   -- hold until publish
+    reldate Date OPTIONAL ,       -- release by date
+    subtype INTEGER {             -- type of submission
+        new (1) ,                 -- new data
+        update (2) ,              -- update by author
+        revision (3) ,            -- 3rd party (non-author) update
+        other (255) } OPTIONAL ,
+    tool VisibleString OPTIONAL,  -- tool used to make submission
+    user-tag VisibleString OPTIONAL, -- user supplied id for this submission
+    comment VisibleString OPTIONAL } -- user comments/advice to database
+
+Contact-info ::= SEQUENCE {      -- who to contact to discuss the submission
+    name VisibleString OPTIONAL ,        -- OBSOLETE: will be removed
+    address SEQUENCE OF VisibleString OPTIONAL ,
+    phone VisibleString OPTIONAL ,
+    fax VisibleString OPTIONAL ,
+    email VisibleString OPTIONAL ,
+    telex VisibleString OPTIONAL ,
+    owner-id Object-id OPTIONAL ,         -- for owner accounts
+    password OCTET STRING OPTIONAL ,
+    last-name VisibleString OPTIONAL ,  -- structured to replace name above
+    first-name VisibleString OPTIONAL ,
+    middle-initial VisibleString OPTIONAL ,
+    contact Author OPTIONAL }           -- WARNING: this will replace the above
+
+END
+
+--$Revision$
+--****************************************************************
+--
+--  NCBI Project Definition Module
+--  by Jim Ostell and Jonathan Kans, 1998
+--
+--****************************************************************
+
+NCBI-Project DEFINITIONS ::=
+BEGIN
+
+EXPORTS Project, Project-item;
+
+IMPORTS Date FROM NCBI-General
+        PubMedId FROM NCBI-Biblio
+        Seq-id, Seq-loc FROM NCBI-Seqloc
+        Seq-annot, Pubdesc FROM NCBI-Sequence
+        Seq-entry FROM NCBI-Seqset
+        Pubmed-entry FROM NCBI-PubMed;
+
+Project ::= SEQUENCE {
+    descr Project-descr OPTIONAL ,
+    data Project-item }
+
+Project-item ::= CHOICE {
+    pmuid SET OF INTEGER ,
+    protuid SET OF INTEGER ,
+    nucuid SET OF INTEGER ,
+    sequid SET OF INTEGER ,
+    genomeuid SET OF INTEGER ,
+    structuid SET OF INTEGER ,
+    pmid SET OF PubMedId ,
+    protid SET OF Seq-id ,
+    nucid SET OF Seq-id ,
+    seqid SET OF Seq-id ,
+    genomeid SET OF Seq-id ,
+    structid NULL ,
+    pment SET OF Pubmed-entry ,
+    protent SET OF Seq-entry ,
+    nucent SET OF Seq-entry ,
+    seqent SET OF Seq-entry ,
+    genomeent SET OF Seq-entry ,
+    structent NULL ,
+    seqannot SET OF Seq-annot ,
+    loc SET OF Seq-loc ,
+    proj SET OF Project
+}
+
+Project-descr ::= SEQUENCE {
+    id SET OF Project-id ,
+    name VisibleString OPTIONAL ,
+    descr SET OF Projdesc OPTIONAL }
+
+Projdesc ::= CHOICE {
+    pub Pubdesc ,
+    date Date ,
+    comment VisibleString ,
+    title VisibleString
+}
+
+Project-id ::= VisibleString
+
+END
+
+
+--$Revision$
+--**********************************************************************
+--
+--  Biological Macromolecule 3-D Structure Data Types for MMDB,
+--                A Molecular Modeling Database
+--
+--  Definitions for a biomolecular assembly and the MMDB database
+--
+--  By Hitomi Ohkawa, Jim Ostell, Chris Hogue, and Steve Bryant 
+--
+--  National Center for Biotechnology Information
+--  National Institutes of Health
+--  Bethesda, MD 20894 USA
+--
+--  July 1995
+--
+--**********************************************************************
+
+-- Contents of the MMDB database are currently based on files distributed by
+-- the Protein Data Bank, PDB.  These data are changed in form, as described
+-- in this specification. To some extent they are also changed in content, in 
+-- that many data items implicit in PDB are made explicit, and others are
+-- corrected or omitted as a consequence of validation checks.  The semantics
+-- of MMDB data items are indicated by comments within the specification below.
+-- These comments explain in detail the manner in which data items from  PDB 
+-- have been mapped into MMDB. 
+
+MMDB DEFINITIONS ::=
+
+BEGIN
+
+EXPORTS Biostruc, Biostruc-id, Biostruc-set, Biostruc-annot-set,
+	Biostruc-residue-graph-set;
+
+IMPORTS Biostruc-graph, Biomol-descr, Residue-graph FROM MMDB-Chemical-graph 
+	Biostruc-model FROM MMDB-Structural-model
+	Biostruc-feature-set FROM MMDB-Features
+	Pub FROM NCBI-Pub
+	Date, Object-id, Dbtag FROM NCBI-General;
+
+-- A structure report or "biostruc" describes the components of a biomolecular 
+-- assembly in terms of their names and descriptions, and a chemical graph 
+-- giving atomic formula, connectivity and chirality. It also gives one or more
+-- three-dimensional model structures, literally a mapping of the atoms, 
+-- residues and/or molecules of each component into a measured three-
+-- dimensional space. Structure may also be described by named features, which 
+-- associate nodes in the chemical graph, or regions in space, with text or 
+-- numeric descriptors.
+
+-- Note that a biostruc may also contain cross references to other databases,
+-- including citations to relevant scientific literature. These cross 
+-- references use object types from other NCBI data specifications, which are 
+-- "imported" into MMDB, and not repeated in this specification. 
+
+Biostruc ::= SEQUENCE {
+	id			SEQUENCE OF Biostruc-id,
+	descr			SEQUENCE OF Biostruc-descr OPTIONAL,
+	chemical-graph		Biostruc-graph,
+	features		SEQUENCE OF Biostruc-feature-set OPTIONAL,
+	model			SEQUENCE OF Biostruc-model OPTIONAL }
+
+-- A Biostruc-id is a collection identifiers for the molecular assembly.
+-- Mmdb-id's are NCBI-assigned, and are intended to be unique and stable 
+-- identifiers.  Other-id's are synonyms.
+
+Biostruc-id ::= CHOICE {
+	mmdb-id			Mmdb-id,
+	other-database		Dbtag,
+	local-id		Object-id }
+
+Mmdb-id ::= INTEGER
+
+
+-- The description of a biostruc refers to both the reported chemical and 
+-- spatial structure of a biomolecular assembly.  PDB-derived descriptors
+-- which refer specifically to the chemical components or spatial structure
+-- are not provided here, but instead as descriptors of the biostruc-graph or 
+-- biostruc-model. For PDB-derived structures the biostruc name is the PDB 
+-- id-code.  PDB-derived citations appear as publications within the biostruc 
+-- description, and include a data-submission citation derived from PDB AUTHOR 
+-- records.  Citations are described using the NCBI Pub specification.
+
+Biostruc-descr ::= CHOICE {
+	name			VisibleString,
+	pdb-comment		VisibleString,
+	other-comment		VisibleString,
+	history			Biostruc-history, 
+	attribution		Pub }
+
+
+-- The history of a biostruc indicates it's origin and it's update history
+-- within MMDB, the NCBI-maintained molecular structure database.  
+
+Biostruc-history ::= SEQUENCE {
+	replaces		Biostruc-replace OPTIONAL,
+	replaced-by		Biostruc-replace OPTIONAL,
+	data-source		Biostruc-source OPTIONAL }
+
+Biostruc-replace ::= SEQUENCE {
+	id			Biostruc-id,
+	date			Date }
+
+-- The origin of a biostruc is a reference to another database.  PDB release 
+-- date and PDB-assigned id codes are recorded here, as are the PDB-assigned 
+-- entry date and replacement history.
+
+Biostruc-source ::= SEQUENCE {
+	name-of-database	VisibleString,
+	version-of-database	CHOICE {
+		release-date		Date,
+		release-code		VisibleString } OPTIONAL,
+	database-entry-id	Biostruc-id,
+	database-entry-date	Date,
+	database-entry-history	SEQUENCE OF VisibleString OPTIONAL}
+
+
+-- A biostruc set is a means to collect ASN.1 data for many biostrucs in 
+-- one file, as convenient for application programs.  The object type is not
+-- inteded to imply similarity of the biostrucs grouped together.
+
+Biostruc-set ::= SEQUENCE {
+	id		SEQUENCE OF Biostruc-id OPTIONAL,
+	descr		SEQUENCE OF Biostruc-descr OPTIONAL,
+	biostrucs	SEQUENCE OF Biostruc }
+
+
+-- A biostruc annotation set is a means to collect ASN.1 data for biostruc
+-- features into one file. The object type is intended as a means to store 
+-- feature annotation of similar type, such as "core" definitions for a 
+-- threading program, or structure-structure alignments for a structure-
+-- similarity browser.
+
+Biostruc-annot-set ::= SEQUENCE {
+	id		SEQUENCE OF Biostruc-id OPTIONAL,
+	descr		SEQUENCE OF Biostruc-descr OPTIONAL,
+	features	SEQUENCE OF Biostruc-feature-set }
+
+
+-- A biostruc residue graph set is a collection of residue graphs.  The object
+-- type is intended as a means to record dictionaries containing the chemical
+-- subgraphs of "standard" residue types, which are used as a means to 
+-- simplify discription of the covalent structure of a biomolecular assembly.
+-- The standard residue graph dictionary supplied with the MMDB database 
+-- contains 20 standard L amino acids and 8 standard ribonucleotide groups. 
+-- These graphs are complete, including explicit hydrogen atoms and separate 
+-- instances for the terminal polypeptide and polynucleotide residues. 
+
+Biostruc-residue-graph-set ::= SEQUENCE {
+	id			SEQUENCE OF Biostruc-id OPTIONAL,
+	descr			SEQUENCE OF Biomol-descr OPTIONAL,
+	residue-graphs		SEQUENCE OF Residue-graph }
+
+END
+
+
+
+--**********************************************************************
+--
+--  Biological Macromolecule 3-D Structure Data Types for MMDB,
+--                A Molecular Modeling Database
+--
+--  Definitions for a chemical graph
+--
+--  By Hitomi Ohkawa, Jim Ostell, Chris Hogue and Steve Bryant 
+--
+--  National Center for Biotechnology Information
+--  National Institutes of Health
+--  Bethesda, MD 20894 USA
+--
+--  July, 1995
+--
+--**********************************************************************
+
+MMDB-Chemical-graph DEFINITIONS ::=
+
+BEGIN
+
+EXPORTS Biostruc-graph, Biomol-descr, Residue-graph,
+	Molecule-id, Residue-id, Atom-id;
+
+IMPORTS Pub FROM NCBI-Pub
+	BioSource FROM NCBI-BioSource
+	Seq-id FROM NCBI-Seqloc
+	Biostruc-id FROM MMDB;
+
+-- A biostruc graph contains the complete chemical graph of the biomolecular 
+-- assembly.  The assembly graph is defined hierarchically, in terms of 
+-- subgraphs graphs of component molecules.  For PDB-derived biostrucs,
+-- the molecules forming the assembly are the individual biopolymer chains and 
+-- any non-polymer or "heterogen" groups which are present. 
+
+-- The PDB-derived  "compound name" field appears as the name within the
+-- biostruc-graph description.  PDB "class" and "source" fields appear as 
+-- explicit attributes.  PDB-derived structures are assigned an assembly type 
+-- of "other" unless they have been further classified as the "physiological
+-- form" or "crystallographic cell" contents.  If they have, the source of the 
+-- type classification appears as a citation within the  assembly description. 
+
+-- Note that the biostruc-graph also includes as literals the subgraphs of 
+-- any nonstandard residues present within it. For PDB-derived biostrucs these 
+-- subgraphs are constructed automatically, with validation as described below.
+
+Biostruc-graph ::= SEQUENCE {
+	descr			SEQUENCE OF Biomol-descr OPTIONAL,
+	molecule-graphs		SEQUENCE OF Molecule-graph,
+	inter-molecule-bonds	SEQUENCE OF Inter-residue-bond OPTIONAL,
+	residue-graphs		SEQUENCE OF Residue-graph OPTIONAL }
+
+-- A biomolecule description refers to the chemical structure of a molecule or 
+-- component substructures.  This descriptor type is used at the level of
+-- assemblies, molecules and residues, and also for residue-graph dictionaries.
+-- The BioSource object type is drawn from NCBI taxonomy data specifications,
+-- and is not repeated here.
+
+Biomol-descr ::= CHOICE {
+	name			VisibleString,
+	pdb-class		VisibleString,
+	pdb-source		VisibleString,
+	pdb-comment		VisibleString,
+	other-comment		VisibleString,
+	organism		BioSource,
+	attribution		Pub,
+	assembly-type		INTEGER {	physiological-form(1),
+						crystallographic-cell(2),
+						other(255) },
+	molecule-type		INTEGER {	dna(1),
+						rna(2),
+						protein(3),
+						other-biopolymer(4),
+						solvent(5),
+						other-nonpolymer(6),
+						other(255) } }
+
+-- A molecule chemical graph is defined by a sequence of residues.  Nonpolymers
+-- are described in the same way, but may contain only a single residue.  
+
+-- Biopolymer molecules are identified within PDB entries according to their
+-- appearance on SEQRES records, which formally define a biopolymer as such. 
+-- Biopolymers are defined by the distinction between ATOM and HETATM 
+-- coordinate records only in cases where the chemical sequence from SEQRES
+-- is in conflict with coordinate data. The PDB-assigned chain code appears as 
+-- the name within the molecule descriptions of the biopolymers.
+
+-- Nonpolymer molecules from PDB correspond to individual HETEROGEN groups, 
+-- excluding any HETEROGEN groups which represent modified biopolymer residues.
+-- These molecules are named according to the chain, residue type and residue 
+-- number fields as assigned by PDB. Any description appearing in the PDB HET 
+-- record appears as a pdb-comment within the molecule description. 
+
+-- Molecule types for PDB-derived molecule graphs are assigned by matching 
+-- residue and atom names against the PDB-documented standard types for protein,
+-- DNA and RNA, and against residue codes commonly used to indicate solvent.
+-- Classification is by "majority rule". If more than half of the residues in
+-- a biopolymer are standard groups of one type, then the molecule is of that 
+-- type, and otherwise classified as "other". Note that this classification does
+-- not preclude the presence of modified residues, but insists they constitute 
+-- less than half the biopolymer. Non-polymers are classified only as "solvent"
+-- or "other".  
+
+-- Note that a molecule graph may also contain a set of cross references 
+-- to biopolymer sequence databases.  All biopolymer molecules in MMDB contain 
+-- appropriate identifiers for the corresponding entry in the NCBI-Sequences 
+-- database, in particular the NCBI "gi" number, which may be used for sequence
+-- retrieval. The Seq-id object type is defined in the NCBI molecular sequence 
+-- specification, and not repeated here.
+
+Molecule-graph ::= SEQUENCE {
+	id			Molecule-id,
+	descr			SEQUENCE OF Biomol-descr OPTIONAL,
+	seq-id			Seq-id OPTIONAL,
+	residue-sequence	SEQUENCE OF Residue,
+	inter-residue-bonds	SEQUENCE OF Inter-residue-bond OPTIONAL }
+   
+Molecule-id ::= INTEGER
+
+-- Residues may be assigned a text-string name as well as an id number. PDB 
+-- assigned residue numbers appear as the residue name.
+
+Residue ::= SEQUENCE {
+	id			Residue-id,
+	name			VisibleString OPTIONAL,
+	residue-graph		Residue-graph-pntr }
+
+Residue-id ::= INTEGER
+
+
+-- Residue graphs from different sources may be referenced within a molecule
+-- graph.  The allowed choices are the nonstandard residue graphs included in 
+-- the present biostruc, residue graphs within other biostrucs, or residue 
+-- graphs within tables of standard residue definitions.
+
+Residue-graph-pntr ::= CHOICE {
+	local			Residue-graph-id,
+	biostruc		Biostruc-graph-pntr,
+	standard		Biostruc-residue-graph-set-pntr }
+	
+Biostruc-graph-pntr ::= SEQUENCE {
+	biostruc-id		Biostruc-id,
+	residue-graph-id	Residue-graph-id }
+
+Biostruc-residue-graph-set-pntr ::= SEQUENCE {
+	biostruc-residue-graph-set-id	Biostruc-id,
+	residue-graph-id		Residue-graph-id } 
+
+
+-- Residue graphs define atomic formulae, connectivity, chirality, and names.
+-- For standard residue graphs from the MMDB dictionary the PDB-assigned 
+-- residue-type code appears as the name within the residue graph description,
+-- and the full trivial name of the residue as a comment within that 
+-- description.  For any nonstandard residue graphs provided with an MMDB 
+-- biostruc the PDB-assigned residue-type code similarly appears as the name 
+-- within the description, and any information provided on PDB HET records as 
+-- a pdb-comment within that description.  
+
+-- Note that nonstandard residue graphs for a PDB-derived biostruc may be 
+-- incomplete. Current PDB format cannot represent connectivity for groups 
+-- which are disordered, and for which no coordinates are given.  In these 
+-- cases the residue graph defined in MMDB represents only the subgraph that 
+-- could be identified from available ATOM, HETATM and CONECT records.
+
+Residue-graph ::= SEQUENCE {
+	id			Residue-graph-id,
+	descr			SEQUENCE OF Biomol-descr OPTIONAL,
+	residue-type		INTEGER {	deoxyribonucleotide(1),
+						ribonucleotide(2),
+						amino-acid(3),
+						other(255) } OPTIONAL,
+	iupac-code		SEQUENCE OF VisibleString OPTIONAL,
+	atoms			SEQUENCE OF Atom,
+	bonds			SEQUENCE OF Intra-residue-bond,
+	chiral-centers		SEQUENCE OF Chiral-center OPTIONAL }
+	
+Residue-graph-id ::= INTEGER
+
+-- Atoms in residue graphs are defined by elemental symbols and names.  PDB-
+-- assigned atom names appear here in the name field, except in cases of known 
+-- PDB synonyms.  In these cases atom names are mapped to the names used in the
+-- MMDB standard dictionary. This occurs primarily for hydrogen atoms, where 
+-- PDB practice allows synonyms for several atom types.  For PDB atoms the 
+-- elemental symbol is obtained by parsing the PDB atom name field, allowing 
+-- for known special-semantics cases where the atom name does not follow the
+-- documented encoding rule.  Ionizable protons are identified within standard 
+-- residue graphs in the MMDB dictionary, but not within automatically-defined
+-- nonstandard graphs.
+
+Atom ::= SEQUENCE {
+	id			Atom-id,
+	name			VisibleString OPTIONAL,
+	iupac-code		SEQUENCE OF VisibleString OPTIONAL,
+	element			ENUMERATED {
+				h(1),   he(2),  li(3),  be(4),  b(5), 
+				c(6),   n(7),   o(8),   f(9),   ne(10), 
+				na(11), mg(12), al(13), si(14), p(15), 
+				s(16),  cl(17), ar(18), k(19),  ca(20), 
+				sc(21), ti(22), v(23),  cr(24), mn(25), 
+				fe(26), co(27), ni(28), cu(29), zn(30), 
+				ga(31), ge(32), as(33), se(34), br(35), 
+				kr(36), rb(37), sr(38), y(39),  zr(40),
+				nb(41), mo(42), tc(43), ru(44), rh(45),
+				pd(46), ag(47), cd(48), in(49), sn(50),
+				sb(51), te(52), i(53),  xe(54), cs(55),
+				ba(56), la(57), ce(58), pr(59), nd(60),
+				pm(61), sm(62), eu(63), gd(64), tb(65),
+				dy(66), ho(67), er(68), tm(69), yb(70),
+				lu(71), hf(72), ta(73), w(74),  re(75),
+				os(76), ir(77), pt(78), au(79), hg(80),
+				tl(81), pb(82), bi(83), po(84), at(85),
+				rn(86), fr(87), ra(88), ac(89), th(90),
+				pa(91), u(92),  np(93), pu(94), am(95),
+				cm(96), bk(97), cf(98), es(99), 
+				fm(100), md(101), no(102), lr(103),
+				other(254), unknown(255) },
+	ionizable-proton	ENUMERATED {
+					true(1),
+					false(2),
+					unknown(255) } OPTIONAL }
+	
+Atom-id ::= INTEGER
+
+-- Intra-residue-bond specifies connectivity between atoms in Residue-graph.
+-- Unlike Inter-residue-bond defined later, its participating atoms are part of
+-- a residue subgraph dictionary, not part of a specific biostruc-graph.
+
+-- For residue graphs in the standard MMDB dictionary bonds are defined from
+-- the known chemical structures of amino acids and nucleotides.  For 
+-- nonstandard residue graphs bonds are defined from PDB CONECT records, with
+-- validation for consistency with coordinate data, and from stereochemical
+-- calculation to identify unreported bonds.  Validation and bond identification
+-- are based on comparison of inter-atomic distances to the sum of covalent
+-- radii for the corresponding elements. 
+
+Intra-residue-bond ::= SEQUENCE {
+	atom-id-1		Atom-id,
+	atom-id-2		Atom-id,
+	bond-order		INTEGER {
+					single(1), 
+					partial-double(2),
+					aromatic(3), 
+					double(4),
+					triple(5),
+					other(6),
+					unknown(255)} OPTIONAL }
+
+-- Chiral centers are atoms with tetrahedral geometry.  Chirality is defined
+-- by a chiral volume involving the chiral center and 3 other atoms bonded to 
+-- it.  For any coordinates assigned to atoms c, n1, n2, and n3, the vector 
+-- triple product (n1-c) dot ( (n2-c) cross (n3-c) ) must have the indicated
+-- sign.  The calculation assumes an orthogonal right-handed coordinate system
+-- as is used for MMDB model structures.  
+
+-- Chirality is defined for standard residues in the MMDB dictionary, but is 
+-- not assigned automatically for PDB-derived nonstandard residues. If assigned
+-- for nonstandard residues, the source of chirality information is described 
+-- by a citation within the residue description.
+
+Chiral-center ::= SEQUENCE {
+	c			Atom-id,
+	n1			Atom-id,
+	n2			Atom-id,
+	n3			Atom-id,
+	sign			ENUMERATED { positive(1),
+					     negative(2) } }
+
+-- Inter-residue bonds are defined by a reference to two atoms. For PDB-derived 
+-- structures bonds are identified from biopolymer connectivity according to
+-- SEQRES and from other connectivity information on SSBOND and CONECT 
+-- records. These data are validated and unreported bonds identified by
+-- stereochemical calculation, using the same criteria as for intra-residue 
+-- bonds.
+
+Inter-residue-bond ::= SEQUENCE {
+	atom-id-1		Atom-pntr,
+	atom-id-2		Atom-pntr,
+	bond-order		INTEGER {
+					single(1), 
+					partial-double(2),
+					aromatic(3), 
+					double(4),
+					triple(5),
+					other(6),
+					unknown(255)} OPTIONAL }
+
+-- Atoms, residues and molecules within the current biostruc are referenced 
+-- by hierarchical pointers.
+
+Atom-pntr ::= SEQUENCE {
+	molecule-id		Molecule-id,
+	residue-id		Residue-id,
+	atom-id			Atom-id }
+
+Atom-pntr-set ::= SEQUENCE OF Atom-pntr
+
+END
+--$Revision$
+--**********************************************************************
+--
+--  Biological Macromolecule 3-D Structure Data Types for MMDB,
+--                A Molecular Modeling Database
+--
+--  Definitions for structural models
+--
+--  By Hitomi Ohkawa, Jim Ostell, Chris Hogue and Steve Bryant 
+--
+--  National Center for Biotechnology Information
+--  National Institutes of Health
+--  Bethesda, MD 20894 USA
+--
+--  July, 1996
+--
+--**********************************************************************
+
+MMDB-Structural-model DEFINITIONS ::=
+
+BEGIN
+
+EXPORTS Biostruc-model, Model-id, Model-coordinate-set-id;
+
+IMPORTS Chem-graph-pntrs, Atom-pntrs, Chem-graph-alignment,
+	Sphere, Cone, Cylinder, Brick, Transform FROM MMDB-Features
+	Biostruc-id FROM MMDB
+	Pub FROM NCBI-Pub;
+
+-- A structural model maps chemical components into a measured three-
+-- dimensional space. PDB-derived biostrucs generally contain 4 models, 
+-- corresponding to "views" of the structure of a biomolecular assemble with 
+-- increasing levels of complexity.  Model types indicate the complexity of the
+-- view.  
+
+-- The model named "NCBI all atom" represents a view suitable for most 
+-- computational biology applications.  It provides complete atomic coordinate 
+-- data for a "single best" model, omitting statistical disorder information 
+-- and/or ensemble structure descriptions provided in the source PDB file.  
+-- Construction of the single best model is based on the assumption that the 
+-- contents of the "alternate conformation" field from pdb imply no correlation
+-- among the occupancies of multiple sites assigned to sets of atoms: the best 
+-- site is chosen only on the basis of highest occupancy. Note, however, that 
+-- alternate conformation sets where correlation is implied are generally 
+-- constrained in crystallographic refinement to have uniform occupancy, and 
+-- will thus be selected as a set. For ensemble models the model which assigns 
+-- coordinates to the most atoms is chosen.  If numbers of coordinates are the 
+-- same, the model occurring first in the PDB file is selected.  The single 
+-- best model includes complete coordinates for all nonpolymer components, but 
+-- omits those classified as "solvent".  Model type is 3 for this model. 
+
+-- The model named "NCBI backbone" represents a simple view intended for 
+-- graphic displays and rapid transmission over a network.  It includes only 
+-- alpha carbon or backbone phosphate coordinates for biopolymers. It is based 
+-- on selection of alpha-carbon and backbone phosphate atoms from the "NCBI
+-- all atom" model. The model type is set to 2.  An even simpler model gives 
+-- only a cartoon representation, using cylinders corresponding to secondary 
+-- structure elements.  This is named "NCBI vector", and has model type 1.
+
+-- The models named "PDB Model 1", "PDB Model 2", etc. represent the complete
+-- information provided by PDB, including full descriptions of statistical
+-- disorder.  The name of the model is based on the contents of the PDB MODEL
+-- record, with a default name of "PDB Model 1" for PDB files which contain 
+-- only a single model.  Construction of these models is based on the 
+-- assumption that contents of the PDB "alternate conformation" field are 
+-- intended to imply correlation among the occupancies of atom sets flagged by
+-- the same identifier.  The special flag " " (blank) is assumed to indicate 
+-- sites occupied in all alternate conformations, and sites flagged otherwise,
+-- together with " ", to indicate a distinct member of an ensemble of 
+-- alternate conformations.  Note that construction of ensemble members 
+-- according to these assumption requires two validation checks on PDB 
+-- "alternate conformation" flags: they must be unique among sites assigned to 
+-- the same atom, and that the special " " flag must occur only for unique
+-- sites.  Sites which violate the first check are flagged as "u", for 
+-- "unknown"; they are omitted from all ensemble definitions but are 
+-- nontheless retained in the coordinate list.  Sites which violate the second
+-- check are flagged "b" for "blank", and are included in an appropriately
+-- named ensemble.  The model type for pdb all models is 4.
+
+-- Note that in the MMDB database models are stored in the ASN.1 stream in
+-- order of increasing model type value.  Since models occur as the last item
+-- in a biostruc, parsers may avoid reading the entire stream if the desired
+-- model is one of the simplified types, which occur first in the stream. This
+-- can save considerable I/O time, particularly for large ensemble models from 
+-- NMR determinations.
+
+Biostruc-model ::= SEQUENCE {
+	id			Model-id,
+	type			Model-type,
+	descr			SEQUENCE OF Model-descr OPTIONAL,
+	model-space		Model-space OPTIONAL,
+	model-coordinates	SEQUENCE OF Model-coordinate-set OPTIONAL }
+
+Model-id ::= INTEGER
+
+Model-type ::= INTEGER {
+	ncbi-vector(1),
+	ncbi-backbone(2),
+	ncbi-all-atom(3),
+	pdb-model(4),
+	other(255)}
+
+Model-descr ::= CHOICE {
+	name			VisibleString,
+	pdb-reso                VisibleString,
+	pdb-method              VisibleString,
+	pdb-comment		VisibleString,
+	other-comment		VisibleString,
+	attribution		Pub }
+
+-- The model space defines measurement units and any external reference frame.
+-- Coordinates refer to a right-handed orthogonal system defined on axes 
+-- tagged x, y and z in the coordinate and feature definitions of a biostruc.
+-- Coordinates from PDB-derived structures are reported without change, in
+-- angstrom units.  The units of temperature and occupancy factors are not
+-- defined explicitly in PDB, but are inferred from their value range.
+
+Model-space ::= SEQUENCE {
+	coordinate-units	ENUMERATED {
+					angstroms(1),
+					nanometers(2),
+					other(3),
+					unknown(255)},
+	thermal-factor-units	ENUMERATED {
+					b(1),
+					u(2),
+					other(3),
+					unknown(255)} OPTIONAL,
+	occupancy-factor-units	ENUMERATED {
+					fractional(1),
+					electrons(2),
+					other(3),
+					unknown(255)} OPTIONAL,
+	density-units		ENUMERATED {
+					electrons-per-unit-volume(1),
+					arbitrary-scale(2),
+					other(3),
+					unknown(255)} OPTIONAL,
+	reference-frame		Reference-frame OPTIONAL }
+
+-- An external reference frame is a pointer to another biostruc, with an 
+-- optional operator to rotate and translate coordinates into its model space.
+-- This item is intended for representation of homology-derived model 
+-- structures, and is not present for structures from PDB.
+
+Reference-frame ::= SEQUENCE {
+	biostruc-id		Biostruc-id,
+	rotation-translation	Transform OPTIONAL }
+
+-- Atomic coordinates may be assigned literally or by reference to another
+-- biostruc.  The reference coordinate type is used to represent homology-
+-- derived model structures.  PDB-derived structures have literal coordinates.
+
+-- Referenced coordinates identify another biostruc, any transformation to be 
+-- applied to coordinates from that biostruc, and a mapping of the chemical
+-- graph of the present biostruc onto that of the referenced biostruc.  They
+-- give an "alignment" of atoms in the current biostruc with those in another,
+-- from which the coordinates of matched atoms may be retrieved.  For non-
+-- atomic models "alignment" may also be represented by molecule and residue
+-- equivalence lists.  Referenced coordinates are a data item inteded for 
+-- representation of homology models, with an explicit pointer to their source
+-- information. They do not occur in PDB-derived models.
+
+Model-coordinate-set ::= SEQUENCE {
+	id			Model-coordinate-set-id OPTIONAL,
+	descr			SEQUENCE OF Model-descr OPTIONAL,
+	coordinates		CHOICE {
+		literal			Coordinates,
+		reference		Chem-graph-alignment } }
+	
+Model-coordinate-set-id ::= INTEGER
+
+
+-- Literal coordinates map chemical components into the model space.  Three 
+-- mapping types are allowed, atomic coordinate models, density-grid models,
+-- and surface models. A model consists of a sequence of such coordinate sets, 
+-- and may thus combine coordinate subsets which have a different source.  
+-- PDB-derived models contain a single atomic coordinate set, as they by
+-- definition represent information from a single source.
+
+Coordinates ::= CHOICE {		
+	atomic			Atomic-coordinates,
+	surface			Surface-coordinates,
+	density			Density-coordinates }
+
+-- Literal atomic coordinate values give location, occupancy and order
+-- parameters, and a pointer to a specific atom defined in the biostruc graph.
+-- Temperature and occupancy factors have their conventional crystallographic
+-- definitions, with units defined in the model space declaration.  Atoms,
+-- sites, temperature-factors, occupancies and alternate-conformation-ids
+-- are parallel arrays, i.e. the have the same number of values as given by
+-- number-of-points. Conformation ensembles represent distinct correlated-
+-- disorder subsets of the coordinates.  They will be present only for certain 
+-- "views" of PDB structures, as described above. Their derivation from PDB-
+-- supplied "alternate-conformation" ids is described below. 
+
+Atomic-coordinates ::= SEQUENCE {
+	number-of-points	INTEGER,
+	atoms			Atom-pntrs,
+	sites			Model-space-points,
+	temperature-factors	Atomic-temperature-factors OPTIONAL,
+	occupancies		Atomic-occupancies OPTIONAL, 
+	alternate-conf-ids	Alternate-conformation-ids OPTIONAL,
+	conf-ensembles		SEQUENCE OF Conformation-ensemble OPTIONAL }
+
+-- The atoms whose location is described by each coordinate are identified
+-- via a hierarchical pointer to the chemical graph of the biomolecular
+-- assembly.  Coordinates may be matched with atoms in the chemical structure
+-- by the values of the molecule, residue and atom id's given here,  which 
+-- match exactly the items of the same type defined in Biostruc-graph.
+
+-- Coordinates are given as integer values, with a scale factor to convert 
+-- to real values for each x, y or z, in the units indicated in model-space.
+-- Integer values must be divided by the the scale factor.  This use of integer
+-- values reduces the ASN.1 stream size. The scale factors for temperature 
+-- factors and occupancies are given separately, but must be used in the same 
+-- fashion to produce properly scaled real values.
+
+Model-space-points ::= SEQUENCE {
+	scale-factor		INTEGER,
+	x			SEQUENCE OF INTEGER,	
+	y			SEQUENCE OF INTEGER,
+	z			SEQUENCE OF INTEGER } 
+
+Atomic-temperature-factors ::= CHOICE {
+	isotropic		Isotropic-temperature-factors,
+	anisotropic		Anisotropic-temperature-factors }
+
+Isotropic-temperature-factors ::= SEQUENCE {
+	scale-factor		INTEGER,
+	b			SEQUENCE OF INTEGER }
+
+Anisotropic-temperature-factors ::= SEQUENCE {
+	scale-factor		INTEGER,
+	b-11			SEQUENCE OF INTEGER,
+	b-12			SEQUENCE OF INTEGER,
+	b-13			SEQUENCE OF INTEGER,
+	b-22			SEQUENCE OF INTEGER,
+	b-23			SEQUENCE OF INTEGER,
+	b-33			SEQUENCE OF INTEGER }
+
+Atomic-occupancies ::= SEQUENCE {
+	scale-factor		INTEGER,
+	o			SEQUENCE OF INTEGER }
+
+-- An alternate conformation id is optionally associated with each coordinate. 
+-- Aside from corrections due to the validation checks described above, the 
+-- contents of MMDB Alternate-conformation-ids are identical to the PDB 
+-- "alternate conformation" field.
+
+Alternate-conformation-ids ::= SEQUENCE OF Alternate-conformation-id 
+
+Alternate-conformation-id ::= VisibleString 
+
+-- Correlated disorder ensemble is defined by a set of alternate conformation 
+-- id's which identify coordinates relevant to that ensemble. These are 
+-- defined from the validated and corrected contents of the PDB "alternate
+-- conformation" field as described above.  A given ensemble, for example, may
+-- consist of atom sites flagged by " " and "A" Alternate-conformation-ids. 
+-- Names for ensembles are constructed from these flags. This example would be
+-- named, in its description, "PDB Ensemble blank plus A".
+
+-- Note that this interpretation is consistent with common PDB usage of the 
+-- "alternate conformation" field, but that PDB specifications do not formally
+-- distinguish between correlated and uncorrelated disorder in crystallographic
+-- models. Ensembles identified in MMDB thus may not correspond to the meaning
+-- intended by PDB or the depositor.  No information is lost, however, and
+-- if the intended meaning is known alternative ensemble descriptions may be
+-- reconstructed directly from the Alternate-conformation-ids.
+
+-- Note that correlated disorder as defined here is allowed within an atomic 
+-- coordinate set but not between the multiple sets which may define a model. 
+-- Multiple sets within the same model are intended as a means to represent 
+-- assemblies modeled from different experimentally determined structures,
+-- where correlated disorder between coordinate sets is not relevant.
+
+Conformation-ensemble ::= SEQUENCE {
+	name		VisibleString,
+	alt-conf-ids	SEQUENCE OF Alternate-conformation-id }
+
+
+-- Literal surface coordinates define the chemical components whose structure
+-- is described by a surface, and the surface itself.  The surface may be
+-- either a regular geometric solid or a triangle-mesh of arbitrary shape.
+
+Surface-coordinates ::= SEQUENCE {
+	contents		Chem-graph-pntrs,
+	surface			CHOICE {	sphere		Sphere,
+						cone		Cone,
+						cylinder	Cylinder,
+						brick		Brick,
+						tmesh		T-mesh,
+						triangles	Triangles } }
+T-mesh ::= SEQUENCE {
+	number-of-points	INTEGER,
+	scale-factor		INTEGER,
+	swap			SEQUENCE OF BOOLEAN,
+	x			SEQUENCE OF INTEGER,
+	y			SEQUENCE OF INTEGER,
+	z		        SEQUENCE OF INTEGER }
+
+Triangles ::= SEQUENCE {
+	number-of-points	INTEGER,
+	scale-factor		INTEGER,
+	x			SEQUENCE OF INTEGER,
+	y			SEQUENCE OF INTEGER,
+	z			SEQUENCE OF INTEGER,
+	number-of-triangles     INTEGER,
+	v1			SEQUENCE OF INTEGER, 
+	v2			SEQUENCE OF INTEGER,
+	v3			SEQUENCE OF INTEGER }
+
+
+-- Literal density coordinates define the chemical components whose structure
+-- is described by a density grid, parameters of this grid, and density values.
+
+Density-coordinates ::= SEQUENCE {
+	contents		Chem-graph-pntrs,
+	grid-corners		Brick,
+	grid-steps-x		INTEGER,
+	grid-steps-y		INTEGER,
+	grid-steps-z		INTEGER,
+	fastest-varying		ENUMERATED {
+					x(1),
+					y(2),
+					z(3)},
+	slowest-varying		ENUMERATED {
+					x(1),
+					y(2),
+					z(3)},
+	scale-factor		INTEGER,
+	density			SEQUENCE OF INTEGER }
+
+
+END
+--$Revision$
+--**********************************************************************
+--
+--  Biological Macromolecule 3-D Structure Data Types for MMDB,
+--                A Molecular Modeling Database
+--
+--  Definitions for structural features and biostruc addressing
+--
+--  By Hitomi Ohkawa, Jim Ostell, Chris Hogue and Steve Bryant 
+--
+--  National Center for Biotechnology Information
+--  National Institutes of Health
+--  Bethesda, MD 20894 USA
+--
+--  July, 1996
+--
+--**********************************************************************
+
+MMDB-Features DEFINITIONS ::=
+
+BEGIN
+
+EXPORTS Biostruc-feature-set, Chem-graph-pntrs, Atom-pntrs,
+	Chem-graph-alignment, Sphere, Cone, Cylinder, Brick, Transform,
+	Biostruc-feature-set-id, Biostruc-feature-id;
+
+IMPORTS Biostruc-id FROM MMDB
+	Molecule-id, Residue-id, Atom-id FROM MMDB-Chemical-graph
+	Model-id, Model-coordinate-set-id FROM MMDB-Structural-model
+	User-object FROM NCBI-General
+	Pub FROM NCBI-Pub;
+
+-- Named model features refer to sets of residues or atoms, or a region in 
+-- the model space.  A few specific feature types are allowed for compatibility
+-- with PDB usage, but the purpose of a named model feature is simply to
+-- associate various types of information with a set of atoms or 
+-- residues, or a spatially-defined region of the model structure.  They also
+-- support association of various properties with each residue or atom of a
+-- set.
+
+-- PDB-derived secondary structure defines a single feature, represented as a
+-- sequence of residue motifs, as are the contents of PDB SITE and
+-- FTNOTE records.  NCBI-assigned core and secondary structure descriptions
+-- are also represented as a sequence of residue motifs.
+
+Biostruc-feature-set ::= SEQUENCE {
+	id		Biostruc-feature-set-id,
+	descr		SEQUENCE OF Biostruc-feature-set-descr OPTIONAL,
+	features	SEQUENCE OF Biostruc-feature }
+
+Biostruc-feature-set-id ::= INTEGER
+
+Biostruc-feature-set-descr ::= CHOICE {
+	name			VisibleString,
+	pdb-comment		VisibleString,
+	other-comment		VisibleString,
+	attribution		Pub }
+
+-- An explicitly specified type in Biostruc-feature allows for
+-- efficient extraction and indexing of feature sets of a specific type. 
+-- Special types are provided for coloring and rendering, as
+-- as needed by molecular graphics programs.
+ 
+Biostruc-feature ::= SEQUENCE {
+	id		Biostruc-feature-id OPTIONAL,
+	name		VisibleString OPTIONAL,
+	type	INTEGER {	helix(1),
+				strand(2),
+				sheet(3),
+				turn(4),
+				site(5),
+				footnote(6),
+				comment(7),      -- new 
+				subgraph(100),   -- NCBI domain reserved
+				region(101), 
+				core(102),       -- user core definition
+				supercore(103),  -- NCBI reserved
+				color(150),      -- new
+				render(151),     -- new
+				label(152),      -- new
+				transform(153),  -- new
+				camera(154),     -- new
+				script(155),      -- for scripts
+				alignment(200),  -- VAST reserved 
+				similarity(201),
+				multalign(202),  -- multiple alignment
+                                indirect(203),   -- new
+				cn3dstate(254),  -- Cn3D reserved
+				other(255) } OPTIONAL,
+	property	CHOICE { 
+				color		Color-prop,
+				render		Render-prop,
+				transform	Transform,
+				camera		Camera,
+				script		Biostruc-script,
+				user		User-object } OPTIONAL,
+	location	CHOICE {
+				subgraph	Chem-graph-pntrs,
+				region		Region-pntrs,   
+				alignment	Chem-graph-alignment,
+				similarity	Region-similarity, 
+				indirect	Other-feature } OPTIONAL } -- new
+
+-- Other-feature allows for specifying location via reference to another
+-- Biostruc-feature and its location.
+
+Other-feature ::= SEQUENCE {
+	biostruc-id		Biostruc-id,
+	set			Biostruc-feature-set-id,
+	feature			Biostruc-feature-id }
+                        
+Biostruc-feature-id ::= INTEGER
+
+-- Atom, residue or molecule motifs describe a substructure defined by a set
+-- of nodes from the chemical graph. PDB secondary structure features are
+-- described as a residue motif, since they are not associated with any one of
+-- the multiple models that may be provided in a PDB file.  NCBI-assigned
+-- secondary structure is represented in the same way, even though it is
+-- model specific, since this allows for simple mapping of the structural 
+-- feature onto a sequence-only representation. This addressing mode may also 
+-- be used to describe features to be associated with particular atoms, 
+-- as, for example, the chemical shift observed in an NMR experiment.
+
+Chem-graph-pntrs ::= CHOICE {
+	atoms			Atom-pntrs,
+	residues		Residue-pntrs,
+	molecules		Molecule-pntrs }
+
+Atom-pntrs ::= SEQUENCE {
+	number-of-ptrs		INTEGER,
+	molecule-ids		SEQUENCE OF Molecule-id,
+	residue-ids		SEQUENCE OF Residue-id,
+	atom-ids		SEQUENCE OF Atom-id }
+
+Residue-pntrs ::= CHOICE {
+	explicit		Residue-explicit-pntrs,
+	interval		SEQUENCE OF Residue-interval-pntr }
+
+Residue-explicit-pntrs ::= SEQUENCE {
+	number-of-ptrs		INTEGER,
+	molecule-ids		SEQUENCE OF Molecule-id,
+	residue-ids		SEQUENCE OF Residue-id }
+
+Residue-interval-pntr ::= SEQUENCE {
+	molecule-id		Molecule-id,
+	from			Residue-id,
+	to			Residue-id }
+
+Molecule-pntrs ::= SEQUENCE {
+	number-of-ptrs		INTEGER,
+	molecule-ids		SEQUENCE OF Molecule-id }
+
+-- Region motifs describe features defined by spatial location, such as the
+-- site specified by a coordinate value, or a rgeion within a bounding volume.
+
+Region-pntrs ::= SEQUENCE {
+	model-id	Model-id,
+	region		CHOICE {
+				site		SEQUENCE OF Region-coordinates,
+				boundary	SEQUENCE OF Region-boundary } }
+
+-- Coordinate sites describe a region in space by reference to individual 
+-- coordinates, in a particular model.  These coordinates may be either the
+-- x, y and z values of atomic coordinates, the triangles of a surface mesh, 
+-- or the grid points of a density model. All are addressed in the same manner,
+-- as coordinate indices which give offsets from the beginning of the 
+-- coordinate data arrays.  A coordinate-index of 5, for example, refers to 
+-- the 5th x, y and z values of an atomic coordinate set, the 5th v1, v2, and v3
+-- values of a triangle mesh, or the 5th value in a density grid.
+
+-- PDB SITE and FTNOTE records refer to particular atomic coordinates, and they
+-- are represented as a region motif with addresses of type Region-coordinates.
+-- Any names or descriptions provided by PDB are thus associated with the
+-- indicated sites, in the indicated model. 
+
+Region-coordinates ::= SEQUENCE {
+	model-coord-set-id	Model-coordinate-set-id,
+	number-of-coords	INTEGER OPTIONAL,
+	coordinate-indices	SEQUENCE OF INTEGER OPTIONAL }
+
+-- Region boundaries are defined by regular solids located in the model space.  
+
+Region-boundary ::=	CHOICE {	sphere		Sphere,
+					cone		Cone,
+					cylinder	Cylinder,
+					brick		Brick }
+
+-- A biostruc alignment establishes an equivalence of nodes in the chemical
+-- graphs of two or more biostrucs. This may be mapped to a sequence
+-- alignment in the case of biopolymers.
+-- The 'dimension' component indicates the number of participants
+-- in the alignment.  For pairwise alignments, such as VAST 
+-- structure-structure alignments, the dimension will be always 2, with
+-- biostruc-ids, alignment, and domain each containing two entries for an  
+-- aligned pair.  The 'alignment' component contains a pair of Chem-graph-pntrs
+-- specifying a like number of corresponding residues in each structure.
+-- The 'domain' component specifies a region of each structure considered 
+-- in the alignment.  Only one transform (for the second structure) and
+-- one aligndata (for the pair) are provided for each VAST alignment.
+--
+-- For multiple alignments, a set of components are treated as
+-- parallel arrays of length 'dimension'.
+-- The 'transform' component moves each structure to align it with
+-- the structure specified as the first element in the "parallel" array,
+-- so necessarily the first transform is a NULL transform.
+-- Align-stats are placeholders for scores.
+
+Chem-graph-alignment ::= SEQUENCE {
+	dimension		INTEGER DEFAULT 2,
+	biostruc-ids		SEQUENCE OF Biostruc-id,
+	alignment		SEQUENCE OF Chem-graph-pntrs,
+	domain			SEQUENCE OF Chem-graph-pntrs OPTIONAL, 
+	transform		SEQUENCE OF Transform OPTIONAL,
+	aligndata		SEQUENCE OF Align-stats OPTIONAL }
+
+Align-stats ::= SEQUENCE {
+	descr		VisibleString OPTIONAL,
+	scale-factor	INTEGER OPTIONAL,
+	vast-score	INTEGER OPTIONAL,
+	vast-mlogp	INTEGER OPTIONAL,
+	align-res	INTEGER OPTIONAL,
+ 	rmsd		INTEGER OPTIONAL,
+	blast-score	INTEGER OPTIONAL,
+	blast-mlogp	INTEGER OPTIONAL,
+	other-score	INTEGER OPTIONAL }	        
+
+-- A biostruc similarity describes spatial features which are similar between
+-- two or more biostrucs.  Similarities are model dependent, and the model and
+-- coordinate set ids of the biostrucs must be specified.  They do not 
+-- necessarily map to a sequence alignment, as the regions referenced may
+-- be pieces of a surface or grid, and thus not uniquely mapable to particular
+-- chemical components.
+
+Region-similarity ::= SEQUENCE {
+	dimension		INTEGER DEFAULT 2,
+	biostruc-ids		SEQUENCE OF Biostruc-id,
+	similarity		SEQUENCE OF Region-pntrs,
+	transform		SEQUENCE OF Transform }
+
+-- Geometrical primitives are used in the definition of region motifs, and 
+-- also non-atomic coordinates.  Spheres, cones, cylinders and bricks are 
+-- defined by a few points in the model space.
+
+Sphere ::= SEQUENCE { 
+	center			Model-space-point,
+	radius			RealValue }
+
+Cone ::= SEQUENCE { 
+	axis-top		Model-space-point,
+	axis-bottom		Model-space-point,
+	radius-bottom		RealValue }
+
+Cylinder ::= SEQUENCE { 
+	axis-top		Model-space-point,
+	axis-bottom		Model-space-point,
+	radius			RealValue }
+
+-- A brick is defined by the coordinates of eight corners.  These are assumed
+-- to appear in the order 000, 001, 010, 011, 100, 101, 110, 111, where the 
+-- digits 0 and 1 refer to respectively to the x, y and z axes of a unit cube.
+-- Opposite edges are assumed to be parallel. 
+
+Brick ::= SEQUENCE {
+	corner-000		Model-space-point,
+	corner-001		Model-space-point,
+	corner-010		Model-space-point,
+	corner-011		Model-space-point,
+	corner-100		Model-space-point,
+	corner-101		Model-space-point,
+	corner-110		Model-space-point,
+	corner-111		Model-space-point }
+
+Model-space-point ::= SEQUENCE {
+	scale-factor		INTEGER,
+	x			INTEGER,
+	y			INTEGER,
+	z			INTEGER } 
+
+RealValue ::= SEQUENCE {
+	scale-factor		INTEGER,
+	scaled-integer-value	INTEGER }
+
+
+Transform ::=  SEQUENCE {
+            id  INTEGER,
+            moves SEQUENCE OF Move }
+            
+Move ::= CHOICE {
+	rotate		Rot-matrix,
+	translate	Trans-matrix }
+          
+-- A rotation matrix is defined by 9 numbers, given by row, i.e.,
+-- with column indices varying fastest.
+-- Coordinates, as a matrix with columns x, y, an z, are rotated 
+-- via multiplication with the rotation matrix. 
+-- A translation matrix is defined by 3 numbers, which is added to
+-- the rotated coordinates for specified amount of translation. 
+
+Rot-matrix ::= SEQUENCE {
+	scale-factor		INTEGER,
+	rot-11			INTEGER,
+	rot-12			INTEGER,
+	rot-13			INTEGER,
+	rot-21			INTEGER,
+	rot-22			INTEGER,
+	rot-23			INTEGER,
+	rot-31			INTEGER,
+	rot-32			INTEGER,
+	rot-33			INTEGER }
+
+Trans-matrix ::= SEQUENCE {
+	scale-factor		INTEGER,
+	tran-1			INTEGER,
+	tran-2			INTEGER,
+	tran-3			INTEGER }
+
+-- The camera is a position relative to the world coordinates
+-- of the structure referred to by a location.  
+-- this is used to set the initial position of the
+-- camera using OpenGL.  scale is the value used to scale the
+-- other values from floating point to integer
+
+Camera ::= SEQUENCE {
+	x		INTEGER,
+	y		INTEGER,
+	distance	INTEGER,
+	angle		INTEGER,
+	scale		INTEGER,
+    modelview   GL-matrix }
+    
+    
+GL-matrix ::= SEQUENCE {
+	scale		INTEGER,
+	m11			INTEGER,
+	m12			INTEGER,
+	m13			INTEGER,
+	m14			INTEGER,
+	m21			INTEGER,
+	m22			INTEGER,
+	m23			INTEGER,
+	m24			INTEGER,
+	m31			INTEGER,
+	m32			INTEGER,
+	m33			INTEGER,
+	m34			INTEGER,
+	m41			INTEGER,
+	m42			INTEGER,
+	m43			INTEGER,
+	m44			INTEGER }
+
+
+Color-prop ::= SEQUENCE {
+	r		INTEGER OPTIONAL, 
+	g		INTEGER OPTIONAL,
+	b		INTEGER OPTIONAL,
+	name		VisibleString OPTIONAL }
+
+-- Note that Render-prop is compatible with the Annmm specification,
+-- i.e., its numbering schemes do not clash with those in Render-prop.
+
+Render-prop ::= INTEGER {
+	default		(0),  -- Default view
+	wire		(1),  -- use wireframe 
+	space		(2),  -- use spacefill
+	stick		(3),  -- use stick model (thin cylinders)
+	ballNStick	(4),  -- use ball & stick model
+	thickWire	(5),  -- thicker wireframe
+	hide		(9),  -- don't show this
+	name		(10), -- display its name next to it
+	number 		(11), -- display its number next to it 
+	pdbNumber	(12), -- display its PDB number next to it
+	objWireFrame	(150), -- display MMDB surface object as wireframe
+	objPolygons	(151), -- display MMDB surface object as polygons   
+	colorsetCPK	(225), -- color atoms like CPK models
+	colorsetbyChain	(226), -- color each chain different
+	colorsetbyTemp	(227), -- color using isotropic Temp factors 
+	colorsetbyRes	(228), -- color using residue properties
+	colorsetbyLen	(229), -- color changes along chain length
+	colorsetbySStru	(230), -- color by secondary structure
+	colorsetbyHydro (231), -- color by hydrophobicity
+	colorsetbyObject(246), -- color each object differently
+	colorsetbyDomain(247), -- color each domain differently
+	other           (255)  
+	}
+
+--  When a Biostruc-Feature with a Biostruc-script is initiated,
+--  it should play the specified steps one at a time, setting the feature-do
+--  list as the active display.
+--  The camera can be set using a feature-do, 
+--  but it may be moved independently with
+--  camera-move, which specifies how to move
+--  the camera dynamically during the step along the path defined (e.g.,
+--  a zoom, a rotate).
+--  Any value of pause (in 1:10th's of a second) will force a pause
+--  after an image is shown.
+--  If waitevent is TRUE, it will await a mouse or keypress and ignore 
+--  the pause value.
+
+Biostruc-script ::= SEQUENCE OF Biostruc-script-step
+
+Biostruc-script-step ::= SEQUENCE {
+	step-id			Step-id,
+	step-name		VisibleString OPTIONAL, 
+	feature-do		SEQUENCE OF Other-feature OPTIONAL,
+	camera-move		Transform OPTIONAL,
+	pause			INTEGER DEFAULT 10,
+	waitevent		BOOLEAN,
+	extra			INTEGER, 
+	jump			Step-id OPTIONAL }
+
+Step-id ::= INTEGER
+
+END
+--$Revision$
+--**********************************************************************
+--
+--  Definitions for CDD's 
+--
+--  NCBI Structure Group
+--
+--  National Center for Biotechnology Information
+--  National Institutes of Health
+--  Bethesda, MD 20894 USA
+--
+--  October 1999
+--
+--  asntool -m cdd.asn -w 100 -o cdd.h
+--  asntool -B objcdd -m cdd.asn -G -w 100 -I objseq.h objsset.h -K cdd.h -M asn.all
+--**********************************************************************
+
+NCBI-Cdd DEFINITIONS ::=
+-- NCBI Conserved Domain Definition
+
+
+BEGIN
+
+EXPORTS  Cdd-id, Cdd-id-set, Cdd, Cdd-set, Cdd-tree, Cdd-tree-set;
+
+IMPORTS  Date                 FROM NCBI-General
+         Pub                  FROM NCBI-Pub
+         Biostruc-annot-set   FROM MMDB
+         Bioseq               FROM NCBI-Sequence
+         Seq-annot            FROM NCBI-Sequence
+         Seq-entry            FROM NCBI-Seqset
+         Org-ref              FROM NCBI-Organism
+         Seq-interval         FROM NCBI-Seqloc
+         Score-set            FROM NCBI-Seqalign;
+
+-- Cdd's should not exist without a unique integer id, but alternative 
+-- id's may be present as well.
+
+Global-id ::= SEQUENCE {
+             accession      VisibleString,
+             release        VisibleString OPTIONAL,
+             version        INTEGER       OPTIONAL, -- version 0 is the seed
+             database       VisibleString OPTIONAL  -- this is NOT the source!
+             }                                      -- rather the database the
+                                                    -- object resides in
+
+Cdd-id ::= CHOICE {
+             uid            INTEGER,
+             gid            Global-id
+             }
+
+Cdd-id-set ::= SEQUENCE OF Cdd-id
+
+-- The description of CDD's refers to the specific set of aligned sequences,
+-- the region that is being aligned and the information contained in the
+-- alignment. It may contain a lengthy comment
+-- describing the function of the domain as well as its origin and all
+-- other anecdotal information that can't be pressed into a rigid scheme.
+-- Crosslinks to reference papers available in PubMed are possible as well.
+-- There can be as many of these as you want in the CDD.
+
+Cdd-descr ::= CHOICE {
+                othername   VisibleString, -- alternative names for the CDD
+                category    VisibleString, -- intracellular, extracellular, etc.
+                comment     VisibleString, -- this is where annotations go
+                reference   Pub,           -- a citation 
+                create-date Date,          -- valid for the current version
+                tax-source  Org-ref,       -- holds the highest common node
+                source      VisibleString, -- the database the seeds were created
+                                           -- from, e.g. SMART, PFAM, etc..
+                status      INTEGER { unassigned(0),
+                                      finished-ok(1),     -- to indicate
+                                      pending-release(2), -- processing status
+                                      other-asis(3),      -- or final type
+                                      matrix-only(4),     -- 
+                                      other(255) }        -- for CD production
+              }
+
+Cdd-descr-set ::= SET OF Cdd-descr
+
+-- the Cdd-tree contains the hierarchy of CDDs.  This object is separate from
+-- the Cdd's themselves to allow it to be retrieved separately and to
+-- operate as an index.
+
+Cdd-tree ::= SEQUENCE {
+            name          VisibleString,
+            id            Cdd-id-set,
+            description   Cdd-descr-set OPTIONAL,
+            parents       Cdd-id-set OPTIONAL,
+            children      Cdd-id-set OPTIONAL,
+            siblings      Cdd-id-set OPTIONAL
+            }
+
+Cdd-tree-set ::= SEQUENCE OF Cdd-tree
+
+-- Matrix definitions, these are supposed to store PSSMs and corresponding 
+-- matrices of relative residue frequencies.
+-- the number of columns and rows is listed explicitly, values in columns
+-- are stored column by column, i.e. in groups of nrows values for each column
+
+Matrix ::= SEQUENCE {
+  ncolumns      INTEGER,
+  nrows         INTEGER,
+  row-labels    SEQUENCE OF VisibleString OPTIONAL,
+  scale-factor  INTEGER,
+  columns       SEQUENCE OF INTEGER
+}
+
+-- definition for matrix of pairwise "distances", stored as the upper 
+-- triangle of a sqared n x n matrix (excluding the diagonal), this is
+-- supposed to store pairwise percentages of identical residues, pairwise
+-- alignment scores or E-values from pairwise BLAST sequence comparisons
+
+Triangle ::= SEQUENCE {
+  nelements     INTEGER,
+  scores        Score-set
+}
+
+-- the Cdd is the basic ASN.1 object storing an annotated and curated
+-- set of alignments (formulated as a set of pairwise master-slave
+-- alignments). 
+-- The alignment data are contained in Seq-align-sets and Biostruc-feature-sets.
+-- Version numbers in Global-ids are meant to be updated every time the Cdd is changed
+-- in a way that does not require Global-ids to be changed (sequences added in update
+-- cycle, annotation changed)
+
+Cdd ::= SEQUENCE {
+  name          VisibleString,
+  id            Cdd-id-set,
+  description   Cdd-descr-set OPTIONAL,
+  seqannot      SEQUENCE OF Seq-annot OPTIONAL, -- contains the alignment
+  features      Biostruc-annot-set OPTIONAL, -- contains structure alignments
+                                             -- or "core" definitions
+  sequences     Seq-entry OPTIONAL,          -- store as bioseq-set inside seq-entry
+  profile-range Seq-interval OPTIONAL,       -- profile for this region only
+                                             -- also stores the Seq-id of the master
+  trunc-master  Bioseq OPTIONAL,             -- holds the truncated master
+                                             -- which may be something like a
+                                             -- consensus, but still refers to the
+                                             -- sequence coord. frame in profile-range
+  posfreq       Matrix OPTIONAL,             -- relative residue frequencies
+  scoremat      Matrix OPTIONAL,             -- Position dependent score matrix
+  distance      Triangle OPTIONAL            -- pairwise distances for all seqs.
+}
+
+Cdd-set ::= SET OF Cdd
+
+END
+--$Revision$
+--****************************************************************
+--
+--  NCBI MIME type (chemical/ncbi-asn1-ascii and chemical/ncbi-asn1-binary)
+--  by Jonathan Epstein, February 1996
+--
+--****************************************************************
+
+NCBI-Mime DEFINITIONS ::=
+BEGIN
+
+EXPORTS Ncbi-mime-asn1;
+IMPORTS Biostruc, Biostruc-annot-set FROM MMDB
+	Seq-entry FROM NCBI-Seqset
+	Seq-annot FROM NCBI-Sequence
+	Medline-entry FROM NCBI-Medline;
+	
+Ncbi-mime-asn1 ::= CHOICE {
+	entrez	Entrez-general,			-- just a structure
+	alignstruc	Biostruc-align,			-- structures & sequences & alignments
+	alignseq	Biostruc-align-seq,	-- sequence alignment
+    strucseq    Biostruc-seq,	-- structure & sequences
+    strucseqs   Biostruc-seqs	    -- structure & sequences & alignments 
+	-- others may be added here in the future
+}
+
+Biostruc-align ::= SEQUENCE {
+	master	Biostruc,
+	slaves	SET OF Biostruc,
+	alignments	Biostruc-annot-set,	-- structure alignments
+	sequences SET OF Seq-entry,	-- sequences
+	seqalign SET OF Seq-annot }
+
+Biostruc-align-seq ::= SEQUENCE {	-- display seq structure align only
+	sequences SET OF Seq-entry,	-- sequences
+	seqalign SET OF Seq-annot }	
+
+Biostruc-seq ::= SEQUENCE {	-- display  structure seq added by yanli 
+    structure Biostruc,
+	sequences SET OF Seq-entry }
+
+Biostruc-seqs ::= SEQUENCE { -- display blast alignment along with neighbor's structure added by yanli 
+    structure Biostruc,
+	sequences SET OF Seq-entry,	-- sequences
+	seqalign SET OF Seq-annot }
+
+Entrez-style ::= ENUMERATED {
+	docsum (1),
+	genbank (2) ,
+	genpept (3) ,
+	fasta (4) ,
+	asn1 (5) ,
+	graphic (6) ,
+	alignment (7) ,
+	globalview (8) ,
+	report (9) ,
+	medlars (10) ,
+	embl (11) ,
+	pdb (12) ,
+	kinemage (13) }
+
+Entrez-general ::= SEQUENCE {
+	title VisibleString OPTIONAL,
+	data CHOICE {
+		ml	Medline-entry ,
+		prot	Seq-entry ,
+		nuc	Seq-entry ,
+		genome	Seq-entry ,
+		structure Biostruc ,
+		strucAnnot Biostruc-annot-set } ,
+	style Entrez-style ,
+	location VisibleString OPTIONAL }
+END
+--$Revision$
+--*********************************************************************
+--
+--  access.asn
+--
+--     messages for data access
+--
+--*********************************************************************
+
+NCBI-Access DEFINITIONS ::=
+BEGIN
+
+EXPORTS Link-set;
+
+    -- links between same class = neighbors
+    -- links between other classes = links
+
+Link-set ::= SEQUENCE {
+    num INTEGER ,                         -- number of links to this doc type
+    uids SEQUENCE OF INTEGER OPTIONAL ,     -- the links
+    weights SEQUENCE OF INTEGER OPTIONAL }  -- the weights
+
+
+END
+--$Revision$
+--**********************************************************************
+--
+--  NCBI Sequence Feature Definition Module
+--  by James Ostell, 1994
+--
+--**********************************************************************
+
+NCBI-FeatDef DEFINITIONS ::=
+BEGIN
+
+EXPORTS FeatDef, FeatDefSet, FeatDispGroup, FeatDispGroupSet;
+
+
+FeatDef ::= SEQUENCE {
+    typelabel VisibleString ,	   -- short label for type eg "CDS"
+    menulabel VisibleString ,	   -- label for a menu eg "Coding Region"
+    featdef-key INTEGER ,		   -- unique for this feature definition
+    seqfeat-key INTEGER ,		   -- SeqFeat.data.choice from objfeat.h
+    entrygroup INTEGER ,		   -- Group for data entry
+    displaygroup INTEGER ,		   -- Group for data display
+    molgroup FeatMolType           -- Type of Molecule used for
+}
+
+FeatMolType ::= ENUMERATED {
+	aa (1),  -- proteins
+    na (2),  -- nucleic acids
+    both (3) }  -- both
+
+FeatDefSet ::= SEQUENCE OF FeatDef   -- collections of defintions
+
+FeatDispGroup ::= SEQUENCE {
+	groupkey INTEGER ,
+    groupname VisibleString }
+
+FeatDispGroupSet ::= SEQUENCE OF FeatDispGroup
+
+FeatDefGroupSet ::= SEQUENCE {
+	groups FeatDispGroupSet ,
+	defs FeatDefSet }
+
+END
+
+    
+--$Revision$
+--********************************************************************
+--
+--  Print Templates
+--  James Ostell, 1993
+--
+--
+--********************************************************************
+
+NCBI-ObjPrt DEFINITIONS ::=
+BEGIN
+
+EXPORTS PrintTemplate, PrintTemplateSet;
+
+PrintTemplate ::= SEQUENCE {
+    name TemplateName ,  -- name for this template
+    labelfrom VisibleString OPTIONAL,    -- ASN.1 path to get label from
+    format PrintFormat }
+
+TemplateName ::= VisibleString
+
+PrintTemplateSet ::= SEQUENCE OF PrintTemplate
+
+PrintFormat ::= SEQUENCE {
+    asn1 VisibleString ,    -- ASN.1 partial path for this
+    label VisibleString OPTIONAL ,   -- printable label
+    prefix VisibleString OPTIONAL,
+    suffix VisibleString OPTIONAL,
+    form PrintForm }
+
+PrintForm ::=   CHOICE {      -- Forms for various ASN.1 components
+    block PrintFormBlock,
+    boolean PrintFormBoolean,
+    enum PrintFormEnum,
+    text PrintFormText,
+    use-template TemplateName,
+    user UserFormat ,
+    null NULL }               -- rarely used
+
+UserFormat ::= SEQUENCE {
+    printfunc VisibleString ,
+    defaultfunc VisibleString OPTIONAL }
+
+PrintFormBlock ::= SEQUENCE {  -- for SEQUENCE, SET
+    separator VisibleString OPTIONAL ,
+    components SEQUENCE OF PrintFormat }
+
+PrintFormBoolean ::= SEQUENCE {
+    true VisibleString OPTIONAL ,
+    false VisibleString OPTIONAL }
+
+PrintFormEnum ::= SEQUENCE {
+    values SEQUENCE OF VisibleString OPTIONAL }
+
+PrintFormText ::= SEQUENCE {
+    textfunc VisibleString OPTIONAL }
+    
+END
+
+--$Revision$
+--  *********************************************************************
+--
+--  These are code and conversion tables for NCBI sequence codes
+--  ASN.1 for the sequences themselves are define in seq.asn
+--
+--  Seq-map-table and Seq-code-table REQUIRE that codes start with 0
+--    and increase continuously.  So IUPAC codes, which are upper case
+--    letters will always have 65 0 cells before the codes begin.  This
+--    allows all codes to do indexed lookups for things
+--
+--  Valid names for code tables are:
+--    IUPACna
+--    IUPACaa
+--    IUPACeaa
+--    IUPACaa3     3 letter amino acid codes : parallels IUPACeaa
+--                   display only, not a data exchange type
+--    NCBI2na
+--    NCBI4na
+--    NCBI8na
+--    NCBI8aa
+--    NCBIstdaa
+--     probability types map to IUPAC types for display as characters
+
+NCBI-SeqCode DEFINITIONS ::=
+BEGIN
+
+EXPORTS Seq-code-table, Seq-map-table, Seq-code-set;
+
+Seq-code-type ::= ENUMERATED {              -- sequence representations
+    iupacna (1) ,              -- IUPAC 1 letter nuc acid code
+    iupacaa (2) ,              -- IUPAC 1 letter amino acid code
+    ncbi2na (3) ,              -- 2 bit nucleic acid code
+    ncbi4na (4) ,              -- 4 bit nucleic acid code
+    ncbi8na (5) ,              -- 8 bit extended nucleic acid code
+    ncbipna (6) ,              -- nucleic acid probabilities
+    ncbi8aa (7) ,              -- 8 bit extended amino acid codes
+    ncbieaa (8) ,              -- extended ASCII 1 letter aa codes
+    ncbipaa (9) ,              -- amino acid probabilities
+    iupacaa3 (10) ,            -- 3 letter code only for display
+    ncbistdaa (11) }           -- consecutive codes for std aas, 0-25
+
+Seq-map-table ::= SEQUENCE { -- for tables of sequence mappings 
+    from Seq-code-type ,      -- code to map from
+    to Seq-code-type ,        -- code to map to
+    num INTEGER ,             -- number of rows in table
+    start-at INTEGER DEFAULT 0 ,   -- index offset of first element
+    table SEQUENCE OF INTEGER }  -- table of values, in from-to order
+
+Seq-code-table ::= SEQUENCE { -- for names of coded values
+    code Seq-code-type ,      -- name of code
+    num INTEGER ,             -- number of rows in table
+    one-letter BOOLEAN ,   -- symbol is ALWAYS 1 letter?
+    start-at INTEGER DEFAULT 0 ,   -- index offset of first element
+    table SEQUENCE OF
+        SEQUENCE {
+            symbol VisibleString ,      -- the printed symbol or letter
+            name VisibleString } ,      -- an explanatory name or string
+    comps SEQUENCE OF INTEGER OPTIONAL } -- pointers to complement nuc acid
+
+Seq-code-set ::= SEQUENCE {    -- for distribution
+    codes SET OF Seq-code-table OPTIONAL ,
+    maps SET OF Seq-map-table OPTIONAL }
+
+END
+

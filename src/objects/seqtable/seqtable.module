@@ -1,0 +1,2 @@
+MODULE_PATH   = objects/seqtable
+MODULE_IMPORT =objects/general/general objects/seq/seq objects/seqloc/seqloc

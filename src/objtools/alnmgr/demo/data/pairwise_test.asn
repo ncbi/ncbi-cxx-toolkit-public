@@ -1,0 +1,64 @@
+Seq-align-set ::= {
+  {
+    type partial,
+    dim 2,
+    segs denseg {
+      dim 2 ,
+      numseg 1 ,
+      ids {
+	gi 37221178,
+	gi 31324547 },
+      starts {
+	0,
+	0 },
+      lens {
+	10 },
+      strands {
+	plus,
+	plus } } },
+  {
+    type partial ,
+    dim 2 ,
+    segs
+    denseg {
+      dim 2 ,
+      numseg 1 ,
+      ids {
+	gi 37221178,
+	gi 31324547 },
+      starts {
+	8 ,
+	6 } ,
+      lens {
+	10 } ,
+      strands {
+	plus ,
+	plus } } },
+  {
+    type global,
+    dim 2,
+    segs std {
+      {
+	dim 2,
+	ids {
+	  gi 37221178,
+	  gi 31324547
+	},
+	loc {
+	  int {
+	    from 0,
+	    to 2552,
+	    strand plus,
+	    id gi 37221178
+	  },
+	  int {
+	    from 0,
+	    to 850,
+	    strand unknown,
+	    id gi 31324547
+	  }
+	}
+      }
+    }
+  }
+}

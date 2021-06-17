@@ -1,0 +1,64 @@
+            "id": "gi|115952497",
+            "type": 12
+        "id": "4.15318858"
+        "id": "4.15318858",
+        "id": "4.15318858",
+        "id": "4.15318858",
+        "id": "ref|NW_001364032.1|SPUUN_WGA87311_2",
+        "last_modified": 1160395665046
+        "last_modified": 1160395665046
+        "last_modified": 1160395665046
+        "type": 10
+        {
+        }
+    "blob_id": {
+    "canonical_id": {
+    "class": "not-set",
+    "compression": "gzip",
+    "data": "eJyFVM1u00AQjk2BNkUIEKdIlfbAoZUqx06gFDglbVUKaoQUaI/RZjOxDY43tdeEcDI8AUg8QNK0oII4wAHehHfgzgMwu+ukSSvB2JJnZ76dn29nPUjtdJA66Yn6Fq7Vu8mzsLG/XVm/W3acRimXG6aFK7X9hm075bXbdhkto9Q0jJySL6k5d+n34wO9GmKgrxhoiE9hcRtC3oFq4gct6TxEh8yBrvlKHEOnGfS1HfMuYN6o8bJkOTpSBrxaY02/EoZcUOHzcAI3SjOwRQnbgyiewWShxjIp7Jou7EnEnwMT8Wb1THULmWdnUzuGqWneGcwG+5gW3hq3nnpANmsVEsNBAiED4sekHfEOEejoeTwA4qpchGYNkwgCoDG0SLOvUFXaD3hENngQgAuEt8kutHzmh0AeJh0aEl0sqesUfuiSDQgFRBiSTEhbRX9XYAa0l2x7jSzHAMQTonu/WOz1epbnxsxqso4lOsyCVlLsZt0XY6BJxDw/LK5YRDbEI9/1QxrMNhB7XLhJSLJ9xMP0sv7xmjIGseSfVCrbj+xMrJKVyx2lBa8uIh662CrD4iMukphg7fhSqaocPiOMh8J3V5GkNkSK0Alvy03FGsavbuw2Jo036oy22zxord+zS84KZvupjlENKB6ccVOf149T66Ge9KV/liSH3NHAi4K+kmM1lAHMpT+nQ3CsAAMNu3E+nro7+emgWsazZhrXFcSslMeuUVp482EreUGjPs78AxwGQV9zVLbkEfEWRB0q7VsBJEh/xKecU6rfAqknML2SOmUwBUL1bNVohPNWWfuRpu8YPwvqAlzYqe3N3orveFdUY+blX5r+vOxWbdDy7b+IMUGDNG/MS0heH5ppzr2X2fOGmct9SkcKMsp4VP8eRLyTSLVhlKpf08nnMxf3VP4CjfiBqA=="
+    "date_changed": "07/30/2013 09:30:00",
+    "division": "CON",
+    "format": "asn.1",
+    "gi": 115952497
+    "hash": 1488528452,
+    "hup_release_date": "",
+    "id": {
+    "id": {
+    "id": {
+    "id2_info": "",
+    "is_dead": false,
+    "is_suppressed": true,
+    "is_withdrawn": false,
+    "length": 1169,
+    "molecule_type": "dna",
+    "n_chunks": 1
+    "original_load_date": "10/09/2006 12:07:45",
+    "other_ids": [
+    "owner": 21,
+    "reply": "BioseqInfo",
+    "reply": "BlobData",
+    "reply": "BlobInfo",
+    "reply": "PublicComment",
+    "seq_state": 10,
+    "size": 1274,
+    "state": 10,
+    "storage_size": 691,
+    "tax_id": 7668,
+    "text": "This record was removed as a result of standard genome annotation processing. See the genome build documentation at http://www.ncbi.nlm.nih.gov/genome/guide/build.shtml for further information, or contact info@ncbi.nlm.nih.gov."
+    "username": "chenhc",
+    ],
+    },
+    },
+    },
+    },
+    },
+[
+]
+{
+{
+{
+{
+}
+},
+},
+},

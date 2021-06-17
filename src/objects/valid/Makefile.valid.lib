@@ -1,0 +1,10 @@
+# $Id$
+LIB = valid
+SRC = valid__ valid___
+
+DLL_LIB = xregexp
+
+ASN_DEP = general
+
+USES_LIBRARIES =  \
+    general xregexp

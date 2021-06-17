@@ -1,0 +1,58 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        name "NM_004638.3:c.-284_-283insTGGGAGG",
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 3,
+                      seq-data iupacna "AGG"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type delins,
+                delta {
+                  {
+                    seq literal {
+                      length 10,
+                      seq-data iupacna "AGGTGGGAGG"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 2,
+        strand plus,
+        id gi 314122240
+      },
+      exts {
+        {
+          type str "Variation Normalization",
+          data {
+            {
+              label str "Fully Shifted",
+              data bool TRUE
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Test Fully Shifted : 1

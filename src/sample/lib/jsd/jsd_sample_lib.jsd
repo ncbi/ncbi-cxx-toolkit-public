@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Data-set-id": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "num": {
+          "type": "integer"
+        },
+        "type": {
+          "type": "integer",
+          "enum": [1, 2, 3]
+        },
+        "weight": {
+          "type": "number"
+        },
+        "uids": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        }
+      },
+      "required": ["version", "name", "num", "type"],
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "Data-set-id": {
+      "$ref": "#/definitions/Data-set-id"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_lib(sqlitewrapp)
+  NCBI_sources(sqlitewrapp)
+  NCBI_requires(SQLITE3)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(vakatov)
+NCBI_end_lib()
+

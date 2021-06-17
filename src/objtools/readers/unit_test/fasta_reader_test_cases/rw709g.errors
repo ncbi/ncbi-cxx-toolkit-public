@@ -1,0 +1,6 @@
+                Error:
+Problem:        Near line 1, the general id string is too long.  Its length is 51 but the maximum allowed general id string length is 50.  Please find and correct all general id strings that are too long.
+SeqId:          db:abababababababababababababababababababababababababa
+Line:           1
+
+

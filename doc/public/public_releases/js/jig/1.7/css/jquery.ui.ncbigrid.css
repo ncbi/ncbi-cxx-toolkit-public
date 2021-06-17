@@ -1,0 +1,146 @@
+/* Paged CSS */
+div.ui-ncbigrid-paged-toolbar{width: auto;border-width: 1px 0 0 0; border-color: #d4dfe9; border-style: solid; background-color: #fff;padding: auto .637em;line-height: .727em;-moz-border-radius-bottomright: 4px;-moz-border-radius-bottomleft: 4px;}
+div.ui-ncbigrid-paged-countItems{width: 25%;float: left;line-height: 1.2em;}
+div.ui-ncbigrid-paged-pageControl{width: 40%;margin-left: 28%;_width: auto;_margin-left: auto;text-align: center;line-height:1.2em;}
+div.ui-ncbigrid-paged-gotoControl{width: 32%;float: right;text-align: right; }
+div.ui-ncbigrid-paged-gotoControl input{text-align: center;font-size: .9em;    }
+tr.ui-ncbigrid-rowHidden{display: none;}
+div.ui-ncbigrid-paged-pageControl button{font-size: .9em;padding: 0em;margin: 0em;*margin: 0em .3em 0em .5em;width: 6em;background: none;border: 1px solid #ccc;color: #14376C; line-height: 1.2em;}
+/* Sortable CSS */
+table.ui-ncbigrid th.sortAsc a,table.ui-ncbigrid th.sortDsc a,table.ui-ncbigrid th.sortNone a{padding-right : 21px;background-repeat: no-repeat;background-position: right center;color: #333;}
+table.ui-ncbigrid th.sortAsc a{background-image : url(../img/sorted_asc.gif);}
+table.ui-ncbigrid th.sortDsc a{background-image : url(../img/sorted_dsc.gif);}
+table.ui-ncbigrid th.sortNone a{background-image: none;color: #14376c;}
+table.ui-ncbigrid th.sortNone a:hover { background-image: url('../img/sorted_non.gif');color: #985735; }
+table.ui-ncbigrid th a{display: block;text-decoration: none;_width : 100%;padding-right: 21px;border: 0; }
+table.ui-ncbigrid th a:hover, table.ui-ncbigrid th a, table.ui-ncbigrid th a:active { border: 0 !important; }
+table.ui-ncbigrid th, table.ui-ncbigrid th a { color: #14376c; }
+/* Scrollable CSS */
+/* Scrollable Table CSS Broken up by browsers so it is easier to undertand and code */
+/************************/
+/* Start of Firefox CSS */
+/************************/
+/* FF has a border collapse bug so all of this work needs to be done */
+div.ui-ncbigrid-scroll{padding : 0px;margin : 0px;}
+div.ui-ncbigrid-scroll.firefox table,div.ui-ncbigrid-scroll.firefox table tr,div.ui-ncbigrid-scroll.firefox table th,div.ui-ncbigrid-scroll.firefox table td {/*border: 1px solid #000;*/   }
+div.ui-ncbigrid-scroll.firefox table td {border-width: 0px 1px 1px 0px;}
+div.ui-ncbigrid-scroll.firefox table tr:last-child td {border-width: 0px 1px 0px 0px;}
+div.ui-ncbigrid-scroll.firefox table tfoot tr:last-child th,div.ui-ncbigrid-scroll.firefox table thead tr:last-child th {border-width: 0px 1px 1px 0px;}
+div.ui-ncbigrid-scroll.firefox table tfoot tr:first-child th {border-width: 1px 1px 0px 0px;}
+div.ui-ncbigrid-scroll.firefox table tfoot tr th:last-child{border-right: 0px;}
+/* end FF collapse Bug */
+/* Adjust for scrollbar */
+div.ui-ncbigrid-scroll.firefox table tr td:last-child  {padding-right: 17px;border-right: 0px;}
+div.ui-ncbigrid-scroll.firefox table caption{/* border-width: 1px 1px 0px;border-style: solid;border-color: #AAA; */}
+div.ui-ncbigrid-scroll.firefox table{position: relative;}
+div.ui-ncbigrid-scroll.firefox table tbody{overflow-y: scroll;overflow-x: hidden;position: relative;}
+/******************************/
+/* Start of Chrome/Safari CSS */
+/******************************/
+div.ui-ncbigrid-scroll.sa_ch{overflow-y: scroll;}
+div.ui-ncbigrid-scroll.sa_ch table,div.ui-ncbigrid-scroll.sa_ch table tr,div.ui-ncbigrid-scroll.sa_ch table tr th,div.ui-ncbigrid-scroll.sa_ch table tr td{border-collapse: collapse;}
+/*Keep border from being very thick against scrollbar*/
+div.ui-ncbigrid-scroll.sa_ch table th:last-child,div.ui-ncbigrid-scroll.sa_ch table td:last-child{border-right: 0;}
+div.ui-ncbigrid-scroll.sa_ch table{border-top: 0;width: 100%;}
+div.ui-ncbigrid-scroll.sa_ch table thead th{}
+div.ui-ncbigrid-scroll.sa_ch table tfoot th{}
+div.ui-ncbigrid-scroll.sa_ch caption{border-top: 0px solid #AAA;}
+/****************************/
+/* End of Chrome/Safari CSS */
+/****************************/
+/********************/
+/* Start of IE8 CSS */
+/********************/
+div.ui-ncbigrid-scroll.ie8{overflow-y: auto;overflow-x: hidden;}
+div.ui-ncbigrid-scroll.ie8 table, div.ui-ncbigrid-scroll.ie8 table tr th{border: 1px solid #AAA;border-collapse: collapse;}
+/* JSL-1085 div.ui-ncbigrid-scroll.ie8 table tr,, div.ui-ncbigrid-scroll.ie8 table tr td{border: 1px solid #AAA; } */
+div.ui-ncbigrid-scroll.ie8 table thead th,div.ui-ncbigrid-scroll.ie8 table tfoot th{background-color: #EEE;}
+div.ui-ncbigrid-scroll.ie8 table caption{border: 1px solid #AAA;border-width: 1px 1px 0px 1px;}
+/******************/
+/* End of IE8 CSS */
+/******************/
+/**********************/
+/* Start of IE6/7 CSS */
+/**********************/
+div.ui-ncbigrid-scroll.ie6_7{overflow-y: scroll;overflow-x: hidden;_border-left: 1px solid #AAA;border-bottom: 1px solid #AAA;padding:0px;margin:0px;padding-right: 11px;_padding-right: 0px;}
+div.ui-ncbigrid-scroll.ie6_7 table{padding:0px;margin:0px;_margin-left:-2px;}
+div.ui-ncbigrid-scroll.ie6_7 table,div.ui-ncbigrid-scroll.ie6_7 table tr,div.ui-ncbigrid-scroll.ie6_7 table tr th,div.ui-ncbigrid-scroll.ie6_7 table tr td{ /* border: 1px solid #AAA;border-collapse: collapse; */ }
+div.ui-ncbigrid-scroll.ie6_7 table,div.ui-ncbigrid-scroll.ie6_7 table tr td{border-bottom:0px;}
+div.ui-ncbigrid-scroll.ie6_7 table thead.orginal tr,div.ui-ncbigrid-scroll.ie6_7 table thead.orginal tr{position: absolute;}
+div.ui-ncbigrid-scroll.ie6_7 table thead.orginal th,div.ui-ncbigrid-scroll.ie6_7 table tfoot th{background-color: #EEE;position: relative;border-left:0px;_left: 3px;}
+/*!! I know expressions are bad, but the onscroll refresh rate does not match this performance !!*/
+div.ui-ncbigrid-scroll.ie6_7 table thead.orginal th{top: expression( (- this.parentNode.parentNode.parentNode.getElementsByTagName("tbody")[0].offsetHeight - this.offsetHeight + 1 ) + "px");}
+div.ui-ncbigrid-scroll.ie6_7 table tfoot.orginal th{top: expression( this.parentNode.parentNode.parentNode.parentNode.offsetHeight - this.parentNode.parentNode.parentNode.offsetHeight + 1 + (window["_scrollredrawIssueHeight"] || 0) + "px");border-bottom: 1px solid #AAA;_top: expression( this.parentNode.parentNode.parentNode.parentNode.offsetHeight - this.parentNode.parentNode.parentNode.offsetHeight + 1 + this.parentNode.parentNode.parentNode.parentNode.scrollTop + "px");}
+div.ui-ncbigrid-scroll-caption,div.ui-ncbigrid-scroll.ie6_7 table caption{border: 0px solid #AAA;border-width: 1px 1px 0px 1px;margin-bottom:-3px;}
+div.ui-ncbigrid-scroll-caption{position: relative;z-index: 1;zoom : 1;top: expression(this.parentNode.parentNode.parentNode.scrollTop - 1+ "px");_left: 1px;border: 1px solid #AAA;border-width: 1px 0px;_border-width: 1px;_margin-right: 1px;}
+div.ui-ncbigrid-scroll table caption{border 0px;padding: 0px;}
+div.ui-ncbigrid-scroll-caption{/*border-width: 1px 1px 0px;*/border-style: solid;border-color: #AAAAAA;background-color: #CCC;padding: .5em .4em;}
+div.ui-ncbigrid-scroll-caption{/*position: relative;*/}
+/* Code bewlow is for wonderful portal which has the xml line beofre the doctype! */
+div.ui-ncbigrid-scroll.ie6_docIgnored table thead.orginal{position: absolute;}
+div.ui-ncbigrid-scroll.ie6_docIgnored table thead.orginal tr{position: absolute;}
+/*div.ui-ncbigrid-scroll.ie6_7 table thead.orginal th    */
+div.ui-ncbigrid-scroll.ie6_docIgnored table thead.orginal th{position: relative;z-index: 1;zoom : 1;xtop: expression(this.parentNode.parentNode.parentNode.parentNode.scrollTop + "px");top: expression( (-this.parentNode.parentNode.parentNode.getElementsByTagName("tbody")[0].offsetHeight - this.offsetHeight + this.parentNode.parentNode.parentNode.parentNode.scrollTop) + "px");left: 1px;border: 1px solid #AAA;border-width: 1px 0px;_border-width: 1px;_margin-right: 1px;border-right: 0px solid #EEE;padding-right: 1px;}
+/********************/
+/* End of IE6/7 CSS */
+/********************/
+/***********************/
+/* Start of common CSS */
+/***********************/
+/* Non Scrollable CSS */
+table.ui-ncbigrid-nonscroll{border-collapse: collapse;}
+/* Zebra */
+tr.ui-ncbigrid-row-odd td{background-color: #F5F5F5;}
+tr.ui-ncbigrid-row-even td{background-color: #FFF;}
+/* filter */
+.ncbigrid-row-filtered{display: none;}
+/* highlighing */
+.ui-ncbigrid tbody tr.ui-ncbigrid-high td,.ui-ncbigrid tbody tr.ui-ncbigrid-high.ui-ncbigrid-row-odd td{background: #F2FF7F;_background: #FFF;}
+.ui-ncbigrid tbody tr.ui-ncbigrid-row-odd td.sorted, .ui-ncbigrid tbody tr.ui-ncbigrid-row-odd.ui-ncbigrid-high td.sorted{background: #F5F5F5;}
+.ui-ncbigrid tbody tr.ui-ncbigrid-high.ui-ncbigrid-row-even td{background: #E7FF00;_background: #F7F7F7;}
+.ui-ncbigrid tbody tr.ui-ncbigrid-row-even.ui-ncbigrid-high td.sorted{background: #F2FF7F;_background: #EFEFEF;}
+/*IE6 Pain*/
+.ui-ncbigrid tbody tr.ui-ncbigrid-row-odd-high-IE6 td{background: #F2FF7F;}
+.ui-ncbigrid tbody tr.ui-ncbigrid-row-odd-high-IE6 td.sorted{background: #E5FF00;}
+.ui-ncbigrid tbody tr.ui-ncbigrid-row-even-high-IE6 td{background: #F5F599;}
+.ui-ncbigrid tbody tr.ui-ncbigrid-row-even-high-IE6 td.sorted{background: #F2FF7F;}
+.ui-ncbigrid td.ui-ncbigrid-column-hidden, .ui-ncbigrid th.ui-ncbigrid-column-hidden{display: none;}
+/*********************/
+/* End of common CSS */ 
+/*********************/
+table.ui-ncbigrid {border: 1px solid #97B0C8;border-radius: 4px;-moz-border-radius: 4px; }
+.ui-tabs table.ui-ncbigrid {clear: both;}
+.ui-ncbigrid-paged-toolbar { padding: 0.4em; width: 100%; display: block; }
+.ui-tabs .jig-ncbigrid-panel, .ui-tabs div.ui-ncbigrid-scroll { }
+.ui-tabs .num_selected { color: #666; }
+table.ui-ncbigrid-scroll caption,table.ui-ncbigrid caption{
+/* border-width: 1px 1px 0px;
+border-style: solid;
+border-color: #AAAAAA;
+background-color: #CCC;
+padding: .5em .4em;
+font-size: 1.2em; */
+height: 0;text-indent: -99999px;padding: 0;margin: 0;border: 0 !important;background: none;display: none;}
+table.ui-ncbigrid,table.ui-ncbigrid td,table.ui-ncbigrid th{border: 1px solid #AAAAAA;}
+table.ui-ncbigrid td,table.ui-ncbigrid th { padding-left: .637em; }
+table.ui-ncbigrid td {border: 0;padding: .091em 0.637em;vertical-align: top; }
+table.ui-ncbigrid tbody tr:first-child td { padding-top: 4px; }
+table.ui-ncbigrid tbody tr:last-child td { padding-bottom: 4px; }
+table.ui-ncbigrid th {font-weight: normal;font-size: 1.1em;background-color: #EEE;text-align: left;background: url('images/gradient.png') repeat-x bottom left #fff !important;border-top: 0;border-width: 0 1px 1px 0;border-style: solid;border-color: #fff #cfcfcf #d4dfe9;}
+table.ui-ncbigrid th:last-child { border-right: 0; }
+table.ui-ncbigrid th.sortAsc,table.ui-ncbigrid th.sortDsc {background: none #fff;}
+table.ui-ncbigrid tbody tr.ui-ncbigrid-row-odd td.sorted{background-color: #EEE;}
+table.ui-ncbigrid tbody tr.ui-ncbigrid-row-even td.sorted{background-color: #f5f5f5;}
+table.ui-ncbigrid tbody tr.ui-ncbigrid-row-even-high-IE6 td.sorted,table.ui-ncbigrid tbody tr.ui-ncbigrid-row-odd.ui-ncbigrid-high td.sorted{background-color: #E7FF00;}
+table.ui-ncbigrid tbody tr.ui-ncbigrid-row-odd-high-IE6 td.sorted,
+table.ui-ncbigrid tbody tr.ui-ncbigrid-row-even.ui-ncbigrid-high td.sorted{background-color: #F2FF7F;}
+div.ui-ncbigrid-loadingbar{width : 10em;height : 2.0em;text-align: center;padding: 1.5em;font-weight: bold;font-size: 1.5em;background-color: #CCC;border: 1px solid #AAA;}
+table.ui-ncbigrid td.select {padding-right: 7px;padding-left: 2px;width: 4px; }
+table.ui-ncbigrid tbody tr:hover td, table.ui-ncbigrid tr.hover td { background: #eaf0f4; }
+table.ui-ncbigrid tbody tr.active td { background-color: #cbd7e3; }
+table.ui-ncbigrid .table-controls {background: #FFF;border: 0;color: #333;clear: both;padding: .25em 7px; }
+table.ui-ncbigrid .table-controls a { color: #14376c; }
+
+/* JSL-1083 */
+table.ui-ncbigrid th.sortDsc, table.ui-ncbigrid th.sortAsc, table.ui-ncbigrid th.sortNone{ padding-left: 0px; }
+table.ui-ncbigrid th.sortDsc a, table.ui-ncbigrid th.sortAsc a, table.ui-ncbigrid th.sortNone a{ padding-left: .637em; }

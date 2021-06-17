@@ -1,0 +1,5 @@
+##gff-version 3
+#!gff-spec-version 1.20
+#!processor NCBI annotwriter
+NC_000020.10	RefSeq	match	17751747	17874115	106831	+	.	ID=1;Target=NW_003315966.1 1 128385 +;merge_aligner=1;bit_score=197281;common_component=1;filter_score=0;num_ident=122245;num_mismatch=82;pct_coverage=95.2814;pct_identity_gap=95.1864;pct_identity_ungap=99.933;pct_identity_gapopen_only=99.9207;rank=1;for_remapping=2;reciprocity=3;Gap=M80315 D1 M3923 I1 M415 D1 M277 D4 M681 D9 M2110 D2 M2712 D2 M2321 D17 M102 I1 M7880 D1 M5984 D1 M1641 D1 M686 D2 M103 I6056 M945 D1 M12232
+###

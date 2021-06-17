@@ -1,0 +1,486 @@
+#!/usr/bin/python
+
+# Usage: Just specify files and it will output all the combinations possible
+# from what's given in each file.
+# See optional args below.
+
+# .template files are in the following format:
+#
+# Possibilities are surrounded by "@(" and ")@" with each choice
+# delimited by "@@".  There is currently no escape character, so
+# be careful if you have at-signs or parens in adjacent text.
+#
+# It will output the file for every possible option to fill that spot.
+# If there are multiple places with this, you will get a sort of cartesian
+# product and it's easy to have an explosion in the number of generated files.
+# Note that the replacement spot can cross line boundaries, so you can
+# substitute whole structures.
+# Here's an example, and all the possible lines it can produce:
+# The @(quick@@slow)@ brown fox @(napped@@jumped over the @(lazy@@tired)@ dog)@.
+#
+# The quick brown fox napped.
+# The quick brown fox jumped over the lazy dog.
+# The quick brown fox jumped over the tired dog.
+# The slow brown fox napped.
+# The slow brown fox jumped over the lazy dog.
+# The slow brown fox jumped over the tired dog.
+
+# To avoid a combinatorial explosion when you want the same substitution
+# in several places, you can use back-references via this syntax:
+# @(BACKREF:0)@
+# The 0 can be any number that has a valid reference.  It refers back to the
+# nth (0 == first, 1 == second, etc.) choice block.
+# For example, "@(a@@b@@c)@ @(BACKREF:0)@ @(BACKREF:0)@" would generate just 3 files,
+# with these lines:
+# a a a
+# b b b
+# c c c
+#
+# You can reference any "@(...something...)@" block, unless it's
+# inside another one.  Careful because you may produce infinite recursion
+# resulting in an error (circular dependency), 
+# such as when a backref refs itself. 
+
+# You can also have number ranges. Example:
+# @(NUMRANGE:3:10)@
+# This produces output with 3, 4, 5, ..., 9.
+# You can optionally have a step.  E.g.:
+# @(NUMRANGE:3:10:2)@
+# ( Gives: 3, 5, 7 and 9 )
+
+# This program also takes command-line arguments:
+# -d
+#     dumps debug data, and shows the number of files it can produce.
+# -n
+#     just test syntax, don't actually produce the files
+#
+# The combination "-d -n" is great for just seeing how many files
+# your .template file could produce.
+
+# Initially created on January 13, 2011
+# Jan 18, 2011: Sep now defaults to "@" if not specified.
+# Jan 24, 2011: Added NUMRANGE
+# Jan 25, 2011: Added ability to specify empty strings
+# Mar 2 & 3, 2011: Added "nested" ability ( almost a rewrite )
+# Apr 7, 2011: Added "-1" option to write everything in one file
+# Apr 11, 2011: Finally checked into repository.
+
+import sys
+import re
+import collections
+from operator import mul
+
+######################################################################
+# These are "constants", although in the future it might
+# be possible for them to be changed at the beginning of the program.
+
+OPEN_SEP="@("
+CLOSE_SEP=")@"
+DIVIDER="@@"
+NUMRANGE="NUMRANGE"
+BACKREF="BACKREF"
+
+
+######################################################################
+def die(msg):
+    print msg
+    sys.exit(1)
+
+######################################################################
+# A Block is a class that holds all the different possible texts
+# that could be in that area of the file.
+# You call "next()" for it to rotate to the next possibile choice
+# ( which returns True when it's rolled over to its initial state ),
+# and "echo()" to print the current possible choice.
+# "next()" will rotate back to the first choice if you
+# go past the last
+class Block:
+
+    _children = []
+
+    def echo(self, output_file):
+        raise NotImplementedError
+
+    def next(self):
+        raise NotImplementedError
+
+    def num_possibilities(self):
+        raise NotImplementedError
+
+    def dump(self, indent):
+        raise NotImplementedError
+
+    def is_backrefable_type(self):
+        return False
+
+    def is_backref_type(self):
+        return False
+
+    def get_children(self):
+        return self._children
+
+######################################################################
+# This merely holds a piece of text
+class TextBlock(Block):
+
+    _text = ""
+
+    def __init__(self, text):
+        self._text = text
+
+    # simply writes its text out
+    def echo(self, output_file):
+        output_file.write( self._text )
+
+    # This always rotates over, since it only has one choice
+    def next(self):
+        return True
+
+    def num_possibilities(self):
+        return 1
+
+    def dump(self, indent):
+        print( " " * indent + "TextBlock [\"" + self._text + "\"]" )
+
+######################################################################
+# This holds a choice of blocks
+class ChoiceBlock(Block):
+
+    _current_choice = 0
+
+    def __init__(self, children):
+        self._children = children
+
+    def echo(self, output_file):
+        self._children[self._current_choice].echo( output_file )
+
+    def next(self):
+        # next() our current choice, and rotate ourselves if
+        # it rolls over.
+        choice_is_done = self._children[self._current_choice].next()
+        if choice_is_done:
+            self._current_choice += 1
+            if self._current_choice >= len(self._children):
+                self._current_choice = 0
+                return True
+        return False
+
+    def num_possibilities(self):
+        return sum( [ choice.num_possibilities() for choice in self._children ] )
+
+    def dump(self, indent):
+        print( " " * indent + "ChoiceBlock: [" )
+        for choice in self._children:
+            choice.dump(indent + 2)
+        print( " " * indent + "]" )
+
+    def is_backrefable_type(self):
+        return True
+
+######################################################################
+# This holds a sequence of blocks
+class SequenceBlock(Block):
+
+    def __init__(self, children):
+        self._children = children
+
+    def echo(self, output_file):
+        for part in self._children:
+            part.echo(output_file)
+
+    # increment the parts from right to left until we reach
+    # one that doesn't roll over (This is somewhat akin
+    # to incrementing a number.  You increase the digits from
+    # right to left until you no longer have a carry digit )
+    def next(self):
+        # increment parts until we find one that hasn't rolled over
+        for part in reversed(self._children):
+            if not part.next():
+                return False
+        # If every part rolled over, then we consider ourselves rolled over
+        return True
+
+    def num_possibilities(self):
+        return reduce( mul, [ \
+                part.num_possibilities() for part in self._children ], 1 )
+
+    def dump(self, indent):
+        print( " " * indent + "SequenceBlock: [" )
+        for part in self._children:
+            part.dump(indent + 2)
+        print( " " * indent + "]" )
+
+######################################################################
+# This holds a reference to another block.
+class RefBlock(Block):
+
+    _index = -1
+    _underlying = None
+
+    def __init__(self, index):
+        self._index = index
+
+    def echo(self, output_file):
+        self._underlying.echo(output_file)
+
+    def next(self):
+        # We always roll over, since we consider our value to have
+        # only one choice: whatever the reference Block has
+        return True
+
+    def num_possibilities(self):
+        return 1
+
+    def dump(self, indent):
+        print( " " * indent + "RefBlock: [" )
+        print( " " * (indent+2) + str(self._index) )
+        print( " " * indent + "]" )
+
+    def is_backref_type(self):
+        return True
+
+    # Used by the function that resolves backrefs
+    def get_index(self):
+        return self._index;
+    def set_underlying(self, underlying):
+        self._underlying = underlying
+            
+
+######################################################################
+# This is the highest level, which holds one inner Block.
+class MasterBlock:
+    _file_name_base = None
+    _highest_block = None
+    _next_file_number = 0 # The number of the next file we're going to print
+
+    _output_file = None
+
+    def __init__(self, file_name_base, highest_block):
+        self._file_name_base = file_name_base
+        self._highest_block = highest_block
+        self._next_file_number = 0
+
+    # Print all choices to files
+    def echo_all(self):
+
+        self._echo_master()
+        while not self._highest_block.next():
+            self._next_file_number += 1
+            self._echo_master()
+
+        self._output_file.close()
+
+    
+    # Print our current choice to a file,
+    # including opening and closing files as necessary
+    def _echo_master(self):
+        if "-1" in sys.argv:
+            if not self._output_file:
+                self._output_file = open( self._file_name_base + ".template_expanded", "w" )
+        else:
+            self._output_file = open( self._file_name_base + "." + \
+                                str(self._next_file_number) + ".test", "w" )
+
+        # the actual write
+        self._highest_block.echo( self._output_file )
+
+        if "-1" not in sys.argv:
+            self._output_file.close()
+
+######################################################################
+# Break the contents of a file into a list of tokens, where
+# a token is "@(", ")@", etc. or just plain text
+def tokenize( file_string ):
+    
+    token_pattern = re.escape(OPEN_SEP) + "|" + re.escape(CLOSE_SEP) + "|" + \
+        re.escape(DIVIDER) + "|" + \
+        re.escape(BACKREF) + ":[0-9]+" + "|" + \
+        re.escape(NUMRANGE) + ":[0-9]+:[0-9]+(?::[0-9]+)?"
+    token_list = re.split( "(" + token_pattern + ")", file_string )
+
+    # remove empty strings from list
+    token_list = [ x for x in token_list if x != "" ]
+
+    return token_list
+
+######################################################################
+# For debugging:
+def print_deque( a_deque ):
+
+    for x in a_deque:
+        print x
+
+######################################################################
+# Give it a numrange block and it creates ChoiceBlock
+# representing all the numbers in the sequence
+def create_numrange_block( piece ):
+    
+    a_match = re.match( "^" + re.escape(NUMRANGE) + ":([0-9])+:([0-9]+)(:([0-9]+))?" + "$", piece )
+    if not a_match:
+        die( "This is not a valid NUMRANGE: \"" + piece + "\"" )
+
+    match_pieces = a_match.groups()
+
+    start = int(match_pieces[0])
+    stop  = int(match_pieces[1])
+    if match_pieces[3]:
+        step = int(match_pieces[3])
+    else:
+        step = 1
+
+    _choices = [ TextBlock(str(num)) for num in xrange(start,stop,step) ]
+    return ChoiceBlock( _choices )
+
+######################################################################
+# Creates a backref_block from the given pattern
+def create_backref_block( piece ):
+
+    a_match = re.match( "^" + re.escape(BACKREF) + ":([0-9]+)" + "$", piece )
+    if not a_match:
+        die( "Invalid backref statement: \"" + piece + "\"" )
+
+    index = int(a_match.group(1))
+    return RefBlock( index )
+
+######################################################################
+# Creates a sequence_block, removing any parts of the token_deque
+# that it used.
+def create_choice_block( token_deque ):
+
+    if len(token_deque) < 1 or token_deque[0] != OPEN_SEP:
+        die( "bug in this program: tried to start a choice at a place that doesn't have an opening separator" )
+
+    # pop off the opening separator
+    token_deque.popleft()
+
+    choices = []
+
+    while len(token_deque) > 0:
+        choices.append( create_sequence_block(token_deque) )
+
+        if len(token_deque) < 1:
+            die("unclosed choice")
+
+        piece = token_deque[0]
+        if piece == DIVIDER:
+            token_deque.popleft() # keep going
+        elif piece == CLOSE_SEP:
+            token_deque.popleft()
+            break
+        else:
+            die( "bug in this program: create_sequence_block " + \
+                     "returned on bad item")
+
+    if len(choices) == 1:
+        return choices[0]
+    else:
+        return ChoiceBlock( choices )
+
+######################################################################
+# Creates a sequence_block, removing any parts of the token_deque
+# that it used.
+def create_sequence_block( token_deque ):
+
+    parts = []
+
+    while len(token_deque) > 0:
+        piece = token_deque[0]
+        if piece == OPEN_SEP:
+            parts.append( create_choice_block( token_deque ) )
+        elif piece == CLOSE_SEP or piece == DIVIDER:
+            break
+        elif piece.startswith(NUMRANGE):
+            parts.append( create_numrange_block( piece ) )
+            token_deque.popleft()
+        elif piece.startswith(BACKREF):
+            parts.append( create_backref_block( piece ) )
+            token_deque.popleft()            
+        else:
+            parts.append( TextBlock( token_deque[0] ) )
+            token_deque.popleft()
+            
+
+    if len(parts) == 1:
+        return parts[0]
+    else:
+        return SequenceBlock( parts )
+
+######################################################################
+def find_backrefs_recurse( block, backrefs ):
+
+    if block.is_backrefable_type():
+        backrefs.append( block )
+    else:
+        for child in block.get_children():
+            find_backrefs_recurse( child, backrefs )
+
+######################################################################
+def resolve_backrefs_recurse( block, backrefs ):
+    
+    if block.is_backref_type():
+        # resolve this one
+        index = block.get_index()
+        if( index < 0 or index >= len(backrefs) ):
+            die( "could not resolve backref: " + str(index) )
+        else:
+            block.set_underlying( backrefs[index] )
+    else:
+        for child in block.get_children():
+            resolve_backrefs_recurse( child, backrefs )
+
+######################################################################
+def resolve_backrefs( highest_block ):
+    
+    backrefs = []
+
+    # recurse downwards to determine all Blocks that
+    # can be used by RefBlocks
+    find_backrefs_recurse( highest_block, backrefs )
+
+    # now find all the RefBlocks and assign them
+    resolve_backrefs_recurse( highest_block, backrefs )
+
+######################################################################
+def process_file(file_name):
+
+    file_name_base = file_name.replace(".template", "")
+
+    # slurp the entire file into one string (file_string)
+    file_handle = open( file_name, "r" )
+    file_string = file_handle.read()
+    file_handle.close()
+
+    # Divide the text into tokens
+    token_list = tokenize( file_string )
+
+    # create the master_block and use it to print all
+    # possibilities
+    token_deque = collections.deque(token_list)
+    highest_block = create_sequence_block( token_deque )
+    if len(token_deque) != 0:
+        die( "stray token such as a divider or separator at the top level" )
+
+    resolve_backrefs( highest_block )
+    if "-d" in sys.argv:
+        highest_block.dump(0)
+        print("total files potentially created: " + \
+                  str(highest_block.num_possibilities()) )
+    master_block = MasterBlock( file_name_base, highest_block )
+
+    if not "-n" in sys.argv:
+        master_block.echo_all()
+
+######################################################################
+def main():
+
+    # load args (and direct derivatives of args)
+    if len(sys.argv) < 2:
+        die( "Specify the files on which to perform substitution" )
+
+    # process each file
+    for file_name in sys.argv[1:]:
+        if not file_name.startswith("-"):
+            process_file( file_name )
+
+######################################################################
+main()

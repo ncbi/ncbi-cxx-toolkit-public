@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_app(test_sra_loader)
+  NCBI_sources(test_sra_loader)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_sra)
+
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_add_test()
+
+  NCBI_project_watchers(vasilche ucko)
+
+NCBI_end_app()
+

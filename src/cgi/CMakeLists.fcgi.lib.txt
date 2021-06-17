@@ -1,0 +1,17 @@
+# $Id$
+
+set(FASTCGI_OBJS fcgibuf)
+
+NCBI_begin_lib(xfcgi)
+  NCBI_sources(
+    ncbicgi cgiapp cgictx ncbicgir ncbires ref_args cgi_util cgi_serial
+    fcgi_run cgi_session cgi_exception cgiapp_cached
+    cgi_entry_reader user_agent
+    ${FASTCGI_OBJS}
+  )
+  NCBI_requires(FASTCGI)
+  NCBI_add_definitions(NCBI_XFCGI_EXPORTS)
+  NCBI_uses_toolkit_libraries(xutil)
+  NCBI_project_watchers(vakatov)
+NCBI_end_lib()
+

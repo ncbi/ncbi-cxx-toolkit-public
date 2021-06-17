@@ -1,0 +1,13 @@
+corelib$
+corelib/hash_impl$
+corelib/impl$
+util$
+util/bitset$
+util/regexp$
+util/xregexp$
+util/cache$
+util/checksum
+serial$
+serial/impl$
+serial/datatool$
+build-system/project_tree_builder

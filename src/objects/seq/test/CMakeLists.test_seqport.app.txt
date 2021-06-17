@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_seqport)
+  NCBI_sources(test_seqport)
+  NCBI_uses_toolkit_libraries(seq)
+  NCBI_project_watchers(clausen)
+NCBI_end_app()
+

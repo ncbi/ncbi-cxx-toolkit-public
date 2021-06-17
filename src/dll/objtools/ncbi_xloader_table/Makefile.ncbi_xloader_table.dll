@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = ncbi_xloader_table
+
+HOSTED_LIBS    = ncbi_xloader_table
+
+DEPENDENCIES   = ncbi_core   ncbi_general ncbi_seq \
+                 ncbi_seqext ncbi_sqlite
+
+CPPFLAGS = -DNCBI_XLOADER_TABLE_EXPORTS
+

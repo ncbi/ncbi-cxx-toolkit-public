@@ -1,0 +1,21 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(gc_cli)
+  NCBI_sources(gc_cli)
+  NCBI_uses_toolkit_libraries(gencoll_client)
+  NCBI_project_watchers(gencoll-dev)
+  NCBI_requires(SQLITE3)
+
+  NCBI_begin_test(test_gencoll_svc_ASSM)
+    NCBI_set_test_command(gc_cli get-assembly -acc GCF_000001405.27 --mode AssemblyOnly)
+  NCBI_end_test()
+  NCBI_begin_test(test_gencoll_svc_ASSM_BY_SEQ)
+    NCBI_set_test_command(gc_cli get-assembly-by-sequence -acc NC_002008.4)
+  NCBI_end_test()
+  NCBI_begin_test(test_gencoll_svc_TYPELOC)
+    NCBI_set_test_command(gc_cli get-chrtype-valid -type eChromosome -loc eMacronuclear)
+  NCBI_end_test()
+NCBI_end_app()
+

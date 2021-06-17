@@ -1,0 +1,186 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        local str "seq1"
+      },
+      descr {
+        source {
+          org {
+            taxname "animal 1"
+          }
+        },
+        title "gene COX cytochrome oxidase"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '909393900FF9A54E4E3939'H
+      }
+    },
+    seq {
+      id {
+        local str "seq2"
+      },
+      descr {
+        source {
+          org {
+            taxname "animal 2"
+          }
+        },
+        title "gene COX cytochrome oxidase"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '33A393900FFA954E4E5939'H
+      }
+    },
+    seq {
+      id {
+        local str "seq3"
+      },
+      descr {
+        title "gene COXcytochrome oxidase"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '399093900FFAA64E4E5339'H
+      }
+    },
+    seq {
+      id {
+        local str "seq4"
+      },
+      descr {
+        source {
+          org {
+            taxname "animal 4"
+          }
+        },
+        title "gene COX cytochrome oxidase"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '3933A3900FFAA57E4E5399'H
+      }
+    },
+    seq {
+      id {
+        local str "seq5"
+      },
+      descr {
+        source {
+          org {
+            taxname "animal 5"
+          }
+        },
+        title "gene COX cytochrome oxidase"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '393990900FFAA54D4E5393'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 5,
+          segs denseg {
+            dim 5,
+            numseg 11,
+            ids {
+              local str "seq1",
+              local str "seq2",
+              local str "seq3",
+              local str "seq4",
+              local str "seq5"
+            },
+            starts {
+              -1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              -1,
+              2,
+              2,
+              2,
+              2,
+              2,
+              -1,
+              4,
+              4,
+              4,
+              4,
+              4,
+              -1,
+              6,
+              6,
+              6,
+              6,
+              6,
+              -1,
+              8,
+              8,
+              8,
+              8,
+              8,
+              -1,
+              36,
+              36,
+              36,
+              36,
+              36,
+              -1,
+              38,
+              38,
+              38,
+              38,
+              38,
+              -1,
+              40,
+              40,
+              40,
+              40,
+              40,
+              -1,
+              42,
+              42,
+              42,
+              42,
+              42,
+              -1
+            },
+            lens {
+              2,
+              2,
+              2,
+              2,
+              2,
+              28,
+              2,
+              2,
+              2,
+              2,
+              2
+            }
+          }
+        }
+      }
+    }
+  }
+}

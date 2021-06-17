@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_app(bss_info)
+  NCBI_sources(bss_info)
+  NCBI_uses_toolkit_libraries(seqset)
+NCBI_end_app()

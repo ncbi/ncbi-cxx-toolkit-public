@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db100_spid)
+  NCBI_sources(spid common)
+  NCBI_set_test_assets(spid.sql)
+  NCBI_add_test(test-db100 db100_spid)
+NCBI_end_app()
+

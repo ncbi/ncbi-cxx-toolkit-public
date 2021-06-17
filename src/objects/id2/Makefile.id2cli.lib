@@ -1,0 +1,10 @@
+ASN_DEP = id2
+
+LIB = id2cli
+SRC = id2_client id2_client_
+
+WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    id2 xconnect

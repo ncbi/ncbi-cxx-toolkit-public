@@ -1,0 +1,11 @@
+Line No    : 24
+Severity   : Warning
+Problem    : Alignment.UnterminatedCommand
+Message    : File format autocorrected to comply with Nexus rules. Unexpected "end;". Appending ';' to prior command. No action required.
+
+SeqID      : seq2
+Line No    : 7
+Severity   : Fatal
+Problem    : Alignment.BadDataChars
+Message    : At ID 'seq2': Bad character [4] found at data position 8.
+

@@ -1,0 +1,27 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        name "NG_007070.1:g.10256_10258GAC[7]",
+        data instance {
+          type microsatellite,
+          delta {
+            {
+              seq literal {
+                length 3,
+                seq-data iupacna "GAC"
+              },
+              multiplier 7
+            }
+          }
+        }
+      },
+      location int {
+        from 10255,
+        to 10269,
+        strand plus,
+        id gi 160358350
+      }
+    }
+  }
+}

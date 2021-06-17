@@ -1,0 +1,329 @@
+
+Author:  Kevin Bealer
+Updated: April 2008
+
+----- ISAM Index and Data Files -----
+
+Naming:   <any-name>.[np][hnpst][di]
+Encoding: binary
+Style:    ISAM indices
+
+  SeqDB uses "ISAM" format indices to quickly find sequences based on
+  pieces of sequence meta-data.  There are (currently) five kinds of
+  ISAM indices that can be applied to a BlastDB database volume:
+
+  Letter  Name       Format  Key
+  ------  ----       ------  ---
+  "h"     "hash"     string  Sequence hash, in decimal.
+  "n"     "numeric"  Int4    GI
+  "p"     "PIG"      Int4    PIG (Protein Identifier Group)
+  "s"     "string"   string  Accession, locus, partial or full Seq-id.
+  "t"     "trace"    Int4/8  Trace-ID (e.g. gnl|ti|...)
+
+  Letter
+
+    The Letter is the second letter of the ISAM indices' files' file
+    extensions.  It is used by SeqDB to determine which ISAM file it
+    is opening.  The first letter is the usual `p' or `n' for protein
+    or nucleotide.  The last letter is `i' for the ISAM index file or
+    `d' for the ISAM data file.
+
+  Name
+
+    This is just an informal name used here to distinguish between the
+    various files.  It does not appear in disk files or necessarily
+    even in source code except perhaps in certain enumerated types.
+
+  Format
+
+    The first type of ISAM index is the string index, mapping string
+    keys to string values.  The second is the numerical index, which
+    maps numeric keys to numeric values.  However, numeric indexes in
+    SeqDB now support two sub-formats, the traditional Int4 format and
+    the newer Int8 format.
+
+  Key
+
+    ISAM indices provide lookup from a "key" to a "value".  The Key
+    can be numeric or a string value.  If it is a string, it is
+    usually a short item, less than 30 characters or so (the format
+    allows longer strings but for BlastDB formats they would probably
+    never occur).  The main difference between the ISAM indices is the
+    type of meta-data used for the key.
+
+--- Purpose and Usage ---
+
+  hash
+
+    This ISAM file uses a hash value for the key, computed by calling
+    the SeqDB_SequenceHash function on the sequence data.  (This uses
+    the same algorithm as the NCBI_SequenceHash function).
+
+    The hash value ISAM file allows the user to quickly find the OID
+    of a sequence in the database that is identical to a piece of
+    known sequence data.  By computing the hash value for the known
+    sequence and looking it up in the database, a list of OIDs is
+    produced.  If any sequence in the database exactly matches the
+    known sequence data, its OID will be in the returned list.
+
+    The sequences for which OIDs are returned are sometimes different
+    than the sequence from which the hash value was computed (this is
+    called a `hash collision').  Therefore it is necessary to compare
+    the contents of the returned sequence to the contents of the
+    target sequence to be certain that they really match.
+
+    This index is relatively new, and is not supported by readdb or
+    formatdb.
+
+    Hash indices could be implemented as numeric or string indices;
+    string indices were selected.  (Numeric indices are more efficient
+    so it seems odd to use string indices here.  I think that lookup
+    of numeric keys mapping to multiple OIDs was more easily done via
+    string ISAM indices given the code base at the time.)
+
+  numeric
+
+    This is probably the most heavily used ISAM file, at least at
+    NCBI; the key used by this file is the NCBI GI.
+
+    Some NCBI services represent sets of sequences as a "GI List", and
+    so one of the common applications of GI lookup is bulk translation
+    of the GIs in these lists into OIDs.  This process often needs to
+    translate thousands or millions of GIs to process a GI lists, so
+    it is a highly optimized path.  (In SeqDB this process uses a
+    "one-sided binary search" and can run at speeds of several million
+    GIs per second under favorable conditions.)
+
+  pig
+
+    PIG indices are numeric indices used by some protein databases.
+    The NCBI assigns "PIG" (Protein Identifier Group) values to each
+    unique strand of protein data added to the NCBI databases.  The
+    PIG is not considered a true sequence identifier, because it just
+    represents a list of residues rather than a "sequence" in NCBI
+    terms (which would also include a defline).  If two protein
+    sequences are identical, they will always have the same PIG.
+
+  string
+
+    This ISAM file uses partial and full Seq-ids (in FASTA format), as
+    well as bare accessions and "locus names" for keys.  String keys
+    vary in length, and OIDs are stored as decimal representations of
+    numbers.  For these reasons, string ISAM files perform poorly
+    compared to numeric ISAM files.
+
+    Because user applications often wish to look up Seq-ids that are
+    incomplete, each input Seq-id results in a number of strings keys
+    being stored in the ISAM file.  For example, this Seq-id:
+
+      gb|AAK06287.1|AE006448_5
+
+    Will result in these strings being stored in the database.
+
+      aak06287
+      aak06287.1
+      ae006448_5
+      gb|aak06287.1|
+      gb|aak06287.1|ae006448_5
+      gb|aak06287|
+      gb|aak06287|ae006448_5
+      gb||ae006448_5
+
+    Each of these strings will be mapped to the same resulting OID.
+    Each type of Seq-id results in the production of a specific list
+    of strings.  (However, this list is for the current production
+    code as of 05/2008 -- in the future, fewer variations of these
+    strings will be stored.)
+
+  trace
+
+    NCBI uses an identifier called a Trace-ID for sequences that have
+    recently been dumped and have not been fully cataloged yet.  The
+    Seq-id version looks like "gnl|ti|54321".  This ISAM file is a
+    numeric index of these IDs.
+
+    Like GI indices (but unlike the other formats), the Trace-ID index
+    supports bulk lookup of TIs.
+
+    This index is relatively new, and is not supported by readdb or
+    formatdb.
+
+--- Index and Data Files ---
+
+ISAM data files store sorted key/value pairs, ordered by ASCII value.
+Sorting of strings uses ordering by ASCII value, also known as "C"
+locale sort order (but all alphabetic characters are converted to
+lowercase before ISAM files are constructed).  Numeric files use 8 or
+12 bytes per line.  Each line is a 4 or 8 byte key plus a 4 byte
+value, all in big-endian byte order.  String indices use one (ASCII)
+line per key/value pair.  The key and value strings may not contain
+the special ASCII characters 0, 2 and 10 (NUL, "^B" and newline), as
+these are used to delimit keys and values in the string ISAM data.
+
+ISAM index files store meta data, "samples", and (sometimes) offsets
+into the ISAM data file.  The samples are key/value terms taken from
+the ISAM data file.  In the case of numeric indices, the samples use
+every 256th value; for string indices, every 64th value is taken.  The
+numbers 256 and 64 here are the "page size".  (The ISAM page size is
+configurable; the numbers 256 and 64 are a BlastDB convention.)
+
+The normal algorithm for looking up a single value is to first look up
+the value in the array of samples in the index file.  The index in the
+samples where it was found (or where the search ended) is multiplied
+by the page size to find the page(s) (or general neighborhood) where
+it should occur in the data file.  (In cases where only one match is
+expected, the search may terminate without looking at the data file if
+the key is found in the index file, however if multiple matches are
+expected, the data file is always consulted.)
+
+
+--- ISAM Index File Format ---
+
+(All offsets are in bytes.)
+
+This is the format of the index file header.  It totals 36 bytes; data
+after the first 36 bytes varies based on whether the index is string,
+Int4, or Int8 based.
+
+  Offset    Type    Fieldname         Notes
+  ------    ----    ---------         -----
+  0         Int4    isam-version      The ISAM format version this
+                                      volume uses -- currently 1.
+  4         Int4    isam-type         Key/value data type.
+  8         Int4    data-file-size    Size of the data file in bytes.
+  12        Int4    num-terms         Total number of key/value mappings.
+  16        Int4    num-samples       Number of sample values stored.
+  20        Int4    page-size         Number of samples per page.
+  24        Int4    max-line-size     Maximum line size (usually 4096).
+  28        Int4    is-sparse         1 for a sparse index, else 0.
+  32        Int4    index-option      (currently) unused field.
+
+  Notes:
+
+  isam-type
+
+    This indicates what kind of ISAM file this is.  It can have any of
+    the following values:
+
+      Numeric (0):
+        Numeric database with Key/Value pairs in the index file.
+
+      String (2):
+        String to String mapping.
+
+      NumericLongId (5):
+        Like Numeric but with 8 byte Keys and Values; this is a newer
+        format, not supported by readdb and formatdb.
+
+    (Several other values are defined in the source code, but are not
+    implemented or used by the BlastDB libraries.)
+
+
+  is-sparse
+
+    If this is "1", a more restricted (and less functional) set of
+    strings is produced for the "string" index; this technique will
+    be replaced by a new format (in the near future) that uses fewer
+    strings and slightly more complicated implementation logic.
+
+
+String Index Format:
+
+  For string ISAM indices ("string" and "hash"), the header is
+  followed by an array of string offsets and samples:
+
+  Offset  Type       Fieldname      Notes
+  ------  ----       ---------      -----
+  36      Int4[N+1]  data-offsets   Page offsets (in the data file).
+  --      Int4[N+1]  index-offsets  Sample offsets (in the index file).
+  --      Bytes[?]   samples        Concatenated string samples.
+
+  Notes:
+
+  data-offsets:
+
+    These are the offsets into the ISAM data file of the data page
+    associated with each sample value.  After the offset for the start
+    of the last sample's page, the ISAM data file size is emitted.
+
+  index-offsets:
+
+    These are the offsets into the ISAM index file corresponding of
+    each sample value.  After the offset for the last sample, the ISAM
+    index file size is emitted.  (The formatdb code uses `native' byte
+    order for the appended file size -- this is a harmless bug, as no
+    code path ever actually reads this final value.)
+
+  samples:
+
+    This is the format for the string samples; it is identical to the
+    format in the data file, except that (for no apparent reason) each
+    string is terminated with a NUL byte instead of a newline:
+
+      Type/Value  Fieldname     Notes
+      ----------  ---------     -----
+      char[]      key-string    Key string, folded to lowercase.
+      x02         end-of-key    Byte marking the end of the key string.
+      char[]      value-string  Value string (OID, printed in decimal).
+      x00         end-of-line   Byte marking the end of the value string.
+
+
+Numeric Index Format:
+
+  For numeric ISAM indices ("numeric", "hash", and "trace"), the
+  numeric samples are stored using a repetition of this format:
+
+  Type    Fieldname       Notes
+  ----    ---------       -----
+  IntE    sample-key      Sample numeric key.
+  Int4    sample-value    Sample numeric value (OID).
+
+  Notes:
+
+  1. For an explanation of the type IntE, see the "Numeric Data
+     Format" section later in this document.
+
+  2. After all normal numeric samples, a final row with key -1 and
+     value 0 is appended.
+
+
+--- ISAM Data File Format ---
+
+String ISAM Data File Format:
+
+  The data file is a sequence of key/value pairs, encoded in the
+  following format.
+
+  Type/Value    Fieldname       Notes
+  ----------    ---------       -----
+  char[]        key-string      Key string, folded to lowercase.
+  x02           end-of-key      Byte marking the end of the key string.
+  char[]        value-string    Value string (OID, printed in decimal).
+  x0A           end-of-line     Byte marking the end of the value string.
+
+  This is identical to the format of the samples in the index file,
+  except that (for no apparent reason) each string is terminated with
+  a newline instead of a NUL byte.
+
+  Each of these lines is folded to lowercase.  The sort order is by
+  ASCII value (this is also called "C" locale sorting).
+
+Numeric Data Format:
+
+  The numeric ISAM data file is simply a repetition of this format:
+
+  Type    Fieldname    Notes
+  ----    ---------    -----
+  IntE    key          Sample numeric key.
+  Int4    value        Sample numeric value (OID).
+
+  This format is like the numeric sample format.  Every 64th value
+  here is also found in the sample data in the index file (starting
+  with the first one (at offset 0)).  However, the "extra" key/value
+  line (with -1 and 0), found in the sample data, is not found here.
+
+  The type IntE refers to Int4 for "numeric" (GI) and "hash" indices.
+  For trace indices, IntE is Int4 when all trace IDs for this volume
+  fit into four byte values, otherwise it is Int8; see also the notes
+  above for the "isam-type" field in the header.
+

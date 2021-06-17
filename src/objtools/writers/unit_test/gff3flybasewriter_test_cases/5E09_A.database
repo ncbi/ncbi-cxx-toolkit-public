@@ -1,0 +1,1110 @@
+Seq-entry ::= set {
+  class pdb-entry,
+  descr {
+    het "(SO4,2486)",
+    het "(SO4,2491)",
+    het "(SO4,2510)",
+    het "(SO4,2515)",
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Ozkan",
+                  full "E.Ozkan",
+                  initials "E."
+                }
+              },
+              {
+                name name {
+                  last "Zinn",
+                  full "K.Zinn",
+                  initials "K."
+                }
+              },
+              {
+                name name {
+                  last "Garcia",
+                  full "K.C.Garcia",
+                  initials "K.C."
+                }
+              }
+            }
+          },
+          date std {
+            year 2015,
+            month 11,
+            day 10
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        article {
+          title {
+            name "Control of Synaptic Connectivity by a Network of Drosophila
+ IgSF Cell Surface Proteins."
+          },
+          authors {
+            names std {
+              {
+                name name {
+                  last "Carrillo",
+                  full "R.A.Carrillo",
+                  initials "R.A."
+                }
+              },
+              {
+                name name {
+                  last "Ozkan",
+                  full "E.Ozkan",
+                  initials "E."
+                }
+              },
+              {
+                name name {
+                  last "Menon",
+                  full "K.P.Menon",
+                  initials "K.P."
+                }
+              },
+              {
+                name name {
+                  last "Nagarkar-Jaiswal",
+                  full "S.Nagarkar-Jaiswal",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Lee",
+                  full "P.T.Lee",
+                  initials "P.T."
+                }
+              },
+              {
+                name name {
+                  last "Jeon",
+                  full "M.Jeon",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Birnbaum",
+                  full "M.E.Birnbaum",
+                  initials "M.E."
+                }
+              },
+              {
+                name name {
+                  last "Bellen",
+                  full "H.J.Bellen",
+                  initials "H.J."
+                }
+              },
+              {
+                name name {
+                  last "Garcia",
+                  full "K.C.Garcia",
+                  initials "K.C."
+                }
+              },
+              {
+                name name {
+                  last "Zinn",
+                  full "K.Zinn",
+                  initials "K."
+                }
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Cell",
+              ml-jta "Cell",
+              issn "1097-4172",
+              name "Cell"
+            },
+            imp {
+              date std {
+                year 2015,
+                month 12,
+                day 17
+              },
+              volume "163",
+              issue "7",
+              pages "1770-1782",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus received,
+                  date std {
+                    year 2015,
+                    month 4,
+                    day 23
+                  }
+                },
+                {
+                  pubstatus revised,
+                  date std {
+                    year 2015,
+                    month 9,
+                    day 27
+                  }
+                },
+                {
+                  pubstatus accepted,
+                  date std {
+                    year 2015,
+                    month 11,
+                    day 10
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 2015,
+                    month 12,
+                    day 22,
+                    hour 6,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2015,
+                    month 12,
+                    day 22,
+                    hour 6,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2016,
+                    month 4,
+                    day 23,
+                    hour 6,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 26687361,
+            doi "10.1016/j.cell.2015.11.022",
+            other {
+              db "pmc",
+              tag str "PMC4720259"
+            },
+            other {
+              db "mid",
+              tag str "NIHMS743748"
+            },
+            pii "S0092-8674(15)01502-0",
+            other {
+              db "ELocationID doi",
+              tag str "10.1016/j.cell.2015.11.022"
+            },
+            other {
+              db "PDB Citation Status",
+              tag str "primary"
+            }
+          }
+        },
+        medline {
+          em std {
+            year 2015,
+            month 12,
+            day 22
+          },
+          cit {
+            from journal {
+              title {
+                name "Control of Synaptic Connectivity by a Network of
+ Drosophila IgSF Cell Surface Proteins"
+              },
+              imp {
+                date std {
+                  year 2015,
+                  month 12,
+                  day 17
+                }
+              }
+            }
+          },
+          abstract "We have defined a network of interacting Drosophila cell
+ surface proteins in which a 21-member IgSF subfamily, the Dprs, binds to a
+ nine-member subfamily, the DIPs. The structural basis of the Dpr-DIP
+ interaction code appears to be dictated by shape complementarity within the
+ Dpr-DIP binding interface. Each of the six dpr and DIP genes examined here is
+ expressed by a unique subset of larval and pupal neurons. In the
+ neuromuscular system, interactions between Dpr11 and DIP-gamma affect
+ presynaptic terminal development, trophic factor responses, and
+ neurotransmission. In the visual system, dpr11 is selectively expressed by R7
+ photoreceptors that use Rh4 opsin (yR7s). Their primary synaptic targets, Dm8
+ amacrine neurons, express DIP-gamma. In dpr11 or DIP-gamma mutants, yR7
+ terminals extend beyond their normal termination zones in layer M6 of the
+ medulla. DIP-gamma is also required for Dm8 survival or differentiation. Our
+ findings suggest that Dpr-DIP interactions are important determinants of
+ synaptic connectivity. "
+        },
+        pmid 26687361
+      }
+    },
+    pdb {
+      deposition std {
+        year 2015,
+        month 11,
+        day 10
+      },
+      class "CELL ADHESION",
+      compound {
+        "Crystal Structure of the complex of Dpr6 Domain 1 bound to DIP-alpha
+ Domain 1+2"
+      },
+      source {
+        "Mmdb_id: 135285",
+        "Pdb_id 1: 5EO9"
+      },
+      exp-method "X-ray Diffraction"
+    },
+    update-date std {
+      year 2019,
+      month 11,
+      day 22
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        pdb {
+          mol "5EO9",
+          chain 65,
+          rel std {
+            year 2019,
+            month 11,
+            day 20
+          }
+        },
+        gi 971826089
+      },
+      descr {
+        source {
+          org {
+            taxname "Drosophila melanogaster",
+            common "fruit fly",
+            db {
+              {
+                db "taxon",
+                tag id 7227
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Drosophila",
+                species "melanogaster"
+              },
+              attrib "specified",
+              lineage "Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Hexapoda;
+ Insecta; Pterygota; Neoptera; Holometabola; Diptera; Brachycera; Muscomorpha;
+ Ephydroidea; Drosophilidae; Drosophila; Sophophora",
+              gcode 1,
+              mgcode 5,
+              div "INV"
+            }
+          }
+        },
+        molinfo {
+          biomol peptide
+        },
+        comment "Dpr6, isoform C",
+        num enum {
+          num 110,
+          names {
+            "",
+            "",
+            "",
+            "71",
+            "72",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "127",
+            "128",
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151",
+            "152",
+            "153",
+            "154",
+            "155",
+            "156",
+            "157",
+            "158",
+            "159",
+            "160",
+            "161",
+            "162",
+            "163",
+            "164",
+            "165",
+            "166",
+            "167",
+            "168",
+            "169",
+            "170",
+            "171",
+            "172",
+            "173",
+            "174",
+            "175",
+            "176",
+            "177"
+          }
+        },
+        create-date std {
+          year 2016,
+          month 1,
+          day 6
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 110,
+        seq-data ncbieaa "SRWMEPYFDPSTPRNVTALMGKSAYLSCRVRNLANKTVSWIRHRDIHILTVG
+SYTYTSDQRFQATHHQDTEDWTLQIKWAQKRDAGMYECQISTQPVRSYFVRLNVVVPH"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data psec-str sheet,
+              comment "strand 1",
+              location int {
+                from 5,
+                to 8,
+                id gi 971826089
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 2",
+              location int {
+                from 13,
+                to 19,
+                id gi 971826089
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 3",
+              location int {
+                from 20,
+                to 31,
+                id gi 971826089
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 4",
+              location int {
+                from 36,
+                to 42,
+                id gi 971826089
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 5",
+              location int {
+                from 45,
+                to 51,
+                id gi 971826089
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 6",
+              location int {
+                from 52,
+                to 56,
+                id gi 971826089
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 7",
+              location int {
+                from 60,
+                to 68,
+                id gi 971826089
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 8",
+              location int {
+                from 69,
+                to 80,
+                id gi 971826089
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 9",
+              location int {
+                from 84,
+                to 93,
+                id gi 971826089
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 10",
+              location int {
+                from 95,
+                to 107,
+                id gi 971826089
+              }
+            },
+            {
+              data het "(NAG,2458)",
+              location mix {
+                bond {
+                  a {
+                    point 14,
+                    id gi 971826089
+                  }
+                }
+              }
+            },
+            {
+              data het "(NAG,2472)",
+              location mix {
+                bond {
+                  a {
+                    point 34,
+                    id gi 971826089
+                  }
+                }
+              }
+            },
+            {
+              data bond disulfide,
+              location bond {
+                a {
+                  point 27,
+                  id gi 971826089
+                },
+                b {
+                  point 89,
+                  id gi 971826089
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        pdb {
+          mol "5EO9",
+          chain 66,
+          rel std {
+            year 2019,
+            month 11,
+            day 20
+          }
+        },
+        gi 971826090
+      },
+      descr {
+        source {
+          org {
+            taxname "Drosophila melanogaster",
+            common "fruit fly",
+            db {
+              {
+                db "taxon",
+                tag id 7227
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Drosophila",
+                species "melanogaster"
+              },
+              attrib "specified",
+              lineage "Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Hexapoda;
+ Insecta; Pterygota; Neoptera; Holometabola; Diptera; Brachycera; Muscomorpha;
+ Ephydroidea; Drosophilidae; Drosophila; Sophophora",
+              gcode 1,
+              mgcode 5,
+              div "INV"
+            }
+          }
+        },
+        molinfo {
+          biomol peptide
+        },
+        comment "CG32791, isoform A",
+        num enum {
+          num 206,
+          names {
+            "37",
+            "38",
+            "39",
+            "40",
+            "41",
+            "42",
+            "43",
+            "44",
+            "45",
+            "46",
+            "47",
+            "48",
+            "49",
+            "50",
+            "51",
+            "52",
+            "53",
+            "54",
+            "55",
+            "56",
+            "57",
+            "58",
+            "59",
+            "60",
+            "61",
+            "62",
+            "63",
+            "64",
+            "65",
+            "66",
+            "67",
+            "68",
+            "69",
+            "70",
+            "71",
+            "72",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100",
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106",
+            "107",
+            "108",
+            "109",
+            "110",
+            "111",
+            "112",
+            "113",
+            "114",
+            "115",
+            "116",
+            "117",
+            "118",
+            "119",
+            "120",
+            "121",
+            "122",
+            "123",
+            "124",
+            "125",
+            "126",
+            "127",
+            "128",
+            "129",
+            "130",
+            "131",
+            "132",
+            "133",
+            "134",
+            "135",
+            "136",
+            "137",
+            "138",
+            "139",
+            "140",
+            "141",
+            "142",
+            "143",
+            "144",
+            "145",
+            "146",
+            "147",
+            "148",
+            "149",
+            "150",
+            "151",
+            "152",
+            "153",
+            "154",
+            "155",
+            "156",
+            "157",
+            "158",
+            "159",
+            "160",
+            "161",
+            "162",
+            "163",
+            "164",
+            "165",
+            "166",
+            "167",
+            "168",
+            "169",
+            "170",
+            "171",
+            "172",
+            "173",
+            "174",
+            "175",
+            "176",
+            "177",
+            "178",
+            "179",
+            "180",
+            "181",
+            "182",
+            "183",
+            "184",
+            "185",
+            "186",
+            "187",
+            "188",
+            "189",
+            "190",
+            "191",
+            "192",
+            "193",
+            "194",
+            "195",
+            "196",
+            "197",
+            "198",
+            "199",
+            "200",
+            "201",
+            "202",
+            "203",
+            "204",
+            "205",
+            "206",
+            "207",
+            "208",
+            "209",
+            "210",
+            "211",
+            "212",
+            "213",
+            "214",
+            "215",
+            "216",
+            "217",
+            "218",
+            "219",
+            "220",
+            "221",
+            "222",
+            "223",
+            "224",
+            "225",
+            "226",
+            "227",
+            "228",
+            "229",
+            "230",
+            "231",
+            "232",
+            "233",
+            "234",
+            "235",
+            "236",
+            "237",
+            "238",
+            "239",
+            "240",
+            "241",
+            ""
+          }
+        },
+        create-date std {
+          year 2016,
+          month 1,
+          day 6
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 206,
+        seq-data ncbieaa "SRAFQPEFVESISNVSVAVGRDATFTCHVRHLGGYRVGWLKADTKAIQAIHE
+NVITHNPRVTVSHLDQNTWNLHIKAVSEEDRGGYMCQLNTDPMKSQIGFLDVVIPPDFISEDTSSDVIVPEGSSVRLT
+CRARGYPEPIVTWRREDGNEIVLKDNVGTKTLAPSFRGEVLKLSKISRNEMGSYLCIASNGVPPSVSKRISLSIHH"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data psec-str sheet,
+              comment "strand 11",
+              location int {
+                from 5,
+                to 8,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 12",
+              location int {
+                from 12,
+                to 17,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 13",
+              location int {
+                from 18,
+                to 30,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 14",
+              location int {
+                from 35,
+                to 41,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 15",
+              location int {
+                from 44,
+                to 50,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 16",
+              location int {
+                from 51,
+                to 55,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 17",
+              location int {
+                from 59,
+                to 66,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 18",
+              location int {
+                from 68,
+                to 78,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 19",
+              location int {
+                from 82,
+                to 91,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 20",
+              location int {
+                from 93,
+                to 105,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 21",
+              location int {
+                from 107,
+                to 110,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 22",
+              location int {
+                from 116,
+                to 121,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 23",
+              location int {
+                from 124,
+                to 130,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 24",
+              location int {
+                from 131,
+                to 134,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 25",
+              location int {
+                from 138,
+                to 145,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 26",
+              location int {
+                from 150,
+                to 155,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 27",
+              location int {
+                from 157,
+                to 162,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 28",
+              location int {
+                from 164,
+                to 167,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 29",
+              location int {
+                from 168,
+                to 174,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 30",
+              location int {
+                from 180,
+                to 189,
+                id gi 971826090
+              }
+            },
+            {
+              data psec-str sheet,
+              comment "strand 31",
+              location int {
+                from 194,
+                to 203,
+                id gi 971826090
+              }
+            },
+            {
+              data region "Domain 1",
+              comment "NCBI Domains",
+              location int {
+                from 0,
+                to 106,
+                id gi 971826090
+              }
+            },
+            {
+              data region "Domain 2",
+              comment "NCBI Domains",
+              location int {
+                from 107,
+                to 205,
+                id gi 971826090
+              }
+            },
+            {
+              data het "(NAG,2496)",
+              location mix {
+                bond {
+                  a {
+                    point 13,
+                    id gi 971826090
+                  }
+                }
+              }
+            },
+            {
+              data bond disulfide,
+              location bond {
+                a {
+                  point 26,
+                  id gi 971826090
+                },
+                b {
+                  point 87,
+                  id gi 971826090
+                }
+              }
+            },
+            {
+              data bond disulfide,
+              location bond {
+                a {
+                  point 130,
+                  id gi 971826090
+                },
+                b {
+                  point 185,
+                  id gi 971826090
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

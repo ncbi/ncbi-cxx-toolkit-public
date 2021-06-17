@@ -1,0 +1,137 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+#
+#  C/C++ compilation rules;  plus
+#  auto-dependencies build rules for GNU make
+#################################
+
+ifeq "$(NODEPGOALS)" ""
+
+###  C/C++ compilation
+include $(builddir)/Makefile.rules
+
+ECHO = /bin/echo
+
+@GCCPCH@GCCPCH = 1
+
+ifdef GCCPCH
+ ifneq ($(findstring $(FAST_CXXFLAGS),$(CXXFLAGS)),)
+  ifneq ($(FAST_CXXFLAGS),$(ORIG_CXXFLAGS))
+   is_fast = 1
+  endif
+ endif
+ ifneq ($(findstring $(CXXFLAGS_DLL),$(CXXFLAGS_ALL)),)
+  ifdef is_fast
+   PCHMODE = fastdll
+  else
+   PCHMODE = dll
+  endif
+ else
+  ifdef is_fast
+   PCHMODE = fast
+  else
+   PCHMODE = normal
+  endif
+ endif
+ FIXPCH = -e 's%\$$(wildcard \$$(includedir)/ncbi_pch\.hpp)%& $$(pchdir)/$(PCHMODE)%g'
+endif
+
+SKIP_DEP_RULES = no
+ifneq "" "$(findstring q,$(MAKEFLAGS))"
+  ifeq "" "$(filter depend,$(MAKECMDGOALS))"
+    SKIP_DEP_RULES = yes
+  endif
+endif
+
+ifeq "no" "$(SKIP_DEP_RULES)"
+### Dependencies (GNU make only)
+DEPFLAGS_ALL = $(DEPFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
+D_TAIL = $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
+	 | $(SED) -e '/^\#/b' -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
+	       -e 's%\$$(wildcard $(*F)@obj_ext@) *:%$*@obj_ext@ $@ :%g' \
+	       -e 's%$(incdir)%$$(incdir)%g' \
+	       -e 's%$(includedir)%$$(includedir)%g' \
+	       -e 's%$(includedir0)%$$(includedir0)%g' \
+	       -e 's% $(subst .,\.,$(srcdir))/% $$(srcdir)/%g' \
+	       -e 's%$(top_srcdir)%$$(top_srcdir)%g' $(FIXPCH) > $@_ \
+	  &&  test -s $@_  &&  /bin/mv -f $@_ $@
+D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH -DNCBI_PCH__HPP= \
+	 $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
+	 | $(SED) -e '/^\#/b' -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
+	       -e 's%\$$(wildcard ncbi_pch_impl@obj_ext@) *:%$$(pchdir)/$(PCHMODE) $$(builddir)/corelib/ncbi_pch_impl.d.$(PCHMODE) :%g' \
+	       -e 's%$(incdir)%$$(incdir)%g' \
+	       -e 's%$(includedir)%$$(includedir)%g' \
+	       -e 's%$(includedir0)%$$(includedir0)%g' \
+	       -e 's% $(subst .,\.,$(srcdir))/% $$(srcdir)/%g' \
+	       -e 's%$(top_srcdir)%$$(top_srcdir)%g' > $@_ \
+	  &&  test -s $@_  &&  /bin/mv -f $@_ $@
+
+define make_cpp_dep
+	@$(ECHO) Updating dependency information for $<.
+	@$(CXX_WRAPPER) $(CXX) $(D_TAIL)  ||  \
+	    (echo "FAILED COMMAND: $(CXX_WRAPPER) $(CXX) $(DEPFLAGS_ALL)" \
+                  "$< $(DEPFLAGS_POST) | sed ..."; exit 1)
+endef
+
+define make_c_dep
+	@$(ECHO) Updating dependency information for $<.
+	@$(CC_WRAPPER) $(CC)   $(D_TAIL)  ||  \
+	    (echo "FAILED COMMAND: $(CC_WRAPPER) $(CC) $(DEPFLAGS_ALL)" \
+                  "$< $(DEPFLAGS_POST) | sed ..."; exit 1)
+endef
+
+ifeq "" "$(OBJ_DIRS)"
+  %.d: $(HERE)%.cpp
+	$(make_cpp_dep)
+  %.d: $(srcdir)/%.cpp
+	$(make_cpp_dep)
+  %.d: $(HERE)%.cc
+	$(make_cpp_dep)
+  %.d: $(srcdir)/%.cc
+	$(make_cpp_dep)
+  %.d: $(HERE)%.c
+	$(make_c_dep)
+  %.d: $(srcdir)/%.c
+	$(make_c_dep)
+else
+  CPP_DEP_HERE = $(CPP_OBJ_HERE:%@obj_ext@=%.d)
+  CC_DEP_HERE  = $(CC_OBJ_HERE:%@obj_ext@=%.d)
+  C_DEP_HERE   = $(C_OBJ_HERE:%@obj_ext@=%.d)
+  ifneq "$(srcdir)" "."
+    CPP_DEP_THERE = $(CPP_OBJ_THERE:%@obj_ext@=%.d)
+    CC_DEP_THERE  = $(CC_OBJ_THERE:%@obj_ext@=%.d)
+    C_DEP_THERE   = $(C_OBJ_THERE:%@obj_ext@=%.d)
+  endif
+  $(CPP_DEP_HERE): %.d: $(HERE)%.cpp
+	$(make_cpp_dep)
+  $(CPP_DEP_THERE): %.d: $(srcdir)/%.cpp $(OBJ_DIRS)
+	$(make_cpp_dep)
+  $(CC_DEP_HERE): %.d: $(HERE)%.cc
+	$(make_cpp_dep)
+  $(CC_DEP_THERE): %.d: $(srcdir)/%.cc $(OBJ_DIRS)
+	$(make_cpp_dep)
+  $(C_DEP_HERE): %.d: $(HERE)%.c
+	$(make_c_dep)
+  $(C_DEP_THERE): %.d: $(srcdir)/%.c $(OBJ_DIRS)
+	$(make_c_dep)
+endif
+
+$(builddir)/corelib/ncbi_pch_impl.hpp.d.$(PCHMODE): $(pchsrc)
+	$(CXX_WRAPPER) $(CXX) $(D_TAIL_PCH)
+
+depend: $(SOURCES:%=%.d)
+endif
+
+NODEPGOALS = $(ALT_GOALS)
+ifneq (,$(filter-out $(NODEPGOALS),$(if $(MAKECMDGOALS),$(MAKECMDGOALS),all)))
+ifdef SOURCES
+ -include $(SOURCES:=.d)
+endif
+ifdef GCCPCH
+ include $(builddir)/corelib/ncbi_pch_impl.hpp.d.$(PCHMODE)
+endif
+endif
+
+endif

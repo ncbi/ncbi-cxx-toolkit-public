@@ -1,0 +1,14 @@
+# $Id$
+
+# Meta-makefile
+#################################
+
+SUB_PROJ = \
+   alnmgr asn basic blast cgi connect dbapi deployable_cgi eutils \
+   http_session lds multicmd netcache netschedule objects objmgr \
+   sdbapi serial soap unit_test
+
+REQUIRES = app
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

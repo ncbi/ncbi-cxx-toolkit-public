@@ -1,0 +1,163 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "Annot:CDD",
+      tag id 6
+    }
+  },
+  inst {
+    repr delta,
+    mol aa,
+    length 342,
+    topology not-set,
+    ext delta {
+      loc int {
+        from 0,
+        to 341,
+        id gi 6
+      }
+    }
+  },
+  annot {
+    {
+      db other,
+      name "Annot:CDD",
+      desc {
+        name "CDDSearch",
+        create-date std {
+          year 2004,
+          month 5,
+          day 12
+        }
+      },
+      data seq-table {
+        feat-type 9,
+        feat-subtype 83,
+        num-rows 4,
+        columns {
+          {
+            header {
+              field-id data-region
+            },
+            default string "Domain abundant in complement control proteins"
+          },
+          {
+            header {
+              field-id comment
+            },
+            default string "CCP"
+          },
+          {
+            header {
+              field-id location-gi
+            },
+            default int 6
+          },
+          {
+            header {
+              field-id location-from
+            },
+            data int {
+              80,
+              201,
+              19,
+              162
+            }
+          },
+          {
+            header {
+              field-id location-to
+            },
+            data int {
+              128,
+              257,
+              75,
+              197
+            }
+          },
+          {
+            header {
+              field-id partial
+            },
+            sparse indexes {
+                3
+            },
+            default bit TRUE
+          },
+          {
+            header {
+              field-id location-fuzz-from-lim
+            },
+            sparse indexes {
+              3
+            },
+            default int 2
+          },
+          {
+            header {
+              field-id ext-type
+            },
+            default string "cddScoreData"
+          },
+          {
+            header {
+              field-id ext,
+              field-name "E.definition"
+            },
+            default string "cd00033"
+          },
+          {
+            header {
+              field-id ext,
+              field-name "E.short_name"
+            },
+            default string "CCP"
+          },
+          {
+            header {
+              field-id ext,
+              field-name "E.score"
+            },
+            data int {
+              118,
+              111,
+              101,
+              86
+            }
+          },
+          {
+            header {
+              field-id ext,
+              field-name "E.evalue"
+            },
+            data real {
+              4.84829e-7,
+              3.601e-6,
+              5.17214e-5,
+              2.30448e-3
+            }
+          },
+          {
+            header {
+              field-id ext,
+              field-name "E.bit_score"
+            },
+            data real {
+              49.6938,
+              46.9974,
+              43.1454,
+              37.3674
+            }
+          },
+          {
+            header {
+              field-id dbxref,
+              field-name "D.CDD"
+            },
+            default int 14774
+          }
+        }
+      }
+    }
+  }
+}

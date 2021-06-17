@@ -1,0 +1,18 @@
+[Common]
+ExcludeProject = FALSE
+
+[AddToProject]
+SourceFiles    = bcp
+
+[Compiler]
+PreprocessorDefinitions = UCS2
+
+[Compiler.800]
+PreprocessorDefinitions=UCS2;_CRT_SECURE_NO_DEPRECATE=1;
+[Compiler.900]
+PreprocessorDefinitions=UCS2;_CRT_SECURE_NO_DEPRECATE=1;
+
+[Compiler.800.release]
+PreprocessorDefinitions=UCS2;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
+[Compiler.900.release]
+PreprocessorDefinitions=UCS2;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;

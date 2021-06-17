@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(mla)
+  NCBI_dataspecs(mla.asn)
+  NCBI_uses_toolkit_libraries(medlars pubmed pub)
+NCBI_end_lib()
+

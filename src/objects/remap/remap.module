@@ -1,0 +1,2 @@
+MODULE_PATH = objects/remap
+MODULE_IMPORT = objects/seqloc/seqloc

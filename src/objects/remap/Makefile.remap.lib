@@ -1,0 +1,6 @@
+LIB = remap
+SRC = remap__ remap___
+
+
+USES_LIBRARIES =  \
+    $(SEQ_LIBS) pub

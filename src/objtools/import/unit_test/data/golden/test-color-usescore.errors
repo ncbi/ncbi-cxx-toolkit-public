@@ -1,0 +1,20 @@
+CFeatureImportError:
+  Severity = Warning
+  Message = "Invalid score value- setting color to BLACK."
+  LineNumber = 7
+
+CFeatureImportError:
+  Severity = Warning
+  Message = "Invalid score value- setting color to BLACK."
+  LineNumber = 8
+
+CFeatureImportError:
+  Severity = Warning
+  Message = "Invalid score value- clipping to 0."
+  LineNumber = 9
+
+CFeatureImportError:
+  Severity = Warning
+  Message = "Invalid score value- clipping to 1000."
+  LineNumber = 10
+

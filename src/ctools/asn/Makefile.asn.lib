@@ -1,0 +1,16 @@
+# $Id$
+
+# Build library "XASN"
+#################################
+
+SRC = asnio asnwrite
+LIB = xasn
+ 
+CPPFLAGS = $(ORIG_CPPFLAGS) \
+  $(NCBI_C_INCLUDE)
+
+WATCHERS = gouriano
+
+
+USES_LIBRARIES =  \
+    xhtml

@@ -1,0 +1,8 @@
+WATCHERS = lewisg slottad
+
+LIB = pepXML
+SRC = pepXML__ pepXML___
+
+
+USES_LIBRARIES =  \
+    xser

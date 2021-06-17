@@ -1,0 +1,11 @@
+# $Id$
+
+# Meta-makefile("dbindex" project)
+#################################
+
+LIB_PROJ = xalgoblastdbindex
+SUB_PROJ = makeindex
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+

@@ -1,0 +1,13 @@
+# $Id$
+
+# Meta-makefile("ALGO" project)
+#################################
+
+LIB_PROJ = xalgophytree
+
+SUB_PROJ = fastme test unit_test phytree_format 
+
+REQUIRES = objects
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

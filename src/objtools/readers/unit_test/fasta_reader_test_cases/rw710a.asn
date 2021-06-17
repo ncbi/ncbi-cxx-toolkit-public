@@ -1,0 +1,145 @@
+Seq-entry ::= set {
+  seq-set {
+    seq {
+      id {
+        local str "local",
+        other {
+          accession "not-an-accession"
+        }
+      },
+      descr {
+        user {
+          type str "CFastaReader",
+          data {
+            {
+              label str "DefLine",
+              data str ">lcl|local|ref|not-an-accession|"
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 6,
+        seq-data ncbi2na '7900'H
+      }
+    },
+    seq {
+      id {
+        local str "local",
+        other {
+          accession "NC_000001"
+        }
+      },
+      descr {
+        user {
+          type str "CFastaReader",
+          data {
+            {
+              label str "DefLine",
+              data str ">lcl|local|ref|NC_000001"
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 6,
+        seq-data ncbi2na '7900'H
+      }
+    },
+    seq {
+      id {
+        other {
+          accession "NC_000001"
+        },
+        local str "local"
+      },
+      descr {
+        user {
+          type str "CFastaReader",
+          data {
+            {
+              label str "DefLine",
+              data str ">ref|NC_000001|lcl|local"
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 6,
+        seq-data ncbi2na '7900'H
+      }
+    },
+    seq {
+      id {
+        local str "local",
+        other {
+          name "locus",
+          accession "NC_000001"
+        }
+      },
+      descr {
+        user {
+          type str "CFastaReader",
+          data {
+            {
+              label str "DefLine",
+              data str ">lcl|local|ref|NC_000001|locus"
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 6,
+        seq-data ncbi2na '7900'H
+      }
+    },
+    seq {
+      id {
+        local str "local",
+        other {
+          accession "NC_000001"
+        }
+      },
+      descr {
+        user {
+          type str "CFastaReader",
+          data {
+            {
+              label str "DefLine",
+              data str ">lcl|local|ref|NC_000001|"
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 6,
+        seq-data ncbi2na '7900'H
+      }
+    }
+  }
+}

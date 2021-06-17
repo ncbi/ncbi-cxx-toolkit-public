@@ -1,0 +1,5 @@
+Line No    : 22
+Severity   : Fatal
+Problem    : Alignment.UnterminatedCommand
+Message    : Terminating semicolon missing from command. Commands in a Nexus file must end with a semicolon.
+

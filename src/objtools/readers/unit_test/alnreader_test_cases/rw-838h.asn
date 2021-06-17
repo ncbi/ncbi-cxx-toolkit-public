@@ -1,0 +1,78 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        local str "fish"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 20,
+        seq-data ncbi2na '1322AC5DC2'H
+      }
+    },
+    seq {
+      id {
+        local str "frog"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 20,
+        seq-data ncbi2na '1322AC5DC2'H
+      }
+    },
+    seq {
+      id {
+        local str "snake"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 20,
+        seq-data ncbi2na '1322AC5DC2'H
+      }
+    },
+    seq {
+      id {
+        local str "mouse"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 20,
+        seq-data ncbi2na '1322AC5DC2'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 4,
+          segs denseg {
+            dim 4,
+            numseg 1,
+            ids {
+              local str "fish",
+              local str "frog",
+              local str "snake",
+              local str "mouse"
+            },
+            starts {
+              0,
+              0,
+              0,
+              0
+            },
+            lens {
+              20
+            }
+          }
+        }
+      }
+    }
+  }
+}

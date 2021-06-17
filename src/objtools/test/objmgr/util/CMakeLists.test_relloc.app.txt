@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_relloc)
+  NCBI_sources(test_relloc)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xobjutil)
+  NCBI_project_watchers(ucko)
+NCBI_end_app()
+

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(concat_seqentries)
+  NCBI_sources(concat_seqentries)
+  NCBI_uses_toolkit_libraries(bdb asn_cache seqset)
+  NCBI_project_watchers(marksc2)
+NCBI_end_app()
+

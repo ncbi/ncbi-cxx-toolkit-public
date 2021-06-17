@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_app(soap_server_sample)
+  NCBI_sources(soap_server_sample)
+  NCBI_uses_toolkit_libraries(soap_dataobj xsoap_server)
+NCBI_end_app()

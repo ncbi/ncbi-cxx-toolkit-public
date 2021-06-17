@@ -1,0 +1,16 @@
+DATATOOL - NCBI data conversion tool.
+
+
+1. Generates C++ data storage classes based on ASN.1, DTD or XML Schema
+specification to be used with NCBI data serialization streams.
+2. Converts ASN.1 specification into a DTD or XML Schema specification and vice versa.
+3. Converts data between ASN.1 and XML formats, and writes data in JSON format. 
+
+
+See also:
+
+http://www.ncbi.nlm.nih.gov/data_specs/NCBI_data_conversion.html
+http://www.ncbi.nlm.nih.gov/books/n/toolkit/ch_app#ch_app.datatool
+
+
+

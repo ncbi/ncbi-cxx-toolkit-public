@@ -1,0 +1,10 @@
+ASN_DEP = seq submit
+LIB = gbproj
+SRC = gbproj__ gbproj___
+
+
+LIB_OR_DLL = lib
+
+
+USES_LIBRARIES =  \
+    submit xconnect

@@ -1,0 +1,78 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      org {
+        taxname "Homo sapiens"
+      },
+      subtype {
+        {
+          subtype other,
+          name "val246_0"
+        }
+      }
+    },
+    pub {
+        pub {
+            pmid 0000
+        }
+    },
+    comment "dummy comment",
+    genbank {
+      extra-accessions {
+        "dummy1",
+        "dummy2",
+        "dummy3"
+      },
+      keywords {
+        "dummy"
+      }
+    },
+    pub {
+        pub {
+            pmid 1111,
+            pmid 2222,
+            muid 1
+        }
+    },
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "Sequence Read Archive",
+          data strs {
+            "dummy"
+          }
+        }
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "dummy"
+      },
+      descr {
+        molinfo {
+          biomol ncRNA,
+          tech both
+        }
+      },
+      inst {
+        repr not-set,
+        mol rna,
+        topology circular,
+        strand mixed,
+        hist {
+          replaces {
+            ids {
+              swissprot {
+                accession "dummy"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

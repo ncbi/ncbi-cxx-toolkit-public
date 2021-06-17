@@ -1,0 +1,7 @@
+                Warning:
+Problem:        FASTA-Reader: Ignoring FASTA modifier(s) found because the input was not expected to have any.
+SeqId:          lcl|seq_id
+Line:           1
+FeatureName:    defline
+
+

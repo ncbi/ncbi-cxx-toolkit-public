@@ -1,0 +1,1568 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "dbEST",
+      tag id 1216776
+    },
+    genbank {
+      accession "AA566393",
+      version 1
+    },
+    gi 2339025
+  },
+  descr {
+    molinfo {
+      biomol mRNA,
+      tech est
+    },
+    title "ZF-E478 zebrafish embryonic Danio rerio cDNA clone ZF-E478 3' end.",
+    create-date std {
+      year 1997,
+      month 8,
+      day 20
+    },
+    update-date std {
+      year 1998,
+      month 8,
+      day 25
+    },
+    source {
+      org {
+        taxname "Danio rerio",
+        common "zebrafish",
+        db {
+          {
+            db "taxon",
+            tag id 7955
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Danio",
+            species "rerio"
+          },
+          mod {
+            {
+              subtype other,
+              subname "Vector: Lambda Uni-ZAP XR; Site_1: EcoRI; Site_2: XhoI;
+ mRNA was purified from mixed stages of zebrafish embryos from 6 hours
+ postfertilization to hatching.  cDNA was unidirectionally cloned into the
+ lambda ZAPII vector using Stratagene's Lambda Uni-ZAP XR cDNA cloning system"
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Ostariophysi;
+ Cypriniformes; Cyprinidae; Danio",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype clone,
+          name "ZF-E478"
+        },
+        {
+          subtype clone-lib,
+          name "LIBEST_000356 zebrafish embryonic"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol rna,
+    length 197,
+    strand ss,
+    seq-data ncbi2na 'FFFFFFFFFBFF1FFA000BF3EE0387BB803EA3AA0CFA497A512C1B4EE5
+FC1112708AE7B6015E86A68800A02415D1F4E2E97FC0'H
+  },
+  annot {
+    {
+      desc {
+        name "NCBI_GPIPE"
+      },
+      data ftable {
+        {
+          data region "alignable",
+          location int {
+            from 24,
+            to 196,
+            strand minus,
+            id gi 2339025
+          }
+        },
+        {
+          data region "polya",
+          location int {
+            from 0,
+            to 23,
+            strand minus,
+            id gi 2339025
+          },
+          qual {
+            {
+              qual "method",
+              val "FindPolyTail"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-entry ::= seq {
+  id {
+    general {
+      db "dbEST",
+      tag id 1216909
+    },
+    genbank {
+      accession "AA566526",
+      version 1
+    },
+    gi 2339158
+  },
+  descr {
+    molinfo {
+      biomol mRNA,
+      tech est
+    },
+    title "ZF-ES47 zebrafish embryonic (subtraction) Danio rerio cDNA clone
+ ZF-ES47 5' end.",
+    create-date std {
+      year 1997,
+      month 8,
+      day 20
+    },
+    update-date std {
+      year 1998,
+      month 8,
+      day 25
+    },
+    source {
+      org {
+        taxname "Danio rerio",
+        common "zebrafish",
+        db {
+          {
+            db "taxon",
+            tag id 7955
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Danio",
+            species "rerio"
+          },
+          mod {
+            {
+              subtype other,
+              subname "Organ: embryo; Vector: Lambda Uni-ZAP XR; Site_1:
+ EcoRI; Site_2: XhoI; mRNA was purified from mixed stages of zebrafish embryos
+ from 6  hours postfertilization to hatching.  cDNA was unidirectionally
+ cloned  into the lambda ZAPII vector using the Stratagene's Lambda Uni-ZAP XR
+  cDNA cloning system. "
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Ostariophysi;
+ Cypriniformes; Cyprinidae; Danio",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype clone,
+          name "ZF-ES47"
+        },
+        {
+          subtype clone-lib,
+          name "LIBEST_000970 zebrafish embryonic (subtraction)"
+        },
+        {
+          subtype tissue-type,
+          name "embryonic"
+        },
+        {
+          subtype dev-stage,
+          name "mixed from 6 hours postfertilization to hatching"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol rna,
+    length 220,
+    strand ss,
+    seq-data ncbi2na 'B512AD40C021E0E0D388050A1010388234EA3E222D2EEF087FFBFEEA
+2B34FD37BF3BF4E03F38D0F0A9FFFFBFEC50C021EFC78000000000'H
+  },
+  annot {
+    {
+      desc {
+        name "NCBI_GPIPE"
+      },
+      data ftable {
+        {
+          data region "alignable",
+          location int {
+            from 0,
+            to 200,
+            strand plus,
+            id gi 2339158
+          }
+        },
+        {
+          data region "polya",
+          location int {
+            from 201,
+            to 219,
+            strand plus,
+            id gi 2339158
+          },
+          qual {
+            {
+              qual "method",
+              val "FindPolyTail"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-entry ::= seq {
+  id {
+    general {
+      db "dbEST",
+      tag id 1188667
+    },
+    genbank {
+      accession "AA542596",
+      version 1
+    },
+    gi 2289531
+  },
+  descr {
+    molinfo {
+      biomol mRNA,
+      tech est
+    },
+    title "fa08e08.s1 Zebrafish ICRFzfls Danio rerio cDNA clone 5A5 3'.",
+    create-date std {
+      year 1997,
+      month 7,
+      day 31
+    },
+    update-date std {
+      year 1997,
+      month 7,
+      day 31
+    },
+    source {
+      org {
+        taxname "Danio rerio",
+        common "zebrafish",
+        db {
+          {
+            db "taxon",
+            tag id 7955
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Danio",
+            species "rerio"
+          },
+          mod {
+            {
+              subtype other,
+              subname "Vector: pSPORT1; Site_1: NotI; Site_2: SalI; 1st strand
+ cDNA was primed with a Not I - oligo(dT)15 primer [5
+'pGACTAGTTCTAGATCGCGAGCGGCCGCCCTTTTTTTTTTTTTTT3'], on mRNA from pooled 26
+ somite zebrafish embryos; double-stranded cDNA was ligated to Sal I adaptors
+ (BRL), digested with Not I and cloned into the Not I and Sal I sites of the
+ pSPORT1 vector (BRL). Library was constructed by Matthew Clark (Lehrach lab;
+ ICRF, London and  Max Planck Institut fuer Molekulare Genetik, Berlin) and
+ was not biochemically normalised.  70,000 clones from this library were
+ arrayed on high density filters and subsequently screened by oligonucleotide
+ hybridization fingerprinting to identify unique or minimally redundant clones
+ for more intensive analysis."
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Ostariophysi;
+ Cypriniformes; Cyprinidae; Danio",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype clone,
+          name "5A5"
+        },
+        {
+          subtype clone-lib,
+          name "LIBEST_000899 Zebrafish ICRFzfls"
+        },
+        {
+          subtype sex,
+          name "mixed"
+        },
+        {
+          subtype tissue-type,
+          name "pooled 26-somite embryos"
+        },
+        {
+          subtype lab-host,
+          name "XL1-blue MRF"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol rna,
+    length 418,
+    strand ss,
+    seq-data ncbi2na 'FFFFFFF03504CFF3FE2013F08CFFA24B013B4A7030F484CD3E1F79ED
+F4F2FD001103B7F10FC03A41FE8CEFF79E8AC7B2FA4BFCC17E0FF501EEB317E10EBCD954E5CC44
+B31EC01504B43FCD03C0EECBC1D00FCF80BC3CC741E008BFC0B43BE0AC38AC3C0C5D3C7D07C0'H
+  },
+  annot {
+    {
+      desc {
+        name "NCBI_GPIPE"
+      },
+      data ftable {
+        {
+          data region "alignable",
+          location int {
+            from 14,
+            to 371,
+            strand minus,
+            id gi 2289531
+          }
+        },
+        {
+          data region "polya",
+          location int {
+            from 0,
+            to 13,
+            strand minus,
+            id gi 2289531
+          },
+          qual {
+            {
+              qual "method",
+              val "FindPolyTail"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-entry ::= seq {
+  id {
+    general {
+      db "dbEST",
+      tag id 24185128
+    },
+    genbank {
+      accession "CO354973",
+      version 1
+    },
+    gi 49436290
+  },
+  descr {
+    molinfo {
+      biomol mRNA,
+      tech est
+    },
+    title "DR_ATE_NRM03_A07 adult testis normalized (TLL) Danio rerio cDNA.",
+    create-date std {
+      year 2004,
+      month 6,
+      day 29
+    },
+    update-date std {
+      year 2004,
+      month 6,
+      day 29
+    },
+    source {
+      org {
+        taxname "Danio rerio",
+        common "zebrafish",
+        db {
+          {
+            db "taxon",
+            tag id 7955
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Danio",
+            species "rerio"
+          },
+          mod {
+            {
+              subtype strain,
+              subname "AB"
+            },
+            {
+              subtype other,
+              subname "Organ: pooled testis; Vector: pBluescript II SK;
+ Site_1: EcoRI; Site_2: XhoI; Full length cDNA was synthesized from adult
+ testis poly(A)+ RNA with ZAP-cDNA Synthesis Kit (Stratagene).
+ Size-fractionated cDNA (mainly 0.5-3kb in length) were directionally cloned
+ into Uni-ZAP XR vector. The cDNA clones were excised from Uni-ZAP vector
+ using ExAssist helper phage. Excised pBluescript phagemids were used to
+ transform E coli XL1-Blue cells. The plasmid library was normalized by using
+ a reassociation-kinetics-based approach according to Bonaldo et al., (Genome
+ Research 6: 791-806,1996) with minor modifications. The insert from randomly
+ selected white colonies was PCR amplified using M13 forward and reverse
+ primers and partially sequenced by using M13 reverse primer."
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Ostariophysi;
+ Cypriniformes; Cyprinidae; Danio",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype clone-lib,
+          name "LIBEST_015931 adult testis normalized (TLL)"
+        },
+        {
+          subtype sex,
+          name "male"
+        },
+        {
+          subtype dev-stage,
+          name "adult (fully mature)"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol rna,
+    length 500,
+    strand ss,
+    seq-data ncbi2na '70453E20E13E77AD09E1E4525DDE0E74EED57BF97A78A7D2307F977A
+4E17BB87DE8EABB852310E77BD1578E27524AD9DF51EFB50E08F908147AA0904D6A114E3F992B9
+E7AE5D75E4EAE1DEBAD77ADED20A30CDE877AEACFBB5EA924B6FB8571CE5E9BB1A58B4589D6E1E
+AE8D23DE97507030300EC49437FA4D1E000000'H
+  },
+  annot {
+    {
+      desc {
+        name "NCBI_GPIPE"
+      },
+      data ftable {
+        {
+          data region "alignable",
+          location int {
+            from 0,
+            to 487,
+            strand plus,
+            id gi 49436290
+          }
+        },
+        {
+          data region "polya",
+          location int {
+            from 488,
+            to 499,
+            strand plus,
+            id gi 49436290
+          },
+          qual {
+            {
+              qual "method",
+              val "FindPolyTail"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-entry ::= seq {
+  id {
+    general {
+      db "dbEST",
+      tag id 41387444
+    },
+    embl {
+      accession "CT700515",
+      version 2
+    },
+    gi 112736981
+  },
+  descr {
+    molinfo {
+      biomol mRNA,
+      tech est
+    },
+    title "CT700515 ZF_mu Danio rerio cDNA clone ZF_mu_199p09 3'.",
+    create-date std {
+      year 2006,
+      month 3,
+      day 16
+    },
+    update-date std {
+      year 2006,
+      month 8,
+      day 29
+    },
+    source {
+      org {
+        taxname "Danio rerio",
+        common "zebrafish",
+        db {
+          {
+            db "taxon",
+            tag id 7955
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Danio",
+            species "rerio"
+          },
+          mod {
+            {
+              subtype other,
+              subname "Vector: pSPORT1; Site_1: SalI; Site_2: NotI; SalI_NotI
+ cut cDNA was then ligated into pSPORT1 with SalI at the 5' end and NotI at
+ the 3' end."
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Ostariophysi;
+ Cypriniformes; Cyprinidae; Danio",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype clone,
+          name "ZF_mu_199p09"
+        },
+        {
+          subtype clone-lib,
+          name "LIBEST_019253 ZF_mu"
+        },
+        {
+          subtype dev-stage,
+          name "myoblast"
+        },
+        {
+          subtype lab-host,
+          name "E. coli"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol rna,
+    length 626,
+    strand ss,
+    seq-data ncbi2na 'FFFFFFFFFFFFFFFF15F7E53E6A4D52DFCFCFBC05088355033D375774
+4030BB101E0BAAE4B81F4048DF4D6AEF7D2DE1DFFF24FE181E3BB85532315121D9EA7DD34CB5B5
+2DFDDF92BE3F4A81EAE86FDE559C924014978AF80361EBD4A5D8474079147B7C05FD1EDF79712A
+033111CBB878B820C8B1107B033D3110F93DF47EB13EEEFFBC0AAEB522ECFEC2BFAFBBC0003902
+438B9F30F0FEF800D17CFFF0'H,
+    hist {
+      replaces {
+        date std {
+          year 2006,
+          month 3,
+          day 16
+        },
+        ids {
+          gi 89911033
+        }
+      }
+    }
+  },
+  annot {
+    {
+      desc {
+        name "NCBI_GPIPE"
+      },
+      data ftable {
+        {
+          data region "alignable",
+          location int {
+            from 32,
+            to 625,
+            strand minus,
+            id gi 112736981
+          }
+        },
+        {
+          data region "polya",
+          location int {
+            from 0,
+            to 31,
+            strand minus,
+            id gi 112736981
+          },
+          qual {
+            {
+              qual "method",
+              val "FindPolyTail"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-entry ::= seq {
+  id {
+    general {
+      db "dbEST",
+      tag id 41534061
+    },
+    embl {
+      accession "CT625722",
+      version 2
+    },
+    gi 113380667
+  },
+  descr {
+    molinfo {
+      biomol mRNA,
+      tech est
+    },
+    title "CT625722 ZF_mu Danio rerio cDNA clone ZF_mu_74p19 3'.",
+    create-date std {
+      year 2006,
+      month 3,
+      day 16
+    },
+    update-date std {
+      year 2006,
+      month 8,
+      day 29
+    },
+    source {
+      org {
+        taxname "Danio rerio",
+        common "zebrafish",
+        db {
+          {
+            db "taxon",
+            tag id 7955
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Danio",
+            species "rerio"
+          },
+          mod {
+            {
+              subtype other,
+              subname "Vector: pSPORT1; Site_1: SalI; Site_2: NotI; SalI_NotI
+ cut cDNA was then ligated into pSPORT1 with SalI at the 5' end and NotI at
+ the 3' end."
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Ostariophysi;
+ Cypriniformes; Cyprinidae; Danio",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype clone,
+          name "ZF_mu_74p19"
+        },
+        {
+          subtype clone-lib,
+          name "LIBEST_019253 ZF_mu"
+        },
+        {
+          subtype dev-stage,
+          name "myoblast"
+        },
+        {
+          subtype lab-host,
+          name "E. coli"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol rna,
+    length 392,
+    strand ss,
+    seq-data ncbi2na 'FFFFFFEC73BF3F7E8F3F0B03003EC3F7FC0C3BEDCA27B3FC30FF1C13
+32901333B153F3B9133B13300CA006943FCC4ED13324005CCD005CCF0040EFCCCAF7F53BA9BFD5
+553511E11A3FC83009A5DF493FC00E75BFD8AF60077A6CBFA07386C0EC9006'H,
+    hist {
+      replaces {
+        date std {
+          year 2006,
+          month 3,
+          day 16
+        },
+        ids {
+          gi 89915898
+        }
+      }
+    }
+  },
+  annot {
+    {
+      desc {
+        name "NCBI_GPIPE"
+      },
+      data ftable {
+        {
+          data region "alignable",
+          location int {
+            from 11,
+            to 391,
+            strand minus,
+            id gi 113380667
+          }
+        },
+        {
+          data region "polya",
+          location int {
+            from 0,
+            to 10,
+            strand minus,
+            id gi 113380667
+          },
+          qual {
+            {
+              qual "method",
+              val "FindPolyTail"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-entry ::= seq {
+  id {
+    general {
+      db "dbEST",
+      tag id 1139420
+    },
+    genbank {
+      accession "AA494743",
+      version 1
+    },
+    gi 2225171
+  },
+  descr {
+    molinfo {
+      biomol mRNA,
+      tech est
+    },
+    title "fa11h12.s1 Zebrafish ICRFzfls Danio rerio cDNA clone 14N22 3'
+ similar to SW:CS24_HUMAN P23246 MYOBLAST CELL SURFACE ANTIGEN 24.1D5 ;.",
+    create-date std {
+      year 1997,
+      month 6,
+      day 27
+    },
+    update-date std {
+      year 1997,
+      month 6,
+      day 27
+    },
+    source {
+      org {
+        taxname "Danio rerio",
+        common "zebrafish",
+        db {
+          {
+            db "taxon",
+            tag id 7955
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Danio",
+            species "rerio"
+          },
+          mod {
+            {
+              subtype other,
+              subname "Vector: pSPORT1; Site_1: NotI; Site_2: SalI; 1st strand
+ cDNA was primed with a Not I - oligo(dT)15 primer [5
+'pGACTAGTTCTAGATCGCGAGCGGCCGCCCTTTTTTTTTTTTTTT3'], on mRNA from pooled 26
+ somite zebrafish embryos; double-stranded cDNA was ligated to Sal I adaptors
+ (BRL), digested with Not I and cloned into the Not I and Sal I sites of the
+ pSPORT1 vector (BRL). Library was constructed by Matthew Clark (Lehrach lab;
+ ICRF, London and  Max Planck Institut fuer Molekulare Genetik, Berlin) and
+ was not biochemically normalised.  70,000 clones from this library were
+ arrayed on high density filters and subsequently screened by oligonucleotide
+ hybridization fingerprinting to identify unique or minimally redundant clones
+ for more intensive analysis."
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Ostariophysi;
+ Cypriniformes; Cyprinidae; Danio",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype clone,
+          name "14N22"
+        },
+        {
+          subtype clone-lib,
+          name "LIBEST_000899 Zebrafish ICRFzfls"
+        },
+        {
+          subtype sex,
+          name "mixed"
+        },
+        {
+          subtype tissue-type,
+          name "pooled 26-somite embryos"
+        },
+        {
+          subtype lab-host,
+          name "XL1-blue MRF"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol rna,
+    length 540,
+    strand ss,
+    seq-data ncbi2na 'FFFFFFFAAFEA2050791DFCF803B1382CFF03B83A4481125320234810
+3F10CF452CC110904E208C0872C62CA8F13BC824739FBDE1F4BEFF3CF0173C20C40300338E0000
+1F9440EA38BFD29C01E4200F7F01F031343EE1DC0D22DDE83D44C427F9FF02E5234826E9F7E92B
+5340F5D1A15E5035E0FD49143957785578945F9E80634F993B6FA19CA5'H
+  },
+  annot {
+    {
+      desc {
+        name "NCBI_GPIPE"
+      },
+      data ftable {
+        {
+          data region "alignable",
+          location int {
+            from 14,
+            to 338,
+            strand minus,
+            id gi 2225171
+          }
+        },
+        {
+          data region "polya",
+          location int {
+            from 0,
+            to 13,
+            strand minus,
+            id gi 2225171
+          },
+          qual {
+            {
+              qual "method",
+              val "FindPolyTail"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-entry ::= seq {
+  id {
+    general {
+      db "dbEST",
+      tag id 2374564
+    },
+    genbank {
+      accession "AI558400",
+      version 1
+    },
+    gi 4508638
+  },
+  descr {
+    molinfo {
+      biomol mRNA,
+      tech est
+    },
+    title "fb72f05.y1 Zebrafish WashU MPIMG EST Danio rerio cDNA clone
+ IMAGE:3717441 5'.",
+    create-date std {
+      year 1999,
+      month 3,
+      day 24
+    },
+    update-date std {
+      year 2001,
+      month 6,
+      day 7
+    },
+    source {
+      org {
+        taxname "Danio rerio",
+        common "zebrafish",
+        db {
+          {
+            db "taxon",
+            tag id 7955
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Danio",
+            species "rerio"
+          },
+          mod {
+            {
+              subtype other,
+              subname "Vector: pSPORT1; Site_1: NotI; Site_2: SalI; 1st strand
+ cDNA was primed with a Not I - oligo(dT)15 primer [5
+'pGACTAGTTCTAGATCGCGAGCGGCCGCCCTTTTTTTTTTTTTTT3']; double-stranded cDNA was
+ ligated to Sal I adaptors (BRL), digested with Not I and cloned into the Not
+ I and Sal I sites of the pSPORT1 vector (BRL). Library was constructed by
+ Matthew Clark (Lehrach lab; ICRF, London and Max Planck Institut fuer
+ Molekulare Genetik,Berlin). cDNAs for EST analysis were selected following
+ oligonucleotide hybridization fingerprinting of arrayed clones from zebrafish
+ late somitogenesis (26 ss), adult liver or embryonic shield stage (5.6 h)
+ libraries.  Fingerprint data were used to computationally cluster cDNAs, and
+ a single cDNA from each cluster was chosen for sequencing.  In some cases
+ multiple members of the same cluster were sequenced to assess clustering
+ parameters or single clones were sequenced additional times to assess quality
+ control."
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Ostariophysi;
+ Cypriniformes; Cyprinidae; Danio",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype clone,
+          name "IMAGE:3717441"
+        },
+        {
+          subtype clone-lib,
+          name "LIBEST_001523 Zebrafish WashU MPIMG EST"
+        },
+        {
+          subtype sex,
+          name "mixed"
+        },
+        {
+          subtype tissue-type,
+          name "26 somite embryos, adult livers, shield stage embryos"
+        },
+        {
+          subtype lab-host,
+          name "XL1-blue MRF"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol rna,
+    length 297,
+    strand ss,
+    seq-data ncbi2na '60A37BF874AA60A25E6BDA99E3A3A7BBA927BBA38137037BE54B3846
+48782849781DCC5D2E02015F7EE876E2FE76FBA6FF860E9B9E3F77B533EFEE9FFB1210C0C3B8E0
+1400000000000000'H
+  },
+  annot {
+    {
+      desc {
+        name "NCBI_GPIPE"
+      },
+      data ftable {
+        {
+          data region "alignable",
+          location int {
+            from 0,
+            to 270,
+            strand plus,
+            id gi 4508638
+          }
+        },
+        {
+          data region "polya",
+          location int {
+            from 271,
+            to 296,
+            strand plus,
+            id gi 4508638
+          },
+          qual {
+            {
+              qual "method",
+              val "FindPolyTail"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-entry ::= seq {
+  id {
+    general {
+      db "dbEST",
+      tag id 1139245
+    },
+    genbank {
+      accession "AA494568",
+      version 1
+    },
+    gi 2224996
+  },
+  descr {
+    molinfo {
+      biomol mRNA,
+      tech est
+    },
+    title "fa10b03.s1 Zebrafish ICRFzfls Danio rerio cDNA clone 8C6 3'.",
+    create-date std {
+      year 1997,
+      month 6,
+      day 27
+    },
+    update-date std {
+      year 1997,
+      month 6,
+      day 27
+    },
+    source {
+      org {
+        taxname "Danio rerio",
+        common "zebrafish",
+        db {
+          {
+            db "taxon",
+            tag id 7955
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Danio",
+            species "rerio"
+          },
+          mod {
+            {
+              subtype other,
+              subname "Vector: pSPORT1; Site_1: NotI; Site_2: SalI; 1st strand
+ cDNA was primed with a Not I - oligo(dT)15 primer [5
+'pGACTAGTTCTAGATCGCGAGCGGCCGCCCTTTTTTTTTTTTTTT3'], on mRNA from pooled 26
+ somite zebrafish embryos; double-stranded cDNA was ligated to Sal I adaptors
+ (BRL), digested with Not I and cloned into the Not I and Sal I sites of the
+ pSPORT1 vector (BRL). Library was constructed by Matthew Clark (Lehrach lab;
+ ICRF, London and  Max Planck Institut fuer Molekulare Genetik, Berlin) and
+ was not biochemically normalised.  70,000 clones from this library were
+ arrayed on high density filters and subsequently screened by oligonucleotide
+ hybridization fingerprinting to identify unique or minimally redundant clones
+ for more intensive analysis."
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Ostariophysi;
+ Cypriniformes; Cyprinidae; Danio",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype clone,
+          name "8C6"
+        },
+        {
+          subtype clone-lib,
+          name "LIBEST_000899 Zebrafish ICRFzfls"
+        },
+        {
+          subtype sex,
+          name "mixed"
+        },
+        {
+          subtype tissue-type,
+          name "pooled 26-somite embryos"
+        },
+        {
+          subtype lab-host,
+          name "XL1-blue MRF"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol rna,
+    length 170,
+    strand ss,
+    seq-data ncbi2na 'FFFEF200B9029EFC3830E0444F70F0B3CC3100C053923910C276CF42
+753C07B21EE9EF2221D00EF48E9800'H
+  },
+  annot {
+    {
+      desc {
+        name "NCBI_GPIPE"
+      },
+      data ftable {
+        {
+          data region "alignable",
+          location int {
+            from 7,
+            to 158,
+            strand minus,
+            id gi 2224996
+          }
+        },
+        {
+          data region "polya",
+          location int {
+            from 0,
+            to 6,
+            strand minus,
+            id gi 2224996
+          },
+          qual {
+            {
+              qual "method",
+              val "FindPolyTail"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-entry ::= seq {
+  id {
+    general {
+      db "dbEST",
+      tag id 1139254
+    },
+    genbank {
+      accession "AA494577",
+      version 1
+    },
+    gi 2225005
+  },
+  descr {
+    molinfo {
+      biomol mRNA,
+      tech est
+    },
+    title "fa10c06.s1 Zebrafish ICRFzfls Danio rerio cDNA clone 23C8 3'.",
+    create-date std {
+      year 1997,
+      month 6,
+      day 27
+    },
+    update-date std {
+      year 1997,
+      month 6,
+      day 27
+    },
+    source {
+      org {
+        taxname "Danio rerio",
+        common "zebrafish",
+        db {
+          {
+            db "taxon",
+            tag id 7955
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Danio",
+            species "rerio"
+          },
+          mod {
+            {
+              subtype other,
+              subname "Vector: pSPORT1; Site_1: NotI; Site_2: SalI; 1st strand
+ cDNA was primed with a Not I - oligo(dT)15 primer [5
+'pGACTAGTTCTAGATCGCGAGCGGCCGCCCTTTTTTTTTTTTTTT3'], on mRNA from pooled 26
+ somite zebrafish embryos; double-stranded cDNA was ligated to Sal I adaptors
+ (BRL), digested with Not I and cloned into the Not I and Sal I sites of the
+ pSPORT1 vector (BRL). Library was constructed by Matthew Clark (Lehrach lab;
+ ICRF, London and  Max Planck Institut fuer Molekulare Genetik, Berlin) and
+ was not biochemically normalised.  70,000 clones from this library were
+ arrayed on high density filters and subsequently screened by oligonucleotide
+ hybridization fingerprinting to identify unique or minimally redundant clones
+ for more intensive analysis."
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Ostariophysi;
+ Cypriniformes; Cyprinidae; Danio",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype clone,
+          name "23C8"
+        },
+        {
+          subtype clone-lib,
+          name "LIBEST_000899 Zebrafish ICRFzfls"
+        },
+        {
+          subtype sex,
+          name "mixed"
+        },
+        {
+          subtype tissue-type,
+          name "pooled 26-somite embryos"
+        },
+        {
+          subtype lab-host,
+          name "XL1-blue MRF"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol rna,
+    length 362,
+    strand ss,
+    seq-data ncbi2na 'EFFFFFE1ED20B13F73FF3CB3330F92F011E34FDE83BEFB50247D0083
+8277001EE9832EF0C17A13E7F8DF303E74144793B014EE34F4EEC3D535D48A99EFD3A3BE8BAF4B
+F77E785B8D4AED37FABBAD149D316A5D051795B515EE4F70'H
+  },
+  annot {
+    {
+      desc {
+        name "NCBI_GPIPE"
+      },
+      data ftable {
+        {
+          data region "alignable",
+          location int {
+            from 13,
+            to 340,
+            strand minus,
+            id gi 2225005
+          }
+        },
+        {
+          data region "polya",
+          location int {
+            from 2,
+            to 12,
+            strand minus,
+            id gi 2225005
+          },
+          qual {
+            {
+              qual "method",
+              val "FindPolyTail"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-entry ::= seq {
+  id {
+    general {
+      db "dbEST",
+      tag id 1216970
+    },
+    genbank {
+      accession "AA566587",
+      version 1
+    },
+    gi 2339219
+  },
+  descr {
+    molinfo {
+      biomol mRNA,
+      tech est
+    },
+    title "ZF-ES108 zebrafish embryonic (subtraction) Danio rerio cDNA clone
+ ZF-ES108 3' end.",
+    create-date std {
+      year 1997,
+      month 8,
+      day 20
+    },
+    update-date std {
+      year 1998,
+      month 8,
+      day 25
+    },
+    source {
+      org {
+        taxname "Danio rerio",
+        common "zebrafish",
+        db {
+          {
+            db "taxon",
+            tag id 7955
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Danio",
+            species "rerio"
+          },
+          mod {
+            {
+              subtype other,
+              subname "Organ: embryo; Vector: Lambda Uni-ZAP XR; Site_1:
+ EcoRI; Site_2: XhoI; mRNA was purified from mixed stages of zebrafish embryos
+ from 6  hours postfertilization to hatching.  cDNA was unidirectionally
+ cloned  into the lambda ZAPII vector using the Stratagene's Lambda Uni-ZAP XR
+  cDNA cloning system. "
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Ostariophysi;
+ Cypriniformes; Cyprinidae; Danio",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype clone,
+          name "ZF-ES108"
+        },
+        {
+          subtype clone-lib,
+          name "LIBEST_000970 zebrafish embryonic (subtraction)"
+        },
+        {
+          subtype tissue-type,
+          name "embryonic"
+        },
+        {
+          subtype dev-stage,
+          name "mixed from 6 hours postfertilization to hatching"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol rna,
+    length 239,
+    strand ss,
+    seq-data ncbi2na '7BBC4BBC04E4AFB2784F310083C7B0FD3DFB8139492C9C0D1D0AFF2B
+C02C4EEC4BFDFFDF55FFCECBECDEC38FAF87E50C03AFB0FD17C0000000000760'H
+  },
+  annot {
+    {
+      desc {
+        name "NCBI_GPIPE"
+      },
+      data ftable {
+        {
+          data region "alignable",
+          location int {
+            from 0,
+            to 212,
+            strand plus,
+            id gi 2339219
+          }
+        },
+        {
+          data region "polya",
+          location int {
+            from 213,
+            to 233,
+            strand plus,
+            id gi 2339219
+          },
+          qual {
+            {
+              qual "method",
+              val "FindPolyTail"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-entry ::= seq {
+  id {
+    general {
+      db "dbEST",
+      tag id 1864336
+    },
+    genbank {
+      accession "AI106017",
+      version 1
+    },
+    gi 3461120
+  },
+  descr {
+    molinfo {
+      biomol mRNA,
+      tech est
+    },
+    title "DB04e11_p1 ZF adult heart library Danio rerio cDNA 5 prime.",
+    create-date std {
+      year 1998,
+      month 8,
+      day 25
+    },
+    update-date std {
+      year 1998,
+      month 8,
+      day 25
+    },
+    source {
+      org {
+        taxname "Danio rerio",
+        common "zebrafish",
+        db {
+          {
+            db "taxon",
+            tag id 7955
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Danio",
+            species "rerio"
+          },
+          mod {
+            {
+              subtype strain,
+              subname "AB"
+            },
+            {
+              subtype other,
+              subname "Organ: heart; Vector: LambdaZAPII; Site_1: EcoR1;
+ Site_2: Xho1"
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Ostariophysi;
+ Cypriniformes; Cyprinidae; Danio",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype clone-lib,
+          name "LIBEST_001401 ZF adult heart library"
+        },
+        {
+          subtype sex,
+          name "mixed"
+        },
+        {
+          subtype tissue-type,
+          name "myocardium, endocardium, vessel"
+        },
+        {
+          subtype dev-stage,
+          name "adult"
+        },
+        {
+          subtype lab-host,
+          name "E. coli XL1 Blue"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol rna,
+    length 251,
+    strand ss,
+    seq-data ncbi4na '81188414218188F11421282111414214141214888228421424248211
+441411241411411411148441442211411414442122844188414284111242214228428428221244
+221421212882482142128114112112114228214282284414222182221812414888184421811182
+8428412211118111288288848122124111111110'H
+  },
+  annot {
+    {
+      desc {
+        name "NCBI_GPIPE"
+      },
+      data ftable {
+        {
+          data region "alignable",
+          location int {
+            from 0,
+            to 242,
+            strand plus,
+            id gi 3461120
+          }
+        },
+        {
+          data region "polya",
+          location int {
+            from 243,
+            to 250,
+            strand plus,
+            id gi 3461120
+          },
+          qual {
+            {
+              qual "method",
+              val "FindPolyTail"
+            }
+          }
+        }
+      }
+    }
+  }
+}

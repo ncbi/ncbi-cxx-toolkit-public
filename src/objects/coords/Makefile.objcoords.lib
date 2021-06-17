@@ -1,0 +1,9 @@
+# $Id$
+
+SRC = objcoords__ objcoords___ 
+LIB = objcoords
+
+
+
+USES_LIBRARIES =  \
+    xser

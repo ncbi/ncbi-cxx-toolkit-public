@@ -1,0 +1,26 @@
+./include/corelib/impl$
+./include/common$
+./include/util$
+corelib$
+connect$
+connect/ext
+connect/mbedtls
+connect/daemons$
+connect/daemons/mod$
+internal/signon3$ update-only
+app$
+app/dblb
+dbapi$
+dbapi/driver$
+dbapi/driver/impl$
+dbapi/driver/util$
+dbapi/driver/odbc/unix_odbc$ update-only
+dbapi/driver/ctlib$
+dbapi/driver/ftds100$
+dbapi/driver/ftds100/impl
+dbapi/driver/ftds100/ctlib$
+dbapi/driver/ftds100/freetds
+-dbapi/driver/ftds100/ctlib/samples
+dbapi/driver/ftds-default
+dbapi/simple$
+util

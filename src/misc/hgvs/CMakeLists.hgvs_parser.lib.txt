@@ -1,0 +1,17 @@
+# $Id$
+
+NCBI_begin_lib(hgvs)
+  NCBI_sources(
+    hgvs_parser2 hgvs_writer2 variation_util2 seq_id_resolver objcoords
+    sequtils hgvs_reader
+  )
+  NCBI_uses_toolkit_libraries(
+    entrez2cli ncbi_xloader_genbank objcoords
+    variation xobjread xobjutil
+    xregexp
+    seq variation objcoords
+  )
+  NCBI_project_tags(gbench)
+  NCBI_project_watchers(astashya)
+NCBI_end_lib()
+

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(demo_contig_assembly)
+  NCBI_sources(demo_contig_assembly)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgocontig_assembly seq)
+  NCBI_project_watchers(jcherry)
+NCBI_end_app()
+

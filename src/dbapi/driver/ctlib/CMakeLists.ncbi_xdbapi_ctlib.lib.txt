@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xdbapi_ctlib SHARED)
+  NCBI_sources(bcp connection context cursor lang_cmd rpc result ctlib_utils)
+  NCBI_add_definitions(NCBI_DBAPIDRIVER_CTLIB_EXPORTS)
+  NCBI_uses_toolkit_libraries(dbapi_driver)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_lib()
+

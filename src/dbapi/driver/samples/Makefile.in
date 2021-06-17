@@ -1,0 +1,8 @@
+# $Id$
+
+APP_PROJ = lang_query dbapi_driver_check
+LIB_PROJ = dbapi_sample_base
+SUB_PROJ = dbapi_bcp dbapi_cursor dbapi_query dbapi_send_data dbapi_testspeed dbapi_conn_policy
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

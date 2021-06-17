@@ -1,0 +1,13 @@
+# $Id$
+
+# Meta-makefile("Gnomon" project)
+#################################
+
+ASN_PROJ = gnomon
+
+SUB_PROJ = demo test
+
+REQUIRES = objects
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

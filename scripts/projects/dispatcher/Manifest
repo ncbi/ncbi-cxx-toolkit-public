@@ -1,0 +1,40 @@
+# $Id$
+#
+# Author: Sergey Satskiy
+#
+# Purpose: This file holds all the supported configurations of a package.
+#          It is used by release configurator.
+#
+
+APP: lbsmd lbsmc lbsm_feedback
+APP: launcherd fwdaemon servnsd dispd.cgi
+APP: ncbi_dblb_cli
+
+LIB: libconnect.a libconnext.a libmghbn.a liblbsmdapi.a
+
+DEFAULT_CONFIGURATIONS: Linux64-Centos:GCC
+
+COPY: $bindir/test_mghbn			$installdir/bin/ncbi_mghbn
+COPY: $bindir/test_ncbi_dblb			$installdir/bin/ncbi_dblb
+COPY: $srcdir/src/connect/daemons/mod/*mod*	$installdir/src/
+COPY: $srcdir/include/connect/*.h		$installdir/include/connect/
+COPY: $srcdir/include/connect/ext/*.h		$installdir/include/connect/ext/
+COPY: $srcdir/include/connect/daemons/*.h	$installdir/include/connect/daemons/
+COPY: $srcdir/include/internal/signon3/id.h	$installdir/include/internal/signon3/
+
+POSTBUILD: [ "$platform" != "Cygwin64" ]  ||  { cp -vp /bin/cyg{check,runsrv}.exe			$installdir/bin/; }
+POSTBUILD: [ "$platform" != "Cygwin64" ]  ||  { cp -vp /bin/cyg{bz2-1,iconv-2,intl-8,win1,z}.dll	$installdir/bin/; }
+POSTBUILD: [ "$platform" != "Cygwin64" ]  ||  { cp -vp /usr/{bin/ipcs,bin/true,sbin/cygserver}.exe	$installdir/bin/; }
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+Linux64-Centos  : ICC   : ICC.sh    --without-debug --without-mt --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --without-serial --with-flat-makefile
+Linux64-Centos  : GCC   : GCC.sh    --without-debug --without-mt --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --without-serial --with-flat-makefile
+FreeBSD64       : Clang : Clang.sh  --without-debug --without-mt --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --without-serial --with-flat-makefile
+IntelMAC        : GCC   : GCC.sh    --without-debug --without-mt --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --without-serial --with-flat-makefile
+Cygwin64        : GCC   : GCC.sh    --without-debug --without-mt --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --without-serial --without-flat-makefile --with-bin-release --with-connext --with-ncbi-crypt --without-krb5 LDFLAGS=-static-libgcc

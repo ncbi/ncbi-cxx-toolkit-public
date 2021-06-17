@@ -1,0 +1,36 @@
+
+<!-- EDIT BOOK ICON FORM START -->
+
+</form>
+<h2>Edit Book's Icon</h2>   
+
+<table border="1" cellspacing="0" bgcolor="#E8E8E8" cellpadding="10">
+  <tr><td>
+  
+<form method=post action="<@BASE_URL@>" ENCTYPE="multipart/form-data">
+
+<input type="hidden" name="cmd" value="update_book_icon">
+<@BOOK_ATTR@>
+    <table>
+    <tr><td>Current icon: </td><td><@BOOK_ICON@></td></tr>
+    <tr><td>Select new Icon: </td><td><input type=file name=new_icon></td></tr>
+    </table>
+    
+    <hr noshade>
+    <input type="submit" name="button" value="Submit Icon">
+</form>
+
+  </td></tr>
+</table>	 
+<br>
+<small>
+* To upload new icon:<br>
+&nbsp;&nbsp;- Click "Browse..." button;<br>
+&nbsp;&nbsp;- Select local image file;<br>
+&nbsp;&nbsp;- Click "Submit Icon" button;<br>
+<br>        
+** To cancel uploading:<br>
+&nbsp;&nbsp;-  Click browser's "Back" button
+</small>
+<form >	 
+<!-- EDIT BOOK INFO FORM END -->

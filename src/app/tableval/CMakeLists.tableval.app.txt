@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(tableval)
+  NCBI_sources(tableval tab_table_reader col_validator)
+  NCBI_uses_toolkit_libraries(taxon1 xmlwrapp xobjread)
+  NCBI_project_watchers(gotvyans)
+NCBI_end_app()
+

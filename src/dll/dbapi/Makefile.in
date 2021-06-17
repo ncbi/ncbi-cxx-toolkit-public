@@ -1,0 +1,14 @@
+# $Id$
+
+SUB_PROJ =  \
+    dbapi_util_blobstore \
+    ncbi_dbapi \
+    ncbi_dbapi_driver \
+    ncbi_xdbapi_ctlib \
+    ncbi_xdbapi_ftds \
+    ncbi_xdbapi_ftds100 \
+    ncbi_xdbapi_mysql \
+    ncbi_xdbapi_odbc
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

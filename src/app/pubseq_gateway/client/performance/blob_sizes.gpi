@@ -1,0 +1,8 @@
+width=200
+bin(x)=width*floor(x/width)+width/2.0
+
+set output 'blob_sizes.png'
+set terminal pngcairo size 1800,300
+set logscale xy
+set boxwidth width
+plot '<grep true latency_to_size.txt |awk "{print \$4}"' using (bin($1)):(1.0) smooth freq with boxes title 'blob sizes, bytes'

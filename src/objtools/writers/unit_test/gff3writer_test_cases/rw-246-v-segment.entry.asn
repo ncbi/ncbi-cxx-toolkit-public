@@ -1,0 +1,1028 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "ASM:GCF_001660635.1",
+      tag str "IpCoco_scf02634"
+    },
+    other {
+      accession "NW_016099849",
+      version 1
+    },
+    gpipe {
+      accession "GPS_012922318",
+      version 1
+    },
+    gi 1041772737
+  },
+  descr {
+    title "Ictalurus punctatus breed USDA103 unplaced genomic scaffold,
+ IpCoco_1.2 IpCoco_scf02634",
+    source {
+      genome genomic,
+      org {
+        taxname "Ictalurus punctatus",
+        common "channel catfish",
+        db {
+          {
+            db "taxon",
+            tag id 7998
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Ictalurus",
+            species "punctatus"
+          },
+          mod {
+            {
+              subtype breed,
+              subname "USDA103"
+            },
+            {
+              subtype other,
+              subname "double haploid"
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Ostariophysi;
+ Siluriformes; Ictaluridae; Ictalurus",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype chromosome,
+          name "Unknown"
+        },
+        {
+          subtype sex,
+          name "female"
+        },
+        {
+          subtype tissue-type,
+          name "blood"
+        },
+        {
+          subtype dev-stage,
+          name "adult"
+        }
+      }
+    },
+    molinfo {
+      biomol genomic,
+      tech wgs
+    },
+    comment "Assembly name: IpCoco_1.2~The genomic sequence for this RefSeq
+ record is from the whole-genome assembly released by the Auburn University on
+ 2016/06/21. The original whole-genome shotgun project has the accession
+ LBML00000000.1.",
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJNA327588"
+          }
+        },
+        {
+          label str "Assembly",
+          num 1,
+          data strs {
+            "GCF_001660625.1"
+          }
+        },
+        {
+          label str "BioSample",
+          num 1,
+          data strs {
+            "SAMN03486842"
+          }
+        }
+      }
+    },
+    user {
+      type str "FeatureFetchPolicy",
+      data {
+        {
+          label str "Policy",
+          data str "OnlyNearFeatures"
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Genome-Assembly-Data-START##"
+        },
+        {
+          label str "Assembly Provider",
+          data str "Auburn University"
+        },
+        {
+          label str "Assembly Method",
+          data str "Celera Assembler v. 6.1; MaSuRCA v. 2.2.0"
+        },
+        {
+          label str "Assembly Name",
+          data str "IpCoco_1.2"
+        },
+        {
+          label str "Genome Coverage",
+          data str "54x"
+        },
+        {
+          label str "Sequencing Technology",
+          data str "Illumina HiSeq; PacBio; Illumina NextSeq500"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Genome-Assembly-Data-END##"
+        }
+      }
+    },
+    user {
+      type str "GenomeBuild",
+      data {
+        {
+          label str "Assembly",
+          data str "IpCoco_1.2"
+        },
+        {
+          label str "NcbiAnnotation",
+          data str "1"
+        },
+        {
+          label str "NcbiVersion",
+          data str "1"
+        }
+      }
+    },
+    user {
+      type str "RefGeneTracking",
+      data {
+        {
+          label str "Status",
+          data str "Pipeline"
+        },
+        {
+          label str "IdenticalTo",
+          data fields {
+            {
+              label id 0,
+              data fields {
+                {
+                  label str "accession",
+                  data str "LBML01027030.1"
+                },
+                {
+                  label str "gi",
+                  data int 1035558032
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Genome-Annotation-Data-START##"
+        },
+        {
+          label str "Annotation Provider",
+          data str "NCBI"
+        },
+        {
+          label str "Annotation Status",
+          data str "Full annotation"
+        },
+        {
+          label str "Annotation Version",
+          data str "Ictalurus punctatus Annotation Release 100"
+        },
+        {
+          label str "Annotation Pipeline",
+          data str "NCBI eukaryotic genome annotation pipeline"
+        },
+        {
+          label str "Annotation Software Version",
+          data str "7.1"
+        },
+        {
+          label str "Annotation Method",
+          data str "Best-placed RefSeq; Gnomon"
+        },
+        {
+          label str "Features Annotated",
+          data str "Gene; mRNA; CDS; ncRNA"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Genome-Annotation-Data-END##"
+        },
+        {
+          label str "Annotation Release Number",
+          data int 100
+        },
+        {
+          label str "Gpipe BuildRun ID",
+          data int 3707107
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 27249958,
+        article {
+          title {
+            name "The channel catfish genome sequence provides insights into
+ the evolution of scale formation in teleosts."
+          },
+          authors {
+            names std {
+              {
+                name name {
+                  last "Liu",
+                  first "Z",
+                  initials "Z."
+                }
+              },
+              {
+                name name {
+                  last "Liu",
+                  first "S",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Yao",
+                  first "J",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Bao",
+                  first "L",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Zhang",
+                  first "J",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Li",
+                  first "Y",
+                  initials "Y."
+                }
+              },
+              {
+                name name {
+                  last "Jiang",
+                  first "C",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Sun",
+                  first "L",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Wang",
+                  first "R",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Zhang",
+                  first "Y",
+                  initials "Y."
+                }
+              },
+              {
+                name name {
+                  last "Zhou",
+                  first "T",
+                  initials "T."
+                }
+              },
+              {
+                name name {
+                  last "Zeng",
+                  first "Q",
+                  initials "Q."
+                }
+              },
+              {
+                name name {
+                  last "Fu",
+                  first "Q",
+                  initials "Q."
+                }
+              },
+              {
+                name name {
+                  last "Gao",
+                  first "S",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Li",
+                  first "N",
+                  initials "N."
+                }
+              },
+              {
+                name name {
+                  last "Koren",
+                  first "S",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Jiang",
+                  first "Y",
+                  initials "Y."
+                }
+              },
+              {
+                name name {
+                  last "Zimin",
+                  first "A",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Xu",
+                  first "P",
+                  initials "P."
+                }
+              },
+              {
+                name name {
+                  last "Phillippy",
+                  first "A",
+                  initials "A.M."
+                }
+              },
+              {
+                name name {
+                  last "Geng",
+                  first "X",
+                  initials "X."
+                }
+              },
+              {
+                name name {
+                  last "Song",
+                  first "L",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Sun",
+                  first "F",
+                  initials "F."
+                }
+              },
+              {
+                name name {
+                  last "Li",
+                  first "C",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Wang",
+                  first "X",
+                  initials "X."
+                }
+              },
+              {
+                name name {
+                  last "Chen",
+                  first "A",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Jin",
+                  first "Y",
+                  initials "Y."
+                }
+              },
+              {
+                name name {
+                  last "Yuan",
+                  first "Z",
+                  initials "Z."
+                }
+              },
+              {
+                name name {
+                  last "Yang",
+                  first "Y",
+                  initials "Y."
+                }
+              },
+              {
+                name name {
+                  last "Tan",
+                  first "S",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Peatman",
+                  first "E",
+                  initials "E."
+                }
+              },
+              {
+                name name {
+                  last "Lu",
+                  first "J",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Qin",
+                  first "Z",
+                  initials "Z."
+                }
+              },
+              {
+                name name {
+                  last "Dunham",
+                  first "R",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Li",
+                  first "Z",
+                  initials "Z."
+                }
+              },
+              {
+                name name {
+                  last "Sonstegard",
+                  first "T",
+                  initials "T."
+                }
+              },
+              {
+                name name {
+                  last "Feng",
+                  first "J",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Danzmann",
+                  first "R",
+                  initials "R.G."
+                }
+              },
+              {
+                name name {
+                  last "Schroeder",
+                  first "S",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Scheffler",
+                  first "B",
+                  initials "B."
+                }
+              },
+              {
+                name name {
+                  last "Duke",
+                  first "M",
+                  initials "M.V."
+                }
+              },
+              {
+                name name {
+                  last "Ballard",
+                  first "L",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Kucuktas",
+                  first "H",
+                  initials "H."
+                }
+              },
+              {
+                name name {
+                  last "Kaltenboeck",
+                  first "L",
+                  initials "L."
+                }
+              },
+              {
+                name name {
+                  last "Liu",
+                  first "H",
+                  initials "H."
+                }
+              },
+              {
+                name name {
+                  last "Armbruster",
+                  first "J",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Xie",
+                  first "Y",
+                  initials "Y."
+                }
+              },
+              {
+                name name {
+                  last "Kirby",
+                  first "M",
+                  initials "M.L."
+                }
+              },
+              {
+                name name {
+                  last "Tian",
+                  first "Y",
+                  initials "Y."
+                }
+              },
+              {
+                name name {
+                  last "Flanagan",
+                  first "M",
+                  initials "M.E."
+                }
+              },
+              {
+                name name {
+                  last "Mu",
+                  first "W",
+                  initials "W."
+                }
+              },
+              {
+                name name {
+                  last "Waldbieser",
+                  first "G",
+                  initials "G.C."
+                }
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Nat Commun",
+              ml-jta "Nat Commun",
+              issn "2041-1723",
+              name "Nature communications"
+            },
+            imp {
+              date std {
+                year 2016
+              },
+              volume "7",
+              pages "11757"
+            }
+          },
+          ids {
+            pii "ncomms11757",
+            doi "10.1038/ncomms11757",
+            pubmed 27249958,
+            other {
+              db "ELocationID doi",
+              tag str "10.1038/ncomms11757"
+            }
+          }
+        }
+      }
+    },
+    update-date std {
+      year 2016,
+      month 7,
+      day 6
+    },
+    create-date std {
+      year 2016,
+      month 7,
+      day 6
+    }
+  },
+  inst {
+    repr delta,
+    mol dna,
+    length 1546,
+    strand ds,
+    ext delta {
+      loc int {
+        from 0,
+        to 1545,
+        strand plus,
+        id gi 1035558032
+      }
+    }
+  },
+  annot {
+    {
+      desc {
+        create-date std {
+          year 2016,
+          month 7,
+          day 5
+        },
+        user {
+          type str "AnnotSource",
+          data {
+            {
+              label str "Source",
+              data str "AnnotBuilder"
+            },
+            {
+              label str "Annot",
+              data str "Features"
+            }
+          }
+        }
+      },
+      data ftable {
+        {
+          id local id 1,
+          data gene {
+            locus "LOC108262046"
+          },
+          partial TRUE,
+          location int {
+            from 759,
+            to 1489,
+            strand minus,
+            id gi 1041772737,
+            fuzz-from lim lt
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 133742
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NW_016099849"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 1041772737
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        759,
+                        1489
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 2,
+              data imp {
+                key "V_segment"
+              }
+            },
+            {
+              id local id 3,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 108262046
+            }
+          }
+        },
+        {
+          id local id 2,
+          data imp {
+            key "V_segment"
+          },
+          partial TRUE,
+          except TRUE,
+          comment "The sequence of the model RefSeq transcript was modified
+ relative to this genomic sequence to represent the inferred CDS: added 150
+ bases not found in genome assembly",
+          location packed-int {
+            {
+              from 1205,
+              to 1489,
+              strand minus,
+              id gi 1041772737
+            },
+            {
+              from 759,
+              to 1060,
+              strand minus,
+              id gi 1041772737,
+              fuzz-from lim lt
+            }
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to RNA sequence, mRNA (same species):INSD:HQ913591.1"
+            },
+            {
+              qual "standard_name",
+              val "Ig lambda chain V-I region MEM-like"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 133743
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "C_term_partial",
+                      data bool TRUE
+                    },
+                    {
+                      label str "NMD",
+                      data bool FALSE
+                    },
+                    {
+                      label str "avg_base_coverage",
+                      data real { 499898, 10, -4 }
+                    },
+                    {
+                      label str "avg_intron_coverage",
+                      data real { 86, 10, 0 }
+                    },
+                    {
+                      label str "coding_propensity",
+                      data real { -137226, 10, -4 }
+                    },
+                    {
+                      label str "gap_bases",
+                      data int 150
+                    },
+                    {
+                      label str "minimum_alignments_introns_same_species",
+                      data int 1
+                    },
+                    {
+                      label str "pct_ab_initio",
+                      data int 0
+                    },
+                    {
+                      label str "pct_introns_with_transcripts",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "protein_len",
+                      data int 173
+                    },
+                    {
+                      label str "rnaseq_base_coverage",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_base_coverage_unambiguous",
+                      data int 89
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_full",
+                      data int 19
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_partial",
+                      data int 0
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NW_016099849"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 1041772737
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        759,
+                        1489
+                      }
+                    },
+                    {
+                      label str "Counts",
+                      data fields {
+                        {
+                          label str "Protein",
+                          data int 11
+                        },
+                        {
+                          label str "mRNA",
+                          data int 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 1,
+              data gene {
+                locus "LOC108262046"
+              }
+            },
+            {
+              id local id 3,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 108262046
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 3,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          partial TRUE,
+          except TRUE,
+          comment "The sequence of the model RefSeq protein was modified
+ relative to this genomic sequence to represent the inferred CDS: added 150
+ bases not found in genome assembly",
+          location packed-int {
+            {
+              from 1205,
+              to 1271,
+              strand minus,
+              id gi 1041772737
+            },
+            {
+              from 759,
+              to 1060,
+              strand minus,
+              id gi 1041772737,
+              fuzz-from lim lt
+            }
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to RNA sequence, mRNA (same species):INSD:HQ913591.1"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 133744
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NW_016099849"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 1041772737
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        759,
+                        1271
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 1,
+              data gene {
+                locus "LOC108262046"
+              }
+            },
+            {
+              data prot {
+                name {
+                  "Ig lambda chain V-I region MEM-like"
+                }
+              }
+            },
+            {
+              id local id 2,
+              data imp {
+                key "V_segment"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 108262046
+            }
+          },
+          except-text "rearrangement required for product"
+        }
+      }
+    }
+  }
+}

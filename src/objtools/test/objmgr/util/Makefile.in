@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile(tests for object utilities)
+#################################
+
+APP_PROJ = test_title test_relloc test_feat_overlap unit_test_seq_trimmer \
+	unit_test_seq
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

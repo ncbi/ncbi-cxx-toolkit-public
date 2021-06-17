@@ -1,0 +1,12 @@
+[-]
+_export = NCBI_SEQRES_EXPORT
+
+[Seq-graph]
+comp._type   = TSeqPos
+numval._type = TSeqPos
+
+[Real-graph]
+values._type = vector
+
+[Int-graph]
+values._type = vector

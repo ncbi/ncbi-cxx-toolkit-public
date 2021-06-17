@@ -1,0 +1,21 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Alexey Rafanovich
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+APP: fwdaemon
+
+COPY: $srcdir/src/connect/daemons/fwdaemon_conn_stats.py         $installdir/
+COPY: $srcdir/src/connect/daemons/fwdaemon_fallback_cmp.py       $installdir/
+COPY: $srcdir/src/connect/daemons/fwdaemon_high_load_analysis.py $installdir/
+COPY: $srcdir/src/connect/daemons/fwdaemon_purge_abusers.py      $installdir/
+
+DEFAULT_CONFIGURATIONS:  Linux64-Centos:GCC
+
+Linux64-Centos  : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --without-serial --with-flat-makefile

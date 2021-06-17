@@ -1,0 +1,191 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        other {
+          accession "NP_001307761",
+          version 1
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 152,
+        seq-data iupacaa "ACGACACTGGGTGCGGTACCTAAGTGTTACTGGCGGTGTGTTGCTCTATGTT
+TCGGAGTGTTACTAGGATGATATACCTAGTTGCCTAGATGCACACCTTGAATTTGTCGAAGCACCCTATTTTTGGGGT
+ATGGGTGCAGGCCAGGAAGTAG"
+      }
+    },
+    seq {
+      id {
+        other {
+          accession "NP_001242811",
+          version 1
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 160,
+        seq-data iupacaa "AAAAGGTCGGCAAAAGTTCACGGTACTATTCGTTTCTGCCTGTGAGCTGCTA
+TACGTTTCGGCGTGTTCCTCGGTTGATGTTGCTAGTTGCAAAGTTGCAAAGACTCAATTTGCTGAAGCACCCTATTTT
+TGCGGTATGGTTGCAGACCAGGAAGTAGGC"
+      }
+    },
+    seq {
+      id {
+        other {
+          accession "NP_001171498",
+          version 1
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 152,
+        seq-data iupacaa "ATGACGCTAGACGGTACCAATAGTCGCGCTGACTGTGGGTTGCTCTACGTCT
+CGGTGAGATCCTTGGTTGGTTGTACTCGTTGCAAATAGGCACCCATTGTAATAGTTGCAGCTTCCTATTTTTGGGGCA
+TGGTTGCAGACTAGGCAGATGC"
+      }
+    },
+    seq {
+      id {
+        other {
+          accession "NP_777040",
+          version 1
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 152,
+        seq-data iupacaa "AATGACGCTGGTGTCAGTATCAAGGTTCCCTGGATGTTAGTTGCTCTACGTC
+TAGGTGAGTTCCTTGGGTGGTGTAACTCGTTGCCTATGCGCAACTACTTTAGTGGAAGAAGCTACCTAGTTTTGCGGC
+AAGTGTGCAGGCTAGGCAGAAG"
+      }
+    },
+    seq {
+      id {
+        other {
+          accession "NP_035564",
+          version 1
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 154,
+        seq-data iupacaa "AAAGACGCTGGTGTCAGTATCAAGAGGATCCTGGAATGTTAGATGCTCTAAG
+TCTAGGTGAGTTCCTTGGGTGGTATAACTCGTTGCCTAGGTGCACCGAATCCAGTGGATGAAGCTACCTAGATTTGGG
+GCAAGTGTGCAGGCTAGGCAGAAA"
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 5,
+          segs denseg {
+            dim 5,
+            numseg 11,
+            ids {
+              other {
+                accession "NP_001307761",
+                version 1
+              },
+              other {
+                accession "NP_001242811",
+                version 1
+              },
+              other {
+                accession "NP_001171498",
+                version 1
+              },
+              other {
+                accession "NP_777040",
+                version 1
+              },
+              other {
+                accession "NP_035564",
+                version 1
+              }
+            },
+            starts {
+              -1,
+              0,
+              -1,
+              -1,
+              -1,
+              -1,
+              5,
+              -1,
+              0,
+              0,
+              0,
+              6,
+              0,
+              1,
+              1,
+              10,
+              16,
+              -1,
+              11,
+              11,
+              12,
+              18,
+              10,
+              13,
+              13,
+              23,
+              29,
+              21,
+              -1,
+              24,
+              25,
+              31,
+              23,
+              24,
+              26,
+              -1,
+              -1,
+              24,
+              25,
+              27,
+              26,
+              32,
+              25,
+              26,
+              28,
+              -1,
+              158,
+              151,
+              -1,
+              -1,
+              -1,
+              159,
+              -1,
+              -1,
+              -1
+            },
+            lens {
+              5,
+              1,
+              10,
+              2,
+              11,
+              2,
+              1,
+              1,
+              126,
+              1,
+              1
+            }
+          }
+        }
+      }
+    }
+  }
+}

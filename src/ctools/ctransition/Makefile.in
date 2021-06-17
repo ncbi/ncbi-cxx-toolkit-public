@@ -1,0 +1,7 @@
+# $Id$
+
+LIB_PROJ = ctransition ctransition_nlmzip
+SUB_PROJ = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

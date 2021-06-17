@@ -1,0 +1,23 @@
+# $Id$
+
+NCBI_begin_lib(seq)
+  NCBI_sources(
+    seqport_util
+    seq_id_tree seq_id_handle seq_id_mapper
+    seq_loc_mapper_base seq_align_mapper_base seqlocinfo so_map
+    seq_loc_from_string seq_loc_reverse_complementer
+  )
+  NCBI_dataspecs(
+    seq.asn 
+    ../seqalign/seqalign.asn
+    ../seqblock/seqblock.asn
+    ../seqfeat/seqfeat.asn
+    ../seqloc/seqloc.asn
+    ../seqres/seqres.asn
+    ../seqtable/seqtable.asn
+  )
+  NCBI_uses_toolkit_libraries(pub seqcode sequtil)
+  NCBI_project_watchers(vasilche grichenk bollin ludwigf)
+NCBI_end_lib()
+
+

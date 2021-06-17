@@ -1,0 +1,10 @@
+# $Id$
+
+SRC = pbacktest
+LIB = xpbacktest
+
+WATCHERS = lavr
+
+
+USES_LIBRARIES =  \
+    xncbi

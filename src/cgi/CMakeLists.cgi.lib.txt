@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_lib(xcgi)
+  NCBI_sources(
+    ncbicgi cgiapp cgictx ncbicgir ncbires ref_args cgi_run cgi_util
+    cgi_serial cgi_session cgi_exception cgiapp_cached cgi_entry_reader
+    user_agent
+  )
+  NCBI_uses_toolkit_libraries(xutil)
+  NCBI_project_watchers(vakatov)
+NCBI_end_lib()
+

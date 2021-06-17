@@ -1,0 +1,18 @@
+# $Id$
+
+NCBI_begin_lib(xobjimport)
+  NCBI_sources(
+    ftable/feat_util ftable/gff_util
+    import_error import_progress import_message_handler
+    id_resolver id_resolver_canonical id_resolver_prefix
+    feat_importer 
+	ftable/feat_import_data ftable/feat_line_reader ftable/feat_annot_assembler
+    ftable/gtf_importer ftable/gtf_import_data ftable/gtf_line_reader ftable/gtf_annot_assembler
+    ftable/gff3_importer ftable/gff3_import_data ftable/gff3_line_reader ftable/gff3_annot_assembler
+    ftable/bed_importer ftable/bed_import_data ftable/bed_line_reader ftable/bed_annot_assembler
+    ftable/5col_importer ftable/5col_import_data ftable/5col_line_reader ftable/5col_annot_assembler
+    annot_import_data
+  )
+  NCBI_uses_toolkit_libraries(xobjutil)
+  NCBI_project_watchers(ludwigf)
+NCBI_end_lib()

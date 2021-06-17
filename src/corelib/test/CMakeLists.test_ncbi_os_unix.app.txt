@@ -1,0 +1,17 @@
+# $Id$
+
+NCBI_begin_app(test_ncbi_os_unix)
+
+  NCBI_sources(test_ncbi_os_unix)
+  NCBI_requires(unix -Cygwin)
+  NCBI_uses_toolkit_libraries(xncbi)
+
+  NCBI_begin_test(test_ncbi_os_unix)
+    NCBI_set_test_command(test_ncbi_os_unix.sh)
+    NCBI_set_test_assets(test_ncbi_os_unix.sh)
+  NCBI_end_test()
+
+  NCBI_project_watchers(lavr)
+
+NCBI_end_app()
+

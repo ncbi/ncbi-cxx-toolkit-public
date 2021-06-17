@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = ncbi_bdb
+
+HOSTED_LIBS    = bdb
+
+DEPENDENCIES   = ncbi_core
+
+CPPFLAGS = -DNCBI_BDB_EXPORTS
+
+WATCHERS = kuznets vakatov

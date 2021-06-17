@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(ct100_rpc_fail)
+  NCBI_sources(rpc_fail common)
+  NCBI_add_test(test-ct100 --no-auto ct100_rpc_fail)
+NCBI_end_app()
+

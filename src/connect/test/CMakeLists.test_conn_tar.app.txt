@@ -1,0 +1,16 @@
+# $Id$
+
+NCBI_begin_app(test_conn_tar)
+
+  NCBI_sources(test_conn_tar)
+  NCBI_uses_toolkit_libraries(xcompress xconnect)
+
+  NCBI_begin_test(test_conn_tar)
+    NCBI_set_test_command(test_conn_tar.sh)
+    NCBI_set_test_assets(../../util/test/test_tar.sh ../../check/ncbi_test_data)
+  NCBI_end_test()
+
+  NCBI_project_watchers(lavr)
+
+NCBI_end_app()
+

@@ -1,0 +1,16 @@
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs sparse {
+    rows {
+      {
+        first-id gi 5,
+        second-id gi 4,
+        numseg 2,
+        first-starts { 110, 150 },
+        second-starts { 10, 40 },
+        lens { 20, 50 }
+      }
+    }
+  }
+}

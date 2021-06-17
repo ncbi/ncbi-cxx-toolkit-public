@@ -1,0 +1,4 @@
+SUB_PROJ = unit_test
+ASN_PROJ = entrezgene
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

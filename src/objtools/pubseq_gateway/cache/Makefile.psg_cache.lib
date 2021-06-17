@@ -1,0 +1,15 @@
+# $Id$
+
+LIB = psg_cache
+
+SRC = psg_cache psg_cache_base psg_cache_bioseq_info psg_cache_si2csi psg_cache_blob_prop
+
+#COVERAGE_FLAGS=-fprofile-arcs -ftest-coverage
+CPPFLAGS = $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(ORIG_CPPFLAGS) $(COVERAGE_FLAGS)
+
+WATCHERS = satskyse saprykin
+ASN_DEP = psg_protobuf
+REQUIRES = MT Linux LMDB PROTOBUF
+
+#user_homedir = $(shell readlink -e ~)
+#LOCAL_CPPFLAGS = -I$(user_homedir)/trunk/c++/include

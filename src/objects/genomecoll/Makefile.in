@@ -1,0 +1,5 @@
+ASN_PROJ = genome_collection gencoll_client
+SUB_PROJ = gc_cli
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+

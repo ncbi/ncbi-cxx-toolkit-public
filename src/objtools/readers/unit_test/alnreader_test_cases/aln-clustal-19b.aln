@@ -1,0 +1,19 @@
+CLUSTAL W (1.82) multiple sequence alignment
+seq1 --GCAAGCATGCATGCAAAA 20
+seq1 AT--ATGGATGCATGCAAAA 20
+seq3 ATGC--GCAAGCATGCAAAA 20
+seq3 ATGCAT--ATGGATGCAAAA 20
+      .: .:.: .:*.*:******
+
+     TTTTGCGGCCCATGCATG-- 40
+     TTTTGGGCCCCATGCATGCC 40
+     TTTTGGGGCGCATGCATGCC 40
+     TTTTGGGGCCCTTGCATGCC 40
+      *****.*:* *.*:****.:
+
+     ATGCATGC 48
+     --GCATGC 48
+     AT--ATGC 48
+     ATGC--GC 48
+      .: .:.: 
+

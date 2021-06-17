@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(test-shift)
+  NCBI_sources(test-shift)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank variation_utils)
+NCBI_end_app()
+

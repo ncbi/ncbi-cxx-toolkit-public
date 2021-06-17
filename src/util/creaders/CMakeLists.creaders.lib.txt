@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(creaders)
+  NCBI_sources(alnread)
+  NCBI_disable_pch()
+  NCBI_project_watchers(bollin)
+NCBI_end_lib()
+

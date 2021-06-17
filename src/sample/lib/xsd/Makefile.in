@@ -1,0 +1,4 @@
+XSD_PROJ = xsd_sample_lib
+REQUIRES = serial
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

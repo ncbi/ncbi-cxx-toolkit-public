@@ -1,0 +1,54 @@
+# $Id$
+#
+# List of tests that will not be checked.
+#
+# [YYYY-MM-DD:] test signature 
+#
+#    date      - optional parameter, defines a date on which test will be
+#                included back into the testsuite.
+#    test      - path in form <src_dir/test_app_name> (APP from Makefile).
+#    signature - OS/compiler signature without machine name (from Makefile.mk)
+#
+###########################################################################
+
+
+; CONNECT
+
+;; kernel issue, should be fixed in 2.6.8
+connect/test/test_ncbi_dsock  GCC_340-Debug--x86_64-unknown-linux2.6.7-gnu2.3.3
+
+;; another known OS issue
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-Debug--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-DebugMT--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-Debug64--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-DebugMT64--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-Release--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-ReleaseMT--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-Release64--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-ReleaseMT64--sparc-sun-solaris2.10
+app/netcache/netcache_check WorkShop53_530-DebugMTDLL--i386-pc-solaris2.9
+dbapi/lang_bind/python/tests/python_ncbi_dbapi_test GCC_412-DebugMT64--x86_64-unknown-linux2.6.5-gnu2.3.5
+
+; No run on Cygwin
+connect/test/test_ncbi_socket GCC_344-Debug--i686-pc-cygwin
+connect/test/test_ncbi_socket GCC_344-DebugMT--i686-pc-cygwin
+connect/test/test_ncbi_socket GCC_344-Release--i686-pc-cygwin
+connect/test/test_ncbi_socket GCC_344-ReleaseMT--i686-pc-cygwin
+app/asn2asn/asn2asn GCC_344-Debug--i686-pc-cygwin
+app/asn2asn/asn2asn GCC_344-DebugMT--i686-pc-cygwin
+app/asn2asn/asn2asn GCC_344-Release--i686-pc-cygwin
+app/asn2asn/asn2asn GCC_344-ReleaseMT--i686-pc-cygwin
+
+
+; OBJMGR
+
+;; looks like some exception throwing glitch, Eugene looks into it but if it
+;; cannot be easily fixed, no big problem;  GCC295 is closing to retirement
+objtools/test/objmgr/test_objmgr_loaders_pubseqos GCC_295-Release--i686-pc-linux2.4.23-gnu2.2.5
+
+
+; BLAST
+
+;; an optimizer bug when FAST_CXXFLAGS are used when compiling "writedb" lib
+objtools/writers/writedb/unit_test/writedb_unit_test GCC_342-ReleaseMT--i386-unknown-freebsd4.10
+objtools/writers/writedb/unit_test/writedb_unit_test GCC_343-Release--i386-pc-solaris2.9

@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(ct100_blk_in2)
+  NCBI_sources(blk_in2 common)
+  NCBI_add_test(test-ct100 --no-auto ct100_blk_in2)
+NCBI_end_app()
+

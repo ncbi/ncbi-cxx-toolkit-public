@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(biblio)
+  NCBI_sources(citation_base)
+  NCBI_dataspecs(biblio.asn)
+  NCBI_uses_toolkit_libraries(general)
+NCBI_end_lib()
+

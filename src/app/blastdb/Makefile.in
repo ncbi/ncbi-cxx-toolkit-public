@@ -1,0 +1,40 @@
+# $Id$
+
+# Meta-makefile("APP" project)
+#################################
+
+REQUIRES = objects algo
+
+APP_PROJ = blastdbcmd makeblastdb blastdb_aliastool blastdbcheck convert2blastmask blastdbcp makeprofiledb blastdb_convert blastdb_path
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+.PHONY: all $(APP_PROJ)
+
+makeblastdb:
+	${MAKE} ${MFLAGS} -f Makefile.makeblastdb_app
+
+blastdbcmd:
+	${MAKE} ${MFLAGS} -f Makefile.blastdbcmd_app
+
+blastdbcp:
+	${MAKE} ${MFLAGS} -f Makefile.blastdbcp_app
+
+blastdb_aliastool:
+	${MAKE} ${MFLAGS} -f Makefile.blastdb_aliastool_app
+
+blastdbcheck:
+	${MAKE} ${MFLAGS} -f Makefile.blastdbcheck_app
+
+convert2blastmask:
+	${MAKE} ${MFLAGS} -f Makefile.convert2blastmask_app
+
+makeprofiledb:
+	${MAKE} ${MFLAGS} -f Makefile.makeprofiledb_app
+
+blastdb_convert:
+	${MAKE} ${MFLAGS} -f Makefile.blastdb_convert_app
+
+blastdb_path:
+	${MAKE} ${MFLAGS} -f Makefile.blastdb_path_app

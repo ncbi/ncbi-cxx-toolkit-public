@@ -1,0 +1,12 @@
+# $Id$
+
+DLL = ncbi_web
+
+HOSTED_LIBS    = xhtml \
+                 xcgi  \
+                 xcgi_redirect
+
+DEPENDENCIES   = ncbi_core
+
+CPPFLAGS = -DNCBI_WEB_EXPORTS
+

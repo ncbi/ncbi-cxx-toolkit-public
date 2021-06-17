@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = snp
+
+HOSTED_LIBS    = w_snp_utils w_snp_filter w_snp_table w_snp_track w_hapmap \
+                 w_snp_ld w_snp_bins
+DEPENDENCIES   = ncbi_core ncbi_seq ncbi_seqext \
+                 gui_objects gui_core gui_utils gui_widgets gui_widgets_seq
+                 
+CPPFLAGS = -DNCBI_GUIWIDGETS_SNP_EXPORTS                 

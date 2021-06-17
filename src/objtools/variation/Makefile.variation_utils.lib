@@ -1,0 +1,10 @@
+# $Id$
+
+LIB = variation_utils
+SRC = variation_utils
+
+DLL_LIB = variation
+
+ASN_DEP = genome_collection seqset variation
+USES_LIBRARIES =  \
+    variation xobjutil

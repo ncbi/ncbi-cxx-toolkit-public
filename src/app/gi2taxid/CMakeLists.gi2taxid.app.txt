@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(gi2taxid)
+  NCBI_sources(gi2taxid)
+  NCBI_uses_toolkit_libraries(id1cli taxon1)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_app()
+

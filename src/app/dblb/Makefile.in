@@ -1,0 +1,9 @@
+# $Id$
+
+APP_PROJ = ncbi_dblb_cli
+
+REQUIRES = dbapi
+WATCHERS = ucko
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

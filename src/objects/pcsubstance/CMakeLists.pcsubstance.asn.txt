@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(pcsubstance)
+  NCBI_dataspecs(pcsubstance.asn)
+  NCBI_uses_toolkit_libraries(pub)
+NCBI_end_lib()
+

@@ -1,0 +1,20 @@
+#
+# Generated automatically.
+# Don't edit it manually unless you know what you are doing.
+#
+
+[importdirs]
+
+[properties]
+scriptname=
+creationdate=2011-11-23
+author=Sergey Satsky (NIH/NLM/NCBI) [C]
+license=
+copyright=
+description=Test packs for various versions of netschedule
+version=0.0.1
+email=
+uuid=48781dc2-15e9-11e1-9963-0022195b9c6a
+
+
+

@@ -1,0 +1,43 @@
+# $Id$
+
+NCBI_begin_lib(task_server)
+  NCBI_sources(
+    server_core srv_sync time_man rcu sockets_man scheduler
+    threads_man timers memory_man logging srv_lib srv_tasks
+    srv_stat
+  )
+  NCBI_headers(
+    task_server.hpp server_core.hpp srv_sync.hpp
+    srv_time.hpp rcu.hpp sockets_man.hpp scheduler.hpp
+    threads_man.hpp timers.hpp memory_man.hpp
+    logging.hpp task_server_pch.hpp srv_ref.hpp
+    srv_diag.hpp srv_lib.hpp srv_inlines.hpp
+    srv_sockets.hpp srv_tasks.hpp time_man.hpp
+    srv_stat.hpp
+  )
+  NCBI_set_pch_header(task_server_pch.hpp)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(-test_boost)
+  NCBI_add_definitions($ENV{NETCACHE_MEMORY_MAN_MODEL})
+NCBI_end_lib()
+
+
+NCBI_begin_app(netcached)
+  NCBI_sources(
+    netcached message_handler sync_log distribution_conf
+    nc_storage nc_storage_blob nc_db_files nc_stat nc_utils
+    periodic_sync active_handler peer_control nc_lib
+  )
+  NCBI_headers(
+    active_handler.hpp distribution_conf.hpp message_handler.hpp
+    nc_db_files.hpp nc_db_info.hpp nc_lib.hpp nc_pch.hpp nc_stat.hpp
+    nc_storage.hpp nc_storage_blob.hpp nc_utils.hpp netcache_version.hpp
+    netcached.hpp peer_control.hpp periodic_sync.hpp storage_types.hpp
+    sync_log.hpp
+  )
+  NCBI_set_pch_header(nc_pch.hpp)
+  NCBI_requires(Boost.Test.Included SQLITE3)
+  NCBI_uses_toolkit_libraries(task_server -test_boost -sqlitewrapp)
+  NCBI_add_definitions($ENV{NETCACHE_MEMORY_MAN_MODEL})
+NCBI_end_app()
+

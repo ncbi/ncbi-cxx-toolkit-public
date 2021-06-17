@@ -1,0 +1,100 @@
+OligoFAR bugs and problems to be solved
+========================================================================
+
+1. Aligning (Done)
+
+	GAGGAGGAGGAGGTGTGCAAAGGAGAGTTGTAAGGTTGCAGACGTATAACCGACGCCTAA
+
+	against 
+
+	/net/oblast-dev3/blast/ref_genomes/human/build_36/fasta/unmasked/chromosomes/hs_ref_chrY.fa
+
+	with -w 11 -n 1 -e 1 -a 1 -A 1 -r s -F 5 -Oad
+
+	(-e1 -rs are essential) gives two hits, start position of the last of them depends on -e value.
+
+	Solution I:
+	1. for -rs -e1 mark hash entries with a bit indicating that adjustment of the alignment 
+	   start may be required
+
+	2. at the alignment stage compute start of the alignment for hits originated from hash values
+	   with this flag on
+
+	Solution II:
+	1. Penalize score matrix for start from position other then 0
+
+________________________________________________________________________
+2. Aligning (Should use only best part of alignment - with overhangs)
+
+	GAGGAGGAGGAGGTGTGCAAAGGAGAGTTGTAAGGTTGCAGACGTATAACCGACGCCTAA
+
+	against 
+
+	/net/oblast-dev3/blast/ref_genomes/human/build_36/fasta/unmasked/chromosomes/hs_ref_chrY.fa
+
+	with -w 11 -n 1 -e 1 -a 1 -A 1 -r s -F 5 -Oad
+
+	(-rs is essential) produces alignments:
+
+# 5'=GAGGAGGAGGAGGTGTGCAAAGGAGAGTTGTAAGGTTGCAGACGTTTAACCGACGCCT-AA=3' query[1]
+#    |||||||||||||||||||||||||||||||||||||||||||||   | ||||  ||       i:52, m:7, g:2
+# 5'=GAGGAGGAGGAGGTGTGCAAAGGAGAGTTGTAAGGTTGCAGACGT-GCAGCGACATCTGGG=3' subject
+
+    while should be:
+
+# 5'=GAGGAGGAGGAGGTGTGCAAAGGAGAGTTGTAAGGTTGCAGACGTTTAACCGACGCCTAA=3' query[1]
+#    |||||||||||||||||||||||||||||||||||||||||||||   | ||||  ||       i:52, m:7, g:1
+# 5'=GAGGAGGAGGAGGTGTGCAAAGGAGAGTTGTAAGGTTGCAGACGT-GCAGCGACATCTGG=3' subject
+
+________________________________________________________________________
+3. Paired problem
+
+The results of runs against test_exact look correct with only minor issues
+with alignments of five low-complexity reads. In all these cases, there exists
+a 100% (+100%) match that some settings find and others do not. Four of these
+are local shifts, and there is only one case with query757350 and setting -w
+12 -S 4 that is not a local shift.
+
+Checking above is not a high priority compared to Seq-graph discussion and
+methylation changes.
+
+/panfs/pan1.be-md.ncbi.nlm.nih.gov/agarwala/alignment/sra/benchmark/oligofar/
+
+query757350     GGCTGGCTGGCTGGCTTGGCTGGCTTGGCTGCCTG	CACCCAGCCAGCCAAGCCACCCAAGACAGCCAGCC
+
+All individual hits are present with any set of -w and -S, but for -w12 -S4
+for some reason are not reported.
+
+________________________________________________________________________
+4. Should S-W be used for drawing always - to make an option?
+
+For read
+    query236274
+    AGCAGCTTCCCTCAATACACTTGGCCAAGTTTCCT
+    CATCTTGGTGAATTCCCTTTAGATGTGAAAAGCCA
+
+I noticed that with run
+   -d chr2.fa -a 1 -A 1 -D 400 -m 100 -N 2 -n 1 -e 1 -S 1 -w 16 -O ad and with
+   -d chr2.fa -a 1 -A 1 -D 400 -m 100 -n 2 -e 1 -S 1 -w 16 -O ad
+
+I get the same alignments, but percent reported in the first case is 177.143
+and in the second is 171.429. Also, in both cases, the alignment
+
+# 5'=AGCAGCTTCCCTCAATACACTTGGCCAAGTTTCCT=3' query[1]
+#    ||||||||||  |||||||||||||||||||||||    i:33, m:1, g:1
+# 5'=AGCAGCTTCCT-CAATACACTTGGCCAAGTTTCCT=3' subject
+
+has T near the gap misaligned.
+
+________________________________________________________________________
+5. Low complexity filtering
+
+Defaults for -F should probably be increased either in relation to -w or just
+that default value should be increased. For example, when I do alignment of
+query658613 that is
+
+GATAGATAGATAGATAATAGATAGATAGATAGATA  GTCGGCCTCTGTCTCTGGCTGCCCTCGGCCTCCAA
+
+with -w 16, I get result for the pair but with -w 30/18, first read is
+filtered out and result is found with -w 30/18 -F 3.
+

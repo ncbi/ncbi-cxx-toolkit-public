@@ -1,0 +1,19 @@
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Windows Help Designer (http://www.visagesoft.com)">
+<TITLE>Structure Window Commands</TITLE>
+</HEAD>
+<BODY>
+<H2>Structure Window Commands</H2>
+<P>Please select a command group from the menu bar of the structure window:</P>
+<P>&nbsp;</P>
+<UL>
+  <LI><A href="SW_File.htm">File</A>
+  <LI><A href="SW_View.htm">View</A>
+  <LI><A href="SW_ShowHide.htm">Select</A> 
+  <LI><A href="SW_Style.htm">Style</A>
+  <LI><A href="SW_Windows.htm">Window</A>
+  <LI><A href="SW_CDD.htm">CDD</A></LI></UL>
+</BODY>
+</HTML>

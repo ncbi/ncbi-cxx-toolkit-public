@@ -1,0 +1,8 @@
+APP_PROJ = oligofar fadice wbmask testsamrecord bmfilter
+#mktest
+
+REQUIRES = objects bdb -Cygwin
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+

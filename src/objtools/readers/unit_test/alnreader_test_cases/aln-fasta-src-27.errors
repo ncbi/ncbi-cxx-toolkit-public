@@ -1,0 +1,32 @@
+SeqID      : lcl|seq1
+Line No    : 1
+Severity   : Error
+Problem    : Mods.InvalidValue
+Message    : Invalid value: transgenic=val1.
+Mod Name   : transgenic
+Mod Value  : val1
+
+SeqID      : lcl|seq2
+Line No    : 5
+Severity   : Error
+Problem    : Mods.InvalidValue
+Message    : Invalid value: environmental-sample=val1.
+Mod Name   : environmental-sample
+Mod Value  : val1
+
+SeqID      : lcl|seq3
+Line No    : 9
+Severity   : Error
+Problem    : Mods.InvalidValue
+Message    : Invalid value: environmental_sample=val1.
+Mod Name   : environmental_sample
+Mod Value  : val1
+
+SeqID      : lcl|seq4
+Line No    : 13
+Severity   : Error
+Problem    : Mods.InvalidValue
+Message    : Invalid value: environmental sample=val1.
+Mod Name   : environmental sample
+Mod Value  : val1
+

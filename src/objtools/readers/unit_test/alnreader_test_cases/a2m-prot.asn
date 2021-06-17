@@ -1,0 +1,98 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        pdb {
+          mol "2crd"
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 37,
+        seq-data iupacaa "XFTNVSCTTSKECWSVCQRLHNTSRGKCMNKKCRCYS"
+      }
+    },
+    seq {
+      id {
+        gi 786430,
+        gibbsq 159192
+      },
+      descr {
+        title "potassium channel blocking toxin 15-1 [Leiurus
+ quinquestriatus=scorpions, ssp. hebreus, venom, Peptide Partial, 32 aa]"
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 32,
+        seq-data iupacaa "SCTASNQCWSICKRLHNTNRGKCMNKKCRCYS"
+      }
+    },
+    seq {
+      id {
+        gi 2500706,
+        swissprot {
+          name "SCKB_PANIM",
+          accession "P55928",
+          release "reviewed"
+        }
+      },
+      descr {
+        title "POTASSIUM CHANNEL BLOCKING TOXIN PITX-K-BETA"
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 35,
+        seq-data iupacaa "TISCTNEKQCYPHCKKETGYPNAKCMNRKCKCFGR"
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 3,
+          segs denseg {
+            dim 3,
+            numseg 5,
+            ids {
+              pdb {
+                mol "2crd"
+              },
+              gi 786430,
+              gi 2500706
+            },
+            starts {
+              -1,
+              -1,
+              0,
+              0,
+              -1,
+              -1,
+              4,
+              -1,
+              1,
+              5,
+              0,
+              2,
+              -1,
+              -1,
+              34
+            },
+            lens {
+              1,
+              4,
+              1,
+              32,
+              1
+            }
+          }
+        }
+      }
+    }
+  }
+}

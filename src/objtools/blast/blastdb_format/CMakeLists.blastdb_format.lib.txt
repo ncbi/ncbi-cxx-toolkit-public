@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_lib(blastdb_format)
+  NCBI_sources(seq_writer blastdb_dataextract blastdb_formatter seq_formatter)
+  NCBI_add_definitions(NCBI_MODULE=BLASTDB)
+  NCBI_uses_toolkit_libraries(seqdb xobjutil seqset)
+  NCBI_project_watchers(camacho fongah2)
+NCBI_end_lib()
+

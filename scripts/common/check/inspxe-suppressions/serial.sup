@@ -1,0 +1,220 @@
+suppression = {
+	name = "GetTypeInfo (1)"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=GetTypeInfo,src=user_field_.cpp;
+		}
+	}
+}
+suppression = {
+	name = "GetTypeInfo (2)"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			!!!;
+			src=stdtypes.cpp,func=GetTypeInfo;
+		}
+	}
+}
+suppression = {
+	name = "GetTypeInfo (3)"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=GetTypeInfo,src=stdtypes.cpp;
+		}
+	}
+}
+suppression = {
+	name = "GetTypeInfo (4)"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=GetTypeInfo,src=ptrinfo.cpp;
+		}
+	}
+}
+suppression = {
+	name = "GetTypeInfo (5)"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=GetTypeInfo;
+		}
+	}
+}
+suppression = {
+	name = "classinfo (1)"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			!!!;
+			func=Create,src=classinfohelper.hpp;
+		}
+	}
+}
+suppression = {
+	name = "classinfo (2)"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=Create,src=classinfohelper.hpp;
+		}
+	}
+}
+suppression = {
+	name = "classinfo (3)"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=Classes,src=classinfob.cpp;
+		}
+	}
+}
+suppression = {
+	name = "stdtypes"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			!!!;
+			func=Create,src=stdtypes.cpp;
+		}
+	}
+}
+suppression = {
+	name = "vector reallocate"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			!!!;
+			func=_Reallocate,src=vector;
+		}
+	}
+}
+suppression = {
+	name = "AddMember"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=AddMember,src=classinfob.cpp;
+		}
+	}
+}
+suppression = {
+	name = "RegisterModule"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=RegisterModule,src=classinfob.cpp;
+		}
+	}
+}
+suppression = {
+	name = "CreateTypeInfo (1)"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=CreateTypeInfo,src=stdtypes.cpp;
+		}
+	}
+}
+suppression = {
+	name = "CreateChoiceInfo"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=CreateChoiceInfo,src=serial.cpp;
+		}
+	}
+}
+suppression = {
+	name = "CreateClassInfo (2)"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=CreateClassInfo,src=serial.cpp;
+		}
+	}
+}
+suppression = {
+	name = "CreateTypeInfo (3)"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=CreateTypeInfo,src=stltypes.hpp;
+		}
+	}
+}
+suppression = {
+	name = "AddElementIn"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=AddElementIn,src=stltypes.hpp;
+		}
+	}
+}
+suppression = {
+	name = "ClassById"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=ClassesById,src=classinfob.cpp;
+		}
+	}
+}
+suppression = {
+	name = "ClassByName"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=ClassesByName,src=classinfob.cpp;
+		}
+	}
+}
+suppression = {
+	name = "GetMayContainType"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=GetMayContainType,src=classinfob.cpp;
+		}
+	}
+}
+suppression = {
+	name = "GetItemsByName - memberlist"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=GetItemsByName,src=memberlist.cpp;
+		}
+	}
+}
+suppression = {
+	name = "GetItemsByTags - memberlist"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=GetItemsByTagInfo,src=memberlist.cpp;
+		}
+	}
+}

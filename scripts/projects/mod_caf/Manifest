@@ -1,0 +1,18 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Sergey Fukanchik, NCBI
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+APP: test_lbsmdapi
+LIB: libconnect.a libconnext.a liblbsmdapi.a libmghbn.a
+SRC: src/connect/daemons/mod/mod_caf.c src/connect/daemons/mod/README.mod_caf
+
+Linux64-Centos  : gcc     : GCC.sh       --without-debug --with-mt --with-64 --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --with-flat-makefile
+Linux64-Centos  : gcc-dbg : GCC.sh       --with-debug    --with-mt --with-64 --with-static --without-runpath --with-local-lbsm --without-gnutls --without-vdb --with-flat-makefile
+

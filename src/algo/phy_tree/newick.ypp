@@ -1,0 +1,189 @@
+%{
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Josh Cherry
+ *
+ * File Description:  bison parser for Newick format phylogenetic trees
+ *
+ */
+
+/*
+ * Meant to be used in conjunction with flex lexer defined
+ * by newick.lpp.  Generate code using (essentially)
+ *   flex -olex.newick.cpp newick.lpp
+ *   bison -d -p newick newick.ypp
+ * The line '#include <unistd.h>' must be removed from the flex-generated
+ * code for it to compile on some platforms.
+ */
+
+#include <algo/phy_tree/phy_node.hpp>
+USING_SCOPE(ncbi);
+static int nodecount = 0;
+static TPhyTreeNode *g_Tree = 0;
+void yyerror(const char *error);
+int yylex(void);
+CNcbiIstream *g_NewickIstr;
+// a list of all allocated nodes so they can be deleted on error
+vector<TPhyTreeNode*> g_NodeList;
+
+// Increase stack size
+#define YYINITDEPTH 10000
+%}
+
+%union {
+    char *strval;
+    double dblval;
+    TPhyTreeNode *nodeval;
+}
+
+%token <strval> LABEL
+%token <dblval> NUM
+%type  <nodeval> node
+%type  <nodeval> nodelist
+
+%%
+
+
+tree:	node ';' { 
+    g_Tree = $1;
+}
+;
+
+
+node:	'(' nodelist ')' ':' NUM { 
+    $$ = $2;
+    $$->GetValue().SetDist($5);
+    $$->GetValue().SetId(nodecount);
+    nodecount++; 
+}
+
+|  '(' nodelist ')' { 
+    $$ = $2;
+    $$->GetValue().SetId(nodecount);
+    nodecount++; 
+}
+
+|  '(' nodelist ')' LABEL ':' NUM { 
+    $$ = $2;
+    $$->GetValue().SetLabel($4);
+    $$->GetValue().SetDist($6);
+    $$->GetValue().SetId(nodecount);
+    nodecount++; 
+}
+
+|  '(' nodelist ')' LABEL { 
+    $$ = $2;
+    $$->GetValue().SetLabel($4);
+    $$->GetValue().SetId(nodecount);
+    nodecount++; 
+}
+
+|	LABEL	':' NUM		{ 
+    $$ = new TPhyTreeNode;
+    $$->GetValue().SetLabel($1);
+    $$->GetValue().SetDist($3);
+    $$->GetValue().SetId(nodecount);
+    nodecount++; 
+}
+
+|   ':' NUM   {
+    $$ = new TPhyTreeNode;
+    $$->GetValue().SetLabel("");
+    $$->GetValue().SetDist($2);
+    $$->GetValue().SetId(nodecount);
+    nodecount++;
+}
+
+|	LABEL			{ 
+    $$ = new TPhyTreeNode;
+    $$->GetValue().SetLabel($1);
+    $$->GetValue().SetId(nodecount);
+    nodecount++; 
+}
+
+|					{
+    $$ = new TPhyTreeNode;
+    $$->GetValue().SetLabel("");
+    $$->GetValue().SetId(nodecount);
+    nodecount++;
+}
+;
+
+
+nodelist:  node {
+    $$ = new TPhyTreeNode;
+    $$->AddNode($1);
+}
+
+| nodelist ',' node {
+    $$ = $1;
+    $$->AddNode($3);
+}
+;
+
+
+%%
+
+void yyerror(const char *s)
+{
+    if (g_Tree) {
+        delete g_Tree;
+    } else {
+        // delete only those nodes that are nobody's children
+        vector<TPhyTreeNode*> del_list;
+        ITERATE (vector<TPhyTreeNode*>, iter, g_NodeList) {
+            if (!(*iter)->GetParent()) {
+                del_list.push_back(*iter);
+            }
+        }
+        ITERATE (vector<TPhyTreeNode*>, iter, del_list) {
+            delete *iter;
+        }
+    }
+    g_NodeList.clear();
+    throw runtime_error(string("error parsing Newick format tree file:  ")
+                        + s);
+}
+
+void newick_flex_reset(void);
+
+BEGIN_NCBI_SCOPE
+
+TPhyTreeNode *ReadNewickTree(CNcbiIstream& is)
+{
+    g_NewickIstr = &is;
+    g_Tree = 0;
+    g_NodeList.clear();
+    newick_flex_reset();
+    yyparse();
+    if (!g_Tree) {
+        yyerror("unknown");
+    }
+    g_NodeList.clear();
+    return g_Tree;
+}
+
+END_NCBI_SCOPE

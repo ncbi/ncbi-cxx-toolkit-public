@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_app(test_feat_tree)
+  NCBI_sources(test_feat_tree)
+  NCBI_uses_toolkit_libraries(xobjutil)
+
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_set_test_assets(test_feat_tree.sh ../../../check/ncbi_test_data)
+  NCBI_add_test(test_feat_tree.sh)
+
+  NCBI_project_watchers(vasilche)
+
+NCBI_end_app()
+

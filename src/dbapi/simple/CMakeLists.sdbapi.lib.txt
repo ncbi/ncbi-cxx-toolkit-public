@@ -1,0 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(sdbapi)
+  NCBI_sources(sdbapi)
+  NCBI_uses_toolkit_libraries(
+    dbapi dbapi_util_blobstore
+    ncbi_xdbapi_ftds ncbi_xdbapi_ftds100
+    xutil xconnect
+  )
+  NCBI_optional_components(connext)
+NCBI_end_lib()
+

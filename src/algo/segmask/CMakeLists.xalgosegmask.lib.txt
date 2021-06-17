@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(xalgosegmask)
+  NCBI_sources(segmask)
+  NCBI_uses_toolkit_libraries(blast xobjmgr seqset)
+  NCBI_project_watchers(blastsoft)
+NCBI_end_lib()
+

@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile("Gnomon" project)
+#################################
+
+APP_PROJ = localfinder
+PROJ_TAG = demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

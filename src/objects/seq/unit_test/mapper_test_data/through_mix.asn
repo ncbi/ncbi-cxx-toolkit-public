@@ -1,0 +1,327 @@
+-- ==================================
+-- ! Mapping through a mix seq-locs !
+-- ==================================
+
+-- Mapping through mix: source
+Seq-loc ::= mix {
+  int {
+    from 10,
+    to 19,
+    id gi 4
+  },
+  int {
+    from 30,
+    to 39,
+    id gi 4
+  },
+  int {
+    from 50,
+    to 59,
+    id gi 4
+  },
+  int {
+    from 70,
+    to 79,
+    id gi 4
+  }
+}
+
+-- Mapping through mix: destination
+Seq-loc ::= mix {
+  int {
+    from 100,
+    to 109,
+    id gi 5
+  },
+  int {
+    from 200,
+    to 214,
+    id gi 5
+  },
+  int {
+    from 300,
+    to 314,
+    id gi 5
+  }
+}
+
+-- Single interval overlapping all source ranges: original
+Seq-loc ::= int {
+  from 0,
+  to 89,
+  id gi 4
+}
+-- Single interval overlapping all source ranges: expected
+Seq-loc ::= packed-int {
+  {
+    from 100,
+    to 109,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 200,
+    to 214,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 300,
+    to 314,
+    id gi 5,
+    fuzz-to lim gt
+  }
+}
+
+-- Single interval on minus strand, partial overlapping: original
+Seq-loc ::= int {
+  from 15,
+  to 73,
+  strand minus,
+  id gi 4
+}
+-- Single interval on minus strand, partial overlapping: expected
+Seq-loc ::= packed-int {
+  {
+    from 300,
+    to 308,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 200,
+    to 214,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 105,
+    to 109,
+    strand minus,
+    id gi 5,
+    fuzz-to lim gt
+  }
+}
+
+
+-- Mapping through mix, reversed strand: source
+Seq-loc ::= mix {
+  int {
+    from 60,
+    to 89,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 30,
+    to 49,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 10,
+    to 19,
+    strand minus,
+    id gi 4
+  }
+}
+
+-- Mapping through mix, reversed strand: destination
+Seq-loc ::= int {
+  from 100,
+  to 159,
+  id gi 5
+}
+
+-- Original sec-loc is the same as mapping source: original
+Seq-loc ::= mix {
+  int {
+    from 60,
+    to 89,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 30,
+    to 49,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 10,
+    to 19,
+    strand minus,
+    id gi 4
+  }
+}
+-- Original sec-loc is the same as mapping source: expected
+Seq-loc ::= packed-int {
+  {
+    from 100,
+    to 129,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 130,
+    to 149,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 150,
+    to 159,
+    strand plus,
+    id gi 5
+  }
+}
+
+-- Mapping a packed-int: original
+Seq-loc ::= packed-int {
+  {
+    from 60,
+    to 89,
+    strand minus,
+    id gi 4
+  },
+  {
+    from 30,
+    to 49,
+    strand minus,
+    id gi 4
+  },
+  {
+    from 10,
+    to 19,
+    strand minus,
+    id gi 4
+  }
+}
+-- Mapping a packed-int: expected
+Seq-loc ::= packed-int {
+  {
+    from 100,
+    to 129,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 130,
+    to 149,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 150,
+    to 159,
+    strand plus,
+    id gi 5
+  }
+}
+
+-- Mapping a multi-level seq-loc: original
+Seq-loc ::= mix {
+  mix {
+    packed-int {
+      {
+        from 45,
+        to 47,
+        strand minus,
+        id gi 4
+      },
+      {
+        from 40,
+        to 44,
+        strand minus,
+        id gi 4
+      }
+    },
+    mix {
+      int {
+        from 35,
+        to 37,
+        strand minus,
+        id gi 4
+      },
+      int {
+        from 30,
+        to 31,
+        strand minus,
+        id gi 4
+      }
+    }
+  },
+  mix {
+    int {
+      from 15,
+      to 18,
+      strand minus,
+      id gi 4
+    },
+    int {
+      from 12,
+      to 14,
+      strand minus,
+      id gi 4
+    }
+  },
+  int {
+    from 10,
+    to 11,
+    strand minus,
+    id gi 4
+  }
+}
+-- Mapping a multi-level seq-loc: expected
+Seq-loc ::= mix {
+  mix {
+    int {
+      from 132,
+      to 134,
+      strand plus,
+      id gi 5
+    },
+    int {
+      from 135,
+      to 139,
+      strand plus,
+      id gi 5
+    },
+    packed-int {
+      {
+        from 142,
+        to 144,
+        strand plus,
+        id gi 5
+      },
+      {
+        from 148,
+        to 149,
+        strand plus,
+        id gi 5
+      }
+    }
+  },
+  packed-int {
+    {
+      from 151,
+      to 154,
+      strand plus,
+      id gi 5
+    },
+    {
+      from 155,
+      to 157,
+      strand plus,
+      id gi 5
+    }
+  },
+  int {
+    from 158,
+    to 159,
+    strand plus,
+    id gi 5
+  }
+}

@@ -1,0 +1,7 @@
+set(SCRIPT_NAME legacy_blast.pl)
+
+add_custom_command(OUTPUT ${EXECUTABLE_OUTPUT_PATH}/${SCRIPT_NAME}
+    COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/${SCRIPT_NAME} ${EXECUTABLE_OUTPUT_PATH}
+)
+
+add_custom_target(legacy_blast.pl ALL DEPENDS ${EXECUTABLE_OUTPUT_PATH}/${SCRIPT_NAME})

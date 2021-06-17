@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc100_warning)
+  NCBI_sources(warning common)
+  NCBI_add_test(test-odbc100 odbc100_warning)
+NCBI_end_app()
+

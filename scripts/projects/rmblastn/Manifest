@@ -1,0 +1,40 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Christiam Camacho
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+# The APP: statement describes binaries
+# The LIB: statement describes libraries
+# The DLL: statement describes shared objects
+# The ETC: statement describes configuration files
+# It is allowed to have more than one of each statements
+APP: rmblastn
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+
+# ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
+# that. The build-root is needed so that rpmbuild can find the proper directories
+# to copy the binaries from
+Linux64-Centos     : icc : ICC.sh           --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --without-vdb --without-gnutls --without-gcrypt
+
+DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
+
+DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-mt --with-build-root=$srcdir/ReleaseMT
+
+Win64_17    : plain : static  64  ReleaseMT
+
+IntelMAC    : plain : GCC.sh 4.0     --without-debug --without-pcre --with-mt --with-flat-makefile --with-ncbi-public
+
+USE_COMPONENTS

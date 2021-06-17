@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_lib(blast)
+  NCBI_sources(${SRC_BLAST_C_CORE})
+  NCBI_disable_pch()
+  NCBI_uses_toolkit_libraries(composition_adjustment connect tables)
+  NCBI_project_watchers(madden camacho fongah2)
+NCBI_end_lib()
+

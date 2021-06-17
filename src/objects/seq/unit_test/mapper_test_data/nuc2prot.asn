@@ -1,0 +1,168 @@
+-- ======================================
+-- ! Mapping from nucleotide to protein !
+-- ======================================
+
+-- Mapping from nucleotide to protein: source on plus
+Seq-loc ::= int {
+  from 30,
+  to 329,
+  id gi 5
+}
+-- Mapping from nucleotide to protein: source on minus
+Seq-loc ::= int {
+  from 30,
+  to 329,
+  strand minus,
+  id gi 5
+}
+-- Mapping from nucleotide to protein: destination
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 6
+}
+
+-- Simple interval: original
+Seq-loc ::= int {
+  from 45,
+  to 89,
+  id gi 5
+}
+-- Simple interval: expected
+Seq-loc ::= int {
+  from 105,
+  to 119,
+  id gi 6
+}
+
+-- Partial on the right: original
+Seq-loc ::= int {
+  from 45,
+  to 359,
+  id gi 5
+}
+-- Partial on the right: expected
+Seq-loc ::= int {
+  from 105,
+  to 199,
+  id gi 6,
+  fuzz-to lim gt
+}
+
+-- Original location on minus strand: original
+Seq-loc ::= int {
+  from 45,
+  to 89,
+  strand minus,
+  id gi 5
+}
+-- Original location on minus strand: expected
+Seq-loc ::= int {
+  from 105,
+  to 119,
+  strand minus,
+  id gi 6
+}
+
+-- Original location on minus strand, partial: original
+Seq-loc ::= int {
+  from 45,
+  to 359,
+  strand minus,
+  id gi 5
+}
+-- Original location on minus strand, partial: expected
+Seq-loc ::= int {
+  from 105,
+  to 199,
+  strand minus,
+  id gi 6,
+  fuzz-to lim gt
+}
+
+-- Shifted nucleotide positions (incomplete codons): original
+Seq-loc ::= int {
+  from 46,
+  to 88,
+  id gi 5
+}
+-- Shifted nucleotide positions (incomplete codons): expected
+Seq-loc ::= int {
+  from 105,
+  to 119,
+  id gi 6
+}
+
+-- Simple interval, reversed strand: original
+Seq-loc ::= int {
+  from 45,
+  to 89,
+  id gi 5
+}
+-- Simple interval, reversed strand: expected
+Seq-loc ::= int {
+  from 180,
+  to 194,
+  strand minus,
+  id gi 6
+}
+
+-- Partial on the right, reversed strand: original
+Seq-loc ::= int {
+  from 45,
+  to 359,
+  id gi 5
+}
+-- Partial on the right, reversed strand: expected
+Seq-loc ::= int {
+  from 100,
+  to 194,
+  strand minus,
+  id gi 6,
+  fuzz-from lim lt
+}
+
+-- Original location on minus strand, reversed strand: original
+Seq-loc ::= int {
+  from 45,
+  to 89,
+  strand minus,
+  id gi 5
+}
+-- Original location on minus strand, reversed strand: expected
+Seq-loc ::= int {
+  from 180,
+  to 194,
+  strand plus,
+  id gi 6
+}
+
+-- Original location on minus strand, partial, reversed strand: original
+Seq-loc ::= int {
+  from 45,
+  to 359,
+  strand minus,
+  id gi 5
+}
+-- Original location on minus strand, partial, reversed strand: expected
+Seq-loc ::= int {
+  from 100,
+  to 194,
+  strand plus,
+  id gi 6,
+  fuzz-from lim lt
+}
+
+-- Shifted nucleotide positions (incomplete codons), reversed strand: original
+Seq-loc ::= int {
+  from 46,
+  to 88,
+  id gi 5
+}
+-- Shifted nucleotide positions (incomplete codons), reversed strand: expected
+Seq-loc ::= int {
+  from 180,
+  to 194,
+  strand minus,
+  id gi 6
+}

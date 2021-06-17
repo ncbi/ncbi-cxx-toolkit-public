@@ -1,0 +1,29 @@
+# $Id$
+
+ASN_DEP = blastdb xnetblast
+DLL_LIB = blast_services gene_info seqdb $(OBJREAD_LIBS) xalnmgr xobjutil \
+          blastdb xnetblastcli xnetblast scoremat taxon1 xhtml xcgi tables \
+          $(OBJMGR_LIBS)
+
+###  BASIC PROJECT SETTINGS
+LIB = align_format
+SRC = format_flags align_format_util showdefline showalign tabular vectorscreen seqalignfilter taxFormat \
+      aln_printer
+# OBJ =
+
+CPPFLAGS = -DNCBI_MODULE=BLASTFORMAT $(ORIG_CPPFLAGS)
+
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
+###  EXAMPLES OF OTHER SETTINGS THAT MIGHT BE OF INTEREST
+# CFLAGS   = $(FAST_CFLAGS)
+# CXXFLAGS = $(FAST_CXXFLAGS)
+#
+# LIB_OR_DLL = dll
+
+WATCHERS = zaretska jianye madden camacho fongah2
+
+
+USES_LIBRARIES =  \
+    $(OBJMGR_LIBS) $(OBJREAD_LIBS) blast_services gene_info seqdb \
+    xalnmgr xcgi xhtml

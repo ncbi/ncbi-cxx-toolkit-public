@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(struct_util_demo)
+  NCBI_sources(struct_util_demo)
+  NCBI_uses_toolkit_libraries(cdd xstruct_util)
+  NCBI_project_watchers(lanczyck)
+NCBI_end_app()
+

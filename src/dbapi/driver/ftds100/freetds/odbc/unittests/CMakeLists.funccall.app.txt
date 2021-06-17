@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc100_funccall)
+  NCBI_sources(funccall common)
+  NCBI_add_test(test-odbc100 --no-auto odbc100_funccall)
+NCBI_end_app()
+

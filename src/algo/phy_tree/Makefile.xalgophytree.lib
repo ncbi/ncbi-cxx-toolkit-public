@@ -1,0 +1,19 @@
+# $Id$
+
+WATCHERS = jcherry boratyng
+
+ASN_DEP = biotree seqset
+
+SRC = bio_tree phy_node dist_methods lex.newick newick.tab tree_to_dist_mat phytree_calc bio_tree_format_label
+LIB = xalgophytree
+DLL_LIB = biotree xalnmgr xobjutil
+
+# The -I flag is necessary because filenames in #line directives throw
+# off some compilers (GCC 2.95 at least). :-/
+CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir) -D__C99FEATURES__
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+
+USES_LIBRARIES =  \
+    biotree fastme xalnmgr

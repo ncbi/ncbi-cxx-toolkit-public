@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(seqdb_demo)
+  NCBI_sources(seqdb_demo)
+  NCBI_uses_toolkit_libraries(seqdb)
+  NCBI_project_watchers(madden camacho)
+NCBI_end_app()
+

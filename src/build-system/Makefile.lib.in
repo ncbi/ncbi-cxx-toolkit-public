@@ -1,0 +1,115 @@
+# -*- makefile-gmake -*-
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+# This can be used to build/install/clean
+# a single(sic!) library [LIB] made of object files [SRC] and [OBJ]
+# where [SRC].o will be automagically compiled from [SRC].cpp or
+# [SRC].c, and [OBJ].o must be already compiled by this time.
+#
+# srcdir = @srcdir@
+# include @builddir@/Makefile.mk
+#
+# LIB = p1
+# SRC = p1_src1 p1_src2
+# OBJ = p1_myobj
+# .....
+# CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_P1_PROJECT
+# .....
+# include @builddir@/Makefile.lib
+#################################
+
+default_rule: all
+
+
+### C/C++ source file compilation (and maybe auto-dependencies) build rules
+
+CXXFLAGS_ALL = @f_compile@ $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
+CFLAGS_ALL   = @f_compile@ $(CFLAGS)   $(LOCAL_CPPFLAGS) $(CPPFLAGS)
+SOURCES      = @UNIX_SRC@ $(LIBOBJ) $(SRC)
+include $(builddir)/Makefile.$(Rules)
+
+
+### The library build rule
+
+XLIBOBJ     = $(SOURCES:=@obj_ext@)
+XOBJ        = $(OBJ:=@obj_ext@)
+XLIB        = $(LIB:%=@lib_pre@%@lib_ext@)
+XLIBDEP     = .$(LIB).dep
+XLIBLINK    = @lib_pre@$(LIB)-static@lib_ext@
+XLIBDEPLINK = .$(LIB)-static.dep
+XOLD_DLLS   = $(LIB:%=@lib_pre@%@dll_ext@) $(LIB:%=@lib_pre@%@loadable_ext@)
+
+$(XLIB): $(XLIBOBJ)
+	-$(RM) $(XLIB) .$(XLIB).stamp
+	$(AR) @f_outlib@$(XLIB) $(XLIBOBJ) $(XOBJ) $(AR_FILTER)
+	@$(RANLIB) $(XLIB)
+	@echo $(srcdir) $(CURDIR) $(TMPL) > $(XLIBDEP)
+	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
+	@$(RM) $(status_dir)/.$(LIB).disabled
+ifneq "$(BINCOPY)" "@:"
+  ifneq "$(srcdir)" "."
+    ifneq "$(filter-out /.,$(wildcard $(libdir)/.))" ""
+	@if [ -w $(libdir) ]; then \
+	    echo $(BINCOPY) $(XLIB) $(libdir) && \
+	    $(BINCOPY) $(XLIB) $(libdir) && \
+	    cd $(libdir) && $(RM) $(XLIBLINK) $(XOLD_DLLS) && \
+	    $(LN_S) $(XLIB) $(XLIBLINK); \
+	fi
+    endif
+  endif
+endif
+
+EXPORTED_LIBDEP = $(XLIB)
+ifneq "$(BINCOPY)" "@:"
+  ifneq "$(srcdir)" "."
+    ifneq "$(filter-out /.,$(wildcard $(status_dir)/.))" ""
+      EXPORTED_LIBDEP = $(status_dir)/$(XLIBDEPLINK)
+    endif
+  endif
+endif
+
+ifeq "$(LIB_OR_DLL)$(DLL)" "both"
+  $(status_dir)/$(XLIBDEPLINK): $(XLIB)
+	@$(BINCOPY) $(XLIBDEPLINK) $(status_dir)
+	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEPLINK)
+else
+  $(status_dir)/$(XLIBDEP): $(XLIB)
+	@$(BINCOPY) $(XLIBDEP) $(status_dir)
+	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP)
+
+  $(status_dir)/$(XLIBDEPLINK): $(status_dir)/$(XLIBDEP)
+	@cd $(status_dir) && \
+	    $(RM) $(XLIBDEPLINK) && \
+	    $(LN_S) $(XLIBDEP) $(XLIBDEPLINK)
+endif
+
+export-libdep: $(EXPORTED_LIBDEP)
+
+### Standard targets
+
+all: export-headers export-libdep
+
+unlink: unlink-lib
+
+unlink-lib:
+	-$(RM) $(XLIB) $(XLIBDEP) .$(XLIB).stamp
+
+clean: clean-common clean-lib
+
+clean-lib: unlink-lib
+	-$(RM) $(XLIBOBJ)
+
+purge: clean purge-headers deactivate
+
+deactivate: deactivate-lib
+
+deactivate-lib: unlink-lib
+ifeq "$(EXPORTED_LIBDEP)" "$(status_dir)/$(XLIBDEPLINK)"
+	-$(RM) $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP) \
+	    $(libdir)/$(XLIBLINK) $(status_dir)/$(XLIBDEPLINK)
+endif
+
+.PHONY: default_rule all unlink unlink-lib clean clean-lib purge
+.PHONY: deactivate deactivate-lib export-libdep

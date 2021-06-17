@@ -1,0 +1,4989 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Hist Seqalign",
+      data {
+        {
+          label str "Hist Seqalign",
+          data bool TRUE
+        }
+      }
+    },
+    user {
+      type str "Blast Type",
+      data {
+        {
+          label str "BLASTN",
+          data int 1
+        }
+      }
+    }
+  },
+  data align {
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 10596
+        },
+        {
+          id str "e_value",
+          value real { 0, 10, 0 }
+        },
+        {
+          id str "bit_score",
+          value real { 195682200104058, 10, -10 }
+        },
+        {
+          id str "num_ident",
+          value int 10596
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786181
+        },
+        starts {
+          0,
+          0
+        },
+        lens {
+          10596
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 71
+        },
+        {
+          id str "e_value",
+          value real { 768870869310097, 10, -44 }
+        },
+        {
+          id str "bit_score",
+          value real { 132232419549707, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 97
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 7,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786920
+        },
+        starts {
+          5607,
+          6820,
+          -1,
+          6884,
+          5602,
+          6885,
+          5601,
+          -1,
+          5578,
+          6890,
+          -1,
+          6913,
+          5564,
+          6914
+        },
+        lens {
+          64,
+          1,
+          5,
+          1,
+          23,
+          1,
+          14
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 67
+        },
+        {
+          id str "e_value",
+          value real { 128659291106903, 10, -41 }
+        },
+        {
+          id str "bit_score",
+          value real { 124845820940355, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 80
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 5,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367197
+        },
+        starts {
+          5586,
+          134,
+          5601,
+          -1,
+          5602,
+          149,
+          -1,
+          153,
+          5606,
+          154
+        },
+        lens {
+          15,
+          1,
+          4,
+          1,
+          65
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 64
+        },
+        {
+          id str "e_value",
+          value real { 598593455983566, 10, -40 }
+        },
+        {
+          id str "bit_score",
+          value real { 119305871983342, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 79
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 5,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367232
+        },
+        starts {
+          5606,
+          8467,
+          -1,
+          8532,
+          5601,
+          8533,
+          5600,
+          -1,
+          5586,
+          8538
+        },
+        lens {
+          65,
+          1,
+          5,
+          1,
+          14
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 61
+        },
+        {
+          id str "e_value",
+          value real { 278498445361886, 10, -38 }
+        },
+        {
+          id str "bit_score",
+          value real { 113765923026328, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 78
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 5,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786888
+        },
+        starts {
+          5604,
+          2129,
+          -1,
+          2196,
+          5602,
+          2197,
+          5601,
+          -1,
+          5586,
+          2199
+        },
+        lens {
+          67,
+          1,
+          2,
+          1,
+          15
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 60
+        },
+        {
+          id str "e_value",
+          value real { 100165857209784, 10, -37 }
+        },
+        {
+          id str "bit_score",
+          value real { 11191927337399, 10, -11 }
+        },
+        {
+          id str "num_ident",
+          value int 77
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 5,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786888
+        },
+        starts {
+          5586,
+          10558,
+          5600,
+          -1,
+          5601,
+          10572,
+          -1,
+          10577,
+          5606,
+          10578
+        },
+        lens {
+          14,
+          1,
+          5,
+          1,
+          64
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 58
+        },
+        {
+          id str "e_value",
+          value real { 129572723012055, 10, -36 }
+        },
+        {
+          id str "bit_score",
+          value real { 108225974069314, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 81
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 9,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367176
+        },
+        starts {
+          5672,
+          41,
+          5671,
+          -1,
+          5604,
+          44,
+          5603,
+          -1,
+          5602,
+          111,
+          5601,
+          -1,
+          5598,
+          112,
+          -1,
+          115,
+          5586,
+          117
+        },
+        lens {
+          3,
+          1,
+          67,
+          1,
+          1,
+          1,
+          3,
+          2,
+          12
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 58
+        },
+        {
+          id str "e_value",
+          value real { 129572723012055, 10, -36 }
+        },
+        {
+          id str "bit_score",
+          value real { 108225974069314, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 78
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 9,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1788022
+        },
+        starts {
+          5631,
+          6089,
+          5630,
+          -1,
+          5628,
+          6129,
+          -1,
+          6131,
+          5607,
+          6132,
+          -1,
+          6153,
+          5602,
+          6154,
+          5601,
+          -1,
+          5586,
+          6159
+        },
+        lens {
+          40,
+          1,
+          2,
+          1,
+          21,
+          1,
+          5,
+          1,
+          15
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 58
+        },
+        {
+          id str "e_value",
+          value real { 129572723012055, 10, -36 }
+        },
+        {
+          id str "bit_score",
+          value real { 108225974069314, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 58
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786192
+        },
+        starts {
+          10538,
+          0
+        },
+        lens {
+          58
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 57
+        },
+        {
+          id str "e_value",
+          value real { 466026402935335, 10, -36 }
+        },
+        {
+          id str "bit_score",
+          value real { 106379324416976, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 76
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 5,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367266
+        },
+        starts {
+          5608,
+          597,
+          -1,
+          659,
+          5602,
+          660,
+          5601,
+          -1,
+          5586,
+          666
+        },
+        lens {
+          62,
+          1,
+          6,
+          1,
+          15
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 55
+        },
+        {
+          id str "e_value",
+          value real { 602843241259118, 10, -35 }
+        },
+        {
+          id str "bit_score",
+          value real { 102686025112301, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 76
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 5,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1788927
+        },
+        starts {
+          5586,
+          4111,
+          5601,
+          -1,
+          5602,
+          4126,
+          -1,
+          4132,
+          5608,
+          4133
+        },
+        lens {
+          15,
+          1,
+          6,
+          1,
+          63
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 54
+        },
+        {
+          id str "e_value",
+          value real { 216820994980349, 10, -34 }
+        },
+        {
+          id str "bit_score",
+          value real { 100839375459963, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 78
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 7,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367356
+        },
+        starts {
+          5606,
+          4834,
+          -1,
+          4899,
+          5601,
+          4900,
+          5600,
+          -1,
+          5587,
+          4905,
+          5586,
+          -1,
+          5583,
+          4918
+        },
+        lens {
+          65,
+          1,
+          5,
+          1,
+          13,
+          1,
+          3
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 54
+        },
+        {
+          id str "e_value",
+          value real { 216820994980349, 10, -34 }
+        },
+        {
+          id str "bit_score",
+          value real { 100839375459963, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 76
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 9,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1788163
+        },
+        starts {
+          5625,
+          12846,
+          -1,
+          12891,
+          5624,
+          12892,
+          5623,
+          -1,
+          5606,
+          12893,
+          -1,
+          12910,
+          5601,
+          12911,
+          5600,
+          -1,
+          5586,
+          12916
+        },
+        lens {
+          45,
+          1,
+          1,
+          1,
+          17,
+          1,
+          5,
+          1,
+          14
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 52
+        },
+        {
+          id str "e_value",
+          value real { 280475678124009, 10, -33 }
+        },
+        {
+          id str "bit_score",
+          value real { 971460761552871, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 76
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 9,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786790
+        },
+        starts {
+          5586,
+          6786,
+          5600,
+          -1,
+          5601,
+          6800,
+          5623,
+          -1,
+          5624,
+          6822,
+          -1,
+          6823,
+          5625,
+          6824,
+          -1,
+          6829,
+          5630,
+          6830
+        },
+        lens {
+          14,
+          1,
+          22,
+          1,
+          1,
+          1,
+          5,
+          1,
+          41
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 51
+        },
+        {
+          id str "e_value",
+          value real { 100876996599679, 10, -32 }
+        },
+        {
+          id str "bit_score",
+          value real { 952994265029492, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 75
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 7,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1790356
+        },
+        starts {
+          5608,
+          15075,
+          5607,
+          -1,
+          5606,
+          15138,
+          -1,
+          15139,
+          5602,
+          15140,
+          5601,
+          -1,
+          5586,
+          15144
+        },
+        lens {
+          63,
+          1,
+          1,
+          1,
+          4,
+          1,
+          15
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 51
+        },
+        {
+          id str "e_value",
+          value real { 100876996599679, 10, -32 }
+        },
+        {
+          id str "bit_score",
+          value real { 952994265029492, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 77
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 9,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786988
+        },
+        starts {
+          5586,
+          9748,
+          5603,
+          -1,
+          5605,
+          9765,
+          -1,
+          9769,
+          5609,
+          9771,
+          5627,
+          -1,
+          5629,
+          9789,
+          -1,
+          9791,
+          5631,
+          9792
+        },
+        lens {
+          17,
+          2,
+          4,
+          2,
+          18,
+          2,
+          2,
+          1,
+          40
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 49
+        },
+        {
+          id str "e_value",
+          value real { 130492639935412, 10, -31 }
+        },
+        {
+          id str "bit_score",
+          value real { 916061271982735, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 77
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 15,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1788899
+        },
+        starts {
+          5586,
+          4746,
+          -1,
+          4758,
+          5598,
+          4760,
+          5601,
+          -1,
+          5602,
+          4763,
+          -1,
+          4765,
+          5604,
+          4766,
+          5605,
+          -1,
+          5606,
+          4767,
+          5607,
+          -1,
+          5608,
+          4768,
+          -1,
+          4787,
+          5627,
+          4788,
+          5630,
+          -1,
+          5631,
+          4791
+        },
+        lens {
+          12,
+          2,
+          3,
+          1,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1,
+          19,
+          1,
+          3,
+          1,
+          40
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 49
+        },
+        {
+          id str "e_value",
+          value real { 130492639935412, 10, -31 }
+        },
+        {
+          id str "bit_score",
+          value real { 916061271982735, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 73
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786315
+        },
+        starts {
+          5586,
+          9
+        },
+        lens {
+          85
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 48
+        },
+        {
+          id str "e_value",
+          value real { 46933501268611, 10, -30 }
+        },
+        {
+          id str "bit_score",
+          value real { 897594775459356, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 74
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 7,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786896
+        },
+        starts {
+          5586,
+          7263,
+          5623,
+          -1,
+          5624,
+          7300,
+          5625,
+          -1,
+          5626,
+          7301,
+          -1,
+          7306,
+          5631,
+          7308
+        },
+        lens {
+          37,
+          1,
+          1,
+          1,
+          5,
+          2,
+          39
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 48
+        },
+        {
+          id str "e_value",
+          value real { 46933501268611, 10, -30 }
+        },
+        {
+          id str "bit_score",
+          value real { 897594775459356, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 50
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786240
+        },
+        starts {
+          5550,
+          9484
+        },
+        lens {
+          51
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 47
+        },
+        {
+          id str "e_value",
+          value real { 168802895122742, 10, -30 }
+        },
+        {
+          id str "bit_score",
+          value real { 879128278935978, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 49
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786240
+        },
+        starts {
+          5550,
+          9400
+        },
+        lens {
+          50
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 47
+        },
+        {
+          id str "e_value",
+          value real { 168802895122742, 10, -30 }
+        },
+        {
+          id str "bit_score",
+          value real { 879128278935978, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 92
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 17,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786283
+        },
+        starts {
+          5564,
+          6232,
+          -1,
+          6268,
+          5600,
+          6269,
+          5609,
+          -1,
+          5611,
+          6278,
+          -1,
+          6280,
+          5613,
+          6281,
+          5615,
+          -1,
+          5616,
+          6283,
+          -1,
+          6288,
+          5621,
+          6289,
+          5626,
+          -1,
+          5628,
+          6294,
+          -1,
+          6306,
+          5640,
+          6307,
+          5641,
+          -1,
+          5642,
+          6308
+        },
+        lens {
+          36,
+          1,
+          9,
+          2,
+          2,
+          1,
+          2,
+          1,
+          5,
+          1,
+          5,
+          2,
+          12,
+          1,
+          1,
+          1,
+          30
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 46
+        },
+        {
+          id str "e_value",
+          value real { 607123198389559, 10, -30 }
+        },
+        {
+          id str "bit_score",
+          value real { 860661782412599, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 77
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 11,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367324
+        },
+        starts {
+          5632,
+          9576,
+          5631,
+          -1,
+          5630,
+          9615,
+          -1,
+          9616,
+          5606,
+          9617,
+          5605,
+          -1,
+          5599,
+          9641,
+          -1,
+          9647,
+          5586,
+          9648,
+          5585,
+          -1,
+          5582,
+          9661
+        },
+        lens {
+          39,
+          1,
+          1,
+          1,
+          24,
+          1,
+          6,
+          1,
+          13,
+          1,
+          3
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 46
+        },
+        {
+          id str "e_value",
+          value real { 607123198389559, 10, -30 }
+        },
+        {
+          id str "bit_score",
+          value real { 860661782412599, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 74
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 7,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1788520
+        },
+        starts {
+          5586,
+          939,
+          5605,
+          -1,
+          5606,
+          958,
+          5608,
+          -1,
+          5609,
+          960,
+          -1,
+          961,
+          5610,
+          963
+        },
+        lens {
+          19,
+          1,
+          2,
+          1,
+          1,
+          2,
+          61
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 45
+        },
+        {
+          id str "e_value",
+          value real { 218360341364257, 10, -29 }
+        },
+        {
+          id str "bit_score",
+          value real { 84219528588922, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 58
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 3,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367163
+        },
+        starts {
+          5607,
+          0,
+          5630,
+          -1,
+          5631,
+          23
+        },
+        lens {
+          23,
+          1,
+          40
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 43
+        },
+        {
+          id str "e_value",
+          value real { 282466948484766, 10, -28 }
+        },
+        {
+          id str "bit_score",
+          value real { 805262292842463, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 56
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 5,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367235
+        },
+        starts {
+          5610,
+          1644,
+          -1,
+          1656,
+          5622,
+          1657,
+          5624,
+          -1,
+          5625,
+          1659
+        },
+        lens {
+          12,
+          1,
+          2,
+          1,
+          46
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 42
+        },
+        {
+          id str "e_value",
+          value real { 101593184808064, 10, -27 }
+        },
+        {
+          id str "bit_score",
+          value real { 786795796319084, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 73
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 13,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1787282
+        },
+        starts {
+          5586,
+          7689,
+          5600,
+          -1,
+          5601,
+          7703,
+          -1,
+          7709,
+          5607,
+          7710,
+          -1,
+          7733,
+          5630,
+          7734,
+          5631,
+          -1,
+          5632,
+          7735,
+          -1,
+          7743,
+          5640,
+          7744,
+          5641,
+          -1,
+          5642,
+          7745
+        },
+        lens {
+          14,
+          1,
+          6,
+          1,
+          23,
+          1,
+          1,
+          1,
+          8,
+          1,
+          1,
+          1,
+          28
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 41
+        },
+        {
+          id str "e_value",
+          value real { 365394084327783, 10, -27 }
+        },
+        {
+          id str "bit_score",
+          value real { 768329299795705, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 95
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 17,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367383
+        },
+        starts {
+          5642,
+          8319,
+          -1,
+          8349,
+          5641,
+          8350,
+          5640,
+          -1,
+          5632,
+          8351,
+          -1,
+          8359,
+          5628,
+          8360,
+          5627,
+          -1,
+          5624,
+          8364,
+          5623,
+          -1,
+          5620,
+          8367,
+          -1,
+          8370,
+          5610,
+          8371,
+          5608,
+          -1,
+          5607,
+          8381,
+          5600,
+          -1,
+          5557,
+          8382
+        },
+        lens {
+          30,
+          1,
+          1,
+          1,
+          8,
+          1,
+          4,
+          1,
+          3,
+          1,
+          3,
+          1,
+          10,
+          2,
+          1,
+          7,
+          43
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 39
+        },
+        {
+          id str "e_value",
+          value real { 472667112304435, 10, -26 }
+        },
+        {
+          id str "bit_score",
+          value real { 731396306748948, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 72
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 7,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1787742
+        },
+        starts {
+          5636,
+          9467,
+          5635,
+          -1,
+          5607,
+          9502,
+          5605,
+          -1,
+          5598,
+          9530,
+          -1,
+          9537,
+          5586,
+          9539
+        },
+        lens {
+          35,
+          1,
+          28,
+          2,
+          7,
+          2,
+          12
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 39
+        },
+        {
+          id str "e_value",
+          value real { 472667112304435, 10, -26 }
+        },
+        {
+          id str "bit_score",
+          value real { 731396306748948, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 72
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 7,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1787742
+        },
+        starts {
+          5636,
+          9645,
+          5635,
+          -1,
+          5607,
+          9680,
+          5605,
+          -1,
+          5598,
+          9708,
+          -1,
+          9715,
+          5586,
+          9717
+        },
+        lens {
+          35,
+          1,
+          28,
+          2,
+          7,
+          2,
+          12
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 38
+        },
+        {
+          id str "e_value",
+          value real { 170001331308425, 10, -25 }
+        },
+        {
+          id str "bit_score",
+          value real { 712929810225569, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 46
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367132
+        },
+        starts {
+          5550,
+          7740
+        },
+        lens {
+          50
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 36
+        },
+        {
+          id str "e_value",
+          value real { 21991061652049, 10, -23 }
+        },
+        {
+          id str "bit_score",
+          value real { 675996817178811, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 36
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367132
+        },
+        starts {
+          5564,
+          7828
+        },
+        lens {
+          36
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 37
+        },
+        {
+          id str "e_value",
+          value real { 611433541583547, 10, -25 }
+        },
+        {
+          id str "bit_score",
+          value real { 69446331370219, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 37
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1788647
+        },
+        starts {
+          5564,
+          5044
+        },
+        lens {
+          37
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 37
+        },
+        {
+          id str "e_value",
+          value real { 611433541583547, 10, -25 }
+        },
+        {
+          id str "bit_score",
+          value real { 69446331370219, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 45
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1788470
+        },
+        starts {
+          5621,
+          57
+        },
+        lens {
+          49
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 36
+        },
+        {
+          id str "e_value",
+          value real { 21991061652049, 10, -23 }
+        },
+        {
+          id str "bit_score",
+          value real { 675996817178811, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 36
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367315
+        },
+        starts {
+          5564,
+          258
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 29
+        },
+        {
+          id str "e_value",
+          value real { 171208275934027, 10, -20 }
+        },
+        {
+          id str "bit_score",
+          value real { 54673134151516, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 33
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367315
+        },
+        starts {
+          5635,
+          309
+        },
+        lens {
+          35
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 36
+        },
+        {
+          id str "e_value",
+          value real { 21991061652049, 10, -23 }
+        },
+        {
+          id str "bit_score",
+          value real { 675996817178811, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 38
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1789783
+        },
+        starts {
+          5632,
+          1575
+        },
+        lens {
+          39
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 36
+        },
+        {
+          id str "e_value",
+          value real { 21991061652049, 10, -23 }
+        },
+        {
+          id str "bit_score",
+          value real { 675996817178811, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 36
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367173
+        },
+        starts {
+          5564,
+          6142
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 34
+        },
+        {
+          id str "e_value",
+          value real { 28447235610575, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 639063824132054, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 40
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367173
+        },
+        starts {
+          5550,
+          6009
+        },
+        lens {
+          43
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 36
+        },
+        {
+          id str "e_value",
+          value real { 21991061652049, 10, -23 }
+        },
+        {
+          id str "bit_score",
+          value real { 675996817178811, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 36
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367131
+        },
+        starts {
+          5564,
+          790
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 36
+        },
+        {
+          id str "e_value",
+          value real { 21991061652049, 10, -23 }
+        },
+        {
+          id str "bit_score",
+          value real { 675996817178811, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 36
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367131
+        },
+        starts {
+          5564,
+          903
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 36
+        },
+        {
+          id str "e_value",
+          value real { 21991061652049, 10, -23 }
+        },
+        {
+          id str "bit_score",
+          value real { 675996817178811, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 36
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367131
+        },
+        starts {
+          5564,
+          1016
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 36
+        },
+        {
+          id str "e_value",
+          value real { 21991061652049, 10, -23 }
+        },
+        {
+          id str "bit_score",
+          value real { 675996817178811, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 36
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367131
+        },
+        starts {
+          5564,
+          1129
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 36
+        },
+        {
+          id str "e_value",
+          value real { 21991061652049, 10, -23 }
+        },
+        {
+          id str "bit_score",
+          value real { 675996817178811, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 36
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367131
+        },
+        starts {
+          5564,
+          1242
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 30
+        },
+        {
+          id str "e_value",
+          value real { 476022868559422, 10, -21 }
+        },
+        {
+          id str "bit_score",
+          value real { 565197838038539, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 35
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 3,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367131
+        },
+        starts {
+          5564,
+          1355,
+          5594,
+          -1,
+          5595,
+          1385
+        },
+        lens {
+          30,
+          1,
+          6
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 36
+        },
+        {
+          id str "e_value",
+          value real { 21991061652049, 10, -23 }
+        },
+        {
+          id str "bit_score",
+          value real { 675996817178811, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 73
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 19,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1787025
+        },
+        starts {
+          5642,
+          3996,
+          -1,
+          4024,
+          5641,
+          4025,
+          5640,
+          -1,
+          5624,
+          4026,
+          5623,
+          -1,
+          5619,
+          4042,
+          -1,
+          4046,
+          5615,
+          4047,
+          5614,
+          -1,
+          5613,
+          4051,
+          -1,
+          4052,
+          5609,
+          4053,
+          -1,
+          4057,
+          5606,
+          4058,
+          -1,
+          4061,
+          5601,
+          4062,
+          5600,
+          -1,
+          5586,
+          4067
+        },
+        lens {
+          28,
+          1,
+          1,
+          1,
+          16,
+          1,
+          4,
+          1,
+          4,
+          1,
+          1,
+          1,
+          4,
+          1,
+          3,
+          1,
+          5,
+          1,
+          14
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 35
+        },
+        {
+          id str "e_value",
+          value real { 790939259452024, 10, -24 }
+        },
+        {
+          id str "bit_score",
+          value real { 657530320655433, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 37
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786808
+        },
+        starts {
+          5632,
+          7444
+        },
+        lens {
+          38
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 35
+        },
+        {
+          id str "e_value",
+          value real { 790939259452024, 10, -24 }
+        },
+        {
+          id str "bit_score",
+          value real { 657530320655433, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 39
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786383
+        },
+        starts {
+          5559,
+          6497
+        },
+        lens {
+          41
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 34
+        },
+        {
+          id str "e_value",
+          value real { 28447235610575, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 639063824132054, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 36
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1790777
+        },
+        starts {
+          5633,
+          3042
+        },
+        lens {
+          37
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 34
+        },
+        {
+          id str "e_value",
+          value real { 28447235610575, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 639063824132054, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 36
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1790670
+        },
+        starts {
+          5635,
+          8868
+        },
+        lens {
+          37
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 34
+        },
+        {
+          id str "e_value",
+          value real { 28447235610575, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 639063824132054, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 36
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786934
+        },
+        starts {
+          5633,
+          10613
+        },
+        lens {
+          37
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 34
+        },
+        {
+          id str "e_value",
+          value real { 28447235610575, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 639063824132054, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 36
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786415
+        },
+        starts {
+          5564,
+          4094
+        },
+        lens {
+          37
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 33
+        },
+        {
+          id str "e_value",
+          value real { 102314457679623, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 620597327608675, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 35
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786415
+        },
+        starts {
+          5564,
+          4836
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 29
+        },
+        {
+          id str "e_value",
+          value real { 171208275934027, 10, -20 }
+        },
+        {
+          id str "bit_score",
+          value real { 54673134151516, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 37
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 7,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786415
+        },
+        starts {
+          5635,
+          4889,
+          5640,
+          -1,
+          5641,
+          4894,
+          -1,
+          4895,
+          5642,
+          4896,
+          -1,
+          4924,
+          5670,
+          4925
+        },
+        lens {
+          5,
+          1,
+          1,
+          1,
+          28,
+          1,
+          3
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 33
+        },
+        {
+          id str "e_value",
+          value real { 102314457679623, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 620597327608675, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 51
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 3,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1790711
+        },
+        starts {
+          5607,
+          2462,
+          5604,
+          -1,
+          5564,
+          2478
+        },
+        lens {
+          16,
+          3,
+          40
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 33
+        },
+        {
+          id str "e_value",
+          value real { 102314457679623, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 620597327608675, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 35
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1790456
+        },
+        starts {
+          5634,
+          2130
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 33
+        },
+        {
+          id str "e_value",
+          value real { 102314457679623, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 620597327608675, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 35
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1790440
+        },
+        starts {
+          5634,
+          10565
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 33
+        },
+        {
+          id str "e_value",
+          value real { 102314457679623, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 620597327608675, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 35
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367151
+        },
+        starts {
+          5634,
+          10031
+        },
+        lens {
+          36
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 33
+        },
+        {
+          id str "e_value",
+          value real { 102314457679623, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 620597327608675, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 35
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1789024
+        },
+        starts {
+          5564,
+          9379
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 33
+        },
+        {
+          id str "e_value",
+          value real { 102314457679623, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 620597327608675, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 35
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786683
+        },
+        starts {
+          5564,
+          1472
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 33
+        },
+        {
+          id str "e_value",
+          value real { 102314457679623, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 620597327608675, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 35
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786683
+        },
+        starts {
+          5635,
+          8562
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 33
+        },
+        {
+          id str "e_value",
+          value real { 102314457679623, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 620597327608675, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 35
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786542
+        },
+        starts {
+          5634,
+          8944
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 32
+        },
+        {
+          id str "e_value",
+          value real { 367988242990611, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 602130831085297, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 34
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786542
+        },
+        starts {
+          5635,
+          6386
+        },
+        lens {
+          35
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 32
+        },
+        {
+          id str "e_value",
+          value real { 367988242990611, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 602130831085297, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 34
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786542
+        },
+        starts {
+          5635,
+          6487
+        },
+        lens {
+          35
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 32
+        },
+        {
+          id str "e_value",
+          value real { 367988242990611, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 602130831085297, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 34
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786542
+        },
+        starts {
+          5635,
+          6588
+        },
+        lens {
+          35
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 30
+        },
+        {
+          id str "e_value",
+          value real { 476022868559422, 10, -21 }
+        },
+        {
+          id str "bit_score",
+          value real { 565197838038539, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 34
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786542
+        },
+        starts {
+          5634,
+          8844
+        },
+        lens {
+          36
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 33
+        },
+        {
+          id str "e_value",
+          value real { 102314457679623, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 620597327608675, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 35
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786532
+        },
+        starts {
+          5635,
+          89
+        },
+        lens {
+          36
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 33
+        },
+        {
+          id str "e_value",
+          value real { 102314457679623, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 620597327608675, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 35
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786520
+        },
+        starts {
+          5635,
+          12329
+        },
+        lens {
+          36
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 33
+        },
+        {
+          id str "e_value",
+          value real { 102314457679623, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 620597327608675, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 35
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786510
+        },
+        starts {
+          5635,
+          4633
+        },
+        lens {
+          36
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 32
+        },
+        {
+          id str "e_value",
+          value real { 367988242990611, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 602130831085297, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 34
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786510
+        },
+        starts {
+          5635,
+          4727
+        },
+        lens {
+          35
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 32
+        },
+        {
+          id str "e_value",
+          value real { 367988242990611, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 602130831085297, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 34
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786510
+        },
+        starts {
+          5635,
+          4913
+        },
+        lens {
+          35
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 32
+        },
+        {
+          id str "e_value",
+          value real { 367988242990611, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 602130831085297, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 37
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 3,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367382
+        },
+        starts {
+          5635,
+          4904,
+          -1,
+          4939,
+          5670,
+          4940
+        },
+        lens {
+          35,
+          1,
+          3
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 32
+        },
+        {
+          id str "e_value",
+          value real { 367988242990611, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 602130831085297, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 37
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 3,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367382
+        },
+        starts {
+          5635,
+          5005,
+          -1,
+          5040,
+          5670,
+          5041
+        },
+        lens {
+          35,
+          1,
+          3
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 32
+        },
+        {
+          id str "e_value",
+          value real { 367988242990611, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 602130831085297, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 34
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367382
+        },
+        starts {
+          5635,
+          5106
+        },
+        lens {
+          35
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 32
+        },
+        {
+          id str "e_value",
+          value real { 367988242990611, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 602130831085297, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 34
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1788373
+        },
+        starts {
+          5635,
+          17
+        },
+        lens {
+          35
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 32
+        },
+        {
+          id str "e_value",
+          value real { 367988242990611, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 602130831085297, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 34
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1788354
+        },
+        starts {
+          5635,
+          20213
+        },
+        lens {
+          35
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 31
+        },
+        {
+          id str "e_value",
+          value real { 132352113328247, 10, -21 }
+        },
+        {
+          id str "bit_score",
+          value real { 583664334561918, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 36
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 5,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1788354
+        },
+        starts {
+          5635,
+          5303,
+          5640,
+          -1,
+          5641,
+          5308,
+          -1,
+          5309,
+          5642,
+          5310
+        },
+        lens {
+          5,
+          1,
+          1,
+          1,
+          30
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 32
+        },
+        {
+          id str "e_value",
+          value real { 367988242990611, 10, -22 }
+        },
+        {
+          id str "bit_score",
+          value real { 602130831085297, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 34
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786580
+        },
+        starts {
+          5635,
+          10006
+        },
+        lens {
+          35
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 29
+        },
+        {
+          id str "e_value",
+          value real { 171208275934027, 10, -20 }
+        },
+        {
+          id str "bit_score",
+          value real { 54673134151516, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 34
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 5,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1786580
+        },
+        starts {
+          5635,
+          10110,
+          -1,
+          10113,
+          5638,
+          10114,
+          5641,
+          -1,
+          5642,
+          10117
+        },
+        lens {
+          3,
+          1,
+          3,
+          1,
+          28
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 31
+        },
+        {
+          id str "e_value",
+          value real { 132352113328247, 10, -21 }
+        },
+        {
+          id str "bit_score",
+          value real { 583664334561918, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 33
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1787084
+        },
+        starts {
+          5566,
+          1087
+        },
+        lens {
+          34
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 30
+        },
+        {
+          id str "e_value",
+          value real { 476022868559422, 10, -21 }
+        },
+        {
+          id str "bit_score",
+          value real { 565197838038539, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 35
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 5,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367366
+        },
+        starts {
+          5634,
+          10230,
+          -1,
+          10236,
+          5640,
+          10237,
+          5641,
+          -1,
+          5642,
+          10238
+        },
+        lens {
+          6,
+          1,
+          1,
+          1,
+          28
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 30
+        },
+        {
+          id str "e_value",
+          value real { 476022868559422, 10, -21 }
+        },
+        {
+          id str "bit_score",
+          value real { 565197838038539, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 32
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 2367182
+        },
+        starts {
+          5637,
+          1052
+        },
+        lens {
+          33
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 30
+        },
+        {
+          id str "e_value",
+          value real { 476022868559422, 10, -21 }
+        },
+        {
+          id str "bit_score",
+          value real { 565197838038539, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 34
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1789319
+        },
+        starts {
+          5634,
+          4433
+        },
+        lens {
+          36
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 29
+        },
+        {
+          id str "e_value",
+          value real { 171208275934027, 10, -20 }
+        },
+        {
+          id str "bit_score",
+          value real { 54673134151516, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 29
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1788883
+        },
+        starts {
+          5642,
+          9499
+        },
+        lens {
+          29
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 29
+        },
+        {
+          id str "e_value",
+          value real { 171208275934027, 10, -20 }
+        },
+        {
+          id str "bit_score",
+          value real { 54673134151516, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 34
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 5,
+        ids {
+          genbank {
+            name "AE000111",
+            accession "AE000111",
+            version 1
+          },
+          gi 1788659
+        },
+        starts {
+          5642,
+          7135,
+          5641,
+          -1,
+          5640,
+          7163,
+          -1,
+          7164,
+          5635,
+          7165
+        },
+        lens {
+          28,
+          1,
+          1,
+          1,
+          5
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    }
+  }
+}

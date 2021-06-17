@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(seqvec_bench)
+  NCBI_sources(seqvec_bench)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_app()
+

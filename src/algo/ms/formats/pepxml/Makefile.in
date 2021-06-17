@@ -1,0 +1,4 @@
+#DTD_PROJ = pepXML
+XSD_PROJ = pepXML
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

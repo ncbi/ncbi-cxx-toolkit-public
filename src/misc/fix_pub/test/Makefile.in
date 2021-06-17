@@ -1,0 +1,9 @@
+# $Id$
+
+APP_PROJ = unit_test_fix_pub
+
+PROJ_TAG = test
+SUB_PROJ = 
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

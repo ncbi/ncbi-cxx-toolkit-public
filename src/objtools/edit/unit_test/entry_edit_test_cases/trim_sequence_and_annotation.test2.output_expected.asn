@@ -1,0 +1,341 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      genome genomic,
+      org {
+        taxname "gamma-endosymbiont of Pseudococcus longispinus",
+        orgname {
+          gcode 1
+        }
+      }
+    },
+    pub {
+      pub {
+        gen {
+          cit "Unpublished",
+          authors {
+            names std {
+              {
+                name name {
+                  last "Lopez-Madrigal",
+                  first "Sergio",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Beltra",
+                  first "Aleixandre",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Resurrecion",
+                  first "Serena",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Latorre",
+                  first "Amparo",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Moya",
+                  first "Andres",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Gil",
+                  first "Rosario",
+                  initials "R."
+                }
+              }
+            },
+            affil std {
+              affil "University of Valencia",
+              div "Institut Cavanilles de Biodiversitat i Biologia Evolutiva",
+              city "Paterna-Valencia",
+              sub "Valencia",
+              country "Spain",
+              street "C/ Catedratico Jose Beltran num 2",
+              postal-code "46980"
+            }
+          },
+          title "Genetic screening on five mealybugs species: evidences for
+ striking functional and molecular differences among the corresponding
+ Tremblaya lineages"
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "SeriousSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 7
+        },
+        {
+          label str "month",
+          data int 7
+        },
+        {
+          label str "day",
+          data int 12
+        },
+        {
+          label str "year",
+          data int 2013
+        }
+      }
+    },
+    create-date std {
+      year 2013,
+      month 7,
+      day 12
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Lopez-Madrigal",
+                  first "Sergio",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Beltra",
+                  first "Aleixandre",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Resurrecion",
+                  first "Serena",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Latorre",
+                  first "Amparo",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Moya",
+                  first "Andres",
+                  initials "A."
+                }
+              },
+              {
+                name name {
+                  last "Gil",
+                  first "Rosario",
+                  initials "R."
+                }
+              }
+            },
+            affil std {
+              affil "University of Valencia",
+              div "Institut Cavanilles de Biodiversitat i Biologia Evolutiva",
+              city "Paterna-Valencia",
+              sub "Valencia",
+              country "Spain",
+              street "C/ Catedratico Jose Beltran num 2",
+              postal-code "46980"
+            }
+          },
+          date std {
+            year 2013,
+            month 7,
+            day 12
+          }
+        }
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "trpB",
+        general {
+          db "NCBIFILE",
+          tag str "g-endosymbiont of Pseudococcus longispinus/trpB"
+        },
+        general {
+          db "TMSMART",
+          tag id 39097200
+        }
+      },
+      descr {
+        title "Partial sequence",
+        molinfo {
+          biomol genomic
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            },
+            {
+              label str "Assembly Method",
+              data str "pregap (Staden Package) v. rel-1-7-0"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "Sanger dideoxy sequencing"
+            }
+          }
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "trpB"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 708,
+        seq-data ncbi2na '360650D9506EFD939A78EA6582D3D6B91269D3517C0219790609
+BE663EB5849CE06E547139DA45965A564D6F5614DB9983D49A38DA6088666648E4224604B97968
+E6B4D979BE9A69D4194DA4EF658FD3638149AF65E329B225E9A5EACD885A124EA9B6F00469645A
+4DCFDA4E0B658E392D6582A48F8A0DF3D4FDA5A5E8FF576BAB5D24E5C5F8C93696A68B1BB6BC58
+E28257A19BD6197756D38A93CF5A67A0DB54E67A546470838C42689688089237EBAF'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data gene {
+                locus "trpB"
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 707,
+                strand plus,
+                id local str "trpB",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "trpB_1",
+        general {
+          db "NCBIFILE",
+          tag str "g-endosymbiont of Pseudococcus longispinus/trpB_1"
+        },
+        general {
+          db "TMSMART",
+          tag id 39097201
+        }
+      },
+      descr {
+        title "TrpB, partial [gamma-endosymbiont of Pseudococcus longispinus]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans,
+          completeness no-ends
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "trpB_1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 236,
+        seq-data iupacaa "IERQSPNVFRMRLMGAEVIPVHSGSSTLKDACNEALRDWSDSYERAHYMLGT
+AAGPHPFPTIVREFQRMIGEETRAQMQEHEQCLPDAVIACVGGGSNAIGMFADFIDEPAVRLIGVEPGGLGIETGQHG
+ASLKHGRTGIYFGMKSPMMQSAEGQIEESYSISAGLDFPSVGPQHAYLDSIGRAEYVSVTDEEALDAFRRLSRHEGII
+PALESSHALAHALRMIQAEPEKEQILVV"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "TrpB"
+                },
+                desc "beta subunit of tryptophan synthase"
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 235,
+                id local str "trpB_1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          partial TRUE,
+          product whole local str "trpB_1",
+          location int {
+            from 0,
+            to 707,
+            strand plus,
+            id local str "trpB",
+            fuzz-from lim lt,
+            fuzz-to lim gt
+          }
+        }
+      }
+    }
+  }
+}

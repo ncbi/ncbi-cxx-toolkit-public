@@ -1,0 +1,12 @@
+# $Id$
+
+LIB = pmcidconv_client
+SRC = pmcidconv_client
+
+DLL_LIB = xmlwrapp
+
+WATCHERS = bollin
+
+USES_LIBRARIES = xconnect xmlwrapp
+
+ASN_DEP = pub

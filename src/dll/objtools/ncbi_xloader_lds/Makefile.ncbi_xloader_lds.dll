@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = ncbi_xloader_lds
+
+HOSTED_LIBS    = ncbi_xloader_lds
+
+DEPENDENCIES   = ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_general \
+                 ncbi_lds ncbi_pub  ncbi_seq ncbi_seqext
+
+CPPFLAGS = -DNCBI_XLOADER_LDS_EXPORTS
+

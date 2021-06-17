@@ -1,0 +1,30 @@
+@@ -1,1 +1,7 @@
++This is an important
++notice! It should
++therefore be located at
++the beginning of this
++document!
++
+ This part of the
+@@ -7,12 +13,6 @@
+ would not be helping to
+-compress the size of the
+-changes.
++compress anything.
+ 
+-This paragraph contains
+-text that is outdated.
+-It will be deleted in the
+-near future.
+-
+ It is important to spell
+-check this dokument. On
++check this document. On
+ the other hand, a
+@@ -24,2 +24,6 @@
+ be added after it.
++
++This paragraph contains
++important new additions
++to this document.
+ 

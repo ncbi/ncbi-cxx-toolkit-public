@@ -1,0 +1,8 @@
+# $Id$
+
+LIB_PROJ = gene_info_writer
+
+SUB_PROJ = unit_test app
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

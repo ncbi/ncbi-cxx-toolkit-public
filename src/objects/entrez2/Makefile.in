@@ -1,0 +1,5 @@
+ASN_PROJ = entrez2
+LIB_PROJ = entrez2cli
+SUB_PROJ = demo
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db100_bcp)
+  NCBI_sources(bcp common)
+  NCBI_set_test_assets(bcp.sql)
+  NCBI_add_test(test-db100 --no-auto db100_bcp)
+NCBI_end_app()
+

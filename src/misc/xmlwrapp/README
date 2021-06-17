@@ -1,0 +1,41 @@
+
+
+1. Requirements
+---------------
+
+In order to build xmlwrapp, you need libxml2 version 2.4.28 or newer. When
+building with XSLT support, libxslt 1.1.6 or newer is required. Both libraries
+are available from http://xmlsoft.org.
+
+
+2. Building on Unix
+-------------------
+
+On Unix, the usual Autotools-based build system is used. Building xmlwrapp is
+usually as simple as running the following three commands:
+
+  ./configure
+  make
+  make install
+
+See the output of `./configure --help` for additional settings and options.
+
+
+3. Building on Windows
+----------------------
+
+At this time, only building with Visual C++ compiler is supported. The required
+project files are located in platform/Win32 directory.
+
+
+4. Using xmlwrapp
+-----------------
+
+On Unix, you should use pkg-config to get compiler flags for xmlwrapp or
+xsltwrapp libraries:
+
+   c++ -c `pkg-config --cflags xmlwrapp` ...
+   c++ -o ... `pkg-config --libs xmlwrapp`
+
+On Windows, you need to link against xmlwrapp libraries and add the include/
+directory to compiler's headers search path.

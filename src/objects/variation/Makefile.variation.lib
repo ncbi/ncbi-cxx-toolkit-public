@@ -1,0 +1,6 @@
+LIB = variation
+SRC = variation__ variation___
+
+
+USES_LIBRARIES =  \
+    $(SEQ_LIBS) pub

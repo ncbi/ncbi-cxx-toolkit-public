@@ -1,0 +1,60 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 6,
+                      seq-data iupacna "CAACAA"
+                    },
+                    action ins-before
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 3,
+                      seq-data iupacna "CAA"
+                    },
+                    action ins-before
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 948432,
+        id other {
+          accession "NC_000001",
+          version 10
+        }
+      },
+      exts {
+        {
+          type str "Variation Normalization",
+          data {
+            {
+              label str "Right Shifted",
+              data bool TRUE
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Test Fully Shifted : 0

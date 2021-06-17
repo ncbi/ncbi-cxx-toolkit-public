@@ -1,0 +1,14 @@
+strand invalid_strand_qual
+molecule invalid_molecule_qual
+mol-type invalid_mol_type_qual
+completeness invalid_completeness_qual
+tech         invalid_tech_qual
+gcode        nonintegral
+pgcode       nonintegral
+mgcode       nonintegral 
+location     invalid_location
+origin       invalid_origin
+invalid_mod_name invalid_mod_value
+dosage      deprecated_mod   
+old-name    deprecated_mod
+transgenic  true_is_the_only_valid_value

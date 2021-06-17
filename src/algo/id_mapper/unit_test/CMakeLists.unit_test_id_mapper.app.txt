@@ -1,0 +1,16 @@
+# $Id$
+
+NCBI_begin_app(unit_test_id_mapper)
+  NCBI_sources(unit_test_id_mapper)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(gencoll_client xid_mapper)
+  NCBI_requires(-Cygwin)
+
+  NCBI_set_test_assets(unit_test_id_mapper.ini)
+  NCBI_set_test_timeout(1800)
+  NCBI_add_test()
+
+  NCBI_project_watchers(boukn meric)
+
+NCBI_end_app()
+

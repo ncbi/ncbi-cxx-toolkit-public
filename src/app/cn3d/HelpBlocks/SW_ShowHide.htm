@@ -1,0 +1,66 @@
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Microsoft FrontPage 5.0">
+<TITLE>Structure Window : Select</TITLE>
+</HEAD>
+<BODY>
+<H2>Structure Window : Select Commands</H2>
+<UL>
+  <LI><A href="#pick">Pick structures</A>
+  <LI><A href="#everything">Show everything</A>
+  <LI><A href="#chains">Show aligned chains</A>
+  <LI><A href="#domains">Show aligned domains</A>
+  <LI><A href="#residues">Show aligned residues</A>
+  <LI><A href="#unaligned">Unaligned residues</A>
+  <LI><A href="#selected_dom">Show selected domains</A>
+  <LI><A href="#selected">Show selected residues</A>
+  <LI><A href="#distance">Select by distance</A></LI>
+  <LI><A href="#toggle">Toggle chain</A></LI>
+  <LI><A href="#molecule">Select molecule</A></LI>
+</UL>
+<h3><a name="pick"></a>Pick structures</h3>
+This dialog allows you to manually select which parts of which structures are
+visible. You will see a hierarchical list of all structures (for example, "1BML"),
+biopolymer chains in each structure (such as "1BML_C"), and domains
+in each chain (like "1BML_C d2"). You can turn each part on and off
+by clicking any line to select or deselect that part of the structure - a highlighted
+line means that part is visible. (On the Macintosh, you'll need to hold down the
+Meta key when clicking.) Because the assembly is hierarchical, if you turn of
+a chain, all domains in that chain will also be turned off. Similarly, if you
+turn on a domain, the chain that contains that domain will also be turned on.
+<h3><a name="everything"></a>Show everything</h3>
+Makes all parts of all structures visible.
+<h3><a name="chains"></a>Show aligned chains</h3>
+Shows only chains that contain residues that are in aligned blocks of the current
+alignment.
+<h3><a name="domains"></a>Show aligned domains</h3>
+Shows only domains that contain residues that are in aligned blocks of the current
+alignment. This is convenient to trim down the display when several multi-domain
+and/or multi-chain PDB structures are represented in the alignment.
+<h3><a name="residues"></a>Show aligned residues</h3>
+Shows only residues that are in aligned blocks of the current alignment. This
+is useful for examining the conserved structural core of an alignment.
+<h3><a name="unaligned"></a>Unaligned residues</h3>
+Shows unaligned residues. There are two choices: show all unaligned residues,
+or show unaligned residues only in aligned domains. The latter is particularly
+useful for examining unconserved loop regions of the structural core.
+<h3><A name="selected_dom"></a>Show selected domains</h3>
+Shows only domains that contain selected residues.
+<h3><a name="selected"></a>Show selected residues</h3>
+Shows only selected (highlighted) residues.
+<h3><a name="distance"></a>Select by distance</h3>
+These functions allow you to highlight residues based on distance between atoms. To use this feature, first select 
+any number of residues (or solvent or heterogen molecules) in either the structure
+or sequence window. Then do <b>Select by Distance</b> and enter a distance cutoff. This will 
+add
+highlights to all biopolymer residues (or all molecules, including heterogens 
+and solvents) that contain any atom within this distance from any atom in the initially selected
+set of residues, based on center-to-center separation. The options checkboxes allow you to choose what types of residues will be selected, and the <b>other</b> option lets you select only residues that are on different molecules from the
+initially selected residues (for focussing on intermolecular contacts).
+<h3><a name="toggle"></a>Toggle chain</h3>
+Brings up a dialog containing all chains of all molecules in the strucure. Selecting one or more chains will cause highlights on every residue of these chains to be toggled on/off.
+<h3><a name="molecule"></a>Select molecule</h3>
+Select a molecule by either the single-character PDB chain code, or the MMDB molecule integer ID. For individual structures only.
+</BODY>
+</HTML>

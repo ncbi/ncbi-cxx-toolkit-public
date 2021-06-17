@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(xalgophytree)
+  NCBI_sources(bio_tree phy_node dist_methods lex.newick newick.tab tree_to_dist_mat phytree_calc bio_tree_format_label)
+  NCBI_uses_toolkit_libraries(biotree fastme xalnmgr)
+  NCBI_project_watchers(jcherry boratyng)
+NCBI_end_lib()
+

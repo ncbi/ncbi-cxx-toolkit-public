@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(local_taxon)
+  NCBI_sources(local_taxon)
+  NCBI_requires(SQLITE3)
+  NCBI_uses_toolkit_libraries(taxon1 sqlitewrapp)
+NCBI_end_lib()
+

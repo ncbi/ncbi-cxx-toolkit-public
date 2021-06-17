@@ -1,0 +1,117 @@
+@script_shell@
+
+# $Id$
+# Author:  Denis Vakatov, NCBI 
+# 
+#  Adjust paths to this build tree and the relevant source tree
+#  (only at the very top level, just to allow "external" users
+#   to use the major makefile templates)
+
+
+script_name=`basename $0`
+script_dir=`dirname $0`
+script_dir=`(cd "${script_dir}" ; pwd)`
+
+src_tree=`pwd`
+bld_tree=`(cd "${script_dir}/.." ; pwd)`
+status_dir=$bld_tree/status
+extra_sed=
+copy_times=false
+
+for x_arg in "$@" ; do
+  case "$x_arg" in
+    --drop-suffix )  extra_sed="s%/c[+][+][^;/ \'\"]*%/c++%g" ;;
+    --copy-times  )  copy_times=true ;;
+    * )  Usage "Unknown argument \"$x_arg\"" ;;
+  esac
+done
+
+if test -x "$src_tree/scripts/common/impl/if_diff.sh"  &&  test -f "$bld_tree/inc/ncbiconf_unix.h" ; then
+   cat <<EOF
+Adjusting makefiles for:
+  - source tree:  $src_tree
+  - build  tree:  $bld_tree
+
+In directory:  $script_dir/
+EOF
+else
+   cat <<EOF
+[$script_name]  USAGE:  This script MUST be
+ 1) located in the build directory
+ 2) run from the top C++ source directory
+EOF
+   exit 1
+fi
+
+
+#### Substitute for the new $(builddir)
+
+files="\
+Makefile.mk Makefile.meta Makefile.lib.tmpl Makefile.app.tmpl install.sh new_module.sh"
+rwcdr=run_with_cd_reporter.py
+
+for f in $files ; do
+   fff="$script_dir/$f"
+   sed '
+      s%^\(builddir *= *\).*%\1'$script_dir'%;
+      s%^\(build_root *= *\).*%\1'$bld_tree'%;
+      s%^\(top_srcdir *= *\).*%\1'$src_tree'%;
+      s%^\(abs_top_srcdir *= *\).*%\1'$src_tree'%;
+      s%^\(old_srcdir='\''\).*\('\''\) *$%\1'$src_tree'\2%
+      s%^\(status_dir *= *\).*%\1'$status_dir'%;
+      s%/net/[^ =]*/lnx\([0-9]*\)_netopt/ncbi_tools/%/netopt/ncbi_tools\1/%g;
+      s%/netopt/ncbi_tools\.[^/ ]*%/netopt/ncbi_tools%g;
+      s%^ *BINCOPY *=.*%BINCOPY = @:%;
+      s%^ *BINTOUCH *=.*%BINTOUCH = @:%;
+      s%^ *APP_OR_NULL *=.*%APP_OR_NULL = app%;
+      /WRAPPER *=.*ccache/s%CCACHE_PREFIX=%%;
+      /WRAPPER *=/s%[^ ]*ccache%%;
+      /LDFLAGS *=/s% *-dylib_file *[^ ]*%%g;
+      /CONF_C[CPX]* *=/s% *-isysroot *[^ ]*%%g;
+      /CONF_C[CPX]* *=/s% *-mmacosx-version-min=[^ ]*%%g;
+      '"$extra_sed"'
+   ' "$fff" > "$fff.tmp"
+   if test $? -ne 0 ; then
+      echo "[$script_name]  Error in processing file \"$f\"!" 
+      exit 2
+   fi
+done
+
+sed '
+   s%^\(scriptdir *= *\).*%\1"'$src_tree/scripts'"%;
+   s%^\([# ]*outdir *= *\).*%\1"'$bld_tree/cd-reports'"%;
+   s%^\(status_dir *= *\).*%\1"'$status_dir'"%;
+   s%/net/[^ =]*/lnx\([0-9]*\)_netopt/ncbi_tools/%/netopt/ncbi_tools\1/%g;
+   s%/netopt/ncbi_tools\.[^/ ]*%/netopt/ncbi_tools%g;
+' $script_dir/$rwcdr > $script_dir/$rwcdr.tmp
+if test $? -ne 0 ; then
+   echo "[$script_name]  Error in processing file \"$rwcdr\"!" 
+   exit 2
+fi
+
+chmod +x "$script_dir"/*.sh.tmp "$script_dir"/*.py.tmp
+
+for f in $files run_with_cd_reporter.py ; do
+   fff="$script_dir/$f"
+   echo "  $f"
+   test "$copy_times" = true  &&  touch -r "$fff.tmp" "$fff"
+   rm -f "$fff"  &&  mv "$fff.tmp" "$fff"
+   if test $? -ne 0 ; then
+      echo "[$script_name]  Error in processing file \"$f\"!" 
+      exit 3
+   fi
+done
+
+
+#### Relocate GBench
+
+gbench_dir=$bld_tree/bin/.gbench
+gbench_move=$gbench_dir/bin/move-gbench.sh
+
+if [ -x $gbench_move ]; then
+   echo GBench relocation started...
+   echo $gbench_move --extra-sed "$extra_sed" $gbench_dir
+   $gbench_move --extra-sed "$extra_sed" $gbench_dir
+fi
+
+echo "Done."

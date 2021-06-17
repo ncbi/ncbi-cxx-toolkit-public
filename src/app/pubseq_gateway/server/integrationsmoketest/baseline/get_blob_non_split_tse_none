@@ -1,0 +1,24 @@
+[
+{
+    "reply": "BlobInfo",
+    "id": {
+        "id": "4.15971",
+        "last_modified": 1123767887386
+    },
+    "compression": "gzip",
+    "format": "asn.1",
+    "storage_size": 1291,
+    "size": 2256,
+    "is_dead": true,
+    "is_suppressed": false,
+    "is_withdrawn": false,
+    "hup_release_date": "",
+    "owner": 2,
+    "original_load_date": "01/19/1994 09:53:47",
+    "class": "nuc-prot",
+    "division": "PRI",
+    "username": "cavanaug",
+    "id2_info": "",
+    "n_chunks": 1
+}
+]

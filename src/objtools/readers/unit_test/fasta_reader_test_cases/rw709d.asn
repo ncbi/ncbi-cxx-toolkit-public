@@ -1,0 +1,25 @@
+Seq-entry ::= seq {
+  id {
+    local str "abc,def"
+  },
+  descr {
+    user {
+      type str "CFastaReader",
+      data {
+        {
+          label str "DefLine",
+          data str ">lcl|abc,def"
+        }
+      }
+    },
+    molinfo {
+      biomol genomic
+    }
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 8,
+    seq-data ncbi2na '39CF'H
+  }
+}

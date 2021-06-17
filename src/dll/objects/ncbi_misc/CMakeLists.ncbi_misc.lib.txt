@@ -1,0 +1,26 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_misc SHARED)
+  NCBI_hosts_projects(
+    objects/access/access
+    objects/biotree/biotree
+    objects/docsum/docsum
+    objects/entrez2/entrez2
+    objects/entrez2/entrez2cli
+    objects/entrezgene/entrezgene
+    objects/featdef/featdef
+    objects/gbseq/gbseq
+    objects/genesbyloc/genesbyloc
+    objects/insdseq/insdseq
+    objects/mim/mim
+    objects/objprt/objprt
+    objects/coords/objcoords
+    objects/pcassay/pcassay
+    objects/pcsubstance/pcsubstance
+    objects/proj/proj
+    objects/remap/remap
+    objects/remap/remapcli
+    objects/tinyseq/tinyseq
+  )
+  NCBI_add_definitions(NCBI_MISC_EXPORTS)
+NCBI_end_lib()

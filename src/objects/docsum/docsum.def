@@ -1,0 +1,11 @@
+[-]
+_export = NCBI_DOCSUM_EXPORT
+
+[ExchangeSet]
+summary.attlist.totalSeqLength._type=Int8
+
+[Ss]
+attlist.ssId._type=Int8
+
+[Rs]
+sequence.attlist.exemplarSs._type=Int8

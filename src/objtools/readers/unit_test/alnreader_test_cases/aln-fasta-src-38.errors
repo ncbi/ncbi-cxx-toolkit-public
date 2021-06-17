@@ -1,0 +1,48 @@
+SeqID      : lcl|seq4
+Line No    : 13
+Severity   : Warning
+Problem    : Mods.Duplicate
+Message    : Duplicated modifier value detected, ignoring duplicate, no action required: other=val1.
+Mod Name   : other
+Mod Value  : val1
+
+SeqID      : lcl|seq4
+Line No    : 13
+Severity   : Error
+Problem    : Mods.InvalidValue
+Message    : Invalid value: environmental-sample=val1.
+Mod Name   : environmental-sample
+Mod Value  : val1
+
+SeqID      : lcl|seq4
+Line No    : 13
+Severity   : Error
+Problem    : Mods.InvalidValue
+Message    : Invalid value: germline=val1.
+Mod Name   : germline
+Mod Value  : val1
+
+SeqID      : lcl|seq4
+Line No    : 13
+Severity   : Error
+Problem    : Mods.InvalidValue
+Message    : Invalid value: metagenomic=val1.
+Mod Name   : metagenomic
+Mod Value  : val1
+
+SeqID      : lcl|seq4
+Line No    : 13
+Severity   : Error
+Problem    : Mods.InvalidValue
+Message    : Invalid value: rearranged=val1.
+Mod Name   : rearranged
+Mod Value  : val1
+
+SeqID      : lcl|seq4
+Line No    : 13
+Severity   : Error
+Problem    : Mods.InvalidValue
+Message    : Invalid value: transgenic=val1.
+Mod Name   : transgenic
+Mod Value  : val1
+

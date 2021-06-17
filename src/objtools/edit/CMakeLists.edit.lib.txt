@@ -1,0 +1,17 @@
+# $Id$
+
+NCBI_begin_lib(xobjedit)
+  NCBI_sources(
+    gene_utils seq_entry_edit promote autodef_with_tax
+    field_handler apply_object string_constraint seqid_guesser dblink_field
+    struc_comm_field text_desc_field gb_block_field
+    link_cds_mrna cds_fix loc_edit mail_report
+    feattable_edit gaps_edit source_edit rna_edit
+    remote_updater parse_text_options publication_edit gap_trim
+    external_annots feature_propagate text_object_description
+    seq_edit pub_fix
+  )
+  NCBI_uses_toolkit_libraries(eutils esearch esummary mlacli taxon3 valid xobjread xobjutil xlogging)
+  NCBI_project_watchers(bollin gotvyans foleyjp)
+NCBI_end_lib()
+

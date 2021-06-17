@@ -1,0 +1,13 @@
+# $Id$
+
+# Meta-makefile("SERIAL" project)
+#################################
+
+LIB_PROJ = serial cserial
+SUB_PROJ = datatool test soap grpc_integration
+PROJ_TAG = core
+
+REQUIRES = serial
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

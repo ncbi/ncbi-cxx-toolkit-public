@@ -1,0 +1,4 @@
+Scaffold10	tRNAScan-SE	tRNA	382	484	87.7	+	.	ID=tRNA-Lys1_tRNA;product=tRNA-Lys;codon_recognized=ttt
+Scaffold10	tRNAScan-SE	tRNA	488	560	70.3	+	.	ID=tRNA-Lys4_tRNA;product=tRNA-Lys;codon_recognized=ttt
+Scaffold10	tRNAScan-SE	tRNA	598	679	70.3	+	.	ID=tRNA-Leu1_tRNA;product=tRNA-Leu;codon_recognized=gag
+Scaffold10	tRNAScan-SE	tRNA	698	779	70.3	+	.	ID=tRNA-Leu2_tRNA;product=tRNA-Leu

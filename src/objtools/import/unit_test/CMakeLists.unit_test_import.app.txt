@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(unit_test_import)
+  NCBI_sources(unit_test_import)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xunittestutil xobjimport)
+  NCBI_project_watchers(ludwigf)
+NCBI_end_app()

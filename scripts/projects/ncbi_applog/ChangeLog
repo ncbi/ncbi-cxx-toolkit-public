@@ -1,0 +1,73 @@
+1.4.0 (02/16/2021)
+    - Add "Note[X]" notation for the severity of posted messages. CXX-11741
+    - Add '-note' flag for 'post' command CXX-11741
+
+1.3.2 (10/19/17)
+    Re-release of broken 1.3.1. CXX-8978
+
+1.3.1 (09/18/17)
+    - Improved 'raw' command to allow multiple applications logs in the same file. CXX-9511
+    - Added '-format' switch for "generate" command, to print out generated values in the shell-compatible formats. CXX-9511
+    - Added 'health' health check command. CXX-8975
+
+1.3.0 (11/29/16)
+    - Switch to HTTPS protocol for CGI mode.
+    - Added '-sid' option for 'generate' command. CXX-8809
+
+1.2.0 (06/29/16)
+    - Do not split log files by default, use .log and .perf files for /log, and single .log file for all other locations. CXX-8158
+    - Add euid to log file name when using /log. CXX-8158
+    - Fixes for 'url' command:  CXX-7846
+	- add '-appname', '-host' and '-pid' flags to allow include only necessary information to the search term;
+	- add '-std' flag to automatically imply all 3 flags above (previously default);
+	- use '-maxtime' instead of '-timestamp', add '-maxtime-delay' flag.
+
+1.1.1 (06/01/16)
+    - Add additional checks to CGI redirecting to return error code if CGI is unavailable. CXX-8117
+    - Add checking /log/logsite location for writing logs, if logsite is known, before redirecting to CGI. CXX-8117
+
+1.1.0 (03/28/16)
+    - Allow to send RAW logs incrementally (for CGI redirects). CXX-7803
+    - Add possibility to generate an Applog query URL on a base of token ('url' command). CXX-7846
+
+
+1.0.17 (02/16/16)
+    - Disable all C++ Toolkit diagnostics and logging. Report ncbi_applog errors locally to stderr. CXX-7782
+    - Bugfixes. CXX-7804, CXX-7616
+
+1.0.16 (07/23/15)
+    - Extend with SID/PHID generation. CXX-5015
+    - Bugfixes. CXX-5771, CXX-4939
+    - Add support for host role/location. CXX-4797
+
+1.0.15 (02/23/15)
+    test only
+
+1.0.14 (-)
+    failed
+
+1.0.13 (01/13/14) - first public version 
+    - Clog try to fallback to /log/<port> or /log/srv. CXX-3423
+    - Add support for $NCBI_CONFIG_LOG_FILE, allow extracting SID from the token. CXX-3818
+    - Alow to specify posting timestamp. CXX-3933
+    - Add RAW logs processing. CXX-4053
+
+
+TEST VERSIONS:
+
+1.0.12 (12/16/13)
+1.0.11 (12/10/13)
+1.0.10 (11/20/13)
+1.0.9  (10/28/13)
+1.0.8  (-)
+1.0.7  (07/30/13)
+1.0.6  (07/24/13)
+1.0.5  (-)
+1.0.4  (-)
+1.0.3  (11/29/12)
+1.0.2  (-)
+1.0.1  (-)
+
+
+Main development thread. CXX-2439
+

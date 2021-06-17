@@ -1,0 +1,11 @@
+# $Id$
+
+MSVC_PROJ = third_party_msvcstatic_install
+
+APP_DEP   = 
+
+DLL_DEP   = 
+
+VCPROJ    = $(msvc_prj)\static\third_party_msvcstatic_install.vcproj
+VCXPROJ   = $(msvc_prj)\static\third_party_msvcstatic_install.vcxproj
+

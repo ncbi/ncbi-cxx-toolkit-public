@@ -1,0 +1,12 @@
+# $Id$
+
+# Meta-makefile ("BLAST" project)
+#################################
+
+SUB_PROJ = composition_adjustment core dbindex dbindex_search api proteinkmer \
+           format blastinput blast_sra_input igblast gumbel_params unit_tests
+
+WATCHERS = camacho madden
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_dbapi SHARED)
+  NCBI_hosts_projects(
+    dbapi/dbapi
+  )
+  NCBI_add_definitions(NCBI_DBAPI_EXPORTS)
+NCBI_end_lib()

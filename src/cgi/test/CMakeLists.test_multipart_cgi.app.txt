@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_multipart_cgi)
+  NCBI_sources(test_multipart_cgi)
+  NCBI_uses_toolkit_libraries(xcgi)
+  NCBI_project_watchers(ucko)
+NCBI_end_app()
+

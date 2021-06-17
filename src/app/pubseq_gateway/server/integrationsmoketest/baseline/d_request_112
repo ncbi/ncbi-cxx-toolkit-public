@@ -1,0 +1,34 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": {
+        "id": "ref|NW_003285567.1|",
+        "type": 10
+    },
+    "other_ids": [
+        {
+            "id": "gnl|ASM:GCF_000004345.1|C59236869",
+            "type": 11
+        },
+        {
+            "id": "gi|295720530",
+            "type": 12
+        },
+        {
+            "id": "gpp|GPS_000535975.1",
+            "type": 19
+        }
+    ],
+    "molecule_type": "dna",
+    "length": 112,
+    "seq_state": 10,
+    "state": 10,
+    "blob_id": {
+        "id": "4.185301617"
+    },
+    "tax_id": 9646,
+    "hash": 1226768067,
+    "date_changed": "06/01/2020 01:19:00",
+    "gi": 295720530
+}
+]

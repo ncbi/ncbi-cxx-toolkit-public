@@ -1,0 +1,10 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(demo_score_builder)
+  NCBI_sources(demo_score_builder)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoalignutil)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_app()
+

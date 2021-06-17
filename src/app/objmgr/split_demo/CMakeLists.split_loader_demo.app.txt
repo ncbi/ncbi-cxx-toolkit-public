@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(split_loader_demo)
+  NCBI_sources(split_loader_demo split_loader)
+  NCBI_uses_toolkit_libraries(xobjmgr)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()

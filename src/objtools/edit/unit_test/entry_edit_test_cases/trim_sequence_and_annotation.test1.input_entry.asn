@@ -1,0 +1,375 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      genome genomic,
+      org {
+        taxname "Salmonella enterica",
+        db {
+          {
+            db "taxon",
+            tag id 28901
+          }
+        },
+        syn {
+          "Bacillus cholerae-suis",
+          "Salmonella cholerae-suis",
+          "Salmonella choleraesuis",
+          "Salmonella enterica ser. choleraesuis"
+        },
+        orgname {
+          name binomial {
+            genus "Salmonella",
+            species "enterica"
+          },
+          mod {
+            {
+              subtype strain,
+              subname "S16748"
+            }
+          },
+          lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Enterobacteriales; Enterobacteriaceae; Salmonella",
+          gcode 11,
+          div "BCT"
+        }
+      },
+      subtype {
+        {
+          subtype country,
+          name "Tanzania"
+        },
+        {
+          subtype isolation-source,
+          name "Bovine feces"
+        },
+        {
+          subtype collection-date,
+          name "18-Oct-2013"
+        },
+        {
+          subtype collected-by,
+          name "Medardus, J. J."
+        },
+        {
+          subtype other,
+          name "[cultured bacterial source]"
+        }
+      }
+    },
+    pub {
+      pub {
+        gen {
+          cit "Unpublished",
+          authors {
+            names std {
+              {
+                name name {
+                  last "Medardus",
+                  first "Julius",
+                  initials "J.J."
+                }
+              },
+              {
+                name name {
+                  last "Kashoma",
+                  first "Isaac",
+                  initials "I.P."
+                }
+              },
+              {
+                name name {
+                  last "Molla",
+                  first "Bayleyegn",
+                  initials "B.Z."
+                }
+              },
+              {
+                name name {
+                  last "Kazwala",
+                  first "Rudovick",
+                  initials "R.R."
+                }
+              },
+              {
+                name name {
+                  last "Gebreyes",
+                  first "Wondwossen",
+                  initials "W.A."
+                }
+              }
+            }
+          },
+          title "Multi-drug Resistant Salmonella from beef, dairy cattle and
+ animal products in Pastoral and Agro-pastoralist zones of Tanzania:
+ Prevalence and molecular characterization"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "ALT EMAIL:gebreyes.1@osu.edu"
+        },
+        {
+          label str "AdditionalComment",
+          data str "BankIt1763738"
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Assembly-Data-START##"
+        },
+        {
+          label str "Sequencing Technology",
+          data str "Sanger dideoxy sequencing"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Assembly-Data-END##"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "AdditionalComment",
+          data str "Vecscreen Comment:Submitter says Vecscreen match is due
+ to: The matches are due to sequencing of the resistant gene cassettes of the
+ class I integron of the multi-drug resistant (MDR) Salmonella."
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "TOTAL # OF SEQS:5"
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "SeriousSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 7
+        },
+        {
+          label str "month",
+          data int 10
+        },
+        {
+          label str "day",
+          data int 3
+        },
+        {
+          label str "year",
+          data int 2014
+        }
+      }
+    },
+    update-date std {
+      year 2014,
+      month 10,
+      day 3,
+      hour 6,
+      minute 20,
+      second 45
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Medardus",
+                  first "Julius",
+                  initials "J.J."
+                }
+              },
+              {
+                name name {
+                  last "Kashoma",
+                  first "Isaac",
+                  initials "I.P."
+                }
+              },
+              {
+                name name {
+                  last "Molla",
+                  first "Bayleyegn",
+                  initials "B.Z."
+                }
+              },
+              {
+                name name {
+                  last "Kazwala",
+                  first "Rudovick",
+                  initials "R.R."
+                }
+              },
+              {
+                name name {
+                  last "Gebreyes",
+                  first "Wondwossen",
+                  initials "W.A."
+                }
+              }
+            },
+            affil std {
+              affil "The Ohio State University",
+              div "Veterinary Preventive Medicine",
+              city "COLUMBUS",
+              sub "OH",
+              country "United States",
+              street "1920 Coffey Road",
+              postal-code "43210"
+            }
+          },
+          medium email,
+          date std {
+            year 2014,
+            month 10,
+            day 3
+          }
+        }
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "Seq4",
+        general {
+          db "BankIt",
+          tag str "1763738/Seq4"
+        },
+        general {
+          db "TMSMART",
+          tag id 48561547
+        }
+      },
+      descr {
+        title "Salmonella enterica strain S16748, dfrA15 gene, complete cds",
+        molinfo {
+          biomol genomic
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "LocalID:Seq4"
+            }
+          }
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq4"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 691,
+        strand ds,
+        seq-data ncbi2na '249099BC65BAB63BF8EF3A249063BC6492A4B6570040BC1570A0
+B36E01CD1C3A490FD820E8BCDA03A548CF53A2E502A810F1DF4098F1730D2E9FFACA58087F62D0
+EAA7F1505803396FB076F427D1F52E3883B3EB3F5373638267034DE0863068D3B8FBB7AEBAE033
+100978D8C0BE31FC4CFD043613E2520AE3B73FD480D54B2FF294BFF25087DBB704C0F32F140DE9
+00ABC10BA4907859402ED1FBFE50025A40109943FEDA49EE529BC8E47090'H
+      }
+    },
+    seq {
+      id {
+        local str "Seq4_prot_4",
+        general {
+          db "TMSMART",
+          tag id 48561548
+        }
+      },
+      descr {
+        title "class 1 integron dihydrofolate reductase (dfrA15) gene
+ [Salmonella enterica]",
+        molinfo {
+          biomol peptide
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq4_prot_4"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 157,
+        seq-data ncbieaa "MKLSLMAAISKNGVIGNGPDIPWSAKGEQLLFKAITYNQWLLVGRKTFESMG
+ALPNRKYAVVTRSSFTSSDENVLVFPSIDEALNHLKTITDHVIVSGGGEIYKSLIDKVDTLHISTIDIEPEGDVYFPE
+IPSSFRPVFSQDFVSNINYSYQIWQKG"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "class 1 integron dihydrofolate reductase (dfrA15) gene"
+                }
+              },
+              location int {
+                from 0,
+                to 156,
+                id local str "Seq4_prot_4"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole local str "Seq4_prot_4",
+          location int {
+            from 109,
+            to 582,
+            strand plus,
+            id local str "Seq4"
+          }
+        }
+      }
+    }
+  }
+}

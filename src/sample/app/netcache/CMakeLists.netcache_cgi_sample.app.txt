@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(netcache_cgi_sample)
+  NCBI_sources(netcache_cgi_sample)
+  NCBI_uses_toolkit_libraries(xconnserv xcgi xhtml xcompress)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()

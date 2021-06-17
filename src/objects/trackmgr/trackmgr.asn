@@ -1,0 +1,555 @@
+--- $Id$
+---
+--- Definitions for the TrackManager service
+---
+
+NCBI-TrackManager DEFINITIONS ::=
+BEGIN
+
+EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext, TMgr-Status,
+        TMgr-ClientInfo, TMgr-DisplayTrackRequest,
+        TMgr-DisplayTrackReply, TMgr-AssemblySpec,TMgr-AttrSpec,
+        TMgr-BlastRIDDetail, TMgr-Assembly, TMgr-Attribute, TMgr-DisplayTrack,
+        TMgr-DTrackId, TMgr-DatasetItem, TMgr-DisplayTrackChoice,
+        TMgr-CreateUserTrackRequest, TMgr-CreateUserTrackReply, TMgr-Identity,
+        TMgr-TrackAttrValueRequest, TMgr-TrackAttrValueReply,
+        TMgr-RetrieveTracksetRequest, TMgr-RetrieveTracksetReply,
+        TMgr-CreateTracksetRequest, TMgr-CreateTracksetReply,
+        TMgr-AttrRequest, TMgr-AttrReply, TMgr-ValueRequest, TMgr-AttrValueReply,
+        TMgr-TrackAttributes, TMgr-MessageLevel, TMgr-Message, TMgr-DatasetItemSeq,
+        TMgr-CreateRemoteTrackReply, TMgr-CreateRemoteTrackRequest;
+
+IMPORTS Seq-id FROM NCBI-Seqloc
+        Dbtag FROM NCBI-General;
+---
+--- Top-level request/reply
+---
+TMgr-Request ::= CHOICE {
+    display-tracks TMgr-DisplayTrackRequest,
+    switch-display-tracks TMgr-SwitchTrackContextRequest,
+    track-attr-values TMgr-TrackAttrValueRequest,
+    blast-tracks TMgr-BlastRIDRequest,
+    create-user-tracks TMgr-CreateUserTrackRequest,
+    create-remote-tracks TMgr-CreateRemoteTrackRequest,
+    resolve-track-items TMgr-ItemResolverRequest,
+    remove-user-tracks TMgr-RemoveUserTrackRequest,
+    retrieve-tracksets TMgr-RetrieveTracksetRequest,
+    create-trackset TMgr-CreateTracksetRequest,
+    rename-trackset TMgr-RenameMyNCBICollectionRequest,
+    supported-assemblies TMgr-SupportedAssembliesRequest
+}
+
+TMgr-Reply ::= CHOICE {
+    display-tracks TMgr-DisplayTrackReply,
+    switch-display-tracks TMgr-SwitchTrackContextReply,
+    track-attr-values TMgr-TrackAttrValueReply,
+    blast-tracks TMgr-BlastRIDReply,
+    create-user-tracks TMgr-CreateUserTrackReply,
+    create-remote-tracks TMgr-CreateRemoteTrackReply,
+    resolve-track-items TMgr-ItemResolverReply,
+    remove-user-tracks TMgr-RemoveUserTrackReply,
+    retrieve-tracksets TMgr-RetrieveTracksetReply,
+    create-trackset TMgr-CreateTracksetReply,
+    rename-trackset TMgr-RenameMyNCBICollectionReply,
+    supported-assemblies TMgr-SupportedAssembliesReply
+}
+
+TMgr-GenomeContext ::= CHOICE {
+    assembly TMgr-AssemblySpec,
+    sequence Seq-id,
+    refseqgene NULL,
+    all NULL,
+    assembly-and-sequence SEQUENCE {
+      assembly TMgr-AssemblySpec,
+      sequence Seq-id
+    }
+}
+
+TMgr-ClientInfo ::= SEQUENCE {
+    client-name VisibleString,
+    context VisibleString OPTIONAL,
+    inhouse BOOLEAN DEFAULT FALSE,
+    context-attrs SET OF TMgr-AttrSpec OPTIONAL
+    --permission keys etc
+}
+
+TMgr-TrackACL-Authorization ::= SEQUENCE {
+    access-level TMgr-ACL-AccessLevel OPTIONAL,
+    access-key VisibleString OPTIONAL
+}
+
+TMgr-DisplayTrackRequest ::= SEQUENCE {
+    client TMgr-ClientInfo,
+    genome-context TMgr-GenomeContext,
+    attrs SET OF TMgr-AttrSpec OPTIONAL,
+    identity TMgr-Identity OPTIONAL,
+    authorization TMgr-TrackACL-Authorization OPTIONAL,
+    flags SEQUENCE {
+        include-stats BOOLEAN DEFAULT FALSE,
+        include-default-tracks BOOLEAN DEFAULT FALSE,
+        include-track-items BOOLEAN DEFAULT FALSE,
+        expanded-rid-details BOOLEAN DEFAULT FALSE,
+        include-track-hubs BOOLEAN DEFAULT FALSE,
+        include-TMS-tracks BOOLEAN DEFAULT TRUE,
+        include-user-tracks BOOLEAN DEFAULT TRUE,
+        include-remote-tracks BOOLEAN DEFAULT TRUE,
+        use-multiple-containers BOOLEAN DEFAULT FALSE
+    } OPTIONAL
+}
+
+TMgr-DisplayTrackReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    display-tracks SET OF TMgr-DisplayTrack OPTIONAL,
+    blast-tracks SET OF TMgr-BlastRIDDetail OPTIONAL,
+    user-tracks SET OF TMgr-DisplayTrack OPTIONAL,
+    remote-tracks SET OF TMgr-DisplayTrack OPTIONAL,
+    hubs SET OF TMgr-DisplayTrack OPTIONAL
+}
+
+TMgr-DTrackId ::= Dbtag
+TMgr-DHubId ::= Dbtag
+
+TMgr-SeqTrackIdRequest ::= SEQUENCE {
+    seq-accession VisibleString
+}
+
+TMgr-SeqTrackIdReply ::= SEQUENCE {
+    status TMgr-Status,
+    messages SET OF TMgr-Message OPTIONAL,
+    dtrack-id TMgr-DTrackId OPTIONAL
+}
+
+TMgr-SwitchTrackContextRequest ::= SEQUENCE {
+    client TMgr-ClientInfo,
+    new-genome-context TMgr-GenomeContext,
+    current-dtrack-ids SET OF TMgr-DTrackId,
+    annotation-release-number INTEGER OPTIONAL
+}
+
+TMgr-SwitchTrackContextReply ::= SEQUENCE {
+    messages SET OF TMgr-Message OPTIONAL,
+    display-tracks SET OF TMgr-DisplayTrackChoice OPTIONAL
+}
+
+TMgr-TrackAttrValueRequest ::= SEQUENCE {
+    track-type-list NULL OPTIONAL,          -- request all track type names
+    attr-list TMgr-AttrRequest OPTIONAL,    -- request attributes associated
+                                            -- with all or some track types
+    value-list TMgr-ValueRequest OPTIONAL   -- request values associated with
+                                            -- attribute list
+}
+
+TMgr-AttrRequest ::= CHOICE {
+    all-attrs NULL,                         -- request all attributes
+    track-type-list SET OF VisibleString    -- request attributes associated
+                                            -- with track types in list
+}
+
+TMgr-ValueRequest ::= SET OF VisibleString  -- list of attributes to return
+                                            -- values for
+
+TMgr-TrackAttrValueReply ::= SEQUENCE {
+    track-type-list SET OF VisibleString OPTIONAL,   -- list of track types
+    attr-list TMgr-AttrReply OPTIONAL,
+    value-list SET OF TMgr-AttrValueReply OPTIONAL
+}
+
+TMgr-AttrReply ::= CHOICE {
+    all-attrs SET OF VisibleString,             -- list of attributes
+    track-attr-list SET OF TMgr-TrackAttributes
+}
+
+TMgr-TrackAttributes ::= SEQUENCE {
+    track-name VisibleString,        -- track type name
+    attributes SET OF VisibleString  -- list of attributes associated with track type name
+}
+
+TMgr-AttrValueReply ::= SEQUENCE {
+    attr-name VisibleString,
+    value-list SET OF VisibleString
+}
+
+TMgr-SwitchTrackExceptionCode ::= INTEGER {
+    track-not-found (0), -- corresponding track not found in new genome context
+    other (255)
+}
+
+TMgr-SwitchTrackException ::= SEQUENCE {
+    dtrack-id TMgr-DTrackId,
+    code TMgr-SwitchTrackExceptionCode OPTIONAL
+}
+
+TMgr-AssemblySpec ::= CHOICE {
+    name SEQUENCE {
+        tax-id INTEGER,
+        name VisibleString
+    },
+    accession VisibleString,
+    all-assemblies NULL
+}
+
+TMgr-AttrSpec ::= SEQUENCE {
+    key VisibleString,
+    value UTF8String
+}
+
+TMgr-Assembly ::= SEQUENCE {
+    accession VisibleString,
+    name UTF8String,
+    short-name UTF8String OPTIONAL,
+    description UTF8String OPTIONAL,
+    is-complete BOOLEAN OPTIONAL
+}
+
+TMgr-Attribute ::= SEQUENCE {
+    key VisibleString,
+    value UTF8String
+}
+
+---
+--- Meta data for TMS, TMSUser, TMSRemote (tracks and hubs)
+---
+TMgr-DisplayTrack ::= SEQUENCE {
+    -- hub-ids, tms-ids, user-ids, remote-ids and must be distinguishable
+    dtrack-id TMgr-DTrackId,
+    name UTF8String,
+    attrs SET OF TMgr-Attribute OPTIONAL,
+    seqs SET OF TMgr-DatasetItemSeq OPTIONAL,
+    items SET OF TMgr-DatasetItem OPTIONAL
+}
+
+TMgr-DatasetItem ::= SEQUENCE {
+    name UTF8String,
+    attrs SET OF TMgr-Attribute OPTIONAL,
+    seqs SET OF TMgr-DatasetItemSeq OPTIONAL
+}
+
+TMgr-DatasetItemSeq ::= SEQUENCE {
+    seq-id Seq-id,
+    counts TMgr-AnnotCounts OPTIONAL,
+    seq-id2 Seq-id OPTIONAL
+}
+
+TMgr-DisplayTrackChoice ::= CHOICE {
+    track TMgr-DisplayTrack,
+    switch-exception TMgr-SwitchTrackException
+}
+
+TMgr-MessageLevel ::= INTEGER {
+    warning (0),
+    error (1),
+    info (2),
+    diagnostic (3)
+}
+
+TMgr-Message ::= SEQUENCE {
+    level TMgr-MessageLevel,
+    message VisibleString
+}
+
+TMgr-BlastRIDRequest ::= SEQUENCE {
+    rid VisibleString
+}
+
+TMgr-BlastQuerySeq ::= SEQUENCE {
+    query-number INTEGER,
+    label VisibleString -- accession or seq-id string
+}
+
+TMgr-BlastRIDDetail ::= SEQUENCE {
+    rid VisibleString,
+    title VisibleString OPTIONAL,
+    query-sequences SEQUENCE OF TMgr-BlastQuerySeq OPTIONAL,
+    created INTEGER OPTIONAL, -- seconds since unix epoch, 00:00:00 UTC on 1 January 1970
+    database VisibleString OPTIONAL,
+    program VisibleString OPTIONAL
+}
+
+TMgr-BlastRIDReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    rid-detail TMgr-BlastRIDDetail OPTIONAL
+}
+
+TMgr-CreateUserDataItem ::= SEQUENCE {
+    datakey VisibleString,
+    seqids SET OF VisibleString,
+    attrs SET OF TMgr-Attribute OPTIONAL,
+    seqs SET OF TMgr-DatasetItemSeq OPTIONAL
+}
+
+TMgr-IdentityId ::= SEQUENCE {
+    id VisibleString,
+    id-type TMgr-IdentityIdType
+}
+
+TMgr-IdentityIdType ::= INTEGER {
+    myncbi-id (0),
+    ncbi-sid (1)
+}
+
+TMgr-Identity ::= SEQUENCE {
+    ids SET OF TMgr-IdentityId
+}
+
+TMgr-ACL-AccessLevel ::= INTEGER {
+    public (0),
+    private (1),
+    ncbi (2),
+    nih (3)
+}
+
+TMgr-TrackACL-Permission ::= SEQUENCE {
+    access-level TMgr-ACL-AccessLevel DEFAULT public,
+    access-key VisibleString OPTIONAL
+}
+
+TMgr-CreateUserTrackRequest ::= SEQUENCE {
+    identity TMgr-Identity,
+    track-name VisibleString OPTIONAL, -- User-provided track name
+    track-descr VisibleString OPTIONAL, -- User-provided data description
+    assembly-acc VisibleString OPTIONAL,
+    attrs SET OF TMgr-Attribute OPTIONAL,
+    data-items SET OF TMgr-CreateUserDataItem,
+    access-perms TMgr-TrackACL-Permission
+}
+
+TMgr-CreateUserTrackReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    display-tracks SET OF TMgr-DisplayTrack OPTIONAL
+}
+
+---
+--- Used to remove user tracks, remote tracks and hubs
+---
+TMgr-RemoveUserTrackRequest ::= SEQUENCE {
+    identity TMgr-Identity,
+    dtrack-ids SET OF TMgr-DTrackId,
+    hub-id TMgr-DHubId OPTIONAL,
+    client TMgr-ClientInfo OPTIONAL
+}
+
+TMgr-TypeTrackType ::= INTEGER {
+    hub (0),
+    altGraphX(2),
+    bam(3),
+    bed(4),
+    bed5FloatScore(5),
+    bedGraph(6),
+    bedRnaElements(7),
+    bigBarChart(8),
+    bigBed(9),
+    bigPsl(10),
+    bigChain(11),
+    bigMaf(12),
+    bigWig(13),
+    broadPeak(14),
+    chain(15),
+    clonePos(16),
+    coloredExon(17),
+    ctgPos(18),
+    downloadsOnly(19),
+    encodeFiveC(20),
+    expRatio(21),
+    factorSource(22),
+    genePred(23),
+    gvf(24),
+    ld2(25),
+    narrowPeak(26),
+    netAlign(27),
+    peptideMapping(28),
+    psl(29),
+    rmsk(30),
+    snake(31),
+    vcfTabix(32),
+    wig(33),
+    wigMaf(34),
+    multiWig(35)
+}
+
+TMgr-Hub ::= SEQUENCE {
+    hub VisibleString, -- hub entry from hub.txt file
+    short-label VisibleString, -- shortLabel entry from hub.txt file
+    long-label VisibleString,  -- longLabel entry from hub.txt file
+    assembly-db-name SET OF VisibleString, --- genome entries in genomes.txt file
+    trackdb-url VisibleString OPTIONAL --- trackDb entry in genomes.txt file associated with assembly_acc
+}
+
+TMgr-HubTrack ::= SEQUENCE {
+    short-label VisibleString, -- shortLabel entry from trackDB.txt file
+    long-label VisibleString,  -- longLabel entry from trackDB.txt file
+    hub-id TMgr-DHubId--- used to associate a track with a hub   
+}
+
+
+---
+--- Used to create remote tracks, hubs and tracks in hubs
+---
+TMgr-CreateRemoteTrackRequest ::= SEQUENCE {
+    -- common to hubs and tracks
+    identity TMgr-Identity, -- identity of user
+    assembly-acc VisibleString, --  NCBI assembly accession
+    url VisibleString, -- url to track data or hub.txt
+    type TMgr-TypeTrackType,
+
+    -- track specific, i.e., when type != hub
+    track-name VisibleString OPTIONAL,
+    index-url VisibleString OPTIONAL, -- for tracks only, not hubs
+    
+    -- Hub Track Database specific fields
+    track-db CHOICE {
+        hub TMgr-Hub,
+        track TMgr-HubTrack
+    } OPTIONAL,
+
+    attrs SET OF TMgr-Attribute OPTIONAL, -- future use
+    client TMgr-ClientInfo OPTIONAL       -- Client information
+}
+
+---
+--- Used to return created hubs, remote tracks, and tracks in hubs
+---
+TMgr-CreateRemoteTrackReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    display-tracks SET OF TMgr-DisplayTrack OPTIONAL
+}
+
+TMgr-Status ::= INTEGER {
+    success (0),
+    failure (1)
+}
+
+---
+--- Response to removing user tracks, remote tracks, hubs and tracks in hubs
+---
+TMgr-RemoveUserTrackReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL
+}
+
+TMgr-ItemResolverRequest ::= SEQUENCE {
+    dtrack-ids SET OF TMgr-DTrackId,
+    client TMgr-ClientInfo,
+    genome-context TMgr-GenomeContext,
+    attrs SET OF TMgr-AttrSpec OPTIONAL,
+    sequence Seq-id OPTIONAL, -- resolve specifically for this top-level sequence
+    flags SEQUENCE {
+        include-stats BOOLEAN DEFAULT FALSE
+    } OPTIONAL
+}
+
+TMgr-TrackItems ::= SEQUENCE {
+    dtrack-id TMgr-DTrackId,
+    data SET OF TMgr-DatasetItem
+}
+
+TMgr-ItemResolverReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    track-items SET OF TMgr-TrackItems OPTIONAL
+}
+
+TMgr-AnnotType ::= INTEGER {
+    total (0),
+    feat (1),
+    feat-gene (100),
+    feat-cdregion (101),
+    feat-prot (102),
+    feat-rna (103),
+    feat-imp (104),
+    feat-region (105),
+    feat-clone (106),
+    feat-variation (107),
+    feat-user (108),
+    seq-table (2),
+    graph (3),
+    align (4),
+    ids (5),
+    locs (6)
+}
+
+TMgr-PositionStats ::= SEQUENCE {
+    min INTEGER,
+    max INTEGER
+}
+
+TMgr-LengthStats ::= SEQUENCE {
+    min INTEGER,
+    max INTEGER,
+    mean INTEGER OPTIONAL
+}
+
+TMgr-TypeStat ::= SEQUENCE {
+    type TMgr-AnnotType,
+    count INTEGER,
+    length-stats TMgr-LengthStats OPTIONAL,
+    position-stats TMgr-PositionStats OPTIONAL
+}
+
+TMgr-AnnotCounts ::= SEQUENCE {
+    counts SET OF TMgr-TypeStat
+}
+
+TMgr-TrackSetType ::= INTEGER {
+    tms (0),
+    myncbi-collection (1)
+}
+
+TMgr-TrackSet ::= SEQUENCE {
+    type TMgr-TrackSetType,
+    id VisibleString, -- internal identifier
+    genome-context TMgr-GenomeContext,
+    name UTF8String,
+    description UTF8String OPTIONAL,
+    tracks SEQUENCE OF TMgr-DisplayTrack
+}
+
+TMgr-RetrieveTracksetRequest ::= SEQUENCE {
+    genome-context TMgr-GenomeContext,
+    identity TMgr-Identity OPTIONAL
+}
+
+TMgr-RetrieveTracksetReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    tracksets SET OF TMgr-TrackSet OPTIONAL,
+    flags SEQUENCE {
+        include-track-items BOOLEAN DEFAULT FALSE
+    } OPTIONAL
+}
+
+TMgr-CreateTracksetRequest ::= SEQUENCE {
+    identity TMgr-Identity OPTIONAL,
+    genome-context TMgr-GenomeContext,
+    name UTF8String,
+    description UTF8String OPTIONAL,
+    tracks SEQUENCE OF TMgr-DTrackId
+}
+
+TMgr-CreateTracksetReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    status TMgr-Status,
+    trackset-id VisibleString OPTIONAL
+}
+
+TMgr-RenameMyNCBICollectionRequest ::= SEQUENCE {
+    collection-id VisibleString,
+    name VisibleString
+}
+
+TMgr-RenameMyNCBICollectionReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    status TMgr-Status
+}
+
+TMgr-SupportedAssembliesRequest ::= CHOICE {
+    assembly-acc VisibleString
+    --tax-id INTEGER (0..MAXINT)
+}
+
+TMgr-SupportedAssembliesReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    reply CHOICE {
+        assembly-acc BOOLEAN
+        --tax-id SET OF VisibleString
+    } OPTIONAL
+}
+
+END
+

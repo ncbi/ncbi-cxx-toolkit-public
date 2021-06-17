@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_web SHARED)
+  NCBI_hosts_projects(
+    html/html
+    cgi/cgi
+    misc/cgi_redirect/cgi_redirect
+  )
+  NCBI_add_definitions(NCBI_WEB_EXPORTS)
+NCBI_end_lib()

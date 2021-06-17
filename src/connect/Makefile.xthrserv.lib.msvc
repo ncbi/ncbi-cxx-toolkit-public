@@ -1,0 +1,3 @@
+[AddToProject]
+HeadersInInclude = threaded_server.hpp server.hpp server_monitor.hpp server_connection.hpp thread_pool_for_server.hpp
+HeadersInSrc = connection_pool.hpp

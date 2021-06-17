@@ -1,0 +1,28 @@
+# Do not make executable -- source it instead!
+
+# Used to set default test data location (Unix only)
+# in the test scripts if it runs outside of "make check".
+#
+# Makefile.<testname>.app:
+#     CHECK_COPY = <testname>.sh ../../check/ncbi_test_data
+#
+# <testname>.sh:
+# . ./ncbi_test_data
+
+if test -z "$NCBI_TEST_DATA"; then
+    case `uname -s` in
+       CYGWIN* )
+           NCBI_TEST_DATA=//snowman/win-coremake/Scripts/test_data
+           ;;
+       Darwin )
+           if test -d /am/ncbiapdata/test_data; then
+               NCBI_TEST_DATA=/am/ncbiapdata/test_data
+           else
+               NCBI_TEST_DATA=/Volumes/ncbiapdata/test_data
+           fi
+           ;;
+       *)
+           NCBI_TEST_DATA=/am/ncbiapdata/test_data
+           ;;
+    esac
+fi

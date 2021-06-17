@@ -1,0 +1,33 @@
+# $Id$
+
+# Adjust ICC flags to avoid problematic references to proprietary functions
+# or outright compilation errors.
+
+CORE_SRCDIR ?= $(srcdir)
+
+ifeq "$(COMPILER)-$(DEBUG_SFX)" "icc-Release"
+  $(CORE)blast_aalookup.o: $(CORE_SRCDIR)/$(CORE)blast_aalookup.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-pow $< -o $@ \
+	    $(CC_FILTER)
+  $(CORE)blast_filter.o: $(CORE_SRCDIR)/$(CORE)blast_filter.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-strcat $< -o $@ \
+	    $(CC_FILTER)
+  $(CORE)blast_hits.o $(CORE)blast_parameters.o: %.o: $(CORE_SRCDIR)/%.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-exp -fno-builtin-log \
+	    $< -o $@ $(CC_FILTER)
+  $(CORE)blast_kappa.o: $(CORE_SRCDIR)/$(CORE)blast_kappa.c
+	$(CC_WRAPPER) $(CC) $(filter-out -ip,$(CFLAGS_ALL)) -fno-builtin-log \
+	    $< -o $@ $(CC_FILTER)
+  $(CORE)blast_psi_priv.o: $(CORE_SRCDIR)/$(CORE)blast_psi_priv.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL:-ax%=) -fno-builtin-exp \
+	    -fno-builtin-log -fno-builtin-pow $< -o $@ $(CC_FILTER)
+  $(CORE)blast_seg.o $(CORE)blast_traceback.o: %.o: $(CORE_SRCDIR)/%.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-log \
+	    $< -o $@ $(CC_FILTER)
+  $(CORE)blast_stat.o: $(CORE_SRCDIR)/$(CORE)blast_stat.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-exp -fno-builtin-log \
+	    -fno-builtin-strncat -fno-builtin-strtok $< -o $@ $(CC_FILTER)
+  $(CORE)ncbi_math.o: $(CORE_SRCDIR)/$(CORE)ncbi_math.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-exp -fno-builtin-log \
+	    -fno-builtin-sin $< -o $@ $(CC_FILTER)
+endif

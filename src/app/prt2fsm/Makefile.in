@@ -1,0 +1,14 @@
+# $Id$
+#
+# Makefile:  for Multipattern Search Code Generator
+# Author: Sema
+#
+
+APP_PROJ = prt2fsm
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+REQUIRES = LIBXSLT 
+
+WATCHERS = kachalos

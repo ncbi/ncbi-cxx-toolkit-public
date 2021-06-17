@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(seqsub_split)
+  NCBI_sources(ssub_fork)
+  NCBI_uses_toolkit_libraries(submit)
+  NCBI_project_watchers(foleyjp)
+NCBI_end_app()
+

@@ -1,0 +1,10 @@
+# $Id$
+# Meta-makefile("objtools" project)
+#################################
+    
+REQUIRES = objects LIBXML LIBXSLT
+ 
+EXPENDABLE_APP_PROJ = test-shift 
+   
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

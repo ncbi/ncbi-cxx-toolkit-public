@@ -1,0 +1,13 @@
+# $Id$
+
+NCBI_begin_app(collection_scores_unit_test)
+  NCBI_sources(collection_scores_unit_test)
+  NCBI_uses_toolkit_libraries(xalgoalignutil)
+
+  NCBI_set_test_assets(data)
+  NCBI_add_test(collection_scores_unit_test -input-binary -seq-entry data/collection_score_entries.asnb -aligns data/collection_score_blast.asnb)
+
+  NCBI_project_watchers(whlavina)
+
+NCBI_end_app()
+

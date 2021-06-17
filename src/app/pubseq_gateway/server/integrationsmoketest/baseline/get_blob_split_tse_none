@@ -1,0 +1,24 @@
+[
+{
+    "reply": "BlobInfo",
+    "id": {
+        "id": "4.509567",
+        "last_modified": 1489032618836
+    },
+    "compression": "gzip",
+    "format": "asn.1",
+    "storage_size": 147998,
+    "size": 685243,
+    "is_dead": false,
+    "is_suppressed": false,
+    "is_withdrawn": false,
+    "hup_release_date": "",
+    "owner": 18,
+    "original_load_date": "07/31/1998 22:13:14",
+    "class": "not-set",
+    "division": "ROD",
+    "username": "cavanaug",
+    "id2_info": "25.507134.14",
+    "n_chunks": 1
+}
+]

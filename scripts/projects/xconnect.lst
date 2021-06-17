@@ -1,0 +1,9 @@
+corelib$
+corelib/test
+util$
+util/bitset$
+util/compress
+util/test
+connect$
+connect/ext
+connect/test

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xloader_genbank SHARED)
+  NCBI_hosts_projects(
+    objtools/data_loaders/genbank/ncbi_xloader_genbank
+  )
+  NCBI_add_definitions(NCBI_XLOADER_GENBANK_EXPORTS)
+NCBI_end_lib()

@@ -1,0 +1,44 @@
+[-]
+_export = NCBI_ID2_EXPORT
+
+[ID2S-Seq-descr-Info]
+type-mask._type = unsigned
+
+[ID2S-Chunk-Id]
+_type = int
+
+[ID2S-Sequence-Piece]
+start._type = TSeqPos
+
+[ID2S-Gi-Interval]
+start._type = TSeqPos
+length._type = TSeqPos
+gi._type = ncbi::TGi
+gi._storage_type = ncbi::TIntId
+
+[ID2S-Interval]
+start._type = TSeqPos
+length._type = TSeqPos
+
+[ID2S-Seq-feat-Ids-Info]
+local-ids._type = vector
+
+[ID2S-Gi-Ints]
+gi._type = ncbi::TGi
+gi._storage_type = ncbi::TIntId
+
+[ID2S-Seq-loc]
+whole-gi._type = ncbi::TGi
+whole-gi._storage_type = ncbi::TIntId
+
+[ID2S-Gi-Range]
+start._type = ncbi::TGi
+start._storage_type = ncbi::TIntId
+
+[ID2S-Bioseq-ids]
+E.gi._type = ncbi::TGi
+E.gi._storage_type = ncbi::TIntId
+
+[ID2S-Chunk-data]
+id.gi._type = ncbi::TGi
+id.gi._storage_type = ncbi::TIntId

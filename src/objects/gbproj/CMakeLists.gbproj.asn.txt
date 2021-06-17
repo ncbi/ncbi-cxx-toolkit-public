@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(gbproj)
+  NCBI_dataspecs(gbproj.asn)
+  NCBI_uses_toolkit_libraries(submit xconnect)
+NCBI_end_lib()
+

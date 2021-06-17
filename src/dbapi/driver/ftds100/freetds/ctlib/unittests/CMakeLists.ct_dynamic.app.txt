@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(ct100_ct_dynamic)
+  NCBI_sources(ct_dynamic common)
+  NCBI_add_test(test-ct100 ct100_ct_dynamic)
+NCBI_end_app()
+

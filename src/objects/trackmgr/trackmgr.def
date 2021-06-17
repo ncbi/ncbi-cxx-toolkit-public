@@ -1,0 +1,22 @@
+[-]
+_export = NCBI_TRACKMGR_EXPORT
+_extra_headers = objects/trackmgr/trackmgr_export.h
+clients = trackmgr_client
+
+[trackmgr_client]
+class = CTrackMgrClient
+request = TMgr-Request
+reply = TMgr-Reply
+
+[TMgr-PositionStats]
+min._type = TSeqPos
+max._type = TSeqPos
+
+[TMgr-LengthStats]
+min._type = TSeqPos
+max._type = TSeqPos
+mean._type = TSeqPos
+
+[TMgr-BlastRIDDetail]
+created._type = time_t
+

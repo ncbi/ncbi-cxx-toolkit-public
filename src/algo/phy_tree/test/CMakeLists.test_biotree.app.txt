@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_biotree)
+  NCBI_sources(test_biotree)
+  NCBI_uses_toolkit_libraries(taxon1 xalgophytree)
+  NCBI_project_watchers(kuznets)
+NCBI_end_app()
+

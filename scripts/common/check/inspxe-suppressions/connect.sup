@@ -1,0 +1,161 @@
+suppression = {
+	name = "::connect() - leaked handle"
+	type = {kernel_handle_leak}
+	stacks = {
+		allocation={
+			...;
+			func=connect;
+		}
+	}
+}
+suppression = {
+	name = "s_CORE_MT_Lock_default_handler - leaked handle"
+	type = {kernel_handle_leak}
+	stacks = {
+		allocation={
+			!!!;
+			src=ncbi_core.c,func=s_CORE_MT_Lock_default_handler;
+		}
+	}
+}
+suppression = {
+	name = "ConnNetInfo_Create/Clone (1)"
+	type = {uninitialized_memory_access}
+	stacks = {
+		allocation={
+			!!!;
+			src=ncbi_connutil.c,func=ConnNetInfo_Create;
+		}
+		{
+			!!!;
+			src=ncbi_connutil.c,func=ConnNetInfo_Clone;
+		}
+	}
+}
+suppression = {
+	name = "ConnNetInfo_Create/Clone (2)"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		allocation={
+			!!!;
+			src=ncbi_connutil.c,func=ConnNetInfo_Create;
+		}
+		{
+			!!!;
+			src=ncbi_connutil.c,func=ConnNetInfo_Clone;
+		}
+	}
+}
+suppression = {
+	name = "ConnNetInfo_SetupStandardArgs/sprintf - 1"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=sprintf;
+			func=ConnNetInfo_SetupStandardArgs;
+		}
+		allocation={
+			...;
+			func=ConnNetInfo_SetupStandardArgs;
+		}
+	}
+}
+suppression = {
+	name = "ConnNetInfo_SetupStandardArgs/sprintf - 2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=sprintf;
+			func=ConnNetInfo_SetupStandardArgs;
+		}
+		allocation={
+			...;
+			func=assign,src=xstring;
+		}
+	}
+}
+suppression = {
+	name = "ConnNetInfo_SetupStandardArgs - all"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			func=ConnNetInfo_SetupStandardArgs;
+		}
+	}
+}
+suppression = {
+	name = "x_FixupUserHeader/sprintf - 1"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=sprintf;
+			func=x_FixupUserHeader,src=ncbi_http_connector.c;
+		}
+		allocation={
+			...;
+		}
+	}
+}
+suppression = {
+	name = "x_FixupUserHeader/sprintf - 2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=sprintf;
+			func=x_FixupUserHeader,src=ncbi_http_connector.c;
+		}
+	}
+}
+suppression = {
+	name = "g_CORE_Sprintf/_stdio_common_vsprintf()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL;
+			func=g_CORE_Sprintf,src=ncbi_priv.c;
+		}
+	}
+}
+suppression = {
+	name = "gnutls_handshake() non-important (only DLL build)"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		allocation={
+			!!!;
+			mod=test_netstorage.exe,func=s_GnuTlsOpen;
+		}
+		{
+			!!!;
+			mod=libgnutls-28.dll,func=gnutls_psk_set_server_params_function;
+		}
+	}
+}
+
+suppression = {
+	name = "gethostbyname() - 1"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		allocation={
+			...;
+			mod=WS2_32.dll,func=gethostbyname;
+		}
+	}
+}
+
+suppression = {
+	name = "gethostbyname() - 2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=gethostname;
+			func=s_gethostname,src=ncbi_socket.c;
+		}
+	}
+}

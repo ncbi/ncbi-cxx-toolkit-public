@@ -1,0 +1,94 @@
+ Seq-align ::= {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 35573
+        },
+        {
+          id str "num_ident",
+          value int 35578
+        },
+        {
+          id str "num_mismatch",
+          value int 1
+        },
+        {
+          id str "common_component",
+          value int 0
+        },
+        {
+          id str "filter_score",
+          value int 0
+        },
+        {
+          id str "for_remapping",
+          value int 2
+        },
+        {
+          id str "rank",
+          value int 1
+        },
+        {
+          id str "bit_score",
+          value real { 662051, 10, -1 }
+        },
+        {
+          id str "e_value",
+          value real { 0, 10, 0 }
+        },
+        {
+          id str "pct_identity_gap",
+          value real { 999944, 10, -4 }
+        },
+        {
+          id str "pct_identity_ungap",
+          value real { 999972, 10, -4 }
+        },
+        {
+          id str "pct_identity_gapopen_only",
+          value real { 999944, 10, -4 }
+        },
+        {
+          id str "pct_coverage",
+          value real { 999972, 10, -4 }
+        },
+        {
+          id str "pct_coverage_hiqual",
+          value real { 999972, 10, -4 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 3,
+        ids {
+          gi 347582623,
+          genbank {
+            accession "LBHZ01000184",
+            version 1
+          }
+        },
+        starts {
+          8731,
+          2363324,
+          8730,
+          -1,
+          0,
+          2390173
+        },
+        lens {
+          26849,
+          1,
+          8730
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+  }

@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(unit_test_pslwriter)
+  NCBI_sources(unit_test_pslwriter)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xobjwrite)
+  NCBI_set_test_assets(pslwriter_test_cases)
+  NCBI_add_test()
+  NCBI_project_watchers(ludwigf)
+NCBI_end_app()

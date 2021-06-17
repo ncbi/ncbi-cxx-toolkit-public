@@ -1,0 +1,14 @@
+corelib$
+connect$
+connect/mbedtls
+./include/util/bitset$
+util$
+util/checksum
+util/cache$
+util/regexp$
+util/xregexp$
+misc$
+misc/clog$
+misc/clog/app$
+misc/third_party
+misc/third_party_static

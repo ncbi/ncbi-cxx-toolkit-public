@@ -1,0 +1,6 @@
+# $Id$
+
+APP_PROJ = tableval
+srcdir = @srcdir@
+
+include @builddir@/Makefile.meta

@@ -1,0 +1,18 @@
+# $Id$
+
+APP_PROJ = igblastp igblastn
+
+REQUIRES = objects algo
+
+USR_PROJ = edit_imgt_file
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+.PHONY: all $(APP_PROJ)
+
+igblastn:
+	${MAKE} ${MFLAGS} -f Makefile.igblastn_app
+igblastp:
+	${MAKE} ${MFLAGS} -f Makefile.igblastp_app
+

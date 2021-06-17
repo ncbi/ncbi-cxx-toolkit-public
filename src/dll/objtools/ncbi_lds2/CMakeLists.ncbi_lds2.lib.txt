@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_lds2 SHARED)
+  NCBI_hosts_projects(
+    objtools/lds2/lds2
+  )
+  NCBI_add_definitions(NCBI_LDS2_EXPORTS)
+NCBI_end_lib()

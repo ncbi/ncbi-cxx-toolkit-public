@@ -1,0 +1,23 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_seq SHARED)
+  NCBI_hosts_projects(
+    objects/seq/seq
+    objects/seqset/seqset
+    objects/seqcode/seqcode
+    objects/seqedit/seqedit
+    objects/submit/submit
+    objects/scoremat/scoremat
+    objects/blast/blast
+    objects/blast/xnetblastcli
+    objects/blastdb/blastdb
+    objects/blastxml/blastxml
+    objects/blastxml2/blastxml2
+    objects/taxon1/taxon1
+    objects/taxon3/taxon3
+    objects/variation/variation
+    objects/seqtest/seqtest
+    objects/genomecoll/genome_collection
+  )
+  NCBI_add_definitions(NCBI_SEQ_EXPORTS)
+NCBI_end_lib()

@@ -1,0 +1,12 @@
+# $Id$
+
+SRC = diff
+LIB = xdiff
+
+CPPFLAGS = $(ORIG_CPPFLAGS)
+
+WATCHERS = ivanov
+
+
+USES_LIBRARIES =  \
+    xncbi

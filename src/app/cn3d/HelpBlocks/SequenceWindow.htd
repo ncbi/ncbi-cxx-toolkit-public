@@ -1,0 +1,20 @@
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Windows Help Designer (http://www.visagesoft.com)">
+<TITLE>Sequence Window Commands</TITLE>
+</HEAD>
+<BODY>
+<H2>Sequence Window Commands</H2>
+<P>Please select a command group from the menu bar of the sequence/alignment window:</P>
+<P>&nbsp;</P>
+<UL>
+  <LI><A href="AW_View.htm">View</A>
+  <LI><A href="AW_Edit.htm">Edit</A>
+  <LI><A href="AW_Mouse.htm">Mouse mode</A>
+  <LI><A href="AW_Unaligned.htm">Unaligned
+  justification</A>
+  <LI><A
+ href="AW_Update.htm" >Imports</A></LI></UL>
+</BODY>
+</HTML>

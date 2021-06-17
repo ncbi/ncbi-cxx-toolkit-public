@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(prt2fsm)
+  NCBI_sources(prt2fsm)
+  NCBI_uses_toolkit_libraries(macro data_loaders_util)
+  NCBI_project_watchers(kachalos)
+NCBI_end_app()
+

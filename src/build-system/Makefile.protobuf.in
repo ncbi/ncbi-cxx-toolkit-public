@@ -1,0 +1,103 @@
+#
+# $Id$
+#
+# Generate source and header files from protobuf spec, typically for
+# use with gRPC.
+#
+# (NOTE: hard-wired for the C++ Toolkit directory structure.)
+#
+
+-include $(builddir)/Makefile.mk
+
+SRCDIR = $(top_srcdir)/src/$(MODULE_PATH)
+INCLUDEDIR = $(top_srcdir)/include/$(MODULE_PATH)
+
+SPEC = $(MODULE_PATH)/$(MODULE_ASN) # sic
+FILES = $(MODULE).files
+comma = ,
+# empty =
+# space = $(empty) $(empty)
+# IMPDIRS = $(subst $(space),:,$(dir $(IMPDEPS)))
+# PROTOC_FLAGS = -I$(SRCDIR):$(IMPDIRS):$(subst $(comma),:,$(MODULE_SEARCH))
+PROTOC_FLAGS = -I.:$(subst $(comma),:,$(MODULE_SEARCH))
+
+PROTOBUF_BIN = @PROTOBUF_BIN@
+GRPC_BIN = @GRPC_BIN@
+PROTOC = $(PROTOBUF_BIN)/protoc
+GRPC_CPP_PLUGIN = $(GRPC_BIN)/grpc_cpp_plugin
+
+ifneq "" "$(wildcard $(PROTOC))"
+  PROTOC_VERSION := $(lastword $(shell $(PROTOC) --version))
+endif
+VERSION_MARKER_BASE = $(MODULE).using-protoc-
+VERSION_MARKER = $(VERSION_MARKER_BASE)$(PROTOC_VERSION)
+
+CAN_MOCK := $(shell grep generate_mock_code $(GRPC_CPP_PLUGIN))
+ifneq "" "$(CAN_MOCK)"
+   MOCK_OPTION = generate_mock_code=true:
+   MOCK_HEADER = $(MODULE)_mock.grpc.pb.h
+endif
+
+GRPC_FILES = $(MODULE).grpc.pb.cc $(INCLUDEDIR)/$(MODULE).grpc.pb.h \
+             $(MOCK_HEADER:%=$(INCLUDEDIR)/%)
+
+DEPS = $(MODULE_ASN) $(PROTOC) $(MODULE).module $(IMPDEPS) $(VERSION_MARKER)
+
+all: sources
+
+all_files: sources
+
+sources: $(FILES)
+
+clean_sources:
+	-$(RM) $(FILES) *.pb.cpp *.pb.h $(VERSION_MARKER_BASE)*
+
+purge_sources:
+	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.h* \
+	    $(VERSION_MARKER_BASE)*
+
+purge_all_sources:
+	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.h* \
+	    $(VERSION_MARKER_BASE)*
+
+purge_all_files:
+	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.h*
+
+ifneq "" "$(wildcard $(PROTOC))"
+$(FILES): $(MODULE).pb.cc $(INCLUDEDIR)/$(MODULE).pb.h $(GRPC_FILES)
+	$(RM) $(MODULE).pb.cpp $(MODULE).grpc.pb.cpp
+	@$(TOUCH) $@
+else
+$(FILES): $(GRPC_FILES)
+	@echo Warning: Skipping code generation for $(MODULE_ASN) >&2
+	@echo because protoc is unavailable here. >&2
+	@$(TOUCH) $(MODULE).pb.cc $(INCLUDEDIR)/$(MODULE).pb.h
+endif
+
+$(MODULE).pb.cc $(MODULE).pb.h: $(DEPS)
+	cd $(top_srcdir)/src  &&  $(PROTOC) $(PROTOC_FLAGS) --cpp_out=. $(SPEC)
+
+ifneq "" "$(wildcard $(GRPC_CPP_PLUGIN))"
+$(MODULE).grpc.pb.cc $(MODULE).grpc.pb.h $(MOCK_HEADER): \
+    $(DEPS) $(GRPC_CPP_PLUGIN)
+	cd $(top_srcdir)/src  &&  $(PROTOC) $(PROTOC_FLAGS) \
+            --grpc_out=$(MOCK_OPTION). \
+	    --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN) $(SPEC)
+else
+$(GRPC_FILES):
+	@$(TOUCH) $(GRPC_FILES)
+endif
+
+$(INCLUDEDIR)/%.pb.h: %.pb.cc # not .h, to avoid duplicate protoc runs
+	$(MKDIR) -p $(INCLUDEDIR)
+	/bin/mv -f $*.pb.h $@
+
+$(INCLUDEDIR)/%_mock.grpc.pb.h: $(INCLUDEDIR)/%.grpc.pb.h
+	/bin/mv -f $*_mock.grpc.pb.h $@
+
+$(MODULE).module:
+	@$(TOUCH) $@
+
+$(VERSION_MARKER): $(builddir)/Makefile.protobuf
+	@-$(RM) $(VERSION_MARKER_BASE)*
+	@$(TOUCH) $@

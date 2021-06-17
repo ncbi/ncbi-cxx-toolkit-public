@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_lib(cdd_access SHARED)
+  NCBI_dataspecs(cdd_access.asn)
+  NCBI_sources(cdd_client)
+  NCBI_add_definitions(NCBI_CDD_ACCESS_EXPORTS)
+  NCBI_uses_toolkit_libraries(id2 xconnect)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()
+

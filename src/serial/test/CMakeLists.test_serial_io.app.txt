@@ -1,0 +1,13 @@
+# $Id$
+
+NCBI_begin_app(test_serial_io)
+  NCBI_sources(test_serial_io)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(test_boost xser xcompress xconnect)
+
+  NCBI_set_test_timeout(2000)
+  NCBI_add_test()
+
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()
+

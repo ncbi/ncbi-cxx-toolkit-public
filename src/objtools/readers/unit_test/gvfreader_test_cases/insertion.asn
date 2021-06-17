@@ -1,0 +1,421 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Track Data",
+      data {
+      }
+    },
+    user {
+      type str "gvf-import-pragmas",
+      data {
+        {
+          label str "gvf-version",
+          data str "1.06"
+        },
+        {
+          label str "feature-ontology",
+          data str "www.sequenceontology.org/resources/obo_files/current_relea
+se.obo"
+        },
+        {
+          label str "genome-build",
+          data str "NCBI B36.3"
+        },
+        {
+          label str "sequence-region",
+          data str "chr16 1 88827254"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "samtools",
+          tag str "ID1"
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq this NULL
+                  }
+                },
+                observation asserted
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state homozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 49291141,
+        strand plus,
+        id local str "chr16"
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "insertion"
+          },
+          {
+            label str "source",
+            data str "samtools"
+          },
+          {
+            label str "id",
+            data str "ID1"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "T"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "samtools",
+          tag str "ID2"
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq this NULL
+                  }
+                },
+                observation asserted
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state homozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 49291241,
+        strand plus,
+        id local str "chr16"
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "insertion"
+          },
+          {
+            label str "source",
+            data str "samtools"
+          },
+          {
+            label str "id",
+            data str "ID2"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "T,T"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "samtools",
+          tag str "ID3"
+        },
+        data set {
+          type package,
+          variations {
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq this NULL
+                  }
+                },
+                observation 5
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 49291341,
+        strand plus,
+        id local str "chr16"
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "insertion"
+          },
+          {
+            label str "source",
+            data str "samtools"
+          },
+          {
+            label str "id",
+            data str "ID3"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "T,-"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "samtools",
+          tag str "ID4"
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq this NULL
+                  }
+                },
+                observation asserted
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 49291441,
+        strand plus,
+        id local str "chr16"
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "insertion"
+          },
+          {
+            label str "source",
+            data str "samtools"
+          },
+          {
+            label str "id",
+            data str "ID4"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "T,A"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "samtools",
+          tag str "ID5"
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq this NULL
+                  }
+                },
+                observation asserted
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state homozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 3,
+                      seq-data iupacna "TTT"
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 49291541,
+        strand plus,
+        id local str "chr16"
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "insertion"
+          },
+          {
+            label str "source",
+            data str "samtools"
+          },
+          {
+            label str "id",
+            data str "ID5"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "TTT"
+          }
+        }
+      }
+    }
+  }
+}

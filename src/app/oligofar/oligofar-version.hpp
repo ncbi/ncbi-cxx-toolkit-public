@@ -1,0 +1,3 @@
+#ifndef OLIGOFAR_VERSION
+#define OLIGOFAR_VERSION "3.101.18" 
+#endif

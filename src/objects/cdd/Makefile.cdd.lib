@@ -1,0 +1,7 @@
+LIB = cdd
+SRC = cdd__ cdd___
+
+DLL_LIB = cn3d scoremat
+
+USES_LIBRARIES =  \
+    cn3d scoremat

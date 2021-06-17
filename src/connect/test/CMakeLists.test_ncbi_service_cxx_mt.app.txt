@@ -1,0 +1,18 @@
+# $Id$
+
+NCBI_begin_app(test_ncbi_service_cxx_mt)
+
+  NCBI_sources(test_ncbi_service_cxx_mt)
+  NCBI_uses_toolkit_libraries(test_mt xconnect)
+
+  NCBI_begin_test(test_ncbi_service_cxx_mt)
+    NCBI_set_test_command(test_ncbi_service_cxx_mt.sh)
+    NCBI_set_test_assets(test_ncbi_service_cxx_mt.sh test_ncbi_service_cxx_mt.ini)
+    NCBI_set_test_requires(in-house-resources)
+    NCBI_set_test_timeout(60)
+  NCBI_end_test()
+
+  NCBI_project_watchers(lavr)
+
+NCBI_end_app()
+

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_id1_client)
+  NCBI_sources(test_id1_client)
+  NCBI_uses_toolkit_libraries(id1cli)
+  NCBI_project_watchers(ucko)
+NCBI_end_app()
+

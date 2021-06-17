@@ -1,0 +1,125 @@
+<!ELEMENT VisualStudioProject (	Platforms, 
+									Configurations, 
+									References, 
+									Files, 
+									Globals	)>
+ 
+ <!ELEMENT Platforms (Platform+)>
+ <!ELEMENT Platform EMPTY>
+ 
+ <!ELEMENT Configurations (Configuration+)>
+ <!ELEMENT Configuration (Tool+)>
+ <!ELEMENT Tool EMPTY>
+
+ <!ELEMENT References (#PCDATA)>
+ 
+ <!ELEMENT Files (Filter*, File*)>
+ <!ELEMENT Filter ((File | Filter)*)>
+ <!ELEMENT File (FileConfiguration*)>
+ <!ELEMENT FileConfiguration (Tool?)>
+ 
+ <!ELEMENT Globals (#PCDATA)>
+ 
+ <!ATTLIST VisualStudioProject ProjectType      CDATA #REQUIRED>
+ <!ATTLIST VisualStudioProject Version          CDATA #REQUIRED>
+ <!ATTLIST VisualStudioProject Name             CDATA #REQUIRED>
+ <!ATTLIST VisualStudioProject SccProjectName   CDATA #IMPLIED>
+ <!ATTLIST VisualStudioProject SccLocalPath     CDATA #IMPLIED>
+ <!ATTLIST VisualStudioProject Keyword          CDATA #IMPLIED>
+ <!ATTLIST VisualStudioProject ProjectGUID      CDATA #IMPLIED>
+ <!ATTLIST VisualStudioProject RootNamespace    CDATA #IMPLIED>
+  
+ <!ATTLIST Platform Name CDATA #REQUIRED>
+ 
+ <!ATTLIST Configuration    Name                    CDATA #REQUIRED>
+ <!ATTLIST Configuration    OutputDirectory         CDATA #REQUIRED>
+ <!ATTLIST Configuration    IntermediateDirectory   CDATA #REQUIRED>
+ <!ATTLIST Configuration    ConfigurationType       CDATA #REQUIRED>
+ <!ATTLIST Configuration    UseOfMFC                            CDATA #IMPLIED>
+ <!ATTLIST Configuration    ATLMinimizesCRunTimeLibraryUsage    CDATA #IMPLIED>
+ <!ATTLIST Configuration    CharacterSet                        CDATA #IMPLIED>
+ <!ATTLIST Configuration    ManagedExtensions                   CDATA #IMPLIED>
+ <!ATTLIST Configuration    BuildLogFile                        CDATA #IMPLIED>
+
+
+ <!ATTLIST Tool	Name                            CDATA #REQUIRED>
+ <!ATTLIST Tool	Optimization                    CDATA #IMPLIED>
+ <!ATTLIST Tool	OutputDirectory                 CDATA #IMPLIED>
+ <!ATTLIST Tool	IntermediateDirectory           CDATA #IMPLIED>
+ <!ATTLIST Tool	ConfigurationType               CDATA #IMPLIED>
+ <!ATTLIST Tool	CharacterSet                    CDATA #IMPLIED>
+ <!ATTLIST Tool	PreprocessorDefinitions         CDATA #IMPLIED>
+ <!ATTLIST Tool	Culture                         CDATA #IMPLIED>
+ <!ATTLIST Tool	AdditionalIncludeDirectories    CDATA #IMPLIED>
+ <!ATTLIST Tool	BasicRuntimeChecks              CDATA #IMPLIED>
+ <!ATTLIST Tool	RuntimeLibrary                  CDATA #IMPLIED>
+ <!ATTLIST Tool	RuntimeTypeInfo                 CDATA #IMPLIED>
+ <!ATTLIST Tool	PrecompiledHeaderFile           CDATA #IMPLIED>
+ <!ATTLIST Tool	AssemblerListingLocation        CDATA #IMPLIED>
+ <!ATTLIST Tool	ObjectFile                      CDATA #IMPLIED>
+ <!ATTLIST Tool	ProgramDataBaseFileName         CDATA #IMPLIED>
+ <!ATTLIST Tool	WarningLevel                    CDATA #IMPLIED>
+ <!ATTLIST Tool	SuppressStartupBanner           CDATA #IMPLIED>
+ <!ATTLIST Tool	DebugInformationFormat          CDATA #IMPLIED>
+ <!ATTLIST Tool	CompileAs                       CDATA #IMPLIED>
+ <!ATTLIST Tool	OutputFile                      CDATA #IMPLIED>
+ <!ATTLIST Tool	TypeLibraryName                 CDATA #IMPLIED>
+ <!ATTLIST Tool	HeaderFileName                  CDATA #IMPLIED>
+ <!ATTLIST Tool	AdditionalDependencies          CDATA #IMPLIED>
+ <!ATTLIST Tool LargeAddressAware               CDATA #IMPLIED>
+ <!ATTLIST Tool	LinkIncremental                 CDATA #IMPLIED>
+ <!ATTLIST Tool	GenerateDebugInformation        CDATA #IMPLIED>
+ <!ATTLIST Tool	SubSystem                       CDATA #IMPLIED>
+ <!ATTLIST Tool	TargetMachine                   CDATA #IMPLIED>
+ <!ATTLIST Tool	AdditionalLibraryDirectories    CDATA #IMPLIED>
+ <!ATTLIST Tool	UsePrecompiledHeader            CDATA #IMPLIED>
+ <!ATTLIST Tool	ProgramDatabaseFile             CDATA #IMPLIED>
+ <!ATTLIST Tool	ImportLibrary                   CDATA #IMPLIED>
+ <!ATTLIST Tool	MkTypLibCompatible              CDATA #IMPLIED>
+ <!ATTLIST Tool	TargetEnvironment               CDATA #IMPLIED>
+ <!ATTLIST Tool	ModuleDefinitionFile            CDATA #IMPLIED>
+ <!ATTLIST Tool	PrecompiledHeaderThrough        CDATA #IMPLIED>
+ <!ATTLIST Tool	CommandLine                     CDATA #IMPLIED>
+ <!ATTLIST Tool	Outputs                         CDATA #IMPLIED>
+ <!ATTLIST Tool	BuildCommandLine                CDATA #IMPLIED>
+ <!ATTLIST Tool	ReBuildCommandLine              CDATA #IMPLIED>
+ <!ATTLIST Tool	CleanCommandLine                CDATA #IMPLIED>
+ <!ATTLIST Tool	Output                          CDATA #IMPLIED>
+ <!ATTLIST Tool	BrowseInformation               CDATA #IMPLIED>
+ <!ATTLIST Tool	BrowseInformationFile           CDATA #IMPLIED>
+ <!ATTLIST Tool	MinimalRebuild                  CDATA #IMPLIED>
+ <!ATTLIST Tool	Detect64BitPortabilityProblems  CDATA #IMPLIED>
+ <!ATTLIST Tool	EnableCOMDATFolding             CDATA #IMPLIED>
+ <!ATTLIST Tool	OptimizeReferences              CDATA #IMPLIED>
+ <!ATTLIST Tool	InlineFunctionExpansion         CDATA #IMPLIED>
+ <!ATTLIST Tool	OmitFramePointers               CDATA #IMPLIED>
+ <!ATTLIST Tool	StringPooling                   CDATA #IMPLIED>
+ <!ATTLIST Tool	EnableFunctionLevelLinking      CDATA #IMPLIED>
+ <!ATTLIST Tool	AdditionalOptions               CDATA #IMPLIED>
+ <!ATTLIST Tool	IgnoreAllDefaultLibraries       CDATA #IMPLIED>
+ <!ATTLIST Tool	IgnoreDefaultLibraryNames       CDATA #IMPLIED>
+ <!ATTLIST Tool	Description                     CDATA #IMPLIED>
+ <!ATTLIST Tool	OptimizeForProcessor            CDATA #IMPLIED>
+ <!ATTLIST Tool	StructMemberAlignment           CDATA #IMPLIED>
+ <!ATTLIST Tool	CallingConvention               CDATA #IMPLIED>
+ <!ATTLIST Tool	IgnoreStandardIncludePath       CDATA #IMPLIED>
+ <!ATTLIST Tool	ExceptionHandling               CDATA #IMPLIED>
+ <!ATTLIST Tool	BufferSecurityCheck             CDATA #IMPLIED>
+ <!ATTLIST Tool	DisableSpecificWarnings         CDATA #IMPLIED>
+ <!ATTLIST Tool	UndefinePreprocessorDefinitions CDATA #IMPLIED>
+ <!ATTLIST Tool	GlobalOptimizations             CDATA #IMPLIED>
+ <!ATTLIST Tool	FavorSizeOrSpeed                CDATA #IMPLIED>
+ <!ATTLIST Tool	FixedBaseAddress                CDATA #IMPLIED>
+ <!ATTLIST Tool	GenerateManifest                CDATA #IMPLIED>
+ <!ATTLIST Tool	EmbedManifest                   CDATA #IMPLIED>
+ <!ATTLIST Tool	ManifestFile                    CDATA #IMPLIED>
+
+
+ <!ATTLIST Filter Name              CDATA #REQUIRED>
+ <!ATTLIST Filter Filter            CDATA #REQUIRED>
+ <!ATTLIST Filter UniqueIdentifier  CDATA #IMPLIED>
+ 
+ <!ATTLIST File	RelativePath CDATA #REQUIRED>
+ 
+ <!ATTLIST FileConfiguration	Name                CDATA #REQUIRED>
+ <!ATTLIST FileConfiguration    ExcludedFromBuild   CDATA #IMPLIED>

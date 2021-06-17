@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_seqmap_switch)
+  NCBI_sources(test_seqmap_switch)
+  NCBI_uses_toolkit_libraries(xobjmgr)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
+

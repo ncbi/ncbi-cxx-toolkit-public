@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(bdbtest)
+  NCBI_sources(test_bdb)
+  NCBI_uses_toolkit_libraries(ncbi_xcache_bdb xcompress)
+  NCBI_project_watchers(satskyse)
+NCBI_end_app()
+

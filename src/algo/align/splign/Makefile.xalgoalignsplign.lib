@@ -1,0 +1,18 @@
+# $Id$
+
+WATCHERS = kiryutin kapustin
+
+ASN_DEP = seq xnetblast
+
+SRC = splign splign_util splign_exon_trim splign_formatter splign_simple splign_cmdargs compart_matching
+
+LIB = xalgoalignsplign
+DLL_LIB = xalgoalignnw xalgoalignutil
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+COLOR_DIAGNOSTICS = -fdiagnostics-color=never
+
+USES_LIBRARIES =  \
+    xalgoalignnw xalgoalignutil

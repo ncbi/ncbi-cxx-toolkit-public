@@ -1,0 +1,125 @@
+ABSTRACT
+
+    makembindex is the utility that can index a set of nucleotide
+    sequences. It takes, as input, a FASTA formatted file or a BLAST
+    database, and creates a specially formatted set of files that index
+    the locations of N-mer occurrences in the database for a given 
+    value of N. In addition, the compressed sequence data is also stored
+    in the index files. However, ambiguity characters are not preserved.
+
+    The indexed databases created by makembindex are currently used
+    by production MegaBLAST software and by a new srsearch utility 
+    designed to quickly search for nearly exact matches (up to one mismatch)
+    of short queries against a genomic database.
+
+    When a FASTA formatted file is used as the input, then masking
+    by lower case letters is incorporated in the index. The searches against
+    an index containing masking information will not produce results
+    The index structure is described in [1]. Please cite this paper in any
+    publication that uses makembindex.
+
+[1] Morgulis A, Coulouris G, Raytselis Y, Madden TL, Agarwala R, Schaffer AA.
+    Database Indexing for Production MegaBLAST Searches. Submitted for
+    publication.
+
+SYNOPSIS
+
+    makembindex [-h] [-help] [-input input_file_name] -output index_name
+    [-iformat input_format] [-legacy use_legacy_index_format] [-nmer nmer_size] 
+    [-ws_hint word_size_hint] [-volsize volume_size] [-stride stride] 
+
+OPTIONS
+
+    -h
+
+        Print a short usage information and exit.
+
+    -help
+
+        Print a comprehensive usage information and exit.
+
+    -old_style_index [true/false]
+
+        Default: true
+
+        If set to 'false' the new style index is created. New style
+        indices should have -iformat blastdb specified and are only
+        used for creating indices from BLAST databases. Option
+        -output is ignored when creating a new style index. New style
+        indices are always created at the same location as the 
+        corresponding BLAST database.
+
+    -input input_file_name
+
+        default: stdin
+
+        Input file name or BLAST database name depending on the input 
+        format used.  For FASTA formatted input this parameter is 
+        optional and defaults to the program's standard input stream.
+
+    -output index_name
+
+        The resulting index name. The index itself can consist of
+        multiple files, called volumes, called <index_name>.00.idx,
+        <index_name>.01.idx,...
+
+        This options should not be used with new style indices.
+
+    -iformat input_format
+
+        default: fasta
+
+        The input format selector. Possible values are 'fasta' and 
+        'blastdb'.
+
+    -legacy use_legacy_index_format
+
+        default: true
+
+        Possible values of this parameter are 'true' or 'false'. If the
+        value is true then the values of -stride, -nmer, and -ws_hint
+        are ignored, and the result is produced using an older 
+        index format. This is a compatibility feature to support
+        current production MegaBLAST. The legacy format functionally
+        corresponds to setting "-stride 5 -nmer 12 -ws_hint 28".
+
+    -nmer nmer_size
+
+        default: 12
+
+        N-mer size to use. This parameter is ignored if -legacy true is
+        specified.
+
+    -ws_hint word_size_hint
+
+        default: 28
+
+        This is an optimization hint for makembindex that indicates an
+        expected minimum match size in searches that use the index. If
+        n is the value of -nmer parameter and s is the value of -stride
+        parameter, then the value of -ws_hint must be at least n + s - 1.
+
+    -stride stride
+
+        default: 5
+
+        makembindex will index every stride-th N-mer of the database.
+
+    -volsize volume_size
+
+        default: 1536
+
+        The target index volume size in megabytes.
+
+EXAMPLES
+
+    To create an index from a FASTA formatted input file named 'input.fa',
+    for use with production MegaBLAST:
+
+    makembindex -input input.fa -output db_index
+
+    To create an index from a FASTA formatted input file named 'input.fa'
+    using N-mer size 11 for use with srsearch utility:
+
+    makembindex -input input.fa -output db_index -legacy false -nmer 11 -stride 1 -ws_hint 11
+

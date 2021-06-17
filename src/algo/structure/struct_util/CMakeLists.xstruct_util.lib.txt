@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_lib(xstruct_util)
+  NCBI_sources(
+    aaa_dummy_pch struct_util su_alignment_set su_block_multiple_alignment
+    su_pssm su_sequence_set
+  )
+  NCBI_uses_toolkit_libraries(xblast xstruct_dp)
+  NCBI_project_watchers(lanczyck)
+NCBI_end_lib()
+

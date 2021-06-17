@@ -1,0 +1,25 @@
+User-object ::= {
+  type str "cddScoreData",
+  data {
+    {
+      label str "definition",
+      data str "Aminotransferase class-V"
+    },
+    {
+      label str "short_name",
+      data str "aminotran_5"
+    },
+    {
+      label str "score",
+      data int 705
+    },
+    {
+      label str "evalue",
+      data real { 0, 10, 0 }
+    },
+    {
+      label str "bit_score",
+      data real { 276174, 10, -3 }
+    }
+  }
+}

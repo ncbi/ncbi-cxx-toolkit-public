@@ -1,0 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(dbapi_driver_test_ftds_ctlib)
+  NCBI_sources(dbapi_driver_test_ftds_ctlib)
+  NCBI_requires(FreeTDS Sybase)
+  NCBI_uses_toolkit_libraries(dbapi)
+  NCBI_project_watchers(ucko satskyse)
+  NCBI_begin_test(dbapi_driver_test_ftds_ctlib)
+    NCBI_set_test_command(run_sybase_app.sh dbapi_driver_test_ftds_ctlib)
+  NCBI_end_test()
+NCBI_end_app()
+

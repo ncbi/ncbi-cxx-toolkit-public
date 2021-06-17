@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xdbapi_mysql SHARED)
+  NCBI_hosts_projects(
+    dbapi/driver/mysql/ncbi_xdbapi_mysql
+  )
+  NCBI_add_definitions(NCBI_DBAPIDRIVER_MYSQL_EXPORTS)
+NCBI_end_lib()

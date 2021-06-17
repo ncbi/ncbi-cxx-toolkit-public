@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(test_value_convert)
+  NCBI_sources(test_value_convert)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_add_test()
+  NCBI_project_watchers(ucko)
+NCBI_end_app()
+

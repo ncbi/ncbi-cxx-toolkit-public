@@ -1,0 +1,6 @@
+                Error:
+Problem:        Fasta Reader: sequence id ends with 26 valid nucleotide characters.  Was the sequence accidentally placed in the definition line?
+SeqId:          ABAAAATTTTTTTGGGGGGGCCCTTTTT
+Line:           1
+
+

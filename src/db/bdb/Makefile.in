@@ -1,0 +1,16 @@
+#################################
+# $Id$
+# Author:  Anatoliy Kuznetsov (kuznets@ncbi.nlm.nih.gov)
+#################################
+
+# Meta-makefile for the "BDB" lib
+#################################
+
+REQUIRES = BerkeleyDB bdb
+
+LIB_PROJ = bdb ncbi_xcache_bdb
+#SUB_PROJ = cache_verify bvstore_util
+SUB_PROJ = test_split demo dumper test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,92 @@
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Microsoft FrontPage 5.0">
+<TITLE>Structure Window : CDD</TITLE>
+</HEAD>
+<BODY>
+<H2>Structure Window :&nbsp;CDD Commands</H2>
+<p align="left">The first item in this menu - <a href="#overview">CDD Overview</a>
+- is presented when a CDD is downloaded from the server, and presents a
+description of the CDD and buttons to activate the annotation and reference
+panels. The rest of this menu is for advanced users and is only available when you have loaded a CDD alignment (of a particular
+  data type) and have turned off the <b>CDD Read-Only</b> option in the<b> </b>
+<a href="SW_File.htm#preferences">Preferences</a> panel.</p>
+<p>&nbsp; </p>
+<ul>
+  <li>
+  <p align="left"><a href="#overview">CDD overview</a></li>
+  <li><a href="#name">Edit name</a></li>
+  <li><a href="#description">Edit description</a></li>
+  <li><a href="#notes">Edit notes</a></li>
+  <li><a href="#references">Edit PubMed references</a></li>
+  <li><a href="#books">Edit book references</a></li>
+  <li><a href="#annotate">Edit annotations</a></li>
+  <li><a href="#interactions">View Master's Interactions</a></li>
+  <li><a href="#reject">Reject sequence</a></li>
+  <li><a href="#show">Show rejects</a></li>
+</ul>
+<h3><a name="overview"></a>CDD overview</h3>
+<p>This is an informative panel that presents information about a CDD when
+downloaded from the CDD server. It shows the name and description of the domain,
+and if annotations and literature references are available, the buttons at the
+bottom will open the <a href="#annotate">Edit Annotations</a> or
+<a href="#references">Edit References</a> panels. If the <b>CDD Read-Only</b>
+option in the <a href="SW_File.htm#preferences">Preferences</a> is
+checked, then both annotations and references information will be read-only,
+meaning you can view but not change the information.</p>
+<h3><a name="name"></a>Edit name</h3>
+Edit the short name of the CDD.
+<h3><a name="description"></a>Edit description</h3>
+Edit the CDD description. This text is actually stored as a single long string,
+so line breaks are not preserved.
+<h3><a name="notes"></a>Edit notes</h3>
+Edit the CDD notes. This is free text in multiple lines, so line breaks (where
+a line is not auto-wrapped) are preserved.
+<h3><a name="references"></a>Edit PubMed references</h3>
+This panel allows you to add PubMed ID links to the literature. Click <b>Add</b>
+to add a new reference; the available references will appear in the list above.
+Select any reference and click <b>Launch</b> to start up a web browser to get
+more information on the article. Click <b>Edit</b> to change the reference number,
+or <b>Delete</b> to remove it. <b>Move up</b> and <b>Move down</b> can be used to reorder the list.
+<h3><a name="books"></a>Edit book references</h3>
+Similar to the <i>PubMed references</i> panel as described above, this lets you maintain a list of
+NCBI book references. These are in a format derived from URLs that address content on the NCBI Bookshelf.  To create a new book reference, copy a full Bookshelf URL to the clipboard and use the <b>Paste</b> button to input the entire reference directly.  Use <b>Edit</b> to change an existing reference.  <b>Launch</b> opens the NCBI Bookshelf page in your web browser that corresponds to a selected book reference.
+<h3><a name="annotate"></a>Annotate</h3>
+<p>Annotations on a CDD are linked to columns in the alignment, such as columns of conserved residues at an active site. To create a new annotation, highlight the desired columns in the sequence viewer (or highlight residues of the first sequence), and click on <B>New</B> in the box on the left and enter a description; available annotations will be listed above. Optionally, you may assign a general type to the annotation with the <B>Type</B> pulldown list.  For a type beside <I>Other</I>, the <B>Description</B> pulldown list will offer some predefined descriptions for that type (read from the 'cdd_annot_types.ini' file, to which you may add custom entries).  If your description matches one of the predefined descriptions, the corresponding <B>Type</B> will be assigned automatically.  You may prepend <I>putative</I> to any description by checking the <I>Is Putative?</I> box.   Clicking <B>Edit</B> will let you change the description of the selected annotation, modify the assigned type, and optionally change the column location of that annotation. <B>Highlight</B> will cause the columns of that annotation to be highlighted in the sequence viewer, and <B>Delete</B> removes the annotation completely.</p>
+<p>Each annotation can have evidence associated with it - for example, a literature
+  reference that describes in more detail the conservation of the active site.
+  Select an annotation in the list on the left, and then click <b>New</b> to create
+  a new evidence item. There are currently three types of evidence: a text comment,
+  a literature reference (PubMed ID), or &quot;Structure&quot; - which can be
+  any set of residues and molecules (including solvents and heterogens) from a
+  single PDB that illustrate a specific case of the conserved feature annotated
+  for the whole CDD family. Clicking <b>Show</b> will display the selected evidence
+  item, <b>Edit</b> will let you change it, and <b>Delete</b> will remove it.
+  <b>Move up/down</b> lets you change the ordering of the evidence items.</p>
+<h3><a name="interactions"></a>View Master's Interactions</h3>
+<p>This command displays interactions between the master and other biomolecules using data retrieved from the Inferred Biomolecular Interactions Server (IBIS, https://www.ncbi.nlm.nih.gov/Structure/ibis/ibis.cgi) at NCBI.  It is enabled only for alignments whose master is a structure.</p>
+<p>A table on the left side of the window summarizes the IBIS data.  The possible interaction types reported by IBIS are:  <I>Protein-Protein</I>, <I>Protein-Nucleic Acid</I>, <I>Protein-Chemical</I>, <I>Protein-Peptide</I>, and <I>Protein-Ion</I>.  The type of interaction partner displayed can be restricted using the <B>Interaction Type Filter</B> control.</p>
+</p>When an interaction in the table is selected, the <B>Launch</B> and <B>Highlight</B> buttons allow the user to open the IBIS web page for that interaction and highlight the interacting residues on the master in Cn3D, respectively. The <B>Make IBIS Annotation</B> button creates a feature annotation from the interaction, and enabled only when all interacting residues are in aligned blocks of the sequence alignment.  When this condition is not satisfied, a warning message appears and the unaligned residues are listed in the Message Log.</p>
+<p>The columns in the table are as follows (see IBIS help for further details, https://www.ncbi.nlm.nih.gov/Structure/ibis/ibis_help.shtml):</p>
+<ul>
+<li><B>Annot Overlap</B>: a check appears if the interaction overlaps any feature annotation</li>
+<li><B>Observed</B>: an icon in this column denotes an "observed" interaction on the master</li>
+<li><B>Filtered on Web</B>: a question mark icon indicates a less-certain interaction that is not shown on the IBIS web page</li>
+<li><B>Description</B>: name of the interaction partner</li>
+<li><B># Res. on Query</B>: number of master residues involved in the interaction</li>
+<li><B>Clust. Size</B>: number of homologs of the master that have similar interaction sites</li>
+<li><B>Avg. Clust. %Id</B>: average percent identity of sites in the interaction within the cluster</li>
+<li><B>IBIS Score</B>: also called the 'ranking score'; only defined for certain interaction types</li>
+</ul>
+<p>When an interaction that has a checkmark in the <B>Annot Overlap</B> column has been selected, the right side of the window displays information about feature annotations that overlap with IBIS interaction.  One can use this information and the various <B>Highlight</B> buttons provided to investigate how the selected feature annotation coincides with the selected IBIS-defined interaction.  The <B>Delete IBIS Annotation</B> button is activated only when the feature annotation appears to have been derived from an IBIS annotation using the <B>Make IBIS Annotation</B> button on the left side of the window.</p>
+<h3><a name="reject"></a>Reject sequence</h3>
+<p>This brings up a list of all sequences present in both alignment and import
+windows. You can choose to add any sequence to the CDD's reject list, which will
+cue the update system to not include the sequence in any subsequent updates, so
+<b>use with caution</b>! You can also optionally remove the sequence from the
+alignment and import windows.</p>
+<h3><a name="show"></a>Show rejects</h3>
+Writes a list of rejected sequences to the message log window.
+</BODY>
+</HTML>

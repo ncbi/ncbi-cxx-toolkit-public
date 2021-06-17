@@ -1,0 +1,10 @@
+                Warning:
+Problem:        FASTA-Reader: Ignoring invalid residues at position(s): On line 2: 5, 18-21
+SeqId:          lcl|seq_id
+
+
+                Warning:
+Problem:        FASTA-Reader: Ignoring invalid residues at position(s): On line 3: 3, 17-18
+SeqId:          lcl|seq_id
+
+

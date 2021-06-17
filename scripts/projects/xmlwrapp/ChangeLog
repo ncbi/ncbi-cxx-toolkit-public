@@ -1,0 +1,12 @@
+2012-08-02: release 2.1.0, based on upstream xmlwrapp-0.6.0
+- Add XSD validation support
+- Extend functionality of manipulating with default attributes
+- Make iterator dereferencing safer
+
+2009-08-17: second draft release, based on upstream xmlwrapp-0.6.0
+- Add XPath support
+- Improve error collection on parsing documents
+
+2009-04-23: first draft release, based on upstream xmlwrapp-0.6.0
+- Add full-featured XML namespace support for both nodes and attributes
+

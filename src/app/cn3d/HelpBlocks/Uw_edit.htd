@@ -1,0 +1,53 @@
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Microsoft FrontPage 5.0">
+<TITLE>Import Window : Edit</TITLE>
+</HEAD>
+<BODY>
+<H2>Import Window : Edit Commands</H2>
+<P>The items in this menu mostly have the same meaning as they do in the <A
+ href="AW_Edit.htm" >Sequence Window :&nbsp;Edit</A> menu, with a few additions:</P>
+<P>&nbsp;</P>
+<ul>
+  <li><a href="#blocks">Delete all blocks</a></li>
+  <li><a href="#all">Delete all blocks in all alignments</a></li>
+  <li><a href="#sort">Sort imports</a></li>
+  <li><a href="#sequence">Import sequences</a></li>
+  <li><a href="#structure">Import structure</a></li>
+</ul>
+<h3><a name="blocks"></a>Delete all blocks</h3>
+Delete all the blocks in the selected alignment.
+<h3><a name="all"></a>Delete all blocks in all alignments</h3>
+Delete all the blocks in all the alignments in the import window.
+<h3><a name="sort"></a>Sort imports</h3>
+<P>Sorts imports by:</p>
+<ul>
+<li><b>Sequence identifier</b>: (of the imported sequence), putting PDB
+sequences at the top in alphabetical order, followed by non-structured sequences
+in numerical order of their identifier.</li>
+<li><b>PSSM score</b>: sorts rows by the sum of the residue-to-PSSM scores for all aligned
+residues, with the highest at the top.</li>
+</ul>
+<H3><a name="sequence"></a>Import sequences</H3>
+<P>Use this item to import new sequences. You will be given a choice to import
+  multiple sequences from a FASTA file, or a single sequence from NCBI via the
+  network. The new sequences will be imported without an alignment. It will then
+  be up to you to align the sequences manually or with one of the available <a href="UW_Algorithms.htm">algorithms</a>.</P>
+<h3><a name="structure"></a>Import structure</h3>
+<p>Allows you to import a new structure and the sequence of the aligned chain.
+You will be given a choice whether to import from a file or directly from NCBI
+via the network; if you import from a file, the structure must be of the type
+downloaded from the MMDB server, and must be of the right all-atom or alpha-only
+type to match the existing structures. 
+After the structure is loaded, Cn3D will query the VAST database to see whether a structure alignment exists; if so, it will load both the structure alignment
+and the corresponding sequence alignment.
+If VAST has no alignment for the two chains, the sequence will be imported without any
+alignment, and you'll have to align it manually or using one of the built-in
+<a href="UW_Algorithms.htm">alignment algorithms</a>.</p>
+<p>Note that the structure will not appear right away. You must first save the
+data to a file, and then re-load. And if there is an existing multiple alignment
+already, depending on the data type the structure may not be visible until after
+you merge the new sequence into the multiple alignment.</p>
+</BODY>
+</HTML>

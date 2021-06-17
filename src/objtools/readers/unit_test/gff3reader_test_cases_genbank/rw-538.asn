@@ -1,0 +1,104 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 1,
+      data imp {
+        key "C_region"
+      },
+      location int {
+        from 9,
+        to 1066,
+        strand minus,
+        id local str "Contig001"
+      },
+      qual {
+        {
+          qual "ID",
+          val "2701068361"
+        }
+      }
+    },
+    {
+      id local id 2,
+      data region "",
+      location int {
+        from 0,
+        to 1066,
+        strand minus,
+        id local str "Contig001"
+      },
+      qual {
+        {
+          qual "ID",
+          val "2701068363"
+        }
+      }
+    },
+    {
+      id local id 3,
+      data rna {
+        type tmRNA
+      },
+      location int {
+        from 154678,
+        to 154962,
+        strand minus,
+        id local str "Contig001"
+      },
+      qual {
+        {
+          qual "ID",
+          val "2701068507"
+        },
+        {
+          qual "product",
+          val "transfer-messenger RNA"
+        }
+      }
+    },
+    {
+      id local id 4,
+      data rna {
+        type tRNA
+      },
+      location int {
+        from 176533,
+        to 176606,
+        strand plus,
+        id local str "Contig001"
+      },
+      qual {
+        {
+          qual "ID",
+          val "2701068529"
+        },
+        {
+          qual "product",
+          val "tRNA-Met"
+        }
+      }
+    },
+    {
+      id local id 5,
+      data rna {
+        type rRNA
+      },
+      location int {
+        from 176656,
+        to 177018,
+        strand plus,
+        id local str "Contig001"
+      },
+      qual {
+        {
+          qual "ID",
+          val "2701068530"
+        },
+        {
+          qual "product",
+          val "16S ribosomal RNA"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+Author: Azat Badretdinov (NCBI)
+
+
+frameshift+ tool is intended 
+*) to assist GenBank group to analyze bacterial genome submissions
+*) to annotate better submitted WGS projects
+
+
+Currently the tool is suited for performing the first task
+The workflow has 4 stages:
+
+*) extraction of sequences from input (.sqn) file
+*) BLAST search vs bact_prot and CDD databases
+*) analysis per se of the CDS's for frameshifts, partial hits and overlaps
+*) BLAST search for marked sequences for user-friendly output
+
+Algorithm of analysis:
+
+*) frameshifts are flagged when two CDS's
+  a1) are immediate neighbors in the contig or
+  a2) all CDSs located between them do not have bact_prot hits and
+  b)  have at least one pair of matching (GI) BLAST hits to bact_prot database
+  Interestingly enough, it turned out that if mentioned conditions are met,
+  the corresponding alignment regions of two CDS's to the common hit sequence
+  are very consistent without significant gaps or insertions in the contig space
+  between the CDSs
+*) partial hits are flagged when a given CDS is persistently hitting only
+  part of CDD profiles.
+*) overlaps of parallel CDS's are flagged 

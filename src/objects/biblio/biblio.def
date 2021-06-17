@@ -1,0 +1,18 @@
+[-]
+_export = NCBI_BIBLIO_EXPORT
+
+[Auth-list]
+names._delay = 1
+
+[PubMedId]
+_type = ncbi::TEntrezId
+
+[MedlineUID]
+_type = ncbi::TEntrezId
+
+[PmcID]
+_type = ncbi::TEntrezId
+
+[Cit-gen]
+muid._type = ncbi::TEntrezId
+muid._storage_type = ncbi::TIntId

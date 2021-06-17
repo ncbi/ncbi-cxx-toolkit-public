@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(test_trial)
+  NCBI_sources(test_trial)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_add_test()
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
+

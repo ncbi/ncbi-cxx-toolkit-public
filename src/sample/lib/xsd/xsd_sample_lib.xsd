@@ -1,0 +1,64 @@
+<?xml version="1.0" ?>
+<!-- ============================================
+     ::DATATOOL:: Generated from "../asn_lib/asn_sample_lib.asn"
+     ::DATATOOL:: by application DATATOOL version 1.9.3
+     ::DATATOOL:: on 06/19/2009 11:58:19
+     ============================================ -->
+
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:ncbi="http://www.ncbi.nlm.nih.gov"
+  xmlns="http://www.ncbi.nlm.nih.gov"
+  targetNamespace="http://www.ncbi.nlm.nih.gov"
+  elementFormDefault="qualified"
+  attributeFormDefault="unqualified">
+
+<!-- ============================================ -->
+<!-- This section is mapped from module "NCBI-sample"
+================================================= -->
+<!--
+ This is only a demo
+-->
+<!-- Elements used by other modules:
+          Data-set-id -->
+
+<!-- ============================================ -->
+
+
+
+<xs:element name="Data-set-id">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="Data-set-id_version" type="xs:string"/>
+      <xs:element name="Data-set-id_name" type="xs:string"/>
+      <xs:element name="Data-set-id_num" type="xs:integer"/>
+      <xs:element name="Data-set-id_type">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="xs:integer">
+              <xs:attribute name="value" use="optional">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:enumeration value="dump" ncbi:intvalue="1"/>
+                    <xs:enumeration value="query" ncbi:intvalue="2"/>
+                    <xs:enumeration value="single" ncbi:intvalue="3"/>
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:attribute>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Data-set-id_weight" type="xs:double" minOccurs="0"/>
+      <xs:element name="Data-set-id_uids" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="Data-set-id_uids_E" type="xs:integer"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+</xs:schema>

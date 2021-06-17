@@ -1,0 +1,10 @@
+>lcl|local|ref|not-an-accession|
+ctgcaa
+>lcl|local|ref|NC_000001
+ctgcaa
+>ref|NC_000001|lcl|local
+ctgcaa
+>lcl|local|ref|NC_000001|locus
+ctgcaa
+>lcl|local|ref|NC_000001|
+ctgcaa

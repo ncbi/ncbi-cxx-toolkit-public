@@ -1,0 +1,201 @@
+5
+-- #0 Simple merge
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 2,
+      gi 3
+    },
+    starts {
+      1095, 2114
+    },
+    lens {
+      53
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 2,
+      gi 3
+    },
+    starts {
+      1000, 2000
+    },
+    lens {
+      95
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 2,
+      gi 3
+    },
+    starts {
+      1165, 2167
+    },
+    lens {
+      37
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 2,
+      gi 3
+    },
+    starts {
+      1195, 2225
+    },
+    lens {
+      69
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 2,
+      gi 3
+    },
+    starts {
+      1280, 2283
+    },
+    lens {
+      76
+    }
+  }
+}
+
+
+5
+-- #1 Minus strand merge
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 2,
+      gi 3
+    },
+    starts {
+      1000, 2264
+    },
+    lens {
+      95
+    },
+    strands {
+      plus, minus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 2,
+      gi 3
+    },
+    starts {
+      1095, 2192
+    },
+    lens {
+      53
+    },
+    strands {
+      plus, minus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 2,
+      gi 3
+    },
+    starts {
+      1165, 2155
+    },
+    lens {
+      37
+    },
+    strands {
+      plus, minus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 2,
+      gi 3
+    },
+    starts {
+      1280, 2000
+    },
+    lens {
+      76
+    },
+    strands {
+      plus, minus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 2,
+      gi 3
+    },
+    starts {
+      1195, 2065
+    },
+    lens {
+      69
+    },
+    strands {
+      plus, minus
+    }
+  }
+}

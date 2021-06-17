@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(socket_io_bouncer)
+  NCBI_sources(socket_io_bouncer)
+  NCBI_uses_toolkit_libraries(connect)
+  NCBI_project_watchers(lavr)
+NCBI_end_app()
+

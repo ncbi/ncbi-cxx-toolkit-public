@@ -1,0 +1,40 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        name "NG_007111.1:g.28602_28625inv24",
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type inv,
+                delta {
+                }
+              }
+            },
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 24
+                    }
+                  }
+                },
+                observation asserted
+              }
+            }
+          }
+        }
+      },
+      location int {
+        from 28601,
+        to 28624,
+        strand plus,
+        id gi 160948586
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+# $Id$
+ASN_PROJ = valid
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

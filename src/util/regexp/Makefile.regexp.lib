@@ -1,0 +1,12 @@
+# $Id$
+
+SRC = pcre_byte_order pcre_chartables pcre_compile pcre_config pcre_dfa_exec pcre_exec pcre_fullinfo \
+      pcre_get pcre_globals pcre_jit_compile pcre_maketables pcre_newline pcre_ord2utf8 pcre_refcount \
+      pcre_string_utils pcre_study pcre_tables pcre_ucd pcre_valid_utf8 pcre_version pcre_xclass \
+      pcreposix
+
+LIB = regexp
+
+CPPFLAGS = -I$(includedir)/util/regexp -DHAVE_CONFIG_H -DPCRE_NO_UTF16 -DPCRE_NO_UTF32 $(ORIG_CPPFLAGS)
+
+WATCHERS = ivanov

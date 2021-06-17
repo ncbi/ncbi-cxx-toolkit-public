@@ -1,0 +1,16 @@
+[-]
+_export = NCBI_ID2_EXPORT
+clients = id2_client
+
+[ID2S-Chunk-Id]
+_type = int
+
+[id2_client]
+class    = CID2Client
+service  = ID2
+request  = ID2-Request.request
+reply    = ID2-Reply.reply
+
+reply.get-packages = get-package
+reply.get-chunks   = get-chunk
+reply.get-blob-info= get-blob

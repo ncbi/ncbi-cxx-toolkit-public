@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(insdseq)
+  NCBI_dataspecs(insdseq.asn)
+  NCBI_uses_toolkit_libraries(xser)
+NCBI_end_lib()
+

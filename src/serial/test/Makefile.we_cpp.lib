@@ -1,0 +1,9 @@
+LIB = we_cpp
+SRC = we_cpp__ we_cpp___
+
+WATCHERS = gouriano
+
+
+
+USES_LIBRARIES =  \
+    xser

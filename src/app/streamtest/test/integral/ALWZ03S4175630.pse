@@ -1,0 +1,75 @@
+Seq-entry ::= seq {
+  id {
+    genbank {
+      accession "ALWZ03S4175630" ,
+      version 1 } ,
+    general {
+      db "WGS:ALWZ03" ,
+      tag
+        str "scaffold168574768" } } ,
+  inst {
+    repr delta ,
+    mol dna ,
+    length 19084 ,
+    strand ds ,
+    ext
+      delta {
+        loc
+          int {
+            from 0 ,
+            to 3903 ,
+            id
+              genbank {
+                accession "ALWZ036971606" ,
+                version 1 } } ,
+        literal {
+          length 50 ,
+          seq-data
+            gap {
+              type scaffold ,
+              linkage linked ,
+              linkage-evidence {
+                {
+                  type paired-ends } } } } ,
+        loc
+          int {
+            from 0 ,
+            to 5041 ,
+            id
+              genbank {
+                accession "ALWZ036971607" ,
+                version 1 } } ,
+        literal {
+          length 2582 ,
+          seq-data
+            gap {
+              type scaffold ,
+              linkage linked ,
+              linkage-evidence {
+                {
+                  type paired-ends } } } } ,
+        loc
+          int {
+            from 0 ,
+            to 3516 ,
+            id
+              genbank {
+                accession "ALWZ036971608" ,
+                version 1 } } ,
+        literal {
+          length 50 ,
+          seq-data
+            gap {
+              type scaffold ,
+              linkage linked ,
+              linkage-evidence {
+                {
+                  type paired-ends } } } } ,
+        loc
+          int {
+            from 0 ,
+            to 3938 ,
+            id
+              genbank {
+                accession "ALWZ036971609" ,
+                version 1 } } } } }

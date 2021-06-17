@@ -1,0 +1,177 @@
+Author:  Kevin Bealer
+Updated: May 2008
+
+--- Some assorted ideas ---
+
+Name: Alias file meta-data date checks
+Type: Correctness
+
+    Currently, alias files generated with "meta data" fields such as
+    LENGTH, MAX_SEQUENCE_LENGTH, and NSEQ become out of date if the
+    databases they refer to are updated but the alias file is not.
+
+    The consequences are that searches produce statistical data which
+    "drifts" away from correctness over time until the alias files are
+    regenerated (if they ever are!).  This problem occurs often and
+    there is no general corrective regime to control it.
+
+  Solutions:
+
+    1. Alias file modify/create datestamps could be checked against
+       those of the volumes they include; if any volume is more than
+       (THRESHOLD) hours/days newer than the alias file, the metadata
+       should be ignored.
+
+       Notes:
+
+       (1) This relies on file system mechanisms which may not be
+       reliable in the presence of distributed file storage,
+       incremental volume update schemes, and so on.
+
+       (2) This conflicts with the "index.alx" alias file aggregation
+       technique.
+
+       (3) Imprecise -- alias files that are only a day old might
+       still contain wildly inaccurate data if volumes were changed
+       drastically over a short period of time.
+
+    2. Similar to #1 but alias files could include a DATE field that
+       encodes the appropriate date stamp directly.
+
+       Notes:
+
+       (1) Handles problem #1,2 from solution #1, but not #3.
+
+    3. Alias files could include a date-list that specifies the date
+
+       stamp of each included volume, and the size of each included GI
+       or TI file; a matching list would be generated from the
+       volumes.  If these lists disagree, the library would ignore the
+       metadata.
+
+       Notes:
+
+       (1) Handles Solution#1 Notes#1,2,3
+       (2) Manual editing of alias files becomes more difficult.
+
+    4. Better tools (applications) to keep alias files up to date.
+
+       Notes:
+
+       (1) This represents a "maturing" towards a more automated and
+       comprehensive alias file management system, and away from the
+       "everything is a file" philosophy.
+
+       (2) The costs and benefits of such large systems (RDBMS, IDEs,
+       package management, operating systems) apply here.
+
+
+Name: Exclusion detection
+Type: Correctness
+
+    Sometimes sequences are completely excluded by virtue of having
+    multiple exclusions of deflines, the combination of which results
+    in exclusion of the entire set of deflines for a given OID.  This
+    can happen when GI lists and OID lists are used to filter the same
+    volume.
+
+    Detection of this scenario during iteration is expensive, because
+    it requires fetching and decoding of ASN.1 data from the volume
+    header file, so the detection is delayed until the sequence is
+    considered interesting, such as when it is found to be a match to
+    a query sequence -- at this point, the headers can be fetched and
+    the sequence can be excluded if it is found not to have been in
+    the database in the first place.
+
+    A more elegant and less error-prone solution would be a good idea.
+    The straightforward approach would be to somehow encode a small
+    table of GIs and membership bits for each defline, in some machine
+    readable (but not ASN.1) format for each OID sequence along with
+    the other ASN.1 data.
+
+    1. These could be stored after the ASN.1 data object in the header
+    file.  For backward compatibility, this technique relies on
+    ASN.1's ability to stop parsing when it has a complete object.
+
+    This method does not require changing the data format in any way.
+    The tables would be found by finding the offset of the next header
+    file object (or in the case of the last sequence, the end-of-file
+    offset), and reading backward from that point to find a four byte
+    length followed by (preceeded by) the table of GI + MEMB_BIT data.
+
+    2. The data about which gis/oid maps are in each subsequence could
+    be stored in a separate column... this would allow expansion of
+    the format for SeqDB without disrupting readdb.  It represents a
+    duplication of data (so does 1), but is the more straightforward,
+    logical, and non-disruptive.  It does require addition of new
+    (column) files for each volume, but this could be restricted to
+    volumes that use OID maps -- this means basically just NR.
+
+    3. The code could be changed to detect these cases up front
+    (e.g. during OID iteration or OID bitmap construction), accepting
+    the performance penalty.  The next update of the BlastDB format,
+    whenever that happens, could implement some more direct method for
+    this purpose.
+
+    4. As with GetSeqLengthApproximate and GetSeqLength, the more
+    exact solution should be the default and code that needs better
+    performance should use another technique.
+
+SeqDBAtlas File/Object Caching
+
+    In some cases, the CSeqDBAtlas could be used to open a file, which
+    then needs to be processed before use.  Examples of this are GI
+    list files, which become CSeqDBGiList objects, Alias Files, which
+    become key/value maps, and Group Alias Files, which become maps of
+    filename to alias files (key/value maps).
+
+    These file processing steps need to be done for these files on
+    each use, and the processing steps depend only on the file data.
+
+    As such it might be a good idea for the CSeqDBAtlas to cache the
+    fully "cooked" objects produced from these files, instead of the
+    file data itself, so that future accesses to these files can skip
+    the "cooking" stage and skip directly to using the cooked data.
+
+
+    Note: This will normally have little effect unless an application
+    uses more than one instance of a SeqDB object during its lifetime,
+    and even in those cases, this technique would need to be enabled
+    by keeping the atlas layer "alive" from one instance's processing
+    to the next.  However, this may be worth doing in any case,
+    because this cache would likely have little or no runtime cost
+    even in cases where the hit rate was zero.
+
+Hash rather than Map for byte range lookup.
+
+    It might be faster to use a hash table to find sequences rather
+    than a map.  The hash table would need to be designed to provide
+    access to sequences based on which megabyte of heap memory (or
+    some other page size) they fall in.  Files spanning many megabytes
+    would need to be included in the hash table once for each megabyte
+    including them.  Smaller files have the opposite problem -- many
+    would accumulate in a specific megabyte, so that hundreds might
+    exist for any given lookup offset.
+
+    To combat this, the file entries would probably be in a red/black
+    tree within each entry in the hash table; the lookup speed should
+    be at least as good as the current lookup speed.  However, the
+    time needed to change the set of mapped regions entries would be
+    "at least as bad" as the current version.
+
+    Variations such as using multiple hash tables at different
+    granularities (or similar) can also be imagined; but it might make
+    the most sense to have the hash table/granularity be "fixed" for
+    each file type, and tune the resulting tables for best performance.
+
+    However, it's not clear that this kind of optimization would be
+    worth the time needed to implement and test it.
+
+
+Detection of global memory allocation issues...
+
+  It might be possible to configure the C++ new and delete handlers to
+  call a SeqDB method in the case of memory allocation failure, which
+  could then call the atlas to do a SeqDB garbage collection.
+
+

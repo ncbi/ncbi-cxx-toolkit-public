@@ -1,0 +1,7 @@
+                Warning:
+Problem:        FASTA-Reader: Title is very long: 1948 characters (max is 1000)
+SeqId:          lcl|seq_id
+Line:           1
+FeatureName:    defline
+
+

@@ -1,0 +1,203 @@
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Windows Help Designer (http://www.visagesoft.com)">
+<TITLE>Structure Window : Style</TITLE>
+</HEAD>
+<BODY>
+<H2>Structure Window : Style Commands</H2>
+<UL>
+  <LI><A href="#edit">Edit global style</A> 
+    <ul>
+      <li><A href="#rendering_descr">Rendering styles</A>
+      <li><A href="#coloring_descr">Coloring styles</A></li>
+    </ul>
+  <LI><A href="#favorites">Favorites</A> 
+  <LI><A href="#rendering_short">Rendering shortcuts</A> 
+  <LI><A href="#coloring_short">Coloring shortcuts</A> 
+  <LI><A href="#annotate">Annotate</A></LI>
+</UL>
+<h3><a name="edit"></a>Edit global style</h3>
+<p>Edit the global drawing style that applies to all structures. (To change the 
+  style of specific residues, see the <A href="#annotate">Annotate</A> item below.) 
+  This brings up the style editor panel. You will see the changes take effect 
+  immediately if the <b>Apply after each change</b> option is on; otherwise, changes 
+  will only occur when you click <b>Apply</b> or <b>Done</b>. The settings chosen 
+  here will be saved and restored automatically when you write your data out to 
+  a file. There are three tabbed panes in the style editor:</p>
+<p>&nbsp;</p>
+<ul>
+  <li><b>Settings</b> tab: these items control rendering and coloring of the various 
+    structural elements. The columns in this panel are: 
+    <ul>
+      <li><b>Group</b>: which atoms or objects 
+    are controlled by each row. 
+      <li><b>Show</b>: whether these items should be displayed, and for backbones, 
+        what type of backbone is drawn. <b>Trace</b> is alpha carbon or phosphate 
+        only; <b>Partial</b> shows all backbone atoms that make a linear 
+    chain. 
+      <li><b>Rendering</b>: what shapes are used to draw these elements. See the 
+        descriptions of <A href="#rendering_descr">rendering styles</A> below. 
+      <li><b>Color scheme</b>: how these items are colored. See the descriptions 
+        of <A href="#coloring_descr">coloring styles</A> below. 
+
+      <li><b>User color</b>: press these buttons to select any color to use when 
+        <b>Color scheme</b> is set to <b>User selection</b>. On PC and UNIX, the 
+        background color of these buttons will be the color selected.</li>
+    </ul>
+  <li><b>Labels</b> tab: controls if and how residues are labeled. 
+    <ul>
+      <li><b>Spacing</b>: labels are drawn every <b><i>N</i></b> residues. 
+      <li><b>Type</b>: one or three letter 
+    residue names are used. 
+      <li><b>Numbering</b>: <b>Sequential</b> means residues are numbered in order 
+        starting from one; <b>From PDB</b> will use residue 
+    numbers from the original PDB file (which may be ordered arbitrarily). 
+      <li><b>Contrast</b>: if selected, 
+    white labels are used if the background is a dark color, and black labels 
+    otherwise. 
+      <li><b>Termini</b>: label the ends of 
+    the chains. For example, the N terminal residue of chain B will be labeled 
+    "N (B)". 
+      <li><b>Metal ions</b>: whether to put the element symbol in the center of 
+        transparently-drawn metal ions.</li>
+    </ul>
+  <li><b>Details</b> tab: controls sizes of the various rendered objects. These 
+    numbers are in units of Angstroms, except for <b>Space fill size</b> which 
+    is a scale factor applied to the van der Waals radius of the element. For 
+    example, you can change the relative radii of atoms and bonds in a Ball and 
+    Stick model by adjusting the <b>Ball radius</b> and <b>Stick radius</b> items..</li>
+</ul>
+<h4><a name="rendering_descr"></a>Rendering Styles</h4>
+<p>Both the <A href="#edit">style editor</A> and the <A href="#rendering_short">rendering 
+  shortcuts</A> offer a variety of drawing styles. Here are descriptions of the 
+  available choices: </p>
+<p>&nbsp;</p>
+<ul>
+  <li><b>Wire worm</b>: a curved thin line 
+  that is drawn through only the alpha carbons (or phosphates) of the backbone. 
+  <li><b>Tube worm</b>: like <b>wire worm</b>, except a thick tube is drawn instead. 
+  <li><b>Wire</b>: bonds between all atoms 
+  are drawn as straight thin lines. 
+  <li><b>Tube</b>: bonds between all atoms 
+  are drawn as thick tubes. 
+  <li><b>Ball and stick</b>: bonds are 
+  drawn as thick tubes, and atoms are represented by spheres. 
+  <li><b>Space fill</b> (sometimes called 
+  CPK): atoms are drawn with larger spheres proportional to their van der Waals 
+  radii. No bonds are drawn. 
+  <li><b>With/without arrows</b>: this is a special style that applies only to 
+    the objects that represent protein helices and strands, and controls whether 
+    or not arrowheads are used to indicate the N-to-C direction of the protein 
+    backbone. </li>
+</ul>
+<h4><a name="coloring_descr"></a>Coloring Styles</h4>
+<p>Both the <A href="#edit">style editor</A> and the <A href="#coloring_short">coloring 
+  shortcuts</A> offer a variety of color schemes. Coloring schemes typically control 
+  how atoms are colored; bonds are colored according to the colors of the atoms 
+  at each end. Here are descriptions of the available choices: </p>
+<p>&nbsp;</p>
+<ul>
+  <li><b>Element</b>: colors by atomic 
+  element. 
+  <li><b>Object</b>: each structure object 
+  - one MMDB/PDB entry - is assigned a different color. 
+  <li><b>Molecule</b>: each molecule - one 
+  chain or heterogen or solvent - is assigned a different color. 
+  <li><b>Domain</b>: each domain in a 
+  chain is assigned a different color. 
+  <li><b>Secondary structure</b>: for 
+  protein chains, distinguishes helix, strand, and coil with different colors. 
+  <li><b>Temperature</b>: uses a 
+  traditional temperature color cycle (blue - green - yellow - red - white) to 
+  indicate relative temperature factors for each atom, where blue is lowest and 
+  white highest temperature. 
+  <li><b>Rainbow</b>: uses a ROYGBIV color 
+  cycle along each chain from N to C (or 5' to 3'). 
+  <li><b>Charge</b>: for proteins, draws 
+  positively charged residues in blue, negative in red, and neutral in gray. 
+  <li><b>Hydrophobicity</b>: for proteins, 
+  uses a standard hydrophobicity scale to draw the most hydrophobic residues in 
+  red, to the least hydrophobic (most hydrophilic) in blue. 
+  <li><b>User selection</b>: a solid color 
+  of the user's choice. 
+  <li><b>Sequence conservation</b>: these schemes are all used to color sequence 
+    alignments in different ways based on sequence conservation. 
+    <ul>
+      <li><b>Aligned</b>: aligned residues 
+    are all red. 
+      <li><b>Identity</b>: columns of 
+    identical residues are red, others blue. 
+      <li><b>Variety</b>: columns with the 
+    lowest number of different amino acids represented are colored red, and 
+    highest variety columns are blue. 
+      <li><b>Weighted variety</b>: similar to <b>variety</b>, but scaled by a standard BLOSUM62 
+    substitution score so that columns of most strongly conserved residues are 
+    more red. 
+      <li><b>Information content</b>: scales 
+    color according to the information content of each column, where a higher 
+    score is more red. 
+      <li><b>Fit</b>: colors each residue according to how well it "fits" 
+        in the column it is in (based on residue-to-PSSM score). A residue colored red has a high substitution 
+        score given the other residues in that column; a blue color indicates a low score.</li>
+      <li><b>Block fit</b>: similar to <i>fit</i> except residues are colored by blocks and ranked by the sum of residue-to-PSSM scores. The highest scoring blocks in the entire alignment are red, the lowest blue.</li>
+      <li><b>Normalized block fit</b>: similar to <i>block fit</i> except scores are normalized within each column of aligned block; the highest scoring row in a given block column is red, the lowest blue.</li>
+      <li><b>Block row fit</b>: Similar to <i>normalized block fit</i> excpet scores are normalized across each sequence row; the highest scoring block of a given sequence will be red, the lowest blue.</li>
+    </ul>
+  </li>
+</ul>
+<h3><a name="favorites"></a>Favorites</h3>
+The <b>Favorites</b> submenu allows you to define your own rendering and coloring 
+styles, which you can save for future sessions. To use this feature, simply define 
+any (global) style using the above <A href="#edit">style editor</A>, then select 
+<b>Add/Replace</b> and type in a name. A new menu item of that name will appear 
+at the bottom of the <b>Favorites</b> submenu (or will replace an existing item 
+of the same name), and when you select that item, this style will be used as the 
+global style and applied to the current structures. You can use the <b>Remove</b> 
+item to remove a style from your list. Your style definitions are saved in a file 
+automatically; you can change the location of this file using <b>Change File</b>. 
+This also allows you to keep different sets of favorite styles or even share these 
+styles with others; when you do <b>Change File</b>, the styles in the current 
+<b>Favorites</b> menu are replaced with the those in the file you select. 
+<h3><a name="rendering_short"></a>Rendering shortcuts</h3>
+These are shortcuts to predefined rendering styles. They will change how structures 
+are shaped, but colors will are unaffected. The shortcuts have the same meanings 
+as the various <A href="#rendering_descr">rendering styles</A>, but are applied 
+to the entire structure rather than to specific groups. <b>Toggle sidechains</b> 
+will turn side chains on or off in the current style. 
+<h3><a name="coloring_short"></a>Coloring shortcuts</h3>
+These are shortcuts to predefined coloring styles. They will change how structures 
+are colored, but shapes will be unaffected. The shortcuts have the same meanings 
+as the various <A href="#coloring_descr">coloring styles</A>, but are applied 
+to the entire structure rather than to specific groups. 
+<h3><a name="annotate"></a>Annotate</h3>
+<p>This panel allows you to annotate a structure by defining different styles 
+  - rendering, coloring, and labeling - to specific sets of residues. This could 
+  be used, for example, to emphasize the amino acids that comprise the active 
+  site of a protein, in a figure for a publication. </p>
+<p>To create a new annotation, simply highlight the residues and molecules you 
+  would like to include in the annotation. They can be from any number of different 
+  chains or even PDB structures. Then bring up this panel and click on <b>New</b>. 
+  You will be prompted for a short name and a longer description, and the <b>edit 
+  style</b> button will bring up the standard <A href="#edit">style editor</A> 
+  - except that the style for only the highlighted residues is changed.</p>
+<p>You can have any number of style annotations defined. The annotations you have 
+  created are listed in the <b>Available</b> area. By default, a new annotation 
+  is always turned on. The <b>Displayed</b> area shows which annotations are visible; 
+  to turn an individual annotation off, simply select it and click on <b>Turn 
+  off</b>, and to redisplay it again, select it and click <b>Turn on</b>.</p>
+<p>The bottom row of buttons are operations you can do on whichever annotation 
+  is currently selected. <b>Highlight</b> will cause the residues and molecules 
+  associated with the annotation to become highlighted. <b>Edit</b> allows you 
+  to change the annotation's name, description, and style definition. <b>Move</b> 
+  can be used to change the location of the annotation - simply highlight the 
+  residues and molecules you would like to move the annotation onto, then press 
+  this button. <b>Delete</b> will remove the annotation completely.</p>
+<p>If annotations cover overlapping regions of residues, then the style associated 
+  with the annotation at the top of the <b>Displayed</b> list is the one that 
+  is shown in the overlapping area. If you would like instead for another overlapped 
+  style to be displayed, select that annotation and press <b>Move up</b> until 
+  that style is at the top of the <b>Displayed</b> list. Similarly, you can lower 
+  the annotation's order by pressing <b>Move down</b>.</p>
+</BODY>
+</HTML>

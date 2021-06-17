@@ -1,0 +1,6 @@
+SeqID      : seq2
+Line No    : 6
+Severity   : Fatal
+Problem    : Alignment.BadDataChars
+Message    : At ID 'seq2': Bad character [4] found at data position 8.
+

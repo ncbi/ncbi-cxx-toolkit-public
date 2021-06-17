@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(omssa)
+  NCBI_dataspecs(omssa.asn)
+  NCBI_uses_toolkit_libraries(seq)
+NCBI_end_lib()
+

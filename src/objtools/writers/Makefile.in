@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile ("objtools/writers" project)
+############################################
+
+LIB_PROJ = xobjwrite
+SUB_PROJ = unit_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(dbapi_util_blobstore SHARED)
+  NCBI_hosts_projects(
+    dbapi/driver/util/dbapi_util_blobstore
+  )
+  NCBI_add_definitions(NCBI_DBAPIUTIL_BLOBSTORE_EXPORTS)
+NCBI_end_lib()

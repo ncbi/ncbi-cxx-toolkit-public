@@ -1,0 +1,10 @@
+# $Id$
+
+WATCHERS = boukn 
+SRC = merge_tree merge_tree_core   equiv_range 
+
+LIB = xmergetree
+
+ASN_DEP = genome_collection seqset
+USES_LIBRARIES =  \
+    $(DL_LIBS) $(SOBJMGR_LIBS)

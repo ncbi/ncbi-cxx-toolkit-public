@@ -1,0 +1,12 @@
+# $Id$
+
+# Avoid problematic references to __libm_sse2_* functions under ICC,
+# and overtaxing WorkShop's optimizer.
+
+lat_lon_country_map.o: $(srcdir)/lat_lon_country_map.cpp
+ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
+	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) -fno-builtin-atan2 \
+	    -fno-builtin-cos -fno-builtin-sin $< -o $@ $(CXX_FILTER)
+else
+	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL:-xO%=) $< -o $@ $(CXX_FILTER)
+endif

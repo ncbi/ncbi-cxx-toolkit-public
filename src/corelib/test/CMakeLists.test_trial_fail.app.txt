@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_app(test_trial_fail)
+  NCBI_sources(test_trial_fail)
+  NCBI_uses_toolkit_libraries(xncbi)
+NCBI_end_app()

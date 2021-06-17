@@ -1,0 +1,4 @@
+track name="test-features.input" description="sorted coverage graph"
+lcl|test1	1	101	100
+lcl|test1	100	201	200
+lcl|test1	800	901	800

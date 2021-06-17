@@ -1,0 +1,86 @@
+Check Variation type: 4
+Ref/Alt : CC - GC
+Variation ::= {
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc int {
+              from 123122,
+              to 123123,
+              strand plus,
+              id other {
+                accession "NC_000001",
+                version 11
+              }
+            },
+            mol genomic,
+            seq {
+              length 2,
+              seq-data iupacna "AT"
+            }
+          }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type mnp,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "GC"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "AT"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type mnp,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "CC"
+                    }
+                  }
+                },
+                observation 5
+              }
+            }
+          }
+        },
+        ext {
+          {
+            type str "Reference Allele Change",
+            data {
+              {
+                label str "Reference Changed",
+                data bool TRUE
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

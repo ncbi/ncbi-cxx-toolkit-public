@@ -1,0 +1,13 @@
+# $Id$
+
+SRC = test_dll
+LIB = test_dll
+
+LIB_OR_DLL = dll
+DLL_TYPE = plugin
+
+DLL_UNDEF_FLAGS = $(FORBID_UNDEF)
+
+WATCHERS = ivanov
+USES_LIBRARIES =  \
+    $(ORIG_LIBS)

@@ -1,0 +1,15 @@
+# $Id$
+
+NCBI_begin_app(test_lds2)
+  NCBI_sources(test_lds2)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_lds2 xobjutil)
+
+  NCBI_set_test_assets(lds2_data)
+  NCBI_add_test(test_lds2 -id 5)
+  NCBI_add_test(test_lds2 -gzip -id 5)
+  NCBI_add_test(test_lds2 -stress)
+  NCBI_add_test(test_lds2 -stress -gzip -format fasta)
+
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()
+

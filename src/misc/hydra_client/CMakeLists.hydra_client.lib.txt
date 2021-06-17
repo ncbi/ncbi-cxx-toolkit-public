@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(hydra_client)
+  NCBI_sources(hydra_client)
+  NCBI_uses_toolkit_libraries(xmlwrapp)
+  NCBI_project_watchers(grichenk choi)
+NCBI_end_lib()
+

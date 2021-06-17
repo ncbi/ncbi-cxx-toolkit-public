@@ -1,0 +1,33 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_define_test_resource(PythonTest 1)
+
+
+NCBI_begin_app(python_ncbi_dbapi_test)
+  NCBI_sources(python_ncbi_dbapi_test)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(dbapi_driver test_boost)
+  if (NCBI_PTBMODE_COLLECT_DEPS AND UNIX AND BUILD_SHARED_LIBS)
+    NCBI_uses_toolkit_libraries(
+        ncbi_xdbapi_ftds
+        ncbi_xdbapi_ftds100
+        ncbi_xdbapi_ctlib
+        ncbi_xdbapi_mysql
+    )
+  endif()
+  NCBI_project_watchers(ucko satskyse)
+
+  NCBI_set_test_requires(unix DLL_BUILD in-house-resources)
+  NCBI_set_test_resources(PythonTest)
+  NCBI_set_test_assets(python_ncbi_dbapi_test.ini)
+  NCBI_set_test_timeout(300)
+  NCBI_add_test(python_ncbi_dbapi_test -dr ctlib -S Sybase)
+  NCBI_add_test(python_ncbi_dbapi_test -dr ctlib -S DBAPI_DEV16_16K)
+  NCBI_add_test(python_ncbi_dbapi_test -dr ftds100 -S Sybase)
+  NCBI_add_test(python_ncbi_dbapi_test -dr ftds100 -S DBAPI_DEV16_16K)
+  NCBI_add_test(python_ncbi_dbapi_test -dr ftds100 -S MsSql)
+  NCBI_add_test(python_ncbi_dbapi_test -dr ftds100 -S MsSql -V 7.4)
+  NCBI_add_test(python_ncbi_dbapi_test -dr odbc  -S MsSql)
+NCBI_end_app(_result)

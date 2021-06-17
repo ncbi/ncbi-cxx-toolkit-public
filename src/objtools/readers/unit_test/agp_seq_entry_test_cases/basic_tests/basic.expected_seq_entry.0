@@ -1,0 +1,33 @@
+Seq-entry ::= seq {
+  id {
+    local str "bogus1"
+  },
+  inst {
+    repr delta,
+    mol dna,
+    length 450,
+    ext delta {
+      loc int {
+        from 100,
+        to 199,
+        strand plus,
+        id genbank {
+          accession "U54469",
+          version 1
+        }
+      },
+      literal {
+        length 150
+      },
+      loc int {
+        from 300,
+        to 499,
+        strand plus,
+        id genbank {
+          accession "U54469",
+          version 1
+        }
+      }
+    }
+  }
+}

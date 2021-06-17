@@ -1,0 +1,16 @@
+                Error
+Line:           1
+Problem:        PSL Error: Number of blockSizes does not match blockCount.
+
+                Error
+Line:           6
+Problem:        PSL Error: Number of blockStartsQ does not match blockCount.
+
+                Error
+Line:           16
+Problem:        PSL Error: Number of blockStartsT does not match blockCount.
+
+                Error
+Line:           100
+Problem:        PSL Error: Record has invalid column count.
+

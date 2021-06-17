@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(cache_index_copy)
+  NCBI_sources(cache_index_copy)
+  NCBI_uses_toolkit_libraries(asn_cache)
+  NCBI_project_watchers(marksc2)
+NCBI_end_app()
+

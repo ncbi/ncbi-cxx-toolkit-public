@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(psg_protobuf)
+  NCBI_dataspecs(psg_protobuf.proto)
+  NCBI_requires(PROTOBUF)
+  NCBI_disable_pch()
+NCBI_end_lib()

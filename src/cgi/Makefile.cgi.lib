@@ -1,0 +1,18 @@
+# $Id$
+
+# Build library "XCGI"
+# NOTE:  see also makefile for lib "XFCGI" -- these two should be kept in-sync!
+#################################
+
+SRC = ncbicgi cgiapp cgictx ncbicgir ncbires ref_args cgi_run cgi_util \
+      cgi_serial cgi_session cgi_exception cgiapp_cached cgi_entry_reader \
+      user_agent
+LIB = xcgi
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE)
+
+WATCHERS = vakatov
+
+
+USES_LIBRARIES =  \
+    xutil

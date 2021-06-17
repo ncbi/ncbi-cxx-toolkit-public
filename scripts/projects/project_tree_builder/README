@@ -1,0 +1,15 @@
+PROJECT TREE BUILDER -
+Based on a tree of UNIX makefiles in NCBI C++ toolkit,
+generates solutions and projects for Microsoft Visual Studio,
+or for Xcode builds system.
+On UNIX, generates a flat makefile with proper dependencies.
+
+
+
+See also:
+
+http://www.ncbi.nlm.nih.gov/books/n/toolkit/ch_config#ch_config.MS_Windows
+
+
+
+

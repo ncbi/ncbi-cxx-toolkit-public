@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(asndisc)
+  NCBI_sources(asndisc)
+  NCBI_uses_toolkit_libraries(xcompress xdiscrepancy data_loaders_util)
+NCBI_end_app()
+

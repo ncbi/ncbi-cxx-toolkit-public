@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xloader_patcher)
+  NCBI_sources(loaderpatcher)
+  NCBI_uses_toolkit_libraries(xobjmgr)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+

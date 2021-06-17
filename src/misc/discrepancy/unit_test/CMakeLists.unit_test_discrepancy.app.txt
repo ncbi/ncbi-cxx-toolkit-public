@@ -1,0 +1,11 @@
+#  $Id$
+
+NCBI_begin_app(unit_test_discrepancy)
+  NCBI_sources(unit_test_discrepancy)
+  NCBI_uses_toolkit_libraries(
+    xdiscrepancy test_boost ncbi_xloader_genbank
+  )
+  NCBI_requires(Boost.Test.Included)
+  NCBI_add_test(unit_test_discrepancy)
+  NCBI_project_watchers(kachalos)
+NCBI_end_app()

@@ -1,0 +1,17 @@
+# $Id$
+
+WATCHERS = thiessen
+
+ASN_DEP = seq cdd ncbimime
+
+SRC = \
+	cav_alignset \
+	cav_alndisplay \
+	cav_function \
+	cav_seqset
+
+LIB = xcddalignview
+
+
+USES_LIBRARIES =  \
+    ncbimime

@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_lib(xalgoalignnw)
+  NCBI_sources(
+    nw_aligner nw_aligner_threads nw_spliced_aligner nw_pssm_aligner
+    nw_band_aligner mm_aligner mm_aligner_threads nw_spliced_aligner16
+    nw_spliced_aligner32 nw_formatter
+  )
+  NCBI_uses_toolkit_libraries(tables xobjmgr seq)
+  NCBI_project_watchers(kiryutin)
+NCBI_end_lib()
+

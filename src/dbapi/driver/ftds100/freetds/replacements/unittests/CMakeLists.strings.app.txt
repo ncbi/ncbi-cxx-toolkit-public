@@ -1,0 +1,14 @@
+# $Id$
+
+add_executable(tds100_strings-app
+    strings
+)
+
+set_target_properties(tds100_strings-app PROPERTIES OUTPUT_NAME tds100_strings)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE})
+
+target_link_libraries(tds100_strings-app
+    tds_ftds100
+)
+

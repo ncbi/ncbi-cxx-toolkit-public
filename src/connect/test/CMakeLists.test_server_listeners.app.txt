@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(test_server_listeners)
+  NCBI_sources(test_server_listeners)
+  NCBI_requires(MT Linux)
+  NCBI_uses_toolkit_libraries(xthrserv)
+  NCBI_project_watchers(satskyse)
+NCBI_end_app()
+

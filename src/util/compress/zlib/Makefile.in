@@ -1,0 +1,7 @@
+# $Id$
+
+LIB_PROJ = zlib
+REQUIRES = LocalZ
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

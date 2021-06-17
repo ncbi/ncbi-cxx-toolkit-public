@@ -1,0 +1,19 @@
+Dense-seg ::= {
+  dim 2,
+  numseg 1,
+  ids {
+    gi 37221178,
+    gi 37221178
+  },
+  starts {
+    0,
+    0
+  },
+  lens {
+    10
+  },
+  strands {
+    plus,
+    plus
+  }
+}

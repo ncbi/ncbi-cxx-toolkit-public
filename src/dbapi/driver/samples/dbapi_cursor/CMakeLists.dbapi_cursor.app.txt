@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(dbapi_cursor)
+  NCBI_sources(dbapi_cursor)
+  NCBI_uses_toolkit_libraries(dbapi_sample_base)
+NCBI_end_app()
+

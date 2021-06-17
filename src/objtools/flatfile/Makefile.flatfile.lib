@@ -1,0 +1,57 @@
+SRC     = \
+    xgbfeat \
+    xgbparint \
+    xutils \
+    valnode \
+    ftaerr  \
+    block \
+    em_index \
+    entry \
+    gb_index \
+    indx_blk \
+    pir_index \
+    prf_index \
+    sp_index \
+    utilfun \
+    xm_index \
+    xmlmisc  \
+    add \
+    asci_blk \
+    citation \
+    em_ascii \
+    fcleanup \
+    fta_qscore \
+    fta_src \
+    ftamain \
+    flatfile_parse_info \
+    gb_ascii \
+    genref \
+    ind \
+    loadfeat \
+    nucprot \
+    pir_ascii \
+    prf_ascii \
+    ref \
+    sp_ascii \
+    sp_ref \
+    utilfeat \
+    utilref \
+    xm_ascii \
+    buf_data_loader  \
+    ftanet \
+    ftamed \
+    flatfile_message \
+    flatfile_message_reporter
+
+
+LIB     = xflatfile
+
+DLL_LIB = xlogging 
+
+ASN_DEP = genome_collection mla submit taxon1
+
+USES_LIBRARIES = xlogging
+
+WATCHERS = kachalos foleyjp
+
+

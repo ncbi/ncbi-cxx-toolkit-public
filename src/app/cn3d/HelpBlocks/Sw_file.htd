@@ -1,0 +1,108 @@
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Microsoft FrontPage 5.0">
+<TITLE>Structure Window : File</TITLE>
+</HEAD>
+<BODY>
+<H2>Structure Window : File Commands</H2>
+<ul>
+  <li><A href="#open">Open</A>
+  <li><A href="#network">Network Load</A>
+  <li><A href="#save">Save</A>
+  <li><A href="#save_as">Save As</A>
+  <li><A href="#png">Export PNG</A>
+  <li><A href="#realign">Realign Structures</A>
+  <li><A href="#preferences">Preferences</A>
+  <li><A href="#fonts">Set Fonts</A>
+  <li><A href="#exit">Exit</A></li>
+</ul>
+<h3><a name="open"></a>Open</h3>
+<p>Open a structure file from the local disk. This can be an ASCII or binary ASN1
+  file, which must contain data of either the Ncbi-mime-asn1 or Cdd types (which
+  will always be true of files downloaded from NCBI structure-based servers).
+  If a there is already a structure being viewed, you will be prompted to save
+  any changes before opening the new file.</p>
+<h3><a name="network"></a>Network Load</h3>
+<p>This is a shortcut to loading particular structures. Enter either a 4-letter PDB code
+or an MMDB integer ID. Cn3D will connect to NCBI's MMDB database via the internet and download
+that structure directly, which you can then manipulate as usual or save to a local file if desired.</p>
+<h3><a name="save"></a>Save</h3>
+<p>Save the current data to a file on the local disk, using the same filename 
+  and data type as was initially loaded. Cn3D will assume all editing changes are to be kept.</p>
+<h3><a name="save_as"></a>Save As</h3>
+<p>Similar to <a href="#save">Save</a> except a dialog will appear in which you can choose
+ a diectory and file name and specify either ASCII or binary type files.</p>
+<h3><a name="png"></a>Export PNG</h3>
+<p>Save the image currently displayed in the structure window to a PNG-format
+  file. First, you will be prompted for a file name and path. Then you will see
+  a dialog that allows you to control the image export parameters, with these
+  fields:</p>
+<p>&nbsp;</p>
+<ul>
+  <li><b>File name</b>: the current
+  path to the file to be saved.
+  <li><b>Width</b> and <b>Height</b>: the size (in pixels) of the image. The
+  dimensions can be smaller or larger than the current window; this is useful
+  for creating small thumbnails, or high resolution images for hardcopy output.
+  <li><b>Maintain Aspect</b>: keep the
+  same relative width/height as the current structure window. If unchecked, the
+  view may not correspond exactly to what you see in the structure window.
+  <li><b>Interlaced</b>: whether to create an interlaced PNG file. Interlacing
+    is mainly for web images; it is unavailable for larger images.</li>
+</ul>
+<p>Once you have set all the appropriate parameters, hit <b>OK</b>. You will see
+  a small progress meter as the file is created; you'll have to wait until export
+  is finished before continuing.</p>
+<h3><a name="realign"></a>Realign Structures</h3>
+<p>Re-compute the structure alignment(s) between multiple structures. Each 
+  structure will be realigned with the first structure of the alignment, according to a rigid body fit using
+  only the alpha carbon coordinates of residues in aligned blocks. The RMSD
+  between the coordinate sets for each pair of structures will be printed in the message log. If there are
+ aligned columns selected in the sequence window, then a dialog will appear asking whether to
+ use only the selected residues for structure alignment.</p>
+<h3><a name="preferences"></a>Preferences</h3>
+<p>Brings up the Preferences dialog. These are program configuration options that
+  persist from one session to another. There are three panels in this dialog:</p>
+<p><b>Quality</b>: controls the faceting resolution of various 3D objects.
+    OpenGL (the 3D graphics system used by Cn3D) draws "smooth" objects
+    like spheres out of many small triangles. These options control just how small
+    the triangles are: more triangles means a smoother, more rounded appearance,
+    but which takes longer to draw - making Cn3D respond more slowly. The <b>Presets</b> buttons are
+  a convenience to adjust an overall rendering quality, from Low which draws
+  quickly but looks jagged, to High which may draw slowly but will look much
+  nicer, especially in a large window or an exported image file. You can also 
+  choose between <b>Perspective</b> and <b>Orthographic</b> projections.</p>
+<p><b>Cache</b>: controls the Biostruc caching system. This is an advanced
+    option and by default will not affect most users. Certain NCBI data files
+    may not actually contain structure information, but only alignments and annotations,
+    etc.; Cn3D has to use a network connection to download structures from NCBI's
+    MMDB server. These structures can be cached in order to avoid repeatedly transferring
+    the same structures over a slow network connection. This panel allows you
+    to set the location of the cache, and limit the amount of disk space it will
+    use.</p>
+  <p><b>Advanced</b>:
+<ul><li>The <b>CDD Annotations</b> checkbox controls whether CDD annotation information is read-only 
+  (the default) or editable. Un-check this option if you want to edit the 
+  annotation information stored in a local CDD file.</li>
+<li><b>Max structures</b>: a limit of how many structures to load from a file with a multi-structured alignment.</li>
+<li><b>Footprint residues</b>: In certain BLAST operations (like self-hits), the alignment is restricted to the currently aligned footprint, for avoiding ambiguity with repeated domains. The "excess" specified here allows the alignment to extend that many residues beyond the existing footprint.</li>
+<li><b>Eye separation</b>: controls the stereo view, how great the depth of the perceived stereo appears.</li>
+<li><b>Proximal</b>: whether to use proximal (cross-eyed) or distal (uncrossed) stereo.</li>
+<li><b>Browser Launch</b>: (<b>UNIX ONLY</b>) tells Cn3D how to launch a web browser on your system.
+ The default is netscape, for which the launch command is:</p>
+<pre>( netscape -raise -remote 'openURL(&lt;URL&gt;)' || netscape '&lt;URL&gt;' ) &gt;/dev/null 2&gt;&amp;1 &amp;</pre>
+<p>This brings up the document in an existing netscape window; if you want to
+use a new window for each document, use the command:</p>
+<pre>( netscape -noraise -remote 'openURL(&lt;URL&gt;,new-window)' || netscape '&lt;URL&gt;' ) &gt;/dev/null 2&gt;&amp;1 &amp;</pre>
+<p>These command strings should be all on one line. You can customize the command to launch any browser you wish. Each occurrence of the string &lt;URL&gt; will be replaced by the actual URL of the web page Cn3D is launching.
+</p>
+</li>
+</ul>
+<h3><a name="fonts"></a>Set Fonts</h3>
+Sets the fonts used in the structure and sequence windows. Like the <b>Preferences</b>
+above, these settings are persistent across multiple Cn3D sessions.
+<h3><a name="exit"></a>Exit</h3>
+Exit the program. You will be prompted to write out any unsaved changes.
+</BODY>
+</HTML>

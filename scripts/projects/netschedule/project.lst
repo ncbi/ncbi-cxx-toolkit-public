@@ -1,0 +1,32 @@
+corelib$
+corelib/test$
+corelib/impl
+corelib/hash_impl
+util$
+util/regexp
+util/xregexp
+util/compress
+util/fileblobstorage$
+util/qparse$
+util/qparse/test$
+util/bitset$ update-only
+util/cache$ update-only
+util/math$ update-only
+util/checksum
+util/test
+connect$
+connect/services$
+connect/services/test$
+connect/services/impl$
+connect/test$
+connect/mbedtls
+check
+app$
+app/netschedule$
+app/netschedule/test$
+app/netschedule/utils$
+dll
+misc$
+misc/third_party
+misc/third_party_static
+

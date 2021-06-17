@@ -1,0 +1,86 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "Annot:MGC",
+      tag id 17391200
+    }
+  },
+  inst {
+    repr delta,
+    mol rna,
+    length 3179,
+    topology not-set,
+    ext delta {
+      loc int {
+        from 0,
+        to 3178,
+        id gi 17391200
+      }
+    }
+  },
+  annot {
+    {
+      db other,
+      name "Annot:MGC",
+      desc {
+        comment "Differences found between this sequence and the human genome
+ (build 34) are described in misc_difference features below"
+      },
+      data seq-table {
+        feat-type 8,
+        feat-subtype 38,
+        num-rows 2,
+        columns {
+          {
+            header {
+              field-id data-imp-key
+            },
+            default string "misc_difference"
+          },
+          {
+            header {
+              field-id comment
+            },
+            data string {
+              "2 bases in genome, TT, are not found in cDNA.",
+              "polyA tail: 45 bases do not align to the genome."
+            }
+          },
+          {
+            header {
+              field-id location-gi
+            },
+            default int 17391200
+          },
+          {
+            header {
+              field-id location-from
+            },
+            data int {
+              1251,
+              3134
+            }
+          },
+          {
+            header {
+              field-id location-to
+            },
+            sparse indexes {
+              1
+            },
+            default int 3178
+          },
+          {
+            header {
+              field-id location-fuzz-from-lim
+            },
+            sparse indexes {
+              0
+            },
+            default int 3
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,192 @@
+Seq-entry ::= seq {
+  id {
+    pir {
+      name "H70430" } ,
+    gi 7450545 } ,
+  descr {
+    title "K+ transport protein homolog - Aquifex aeolicus" ,
+    pir {
+      summary "#length 443 #molecular-weight 49157 #checksum 6788" ,
+      genetic "#gene trk1" ,
+      superfamily "Na+-ATP synthase chain J" ,
+      date "08-May-1998 #sequence_revision 08-May-1998 #text_change
+ 29-Sep-1999" } ,
+    create-date
+      std {
+        year 1998 ,
+        month 5 ,
+        day 8 } ,
+    update-date
+      std {
+        year 1999 ,
+        month 9 ,
+        day 29 } ,
+    source {
+      org {
+        taxname "Aquifex aeolicus" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 63363 } } ,
+        orgname {
+          name
+            binomial {
+              genus "Aquifex" ,
+              species "aeolicus" } ,
+          lineage "Bacteria; Aquificae; Aquificales; Aquificaceae; Aquifex" ,
+          gcode 11 ,
+          div "BCT" } } } ,
+    molinfo {
+      biomol peptide } ,
+    pub {
+      pub {
+        muid 98196666 ,
+        pmid 9537320 ,
+        article {
+          title {
+            name "The complete genome of the hyperthermophilic bacterium
+ Aquifex aeolicus." } ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Deckert" ,
+                      initials "G." } } ,
+                {
+                  name
+                    name {
+                      last "Warren" ,
+                      initials "P.V." } } ,
+                {
+                  name
+                    name {
+                      last "Gaasterland" ,
+                      initials "T." } } ,
+                {
+                  name
+                    name {
+                      last "Young" ,
+                      initials "W.G." } } ,
+                {
+                  name
+                    name {
+                      last "Lenox" ,
+                      initials "A.L." } } ,
+                {
+                  name
+                    name {
+                      last "Graham" ,
+                      initials "D.E." } } ,
+                {
+                  name
+                    name {
+                      last "Overbeek" ,
+                      initials "R." } } ,
+                {
+                  name
+                    name {
+                      last "Snead" ,
+                      initials "M.A." } } ,
+                {
+                  name
+                    name {
+                      last "Keller" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Aujay" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Huber" ,
+                      initials "R." } } ,
+                {
+                  name
+                    name {
+                      last "Feldman" ,
+                      initials "R.A." } } ,
+                {
+                  name
+                    name {
+                      last "Short" ,
+                      initials "J.M." } } ,
+                {
+                  name
+                    name {
+                      last "Olsen" ,
+                      initials "G.J." } } ,
+                {
+                  name
+                    name {
+                      last "Swanson" ,
+                      initials "R.V." } } } ,
+            affil
+              str "Diversa Corporation, San Diego, California 92121, USA." } ,
+          from
+            journal {
+              title {
+                iso-jta "Nature" ,
+                ml-jta "Nature" ,
+                issn "0028-0836" ,
+                name "Nature." } ,
+              imp {
+                date
+                  std {
+                    year 1998 ,
+                    month 3 ,
+                    day 26 } ,
+                volume "392" ,
+                issue "6674" ,
+                pages "353-358" ,
+                language "eng" ,
+                pubstatus ppublish ,
+                history {
+                  {
+                    pubstatus medline ,
+                    date
+                      std {
+                        year 2001 ,
+                        month 3 ,
+                        day 23 ,
+                        hour 10 ,
+                        minute 1 } } ,
+                  {
+                    pubstatus pubmed ,
+                    date
+                      std {
+                        year 1998 ,
+                        month 4 ,
+                        day 16 ,
+                        hour 2 ,
+                        minute 22 } } } } } ,
+          ids {
+            doi "10.1038/32831" ,
+            pubmed 9537320 } } } } } ,
+  inst {
+    repr raw ,
+    mol aa ,
+    length 443 ,
+    seq-data
+      ncbieaa "MVKKLNPSRTLLFSFSLLILVGALLLYLPISTTRPISFLDALFTATSAVTVTGLAVLDTYSDF
+TLFGKLVILFLIQVGGLGYMTLSTFFLVLLGRRIGLKERLILAESLEYPSMHGLIRFLKRVFSFVFITELTGAILLSI
+YFSLKGVEDPVFNGIFHSVSAFNNAGFSTFKNGLLDFRGDLFVNLVISFLIILGGIGFFVVNDIYLWYTKKVPRLSVH
+TKLVMITSVLLILLGTVGLIFTEFGNYKGLWQYDWYERILSSYFMSVSSRTAGFSTVDLIDMSESSQFLLMILMFIGA
+SPGGTGGGIKTTTFVVILIAVYSFVRGREQSVIFERSVPESTIKKALVILSLSIFFINFVNLMLDKFENKDFLYTMFE
+VVSAFSTVGLSIGNPEGLSFCADFSPLGKIVIIITMLVGRLGILGFALALTGRSEVQRIKYPEARILV" } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              prot {
+                name {
+                  "K+ transport protein homolog" } } ,
+            location
+              whole
+                gi 7450545 } } } } }

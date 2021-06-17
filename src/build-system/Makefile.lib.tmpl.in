@@ -1,0 +1,47 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+
+# Standard template to build a library (static or DLL)
+######################################################
+
+builddir = @builddir@
+
+
+# Configured makefile variables:
+#   tools, flags, paths
+#
+include $(builddir)/Makefile.mk
+
+
+# Project definition:
+#   code sources, library name, project-specific flags and tools
+#
+include $(srcdir)/Makefile.$(TMPL).lib
+
+
+# Indicates whether DLLs are buildable in this configuration,
+# and if not -- then force the library to be built as static
+#
+include $(builddir)/Makefile.is_dll_support
+
+
+# Standard rules to build a library
+#
+include $(builddir)/Makefile.$(LIB_OR_DLL)
+
+
+# If the makefile's changed, we probably at least need to relink.
+#
+$(XLIB) $(XDLL): $(srcdir)/Makefile.$(TMPL).lib
+
+src-stamp:
+	@$(TOUCH) $(status_dir)/.$(LIB).files
+
+# Guard against invalid PTB-oriented settings.
+#
+all: $(ASN_DEP:%=$(status_dir)/.%.files)
+all: $(USR_DEP:%=$(status_dir)/.%.dep)
+
+.PHONY: src-stamp

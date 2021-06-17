@@ -1,0 +1,9 @@
+# $Id$
+
+LIB_PROJ = psg_cache
+SUB_PROJ = test
+
+REQUIRES = MT LMDB
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

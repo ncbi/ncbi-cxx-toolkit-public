@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_app(hooks_skip_variant)
+  NCBI_sources(hooks_skip_variant)
+  NCBI_uses_toolkit_libraries(seqset)
+NCBI_end_app()

@@ -1,0 +1,20 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(python_ncbi_dbapi)
+  NCBI_sources(python_ncbi_dbapi)
+  NCBI_headers(*.hpp pythonpp/*.hpp)
+  NCBI_uses_toolkit_libraries(dbapi xutil)
+  NCBI_optional_components(connext)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_lib(_result)
+
+if(_result AND UNIX AND BUILD_SHARED_LIBS)
+  add_custom_command(TARGET python_ncbi_dbapi POST_BUILD
+    COMMAND ln -f -s libpython_ncbi_dbapi.so python_ncbi_dbapi.so
+    BYPRODUCTS ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/python_ncbi_dbapi.so
+    WORKING_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
+  )
+endif()
+

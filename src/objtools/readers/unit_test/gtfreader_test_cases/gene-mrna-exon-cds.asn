@@ -1,0 +1,1048 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local str "gene_4",
+      data gene {
+      },
+      location int {
+        from 3630,
+        to 5898,
+        strand plus,
+        id local str "Chr1"
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01010"
+        }
+      }
+    },
+    {
+      id local str "mrna_5",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 3630,
+          to 3912,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 3995,
+          to 4275,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 4485,
+          to 4604,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 4705,
+          to 5094,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 5173,
+          to 5325,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 5438,
+          to 5898,
+          strand plus,
+          id local str "Chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01010"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01010.1"
+        }
+      },
+      xref {
+        {
+          id local str "gene_4"
+        }
+      }
+    },
+    {
+      id local str "cds_6",
+      data cdregion {
+      },
+      location mix {
+        int {
+          from 3759,
+          to 3912,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 3995,
+          to 4275,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 4485,
+          to 4604,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 4705,
+          to 5094,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 5173,
+          to 5325,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 5438,
+          to 5629,
+          strand plus,
+          id local str "Chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01010"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01010.1"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_5"
+        },
+        {
+          id local str "gene_4"
+        }
+      }
+    },
+    {
+      id local str "gene_7",
+      data gene {
+      },
+      location int {
+        from 5927,
+        to 8736,
+        strand minus,
+        id local str "Chr1"
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01020"
+        }
+      }
+    },
+    {
+      id local str "mrna_8",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 8570,
+          to 8736,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 8416,
+          to 8463,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 8235,
+          to 8324,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7941,
+          to 7986,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7761,
+          to 7834,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7563,
+          to 7648,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7383,
+          to 7449,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7156,
+          to 7231,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 6436,
+          to 7068,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 5927,
+          to 6262,
+          strand minus,
+          id local str "Chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01020"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01020.1"
+        }
+      },
+      xref {
+        {
+          id local str "gene_7"
+        }
+      }
+    },
+    {
+      id local str "cds_9",
+      data cdregion {
+      },
+      location mix {
+        int {
+          from 8570,
+          to 8665,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 8416,
+          to 8463,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 8235,
+          to 8324,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7941,
+          to 7986,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7761,
+          to 7834,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7563,
+          to 7648,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7383,
+          to 7449,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7156,
+          to 7231,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 6914,
+          to 7068,
+          strand minus,
+          id local str "Chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01020"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01020.1"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_8"
+        },
+        {
+          id local str "gene_7"
+        }
+      }
+    },
+    {
+      id local str "mrna_10",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 8570,
+          to 8736,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 8416,
+          to 8463,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 8235,
+          to 8324,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7941,
+          to 7986,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7761,
+          to 7834,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7563,
+          to 7648,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7156,
+          to 7449,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 6789,
+          to 7068,
+          strand minus,
+          id local str "Chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01020"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01020.2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_7"
+        }
+      }
+    },
+    {
+      id local str "cds_11",
+      data cdregion {
+      },
+      location mix {
+        int {
+          from 8570,
+          to 8665,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 8416,
+          to 8463,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 8235,
+          to 8324,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7941,
+          to 7986,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7761,
+          to 7834,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7563,
+          to 7648,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 7314,
+          to 7449,
+          strand minus,
+          id local str "Chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01020"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01020.2"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_10"
+        },
+        {
+          id local str "gene_7"
+        }
+      }
+    },
+    {
+      id local str "gene_12",
+      data gene {
+      },
+      location int {
+        from 11648,
+        to 13713,
+        strand minus,
+        id local str "Chr1"
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01030"
+        }
+      }
+    },
+    {
+      id local str "mrna_13",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 13334,
+          to 13713,
+          strand minus,
+          id local str "Chr1"
+        },
+        int {
+          from 11648,
+          to 13172,
+          strand minus,
+          id local str "Chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01030"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01030.1"
+        }
+      },
+      xref {
+        {
+          id local str "gene_12"
+        }
+      }
+    },
+    {
+      id local str "cds_14",
+      data cdregion {
+      },
+      location int {
+        from 11863,
+        to 12939,
+        strand minus,
+        id local str "Chr1"
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01030"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01030.1"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_13"
+        },
+        {
+          id local str "gene_12"
+        }
+      }
+    },
+    {
+      id local str "gene_15",
+      data gene {
+      },
+      location int {
+        from 23145,
+        to 31226,
+        strand plus,
+        id local str "Chr1"
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01040"
+        }
+      }
+    },
+    {
+      id local str "mrna_16",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 23145,
+          to 24450,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 24541,
+          to 24654,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 24751,
+          to 24961,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 25040,
+          to 25434,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 25523,
+          to 25742,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 25824,
+          to 25996,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26080,
+          to 26202,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26291,
+          to 26451,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26542,
+          to 26775,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26861,
+          to 27011,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 27098,
+          to 27280,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 27371,
+          to 27532,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 27617,
+          to 27712,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 27802,
+          to 28430,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 28707,
+          to 28804,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 28889,
+          to 29079,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 29159,
+          to 30064,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 30146,
+          to 30310,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 30409,
+          to 30815,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 30901,
+          to 31226,
+          strand plus,
+          id local str "Chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01040"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01040.1"
+        }
+      },
+      xref {
+        {
+          id local str "gene_15"
+        }
+      }
+    },
+    {
+      id local str "cds_17",
+      data cdregion {
+      },
+      location mix {
+        int {
+          from 23518,
+          to 24450,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 24541,
+          to 24654,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 24751,
+          to 24961,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 25040,
+          to 25434,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 25523,
+          to 25742,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 25824,
+          to 25996,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26080,
+          to 26202,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26291,
+          to 26451,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26542,
+          to 26775,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26861,
+          to 27011,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 27098,
+          to 27280,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 27371,
+          to 27532,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 27617,
+          to 27712,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 27802,
+          to 28430,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 28707,
+          to 28804,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 28889,
+          to 29079,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 29159,
+          to 30064,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 30146,
+          to 30310,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 30409,
+          to 30815,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 30901,
+          to 31078,
+          strand plus,
+          id local str "Chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01040"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01040.1"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_16"
+        },
+        {
+          id local str "gene_15"
+        }
+      }
+    },
+    {
+      id local str "mrna_18",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 23415,
+          to 24450,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 24541,
+          to 24654,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 24751,
+          to 24961,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 25040,
+          to 25434,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 25523,
+          to 25742,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 25824,
+          to 25996,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26080,
+          to 26202,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26291,
+          to 26451,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26542,
+          to 26775,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26861,
+          to 27011,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 27098,
+          to 27280,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 27371,
+          to 27535,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 27617,
+          to 27712,
+          strand plus,
+          id local str "Chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01040"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01040.2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_15"
+        }
+      }
+    },
+    {
+      id local str "cds_19",
+      data cdregion {
+      },
+      location mix {
+        int {
+          from 23518,
+          to 24450,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 24541,
+          to 24654,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 24751,
+          to 24961,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 25040,
+          to 25434,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 25523,
+          to 25742,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 25824,
+          to 25996,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26080,
+          to 26202,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26291,
+          to 26451,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26542,
+          to 26775,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 26861,
+          to 27011,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 27098,
+          to 27280,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 27371,
+          to 27535,
+          strand plus,
+          id local str "Chr1"
+        },
+        int {
+          from 27617,
+          to 27712,
+          strand plus,
+          id local str "Chr1"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "AT1G01040"
+        },
+        {
+          qual "transcript_id",
+          val "AT1G01040.2"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_18"
+        },
+        {
+          id local str "gene_15"
+        }
+      }
+    }
+  }
+}

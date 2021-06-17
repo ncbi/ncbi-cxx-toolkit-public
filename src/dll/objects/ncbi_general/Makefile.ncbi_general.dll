@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = ncbi_general
+
+HOSTED_LIBS    = general
+
+DEPENDENCIES   = ncbi_core
+
+CPPFLAGS = -DNCBI_GENERAL_EXPORTS
+

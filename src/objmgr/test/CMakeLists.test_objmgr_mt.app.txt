@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(test_objmgr_mt)
+  NCBI_sources(test_objmgr_mt test_helper)
+  NCBI_uses_toolkit_libraries(test_mt xobjmgr)
+  NCBI_set_test_timeout(600)
+  NCBI_add_test()
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
+

@@ -1,0 +1,5 @@
+Line No    : 1
+Severity   : Fatal
+Problem    : Alignment.IllegalDefinitionLine
+Message    : Invalid Fasta definition line. ">" must be followed by a sequence_ID.
+

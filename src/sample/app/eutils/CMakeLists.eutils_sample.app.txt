@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(eutils_sample)
+  NCBI_sources(eutils_sample)
+  NCBI_uses_toolkit_libraries(eutils seqset)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()

@@ -1,0 +1,564 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        local str "Ecle"
+      },
+      descr {
+        source {
+          org {
+            taxname "Eclectus roratus",
+            orgname {
+              mod {
+                {
+                  subtype sub-species,
+                  subname "roratus"
+                }
+              }
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi2na '151CC5903175725F74D6C941139601B10C68E1C35905C4E40689
+74F7DF4DE4DC5D4CF958AFFC71A74C5CC40885E0112834D75C7C57CC90797DBE9C6D714E2948CD
+3DE289C4B4F10173DD65354C4DA1011CBE0EA7E29A3DD6C84154570763DF65711F5D714FCC345A
+5C94D351707F5D460D28D010D572B374D01E6100D53D454C7DD5C02173CABD14D31D75474515D9
+5CF7454173CA2156007D1D490151C10555444D015838C7D73D93190D718D0D54101FAA8B7C95C9
+E5D6C70F73D70955D751035012645325F584'H
+      }
+    },
+    seq {
+      id {
+        local str "Phim"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula himalayana"
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi4na '4222128121224214881228222814228828218224814281121818
+422411124812148124448412811822481122812184211124424218212828828881828421828122
+822181824222414428888128184428218128818121814111228411121214411881822822812821
+222821814211284288824884428184822812218414422111818218828414414281214821821211
+12881882822428482221818188441211FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0'H
+      }
+    },
+    seq {
+      id {
+        local str "Pder"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula derbyana"
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi4na '4222128121284214121228222814228828218224814281121218
+422411184812148124418412811822421122812184211184414228212828828881828481828122
+822181824212444428828128184428218122818121114111228411121244411881822822812881
+222821814211284288884824428124822812218414422111818218828414444281214821821211
+122818828284221822218121824412111212814884118444228414484418828224814181122221
+2228112124188288242228121288228228122188218FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0'H
+      }
+    },
+    seq {
+      id {
+        local str "Plon"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula longicauda"
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi4na '1222128121224214121228222814228828218224814221421218
+422411124812148124418412811882421122812184211124414228288828828881828421828122
+822181824222414428828128124428248122818121144111228411121214411821822822812881
+222821814211284288884884428124822812218414422111818218828414444281214881821211
+128818828224221822218121824412111212814824118444228414484418828224814181122221
+222811212418828884222812128822822812218881811821221422814881821822122811228822
+822184118214418211121122222814421882218211128424121111822218822122228128828222
+811114122812814448824221881812822828212821281222824222818FFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0'H
+      }
+    },
+    seq {
+      id {
+        local str "Pal1"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula alexandri"
+          },
+          subtype {
+            {
+              subtype haplotype,
+              name "1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi2na '951C47901175725F74D6C9C1139603B12C68E1C35905C4E40E89
+7477DFCDECDC5D4CD918A7DC73A74C5CC40805E011A83CD75C7C574C9079FFB69C6D714E2940CD
+3DE2A9C4B4D10173DDE5354C4DA1011CBE0EA5E2BA3DD6C0C154570463DF65711F5D714F4C3452
+5CBCD353705F5D462D28D01055729354D01E6100D53D455C7DD5C02171CA3D94F31D77C74515F9
+5CF7454171CAA156007D15490355C1055544CF015838C7D73F93190D718D0D54101CA68B5C95C9
+E5D6C70D7BD70957D713035012645325F5A4'H
+      }
+    },
+    seq {
+      id {
+        local str "Pal2"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula alexandri"
+          },
+          subtype {
+            {
+              subtype haplotype,
+              name "2"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi2na '951C47901175725F74D6C9C1139603B12C68E1C35905C4E40E89
+7477DFCDECDC5D4CD918A7DC73A74C5CC40805E011A83CD75C7C574C9079FFB69C6D714E2940CD
+3DE2A9C4B4D10173DDE5354C4DA1011CBE0EA5E2BA3DD6C8C154570463DF65711F5D714F4C3452
+5CBCD353705F5D462D28D01055729354D01E6100D53D455C7DD5C02171CA3D94F31D77C74515F9
+5CF7454171CAA156007D15490355C1055D44CF015838C7D73F93190D718D0D54101CA68B5C95C9
+E5D6C70D7BD70957D713035012645325F5A4'H
+      }
+    },
+    seq {
+      id {
+        local str "Pros"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula roseata"
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi2na '151CC5921175725F7456C941139601B12C68E1C35907C4E40689
+7677DFCDE4DC5D44D958A7DC73A74C5CC42805E011283CD75D7457CC9079FFBE9CED714E2940CD
+3DE2A9C4BCD10173DD65354C4DA1011CB60E25E2BA3DD6C84154570463DF65711F5D714F4C345A
+5CBCF351705F5D462D28D0105572B754D01E6300F53D456C7DD5C02171CA3D14D31D7DC74515D9
+5CF745C171CAA152007F15490155C90555444D015838C7D73D93190D718D0D54301EA68B5C95C1
+E7D6C70DF3D70955F7510370106473A5F584'H
+      }
+    },
+    seq {
+      id {
+        local str "Pcol"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula columboides"
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi2na '151C45921175725F74D6E941139601B11C68E1C35905C4E40689
+7477DFCDE4DC5D44D9D8A7DC71A74C5CC40885E0112834D75C7C57CC90597FBE9CED714E2940CD
+3DE2A9C4B4D10173DDE5354C4DA1011CBE2EA5E2BA3DD6C84154570463DFE5713F5D714F4C3452
+5CBCD351705F5D460D68D0105572B354D01E6100D53D454C7DD5C02171CA3D94D31F77474515D9
+5CF74541F1CA2156007D15490155C1055D444D017838C7F73F93190F718D0D54309CA68B5E95C9
+65D6C70DF3D70957D7130350106C5325F584'H
+      }
+    },
+    seq {
+      id {
+        local str "Pcya"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula cyanocephala"
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi2na '951C45923175F25F74D6C9C1139603B12C68E1C35B05C4E40689
+7477DFCDE4DC5D44D958A7DC73A74C5CC40805E011283CD75C7657CC9079FDB69C6D714E2940CD
+3DE289C4B4D101F3DD67354C4DA1011CBE0EA5E29A3DD6C84154570463DFE5711F5D714F4C345A
+5CBCD351705F5F460D28D01055729750D01E6100F53D454C7DD5C02171CA3D14D31D75C74715D9
+5CFF454371CA215600FD15490157C10555444D015838C7D73D93190F718D0D54309CA69B5C95C9
+67D6C70D73D7095DF751037010645325F584'H
+      }
+    },
+    seq {
+      id {
+        local str "Pkm1"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula krameri",
+            orgname {
+              mod {
+                {
+                  subtype sub-species,
+                  subname "manillensis"
+                }
+              }
+            }
+          },
+          subtype {
+            {
+              subtype haplotype,
+              name "1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi2na '951C45921175725F74D6C941139601B90C6AE9C35905C4E40689
+F4F3DFCDE4DC5D44D958A7FC73A74C5CC40805E0112834D75C7C574C9059FDBE9CED714E2940CD
+3DE2A9C4BCD10173DD65356C4DA1093CB60E25E29A3DD6C841545F0463DF65711F5D714F4C3452
+5CBCD351705FDD460D28D01055729354D01E6100D53D454C7DD5C02171CABF9CD31D77574515F9
+5CF74541F1EAA156007D15490155C1075544CD01783AC7D73D9B190F718D0D54101EA68B5E95C9
+E5D6C78D73D70955D7530350106C5325F5A4'H
+      }
+    },
+    seq {
+      id {
+        local str "Pkm2"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula krameri",
+            orgname {
+              mod {
+                {
+                  subtype sub-species,
+                  subname "manillensis"
+                }
+              }
+            }
+          },
+          subtype {
+            {
+              subtype haplotype,
+              name "2"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi2na '951C45921175725F74D6C941139601B90C6AE9C35905C4E40689
+F4F3DFCDE4DC5D44D958A7FC73A75C5CC40805E0112834D75C7C574C9059FDBE9CED714E2940CD
+3DE2A9C4BCD10173DD65356C4DA1093CB60E25E29A3DD6C841545F0463DF65711F5D714F4C3452
+5CBCD351705FDD460D28D01055729354D01E6100D53D454C7DD5C02171CABF9CD31D77574515F9
+5CF74541F1EAA156007D15490155C1075544CD01783AC7D73D9B190F718D0D54101EA68B5E95C9
+E5D6C78D73D70955D7530350106C5325F5A4'H
+      }
+    },
+    seq {
+      id {
+        local str "Pkm3"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula krameri",
+            orgname {
+              mod {
+                {
+                  subtype sub-species,
+                  subname "manillensis"
+                }
+              }
+            }
+          },
+          subtype {
+            {
+              subtype haplotype,
+              name "3"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi2na '951C45921175725F74D6C941139601B90C68E9C35905C4E40689
+F4F3DFCDE4DC5D44D958A7FC73A74C5CC40805E0112834D75C7C574C9059FDBE9CED714E2940CD
+3DE2A9C4BCD10173DD65356C4DA1093CB60E25E29A3DD6C841545F0463DF65711F5D714F4C3452
+5CBCD351705FDD460D28D01055729354D01E6100D53D454C7DD5C02171CABF9CD31D77574515F9
+5CF74541F1EAA156007D15490157C10F5544CD01783AC7D73D9B190F718D0D54101EA68B5E95C9
+E5D6C78D73D70955D7530350106C5325F5A4'H
+      }
+    },
+    seq {
+      id {
+        local str "Pech"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula echo"
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi2na '951C45921175725F74D6C941139601B10C6AE1C35905C4E40689
+74F7DFCDE4DC5D44D958A7FC73A74C5CC40805E0112834D75C74574C90597DBE9CEDF14E2940CD
+3DE2A9C4BCD10173DD65354C4DA1011CBE0E27E29A3DD6C841545F0463DF65711F5D714F4C3452
+5CBCD351705FDD460D28D01055729354D01E6100F53D454C7DD5C02171CA3F9CD31D77474515F9
+DCF74541F1EAA156007D15490155C10755444D017838C7D73D93190F718D0D54109EA68B7E95C9
+E5D6C78D73D70955D7530350106C5325F5A4'H
+      }
+    },
+    seq {
+      id {
+        local str "Pkk2"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula krameri",
+            orgname {
+              mod {
+                {
+                  subtype sub-species,
+                  subname "krameri"
+                }
+              }
+            }
+          },
+          subtype {
+            {
+              subtype haplotype,
+              name "2"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi2na '151C45901175725F74D6C941139601B12C68E1C35905C4E40689
+74F7DFCDE4DC5D44D958A7FC73A74C5CCC0805E0112834D75C7C574C9059FDBE9CEDF14E2940CD
+3DE2A9C4B4D10173DD65356C4DA1011CBE0E25E29A3DD6C841545F0463DF65711F5D714F4C3472
+5CBCD351705FDD460D28D01055729354D01E6100D53D454C7DD5C02171CA3F94D39D77474515F9
+DCF74541F1EAA156007D15490155C10755444D015838C7D73D93190F798D0D54109CA68B5E95C9
+E5D6C70D73D70955D753035010645325F5A4'H
+      }
+    },
+    seq {
+      id {
+        local str "Peup"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula eupatria"
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi2na '951C45921175725F74D6C94113B601B10C6AE1C35907C4E40689
+7677DF4DE4DC5D44D9D8A7FC71A74C5ECC2805E011283CD75C74574C9059FDBE9CEDF14E2940CD
+3DE2A9C4B4D10173DD65354C4FA1011CBE0EA5E29A3DD6C84154570463DF65791F5D714F4C3452
+5CBCD351705F5D460DE8D01055729354D01EE100D53D456C7DD5C02171CA3D94F31D76474515D9
+5EF7454371CA215E007F15490155C10555444D015838C7D73D93190D718D0D54301CA68B5C95C9
+E5D6C78D73D70955D751035010605325F584'H
+      }
+    },
+    seq {
+      id {
+        local str "Pkbo"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula krameri",
+            orgname {
+              mod {
+                {
+                  subtype sub-species,
+                  subname "borealis"
+                }
+              }
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi2na '951C45921175725F74D6C941139601B90C6AE9C35905C4E40689
+F4F3DFCDE4DC5D44D958A7FC73A74C5CC40805E0112834D75C7C574C9059FDBE9CEDF14E2940CD
+3DE2A9C4BCD10173DD65356C4DA1013CB60E25E29A3DD6C841545F0463DF65711F5D714F4C3452
+5CBCD351705FDD460D28D01055729354D01E6100D53D454C7DD5C02171CABF9CD31D77574515F9
+5CF74541F1EAA156007D15490155C10755644D01783AC7D73D9B190F718D0D54109EA68B5E95C9
+E5D6C78D73D70955D753035010645325F5A4'H
+      }
+    },
+    seq {
+      id {
+        local str "Pkk1"
+      },
+      descr {
+        source {
+          org {
+            taxname "Psittacula krameri",
+            orgname {
+              mod {
+                {
+                  subtype sub-species,
+                  subname "krameri"
+                }
+              }
+            }
+          },
+          subtype {
+            {
+              subtype haplotype,
+              name "1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 799,
+        seq-data ncbi2na '151C45901175727F74D6C941139601B12C68E1C35905C4E40689
+74F7DFCDE4DC5D44D958A7FC73A74C5CCC0805E0112834D75C7C574C9059FDBE9CEDF14E2940CD
+3DE2A9C4B4D10173DD65356C4DA1011CBE0E25E29A3DD6C841545F0463DF65711F5D714F4C3472
+5CBCD351705FDD460D28D01055729354D01E6100D53D454C7DD5C02171CA3F94D31D77474515F9
+DCF74541F1EAA156007D15490155C10755444D015838C7D73D93190F798D0D54109CA68B5E95C9
+E5D6C70D73D70955D753035010645325F5A4'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 17,
+          segs denseg {
+            dim 17,
+            numseg 1,
+            ids {
+              local str "Ecle",
+              local str "Phim",
+              local str "Pder",
+              local str "Plon",
+              local str "Pal1",
+              local str "Pal2",
+              local str "Pros",
+              local str "Pcol",
+              local str "Pcya",
+              local str "Pkm1",
+              local str "Pkm2",
+              local str "Pkm3",
+              local str "Pech",
+              local str "Pkk2",
+              local str "Peup",
+              local str "Pkbo",
+              local str "Pkk1"
+            },
+            starts {
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            },
+            lens {
+              799
+            }
+          }
+        }
+      }
+    }
+  }
+}

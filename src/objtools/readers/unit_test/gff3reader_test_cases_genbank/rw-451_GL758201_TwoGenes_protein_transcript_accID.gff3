@@ -1,0 +1,22 @@
+##gff-version 3
+##feature-ontology http://song.cvs.sourceforge.net/*checkout*/song/ontology/sofa.obo?revision=1.93
+##sequence-region GL758201.1 1 2191949
+GL758201.1	ITAG_eugene	gene	16437	18189	.	+	.	ID=gene:Solyc00g005000.2;Name=Solyc00g005000.2;locus_tag=Solyc_00g005000;from_BOGAS=1;length=1753
+GL758201.1	ITAG_eugene	mRNA	16437	18189	.	+	.	ID=mRNA:Solyc00g005000.2.1;transcript_id=gnl|KC|Solyc00g005000.2.1;Parent=gene:Solyc00g005000.2;Note=Aspartic proteinase nepenthesin I contains Interpro domain(s)  IPR001461  Peptidase A1 ;Ontology_term=GO:0006508;from_BOGAS=1;interpro2go_term=GO:0006508;length=1753;nb_exon=2
+GL758201.1	ITAG_eugene	exon	16437	17275	.	+	.	ID=exon:Solyc00g005000.2.1.1;Parent=mRNA:Solyc00g005000.2.1;from_BOGAS=1
+GL758201.1	ITAG_eugene	five_prime_UTR	16437	16479	.	+	.	ID=five_prime_UTR:Solyc00g005000.2.1.0;Parent=mRNA:Solyc00g005000.2.1;from_BOGAS=1
+GL758201.1	ITAG_eugene	CDS	16480	17275	.	+	0	ID=CDS:Solyc00g005000.2.1.1;Parent=mRNA:Solyc00g005000.2.1;from_BOGAS=1;protein_id=gnl|KC|Solyc00g005000.2.1.2
+GL758201.1	ITAG_eugene	intron	17276	17335	.	+	.	ID=intron:Solyc00g005000.2.1.1;Parent=mRNA:Solyc00g005000.2.1;from_BOGAS=1
+GL758201.1	ITAG_eugene	exon	17336	18189	.	+	0	ID=exon:Solyc00g005000.2.1.2;Parent=mRNA:Solyc00g005000.2.1;from_BOGAS=1
+GL758201.1	ITAG_eugene	CDS	17336	17940	.	+	2	ID=CDS:Solyc00g005000.2.1.2;Parent=mRNA:Solyc00g005000.2.1;from_BOGAS=1;protein_id=gnl|KC|Solyc00g005000.2.1.2
+GL758201.1	ITAG_eugene	three_prime_UTR	17941	18189	.	+	.	ID=three_prime_UTR:Solyc00g005000.2.1.0;Parent=mRNA:Solyc00g005000.2.1;from_BOGAS=1
+GL758201.1	ITAG_eugene	gene	68062	68764	.	+	.	ID=gene:Solyc00g005020.1;Name=Solyc00g005020.1;locus_tag=Solyc_00g005020;from_BOGAS=1;length=703
+GL758201.1	ITAG_eugene	mRNA	68062	68764	.	+	.	ID=mRNA:Solyc00g005020.1.1;transcript_id=gnl|KC|Solyc00g005020.1.1;Parent=gene:Solyc00g005020.1;Note=Unknown Protein (AHRD V1);eugene_evidence_code=10F0H0E0IEG;from_BOGAS=1;length=703;nb_exon=3
+GL758201.1	ITAG_eugene	exon	68062	68211	.	+	0	ID=exon:Solyc00g005020.1.1.1;Parent=mRNA:Solyc00g005020.1.1;from_BOGAS=1
+GL758201.1	ITAG_eugene	CDS	68062	68211	.	+	0	ID=CDS:Solyc00g005020.1.1.1;Parent=mRNA:Solyc00g005020.1.1;from_BOGAS=1;protein_id=gnl|KC|Solyc00g005020.1.1.2|gb|AAC12345.1
+GL758201.1	ITAG_eugene	intron	68212	68343	.	+	.	ID=intron:Solyc00g005020.1.1.1;Parent=mRNA:Solyc00g005020.1.1;from_BOGAS=1
+GL758201.1	ITAG_eugene	exon	68344	68568	.	+	0	ID=exon:Solyc00g005020.1.1.2;Parent=mRNA:Solyc00g005020.1.1;from_BOGAS=1
+GL758201.1	ITAG_eugene	CDS	68344	68568	.	+	0	ID=CDS:Solyc00g005020.1.1.2;Parent=mRNA:Solyc00g005020.1.1;from_BOGAS=1;protein_id=gnl|KC|Solyc00g005020.1.1.2|gb|AAC12345.1
+GL758201.1	ITAG_eugene	intron	68569	68653	.	+	.	ID=intron:Solyc00g005020.1.1.2;Parent=mRNA:Solyc00g005020.1.1;from_BOGAS=1
+GL758201.1	ITAG_eugene	exon	68654	68764	.	+	0	ID=exon:Solyc00g005020.1.1.3;Parent=mRNA:Solyc00g005020.1.1;from_BOGAS=1
+GL758201.1	ITAG_eugene	CDS	68654	68764	.	+	0	ID=CDS:Solyc00g005020.1.1.3;Parent=mRNA:Solyc00g005020.1.1;from_BOGAS=1;protein_id=gnl|KC|Solyc00g005020.1.1.2|gb|AAC12345.1

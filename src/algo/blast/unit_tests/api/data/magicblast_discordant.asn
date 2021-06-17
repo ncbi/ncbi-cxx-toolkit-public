@@ -1,0 +1,188 @@
+Bioseq-set ::= {
+  seq-set {
+    seq {
+      id {
+        local id 1
+      },
+      descr {
+        title "SRR6207557.331.1",
+        user {
+          type str "Mapping",
+          data {
+            {
+              label str "has_pair",
+              data int 1
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 51,
+        seq-data iupacna "TTCCTAAGATCTCTATTTTCCGCACGAACTGAACGCATATCGAGAGTATTG"
+      }
+    },
+    seq {
+      id {
+        local id 2
+      },
+      descr {
+        title "SRR6207557.331.2",
+        user {
+          type str "Mapping",
+          data {
+            {
+              label str "has_pair",
+              data int 2
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 51,
+        seq-data iupacna "GACCCTGATTTGCCTCCAATTACTTCAGTTCAAGATGTAGATCGGTTGTCT"
+      }
+    },
+    seq {
+      id {
+        local id 3
+      },
+      descr {
+        title "SRR6207557.816.1",
+        user {
+          type str "Mapping",
+          data {
+            {
+              label str "has_pair",
+              data int 1
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 51,
+        seq-data iupacna "AGGAATATTTGACACACCGGGTTCAGTGGCACTGGCATACGGATACTGAGC"
+      }
+    },
+    seq {
+      id {
+        local id 4
+      },
+      descr {
+        title "SRR6207557.816.2",
+        user {
+          type str "Mapping",
+          data {
+            {
+              label str "has_pair",
+              data int 2
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 51,
+        seq-data iupacna "AGACCTGAGCGACCAGTCGTTTACAACATGGACGTATCACAAACGACAACG"
+      }
+    },
+    seq {
+      id {
+        local id 5
+      },
+      descr {
+        title "pminus.1",
+        user {
+          type str "Mapping",
+          data {
+            {
+              label str "has_pair",
+              data int 1
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 51,
+        seq-data iupacna "CAATACTCTCGATATGCGTTCAGTTCGTGCGGAAAATAGAGATCTTAGGAA"
+      }
+    },
+    seq {
+      id {
+        local id 6
+      },
+      descr {
+        title "pminus.2",
+        user {
+          type str "Mapping",
+          data {
+            {
+              label str "has_pair",
+              data int 2
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 51,
+        seq-data iupacna "GACCCTGATTTGCCTCCAATTACTTCAGTTCAAGATGTAGATCGGTTGTCT"
+      }
+    },
+    seq {
+      id {
+        local id 7
+      },
+      descr {
+        title "pplus.1",
+        user {
+          type str "Mapping",
+          data {
+            {
+              label str "has_pair",
+              data int 1
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 51,
+        seq-data iupacna "TTCCTAAGATCTCTATTTTCCGCACGAACTGAACGCATATCGAGAGTATTG"
+      }
+    },
+    seq {
+      id {
+        local id 8
+      },
+      descr {
+        title "pplus.2",
+        user {
+          type str "Mapping",
+          data {
+            {
+              label str "has_pair",
+              data int 2
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 51,
+        seq-data iupacna "AGACAACCGATCTACATCTTGAACTGAAGTAATTGGAGGCAAATCAGGGTC"
+      }
+    }
+  }
+}

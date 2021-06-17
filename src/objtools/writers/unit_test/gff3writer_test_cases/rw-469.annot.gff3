@@ -1,0 +1,8 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+U00096.3	Genbank	region	1	4641652	.	+	.	ID=id-U00096.3:1..4641652;Is_circular=true;gbkey=chromosome
+U00096.3	Genbank	gene	190	255	.	+	.	ID=gene0;Dbxref=EcoGene:EG11277;Name=thrL;gbkey=Gene;gene=thrL;gene_biotype=other;gene_synonym=ECK0001,JW4367;locus_tag=b0001;test_qual=lower case
+U00096.3	Genbank	attenuator	301	310	.	+	.	ID=id1;Parent=gene0;gbkey=regulatory;regulatory_class=attenuator
+U00096.3	Genbank	CAAT_signal	311	320	.	+	.	ID=id2;Parent=gene0;gbkey=regulatory;regulatory_class=CAAT_signal
+###

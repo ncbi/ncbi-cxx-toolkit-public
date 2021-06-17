@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db100_timeout)
+  NCBI_sources(timeout common)
+  NCBI_set_test_assets(timeout.sql)
+  NCBI_add_test(test-db100 db100_timeout)
+NCBI_end_app()
+

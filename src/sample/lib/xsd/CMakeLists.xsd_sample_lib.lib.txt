@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_lib(xsd_sample_lib)
+  NCBI_dataspecs(xsd_sample_lib.xsd)
+  NCBI_uses_toolkit_libraries(xser)
+NCBI_end_lib()

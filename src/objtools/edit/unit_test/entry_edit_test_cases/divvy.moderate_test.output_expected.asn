@@ -1,0 +1,3079 @@
+Seq-entry ::= set {
+  seq-set {
+    set {
+      seq-set {
+        seq {
+          id {
+            local str "A"
+          },
+          inst {
+            repr virtual,
+            mol dna,
+            length 100
+          },
+          annot {
+            {
+              data align {
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "A",
+                        local str "A"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 0
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "A",
+                        local str "B"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 1
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "A",
+                        local str "C"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 2
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "A",
+                        local str "D"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 3
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "A",
+                        local str "NONEXISTENT"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 4
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "B",
+                        local str "A"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 5
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "B",
+                        local str "B"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 6
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "B",
+                        local str "C"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 7
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "B",
+                        local str "D"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 8
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "B",
+                        local str "NONEXISTENT"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 9
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "C",
+                        local str "A"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 10
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "C",
+                        local str "B"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 11
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "C",
+                        local str "C"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 12
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "C",
+                        local str "D"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 13
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "C",
+                        local str "NONEXISTENT"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 14
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "D",
+                        local str "A"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 15
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "D",
+                        local str "B"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 16
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "D",
+                        local str "C"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 17
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "D",
+                        local str "D"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 18
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "D",
+                        local str "NONEXISTENT"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 19
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "NONEXISTENT",
+                        local str "A"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 20
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "NONEXISTENT",
+                        local str "B"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 21
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "NONEXISTENT",
+                        local str "C"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 22
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "NONEXISTENT",
+                        local str "D"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 23
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "NONEXISTENT",
+                        local str "NONEXISTENT"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 24
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          seq-set {
+            seq {
+              id {
+                local str "B"
+              },
+              inst {
+                repr virtual,
+                mol dna,
+                length 100
+              },
+              annot {
+                {
+                  data align {
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "A",
+                            local str "A"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 25
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "A",
+                            local str "B"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 26
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "A",
+                            local str "C"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 27
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "A",
+                            local str "D"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 28
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "A",
+                            local str "NONEXISTENT"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 29
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "B",
+                            local str "A"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 30
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "B",
+                            local str "B"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 31
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "B",
+                            local str "C"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 32
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "B",
+                            local str "D"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 33
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "B",
+                            local str "NONEXISTENT"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 34
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "C",
+                            local str "A"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 35
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "C",
+                            local str "B"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 36
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "C",
+                            local str "C"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 37
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "C",
+                            local str "D"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 38
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "C",
+                            local str "NONEXISTENT"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 39
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "D",
+                            local str "A"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 40
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "D",
+                            local str "B"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 41
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "D",
+                            local str "C"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 42
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "D",
+                            local str "D"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 43
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "D",
+                            local str "NONEXISTENT"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 44
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "NONEXISTENT",
+                            local str "A"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 45
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "NONEXISTENT",
+                            local str "B"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 46
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "NONEXISTENT",
+                            local str "C"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 47
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "NONEXISTENT",
+                            local str "D"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 48
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "NONEXISTENT",
+                            local str "NONEXISTENT"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 49
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "C"
+              },
+              inst {
+                repr virtual,
+                mol dna,
+                length 100
+              },
+              annot {
+                {
+                  data align {
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "A",
+                            local str "A"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 50
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "A",
+                            local str "B"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 51
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "A",
+                            local str "C"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 52
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "A",
+                            local str "D"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 53
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "A",
+                            local str "NONEXISTENT"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 54
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "B",
+                            local str "A"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 55
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "B",
+                            local str "B"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 56
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "B",
+                            local str "C"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 57
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "B",
+                            local str "D"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 58
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "B",
+                            local str "NONEXISTENT"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 59
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "C",
+                            local str "A"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 60
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "C",
+                            local str "B"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 61
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "C",
+                            local str "C"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 62
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "C",
+                            local str "D"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 63
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "C",
+                            local str "NONEXISTENT"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 64
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "D",
+                            local str "A"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 65
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "D",
+                            local str "B"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 66
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "D",
+                            local str "C"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 67
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "D",
+                            local str "D"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 68
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "D",
+                            local str "NONEXISTENT"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 69
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "NONEXISTENT",
+                            local str "A"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 70
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "NONEXISTENT",
+                            local str "B"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 71
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "NONEXISTENT",
+                            local str "C"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 72
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "NONEXISTENT",
+                            local str "D"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 73
+                      }
+                    },
+                    {
+                      type partial,
+                      dim 2,
+                      segs dendiag {
+                        {
+                          dim 2,
+                          ids {
+                            local str "NONEXISTENT",
+                            local str "NONEXISTENT"
+                          },
+                          starts {
+                            3,
+                            8
+                          },
+                          len 25
+                        }
+                      },
+                      id {
+                        id 74
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data align {
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "A",
+                        local str "A"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 75
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "A",
+                        local str "B"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 76
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "A",
+                        local str "C"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 77
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "A",
+                        local str "D"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 78
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "A",
+                        local str "NONEXISTENT"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 79
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "B",
+                        local str "A"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 80
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "B",
+                        local str "B"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 81
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "B",
+                        local str "C"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 82
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "B",
+                        local str "D"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 83
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "B",
+                        local str "NONEXISTENT"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 84
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "C",
+                        local str "A"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 85
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "C",
+                        local str "B"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 86
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "C",
+                        local str "C"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 87
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "C",
+                        local str "D"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 88
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "C",
+                        local str "NONEXISTENT"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 89
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "D",
+                        local str "A"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 90
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "D",
+                        local str "B"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 91
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "D",
+                        local str "C"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 92
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "D",
+                        local str "D"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 93
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "D",
+                        local str "NONEXISTENT"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 94
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "NONEXISTENT",
+                        local str "A"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 95
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "NONEXISTENT",
+                        local str "B"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 96
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "NONEXISTENT",
+                        local str "C"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 97
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "NONEXISTENT",
+                        local str "D"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 98
+                  }
+                },
+                {
+                  type partial,
+                  dim 2,
+                  segs dendiag {
+                    {
+                      dim 2,
+                      ids {
+                        local str "NONEXISTENT",
+                        local str "NONEXISTENT"
+                      },
+                      starts {
+                        3,
+                        8
+                      },
+                      len 25
+                    }
+                  },
+                  id {
+                    id 99
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data align {
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "A",
+                    local str "A"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 100
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "A",
+                    local str "B"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 101
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "A",
+                    local str "C"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 102
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "A",
+                    local str "NONEXISTENT"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 104
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "B",
+                    local str "A"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 105
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "B",
+                    local str "B"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 106
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "B",
+                    local str "C"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 107
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "B",
+                    local str "NONEXISTENT"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 109
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "C",
+                    local str "A"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 110
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "C",
+                    local str "B"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 111
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "C",
+                    local str "C"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 112
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "C",
+                    local str "NONEXISTENT"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 114
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "A"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 120
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "B"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 121
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "C"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 122
+              }
+            }
+          }
+        },
+        {
+          data align {
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "NONEXISTENT"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 124
+              }
+            }
+          }
+        },
+        {
+          data align {
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "A",
+                    local str "A"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 125
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "A",
+                    local str "B"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 126
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "A",
+                    local str "C"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 127
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "A",
+                    local str "NONEXISTENT"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 129
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "B",
+                    local str "A"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 130
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "B",
+                    local str "B"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 131
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "B",
+                    local str "C"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 132
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "B",
+                    local str "NONEXISTENT"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 134
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "C",
+                    local str "A"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 135
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "C",
+                    local str "B"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 136
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "C",
+                    local str "C"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 137
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "C",
+                    local str "NONEXISTENT"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 139
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "A"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 145
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "B"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 146
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "C"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 147
+              }
+            }
+          }
+        },
+        {
+          data align {
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "NONEXISTENT"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 149
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "D"
+      },
+      inst {
+        repr virtual,
+        mol dna,
+        length 100
+      },
+      annot {
+        {
+          data align {
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "D",
+                    local str "D"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 118
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "D",
+                    local str "NONEXISTENT"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 119
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "D"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 123
+              }
+            }
+          }
+        },
+        {
+          data align {
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "NONEXISTENT"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 124
+              }
+            }
+          }
+        },
+        {
+          data align {
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "D",
+                    local str "D"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 143
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "D",
+                    local str "NONEXISTENT"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 144
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "D"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 148
+              }
+            }
+          }
+        },
+        {
+          data align {
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "NONEXISTENT"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 149
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type partial,
+          dim 2,
+          segs dendiag {
+            {
+              dim 2,
+              ids {
+                local str "DUMMY1",
+                local str "DUMMY2"
+              },
+              starts {
+                3,
+                8
+              },
+              len 25
+            }
+          },
+          id {
+            id 150
+          }
+        }
+      }
+    }
+  }
+}

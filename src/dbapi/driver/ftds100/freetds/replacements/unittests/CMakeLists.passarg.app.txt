@@ -1,0 +1,14 @@
+# $Id$
+
+add_executable(tds100_passarg-app
+    passarg
+)
+
+set_target_properties(tds100_passarg-app PROPERTIES OUTPUT_NAME tds100_passarg)
+
+include_directories(SYSTEM ${FTDS100_INCLUDE})
+
+target_link_libraries(tds100_passarg-app
+    tds_ftds100
+)
+

@@ -1,0 +1,6 @@
+# $Id$
+
+APP_PROJ = taxon1_unit_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

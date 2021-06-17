@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_lib(xconnect)
+  NCBI_sources(${SRC_C} ${SRC_CXX})
+  NCBI_headers(*.hpp)
+  NCBI_optional_components(GNUTLS)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_uses_external_libraries(${NETWORK_LIBS})
+  NCBI_project_tags(core)
+  NCBI_project_watchers(lavr)
+NCBI_end_lib()
+

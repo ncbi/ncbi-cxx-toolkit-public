@@ -1,0 +1,992 @@
+# $Id$
+#
+# Valgrind suppression file (version 3.5.0 -> 3.15.0).
+#
+################################################################################
+#
+# Format of this file is:
+# {
+#     name_of_suppression
+#     tool_name:supp_kind
+#     (optional extra info for some suppression types)
+#     caller0 name, or /name/of/so/file.so
+#     caller1 name, or ditto
+#     (optionally: caller2 name)
+#     (optionally: caller3 name)
+#  }
+#
+# For Memcheck, the supp_kinds are:
+#
+#     Param Value1 Value2 Value4 Value8 Value16
+#     Free Addr1 Addr2 Addr4 Addr8 Addr16
+#     Cond (previously known as Value0)
+#
+# and the optional extra info is:
+#     if Param: name of system call param
+#     if Free: name of free-ing fn)
+#
+################################################################################
+#
+# NOTE: C++ function names must be mangled.
+#       Use --gen-suppressions=all option to generate rules.
+#
+################################################################################
+
+
+{
+   BerkeleyDB-4.6.21.1 -- looks like an internal glitch (GCC730-ReleaseMT)
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__log_write
+   fun:__log_fill
+   fun:__log_putr.isra.1
+   fun:__log_put
+}
+
+
+{
+   BerkeleyDB-4.6.21.1 -- looks like an internal glitch (GCC730-ReleaseMT)
+   Memcheck:Cond
+   fun:__log_putr.isra.1
+   fun:__log_put
+   ...
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+}
+
+
+#{
+#   NCBI VDB ver 2.5.0 -- uninit value created on stack, passed around
+#   Memcheck:Param
+#   fun:__open_nocancel
+#   fun:KSysDirOpenFileRead_v1 (sysdir.c:1838)
+#}
+
+
+{
+   GnuTLS/Nettle -- apparent optimization shortcut
+   Memcheck:Addr8
+   fun:__gmpn_copyi_core2
+   fun:__gmpn_powm
+   fun:__gmpz_powm
+   fun:nettle_rsa_compute_root
+   fun:nettle_rsa_pkcs1_sign_tr
+   fun:_wrap_nettle_pk_sign
+   fun:gnutls_privkey_sign_data
+   fun:_gnutls_check_key_cert_match
+   fun:gnutls_certificate_set_x509_key
+   fun:gnutls_certificate_set_x509_simple_pkcs12_mem
+   fun:gnutls_certificate_set_x509_simple_pkcs12_file
+}
+
+{
+   NCBI VDB ver 2.5.0 -- uninit value created on stack in string_vprintf (printf.c:3374)
+   Memcheck:Cond
+   ...
+   fun:add_aws_nodes
+}
+
+
+{
+    corelib/CFileUtil::GetTotalDiskSpace, PANFS, CXX-5713 because DLL is not supposed to be closed
+    Memcheck:Leak
+    fun:malloc
+    ...
+    fun:_dl_open
+    ...
+    fun:*s_GetDiskSpace_PANFS*
+    fun:*s_GetFileSystemInfo*
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__log_write
+   fun:__log_fill
+   fun:__log_putr
+   ...
+   fun:__log_put
+   fun:__txn_regop_log
+   fun:__txn_commit
+   fun:__txn_commit_pp
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_ovput() in bt_put.c:886
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__log_write
+   fun:__log_fill
+   fun:__log_putr
+   ...
+   fun:__log_put
+   fun:__db_big_log
+   fun:__db_poff
+   ...
+   fun:__bam_iitem
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 3)
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__memp_pgwrite
+   fun:__memp_bhwrite
+   fun:__memp_sync_int
+   ...
+   fun:__db_sync
+   fun:__db_refresh
+   fun:__db_close
+   fun:__db_close_pp
+   fun:_ZN4ncbi12CBDB_RawFile7x_CloseENS0_12EIgnoreErrorE
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 2b)
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__memp_pgwrite
+   fun:__memp_bhwrite
+   fun:__memp_sync_int
+   ...
+   fun:__memp_trickle_pp
+   fun:_ZN4ncbi8CBDB_Env11MempTrickleEiPi
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 2a)
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__log_write
+   fun:__log_flush_int
+   fun:__log_flush
+   ...
+   fun:__memp_sync_int
+   ...
+   fun:__memp_trickle_pp
+   fun:_ZN4ncbi8CBDB_Env11MempTrickleEiPi
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 1e)
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__log_write
+   fun:__log_fill
+   fun:__log_putr
+   ...
+   fun:__log_put
+   fun:__db_addrem_log
+   fun:__db_pitem
+   fun:__bam_iitem
+   fun:__bamc_put
+   fun:__dbc_put
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 1d)
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__log_write
+   fun:__log_fill
+   fun:__log_putr
+   ...
+   fun:__log_put
+   fun:__bam_repl_log
+   fun:__bam_ritem
+   fun:__bam_iitem
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__dbc_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile9x_DB_CPutEP5__dbcP8__db_dbtS4_j
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 1c)
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__log_write
+   fun:__log_flush_int
+   ...
+   fun:__log_put
+   ...
+   fun:__db_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b5)
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__log_write
+   fun:__log_fill
+   fun:__log_putr
+   ...
+   fun:__log_put
+   ...
+   fun:__bam_split
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b4)
+   Memcheck:Cond
+   fun:__log_putr
+   ...
+   fun:__log_put
+   fun:__bam_split_log
+   ...
+   fun:__bam_split
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b3)
+   Memcheck:Cond
+
+   fun:__log_putr
+   fun:__log_put
+   fun:__db_addrem_log
+   ...
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b2)
+   Memcheck:Cond
+   fun:__log_putr
+   fun:__log_put
+   fun:__db_addrem_log
+   fun:__db_pitem
+   fun:__bam_iitem
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b1)
+   Memcheck:Cond
+   fun:__log_putr
+   fun:__log_put_next
+   fun:__log_put
+   fun:__db_addrem_log
+   fun:__db_pitem
+   fun:__bam_ovput
+   fun:__bam_iitem
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 1a)
+   Memcheck:Cond
+   fun:__log_putr
+   fun:__log_put_next
+   fun:__log_put
+   fun:__db_addrem_log
+   fun:__db_pitem
+   fun:__bam_broot
+   fun:__bam_root
+   fun:__bam_split
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
+}
+
+{
+   Known LIBC bug (https://bugs.kde.org/show_bug.cgi?id=167483)
+   Memcheck:Free
+   fun:free
+   fun:free_mem
+   fun:__libc_freeres
+   fun:_vgnU_freeres
+   fun:exit
+   fun:(below main)
+}
+
+{
+   MemCpy to itself in swap() in CObject  (ICC 10.1)
+   Memcheck:Overlap
+   fun:memcpy
+   fun:_ZSt4swapISt4pairIPvjEEvRT_S4_
+   fun:_ZN4ncbi24sx_PopLastNewPtrMultipleEPv
+   fun:_ZN4ncbi16sx_PopLastNewPtrEPv
+   fun:_ZN4ncbi7CObject11InitCounterEv
+}
+
+{
+   Sybase CTLIB 15.7-SP122-64bit (Case 1)
+   Memcheck:Addr1
+   fun:com_secure_memset
+   fun:ct__tds_loginover
+   fun:ct_async_exec_stack
+   fun:ct_connect
+}
+
+{
+   Sybase DBLIB 15.7-SP122-64bit (Case 2)
+   Memcheck:Param
+   socketcall.sendto(msg)
+   fun:send
+   fun:sybsoc_write
+   fun:sybnet_write
+   fun:write_buffer
+   fun:sendflush
+   fun:sendeom
+   fun:bcp__endbatch
+   fun:bcp_done
+}
+
+{
+   Sybase DBLIB 12.5.1.10-ESD26-64bit (case 1)
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   fun:syb_tcp_write
+   fun:sendflush
+   fun:sendeom
+   fun:bcp__endbatch
+   fun:bcp_done
+}
+
+{
+   Sybase DBLIB 12.5.1.10-ESD26-64bit (case 2)
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   fun:syb_tcp_write
+   fun:sendflush
+   fun:sendserver
+   fun:bcp__send_text
+   fun:bcp_moretext
+}
+
+
+{
+   Sybase DBLIB 12.5.1.10-ESD26-64bit (case 3)
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   fun:syb_tcp_write
+   fun:sendflush
+   fun:sendserver
+   fun:bcp__buildrow
+   fun:bcp_sendrow
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- both alloc and use happen inside the same call
+   Memcheck:Param
+   pwrite64(buf)
+   fun:__pwrite_nocancel
+   fun:__os_io
+   fun:__memp_pgwrite
+   fun:__memp_bhwrite
+   fun:__memp_sync_int
+   ...
+   fun:__db_sync
+   fun:__db_refresh
+   fun:__db_close
+   fun:__fop_subdb_setup
+   fun:__db_open
+   fun:__db_open_pp
+}
+
+{
+   Googles as an apparent LZO2' intentional overread for performance
+   Memcheck:Value8
+   ...
+   fun:find_match
+   fun:lzo1x_999_compress_internal
+   fun:lzo1x_999_compress_level
+   fun:lzo1x_999_compress
+}
+
+{
+    http://permalink.gmane.org/gmane.comp.encryption.nettle.bugs/886
+    Memcheck:Addr8
+    fun:memxor3
+    fun:gcm_crypt
+    fun:nettle_gcm_encrypt
+}
+
+{
+    I think this is glibc's ultra optimised getenv doing 2 byte reads
+    Memcheck:Addr2
+    fun:getenv
+}
+
+{
+    I think this is glibc's ultra optimised getenv doing 2 byte reads
+    Memcheck:Cond
+    fun:getenv
+}
+
+{
+    corelib/CObject/InitCounter
+    Memcheck:Cond
+    fun:_ZN4ncbi7CObject11InitCounterEv
+    fun:*
+}
+
+{
+    corelib/Diag/s_CreateDefaultDiagHandler 1
+    Memcheck:Leak
+    ...
+    fun:s_CreateDefaultDiagHandler
+    fun:__static_initialization_and_destruction_0
+}
+{
+    corelib/Diag/s_CreateDefaultHandler 2
+    Memcheck:Leak
+    ...
+    fun:_ZN4ncbiL26s_CreateDefaultDiagHandlerEv
+}
+{
+    corelib/Diag/CreateDefaultHandler
+    Memcheck:Leak
+    ...
+    fun:_ZN4ncbi24CreateDefaultDiagHandlerEv
+}
+{
+    corelib/Diag/CDiagContext::SetupDiag
+    Memcheck:Leak
+    ...
+    fun:_ZN4ncbi12CDiagContext9SetupDiagENS_14EAppDiagStreamEPNS_13CNcbiRegistryENS_20EDiagCollectMessagesEPKc
+    fun:_ZN4ncbi15InitDiagHandlerEv
+}
+{  
+    corelib/Diag/global-init
+    Memcheck:Leak
+    fun:_Znwm
+    fun:_GLOBAL__sub_I_ncbidiag.cpp
+    fun:__libc_csu_init
+}
+
+{
+    corelib/SSystemMutex/InitializeDynamic
+    Memcheck:Cond
+    fun:_ZN4ncbi12SSystemMutex17InitializeDynamicEv
+    fun:*
+}
+{
+    corelib/SSystemFastMutex/InitializeDynamic
+    Memcheck:Cond
+    fun:_ZN4ncbi16SSystemFastMutex17InitializeDynamicEv
+    fun:*
+}
+{
+    corelib/CTimeout/operator ==, <
+    Memcheck:Cond
+    fun:_ZNK4ncbi8CTimeout??ERKS0_
+    fun:*
+}
+{
+    corelib/NCBI_THROW
+    Memcheck:Leak
+    fun:malloc
+    fun:__cxa_get_globals
+    fun:__cxa_allocate_exception
+}
+{
+    corelib/SetDiagStream
+    Memcheck:Leak
+    fun:_Znwm
+    fun:_ZN4ncbi13SetDiagStreamEPSobPFvPvES1_RKSs
+}
+{
+   corelib/CNcbiEnvironment::Set
+   Memcheck:Leak
+   fun:malloc
+   fun:strdup
+   fun:_ZN4ncbi16CNcbiEnvironment3SetERKSsS2_
+}
+{
+    CToolkit/COldAsnTypeInfo
+    Memcheck:Leak
+    fun:?alloc
+    fun:s_MemAllocator
+    ...
+    fun:_ZN4ncbi15COldAsnTypeInfo*
+}
+{
+    serial/TypeInfo
+    Memcheck:Leak
+    fun:_Znwm
+    ...
+    fun:*TypeInfo*
+}
+{
+    serial/CEnumDataType::CreateDefault
+    Memcheck:Leak
+    fun:_Znwm
+    fun:_ZNK4ncbi13CEnumDataType13CreateDefaultERKNS_10CDataValueE
+    fun:_ZN4ncbi18CDataContainerType15CreateClassInfo*
+}
+{
+    serial/CIntDataType::CreateDefault
+    Memcheck:Leak
+    fun:_Znwm
+    fun:_ZNK4ncbi12CIntDataType13CreateDefaultERKNS_10CDataValueE
+    fun:_ZN4ncbi18CDataContainerType15CreateClassInfo*
+}
+{
+    serial/CPointerTypeInfo::ReadPointer
+    Memcheck:Leak
+    fun:_Znwm
+    fun:*
+    fun:*
+    fun:_ZN4ncbi16CPointerTypeInfo11ReadPointer*
+}
+{
+    serial/member
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi18CClassTypeInfoBase9AddMemberEPKcPKvRKNS_8CTypeRefE
+}
+{
+    serial/member
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi18CClassTypeInfoBase9AddMemberEPKcPKvRKNS_8CTypeRefE
+}
+{
+    serial/classinfo
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeIPN4ncbi18CClassTypeInfoBaseEEE8allocateEjPKv
+    fun:_ZNSt8_Rb_treeIPN4ncbi18CClassTypeInfoBaseES2_St9_IdentityIS2_ESt4lessIS2_ESaIS2_EE11_M_get_nodeEv
+}
+{
+    serial/iteminfo
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN9__gnu_cxx13new_allocatorIN4ncbi7AutoPtrINS1_9CItemInfoENS1_7DeleterIS3_EEEEE8allocateEjPKv
+    fun:_ZNSt12_Vector_baseIN4ncbi7AutoPtrINS0_9CItemInfoENS0_7DeleterIS2_EEEESaIS5_EE11_M_allocateEj
+}
+{
+    serial/iteminfo
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN9__gnu_cxx13new_allocatorIN4ncbi7AutoPtrINS1_9CItemInfoENS1_7DeleterIS3_EEEEE8allocateEjPKv
+}
+{
+    serial/iteminfo
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZNSt6vectorIN4ncbi7AutoPtrINS0_9CItemInfoENS0_7DeleterIS2_EEEESaIS5_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS5_S7_EERKS5_
+}
+{
+    serial/stltype
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:*
+    fun:_ZN4ncbi16CTypeInfoMapData11GetTypeInfoEPKNS_9CTypeInfoEPFPS1_S3_E
+}
+{
+    serial/stltype
+    Memcheck:Leak
+    fun:_Znwj
+    fun:*
+    fun:_ZN4ncbi16CTypeInfoMapData11GetTypeInfoEPKNS_9CTypeInfoEPFPS1_S3_E
+}
+{
+    serial/enumvalue
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZNK4ncbi21CEnumeratedTypeValues11ValueToNameEv
+}
+{
+    serial/enumvalue
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZNSt8_Rb_treeIiSt4pairIKiPKSsESt10_Select1stIS4_ESt4lessIiESaIS4_EE9_M_insertEPSt18_Rb_tree_node_baseSC_RKS4_
+    fun:_ZNSt8_Rb_treeIiSt4pairIKiPKSsESt10_Select1stIS4_ESt4lessIiESaIS4_EE13insert_uniqueESt17_Rb_tree_iteratorIS4_ERKS4_
+    fun:_ZNK4ncbi21CEnumeratedTypeValues11ValueToNameEv
+}
+{
+    serial/classinfo
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi20CClassInfoHelperBase15CreateClassInfoEPKcjPKNS_7CObjectEPFPvPKNS_9CTypeInfoEERKSt9type_infoPFPSD_PKvE
+}
+{
+    serial/classinfo
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi20CClassInfoHelperBase15CreateClassInfoEPKcjPKNS_7CObjectEPFPvPKNS_9CTypeInfoEPNS_17CObjectMemoryPoolEERKSt9type_infoPFPSF_PKvE
+}
+{
+    serial/choiceinfo
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi20CClassInfoHelperBase16CreateChoiceInfoEPKcjPKNS_7CObjectEPFPvPKNS_9CTypeInfoEERKSt9type_infoPFjPKNS_15CChoiceTypeInfoEPKvEPFvSH_S6_jEPFvSH_S6_E
+}
+{
+    serial/choiceinfo
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi20CClassInfoHelperBase16CreateChoiceInfoEPKcjPKNS_7CObjectEPFPvPKNS_9CTypeInfoEPNS_17CObjectMemoryPoolEERKSt9type_infoPFjPKNS_15CChoiceTypeInfoEPKvEPFvSJ_S6_jSB_EPFvSJ_S6_E
+}
+{
+    serial/typeinfo
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi7objects*11GetTypeInfoEv
+}
+{
+    serial/typeinfo
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi7objects*11GetTypeInfoEv
+}
+{
+    serial/typeinfo
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi30CPrimitiveTypeInfoIntFunctionsI?E14CreateTypeInfoEv
+}
+{
+    serial/typeinfo
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi30CPrimitiveTypeInfoIntFunctionsI?E14CreateTypeInfoEv
+}
+{
+    serial/enuminfo
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi24CreateEnumeratedTypeInfoI*21CEnumeratedTypeValuesE
+}
+{
+    serial/enuminfo
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi24CreateEnumeratedTypeInfoI*21CEnumeratedTypeValuesE
+}
+{
+    serial/choice
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi15CChoiceTypeInfo10AddVariantEPKcPKvRKNS_8CTypeRefE
+}
+{
+    serial/choice
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi15CChoiceTypeInfo10AddVariantEPKcPKvRKNS_8CTypeRefE
+}
+{
+    serial/std
+    Memcheck:Leak
+    fun:__builtin_new
+    fun:_Znwj
+    fun:_ZN4ncbi12CStdTypeInfo*CreateTypeInfo*
+}
+{
+    serial/std
+    Memcheck:Leak
+    fun:_Znwj
+    fun:_ZN4ncbi12CStdTypeInfo*CreateTypeInfo*
+}
+{
+    GProf/profil_counter
+    Memcheck:Cond
+    fun:profil_counter
+    fun:*
+}
+{
+    CSeqVector/tables
+    Memcheck:Leak
+    fun:__builtin_vec_new
+    fun:_Znaj
+    fun:_ZGVZN4ncbi7objects10CSeqVector18sx_GetConvertTableENS0_14CSeq_data_Base8E_ChoiceES3_bE6tables
+}
+{
+    CSeqVector/tables
+    Memcheck:Leak
+    fun:_Znaj
+    fun:_ZGVZN4ncbi7objects10CSeqVector18sx_GetConvertTableENS0_14CSeq_data_Base8E_ChoiceES3_bE6tables
+}
+{
+    boost/sigaltstack
+    Memcheck:Param
+    sigaltstack(ss)
+    fun:sigaltstack
+    fun:_ZN5boost6detail14signal_handlerD1Ev
+}
+{
+   boost/test_framework_impl::clear
+   Memcheck:Addr4
+   fun:_ZN5boost9unit_test14framework_impl5clearEv
+   fun:_ZN5boost9unit_test14framework_implD1Ev
+   fun:__tcf_3
+}
+{
+    LZO/do_compress
+    Memcheck:Cond
+    fun:do_compress
+    fun:lzo1x_1_compress
+}
+{
+    LZO/do_compress V8
+    Memcheck:Value8
+    fun:do_compress
+    fun:lzo1x_1_compress
+}
+{
+    STL/locale
+    Memcheck:Leak
+    fun:__builtin_vec_new
+    fun:_Znwj
+    fun:_ZNSt6locale7classicEv
+}
+{
+    STL/uncaught_exception
+    Memcheck:Leak
+    fun:malloc
+    fun:__cxa_get_globals
+    fun:_ZSt18uncaught_exceptionv
+}
+{
+    libc/dlrelocate
+    Memcheck:Cond
+    fun:_dl_relocate_object
+    fun:*
+}
+{
+    libc/dlopen
+    Memcheck:Leak
+    fun:malloc
+    fun:add_to_global
+    fun:dl_open_worker
+}
+{
+    libc/dlopen
+    Memcheck:Leak
+    fun:calloc
+    fun:_dlerror_run
+}
+{
+    libc/dlopen
+    Memcheck:Leak
+    fun:malloc
+    fun:decompose_rpath
+    fun:_dl_map_object
+}
+{
+    libc/dlopen
+    Memcheck:Leak
+    fun:malloc
+    fun:_dl_map_object_deps
+}
+{
+    libc/dlopen
+    Memcheck:Leak
+    fun:malloc
+    fun:_dl_new_object
+}
+{
+    libc/dlopen
+    Memcheck:Leak
+    fun:calloc
+    fun:_dl_new_object
+}
+{
+    libc/dlopen
+    Memcheck:Leak
+    fun:malloc
+    fun:open_rpath
+    fun:_dl_map_object
+}
+{
+    libc/dlopen
+    Memcheck:Leak
+    fun:calloc
+    fun:_dl_check_map_versions
+}
+{
+    iostream/buffer
+    Memcheck:Leak
+    fun:__builtin_vec_new
+    fun:_Znaj
+    fun:_ZNSt13basic_filebufIwSt11char_traitsIwEE27_M_allocate_internal_bufferEv
+}
+{
+    iostream/buffer
+    Memcheck:Leak
+    fun:_Znaj
+    fun:_ZNSt13basic_filebufIwSt11char_traitsIwEE27_M_allocate_internal_bufferEv
+}
+{
+    iostream/buffer
+    Memcheck:Leak
+    fun:__builtin_vec_new
+    fun:_Znaj
+    fun:_ZNSt13basic_filebufIcSt11char_traitsIcEE27_M_allocate_internal_bufferEv
+}
+{
+    iostream/buffer
+    Memcheck:Leak
+    fun:_Znaj
+    fun:_ZNSt13basic_filebufIcSt11char_traitsIcEE27_M_allocate_internal_bufferEv
+}
+{
+    iostream/sync_with_stdio
+    Memcheck:Leak
+    fun:_Znam
+    fun:_ZNSt13basic_filebufI?St11char_traitsI?EE27_M_allocate_internal_bufferEv*
+    fun:_ZN9__gnu_cxx13stdio_filebuf*char_traitsI?EEC1EP8_IO_FILESt13_Ios_Openmodem
+    fun:_ZNSt8ios_base15sync_with_stdioEb
+}
+{
+    _dl_open
+    Memcheck:Addr4
+    fun:*
+    fun:*
+    fun:_dl_catch_error
+    fun:_dl_open
+}
+{
+    _dl_map_object
+    Memcheck:Addr4
+    fun:*
+    fun:*
+    fun:_dl_map_object
+}
+{
+   OpenMP/malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:gomp_malloc
+   fun:gomp_init_num_threads
+   fun:initialize_env
+   fun:_dl_init
+}
+
+
+
+
+################################################################################
+#
+# Helgrind
+#
+################################################################################
+
+# System issues
+{
+   CRT/throw runtime_error("...")
+   Helgrind:Race
+   fun:uw_install_context_1
+   fun:_Unwind_RaiseException
+   fun:__cxa_throw
+   fun:*
+}
+{
+   corelib/SSystemFastMutex::Lock() -- CXX-10523
+   Helgrind:Race
+   fun:_ZN4ncbi23ncbi_namespace_mutex_mt12SSystemMutex4LockENS0_16SSystemFastMutex14ELockSemanticsE
+   fun:_ZNK4ncbi11SSimpleLockINS_23ncbi_namespace_mutex_mt12SSystemMutexEEclERS2_
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+   fun:ThreadWrapperCallerImpl
+}
+{
+   corelib/CSafeStatic<ncbi::CTls -- CXX-10544
+   Helgrind:Race
+   fun:_ZN4ncbi11CSafeStaticINS_4CTlsIiEENS_20CStaticTls_CallbacksIiEEE3GetEv
+   fun:*
+   fun:_ZN4ncbi14CInGroupThread4MainEv
+   fun:_ZN4ncbi7CThread7WrapperEPv
+   fun:_ZN4ncbi19ThreadWrapperCallerEPv
+   fun:ThreadWrapperCallerImpl
+}
+{
+   corelib/CSystemInfo::GetVirtualMemoryPageSize() - static cashed value - false positive
+   Helgrind:Race
+   fun:_ZN4ncbi11CSystemInfo24GetVirtualMemoryPageSizeEv
+}
+{
+   corelib/test/test_tls_object - global statics vars, just not important, ignore -- CXX-10546
+   Helgrind:Race
+   fun:_ZSt3maxImERKT_S2_S2_
+   fun:_Z7messagePKcS0_dS0_dm
+   fun:_ZN17CTestTlsObjectApp7RunTestEv
+}
+{
+   corelib/test/test_tls_object - global statics vars, just not important, ignore -- CXX-10546
+   Helgrind:Race
+   fun:_Z7messagePKcS0_dS0_dm
+   fun:_ZN17CTestTlsObjectApp7RunTestEv
+   fun:_ZN17CTestTlsObjectApp10Thread_RunEi
+}
+{
+   corelib/test/test_tls_object - throw runtime_error(""), ignore -- CXX-10546
+   Helgrind:Race
+   fun:_Unwind_RaiseException
+   fun:__cxa_throw
+   fun:_ZN14CObjectWithTLSC1ENS_12EObjectPlaceE
+   fun:_ZN15CObjectWithTLS3C1Ei
+}

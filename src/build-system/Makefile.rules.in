@@ -1,0 +1,192 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov),
+#          Aaron Ucko    (ucko@ncbi.nlm.nih.gov)
+#################################
+#
+#  C and C++ compilation rules
+#################################
+
+ifeq "$(ALT_GOALS)" ""
+
+ifeq "$(RUNPATH_FLAG)" "-L"
+regroup_runpaths = $(1)
+else
+non_runpaths     = $(filter-out $(RUNPATH_FLAG)%,$(1))
+extract_runpaths = $(filter     $(RUNPATH_FLAG)%,$(1))
+extract_rpargs   = $(patsubst $(RUNPATH_FLAG)%,%,$(call extract_runpaths,$(1)))
+extract_rpdirs   = $(subst :, ,$(call extract_rpargs,$(1)))
+remote_last      = $(filter-out /net%,$(1)) $(filter /net%,$(1))
+regrouped_rpdirs = $(call remote_last,$(call extract_rpdirs,$(1)))
+regrouped_runpaths=$(patsubst %,$(RUNPATH_FLAG)%,$(call regrouped_rpdirs,$(1)))
+regroup_runpaths = $(call regrouped_runpaths,$(1)) $(call non_runpaths,$(1))
+endif
+
+# Requirements checking
+XREQLIB=$(patsubst %$(FORCE_STATIC),%,$(patsubst %$(DLL),%,$(XAPP_LIB) $(XDLL_LIBS)))
+include $(wildcard $(XREQLIB:%=$(status_dir)/.%.disabled))
+requirements:  $(REQUIRES:%=$(status_dir)/%.enabled)
+
+mark-as-disabled:
+ifneq "$(BINCOPY)" "@:"
+  ifneq "$(srcdir)" "."
+    ifneq "$(filter-out /.,$(wildcard $(status_dir)/.))" ""
+	@echo REQUIRES += $(INHERITED_REQUIREMENTS) $(REQUIRES) \
+	    > $(status_dir)/.$(LIB).disabled
+    endif
+  endif
+endif
+
+ALT_GOALS = clean purge requirements mark-as-disabled deactivate src-stamp \
+            export-headers depend
+
+ALL_SETTINGS = $(CFLAGS_ALL) $(CXXFLAGS_ALL) $(DLL_LIBS) \
+               $(LDFLAGS) $(LIB) $(LIBS)
+ifneq "" "$(filter @%@,$(ALL_SETTINGS))"
+  config_status = $(status_dir)/config.status
+  build_sys_dir = $(abs_top_srcdir)/src/build-system
+  $(config_status): $(build_sys_dir)/configure $(build_sys_dir)/config.h.in
+	$(abs_top_srcdir)/scripts/common/impl/maybe_reconfigure.sh $(builddir)
+endif
+
+# Colored messages are nice, but not enough to require reconfiguration.
+ifneq "" "$(CC_WRAPPER)$(CXX_WRAPPER)"
+  ifneq "" "$(filter-out @%@,$(COLOR_DIAGNOSTICS))"
+    STDERR_IS_TTY := $(shell if [ -t 2 ]; then echo yes; else echo no; fi)
+    ifeq "yes" "$(STDERR_IS_TTY)"
+      CPPFLAGS += $(COLOR_DIAGNOSTICS)
+      LDFLAGS  += $(COLOR_DIAGNOSTICS)
+    endif
+  endif
+endif
+
+ifdef import_root
+  %.pb@obj_ext@ %.pb.d: \
+    CPPFLAGS += -I$(import_root)/../include/$(project_path)
+else
+  %.pb@obj_ext@ %.pb.d: \
+    CPPFLAGS += -I$(srcdir:$(top_srcdir)/src/%=$(includedir)/%)
+endif
+
+###  C++ compilation
+make_cpp = $(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
+###  C compilation
+make_c = $(CC_WRAPPER) $(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
+
+SRC := $(strip $(SRC))
+
+OBJ_DIRS = $(filter-out ./.exists,$(patsubst %/,%/.exists,$(sort $(dir $(SRC)))))
+
+ifneq "" "$(filter-out 0 N% n% F% f% OFF Off off, $(USE_FULL_PATHS))"
+  HERE = $(CURDIR)/
+endif
+
+ifeq "" "$(OBJ_DIRS)"
+  %@obj_ext@: $(HERE)%.cpp $(config_status)
+	$(make_cpp)
+  %@obj_ext@: $(srcdir)/%.cpp $(config_status)
+	$(make_cpp)
+  %@obj_ext@: $(HERE)%.cc $(config_status)
+	$(make_cpp)
+  %@obj_ext@: $(srcdir)/%.cc $(config_status)
+	$(make_cpp)
+  %@obj_ext@: $(HERE)%.c $(config_status)
+	$(make_c)
+  %@obj_ext@: $(srcdir)/%.c $(config_status)
+	$(make_c)
+else
+  $(OBJ_DIRS): %:
+	$(MKDIR) -p $(@D)
+	@touch $@
+
+  all: list-dirs
+
+  list-dirs:
+	@-echo $(OBJ_DIRS:%/.exists=%) > .$(TMPL).dirs
+
+  STD_SRC = $(filter-out $(OVERRIDDEN_SRC),$(SRC) $(UNIX_SRC))
+  CPP_OBJ_HERE = $(patsubst $(HERE)%.cpp,%@obj_ext@,$(wildcard $(STD_SRC:%=$(HERE)%.cpp)))
+  CC_OBJ_HERE = $(patsubst $(HERE)%.cc,%@obj_ext@,$(wildcard $(STD_SRC:%=$(HERE)%.cc)))
+  C_OBJ_HERE = $(patsubst $(HERE)%.c,%@obj_ext@,$(wildcard $(STD_SRC:%=$(HERE)%.c)))
+  ifneq "$(srcdir)" "."
+    CPP_OBJ_THERE = $(patsubst $(srcdir)/%.cpp,%@obj_ext@,$(wildcard $(STD_SRC:%=$(srcdir)/%.cpp)))
+    CC_OBJ_THERE = $(patsubst $(srcdir)/%.cc,%@obj_ext@,$(wildcard $(STD_SRC:%=$(srcdir)/%.cc)))
+    C_OBJ_THERE = $(patsubst $(srcdir)/%.c,%@obj_ext@,$(wildcard $(STD_SRC:%=$(srcdir)/%.c)))
+  endif
+  $(CPP_OBJ_HERE): %@obj_ext@: $(HERE)%.cpp $(config_status)
+	$(make_cpp)
+  $(CPP_OBJ_THERE): %@obj_ext@: $(srcdir)/%.cpp $(config_status) $(OBJ_DIRS)
+	$(make_cpp)
+  $(CC_OBJ_HERE): %@obj_ext@: $(HERE)%.cc $(config_status)
+	$(make_cpp)
+  $(CC_OBJ_THERE): %@obj_ext@: $(srcdir)/%.cc $(config_status) $(OBJ_DIRS)
+	$(make_cpp)
+  $(C_OBJ_HERE): %@obj_ext@: $(HERE)%.c $(config_status)
+	$(make_c)
+  $(C_OBJ_THERE): %@obj_ext@: $(srcdir)/%.c $(config_status) $(OBJ_DIRS)
+	$(make_c)
+endif
+
+ifneq "" "$(NCBI_BUILD_SESSION_ID)"
+  CPPFLAGS += -DNCBI_BUILD_SESSION_ID=$(NCBI_BUILD_SESSION_ID)
+endif
+
+###  Header precompilation
+@GCCPCH@pchdir = $(incdir)/common/ncbi_pch_impl.hpp.gch
+@GCCPCH@pchsrc = $(includedir0)/common/ncbi_pch_impl.hpp
+@GCCPCH@$(pchdir)/normal: $(pchsrc) $(config_status)
+@GCCPCH@	$(MKDIR) -p $(pchdir)
+@GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(ORIG_CXXFLAGS) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
+@GCCPCH@$(pchdir)/dll: $(pchsrc) $(config_status)
+@GCCPCH@	$(MKDIR) -p $(pchdir)
+@GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(ORIG_CXXFLAGS) $(CXXFLAGS_DLL) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
+@GCCPCH@$(pchdir)/fast: $(pchsrc) $(config_status)
+@GCCPCH@	$(MKDIR) -p $(pchdir)
+@GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(FAST_CXXFLAGS) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
+@GCCPCH@$(pchdir)/fastdll: $(pchsrc) $(config_status)
+@GCCPCH@	$(MKDIR) -p $(pchdir)
+@GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(FAST_CXXFLAGS) $(CXXFLAGS_DLL) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
+
+clean-common:
+	-$(RMDIR) SunWS_cache
+	-$(RMDIR) ii_files
+	-$(RMDIR) ti_files
+	-$(RM) .make.state
+	-$(RM) $(SOURCES:=.d) $(SOURCES:=.gcda) $(SOURCES:=.gcno)
+	-$(RM) ir.out
+ifeq "$(APP)" ""
+	-$(RM) $(status_dir)/.$(LIB).disabled
+endif
+
+### Header exporting, SSS-style.
+# NB: export-headers explicitly uses $(COPY) rather than $(bincopy) because
+# the whole point is to have build-specific copies of the headers
+# guaranteed to be in sync with the corresponding library.
+
+pkg_incdir = $(incdest)/$(PACKAGE_EXPORT)
+src_headers = $(HEADER_EXPORT:%=$(srcdir)/%)
+exp_headers = $(HEADER_EXPORT:%=$(pkg_incdir)/%)
+
+export-headers: $(exp_headers) $(config_status)
+
+$(pkg_incdir)/%: $(srcdir)/%
+	@if [ -n "$(PACKAGE_EXPORT)" -a -n "$(HEADER_EXPORT)" ]; then \
+	    test -d $(pkg_incdir)  ||  $(RM) -f $(pkg_incdir); \
+	    $(MKDIR) -p $(pkg_incdir); \
+	    echo $(COPY) -fp $< $@; \
+	    $(COPY) -fp $< $@; \
+	fi
+
+purge-headers:
+	@-if [ -n "$(PACKAGE_EXPORT)" -a -n "$(HEADER_EXPORT)" ]; then \
+	    echo $(RM) -f $(exp_headers); \
+	    $(RM) -f $(exp_headers); \
+	    cd $(incdest)  &&  rmdir -p $(PACKAGE_EXPORT); \
+	fi
+
+depend:;
+
+.PHONY: clean-common export-headers purge-headers requirements mark-as-disabled
+.PHONY: depend
+
+endif

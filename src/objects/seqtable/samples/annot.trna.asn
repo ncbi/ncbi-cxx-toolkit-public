@@ -1,0 +1,174 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "Annot:tRNA",
+      tag id 51459255
+    }
+  },
+  inst {
+    repr delta,
+    mol dna,
+    length 3518496,
+    topology not-set,
+    ext delta {
+      loc int {
+        from 0,
+        to 3518495,
+        id gi 51459255
+      }
+    }
+  },
+  annot {
+    {
+      db other,
+      name "Annot:tRNA",
+      desc {
+        name "tRNA",
+        title "tRNAscan-SE",
+        comment "Calculated by tRNAscan-SE"
+      },
+      data ftable {
+        {
+          data rna {
+            type tRNA,
+            ext tRNA {
+              aa ncbieaa 71
+            }
+          },
+          location int {
+            from 3446617,
+            to 3446687,
+            strand plus,
+            id gi 51459255
+          },
+          xref {
+            {
+              data gene {
+              }
+            }
+          }
+        },
+        {
+          data rna {
+            type tRNA,
+            ext tRNA {
+              aa ncbieaa 86
+            }
+          },
+          location int {
+            from 3399338,
+            to 3399410,
+            strand minus,
+            id gi 51459255
+          },
+          xref {
+            {
+              data gene {
+              }
+            }
+          }
+        },
+        {
+          data rna {
+            type tRNA,
+            ext tRNA {
+              aa ncbieaa 71
+            }
+          },
+          location int {
+            from 3397603,
+            to 3397673,
+            strand minus,
+            id gi 51459255
+          },
+          xref {
+            {
+              data gene {
+              }
+            }
+          }
+        },
+        {
+          data rna {
+            type tRNA,
+            ext tRNA {
+              aa ncbieaa 71
+            }
+          },
+          location int {
+            from 3265271,
+            to 3265341,
+            strand minus,
+            id gi 51459255
+          },
+          xref {
+            {
+              data gene {
+              }
+            }
+          }
+        },
+        {
+          data rna {
+            type tRNA,
+            ext tRNA {
+              aa ncbieaa 69
+            }
+          },
+          location int {
+            from 3254611,
+            to 3254682,
+            strand minus,
+            id gi 51459255
+          },
+          xref {
+            {
+              data gene {
+              }
+            }
+          }
+        },
+        {
+          data rna {
+            type tRNA,
+            ext tRNA {
+              aa ncbieaa 78
+            }
+          },
+          location int {
+            from 3251730,
+            to 3251803,
+            strand minus,
+            id gi 51459255
+          },
+          xref {
+            {
+              data gene {
+              }
+            }
+          }
+        },
+        {
+          data rna {
+            type tRNA,
+            ext tRNA {
+              aa ncbieaa 78
+            }
+          },
+          location int {
+            from 3239917,
+            to 3239990,
+            strand minus,
+            id gi 51459255
+          },
+          xref {
+            {
+              data gene {
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

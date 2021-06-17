@@ -1,0 +1,61 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        local str "GoodSeqId"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 560,
+        seq-data ncbi2na '5CB69D91A892E4AB7AA270E31B830A853704F3E761A10B4BDDAF
+690454DD0ECFEBBD89E2ECD968FD2471F5CB3B67DC98B5C35D08F619F41E45274016B591976B2F
+77C3A48996E9AA5B7C1499BBCCF688E22A202DA132AD85CAE3EA264418C25B721B6BD1F16441A5
+F703F6E92C18FEEC8C6920772A828241293C4C829E0A7A8739A8BD721C6F3AA4EB57F555'H
+      }
+    },
+    seq {
+      id {
+        local str "lcl||12345"
+      },
+      descr {
+        title "Campylobacter jejuni ABC"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 560,
+        seq-data ncbi2na '5CB69D91A892E4AB7AA270E31B830A853704F3E761A10B4BDDAF
+690454DD0ECFEBBD89E2ECD968FD2471F5CB3B67DC98B5C35D08F619F41E45274016B591976B2F
+77C3A48996E9AA5B7C1499BBCCF688E22A202DA132AD85CAE3EA264418C25B721B6BD1F16441A5
+F703F6E92C18FEEC8C6920772A828241293C4C829E0A7A8739A8BD721C6F3AA4EB57F555'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 2,
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              local str "GoodSeqId",
+              local str "lcl||12345"
+            },
+            starts {
+              0,
+              0
+            },
+            lens {
+              560
+            }
+          }
+        }
+      }
+    }
+  }
+}

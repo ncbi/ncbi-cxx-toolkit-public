@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_app(hooks_highest_se_objs)
+  NCBI_sources(hooks_highest_se_objs)
+  NCBI_uses_toolkit_libraries(submit pub)
+NCBI_end_app()

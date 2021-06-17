@@ -1,0 +1,46 @@
+<!-- ============================================
+     ::DATATOOL:: Generated from "../asn_lib/asn_sample_lib.asn"
+     ::DATATOOL:: by application DATATOOL version 1.9.3
+     ::DATATOOL:: on 06/19/2009 11:56:41
+     ============================================ -->
+
+<!-- ============================================ -->
+<!-- This section is mapped from module "NCBI-sample"
+================================================= -->
+
+<!-- This is only a demo -->
+
+<!-- Elements used by other modules:
+          Data-set-id -->
+<!-- ============================================ -->
+
+
+<!ELEMENT Data-set-id (
+        Data-set-id_version, 
+        Data-set-id_name, 
+        Data-set-id_num, 
+        Data-set-id_type, 
+        Data-set-id_weight?, 
+        Data-set-id_uids?)>
+
+<!ELEMENT Data-set-id_version (#PCDATA)>
+
+<!ELEMENT Data-set-id_name (#PCDATA)>
+
+<!ELEMENT Data-set-id_num (#PCDATA)>
+
+<!ELEMENT Data-set-id_type (#PCDATA)>
+<!ATTLIST Data-set-id_type value (
+        dump |
+        query |
+        single
+        ) #IMPLIED >
+
+
+<!ELEMENT Data-set-id_weight (#PCDATA)>
+
+<!ELEMENT Data-set-id_uids (Data-set-id_uids_E*)>
+
+
+<!ELEMENT Data-set-id_uids_E (#PCDATA)>
+

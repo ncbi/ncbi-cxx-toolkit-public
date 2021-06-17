@@ -1,0 +1,164 @@
+Magic-BLAST is a tool for mapping large next-generation RNA or DNA sequencing
+runs against a whole genome or transcriptome. Unlike other BLAST nucleotide search programs, such as BLASTN or Megablast, Magic-BLAST produces spliced alignments and optimizes alignment scores for paired reads. 
+
+Magic-Blast incorporates within the NCBI BLAST code framework ideas
+developed in the NCBI Magic pipeline, in particular hit extensions by
+local walk and jump, which is faster than Smith-Waterman extension
+(http://www.ncbi.nlm.nih.gov/pubmed/26109056).
+
+We call the whole next generation run (from Illumina, Roche-454, ABI, or
+another sequencing platform excluding SOLiD), a query. The input reads may
+be provided as SRA accession or file in a SRA, FASTA, FASTQ, or FASTC format.
+Read pairs can be presented as parallel files, or as successive reads in a
+single file.
+
+The reference genome or transcriptome can be given as a BLAST database
+or a FASTA file. It is preferable to use BLAST database for large genomes,
+such as human, or transcript collections, such as all of RefSeq, Ensembl,
+or AceView. The procedure for creating a BLAST database is described below.
+
+The full list of options is listed when you use -help option.
+
+For more information, visit https://ncbi.github.io/magicblast/
+
+
+===================
+
+EXAMPLES:
+Use this command line to map RNA-seq reads in FASTA format to a reference
+genome in FASTA format:
+magicblast -query reads.fa -subject genome.fa
+
+Use this command line to map RNA-seq reads to a reference genome provided
+as a BLAST database:
+magicblast -query reads.fa -db genome
+
+Use this command line to map RNA-seq reads in FASTQ format:
+magicblast -query reads.fastq -db genome -infmt fastq
+
+The reads can also be provided from the standard input:
+cat reads.fa | magicblast -query - -db genome
+cat reads.fa | magicblast -db genome
+
+Magic-Blast recognizes read and reference file names with extension ".gz"
+as compressed and decompresses them automatically using gzip.
+
+Use this command line to map SRA run to a genome:
+magicblast -sra sra_accession -db genome
+
+
+
+PAIRED-READS:
+
+For paired reads presented as successive entries in a single FASTA or FASTQ
+file, i.e. read 1 and 2 of fragment 1, then read 1 and 2 of fragment 2,
+etc., simply add the parameter '-paired':
+magicblast -query reads.fa -db genome -paired
+
+If you are using fastq-dump
+(http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?view=toolkit_doc&f=fastq-dump)
+to download NCBI SRA data or convert SRA file to the FASTQ format, use these
+parameters for runs with paired reads to create a single merged input file
+for Magic-Blast:
+fastq-dump -I --split-spot <accession or file>
+
+For paired reads presented in two parallel files, use these options:
+magicblast -query reads.fa -query_mate mates.fa -db genome
+
+
+RNA versus DNA:
+
+By default, Magic-Blast aligns RNA reads to a genome and reports spliced
+alignments, possibly spanning several exons. To disable spliced alignments,
+use the '-splice F' option. Use the '-reftype transcriptome' option, to
+map reads to a transcriptome database. These are example command lines:
+magicblast -query reads.fa -db genome -splice F
+magicblast -query reads.fa -db genome -reftype transcriptome
+
+Magic-Blast finds alignments between a read and a genome based on initial
+common word in both. To make mapping faster we first count word occurrences
+in the genome and disregard those that occur too often. With the
+'-reftype transcripts' option the words that are frequent in the transcript
+database are used for alignment.
+
+
+MULTI-THREADING
+
+To use multiple CPUs, specify the maximal number of threads with the
+'-num_threads' parameter:
+magicblast -query reads.fa -db genome -num_threads 10
+
+
+OUTPUT:
+
+By default, results are provided to the standard output in the SAM format.
+Use '-out filename' option to redirect output to a file.
+Use '-outfmt' option to specify the output format:
+-outfmt SAM : SAM format (default)
+-outfmt tabular : exports a simple tab delimited format defined below.
+
+The output can be also compressed, using the '-gzo' flag:
+magicblast -query reads.fa -db genome -out output.gz -gzo
+
+
+CREATION OF A BLAST DATABASE:
+
+Use this command line to create a BLAST database:
+makeblastdb -in fasta_file -dbtype nucl -parse_seqids -out database_name
+-title "Database title"
+
+The -parse_seqids option is required to keep the original sequence
+identifiers. Otherwise makeblastdb will generate its own identifiers.
+
+
+TABULAR OUTPUT FORMAT
+
+The tabular output format shows one alignment per line with these tab
+delimited fields:
+1. Query/read sequence identifier
+2. Reference sequence identifier
+3. Percent identity of the alignment
+4. Not used
+5. Not used
+6. Not used
+7. Alignment start position on the query sequence
+8. Alignment stop position on the query sequence
+9. Alignment start position on the reference sequence
+10. Alignment stop position on the reference sequence
+11. Not used
+12. Not used
+13. Alignment score
+14. Query strand
+15. Reference sequence strand
+16. Query/read length
+17. Alignment as extended BTOP string
+    This is the same BTOP string as in BLAST tabular output with a
+    few extensions:
+    - a number represents this many matches,
+    - two bases represent a mismatch and show query and reference base,
+    - base and gap or gap and base, show a gap in query or reference,
+    - ^<number>^ represents an intron of this number of bases,
+    - _<number>_ represents a gap in query of this number of bases,
+    - (<number>) shows number of query bases that are shared between
+    two parts of a spliced alignment; used when proper splice sites
+    were not found
+18. Number of different alignments reported for this query sequence
+19. Information about detected splice sites, polyA tails, or adapter
+    sequences found at the edges of the alignment
+20. Compartment - a unique identifier for all alignments that belong to
+    a single fragment. These can be two alignments for a pair of reads
+    or alignments to exons that were not spliced.
+21. Reverse complemented unaligned query sequence from the beginning
+    of the query, or '-' if the query aligns to the left edge
+22. Unaligned sequence at the end of the query, or '-'
+23. Reference sequence identifier where the mate is aligned, if
+    different from the identifier in column 2, otherwise '-'
+24. Alignment start position on the reference sequence for the mate, or
+    '-' if no alignment for the mate was found; a negative number
+    denotes a divergent pair
+25. Composite alignment score for all exons that belong to the fragment
+
+Thank you for testing this code and providing us with feedback. Please,
+let us know of any desired option, problem or difficulty.
+
+E-mail blast-help@ncbi.nlm.nih.gov with questions or comments.

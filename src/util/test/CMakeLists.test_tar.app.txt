@@ -1,0 +1,18 @@
+# $Id$
+
+NCBI_begin_app(test_tar)
+
+  NCBI_sources(test_tar)
+  NCBI_uses_toolkit_libraries(xcompress)
+
+  NCBI_begin_test(test_tar)
+    NCBI_set_test_command(test_tar.sh)
+    NCBI_set_test_assets(test_tar.sh)
+    NCBI_set_test_timeout(600)
+    NCBI_set_test_requires(unix)
+  NCBI_end_test()
+
+  NCBI_project_watchers(lavr)
+
+NCBI_end_app()
+

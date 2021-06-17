@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile("objtools/test" project)
+#################################
+
+SUB_PROJ = objmgr
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

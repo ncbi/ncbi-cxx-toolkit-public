@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(ncbimime)
+  NCBI_dataspecs(ncbimime.asn)
+  NCBI_uses_toolkit_libraries(cdd)
+NCBI_end_lib()
+

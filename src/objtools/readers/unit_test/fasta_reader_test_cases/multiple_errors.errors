@@ -1,0 +1,26 @@
+                Warning:
+Problem:        FASTA-Reader: Start of first data line in seq is about 60% ambiguous nucleotides (shouldn't be over 40%)
+SeqId:          lcl|seq_id
+Line:           2
+FeatureName:    first data line
+
+
+                Warning:
+Problem:        FASTA-Reader: Ignoring invalid residues at position(s): On line 2: 38
+SeqId:          lcl|seq_id
+
+
+                Warning:
+Problem:        FASTA-Reader: Title is very long: 1733 characters (max is 1000)
+SeqId:          lcl|seq_id
+Line:           1
+FeatureName:    defline
+
+
+                Warning:
+Problem:        FASTA-Reader: Ignoring FASTA modifier(s) found because the input was not expected to have any.
+SeqId:          lcl|seq_id
+Line:           1
+FeatureName:    defline
+
+

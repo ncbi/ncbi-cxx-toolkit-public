@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(unit_test_entrezgene)
+  NCBI_sources(unit_test_entrezgene)
+  NCBI_uses_toolkit_libraries(entrezgene eutils test_boost)
+  NCBI_project_watchers(wallinc)
+NCBI_end_app()
+

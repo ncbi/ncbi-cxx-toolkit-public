@@ -1,0 +1,9 @@
+# $Id$
+#################################
+
+XSD_PROJ = msbuild_dataobj
+
+REQUIRES = MSWin
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

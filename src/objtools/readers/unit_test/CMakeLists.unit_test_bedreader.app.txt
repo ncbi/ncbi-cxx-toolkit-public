@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_app(unit_test_bedreader)
+  NCBI_sources(unit_test_bedreader)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xobjread)
+  NCBI_set_test_assets( bedreader_test_cases)
+  NCBI_add_test()
+  NCBI_project_watchers(ludwigf gotvyans foleyjp)
+NCBI_end_app()
+

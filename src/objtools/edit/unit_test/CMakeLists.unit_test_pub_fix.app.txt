@@ -1,0 +1,13 @@
+#############################################################################
+#  $Id$
+#############################################################################
+
+NCBI_begin_app(unit_test_pub_fix)
+  NCBI_sources(unit_test_pub_fix)
+  NCBI_uses_toolkit_libraries(
+    xobjedit xunittestutil test_boost ncbi_xloader_genbank
+  )
+  NCBI_requires(Boost.Test.Included)
+  NCBI_add_test()
+  NCBI_project_watchers(dobronad)
+NCBI_end_app()

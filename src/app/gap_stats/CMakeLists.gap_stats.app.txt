@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(gap_stats)
+  NCBI_sources(gap_stats)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoseq xmlwrapp xobjread)
+  NCBI_project_watchers(drozdov)
+NCBI_end_app()
+

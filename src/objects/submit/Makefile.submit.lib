@@ -1,0 +1,6 @@
+LIB = submit
+SRC = submit__ submit___
+
+
+USES_LIBRARIES =  \
+    seqset

@@ -1,0 +1,10 @@
+# $Id$
+
+LIB = einfo
+SRC = einfo__ einfo___
+
+WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    xser

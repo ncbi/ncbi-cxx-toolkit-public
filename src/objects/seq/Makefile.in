@@ -1,0 +1,8 @@
+# $Id$
+
+USR_PROJ = sources
+ASN_PROJ = seq
+SUB_PROJ = test unit_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

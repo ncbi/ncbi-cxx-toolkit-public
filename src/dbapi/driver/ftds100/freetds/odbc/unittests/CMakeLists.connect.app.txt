@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(odbc100_connect)
+  NCBI_sources(connect common)
+  NCBI_set_test_assets(freetds.conf odbc.ini)
+  NCBI_add_test(test-odbc100 --set-env FREETDSCONF=freetds.conf odbc100_connect)
+NCBI_end_app()
+

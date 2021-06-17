@@ -1,0 +1,5 @@
+Line No    : 2
+Severity   : Fatal
+Problem    : Alignment.IllegalDataLine
+Message    : Clustal conservation characters (e.g. *.: characters) were detected in the alignment file, but are out of the expected order. Conservation characters, if included, must appear after sequence data lines.
+

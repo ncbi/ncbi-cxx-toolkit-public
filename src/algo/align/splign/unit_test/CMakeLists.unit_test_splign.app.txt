@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_app(unit_test_splign)
+  NCBI_sources(unit_test_splign)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoalignsplign)
+
+  NCBI_set_test_assets(mrna_in.asn mrna_expected.asn est_in.asn est_expected.asn)
+  NCBI_add_test(unit_test_splign -mrna-data-in mrna_in.asn -est-data-in est_in.asn -mrna-expected mrna_expected.asn -est-expected est_expected.asn)
+
+  NCBI_project_watchers(kiryutin)
+
+NCBI_end_app()
+

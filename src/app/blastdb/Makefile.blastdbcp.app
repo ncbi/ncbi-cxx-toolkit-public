@@ -1,0 +1,19 @@
+# $Id$
+
+APP = blastdbcp
+SRC = blastdbcp
+LIB_ = $(BLAST_INPUT_LIBS) writedb $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB_ += $(XCONNEXT) xser xcgi xhtml xconnect xutil xncbi
+#LIB = $(LIB_:%=%$(STATIC))
+LIB = $(LIB_)
+
+CFLAGS   = $(FAST_CFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS) 
+
+CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS) $(BLAST_THIRD_PARTY_INCLUDE)
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+
+REQUIRES = objects -Cygwin
+
+WATCHERS = camacho madden fongah2

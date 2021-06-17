@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(blobreader)
+  NCBI_sources(blobreader)
+  NCBI_uses_toolkit_libraries(dbapi_util_blobstore)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_app()
+

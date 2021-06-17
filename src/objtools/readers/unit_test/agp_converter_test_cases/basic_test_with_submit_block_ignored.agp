@@ -1,0 +1,5 @@
+BasicObj	1	78	1	O	U54469.1	11	88	+
+BasicObj	79	104	2	N	26	scaffold	yes	strobe
+BasicObj	105	220	3	O	U54469.1	104	219	-
+BasicObj	221	320	4	U	100	contig	no	na
+BasicObj	321	348	5	O	U54470.1	21	48	+

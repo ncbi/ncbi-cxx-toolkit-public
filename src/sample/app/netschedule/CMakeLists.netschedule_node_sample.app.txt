@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(netschedule_node_sample)
+  NCBI_sources(netschedule_node_sample)
+  NCBI_uses_toolkit_libraries(xconnserv)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()

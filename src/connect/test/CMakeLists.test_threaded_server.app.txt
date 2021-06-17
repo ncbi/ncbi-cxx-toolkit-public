@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_threaded_server)
+  NCBI_sources(test_threaded_server)
+  NCBI_uses_toolkit_libraries(xthrserv)
+  NCBI_project_watchers(ucko)
+NCBI_end_app()
+

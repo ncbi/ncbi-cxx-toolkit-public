@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_netschedule_stress)
+  NCBI_sources(test_netschedule_stress)
+  NCBI_uses_toolkit_libraries(xconnserv)
+  NCBI_project_watchers(satskyse)
+NCBI_end_app()
+

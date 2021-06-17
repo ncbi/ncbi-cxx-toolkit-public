@@ -1,0 +1,2297 @@
+Seq-entry ::= set {
+  level 1,
+  class nuc-prot,
+  descr {
+    source {
+      genome genomic,
+      org {
+        taxname "Homo sapiens",
+        common "human",
+        db {
+          {
+            db "taxon",
+            tag id 9606
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Homo",
+            species "sapiens"
+          },
+          attrib "specified",
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+ Catarrhini; Hominidae; Homo",
+          gcode 1,
+          mgcode 2,
+          div "PRI"
+        }
+      },
+      subtype {
+        {
+          subtype chromosome,
+          name "5"
+        },
+        {
+          subtype map,
+          name "5q35.3"
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 31878999,
+        article {
+          title {
+            name "[High expression of VEGFR3 is positively associated with
+ poor prognosis in lung adenocarcinoma]."
+          },
+          authors {
+            names std {
+              {
+                name ml "Li J",
+                affil str "Medical School of Chinese PLA, Beijing 100853;
+ Department of Thoracic-cardio Surgery, Fourth Medical Center, PLA General
+ Hospital, Beijing 100048, China."
+              },
+              {
+                name ml "Zhang W",
+                affil str "Department of Thoracic-cardio Surgery, Fourth
+ Medical Center, PLA General Hospital, Beijing 100048, China."
+              },
+              {
+                name ml "Xia H",
+                affil str "Department of Thoracic-cardio Surgery, Fourth
+ Medical Center, PLA General Hospital, Beijing 100048, China."
+              },
+              {
+                name ml "Liu Y",
+                affil str "Medical School of Chinese PLA, Beijing 100853,
+ China. *Corresponding author, E-mail:liuy_301@163.com."
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Xi Bao Yu Fen Zi Mian Yi Xue Za Zhi",
+              ml-jta "Xi Bao Yu Fen Zi Mian Yi Xue Za Zhi",
+              issn "1007-8738",
+              name "Xi bao yu fen zi mian yi xue za zhi = Chinese journal of
+ cellular and molecular immunology"
+            },
+            imp {
+              date std {
+                year 2019,
+                month 11
+              },
+              volume "35",
+              issue "11",
+              pages "1023-1029",
+              language "chi",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus other,
+                  date std {
+                    year 2019,
+                    month 12,
+                    day 28,
+                    hour 6,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2019,
+                    month 12,
+                    day 28,
+                    hour 6,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2020,
+                    month 1,
+                    day 17,
+                    hour 6,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 31878999
+          }
+        }
+      },
+      comment "GeneRIF: High expression of VEGFR3 in the lung adenocarcinoma
+ tissue is positively correlated with poor prognosis."
+    },
+    pub {
+      pub {
+        pmid 30586762,
+        article {
+          title {
+            name "Vascular Endothelial Growth Factor Receptor 3 Regulates
+ Endothelial Function Through beta-Arrestin 1."
+          },
+          authors {
+            names std {
+              {
+                name ml "Ma Z",
+                affil str "Division of Cardiology (Z.M., X.X., S.R.), Duke
+ University Medical Center, Durham, NC."
+              },
+              {
+                name ml "Yu YR",
+                affil str "Division of Pulmonary and Critical Care (Y.-R.Y.,
+ C.A.P.), Duke University Medical Center, Durham, NC."
+              },
+              {
+                name ml "Badea CT",
+                affil str "Department of Radiology (C.T.B.), Duke University
+ Medical Center, Durham, NC."
+              },
+              {
+                name ml "Kovacs JJ",
+                affil str "Department of Medicine (J.J.K.), Duke University
+ Medical Center, Durham, NC."
+              },
+              {
+                name ml "Xiong X",
+                affil str "Division of Cardiology (Z.M., X.X., S.R.), Duke
+ University Medical Center, Durham, NC."
+              },
+              {
+                name ml "Comhair S",
+                affil str "Lerner Research Institute, Cleveland Clinic, OH
+ (S.C.). The current address for Dr Kovacs is MD Anderson Cancer Center
+ Institute for Applied Cancer Science and Center for Co-Clinical Trials,
+ Houston, TX."
+              },
+              {
+                name ml "Piantadosi CA",
+                affil str "Division of Pulmonary and Critical Care (Y.-R.Y.,
+ C.A.P.), Duke University Medical Center, Durham, NC."
+              },
+              {
+                name ml "Rajagopal S",
+                affil str "Division of Cardiology (Z.M., X.X., S.R.), Duke
+ University Medical Center, Durham, NC.; Department of Biochemistry (S.R.),
+ Duke University Medical Center, Durham, NC."
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Circulation",
+              ml-jta "Circulation",
+              issn "1524-4539",
+              name "Circulation"
+            },
+            imp {
+              date std {
+                year 2019,
+                month 3,
+                day 26
+              },
+              volume "139",
+              issue "13",
+              pages "1629-1642",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus other,
+                  date std {
+                    year 2020,
+                    month 3,
+                    day 26
+                  }
+                },
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2018,
+                    month 12,
+                    day 28,
+                    hour 6,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2019,
+                    month 12,
+                    day 31,
+                    hour 6,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 2018,
+                    month 12,
+                    day 28,
+                    hour 6,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 30586762,
+            doi "10.1161/CIRCULATIONAHA.118.034961",
+            other {
+              db "pmc",
+              tag str "PMC6433500"
+            },
+            other {
+              db "mid",
+              tag str "NIHMS1521042"
+            },
+            other {
+              db "ELocationID doi",
+              tag str "10.1161/CIRCULATIONAHA.118.034961"
+            }
+          }
+        }
+      },
+      comment "GeneRIF: results demonstrate a novel role for ARRB1 in VEGFR
+ regulation and suggest a mechanism for cross talk between G protein-coupled
+ receptors and VEGFRs in pulmonary arterial hypertension."
+    },
+    pub {
+      pub {
+        pmid 20301417,
+        article {
+          title {
+            name "Milroy Disease"
+          },
+          authors {
+            names std {
+              {
+                name name {
+                  last "Brice",
+                  first "G",
+                  initials "G.W."
+                }
+              },
+              {
+                name name {
+                  last "Mansour",
+                  first "S",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Ostergaard",
+                  first "P",
+                  initials "P."
+                }
+              },
+              {
+                name name {
+                  last "Connell",
+                  first "F",
+                  initials "F."
+                }
+              },
+              {
+                name name {
+                  last "Jeffery",
+                  first "S",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Mortimer",
+                  first "P",
+                  initials "P."
+                }
+              }
+            }
+          },
+          from book {
+            title {
+              name "GeneReviews((R))"
+            },
+            authors {
+              names std {
+                {
+                  name ml "Adam MP",
+                  role editor
+                },
+                {
+                  name ml "Ardinger HH",
+                  role editor
+                },
+                {
+                  name ml "Pagon RA",
+                  role editor
+                },
+                {
+                  name ml "Wallace SE",
+                  role editor
+                },
+                {
+                  name ml "Bean LJH",
+                  role editor
+                },
+                {
+                  name ml "Stephens K",
+                  role editor
+                },
+                {
+                  name ml "Amemiya A",
+                  role editor
+                }
+              }
+            },
+            imp {
+              date std {
+                year 1993
+              },
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2014,
+                    month 9,
+                    day 25,
+                    hour 6,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2014,
+                    month 9,
+                    day 25,
+                    hour 6,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 2010,
+                    month 3,
+                    day 20,
+                    hour 6,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 20301417
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 8386825,
+        article {
+          title {
+            name "The FLT4 gene encodes a transmembrane tyrosine kinase
+ related to the vascular endothelial growth factor receptor."
+          },
+          authors {
+            names std {
+              {
+                name ml "Galland F",
+                affil str "Laboratoire d'Oncologie Moleculaire, U.119 INSERM,
+ Marseille, France."
+              },
+              {
+                name ml "Karamysheva A"
+              },
+              {
+                name ml "Pebusque MJ"
+              },
+              {
+                name ml "Borg JP"
+              },
+              {
+                name ml "Rottapel R"
+              },
+              {
+                name ml "Dubreuil P"
+              },
+              {
+                name ml "Rosnet O"
+              },
+              {
+                name ml "Birnbaum D"
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Oncogene",
+              ml-jta "Oncogene",
+              issn "0950-9232",
+              name "Oncogene"
+            },
+            imp {
+              date std {
+                year 1993,
+                month 5
+              },
+              volume "8",
+              issue "5",
+              pages "1233-1240",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 1993,
+                    month 5,
+                    day 1
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 1993,
+                    month 5,
+                    day 1,
+                    hour 0,
+                    minute 1
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 1993,
+                    month 5,
+                    day 1,
+                    hour 0,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 8386825
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 7898938,
+        article {
+          title {
+            name "Biochemical characterization of two isoforms of FLT4, a VEGF
+ receptor-related tyrosine kinase."
+          },
+          authors {
+            names std {
+              {
+                name ml "Borg JP",
+                affil str "Laboratoire d'Oncologie Moleculaire, U.119 Inserm,
+ Marseille, France."
+              },
+              {
+                name ml "deLapeyriere O"
+              },
+              {
+                name ml "Noguchi T"
+              },
+              {
+                name ml "Rottapel R"
+              },
+              {
+                name ml "Dubreuil P"
+              },
+              {
+                name ml "Birnbaum D"
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Oncogene",
+              ml-jta "Oncogene",
+              issn "0950-9232",
+              name "Oncogene"
+            },
+            imp {
+              date std {
+                year 1995,
+                month 3,
+                day 2
+              },
+              volume "10",
+              issue "5",
+              pages "973-984",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 1995,
+                    month 3,
+                    day 2
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 1995,
+                    month 3,
+                    day 2,
+                    hour 0,
+                    minute 1
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 1995,
+                    month 3,
+                    day 2,
+                    hour 0,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 7898938
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 7692369,
+        article {
+          title {
+            name "Two human FLT4 receptor tyrosine kinase isoforms with
+ distinct carboxy terminal tails are produced by alternative processing of
+ primary transcripts."
+          },
+          authors {
+            names std {
+              {
+                name ml "Pajusola K",
+                affil str "Department of Pathology, University of Helsinki,
+ Finland."
+              },
+              {
+                name ml "Aprelikova O"
+              },
+              {
+                name ml "Armstrong E"
+              },
+              {
+                name ml "Morris S"
+              },
+              {
+                name ml "Alitalo K"
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Oncogene",
+              ml-jta "Oncogene",
+              issn "0950-9232",
+              name "Oncogene"
+            },
+            imp {
+              date std {
+                year 1993,
+                month 11
+              },
+              volume "8",
+              issue "11",
+              pages "2931-2937",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 1993,
+                    month 11,
+                    day 1
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 1993,
+                    month 11,
+                    day 1,
+                    hour 0,
+                    minute 1
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 1993,
+                    month 11,
+                    day 1,
+                    hour 0,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 7692369
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 7675451,
+        article {
+          title {
+            name "Mutation at tyrosine residue 1337 abrogates ligand-dependent
+ transforming capacity of the FLT4 receptor."
+          },
+          authors {
+            names std {
+              {
+                name ml "Fournier E",
+                affil str "Laboratoire d'Oncologie moleculaire, U.119 INSERM,
+ Marseille, France."
+              },
+              {
+                name ml "Dubreuil P"
+              },
+              {
+                name ml "Birnbaum D"
+              },
+              {
+                name ml "Borg JP"
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Oncogene",
+              ml-jta "Oncogene",
+              issn "0950-9232",
+              name "Oncogene"
+            },
+            imp {
+              date std {
+                year 1995,
+                month 9,
+                day 7
+              },
+              volume "11",
+              issue "5",
+              pages "921-931",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 1995,
+                    month 9,
+                    day 7
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 1995,
+                    month 9,
+                    day 7,
+                    hour 0,
+                    minute 1
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 1995,
+                    month 9,
+                    day 7,
+                    hour 0,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 7675451
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 1327515,
+        article {
+          title {
+            name "FLT4 receptor tyrosine kinase contains seven
+ immunoglobulin-like loops and is expressed in multiple human tissues and cell
+ lines."
+          },
+          authors {
+            names std {
+              {
+                name ml "Pajusola K",
+                affil str "Department of Virology, University of Helsinki,
+ Finland."
+              },
+              {
+                name ml "Aprelikova O"
+              },
+              {
+                name ml "Korhonen J"
+              },
+              {
+                name ml "Kaipainen A"
+              },
+              {
+                name ml "Pertovaara L"
+              },
+              {
+                name ml "Alitalo R"
+              },
+              {
+                name ml "Alitalo K"
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Cancer Res.",
+              ml-jta "Cancer Res",
+              issn "0008-5472",
+              name "Cancer research"
+            },
+            imp {
+              date std {
+                year 1992,
+                month 10,
+                day 15
+              },
+              volume "52",
+              issue "20",
+              pages "5738-5743",
+              language "eng",
+              retract {
+                type in-error,
+                exp "Cancer Res 1993 Aug 15;53(16):3845"
+              },
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 1992,
+                    month 10,
+                    day 15
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 1992,
+                    month 10,
+                    day 15,
+                    hour 0,
+                    minute 1
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 1992,
+                    month 10,
+                    day 15,
+                    hour 0,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 1327515
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 1319394,
+        article {
+          title {
+            name "Chromosomal localization of FLT4, a novel receptor-type
+ tyrosine kinase gene."
+          },
+          authors {
+            names std {
+              {
+                name ml "Galland F",
+                affil str "Laboratory of Molecular Oncology, U. 119 INSERM,
+ Marseille, France."
+              },
+              {
+                name ml "Karamysheva A"
+              },
+              {
+                name ml "Mattei MG"
+              },
+              {
+                name ml "Rosnet O"
+              },
+              {
+                name ml "Marchetto S"
+              },
+              {
+                name ml "Birnbaum D"
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Genomics",
+              ml-jta "Genomics",
+              issn "0888-7543",
+              name "Genomics"
+            },
+            imp {
+              date std {
+                year 1992,
+                month 6
+              },
+              volume "13",
+              issue "2",
+              pages "475-478",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 1992,
+                    month 6,
+                    day 1
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 1992,
+                    month 6,
+                    day 1,
+                    hour 0,
+                    minute 1
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 1992,
+                    month 6,
+                    day 1,
+                    hour 0,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 1319394,
+            pii "0888-7543(92)90277-Y",
+            doi "10.1016/0888-7543(92)90277-y"
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 1310071,
+        article {
+          title {
+            name "FLT4, a novel class III receptor tyrosine kinase in
+ chromosome 5q33-qter."
+          },
+          authors {
+            names std {
+              {
+                name ml "Aprelikova O",
+                affil str "Department of Virology, University of Helsinki,
+ Finland."
+              },
+              {
+                name ml "Pajusola K"
+              },
+              {
+                name ml "Partanen J"
+              },
+              {
+                name ml "Armstrong E"
+              },
+              {
+                name ml "Alitalo R"
+              },
+              {
+                name ml "Bailey SK"
+              },
+              {
+                name ml "McMahon J"
+              },
+              {
+                name ml "Wasmuth J"
+              },
+              {
+                name ml "Huebner K"
+              },
+              {
+                name ml "Alitalo K"
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Cancer Res.",
+              ml-jta "Cancer Res",
+              issn "0008-5472",
+              name "Cancer research"
+            },
+            imp {
+              date std {
+                year 1992,
+                month 2,
+                day 1
+              },
+              volume "52",
+              issue "3",
+              pages "746-748",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 1992,
+                    month 2,
+                    day 1
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 1992,
+                    month 2,
+                    day 1,
+                    hour 0,
+                    minute 1
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 1992,
+                    month 2,
+                    day 1,
+                    hour 0,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 1310071
+          }
+        }
+      }
+    },
+    comment "~Summary: This gene encodes a tyrosine kinase receptor for
+ vascular endothelial growth factors C and D. The protein is thought to be
+ involved in lymphangiogenesis and maintenance of the lymphatic endothelium.
+ Mutations in this gene cause hereditary lymphedema type IA. [provided by
+ RefSeq, Jul 2008]",
+    comment "~Transcript Variant: This variant (2) contains an alternate 3'
+ terminal exon compared to variant 1. This results in an isoform (2) with a
+ shorter C-terminus compared to isoform 1.",
+    comment "~Publication Note:  This RefSeq record includes a subset of the
+ publications that are available for this gene. Please see the Gene record to
+ access additional publications.",
+    user {
+      type str "RefGeneTracking",
+      data {
+        {
+          label str "Status",
+          data str "Reviewed"
+        },
+        {
+          label str "Assembly",
+          data fields {
+            {
+              label id 0,
+              data fields {
+                {
+                  label str "accession",
+                  data str "DB455035.2"
+                }
+              }
+            },
+            {
+              label id 0,
+              data fields {
+                {
+                  label str "accession",
+                  data str "X68203.1"
+                }
+              }
+            },
+            {
+              label id 0,
+              data fields {
+                {
+                  label str "accession",
+                  data str "AY233382.1"
+                }
+              }
+            },
+            {
+              label id 0,
+              data fields {
+                {
+                  label str "accession",
+                  data str "AC122714.2"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Evidence-Data-START##"
+        },
+        {
+          label str "Transcript exon combination",
+          data str "AK291679.1, AY233382.1 [ECO:0000332]"
+        },
+        {
+          label str "RNAseq introns",
+          data str "mixed/partial sample support SAMEA1965299, SAMEA1966682
+ [ECO:0000350]"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Evidence-Data-END##"
+        }
+      }
+    },
+    update-date std {
+      year 2020,
+      month 2,
+      day 23
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        other {
+          accession "NM_002020",
+          version 5
+        },
+        gi 1675111035
+      },
+      descr {
+        title "Homo sapiens fms related receptor tyrosine kinase 4 (FLT4),
+ transcript variant 2, mRNA",
+        molinfo {
+          biomol mRNA,
+          completeness has-right
+        },
+        create-date std {
+          year 1999,
+          month 3,
+          day 19
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 4484,
+        seq-data ncbi2na '1FD25589669676ADA15199269688E49AA6599EE5E61EE9DE5EA1
+D7A1A5EB8BA71D4E155585F813468A2D11B4D845AE125ED4DD792A849155D8BA9FA5289D28A652
+51688428498A11AABAE621E62A44865295C790AEF9E7918AC4E5061129271B79C710B134291936
+2A451A5949D71BBDB8887F89253D34109784677EB412828653BAB95EDEBB5355A5D0ED19E67640
+9DAE7BA521A928AEBBA8E169AA4E76ED4651E7918E57B1792E62145EA885287D7F5055F5EB9134
+4A4189DCE13527BE54A0B67A279EB2A8827AD781E45BBA9E2FC1D2BB45FE1EA1C54A824A489AAC
+2EAE562619D5248544481DD4935E14D441B4949185EA76CEEE4294106935263F6A22458AD3EE4E
+00D5F4D26D8BA740A1535E8A51A4A2189EB82795B827A49B1556562F52EB10A3A0291ED6A6512D
+44E57AE7428AE12294912917115D95EE81D679E978A6413497A27AEB83B955523138828A5D7554
+9371D9B44965295D1791A5C6AB95797749352E91E9A57A115E423BF9526CB75A69A49242174E51
+2E5B87A2A6B851928E5B8154D8897A117A162FEE8A8083087B8909EB8D483941BB794EC42EEEB7
+5042BA94A389A74DC7DCEE145355869F45360D425358A271C8A9496B9D789E509612710B189379
+9EB165D05ED467918E646A0567DE761E4206E4DEF651577A59497A28AE917AA665194674978B35
+566D9958918A9473BB982E4216992538424794420B17B6B9295E8255DA746481F8585D7AE06E26
+1D9E88E4B9FAE96899199524DBBAC4086229E7A2802DE8B61FA687505209E24D499B998A28E6A1
+9CDEE49BB90650A9E6D075D6526E96E829D628C2A493A236E35FB6B169B4D9EDF7DEAD75D75D37
+DEC138A2969519213421A9C5ED4D34E855AA2B977A2890E60C5ED718E5252EA0F5562269E45EA8
+8B9DA71A65F6A0AEBA09759FDA4D442A4927B845BA5B8039E022A651A526245999E3B689D08D74
+F44DA4145D06EB4175DAA6E450964A955D3AE36E8BDE42C6905DD41F5E66509A865F495799A20B
+7562499A19F5994EBA276529E8DA29A5AA24984AB5DF666BDD82162A6898A6A7DD48508278A17B
+A78959E14E8237EDE7127D4AE948A8E8BD7A7D580B93512217A79DA04F79EDA0261BAE08DEE1FE
+97E56A1371021561C6D642A4B95A795782E8E95780937D842BB114648B86EEB5FEAB9F77A88DF7
+77AA9755B15EAB923438A2F7949A78886910A38A95689E94756531964D39E079EB5A215429885E
+4F7689EBA235EAA179D4A92A97908A08A2B793A5599277489D208A927DD92BB514E95C44D9529E
+19E284959425E4994497A594ACF107ABB5FD5AB97A522A9E215BAF5D4A38213F8A0F5538550617
+1029DEE84148484BA8EB9E9768A2FE248C889293210809A7D2B27824888882924C6D24FF7DDE47
+CC20234087F087F673F7DC79CDC7101F408A0528A108A24E02E8428BB851E09144A8AAF2975A38
+79A9297A30CD497544209EBA248BBD5E1D750A02A2195FD3ADE78B04AE5F54847A6F1E7E140895
+D09A57CE526E122A745DF97DCAD1F7443B57D245E15EE5452F3D7EB0CE2C313408B2CF009C3C34
+EFCC70'H,
+        hist {
+          assembly {
+            {
+              type partial,
+              dim 2,
+              segs denseg {
+                dim 2,
+                numseg 1,
+                ids {
+                  gi 1675111035,
+                  gi 106876852
+                },
+                starts {
+                  0,
+                  24
+                },
+                lens {
+                  36
+                },
+                strands {
+                  plus,
+                  plus
+                }
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs denseg {
+                dim 2,
+                numseg 1,
+                ids {
+                  gi 1675111035,
+                  gi 31433
+                },
+                starts {
+                  36,
+                  0
+                },
+                lens {
+                  3216
+                },
+                strands {
+                  plus,
+                  plus
+                }
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs denseg {
+                dim 2,
+                numseg 1,
+                ids {
+                  gi 1675111035,
+                  gi 29691194
+                },
+                starts {
+                  3252,
+                  3217
+                },
+                lens {
+                  183
+                },
+                strands {
+                  plus,
+                  plus
+                }
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs denseg {
+                dim 2,
+                numseg 1,
+                ids {
+                  gi 1675111035,
+                  gi 31433
+                },
+                starts {
+                  3435,
+                  3399
+                },
+                lens {
+                  705
+                },
+                strands {
+                  plus,
+                  plus
+                }
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs denseg {
+                dim 2,
+                numseg 1,
+                ids {
+                  gi 1675111035,
+                  gi 29691194
+                },
+                starts {
+                  4140,
+                  4105
+                },
+                lens {
+                  266
+                },
+                strands {
+                  plus,
+                  plus
+                }
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs denseg {
+                dim 2,
+                numseg 1,
+                ids {
+                  gi 1675111035,
+                  gi 28827858
+                },
+                starts {
+                  4406,
+                  97290
+                },
+                lens {
+                  11
+                },
+                strands {
+                  plus,
+                  minus
+                }
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs denseg {
+                dim 2,
+                numseg 1,
+                ids {
+                  gi 1675111035,
+                  gi 29691194
+                },
+                starts {
+                  4417,
+                  4382
+                },
+                lens {
+                  63
+                },
+                strands {
+                  plus,
+                  plus
+                }
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs denseg {
+                dim 2,
+                numseg 1,
+                ids {
+                  gi 1675111035,
+                  gi 28827858
+                },
+                starts {
+                  4480,
+                  97223
+                },
+                lens {
+                  4
+                },
+                strands {
+                  plus,
+                  minus
+                }
+              }
+            }
+          },
+          replaces {
+            date std {
+              year 2019,
+              month 5,
+              day 31
+            },
+            ids {
+              gi 189083693
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data gene {
+                locus "FLT4",
+                desc "fms related receptor tyrosine kinase 4",
+                syn {
+                  "CHTD7",
+                  "FLT-4",
+                  "FLT41",
+                  "LMPH1A",
+                  "LMPHM1",
+                  "PCL",
+                  "VEGFR-3",
+                  "VEGFR3"
+                }
+              },
+              location int {
+                from 0,
+                to 4483,
+                strand plus,
+                id gi 1675111035
+              },
+              dbxref {
+                {
+                  db "GeneID",
+                  tag id 2324
+                },
+                {
+                  db "HGNC",
+                  tag str "HGNC:3767"
+                },
+                {
+                  db "MIM",
+                  tag id 136352
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        other {
+          accession "NP_002011",
+          version 2
+        },
+        gi 103472027
+      },
+      descr {
+        title "vascular endothelial growth factor receptor 3 isoform 2
+ precursor [Homo sapiens]",
+        molinfo {
+          biomol peptide
+        },
+        create-date std {
+          year 1999,
+          month 3,
+          day 19
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 1298,
+        seq-data ncbieaa "MQRGAALCLRLWLCLGLLDGLVSGYSMTPPTLNITEESHVIDTGDSLSISCR
+GQHPLEWAWPGAQEAPATGDKDSEDTGVVRDCEGTDARPYCKVLLLHEVHANDTGSYVCYYKYIKARIEGTTAASSYV
+FVRDFEQPFINKPDTLLVNRKDAMWVPCLVSIPGLNVTLRSQSSVLWPDGQEVVWDDRRGMLVSTPLLHDALYLQCET
+TWGDQDFLSNPFLVHITGNELYDIQLLPRKSLELLVGEKLVLNCTVWAEFNSGVTFDWDYPGKQAERGKWVPERRSQQ
+THTELSSILTIHNVSQHDLGSYVCKANNGIQRFRESTEVIVHENPFISVEWLKGPILEATAGDELVKLPVKLAAYPPP
+EFQWYKDGKALSGRHSPHALVLKEVTEASTGTYTLALWNSAAGLRRNISLELVVNVPPQIHEKEASSPSIYSRHSRQA
+LTCTAYGVPLPLSIQWHWRPWTPCKMFAQRSLRRRQQQDLMPQCRDWRAVTTQDAVNPIESLDTWTEFVEGKNKTVSK
+LVIQNANVSAMYKCVVSNKVGQDERLIYFYVTTIPDGFTIESKPSEELLEGQPVLLSCQADSYKYEHLRWYRLNLSTL
+HDAHGNPLLLDCKNVHLFATPLAASLEEVAPGARHATLSLSIPRVAPEHEGHYVCEVQDRRSHDKHCHKKYLSVQALE
+APRLTQNLTDLLVNVSDSLEMQCLVAGAHAPSIVWYKDERLLEEKSGVDLADSNQKLSIQRVREEDAGRYLCSVCNAK
+GCVNSSASVAVEGSEDKGSMEIVILVGTGVIAVFFWVLLLLIFCNMRRPAHADIKTGYLSIIMDPGEVPLEEQCEYLS
+YDASQWEFPRERLHLGRVLGYGAFGKVVEASAFGIHKGSSCDTVAVKMLKEGATASEHRALMSELKILIHIGNHLNVV
+NLLGACTKPQGPLMVIVEFCKYGNLSNFLRAKRDAFSPCAEKSPEQRGRFRAMVELARLDRRRPGSSDRVLFARFSKT
+EGGARRASPDQEAEDLWLSPLTMEDLVCYSFQVARGMEFLASRKCIHRDLAARNILLSESDVVKICDFGLARDIYKDP
+DYVRKGSARLPLKWMAPESIFDKVYTTQSDVWSFGVLLWEIFSLGASPYPGVQINEEFCQRLRDGTRMRAPELATPAI
+RRIMLNCWSGDPKARPAFSELVEILGDLLQGRGLQEEEEVCMAPRSSQSSEEGSFSQVSTMALHIAQADAEDSPPSLQ
+RHSLAARYYNWVSFPGCLARGAETRGSSRMKTFEEFPMTPTTYKGSVDNQTDSGMVLASEEFEQIESRHRQESGFR",
+        hist {
+          replaces {
+            date std {
+              year 2006,
+              month 5,
+              day 27
+            },
+            ids {
+              gi 4503753
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "vascular endothelial growth factor receptor 3 isoform 2
+ precursor",
+                  "vascular endothelial growth factor receptor 3",
+                  "VEGF receptor-3",
+                  "Feline McDonough Sarcoma (FMS)-like tyrosine kinase 4",
+                  "fms related tyrosine kinase 4",
+                  "primary congenital lymphedema",
+                  "fms-like tyrosine kinase 4",
+                  "tyrosine-protein kinase receptor FLT4"
+                },
+                ec {
+                  "2.7.10.1"
+                }
+              },
+              location int {
+                from 0,
+                to 1297,
+                id gi 103472027
+              }
+            },
+            {
+              data prot {
+                name {
+                  "vascular endothelial growth factor receptor 3 isoform 2"
+                },
+                processed mature
+              },
+              location int {
+                from 24,
+                to 1297,
+                id gi 103472027
+              }
+            },
+            {
+              data site glycosylation,
+              comment "N-linked (GlcNAc...) asparagine. {ECO:0000244|PDB:4BSK,
+ ECO:0000269|PubMed:23878260}; propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 32,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site glycosylation,
+              comment "N-linked (GlcNAc...) asparagine. {ECO:0000244|PDB:4BSK,
+ ECO:0000269|PubMed:23878260}; propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 103,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site glycosylation,
+              comment "N-linked (GlcNAc...) asparagine. {ECO:0000255};
+ propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 165,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site glycosylation,
+              comment "N-linked (GlcNAc...) asparagine. {ECO:0000255};
+ propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 250,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site glycosylation,
+              comment "N-linked (GlcNAc...) asparagine. {ECO:0000255};
+ propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 298,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site glycosylation,
+              comment "N-linked (GlcNAc...) asparagine. {ECO:0000244|PDB:4BSK,
+ ECO:0000269|PubMed:23878260}; propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 410,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site glycosylation,
+              comment "N-linked (GlcNAc...) asparagine. {ECO:0000244|PDB:4BSK,
+ ECO:0000269|PubMed:23878260}; propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 514,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site glycosylation,
+              comment "N-linked (GlcNAc...) asparagine.
+ {ECO:0000269|PubMed:16335952}; propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 526,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site glycosylation,
+              comment "N-linked (GlcNAc...) asparagine. {ECO:0000255};
+ propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 593,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site glycosylation,
+              comment "N-linked (GlcNAc...) asparagine. {ECO:0000255};
+ propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 682,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site glycosylation,
+              comment "N-linked (GlcNAc...) asparagine. {ECO:0000255};
+ propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 689,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site glycosylation,
+              comment "N-linked (GlcNAc...) asparagine. {ECO:0000255};
+ propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 757,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site transmembrane-region,
+              comment "propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location int {
+                from 775,
+                to 795,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site phosphorylation,
+              comment "Phosphotyrosine, by SRC. {ECO:0000269|PubMed:20431062};
+ propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 829,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site phosphorylation,
+              comment "Phosphotyrosine, by SRC. {ECO:0000269|PubMed:20431062};
+ propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 832,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site phosphorylation,
+              comment "Phosphotyrosine, by SRC. {ECO:0000269|PubMed:20431062};
+ propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 852,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site phosphorylation,
+              comment "Phosphotyrosine, by autocatalysis and SRC.
+ {ECO:0000269|PubMed:16076871, ECO:0000269|PubMed:20431062}; propagated from
+ UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 1062,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site phosphorylation,
+              comment "Phosphotyrosine, by autocatalysis.
+ {ECO:0000269|PubMed:16076871, ECO:0000269|PubMed:20431062}; propagated from
+ UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 1067,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site phosphorylation,
+              comment "Phosphotyrosine, by autocatalysis.
+ {ECO:0000269|PubMed:12881528, ECO:0000269|PubMed:16076871}; propagated from
+ UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 1229,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site phosphorylation,
+              comment "Phosphotyrosine, by autocatalysis.
+ {ECO:0000269|PubMed:12881528, ECO:0000269|PubMed:16076871}; propagated from
+ UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 1230,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data site phosphorylation,
+              comment "Phosphotyrosine, by autocatalysis.
+ {ECO:0000269|PubMed:12881528}; propagated from UniProtKB/Swiss-Prot (P35916.3)",
+              location pnt {
+                point 1264,
+                id gi 103472027
+              },
+              exp-ev experimental
+            },
+            {
+              data prot {
+                processed signal-peptide
+              },
+              location int {
+                from 0,
+                to 23,
+                id gi 103472027
+              },
+              qual {
+                {
+                  qual "inference",
+                  val "COORDINATES: ab initio prediction:SignalP:4.0"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data cdregion {
+            code {
+              id 1
+            }
+          },
+          comment "isoform 2 precursor is encoded by transcript variant 2",
+          product whole gi 103472027,
+          location int {
+            from 55,
+            to 3951,
+            strand plus,
+            id gi 1675111035
+          },
+          dbxref {
+            {
+              db "CCDS",
+              tag str "CCDS43412.1"
+            }
+          }
+        }
+      }
+    },
+    {
+      name "exons",
+      data ftable {
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 0,
+            to 112,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 113,
+            to 209,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 210,
+            to 454,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 455,
+            to 567,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 568,
+            to 730,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 731,
+            to 870,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 871,
+            to 1039,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 1040,
+            to 1157,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 1158,
+            to 1312,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 1313,
+            to 1475,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 1476,
+            to 1602,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 1603,
+            to 1711,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 1712,
+            to 2074,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 2075,
+            to 2221,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 2222,
+            to 2353,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 2354,
+            to 2460,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 2461,
+            to 2596,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 2597,
+            to 2701,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 2702,
+            to 2815,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 2816,
+            to 2904,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 2905,
+            to 3055,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 3056,
+            to 3150,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 3151,
+            to 3273,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 3274,
+            to 3385,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 3386,
+            to 3485,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 3486,
+            to 3591,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 3592,
+            to 3740,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 3741,
+            to 3861,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 3862,
+            to 3947,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 3948,
+            to 4483,
+            strand plus,
+            id gi 1675111035
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

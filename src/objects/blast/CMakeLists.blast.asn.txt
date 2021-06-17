@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_lib(xnetblast)
+  NCBI_sources(names)
+  NCBI_dataspecs(blast.asn)
+  NCBI_uses_toolkit_libraries(scoremat)
+  NCBI_project_watchers(camacho)
+NCBI_end_lib()
+

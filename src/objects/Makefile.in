@@ -1,0 +1,19 @@
+# $Id$
+
+# Meta-makefile("objects" project)
+#################################
+
+USR_PROJ = sources
+
+SUB_PROJ = general biblio medline pub seqcode seq seqset submit \
+           seqedit seqsplit id1 id2 entrez2 pubmed medlars mla proj \
+           scoremat blast blastdb blastxml blastxml2 mmdb cn3d cdd ncbimime \
+           pcsubstance pcassay pcassay2 gbseq insdseq tinyseq biotree entrezgene \
+           omssa remap seqtest taxon1 taxon3 gbproj trackmgr valerr valid \
+           access docsum featdef genomecoll homologene mim objprt \
+           variation macro genesbyloc coords varrep variation_libs dbsnp
+
+REQUIRES = objects
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

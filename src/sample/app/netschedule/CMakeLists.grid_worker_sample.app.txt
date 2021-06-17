@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(grid_worker_sample)
+  NCBI_sources(grid_worker_sample)
+  NCBI_uses_toolkit_libraries(xconnserv)
+  NCBI_project_tags(grid)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()

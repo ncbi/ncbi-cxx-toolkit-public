@@ -1,0 +1,9 @@
+APP_DEP = seq
+
+LIB = omssa
+SRC = omssa__ omssa___
+
+DLL_LIB = $(SEQ_LIBS)
+
+USES_LIBRARIES =  \
+    $(SEQ_LIBS) pub

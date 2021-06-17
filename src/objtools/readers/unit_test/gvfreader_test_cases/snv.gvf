@@ -1,0 +1,30 @@
+##gvf-version 1.06
+##feature-ontology www.sequenceontology.org/resources/obo_files/current_release.obo
+##genome-build NCBI B36.3
+##sequence-region chr16 1 88827254
+
+#ID1: Expecting
+# "T" instance, observation asserted+variant, homozygous.
+chr16   samtools        SNV     49291041        49291041        .       +       .       ID=ID1;Variant_seq=T;Reference_seq=T;
+
+#ID2: Expecting 
+#  "T" instance, observation asserted. 
+#  "A" instance, observation variant, homozygous.
+chr16   samtools        SNV     49291141        49291141        .       +       .       ID=ID2;Variant_seq=A;Reference_seq=T;
+
+#ID3: Expecting 
+#  "T" instance, observation asserted+variant, heterozygous
+#  "A" instance, observation variant, heterozygous.
+chr16   samtools        SNV     49291241        49291241        .       +       .       ID=ID3;Variant_seq=A,T;Reference_seq=T;
+
+#ID4: Expecting 
+#  "T" instance, observation asserted. 
+#  "A" instance, observation variant, homozygous.
+chr16   samtools        SNV     49291341        49291341        .       +       .       ID=ID4;Variant_seq=A,A;Reference_seq=T;
+
+#ID5: Expecting 
+#  "T" instance, observation asserted. 
+#  "A" instance, observation variant, heterozygous.
+#  "G" instance, observation variant, heterozygous.
+chr16   samtools        SNV     49291441        49291441        .       +       .       ID=ID5;Variant_seq=A,G;Reference_seq=T;
+

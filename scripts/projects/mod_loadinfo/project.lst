@@ -1,0 +1,6 @@
+#define TAGS mod_loadinfo
+corelib$
+common$
+connect$
+connect/daemons$
+connect/daemons/mod$

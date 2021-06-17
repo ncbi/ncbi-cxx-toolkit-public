@@ -1,0 +1,12 @@
+Bioseq ::= {
+  id {
+    local str "dummy_id"
+  },
+  inst {
+    repr raw,
+    mol aa,
+    length 100,
+    seq-data iupacaa "MEWNTFFLVILIIIIKSTTPQITQRPPVENISTYHADWDTPLYTHPSNCRDDSFVP
+IRPAQLRCPHEFEDTNKGLVSVPTRIVHLPLSVTSVSAVASGHY"
+  }
+}

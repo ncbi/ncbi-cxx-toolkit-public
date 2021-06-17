@@ -1,0 +1,10 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(dbapi_driver_test_ctlib)
+  NCBI_sources(dbapi_driver_test_ctlib)
+  NCBI_requires(Boost.Test.Included Sybase)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_app()
+

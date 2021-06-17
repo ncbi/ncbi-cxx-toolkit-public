@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc100_preperror)
+  NCBI_sources(preperror common)
+  NCBI_add_test(test-odbc100 odbc100_preperror)
+NCBI_end_app()
+

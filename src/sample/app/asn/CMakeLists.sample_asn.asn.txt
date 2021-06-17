@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(sample_asn)
+  NCBI_dataspecs(sample_asn.asn)
+  NCBI_uses_toolkit_libraries(general)
+  NCBI_project_watchers(gouriano)
+NCBI_end_lib()

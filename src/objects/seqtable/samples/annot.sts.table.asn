@@ -1,0 +1,172 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "Annot:STS",
+      tag id 30240931
+    }
+  },
+  inst {
+    repr delta,
+    mol rna,
+    length 3482,
+    topology not-set,
+    ext delta {
+      loc int {
+        from 0,
+        to 3481,
+        id gi 30240931
+      }
+    }
+  },
+  annot {
+    {
+      db other,
+      name "Annot:STS",
+      data seq-table {
+        feat-type 8,
+        feat-subtype 64,
+        num-rows 18,
+        columns {
+          {
+            header {
+              field-id data-imp-key
+            },
+            default string "STS"
+          },
+          {
+            header {
+              field-id location-gi
+            },
+            default int 30240931
+          },
+          {
+            header {
+              field-id location-from
+            },
+            data int {
+              3307,
+              1838,
+              1591,
+              2038,
+              2058,
+              1345,
+              3318,
+              2726,
+              2283,
+              910,
+              250,
+              3318,
+              1353,
+              2968,
+              2507,
+              50,
+              1923,
+              3202
+            }
+          },
+          {
+            header {
+              field-id location-to
+            },
+            data int {
+              3433,
+              2070,
+              1857,
+              2742,
+              2305,
+              1601,
+              3430,
+              2977,
+              2531,
+              1147,
+              490,
+              3430,
+              2108,
+              3221,
+              2752,
+              275,
+              2116,
+              3411
+            }
+          },
+          {
+            header {
+              field-id location-strand
+            },
+            default int 1
+          },
+          {
+            header {
+              field-id qual,
+              field-name "Q.standard_name"
+            },
+            data string {
+              "SHGC-31898",
+              "REN56726",
+              "REN56727",
+              "ECD06594",
+              "REN56725",
+              "REN56728",
+              "G32275",
+              "REN56722",
+              "REN56724",
+              "REN56749",
+              "REN56824",
+              "A005R01",
+              "REN56721",
+              "REN56723",
+              "REN56825",
+              "STS-AA040336",
+              "STS-W49531"
+            },
+            sparse indexes {
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17
+            }
+          },
+          {
+            header {
+              field-id dbxref,
+              field-name "D.UniSTS"
+            },
+            data int {
+              14622,
+              381526,
+              381527,
+              287654,
+              381525,
+              381528,
+              116873,
+              381522,
+              381524,
+              381549,
+              381624,
+              11215,
+              468401,
+              381521,
+              381523,
+              381625,
+              53135,
+              66390
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+# $Id$
+
+LIB = xalgoblastdbindex
+
+SRC = sequence_istream_fasta \
+      sequence_istream_bdb \
+      dbindex \
+      dbindex_factory \
+      dbindex_search
+
+CXXFLAGS = -DDO_INLINE $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+ASN_DEP = seqset submit
+
+WATCHERS = morgulis
+
+
+USES_LIBRARIES =  \
+    $(OBJREAD_LIBS) blast seqdb xobjutil

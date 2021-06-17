@@ -1,0 +1,27 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        name "NC_000007.13:g.126096600_126096601insA",
+        data instance {
+          type ins,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "A"
+              },
+              action ins-before
+            }
+          }
+        }
+      },
+      location int {
+        from 126096599,
+        to 126096600,
+        strand plus,
+        id gi 224589819
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(psg_client)
+  NCBI_sources(psg_client psg_client_transport)
+  NCBI_requires(UV NGHTTP2)
+  NCBI_uses_toolkit_libraries(id2 seqsplit xconnserv xxconnect2)
+  NCBI_project_watchers(sadyrovr dmitrie1)
+NCBI_end_lib()

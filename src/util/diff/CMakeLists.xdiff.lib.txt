@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(xdiff)
+  NCBI_sources(diff)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(ivanov)
+NCBI_end_lib()
+

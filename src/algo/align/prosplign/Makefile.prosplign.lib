@@ -1,0 +1,17 @@
+# $Id$
+
+WATCHERS = kiryutin chetvern
+
+ASN_DEP = seqset
+
+SRC = prosplign scoring PSeq NSeq Ali  AliSeqAlign Info nucprot intron AlignInfo compartments
+
+LIB = prosplign
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+COLOR_DIAGNOSTICS = -fdiagnostics-color=never
+
+USES_LIBRARIES =  \
+    xalgoalignutil

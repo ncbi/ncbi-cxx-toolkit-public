@@ -1,0 +1,141 @@
+-- ======================================
+-- ! Mapping from protein to nucleotide !
+-- ======================================
+
+-- Mapping from protein to nucleotide: source
+Seq-loc ::= int {
+  from 11,
+  to 97,
+  id gi 6
+}
+-- Mapping from protein to nucleotide: destination on plus
+Seq-loc ::= int {
+  from 127,
+  to 387,
+  id gi 5
+}
+-- Mapping from protein to nucleotide: destination on minus
+Seq-loc ::= int {
+  from 127,
+  to 387,
+  strand minus,
+  id gi 5
+}
+
+-- Simple interval: original
+Seq-loc ::= int {
+  from 17,
+  to 31,
+  id gi 6
+}
+-- Simple interval: expected
+Seq-loc ::= int {
+  from 145,
+  to 189,
+  id gi 5
+}
+
+-- Partial on the right: original
+Seq-loc ::= int {
+  from 17,
+  to 113,
+  id gi 6
+}
+-- Partial on the right: expected
+Seq-loc ::= int {
+  from 145,
+  to 387,
+  id gi 5,
+  fuzz-to lim gt
+}
+
+-- Original location on minus strand: original
+Seq-loc ::= int {
+  from 17,
+  to 31,
+  strand minus,
+  id gi 6
+}
+-- Original location on minus strand: expected
+Seq-loc ::= int {
+  from 145,
+  to 189,
+  strand minus,
+  id gi 5
+}
+
+-- Original location on minus strand, partial: original
+Seq-loc ::= int {
+  from 17,
+  to 113,
+  strand minus,
+  id gi 6
+}
+-- Original location on minus strand, partial: expected
+Seq-loc ::= int {
+  from 145,
+  to 387,
+  strand minus,
+  id gi 5,
+  fuzz-to lim gt
+}
+
+-- Simple interval, reversed strand: original
+Seq-loc ::= int {
+  from 17,
+  to 61,
+  id gi 6
+}
+-- Simple interval, reversed strand: expected
+Seq-loc ::= int {
+  from 235,
+  to 369,
+  strand minus,
+  id gi 5
+}
+
+-- Partial on the right, reversed strand: original
+Seq-loc ::= int {
+  from 17,
+  to 109,
+  id gi 6
+}
+-- Partial on the right, reversed strand: expected
+Seq-loc ::= int {
+  from 127,
+  to 369,
+  strand minus,
+  id gi 5,
+  fuzz-from lim lt
+}
+
+-- Original location on minus strand, reversed strand: original
+Seq-loc ::= int {
+  from 17,
+  to 31,
+  strand minus,
+  id gi 6
+}
+-- Original location on minus strand, reversed strand: expected
+Seq-loc ::= int {
+  from 325,
+  to 369,
+  strand plus,
+  id gi 5
+}
+
+-- Original location on minus strand, partial, reversed strand: original
+Seq-loc ::= int {
+  from 17,
+  to 113,
+  strand minus,
+  id gi 6
+}
+-- Original location on minus strand, partial, reversed strand: expected
+Seq-loc ::= int {
+  from 127,
+  to 369,
+  strand plus,
+  id gi 5,
+  fuzz-from lim lt
+}

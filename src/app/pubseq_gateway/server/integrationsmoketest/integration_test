@@ -1,0 +1,140 @@
+#!/bin/env python3
+import os, os.path
+import sys
+from distutils.spawn import find_executable
+
+if 'VIRTUAL_ENV' in os.environ:
+    os.environ['PYTHONPATH']=os.environ['VIRTUAL_ENV']
+
+NO_UDC_ROBOT = 1
+NO_PSG_CLIENT = 2
+MALFORMED_ARGUMENTS = 3
+
+
+"""Driver to run udc and psg_client"""
+
+def isUDCParent():
+    """Returns True if it was a UDC process which ran this script"""
+    ppid = os.getppid()
+    if ppid == 1:
+        # It is init
+        return False
+
+    fname = '/proc/' + str(ppid) + '/cmdline'
+    cmdline = open(fname, 'r').read()
+    return '/udc' in cmdline.lower()
+
+
+def driveUDC():
+    """First stage: check the prerequisites:
+       - the udc robot file
+       - the psg_client
+       - service spec
+       run udc approprietely"""
+    dirname = os.path.abspath(os.path.dirname(sys.argv[0])) + os.path.sep
+    robotFile = dirname + 'udc.robot'
+    if not os.path.exists(robotFile):
+        print('UDC robot file is not found. Expected here: ' + robotFile,
+              file=sys.stderr)
+        return NO_UDC_ROBOT
+
+    # Check the psg_client availability
+    if getPSGClientPath() is None:
+        print('psg_client is not found', file=sys.stderr)
+        return NO_PSG_CLIENT
+
+    if len(sys.argv) != 2:
+        exename = os.path.basename(sys.argv[0])
+        print('Unexpected number of arguments\nUsage: ' +
+              exename + ' <service to connect to>', file=sys.stderr)
+        return MALFORMED_ARGUMENTS
+
+    service = sys.argv[1]
+    retCode = os.system('udc -v SERVICE:' + service + ' ' + dirname)
+    if retCode != 0:
+        low=retCode&0xFF
+        hi=(retCode>>8)&0xFF
+        if low==0:
+            retCode=hi
+    return retCode
+
+
+def getPSGClientPath():
+    """First tries to use the same location as the script; then PATH"""
+    candidate = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'psg_client'
+    if os.path.exists(candidate):
+        return candidate
+    return find_executable('psg_client')
+
+
+def doesTestNeedSort(outputFile):
+    """Some tests compete in the order of producing the results;
+       Notably in case of public comments. They may come first or second"""
+    needSort = ['get_164040__3', 'get_with_exclude_not_excluded',
+                'get_AC052670__5', 'get_fasta_bbm_164040',
+                'get_fasta_bbm_164040__3', 'get_115952497', 'get_AC052670',
+                'get_115952497__12', 'get_invalid_exclude_blob']
+    for item in needSort:
+        if '/' + item + '/' in outputFile:
+            return True
+    return False
+
+
+def drivePSGClient():
+    """Run the psg_client with the appropriate arguments"""
+    # Need to suppress -i
+    # Need to suppress -logfile <file>
+    # Need to suppress -h
+    # Need to take out -o <file> and use file for redirection
+    params = sys.argv[1:]
+    if '-h' in params:
+        print('Unexpected argument: -h is supposed only for interactive calls',
+              file=sys.stderr)
+        return MALFORMED_ARGUMENTS
+
+    if '-i' in params:
+        params.remove('-i')
+
+    if '-logfile' in params:
+        index = params.index('-logfile')
+        params.pop(index)
+        params.pop(index)
+
+    if '-o' not in params:
+        print('Unexpected arguments: -o <file> is not found',
+              file=sys.stderr)
+        return MALFORMED_ARGUMENTS
+
+    index = params.index('-o')
+    params.pop(index)
+    outputFile = params.pop(index)
+
+    if '-service' not in params:
+        print('Unexpected arguments: -service <file> is not found',
+              file=sys.stderr)
+        return MALFORMED_ARGUMENTS
+
+    index = params.index('-service')
+    params.pop(index)
+    service = params.pop(index)
+
+    # The -service <...> parameter must be after the command however
+    # the udc robot inserts it as the first argument.
+    # The removing the parameter and inserting it right after the command helps
+    params.insert(1, service)
+    params.insert(1, '-service')
+
+    psgClient = getPSGClientPath()
+    if doesTestNeedSort(outputFile):
+        cmdline = psgClient + ' ' + ' '.join(params) + ' | sort > ' + outputFile + ' 2>&1'
+    else:
+        cmdline = psgClient + ' ' + ' '.join(params) + ' > ' + outputFile + ' 2>&1'
+    retCode = os.system(cmdline)
+    return retCode
+
+
+if not isUDCParent():
+    sys.exit(driveUDC())
+
+sys.exit(drivePSGClient())
+

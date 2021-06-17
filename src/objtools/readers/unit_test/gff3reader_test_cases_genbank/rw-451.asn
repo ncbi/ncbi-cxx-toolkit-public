@@ -1,0 +1,252 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+        locus-tag "B5V51_14826"
+      },
+      location int {
+        from 32925,
+        to 33083,
+        strand minus,
+        id local str "scaffold_944"
+      },
+      qual {
+        {
+          qual "ID",
+          val "J14826"
+        }
+      }
+    },
+    {
+      id local id 2,
+      data rna {
+        type mRNA
+      },
+      location int {
+        from 32925,
+        to 33083,
+        strand minus,
+        id local str "scaffold_944"
+      },
+      qual {
+        {
+          qual "Parent",
+          val "J14826"
+        },
+        {
+          qual "ID",
+          val "J14826.1"
+        },
+        {
+          qual "protein_id",
+          val "gnl|B5V51|J14826.1"
+        },
+        {
+          qual "transcript_id",
+          val "gnl|B5V51|mrna.J14826.1"
+        }
+      },
+      xref {
+        {
+          id local id 3
+        }
+      }
+    },
+    {
+      id local id 3,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 32925,
+        to 33083,
+        strand minus,
+        id local str "scaffold_944"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds.J14826.1"
+        },
+        {
+          qual "protein_id",
+          val "gnl|B5V51|J14826.1"
+        },
+        {
+          qual "transcript_id",
+          val "gnl|B5V51|mrna.J14826.1"
+        },
+        {
+          qual "Parent",
+          val "J14826.1"
+        }
+      },
+      xref {
+        {
+          id local id 2
+        }
+      }
+    },
+    {
+      id local id 4,
+      data gene {
+        locus-tag "B5V51_24826"
+      },
+      location int {
+        from 32925,
+        to 33083,
+        strand minus,
+        id local str "scaffold_944"
+      },
+      qual {
+        {
+          qual "ID",
+          val "J24826"
+        }
+      }
+    },
+    {
+      id local id 5,
+      data rna {
+        type mRNA
+      },
+      location int {
+        from 32925,
+        to 33083,
+        strand minus,
+        id local str "scaffold_944"
+      },
+      qual {
+        {
+          qual "Parent",
+          val "J24826"
+        },
+        {
+          qual "ID",
+          val "J24826.1"
+        },
+        {
+          qual "protein_id",
+          val "J24826.1"
+        },
+        {
+          qual "transcript_id",
+          val "mrna.J24826.1"
+        }
+      },
+      xref {
+        {
+          id local id 6
+        }
+      }
+    },
+    {
+      id local id 6,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 32925,
+        to 33083,
+        strand minus,
+        id local str "scaffold_944"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds.J24826.1"
+        },
+        {
+          qual "protein_id",
+          val "J24826.1"
+        },
+        {
+          qual "transcript_id",
+          val "mrna.J24826.1"
+        },
+        {
+          qual "Parent",
+          val "J24826.1"
+        }
+      },
+      xref {
+        {
+          id local id 5
+        }
+      }
+    },
+    {
+      id local id 7,
+      data gene {
+        locus-tag "B5V51_24826"
+      },
+      location int {
+        from 32925,
+        to 33083,
+        strand minus,
+        id local str "scaffold_944"
+      },
+      qual {
+        {
+          qual "ID",
+          val "J34826"
+        }
+      }
+    },
+    {
+      id local id 8,
+      data rna {
+        type mRNA
+      },
+      location int {
+        from 32925,
+        to 33083,
+        strand minus,
+        id local str "scaffold_944"
+      },
+      qual {
+        {
+          qual "Parent",
+          val "J34826"
+        },
+        {
+          qual "ID",
+          val "J34826.1"
+        }
+      },
+      xref {
+        {
+          id local id 9
+        }
+      }
+    },
+    {
+      id local id 9,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 32925,
+        to 33083,
+        strand minus,
+        id local str "scaffold_944"
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds.J34826.1"
+        },
+        {
+          qual "Parent",
+          val "J34826.1"
+        }
+      },
+      xref {
+        {
+          id local id 8
+        }
+      }
+    }
+  }
+}

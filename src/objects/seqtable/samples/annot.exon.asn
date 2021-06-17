@@ -1,0 +1,95 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "Annot:Exon",
+      tag id 42741670
+    }
+  },
+  inst {
+    repr delta,
+    mol rna,
+    length 1438,
+    topology not-set,
+    ext delta {
+      loc int {
+        from 0,
+        to 1423,
+        id gi 42741670
+      }
+    }
+  },
+  annot {
+    {
+      db other,
+      name "Annot:Exon",
+      desc {
+        title "NM exons based on Splign alignments"
+      },
+      data ftable {
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 0,
+            to 74,
+            strand plus,
+            id gi 42741670
+          },
+          qual {
+            {
+              qual "number",
+              val "1"
+            },
+            {
+              qual "inference",
+              val "alignment:Splign"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 75,
+            to 153,
+            strand plus,
+            id gi 42741670
+          },
+          qual {
+            {
+              qual "number",
+              val "2"
+            },
+            {
+              qual "inference",
+              val "alignment:Splign"
+            }
+          }
+        },
+        {
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 154,
+            to 1423,
+            strand plus,
+            id gi 42741670
+          },
+          qual {
+            {
+              qual "number",
+              val "3"
+            },
+            {
+              qual "inference",
+              val "alignment:Splign"
+            }
+          }
+        }
+      }
+    }
+  }
+}

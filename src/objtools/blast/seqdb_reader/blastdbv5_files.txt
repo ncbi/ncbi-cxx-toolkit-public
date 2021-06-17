@@ -1,0 +1,97 @@
+BLAST DB V5 Files Format
+
+Author: fongah2
+
+----- Seq ID to Oid File ------------
+
+File Extension (p/ndb)
+    Following the same 3 letters convention used in blastdb:-
+    p    protein
+    n    nucl
+    db   means database 
+    
+Format
+    LMDB Key Value Pair:-
+    Key        seq id
+    Value      oid 
+    
+Seq ID Format Stored:-
+    PIR and PRF are stored as Fasta Style Seq IDs  
+    PDB IDs are stored with and without Chain
+    CTexeq_Id are stored with and without version
+ 
+ 
+----- Oid To Seq IDs Lookup File -----
+
+File Extension (p/nos)
+    Following the same 3 letters convention used in blastdb:-
+    p    protein
+    n    nucl
+    os   means oid to seqid
+
+Format
+    The total num of oids is stored at the start of the file as
+    Uint8 (8 bytes). The rest of the file contains two parts.
+    
+    The first part is an Uint8 index array (0 - # of oids) that stores
+    the offset (in number of bytes) where seq ids data for an oid
+    ends counting from the begining of the data section. Hence, the
+    start of the seqid ids data for an oid (greater than 0) is where 
+    (oid -1) data ends.
+ 
+    The second part (data) stores seqids in the following format:-
+    id length (one byte) if the length is less OxFF (bytes max)
+    Otherise, the id length byte is set to 0xFF and the real id
+    length is stored as Uint4 (4 bytes that folows the id length byte)
+    seq ids are stroed in Ascii fomrat following the id length byte or bytes.
+    Note that no NULL byte at end of id string.
+    
+----- Oid To Tax IDs Lookup File -----
+
+File Extension (p/not)
+    Following the same 3 letters convention used in blastdb:-
+    p    protein
+    n    nucl
+    ot   means oid to tax id 
+
+Format
+    The total num of oids is stored at the start of the file as
+    Uint8 (8 bytes). The rest of the file contains two parts.
+    
+    The first part is an Uint8 index array (0 - # of oids) that stores
+    the offset (in number of Int4) where tax id data for an oid
+    ends counting from the begining of the data section. Hence, the
+    start of the tax id data for an oid (greater than 0) is where 
+    (oid -1) data ends.
+ 
+    The second part (data) stores tax ids in Int4 format. 
+    
+----- Tax ID To Oid List Offset Lookup File -----
+
+File Extension (p/ntf)
+    Following the same 3 letters convention used in blastdb:-
+    p    protein
+    n    nucl
+    tf   means tax id to oid list offset  
+
+Format
+    LMDB Key Value Pair:-
+    Key        tax id
+    Value      Offset in the tax id to oid list file 
+    
+----- Tax id To Oid List File -----
+
+File Extension (p/nto)
+    Following the same 3 letters convention used in blastdb:-
+    p    protein
+    n    nucl
+    to   means tax id to oids  
+
+Format
+    For each tax id, the first Uint4 where the tax id to oids list 
+    offset points to, stored the num of oids in the list. The 
+    list of oids (Uint4) corresponds to the tax id is stored in 
+    asccending order following the num of oids in the list.
+    
+    
+    

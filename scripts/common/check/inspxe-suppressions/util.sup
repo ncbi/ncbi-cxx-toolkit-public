@@ -1,0 +1,70 @@
+suppression = {
+	name = "ZLIB/deflateInit2_()"
+	type = {uninitialized_memory_access}
+	stacks = {
+		allocation={
+			...;
+			func=deflateInit2_;
+		}
+	}
+}
+suppression = {
+	name = "LZO/lzo1x_999_compress_level()"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=lzo1x_999_compress_level;
+		}
+	}
+}
+suppression = {
+	name = "CCompressArchive - miniz"
+	type = {uninitialized_memory_access}
+	stacks = {
+		allocation={
+			...;
+			func=mz_zip_writer_add_file,src=miniz.c;
+		}
+	}
+}
+suppression = {
+	name = "CCompressArchive - miniz"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=tdefl_compress_normal,src=miniz.c;
+		}
+	}
+}
+suppression = {
+	name = "CCompressArchive - miniz"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=mz_zip_writer_add_file,src=miniz.c;
+		}
+	}
+}
+suppression = {
+	name = "CCompressArchive - miniz"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		allocation={
+			...;
+			func=mz_zip_writer_add_file,src=miniz.c;
+		}
+	}
+}
+suppression = {
+	name = "CCompressArchive - miniz"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=tdefl_compress_normal,src=miniz.c;
+		}
+	}
+}

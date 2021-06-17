@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(compartp)
+  NCBI_sources(compartp)
+  NCBI_uses_toolkit_libraries(prosplign)
+  NCBI_project_watchers(chetvern)
+NCBI_end_app()
+

@@ -1,0 +1,214 @@
+Seq-annot ::= {
+  desc {
+    title "fixedStep format",
+    name "fixedStep2",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "autoScale",
+          data str "off"
+        },
+        {
+          label str "color",
+          data str "0,200,100"
+        },
+        {
+          label str "graphType",
+          data str "points"
+        },
+        {
+          label str "maxHeightPixels",
+          data str "100:50:20"
+        },
+        {
+          label str "priority",
+          data str "20"
+        },
+        {
+          label str "viewLimits",
+          data str "0:1000"
+        },
+        {
+          label str "visibility",
+          data str "full"
+        }
+      }
+    }
+  },
+  data seq-table {
+    feat-type 0,
+    num-rows 10,
+    columns {
+      {
+        header {
+          field-name "Seq-table location"
+        },
+        default loc int {
+          from 1499,
+          to 4498,
+          id other {
+            accession "AC_000017",
+            version 1
+          }
+        }
+      },
+      {
+        header {
+          field-id location-id
+        },
+        default id other {
+          accession "AC_000017",
+          version 1
+        }
+      },
+      {
+        header {
+          field-id location-from
+        },
+        data int {
+          1499,
+          1799,
+          2099,
+          2399,
+          2699,
+          2999,
+          3299,
+          3599,
+          3899,
+          4199
+        }
+      },
+      {
+        header {
+          field-name "span"
+        },
+        default int 300
+      },
+      {
+        header {
+          field-name "values"
+        },
+        data real {
+          { 1, 10, 3 },
+          { 9, 10, 2 },
+          { 8, 10, 2 },
+          { 7, 10, 2 },
+          { 6, 10, 2 },
+          { 5, 10, 2 },
+          { 4, 10, 2 },
+          { 3, 10, 2 },
+          { 2, 10, 2 },
+          { 1, 10, 2 }
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    title "fixedStep format",
+    name "fixedStep2",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "autoScale",
+          data str "off"
+        },
+        {
+          label str "color",
+          data str "0,200,100"
+        },
+        {
+          label str "graphType",
+          data str "points"
+        },
+        {
+          label str "maxHeightPixels",
+          data str "100:50:20"
+        },
+        {
+          label str "priority",
+          data str "20"
+        },
+        {
+          label str "viewLimits",
+          data str "0:1000"
+        },
+        {
+          label str "visibility",
+          data str "full"
+        }
+      }
+    }
+  },
+  data seq-table {
+    feat-type 0,
+    num-rows 10,
+    columns {
+      {
+        header {
+          field-name "Seq-table location"
+        },
+        default loc int {
+          from 1499,
+          to 4498,
+          id other {
+            accession "AC_000018",
+            version 1
+          }
+        }
+      },
+      {
+        header {
+          field-id location-id
+        },
+        default id other {
+          accession "AC_000018",
+          version 1
+        }
+      },
+      {
+        header {
+          field-id location-from
+        },
+        data int {
+          1499,
+          1799,
+          2099,
+          2399,
+          2699,
+          2999,
+          3299,
+          3599,
+          3899,
+          4199
+        }
+      },
+      {
+        header {
+          field-name "span"
+        },
+        default int 300
+      },
+      {
+        header {
+          field-name "values"
+        },
+        data real {
+          { 1, 10, 3 },
+          { 9, 10, 2 },
+          { 8, 10, 2 },
+          { 7, 10, 2 },
+          { 6, 10, 2 },
+          { 5, 10, 2 },
+          { 4, 10, 2 },
+          { 3, 10, 2 },
+          { 2, 10, 2 },
+          { 1, 10, 2 }
+        }
+      }
+    }
+  }
+}

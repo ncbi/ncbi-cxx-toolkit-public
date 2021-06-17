@@ -1,0 +1,70 @@
+Is Reference Correct? : 0 . CC . AT
+Check Variation type: 4
+Ref/Alt : CC - GC
+Seq-feat ::= {
+  data variation {
+    data set {
+      type package,
+      variations {
+        {
+          data instance {
+            type mnp,
+            delta {
+              {
+                seq literal {
+                  length 2,
+                  seq-data iupacna "GC"
+                }
+              }
+            }
+          }
+        },
+        {
+          data instance {
+            type identity,
+            delta {
+              {
+                seq literal {
+                  length 2,
+                  seq-data iupacna "AT"
+                }
+              }
+            },
+            observation reference
+          }
+        },
+        {
+          data instance {
+            type mnp,
+            delta {
+              {
+                seq literal {
+                  length 2,
+                  seq-data iupacna "CC"
+                }
+              }
+            },
+            observation 5
+          }
+        }
+      }
+    }
+  },
+  location int {
+    from 123122,
+    to 123123,
+    strand plus,
+    id gi 568815597
+  },
+  exts {
+    {
+      type str "Reference Allele Change",
+      data {
+        {
+          label str "Reference Changed",
+          data bool TRUE
+        }
+      }
+    }
+  }
+}

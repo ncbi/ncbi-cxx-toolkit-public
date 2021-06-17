@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile ("struct_util_demo" program)
+#################################
+
+APP_PROJ = struct_util_demo
+PROJ_TAG = demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

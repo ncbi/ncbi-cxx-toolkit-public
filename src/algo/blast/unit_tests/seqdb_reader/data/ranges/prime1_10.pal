@@ -1,0 +1,6 @@
+
+DBLIST ../seqp
+FIRST_OID 1
+LAST_OID 10
+OIDLIST primep.msk
+

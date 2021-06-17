@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<MSSearchSettings
+    xmlns="http://www.ncbi.nlm.nih.gov"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
+    xs:schemaLocation="http://www.ncbi.nlm.nih.gov OMSSA.xsd"
+>
+          <MSSearchSettings_precursorsearchtype>
+            <MSSearchType value="monoisotopic">0</MSSearchType>
+          </MSSearchSettings_precursorsearchtype>
+          <MSSearchSettings_productsearchtype>
+            <MSSearchType value="monoisotopic">0</MSSearchType>
+          </MSSearchSettings_productsearchtype>
+          <MSSearchSettings_ionstosearch>
+            <MSIonType value="b">1</MSIonType>
+            <MSIonType value="y">4</MSIonType>
+          </MSSearchSettings_ionstosearch>
+          <MSSearchSettings_peptol>2</MSSearchSettings_peptol>
+          <MSSearchSettings_msmstol>0.8</MSSearchSettings_msmstol>
+          <MSSearchSettings_zdep>
+            <MSZdependence value="independent">0</MSZdependence>
+          </MSSearchSettings_zdep>
+          <MSSearchSettings_cutoff>1</MSSearchSettings_cutoff>
+          <MSSearchSettings_cutlo>0</MSSearchSettings_cutlo>
+          <MSSearchSettings_cuthi>0.2</MSSearchSettings_cuthi>
+          <MSSearchSettings_cutinc>0.0005</MSSearchSettings_cutinc>
+          <MSSearchSettings_singlewin>20</MSSearchSettings_singlewin>
+          <MSSearchSettings_doublewin>14</MSSearchSettings_doublewin>
+          <MSSearchSettings_singlenum>2</MSSearchSettings_singlenum>
+          <MSSearchSettings_doublenum>2</MSSearchSettings_doublenum>
+          <MSSearchSettings_fixed></MSSearchSettings_fixed>
+          <MSSearchSettings_variable></MSSearchSettings_variable>
+          <MSSearchSettings_enzyme>
+            <MSEnzymes value="trypsin">0</MSEnzymes>
+          </MSSearchSettings_enzyme>
+          <MSSearchSettings_missedcleave>1</MSSearchSettings_missedcleave>
+          <MSSearchSettings_hitlistlen>10</MSSearchSettings_hitlistlen>
+          <MSSearchSettings_db>nr</MSSearchSettings_db>
+          <MSSearchSettings_tophitnum>6</MSSearchSettings_tophitnum>
+          <MSSearchSettings_minhit>2</MSSearchSettings_minhit>
+          <MSSearchSettings_minspectra>4</MSSearchSettings_minspectra>
+          <MSSearchSettings_scale>1000</MSSearchSettings_scale>
+          <MSSearchSettings_maxmods>64</MSSearchSettings_maxmods>
+          <MSSearchSettings_chargehandling>
+            <MSChargeHandle>
+              <MSChargeHandle_calcplusone>
+                <MSCalcPlusOne>1</MSCalcPlusOne>
+              </MSChargeHandle_calcplusone>
+              <MSChargeHandle_calccharge>
+                <MSCalcCharge>2</MSCalcCharge>
+              </MSChargeHandle_calccharge>
+              <MSChargeHandle_mincharge>1</MSChargeHandle_mincharge>
+              <MSChargeHandle_maxcharge>3</MSChargeHandle_maxcharge>
+              <MSChargeHandle_considermult>3</MSChargeHandle_considermult>
+              <MSChargeHandle_plusone>0.95</MSChargeHandle_plusone>
+              <MSChargeHandle_maxproductcharge>2</MSChargeHandle_maxproductcharge>
+            </MSChargeHandle>
+          </MSSearchSettings_chargehandling>
+          <MSSearchSettings_pseudocount>1</MSSearchSettings_pseudocount>
+          <MSSearchSettings_searchb1>1</MSSearchSettings_searchb1>
+          <MSSearchSettings_searchctermproduct>0</MSSearchSettings_searchctermproduct>
+          <MSSearchSettings_maxproductions>100</MSSearchSettings_maxproductions>
+          <MSSearchSettings_minnoenzyme>4</MSSearchSettings_minnoenzyme>
+          <MSSearchSettings_maxnoenzyme>40</MSSearchSettings_maxnoenzyme>
+          <MSSearchSettings_exactmass>1446.94</MSSearchSettings_exactmass>
+          <MSSearchSettings_settingid>0</MSSearchSettings_settingid>
+          <MSSearchSettings_iterativesettings>
+            <MSIterativeSettings>
+              <MSIterativeSettings_researchthresh>0.01</MSIterativeSettings_researchthresh>
+              <MSIterativeSettings_subsetthresh>0</MSIterativeSettings_subsetthresh>
+              <MSIterativeSettings_replacethresh>0</MSIterativeSettings_replacethresh>
+            </MSIterativeSettings>
+          </MSSearchSettings_iterativesettings>
+          <MSSearchSettings_precursorcull>0</MSSearchSettings_precursorcull>
+          <MSSearchSettings_nocorrelationscore>0</MSSearchSettings_nocorrelationscore>
+          <MSSearchSettings_probfollowingion>0.5</MSSearchSettings_probfollowingion>
+          <MSSearchSettings_nmethionine value="true"/>
+          <MSSearchSettings_automassadjust>1.0</MSSearchSettings_automassadjust>
+        </MSSearchSettings>

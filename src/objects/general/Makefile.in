@@ -1,0 +1,4 @@
+SUB_PROJ = test unit_test
+ASN_PROJ = general
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

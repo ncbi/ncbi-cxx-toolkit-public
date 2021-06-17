@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(id2_fetch_simple)
+  NCBI_sources(id2_fetch_simple)
+  NCBI_uses_toolkit_libraries(dbapi_driver id2 xcompress xconnect)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()
+

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(demo_html)
+  NCBI_sources(demo_html)
+  NCBI_uses_toolkit_libraries(xcgi xhtml)
+  NCBI_project_watchers(ivanov)
+NCBI_end_app()
+

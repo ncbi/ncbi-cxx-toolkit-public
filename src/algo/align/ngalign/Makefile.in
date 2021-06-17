@@ -1,0 +1,14 @@
+# $Id$
+
+# Meta-makefile (algo/align/ngalign)
+#################################
+
+LIB_PROJ = xngalign
+EXPENDABLE_SUB_PROJ = app
+
+REQUIRES = objects
+
+WATCHERS = boukn
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

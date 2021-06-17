@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_app(ct100_connect_fail)
+  NCBI_sources(connect_fail common)
+NCBI_end_app()
+

@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(blastxml2)
+  NCBI_dataspecs(blastxml2.asn)
+  NCBI_uses_toolkit_libraries(xser)
+NCBI_end_lib()
+

@@ -1,0 +1,6 @@
+# $Id$
+ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
+  seqfeat__.o: seqfeat__.cpp
+	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) \
+	    -fno-builtin-strcpy -fno-builtin-strspn $< -o $@ $(CXX_FILTER)
+endif

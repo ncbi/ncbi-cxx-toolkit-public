@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_app(unit_test_title_parser)
+  NCBI_sources(unit_test_title_parser)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xunittestutil xobjread)
+  NCBI_set_test_assets( title_parser_test_cases)
+  NCBI_add_test()
+  NCBI_project_watchers(foleyjp)
+NCBI_end_app()
+

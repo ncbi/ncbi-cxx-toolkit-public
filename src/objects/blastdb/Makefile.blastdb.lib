@@ -1,0 +1,12 @@
+# $Id$
+
+LIB = blastdb
+SRC = blastdb__ blastdb___
+
+DLL_LIB = xser
+
+WATCHERS = camacho
+
+
+USES_LIBRARIES =  \
+    $(SEQ_LIBS) pub

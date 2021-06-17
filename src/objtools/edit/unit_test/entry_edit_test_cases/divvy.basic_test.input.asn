@@ -1,0 +1,835 @@
+Seq-entry ::= set {
+  seq-set {
+    set {
+      seq-set {
+        seq {
+          id {
+            local str "A" } ,
+          inst {
+            repr virtual ,
+            mol dna ,
+            length 100 } ,
+          annot {
+            {
+              data align {
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "A" ,
+                        local str "A" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 0 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "A" ,
+                        local str "B" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 1 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "B" ,
+                        local str "A" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 2 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "B" ,
+                        local str "B" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 3 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "C" ,
+                        local str "C" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 4 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "C" ,
+                        local str "B" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 5 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "B" ,
+                        local str "C" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 6 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "B" ,
+                        local str "B" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 7 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "A" ,
+                        local str "A" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 8 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "A" ,
+                        local str "C" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 9 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "C" ,
+                        local str "A" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 10 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "C" ,
+                        local str "C" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 11 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "NONEXISTENT" ,
+                        local str "NONEXISTENT" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 12 } } } } } } ,
+        seq {
+          id {
+            local str "B" } ,
+          inst {
+            repr virtual ,
+            mol dna ,
+            length 100 } ,
+          annot {
+            {
+              data align {
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "A" ,
+                        local str "A" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 13 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "A" ,
+                        local str "B" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 14 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "B" ,
+                        local str "A" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 15 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "B" ,
+                        local str "B" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 16 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "C" ,
+                        local str "C" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 17 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "C" ,
+                        local str "B" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 18 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "B" ,
+                        local str "C" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 19 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "B" ,
+                        local str "B" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 20 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "A" ,
+                        local str "A" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 21 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "A" ,
+                        local str "C" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 22 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "C" ,
+                        local str "A" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 23 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "C" ,
+                        local str "C" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 24 } } ,
+                {
+                  type partial ,
+                  dim 2 ,
+                  segs dendiag {
+                    {
+                      dim 2 ,
+                      ids {
+                        local str "NONEXISTENT" ,
+                        local str "NONEXISTENT" } ,
+                      starts {
+                        3 ,
+                        8 } ,
+                      len 25 } } ,
+                  id {
+                    id 25 } } } } } } } ,
+      annot {
+        {
+          data align {
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "A" ,
+                    local str "A" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 26 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "A" ,
+                    local str "B" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 27 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "B" ,
+                    local str "A" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 28 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "B" ,
+                    local str "B" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 29 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "C" ,
+                    local str "C" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 30 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "C" ,
+                    local str "B" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 31 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "B" ,
+                    local str "C" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 32 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "B" ,
+                    local str "B" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 33 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "A" ,
+                    local str "A" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 34 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "A" ,
+                    local str "C" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 35 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "C" ,
+                    local str "A" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 36 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "C" ,
+                    local str "C" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 37 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "NONEXISTENT" ,
+                    local str "NONEXISTENT" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 38 } } } } } } ,
+    seq {
+      id {
+        local str "C" } ,
+      inst {
+        repr virtual ,
+        mol dna ,
+        length 100 } ,
+      annot {
+        {
+          data align {
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "A" ,
+                    local str "A" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 39 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "A" ,
+                    local str "B" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 40 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "B" ,
+                    local str "A" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 41 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "B" ,
+                    local str "B" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 42 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "C" ,
+                    local str "C" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 43 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "C" ,
+                    local str "B" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 44 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "B" ,
+                    local str "C" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 45 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "B" ,
+                    local str "B" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 46 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "A" ,
+                    local str "A" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 47 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "A" ,
+                    local str "C" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 48 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "C" ,
+                    local str "A" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 49 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "C" ,
+                    local str "C" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 50 } } ,
+            {
+              type partial ,
+              dim 2 ,
+              segs dendiag {
+                {
+                  dim 2 ,
+                  ids {
+                    local str "NONEXISTENT" ,
+                    local str "NONEXISTENT" } ,
+                  starts {
+                    3 ,
+                    8 } ,
+                  len 25 } } ,
+              id {
+                id 51 } } } } } } } ,
+  annot {
+    {
+      data align {
+        {
+          type partial ,
+          dim 2 ,
+          segs dendiag {
+            {
+              dim 2 ,
+              ids {
+                local str "DUMMY1" ,
+                local str "DUMMY2" } ,
+              starts {
+                3 ,
+                8 } ,
+              len 25 } } ,
+          id {
+            id 52 } } } } } } 

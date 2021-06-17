@@ -1,0 +1,36 @@
+Line No    : 12
+Severity   : Error
+Message    : Bad data line: Invalid feature type "3'clip"
+
+Line No    : 14
+Severity   : Error
+Message    : Bad data line: Invalid feature type "5'clip"
+
+Line No    : 24
+Severity   : Error
+Message    : Bad data line: Invalid feature type "Comment"
+
+Line No    : 25
+Severity   : Error
+Message    : Bad data line: Invalid feature type "conflict"
+
+Line No    : 43
+Severity   : Error
+Message    : Bad data line: Invalid feature type "Protein"
+
+Line No    : 47
+Severity   : Error
+Message    : Bad data line: Invalid feature type "Rsite"
+
+Line No    : 51
+Severity   : Error
+Message    : Bad data line: Invalid feature type "Site"
+
+Line No    : 52
+Severity   : Error
+Message    : Bad data line: Invalid feature type "Site-ref"
+
+Line No    : 57
+Severity   : Error
+Message    : Bad data line: Invalid feature type "virion"
+

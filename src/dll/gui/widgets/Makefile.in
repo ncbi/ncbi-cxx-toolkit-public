@@ -1,0 +1,10 @@
+# $Id$
+
+SUB_PROJ =  \
+    gui_widgets \
+    gui_widgets_aln \
+    gui_widgets_misc \
+    gui_widgets_seq \
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

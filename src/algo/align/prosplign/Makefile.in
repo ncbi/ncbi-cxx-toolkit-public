@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile (algo/align/prosplign)
+#################################
+
+LIB_PROJ = prosplign
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

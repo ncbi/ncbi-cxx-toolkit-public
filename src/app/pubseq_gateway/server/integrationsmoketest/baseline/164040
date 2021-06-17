@@ -1,0 +1,34 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": {
+        "id": "gb|AAA05806.1|",
+        "type": 5
+    },
+    "other_ids": [
+        {
+            "id": "bbs|65136",
+            "type": 2
+        },
+        {
+            "id": "bbm|164040",
+            "type": 3
+        },
+        {
+            "id": "gi|238806",
+            "type": 12
+        }
+    ],
+    "molecule_type": "aa",
+    "length": 117,
+    "seq_state": 10,
+    "state": 10,
+    "blob_id": {
+        "id": "4.8091"
+    },
+    "tax_id": 0,
+    "hash": -1400003729,
+    "date_changed": "09/13/2001 20:26:41",
+    "gi": 238806
+}
+]

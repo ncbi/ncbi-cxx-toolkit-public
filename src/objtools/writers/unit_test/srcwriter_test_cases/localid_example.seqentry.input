@@ -1,0 +1,1051 @@
+Seq-entry ::= set {
+  class pop-set ,
+  descr {
+    pub {
+      pub {
+        gen {
+          cit "Unpublished" ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Nwagbo" ,
+                      first "Ijeoma" ,
+                      initials "I.O." } } ,
+                {
+                  name
+                    name {
+                      last "Shittu" ,
+                      first "Ismail" ,
+                      initials "I.A." } } ,
+                {
+                  name
+                    name {
+                      last "Nwosuh" ,
+                      first "Chika" ,
+                      initials "C.I." } } ,
+                {
+                  name
+                    name {
+                      last "Ezeifeka" ,
+                      first "George" ,
+                      initials "G.O." } } ,
+                {
+                  name
+                    name {
+                      last "Odibo" ,
+                      first "Frederick" ,
+                      initials "F.J.C." } } ,
+                {
+                  name
+                    name {
+                      last "Jackwood" ,
+                      first "Daral" ,
+                      initials "D.J." } } } ,
+            affil
+              std {
+                affil "National Veterinary Research Institute" ,
+                div "Virology" ,
+                city "Vom" ,
+                sub "Plateau" ,
+                country "Nigeria" ,
+                postal-code "930103" } } ,
+          title "Characterization of Infectious bursal disease virus isolates
+ in Nigeria" } } } ,
+    user {
+      type
+        str "NcbiCleanup" ,
+      data {
+        {
+          label
+            str "method" ,
+          data
+            str "SeriousSeqEntryCleanup" } ,
+        {
+          label
+            str "version" ,
+          data
+            int 7 } ,
+        {
+          label
+            str "month" ,
+          data
+            int 12 } ,
+        {
+          label
+            str "day" ,
+          data
+            int 11 } ,
+        {
+          label
+            str "year" ,
+          data
+            int 2014 } } } ,
+    create-date
+      std {
+        year 2014 ,
+        month 12 ,
+        day 11 } } ,
+  seq-set {
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Infectious bursal disease virus (Gumboro)" ,
+            orgname {
+              mod {
+                {
+                  subtype isolate ,
+                  subname "PLATEAU19/NG/2009" } ,
+                {
+                  subtype nat-host ,
+                  subname "Chicken" } } } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Nigeria" } ,
+            {
+              subtype segment ,
+              name "Segment B" } ,
+            {
+              subtype isolation-source ,
+              name "Bursa of Fabricius" } ,
+            {
+              subtype collection-date ,
+              name "2009" } ,
+            {
+              subtype collected-by ,
+              name "Ijeoma Nwagbo" } ,
+            {
+              subtype other ,
+              name "[virus wizard]" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "PLATEAU19/NG/2009" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "2013 seg B sequin for submission to
+ genbank/PLATEAU19/NG/2009" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 50097182 } } ,
+          descr {
+            molinfo {
+              biomol genomic } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 684 ,
+            seq-data
+              ncbi2na '4A3BA081D78D5C2BBABD45E28577E52D72597A40BF748803A7100DF
+9251ADDC5600E28B388585231D521727E8E292320AA7B1C0951DCDDD54FA214A2C7D500C715444
+D95090A1015066C5452136471D09238DC5EF5D48F56291182A742822B8775F15004C2A10ADC6A2
+681713AA4261087EE94E0A0B2512A2815410235DC01FAB117F88B36549E7E1347714B29517AE08
+E2095EAE51D10AB96DCA3BEB9E1A886E8EA87F8AF823C5C500341'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "VP1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 683 ,
+                        strand plus ,
+                        id
+                          local
+                            str "PLATEAU19/NG/2009" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "PLATEAU19/NG/2009_1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "2013 seg B sequin for submission to
+ genbank/PLATEAU19/NG/2009_1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 50097183 } } ,
+          descr {
+            title "Viral Protein, partial [Infectious bursal disease virus
+ (Gumboro)]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 228 ,
+            seq-data
+              ncbieaa "QDVEELLIPKVWVPPEDPLASPSRLAKFLRENGYKILQPRSLPENEEYETDQILP
+DLAWMRQIEGAVLKPTLSLPIGDQEYFPKYYPTHRPSKDKPNAYPPDIALLKQMIYLFLQIPEAHEGLKEEVTLLTQN
+IRDKVYGSGTYMGQATRLVAMKEVATGRNPNKDPLKLGYTFESIAQLLDITLPVGPPGEDEKPWVPLTRVPSRMLVLT
+GDVDGDFEVEDYLPKIN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "Viral Protein" } ,
+                        desc "IBDV viral protein 1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 227 ,
+                        id
+                          local
+                            str "PLATEAU19/NG/2009_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 0 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "PLATEAU19/NG/2009_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 683 ,
+                    strand plus ,
+                    id
+                      local
+                        str "PLATEAU19/NG/2009" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Infectious bursal disease virus (Gumboro)" ,
+            orgname {
+              mod {
+                {
+                  subtype isolate ,
+                  subname "KADUNA61/NG/2012" } ,
+                {
+                  subtype nat-host ,
+                  subname "Chicken" } } } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Nigeria" } ,
+            {
+              subtype segment ,
+              name "Segment B" } ,
+            {
+              subtype isolation-source ,
+              name "Bursa of Fabricius" } ,
+            {
+              subtype collection-date ,
+              name "2012" } ,
+            {
+              subtype collected-by ,
+              name "Ijeoma Nwagbo" } ,
+            {
+              subtype other ,
+              name "[virus wizard]" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "KADUNA61/NG/2012" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "2013 seg B sequin for submission to
+ genbank/KADUNA61/NG/2012" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 50097184 } } ,
+          descr {
+            molinfo {
+              biomol genomic } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 684 ,
+            seq-data
+              ncbi2na '4A3BA081D78D5C2BBABD45E28577E52D72597A40BF748803A7100DF
+9251ADDC5600E28B388585231D521727E8E292322AA7B1C0951DCDDD54FA214A2C7D500C715444
+D95090A1015066C5452136471D09238DC5EF5D48F56291082A742822B8775F15004C2A10ADC6A2
+681713AA426D087EE94E0A0B2512A2815410235DC01FAB117F88B36549E7E1347714B29517AE28
+E2095EAE51D10AB96DCA3BEB9E1A886E8EA87F8AF823C5C500341'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "VP1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 683 ,
+                        strand plus ,
+                        id
+                          local
+                            str "KADUNA61/NG/2012" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "KADUNA61/NG/2012_1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "2013 seg B sequin for submission to
+ genbank/KADUNA61/NG/2012_1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 50097185 } } ,
+          descr {
+            title "Viral Protein, partial [Infectious bursal disease virus
+ (Gumboro)]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 228 ,
+            seq-data
+              ncbieaa "QDVEELLIPKVWVPPEDPLASPSRLAKFLRENGYKILQPRSLPENEEYETDQILP
+DLAWMRQIEGAVLKPTLSLPIGDQEYFPKYYPTHRPSKDKPNAYPPDIALLKQMIYLFLQIPEAQEGLKEEVTLLTQN
+IRDKVYGSGTYMGQASRLVAMKEVATGRNPNKDPLKLGYTFESIAQLLDITLPVGPPGEDEKPWVPLTRVPSRMLVLT
+GDVDGDFEVEDYLPKIN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "Viral Protein" } ,
+                        desc "IBDV viral protein 1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 227 ,
+                        id
+                          local
+                            str "KADUNA61/NG/2012_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 0 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "KADUNA61/NG/2012_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 683 ,
+                    strand plus ,
+                    id
+                      local
+                        str "KADUNA61/NG/2012" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Infectious bursal disease virus (Gumboro)" ,
+            orgname {
+              mod {
+                {
+                  subtype isolate ,
+                  subname "BAUCHI58/NG/2012" } ,
+                {
+                  subtype nat-host ,
+                  subname "Chicken" } } } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Nigeria" } ,
+            {
+              subtype segment ,
+              name "Segment B" } ,
+            {
+              subtype isolation-source ,
+              name "Bursa of Fabricius" } ,
+            {
+              subtype collection-date ,
+              name "2012" } ,
+            {
+              subtype collected-by ,
+              name "Ijeoma Nwagbo" } ,
+            {
+              subtype other ,
+              name "[virus wizard]" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "BAUCHI58/NG/2012" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "2013 seg B sequin for submission to
+ genbank/BAUCHI58/NG/2012" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 50097186 } } ,
+          descr {
+            molinfo {
+              biomol genomic } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 684 ,
+            seq-data
+              ncbi2na '4A3BA081D78D542BBABD45E28577E52D52D97A40BF74A801A7100DF
+9251ADDC5620E28B38858523DD521727E8E292320AA7B1C0971DCDDD54FAA1422C7D500C715C44
+D95090A0015066C5452136471D09238DC5EF5D48F56291082A502822B8775D15004C2A10A5C6A2
+681713AA42610A72E94E0A0B2512A2815410235DC01FAB11FF88936549E7E1347716B29515AE08
+E2095EAE51D10AB96DCA3BEB9E1A886E8EA87F8AF821C5C500341'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "VP1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 683 ,
+                        strand plus ,
+                        id
+                          local
+                            str "BAUCHI58/NG/2012" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "BAUCHI58/NG/2012_1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "2013 seg B sequin for submission to
+ genbank/BAUCHI58/NG/2012_1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 50097187 } } ,
+          descr {
+            title "Viral Protein, partial [Infectious bursal disease virus
+ (Gumboro)]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 228 ,
+            seq-data
+              ncbieaa "QDVEELLIPKVWVPPEDPLASPSRLAKFLRENGYKILQPRSLPENEEYETDQILP
+DLAWMRQIEGAVLKPTLSLPIGDQEYFPKYYPTHRPSKEKPNAYPPDIALLKQMIYLFLQIPEAQEGPKEEVTLLTQN
+IRDKAYGSGTYMGQATRLVAMKEVATGRNPNKDPLKLGYTFESIAQLLDITLPVGPPGEDEKPWVPLTRVPSRMLVLT
+GDVDGDFEVEDYLPKIN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "Viral Protein" } ,
+                        desc "IBDV viral protein 1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 227 ,
+                        id
+                          local
+                            str "BAUCHI58/NG/2012_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 0 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "BAUCHI58/NG/2012_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 683 ,
+                    strand plus ,
+                    id
+                      local
+                        str "BAUCHI58/NG/2012" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Infectious bursal disease virus (Gumboro)" ,
+            orgname {
+              mod {
+                {
+                  subtype isolate ,
+                  subname "PLATEAU53/NG/2010" } ,
+                {
+                  subtype nat-host ,
+                  subname "Chicken" } } } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Nigeria" } ,
+            {
+              subtype segment ,
+              name "Segment B" } ,
+            {
+              subtype isolation-source ,
+              name "Bursa of Fabricius" } ,
+            {
+              subtype collection-date ,
+              name "2010" } ,
+            {
+              subtype collected-by ,
+              name "Ijeoma Nwagbo" } ,
+            {
+              subtype other ,
+              name "[virus wizard]" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "PLATEAU53/NG/2010" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "2013 seg B sequin for submission to
+ genbank/PLATEAU53/NG/2010" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 50097188 } } ,
+          descr {
+            molinfo {
+              biomol genomic } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 684 ,
+            seq-data
+              ncbi2na '4A3BAC81DF8D5C2BBABD45E28577E52D72597A40BF748803A7100DF
+9251ADDC5600E28B388585231D521727E8E292322AA7B1C0951DCDDD54FA214A2C7D500C715444
+D95090A1015066C5452136471D09238DC5EF5D48F56291082A742822B8775F15004C2A10ADC6A2
+681713AA4261087EE94E0A0B2512A2815410235DC01FAB117F88B36549E7E1347714B29517AE08
+E2095EAE51D10AB96DCA3BEB9E1A886E8EA87F8AF823C5C500341'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "VP1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 683 ,
+                        strand plus ,
+                        id
+                          local
+                            str "PLATEAU53/NG/2010" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "PLATEAU53/NG/2010_1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "2013 seg B sequin for submission to
+ genbank/PLATEAU53/NG/2010_1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 50097189 } } ,
+          descr {
+            title "Viral Protein, partial [Infectious bursal disease virus
+ (Gumboro)]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 228 ,
+            seq-data
+              ncbieaa "QDVVELLIPKVWVPPEDPLASPSRLAKFLRENGYKILQPRSLPENEEYETDQILP
+DLAWMRQIEGAVLKPTLSLPIGDQEYFPKYYPTHRPSKDKPNAYPPDIALLKQMIYLFLQIPEAQEGLKEEVTLLTQN
+IRDKVYGSGTYMGQATRLVAMKEVATGRNPNKDPLKLGYTFESIAQLLDITLPVGPPGEDEKPWVPLTRVPSRMLVLT
+GDVDGDFEVEDYLPKIN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "Viral Protein" } ,
+                        desc "IBDV viral protein 1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 227 ,
+                        id
+                          local
+                            str "PLATEAU53/NG/2010_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 0 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "PLATEAU53/NG/2010_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 683 ,
+                    strand plus ,
+                    id
+                      local
+                        str "PLATEAU53/NG/2010" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Infectious bursal disease virus (Gumboro)" ,
+            orgname {
+              mod {
+                {
+                  subtype isolate ,
+                  subname "PLATEAU7/NG/2009" } ,
+                {
+                  subtype nat-host ,
+                  subname "Chicken" } } } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Nigeria" } ,
+            {
+              subtype segment ,
+              name "Segment B" } ,
+            {
+              subtype isolation-source ,
+              name "Bursa of Fabricius" } ,
+            {
+              subtype collection-date ,
+              name "2009" } ,
+            {
+              subtype collected-by ,
+              name "Ijeoma Nwagbo" } ,
+            {
+              subtype other ,
+              name "[virus wizard]" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "PLATEAU7/NG/2009" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "2013 seg B sequin for submission to
+ genbank/PLATEAU7/NG/2009" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 50097190 } } ,
+          descr {
+            molinfo {
+              biomol genomic } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 684 ,
+            seq-data
+              ncbi2na '4A3BA081D78D5C2BBABD45E28577E52D72597A40BF748803A7100DF
+9251ADDC5600E28B388585231D521727E8E292320AA7B1C0951DCDDD54FA214A2C7D500C715444
+D95090A1015066C5452136471D09238DC5EF5D48F56291186A742822B8775F15004C2A10ADC6A2
+681713AA4261087EE94E0A0B2512A2815410235DC01FAB117F88B36549E7E1347714B29517AE08
+E2095EAE51D10AB96DCA3BEB9E1A886E8EA87F8AF823C5C500341'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "VP1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 683 ,
+                        strand plus ,
+                        id
+                          local
+                            str "PLATEAU7/NG/2009" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "PLATEAU7/NG/2009_1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "2013 seg B sequin for submission to
+ genbank/PLATEAU7/NG/2009_1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 50097191 } } ,
+          descr {
+            title "Viral Protein, partial [Infectious bursal disease virus
+ (Gumboro)]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 228 ,
+            seq-data
+              ncbieaa "QDVEELLIPKVWVPPEDPLASPSRLAKFLRENGYKILQPRSLPENEEYETDQILP
+DLAWMRQIEGAVLKPTLSLPIGDQEYFPKYYPTHRPSKDKPNAYPPDIALLKQMIYLFLQIPEAHDGLKEEVTLLTQN
+IRDKVYGSGTYMGQATRLVAMKEVATGRNPNKDPLKLGYTFESIAQLLDITLPVGPPGEDEKPWVPLTRVPSRMLVLT
+GDVDGDFEVEDYLPKIN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "Viral Protein" } ,
+                        desc "IBDV viral protein 1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 227 ,
+                        id
+                          local
+                            str "PLATEAU7/NG/2009_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 0 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "PLATEAU7/NG/2009_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 683 ,
+                    strand plus ,
+                    id
+                      local
+                        str "PLATEAU7/NG/2009" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Infectious bursal disease virus (Gumboro)" ,
+            orgname {
+              mod {
+                {
+                  subtype isolate ,
+                  subname "BAUCHI37/NG/2012" } ,
+                {
+                  subtype nat-host ,
+                  subname "Chicken" } } } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Nigeria" } ,
+            {
+              subtype segment ,
+              name "Segment B" } ,
+            {
+              subtype isolation-source ,
+              name "Bursa of Fabricius" } ,
+            {
+              subtype collection-date ,
+              name "2012" } ,
+            {
+              subtype collected-by ,
+              name "Ijeoma Nwagbo" } ,
+            {
+              subtype other ,
+              name "[virus wizard]" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "BAUCHI37/NG/2012" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "2013 seg B sequin for submission to
+ genbank/BAUCHI37/NG/2012" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 50097192 } } ,
+          descr {
+            molinfo {
+              biomol genomic } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 684 ,
+            seq-data
+              ncbi2na '4A3BA081D78D5C2BBABD45E28577E52D72597A40BF748803A7100DF
+9251ADDC5600E28B388585231D521727E8E292322AA7B1C0951DCDDD54FA214A2C7D500C715444
+D95090A1015066C5452136471D09238DC5EF5D48F56291082A742822B8575F15004C2A10ADC6A2
+681713AA4241087EE94E0A0B2512A2815410235DC01FAB117F88B36549E7E1347714B29517AE08
+E2095EAE51D10AB96DCA3BEB9E1A886E8EA87F8AF823C5C500341'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "VP1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 683 ,
+                        strand plus ,
+                        id
+                          local
+                            str "BAUCHI37/NG/2012" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "BAUCHI37/NG/2012_1" ,
+            general {
+              db "NCBIFILE" ,
+              tag
+                str "2013 seg B sequin for submission to
+ genbank/BAUCHI37/NG/2012_1" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 50097193 } } ,
+          descr {
+            title "Viral Protein, partial [Infectious bursal disease virus
+ (Gumboro)]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 228 ,
+            seq-data
+              ncbieaa "QDVEELLIPKVWVPPEDPLASPSRLAKFLRENGYKILQPRSLPENEEYETDQILP
+DLAWMRQIEGAVLKPTLSLPIGDQEYFPKYYPTHRPSKDKPNAYPPDIALLKQMIYLFLQIPEAQEGLKEEVTLLTQN
+IRDKVYGSGTYMGQATRLVAMKEVATGRNPNKDPLKLGYTFESIAQLLDITLPVGPPGEDEKPWVPLTRVPSRMLVLT
+GDVDGDFEVEDYLPKIN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "Viral Protein" } ,
+                        desc "IBDV viral protein 1" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 227 ,
+                        id
+                          local
+                            str "BAUCHI37/NG/2012_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 0 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "BAUCHI37/NG/2012_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 683 ,
+                    strand plus ,
+                    id
+                      local
+                        str "BAUCHI37/NG/2012" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } } }

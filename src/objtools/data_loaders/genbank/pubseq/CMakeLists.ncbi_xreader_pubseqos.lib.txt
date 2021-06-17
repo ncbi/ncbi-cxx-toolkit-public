@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xreader_pubseqos SHARED)
+  NCBI_sources(reader_pubseq)
+  NCBI_add_definitions(NCBI_XREADER_PUBSEQOS_EXPORTS)
+  NCBI_uses_toolkit_libraries(dbapi_driver ncbi_xreader)
+  NCBI_optional_components(connext)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+

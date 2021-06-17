@@ -1,0 +1,23 @@
+corelib
+util
+connect
+cgi
+html
+misc
+serial
+db
+dbapi
+objects
+objmgr
+objtools
+ctools
+app
+sample
+build-system
+algo
+sra
+check
+gui
+-gui/plugins
+-gui/gbench
+common update-only

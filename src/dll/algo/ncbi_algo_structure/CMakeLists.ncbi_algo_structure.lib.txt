@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_algo_structure SHARED)
+  NCBI_hosts_projects(
+    algo/structure/bma_refine/xbma_refiner
+    algo/structure/cd_utils/xcd_utils
+    algo/structure/struct_dp/xstruct_dp
+    algo/structure/struct_util/xstruct_util
+    algo/structure/threader/xstruct_thread
+  )
+  NCBI_add_definitions(NCBI_ALGOSTRUCTURE_EXPORTS)
+NCBI_end_lib()

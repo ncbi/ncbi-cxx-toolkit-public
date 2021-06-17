@@ -1,0 +1,267 @@
+Seq-align-set ::= {
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 1191
+      },
+      {
+        id str "e_value",
+        value real { 137689878408267, 10, -143 }
+      },
+      {
+        id str "bit_score",
+        value real { 463380927197612, 10, -12 }
+      },
+      {
+        id str "num_ident",
+        value int 232
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+        gi 129295,
+        gi 129295
+      },
+      starts {
+        0,
+        0
+      },
+      lens {
+        232
+      },
+      strands {
+        unknown,
+        unknown
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 949
+      },
+      {
+        id str "e_value",
+        value real { 1586374316912, 10, -113 }
+      },
+      {
+        id str "bit_score",
+        value real { 370162629825612, 10, -12 }
+      },
+      {
+        id str "num_ident",
+        value int 180
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+        gi 129295,
+        gi 129296
+      },
+      starts {
+        0,
+        156
+      },
+      lens {
+        232
+      },
+      strands {
+        unknown,
+        unknown
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 743
+      },
+      {
+        id str "e_value",
+        value real { 122312477681149, 10, -91 }
+      },
+      {
+        id str "bit_score",
+        value real { 290811517186638, 10, -12 }
+      },
+      {
+        id str "num_ident",
+        value int 149
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 3,
+      ids {
+        gi 129295,
+        gi 129293
+      },
+      starts {
+        1,
+        157,
+        192,
+        -1,
+        194,
+        348
+      },
+      lens {
+        191,
+        2,
+        38
+      },
+      strands {
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 743
+      },
+      {
+        id str "e_value",
+        value real { 122312477681149, 10, -91 }
+      },
+      {
+        id str "bit_score",
+        value real { 290811517186638, 10, -12 }
+      },
+      {
+        id str "num_ident",
+        value int 149
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 3,
+      ids {
+        gi 129295,
+        gi 157879563
+      },
+      starts {
+        1,
+        156,
+        192,
+        -1,
+        194,
+        347
+      },
+      lens {
+        191,
+        2,
+        38
+      },
+      strands {
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 262
+      },
+      {
+        id str "e_value",
+        value real { 728799709984317, 10, -36 }
+      },
+      {
+        id str "bit_score",
+        value real { 105530521170391, 10, -12 }
+      },
+      {
+        id str "num_ident",
+        value int 67
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 9,
+      ids {
+        gi 129295,
+        gi 20141241
+      },
+      starts {
+        17,
+        198,
+        113,
+        -1,
+        115,
+        294,
+        -1,
+        333,
+        154,
+        334,
+        197,
+        -1,
+        198,
+        377,
+        200,
+        -1,
+        202,
+        379
+      },
+      lens {
+        96,
+        2,
+        39,
+        1,
+        43,
+        1,
+        2,
+        2,
+        30
+      },
+      strands {
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        unknown
+      }
+    }
+  }
+}

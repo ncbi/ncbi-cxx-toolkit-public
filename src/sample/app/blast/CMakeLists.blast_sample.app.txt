@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(blast_sample)
+  NCBI_sources(blast_sample)
+  NCBI_uses_toolkit_libraries(xobjsimple xblast)
+  NCBI_project_watchers(camacho madden)
+NCBI_end_app()

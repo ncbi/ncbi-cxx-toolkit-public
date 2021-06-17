@@ -1,0 +1,6 @@
+# $Id$
+
+DLL_PROJ = gui_widgets_aln
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

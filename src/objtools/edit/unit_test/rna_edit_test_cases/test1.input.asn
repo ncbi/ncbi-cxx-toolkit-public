@@ -1,0 +1,433 @@
+Seq-entry ::= set {
+  class genbank,
+  seq-set {
+    set {
+      class pop-set,
+      descr {
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 8547678
+            }
+          }
+        },
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Chen",
+                      first "C",
+                      initials "C.F."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Lai",
+                      first "M",
+                      initials "M.N."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Huang",
+                      first "H",
+                      initials "H.T."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Lo",
+                      first "K",
+                      initials "K.Y."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Ng",
+                      first "L",
+                      initials "L.T."
+                    }
+                  }
+                }
+              },
+              title "Establishment and application of Xyalria nigripes rDNA
+ nucleotide sequence database"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "ALT EMAIL:s506100@yahoo.com.tw"
+            },
+            {
+              label str "AdditionalComment",
+              data str "BankIt1712260"
+            }
+          }
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "Sanger dideoxy sequencing"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:2"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SETS:1"
+            }
+          }
+        },
+        user {
+          type str "NcbiCleanup",
+          data {
+            {
+              label str "method",
+              data str "SeriousSeqEntryCleanup"
+            },
+            {
+              label str "version",
+              data int 7
+            },
+            {
+              label str "month",
+              data int 3
+            },
+            {
+              label str "day",
+              data int 26
+            },
+            {
+              label str "year",
+              data int 2014
+            }
+          }
+        },
+        update-date std {
+          year 2014,
+          month 3,
+          day 26,
+          hour 5,
+          minute 51,
+          second 7
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Chen",
+                      first "C",
+                      initials "C.F."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Lai",
+                      first "M",
+                      initials "M.N."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Huang",
+                      first "H",
+                      initials "H.T."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Lo",
+                      first "K",
+                      initials "K.Y."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Ng",
+                      first "L",
+                      initials "L.T."
+                    }
+                  }
+                },
+                affil std {
+                  affil "national taiwan university",
+                  div "agricultural chemistry",
+                  city "taipei",
+                  sub "taiwan",
+                  country "taiwan",
+                  street "No. 1, Sec. 4, Roosevelt Road, Taipei, 10617
+ Taiwan(R.O.C)",
+                  postal-code "10617"
+                }
+              },
+              medium email,
+              date std {
+                year 2014,
+                month 3,
+                day 26
+              }
+            }
+          }
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "Seq1",
+            general {
+              db "BankIt",
+              tag str "1712260/Seq1"
+            },
+            general {
+              db "TMSMART",
+              tag id 44428740
+            },
+            genbank {
+              accession "KJ627786"
+            }
+          },
+          descr {
+            title "strain TGM 18S ribosomal RNA gene, partial sequence;
+ internal transcribed spacer 1, 5.8S ribosomal RNA gene, and internal
+ transcribed spacer 2, complete sequence; and 28S ribosomal RNA gene, partial
+ sequence",
+            source {
+              genome genomic,
+              org {
+                taxname "Xylaria nigripes",
+                db {
+                  {
+                    db "taxon",
+                    tag id 490159
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Xylaria",
+                    species "nigripes"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "TGM"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Pezizomycotina; Sordariomycetes; Xylariomycetidae; Xylariales; Xylariaceae;
+ Xylaria",
+                  gcode 1,
+                  mgcode 4,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Taiwan"
+                },
+                {
+                  subtype isolation-source,
+                  name "Nantou"
+                },
+                {
+                  subtype collection-date,
+                  name "2012"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "tccgtaggtgaacctgcgg",
+                      name "its1"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "tcctccgcttattgatatgc",
+                      name "its4"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:Seq1"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 559,
+            strand ds,
+            seq-data ncbi2na 'D6CAE05E68A8D3C08BC010754057B81B177EF97692A662A5
+699896247666D17969A7460073BF3CF87DE04041F0C2F007F41068DDFAF7A4D8E0819260398C2C
+3B83E483D2E0D360DFE0644F9951CB3DEBA9397BD89B4FD057C2576F9F2EFA8871A4DB275502D2
+E9A25AFD19DC86CB23F376DE49EA5AD5796C011143FF02BE1768D2B283159E07C24CD0C268A0'H
+          },
+          annot {
+            {
+              data ftable {
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Seq2",
+            general {
+              db "BankIt",
+              tag str "1712260/Seq2"
+            },
+            general {
+              db "TMSMART",
+              tag id 44428741
+            },
+            genbank {
+              accession "KJ627787"
+            }
+          },
+          descr {
+            title "strain CWF 18S ribosomal RNA gene, partial sequence;
+ internal transcribed spacer 1, 5.8S ribosomal RNA gene, and internal
+ transcribed spacer 2, complete sequence; and 28S ribosomal RNA gene, partial
+ sequence",
+            source {
+              genome genomic,
+              org {
+                taxname "Xylaria nigripes",
+                db {
+                  {
+                    db "taxon",
+                    tag id 490159
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Xylaria",
+                    species "nigripes"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "CWF"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Pezizomycotina; Sordariomycetes; Xylariomycetidae; Xylariales; Xylariaceae;
+ Xylaria",
+                  gcode 1,
+                  mgcode 4,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Taiwan"
+                },
+                {
+                  subtype isolation-source,
+                  name "Nantou"
+                },
+                {
+                  subtype collection-date,
+                  name "2012"
+                }
+              },
+              pcr-primers {
+                {
+                  forward {
+                    {
+                      seq "tccgtaggtgaacctgcgg",
+                      name "its1"
+                    }
+                  },
+                  reverse {
+                    {
+                      seq "tcctccgcttattgatatgc",
+                      name "its4"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:Seq2"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 559,
+            strand ds,
+            seq-data ncbi2na 'D6CAE179A2A34F022F0041D5015EE06C5DFBE5DA4A998A95
+A6625891D99B45E5A69D1801CEFCF3E1F7810107C30BC01FD041A377EBDE936382064980E630B0
+EE0F920F4B834D837F81913E65472CF7AEA4E5EF626D3F415F095DBE7CBBEA21C6936C9D540B4B
+A6896BF467721B2C8FCDDB7927A96B55E5B004450FFC0AF85DA34ACA0C567207C24CD0C268A0'H
+          },
+          annot {
+            {
+              data ftable {
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile ("remote_app" program)
+#################################
+
+APP_PROJ = remote_app remote_cgi
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

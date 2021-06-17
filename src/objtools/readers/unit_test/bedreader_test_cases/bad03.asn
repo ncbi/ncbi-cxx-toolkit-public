@@ -1,0 +1,164 @@
+Seq-annot ::= {
+  desc {
+    title "Clone Paired Reads",
+    name "pairedReads",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "description",
+          data str "Clone Paired Reads"
+        },
+        {
+          label str "name",
+          data str "pairedReads"
+        },
+        {
+          label str "useScore",
+          data str "1"
+        }
+      }
+    },
+    user {
+      type str "NCBI_BED_COLUMN_COUNT",
+      data {
+        {
+          label str "NCBI_BED_COLUMN_COUNT",
+          data int 9
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 1,
+      data region "cloneA",
+      location int {
+        from 1000,
+        to 4999,
+        strand plus,
+        id local str "chr22"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "15 15 15"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 2,
+      data region "cloneA",
+      location int {
+        from 1000,
+        to 4999,
+        strand plus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local id 1
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "15 15 15"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "thick"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 4,
+      data region "cloneB",
+      location int {
+        from 2000,
+        to 5999,
+        strand minus,
+        id local str "chr22"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "30 30 30"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 5,
+      data region "cloneB",
+      location int {
+        from 2000,
+        to 5999,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local id 4
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "30 30 30"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "thick"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+# $Id$
+# Author:  Mike DiCuccio
+
+# Meta-makefile for libximage
+#################################
+
+LIB_PROJ = image
+SUB_PROJ = test demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

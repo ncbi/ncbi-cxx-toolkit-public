@@ -1,0 +1,3937 @@
+Seq-submit ::= {
+  sub {
+    contact {
+      contact {
+        name
+          name {
+            last "Filippov" ,
+            first "Igor" ,
+            initials "I." } ,
+        affil
+          str "NCBI" } } ,
+    cit {
+      authors {
+        names
+          std {
+            {
+              name
+                name {
+                  last "Filippov" ,
+                  first "Igor" ,
+                  initials "I." } } } ,
+        affil
+          str "NCBI" } ,
+      date
+        std {
+          year 2012 ,
+          month 10 ,
+          day 18 } ,
+      descr "title" } ,
+    tool "Sequin 12.30 - MS WINDOWS VISTA" } ,
+  data
+    entrys {
+      set {
+        class pop-set ,
+        descr {
+          pub {
+            pub {
+              sub {
+                authors {
+                  names
+                    std {
+                      {
+                        name
+                          name {
+                            last "Bollin" ,
+                            first "Colleen" ,
+                            initials "C.J." } } } } ,
+                date
+                  std {
+                    year 2012 ,
+                    month 11 ,
+                    day 8 } ,
+                descr "Sequence update by submitter" } } } ,
+          user {
+            type
+              str "NcbiCleanup" ,
+            data {
+              {
+                label
+                  str "method" ,
+                data
+                  str "SequinCleanup" } ,
+              {
+                label
+                  str "version" ,
+                data
+                  int 7 } ,
+              {
+                label
+                  str "month" ,
+                data
+                  int 11 } ,
+              {
+                label
+                  str "day" ,
+                data
+                  int 9 } ,
+              {
+                label
+                  str "year" ,
+                data
+                  int 2012 } } } } ,
+        seq-set {
+          set {
+            class nuc-prot ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_1" } } } } } } ,
+            seq-set {
+              seq {
+                id {
+                  local
+                    str "seq_1" } ,
+                descr {
+                  user {
+                    type
+                      str "CFastaReader" ,
+                    data {
+                      {
+                        label
+                          str "DefLine" ,
+                        data
+                          str ">seq_1" } } } } ,
+                inst {
+                  repr raw ,
+                  mol na ,
+                  length 336 ,
+                  seq-data
+                    ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA950
+3FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA950
+3FA9503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+              seq {
+                id {
+                  local
+                    str "seq_1_1" } ,
+                descr {
+                  molinfo {
+                    biomol peptide ,
+                    tech concept-trans } } ,
+                inst {
+                  repr raw ,
+                  mol aa ,
+                  length 112 ,
+                  seq-data
+                    ncbieaa "-FGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPK
+FGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGP" } ,
+                annot {
+                  {
+                    data
+                      ftable {
+                        {
+                          data
+                            prot {
+                              name {
+                                "abc" } } ,
+                          location
+                            int {
+                              from 0 ,
+                              to 111 ,
+                              id
+                                local
+                                  str "seq_1_1" } } } } } } } ,
+            annot {
+              {
+                data
+                  ftable {
+                    {
+                      data
+                        cdregion {
+                          code {
+                            id 1 } } ,
+                      product
+                        whole
+                          local
+                            str "seq_2_1" ,
+                      location
+                        int {
+                          from 0 ,
+                          to 335 ,
+                          strand plus ,
+                          id
+                            local
+                              str "seq_1" } } } } } } ,
+          set {
+            class nuc-prot ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_2" } } } } } } ,
+            seq-set {
+              seq {
+                id {
+                  local
+                    str "seq_2" } ,
+                descr {
+                  user {
+                    type
+                      str "CFastaReader" ,
+                    data {
+                      {
+                        label
+                          str "DefLine" ,
+                        data
+                          str ">seq_2" } } } } ,
+                inst {
+                  repr raw ,
+                  mol na ,
+                  length 336 ,
+                  seq-data
+                    ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA950
+3FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA950
+3FA9503FA9503FA9503FA9503FA9503FA9503FA95'H } ,
+                annot {
+                  {
+                    data
+                      ftable {
+                        {
+                          data
+                            cdregion {
+                              code {
+                                id 1 } } ,
+                          product
+                            whole
+                              local
+                                str "seq_2_1" ,
+                          location
+                            int {
+                              from 0 ,
+                              to 335 ,
+                              strand plus ,
+                              id
+                                local
+                                  str "seq_2" } } } } } } ,
+              seq {
+                id {
+                  local
+                    str "seq_2_1" } ,
+                descr {
+                  molinfo {
+                    biomol peptide ,
+                    tech concept-trans } } ,
+                inst {
+                  repr raw ,
+                  mol aa ,
+                  length 112 ,
+                  seq-data
+                    ncbieaa "-FGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPK
+FGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGPKFGP" } } } } ,
+          seq {
+            id {
+              local
+                str "seq_3" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_3" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_3" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_4" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_4" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_4" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_5" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_5" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_5" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_6" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_6" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_6" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_7" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_7" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_7" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_8" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_8" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_8" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_9" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_9" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_9" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_10" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_10" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_10" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_100" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_100" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_100" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_101" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_101" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_101" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_102" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_102" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_102" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_103" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_103" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_103" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_104" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_104" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_104" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_105" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_105" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_105" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_106" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_106" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_106" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_107" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_107" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_107" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_108" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_108" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_108" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_109" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_109" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_109" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_110" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_110" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_110" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_111" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_111" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_111" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_112" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_112" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_112" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_113" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_113" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_113" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_114" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_114" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_114" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_115" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_115" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_115" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_116" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_116" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_116" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_117" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_117" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_117" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_118" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_118" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_118" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_119" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_119" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_119" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_120" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_120" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_120" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_121" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_121" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_121" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_122" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_122" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_122" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_123" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_123" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_123" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_124" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_124" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_124" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_125" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_125" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_125" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_126" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_126" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_126" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_127" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_127" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_127" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_128" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_128" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_128" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_129" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_129" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_129" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_130" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_130" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_130" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_131" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_131" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_131" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_132" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_132" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_132" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_133" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_133" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_133" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_134" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_134" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_134" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_135" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_135" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_135" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_136" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_136" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_136" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_137" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_137" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_137" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_138" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_138" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_138" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_139" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_139" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_139" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_140" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_140" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_140" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_141" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_141" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_141" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_142" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_142" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_142" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_143" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_143" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_143" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_144" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_144" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_144" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_145" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_145" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_145" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_146" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_146" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_146" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_147" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_147" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_147" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_148" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_148" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_148" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_149" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_149" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_149" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_150" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_150" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_150" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_151" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_151" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_151" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_152" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_152" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_152" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_153" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_153" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_153" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_154" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_154" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_154" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_155" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_155" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_155" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_156" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_156" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_156" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_157" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_157" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_157" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_158" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_158" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_158" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_159" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_159" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_159" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_160" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_160" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_160" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_161" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_161" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_161" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_162" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_162" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_162" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_163" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_163" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_163" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_164" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_164" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_164" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_165" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_165" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_165" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_166" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_166" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_166" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_167" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_167" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_167" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_168" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_168" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_168" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_169" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_169" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_169" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_170" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_170" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_170" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_171" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_171" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_171" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_172" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_172" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_172" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_173" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_173" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_173" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_174" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_174" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_174" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_175" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_175" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_175" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_176" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_176" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_176" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_177" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_177" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_177" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_178" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_178" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_178" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_179" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_179" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_179" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_180" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_180" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_180" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_181" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_181" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_181" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_182" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_182" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_182" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_183" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_183" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_183" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_184" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_184" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_184" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_185" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_185" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_185" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_186" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_186" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_186" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_187" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_187" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_187" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_188" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_188" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_188" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_189" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_189" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_189" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_190" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_190" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_190" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_191" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_191" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_191" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_192" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_192" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_192" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_193" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_193" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_193" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_194" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_194" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_194" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_195" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_195" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_195" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_196" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_196" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_196" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_197" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_197" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_197" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_198" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_198" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_198" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
+          seq {
+            id {
+              local
+                str "seq_199" } ,
+            descr {
+              source {
+                org {
+                  taxname "Uncultured bacterium" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "seq_199" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_199" } } } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 336 ,
+              seq-data
+                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA95'H } } } ,
+        annot {
+          {
+            data
+              align {
+                {
+                  type partial ,
+                  dim 110 ,
+                  segs
+                    denseg {
+                      dim 110 ,
+                      numseg 1 ,
+                      ids {
+                        local
+                          str "seq_1" ,
+                        local
+                          str "seq_4" ,
+                        local
+                          str "seq_5" ,
+                        local
+                          str "seq_6" ,
+                        local
+                          str "seq_7" ,
+                        local
+                          str "seq_8" ,
+                        local
+                          str "seq_9" ,
+                        local
+                          str "seq_10" ,
+                        local
+                          str "seq_100" ,
+                        local
+                          str "seq_101" ,
+                        local
+                          str "seq_102" ,
+                        local
+                          str "seq_103" ,
+                        local
+                          str "seq_104" ,
+                        local
+                          str "seq_105" ,
+                        local
+                          str "seq_106" ,
+                        local
+                          str "seq_107" ,
+                        local
+                          str "seq_108" ,
+                        local
+                          str "seq_109" ,
+                        local
+                          str "seq_110" ,
+                        local
+                          str "seq_111" ,
+                        local
+                          str "seq_112" ,
+                        local
+                          str "seq_113" ,
+                        local
+                          str "seq_114" ,
+                        local
+                          str "seq_115" ,
+                        local
+                          str "seq_116" ,
+                        local
+                          str "seq_117" ,
+                        local
+                          str "seq_118" ,
+                        local
+                          str "seq_119" ,
+                        local
+                          str "seq_120" ,
+                        local
+                          str "seq_121" ,
+                        local
+                          str "seq_122" ,
+                        local
+                          str "seq_123" ,
+                        local
+                          str "seq_124" ,
+                        local
+                          str "seq_125" ,
+                        local
+                          str "seq_126" ,
+                        local
+                          str "seq_127" ,
+                        local
+                          str "seq_128" ,
+                        local
+                          str "seq_129" ,
+                        local
+                          str "seq_130" ,
+                        local
+                          str "seq_131" ,
+                        local
+                          str "seq_132" ,
+                        local
+                          str "seq_133" ,
+                        local
+                          str "seq_134" ,
+                        local
+                          str "seq_135" ,
+                        local
+                          str "seq_136" ,
+                        local
+                          str "seq_137" ,
+                        local
+                          str "seq_138" ,
+                        local
+                          str "seq_139" ,
+                        local
+                          str "seq_140" ,
+                        local
+                          str "seq_141" ,
+                        local
+                          str "seq_142" ,
+                        local
+                          str "seq_143" ,
+                        local
+                          str "seq_144" ,
+                        local
+                          str "seq_145" ,
+                        local
+                          str "seq_146" ,
+                        local
+                          str "seq_147" ,
+                        local
+                          str "seq_148" ,
+                        local
+                          str "seq_149" ,
+                        local
+                          str "seq_150" ,
+                        local
+                          str "seq_151" ,
+                        local
+                          str "seq_152" ,
+                        local
+                          str "seq_153" ,
+                        local
+                          str "seq_154" ,
+                        local
+                          str "seq_155" ,
+                        local
+                          str "seq_156" ,
+                        local
+                          str "seq_157" ,
+                        local
+                          str "seq_158" ,
+                        local
+                          str "seq_159" ,
+                        local
+                          str "seq_160" ,
+                        local
+                          str "seq_161" ,
+                        local
+                          str "seq_162" ,
+                        local
+                          str "seq_163" ,
+                        local
+                          str "seq_164" ,
+                        local
+                          str "seq_165" ,
+                        local
+                          str "seq_166" ,
+                        local
+                          str "seq_167" ,
+                        local
+                          str "seq_168" ,
+                        local
+                          str "seq_169" ,
+                        local
+                          str "seq_170" ,
+                        local
+                          str "seq_171" ,
+                        local
+                          str "seq_172" ,
+                        local
+                          str "seq_173" ,
+                        local
+                          str "seq_174" ,
+                        local
+                          str "seq_175" ,
+                        local
+                          str "seq_176" ,
+                        local
+                          str "seq_177" ,
+                        local
+                          str "seq_178" ,
+                        local
+                          str "seq_179" ,
+                        local
+                          str "seq_180" ,
+                        local
+                          str "seq_181" ,
+                        local
+                          str "seq_182" ,
+                        local
+                          str "seq_183" ,
+                        local
+                          str "seq_184" ,
+                        local
+                          str "seq_185" ,
+                        local
+                          str "seq_186" ,
+                        local
+                          str "seq_187" ,
+                        local
+                          str "seq_188" ,
+                        local
+                          str "seq_189" ,
+                        local
+                          str "seq_190" ,
+                        local
+                          str "seq_191" ,
+                        local
+                          str "seq_192" ,
+                        local
+                          str "seq_193" ,
+                        local
+                          str "seq_194" ,
+                        local
+                          str "seq_195" ,
+                        local
+                          str "seq_196" ,
+                        local
+                          str "seq_197" ,
+                        local
+                          str "seq_198" ,
+                        local
+                          str "seq_199" ,
+                        local
+                          str "seq_2" ,
+                        local
+                          str "seq_3" } ,
+                      starts {
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 ,
+                        0 } ,
+                      lens {
+                        336 } ,
+                      strands {
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus ,
+                        plus } } } } } } } } }
+end-of-file
+end-of-file

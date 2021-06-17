@@ -1,0 +1,453 @@
+Seq-entry ::= set {
+class phy-set ,
+descr {
+create-date
+std {
+year 1998 ,
+month 10 ,
+day 30 } ,
+pub {
+pub {
+article {
+title {
+name "Evolution of the Fucaceae (Phaeophyceae) Inferred from
+nrDNA-ITS" } ,
+authors {
+names
+std {
+{
+name
+name {
+last "Serrao" ,
+first "Ester" ,
+initials "E.A." } } ,
+{
+name
+name {
+last "Alice" ,
+first "Lawrence" ,
+initials "L.A." } } ,
+{
+name
+name {
+last "Brawley" ,
+first "Susan" ,
+initials "S.H." } } } ,
+affil
+std {
+affil "University of Algarve" ,
+div "Centro de Ciencias do Mar, U.C.T.R.A." ,
+city "Faro" ,
+country "Portugal" ,
+street "Campus de Gambelas" ,
+postal-code "8000" } } ,
+from
+journal {
+title {
+iso-jta "J. Phycol." } ,
+imp {
+date
+std {
+year 1999 } ,
+prepub in-press
+}
+}
+}
+}
+} ,
+update-date
+std {
+year 1999 ,
+month 1 ,
+day 20 } } ,
+seq-set {
+seq {
+id {
+genbank {
+name "AF102903" ,
+accession "AF102903" ,
+version 1 } ,
+gi 4580781 } ,
+descr {
+create-date
+std {
+year 1999 ,
+month 4 ,
+day 12 } ,
+source {
+org {
+taxname "Fucus ceranoides" ,
+db {
+{
+db "taxon" ,
+tag
+id 87146 } } ,
+orgname {
+name
+binomial {
+genus "Fucus" ,
+species "ceranoides" } ,
+lineage "Eukaryota; stramenopiles; Phaeophyceae/Xanthophyceae
+group; Phaeophyceae; Fucales; Fucaceae; Fucus" ,
+gcode 1 ,
+mgcode 1 ,
+div "PLN" } } ,
+subtype {
+{
+subtype 23 ,
+name "Great Britain: Isle of Man" } } } ,
+molinfo {
+biomol genomic ,
+completeness no-ends } ,
+title "Fucus ceranoides country Great Britain: Isle of Man 18S
+ribosomal RNA gene, partial sequence; internal transcribed spacer 1, 5.8S
+ribosomal RNA gene and internal transcribed spacer 2, complete sequence; and
+26S ribosomal RNA gene, partial sequence." ,
+pub {
+pub {
+sub {
+authors {
+names
+std {
+{
+name
+name {
+last "Serrao" ,
+first "Ester" ,
+initials "E.A." } } ,
+{
+name
+name {
+last "Alice" ,
+first "Lawrence" ,
+initials "L.A." } } ,
+{
+name
+name {
+last "Brawley" ,
+first "Susan" ,
+initials "S.H." } } } ,
+affil
+std {
+affil "University of Algarve" ,
+div "Centro de Ciencias do Mar, U.C.T.R.A." ,
+city "Faro" ,
+country "Portugal" ,
+street "Campus de Gambelas" ,
+postal-code "8000" } } ,
+date
+std {
+year 1998 ,
+month 10 ,
+day 30 } } } } } ,
+inst {
+repr raw ,
+mol dna ,
+length 1012 ,
+seq-data
+ncbi4na '84244114418218812218111121111828288282128444442821884241482
+882242441288888991118118891888288818484425144224111212442288488188811424124118
+118818881112288824282684244421441122442224228428812111244448241251112484884888
+882228842224244444124128951244111418188848824842288288182218815184418411884412
+51124244125148442822A248841442842444445844848318122812242224284222411181114224
+112212411121262281914824918284118218244114411441144114413428836228848844828282
+216234122212242241421881218181248112412811111288821424124418482884428222128124
+184114112421424118424181282884241288421411822148411821821111288841124212288424
+288224441118222844414218428848244148482848841242211824281412222884482828418244
+484848284424412818414848822441142481142242241482212241148184811418884811442221
+842411218212224222482411484148814842144884448248881244144822288888282288241414
+144144444821111881244822422242248128842414442444141182848224848284424888842141
+821841114418241824888884824441442812482222224422142414288821121211184218881188
+28122822418251421'H } ,
+annot {
+{
+data
+ftable {
+{
+data
+rna {
+type rRNA ,
+ext
+name "18S ribosomal RNA" } ,
+partial TRUE ,
+location
+int {
+from 0 ,
+to 15 ,
+id
+gi 4580781 ,
+fuzz-from
+lim lt } } ,
+{
+data
+rna {
+type rRNA ,
+ext
+name "5.8S ribosomal RNA" } ,
+location
+int {
+from 493 ,
+to 643 ,
+id
+gi 4580781 } } ,
+{
+data
+rna {
+type rRNA ,
+ext
+name "26S ribosomal RNA" } ,
+partial TRUE ,
+location
+int {
+from 997 ,
+to 1011 ,
+id
+gi 4580781 ,
+fuzz-to
+lim gt } } ,
+{
+data
+rna {
+type other ,
+ext
+name "internal transcribed spacer 1" } ,
+comment "ITS1" ,
+location
+int {
+from 16 ,
+to 492 ,
+strand plus ,
+id
+gi 4580781 } } ,
+{
+data
+rna {
+type other ,
+ext
+name "internal transcribed spacer 2" } ,
+comment "ITS2" ,
+location
+int {
+from 644 ,
+to 996 ,
+strand plus ,
+id
+gi 4580781 } } } } } } ,
+seq {
+id {
+genbank {
+name "AF102904" ,
+accession "AF102904" ,
+version 1 } ,
+gi 4580782 } ,
+descr {
+create-date
+std {
+year 1999 ,
+month 4 ,
+day 12 } ,
+source {
+org {
+taxname "Fucus spiralis" ,
+db {
+{
+db "taxon" ,
+tag
+id 87149 } } ,
+orgname {
+name
+binomial {
+genus "Fucus" ,
+species "spiralis" } ,
+lineage "Eukaryota; stramenopiles; Phaeophyceae/Xanthophyceae
+group; Phaeophyceae; Fucales; Fucaceae; Fucus" ,
+gcode 1 ,
+mgcode 1 ,
+div "PLN" } } ,
+subtype {
+{
+subtype 23 ,
+name "Spain: Canary Islands" } } } ,
+molinfo {
+biomol genomic ,
+completeness no-ends } ,
+title "Fucus spiralis country Spain: Canary Islands 18S ribosomal RNA
+gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+gene and internal transcribed spacer 2, complete sequence; and 26S ribosomal
+RNA gene, partial sequence." ,
+pub {
+pub {
+sub {
+authors {
+names
+std {
+{
+name
+name {
+last "Serrao" ,
+first "Ester" ,
+initials "E.A." } } ,
+{
+name
+name {
+last "Alice" ,
+first "Lawrence" ,
+initials "L.A." } } ,
+{
+name
+name {
+last "Brawley" ,
+first "Susan" ,
+initials "S.H." } } } ,
+affil
+std {
+affil "University of Algarve" ,
+div "Centro de Ciencias do Mar, U.C.T.R.A." ,
+city "Faro" ,
+country "Portugal" ,
+street "Campus de Gambelas" ,
+postal-code "8000" } } ,
+date
+std {
+year 1998 ,
+month 10 ,
+day 30 } } } } } ,
+inst {
+repr raw ,
+mol dna ,
+length 1024 ,
+seq-data
+ncbi4na '88822481448411228424411441821881221811112111182828828212844
+444282188424148288224244128888888111811888188828881848442414422411121244228848
+818881142412411811881888111228882428228424442144112244222422842881211124444824
+124111248488488888822884222424444412412881124411141818884882484228828818221881
+418441841188441241124244124148442822824884144284244444484484811812281224222428
+422241118111422411221241112121221111482411828411821824411441144114411422814228
+848844428282214224122242241421881218181248112412811111288821424124418482884428
+222128124184114112421424111842418124828842412884214118221484118218211112888491
+242122884242882244411182228444142184288482441484828488412422118242814122222844
+828284182444848482844244128184148488224411424811422422414822122411481848114188
+848114422218424112182122242224824114841488148421448844482488812441448222888882
+822882414141441444448211118812448224422122481288424144424441411828482248482844
+248888421418218411144182418248888848244411482812484222224422142414288821121211
+18421888118828122822418211421'H } ,
+annot {
+{
+data
+ftable {
+{
+data
+rna {
+type rRNA ,
+ext
+name "18S ribosomal RNA" } ,
+partial TRUE ,
+location
+int {
+from 0 ,
+to 31 ,
+id
+gi 4580782 ,
+fuzz-from
+lim lt } } ,
+{
+data
+rna {
+type rRNA ,
+ext
+name "5.8S ribosomal RNA" } ,
+location
+int {
+from 502 ,
+to 654 ,
+id
+gi 4580782 } } ,
+{
+data
+rna {
+type rRNA ,
+ext
+name "26S ribosomal RNA" } ,
+partial TRUE ,
+location
+int {
+from 1009 ,
+to 1023 ,
+id
+gi 4580782 ,
+fuzz-to
+lim gt } } ,
+{
+data
+rna {
+type other ,
+ext
+name "internal transcribed spacer 1" } ,
+comment "ITS1" ,
+location
+int {
+from 32 ,
+to 501 ,
+strand plus ,
+id
+gi 4580782 } } ,
+{
+data
+rna {
+type other ,
+ext
+name "internal transcribed spacer 2" } ,
+comment "ITS2" ,
+location
+int {
+from 655 ,
+to 1008 ,
+strand plus ,
+id
+gi 4580782 } } } } } } } ,
+annot {
+{
+data
+align {
+{
+type partial ,
+dim 77 ,
+segs
+denseg {
+dim 77 ,
+numseg 10 ,
+ids {
+gi 4580781 } ,
+starts {
+1 ,
+3 ,
+3 ,
+1 ,
+2 ,
+4 ,
+1 ,
+1 ,
+1 ,
+20 } ,
+lens {
+1 ,
+3 ,
+3 ,
+1 ,
+2 ,
+4 ,
+1 ,
+1 ,
+1 ,
+20 } ,
+strands {
+unknown ,
+unknown ,
+unknown ,
+unknown ,
+unknown ,
+unknown ,
+unknown ,
+unknown ,
+unknown ,
+unknown } } } } } } }

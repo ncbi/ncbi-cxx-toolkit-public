@@ -1,0 +1,31 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Authors: Pavel Ivanov, Aaron Ucko
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+COPY: $srcdir/src/dbapi/lang_bind/python/tests/python_dbapi_test.py $installdir/bin
+
+# Library installation relegated to post_build.py, to account for
+# platform-dependent naming and placement.
+
+# Use stable components (per components.link) rather than the trunk.
+USE_COMPONENTS
+
+POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/post_build.py $bindir $libdir $installdir $srcdir
+
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+Linux64-Centos : 64  : GCC.sh 7.3.0 --without-debug --with-optimization --with-mt --with-dll --with-hard-runpath
+#Win64_17       : plain : dll 64 ReleaseDLL

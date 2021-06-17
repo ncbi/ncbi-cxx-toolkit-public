@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_app(hooks_copy_object)
+  NCBI_sources(hooks_copy_object)
+  NCBI_uses_toolkit_libraries(seqset)
+NCBI_end_app()

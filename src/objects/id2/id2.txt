@@ -1,0 +1,155 @@
+                                  Authors:  Denis Vakatov, Eugene Vasilchenko
+
+  ID2 Protocol:
+
+			 Request
+			 Reply
+			 Transmission of Split data
+			 TSE Sources
+			 Authentication
+			 PARAM packages
+			 List of Params
+
+
+-----------------------------------------------------------------------------
+
+---------------------- Request
+
+Requests (unlike replies) must be assembled into packages (ID2-Request-Packet).
+This is to allow for a convenience of sending several requests at once --
+without having to up-read the replies to previously sent requests from the
+same package (otherwise, if one does not do such an up-read there can be
+a deadlock in the client-server communication).
+
+
+---------------------- Reply
+
+Every request may result in several replies. In this case
+all but last reply will have end-of-reply member FALSE and
+the last one will have end-of-reply member TRUE.
+
+Replies can be reordered by server and even mixed with replies
+on another request if client and server will negotiate 'reorder'
+capability.
+
+Some requests have nested request which will be executed by server
+with arguments from parent reply if it was successful.
+
+All these nested replies will have the same serial-number and only
+the last reply among parent replies and nested replies will be marked
+as end-of-reply.
+
+If connection doesn't support streaming like HTTP all replies on request
+have to be sent in one piece. In this case they will be streamed inside
+of this data piece.
+
+
+---------------------- Split
+
+When TSE is splitted initial reply will contain at least two blobs:
+so called 'skeleton' and 'split-info'.
+Skeleton of TSE is original TSE with cut out some or all Seq-descr,
+Seq-annot, Seq-data and assembly objects.
+This cut out data is distributed evenly among blobs called 'chunks'.
+Split-info blob contains information about distribution of data among
+chunks. This allows client to determine on its side what chunks are
+needed to perform a work.
+
+Sometimes splitted TSE may be repackaged under the same Tse-id.
+In this case skeleton blob will be left untouched, only chunks and split-info
+blobs will be changed.
+New splitted data set will have new unique chunk id set and chunks from old
+splitted version will remain on server for reasonable time.
+Thus, the clients which already loaded old split-info will still be using old
+compatible chunks, while new clients will get new split-info and
+correspondingly will use new chunks.
+
+When resolving gi to Tse-id, server also sets field split-version which
+will allow caching clients to know when to reload new version of splitted TSE.
+It's convenient to use last chunk id in chunk set as split-version but
+this is not required by protocol.
+
+
+---------------------- TSE Sources
+
+There are possibly several current TSE containing information about
+the same gi.
+As an example of current GenBank state we have a 'native' TSE with
+sequence and maybe a TSE with SNP data.
+So all TSE are considered to have 'source name' - string.
+It is assumed that sequence itself (if any) is located in source
+with empty name.
+
+
+---------------------- Authentication
+
+Client authentication can be implemented using optional 'params' field.
+
+
+---------------------- PARAM packages
+
+1) At least in the case of stateless connection (such as HTTP) the
+   PARAMs must be sent with each request. Therefore, and also
+   to help avoid accidental errors (typos, omissions, extras)
+   in the PARAMs and maybe even save some time on parsing them on
+   the server side, there will be so-called PACKAGEs of PARAMs,
+   which client is encouraged to use.
+
+2) The PACKAGE is just a pre-defined list of PARAMs.
+
+3) It's represented as a PARAM of type `package' with some unique
+   (and preferably meaningful enough) name.
+
+4) PACKAGEs are stored on the server side.
+
+4.1) The list of (names of) available PACKAGEs can be retrieved from
+     the server using request `get-params' with the `params' request field 
+     un-set.
+4.2) The contents, i.e. the PARAMs (name/value/type) constituting
+     the PACKAGE(s) can be obtained by using request `get-params' with
+     the `params' request field containing the list of names (with
+     type `package' of course, and no value) of the PACKAGE(s) which
+     content you want to retrieve.
+4.3) Or, you can get all available PACKAGEs along with their contents
+     without specifying their names using request `get-params' with
+     the `params' field set but empty.
+
+5) A PACKAGE sent to the server is processed exactly in a way
+   as if it was just a list of the PARAMs wich constitute it
+   (except for case [6] below).
+
+6) If server does not recognize name of the PACKAGE set to it by the
+   client, an error will be reported, and the request will not be
+   acted upon.
+
+7) One can send (for the same request) more than one PACKAGE and/or
+   PARAMs. PACKAGE(s) here will again be treated just as if they were
+   expanded to the list of PARAMs which constitute them.
+
+8) The order matters -- in case of the PARAMs with the same name,
+   the PARAM most down the PARAMs list will be used by server.
+   All other PARAMs will be ignored, and warnings reporting the
+   conflict may be posted in the reply.
+8.1) If two PARAMs have the same name but different types, then
+     error will be reported, and the request will not be acted upon.
+
+
+---------------------- List of Params
+
+List of client params:
+
+1. "ID2-version" = "9" "100" etc
+2. "Compression" = "gzip,none" first one is preferred
+3. "TSE-Split" = "allow"
+4. "Data-types" = "Seq-entry,Seq-annot"
+
+Server params:
+
+1. "ID2-version" = "9" "100" etc
+2. "Compression" = "gzip,none" first one is preferred
+3. "TSE-Split" = "allow"
+4. "Data-sources" = "SNP"
+5.
+
+-----------------------------------------------------------------------------
+$Id$

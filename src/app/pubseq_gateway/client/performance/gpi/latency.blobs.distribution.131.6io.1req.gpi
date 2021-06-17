@@ -1,0 +1,21 @@
+set title "Number of blobs by latency and size (v1.3.1, 6 I/O, 1 Req)"
+set output 'blob_distribution.png'
+set terminal pngcairo size 1800,900
+set view 30,20
+set dgrid3d 39,24 qnorm 2
+set xyplane 0.25
+# set pm3d implicit at s
+set palette model RGB functions (1-gray**0.25), (1-gray**0.12), 0
+
+set ylabel "size, bytes"
+
+set xlabel "latency, ms"
+set xtics ("0.5" 1, "0.6" 2, "0.7" 3, "0.8" 4, "0.9" 5, "1.0" 6, "2.0" 7, "3.0" 8, "4.0" 9, "5.0" 10, "6.0" 11, "7.0" 12, "8.0" 13, "9.0" 14, "10.0" 15, "20.0" 16, "30.0" 17, "40.0" 18, "50.0" 19, "60.0" 20, "70.0" 21, "80.0" 22, "90.0" 23, "10.0" 24) format "%s" font ',7'
+set xrange [1:7]
+
+set ylabel "size, bytes"
+set ytics ("400" 1, "500" 2, "600" 3, "700" 4, "800" 5, "900" 6, "1000" 7, "2000" 8, "3000" 9, "4000" 10, "5000" 11, "6000" 12, "7000" 13, "8000" 14, "9000" 15, "1x10^4" 16, "2x10^4" 17, "3x10^4" 18, "4x10^4" 19, "5x10^4" 20, "6x10^4" 21, "7x10^4" 22, "8x10^4" 23, "9x10^4" 24, "1x10^5" 25, "2x10^5" 26, "3x10^5" 27, "4x10^5" 28, "5x10^5" 29, "6x10^5" 30, "7x10^5" 31, "8x10^5" 32, "9x10^5" 33, "1x10^6" 34, "2x10^6" 35, "6x10^6" 36, "7x10^6" 37, "8x10^6" 38, "1x10^7" 39) format "%s" font ',7'
+set yrange [1:34]
+
+#splot 'heatmap.v2.txt' with surface notitle
+plot 'heatmap.v2.txt' with image

@@ -1,0 +1,36 @@
+--
+-- $Id$
+--
+
+
+NCBI-SeqTest DEFINITIONS ::=
+BEGIN
+
+EXPORTS Seq-test-result, Seq-test-result-set, SeqTestResults;
+
+IMPORTS Date, User-object FROM NCBI-General
+        Seq-align FROM NCBI-Seqalign
+        Seq-feat FROM NCBI-Seqfeat
+        Seq-graph FROM NCBI-Seqres
+        Bioseq FROM NCBI-Sequence
+        Seq-id, Seq-loc FROM NCBI-Seqloc;
+
+SeqTestResults ::= SEQUENCE {
+    source CHOICE {
+        seq-id Seq-id,
+        seq-feat Seq-feat,
+        seq-align Seq-align
+    },
+    results Seq-test-result-set
+}
+
+Seq-test-result-set ::= SET OF Seq-test-result
+
+Seq-test-result ::= SEQUENCE {
+    test VisibleString,
+    date Date,
+    output-data User-object
+}
+
+
+END

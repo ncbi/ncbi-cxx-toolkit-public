@@ -1,0 +1,158 @@
+query = AC144835.3
+0
+subject = NT_011515.12
+1 2
+query >= subject
+10
+query < subject
+0 1 2 3 4 5 6 7 8 9 11 12 13
+coalesce(pct_coverage_hiqual,100) > 99.99
+2 5 10
+5prime_unaligned > 50
+6 9
+3prime_unaligned > 3
+1 8
+align_length < 1000
+3 5 6 7 8 12 13
+align_length = align_length_ungap
+1 3 5
+align_length_ratio < .999
+7 8
+align_length_ratio between .97 and .99
+8
+cds_start > 300
+1
+ADD(cds_start,200) > 500
+1
+cds_end > 4000
+2 9
+SUB(cds_end, 1000) > 3000
+2 9
+cds_pct_coverage = 100
+1 2 11
+cds_pct_identity = 100
+1
+is_seg_type(spliced) = 0
+0 1 5
+exon_count > 1
+2 4 9 10 12 13
+not exon_count > 1
+0 1 3 5 6 7 8 11
+exon_count >= 1
+2 3 4 6 7 8 9 10 11 12 13
+exon_count != 1
+2 4 9 10 12 13
+exon_count <= 1
+3 6 7 8 11
+last_splice_site > 3000
+2 9
+internal_unaligned > 2
+4
+cds_pct_coverage = 100 and (internal_unaligned > 2 or last_splice_site > 3000)
+2
+cds_pct_coverage < 100 and (internal_unaligned > 2 or last_splice_site > 3000)
+4 9
+(cds_pct_coverage < 100 and internal_unaligned > 2) or last_splice_site > 3000
+2 4 9
+longest_gap > 1000
+1
+max_intron_len > 10000
+2 9 12
+min_exon_len < 30
+2 13
+pct_coverage > 97.5
+0 1 2 3 4 5 10 11 12 13
+symmetric_overlap_min > 97.5
+0 1 2 3 4 10 11 12 13
+symmetric_overlap > 2
+5
+query_start > 50
+6 9
+subject_start < 50
+0
+query_end < 500
+5 7 8
+subject_end > 10000000
+8 11
+query_taxid = 8035
+5
+subject_taxid = 7227
+4
+product_length < 500
+5 7 8
+query_length < 500
+5 7 8
+subject_length < 4000000
+0 5 6 9 10 12
+gap_count = 0
+1 3 5 10
+gap_basecount > 100
+0
+query_gap_length < 20
+1 2 3 6 7 8 9 10 11 12 13
+subject_gap_length < 20
+1 2 3 4 6 8 9 10 11 12 13
+product_gap_length < 20
+2 3 6 7 8 9 10 11 12 13
+genomic_gap_length < 20
+2 3 4 6 8 9 10 11 12 13
+MUL(subject_length,product_length) < 2000000000
+5 10
+DIV(query_length,subject_length) < .0001
+3 7 8 11 13
+cds_internal_stops == 0
+1 2 3 4 5 6 7 8 9 10 12 13
+cds_internal_stops > 0
+11
+cds_internal_stops == 9
+11
+frame > 0
+4 9 11
+sframe > 0
+4 11
+qframe > 0
+4 9
+start_codon = 1
+1 2 4 5 10 11
+stop_codon = 1
+1 2 4 5 9 10 11
+not 5prime_exon_len >= 500
+0 1 2 3 4 5 6 7 8 9 11 12 13
+not 3prime_exon_len >= 500
+0 1 3 4 5 6 7 8 10 11 12 13
+5prime_exon_len < 500
+2 4 9 12 13
+3prime_exon_len < 500
+4 10 12 13
+5prime_exon_pct_identity > 98
+2 4 10 12
+3prime_exon_pct_identity > 98
+2 4 9 10
+query_strand = subject_strand
+0 1 2 3 6 7 8 9 12
+query_strand = +
+0 1 2 7 8 9 11 12 13
+query_strand = -
+3 6
+query_strand = ?
+4 5 10
+subject_strand = +
+0 1 2 5 7 8 9 10 12
+subject_strand = -
+3 4 6 11 13
+query_refseq_status = reviewed
+1 2
+subject_refseq_status = reviewed
+4 5
+subject_refseq_status = model
+0
+HAS_DESC_KEYWORD(query, aldolase)
+11
+query_geneid = 54020
+1
+min_indel_to_splice < 2
+12 13
+COALESCE(min_indel_to_splice,2) > 1
+0 1 2 3 4 5 6 7 8 9 10 11
+min_indel_to_splice > 1
+2 4 6 7 8 9

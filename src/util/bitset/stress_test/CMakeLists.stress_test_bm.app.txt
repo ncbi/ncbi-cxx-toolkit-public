@@ -1,0 +1,12 @@
+# $Id$
+
+add_executable(stress_test_bm-app
+    stress
+)
+
+set_target_properties(stress_test_bm-app PROPERTIES OUTPUT_NAME stress_test_bm)
+
+target_link_libraries(stress_test_bm-app
+    xncbi
+)
+

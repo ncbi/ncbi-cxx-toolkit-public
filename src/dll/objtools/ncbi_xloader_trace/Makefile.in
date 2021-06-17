@@ -1,0 +1,6 @@
+# $Id$
+
+DLL_PROJ = ncbi_xloader_trace
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

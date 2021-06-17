@@ -1,0 +1,3 @@
+[AddToProject]
+SourceFiles      = property_list__ property_list___
+LIB              = xser

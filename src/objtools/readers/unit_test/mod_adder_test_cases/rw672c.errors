@@ -1,0 +1,15 @@
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: old-lineage.
+
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: dosage.
+
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: old-name.
+
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: transposon-name.
+
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: plastid-name.
+

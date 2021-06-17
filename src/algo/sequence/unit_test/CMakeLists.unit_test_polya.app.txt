@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_app(unit_test_polya)
+  NCBI_sources(unit_test_polya)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xobjmgr)
+
+  NCBI_set_test_assets(polya.seq.asn)
+  NCBI_add_test(unit_test_polya -data-in polya.seq.asn)
+
+  NCBI_project_watchers(mozese2)
+
+NCBI_end_app()
+

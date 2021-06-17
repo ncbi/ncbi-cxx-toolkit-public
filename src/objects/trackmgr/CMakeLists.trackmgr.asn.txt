@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(trackmgr)
+  NCBI_dataspecs(trackmgr.asn)
+  NCBI_uses_toolkit_libraries(seq)
+  NCBI_project_watchers(meric clausen)
+NCBI_end_lib()
+

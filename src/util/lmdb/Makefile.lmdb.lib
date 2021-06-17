@@ -1,0 +1,18 @@
+# $Id$
+
+REQUIRES = LocalLMDB
+
+SRC = mdb midl
+LIB = lmdb
+
+CPPFLAGS = $(ORIG_CPPFLAGS) -I$(includedir)/util/lmdb
+
+CFLAGS   = $(FAST_CFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+LIBS = $(THREAD_LIBS)
+
+WATCHERS = ivanov
+
+USES_LIBRARIES =  \
+    $(ORIG_LIBS)

@@ -1,0 +1,15 @@
+#!/bin/sh
+#Template analyze method for new_test
+
+#Environment variables provided by the framework
+#$NCBI_TESTRES_UNIT                 Name of the test unit
+#$NCBI_TESTRES_COMPAREDDIRLIST      List of compare run directories, each line is "res1 <TAB> res2 <TAB> directory"
+#$NCBI_TESTRES_RESULT               Name of the result file
+#$NCBI_TESTRES_VERSION_DIR          Name of the test version configuration directory (R/O)
+#$NCBI_TESTRES_TEST_DIR             Name of the test configuration directory (R/O)
+#$NCBI_TESTRES_WORK_DIR              Name of the specially created working directory (R/W)#$NCBI_TESTRES_UNIT
+#$NCBI_TESTRES_INIT_DIR             Name of the initialization script dir results
+
+echo ?Success!? > 1>&2
+exit 0
+

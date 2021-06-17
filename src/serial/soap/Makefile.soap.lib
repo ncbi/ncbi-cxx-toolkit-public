@@ -1,0 +1,14 @@
+# $Id$
+
+# Build library "XSOAP"
+#################################
+
+SRC = soap_message soap_readhook soap_writehook soap_client \
+      soap_11__ soap_11___
+LIB = xsoap
+
+WATCHERS = gouriano
+
+
+USES_LIBRARIES =  \
+    xconnect xser

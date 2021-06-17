@@ -1,0 +1,13 @@
+# $Id$
+
+SRC = blocksort huffman crctable randtable ncbi_bz2_compress decompress bzlib
+LIB = bz2
+
+CPPFLAGS = $(ORIG_CPPFLAGS) -I$(includedir)/util/compress/bzip2
+
+CFLAGS   = $(FAST_CFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+WATCHERS = ivanov
+USES_LIBRARIES =  \
+    $(ORIG_LIBS)

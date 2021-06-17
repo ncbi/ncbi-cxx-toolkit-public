@@ -1,0 +1,51 @@
+#################################
+# $Id$
+# Author:  Aaron Ucko (ucko@ncbi.nlm.nih.gov)
+#################################
+# This can be used to build/install/clean BOTH
+#
+# a single(sic!) library [LIB] made of object files [SRC] and [OBJ]
+# where [SRC].o will be automagically compiled from [SRC].cpp or
+# [SRC].c, and [OBJ].o must be already compiled by this time.
+#
+# AND
+#
+# a single shared(DLL) library [LIB] made of object files [SRC] and [OBJ]
+# where [SRC].o will be automagically compiled from [SRC].cpp or
+# [SRC].c, and [OBJ].o must be already compiled by this time.
+# The following libs will be used to resolve external references:
+#   [DLL_LIB] or [DLL_DLIB] -- libs located in the NCBI C++ "lib/" dir;
+#   [LIBS]                  -- 3rd-party libs
+#
+# The library will be linked against DLL_DLIB in --with-dll configurations
+# (and --with-gbench configurations) and DLL_LIB otherwise.
+#
+################
+## Example of usage:
+#
+# srcdir = @srcdir@
+# include @builddir@/Makefile.mk
+#
+# LIB = p1
+# SRC = p1_src1 p1_src2
+# OBJ = p1_myobj
+#
+# DLL_LIB  = xncbi
+# LIBS = $(NETWORK_LIBS)
+# .....
+# CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_P1_PROJECT
+# .....
+# include @builddir@/Makefile.both
+#################################
+
+# Copied from Makefile.dll.in, so that it can take effect in time for
+# Makefile.lib's inclusion of Makefile.$(Rules).
+XDLL_LIBS = @DLL_LIB_SETTING@
+include $(builddir)/Makefile.lib
+@IF_WITH_DLL@ XLIBDEP = $(XLIBDEPLINK)
+@IF_WITH_DLL@ XOLD_DLLS =
+
+include $(builddir)/Makefile.dll
+@UNLESS_WITH_DLL@ XDLL_LINK          = $(XDLL)
+@UNLESS_WITH_DLL@ XDLL_LOADABLE_LINK = $(XDLL_LOADABLE)
+@UNLESS_WITH_DLL@ XDLLDEP_LINK       = $(XDLLDEP)

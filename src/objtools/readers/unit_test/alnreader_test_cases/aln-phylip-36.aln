@@ -1,0 +1,27 @@
+     5     48
+seq1 --GCAAGCATGCATGCAAAA
+seq2 AT--ATGGATGCATGCAAAA
+seq3 ATGC--GCAAGCATGCAAAA
+seq4 ATGCAT--ATGGATGCAAAA
+seq5 ATGCATGC--GCAAGCAAAA
+
+       TTTTGCGGCCCATGCATG--
+       TTTTGGGCCCCATGCATGCC
+       TTTTGGGGCGCATGCATGCC
+       TTTTGGGGCCCTTGCATGCC
+       TTTTGGGGCCCATCCATGCC
+
+       ATGCATGC
+       --GCATGC
+       AT--ATG
+       ATGC--GC
+       ATGCAT--
+
+BEGIN ncbi;
+sequin
+[org=animal 1]
+[org=animal 2]
+[org=animal 3]
+[org=animal 4]
+[org=animal 5]
+END;

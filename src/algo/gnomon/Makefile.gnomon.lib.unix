@@ -1,0 +1,9 @@
+# $Id$
+
+# Adjust ICC flags to avoid problematic references to __svml_* functions.
+
+ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
+  hmm.o: $(srcdir)/hmm.cpp
+	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) -fno-builtin-log $< -o $@ \
+	    $(CXX_FILTER)
+endif

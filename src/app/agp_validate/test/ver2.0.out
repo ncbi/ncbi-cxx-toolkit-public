@@ -1,0 +1,116 @@
+===== Reading Scaffold from component AGP =====
+
+No errors, no warnings.
+
+Objects                : 23
+- with single component: 13
+
+Scaffolds              : 23
+- with single component: 13
+
+Components                   : 95 (W)
+  orientation +              : 81
+  orientation -              : 14
+  orientation ? (formerly 0) :  0
+  orientation na             :  0
+
+Gaps                   : 72 (N)
+- do not break scaffold: 72
+  scaffold, linkage yes: 71
+  contamination, linkage yes:  1
+- break it, linkage no :  0
+
+Linkage evidence:
+  paired-ends       : 71
+  proximity_ligation:  1
+
+Object names         :  23
+  EG1_scaffold[1..23]:  23
+
+Component names             :  95
+  AADB[02037551..02037645].1:  95
+
+#Comment line count    : 7
+
+===== Reading Chromosome from scaffold AGP =====
+
+No errors, no warnings.
+
+Objects                :  1
+- with single component:  0
+
+Scaffolds              : 23
+- with single component: 23
+
+Components                   : 23 (W)
+  orientation +              : 20
+  orientation -              :  0
+  orientation ? (formerly 0) :  3
+  orientation na             :  0
+
+Gaps                   : 24 (N)
+- do not break scaffold:  0
+- break it, linkage no : 24
+	contig         : 21 (100% of N gaps have length=50000)
+	centromere     :  1
+	telomere       :  2 (100% of N gaps have length=10000)
+
+Most frequent N gap_length (87.5% or 21 lines): 50000
+
+Object names:  1
+  chrY      :  1
+
+Component names      :  23
+  EG1_scaffold[1..23]:  23
+
+#Comment line count    : 9
+
+./test/chr_from_contig_BAC.agp2.0:10:chr37	1	8000000	1	N	8000000	short_arm	no	na
+./test/chr_from_contig_BAC.agp2.0:11:chr37	8000001	8050000	2	N	50000	heterochromatin	no	na
+	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+./test/chr_from_contig_BAC.agp2.0:12:chr37	8050001	9050000	3	N	1000000	centromere	no	na
+	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+
+No errors, 2 warnings.
+  Count Code  Description
+      2  w33  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+
+
+Objects                :   2
+- with single component:   0
+
+Scaffolds              :  27
+- with single component:  13
+
+Components                   : 208 (W:95, F:80, A:18, D:15)
+  orientation +              : 131
+  orientation -              :  77
+  orientation ? (formerly 0) :   0
+  orientation na             :   0
+
+Gaps                   : 127 (N:115, U:12)
+- do not break scaffold:  96
+  scaffold, linkage yes:  96
+- break it, linkage no :  31
+	contig         :  24 (100% of N gaps have length=50000)
+	centromere     :   2 (100% of N gaps have length=1000000)
+	short_arm      :   1
+	heterochromatin:   1
+	telomere       :   3
+
+Most frequent N gap_length (21.7% or 25 lines): 50000
+
+Linkage evidence:
+  paired-ends :  79
+  within_clone:  12
+  clone_contig:   5
+
+Object names:  2
+  chrY      :  1
+  chr37     :  1
+
+Component names             : 189
+  AADB[02037551..02037645].1:  95
+  AC[139190..170923].[1..5] :  94
+
+#Comment line count    : 16

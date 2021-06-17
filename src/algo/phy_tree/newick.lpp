@@ -1,0 +1,125 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Josh Cherry
+ *
+ * File Description:  flex lexer for Newick format phylogenetic trees
+ *
+ */
+
+
+/*
+ * Meant to be used in conjunction with bison parser defined
+ * by newick.ypp.  Generate code using (essentially)
+ *   flex -olex.newick.cpp newick.lpp
+ *   bison -d -p newick newick.ypp
+ * The line '#include <unistd.h>' must be removed from the flex-generated
+ * code for it to compile on some platforms.
+ */
+
+
+%{
+#include <ncbi_pch.hpp>
+#include <string.h>
+#include <corelib/stream_utils.hpp>
+#include <algo/phy_tree/phy_node.hpp>
+
+#define YY_NO_UNPUT 1  // avoid a compiler warning
+
+USING_SCOPE(ncbi);
+
+#include "newick.tab.hpp"
+
+static string g_Buffer;
+
+// input from a stream
+extern CNcbiIstream *g_NewickIstr;
+#define YY_INPUT(buf, result, max_size) \
+{ \
+    result = CStreamUtils::Readsome(*g_NewickIstr, buf, max_size); \
+    if (result == 0 && !*g_NewickIstr) { \
+        result = YY_NULL; \
+    } \
+}
+
+%}
+
+%option noyywrap
+%option never-interactive
+%option prefix="newick"
+
+%s EXPECT_NUM
+
+%%
+
+<EXPECT_NUM>[-+]?(([0-9]+|([0-9]*\.[0-9]+))([eE][-+]?[0-9]+)?) {
+    newicklval.dblval = atof(yytext);
+    BEGIN 0;
+    return NUM;
+}
+
+[ \t\n\r]	;
+
+[^ \t\n\r\(\)\[\]';:,]+ {
+    g_Buffer = yytext;
+    for (unsigned int i = 0;  i < g_Buffer.size();  ++i) {
+        if (g_Buffer[i] == '_') {
+            g_Buffer[i] = ' ';
+        }
+    }
+    newicklval.strval = const_cast<char *>(g_Buffer.c_str());
+//    printf( "Token: %s\n", yytext );
+    return LABEL;
+}
+
+('[^']*')* {
+    g_Buffer.erase();
+    g_Buffer.reserve(strlen(yytext));
+    for (unsigned int i = 1;  i < strlen(yytext) - 1; ++ i) {
+        g_Buffer += yytext[i];
+        if (yytext[i] == '\'') {
+            ++i;
+        }
+    }
+    newicklval.strval = const_cast<char *>(g_Buffer.c_str());
+//    printf( "Token: %s\n", yytext );
+    return LABEL;
+}
+
+: {
+    BEGIN EXPECT_NUM;
+    return ':';
+}
+
+.	return yytext[0];
+
+%%
+
+// Reset the lexer: discard input buffer and enter initial state
+void newick_flex_reset(void)
+{
+   newickrestart(0);  // flush flex buffer
+   BEGIN 0;
+}

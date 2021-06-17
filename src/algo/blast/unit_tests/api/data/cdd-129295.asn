@@ -1,0 +1,227 @@
+Seq-align-set ::= {
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 735
+        },
+        {
+          id str "e_value",
+          value real { 267264558659858, 10, -113 }
+        },
+        {
+          id str "bit_score",
+          value real { 286810876764316, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 111
+        },
+        {
+          id str "num_positives",
+          value int 147
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 3,
+        ids {
+          gi 129295,
+          general {
+            db "CDD",
+            tag id 200983
+          }
+        },
+        starts {
+          1,
+          139,
+          80,
+          -1,
+          81,
+          218
+        },
+        lens {
+          79,
+          1,
+          151
+        },
+        strands {
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 698
+        },
+        {
+          id str "e_value",
+          value real { 756782099408301, 10, -108 }
+        },
+        {
+          id str "bit_score",
+          value real { 27251693545461, 10, -11 }
+        },
+        {
+          id str "num_ident",
+          value int 107
+        },
+        {
+          id str "num_positives",
+          value int 149
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 13,
+        ids {
+          gi 129295,
+          general {
+            db "CDD",
+            tag id 197513
+          }
+        },
+        starts {
+          1,
+          135,
+          6,
+          -1,
+          8,
+          140,
+          -1,
+          190,
+          58,
+          191,
+          80,
+          -1,
+          81,
+          213,
+          94,
+          -1,
+          95,
+          226,
+          114,
+          -1,
+          116,
+          245,
+          200,
+          -1,
+          202,
+          329
+        },
+        lens {
+          5,
+          2,
+          50,
+          1,
+          22,
+          1,
+          13,
+          1,
+          19,
+          2,
+          84,
+          2,
+          30
+        },
+        strands {
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 661
+        },
+        {
+          id str "e_value",
+          value real { 292585805412531, 10, -102 }
+        },
+        {
+          id str "bit_score",
+          value real { 258336698795093, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 106
+        },
+        {
+          id str "num_positives",
+          value int 149
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 3,
+        ids {
+          gi 129295,
+          general {
+            db "CDD",
+            tag id 29117
+          }
+        },
+        starts {
+          0,
+          137,
+          115,
+          -1,
+          117,
+          252
+        },
+        lens {
+          115,
+          2,
+          112
+        },
+        strands {
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown,
+          unknown
+        }
+      }
+    }
+
+}

@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_lib(soap_dataobj)
+  NCBI_dataspecs(soap_dataobj.xsd)
+  NCBI_uses_toolkit_libraries(xser)
+NCBI_end_lib()

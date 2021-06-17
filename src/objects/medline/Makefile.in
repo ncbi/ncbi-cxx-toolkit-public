@@ -1,0 +1,3 @@
+ASN_PROJ = medline
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

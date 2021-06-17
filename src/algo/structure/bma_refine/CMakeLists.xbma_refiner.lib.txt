@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_lib(xbma_refiner)
+  NCBI_sources(
+    RowSelector ColumnScorer BMAUtils BlockBoundaryAlgorithm BlockEditor
+    AlignRefineScorer RefinerPhase RefinerCycle RefinerTrial RefinerEngine
+    Interface
+  )
+  NCBI_uses_toolkit_libraries(xcd_utils xstruct_util cdd)
+  NCBI_project_watchers(lanczyck)
+NCBI_end_lib()
+

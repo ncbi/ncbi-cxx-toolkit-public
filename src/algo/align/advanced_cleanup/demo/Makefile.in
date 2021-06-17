@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile (algo/align/advanced_cleanup/demo)
+#################################
+
+EXPENDABLE_APP_PROJ = demo_align_cleanup
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,112 @@
+; General purpose server parameters
+[server]
+
+; maximum number of simultaneous connections
+; Default: 500
+max_connections=500
+
+; maximum number of processing threads
+; Default: 50
+max_threads=50
+
+; initial number of threads created for incoming requests
+; Default: 10
+init_threads=10
+
+; TCP/IP port number server responds on
+; Recommended ports range: 9800 - 9809
+; Default: none
+port={PORT}
+
+; Network inactivity timeout in seconds
+; Default: 10
+network_timeout=10
+
+; Server side logging
+; Default: true
+log=true
+
+; Default: false
+; Switching to true will have effect only if log == true
+log_timing=true
+
+; Default: false
+; Switching to true will have effect only if log == true
+log_timing_nst_api=true
+
+; Default: false
+; Switching to true will have effect only if log == true
+log_timing_client_socket=true
+
+; A list of client names which can execute commands requiring administrative
+; privileges. The separators for the client names are: ';', ',', space.
+; Default: empty list which means that nobody will be able to execute
+;          administrative commands.
+admin_client_name=GRIDDashboard
+
+[netstorage_api]
+; Choice of available storage backends.
+netcache_api=netcache_api
+netcache=netcache_api
+filetrack=filetrack
+
+[filetrack]
+; FileTrack site to use.
+; Available values: "prod" (submit.ncbi), "qa" (qsubmit.ncbi),
+; and "dev" (dsubmit.ncbi). Default value: "prod"
+site=dev
+; FileTrack API key. Required to upload data to FileTrack.
+; token=eafe32733ade877a24555a9df15edcca42512040
+token={FILETRACK_API_KEY}
+
+[netcache_api]
+; NetCache service to use by default (that is, if NetCache
+; service name is omitted by the user).
+service_name=NC_Test
+; ICache name to use by default.
+cache_name=netstorage_integration
+
+[Log]
+; File name where the server stores the log messages.
+;file=netstoraged.log
+PerfLogging=true
+
+[Diag]
+; do not strip any request-start messages
+AppLog_Rate_Limit=4294967295
+
+[database]
+; Server name where attributes DB is stored
+; Default: empty string, i.e. no attributes stored
+service={DB_NAME}
+; User name to get access to the attributes DB
+; Default: empty string
+user_name=netstorage_write
+; Password to get access to the attributes DB
+; Default: empty string
+password=allowed_write
+; Database name for the user attributes
+; Default: empty string
+database={DB_NAME}
+
+; Individual stored procedure execution timeout in seconds, float
+; Default: 20.0 sec
+execute_sp_timeout=20.0
+
+[{DB_NAME}.dbservice]
+use_conn_pool=true
+conn_pool_minsize = 10
+conn_pool_maxsize = 50
+
+[metadata_conf]
+services={NST_SERVICE},LBSMDNSTTestService
+ttl=30d
+prolong_on_read=1d
+prolong_on_write=1d
+
+[service_LBSMDNSTTestService]
+ttl=15m
+
+[service_{NST_SERVICE}]
+metadata=true
+

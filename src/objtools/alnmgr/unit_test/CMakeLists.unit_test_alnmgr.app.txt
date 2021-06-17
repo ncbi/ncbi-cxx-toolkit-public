@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(unit_test_alnmgr)
+  NCBI_sources(unit_test_alnmgr)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalnmgr)
+  NCBI_set_test_assets(data)
+  NCBI_add_test()
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()
+

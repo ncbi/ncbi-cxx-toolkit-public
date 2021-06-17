@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(ct100_rpc_ct_param)
+  NCBI_sources(rpc_ct_param common)
+  NCBI_add_test(test-ct100 --no-auto ct100_rpc_ct_param)
+NCBI_end_app()
+

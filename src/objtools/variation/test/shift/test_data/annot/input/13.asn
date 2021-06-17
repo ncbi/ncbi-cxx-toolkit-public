@@ -1,0 +1,27 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        name "XR_159443.1:n.14_15insCTGATACATTCCAAGCATACA",
+        data instance {
+          type ins,
+          delta {
+            {
+              seq literal {
+                length 21,
+                seq-data iupacna "CTGATACATTCCAAGCATACA"
+              },
+              action ins-before
+            }
+          }
+        }
+      },
+      location int {
+        from 13,
+        to 14,
+        strand plus,
+        id gi 397138319
+      }
+    }
+  }
+}

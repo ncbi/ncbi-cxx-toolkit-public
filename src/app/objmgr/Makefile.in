@@ -1,0 +1,11 @@
+# $Id$
+
+# Miscellaneous objmgr applications
+#################################
+
+REQUIRES = objects
+
+SUB_PROJ = demo split_demo test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

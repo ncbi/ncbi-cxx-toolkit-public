@@ -1,0 +1,4 @@
+LIB_PROJ = hgvsread
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

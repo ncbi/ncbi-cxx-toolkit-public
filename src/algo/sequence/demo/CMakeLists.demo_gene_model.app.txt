@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(demo_gene_model)
+  NCBI_sources(demo_gene_model)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoseq)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_app()
+

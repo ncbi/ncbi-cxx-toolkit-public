@@ -1,0 +1,201 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+      },
+      location int {
+        from 433,
+        to 981,
+        strand minus,
+        id local str "scaffold12159"
+      },
+      qual {
+        {
+          qual "ID",
+          val "scaffold12159.g1.t1"
+        }
+      },
+      xref {
+        {
+          id local id 2
+        }
+      }
+    },
+    {
+      id local id 2,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 433,
+        to 981,
+        strand minus,
+        id local str "scaffold12159"
+      },
+      qual {
+        {
+          qual "ID",
+          val "scaffold12159.g1.t1.cds"
+        },
+        {
+          qual "product",
+          val "dtw domain-containing protein 2"
+        },
+        {
+          qual "Parent",
+          val "scaffold12159.g1.t1"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    },
+    {
+      id local id 3,
+      data gene {
+      },
+      location int {
+        from 3819,
+        to 4328,
+        strand plus,
+        id local str "scaffold12159"
+      },
+      qual {
+        {
+          qual "ID",
+          val "scaffold12159.g2.t1"
+        }
+      },
+      xref {
+        {
+          id local id 4
+        }
+      }
+    },
+    {
+      id local id 4,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 3819,
+          to 4199,
+          strand plus,
+          id local str "scaffold12159"
+        },
+        int {
+          from 4239,
+          to 4328,
+          strand plus,
+          id local str "scaffold12159"
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "scaffold12159.g2.t1.cds"
+        },
+        {
+          qual "product",
+          val "dtw domain-containing protein 22"
+        },
+        {
+          qual "Parent",
+          val "scaffold12159.g2.t1"
+        }
+      },
+      xref {
+        {
+          id local id 3
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 5,
+      data gene {
+      },
+      location int {
+        from 645,
+        to 8052,
+        strand plus,
+        id local str "scaffold12160"
+      },
+      qual {
+        {
+          qual "ID",
+          val "scaffold12160.g1.t1"
+        }
+      },
+      xref {
+        {
+          id local id 6
+        }
+      }
+    },
+    {
+      id local id 6,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 645,
+          to 686,
+          strand plus,
+          id local str "scaffold12160"
+        },
+        int {
+          from 1055,
+          to 1179,
+          strand plus,
+          id local str "scaffold12160"
+        },
+        int {
+          from 5016,
+          to 5128,
+          strand plus,
+          id local str "scaffold12160"
+        },
+        int {
+          from 5484,
+          to 5578,
+          strand plus,
+          id local str "scaffold12160"
+        },
+        int {
+          from 7648,
+          to 8052,
+          strand plus,
+          id local str "scaffold12160"
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "scaffold12160.g1.t1.cds"
+        },
+        {
+          qual "product",
+          val "pyruvate dehydrogenase phosphatase regulatory mitochondrial"
+        },
+        {
+          qual "Parent",
+          val "scaffold12160.g1.t1"
+        }
+      },
+      xref {
+        {
+          id local id 5
+        }
+      }
+    }
+  }
+}

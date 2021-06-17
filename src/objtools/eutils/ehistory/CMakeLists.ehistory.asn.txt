@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ehistory)
+  NCBI_dataspecs(ehistory.dtd)
+  NCBI_uses_toolkit_libraries(xser)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()
+

@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(test_server)
+  NCBI_sources(test_server)
+  NCBI_uses_toolkit_libraries(xthrserv)
+  NCBI_set_test_timeout(400)
+  NCBI_add_test()
+  NCBI_project_watchers(vakatov)
+NCBI_end_app()
+

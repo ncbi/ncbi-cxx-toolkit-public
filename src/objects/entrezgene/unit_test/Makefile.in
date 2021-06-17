@@ -1,0 +1,10 @@
+# $Id$
+
+# currently expendable due to dependency on eutils lib, which affects certain builds
+EXPENDABLE_APP_PROJ = unit_test_entrezgene
+PROJ_TAG = test
+
+REQUIRES = Boost.Test.Included objects
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

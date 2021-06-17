@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<note
+    xmlns="schema-test"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
+    xs:schemaLocation="http://www.ncbi.nlm.nih.gov ../alltest.xsd"
+    partNum="partnum" weightKg="1.23" label="[BETH'U]">
+  <to gender="female">
+    <firstname>April</firstname>
+    <lastname>May</lastname>
+  </to>
+  <from>
+    <firstname>Jan</firstname>
+    <lastname>Feb</lastname>
+  </from>
+  <description type="complimentary"/>
+  <ordertype orderid="1">
+    <address>address 1</address>
+    <comment>order 1 comment 1</comment>
+    <item>order 1 item 1</item>
+    <ship.To>shipto1</ship.To>
+    <bill-To>billto1</bill-To>
+    <comment>order 1 comment 2</comment>
+    <item>order 1 item 2</item>
+  </ordertype>
+  <ordertype orderid="1">
+    <address>address 2</address>
+    <comment>order 2 comment 1</comment>
+    <item>order 2 item 1</item>
+    <ship.To>shipto2</ship.To>
+    <bill-To>billto2</bill-To>
+    <comment>order 2 comment 2</comment>
+    <item>order 2 item 2</item>
+  </ordertype>
+  <defaultElement>
+    <firstname/>
+    <lastname/>
+    <dob/>
+    <longid/>
+    <fraction/>
+    <flag/>
+    <langlist>English</langlist>
+    <langlist/>
+    <language>EN</language>
+    <language/>
+    <language>DE</language>
+    <language/>
+  </defaultElement>
+  <nillableElements>
+    <firstname xs:nil="true"/>
+    <lastname xs:nil="true"/>
+    <dob xs:nil="true"/>
+    <longid xs:nil="true"/>
+    <fraction xs:nil="true"/>
+    <flag xs:nil="true"/>
+    <langnil type="lang" xs:nil="true"/>
+    <langlist xs:nil="true"/>
+    <langlist>EN</langlist>
+    <fromnil xs:nil="true"/>
+    <fromnilplus id="0" xs:nil="true"/>
+    <fromnilplus id="1">
+      <name>name</name>
+      <number>number</number>
+    </fromnilplus>
+    <fromnilplus id="2" xs:nil="true"/>
+  </nillableElements>
+</note>

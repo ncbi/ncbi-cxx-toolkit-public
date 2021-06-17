@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(variation_utils)
+  NCBI_sources(variation_utils)
+  NCBI_uses_toolkit_libraries(variation xobjutil blastdb genome_collection)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()
+

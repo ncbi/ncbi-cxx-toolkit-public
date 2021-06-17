@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(epost)
+  NCBI_dataspecs(epost.dtd)
+  NCBI_uses_toolkit_libraries(xser)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()
+

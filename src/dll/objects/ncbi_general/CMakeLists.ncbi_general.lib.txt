@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_general SHARED)
+  NCBI_hosts_projects(
+    objects/general/general
+  )
+  NCBI_add_definitions(NCBI_GENERAL_EXPORTS)
+NCBI_end_lib()

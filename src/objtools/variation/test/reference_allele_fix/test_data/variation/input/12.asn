@@ -1,0 +1,53 @@
+Variation ::= {
+  name "NG_000006.1:g.15164_37864del22701",
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc int {
+              from 15163,
+              to 37863,
+              strand plus,
+              id other {
+                accession "NG_000006",
+                version 1
+              }
+            },
+            mol genomic
+          }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 22701
+                    }
+                  }
+                },
+                observation asserted
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("ALGO" project)
+#################################
+
+APP_PROJ = makeindex
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

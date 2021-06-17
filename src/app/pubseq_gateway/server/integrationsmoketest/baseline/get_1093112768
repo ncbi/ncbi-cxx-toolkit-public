@@ -1,0 +1,64 @@
+[
+{
+    "reply": "BioseqInfo",
+    "canonical_id": {
+        "id": "ref|NW_017516490.1|",
+        "type": 10
+    },
+    "other_ids": [
+        {
+            "id": "gnl|ASM:GCF_000227165.2|GORGOR4_CHRUN_RANDOM_3256",
+            "type": 11
+        },
+        {
+            "id": "gi|1093112768",
+            "type": 12
+        },
+        {
+            "id": "gpp|GPS_014332008.1",
+            "type": 19
+        }
+    ],
+    "molecule_type": "dna",
+    "length": 5175,
+    "seq_state": 10,
+    "state": 10,
+    "blob_id": {
+        "id": "4.211423175"
+    },
+    "tax_id": 9595,
+    "hash": -181807675,
+    "date_changed": "10/18/2019 17:48:00",
+    "gi": 1093112768
+},
+{
+    "reply": "BlobInfo",
+    "id": {
+        "id": "4.211423175",
+        "last_modified": 1517330505753
+    },
+    "compression": "gzip",
+    "format": "asn.1",
+    "storage_size": 2159,
+    "size": 6037,
+    "is_dead": false,
+    "is_suppressed": false,
+    "is_withdrawn": false,
+    "hup_release_date": "",
+    "owner": 21,
+    "original_load_date": "01/30/2018 16:41:45",
+    "class": "not-set",
+    "division": "CON",
+    "username": "gpipe",
+    "id2_info": "",
+    "n_chunks": 1
+},
+{
+    "reply": "BlobData",
+    "id": {
+        "id": "4.211423175",
+        "last_modified": 1517330505753
+    },
+    "data": "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"
+}
+]

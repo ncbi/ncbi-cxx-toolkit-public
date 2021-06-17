@@ -1,0 +1,46 @@
+# $Id$
+
+SRC_CXX = \
+blast_input \
+blast_fasta_input \
+blast_scope_src \
+blast_args \
+cmdline_flags \
+blast_input_aux \
+blastp_args \
+blastn_args \
+rmblastn_args \
+blastx_args \
+tblastn_args \
+tblastx_args \
+psiblast_args \
+rpsblast_args \
+rpstblastn_args \
+igblastn_args \
+igblastp_args \
+deltablast_args \
+magicblast_args \
+kblastp_args \
+blast_asn1_input
+
+SRC  = $(SRC_CXX)
+
+LIB = blastinput
+
+DLL_LIB = xblast align_format ncbi_xloader_blastdb_rmt ncbi_xloader_blastdb seqdb $(OBJREAD_LIBS) $(OBJMGR_LIBS) xutil
+
+# should be redundant, given the above :-/
+ASN_DEP = seqset xnetblast
+
+CFLAGS   = $(FAST_CFLAGS)
+CPPFLAGS = -DNCBI_MODULE=BLAST $(ORIG_CPPFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+
+WATCHERS = madden camacho fongah2 boratyng
+
+
+USES_LIBRARIES =  \
+    $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_LIBS) align_format

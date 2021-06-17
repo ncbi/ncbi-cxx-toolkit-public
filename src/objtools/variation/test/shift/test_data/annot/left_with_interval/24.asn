@@ -1,0 +1,56 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "CC"
+                    },
+                    action ins-before
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location int {
+        from 842384,
+        to 842385,
+        id other {
+          accession "NC_000001",
+          version 10
+        }
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          }
+        }
+      },
+      exts {
+        {
+          type str "Variation Normalization",
+          data {
+            {
+              label str "Left Interval Shifted",
+              data bool TRUE
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Test Fully Shifted : 0

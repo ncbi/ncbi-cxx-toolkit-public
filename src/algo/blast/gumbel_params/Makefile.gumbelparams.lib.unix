@@ -1,0 +1,10 @@
+# $Id$
+
+# Adjust ICC flags to avoid problematic references to __svml_* functions.
+
+ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
+  njn_localmaxstat.o njn_localmaxstatutil.o sls_alp_data.o sls_alp_sim.o: \
+    %.o: $(srcdir)/%.cpp
+	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) -fno-builtin-exp \
+	    $< -o $@ $(CXX_FILTER)
+endif

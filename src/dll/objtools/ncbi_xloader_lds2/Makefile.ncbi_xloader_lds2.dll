@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = ncbi_xloader_lds2
+
+HOSTED_LIBS    = ncbi_xloader_lds2
+
+DEPENDENCIES   = ncbi_core ncbi_general sqlitewrapp ncbi_lds2 ncbi_pub \
+                 ncbi_seq ncbi_seqext
+
+CPPFLAGS = -DNCBI_XLOADER_LDS2_EXPORTS
+

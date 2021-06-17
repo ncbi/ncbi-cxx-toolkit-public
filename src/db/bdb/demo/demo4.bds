@@ -1,0 +1,7 @@
+#  $Id$
+# BDB structure file for demo4 application (use with bdb_dump)
+
+
+blob_id		int4 PK
+
+data    BLOB

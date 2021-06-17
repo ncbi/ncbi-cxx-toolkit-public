@@ -1,0 +1,9 @@
+[components]
+infrastructure  20.0
+core            20.0
+dbase           20.0
+web             20.0
+objects         20.0
+objtools        20.0
+algo            20.0
+app             20.0

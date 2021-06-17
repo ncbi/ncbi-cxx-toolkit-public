@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_app(basic_sample_lib_test)
+  NCBI_sources(basic_sample_lib_test)
+  NCBI_uses_toolkit_libraries(basic_sample_lib)
+NCBI_end_app()

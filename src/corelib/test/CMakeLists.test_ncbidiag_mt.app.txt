@@ -1,0 +1,21 @@
+# $Id$
+
+NCBI_begin_app(test_ncbidiag_mt)
+
+  NCBI_sources(test_ncbidiag_mt)
+  NCBI_add_definitions(NCBI_SHOW_FUNCTION_NAME)
+  NCBI_uses_toolkit_libraries(test_mt)
+
+  NCBI_begin_test(test_ncbidiag_mt_old_fmt)
+    NCBI_set_test_command(test_ncbidiag_mt.sh -format old)
+    NCBI_set_test_assets(test_ncbidiag_mt.sh)
+  NCBI_end_test()
+  NCBI_begin_test(test_ncbidiag_mt_new_fmt)
+    NCBI_set_test_command(test_ncbidiag_mt.sh -format new)
+    NCBI_set_test_assets(test_ncbidiag_mt.sh)
+  NCBI_end_test()
+
+  NCBI_project_watchers(grichenk)
+
+NCBI_end_app()
+

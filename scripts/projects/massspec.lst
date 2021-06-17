@@ -1,0 +1,12 @@
+algo/ms
+algo/blast
+app/mshdf5
+build-system
+corelib
+connect
+misc/xmlwrapp
+objects
+objmgr
+objtools
+serial
+util

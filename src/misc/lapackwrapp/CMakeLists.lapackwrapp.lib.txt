@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(lapackwrapp)
+  NCBI_sources(ncbi_lapack)
+  NCBI_project_watchers(ucko)
+NCBI_end_lib()
+

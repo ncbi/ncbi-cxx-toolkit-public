@@ -1,0 +1,10 @@
+#include "../blast/project.lst"
+-app/blast
+-app/blastdb
+-app/winmasker
+-app/dustmasker
+-app/segmasker
+connect/mbedtls
+algo/blast$
+algo/blast/proteinkmer$
+algo/blast/proteinkmer/demo$

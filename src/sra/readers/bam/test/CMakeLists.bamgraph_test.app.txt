@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(bamgraph_test)
+  NCBI_sources(bamgraph_test)
+  NCBI_uses_toolkit_libraries(bamread)
+  NCBI_project_watchers(vasilche ucko)
+NCBI_end_app()
+

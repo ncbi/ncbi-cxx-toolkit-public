@@ -1,0 +1,25 @@
+# $Id$
+# Author:  Lewis Geer
+
+# Build library "xomssa"
+#################################
+
+WATCHERS = lewisg slottad
+
+ASN_DEP     = blastdb pepXML omssa
+
+# NCBI_C_LIBS =  -lncbitool -lblastcompadj -lncbiobj -lncbi -lncbimmdb
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(PCRE_INCLUDE) $(NCBI_C_INCLUDE)
+
+SRC = SpectrumSet msladder msms mspeak omssa Mod omssascore msmerge omssaapp pepxml
+
+LIB = xomssa
+
+CFLAGS   = $(FAST_CFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+
+USES_LIBRARIES =  \
+    $(COMPRESS_LIBS) blast omssa pepXML seqdb xconnect xregexp

@@ -1,0 +1,535 @@
+-- ==================
+-- ! Mapping fuzzes !
+-- ==================
+
+-- Mapping fuzzes: source
+Seq-loc ::= int {
+  from 10,
+  to 99,
+  id gi 4
+}
+-- Mapping fuzzes: destination on plus
+Seq-loc ::= int {
+  from 110,
+  to 199,
+  id gi 5
+}
+-- Mapping fuzzes: destination on minus
+Seq-loc ::= int {
+  from 110,
+  to 199,
+  strand minus,
+  id gi 5
+}
+
+-- Fuzz-from lim lt: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from lim lt
+}
+-- Fuzz-from lim lt: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from lim lt
+}
+-- Fuzz-from lim lt, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to lim gt
+}
+
+-- Fuzz-from lim gt: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from lim gt
+}
+-- Fuzz-from lim gt: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from lim gt
+}
+-- Fuzz-from lim gt, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to lim lt
+}
+
+-- Fuzz-from lim tl: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from lim tl
+}
+-- Fuzz-from lim tl: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from lim tl
+}
+-- Fuzz-from lim tl, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to lim tr
+}
+
+-- Fuzz-from lim tr: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from lim tr
+}
+-- Fuzz-from lim tr: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from lim tr
+}
+-- Fuzz-from lim tr, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to lim tl
+}
+
+-- Fuzz-from alt #1: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from alt {   1,  12,  23,  76,  87,  98, 109 }
+}
+-- Fuzz-from alt #1: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from alt {      112, 123, 176, 187, 198      }
+}
+-- Fuzz-from alt #1, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to alt {        197, 186, 133, 122, 111      }
+}
+
+-- Fuzz-from alt #2: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from alt { 1, 109 }
+}
+-- Fuzz-from alt #2: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5
+}
+-- Fuzz-from alt #2, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5
+}
+
+-- Fuzz-from range #1: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from range {
+    max 23,
+    min 1
+  }
+}
+-- Fuzz-from range #1: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from range {
+    max 123,
+    min 110
+  }
+}
+-- Fuzz-from range #1, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to range {
+    max 199,
+    min 186
+  }
+}
+
+-- Fuzz-from range #2: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from range {
+    max 58,
+    min 34
+  }
+}
+-- Fuzz-from range #2: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from range {
+    max 158,
+    min 134
+  }
+}
+-- Fuzz-from range #2, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to range {
+    max 175,
+    min 151
+  }
+}
+
+-- Fuzz-from range #3: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from range {
+    max 108,
+    min 94
+  }
+}
+-- Fuzz-from range #3: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-from range {
+    max 199,
+    min 194
+  }
+}
+-- Fuzz-from range #3, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-to range {
+    max 115,
+    min 110
+  }
+}
+
+-- Fuzz-from range #4: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-from range {
+    max 8,
+    min 1
+  }
+}
+-- Fuzz-from range #4: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5
+}
+-- Fuzz-from range #4, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5
+}
+
+-- Fuzz-to lim lt: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to lim lt
+}
+-- Fuzz-to lim lt: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to lim lt
+}
+-- Fuzz-to lim lt, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from lim gt
+}
+
+-- Fuzz-to lim gt: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to lim gt
+}
+-- Fuzz-to lim gt: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to lim gt
+}
+-- Fuzz-to lim gt, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from lim lt
+}
+
+-- Fuzz-to lim tl: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to lim tl
+}
+-- Fuzz-to lim tl: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to lim tl
+}
+-- Fuzz-to lim tl, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from lim tr
+}
+
+-- Fuzz-to lim tr: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to lim tr
+}
+-- Fuzz-to lim tr: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to lim tr
+}
+-- Fuzz-to lim tr, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from lim tl
+}
+
+-- Fuzz-to alt #1: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to alt {   1,  12,  23,  76,  87,  98, 109 }
+}
+-- Fuzz-to alt #1: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to alt {      112, 123, 176, 187, 198      }
+}
+-- Fuzz-to alt #1, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from alt {    197, 186, 133, 122, 111      }
+}
+
+-- Fuzz-to alt #2: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to alt { 1, 109 }
+}
+-- Fuzz-to alt #2: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5
+}
+-- Fuzz-to alt #2, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5
+}
+
+-- Fuzz-to range #1: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to range {
+    max 23,
+    min 1
+  }
+}
+-- Fuzz-to range #1: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to range {
+    max 123,
+    min 110
+  }
+}
+-- Fuzz-to range #1, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from range {
+    max 199,
+    min 186
+  }
+}
+
+-- Fuzz-to range #2: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to range {
+    max 58,
+    min 34
+  }
+}
+-- Fuzz-to range #2: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to range {
+    max 158,
+    min 134
+  }
+}
+-- Fuzz-to range #2, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from range {
+    max 175,
+    min 151
+  }
+}
+
+-- Fuzz-to range #3: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to range {
+    max 108,
+    min 94
+  }
+}
+-- Fuzz-to range #3: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5,
+  fuzz-to range {
+    max 199,
+    min 194
+  }
+}
+-- Fuzz-to range #3, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5,
+  fuzz-from range {
+    max 115,
+    min 110
+  }
+}
+
+-- Fuzz-to range #4: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4,
+  fuzz-to range {
+    max 8,
+    min 1
+  }
+}
+-- Fuzz-to range #4: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  id gi 5
+}
+-- Fuzz-to range #4, reversed strand: expected
+Seq-loc ::= int {
+  from 120,
+  to 189,
+  strand minus,
+  id gi 5
+}

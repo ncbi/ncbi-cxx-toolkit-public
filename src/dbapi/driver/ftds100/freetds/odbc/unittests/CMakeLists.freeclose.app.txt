@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc100_freeclose)
+  NCBI_sources(freeclose common)
+  NCBI_add_test(test-odbc100 --syb-ver 5.0 odbc100_freeclose)
+NCBI_end_app()
+

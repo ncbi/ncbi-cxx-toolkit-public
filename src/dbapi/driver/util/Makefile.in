@@ -1,0 +1,8 @@
+# $Id$
+
+LIB_PROJ = dbapi_util_blobstore
+APP_PROJ = blobreader blobwriter
+SUB_PROJ = samples
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

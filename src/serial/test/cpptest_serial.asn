@@ -1,0 +1,91 @@
+CTestSerialObject ::= {
+  m_Name "name",
+  m_HaveName FALSE,
+  m_Size -1,
+  m_Attributes {
+    "m_Attributes",
+    "m_Size",
+    "m_"
+  },
+  m_Data '64617461'H,
+  m_Offsets {
+    25,
+    -1024
+  },
+  m_Names {
+    {
+      0,
+      "zero"
+    },
+    {
+      1,
+      "one"
+    },
+    {
+      2,
+      "two"
+    },
+    {
+      3,
+      "three"
+    },
+    {
+      10,
+      "ten"
+    }
+  },
+  m_Next : CTestSerialObject2 {
+    {
+      m_Name "write1",
+      m_HaveName TRUE,
+      m_NamePtr "test",
+      m_Size 32767,
+      m_Attributes {
+        "write1"
+      },
+      m_Data ''H,
+      m_Offsets {
+      },
+      m_Names {
+      }
+    },
+    m_Name2 "name2"
+  },
+  m_WebEnv {
+    queries {
+      {
+        seqNumber 1,
+        time unix 929130371,
+        command search {
+          db "medline",
+          term "cat",
+          field "",
+          count 211903
+        }
+      },
+      {
+        seqNumber 2,
+        time full {
+          year 1999,
+          month 12,
+          day 15,
+          hour 20,
+          minute 5,
+          second 0
+        },
+        command related {
+          base select {
+            db "medline",
+            items {
+              items '0123456789'H,
+              count 5
+            }
+          },
+          relation "link",
+          db "protein",
+          items itemCount -20
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+How to create self signed certificate:
+
+openssl genrsa -des3 -passout pass:x -out keypair.key 2048
+openssl rsa -passin pass:x -in keypair.key -out <ip>.key
+openssl req -new -key <ip>.key -out <ip>.csr
+openssl x509 -req -days 365 -in <ip>.csr -signkey <ip>.key -out <ip>.crt
+
+e.g.: https://www.rosehosting.com/blog/how-to-generate-a-self-signed-ssl-certificate-on-linux/
+

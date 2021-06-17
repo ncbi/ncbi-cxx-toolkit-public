@@ -1,0 +1,13 @@
+# $Id$
+
+NCBI_begin_app(graph_test)
+  NCBI_sources(graph_test)
+  NCBI_uses_toolkit_libraries(sraread)
+
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_add_test(graph_test -q .)
+
+  NCBI_project_watchers(vasilche ucko)
+
+NCBI_end_app()
+

@@ -1,0 +1,7 @@
+# $Id$
+
+EXPENDABLE_APP_PROJ = pubseq_gateway
+# SUB_PROJ = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

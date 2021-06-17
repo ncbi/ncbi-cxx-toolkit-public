@@ -1,0 +1,27 @@
+Seq-entry ::= seq {
+  id {
+    genbank {
+      accession "ab123aaaatttttttgggggggccc"
+    }
+  },
+  descr {
+    user {
+      type str "CFastaReader",
+      data {
+        {
+          label str "DefLine",
+          data str ">gb|ab123aaaatttttttgggggggccc"
+        }
+      }
+    },
+    molinfo {
+      biomol genomic
+    }
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 8,
+    seq-data ncbi2na '39CF'H
+  }
+}

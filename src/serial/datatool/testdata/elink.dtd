@@ -1,0 +1,53 @@
+
+<!ELEMENT        ERROR          (#PCDATA)>	<!-- .+ -->
+<!ELEMENT        Info           (#PCDATA)>	<!-- .+ -->
+
+<!ELEMENT	Id		(#PCDATA)>	<!-- \d+ -->
+<!ATTLIST	Id		
+			HasLinkOut  (Y|N)	#IMPLIED	
+			HasNeighbor (Y|N)	#IMPLIED
+			>
+			
+<!ELEMENT	Score		(#PCDATA)>	<!-- \d+ -->
+<!ELEMENT	DbFrom		(#PCDATA)>	<!-- \S+ -->
+<!ELEMENT	DbTo		(#PCDATA)>	<!-- \S+ -->
+<!ELEMENT	LinkName	(#PCDATA)>	<!-- \S+ -->
+
+<!ELEMENT	IdList		(Id*)>
+
+<!-- cmd=neighbor -->
+<!ELEMENT	Link		(Id, Score?)>
+
+<!ELEMENT	LinkSetDb	(DbTo, LinkName, (Link*|Info), ERROR?)>
+
+<!-- cmd=links -->
+
+<!ELEMENT	Url		(#PCDATA)>	<!-- \S+ -->
+<!ELEMENT       SubjectType	(#PCDATA)>	<!-- .+ -->
+<!ELEMENT       ProviderName	(#PCDATA)>	<!-- .+ -->
+<!ELEMENT       ProviderNameAbbr	(#PCDATA)>	<!-- \S+ -->
+<!ELEMENT       ProviderId	(#PCDATA)>	<!-- \d+ -->		
+
+<!ELEMENT	ObjUrl	(
+				Url,
+                                SubjectType,
+                                ProviderName,
+                                ProviderNameAbbr,
+                                ProviderId			
+			)>
+
+<!ELEMENT	IdUrlSet	(Id,(ObjUrl+|Info))>
+
+<!ELEMENT	IdUrlList	(IdUrlSet*,ERROR?)>
+
+
+<!-- cmd=ncheck & lcheck -->
+<!ELEMENT	IdCheckList	(Id*,ERROR?)>
+
+
+<!-- Common -->
+<!ELEMENT	LinkSet		(DbFrom, 
+				((IdList?, LinkSetDb*) | IdUrlList | IdCheckList | ERROR)  
+				)>
+
+<!ELEMENT	eLinkResult	(LinkSet+,ERROR?)>

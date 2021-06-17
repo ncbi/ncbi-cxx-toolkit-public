@@ -1,0 +1,6511 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 9
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 1,
+      data biosrc {
+        genome genomic,
+        org {
+          orgname {
+            mod {
+              {
+                subtype isolate,
+                subname "HBV/1303"
+              }
+            }
+          }
+        },
+        subtype {
+          {
+            subtype other,
+            name "is_circular"
+          },
+          {
+            subtype genotype,
+            name "D"
+          },
+          {
+            subtype other,
+            name "isolated from serum of a chronic HBV carrier"
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 3181,
+        strand plus,
+        id genbank {
+          accession "AF121239",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "AF121239.1:1..3182"
+        },
+        {
+          qual "Is_circular",
+          val "true"
+        },
+        {
+          qual "mol_type",
+          val "genomic DNA"
+        }
+      },
+      dbxref {
+        {
+          db "taxon",
+          tag id 10407
+        }
+      }
+    },
+    {
+      id local id 2,
+      data gene {
+        locus "X"
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121239",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-X"
+        },
+        {
+          qual "Name",
+          val "X"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 3
+        }
+      }
+    },
+    {
+      id local id 3,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121239",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24659.1-2"
+        },
+        {
+          qual "gene",
+          val "X"
+        },
+        {
+          qual "product",
+          val "X peptide"
+        },
+        {
+          qual "protein_id",
+          val "AAF24659.1"
+        },
+        {
+          qual "Parent",
+          val "gene-X"
+        }
+      },
+      xref {
+        {
+          id local id 2
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24659.1"
+        }
+      }
+    },
+    {
+      id local id 4,
+      data gene {
+        locus "C"
+      },
+      location int {
+        from 1813,
+        to 2541,
+        strand plus,
+        id genbank {
+          accession "AF121239",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-C"
+        },
+        {
+          qual "Name",
+          val "C"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 5
+        }
+      }
+    },
+    {
+      id local id 5,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1900,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121239",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24664.1-2"
+        },
+        {
+          qual "gene",
+          val "C"
+        },
+        {
+          qual "product",
+          val "core protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24664.1"
+        },
+        {
+          qual "Parent",
+          val "gene-C"
+        }
+      },
+      xref {
+        {
+          id local id 4
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24664.1"
+        }
+      }
+    },
+    {
+      id local id 6,
+      data imp {
+        key "misc_feature"
+      },
+      comment "precore/core pseudogene",
+      location int {
+        from 1813,
+        to 2541,
+        strand plus,
+        id genbank {
+          accession "AF121239",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id-C"
+        },
+        {
+          qual "gene",
+          val "C"
+        }
+      }
+    },
+    {
+      id local id 7,
+      data gene {
+        locus "P"
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-P"
+        },
+        {
+          qual "Name",
+          val "P"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 8
+        }
+      }
+    },
+    {
+      id local id 8,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24660.1-2"
+        },
+        {
+          qual "gene",
+          val "P"
+        },
+        {
+          qual "product",
+          val "polymerase"
+        },
+        {
+          qual "protein_id",
+          val "AAF24660.1"
+        },
+        {
+          qual "Parent",
+          val "gene-P"
+        }
+      },
+      xref {
+        {
+          id local id 7
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24660.1"
+        }
+      }
+    },
+    {
+      id local id 9,
+      data gene {
+        locus "S"
+      },
+      location mix {
+        int {
+          from 2847,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-S"
+        },
+        {
+          qual "Name",
+          val "S"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 10
+        }
+      }
+    },
+    {
+      id local id 10,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        },
+        int {
+          from 2847,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        },
+        int {
+          from 3171,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24661.1-2"
+        },
+        {
+          qual "gene",
+          val "S"
+        },
+        {
+          qual "product",
+          val "large S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24661.1"
+        },
+        {
+          qual "Parent",
+          val "gene-S"
+        }
+      },
+      xref {
+        {
+          id local id 9
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24661.1"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 9
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 11,
+      data biosrc {
+        org {
+          orgname {
+            mod {
+              {
+                subtype isolate,
+                subname "HBV/11066"
+              }
+            }
+          }
+        },
+        subtype {
+          {
+            subtype other,
+            name "is_circular"
+          },
+          {
+            subtype genotype,
+            name "D"
+          },
+          {
+            subtype other,
+            name "isolated from serum of a chronic HBV carrier"
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 3181,
+        strand plus,
+        id genbank {
+          accession "AF121240",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "AF121240.1:1..3182"
+        },
+        {
+          qual "Is_circular",
+          val "true"
+        },
+        {
+          qual "mol_type",
+          val "genomic DNA"
+        }
+      },
+      dbxref {
+        {
+          db "taxon",
+          tag id 10407
+        }
+      }
+    },
+    {
+      id local id 12,
+      data gene {
+        locus "X"
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121240",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-X-2"
+        },
+        {
+          qual "Name",
+          val "X"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 13
+        }
+      }
+    },
+    {
+      id local id 13,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121240",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24665.1"
+        },
+        {
+          qual "gene",
+          val "X"
+        },
+        {
+          qual "product",
+          val "X peptide"
+        },
+        {
+          qual "protein_id",
+          val "AAF24665.1"
+        },
+        {
+          qual "Parent",
+          val "gene-X-2"
+        }
+      },
+      xref {
+        {
+          id local id 12
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24665.1"
+        }
+      }
+    },
+    {
+      id local id 14,
+      data gene {
+        locus "C"
+      },
+      location int {
+        from 1813,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121240",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-C-2"
+        },
+        {
+          qual "Name",
+          val "C"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 15
+        }
+      }
+    },
+    {
+      id local id 15,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24670.1"
+        },
+        {
+          qual "gene",
+          val "C"
+        },
+        {
+          qual "product",
+          val "precore/core protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24670.1"
+        },
+        {
+          qual "Parent",
+          val "gene-C-2"
+        }
+      },
+      xref {
+        {
+          id local id 14
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24670.1"
+        }
+      }
+    },
+    {
+      id local id 16,
+      data gene {
+        locus "P"
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-P-2"
+        },
+        {
+          qual "Name",
+          val "P"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 17
+        }
+      }
+    },
+    {
+      id local id 17,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24666.1"
+        },
+        {
+          qual "gene",
+          val "P"
+        },
+        {
+          qual "product",
+          val "polymerase"
+        },
+        {
+          qual "protein_id",
+          val "AAF24666.1"
+        },
+        {
+          qual "Parent",
+          val "gene-P-2"
+        }
+      },
+      xref {
+        {
+          id local id 16
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24666.1"
+        }
+      }
+    },
+    {
+      id local id 18,
+      data gene {
+        locus "S"
+      },
+      location mix {
+        int {
+          from 2847,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-S-2"
+        },
+        {
+          qual "Name",
+          val "S"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 19
+        }
+      }
+    },
+    {
+      id local id 19,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        },
+        int {
+          from 2847,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        },
+        int {
+          from 3171,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121240",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24667.1"
+        },
+        {
+          qual "gene",
+          val "S"
+        },
+        {
+          qual "product",
+          val "large S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24667.1"
+        },
+        {
+          qual "Parent",
+          val "gene-S-2"
+        }
+      },
+      xref {
+        {
+          id local id 18
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24667.1"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 9
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 20,
+      data biosrc {
+        org {
+          orgname {
+            mod {
+              {
+                subtype isolate,
+                subname "HBV/1758"
+              }
+            }
+          }
+        },
+        subtype {
+          {
+            subtype other,
+            name "is_circular"
+          },
+          {
+            subtype genotype,
+            name "D"
+          },
+          {
+            subtype other,
+            name "isolated from serum of a chronic HBV carrier"
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 3181,
+        strand plus,
+        id genbank {
+          accession "AF121241",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "AF121241.1:1..3182"
+        },
+        {
+          qual "Is_circular",
+          val "true"
+        },
+        {
+          qual "mol_type",
+          val "genomic DNA"
+        }
+      },
+      dbxref {
+        {
+          db "taxon",
+          tag id 10407
+        }
+      }
+    },
+    {
+      id local id 21,
+      data gene {
+        locus "X"
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121241",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-X-3"
+        },
+        {
+          qual "Name",
+          val "X"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 22
+        }
+      }
+    },
+    {
+      id local id 22,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121241",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24672.1"
+        },
+        {
+          qual "gene",
+          val "X"
+        },
+        {
+          qual "product",
+          val "X peptide"
+        },
+        {
+          qual "protein_id",
+          val "AAF24672.1"
+        },
+        {
+          qual "Parent",
+          val "gene-X-3"
+        }
+      },
+      xref {
+        {
+          id local id 21
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24672.1"
+        }
+      }
+    },
+    {
+      id local id 23,
+      data gene {
+        locus "C"
+      },
+      location int {
+        from 1813,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121241",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-C-3"
+        },
+        {
+          qual "Name",
+          val "C"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 24
+        }
+      }
+    },
+    {
+      id local id 24,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24677.1"
+        },
+        {
+          qual "gene",
+          val "C"
+        },
+        {
+          qual "product",
+          val "precore/core protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24677.1"
+        },
+        {
+          qual "Parent",
+          val "gene-C-3"
+        }
+      },
+      xref {
+        {
+          id local id 23
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24677.1"
+        }
+      }
+    },
+    {
+      id local id 25,
+      data gene {
+        locus "P"
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-P-3"
+        },
+        {
+          qual "Name",
+          val "P"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 26
+        }
+      }
+    },
+    {
+      id local id 26,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24673.1"
+        },
+        {
+          qual "gene",
+          val "P"
+        },
+        {
+          qual "product",
+          val "polymerase"
+        },
+        {
+          qual "protein_id",
+          val "AAF24673.1"
+        },
+        {
+          qual "Parent",
+          val "gene-P-3"
+        }
+      },
+      xref {
+        {
+          id local id 25
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24673.1"
+        }
+      }
+    },
+    {
+      id local id 27,
+      data gene {
+        locus "S"
+      },
+      location mix {
+        int {
+          from 2847,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-S-3"
+        },
+        {
+          qual "Name",
+          val "S"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 28
+        }
+      }
+    },
+    {
+      id local id 28,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        },
+        int {
+          from 2847,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        },
+        int {
+          from 3171,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121241",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24674.1"
+        },
+        {
+          qual "gene",
+          val "S"
+        },
+        {
+          qual "product",
+          val "large S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24674.1"
+        },
+        {
+          qual "Parent",
+          val "gene-S-3"
+        }
+      },
+      xref {
+        {
+          id local id 27
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24674.1"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 9
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 29,
+      data biosrc {
+        org {
+          orgname {
+            mod {
+              {
+                subtype isolate,
+                subname "HBV/1218"
+              }
+            }
+          }
+        },
+        subtype {
+          {
+            subtype other,
+            name "is_circular"
+          },
+          {
+            subtype genotype,
+            name "D"
+          },
+          {
+            subtype other,
+            name "isolated from serum of a chronic HBV carrier"
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 3181,
+        strand plus,
+        id genbank {
+          accession "AF121242",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "AF121242.1:1..3182"
+        },
+        {
+          qual "Is_circular",
+          val "true"
+        },
+        {
+          qual "mol_type",
+          val "genomic DNA"
+        }
+      },
+      dbxref {
+        {
+          db "taxon",
+          tag id 10407
+        }
+      }
+    },
+    {
+      id local id 30,
+      data gene {
+        locus "X"
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121242",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-X-4"
+        },
+        {
+          qual "Name",
+          val "X"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 31
+        }
+      }
+    },
+    {
+      id local id 31,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121242",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24679.1"
+        },
+        {
+          qual "gene",
+          val "X"
+        },
+        {
+          qual "product",
+          val "X peptide"
+        },
+        {
+          qual "protein_id",
+          val "AAF24679.1"
+        },
+        {
+          qual "Parent",
+          val "gene-X-4"
+        }
+      },
+      xref {
+        {
+          id local id 30
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24679.1"
+        }
+      }
+    },
+    {
+      id local id 32,
+      data gene {
+        locus "C"
+      },
+      location int {
+        from 1813,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121242",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-C-4"
+        },
+        {
+          qual "Name",
+          val "C"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 33
+        }
+      }
+    },
+    {
+      id local id 33,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1900,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121242",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24684.1"
+        },
+        {
+          qual "gene",
+          val "C"
+        },
+        {
+          qual "product",
+          val "core protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24684.1"
+        },
+        {
+          qual "Parent",
+          val "gene-C-4"
+        }
+      },
+      xref {
+        {
+          id local id 32
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24684.1"
+        }
+      }
+    },
+    {
+      id local id 34,
+      data imp {
+        key "misc_feature"
+      },
+      comment "precore/core pseudogene",
+      location int {
+        from 1813,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121242",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id-C-2"
+        },
+        {
+          qual "gene",
+          val "C"
+        }
+      }
+    },
+    {
+      id local id 35,
+      data gene {
+        locus "P"
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121242",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121242",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-P-4"
+        },
+        {
+          qual "Name",
+          val "P"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 36
+        }
+      }
+    },
+    {
+      id local id 36,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121242",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121242",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24680.1"
+        },
+        {
+          qual "gene",
+          val "P"
+        },
+        {
+          qual "product",
+          val "polymerase"
+        },
+        {
+          qual "protein_id",
+          val "AAF24680.1"
+        },
+        {
+          qual "Parent",
+          val "gene-P-4"
+        }
+      },
+      xref {
+        {
+          id local id 35
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24680.1"
+        }
+      }
+    },
+    {
+      id local id 37,
+      data gene {
+        locus "S"
+      },
+      location mix {
+        int {
+          from 2847,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121242",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121242",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-S-4"
+        },
+        {
+          qual "Name",
+          val "S"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 38
+        }
+      }
+    },
+    {
+      id local id 38,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121242",
+            version 1
+          }
+        },
+        int {
+          from 2847,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121242",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121242",
+            version 1
+          }
+        },
+        int {
+          from 3171,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121242",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121242",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24681.1"
+        },
+        {
+          qual "gene",
+          val "S"
+        },
+        {
+          qual "product",
+          val "large S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24681.1"
+        },
+        {
+          qual "Parent",
+          val "gene-S-4"
+        }
+      },
+      xref {
+        {
+          id local id 37
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24681.1"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 9
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 39,
+      data biosrc {
+        org {
+          orgname {
+            mod {
+              {
+                subtype isolate,
+                subname "HBV/14611"
+              }
+            }
+          }
+        },
+        subtype {
+          {
+            subtype other,
+            name "is_circular"
+          },
+          {
+            subtype genotype,
+            name "B"
+          },
+          {
+            subtype other,
+            name "isolated from serum of a chronic HBV carrier"
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 3214,
+        strand plus,
+        id genbank {
+          accession "AF121243",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "AF121243.1:1..3215"
+        },
+        {
+          qual "Is_circular",
+          val "true"
+        },
+        {
+          qual "mol_type",
+          val "genomic DNA"
+        }
+      },
+      dbxref {
+        {
+          db "taxon",
+          tag id 10407
+        }
+      }
+    },
+    {
+      id local id 40,
+      data gene {
+        locus "X"
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121243",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-X-5"
+        },
+        {
+          qual "Name",
+          val "X"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 41
+        }
+      }
+    },
+    {
+      id local id 41,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121243",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24685.1"
+        },
+        {
+          qual "gene",
+          val "X"
+        },
+        {
+          qual "product",
+          val "X peptide"
+        },
+        {
+          qual "protein_id",
+          val "AAF24685.1"
+        },
+        {
+          qual "Parent",
+          val "gene-X-5"
+        }
+      },
+      xref {
+        {
+          id local id 40
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24685.1"
+        }
+      }
+    },
+    {
+      id local id 42,
+      data gene {
+        locus "C"
+      },
+      location int {
+        from 1813,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121243",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-C-5"
+        },
+        {
+          qual "Name",
+          val "C"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 43
+        }
+      }
+    },
+    {
+      id local id 43,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24690.1"
+        },
+        {
+          qual "gene",
+          val "C"
+        },
+        {
+          qual "product",
+          val "precore/core protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24690.1"
+        },
+        {
+          qual "Parent",
+          val "gene-C-5"
+        }
+      },
+      xref {
+        {
+          id local id 42
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24690.1"
+        }
+      }
+    },
+    {
+      id local id 44,
+      data gene {
+        locus "P"
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-P-5"
+        },
+        {
+          qual "Name",
+          val "P"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 45
+        }
+      }
+    },
+    {
+      id local id 45,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24686.1"
+        },
+        {
+          qual "gene",
+          val "P"
+        },
+        {
+          qual "product",
+          val "polymerase"
+        },
+        {
+          qual "protein_id",
+          val "AAF24686.1"
+        },
+        {
+          qual "Parent",
+          val "gene-P-5"
+        }
+      },
+      xref {
+        {
+          id local id 44
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24686.1"
+        }
+      }
+    },
+    {
+      id local id 46,
+      data gene {
+        locus "S"
+      },
+      location mix {
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-S-5"
+        },
+        {
+          qual "Name",
+          val "S"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 47
+        }
+      }
+    },
+    {
+      id local id 47,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        },
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        },
+        int {
+          from 3204,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121243",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24687.1"
+        },
+        {
+          qual "gene",
+          val "S"
+        },
+        {
+          qual "product",
+          val "large S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24687.1"
+        },
+        {
+          qual "Parent",
+          val "gene-S-5"
+        }
+      },
+      xref {
+        {
+          id local id 46
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24687.1"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 9
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 48,
+      data biosrc {
+        org {
+          orgname {
+            mod {
+              {
+                subtype isolate,
+                subname "HBV/15122"
+              }
+            }
+          }
+        },
+        subtype {
+          {
+            subtype other,
+            name "is_circular"
+          },
+          {
+            subtype genotype,
+            name "B"
+          },
+          {
+            subtype other,
+            name "isolated from serum of a chronic HBV carrier"
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 3214,
+        strand plus,
+        id genbank {
+          accession "AF121244",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "AF121244.1:1..3215"
+        },
+        {
+          qual "Is_circular",
+          val "true"
+        },
+        {
+          qual "mol_type",
+          val "genomic DNA"
+        }
+      },
+      dbxref {
+        {
+          db "taxon",
+          tag id 10407
+        }
+      }
+    },
+    {
+      id local id 49,
+      data gene {
+        locus "X"
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121244",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-X-6"
+        },
+        {
+          qual "Name",
+          val "X"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 50
+        }
+      }
+    },
+    {
+      id local id 50,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121244",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24692.1"
+        },
+        {
+          qual "gene",
+          val "X"
+        },
+        {
+          qual "product",
+          val "X peptide"
+        },
+        {
+          qual "protein_id",
+          val "AAF24692.1"
+        },
+        {
+          qual "Parent",
+          val "gene-X-6"
+        }
+      },
+      xref {
+        {
+          id local id 49
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24692.1"
+        }
+      }
+    },
+    {
+      id local id 51,
+      data gene {
+        locus "C"
+      },
+      location int {
+        from 1813,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121244",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-C-6"
+        },
+        {
+          qual "Name",
+          val "C"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 52
+        }
+      }
+    },
+    {
+      id local id 52,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24697.1"
+        },
+        {
+          qual "gene",
+          val "C"
+        },
+        {
+          qual "product",
+          val "precore/core protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24697.1"
+        },
+        {
+          qual "Parent",
+          val "gene-C-6"
+        }
+      },
+      xref {
+        {
+          id local id 51
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24697.1"
+        }
+      }
+    },
+    {
+      id local id 53,
+      data gene {
+        locus "P"
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-P-6"
+        },
+        {
+          qual "Name",
+          val "P"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 54
+        }
+      }
+    },
+    {
+      id local id 54,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24693.1"
+        },
+        {
+          qual "gene",
+          val "P"
+        },
+        {
+          qual "product",
+          val "polymerase"
+        },
+        {
+          qual "protein_id",
+          val "AAF24693.1"
+        },
+        {
+          qual "Parent",
+          val "gene-P-6"
+        }
+      },
+      xref {
+        {
+          id local id 53
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24693.1"
+        }
+      }
+    },
+    {
+      id local id 55,
+      data gene {
+        locus "S"
+      },
+      location mix {
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-S-6"
+        },
+        {
+          qual "Name",
+          val "S"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 56
+        }
+      }
+    },
+    {
+      id local id 56,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        },
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        },
+        int {
+          from 3204,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121244",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24694.1"
+        },
+        {
+          qual "gene",
+          val "S"
+        },
+        {
+          qual "product",
+          val "large S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24694.1"
+        },
+        {
+          qual "Parent",
+          val "gene-S-6"
+        }
+      },
+      xref {
+        {
+          id local id 55
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24694.1"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 9
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 57,
+      data biosrc {
+        org {
+          orgname {
+            mod {
+              {
+                subtype isolate,
+                subname "HBV/16091"
+              }
+            }
+          }
+        },
+        subtype {
+          {
+            subtype other,
+            name "is_circular"
+          },
+          {
+            subtype genotype,
+            name "B"
+          },
+          {
+            subtype other,
+            name "isolated from serum of a chronic HBV carrier"
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 3214,
+        strand plus,
+        id genbank {
+          accession "AF121245",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "AF121245.1:1..3215"
+        },
+        {
+          qual "Is_circular",
+          val "true"
+        },
+        {
+          qual "mol_type",
+          val "genomic DNA"
+        }
+      },
+      dbxref {
+        {
+          db "taxon",
+          tag id 10407
+        }
+      }
+    },
+    {
+      id local id 58,
+      data gene {
+        locus "X"
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121245",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-X-7"
+        },
+        {
+          qual "Name",
+          val "X"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 59
+        }
+      }
+    },
+    {
+      id local id 59,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121245",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24699.1"
+        },
+        {
+          qual "gene",
+          val "X"
+        },
+        {
+          qual "product",
+          val "X peptide"
+        },
+        {
+          qual "protein_id",
+          val "AAF24699.1"
+        },
+        {
+          qual "Parent",
+          val "gene-X-7"
+        }
+      },
+      xref {
+        {
+          id local id 58
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24699.1"
+        }
+      }
+    },
+    {
+      id local id 60,
+      data gene {
+        locus "C"
+      },
+      location int {
+        from 1813,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121245",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-C-7"
+        },
+        {
+          qual "Name",
+          val "C"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 61
+        }
+      }
+    },
+    {
+      id local id 61,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24704.1"
+        },
+        {
+          qual "gene",
+          val "C"
+        },
+        {
+          qual "product",
+          val "precore/core protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24704.1"
+        },
+        {
+          qual "Parent",
+          val "gene-C-7"
+        }
+      },
+      xref {
+        {
+          id local id 60
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24704.1"
+        }
+      }
+    },
+    {
+      id local id 62,
+      data gene {
+        locus "P"
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-P-7"
+        },
+        {
+          qual "Name",
+          val "P"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 63
+        }
+      }
+    },
+    {
+      id local id 63,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24700.1"
+        },
+        {
+          qual "gene",
+          val "P"
+        },
+        {
+          qual "product",
+          val "polymerase"
+        },
+        {
+          qual "protein_id",
+          val "AAF24700.1"
+        },
+        {
+          qual "Parent",
+          val "gene-P-7"
+        }
+      },
+      xref {
+        {
+          id local id 62
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24700.1"
+        }
+      }
+    },
+    {
+      id local id 64,
+      data gene {
+        locus "S"
+      },
+      location mix {
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-S-7"
+        },
+        {
+          qual "Name",
+          val "S"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 65
+        }
+      }
+    },
+    {
+      id local id 65,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        },
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        },
+        int {
+          from 3204,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121245",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24701.1"
+        },
+        {
+          qual "gene",
+          val "S"
+        },
+        {
+          qual "product",
+          val "large S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24701.1"
+        },
+        {
+          qual "Parent",
+          val "gene-S-7"
+        }
+      },
+      xref {
+        {
+          id local id 64
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24701.1"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 9
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 66,
+      data biosrc {
+        org {
+          orgname {
+            mod {
+              {
+                subtype isolate,
+                subname "HBV/IK29902"
+              }
+            }
+          }
+        },
+        subtype {
+          {
+            subtype other,
+            name "is_circular"
+          },
+          {
+            subtype genotype,
+            name "B"
+          },
+          {
+            subtype other,
+            name "isolated from serum of a chronic HBV carrier"
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 3214,
+        strand plus,
+        id genbank {
+          accession "AF121246",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "AF121246.1:1..3215"
+        },
+        {
+          qual "Is_circular",
+          val "true"
+        },
+        {
+          qual "mol_type",
+          val "genomic DNA"
+        }
+      },
+      dbxref {
+        {
+          db "taxon",
+          tag id 10407
+        }
+      }
+    },
+    {
+      id local id 67,
+      data gene {
+        locus "X"
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121246",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-X-8"
+        },
+        {
+          qual "Name",
+          val "X"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 68
+        }
+      }
+    },
+    {
+      id local id 68,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121246",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24706.1"
+        },
+        {
+          qual "gene",
+          val "X"
+        },
+        {
+          qual "product",
+          val "X peptide"
+        },
+        {
+          qual "protein_id",
+          val "AAF24706.1"
+        },
+        {
+          qual "Parent",
+          val "gene-X-8"
+        }
+      },
+      xref {
+        {
+          id local id 67
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24706.1"
+        }
+      }
+    },
+    {
+      id local id 69,
+      data gene {
+        locus "C"
+      },
+      location int {
+        from 1813,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121246",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-C-8"
+        },
+        {
+          qual "Name",
+          val "C"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 70
+        }
+      }
+    },
+    {
+      id local id 70,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24711.1"
+        },
+        {
+          qual "gene",
+          val "C"
+        },
+        {
+          qual "product",
+          val "precore/core protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24711.1"
+        },
+        {
+          qual "Parent",
+          val "gene-C-8"
+        }
+      },
+      xref {
+        {
+          id local id 69
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24711.1"
+        }
+      }
+    },
+    {
+      id local id 71,
+      data gene {
+        locus "P"
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-P-8"
+        },
+        {
+          qual "Name",
+          val "P"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 72
+        }
+      }
+    },
+    {
+      id local id 72,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24707.1"
+        },
+        {
+          qual "gene",
+          val "P"
+        },
+        {
+          qual "product",
+          val "polymerase"
+        },
+        {
+          qual "protein_id",
+          val "AAF24707.1"
+        },
+        {
+          qual "Parent",
+          val "gene-P-8"
+        }
+      },
+      xref {
+        {
+          id local id 71
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24707.1"
+        }
+      }
+    },
+    {
+      id local id 73,
+      data gene {
+        locus "S"
+      },
+      location mix {
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-S-8"
+        },
+        {
+          qual "Name",
+          val "S"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 74
+        }
+      }
+    },
+    {
+      id local id 74,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        },
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        },
+        int {
+          from 3204,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121246",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24708.1"
+        },
+        {
+          qual "gene",
+          val "S"
+        },
+        {
+          qual "product",
+          val "large S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24708.1"
+        },
+        {
+          qual "Parent",
+          val "gene-S-8"
+        }
+      },
+      xref {
+        {
+          id local id 73
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24708.1"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 9
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 75,
+      data biosrc {
+        org {
+          orgname {
+            mod {
+              {
+                subtype isolate,
+                subname "HBV/719"
+              }
+            }
+          }
+        },
+        subtype {
+          {
+            subtype other,
+            name "is_circular"
+          },
+          {
+            subtype genotype,
+            name "B"
+          },
+          {
+            subtype other,
+            name "isolated from serum of a chronic HBV carrier"
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 3214,
+        strand plus,
+        id genbank {
+          accession "AF121247",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "AF121247.1:1..3215"
+        },
+        {
+          qual "Is_circular",
+          val "true"
+        },
+        {
+          qual "mol_type",
+          val "genomic DNA"
+        }
+      },
+      dbxref {
+        {
+          db "taxon",
+          tag id 10407
+        }
+      }
+    },
+    {
+      id local id 76,
+      data gene {
+        locus "X"
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121247",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-X-9"
+        },
+        {
+          qual "Name",
+          val "X"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 77
+        }
+      }
+    },
+    {
+      id local id 77,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121247",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24713.1"
+        },
+        {
+          qual "gene",
+          val "X"
+        },
+        {
+          qual "product",
+          val "X peptide"
+        },
+        {
+          qual "protein_id",
+          val "AAF24713.1"
+        },
+        {
+          qual "Parent",
+          val "gene-X-9"
+        }
+      },
+      xref {
+        {
+          id local id 76
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24713.1"
+        }
+      }
+    },
+    {
+      id local id 78,
+      data gene {
+        locus "C"
+      },
+      location int {
+        from 1813,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121247",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-C-9"
+        },
+        {
+          qual "Name",
+          val "C"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 79
+        }
+      }
+    },
+    {
+      id local id 79,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24718.1"
+        },
+        {
+          qual "gene",
+          val "C"
+        },
+        {
+          qual "product",
+          val "precore/core protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24718.1"
+        },
+        {
+          qual "Parent",
+          val "gene-C-9"
+        }
+      },
+      xref {
+        {
+          id local id 78
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24718.1"
+        }
+      }
+    },
+    {
+      id local id 80,
+      data gene {
+        locus "P"
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-P-9"
+        },
+        {
+          qual "Name",
+          val "P"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 81
+        }
+      }
+    },
+    {
+      id local id 81,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24714.1"
+        },
+        {
+          qual "gene",
+          val "P"
+        },
+        {
+          qual "product",
+          val "polymerase"
+        },
+        {
+          qual "protein_id",
+          val "AAF24714.1"
+        },
+        {
+          qual "Parent",
+          val "gene-P-9"
+        }
+      },
+      xref {
+        {
+          id local id 80
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24714.1"
+        }
+      }
+    },
+    {
+      id local id 82,
+      data gene {
+        locus "S"
+      },
+      location mix {
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-S-9"
+        },
+        {
+          qual "Name",
+          val "S"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 83
+        }
+      }
+    },
+    {
+      id local id 83,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        },
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        },
+        int {
+          from 3204,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121247",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24715.1"
+        },
+        {
+          qual "gene",
+          val "S"
+        },
+        {
+          qual "product",
+          val "large S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24715.1"
+        },
+        {
+          qual "Parent",
+          val "gene-S-9"
+        }
+      },
+      xref {
+        {
+          id local id 82
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24715.1"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 9
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 84,
+      data biosrc {
+        org {
+          orgname {
+            mod {
+              {
+                subtype isolate,
+                subname "HBV/139-1"
+              }
+            }
+          }
+        },
+        subtype {
+          {
+            subtype other,
+            name "is_circular"
+          },
+          {
+            subtype genotype,
+            name "B"
+          },
+          {
+            subtype other,
+            name "isolated from serum of a chronic HBV carrier"
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 3214,
+        strand plus,
+        id genbank {
+          accession "AF121248",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "AF121248.1:1..3215"
+        },
+        {
+          qual "Is_circular",
+          val "true"
+        },
+        {
+          qual "mol_type",
+          val "genomic DNA"
+        }
+      },
+      dbxref {
+        {
+          db "taxon",
+          tag id 10407
+        }
+      }
+    },
+    {
+      id local id 85,
+      data gene {
+        locus "X"
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121248",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-X-10"
+        },
+        {
+          qual "Name",
+          val "X"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 86
+        }
+      }
+    },
+    {
+      id local id 86,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121248",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24720.1"
+        },
+        {
+          qual "gene",
+          val "X"
+        },
+        {
+          qual "product",
+          val "X peptide"
+        },
+        {
+          qual "protein_id",
+          val "AAF24720.1"
+        },
+        {
+          qual "Parent",
+          val "gene-X-10"
+        }
+      },
+      xref {
+        {
+          id local id 85
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24720.1"
+        }
+      }
+    },
+    {
+      id local id 87,
+      data gene {
+        locus "C"
+      },
+      location int {
+        from 1813,
+        to 2541,
+        strand plus,
+        id genbank {
+          accession "AF121248",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-C-10"
+        },
+        {
+          qual "Name",
+          val "C"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 88
+        }
+      }
+    },
+    {
+      id local id 88,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1900,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121248",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24725.1"
+        },
+        {
+          qual "gene",
+          val "C"
+        },
+        {
+          qual "product",
+          val "core protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24725.1"
+        },
+        {
+          qual "Parent",
+          val "gene-C-10"
+        }
+      },
+      xref {
+        {
+          id local id 87
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24725.1"
+        }
+      }
+    },
+    {
+      id local id 89,
+      data imp {
+        key "misc_feature"
+      },
+      comment "precore/core pseudogene",
+      location int {
+        from 1813,
+        to 2541,
+        strand plus,
+        id genbank {
+          accession "AF121248",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id-C-3"
+        },
+        {
+          qual "gene",
+          val "C"
+        }
+      }
+    },
+    {
+      id local id 90,
+      data gene {
+        locus "P"
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121248",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121248",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-P-10"
+        },
+        {
+          qual "Name",
+          val "P"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 91
+        }
+      }
+    },
+    {
+      id local id 91,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121248",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121248",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24721.1"
+        },
+        {
+          qual "gene",
+          val "P"
+        },
+        {
+          qual "product",
+          val "polymerase"
+        },
+        {
+          qual "protein_id",
+          val "AAF24721.1"
+        },
+        {
+          qual "Parent",
+          val "gene-P-10"
+        }
+      },
+      xref {
+        {
+          id local id 90
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24721.1"
+        }
+      }
+    },
+    {
+      id local id 92,
+      data gene {
+        locus "S"
+      },
+      location mix {
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121248",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121248",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-S-10"
+        },
+        {
+          qual "Name",
+          val "S"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 93
+        }
+      }
+    },
+    {
+      id local id 93,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121248",
+            version 1
+          }
+        },
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121248",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121248",
+            version 1
+          }
+        },
+        int {
+          from 3204,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121248",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121248",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24722.1"
+        },
+        {
+          qual "gene",
+          val "S"
+        },
+        {
+          qual "product",
+          val "large S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24722.1"
+        },
+        {
+          qual "Parent",
+          val "gene-S-10"
+        }
+      },
+      xref {
+        {
+          id local id 92
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24722.1"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 9
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 94,
+      data biosrc {
+        org {
+          orgname {
+            mod {
+              {
+                subtype isolate,
+                subname "HBV/4014"
+              }
+            }
+          }
+        },
+        subtype {
+          {
+            subtype other,
+            name "is_circular"
+          },
+          {
+            subtype genotype,
+            name "B"
+          },
+          {
+            subtype other,
+            name "isolated from serum of a chronic HBV carrier"
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 3214,
+        strand plus,
+        id genbank {
+          accession "AF121249",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "AF121249.1:1..3215"
+        },
+        {
+          qual "Is_circular",
+          val "true"
+        },
+        {
+          qual "mol_type",
+          val "genomic DNA"
+        }
+      },
+      dbxref {
+        {
+          db "taxon",
+          tag id 10407
+        }
+      }
+    },
+    {
+      id local id 95,
+      data gene {
+        locus "X"
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121249",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-X-11"
+        },
+        {
+          qual "Name",
+          val "X"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 96
+        }
+      }
+    },
+    {
+      id local id 96,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121249",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24726.1"
+        },
+        {
+          qual "gene",
+          val "X"
+        },
+        {
+          qual "product",
+          val "X peptide"
+        },
+        {
+          qual "protein_id",
+          val "AAF24726.1"
+        },
+        {
+          qual "Parent",
+          val "gene-X-11"
+        }
+      },
+      xref {
+        {
+          id local id 95
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24726.1"
+        }
+      }
+    },
+    {
+      id local id 97,
+      data gene {
+        locus "C"
+      },
+      location int {
+        from 1813,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121249",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-C-11"
+        },
+        {
+          qual "Name",
+          val "C"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 98
+        }
+      }
+    },
+    {
+      id local id 98,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 1813,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        },
+        int {
+          from 1900,
+          to 2451,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24731.1"
+        },
+        {
+          qual "gene",
+          val "C"
+        },
+        {
+          qual "product",
+          val "precore/core protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24731.1"
+        },
+        {
+          qual "Parent",
+          val "gene-C-11"
+        }
+      },
+      xref {
+        {
+          id local id 97
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24731.1"
+        }
+      }
+    },
+    {
+      id local id 99,
+      data gene {
+        locus "P"
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-P-11"
+        },
+        {
+          qual "Name",
+          val "P"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 100
+        }
+      }
+    },
+    {
+      id local id 100,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24727.1"
+        },
+        {
+          qual "gene",
+          val "P"
+        },
+        {
+          qual "product",
+          val "polymerase"
+        },
+        {
+          qual "protein_id",
+          val "AAF24727.1"
+        },
+        {
+          qual "Parent",
+          val "gene-P-11"
+        }
+      },
+      xref {
+        {
+          id local id 99
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24727.1"
+        }
+      }
+    },
+    {
+      id local id 101,
+      data gene {
+        locus "S"
+      },
+      location mix {
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-S-11"
+        },
+        {
+          qual "Name",
+          val "S"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 102
+        }
+      }
+    },
+    {
+      id local id 102,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        },
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        },
+        int {
+          from 3204,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121249",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24728.1"
+        },
+        {
+          qual "gene",
+          val "S"
+        },
+        {
+          qual "product",
+          val "large S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24728.1"
+        },
+        {
+          qual "Parent",
+          val "gene-S-11"
+        }
+      },
+      xref {
+        {
+          id local id 101
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24728.1"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 9
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 103,
+      data biosrc {
+        org {
+          orgname {
+            mod {
+              {
+                subtype isolate,
+                subname "HBV/6395"
+              }
+            }
+          }
+        },
+        subtype {
+          {
+            subtype other,
+            name "is_circular"
+          },
+          {
+            subtype genotype,
+            name "B"
+          },
+          {
+            subtype other,
+            name "isolated from serum of a chronic HBV carrier"
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 3214,
+        strand plus,
+        id genbank {
+          accession "AF121250",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "AF121250.1:1..3215"
+        },
+        {
+          qual "Is_circular",
+          val "true"
+        },
+        {
+          qual "mol_type",
+          val "genomic DNA"
+        }
+      },
+      dbxref {
+        {
+          db "taxon",
+          tag id 10407
+        }
+      }
+    },
+    {
+      id local id 104,
+      data gene {
+        locus "X"
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121250",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-X-12"
+        },
+        {
+          qual "Name",
+          val "X"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 105
+        }
+      }
+    },
+    {
+      id local id 105,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121250",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24733.1"
+        },
+        {
+          qual "gene",
+          val "X"
+        },
+        {
+          qual "product",
+          val "X peptide"
+        },
+        {
+          qual "protein_id",
+          val "AAF24733.1"
+        },
+        {
+          qual "Parent",
+          val "gene-X-12"
+        }
+      },
+      xref {
+        {
+          id local id 104
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24733.1"
+        }
+      }
+    },
+    {
+      id local id 106,
+      data gene {
+        locus "C"
+      },
+      location int {
+        from 1813,
+        to 2541,
+        strand plus,
+        id genbank {
+          accession "AF121250",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-C-12"
+        },
+        {
+          qual "Name",
+          val "C"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 107
+        }
+      }
+    },
+    {
+      id local id 107,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1900,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121250",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24738.1"
+        },
+        {
+          qual "gene",
+          val "C"
+        },
+        {
+          qual "product",
+          val "core protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24738.1"
+        },
+        {
+          qual "Parent",
+          val "gene-C-12"
+        }
+      },
+      xref {
+        {
+          id local id 106
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24738.1"
+        }
+      }
+    },
+    {
+      id local id 108,
+      data imp {
+        key "misc_feature"
+      },
+      comment "precore/core pseudogene",
+      location int {
+        from 1813,
+        to 2541,
+        strand plus,
+        id genbank {
+          accession "AF121250",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id-C-4"
+        },
+        {
+          qual "gene",
+          val "C"
+        }
+      }
+    },
+    {
+      id local id 109,
+      data gene {
+        locus "P"
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121250",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121250",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-P-12"
+        },
+        {
+          qual "Name",
+          val "P"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 110
+        }
+      }
+    },
+    {
+      id local id 110,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121250",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121250",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24734.1"
+        },
+        {
+          qual "gene",
+          val "P"
+        },
+        {
+          qual "product",
+          val "polymerase"
+        },
+        {
+          qual "protein_id",
+          val "AAF24734.1"
+        },
+        {
+          qual "Parent",
+          val "gene-P-12"
+        }
+      },
+      xref {
+        {
+          id local id 109
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24734.1"
+        }
+      }
+    },
+    {
+      id local id 111,
+      data gene {
+        locus "S"
+      },
+      location mix {
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121250",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121250",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-S-12"
+        },
+        {
+          qual "Name",
+          val "S"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 112
+        }
+      }
+    },
+    {
+      id local id 112,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121250",
+            version 1
+          }
+        },
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121250",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121250",
+            version 1
+          }
+        },
+        int {
+          from 3204,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121250",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121250",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24735.1"
+        },
+        {
+          qual "gene",
+          val "S"
+        },
+        {
+          qual "product",
+          val "large S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24735.1"
+        },
+        {
+          qual "Parent",
+          val "gene-S-12"
+        }
+      },
+      xref {
+        {
+          id local id 111
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24735.1"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Conversion Info",
+      data {
+        {
+          label str "critical errors",
+          data int 0
+        },
+        {
+          label str "errors",
+          data int 9
+        },
+        {
+          label str "warnings",
+          data int 0
+        },
+        {
+          label str "notes",
+          data int 0
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 113,
+      data biosrc {
+        org {
+          orgname {
+            mod {
+              {
+                subtype isolate,
+                subname "HBV/9873"
+              }
+            }
+          }
+        },
+        subtype {
+          {
+            subtype other,
+            name "is_circular"
+          },
+          {
+            subtype genotype,
+            name "B"
+          },
+          {
+            subtype other,
+            name "isolated from serum of a chronic HBV carrier"
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 3214,
+        strand plus,
+        id genbank {
+          accession "AF121251",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "AF121251.1:1..3215"
+        },
+        {
+          qual "Is_circular",
+          val "true"
+        },
+        {
+          qual "mol_type",
+          val "genomic DNA"
+        }
+      },
+      dbxref {
+        {
+          db "taxon",
+          tag id 10407
+        }
+      }
+    },
+    {
+      id local id 114,
+      data gene {
+        locus "X"
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121251",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-X-13"
+        },
+        {
+          qual "Name",
+          val "X"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 115
+        }
+      }
+    },
+    {
+      id local id 115,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121251",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24739.1"
+        },
+        {
+          qual "gene",
+          val "X"
+        },
+        {
+          qual "product",
+          val "X peptide"
+        },
+        {
+          qual "protein_id",
+          val "AAF24739.1"
+        },
+        {
+          qual "Parent",
+          val "gene-X-13"
+        }
+      },
+      xref {
+        {
+          id local id 114
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24739.1"
+        }
+      }
+    },
+    {
+      id local id 116,
+      data gene {
+        locus "C"
+      },
+      location int {
+        from 1813,
+        to 2541,
+        strand plus,
+        id genbank {
+          accession "AF121251",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-C-13"
+        },
+        {
+          qual "Name",
+          val "C"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 117
+        }
+      }
+    },
+    {
+      id local id 117,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1900,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121251",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24744.1"
+        },
+        {
+          qual "gene",
+          val "C"
+        },
+        {
+          qual "product",
+          val "core protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24744.1"
+        },
+        {
+          qual "Parent",
+          val "gene-C-13"
+        }
+      },
+      xref {
+        {
+          id local id 116
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24744.1"
+        }
+      }
+    },
+    {
+      id local id 118,
+      data imp {
+        key "misc_feature"
+      },
+      comment "precore/core pseudogene",
+      location int {
+        from 1813,
+        to 2541,
+        strand plus,
+        id genbank {
+          accession "AF121251",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id-C-5"
+        },
+        {
+          qual "gene",
+          val "C"
+        }
+      }
+    },
+    {
+      id local id 119,
+      data gene {
+        locus "P"
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121251",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121251",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-P-13"
+        },
+        {
+          qual "Name",
+          val "P"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 120
+        }
+      }
+    },
+    {
+      id local id 120,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121251",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121251",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24740.1"
+        },
+        {
+          qual "gene",
+          val "P"
+        },
+        {
+          qual "product",
+          val "polymerase"
+        },
+        {
+          qual "protein_id",
+          val "AAF24740.1"
+        },
+        {
+          qual "Parent",
+          val "gene-P-13"
+        }
+      },
+      xref {
+        {
+          id local id 119
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24740.1"
+        }
+      }
+    },
+    {
+      id local id 121,
+      data gene {
+        locus "S"
+      },
+      location mix {
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121251",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121251",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene-S-13"
+        },
+        {
+          qual "Name",
+          val "S"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 122
+        }
+      }
+    },
+    {
+      id local id 122,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 154,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121251",
+            version 1
+          }
+        },
+        int {
+          from 2847,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121251",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121251",
+            version 1
+          }
+        },
+        int {
+          from 3204,
+          to 3214,
+          strand plus,
+          id genbank {
+            accession "AF121251",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121251",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24741.1"
+        },
+        {
+          qual "gene",
+          val "S"
+        },
+        {
+          qual "product",
+          val "large S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24741.1"
+        },
+        {
+          qual "Parent",
+          val "gene-S-13"
+        }
+      },
+      xref {
+        {
+          id local id 121
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24741.1"
+        }
+      }
+    }
+  }
+}

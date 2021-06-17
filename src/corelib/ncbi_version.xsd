@@ -1,0 +1,105 @@
+<?xml version="1.0" ?>
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns="ncbi:version"
+  targetNamespace="ncbi:version"
+  elementFormDefault="qualified"
+  attributeFormDefault="unqualified">
+
+<xs:annotation>
+  <xs:documentation>
+
+    $Id$
+  ===========================================================================
+ 
+                             PUBLIC DOMAIN NOTICE
+                National Center for Biotechnology Information
+ 
+   This software/database is a "United States Government Work" under the
+   terms of the United States Copyright Act.  It was written as part of
+   the author's official duties as a United States Government employee and
+   thus cannot be copyrighted.  This software/database is freely available
+   to the public for use. The National Library of Medicine and the U.S.
+   Government have not placed any restriction on its use or reproduction.
+ 
+   Although all reasonable efforts have been taken to ensure the accuracy
+   and reliability of the software and data, the NLM and the U.S.
+   Government do not and cannot warrant the performance or results that
+   may be obtained by using this software or data. The NLM and the U.S.
+   Government disclaim all warranties, express or implied, including
+   warranties of performance, merchantability or fitness for any particular
+   purpose.
+ 
+   Please cite the author in any work or product based on this material.
+ 
+  ===========================================================================
+ 
+  Author:  Aleksey Grichenko
+ 
+  File Description:
+      Defines format of CVersion::PrintXml() output.
+
+  </xs:documentation>
+</xs:annotation>
+
+  <xs:element name="ncbi_version">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="appname" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="version_info" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="component" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element ref="package" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="build_signature" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="build_info" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="teamcity_build_number" type="xs:string" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="version_info">
+    <xs:complexType>
+      <xs:attribute name="major" type="xs:int" use="required"/>
+      <xs:attribute name="minor" type="xs:int" use="required"/>
+      <xs:attribute name="patch_level" type="xs:int" use="required"/>
+      <xs:attribute name="name" type="xs:string" use="optional"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="build_info">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="teamcity_project_name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="teamcity_buildconf_name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="subversion_revision" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="stable_components_version" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:choice minOccurs="0" maxOccurs="1">
+          <xs:element name="production_version" type="xs:string"/>
+          <xs:element name="development_version" type="xs:string"/>
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="date" type="xs:string" use="optional"/>
+      <xs:attribute name="tag" type="xs:string" use="optional"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="component">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="version_info" minOccurs="1" maxOccurs="1"/>
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="package">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="version_info" minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="build_info" minOccurs="1" maxOccurs="1"/>
+        <xs:element name="config" type="xs:string" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

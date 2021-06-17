@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(id1)
+  NCBI_dataspecs(id1.asn)
+  NCBI_uses_toolkit_libraries(seqset)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+

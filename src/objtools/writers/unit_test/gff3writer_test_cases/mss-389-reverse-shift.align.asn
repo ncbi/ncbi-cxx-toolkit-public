@@ -1,0 +1,544 @@
+Seq-align ::= {
+  type global,
+  dim 2,
+  score {
+    {
+      id str "num_ident",
+      value int 402
+    },
+    {
+      id str "num_positives",
+      value int 402
+    },
+    {
+      id str "num_negatives",
+      value int 3
+    },
+    {
+      id str "product_gap_length",
+      value int 0
+    },
+    {
+      id str "genomic_gap_length",
+      value int 1
+    },
+    {
+      id str "align_length",
+      value int 405
+    },
+    {
+      id str "product_internal_gap_length",
+      value int 0
+    },
+    {
+      id str "score",
+      value int 679
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 992592592592593, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 2
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 995049504950495, 10, -13 }
+    },
+    {
+      id str "gap_count",
+      value int 1
+    },
+    {
+      id str "pct_coverage",
+      value real { 997530864197531, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 997530864197531, 10, -13 }
+    }
+  },
+  segs spliced {
+    product-id gi 497571812,
+    genomic-id gi 84626123,
+    genomic-strand plus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 134,
+          frame 3
+        },
+        genomic-start 346845,
+        genomic-end 347248,
+        parts {
+          match 3,
+          diag 33,
+          product-ins 1,
+          diag 368
+        },
+        partial FALSE
+      }
+    },
+    product-length 135,
+    modifiers {
+      start-codon-found TRUE,
+      stop-codon-found TRUE
+    }
+  },
+  bounds {
+    whole gi 497571812,
+    int {
+      from 346745,
+      to 347348,
+      strand plus,
+      id gi 84626123
+    }
+  },
+  id {
+    str "634208e9-42ac-4347-9b16-0ba39c5772dd"
+  }
+}
+Seq-align ::= {
+  type disc,
+  dim 2,
+  score {
+    {
+      id str "num_ident",
+      value int 558
+    },
+    {
+      id str "num_positives",
+      value int 618
+    },
+    {
+      id str "num_negatives",
+      value int 57
+    },
+    {
+      id str "product_gap_length",
+      value int 18
+    },
+    {
+      id str "genomic_gap_length",
+      value int 7
+    },
+    {
+      id str "align_length",
+      value int 699
+    },
+    {
+      id str "product_internal_gap_length",
+      value int 18
+    },
+    {
+      id str "score",
+      value int 916
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 798283261802575, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 116
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 827893175074184, 10, -13 }
+    },
+    {
+      id str "gap_count",
+      value int 5
+    },
+    {
+      id str "pct_coverage",
+      value real { 976811594202899, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 976811594202899, 10, -13 }
+    }
+  },
+  segs spliced {
+    product-id gi 504707106,
+    genomic-id gi 84626123,
+    genomic-strand plus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 226,
+          frame 3
+        },
+        genomic-start 314203,
+        genomic-end 314894,
+        parts {
+          match 3,
+          diag 54,
+          genomic-ins 3,
+          diag 21,
+          genomic-ins 6,
+          diag 423,
+          genomic-ins 3,
+          diag 42,
+          genomic-ins 6,
+          diag 90,
+          product-ins 7,
+          diag 41
+        },
+        partial TRUE
+      }
+    },
+    product-length 230,
+    modifiers {
+      start-codon-found TRUE
+    }
+  },
+  bounds {
+    whole gi 504707106,
+    int {
+      from 314103,
+      to 314994,
+      strand plus,
+      id gi 84626123
+    }
+  },
+  id {
+    str "f55bcc26-1293-41c6-85d9-1d258cba9b4f"
+  }
+}
+Seq-align ::= {
+  type disc,
+  dim 2,
+  score {
+    {
+      id str "num_ident",
+      value int 354
+    },
+    {
+      id str "num_positives",
+      value int 390
+    },
+    {
+      id str "num_negatives",
+      value int 60
+    },
+    {
+      id str "product_gap_length",
+      value int 18
+    },
+    {
+      id str "genomic_gap_length",
+      value int 10
+    },
+    {
+      id str "align_length",
+      value int 477
+    },
+    {
+      id str "product_internal_gap_length",
+      value int 18
+    },
+    {
+      id str "score",
+      value int 583
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 742138364779874, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 95
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 788418708240535, 10, -13 }
+    },
+    {
+      id str "gap_count",
+      value int 4
+    },
+    {
+      id str "pct_coverage",
+      value real { 971861471861472, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 971861471861472, 10, -13 }
+    }
+  },
+  segs spliced {
+    product-id gi 504706857,
+    genomic-id gi 84626123,
+    genomic-strand plus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 152,
+          frame 3
+        },
+        genomic-start 86172,
+        genomic-end 86638,
+        parts {
+          match 3,
+          diag 111,
+          product-ins 3,
+          diag 21,
+          genomic-ins 18,
+          diag 9,
+          product-ins 6,
+          diag 267,
+          product-ins 1,
+          diag 38
+        },
+        partial TRUE
+      }
+    },
+    product-length 154,
+    modifiers {
+      start-codon-found TRUE
+    }
+  },
+  bounds {
+    whole gi 504706857,
+    int {
+      from 86072,
+      to 86730,
+      strand plus,
+      id gi 84626123
+    }
+  },
+  id {
+    str "34b3d3d9-4bb0-4e35-9bd7-415c0432f308"
+  }
+}
+Seq-align ::= {
+  type disc,
+  dim 2,
+  score {
+    {
+      id str "num_ident",
+      value int 546
+    },
+    {
+      id str "num_positives",
+      value int 579
+    },
+    {
+      id str "num_negatives",
+      value int 75
+    },
+    {
+      id str "product_gap_length",
+      value int 12
+    },
+    {
+      id str "genomic_gap_length",
+      value int 7
+    },
+    {
+      id str "align_length",
+      value int 672
+    },
+    {
+      id str "product_internal_gap_length",
+      value int 12
+    },
+    {
+      id str "score",
+      value int 905
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 8125, 10, -2 }
+    },
+    {
+      id str "num_mismatch",
+      value int 107
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 83614088820827, 10, -12 }
+    },
+    {
+      id str "gap_count",
+      value int 3
+    },
+    {
+      id str "pct_coverage",
+      value real { 984917043740573, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 984917043740573, 10, -13 }
+    }
+  },
+  segs spliced {
+    product-id gi 504707507,
+    genomic-id gi 84626123,
+    genomic-strand plus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 1,
+          frame 1
+        },
+        product-end protpos {
+          amin 220,
+          frame 3
+        },
+        genomic-start 314239,
+        genomic-end 314903,
+        parts {
+          diag 36,
+          genomic-ins 6,
+          diag 228,
+          genomic-ins 6,
+          diag 339,
+          product-ins 7,
+          diag 50
+        },
+        partial TRUE
+      }
+    },
+    product-length 221,
+    modifiers {
+      stop-codon-found TRUE
+    }
+  },
+  bounds {
+    whole gi 504707507,
+    int {
+      from 314139,
+      to 315003,
+      strand plus,
+      id gi 84626123
+    }
+  },
+  id {
+    str "83c0d446-a8cd-4c97-86f4-6a4e8dab2972"
+  }
+}
+Seq-align ::= {
+  type global,
+  dim 2,
+  score {
+    {
+      id str "num_ident",
+      value int 195
+    },
+    {
+      id str "num_positives",
+      value int 246
+    },
+    {
+      id str "num_negatives",
+      value int 39
+    },
+    {
+      id str "product_gap_length",
+      value int 0
+    },
+    {
+      id str "genomic_gap_length",
+      value int 1
+    },
+    {
+      id str "align_length",
+      value int 285
+    },
+    {
+      id str "product_internal_gap_length",
+      value int 0
+    },
+    {
+      id str "score",
+      value int 327
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 684210526315789, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 89
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 686619718309859, 10, -13 }
+    },
+    {
+      id str "gap_count",
+      value int 1
+    },
+    {
+      id str "pct_coverage",
+      value real { 996491228070175, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 996491228070175, 10, -13 }
+    }
+  },
+  segs spliced {
+    product-id gi 13959644,
+    genomic-id gi 84626123,
+    genomic-strand plus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 94,
+          frame 3
+        },
+        genomic-start 158022,
+        genomic-end 158305,
+        parts {
+          match 3,
+          diag 213,
+          product-ins 1,
+          diag 68
+        },
+        partial FALSE
+      }
+    },
+    product-length 95,
+    modifiers {
+      start-codon-found TRUE,
+      stop-codon-found TRUE
+    }
+  },
+  bounds {
+    whole gi 13959644,
+    int {
+      from 157922,
+      to 158391,
+      strand plus,
+      id gi 84626123
+    }
+  },
+  id {
+    str "edc04b9d-6137-45e7-ad7c-75306f5dac55"
+  }
+}

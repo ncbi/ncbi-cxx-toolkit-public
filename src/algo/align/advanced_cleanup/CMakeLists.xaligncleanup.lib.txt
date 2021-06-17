@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_lib(xaligncleanup)
+  NCBI_sources(
+    advanced_cleanup
+  )
+  NCBI_uses_toolkit_libraries(xalgoalignsplign prosplign)
+  NCBI_project_watchers(mozese2)
+NCBI_end_lib()
+

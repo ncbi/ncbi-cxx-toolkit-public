@@ -1,0 +1,139 @@
+/* macros make this much easier to read.  Just send it through "cpp -P" and
+   it becomes a valid ASN.1 file */
+
+#include "util.macros"
+
+#define BIOSEQ_SET(_contents,_aligns)                   \
+    set {                                               \
+        seq-set {                                       \
+            _contents                                   \
+        },                                              \
+        annot { { data align { _aligns } } }            \
+    }
+
+#define BIOSEQ(_name, _aligns)                          \
+    seq {                                               \
+        id { local str _name },                         \
+        inst { repr virtual, mol dna, length 100 },     \
+        annot { { data align { _aligns } } }            \
+    }
+
+/* The starts and len are arbitrary */
+#define DENDIAG2(_id1,_id2)                     \
+    {                                           \
+        dim 2,                                  \
+            ids {                               \
+            local str _id1,                     \
+                local str _id2                  \
+                },                              \
+            starts {                            \
+                3, 8                            \
+                    },                          \
+                len 25                          \
+                    }
+
+#define SEQ_ALIGN_DENDIAG2(_id1,_id2)           \
+    SEQ_ALIGN(2,                                \
+              dendiag {                         \
+                  DENDIAG2(_id1, _id2) })
+
+/* The starts and len are arbitrary */
+#define DENDIAG3(_id1,_id2,_id3)                \
+    {                                           \
+        dim 3,                                  \
+            ids {                               \
+            local str _id1,                     \
+                local str _id2,                 \
+                local str _id3                  \
+                },                              \
+            starts {                            \
+                3, 8, 7                         \
+                    },                          \
+                len 25                          \
+                    }
+
+#define SEQ_ALIGN_DENDIAG3(_id1,_id2,_id3)      \
+    SEQ_ALIGN(3,                                \
+              dendiag {                         \
+                  DENDIAG3(_id1, _id2, _id3) })
+
+
+#define DENSEG3(_id1,_id2,_id3)                         \
+    denseg {                                            \
+        dim 3,                                          \
+            numseg 4,                                   \
+            ids {                                       \
+            local str _id1,                             \
+                local str _id2,                         \
+                local str _id3                          \
+                },                                      \
+            starts {                                    \
+                3,6,8, 10,13,-1, 15,16,19, 23,20,30      \
+                    },                                  \
+                lens {                                  \
+                    5, 3, 4, 10                         \
+                        }                               \
+    }
+
+#define SEQ_ALIGN_DENSEG3(_id1,_id2,_id3)       \
+    SEQ_ALIGN(3,                                \
+              DENSEG3(_id1,_id2,_id3) )
+
+#define SEQ_ALIGN(_dim, _segs)                  \
+    {                                           \
+        type partial,                           \
+            dim _dim,                           \
+            segs _segs,                         \
+            id { id __COUNTER__ }               \
+    }
+
+#define SEQ_ALIGN_DUMMY                                 \
+    SEQ_ALIGN(2,                                        \
+              dendiag {                                 \
+                  DENDIAG2("DUMMY1", "DUMMY2") })
+
+#define SEQ_ALIGN_ALL_COMBOS                                    \
+    SEQ_ALIGN_DENDIAG2("A", "A"),                               \
+        SEQ_ALIGN_DENDIAG2("A", "B"),                           \
+        SEQ_ALIGN_DENDIAG2("A", "C"),                           \
+        SEQ_ALIGN_DENDIAG2("A", "D"),                           \
+        SEQ_ALIGN_DENDIAG2("A", "NONEXISTENT"),                 \
+        SEQ_ALIGN_DENDIAG2("B", "A"),                           \
+        SEQ_ALIGN_DENDIAG2("B", "B"),                           \
+        SEQ_ALIGN_DENDIAG2("B", "C"),                           \
+        SEQ_ALIGN_DENDIAG2("B", "D"),                           \
+        SEQ_ALIGN_DENDIAG2("B", "NONEXISTENT"),                 \
+        SEQ_ALIGN_DENDIAG2("C", "A"),                           \
+        SEQ_ALIGN_DENDIAG2("C", "B"),                           \
+        SEQ_ALIGN_DENDIAG2("C", "C"),                           \
+        SEQ_ALIGN_DENDIAG2("C", "D"),                           \
+        SEQ_ALIGN_DENDIAG2("C", "NONEXISTENT"),                 \
+        SEQ_ALIGN_DENDIAG2("D", "A"),                           \
+        SEQ_ALIGN_DENDIAG2("D", "B"),                           \
+        SEQ_ALIGN_DENDIAG2("D", "C"),                           \
+        SEQ_ALIGN_DENDIAG2("D", "D"),                           \
+        SEQ_ALIGN_DENDIAG2("D", "NONEXISTENT"),                 \
+        SEQ_ALIGN_DENDIAG2("NONEXISTENT", "A"),                 \
+        SEQ_ALIGN_DENDIAG2("NONEXISTENT", "B"),                 \
+        SEQ_ALIGN_DENDIAG2("NONEXISTENT", "C"),                 \
+        SEQ_ALIGN_DENDIAG2("NONEXISTENT", "D"),                 \
+        SEQ_ALIGN_DENDIAG2("NONEXISTENT", "NONEXISTENT")
+
+/* Each Bioseq is named based on its position in the hierachy.
+   A is the first child of the top-level Seq-entry.  B is the second child.  C is
+   the third child.  A_A is the first child of A, A_B is the second child of A,
+   and so on. Bioseq-sets' names are not shown. */
+Seq-entry ::= BIOSEQ_SET(
+    CONCAT(
+        BIOSEQ_SET(
+            CONCAT(
+                BIOSEQ("A", SEQ_ALIGN_ALL_COMBOS),
+                BIOSEQ_SET(
+                    CONCAT(
+                        BIOSEQ("B", SEQ_ALIGN_ALL_COMBOS),
+                        BIOSEQ("C", SEQ_ALIGN_ALL_COMBOS)),
+                    SEQ_ALIGN_ALL_COMBOS )),
+            SEQ_ALIGN_ALL_COMBOS),
+        BIOSEQ("D", SEQ_ALIGN_ALL_COMBOS)
+        ),
+    SEQ_ALIGN_DUMMY)

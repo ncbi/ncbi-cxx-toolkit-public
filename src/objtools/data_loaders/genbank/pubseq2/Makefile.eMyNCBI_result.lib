@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = eMyNCBI_result
+SRC = eMyNCBI_result__ eMyNCBI_result___

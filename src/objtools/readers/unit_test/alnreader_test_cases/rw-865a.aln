@@ -1,0 +1,29 @@
+#NEXUS
+BEGIN TAXA;
+Dimensions NTax=5 NChar=40;
+TaxLabels fish frog snake mouse;
+END;
+
+[Note how there is no semi-colon at the end of the matrix]
+BEGIN CHARACTERS;
+Dimensions NChar=40;
+Format DataType=DNA;
+Matrix
+fish   ACATA GAGGG TACCT CTAAG
+duck   ACATA GAGGG TACCT CTAAG
+frog   ACATA GAGGG TACCT CTAAG
+snake  ACATA GAGGG TACCT CTAAG
+mouse  ACATA GAGGG TACCT CTAAG
+
+fish   ACATA GAGGG TACCT CTAAG
+duck   ACATA GAGGG TACCT CTAAG
+frog   ACATA GAGGG TACCT CTAAG
+snake  ACATA GAGGG TACCT CTAAG
+;
+END;
+
+BEGIN TREES;
+Tree best=(fish, (frog, (snake, mouse)));
+END;
+
+

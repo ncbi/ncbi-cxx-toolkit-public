@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_app(test_utf8)
+  NCBI_sources(test_utf8)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xutil)
+  NCBI_set_test_assets(test_utf8_u2a.txt test_utf8.ini)
+  NCBI_add_test()
+  NCBI_project_watchers(gouriano)
+NCBI_end_app()
+

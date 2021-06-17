@@ -1,0 +1,11 @@
+# $Id$
+
+REQUIRES = LocalLMDB
+
+LIB_PROJ = lmdb
+APP_PROJ = lmdb_test1 lmdb_test2 lmdb_test3 lmdb_test4 lmdb_test5
+
+#lmdb_test6 -- this test use undefined method 'mdb_dkey', not declared in the header.
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

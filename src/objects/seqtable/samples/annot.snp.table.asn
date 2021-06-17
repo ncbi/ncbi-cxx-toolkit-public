@@ -1,0 +1,112 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "Annot:SNP",
+      tag id 6912644
+    }
+  },
+  inst {
+    repr delta,
+    mol aa,
+    length 293,
+    topology not-set,
+    ext delta {
+      loc int {
+        from 0,
+        to 292,
+        id gi 6912644
+      }
+    }
+  },
+  annot {
+    {
+      db other,
+      name "Annot:SNP",
+      data seq-table {
+        feat-type 8,
+        feat-subtype 71,
+        num-rows 4,
+        columns {
+          {
+            header {
+              field-id data-imp-key
+            },
+            default string "variation"
+          },
+          {
+            header {
+              field-id location-gi
+            },
+            default int 6912644
+          },
+          {
+            header {
+              field-id location-from
+            },
+            data int {
+              152,
+              171,
+              209,
+              54
+            }
+          },
+          {
+            header {
+              field-id location-strand
+            },
+            default int 1
+          },
+          {
+            header {
+              field-id qual,
+              field-name "Q.replace"
+            },
+            data string {
+              "D",
+              "I",
+              "S",
+              "R"
+            }
+          },
+          {
+            header {
+              field-id qual,
+              field-name "Q.replace"
+            },
+            data string {
+              "N",
+              "V",
+              "T",
+              "G"
+            }
+          },
+          {
+            header {
+              field-id ext-type
+            },
+            default string "dbSnpSynonymyData"
+          },
+          {
+            header {
+              field-id ext,
+              field-name "E.weight"
+            },
+            default int 1
+          },
+          {
+            header {
+              field-id dbxref,
+              field-name "D.dbSNP"
+            },
+            data int {
+              183854,
+              2232534,
+              2232535,
+              2232532
+            }
+          }
+        }
+      }
+    }
+  }
+}

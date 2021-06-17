@@ -1,0 +1,15 @@
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene.
+
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: allele.
+
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: Locus_Tag.
+
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene_syn.
+
+                Warning:
+Problem:        Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene-synonym.
+

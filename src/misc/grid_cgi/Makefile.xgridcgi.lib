@@ -1,0 +1,15 @@
+# $Id$
+
+# Build library "XGRIDCGI"
+#################################
+
+SRC = grid_cgiapp remote_cgiapp cgi2grid cgi_session_netcache
+LIB = xgridcgi
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE)
+
+WATCHERS = vakatov sadyrovr
+
+
+USES_LIBRARIES =  \
+    xcgi xconnserv xhtml

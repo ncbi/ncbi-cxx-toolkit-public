@@ -1,0 +1,24 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_core SHARED)
+  NCBI_hosts_projects(
+    corelib/corelib
+    util/util
+    util/compress/api/compress
+    util/tables/tables
+    util/sequtil/sequtil
+    util/xregexp/xregexp
+    util/diff/xdiff
+    util/qparse/xqueryparse
+    connect/xthrserv
+    connect/services/xconnserv
+    connect/connect
+    connect/xxconnect
+    serial/serial
+  )
+  NCBI_hosts_virtual_projects(
+    xconnect
+    connssl
+  )
+  NCBI_add_definitions(NCBI_CORE_EXPORTS)
+NCBI_end_lib()

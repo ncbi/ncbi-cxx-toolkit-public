@@ -1,0 +1,87 @@
+Update of PubSeqOS interface from Michael Kimelman at 12/19/2003.
+
+
+1. id_gi_by_seqid_asn
+this call now return sat, sat_key and external features mask for any resolvable
+Seqid.
+
+keep in mind that it also recognises constructions like
+Seq-id ::= general { db "NCBI" , tag id 2 }'
+which is actually a reference to whole blob (sat=4,sat_key=2) rather than specific
+sequence in it.
+
+
+   PUBSEQ_OS.kimelman.|20.1> id_gi_by_seqid_asn 'Seq-id ::= gi 6';
+    gi          sat    sat_key     extra_feat
+    ----------- ------ ----------- -----------
+              6      2     4197975           0
+
+   PUBSEQ_OS.kimelman.|27.1> id_gi_by_seqid_asn 'Seq-id ::= general { db "TRACE" ,
+tag id 2 }';
+    gi          sat    sat_key     extra_feat
+    ----------- ------ ----------- -----------
+              0     28           2           0
+
+   PUBSEQ_OS.kimelman.|28.1> id_gi_by_seqid_asn 'Seq-id ::= general { db "ti" , tag
+id 2 }';
+    gi          sat    sat_key     extra_feat
+    ----------- ------ ----------- -----------
+              0     28           2           0
+
+   PUBSEQ_OS.kimelman.|37.1> id_gi_by_seqid_asn 'Seq-id ::= general { db "ANNOT:CDD"
+, tag id 6 }';
+    gi          sat    sat_key     extra_feat
+    ----------- ------ ----------- -----------
+              6     26           6           0
+
+2. show_annotations
+   this call allows you to retrieve the interpretation of extra_feat mask.
+   you need to run it once for the life of connection. (or refresh it once in a
+while)
+
+   PUBSEQ_OS.kimelman.|29.1> show_annotations ;
+    name            annot_bit   sat    internal
+    --------------- ----------- ------ -----------
+    SNP                       1     26           0
+
+3. id_get_asn
+   this new satellite 26 provides annotation in different packaging.
+   they are packaged as a regular Seq-entry with seqid like
+   Seqid ::= general { db "ANNOT:<annot_name>" , tag id <gi> }
+
+   you can check id_get_asn 6,6,26,0,1,0,0,0,8; as example.
+   Seq-entry ::= seq {
+     id { general { db "Annot:CDD" , tag id 6 } } ,
+     inst {
+       repr delta , mol aa , length 342 , topology not-set ,
+       ext delta {
+         loc int { from 0 , to 341 , id gi 6 } } } ,
+     annot { ....
+   }}
+
+you also can get new values of zip_type field in first result set of id_get_asn.
+
+PUBSEQ_OS.kimelman.|36.1> id_get_asn 6,6,26,0,0,0,0,0,8;
+  sat_key     sat    state confidential suppress override username div class hup_date
+zip_type last_touched_m
+  ----------- ------ ----- ------------ -------- -------- -------- --- -----
+---------------
+-------- --------------
+            6     26   100            0        0        0 kimelman N/A     0 1/1/1900
+2       17823575
+
+
+the old values was:
+0: nothing special : plain asn1 (or smth else according to outfmt (fifth argument of
+id_get_asn))
+1: nlmzipped SNP annotation.
+new values:
+2: bit flag - output is gzipped.
+      you will get zip_type&2>0 only if you informed pubseq that you can accept
+gzipped
+      data.  by
+      PUBSEQ_OS.kimelman.|35.1> set accept gzip;
+4: bit_flag - output contains more than one seq-entry wrapped in
+        Seq-entry ::= set { class genbank, set { <set of seqentries> } }
+    currently you can get this kind of output only if you request more than one
+    external annotation for gi which actually has more than one.

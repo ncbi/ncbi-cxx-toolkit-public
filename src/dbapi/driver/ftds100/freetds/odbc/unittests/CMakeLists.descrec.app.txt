@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc100_descrec)
+  NCBI_sources(descrec common)
+  NCBI_add_test(test-odbc100 odbc100_descrec)
+NCBI_end_app()
+

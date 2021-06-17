@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_feat_overlap)
+  NCBI_sources(test_feat_overlap)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xobjutil)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_app()
+

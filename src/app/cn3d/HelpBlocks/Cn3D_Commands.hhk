@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD>
+<meta name="GENERATOR" content="Anthemion HelpBlocks">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<!-- Sitemap 1.0 -->
+</HEAD><BODY>
+<OBJECT type="text/site properties">
+    <param name="Font" value="MS Sans Serif,8,0">
+</OBJECT>
+<UL>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Structure Window Menus">
+             <PARAM NAME="Local" VALUE="StructureWindow.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Structure Window : File">
+             <PARAM NAME="Local" VALUE="SW_File.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Structure Window : View">
+             <PARAM NAME="Local" VALUE="SW_View.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Structure Window : Select">
+             <PARAM NAME="Local" VALUE="SW_ShowHide.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Structure Window : Style">
+             <PARAM NAME="Local" VALUE="SW_Style.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Structure Window : Window">
+             <PARAM NAME="Local" VALUE="SW_Windows.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Structure Window : CDD">
+             <PARAM NAME="Local" VALUE="SW_CDD.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Sequence Window Menus">
+             <PARAM NAME="Local" VALUE="SequenceWindow.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Sequence Window : View">
+             <PARAM NAME="Local" VALUE="AW_View.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Sequence Window : Edit">
+             <PARAM NAME="Local" VALUE="AW_Edit.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Sequence Window : Mouse Mode">
+             <PARAM NAME="Local" VALUE="AW_Mouse.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Sequence Window : Unaligned Justification">
+             <PARAM NAME="Local" VALUE="AW_Unaligned.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Sequence Window : Import">
+             <PARAM NAME="Local" VALUE="AW_Update.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Sequence Window : Refiner">
+             <PARAM NAME="Local" VALUE="refinerHelp.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Import Window Menus">
+             <PARAM NAME="Local" VALUE="UpdateWindow.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Import Window : View">
+             <PARAM NAME="Local" VALUE="UW_View.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Import Window : Edit">
+             <PARAM NAME="Local" VALUE="UW_Edit.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Import Window : Mouse Mode">
+             <PARAM NAME="Local" VALUE="UW_Mouse.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Import Window : Unaligned Justification">
+             <PARAM NAME="Local" VALUE="UW_Unaligned.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Import Window : Algorithms">
+             <PARAM NAME="Local" VALUE="UW_Algorithms.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Import Window : Alignments">
+             <PARAM NAME="Local" VALUE="UW_Alignments.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Key and Mouse Actions">
+             <PARAM NAME="Local" VALUE="KeysAndMouse.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Contents">
+             <PARAM NAME="Local" VALUE="Contents.htm">
+         </OBJECT>
+</UL>
+</BODY></HTML>

@@ -1,0 +1,7 @@
+# Meta-makefile for variation's dbSNP 2.0 ASN.1 objects
+#################################
+
+SUB_PROJ = search_by_rsid tooltip_service
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

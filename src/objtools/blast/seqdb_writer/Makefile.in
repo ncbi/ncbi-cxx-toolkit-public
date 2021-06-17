@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile("WRITEDB" project)
+#################################
+
+LIB_PROJ = writedb
+SUB_PROJ = unit_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

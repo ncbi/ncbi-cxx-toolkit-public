@@ -1,0 +1,69 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local str "cds_1",
+      data cdregion {
+      },
+      location int {
+        from 498,
+        to 1691,
+        strand plus,
+        id local str "D806"
+      },
+      qual {
+        {
+          qual "ID",
+          val "D806_00010"
+        },
+        {
+          qual "Parent",
+          val "D806_00010_gene"
+        },
+        {
+          qual "inference",
+          val "ab initio prediction:Prodigal:2.6"
+        },
+        {
+          qual "inference",
+          val "similar to AA sequence:INSD:ABK70300.1"
+        },
+        {
+          qual "note",
+          val "reciprocal best blast hit to MSMEG_0001"
+        },
+        {
+          qual "product",
+          val "DNA polymerase III, beta subunit"
+        }
+      },
+      xref {
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "gene_1",
+      data gene {
+        locus-tag "D806_00010"
+      },
+      location int {
+        from 498,
+        to 1691,
+        strand plus,
+        id local str "D806"
+      },
+      qual {
+        {
+          qual "ID",
+          val "D806_00010_gene"
+        }
+      },
+      xref {
+        {
+          id local str "cds_1"
+        }
+      }
+    }
+  }
+}

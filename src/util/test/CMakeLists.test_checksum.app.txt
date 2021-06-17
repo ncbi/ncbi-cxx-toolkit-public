@@ -1,0 +1,16 @@
+# $Id$
+
+NCBI_begin_app(test_checksum)
+
+  NCBI_sources(test_checksum)
+  NCBI_uses_toolkit_libraries(xutil)
+
+  NCBI_begin_test(test_checksum)
+    NCBI_set_test_command(test_checksum -selftest)
+    NCBI_set_test_assets(test_data)
+  NCBI_end_test()
+
+  NCBI_project_watchers(vasilche ivanov)
+
+NCBI_end_app()
+

@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile("CACHE" project)
+#################################
+
+LIB_PROJ = id2_split
+SUB_PROJ = 
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

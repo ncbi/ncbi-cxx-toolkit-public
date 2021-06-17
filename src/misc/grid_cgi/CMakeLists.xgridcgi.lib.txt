@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(xgridcgi)
+  NCBI_sources(grid_cgiapp remote_cgiapp cgi2grid cgi_session_netcache)
+  NCBI_uses_toolkit_libraries(xcgi xconnserv xhtml)
+  NCBI_project_watchers(vakatov sadyrovr)
+NCBI_end_lib()
+

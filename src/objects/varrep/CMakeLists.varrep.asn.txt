@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(varrep)
+  NCBI_dataspecs(varrep.asn)
+  NCBI_uses_toolkit_libraries(xser)
+NCBI_end_lib()
+

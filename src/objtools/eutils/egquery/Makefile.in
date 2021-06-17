@@ -1,0 +1,6 @@
+# $Id$
+
+DTD_PROJ = egquery
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

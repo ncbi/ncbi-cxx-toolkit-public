@@ -1,0 +1,25 @@
+# $Id$
+
+NCBI_begin_lib(xcd_utils)
+  NCBI_sources(
+    cuAlign cuAlignedDM cuAlignmentCollection cuBaseClusterer cuBlast2Seq
+    cuBlock cuBlockExtender cuBlockFormater cuBlockIntersector
+    cuBookRefUtils cuCD cuCdCore cuCdFamily cuCdFromFasta cuCdUpdater
+    cuCdUpdateParameters cuConsensusMaker cuDbPriority cuDistmat
+    cuDmAlignedOptimalScore cuDmAlignedscore cuDmBlastscore cuDmIdentities
+    cuFlexiDm cuHitsDistributor cuMatrix cuNRCriteria cuPrefTaxNodes
+    cuPssmMaker cuPssmScorer cuReadFastaWrapper cuResidueProfile
+    cuRowSourceTable cuScoringMatrix cuSeqAnnotFromFasta cuSeqSwapper
+    cuSeqtree cuSeqTreeAlg cuSeqTreeAPI cuSeqTreeAsnizer cuSeqTreeFactory
+    cuSeqTreeNj cuSeqTreeRootedLayout cuSeqTreeSlc cuSeqTreeStream
+    cuSequence cuSequenceTable cuSimpleB2SWrapper cuSort cuStdAnnotTypes
+    cuTaxClient cuTaxNRCriteria cuTaxTree cuUtils
+  )
+  NCBI_uses_toolkit_libraries(
+    blast_services entrez2cli id1cli
+    ncbimime taxon1 xblast
+    xregexp
+  )
+  NCBI_project_watchers(lanczyck cliu)
+NCBI_end_lib()
+

@@ -1,0 +1,13 @@
+# $Id$
+
+NCBI_begin_lib(xcompress)
+  NCBI_sources(
+    compress stream streambuf stream_util bzip2 zlib lzo reader_zlib tar
+    archive archive_ archive_zip
+  )
+  NCBI_uses_toolkit_libraries(xutil)
+  NCBI_optional_components(Z BZ2 LZO)
+  NCBI_project_watchers(ivanov)
+NCBI_end_lib()
+
+

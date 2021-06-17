@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db100_dbmorecmds)
+  NCBI_sources(dbmorecmds common)
+  NCBI_set_test_assets(dbmorecmds.sql)
+  NCBI_add_test(test-db100 db100_dbmorecmds)
+NCBI_end_app()
+

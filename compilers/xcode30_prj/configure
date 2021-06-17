@@ -1,0 +1,431 @@
+#!/bin/sh
+
+# $Id$
+# Author:  Andrei Gourianov, NCBI (gouriano@ncbi.nlm.nih.gov)
+
+#-----------------------------------------------------------------------------
+#set -xv
+#set -x
+
+use_projectlst="scripts/projects/ncbi_cpp.lst"
+
+TAB="	"
+# defaults
+use_savedcfg=""
+use_gui="no"
+use_debug="yes"
+use_dll="no"
+use_64="yes"
+use_staticstd="no"
+use_action=""
+srcroot="../.."
+
+mk_name="Makefile"
+mkmk_name="Makefile.mk"
+sln_name="configured"
+generated="_generated_files.txt"
+tmpfile="tmptmp.tmp"
+buildres="build_results.txt"
+#-----------------------------------------------------------------------------
+# silently ignored  options
+noops="\
+ --without-optimization \
+ --with-profiling \
+ --with-tcheck \
+ --with-static \
+ --with-plugin-auto-load \
+ --with-bin-release \
+ --with-mt \
+ --with-64 \
+ --without-exe \
+ --with-runpath \
+ --with-lfs \
+ --with-autodep \
+ --with-build-root \
+ --with-fake-root \
+ --without-suffix \
+ --with-hostspec \
+ --without-version \
+ --with-build-root-sfx \
+ --without-execopy \
+ --with-bincopy \
+ --with-lib-rebuilds \
+ --with-lib-rebuilds \
+ --without-deactivation \
+ --without-makefile-auto-update \
+ --without-flat-makefile \
+ --with-check \
+ --with-check-tools \
+ --with-ncbi-public \
+ --with-strip \
+ --with-pch \
+ --with-caution \
+ --without-caution \
+ --without-ccache \
+ --with-distcc \
+ NCBI_C_PATH= \
+ --without-ncbi-c \
+ --without-sss \
+ --without-utils \
+ --without-sssdb \
+ --with-included-sss \
+ --with-z \
+ --without-z \
+ --with-bz2 \
+ --without-bz2 \
+ --with-lzo \
+ --without-lzo \
+ --with-pcre \
+ --without-pcre \
+ --with-gnutls \
+ --without-gnutls \
+ --with-openssl \
+ --without-openssl \
+ --without-sybase \
+ --with-sybase-local \
+ --with-sybase-new \
+ --without-ftds \
+ --with-ftds \
+ --without-ftds-renamed \
+ --without-mysql \
+ --with-mysql \
+ --without-opengl \
+ --with-opengl \
+ --without-mesa \
+ --with-mesa \
+ --without-glew \
+ --with-glew \
+ --without-glut \
+ --with-glut \
+ --without-wxwidgets \
+ --with-wxwidgets \
+ --with-wxwidgets-ucs \
+ --without-wxwidgets-ucs \
+ --without-freetype \
+ --with-freetype \
+ --without-fastcgi \
+ --with-fastcgi \
+ --with-fastcgi \
+ --without-bdb \
+ --with-bdb \
+ --without-sp \
+ --without-orbacus \
+ --with-orbacus \
+ --with-odbc \
+ --with-python \
+ --without-python \
+ --with-boost \
+ --without-boost \
+ --with-boost-tag \
+ --without-boost-tag \
+ --with-sqlite \
+ --without-sqlite \
+ --with-sqlite3 \
+ --without-sqlite3 \
+ --with-icu \
+ --without-icu \
+ --with-expat \
+ --without-expat \
+ --with-sablot \
+ --without-sablot \
+ --with-libxml \
+ --without-libxml \
+ --with-libxslt \
+ --without-libxslt \
+ --with-xerces \
+ --without-xerces \
+ --with-xalan \
+ --without-xalan \
+ --with-oechem \
+ --without-oechem \
+ --with-sge \
+ --without-sge \
+ --with-muparser \
+ --without-muparser \
+ --with-hdf5 \
+ --without-hdf5 \
+ --with-gif \
+ --without-gif \
+ --with-jpeg \
+ --without-jpeg \
+ --with-png \
+ --without-png \
+ --with-tiff \
+ --without-tiff \
+ --with-xpm \
+ --without-xpm \
+ --without-local-lbsm \
+ --without-ncbi-crypt \
+ --without-connext \
+ --without-serial \
+ --without-objects \
+ --without-dbapi \
+ --without-app \
+ --without-ctools \
+ --without-gui \
+ --without-algo \
+ --without-internal \
+ --with-gbench \
+ --without-gbench \
+ --with-x \
+"
+#-----------------------------------------------------------------------------
+
+initial_dir=`pwd`
+script_name=`basename $0`
+script_dir=`dirname $0`
+script_dir=`(cd "${script_dir}" ; pwd)`
+cd $script_dir
+cd $srcroot
+srcroot=`pwd`
+cd $initial_dir
+
+Usage()
+{
+    cat <<EOF 1>&2
+USAGE: $script_name [OPTION]...
+SYNOPSIS:
+ configure NCBI C++ toolkit for Xcode build system.
+OPTIONS:
+  --help                     -- print Usage
+  --with-configure-dialog    -- use Configuration GUI application
+  --without-configure-dialog -- do not use Configuration GUI application
+  --with-saved-settings=FILE -- load configuration settings from FILE
+  --without-debug            -- build non-debug versions of libs and apps
+  --with-debug               -- build debug versions of libs and apps
+  --without-dll              -- build all toolkit libraries as static ones
+  --with-dll                 -- assemble toolkit libraries into DLLs where requested
+  --without-64               -- compile to 32-bit code
+  --with-static-exe          -- use static C++ standard libraries
+  --with-projects=FILE       -- build projects listed in $srcroot/FILE
+           FILE can also be a name of a subdirectory
+           examples:   --with-projects=src/corelib
+                       --with-projects=scripts/projects/ncbi_cpp.lst
+  --with-extra-action=SCR    -- script to call after the configuration is complete
+  --ignore-unsupported-options   --ignore unsupported options
+EOF
+}
+
+# has one optional argument: error message
+Error()
+{
+  Usage
+  test -z "$1"  ||  echo ERROR: $1 1>&2
+  cd "$initial_dir"
+  exit 1
+}
+
+#--------------------------------------------------------------------------------
+# parse arguments
+unknown=""
+ignore_unknown="no"
+for cmd_arg in "$@"; do
+  case "$cmd_arg" in
+    --help                )  Usage; exit 0 ;;
+    --with-configure-dialog    ) use_gui="yes" ;;
+    --without-configure-dialog ) use_gui="no" ;;
+    --with-saved-settings=*    )  use_savedcfg="$cmd_arg" ;;
+    --without-debug       )  use_debug="no" ;;
+    --with-debug          )  use_debug="yes" ;;
+    --without-dll         )  use_dll="no" ;;
+    --with-dll            )  use_dll="yes" ;;
+    --without-64          )  use_64="no" ;;
+    --with-static-exe     )  use_staticstd="yes" ;;
+    --with-projects=*     )  use_projectlst="$cmd_arg" ;;
+    --with-extra-action=* )  use_action="$cmd_arg" ;;
+    --ignore-unsupported-options ) ignore_unknown="yes" ;;
+    *  ) unknown="$unknown $cmd_arg" ;;
+  esac
+done
+
+# check and report unknown options
+for u in $unknown; do
+  found="no"
+  for n in $noops; do
+    echo $u | grep --regexp="^$n" >/dev/null 2>/dev/null
+    if test $? -eq 0; then
+      found="yes"
+      break
+    fi
+  done
+  if test $found = "yes"; then
+    echo "Ignored:  $u"
+  else
+    if test $ignore_unknown = "no"; then
+      Error  "Invalid option:  $u"
+    else
+      echo "Ignored unsupported:  $u"
+    fi
+  fi
+done
+
+cd "$script_dir"
+use_savedcfg=`echo $use_savedcfg | sed -e s/--with-saved-settings=// | sed -e "s%^~/%$HOME/%"`
+if test -n "$use_savedcfg"; then
+  if ! test -f "$use_savedcfg"; then
+    if test -f "$initial_dir/$use_savedcfg"; then
+      use_savedcfg="$initial_dir/$use_savedcfg"
+    else
+      Error "$use_savedcfg not found"
+    fi
+  fi
+fi
+use_projectlst=`echo $use_projectlst | sed -e s/--with-projects=//`
+use_action=`echo $use_action | sed -e s/--with-extra-action=//`
+#--------------------------------------------------------------------------------
+
+xcodebuild -version >/dev/null 2>/dev/null
+test $? -ne 0 && Error "xcodebuild not found"
+arch=`arch`
+platform=`xcodebuild -version 2>/dev/null | grep 'Xcode [0-9][0-9]*' | sed -e 's/[ .]//g'`
+
+# ------- target architecture
+if test "$use_64" == "yes"; then
+  use_arch="x86_64"
+else
+  use_arch="i386"
+fi 
+PTB_PLATFORM="$use_arch"
+
+# ------- configuration and flags
+if test "$use_dll" = "yes"; then
+  build_results="dll"
+  PTB_FLAGS="-dll"
+  if test "$use_debug" = "yes"; then
+    CONFIGURATION="DebugDLL"
+    conf="DebugDLL"
+  else
+    CONFIGURATION="ReleaseDLL"
+    conf="ReleaseDLL"
+  fi
+else
+  build_results="static"
+  PTB_FLAGS=""
+  if test "$use_debug" = "yes"; then
+    if test "$use_staticstd" = "yes"; then
+      CONFIGURATION="DebugMT"
+      conf="DebugMT"
+    else
+      CONFIGURATION="DebugDLL"
+      conf="Debug"
+    fi
+  else
+    if test "$use_staticstd" = "yes"; then
+      CONFIGURATION="ReleaseMT"
+      conf="ReleaseMT"
+    else
+      CONFIGURATION="ReleaseDLL"
+      conf="Release"
+    fi
+  fi
+fi
+conf="$CONFIGURATION"
+if test "$use_gui" = "yes"; then
+  PTB_FLAGS="$PTB_FLAGS -cfg"
+fi
+sln_path="${platform}-${conf}-${use_arch}"
+sln_path=`echo $sln_path | sed -e 's/ /_/g'`
+
+#test -d "$sln_path" && rm -rf "$sln_path"
+#mkdir "$sln_path"
+sln_name="$sln_path"
+sln_path="$build_results"
+
+test -e "$srcroot/$use_projectlst" || Error "$use_projectlst not found"
+#--------------------------------------------------------------------------------
+# prepare and run ptb.sh
+
+export PTB_PLATFORM
+export PTB_FLAGS
+export PTB_PATH=./static/UtilityProjects/bin/ReleaseDLL
+export SLN_PATH=$sln_path/$sln_name
+export TREE_ROOT=$srcroot
+export BUILD_TREE_ROOT=.
+export PTB_PROJECT_REQ="$use_projectlst"
+export PTB_SAVED_CFG_REQ="$use_savedcfg"
+
+./ptb.sh
+datatool=static/bin/ReleaseDLL/datatool
+if test -x "$PTB_PATH"/datatool  &&
+   test \! -x $datatool -o "$PTB_PATH"/datatool -nt $datatool; then
+  mkdir -p `dirname $datatool`
+  cp "$PTB_PATH"/datatool $datatool
+fi
+if test $? -ne 0; then
+  echo "ERROR:  Configuration failed" 1>&2
+  cd "$initial_dir"
+  exit 1
+fi
+
+#--------------------------------------------------------------------------------
+# generate makefile
+
+cp -f -p "$srcroot/src/build-system/Makefile.xcode.top.tmpl" "./$mk_name"
+cp -f -p "$srcroot/src/build-system/Makefile.xcode.tmpl" "$sln_path/$mk_name"
+
+{
+  echo "# generated by $script_name  on `date`"
+  echo
+  echo builddir="$build_results"
+} > $mkmk_name;
+{
+  echo "# generated by $script_name  on `date`"
+  echo
+  echo MTARGET="BUILD_ALL"
+  echo CONFIGURATION="$CONFIGURATION"
+  echo SLN_NAME="${sln_name}"
+  echo BUILT_CFGS="$build_results,$sln_name,$CONFIGURATION"
+} > $sln_path/$mkmk_name
+
+#--------------------------------------------------------------------------------
+curr=`pwd`
+resloc=$curr
+genloc=$curr/$sln_path
+cd $TREE_ROOT
+root=`pwd`/
+cd $curr
+resloc=`echo $resloc | sed -e s%$root%%`
+genloc=`echo $genloc | sed -e s%$root%%`
+cd $sln_path
+
+#--------------------------------------------------------------------------------
+# generate build_results text
+
+{
+  echo $resloc/$build_results/bin/$CONFIGURATION
+  echo $resloc/$build_results/lib/$CONFIGURATION
+} > $buildres
+
+#--------------------------------------------------------------------------------
+# modify generated_files text
+
+if test -f $sln_name$generated; then
+  {
+    cat $sln_name$generated
+    echo $resloc/$mkmk_name
+    echo $resloc/$mk_name
+    echo $genloc/$mkmk_name
+    echo $genloc/$mk_name
+    echo $genloc/$buildres
+  } > $tmpfile
+  rm -f $sln_name$generated
+  mv $tmpfile $sln_name$generated
+fi
+
+cd "$initial_dir"
+#--------------------------------------------------------------------------------
+# extra action
+if test -n "$use_action"; then
+  use_action=`echo $use_action | sed -e s%{}%$curr/$sln_path%g`
+  echo
+  echo "Executing $use_action"
+  eval $use_action
+  test "$?" -ne 0 && Error "Extra action $use_action failed"
+fi
+
+#--------------------------------------------------------------------------------
+echo
+echo "------------------------------------------------------------------------------"
+echo "Configure succeeded"
+echo "To build the project, execute the following commands:"
+echo "make"

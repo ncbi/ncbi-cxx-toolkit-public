@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = pkg_proteus
+
+HOSTED_LIBS = pkg_proteus proteus_asn proteus_align proteus_db proteus_domain
+
+DEPENDENCIES = gui_config gui_objects gui_core ncbi_algo ncbi_seqext \
+		ncbi_seq ncbi_general ncbi_dbapi \
+		ncbi_dbapi_driver ncbi_core gui_utils gui_widgets \
+		gui_widgets_aln gui_widgets_seq connext gui_widgets_misc gui_view_align

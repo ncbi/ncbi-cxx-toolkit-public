@@ -1,0 +1,71 @@
+Seq-annot ::= {
+  desc {
+    title "track1",
+    name "test-3-col",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "description",
+          data str "track1"
+        },
+        {
+          label str "name",
+          data str "test-3-col"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local str "gene_1",
+      data region "",
+      location int {
+        from 2000,
+        to 2100,
+        strand plus,
+        id local str "chr22"
+      }
+    },
+    {
+      id local str "gene_2",
+      data region "",
+      location int {
+        from 2200,
+        to 2300,
+        strand plus,
+        id local str "chr22"
+      }
+    },
+    {
+      id local str "gene_3",
+      data region "",
+      location int {
+        from 2400,
+        to 2500,
+        strand plus,
+        id local str "chr22"
+      }
+    },
+    {
+      id local str "gene_4",
+      data region "",
+      location int {
+        from 2600,
+        to 2700,
+        strand plus,
+        id local str "chr22"
+      }
+    },
+    {
+      id local str "gene_5",
+      data region "",
+      location int {
+        from 2800,
+        to 2900,
+        strand plus,
+        id local str "chr22"
+      }
+    }
+  }
+}

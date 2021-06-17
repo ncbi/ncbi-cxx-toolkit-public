@@ -1,0 +1,3 @@
+MODULE_ASN = gbproj.asn
+MODULE_IMPORT = objects/seq/seq objects/seqloc/seqloc objects/seqset/seqset objects/general/general objects/submit/submit objects/seqalign/seqalign
+MODULE_PATH = objects/gbproj

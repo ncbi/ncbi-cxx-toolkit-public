@@ -1,0 +1,12 @@
+# $Id$
+
+# Meta-makefile("ALGO" project)
+#################################
+
+APP_PROJ = demo_seqtest
+PROJ_TAG = demo
+
+REQUIRES = objects
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

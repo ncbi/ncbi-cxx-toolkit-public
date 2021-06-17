@@ -1,0 +1,56 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        name "NC_000001.10:g.123456delA",
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                },
+                observation asserted
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 123455,
+        strand plus,
+        id gi 224589800
+      },
+      exts {
+        {
+         type str "VCF_COLUMN_1_ID",
+         data {
+                {
+                 label str "chrom",
+                 data str "1" 
+                }
+             }
+        
+        }
+      }
+    }
+  }
+}

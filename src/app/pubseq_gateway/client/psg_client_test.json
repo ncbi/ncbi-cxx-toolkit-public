@@ -1,0 +1,28 @@
+{ "jsonrpc": "2.0", "method": "resolve", "params": { "bio_id": [ "2766506" ], "include_info": [ "all-info-except" ], "expected_result": "success" }, "id": "resolve_1" }
+{ "jsonrpc": "2.0", "method": "resolve", "params": { "bio_id": [ "2766506", 10 ], "include_info": [ "all-info-except" ], "expected_result": "failure" }, "id": "resolve_2" }
+{ "jsonrpc": "2.0", "method": "resolve", "params": { "bio_id": [ "gnl|blah.foo.35" ], "include_info": [ "all-info-except" ], "expected_result": "failure" }, "id": "resolve_3" }
+{ "jsonrpc": "2.0", "method": "resolve", "params": { "bio_id": [ "boo-ga-ga" ], "include_info": [ "all-info-except" ], "expected_result": "failure" }, "id": "resolve_4" }
+{ "jsonrpc": "2.0", "method": "biodata", "params": { "bio_id": [ "2766506" ], "include_data": "no-tse", "expected_result": "success" }, "id": "biodata_1" }
+{ "jsonrpc": "2.0", "method": "biodata", "params": { "bio_id": [ "2766506" ], "include_data": "slim-tse", "expected_result": "success" }, "id": "biodata_2" }
+{ "jsonrpc": "2.0", "method": "biodata", "params": { "bio_id": [ "2766506" ], "include_data": "smart-tse", "expected_result": "success" }, "id": "biodata_3" }
+{ "jsonrpc": "2.0", "method": "biodata", "params": { "bio_id": [ "2766506" ], "include_data": "whole-tse", "expected_result": "success" }, "id": "biodata_4" }
+{ "jsonrpc": "2.0", "method": "biodata", "params": { "bio_id": [ "2766506" ], "include_data": "orig-tse", "expected_result": "success" }, "id": "biodata_5" }
+{ "jsonrpc": "2.0", "method": "biodata", "params": { "bio_id": [ "2766506", 10 ], "include_data": "no-tse", "expected_result": "failure" }, "id": "biodata_6" }
+{ "jsonrpc": "2.0", "method": "biodata", "params": { "bio_id": [ "boo-ga-ga" ], "include_data": "orig-tse", "expected_result": "failure" }, "id": "biodata_7" }
+{ "jsonrpc": "2.0", "method": "blob", "params": { "blob_id": [ "4.42760593" ], "include_data": "no-tse", "expected_result": "success" }, "id": "blob_1" }
+{ "jsonrpc": "2.0", "method": "blob", "params": { "blob_id": [ "4.42760593" ], "include_data": "slim-tse", "expected_result": "success" }, "id": "blob_2" }
+{ "jsonrpc": "2.0", "method": "blob", "params": { "blob_id": [ "4.42760593" ], "include_data": "smart-tse", "expected_result": "success" }, "id": "blob_3" }
+{ "jsonrpc": "2.0", "method": "blob", "params": { "blob_id": [ "4.42760593" ], "include_data": "whole-tse", "expected_result": "success" }, "id": "blob_4" }
+{ "jsonrpc": "2.0", "method": "blob", "params": { "blob_id": [ "4.42760593" ], "include_data": "orig-tse", "expected_result": "success" }, "id": "blob_5" }
+{ "jsonrpc": "2.0", "method": "blob", "params": { "blob_id": [ "9999.88888" ], "include_data": "no-tse", "expected_result": "failure" }, "id": "blob_6" }
+{ "jsonrpc": "2.0", "method": "blob", "params": { "blob_id": [ "blah.boo.10" ], "include_data": "no-tse", "expected_result": "failure" }, "id": "blob_7" }
+{ "jsonrpc": "2.0", "method": "blob", "params": { "blob_id": [ "4.42760593", 1277299586146 ], "include_data": "no-tse", "expected_result": "success" }, "id": "blob_8" }
+{ "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "NC_000024", 10 ], "named_annots": [ "NA000000067.16" ], "expected_result": "success" }, "id": "annot_1" }
+{ "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "NC_000024", 10 ], "named_annots": [ "NA000000067.16", "NA000134068.1" ], "expected_result": "success" }, "id": "annot_2" }
+{ "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "NC_000024", 12 ], "named_annots": [ "NA000000067.16", "NA000134068.1" ], "expected_result": "failure" }, "id": "annot_3" }
+{ "jsonrpc": "2.0", "method": "named_annot", "params": { "bio_id": [ "boo-ga-ga", 12 ], "named_annots": [ "NA000000067.16", "NA000134068.1" ], "expected_result": "failure" }, "id": "annot_4" }
+{ "jsonrpc": "2.0", "method": "chunk", "params": { "chunk_id": [ 1, "25.116773935.5" ], "expected_result": "success" }, "id": "chunk_1" }
+{ "jsonrpc": "2.0", "method": "chunk", "params": { "chunk_id": [ 5, "25.116773935.5" ], "expected_result": "success" }, "id": "chunk_2" }
+{ "jsonrpc": "2.0", "method": "chunk", "params": { "chunk_id": [ 999999999, "25.116773935.5" ], "expected_result": "success" }, "id": "chunk_3" }
+{ "jsonrpc": "2.0", "method": "chunk", "params": { "chunk_id": [ 6, "25.116773935.5" ], "expected_result": "failure" }, "id": "chunk_4" }
+{ "jsonrpc": "2.0", "method": "chunk", "params": { "chunk_id": [ 1, "invalid" ], "expected_result": "failure" }, "id": "chunk_5" }

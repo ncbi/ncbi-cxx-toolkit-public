@@ -1,0 +1,2407 @@
+Seq-entry ::= seq {
+  id {
+    other {
+      accession "NG_011340",
+      version 1
+    },
+    gi 224500872
+  },
+  descr {
+    title "Homo sapiens paternally expressed 10 (PEG10), RefSeqGene on
+ chromosome 7",
+    source {
+      genome genomic,
+      org {
+        taxname "Homo sapiens",
+        common "human",
+        db {
+          {
+            db "taxon",
+            tag id 9606
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Homo",
+            species "sapiens"
+          },
+          attrib "specified",
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+ Catarrhini; Hominidae; Homo",
+          gcode 1,
+          mgcode 2,
+          div "PRI"
+        }
+      },
+      subtype {
+        {
+          subtype chromosome,
+          name "7"
+        },
+        {
+          subtype map,
+          name "7q21.3"
+        }
+      }
+    },
+    molinfo {
+      biomol genomic
+    },
+    pub {
+      pub {
+        pmid 20084274,
+        article {
+          title {
+            name "Genetic and molecular analyses of PEG10 reveal new aspects
+ of genomic organization, transcription and translation."
+          },
+          authors {
+            names std {
+              {
+                name ml "Lux H",
+                affil str "Institute of Molecular and Cell Biology, Mannheim
+ University of Applied Sciences, Mannheim, Germany."
+              },
+              {
+                name ml "Flammann H"
+              },
+              {
+                name ml "Hafner M"
+              },
+              {
+                name ml "Lux A"
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "PLoS ONE",
+              ml-jta "PLoS One",
+              issn "1932-6203",
+              name "PloS one"
+            },
+            imp {
+              date std {
+                year 2010,
+                month 1,
+                day 13
+              },
+              volume "5",
+              issue "1",
+              pages "e8686",
+              language "eng",
+              pubstatus epublish,
+              history {
+                {
+                  pubstatus received,
+                  date std {
+                    year 2009,
+                    month 2,
+                    day 17
+                  }
+                },
+                {
+                  pubstatus accepted,
+                  date std {
+                    year 2009,
+                    month 12,
+                    day 22
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 2010,
+                    month 1,
+                    day 20,
+                    hour 6,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2010,
+                    month 1,
+                    day 20,
+                    hour 6,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2010,
+                    month 5,
+                    day 21,
+                    hour 6,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 20084274,
+            doi "10.1371/journal.pone.0008686",
+            other {
+              db "pmc",
+              tag str "PMC2800197"
+            },
+            other {
+              db "ELocationID doi",
+              tag str "10.1371/journal.pone.0008686"
+            }
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 17942406,
+        article {
+          title {
+            name "Mammalian gene PEG10 expresses two reading frames by high
+ efficiency -1 frameshifting in embryonic-associated tissues."
+          },
+          authors {
+            names std {
+              {
+                name ml "Clark MB",
+                affil str "Department of Biochemistry, University of Otago,
+ Dunedin, New Zealand."
+              },
+              {
+                name ml "Janicke M"
+              },
+              {
+                name ml "Gottesbuhren U"
+              },
+              {
+                name ml "Kleffmann T"
+              },
+              {
+                name ml "Legge M"
+              },
+              {
+                name ml "Poole ES"
+              },
+              {
+                name ml "Tate WP"
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "J. Biol. Chem.",
+              ml-jta "J Biol Chem",
+              issn "0021-9258",
+              name "The Journal of biological chemistry"
+            },
+            imp {
+              date std {
+                year 2007,
+                month 12,
+                day 28
+              },
+              volume "282",
+              issue "52",
+              pages "37359-37369",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2007,
+                    month 10,
+                    day 19,
+                    hour 9,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2008,
+                    month 3,
+                    day 5,
+                    hour 9,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 2007,
+                    month 10,
+                    day 19,
+                    hour 9,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 17942406,
+            pii "M705676200",
+            doi "10.1074/jbc.M705676200"
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 15767280,
+        article {
+          title {
+            name "Characterization of the frameshift signal of Edr, a
+ mammalian example of programmed -1 ribosomal frameshifting."
+          },
+          authors {
+            names std {
+              {
+                name ml "Manktelow E",
+                affil str "Division of Virology, Department of Pathology
+ University of Cambridge Tennis Court Road, Cambridge CB2 1QP, UK."
+              },
+              {
+                name ml "Shigemoto K"
+              },
+              {
+                name ml "Brierley I"
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Nucleic Acids Res.",
+              ml-jta "Nucleic Acids Res",
+              issn "1362-4962",
+              name "Nucleic acids research"
+            },
+            imp {
+              date std {
+                year 2005,
+                month 3,
+                day 14
+              },
+              volume "33",
+              issue "5",
+              pages "1553-1563",
+              language "eng",
+              pubstatus epublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2005,
+                    month 3,
+                    day 16,
+                    hour 9,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2005,
+                    month 3,
+                    day 29,
+                    hour 9,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 2005,
+                    month 3,
+                    day 16,
+                    hour 9,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 15767280,
+            pii "33/5/1553",
+            doi "10.1093/nar/gki299",
+            other {
+              db "pmc",
+              tag str "PMC1065257"
+            }
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 15611116,
+        article {
+          title {
+            name "Human retroviral gag- and gag-pol-like proteins interact
+ with the transforming growth factor-beta receptor activin receptor-like
+ kinase 1."
+          },
+          authors {
+            names std {
+              {
+                name ml "Lux A",
+                affil str "University Hospital Mannheim and Institute of
+ Molecular Biology and Cell Culture Technology, University of Applied Sciences
+ Mannheim, 68163 Mannheim, Germany. a.lux@fh-mannheim.de"
+              },
+              {
+                name ml "Beil C"
+              },
+              {
+                name ml "Majety M"
+              },
+              {
+                name ml "Barron S"
+              },
+              {
+                name ml "Gallione CJ"
+              },
+              {
+                name ml "Kuhn HM"
+              },
+              {
+                name ml "Berg JN"
+              },
+              {
+                name ml "Kioschis P"
+              },
+              {
+                name ml "Marchuk DA"
+              },
+              {
+                name ml "Hafner M"
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "J. Biol. Chem.",
+              ml-jta "J Biol Chem",
+              issn "0021-9258",
+              name "The Journal of biological chemistry"
+            },
+            imp {
+              date std {
+                year 2005,
+                month 3,
+                day 4
+              },
+              volume "280",
+              issue "9",
+              pages "8482-8493",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2004,
+                    month 12,
+                    day 22,
+                    hour 9,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2005,
+                    month 4,
+                    day 9,
+                    hour 9,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 2004,
+                    month 12,
+                    day 22,
+                    hour 9,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 15611116,
+            pii "M409197200",
+            doi "10.1074/jbc.M409197200"
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 11318613,
+        article {
+          title {
+            name "A retrotransposon-derived gene, PEG10, is a novel imprinted
+ gene located on human chromosome 7q21."
+          },
+          authors {
+            names std {
+              {
+                name ml "Ono R",
+                affil str "Gene Research Center, Tokyo Institute of
+ Technology, 4259 Nagatsuta-cho, Midori-ku, Yokohama 226-8501, Japan."
+              },
+              {
+                name ml "Kobayashi S"
+              },
+              {
+                name ml "Wagatsuma H"
+              },
+              {
+                name ml "Aisaka K"
+              },
+              {
+                name ml "Kohda T"
+              },
+              {
+                name ml "Kaneko-Ishino T"
+              },
+              {
+                name ml "Ishino F"
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Genomics",
+              ml-jta "Genomics",
+              issn "0888-7543",
+              name "Genomics"
+            },
+            imp {
+              date std {
+                year 2001,
+                month 4,
+                day 15
+              },
+              volume "73",
+              issue "2",
+              pages "232-237",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2001,
+                    month 4,
+                    day 25,
+                    hour 10,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2001,
+                    month 8,
+                    day 24,
+                    hour 10,
+                    minute 1
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 2001,
+                    month 4,
+                    day 25,
+                    hour 10,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pubmed 11318613,
+            doi "10.1006/geno.2001.6494",
+            pii "S0888-7543(01)96494-8"
+          }
+        }
+      }
+    },
+    comment "~Summary: This is a paternally expressed imprinted gene that is
+ thought to have been derived from the Ty3/Gypsy family of retrotransposons.
+ It contains two overlapping open reading frames, RF1 and RF2, and expresses
+ two proteins: a shorter, gag-like protein (with a CCHC-type zinc finger
+ domain) from RF1; and a longer, gag/pol-like fusion protein (with an
+ additional aspartic protease motif) from RF1/RF2 by -1 translational
+ frameshifting (-1 FS). While -1 FS has been observed in RNA viruses and
+ transposons in both prokaryotes and eukaryotes, this gene represents the
+ first example of -1 FS in a eukaryotic cellular gene. This gene is highly
+ conserved across mammalian species and retains the heptanucleotide (GGGAAAC)
+ and pseudoknot elements required for -1 FS. It is expressed in adult and
+ embryonic tissues (most notably in placenta) and reported to have a role in
+ cell proliferation, differentiation and apoptosis. Overexpression of this
+ gene has been associated with several malignancies, such as hepatocellular
+ carcinoma and B-cell lymphocytic leukemia. Knockout mice lacking this gene
+ showed early embryonic lethality with placental defects, indicating the
+ importance of this gene in embryonic development. Additional isoforms
+ resulting from alternatively spliced transcript variants, and use of upstream
+ non-AUG (CUG) start codon have been reported for this gene. [provided by
+ RefSeq, Oct 2014]",
+    user {
+      type str "RefSeqGene",
+      data {
+        {
+          label str "Status",
+          data str "Reference Standard"
+        }
+      }
+    },
+    user {
+      type str "RefGeneTracking",
+      data {
+        {
+          label str "Status",
+          data str "Reviewed"
+        },
+        {
+          label str "Collaborator",
+          data str "NCBI staff in collaboration with David Monk"
+        },
+        {
+          label str "Assembly",
+          data fields {
+            {
+              label id 0,
+              data fields {
+                {
+                  label str "accession",
+                  data str "AC069292.12"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    genbank {
+      keywords {
+        "RefSeqGene"
+      }
+    },
+    create-date std {
+      year 2009,
+      month 3,
+      day 4
+    },
+    update-date std {
+      year 2018,
+      month 2,
+      day 7
+    }
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 20371,
+    seq-data ncbi2na '2425DF237D340B4F6C40E78A08401D2A40A7CE35F052A18C57864054
+206CC45D96B9EBD2DE5D59D112431E70F0DE445174C44224D7935F840E7F92024A3C1F37F40102
+EC20373133C03CC3CCC40CFCEC4481021C82A3104D0E80EBEF522D2DEE807A23FBFFC7C31EDFC3
+1AF120FC011EA0F382220FE9FA090D4EE0324FC224F8877378D73417801F834804CF47E0087CF8
+C5C804FA7FF7DFCF3FFFFFEFDDB1E71FCA7C33F7A034A88C121E881E8F582FC8009783A2EE6F2D
+CECE75D137B7B7B7B779EA8AF88A8C808012534CF8CFDEE09CE87098DD57525420FDC181121533
+4D0F55C8B4FFFC47A2B280C2EF20CE4FCAEFC4833A0AB0BFC280A3FAB23CE8C3C9000800A082BA
+7AB3FE8803B8DCC0C791F3C83480437833F87EA0FFFC10B4A3F7D1C7D0CFFBB1E4E3FD14BA0072
+EF201E8C4EF37F3F5F8AFB67052FFF7AEFB57CFF43B7B8842E00E51FE7C80E43F3514C7328C2C0
+3138240D049FF23F3A407BEC00E8C03BD0C40B51F1DFE107A03EC7F9F20303FD6C531481F0940C
+4AEB0B492BDB0353243ED3C00E0C2BB503202D4BCF3F841E00FF1FE7C80CCFF7733C80F0940CCE
+EB0B4923932373240FB4F002A300ED40C80B10F1CFF10B803D4BFBFE036FF70057207C2703130A
+C0F4127F30313A40FF4F03AB00ED40880B72F3CDC10B803547FBFE0310FF7C131C82F0332BBC0D
+049F6C8DC4903DD30032300EDC0C60952F3CFE300C0C3113C1D77F9ECCE415EE403A92032D0452
+0303378803500F44C8CF033500CEFC0BDF373C3FAFFAFFAFF803BFBEF72104400EF1702CF9DCF0
+EF37F7BFCFFCB3EFFBFFE8C1002BFCDC0F1F333E39EFFF57C803DCFDC240B8033FD33B22830007
+10CEF20CB88EA200F7DD2FF7AFF033F3B1C2BEF4FC03FC3C003C33CFD7F020277501F0EF3F04FC
+0A77FA0200C362883C3F8DFBFF07FC80B3F0790D73800CFCFB32717333932206DE002487730EFC
+7AEF3E4AB832BC4AE17FDFC8BFDCABFDDD783FEC4385E03C7FCF3AC031C3C6FFF0002D7AF24FF8
+0E000D03EBD01FBD01FF02DF08E8FFE07F0FFD79FF4DCC7AFF03743FF20030EDD2F072B82C1FD8
+3F010101007AC20FE126B45204B1DC5093080D7A0F3DCDF9208AB8135C08F03C0291F7002CC3EE
+FC541F5CA80EDFEF002793F4F4F4CF5A32EA4FF70C00B00DD2C0EA712FFBF3D72029DDFF02E6BB
+7906FBCE10C2D03DF3E33D42CC030D6C90EF1C03B9D0FF9DF40CE026FD37BBF4805C1D27B210FE
+BFD5FF07C07EFF1C234D048FB4BF54245E11E299F23A8359BC2BFCFC935F5D3483FC9B7CD251E4
+3FD5E1300CCCEF4CB103919033FBA5837690567A028F01B9AF96E1C064F4F457108FCA00EC1BE4
+2A090ADDEEC05DB0D94500B6B27A897D025650111E824D449EFF03EBFEBF7A0326476B1A49377A
+5D496ABC15E178195EFC9D524FD38F59F579D6C0160801623F5B45880E47C908AA80F6BBFC0ED1
+3FFBBDDC51CD080280023BBFBB26A8649F8454FD7FA764D9AD92254366A806A555200129061552
+77F9C4A8DA88A1C57AA7A9AA2AA3BEA04A0FA23A0FDE6564892A2A959AA99A228000A52AB425EA
+888827A96A80EAB12AEC7828AAC6BAAD6A1202229EB9502A6674A65681589AA8AA8A69A5EFA55A
+85D46D999294705ED2420EE52EB66A9D35E6ED55857B56D4244AADD52754516A90F93DFA5E9CA5
+B5B5D8F755D5757F7DF57549FA52F4934935645576B0D5B1D5DC9A6A51E49BA516554554D55355
+915575155C959A2467A8FE995575DAE417330A744B799D7AC4667D07DAFAEEED8201787995E288
+126882B51625E980AD6789A9EDB5A251D6A79A2454BA21665E9D2BBA85535F5EDF648A2D766EB8
+B39AE286FFFFF02346F4F55B9F36A279A88E8B245520EDD46401FB465F47A7B1540103AA01425F
+029FABF52850B5231A9EC8488E279A12E389E486B4A2732363F90FE77D0399C50B94E7F1012309
+9F40E67101E99F48E6710919F466A6101E3A89C41E99F4F99CC078EA67F3B94407868EA67D2E99
+C4352062892633289E484801E0F99FC4E67900DE279208B24710006710018E63C9495841267D3E
+6798A44E07922B1389E6810F445C2391C40BAC227922B1289E485BF99C40C0925B2EA1389E68B1
+0F5DEFF7E89285515FD17FE83A754773FF79286BDD938EB9EB2100E8956A400F2EFC13DE54453D
+59CC92E8BA2A91E3E8BA03A837FEB8E9224A797971FB9F8F82E9AECBEEBA660D26D4904BFBA01E
+EAFE78B3A6AA0FA37BA3E77E79380E0DE9FEB87AEA2ABFA8AAA3DE9A6AAAAABB9231DE495EC925
+2DD29795654D72EE5F779AE7C9975D71265D748999755E49997D522665F7239A5D74A55D7549D7
+C997979529545DDDE945D3DE2B89E74A55977D4A565FF7BAE2795295E5DD5A95171DE2B81ED4A5
+597756A9655778AE079529545DD7A95975DE2B81E54A559775EA565D778AE079521545DD7A9597
+5DE2B81E54A559775EA565D778AE079529565DD7A95975DE3B89D1523545D54A565D77CAC979D2
+9565DD429FA55D5C25E5DE5A9E9732D5175748969C9113992EE057495757D2996B5DE45E645F5F
+97895E9EC4956555E6BF779EEFAFF9FFE9C722DC320C3030043C10C30F307A0FCE247FC33BDFE4
+CCF4304C35443F01D78CBA7CE0A85FB01E13A7AE5DC0A43F2503BFF1E40E005007C10FCFFC007F
+0033FD13F0AFFFC8A472E85FEA0DA3BFEBA3100FAE7BEBFA5DE2E28C29FF3F9B973827ABBFD7E0
+DDCAE3C15C973F973B30C0FB97913ACA4F4F033BBC0E148B03EBF3D2EDF9FAEDECADDF78FE75FD
+73AE7F9ED7ABE5FBF9BCDDD13F048300002ECEEFFC0750E3309EC3CC310241C0F0FF0F3D40C3C9
+FFF4C009CBCF5033C9FFF4E009CBCF5030F27FFD300272F3D40C3C9FFF4C009CBCF5030F27FFD3
+00272F3D40C3C9FFF4C009CBCF5030F27FFD300272F3D40C3C9FFF4C009C3F03FAA42ECF3C3AC4
+CFB3C0BFBB0EC3302E944F100CCAFBF49F900F0107B30040FCC1E3E72C22B14EC20FBBF5278382
+03FC017AF5333C40D3894A1FEB2A8A0FAA9FE9D500377B44C557551442C44373A00FEE7CD30F12
+7F0B0FF57DDFE8CFB33F933E08AF40104B0C13933C220FE4FD3032C4232C7000FA13F80338241C
+22F9F0E23B4FD704A3BD3F3AFFE9C73E77FAEEFEE83203CF509CFB822D0C3C140ECFCFD70021C0
+1E03CF34EC08E937B5CA41FA7F392FED7F4BFD283885DF855D5750E49571C2AA2FC2894C4CBDCC
+3D0342C04E7DFB54AF07EE7974B67BF013FF3191EF05E5E54F15CF1FF0E8C071EF57A92FB77FC1
+B545701F9415D3382974A7EF3E902B482DF09CB85F929C0B297E0FEFE14A0703C0030008380EDE
+BA4AAA4AAEA8ABAC2AA2A4E45542F53EF9255D537C1DEB77FD1FF41C5F5F33140ACFE0FFC1DF3E
+37FCFD5C053B2C3CFE78FD70ECFBCFDED5347BFFE48C30053485EA7D0C09547CBA5B8F842EB4A7
+914A539EE0E77F282DFB742BFE08CF0EDC8E100BAC5F2D17C7CEBCF2FBD3C3A84E0075C3F0C280
+0F93CEFB8EF33ED2AD24310FB7F0A2FA038C783B46AF38EEFCFBBFDC3FFDC07E0CFF37E0ED0F3F
+BEFFCC970BC702C3C2CBAAF007BC03B4471D5EDDF0215E7E7B3251D7E88A71141E40A112A32CDE
+EAEB84FAA4EA2B17022FCA2FA2282893F7F1252A9EA4D3BF0F147FFFFF7EC773EBE00CB073FF45
+C1F770F141EECDFFE97CF73B0FCFE9B53FF92B0344CB8B352228507CECFC07FEFCFC02FF301FDF
+C02FF01FFC0D02FFF01FFF01FF133CEFF01FFCCCFC0FF5033A87E23CF0C03F00C3C0D3DC0E4FC1
+ECFF4A0B1129211EED28FFCEEEE3ED3C474C3C839F011115C5545D54444D47455728B9257B545F
+04F1017D3FAA739E1037D3C0073A3C407AC0790840C297E0FEFE14112CFFC002C0EDFCAEA03939
+53BE732F9255D5DFF0D51DFFC448CB45FDCFF70F0C1FEF4CD27053EF831D1C4C3F1791CFC3C2D7
+4C3CBF8ACC73CFA9F7F83B54FF327FD728A4D0F3CFDF8387930E10280784C44CF9E7CB94FDED53
+220FF7FAA3F03CEB4802C3F292D7BAFFEEBAEBEFE3F8C14BC5F76BA4BA0CABEE12FA522C575E54
+4A9E3831393EE3FC31D5F7E7F0E23DCF2F92CF073FFA5E9F7F0C100BCF3FE9FC3F930F8FFB353B
+F97E0BF7E7BBF8310071FBF22AFD04F7FCCBF302B0939EF8C3B3EF834C3812BA5FE28210AD3F81
+3400B1FE7FFBCCCEB9E3C707F77E22FCFF7FBD1C3CF0EC246C890A8C3F03140D7FBB79FF9E7F83
+B30BE8FCC4C4FCDFCFC480C26AFF8010000828BA08AA94A352975355120B827127A8ADD7545505
+B457AB561E545D75D75575550410410410750911694C22E6EED54138581820A86277782234107C
+2220AD3824B68A204105E4894AE4827448A204515F62242E8151578A38A38E1362759AE79249E7
+95455750C8A08B952085D5220BD8E905484E7A75FD3A54B948DF4E8022452A3F74BE36ED6EDE7D
+B8424E385A5B9E56FA9749027A267547178E441C549FD38E80E093B7F8215D22988AF940642348
+65E650A4EAB7B4D871D439FD48E3E54A17A3E8189799E3E14B1462A5D26144F4A289DD51762B65
+0B67B79DE3EA4B93D13E220A7A52A79E49D90946765156A67AEF9744F9094514AC8D41625AEA2B
+9593997864A080080864809E05EE5DC7BA04A2B4719E10FB5E50A5D02DF65A6A01D569567B22A1
+7D2616A52030C2B55108E3974DD447E42E39D48F4DF5A921115EF6D62538D8F7AE7DE907D3E346
+0CEF9D00E83D770834287A50C7EE8243E3A9954C936A54BED4601D185E32F85EA234588AE7B4FE
+3B874B753DF57B6D72ABD9E9E2444E3543344E891D8DCDB7F8F7831E59C51E5A3B3DD431453675
+451491441651DCF352C8E8C48BF1414B8ACF1CED483BB11D4B23891B715234597AF85744C80E31
+7A2444B3D52E84EECF47B581780E9277D88FFBA4203B008EA70F1D418F9170E8950BDD4AE08AAB
+A01E42FDF38F96275010FF1CD4834B35D97373D40FC82142445E906C4783DB1740C5E8C5013154
+4CE59B1585C54B28F65EB152EA18868428234733B17B8E347E83511EB16525D6B144B159651259
+65D45145165965D4DF12C57B0317B4ED7D28DDE57403F3D7BD27DD0D2E1EEE703FCA71ECDF4A51
+78A44D7778069CE82BCA9477A1E91135C09140217D04FF7889048B3F943038DDD3FF517E1E50DC
+1C030F0C2FC7F5252D7A0B7ABFC5E5005D4D14DC0F329E503F9EFC13F12209E31019280E78FDFC
+E8AA88628A28A1387FDF9AFDAC577FF0347A2878A5F3C282500F36B92EE80A7D6E35DD9E457C80
+7D16DF40753F53AF7BC3DD0A2490761EBDD5289280057EE13804DD29780202E77748E877E4EF08
+73B7D134EB90344EC543875A7F844117C534D394E3A7D44093C05EB05223C7AE9D49BEF23BD380
+EE145DD0D17F8A9C08B244D00A1D40354C541DF088FED7AC7D2020FF4E2EF7C3E9E802452786FF
+A0837353BB797533937A93F4DF4B55D3C87B24F28EEE888A2038FC91523D11D7397A0AA84DFE08
+2283CA9EE847B7E28EE87D7CB89D44F1F8EB051F4028D20D46C3800AD5DC8A3A278EE09E50E8E0
+09748090740A1D0241A104422FB7D254B845DE3B55E827FB9C17A879787D7F25EB57E71C5F81EF
+F3705DDFFDEFC3DFE71E53E15E7928FEED3FD797AF9E21D4FF9E5111223B08A4A7F0F940912FE2
+4B200413AECCDD03E5E138228B706B82FD1FF4D24D37F44EF4F34DE77CF7E4EFC047C03FF2CC3F
+F2EEFF82EB8729FD001F53E0F10247352F7CFBC070B0038C2C132EC033D7F1EE07DF10E7B8388A
+75D207A24FECC30F4D7BD37D0FF04D3330FD0F7343EA5FC00D3300A3300FE008805C3E9CFC3500
+41FFFFD7D0E834809FB43474EEFF22C3C7FC03AE4FEE7DE073FE08B47DEFC5D0B343D35D4C4FE0
+F42FBFFFB40FC4BED0F8DF42792AE5C80EA5BEDEC95E93B911A13F9451E42402DE882F45061081
+8F2A00CE79EEAF041D202D5E3513FA7BF1C09FB8F07FFA4BBB1CE773E73339CDCC0EC8EF0A30B0
+F703F3CF732FF82FEBC2FD7F4743E3F3FEFBC340FCEF0FA35FC0FFFFA4FF50400E9FCF4C202800
+0D0E83F8CDC082F202A24030004C0A232383CB09034B2D8BFF407A403C3C3E1FF2540FC4FBC3C0
+D0828208DC22754F8CA425C8881C9C0FCD39CA33E011202FC4C4FCE0AB43F2FE84B8ACFEDF2E80
+02883CB78D036E0B0C4B81F92B9100C22A513733AE4B7A0F7BF0BFB2B177E87DE0F8D4BED35144
+84DD1348C484BD423E10488105E7A0217A9203A22579A814E713FD3702220E44DE388780BDFEFB
+FC8FB20EB3E0FADEE803E4F9FF3F7FBB0D0BF0B0CAA3330D3093FCABA8A873C2C3FC2EAEABCFC8
+3BC830CF3B3C8CD9CC2E84E6C7C7EC15FC5730F9CD7C08FD0301DA2A0792A2141F3F2260FA13A3
+00154BA880BD02B8F23C30FC3228E2E1778C0F1E720E07ED0E3A3AC0FF4E82F300B8C0C0057E7F
+C55ED2C95D75C51E0553E55C55D7DC1FCF9ECF77D1DCCFDDDCFE70CF93E7BC43003D0C08FCBAF0
+B901EED78D3F4937149342A0EABAACABAA0A7888B2A22EA229C8B2AEA9EEA8ABA8FBE82ACA8ACA
+2AEACAB2ABA0F8BFA8CBAAEBACC0813CF8F105CB383CCC94831D4A034BCF527900BF04CC030231
+10F0C9077AF9CF34407F04D2FF1FC0C7E23D3C3300F382CF284C8208BF40A9E72BD3384E12D130
+3387BF3EA08CB8700A00372070E004441C007B715D20929C522C9CD4D09227440750DBB92AEBAB
+ABF820FA8B0AB5D25081C78BCF0B1795EAAFDF10FC178C402E3C940D4BE0200E80CFF3D43FBC45
+C875D74DEA551F7F530D4EE3C0400400002B9D25D08F33C2F3927B38409CB5204301F3FC4C10F9
+0CFFF807FF380E0C084577CDCBB2C8E7243C3401070F10D0043EFC838E14473BC1F00440EC4F4F
+EB437C022B533DC78FA2778BE57FE0C0D34B100EF31043A8030107FC004C0A43C0CF4E28C20D1D
+F8D4C5D000C47060F930A1C620A08207CFACE28AB01C313708E0F03C302304E44120E804CFEB13
+173038FE3060F4F350145D33FD7A003C2C04543D515FC75F35DABD44DC48F4141748E8031D2002
+C0000CC410C00C00C04330C41CFC4C83F13E4F2B3C42C37A230FC0B3128ABB930BCCE40C7383FC
+CC2A1F8937D23FC73E92A2A2B5C827BC5F4C450A841EC4E0820DE828E8C0C030888933BBBBACEF
+43043F3C3F7F43BD0A4B29FADCAA0E41D2A4485FA1E41172E4BE0AB89150ABDDC9C8'H,
+    hist {
+      assembly {
+        {
+          type partial,
+          dim 2,
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              gi 224500872,
+              gi 13992795
+            },
+            starts {
+              0,
+              77536
+            },
+            lens {
+              20371
+            },
+            strands {
+              plus,
+              plus
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          id local id 1,
+          data gene {
+            locus "SGCE",
+            desc "sarcoglycan epsilon",
+            syn {
+              "DYT11",
+              "epsilon-SG",
+              "ESG"
+            }
+          },
+          partial TRUE,
+          location int {
+            from 0,
+            to 4884,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          xref {
+            {
+              id local id 2,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 3,
+              data cdregion {
+              }
+            },
+            {
+              id local id 4,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 5,
+              data cdregion {
+              }
+            },
+            {
+              id local id 6,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 7,
+              data cdregion {
+              }
+            },
+            {
+              id local id 8,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 9,
+              data cdregion {
+              }
+            },
+            {
+              id local id 10,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 11,
+              data cdregion {
+              }
+            },
+            {
+              id local id 12,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 13,
+              data cdregion {
+              }
+            },
+            {
+              id local id 14,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 15,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 8910
+            },
+            {
+              db "HGNC",
+              tag str "HGNC:10808"
+            },
+            {
+              db "MIM",
+              tag id 604149
+            }
+          }
+        },
+        {
+          id local id 2,
+          data rna {
+            type mRNA,
+            ext name "sarcoglycan epsilon, transcript variant 2"
+          },
+          partial TRUE,
+          except TRUE,
+          product whole gi 150378491,
+          location int {
+            from 4665,
+            to 4884,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to RNA sequence, mRNA (same
+ species):RefSeq:NM_003919.2"
+            }
+          },
+          xref {
+            {
+              id local id 3,
+              data cdregion {
+              }
+            },
+            {
+              id local id 1,
+              data gene {
+                locus "SGCE"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 8910
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 3,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          partial TRUE,
+          except TRUE,
+          comment "isoform 2 is encoded by transcript variant 2",
+          product whole gi 10835047,
+          location int {
+            from 4665,
+            to 4773,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to AA sequence (same species):RefSeq:NP_003910.1"
+            }
+          },
+          xref {
+            {
+              id local id 1,
+              data gene {
+                locus "SGCE"
+              }
+            },
+            {
+              id local id 2,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "CCDS",
+              tag str "CCDS5637.1"
+            },
+            {
+              db "GeneID",
+              tag id 8910
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 4,
+          data rna {
+            type mRNA,
+            ext name "sarcoglycan epsilon, transcript variant 3"
+          },
+          partial TRUE,
+          except TRUE,
+          product whole gi 150378534,
+          location int {
+            from 4665,
+            to 4884,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to RNA sequence, mRNA (same
+ species):RefSeq:NM_001099400.1"
+            }
+          },
+          xref {
+            {
+              id local id 5,
+              data cdregion {
+              }
+            },
+            {
+              id local id 1,
+              data gene {
+                locus "SGCE"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 8910
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 5,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          partial TRUE,
+          except TRUE,
+          comment "isoform 3 is encoded by transcript variant 3",
+          product whole gi 150378535,
+          location int {
+            from 4665,
+            to 4773,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to AA sequence (same species):RefSeq:NP_001092870.1"
+            }
+          },
+          xref {
+            {
+              id local id 1,
+              data gene {
+                locus "SGCE"
+              }
+            },
+            {
+              id local id 4,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "CCDS",
+              tag str "CCDS47642.1"
+            },
+            {
+              db "GeneID",
+              tag id 8910
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 6,
+          data rna {
+            type mRNA,
+            ext name "sarcoglycan epsilon, transcript variant 4"
+          },
+          partial TRUE,
+          except TRUE,
+          product whole gi 667489386,
+          location int {
+            from 4665,
+            to 4884,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to RNA sequence, mRNA (same
+ species):RefSeq:NM_001301139.1"
+            }
+          },
+          xref {
+            {
+              id local id 7,
+              data cdregion {
+              }
+            },
+            {
+              id local id 1,
+              data gene {
+                locus "SGCE"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 8910
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 7,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          partial TRUE,
+          except TRUE,
+          comment "isoform 4 is encoded by transcript variant 4",
+          product whole gi 667489387,
+          location int {
+            from 4665,
+            to 4773,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to AA sequence (same species):RefSeq:NP_001288068.1"
+            }
+          },
+          xref {
+            {
+              id local id 1,
+              data gene {
+                locus "SGCE"
+              }
+            },
+            {
+              id local id 6,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "CCDS",
+              tag str "CCDS75634.1"
+            },
+            {
+              db "GeneID",
+              tag id 8910
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 8,
+          data rna {
+            type mRNA,
+            ext name "sarcoglycan epsilon, transcript variant 6"
+          },
+          partial TRUE,
+          except TRUE,
+          product whole gi 1092878765,
+          location int {
+            from 4665,
+            to 4884,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to RNA sequence, mRNA (same
+ species):RefSeq:NM_001346715.1"
+            }
+          },
+          xref {
+            {
+              id local id 9,
+              data cdregion {
+              }
+            },
+            {
+              id local id 1,
+              data gene {
+                locus "SGCE"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 8910
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 9,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          partial TRUE,
+          except TRUE,
+          comment "isoform 6 is encoded by transcript variant 6",
+          product whole gi 1092878766,
+          location int {
+            from 4665,
+            to 4773,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to AA sequence (same species):RefSeq:NP_001333644.1"
+            }
+          },
+          xref {
+            {
+              id local id 1,
+              data gene {
+                locus "SGCE"
+              }
+            },
+            {
+              id local id 8,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 8910
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 10,
+          data rna {
+            type mRNA,
+            ext name "sarcoglycan epsilon, transcript variant 7"
+          },
+          partial TRUE,
+          except TRUE,
+          product whole gi 1092878796,
+          location int {
+            from 4665,
+            to 4884,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to RNA sequence, mRNA (same
+ species):RefSeq:NM_001346717.1"
+            }
+          },
+          xref {
+            {
+              id local id 11,
+              data cdregion {
+              }
+            },
+            {
+              id local id 1,
+              data gene {
+                locus "SGCE"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 8910
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 11,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          partial TRUE,
+          except TRUE,
+          comment "isoform 7 is encoded by transcript variant 7",
+          product whole gi 1092878797,
+          location int {
+            from 4665,
+            to 4773,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to AA sequence (same species):RefSeq:NP_001333646.1"
+            }
+          },
+          xref {
+            {
+              id local id 1,
+              data gene {
+                locus "SGCE"
+              }
+            },
+            {
+              id local id 10,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 8910
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 12,
+          data rna {
+            type mRNA,
+            ext name "sarcoglycan epsilon, transcript variant 1"
+          },
+          partial TRUE,
+          except TRUE,
+          product whole gi 150378453,
+          location int {
+            from 4665,
+            to 4884,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to RNA sequence, mRNA (same
+ species):RefSeq:NM_001099401.1"
+            }
+          },
+          xref {
+            {
+              id local id 13,
+              data cdregion {
+              }
+            },
+            {
+              id local id 1,
+              data gene {
+                locus "SGCE"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 8910
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 13,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          partial TRUE,
+          except TRUE,
+          comment "isoform 1 is encoded by transcript variant 1",
+          product whole gi 150378454,
+          location int {
+            from 4665,
+            to 4773,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to AA sequence (same species):RefSeq:NP_001092871.1"
+            }
+          },
+          xref {
+            {
+              id local id 1,
+              data gene {
+                locus "SGCE"
+              }
+            },
+            {
+              id local id 12,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "CCDS",
+              tag str "CCDS47643.1"
+            },
+            {
+              db "GeneID",
+              tag id 8910
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 14,
+          data rna {
+            type mRNA,
+            ext name "sarcoglycan epsilon, transcript variant 5"
+          },
+          partial TRUE,
+          except TRUE,
+          product whole gi 1092878838,
+          location int {
+            from 4665,
+            to 4884,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to RNA sequence, mRNA (same
+ species):RefSeq:NM_001346713.1"
+            }
+          },
+          xref {
+            {
+              id local id 15,
+              data cdregion {
+              }
+            },
+            {
+              id local id 1,
+              data gene {
+                locus "SGCE"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 8910
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 15,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          partial TRUE,
+          except TRUE,
+          comment "isoform 5 is encoded by transcript variant 5",
+          product whole gi 1092878839,
+          location int {
+            from 4665,
+            to 4773,
+            strand minus,
+            id gi 224500872,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to AA sequence (same species):RefSeq:NP_001333642.1"
+            }
+          },
+          xref {
+            {
+              id local id 1,
+              data gene {
+                locus "SGCE"
+              }
+            },
+            {
+              id local id 14,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 8910
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 16,
+          data gene {
+            locus "PEG10",
+            desc "paternally expressed 10",
+            syn {
+              "EDR",
+              "HB-1",
+              "Mar2",
+              "Mart2",
+              "MEF3L",
+              "RGAG3",
+              "RTL2",
+              "SIRH1"
+            }
+          },
+          location int {
+            from 5000,
+            to 18370,
+            strand plus,
+            id gi 224500872
+          },
+          xref {
+            {
+              id local id 17,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 18,
+              data cdregion {
+              }
+            },
+            {
+              id local id 19,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 20,
+              data cdregion {
+              }
+            },
+            {
+              id local id 21,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 22,
+              data cdregion {
+              }
+            },
+            {
+              id local id 23
+            },
+            {
+              id local id 24
+            },
+            {
+              id local id 25
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 23089
+            },
+            {
+              db "HGNC",
+              tag str "HGNC:14005"
+            },
+            {
+              db "MIM",
+              tag id 609810
+            }
+          }
+        },
+        {
+          id local id 17,
+          data rna {
+            type mRNA,
+            ext name "paternally expressed 10, transcript variant 1"
+          },
+          product whole gi 94421474,
+          location mix {
+            int {
+              from 5000,
+              to 5255,
+              strand plus,
+              id gi 224500872
+            },
+            int {
+              from 12009,
+              to 18370,
+              strand plus,
+              id gi 224500872
+            }
+          },
+          xref {
+            {
+              id local id 18,
+              data cdregion {
+              }
+            },
+            {
+              id local id 16,
+              data gene {
+                locus "PEG10"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 23089
+            }
+          }
+        },
+        {
+          id local id 18,
+          data cdregion {
+            code {
+              id 1
+            }
+          },
+          except TRUE,
+          comment "protein translation is dependent on -1 ribosomal
+ frameshift; isoform 1 is encoded by transcript variant 1",
+          product whole gi 94421475,
+          location mix {
+            int {
+              from 12232,
+              to 13188,
+              strand plus,
+              id gi 224500872
+            },
+            int {
+              from 13188,
+              to 14357,
+              strand plus,
+              id gi 224500872
+            }
+          },
+          xref {
+            {
+              id local id 16,
+              data gene {
+                locus "PEG10"
+              }
+            },
+            {
+              id local id 17,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 23089
+            }
+          },
+          except-text "ribosomal slippage"
+        },
+        {
+          id local id 19,
+          data rna {
+            type mRNA,
+            ext name "paternally expressed 10, transcript variant 2"
+          },
+          product whole gi 698980030,
+          location mix {
+            int {
+              from 5000,
+              to 5266,
+              strand plus,
+              id gi 224500872
+            },
+            int {
+              from 12009,
+              to 18370,
+              strand plus,
+              id gi 224500872
+            }
+          },
+          xref {
+            {
+              id local id 20,
+              data cdregion {
+              }
+            },
+            {
+              id local id 16,
+              data gene {
+                locus "PEG10"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 23089
+            }
+          }
+        },
+        {
+          id local id 20,
+          data cdregion {
+            code {
+              id 1
+            }
+          },
+          comment "isoform 4 is encoded by transcript variant 2",
+          product whole gi 289176998,
+          location mix {
+            int {
+              from 5262,
+              to 5266,
+              strand plus,
+              id gi 224500872
+            },
+            int {
+              from 12009,
+              to 13209,
+              strand plus,
+              id gi 224500872
+            }
+          },
+          xref {
+            {
+              id local id 16,
+              data gene {
+                locus "PEG10"
+              }
+            },
+            {
+              id local id 19,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "CCDS",
+              tag str "CCDS75636.1"
+            },
+            {
+              db "GeneID",
+              tag id 23089
+            }
+          }
+        },
+        {
+          id local id 21,
+          data rna {
+            type mRNA,
+            ext name "paternally expressed 10, transcript variant 1"
+          },
+          product whole gi 94421472,
+          location mix {
+            int {
+              from 5000,
+              to 5255,
+              strand plus,
+              id gi 224500872
+            },
+            int {
+              from 12009,
+              to 18370,
+              strand plus,
+              id gi 224500872
+            }
+          },
+          xref {
+            {
+              id local id 22,
+              data cdregion {
+              }
+            },
+            {
+              id local id 16,
+              data gene {
+                locus "PEG10"
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 23089
+            }
+          }
+        },
+        {
+          id local id 22,
+          data cdregion {
+            code {
+              id 1
+            }
+          },
+          comment "isoform 2 is encoded by transcript variant 1",
+          product whole gi 94421473,
+          location int {
+            from 12232,
+            to 13209,
+            strand plus,
+            id gi 224500872
+          },
+          xref {
+            {
+              id local id 16,
+              data gene {
+                locus "PEG10"
+              }
+            },
+            {
+              id local id 21,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "CCDS",
+              tag str "CCDS55126.1"
+            },
+            {
+              db "GeneID",
+              tag id 23089
+            }
+          }
+        },
+        {
+          id local id 23,
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 5000,
+            to 5255,
+            strand plus,
+            id gi 224500872
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            },
+            {
+              qual "number",
+              val "1a"
+            }
+          },
+          xref {
+            {
+              id local id 16,
+              data gene {
+                locus "PEG10"
+              }
+            }
+          }
+        },
+        {
+          id local id 24,
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 12009,
+            to 18370,
+            strand plus,
+            id gi 224500872
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            },
+            {
+              qual "number",
+              val "2"
+            }
+          },
+          xref {
+            {
+              id local id 16,
+              data gene {
+                locus "PEG10"
+              }
+            }
+          }
+        },
+        {
+          id local id 25,
+          data imp {
+            key "exon"
+          },
+          location int {
+            from 5000,
+            to 5266,
+            strand plus,
+            id gi 224500872
+          },
+          qual {
+            {
+              qual "inference",
+              val "alignment:Splign:2.1.0"
+            },
+            {
+              qual "number",
+              val "1b"
+            }
+          },
+          xref {
+            {
+              id local id 16,
+              data gene {
+                locus "PEG10"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      desc {
+        name "Reference transcript alignments"
+      },
+      data align {
+        {
+          type global,
+          dim 2,
+          segs spliced {
+            product-id gi 94421474,
+            genomic-id gi 224500872,
+            product-strand plus,
+            genomic-strand plus,
+            product-type transcript,
+            exons {
+              {
+                product-start nucpos 0,
+                product-end nucpos 255,
+                genomic-start 5000,
+                genomic-end 5255,
+                parts {
+                  match 256
+                },
+                scores {
+                  {
+                    id str "splign",
+                    value real { 256, 10, 0 }
+                  },
+                  {
+                    id str "idty",
+                    value real { 1, 10, 0 }
+                  }
+                },
+                donor-after-exon {
+                  bases "GT"
+                }
+              },
+              {
+                product-start nucpos 256,
+                product-end nucpos 6617,
+                genomic-start 12009,
+                genomic-end 18370,
+                parts {
+                  match 6362
+                },
+                scores {
+                  {
+                    id str "splign",
+                    value real { 6362, 10, 0 }
+                  },
+                  {
+                    id str "idty",
+                    value real { 1, 10, 0 }
+                  }
+                },
+                acceptor-before-exon {
+                  bases "AG"
+                }
+              }
+            },
+            poly-a 6618,
+            product-length 6628
+          },
+          ext {
+            {
+              type str "origin",
+              data {
+                {
+                  label str "algo",
+                  data str "Splign:2.1.0"
+                }
+              }
+            }
+          }
+        },
+        {
+          type global,
+          dim 2,
+          segs spliced {
+            product-id gi 698980030,
+            genomic-id gi 224500872,
+            product-strand plus,
+            genomic-strand plus,
+            product-type transcript,
+            exons {
+              {
+                product-start nucpos 0,
+                product-end nucpos 266,
+                genomic-start 5000,
+                genomic-end 5266,
+                parts {
+                  match 267
+                },
+                scores {
+                  {
+                    id str "splign",
+                    value real { 267, 10, 0 }
+                  },
+                  {
+                    id str "idty",
+                    value real { 1, 10, 0 }
+                  }
+                },
+                donor-after-exon {
+                  bases "GT"
+                }
+              },
+              {
+                product-start nucpos 267,
+                product-end nucpos 6628,
+                genomic-start 12009,
+                genomic-end 18370,
+                parts {
+                  match 6362
+                },
+                scores {
+                  {
+                    id str "splign",
+                    value real { 6362, 10, 0 }
+                  },
+                  {
+                    id str "idty",
+                    value real { 1, 10, 0 }
+                  }
+                },
+                acceptor-before-exon {
+                  bases "AG"
+                }
+              }
+            },
+            poly-a 6629,
+            product-length 6639
+          },
+          ext {
+            {
+              type str "origin",
+              data {
+                {
+                  label str "algo",
+                  data str "Splign:2.1.0"
+                }
+              }
+            }
+          }
+        },
+        {
+          type global,
+          dim 2,
+          segs spliced {
+            product-id gi 94421472,
+            genomic-id gi 224500872,
+            product-strand plus,
+            genomic-strand plus,
+            product-type transcript,
+            exons {
+              {
+                product-start nucpos 0,
+                product-end nucpos 255,
+                genomic-start 5000,
+                genomic-end 5255,
+                parts {
+                  match 256
+                },
+                scores {
+                  {
+                    id str "splign",
+                    value real { 256, 10, 0 }
+                  },
+                  {
+                    id str "idty",
+                    value real { 1, 10, 0 }
+                  }
+                },
+                donor-after-exon {
+                  bases "GT"
+                }
+              },
+              {
+                product-start nucpos 256,
+                product-end nucpos 6617,
+                genomic-start 12009,
+                genomic-end 18370,
+                parts {
+                  match 6362
+                },
+                scores {
+                  {
+                    id str "splign",
+                    value real { 6362, 10, 0 }
+                  },
+                  {
+                    id str "idty",
+                    value real { 1, 10, 0 }
+                  }
+                },
+                acceptor-before-exon {
+                  bases "AG"
+                }
+              }
+            },
+            poly-a 6618,
+            product-length 6628
+          },
+          ext {
+            {
+              type str "origin",
+              data {
+                {
+                  label str "algo",
+                  data str "Splign:2.1.0"
+                }
+              }
+            }
+          }
+        },
+        {
+          type global,
+          dim 2,
+          segs spliced {
+            product-id gi 698980029,
+            genomic-id gi 224500872,
+            product-strand plus,
+            genomic-strand plus,
+            product-type transcript,
+            exons {
+              {
+                product-start nucpos 0,
+                product-end nucpos 266,
+                genomic-start 5000,
+                genomic-end 5266,
+                parts {
+                  match 267
+                },
+                scores {
+                  {
+                    id str "splign",
+                    value real { 267, 10, 0 }
+                  },
+                  {
+                    id str "idty",
+                    value real { 1, 10, 0 }
+                  }
+                },
+                donor-after-exon {
+                  bases "GT"
+                }
+              },
+              {
+                product-start nucpos 267,
+                product-end nucpos 6628,
+                genomic-start 12009,
+                genomic-end 18370,
+                parts {
+                  match 6362
+                },
+                scores {
+                  {
+                    id str "splign",
+                    value real { 6362, 10, 0 }
+                  },
+                  {
+                    id str "idty",
+                    value real { 1, 10, 0 }
+                  }
+                },
+                acceptor-before-exon {
+                  bases "AG"
+                }
+              }
+            },
+            poly-a 6629,
+            product-length 6639
+          },
+          ext {
+            {
+              type str "origin",
+              data {
+                {
+                  label str "algo",
+                  data str "Splign:2.1.0"
+                }
+              }
+            }
+          }
+        },
+        {
+          type global,
+          dim 2,
+          segs spliced {
+            product-id gi 296785057,
+            genomic-id gi 224500872,
+            product-strand plus,
+            genomic-strand plus,
+            product-type transcript,
+            exons {
+              {
+                product-start nucpos 0,
+                product-end nucpos 255,
+                genomic-start 5000,
+                genomic-end 5255,
+                parts {
+                  match 256
+                },
+                scores {
+                  {
+                    id str "splign",
+                    value real { 256, 10, 0 }
+                  },
+                  {
+                    id str "idty",
+                    value real { 1, 10, 0 }
+                  }
+                },
+                donor-after-exon {
+                  bases "GT"
+                }
+              },
+              {
+                product-start nucpos 256,
+                product-end nucpos 6617,
+                genomic-start 12009,
+                genomic-end 18370,
+                parts {
+                  match 6362
+                },
+                scores {
+                  {
+                    id str "splign",
+                    value real { 6362, 10, 0 }
+                  },
+                  {
+                    id str "idty",
+                    value real { 1, 10, 0 }
+                  }
+                },
+                acceptor-before-exon {
+                  bases "AG"
+                }
+              }
+            },
+            poly-a 6618,
+            product-length 6628
+          },
+          ext {
+            {
+              type str "origin",
+              data {
+                {
+                  label str "algo",
+                  data str "Splign:2.1.0"
+                }
+              }
+            }
+          }
+        },
+        {
+          type global,
+          dim 2,
+          segs spliced {
+            product-id gi 296785059,
+            genomic-id gi 224500872,
+            product-strand plus,
+            genomic-strand plus,
+            product-type transcript,
+            exons {
+              {
+                product-start nucpos 0,
+                product-end nucpos 255,
+                genomic-start 5000,
+                genomic-end 5255,
+                parts {
+                  match 256
+                },
+                scores {
+                  {
+                    id str "splign",
+                    value real { 256, 10, 0 }
+                  },
+                  {
+                    id str "idty",
+                    value real { 1, 10, 0 }
+                  }
+                },
+                donor-after-exon {
+                  bases "GT"
+                }
+              },
+              {
+                product-start nucpos 256,
+                product-end nucpos 6617,
+                genomic-start 12009,
+                genomic-end 18370,
+                parts {
+                  match 6362
+                },
+                scores {
+                  {
+                    id str "splign",
+                    value real { 6362, 10, 0 }
+                  },
+                  {
+                    id str "idty",
+                    value real { 1, 10, 0 }
+                  }
+                },
+                acceptor-before-exon {
+                  bases "AG"
+                }
+              }
+            },
+            poly-a 6618,
+            product-length 6628
+          },
+          ext {
+            {
+              type str "origin",
+              data {
+                {
+                  label str "algo",
+                  data str "Splign:2.1.0"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

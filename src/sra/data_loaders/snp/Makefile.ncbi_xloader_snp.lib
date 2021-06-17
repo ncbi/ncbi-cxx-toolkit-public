@@ -1,0 +1,28 @@
+# $Id$
+
+# Build library "ncbi_xloader_snp"
+###############################
+
+PROJ_TAG = gbench,lib,public
+
+LIB = ncbi_xloader_snp
+SRC = snploader snploader_impl
+
+REQUIRES = objects $(GRPC_OPT)
+
+ASN_DEP = seqset seq
+
+LIB_OR_DLL = both
+
+DLL_LIB = $(SOBJMGR_LIBS) sraread$(STATIC) $(SRAREAD_LDEP) dbsnp_ptis \
+          grpc_integration $(XCONNEXT) xconnect $(CMPRS_LIB)
+LIBS = $(SRA_SDK_SYSLIBS) $(GRPC_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+POST_LINK = $(VDB_POST_LINK)
+
+CPPFLAGS = $(SRA_INCLUDE) -DNCBI_XLOADER_SNP_EXPORTS $(ORIG_CPPFLAGS)
+
+WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    $(SOBJMGR_LIBS) $(SRAREAD_LIBS) $(SRA_SDK_SYSLIBS)

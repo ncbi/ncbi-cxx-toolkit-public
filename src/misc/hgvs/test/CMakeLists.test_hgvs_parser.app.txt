@@ -1,0 +1,13 @@
+# $Id$
+
+NCBI_begin_app(test_hgvs_parser)
+  NCBI_sources(test_hgvs_parser_app)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(hgvs)
+  NCBI_set_test_assets(test_variations.asn)
+  NCBI_begin_test(test_hgvs_parser)
+    NCBI_set_test_command(test_hgvs_parser -in test_variations.asn)
+  NCBI_end_test()
+  NCBI_project_watchers(astashya)
+NCBI_end_app()
+

@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(windowmasker)
+  NCBI_sources(main win_mask_app win_mask_sdust_masker)
+  NCBI_uses_toolkit_libraries(seq ncbi_xloader_genbank xalgodustmask xalgowinmask)
+  NCBI_project_tags(gbench)
+  NCBI_project_watchers(morgulis camacho mozese2 fongah2)
+NCBI_end_app()
+

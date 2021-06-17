@@ -1,0 +1,1569 @@
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 178601,
+      gi 178602
+    },
+    starts {
+      1,
+      1
+    },
+    lens {
+      8
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "APP"
+      },
+      location packed-int {
+        {
+          from 483,
+          to 1153,
+          id gi 178595
+        },
+        {
+          from 0,
+          to 770,
+          id gi 178596
+        },
+        {
+          from 0,
+          to 603,
+          id gi 178597
+        },
+        {
+          from 0,
+          to 248,
+          id gi 178598
+        },
+        {
+          from 0,
+          to 909,
+          id gi 178599
+        },
+        {
+          from 0,
+          to 744,
+          id gi 178600
+        },
+        {
+          from 0,
+          to 668,
+          id gi 178601
+        },
+        {
+          from 0,
+          to 412,
+          id gi 178602
+        },
+        {
+          from 0,
+          to 638,
+          id gi 178603
+        },
+        {
+          from 0,
+          to 467,
+          id gi 178604
+        },
+        {
+          from 0,
+          to 741,
+          id gi 178605
+        },
+        {
+          from 0,
+          to 487,
+          id gi 178606
+        },
+        {
+          from 0,
+          to 412,
+          id gi 178607
+        },
+        {
+          from 0,
+          to 1036,
+          id gi 178608
+        },
+        {
+          from 0,
+          to 576,
+          id gi 178609
+        },
+        {
+          from 0,
+          to 533,
+          id gi 178610
+        },
+        {
+          from 0,
+          to 552,
+          id gi 178611
+        },
+        {
+          from 0,
+          to 566,
+          id gi 178612
+        },
+        {
+          from 0,
+          to 1379,
+          id gi 178613
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "amyloid-beta protein"
+      },
+      comment "alternatively transcribed; G00-119-692",
+      location mix {
+        int {
+          from 833,
+          to 1036,
+          strand plus,
+          id gi 178595
+        },
+        int {
+          from 278,
+          to 445,
+          strand plus,
+          id gi 178596
+        },
+        int {
+          from 229,
+          to 358,
+          strand plus,
+          id gi 178597
+        },
+        int {
+          from 131,
+          to 243,
+          strand plus,
+          id gi 178598
+        },
+        int {
+          from 485,
+          to 678,
+          strand plus,
+          id gi 178599
+        },
+        int {
+          from 199,
+          to 401,
+          strand plus,
+          id gi 178600
+        },
+        int {
+          from 184,
+          to 351,
+          strand plus,
+          id gi 178601
+        },
+        int {
+          from 158,
+          to 214,
+          strand plus,
+          id gi 178602
+        },
+        int {
+          from 309,
+          to 442,
+          strand plus,
+          id gi 178603
+        },
+        int {
+          from 263,
+          to 337,
+          strand plus,
+          id gi 178604
+        },
+        int {
+          from 316,
+          to 474,
+          strand plus,
+          id gi 178605
+        },
+        int {
+          from 207,
+          to 335,
+          strand plus,
+          id gi 178606
+        },
+        int {
+          from 288,
+          to 739,
+          strand plus,
+          id gi 178608
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "amyloid-beta protein"
+      },
+      comment "G00-119-692",
+      location mix {
+        int {
+          from 833,
+          to 1036,
+          strand plus,
+          id gi 178595
+        },
+        int {
+          from 278,
+          to 445,
+          strand plus,
+          id gi 178596
+        },
+        int {
+          from 229,
+          to 358,
+          strand plus,
+          id gi 178597
+        },
+        int {
+          from 131,
+          to 243,
+          strand plus,
+          id gi 178598
+        },
+        int {
+          from 485,
+          to 678,
+          strand plus,
+          id gi 178599
+        },
+        int {
+          from 199,
+          to 401,
+          strand plus,
+          id gi 178600
+        },
+        int {
+          from 184,
+          to 351,
+          strand plus,
+          id gi 178601
+        },
+        int {
+          from 158,
+          to 214,
+          strand plus,
+          id gi 178602
+        },
+        int {
+          from 309,
+          to 442,
+          strand plus,
+          id gi 178603
+        },
+        int {
+          from 263,
+          to 337,
+          strand plus,
+          id gi 178604
+        },
+        int {
+          from 316,
+          to 474,
+          strand plus,
+          id gi 178605
+        },
+        int {
+          from 207,
+          to 335,
+          strand plus,
+          id gi 178606
+        },
+        int {
+          from 92,
+          to 191,
+          strand plus,
+          id gi 178607
+        },
+        int {
+          from 241,
+          to 462,
+          strand plus,
+          id gi 178609
+        },
+        int {
+          from 258,
+          to 311,
+          strand plus,
+          id gi 178610
+        },
+        int {
+          from 173,
+          to 273,
+          strand plus,
+          id gi 178611
+        },
+        int {
+          from 194,
+          to 340,
+          strand plus,
+          id gi 178612
+        },
+        int {
+          from 159,
+          to 1379,
+          strand plus,
+          id gi 178613
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data cdregion {
+        frame one,
+        code {
+          id 1
+        }
+      },
+      comment "alternate amyloid-beta protein",
+      product whole gi 178615,
+      location mix {
+        int {
+          from 980,
+          to 1036,
+          strand plus,
+          id gi 178595
+        },
+        int {
+          from 278,
+          to 445,
+          strand plus,
+          id gi 178596
+        },
+        int {
+          from 229,
+          to 358,
+          strand plus,
+          id gi 178597
+        },
+        int {
+          from 131,
+          to 243,
+          strand plus,
+          id gi 178598
+        },
+        int {
+          from 485,
+          to 678,
+          strand plus,
+          id gi 178599
+        },
+        int {
+          from 199,
+          to 401,
+          strand plus,
+          id gi 178600
+        },
+        int {
+          from 184,
+          to 351,
+          strand plus,
+          id gi 178601
+        },
+        int {
+          from 158,
+          to 214,
+          strand plus,
+          id gi 178602
+        },
+        int {
+          from 309,
+          to 442,
+          strand plus,
+          id gi 178603
+        },
+        int {
+          from 263,
+          to 337,
+          strand plus,
+          id gi 178604
+        },
+        int {
+          from 316,
+          to 474,
+          strand plus,
+          id gi 178605
+        },
+        int {
+          from 207,
+          to 335,
+          strand plus,
+          id gi 178606
+        },
+        int {
+          from 288,
+          to 344,
+          strand plus,
+          id gi 178608
+        }
+      },
+      dbxref {
+        {
+          db "GDB",
+          tag str "G00-119-692"
+        }
+      }
+    },
+    {
+      data cdregion {
+        frame one,
+        code {
+          id 1
+        }
+      },
+      product whole gi 178616,
+      location mix {
+        int {
+          from 980,
+          to 1036,
+          id gi 178595
+        },
+        int {
+          from 278,
+          to 445,
+          id gi 178596
+        },
+        int {
+          from 229,
+          to 358,
+          id gi 178597
+        },
+        int {
+          from 131,
+          to 243,
+          id gi 178598
+        },
+        int {
+          from 485,
+          to 678,
+          id gi 178599
+        },
+        int {
+          from 199,
+          to 401,
+          id gi 178600
+        },
+        int {
+          from 184,
+          to 351,
+          id gi 178601
+        },
+        int {
+          from 158,
+          to 214,
+          id gi 178602
+        },
+        int {
+          from 309,
+          to 442,
+          id gi 178603
+        },
+        int {
+          from 263,
+          to 337,
+          id gi 178604
+        },
+        int {
+          from 316,
+          to 474,
+          id gi 178605
+        },
+        int {
+          from 207,
+          to 335,
+          id gi 178606
+        },
+        int {
+          from 92,
+          to 191,
+          id gi 178607
+        },
+        int {
+          from 241,
+          to 462,
+          id gi 178609
+        },
+        int {
+          from 258,
+          to 311,
+          id gi 178610
+        },
+        int {
+          from 173,
+          to 273,
+          id gi 178611
+        },
+        int {
+          from 194,
+          to 340,
+          id gi 178612
+        },
+        int {
+          from 159,
+          to 260,
+          id gi 178613
+        }
+      },
+      dbxref {
+        {
+          db "GDB",
+          tag str "G00-119-692"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data align {
+    {
+      type partial,
+      dim 2,
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 178601,
+          gi 178602
+        },
+        starts {
+          1,
+          1
+        },
+        lens {
+          8
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 178601,
+          gi 178602
+        },
+        starts {
+          1,
+          1
+        },
+        lens {
+          0
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data imp {
+        key "exon"
+      },
+      comment "G00-119-692",
+      location int {
+        from 184,
+        to 351,
+        id gi 178601
+      },
+      qual {
+        {
+          qual "number",
+          val "7"
+        }
+      }
+    }
+  }
+}
+Seq-feat ::= {
+  data gene {
+    locus "APP"
+  },
+  location packed-int {
+    {
+      from 483,
+      to 1153,
+      id gi 178614
+    },
+    {
+      from 1154,
+      to 1924,
+      id gi 178614
+    },
+    {
+      from 1925,
+      to 2528,
+      id gi 178614
+    },
+    {
+      from 2529,
+      to 2777,
+      id gi 178614
+    },
+    {
+      from 2778,
+      to 3687,
+      id gi 178614
+    },
+    {
+      from 3688,
+      to 4432,
+      id gi 178614
+    },
+    {
+      from 4433,
+      to 5101,
+      id gi 178614
+    },
+    {
+      from 5102,
+      to 5514,
+      id gi 178614
+    },
+    {
+      from 5515,
+      to 6153,
+      id gi 178614
+    },
+    {
+      from 6154,
+      to 6621,
+      id gi 178614
+    },
+    {
+      from 6622,
+      to 7363,
+      id gi 178614
+    },
+    {
+      from 7364,
+      to 7851,
+      id gi 178614
+    },
+    {
+      from 7852,
+      to 8264,
+      id gi 178614
+    },
+    {
+      from 8265,
+      to 9301,
+      id gi 178614
+    },
+    {
+      from 9302,
+      to 9878,
+      id gi 178614
+    },
+    {
+      from 9879,
+      to 10412,
+      id gi 178614
+    },
+    {
+      from 10413,
+      to 10965,
+      id gi 178614
+    },
+    {
+      from 10966,
+      to 11532,
+      id gi 178614
+    },
+    {
+      from 11533,
+      to 12912,
+      id gi 178614
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "protein_bind"
+  },
+  comment "G00-119-692",
+  location int {
+    from 483,
+    to 489,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "bound_moiety",
+      val "AP-1"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "protein_bind"
+  },
+  comment "G00-119-692",
+  location int {
+    from 788,
+    to 794,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "bound_moiety",
+      val "AP-1"
+    }
+  }
+}
+Seq-feat ::= {
+  data rna {
+    type mRNA,
+    ext name "amyloid-beta protein"
+  },
+  comment "G00-119-692",
+  location mix {
+    int {
+      from 833,
+      to 1036,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 1432,
+      to 1599,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 2154,
+      to 2283,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 2660,
+      to 2772,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 3263,
+      to 3456,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 3887,
+      to 4089,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 4617,
+      to 4784,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 5260,
+      to 5316,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 5824,
+      to 5957,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 6417,
+      to 6491,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 6938,
+      to 7096,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 7571,
+      to 7699,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 7944,
+      to 8043,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 9543,
+      to 9764,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 10137,
+      to 10190,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 10586,
+      to 10686,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 11160,
+      to 11306,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 11692,
+      to 12912,
+      strand plus,
+      id gi 178614
+    }
+  }
+}
+Seq-feat ::= {
+  data rna {
+    type mRNA,
+    ext name "amyloid-beta protein"
+  },
+  comment "alternatively transcribed; G00-119-692",
+  location mix {
+    int {
+      from 833,
+      to 1036,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 1432,
+      to 1599,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 2154,
+      to 2283,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 2660,
+      to 2772,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 3263,
+      to 3456,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 3887,
+      to 4089,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 4617,
+      to 4784,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 5260,
+      to 5316,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 5824,
+      to 5957,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 6417,
+      to 6491,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 6938,
+      to 7096,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 7571,
+      to 7699,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 8553,
+      to 9004,
+      strand plus,
+      id gi 178614
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 833,
+    to 1036,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "1"
+    }
+  }
+}
+Seq-feat ::= {
+  data cdregion {
+    frame one,
+    code {
+      id 1
+    }
+  },
+  product whole gi 178616,
+  location mix {
+    int {
+      from 980,
+      to 1036,
+      id gi 178614
+    },
+    int {
+      from 1432,
+      to 1599,
+      id gi 178614
+    },
+    int {
+      from 2154,
+      to 2283,
+      id gi 178614
+    },
+    int {
+      from 2660,
+      to 2772,
+      id gi 178614
+    },
+    int {
+      from 3263,
+      to 3456,
+      id gi 178614
+    },
+    int {
+      from 3887,
+      to 4089,
+      id gi 178614
+    },
+    int {
+      from 4617,
+      to 4784,
+      id gi 178614
+    },
+    int {
+      from 5260,
+      to 5316,
+      id gi 178614
+    },
+    int {
+      from 5824,
+      to 5957,
+      id gi 178614
+    },
+    int {
+      from 6417,
+      to 6491,
+      id gi 178614
+    },
+    int {
+      from 6938,
+      to 7096,
+      id gi 178614
+    },
+    int {
+      from 7571,
+      to 7699,
+      id gi 178614
+    },
+    int {
+      from 7944,
+      to 8043,
+      id gi 178614
+    },
+    int {
+      from 9543,
+      to 9764,
+      id gi 178614
+    },
+    int {
+      from 10137,
+      to 10190,
+      id gi 178614
+    },
+    int {
+      from 10586,
+      to 10686,
+      id gi 178614
+    },
+    int {
+      from 11160,
+      to 11306,
+      id gi 178614
+    },
+    int {
+      from 11692,
+      to 11793,
+      id gi 178614
+    }
+  },
+  dbxref {
+    {
+      db "GDB",
+      tag str "G00-119-692"
+    }
+  }
+}
+Seq-feat ::= {
+  data cdregion {
+    frame one,
+    code {
+      id 1
+    }
+  },
+  comment "alternate amyloid-beta protein",
+  product whole gi 178615,
+  location mix {
+    int {
+      from 980,
+      to 1036,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 1432,
+      to 1599,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 2154,
+      to 2283,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 2660,
+      to 2772,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 3263,
+      to 3456,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 3887,
+      to 4089,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 4617,
+      to 4784,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 5260,
+      to 5316,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 5824,
+      to 5957,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 6417,
+      to 6491,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 6938,
+      to 7096,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 7571,
+      to 7699,
+      strand plus,
+      id gi 178614
+    },
+    int {
+      from 8553,
+      to 8609,
+      strand plus,
+      id gi 178614
+    }
+  },
+  dbxref {
+    {
+      db "GDB",
+      tag str "G00-119-692"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 1432,
+    to 1599,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "2"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 2154,
+    to 2283,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "3"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 2660,
+    to 2772,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "4"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 3263,
+    to 3456,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "5"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 3887,
+    to 4089,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "6"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 4617,
+    to 4784,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "7"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 5260,
+    to 5316,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "8"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "variation"
+  },
+  comment "g in one allele; gg in another allele",
+  location pnt {
+    point 5370,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "replace",
+      val "gg"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 5824,
+    to 5957,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "9"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 6417,
+    to 6491,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "10"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 6938,
+    to 7096,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "11"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 7571,
+    to 7699,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "12"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "alternately spliced; G00-119-692",
+  location int {
+    from 7944,
+    to 8043,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "13"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "alternately spliced; G00-119-692",
+  location int {
+    from 8553,
+    to 9004,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "13"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 9543,
+    to 9764,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "14"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 10137,
+    to 10190,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "15"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "amyloid-beta protein",
+  location int {
+    from 10586,
+    to 10686,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "16"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 11160,
+    to 11306,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "17"
+    }
+  }
+}
+Seq-feat ::= {
+  data imp {
+    key "exon"
+  },
+  comment "G00-119-692",
+  location int {
+    from 11692,
+    to 12912,
+    id gi 178614
+  },
+  qual {
+    {
+      qual "number",
+      val "18"
+    }
+  }
+}
+Seq-feat ::= {
+  data rna {
+    type mRNA,
+    ext name "amyloid-beta protein"
+  },
+  location int {
+    from 1,
+    to 12,
+    strand plus,
+    id gi 2
+  }
+}
+Seq-feat ::= {
+  data rna {
+    type mRNA,
+    ext name "amyloid-beta protein"
+  },
+  location int {
+    from 13,
+    to 24,
+    strand minus,
+    id gi 2
+  }
+}
+Seq-feat ::= {
+  data rna {
+    type mRNA,
+    ext name "amyloid-beta protein"
+  },
+  location int {
+    from 13,
+    to 24,
+    strand minus,
+    id gi 2
+  }
+}
+Seq-feat ::= {
+  data rna {
+    type mRNA,
+    ext name "amyloid-beta protein"
+  },
+  location int {
+    from 1,
+    to 12,
+    strand plus,
+    id gi 2
+  }
+}
+Error: (1204.3) Empty region in Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 178601,
+      gi 178602
+    },
+    starts {
+      1,
+      1
+    },
+    lens {
+      0
+    }
+  }
+}
+
+Error: (1204.3) Empty region in Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 178601,
+      gi 178602
+    },
+    starts {
+      1,
+      1
+    },
+    lens {
+      0
+    }
+  }
+}
+

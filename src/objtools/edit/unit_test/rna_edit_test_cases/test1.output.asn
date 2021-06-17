@@ -1,0 +1,38 @@
+Seq-feat ::= {
+  data rna {
+    type miscRNA
+  },
+  partial TRUE,
+  comment "contains small subunit ribosomal RNA, internal transcribed spacer
+ 1, 5.8S ribosomal RNA, internal transcribed spacer 2, and large subunit
+ ribosomal RNA",
+  location int {
+    from 0,
+    to 558,
+    strand plus,
+    id genbank {
+      accession "KJ627786"
+    },
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+Seq-feat ::= {
+  data rna {
+    type miscRNA
+  },
+  partial TRUE,
+  comment "contains small subunit ribosomal RNA, internal transcribed spacer
+ 1, 5.8S ribosomal RNA, internal transcribed spacer 2, and large subunit
+ ribosomal RNA",
+  location int {
+    from 0,
+    to 558,
+    strand plus,
+    id genbank {
+      accession "KJ627787"
+    },
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}

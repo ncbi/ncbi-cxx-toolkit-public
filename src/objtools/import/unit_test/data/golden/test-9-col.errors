@@ -1,0 +1,5 @@
+CFeatureImportError:
+  Severity = Error
+  Message = "thickInterval extending beyond chrom feature"
+  LineNumber = 5
+

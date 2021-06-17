@@ -1,0 +1,119 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local str "gene_1",
+      data gene {
+      },
+      location int {
+        from 999,
+        to 9998,
+        strand plus,
+        id local str "chr1"
+      },
+      qual {
+        {
+          qual "ID",
+          val "chr1-gene"
+        },
+        {
+          qual "Name",
+          val "the-gene"
+        }
+      },
+      xref {
+        {
+          id local str "cds_1"
+        },
+        {
+          id local str "mrna_1"
+        }
+      }
+    },
+    {
+      id local str "mrna_1",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 999,
+          to 1998,
+          strand plus,
+          id local str "chr1"
+        },
+        int {
+          from 3999,
+          to 5998,
+          strand plus,
+          id local str "chr1"
+        },
+        int {
+          from 7999,
+          to 9998,
+          strand plus,
+          id local str "chr1"
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "chr1-mrna"
+        },
+        {
+          qual "Parent",
+          val "chr1-gene"
+        },
+        {
+          qual "Name",
+          val "the-mrna"
+        }
+      },
+      xref {
+        {
+          id local str "cds_1"
+        },
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "cds_1",
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 1499,
+          to 1998,
+          strand plus,
+          id local str "chr1"
+        },
+        int {
+          from 3999,
+          to 5998,
+          strand plus,
+          id local str "chr1"
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "chr1-cds"
+        },
+        {
+          qual "Parent",
+          val "chr1-mrna"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "gene_1"
+        }
+      }
+    }
+  }
+}

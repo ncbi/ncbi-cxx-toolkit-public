@@ -1,0 +1,17 @@
+<h2>Access Rights for <i><@REQUEST_UNAME@></i></h2>
+
+<table border="1" cellspacing="0" bgcolor="#E8E8E8" cellpadding="10"><tr><td>
+
+<table border="2" width="0" cellspacing="0" cellpadding="2">
+  <tr><th>Book Id</th><th>Book Title</th><th>Access</th></tr>
+  <@USER_RIGHTS@>
+</table>  
+
+<br>
+<input type="hidden" name="cmd" value="save_user_rights">
+<input type="hidden" name="uname" value="<@REQUEST_UNAME@>">
+<input type="submit" name="button" value="Save changes">&nbsp;
+<input type="submit" name="button" value="Cancel">
+	 
+</td></tr>
+</table>	 

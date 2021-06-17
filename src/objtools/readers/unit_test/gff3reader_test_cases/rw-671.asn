@@ -1,0 +1,91 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+      },
+      location int {
+        from 9978,
+        to 28455,
+        strand plus,
+        id local str "LG01_ordered_scaffold_0"
+      },
+      qual {
+        {
+          qual "Alias",
+          val "maker-LG01_ordered_scaffold_0-augustus-gene-0.5"
+        },
+        {
+          qual "ID",
+          val "C3L33_00001"
+        },
+        {
+          qual "Name",
+          val "C3L33_00001"
+        }
+      },
+      xref {
+        {
+          id local id 2
+        }
+      }
+    },
+    {
+      id local id 2,
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 9978,
+          to 10400,
+          strand plus,
+          id local str "LG01_ordered_scaffold_0"
+        },
+        int {
+          from 10496,
+          to 10916,
+          strand plus,
+          id local str "LG01_ordered_scaffold_0"
+        },
+        int {
+          from 17859,
+          to 17875,
+          strand plus,
+          id local str "LG01_ordered_scaffold_0"
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "C3L33_00001"
+        },
+        {
+          qual "Alias",
+          val "maker-LG01_ordered_scaffold_0-augustus-gene-0.5-mRNA-1"
+        },
+        {
+          qual "ID",
+          val "C3L33_00001-RA"
+        },
+        {
+          qual "_AED",
+          val "0.22"
+        },
+        {
+          qual "_QI",
+          val "861|0|0|0.85|0|0|14|0|1452"
+        },
+        {
+          qual "_eAED",
+          val "0.22"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    }
+  }
+}

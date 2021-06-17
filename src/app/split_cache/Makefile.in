@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("CACHE" project)
+#################################
+
+APP_PROJ = split_cache
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

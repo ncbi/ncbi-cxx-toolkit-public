@@ -1,0 +1,5 @@
+Line No    : 23
+Severity   : Error
+Problem    : Alignment.UnexpectedCommand
+Message    : Exiting empty "NCBI" block. Expected a "sequin" command.
+

@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_ideo SHARED)
+  NCBI_hosts_projects(
+    internal/mapview/objects/ideo/ideo
+    internal/mapview/objects/ideo/ideocli
+  )
+  NCBI_add_definitions(NCBI_IDEO_EXPORTS)
+NCBI_end_lib()

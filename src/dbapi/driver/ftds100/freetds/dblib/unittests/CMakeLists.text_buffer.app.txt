@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db100_text_buffer)
+  NCBI_sources(text_buffer common)
+  NCBI_set_test_assets(text_buffer.sql)
+  NCBI_add_test(test-db100 db100_text_buffer)
+NCBI_end_app()
+

@@ -1,0 +1,17 @@
+CLUSTAL W (1.82) multiple sequence alignment
+seq1 --GCAAGCATGCATGCAAAA 20
+seq2 AT--ATGGATGCATGCAAAA 20
+seq3 ATGC--GCAAGCATGCAAAA 20
+seq4 ATGCAT--ATGGATGCAAAA 20
+seq5 ATGCATGC--GCAAGCAAAA 20
+      .: .:.: .:*.*:******
+
+seq1 ATGCATGC 28
+seq2 --GCATGC 28
+seq3 AT--ATGC 28
+seq4 ATGC--GC 28
+seq5 ATGCAT-- 28
+      .: .:.: 
+
+This line isn't used.
+And neither is this line.

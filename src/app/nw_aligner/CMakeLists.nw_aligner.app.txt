@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(nw_aligner)
+  NCBI_sources(nwa)
+  NCBI_uses_toolkit_libraries(xalgoalignnw)
+  NCBI_project_watchers(kapustin)
+NCBI_end_app()
+

@@ -1,0 +1,7 @@
+APP_PROJ = phytree_format_unit_test
+PROJ_TAG = test
+
+REQUIRES = algo objects Boost.Test.Included
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

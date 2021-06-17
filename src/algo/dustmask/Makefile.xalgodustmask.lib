@@ -1,0 +1,17 @@
+# $Id$
+
+WATCHERS = morgulis
+
+ASN_DEP = seqset
+
+LIB = xalgodustmask
+
+SRC = symdust
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+
+
+USES_LIBRARIES =  \
+    $(DL_LIBS) $(SOBJMGR_LIBS)

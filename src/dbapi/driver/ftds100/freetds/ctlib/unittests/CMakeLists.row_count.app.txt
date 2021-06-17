@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(ct100_row_count)
+  NCBI_sources(row_count common)
+  NCBI_add_test(test-ct100 ct100_row_count)
+NCBI_end_app()
+

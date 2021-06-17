@@ -1,0 +1,286 @@
+Seq-entry ::= seq {
+  id {
+    embl {
+      accession "AJ965727",
+      version 1
+    },
+    gi 62816380
+  },
+  descr {
+    title "Pisum sativum PDR1 retrotransposon partial right terminal repeat,
+ clone 1006-R11",
+    source {
+      org {
+        taxname "Pisum sativum",
+        common "pea",
+        db {
+          {
+            db "taxon",
+            tag id 3888
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Pisum",
+            species "sativum"
+          },
+          mod {
+            {
+              subtype strain,
+              subname "JI1006"
+            }
+          },
+          lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons; Gunneridae;
+ Pentapetalae; rosids; fabids; Fabales; Fabaceae; Papilionoideae; Fabeae; Pisum",
+          gcode 1,
+          mgcode 1,
+          div "PLN"
+        }
+      },
+      subtype {
+        {
+          subtype clone,
+          name "1006-R11"
+        }
+      }
+    },
+    molinfo {
+      biomol genomic
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Flavell",
+                  initials "A.J."
+                }
+              }
+            },
+            affil str "Flavell A.J., Environmental and applied Biology,
+ University of Dundee, Plant Research Unit, University of Dundee at SCRI,
+ Invergowrie, DUNDEE, DD2 5DA, UNITED KINGDOM"
+          },
+          medium other,
+          date std {
+            year 2005,
+            month 3,
+            day 25
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 16085698,
+        article {
+          title {
+            name "Insertional polymorphism and antiquity of PDR1
+ retrotransposon insertions in pisum species."
+          },
+          authors {
+            names std {
+              {
+                name name {
+                  last "Jing",
+                  initials "R."
+                }
+              },
+              {
+                name name {
+                  last "Knox",
+                  initials "M.R."
+                }
+              },
+              {
+                name name {
+                  last "Lee",
+                  initials "J.M."
+                }
+              },
+              {
+                name name {
+                  last "Vershinin",
+                  initials "A.V."
+                }
+              },
+              {
+                name name {
+                  last "Ambrose",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Ellis",
+                  initials "T.H."
+                }
+              },
+              {
+                name name {
+                  last "Flavell",
+                  initials "A.J."
+                }
+              }
+            },
+            affil str "Plant Research Unit, University of Dundee at SCRI,
+ Invergowrie, UK."
+          },
+          from journal {
+            title {
+              iso-jta "Genetics",
+              ml-jta "Genetics",
+              issn "0016-6731",
+              name "Genetics"
+            },
+            imp {
+              date std {
+                year 2005,
+                month 10
+              },
+              volume "171",
+              issue "2",
+              pages "741-752",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus aheadofprint,
+                  date std {
+                    year 2005,
+                    month 8,
+                    day 5
+                  }
+                },
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2005,
+                    month 8,
+                    day 9,
+                    hour 9,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2006,
+                    month 6,
+                    day 28,
+                    hour 9,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 2005,
+                    month 8,
+                    day 9,
+                    hour 9,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pii "genetics.105.045112",
+            doi "10.1534/genetics.105.045112",
+            pubmed 16085698,
+            other {
+              db "pmc",
+              tag str "PMC1456784"
+            }
+          }
+        }
+      },
+      reftype no-target
+    },
+    embl {
+      div pln,
+      creation-date std {
+        year 2005,
+        month 4,
+        day 20
+      },
+      update-date std {
+        year 2008,
+        month 10,
+        day 23
+      },
+      keywords {
+        "transposon"
+      }
+    },
+    create-date std {
+      year 2005,
+      month 4,
+      day 20
+    },
+    update-date std {
+      year 2008,
+      month 10,
+      day 23
+    }
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 48,
+    seq-data ncbi2na '4E6736CF7FB48F8C9212BED8'H
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data imp {
+            key "mobile_element"
+          },
+          partial TRUE,
+          location int {
+            from 0,
+            to 4,
+            id gi 62816380,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "mobile_element_type",
+              val "transposon:PDR1"
+            }
+          }
+        },
+        {
+          data imp {
+            key "repeat_region"
+          },
+          partial TRUE,
+          comment "right terminal repeat;~target site for PDR1
+ retrotransposon;~terminal sequence duplication, TSD",
+          location int {
+            from 0,
+            to 4,
+            id gi 62816380,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "rpt_type",
+              val "INVERTED"
+            },
+            {
+              qual "rpt_type",
+              val "TERMINAL"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

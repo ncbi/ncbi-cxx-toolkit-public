@@ -1,0 +1,14 @@
+# $Id$
+
+# Meta-makefile ("misc/pmcidconv_client" project)
+############################################
+
+LIB_PROJ = pmcidconv_client
+SUB_PROJ = unit_test
+
+REQUIRES = LIBXSLT
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+WATCHERS = bollin

@@ -1,0 +1,153 @@
+-- $Id$
+-- **********************************************************************
+--
+--  NCBI Genome Collections Statistics
+--  by Michael DiCuccio, Vinay Kumar
+--
+-- **********************************************************************
+
+
+
+
+NCBI-GencollClient DEFINITIONS ::=
+BEGIN
+
+IMPORTS GC-Assembly FROM NCBI-GenomeCollection;
+
+
+GCClientRequest ::= CHOICE {
+    get-chrtype-valid  GCClient-ValidateChrTypeLocRequest,
+    get-equivalent-assemblies GCClient-GetEquivalentAssembliesRequest,
+    get-assembly-blob GCClient-GetAssemblyBlobRequest,
+    get-assembly-by-sequence GCClient-GetAssemblyBySequenceRequest
+}
+
+
+GCClientResponse ::= CHOICE {
+    get-chrtype-valid  VisibleString,
+    get-equivalent-assemblies GCClient-EquivalentAssemblies,
+    
+    --  errors encountered at the server side.
+    srvr-error GCClient-Error,
+    get-assembly-blob OCTET STRING,
+    get-assembly-by-sequence GCClient-AssembliesForSequences
+}
+
+GCClient-Error ::= SEQUENCE {
+    error-id INTEGER {
+        assembly-not-found(0),
+        other(255)
+    },
+    description VisibleString OPTIONAL
+}
+
+GCClient-GetAssemblyBlobRequest ::= SEQUENCE {
+
+    -- One of accession or release id MUST BE SUPPLIED
+
+    -- Assembly accession or accession.version
+    -- (versionless accession is answered with most recent version)
+    accession VisibleString OPTIONAL,
+
+    -- release ID
+    release-id INTEGER OPTIONAL,
+
+    mode VisibleString
+}
+
+GCClient-ValidateChrTypeLocRequest ::= SEQUENCE {
+    
+    -- Validate the Type Location in the request
+    
+    type  VisibleString,
+    
+    location VisibleString
+}
+
+GCClient-ValidateChrTypeLocResponse ::= SEQUENCE {
+    
+    -- Result of the Type Location validate request
+    
+    result  VisibleString
+}
+
+
+-- This is a bitfield.  All values are powers of two.
+GCClient-GetAssemblyBySequenceFilter ::= INTEGER {
+    all(0),
+    latest(1),
+    major(2),
+    genbank(4),
+    refseq(8)
+}
+
+GCClient-GetAssemblyBySequenceRequest ::= SEQUENCE {
+    sequence-acc SET OF VisibleString,
+
+    filter GCClient-GetAssemblyBySequenceFilter DEFAULT all,
+
+    sort INTEGER {
+        default(0),
+        latest(1),
+        major(2)
+    } DEFAULT default,
+
+    top-assembly-only INTEGER DEFAULT 0,
+    add-sequence-roles BOOLEAN OPTIONAL
+}
+
+
+GCClient-AssemblyInfo ::= SEQUENCE {
+    accession VisibleString,
+    latest    BOOLEAN,
+    major     BOOLEAN,
+    annotated BOOLEAN OPTIONAL,
+    type INTEGER {
+        genbank(1),
+        refseq(2)
+    } OPTIONAL
+}
+
+GCClient-SequenceInfo ::= SEQUENCE {
+    sequence-acc VisibleString,
+    role INTEGER {
+        chromosome-top-level(3),
+        scaffold-top-level(1),
+        other(0)
+    }
+}
+
+GCClient-AssemblySequenceInfo ::= SEQUENCE {
+    assembly   GCClient-AssemblyInfo,
+    sequences-in-assembly SET OF VisibleString,
+    sequences-not-in-assembly SET OF VisibleString OPTIONAL,
+    sequence-roles-in-assembly SET OF GCClient-SequenceInfo OPTIONAL
+}
+
+
+GCClient-AssembliesForSequences ::= SEQUENCE {
+    assemblies SET OF GCClient-AssemblySequenceInfo OPTIONAL,
+    not-found-sequences SET OF VisibleString OPTIONAL
+}
+
+
+
+GCClient-GetEquivalentAssembliesRequest ::= SEQUENCE {
+    accession VisibleString,
+    equivalency INTEGER {
+        paired-strict             (1), -- Paired assembly, if identical
+        paired                    (2), -- Paired assembly, if exists, even if not identical
+        same-coordinates          (3), -- All assemblies with same major release and same type (Gb/Rs)
+        all-types-same-coordinates(4), -- All assemblies with same major release, both Gb and Rs.
+        major-release             (5)  -- Major release of assembly, same type
+    }
+}
+
+GCClient-EquivalentAssemblies ::= SEQUENCE {
+    assemblies SET OF SEQUENCE {
+        accession VisibleString
+    }
+}
+
+
+END

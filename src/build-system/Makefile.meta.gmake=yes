@@ -1,0 +1,70 @@
+# -*- makefile-gmake -*-
+# $Id$
+
+ifeq "" "$(findstring /,$(MAKE))"
+  ABSMAKE := $(word 1,$(wildcard $(patsubst %,%/$(MAKE),$(subst :, ,$(PATH)))))
+  ifneq "" "$(ABSMAKE)" # Can fail on Cygwin for some reason
+    MAKE := $(ABSMAKE)
+  endif
+endif
+
+ifneq "" "$(findstring :,$(LD_LIBRARY_PATH))"
+  collect_libs = $(top_srcdir)/scripts/common/impl/collect_outside_libs.sh
+  ifneq "" "$(import_root)"
+    ifeq "" "$(filter /%,$(import_root))"
+      outside_lib_root = $(CURDIR)/$(import_root)/../lib/outside
+    else
+      outside_lib_root = $(import_root)/../lib/outside
+    endif
+  else
+    ifeq "" "$(build_root)"
+      build_root = $(CURDIR)/..
+    endif
+    outside_lib_root = $(build_root)/lib/outside
+  endif
+  new_llp := $(shell $(collect_libs) $(outside_lib_root))
+  ifneq "" "$(new_llp)"
+    LD_LIBRARY_PATH = $(new_llp)
+    export LD_LIBRARY_PATH
+  endif
+endif
+
+ifeq "" "$(NCBI_BUILD_SESSION_ID)"
+  ifeq "" "$(filter-out @%@, $(UUIDGEN))"
+    UUIDGEN = uuidgen 2>/dev/null
+  endif
+  NCBI_BUILD_SESSION_ID := $(shell $(UUIDGEN))
+  export NCBI_BUILD_SESSION_ID
+  ifneq "" "$(NCBI_BUILD_SESSION_ID)"
+    $(info Build session ID: $(NCBI_BUILD_SESSION_ID))
+  endif
+endif
+
+# Work around GNU Make's tendency to double its automatic
+# --jobserver-fds=* flag's usage with each level of recursion, by
+# constructing an alternate MFLAGS_NR variable that limits its
+# occurrence to a single instance.  (Stripping it altogether backfires
+# with the patched make Mac OS X 10.5 ships.)
+
+MFLAGS_NR = $(filter-out -,$(filter-out --jobserver-fds=%,$(MFLAGS))) \
+            $(word 1,$(filter --jobserver-fds=%,$(MFLAGS)))
+
+#ifeq "" "$(filter Makefile.flat %/Makefile.flat,$(MAKEFILE_LIST))"
+ifdef abs_top_srcdir
+  include $(top_srcdir)/src/build-system/Makefile.meta_l
+  ifneq "" "$(filter %_r %_p,$(MAKECMDGOALS))"
+    include $(top_srcdir)/src/build-system/Makefile.meta_r
+    ifneq "" "$(filter %_p,$(MAKECMDGOALS))"
+      include $(top_srcdir)/src/build-system/Makefile.meta_p
+    endif
+  endif
+  ifneq "" "$(filter %_f %_fd,$(MAKECMDGOALS))"
+    include $(top_srcdir)/src/build-system/Makefile.meta_f
+  endif
+  include $(top_srcdir)/src/build-system/Makefile.requirements
+else
+  export NCBI_USING_FLAT_MAKEFILE = 1
+  ifndef builddir
+    include $(top_srcdir)/src/build-system/Makefile.flat_tuneups
+  endif
+endif

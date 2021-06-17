@@ -1,0 +1,6 @@
+SeqID      : Seq2
+Line No    : 5
+Severity   : Fatal
+Problem    : Alignment.BadDataCount
+Message    : At ID 'Seq2': Number of characters on sequence line is different from expected. Expected number of characters is 0. Actual number of characters is 4.
+

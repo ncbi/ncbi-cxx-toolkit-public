@@ -1,0 +1,14 @@
+corelib$
+util
+connect$
+connect/ext$
+db/bdb$
+dbapi
+serial$
+serial/datatool$
+objects
+objmgr
+objtools
+-objtools/align
+-objtools/blast_format
+app/lds_indexer$

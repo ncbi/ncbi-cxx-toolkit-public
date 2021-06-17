@@ -1,0 +1,5 @@
+Line No    : None (Encountered during pre or post processing)
+Severity   : Fatal
+Problem    : Alignment.BadSequenceCount
+Message    : No sequence data was detected in alignment file.
+

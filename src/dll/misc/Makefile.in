@@ -1,0 +1,7 @@
+# $Id$
+
+SUB_PROJ =  \
+    ncbi_xdiscrepancy
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

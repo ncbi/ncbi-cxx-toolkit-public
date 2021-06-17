@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(pub)
+  NCBI_dataspecs(pub.asn)
+  NCBI_uses_toolkit_libraries(medline)
+NCBI_end_lib()
+

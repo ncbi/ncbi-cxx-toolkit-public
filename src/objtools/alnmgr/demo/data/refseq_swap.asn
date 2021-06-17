@@ -1,0 +1,57 @@
+Seq-align-set ::= {{
+  type global,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      other {
+	accession "NM_194315",
+	version 1
+      },
+      other {
+	accession "NC_000001",
+	version 8
+      }
+    },
+    starts {
+      0,
+      1248968
+    },
+    lens {
+      189
+    },
+    strands {
+      plus,
+      minus
+    }
+  }
+},{
+  type global,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      other {
+	accession "NM_058167",
+	version 2
+      },
+      other {
+	accession "NC_000001",
+	version 8
+      }
+    },
+    starts {
+      0,
+      1248968
+    },
+    lens {
+      189
+    },
+    strands {
+      plus,
+      minus
+    }
+  }
+}}

@@ -1,0 +1,19 @@
+# $Id$
+
+# Build library "xalnmgr"
+#################################
+ASN_DEP = seqset
+
+LIB = xalnmgr
+SRC = aln_builders aln_converters aln_generators aln_seqid aln_serial	\
+      alndiag alnmap alnmapprint alnmatch alnmerger alnmix alnpos_ci	\
+      alnsegments alnseq alnvec alnvec_iterator alnvecprint		\
+      pairwise_aln sparse_aln sparse_ci alntext score_builder_base aln_container
+
+DLL_LIB = xobjutil tables
+
+WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    tables xobjutil

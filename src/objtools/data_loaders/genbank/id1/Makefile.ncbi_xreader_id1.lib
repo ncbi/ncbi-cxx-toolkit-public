@@ -1,0 +1,21 @@
+# $Id$
+
+SRC = reader_id1
+
+LIB = ncbi_xreader_id1
+
+ASN_DEP = id1 id2
+
+# Build shared version when possible
+LIB_OR_DLL = both
+
+# Dependencies for shared library
+DLL_LIB = ncbi_xreader$(DLL) $(GENBANK_READER_LDEP)
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(CMPRS_INCLUDE)
+
+WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    ncbi_xreader

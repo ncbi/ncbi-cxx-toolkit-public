@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(db100_bcp_getl)
+  NCBI_sources(bcp_getl)
+  NCBI_add_test()
+NCBI_end_app()
+

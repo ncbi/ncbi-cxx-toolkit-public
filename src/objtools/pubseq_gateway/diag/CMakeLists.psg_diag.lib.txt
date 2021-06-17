@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(psg_diag)
+  NCBI_sources(AppLog AppPerf IdLogUtl AppLogWrap)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_requires(Linux)
+  NCBI_project_watchers(satskyse dmitrie1)
+NCBI_end_lib()

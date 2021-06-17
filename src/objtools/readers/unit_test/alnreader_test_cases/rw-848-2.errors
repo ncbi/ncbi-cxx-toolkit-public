@@ -1,0 +1,5 @@
+Line No    : 13
+Severity   : Fatal
+Problem    : Alignment.UnexpectedSeqId
+Message    : Conflicting IDs: "Seq7" differs only in case from "SEQ7" at line 10.
+

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(splign)
+  NCBI_sources(splign_app)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_blastdb ncbi_xloader_genbank ncbi_xloader_lds2 xalgoalignsplign)
+  NCBI_project_watchers(kiryutin kapustin)
+NCBI_end_app()
+

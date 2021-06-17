@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_dbapi_driver SHARED)
+  NCBI_hosts_projects(
+    dbapi/driver/dbapi_driver
+  )
+  NCBI_add_definitions(NCBI_DBAPIDRIVER_EXPORTS)
+NCBI_end_lib()

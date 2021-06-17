@@ -1,0 +1,6 @@
+# $Id$
+
+DTD_PROJ = uilist
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

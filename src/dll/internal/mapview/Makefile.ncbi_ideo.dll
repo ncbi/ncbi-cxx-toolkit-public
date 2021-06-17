@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = ncbi_ideo
+
+HOSTED_LIBS = ideo ideocli
+
+DEPENDENCIES = ncbi_core mapview
+
+CPPFLAGS = -DNCBI_IDEO_EXPORTS
+

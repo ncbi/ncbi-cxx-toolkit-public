@@ -1,0 +1,32 @@
+[
+{
+    "reply": "BlobInfo",
+    "id": {
+        "id2_chunk": 96,
+        "id2_info": "psg~~tse_id-4.340865818~~tse_split_version-1565299085"
+    },
+    "compression": "gzip",
+    "format": "asn.1",
+    "storage_size": 567,
+    "size": 1142,
+    "is_dead": false,
+    "is_suppressed": false,
+    "is_withdrawn": false,
+    "hup_release_date": "",
+    "owner": 0,
+    "original_load_date": "",
+    "class": "not-set",
+    "division": "",
+    "username": "gbupdate",
+    "id2_info": "",
+    "n_chunks": 1
+},
+{
+    "reply": "BlobData",
+    "id": {
+        "id2_chunk": 96,
+        "id2_info": "psg~~tse_id-4.340865818~~tse_split_version-1565299085"
+    },
+    "data": "eJytU8Fu00AQddxCEPxBuMwRpMROCqpQOKWNaEOVNpLDGY3tib2Jvet610TmULniD/gCAggJuPFL8B+wjtMmSKlUCUbatbXv7czbt7Pt4kPRKdp6XhTmLs3e/TJ0LPTal6Jx+WMcEiDnQqFigsMcJaDvkw9uDkpjp4cHAxilYoZpLhTz4Ii4iAl66z0jllDEOMGj0VFv9NiCAZ+INK5AdEWmoATAQw4uwURk3IeQUupCqFQiu7Y9n88t7rnM4lFscRZagXhjB8tK9lrd60TrsA1DC2+t6muhqKD/oueMr5P5E5RKZwks9KxpYl9cGMb3pQMdPcpv48ErnmRuxGRIfmlGuVhClU1Lyt2hSJnCEm3UhobxuWiYQ8u4jg1q3QlZjP6Ke1JxT7Zzdw/QXRGPK+LxduI9XV9Msim7Tdads6vqTsVzblA6eJvFLL+VgPpZyLVB7EYH1vG1aMxXfSHpPCPuEYgJIDgYxYJTFCEQV5QyDzUjFSpPCBziE0XcpTQAqVJkHCL0ZowHm/sSVKHQrcA8pnJgMkLutzqgyS8xQb4W8a0wazvV79VtVyf5x8v9/5YtSu7l+0PBFXqqO0SJSsQCKlFwumx2jPQ7koqpTC3N1I+KPA1kEvpMEkqSTehTgqmKtbcl5UBn0x6LSAQ5DJ7DWOQYI3Rae09anSboLuXTbJa1ZllTY7NcQGd/r/Vs/2m7+beZH4v7pvHbMD6tDmaa9Z+lbLN2pwTN2sNtXbAZfwDhy0/G"
+}
+]

@@ -1,0 +1,10 @@
+# $Id$
+
+#################################
+
+LIB_PROJ = soap soap_server
+SUB_PROJ = 
+PROJ_TAG = -core
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

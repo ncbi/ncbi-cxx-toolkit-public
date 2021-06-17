@@ -1,0 +1,21 @@
+# $Id$
+
+NCBI_begin_lib(mapview SHARED)
+  NCBI_hosts_projects(
+    internal/mapview/objects/mapdata/mapdata
+    internal/mapview/objects/mapview/mapview
+    internal/mapview/objects/mapview/mapviewcli
+    internal/mapview/objects/admin/admin
+    internal/mapview/objects/admin/mv_admincli
+    internal/mapview/objects/align/align
+    internal/mapview/objects/entrez/entrez
+    internal/mapview/objects/entrez/mv_entrezcli
+    internal/mapview/objects/markup/markup
+    internal/mapview/objects/meta/meta
+    internal/mapview/objects/meta/mv_metacli
+    internal/mapview/objects/types/types
+    internal/mapview/objects/util/mvobjutil
+    internal/mapview/objects/cache/xmvdatacache
+  )
+  NCBI_add_definitions(NCBI_MAPVIEWASN_EXPORTS)
+NCBI_end_lib()

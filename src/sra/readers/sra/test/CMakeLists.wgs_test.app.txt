@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_app(wgs_test)
+  NCBI_sources(wgs_test)
+  NCBI_uses_toolkit_libraries(sraread)
+
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_set_test_assets(wgs_test.sh)
+  NCBI_add_test(wgs_test.sh)
+
+  NCBI_project_watchers(vasilche ucko)
+
+NCBI_end_app()
+

@@ -1,0 +1,18 @@
+Number:
+
+0xxxxxxx : 7 bit
+10xxxxxx xxxxxxxx : 14 bit
+110xxxxx xxxxxxxx xxxxxxxx : 21 bit
+1110xxxx xxxxxxxx xxxxxxxx xxxxxxxx : 28 bit
+11110000 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx : 32 bit
+11110001 \
+     ...  > reserved
+11110111 /
+11111yyy : 3 bit
+
+Where:
+    xx...xx will be extended preserving sign (if any)
+    yyy will be extended as well and subtracted from MAX_VALUE
+
+String:
+

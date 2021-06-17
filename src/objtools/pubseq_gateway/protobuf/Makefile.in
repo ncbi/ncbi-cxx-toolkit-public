@@ -1,0 +1,8 @@
+# $Id$
+
+PROTOBUF_PROJ = psg_protobuf
+
+REQUIRES = PROTOBUF
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

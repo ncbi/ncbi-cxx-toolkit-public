@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(odbc100_data)
+  NCBI_sources(data common c2string parser)
+  NCBI_add_definitions(NEED_FREETDS_SRCDIR)
+  NCBI_set_test_assets(data.in odbc.ini)
+  NCBI_add_test(test-odbc100 --no-auto odbc100_data)
+NCBI_end_app()
+

@@ -1,0 +1,4 @@
+APP_PROJ = pub_report 
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

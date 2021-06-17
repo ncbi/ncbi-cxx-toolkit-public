@@ -1,0 +1,306 @@
+Installation
+============
+
+Input File Formats
+============
+
+Ribosomal RNA predictions file (parameter -inrrna)
+--------------------------------------------------
+
+The format of ribosomal predictions file is derived from the existing format of
+output of one of the components of the  NCBI Prokaryotic Genomes Automatic 
+Annotation Pipeline (PGAAP).
+
+Each line of the input file specifies exactly one exon of rRNA annotation. The 
+format of the line is:
+
+<TAB>start<TAB>stop<TAB>annotation_id<TAB>strand<TAB>type[<TAB>comments...]
+
+Example format:
+
+	100	500	1	+	16S	comment
+	600	1600	1	+	16S	comment
+	1800	1920	2	+	5S	comment
+	2000	4900	3	+	23S	comment
+        
+"Start" and "stop" define the location of the exon (1-based) in the nucleotide 
+    sequence of the submission in absolute values. "Start" should always be less 
+    than "stop". 
+"annotation_id" specifies a unique (for this submission) id of the rRNA 
+    annotation. Presence of the same id in different lines in the input file 
+    means that this annotation has more than one exon
+"strand" is either "+" or "-"
+"type" is type of RNA
+"comments" are optional, and are not used in computation
+
+tRNA predictions file (parameter -intrna)
+-----------------------------------------
+
+Please refer to the documentation of tRNAscan 
+
+e.g. http://lowelab.ucsc.edu/tRNAscan-SE/trnascanseReadme.html
+
+for the "abbreviated" output tRNA prediction file format. 
+
+
+BLAST file format (parameters -inblast and -inblastcdd)
+-------------------------------------------------------
+
+This format corresponds to the output produced by 
+
+blastall -p blastp -m 0 ... (for -inblast parameter)
+
+or
+
+rpsblast -m 0 .... (for -inblastcdd parameter)
+
+command (see for description
+http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=handbook.section.615)
+
+Output File Formats
+============
+
+"bad.strand" and "missing" files
+----------------------------------------------
+
+File consists of one or more sections each referring to one "case" of a problem. Each 
+section consists of the section head:
+
+==== <annotation id> ====
+
+short description of the problem:
+
+--- <description> ---
+
+and several lines each representing one exon of either original or predicted 
+annotation that is in the vicinity of problematic annotation. Each line 
+contains several tab-separated fields:
+
+1. Tag. Tag can be one of CENTER_REFERENCE,REFERENCE,VICINITY. It identifies
+   whether it is an original or predicted annotation and its relevance to the 
+   particular problem. In particular,
+
+      CENTER_REFERENCE refers to the predicted annotation which is directly
+        relevant to the problem. Depending on the nature of the problem,
+        "missing" or "bad.strand", it represent a missing annotation or 
+        predicted annotation matching an original annotation of the same type 
+        and wrong strand.
+  
+      REFERENCE refers to the predicted annotation that happens to be in the 
+        vicinity.
+
+      VICINITY refers to the original annotation that happens to be in the 
+        vicinity.
+
+2. Size of the location span containing all relevant annotations. Should be
+   the same for all lines in one chapter. Unit: base.
+
+3. Type of annotation. Could be tRNA, CDS, 5S, 16S or 23S. 
+
+4. Unique identifier of the annotation and locus tag. Format 
+   <identifier>(<locus_tag>).
+
+5. One-number location of the annotation for the purposes of quicksort. 
+   Currently it is redundant, since it coincides with the start of annotation.
+
+6. Name of the annotation as specified by the /product descriptor in the original
+   ASN.1 file or automatically generated name, if it is a predicted annotation.
+
+7. Start location.
+
+8. Stop location. Stop is always larger than start.
+
+9. Strand (+ or -). Note that the tool assumes a plus strand for annotations w/
+   unspecied strands. 
+
+
+This format of output is geared towards use in graphical representation of the
+problems identified, as in the web version of the tool.
+
+
+"frameshift" file
+-----------------
+
+File consists of one or more sections each referring to one "case" of a problem. Each 
+section consists of the section head:
+
+==== <annotation id> ====
+
+which specifies the "left" or "right" protein annotation out of two proteins 
+that might potentially constitute one frameshifted protein. In case of "left" 
+protein annotation this section head is followed by one or more subsections,
+titled
+
+--- Potential frame shift evidence found ---
+
+each corresponding to one particular instance of BLAST hit elucidating the 
+problem.
+
+^^^^^^^^^^^^^^^^
+Next 3 lines in each subsection list Genbank-style-like ids for two adjacent 
+query protein annotations (q1 and q2 in the beginning of the line) and subject
+from the BLAST database.
+
+Example:
+
+q1 | lcl | ref|YP_001169943.1||Rsph17025_3775 | hypothetical protein
+q2 | lcl | ref|YP_001169942.1||Rsph17025_3774 | hypothetical protein
+s | gi|146280039|ref|YP_001170196.1| hypothetical protein
+
+^^^^^^^^^^^^^^^^
+Next 6 lines describe schematic alignment (or juxtaposition) of two query 
+annotations relative to the subject. 
+
+First line just lists again two tab separated query annotations ("left" and
+"right" annotations) with strand in parentheses after each annotation.
+
+Second line specify locations of query annotations in the format:
+
+[<start>...<stop>]<TAB><TAB>[<start>...<stop>]
+
+Example:
+
+[24690...24902]<TAB><TAB>[24362...24658]
+
+which is visible as
+
+[24690...24902]		[24362...24658]
+
+Third line is empty.
+
+Three subsequent lines list the sizes (in bases) of the pieces of 3 involved 
+proteins that align with each other:
+
+q<TAB>qlb<TAB>qlh<TAB>qla<TAB>s<TAB>qrb<TAB>qrh<TAB>qra
+s<TAB>slb<TAB>slh<TAB>...<TAB>...<TAB>...<TAB>slb<TAB>...
+s<TAB>...<TAB>srb<TAB>...<TAB>...<TAB>...<TAB>srh<TAB>sra
+
+For example, with expanded size-8 tabs, those three lines might look like this:
+
+q       0       70      0       11      23      26      49
+s       210     70      ...     ...     ...     168     ...
+s       ...     393     ...     ...     ...     26      29
+
+Each protein is broken into three pieces: a piece entering the BLAST hit 
+alignment, preceding and consequent pieces, and a "spacer" piece separating
+adjacent original protein annotations. First letter of the three-letter 
+abbreviations (for example, "qlb") refers to the query ("q") or subject("s"), 
+second letter identifies which query ("l" for left and "r" for right) is 
+aligned to the subject and third letter refers to the piece before ("b") the 
+BLAST hit, BLAST hit ("h") piece and the piece after ("a") the BLAST hit.  For 
+example, "qlb" refers to the piece, preceding the BLAST alignment of the first 
+query and subject (q - for "query", "l" - for "left" query and b - for 
+"before"). Standalone "s" in the middle of the first line stands for the spacer 
+between two queries. 
+
+Thus, each column in that table represents an aligned portion of the two schematic 
+alignment of two queries with the same subject. Lines 1 and 2 represent an 
+alignment of "left" query and the subject and lines 1 and 3 represent an 
+alignment of "right" query and the subject. 
+
+Note that "srb" piece (393 in the example above) does not align with a single 
+piece of the "left" query, but with the part of the nucleotide sequence of the 
+input represented by pieces qlb, qlh, qla, s and qrb. Similarly "sla" (subject, 
+left, after) (168 in the example above) aligns altogether with pieces qla, s, 
+qrb, qrh and qra. 
+
+This schematic representation of alignment is essentially a low-tech, text-only,
+no-GUI equivalent of the corresonding graphical output of the web version of 
+this tool.
+
+^^^^^^^^^^^^^^^^
+Next three lines specify in slightly different way the difference between 
+alignment of subject to "left" and "right" query.  First two lines are 
+deprecated and disappear in future versions. Third line in intentionally human
+readable format specify the nature of the potential frameshift, that is whether
+it involves the artefact of deletion or insertion occured during sequencing or
+evolution.  Example:
+
+diff_left, diff_right: 79, 79
+diff_edge_left, diff_edge_right: 79, 79
+Potential deletetion of a nucleotide sequence equivalent to 79 occurred.
+
+79 here is equal to the shift between locations of the subject when it is 
+aligned to the left and right query. 
+
+
+"overlap", "complete.overlap" or "rna.overlap" file
+---------------------------------------------------
+
+File consists of one or more sections each referring to one "case" of a problem. Each 
+section has a section head:
+
+==== <annotation id> ====
+
+which specifies the "left" protein annotation out of two overlapping proteins.
+This section head is followed by subtitle
+
+--- Complete overlap found ---
+
+or 
+
+--- Potential overlap found ---
+
+or
+
+--- Potential RNA overlap found ---
+
+additionally identifying the type of file. 
+
+^^^^^^^^^^^^^^^^
+Next 2 lines list Genbank-style-like ids for two adjacent overlapping protein 
+annotations (q1 and q2 in the beginning of the line). 
+
+Example:
+
+q1 | lcl | ref|YP_001169716.1||Rsph17025_3541 | hypothetical protein
+q2 | lcl | ref|YP_001169717.1||Rsph17025_3542 | hypothetical protein
+
+^^^^^^^^^^^^^^^^
+Next line lists again two annotations, this time separated by tabs with strand 
+in parentheses after each annotation.
+
+^^^^^^^^^^^^^^^^
+Next line specifies locations of overlapping annotations in the format:
+
+[<start>...<stop>] <frame><TAB><TAB>[<start>...<stop>] <frame>
+
+Example:
+
+[12800...13294] -2<TAB><TAB>[13260...13694] -3
+
+which is visible as
+
+[12800...13294] -2              [13260...13694] -3
+
+Only difference between two frame specifiers is important. 
+
+Next line is empty and last line in section specifies the overlap rounded to 
+the number of amino acids. 
+
+
+"partial" file
+--------------
+
+File consists of one or more sections each referring to one "case" of a problem. Each 
+section consists of the section head:
+
+==== <annotation id> ====
+
+which specifies the problematic protein annotation. This section head is 
+followed by one or more subsections, titled
+
+--- Potential partial protein annotation found ---
+
+Followed by two lines specifying the problematic protein annotation ("query")
+and subject from the CDD database ("Subject"). 
+
+Format:        
+
+<tag><TAB><id><TAB><length><TAB><start><TAB><stop>
+
+where "tag" is "Query" or "Subject", "id" is Genbank-style name, "start" and 
+"stop" define position of the BLAST hit alignment relative to the beginning of 
+query or subject.
+
+

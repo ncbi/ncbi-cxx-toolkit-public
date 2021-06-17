@@ -1,0 +1,490 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        local str "seq1"
+      },
+      descr {
+        source {
+          org {
+            taxname "val1"
+          },
+          subtype {
+            {
+              subtype other,
+              name "val1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '909393900FF9A54E4E3939'H
+      }
+    },
+    seq {
+      id {
+        local str "seq2"
+      },
+      descr {
+        user {
+          type str "DBLink",
+          data {
+            {
+              label str "BioProject",
+              data strs {
+                "val1"
+              }
+            }
+          }
+        },
+        source {
+          org {
+            taxname "val1"
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '33A393900FFA954E4E5939'H
+      }
+    },
+    seq {
+      id {
+        local str "seq3"
+      },
+      descr {
+        user {
+          type str "DBLink",
+          data {
+            {
+              label str "BioSample",
+              data strs {
+                "val1"
+              }
+            }
+          }
+        },
+        source {
+          org {
+            taxname "val1"
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '399093900FFAA64E4E5339'H
+      }
+    },
+    seq {
+      id {
+        local str "seq4"
+      },
+      descr {
+        source {
+          genome plasmid,
+          org {
+            taxname "val1",
+            common "val1",
+            orgname {
+              mod {
+                {
+                  subtype acronym,
+                  subname "val1"
+                },
+                {
+                  subtype anamorph,
+                  subname "val1"
+                },
+                {
+                  subtype authority,
+                  subname "val1"
+                },
+                {
+                  subtype bio-material,
+                  subname "val1"
+                },
+                {
+                  subtype biotype,
+                  subname "val1"
+                },
+                {
+                  subtype biovar,
+                  subname "val1"
+                },
+                {
+                  subtype breed,
+                  subname "val1"
+                },
+                {
+                  subtype chemovar,
+                  subname "val1"
+                },
+                {
+                  subtype cultivar,
+                  subname "val1"
+                },
+                {
+                  subtype culture-collection,
+                  subname "val1"
+                },
+                {
+                  subtype ecotype,
+                  subname "val1"
+                },
+                {
+                  subtype forma,
+                  subname "val1"
+                },
+                {
+                  subtype forma-specialis,
+                  subname "val1"
+                },
+                {
+                  subtype gb-acronym,
+                  subname "val1"
+                },
+                {
+                  subtype gb-anamorph,
+                  subname "val1"
+                },
+                {
+                  subtype gb-synonym,
+                  subname "val1"
+                },
+                {
+                  subtype group,
+                  subname "val1"
+                },
+                {
+                  subtype isolate,
+                  subname "val1"
+                },
+                {
+                  subtype metagenome-source,
+                  subname "val1"
+                },
+                {
+                  subtype nat-host,
+                  subname "val1"
+                },
+                {
+                  subtype pathovar,
+                  subname "val1"
+                },
+                {
+                  subtype serogroup,
+                  subname "val1"
+                },
+                {
+                  subtype serotype,
+                  subname "val1"
+                },
+                {
+                  subtype serovar,
+                  subname "val1"
+                },
+                {
+                  subtype specimen-voucher,
+                  subname "val1"
+                },
+                {
+                  subtype strain,
+                  subname "val1"
+                },
+                {
+                  subtype sub-species,
+                  subname "val1"
+                },
+                {
+                  subtype subgroup,
+                  subname "val1"
+                },
+                {
+                  subtype substrain,
+                  subname "val1"
+                },
+                {
+                  subtype subtype,
+                  subname "val1"
+                },
+                {
+                  subtype synonym,
+                  subname "val1"
+                },
+                {
+                  subtype teleomorph,
+                  subname "val1"
+                },
+                {
+                  subtype type,
+                  subname "val1"
+                },
+                {
+                  subtype type-material,
+                  subname "val1"
+                },
+                {
+                  subtype variety,
+                  subname "val1"
+                }
+              }
+            }
+          },
+          subtype {
+            {
+              subtype altitude,
+              name "val1"
+            },
+            {
+              subtype cell-line,
+              name "val1"
+            },
+            {
+              subtype cell-type,
+              name "val1"
+            },
+            {
+              subtype chromosome,
+              name "val1"
+            },
+            {
+              subtype clone,
+              name "val1"
+            },
+            {
+              subtype clone-lib,
+              name "val1"
+            },
+            {
+              subtype collected-by,
+              name "val1"
+            },
+            {
+              subtype collection-date,
+              name "val1"
+            },
+            {
+              subtype country,
+              name "val1"
+            },
+            {
+              subtype dev-stage,
+              name "val1"
+            },
+            {
+              subtype endogenous-virus-name,
+              name "val1"
+            },
+            {
+              subtype frequency,
+              name "val1"
+            },
+            {
+              subtype genotype,
+              name "val1"
+            },
+            {
+              subtype haplogroup,
+              name "val1"
+            },
+            {
+              subtype haplotype,
+              name "val1"
+            },
+            {
+              subtype identified-by,
+              name "val1"
+            },
+            {
+              subtype isolation-source,
+              name "val1"
+            },
+            {
+              subtype lab-host,
+              name "val1"
+            },
+            {
+              subtype lat-lon,
+              name "val1"
+            },
+            {
+              subtype linkage-group,
+              name "val1"
+            },
+            {
+              subtype map,
+              name "val1"
+            },
+            {
+              subtype mating-type,
+              name "val1"
+            },
+            {
+              subtype other,
+              name "val1"
+            },
+            {
+              subtype phenotype,
+              name "val1"
+            },
+            {
+              subtype plasmid-name,
+              name "val1"
+            },
+            {
+              subtype pop-variant,
+              name "val1"
+            },
+            {
+              subtype segment,
+              name "val1"
+            },
+            {
+              subtype sex,
+              name "val1"
+            },
+            {
+              subtype subclone,
+              name "val1"
+            },
+            {
+              subtype tissue-lib,
+              name "val1"
+            },
+            {
+              subtype tissue-type,
+              name "val1"
+            },
+            {
+              subtype whole-replicon,
+              name "val1"
+            }
+          },
+          pcr-primers {
+            {
+              forward {
+                {
+                  seq "val1",
+                  name "val1"
+                }
+              },
+              reverse {
+                {
+                  seq "val1",
+                  name "val1"
+                }
+              }
+            }
+          }
+        },
+        user {
+          type str "DBLink",
+          data {
+            {
+              label str "BioProject",
+              data strs {
+                "val1"
+              }
+            },
+            {
+              label str "BioSample",
+              data strs {
+                "val1"
+              }
+            }
+          }
+        },
+        title "[environmental-sample=val1] [germline=val1] [metagenomic=val1]
+ [rearranged=val1] [transgenic=val1]"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '3933A3900FFAA57E4E5399'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 4,
+          segs denseg {
+            dim 4,
+            numseg 10,
+            ids {
+              local str "seq1",
+              local str "seq2",
+              local str "seq3",
+              local str "seq4"
+            },
+            starts {
+              -1,
+              0,
+              0,
+              0,
+              0,
+              -1,
+              2,
+              2,
+              2,
+              2,
+              -1,
+              4,
+              4,
+              4,
+              4,
+              -1,
+              6,
+              6,
+              6,
+              6,
+              -1,
+              36,
+              36,
+              36,
+              36,
+              -1,
+              38,
+              38,
+              38,
+              38,
+              -1,
+              40,
+              40,
+              40,
+              40,
+              -1,
+              42,
+              42,
+              42,
+              42
+            },
+            lens {
+              2,
+              2,
+              2,
+              2,
+              30,
+              2,
+              2,
+              2,
+              2,
+              2
+            }
+          }
+        }
+      }
+    }
+  }
+}

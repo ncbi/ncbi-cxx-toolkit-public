@@ -1,0 +1,16 @@
+#include "../blast/project.lst"
+algo/tree
+algo/phy_tree
+algo/align$
+algo/align/nw
+algo/cobalt
+-app/blast
+-app/blastdb
+-app/winmasker
+-app/dustmasker
+-app/segmasker
+connect/mbedtls
+algo/blast$
+algo/blast/proteinkmer$
+-algo/blast/proteinkmer/demo
+

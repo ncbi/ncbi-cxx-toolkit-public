@@ -1,0 +1,682 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Hist Seqalign",
+      data {
+        {
+          label str "Hist Seqalign",
+          data bool TRUE
+        }
+      }
+    },
+    user {
+      type str "Blast Type",
+      data {
+        {
+          label str "blastn",
+          data int 1
+        }
+      }
+    },
+    user {
+      type str "Blast Database Title",
+      data {
+        {
+          label str "mgen",
+          data bool TRUE
+        }
+      }
+    }
+  },
+  data align {
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 379
+        },
+        {
+          id str "e_value",
+          value real { 0, 10, 0 }
+        },
+        {
+          id str "bit_score",
+          value real { 701000512469772, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 379
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 23838579,
+          gi 224514737
+        },
+        starts {
+          0,
+          33702489
+        },
+        lens {
+          379
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Hist Seqalign",
+      data {
+        {
+          label str "Hist Seqalign",
+          data bool TRUE
+        }
+      }
+    },
+    user {
+      type str "Blast Type",
+      data {
+        {
+          label str "blastn",
+          data int 1
+        }
+      }
+    },
+    user {
+      type str "Blast Database Title",
+      data {
+        {
+          label str "mgen",
+          data bool TRUE
+        }
+      }
+    }
+  },
+  data align {
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 577
+        },
+        {
+          id str "e_value",
+          value real { 0, 10, 0 }
+        },
+        {
+          id str "bit_score",
+          value real { 106663714363267, 10, -11 }
+        },
+        {
+          id str "num_ident",
+          value int 577
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 80514115,
+          gi 224514737
+        },
+        starts {
+          0,
+          26955638
+        },
+        lens {
+          577
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Hist Seqalign",
+      data {
+        {
+          label str "Hist Seqalign",
+          data bool TRUE
+        }
+      }
+    },
+    user {
+      type str "Blast Type",
+      data {
+        {
+          label str "blastn",
+          data int 1
+        }
+      }
+    },
+    user {
+      type str "Blast Database Title",
+      data {
+        {
+          label str "mgen",
+          data bool TRUE
+        }
+      }
+    }
+  },
+  data align {
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 148
+        },
+        {
+          id str "e_value",
+          value real { 565300089230318, 10, -87 }
+        },
+        {
+          id str "bit_score",
+          value real { 274424442779723, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 148
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 83248489,
+          gi 224514737
+        },
+        starts {
+          49,
+          45884367
+        },
+        lens {
+          148
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 111
+        },
+        {
+          id str "e_value",
+          value real { 209153779534441, 10, -66 }
+        },
+        {
+          id str "bit_score",
+          value real { 206098405643222, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 111
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 83248489,
+          gi 224514737
+        },
+        starts {
+          196,
+          45884607
+        },
+        lens {
+          111
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 91
+        },
+        {
+          id str "e_value",
+          value real { 274412855904374, 10, -55 }
+        },
+        {
+          id str "bit_score",
+          value real { 169165412596464, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 91
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 83248489,
+          gi 224514737
+        },
+        starts {
+          388,
+          45885702
+        },
+        lens {
+          91
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 86
+        },
+        {
+          id str "e_value",
+          value real { 165154015654355, 10, -52 }
+        },
+        {
+          id str "bit_score",
+          value real { 159932164334775, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 86
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 83248489,
+          gi 224514737
+        },
+        starts {
+          305,
+          45885021
+        },
+        lens {
+          86
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 54
+        },
+        {
+          id str "e_value",
+          value real { 10152923563728, 10, -33 }
+        },
+        {
+          id str "bit_score",
+          value real { 100839375459963, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 54
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 83248489,
+          gi 224514737
+        },
+        starts {
+          0,
+          45884226
+        },
+        lens {
+          54
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Hist Seqalign",
+      data {
+        {
+          label str "Hist Seqalign",
+          data bool TRUE
+        }
+      }
+    },
+    user {
+      type str "Blast Type",
+      data {
+        {
+          label str "blastn",
+          data int 1
+        }
+      }
+    },
+    user {
+      type str "Blast Database Title",
+      data {
+        {
+          label str "mgen",
+          data bool TRUE
+        }
+      }
+    }
+  },
+  data align {
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 532
+        },
+        {
+          id str "e_value",
+          value real { 0, 10, 0 }
+        },
+        {
+          id str "bit_score",
+          value real { 983537909277466, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 532
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 83109079,
+          gi 224514737
+        },
+        starts {
+          0,
+          35218169
+        },
+        lens {
+          532
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Hist Seqalign",
+      data {
+        {
+          label str "Hist Seqalign",
+          data bool TRUE
+        }
+      }
+    },
+    user {
+      type str "Blast Type",
+      data {
+        {
+          label str "blastn",
+          data int 1
+        }
+      }
+    },
+    user {
+      type str "Blast Database Title",
+      data {
+        {
+          label str "mgen",
+          data bool TRUE
+        }
+      }
+    }
+  },
+  data align {
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 568
+        },
+        {
+          id str "e_value",
+          value real { 0, 10, 0 }
+        },
+        {
+          id str "bit_score",
+          value real { 105001729676163, 10, -11 }
+        },
+        {
+          id str "num_ident",
+          value int 568
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 78274520,
+          gi 224514737
+        },
+        starts {
+          0,
+          45766725
+        },
+        lens {
+          568
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Hist Seqalign",
+      data {
+        {
+          label str "Hist Seqalign",
+          data bool TRUE
+        }
+      }
+    },
+    user {
+      type str "Blast Type",
+      data {
+        {
+          label str "blastn",
+          data int 1
+        }
+      }
+    },
+    user {
+      type str "Blast Database Title",
+      data {
+        {
+          label str "mgen",
+          data bool TRUE
+        }
+      }
+    }
+  },
+  data align {
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 577
+        },
+        {
+          id str "e_value",
+          value real { 0, 10, 0 }
+        },
+        {
+          id str "bit_score",
+          value real { 106663714363267, 10, -11 }
+        },
+        {
+          id str "num_ident",
+          value int 577
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 80779892,
+          gi 224514737
+        },
+        starts {
+          0,
+          35624417
+        },
+        lens {
+          577
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Hist Seqalign",
+      data {
+        {
+          label str "Hist Seqalign",
+          data bool TRUE
+        }
+      }
+    },
+    user {
+      type str "Blast Type",
+      data {
+        {
+          label str "blastn",
+          data int 1
+        }
+      }
+    },
+    user {
+      type str "Blast Database Title",
+      data {
+        {
+          label str "mgen",
+          data bool TRUE
+        }
+      }
+    }
+  },
+  data align {
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 304
+        },
+        {
+          id str "e_value",
+          value real { 664445087124144, 10, -174 }
+        },
+        {
+          id str "bit_score",
+          value real { 562501788544431, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 304
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 81166152,
+          gi 224514737
+        },
+        starts {
+          0,
+          46579127
+        },
+        lens {
+          304
+        },
+        strands {
+          plus,
+          plus
+        }
+      }
+    }
+  }
+}

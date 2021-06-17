@@ -1,0 +1,37 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_seqext SHARED)
+  NCBI_hosts_projects(
+    objtools/alnmgr/alnmgr
+    objmgr/objmgr
+    objtools/readers/xobjread
+    objtools/readers/xobjreadex
+    objtools/writers/xobjwrite
+    objtools/import/xobjimport
+    objmgr/util/util
+    objtools/manip/xobjmanip
+    objtools/format/xformat
+    objtools/blast/seqdb_reader/seqdb
+    objtools/blast/gene_info_reader/gene_info
+    objtools/blast/seqdb_writer/writedb
+    objects/id1/id1
+    objects/id1/id1cli
+    objects/id2/id2
+    objects/id2/id2cli
+    objmgr/split/id2_split
+    objects/seqsplit/seqsplit
+    objtools/seqmasks_io/seqmasks_io
+    objtools/edit/edit
+    objtools/cleanup/cleanup
+    objects/valerr/valerr
+    objects/valid/valid
+    objtools/blast/services/blast_services
+    objtools/blast/blastdb_format/blastdb_format
+    objtools/logging/logging
+    objtools/snputil/snputil
+    objtools/uudutil/uudutil
+    objtools/unit_test_util/unit_test_util
+    objtools/variation/variation_utils
+  )
+  NCBI_add_definitions(NCBI_SEQEXT_EXPORTS)
+NCBI_end_lib()

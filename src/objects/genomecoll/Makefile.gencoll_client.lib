@@ -1,0 +1,21 @@
+# $Id$
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(SQLITE3_INCLUDE)
+
+ASN = gencoll_client
+
+# SRC = $(ASN:%=%__) $(ASN:%=%___)
+
+SRC = gencoll_client__ gencoll_client___ genomic_collections_cli genomic_collections_cli_ cached_assembly
+
+LIB = gencoll_client
+
+LIB_OR_DLL = lib
+
+REQUIRES = SQLITE3
+
+WATCHERS = smithrg dicuccio zherikov
+
+
+USES_LIBRARIES =  \
+    genome_collection sqlitewrapp xconnect $(COMPRESS_LIBS)

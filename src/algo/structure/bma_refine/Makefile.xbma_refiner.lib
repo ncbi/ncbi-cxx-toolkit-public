@@ -1,0 +1,30 @@
+# $Id$
+#
+# Block Multiple Alignment Refiner library
+#
+##########################################
+
+WATCHERS = lanczyck 
+
+
+REQUIRES = objects
+
+ASN_DEP = cdd
+
+LIB =   xbma_refiner
+
+SRC =   RowSelector \
+        ColumnScorer \
+        BMAUtils \
+        BlockBoundaryAlgorithm \
+        BlockEditor \
+        AlignRefineScorer \
+        RefinerPhase \
+        RefinerCycle \
+        RefinerTrial \
+        RefinerEngine \
+        Interface
+
+
+USES_LIBRARIES =  \
+    xcd_utils xstruct_util

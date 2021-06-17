@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile (ncbi_xloader_blastdb)
+##################################
+
+LIB_PROJ = ncbi_xloader_blastdb ncbi_xloader_blastdb_rmt
+SUB_PROJ = unit_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

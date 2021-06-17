@@ -1,0 +1,234 @@
+#!/usr/bin/env python3
+# Authors: David McElhany
+# Audience: NCBI Internal
+
+"""
+Filter STDIN to STDOUT, either treating input as binary and converting to a
+printable string (a la C++ Toolkit NStr::PrintableString() or treating input as
+a printable string and decoding to binary.
+
+https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=PrintableString
+"""
+
+
+import argparse
+import os
+import sys
+
+
+# A list of encodings for each ASCII character - either just ASCII characters
+# for printables, or printable escape sequences.
+ENCODINGS = [None]*256
+
+
+def build_encodings():
+    """
+    Build an encodings list programmatically to avoid typos.
+    """
+    global ENCODINGS
+    for b in range(0, 256):
+        if b == ord("\\"):
+            ENCODINGS[b] = "\\\\"
+        elif b >= 32 and b <= 126:
+            ENCODINGS[b] = chr(b)
+        elif b >= 7 and b <= 13:
+            controls = {
+                7:  "\\a",      # these have to be hard-coded...
+                8:  "\\b",
+                9:  "\\t",
+                10: "\\n",
+                11: "\\v",
+                12: "\\f",
+                13: "\\r",
+            }
+            ENCODINGS[b] = controls[b]
+        else:
+            # C++ Toolkit NStr::PrintableString() encodes in octal:
+            ENCODINGS[b] = f"\\{b:03o}"
+
+
+# Now initialize the data at module import time:
+build_encodings()
+
+
+def get_octal(istr, offset):
+    """
+    Parse the first 1-3 characters as an octal [0-255], if possible.
+    """
+    digits = 0
+    slen = len(istr)
+    if slen > 0 and istr[0] in "01234567":
+        digits += 1
+        if slen > 1 and istr[1] in "01234567":
+            digits += 1
+            if slen > 2 and istr[2] in "01234567":
+                digits += 1
+    val = 0
+    if digits:
+        val = int(istr[0:digits], 8)
+    if val < 256:
+        return (digits, val)
+    else:
+        raise ValueError(
+            "Octal sequence '\\" + istr[:3] + "' exceeds 255 (" +
+            str(val) + ") at offset " + str(offset))
+
+
+def decode(args):
+    """
+    Convert the input from an ASCII-encoded string into a binary bytes string.
+    """
+    ostr = b""
+    istr = sys.stdin.read()
+    slen = len(istr)
+    offset = 0
+    while offset < slen:
+        c = istr[offset]
+        if c == "\\":
+            if offset == slen - 1:
+                ostr += bytes([ord(c)])
+            else:
+                d = istr[offset+1]
+                if d == "a":
+                    ostr += b"\a"
+                elif d == "b":
+                    ostr += b"\b"
+                elif d == "t":
+                    ostr += b"\t"
+                elif d == "n":
+                    ostr += b"\n"
+                elif d == "v":
+                    ostr += b"\v"
+                elif d == "f":
+                    ostr += b"\f"
+                elif d == "r":
+                    ostr += b"\r"
+                elif d == "\\":
+                    ostr += b"\\"
+                else:
+                    (digits, val) = get_octal(istr[offset+1:], offset)
+                    if digits > 0:
+                        ostr += bytes([val])
+                        offset += digits - 1
+                    else:
+                        ostr += bytes([ord(c)])
+                        ostr += bytes([ord(d)])
+                offset += 1
+        else:
+            ostr += bytes([ord(c)])
+        offset += 1
+    sys.stdout.buffer.write(ostr)
+
+
+def encode(args):
+    """
+    Convert the input from a binary bytes string into an ASCII-encoded string.
+    """
+
+    class BinaryStdin(object):
+        """
+        A context manager for reading binary from stdin.
+        """
+        def __init__(self):
+            self.old_stdin = sys.stdin
+
+        def __enter__(self):
+            sys.stdin = os.fdopen(sys.stdin.fileno(), 'rb', 0)
+
+        def __exit__(self, a, b, c):
+            sys.stdin = self.old_stdin
+
+    with BinaryStdin():
+        istr = sys.stdin.read()
+        istr_len = len(istr)
+        ostr = ""
+        if args.wrap and args.wrap[0] in ["b", "c"]:
+            width = int(args.wrap[1:])
+            if width < 1:
+                args.wrap = ""
+        if args.exempt:
+            exempt = [int(x) for x in args.exempt.split(",")]
+        else:
+            exempt = []
+        for pos in range(istr_len):
+            cur_byte = istr[pos]
+            if cur_byte in exempt:
+                new_str = chr(int(cur_byte))
+            else:
+                new_str = ENCODINGS[cur_byte]
+                if not args.keep_zeros and new_str.startswith("\\0"):
+                    # Can remove superfluous zeros if last byte or next bytes
+                    # isn't an octal digit.
+                    if pos == istr_len - 1 or ENCODINGS[istr[pos+1]] \
+                            not in ["0", "1", "2", "3", "4", "5", "6", "7"]:
+                        new_str = "\\" + (
+                            new_str[3] if new_str[1:3] == "00" else new_str[2:])
+                if args.wrap:
+                    if args.wrap == "z":
+                        if cur_byte == "\x00" and \
+                                (pos+1 == istr_len or istr[pos+1] != "\x00"):
+                            new_str += "\n"
+                    elif args.wrap.startswith("b"):
+                        if pos+1 == istr_len or (pos+1) % width == 0:
+                            new_str += "\n"
+            ostr += new_str
+        if not args.wrap:
+            quote = "'" if args.single else '"' if args.double else None
+            if quote:
+                ostr = quote + ostr.replace(quote, "\\" + quote) + quote
+            if args.add_newline:
+                ostr += "\n"
+        elif args.wrap.startswith("c"):
+            len_ostr = len(ostr)
+            old_ostr = ostr
+            ostr = ""
+            for line in range((len_ostr + width - 1) / width):
+                ostr += old_ostr[width * line: width * (line + 1)] + "\n"
+        sys.stdout.write(ostr)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    subparsers = parser.add_subparsers()
+
+    decode_parser = subparsers.add_parser(
+            'decode', aliases=['d', 'dec'],
+            help="Decode a supplied printable string to binary.")
+    decode_parser.set_defaults(subcmd=decode)
+
+    encode_parser = subparsers.add_parser(
+            'encode', aliases=['e', 'dec'],
+            help="Encode a supplied binary as a printable representation.")
+    encode_parser.add_argument(
+            "-e", "--exempt",
+            help="Comma-separated list of decimal ASCII values to exempt "
+                 "from encoding.")
+    encode_parser.add_argument(
+            "-n", "--add_newline", action="store_true",
+            help="Append a newline (implicit in --wrap).")
+    encode_parser.add_argument(
+            "--double", action="store_true",
+            help="Escape double quotes and enclose result in double quotes "
+                 "(not applicable with --wrap).")
+    encode_parser.add_argument(
+            "-z", "--keep_zeros", action="store_true",
+            help="Retain unambiguous leading zeros (stripped by default).")
+    encode_parser.add_argument(
+            "--single", action="store_true",
+            help="Escape single quotes and enclose result in single quotes "
+                 "(not applicable with --wrap).")
+    encode_parser.add_argument(
+            "-w", "--wrap", default=None,
+            help="Wrap lines: 'z' = after runs of zeros; 'bNN' = after NN "
+                 "bytes; 'cNN' = after NN characters (will split bytes).")
+    encode_parser.set_defaults(subcmd=encode)
+
+    args = parser.parse_args()
+    if hasattr(args, "subcmd"):
+        args.subcmd(args)
+    else:
+        parser.print_help()
+
+
+if __name__ == "__main__":
+    main()

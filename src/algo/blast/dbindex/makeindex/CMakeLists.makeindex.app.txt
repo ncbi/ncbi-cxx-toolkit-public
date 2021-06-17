@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(makembindex)
+  NCBI_sources(main mkindex_app)
+  NCBI_uses_toolkit_libraries(xalgoblastdbindex)
+  NCBI_project_watchers(morgulis)
+NCBI_end_app()
+

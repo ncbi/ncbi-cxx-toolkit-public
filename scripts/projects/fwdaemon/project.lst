@@ -1,0 +1,6 @@
+#define TAGS fwdaemon
+./include/corelib$
+./include/util$
+connect$
+connect/ext$
+connect/daemons$

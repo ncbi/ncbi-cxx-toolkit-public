@@ -1,0 +1,5 @@
+>lcl|a [topology=circular]
+>lcl|b [organism=Homo sapiens]
+>lcl|c [strain=asdf]
+>lcl|d [gcode=17]
+>lcl|e [tech=EST]

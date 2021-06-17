@@ -1,0 +1,15 @@
+# $Id$
+# Author:  Paul Thiessen
+
+# Build library "xstruct_dp"
+#################################
+
+WATCHERS = lanczyck
+
+SRC = block_align
+
+LIB = xstruct_dp
+
+
+USES_LIBRARIES =  \
+    xncbi

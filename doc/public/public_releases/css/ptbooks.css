@@ -1,0 +1,1005 @@
+
+/********************************************************************/
+/*  ComponentID=285982 /projects/standards/standard_grid_css@1.3  */
+
+.grid{ min-width:800px; max-width:1200px; width:100%; clear:both; margin:0 auto; text-align:left }
+
+.col { margin-right: 1%; float: left; background-color: #fff; overflow:hidden; }
+.last { *zoom:1; *margin-right:0; _margin-right:-6px;  }
+.one_col { width: 7.3333%; }
+.two_col { width: 15.6664%; }
+.three_col { width: 23.9999%; }
+.four_col { width: 32.3333%; }
+.five_col { width: 40.6666%; }
+.six_col { width: 48.9999% }
+.seven_col { width: 57.3333%; }
+.eight_col { width: 65.6666%; }
+.nine_col { width: 73.9999%; }
+.ten_col { width: 82.3333%; }
+.eleven_col { width: 90.6666%; }
+.twelve_col { width: 98.9999%; }
+
+/********************************************************************/
+/*  ComponentID=95857 /projects/standards/standard_portlet_css@1.18  */
+
+.portlet { font-size: .8333em; /* <- adjust 12px inherited to 10px base */ border-top: .4em solid #97b0c8; padding-top: .7em; margin: 1em 0 2.8em 0; overflow: visible; line-height: 1.1666; zoom:1; }
+.portlet h1, .portlet h2, .portlet h3, .portlet h4, .portlet h5, .portlet h6 { font-size: 1.4em; color: #985735; font-weight: bold; display: inline;  }
+.portlet .whatsthis {font-size: 1em; color: #14376c; white-space: nowrap; margin-left: .3em;}
+.portlet ul { margin: 0; padding: 0; }
+.portlet ul li { list-style-type: none; margin-top: .6em; padding-bottom: 1px; border-bottom: 1px dotted #ccc; position: relative; overflow: visible; zoom:1; /*_height:1.6em;_overflow:hidden;*/ }
+.portlet ul li a { text-decoration: none; color: #14376c; font-size: 1.2em; border-bottom:0 }
+.portlet ul li a:hover,.portlet ul li a:active{border-bottom:0}
+.portlet .seemore { display: block; text-align: right; color: #14376c; font-size: 1.2em; text-decoration: none; margin-top: .8em; }
+.portlet ul a { _display: block; _float: left; _clear: left; }
+
+.portlet li.two_line { height: 2.8em; height\0: 2.9em; overflow: hidden; }
+.portlet .two_line a { max-height: 2.5em; overflow: hidden; display: block; }
+.portlet .long_info, .portlet p, .portlet .two_line .source, .portlet .one_line_source, .portlet_content .image .desc { color: #777; font-size: 1.2em;  }
+.portlet .two_line .source, .portlet .one_line_source { white-space: nowrap; position: absolute; right: 0; background-color: white; padding-left: .3em; }
+.portlet .two_line .source { top: 1.15em; }
+.portlet .one_line_source {  }
+.portlet .two_line .tertiary { font-size: 1em; color: #777; position: absolute; right:0; background-color: white; padding: .1em 0 0 .3em; top: 1.4em; top\0: 1.3em; }
+
+.portlet .portlet_content p { margin: .8em 0; }
+.portlet .buttonwrap { float: left; position: relative; top: -.1em; overflow: visible; }
+.portlet .invert { color: #fff; background-color: #14376c; padding: 0 .2em; }
+.portlet .tertiary { font-size: 1em; color: #777; text-align: right; line-height: 1.4em; position: relative; top: .1em; }
+.portlet_head { margin-bottom: .6em; position: relative; }
+.portlet_title { margin-right: 2em; }
+.portlet_content { position: relative; }
+.portlet_content textarea { margin: 0 0 .9em; }
+.portlet_content img { margin: .3em 1.4em .7em 0;}
+.portlet_content .image { display: block; overflow: auto; overflow:hidden\0; }
+.portlet_content .image .img_link { font-size:1em; float: left; }
+
+
+.portlet_shutter { background: transparent url(/portal/portal3rc.fcgi/2486979/img/32197) no-repeat scroll left top; display: block; float: right; width: 15px; height: 15px; position: absolute; top: -.2em; margin-left: .6em; right: 0; }
+.shutter_closed { background-position: left bottom; }
+.portlet .related li { font-size: 1.2em; border-bottom: 0; }
+.portlet .right { text-align: right; }
+
+.ra_qry, .ra_rcd { padding-left: 2em; }
+.ra_qry { background: transparent url(/portal/portal3rc.fcgi/2486979/img/32182) no-repeat scroll 0 1px; }
+.ra_rcd { background: transparent url(/portal/portal3rc.fcgi/2486979/img/32183) no-repeat scroll 0 1px; }
+
+/********************************************************************/
+/*  ComponentID=36060 /imported/WebDesign/historyportletCSS@3.3  */
+
+/******************************************/
+/* historyportletCSS */
+/******************************************/
+
+div#HTDisplay ul li a.hidden {
+    display:none;
+}
+
+
+div#HTDisplay div.action {
+    overflow:hidden;
+    width: 100%; /*IE 6*/
+}
+
+div#HTDisplay div.action a {
+    margin: 0em .5em .25em .5em;
+    float: right;
+    color:#14376C;
+    font-size:1.1em;
+}
+
+div#HTDisplay p {
+    clear: both;
+    /*font-size:85%;*/
+    color:#14376C;
+    font-size:1.2em;
+    margin: 1.2em 0em 0.6em 0.5em;
+}
+
+div#HTDisplay p a {
+    color:#14376C;
+}
+
+div#tkb_internal, div#tkb_public {     /* this will hide both public and internal side bars*/
+  display:none;
+}
+
+/*************************************************
+* show and hide messages and Turn on/off links
+*
+**************************************************/
+div#HTDisplay p, div#HTDisplay .action a.HTOff, div#HTDisplay.HTOff .action a.HTOn {
+    display:none;
+}
+
+div#HTDisplay.HTOff p.HTOff, div#HTDisplay.HTOn p.HTOn {
+    display:block;
+}
+
+div#HTDisplay.HTOff .action a.HTOff, div#HTDisplay.HTOn .action a.HTOn {
+    display:block;
+}
+
+div#HTDisplay ul.hide {
+    display:none;
+}
+
+div#HTDisplay p.Err {
+    display:block;
+}
+
+div#HTDisplay.HTOff a.seemore, div#HTDisplay.HTOn a.seemore {
+    display:none;
+}
+
+
+/*------------------------------------  Popup History Window -------------------------------------------*/
+body .popper {font-size: 1.2em;} /*moved from Entrez_PageLayout_css (coz other poppers are using jig now)*/
+
+div.popper p {
+/*margin-top: 0;
+margin-bottom: .25em;*/
+margin: 0 0 0.25em 0;
+}
+/*---*/
+
+p#htbpcit,
+p.pmid {
+font-size: 85%;
+display: block;
+}
+
+p#htbpcit {
+font-style: italic;
+}
+
+#htbpopper.hidden {
+display: none;
+}
+
+
+/********************************************************************/
+/*  ComponentID=35809 /projects/entrez/core/Entrez_DiscoveryLinks_CSS@1.3  */
+
+#content ul.DiscoverySection, .content ul.DiscoverySectionc{
+}
+
+#content li.DiscoverySectionTitle, .content li.DiscoverySectionTitle{
+    color:#1356D8;;
+    font-weight:bold;
+    border-bottom:1px solid #CCCCCC;
+    padding-top: 1em;
+    padding-bottom: 0.2em;
+}
+
+#content li.DiscoveryItem, .content li.DiscoveryItem {
+   background: url(/portal:img/ra_red) no-repeat top left;
+   padding-left: 1.2em;
+   padding-bottom: 0.3em;
+   font-size:0.9em;
+}
+
+#content li.DiscoveryItem a, .content li.DiscoveryItem a {
+    color:#232323;
+    border-bottom: none;
+}
+
+#content li.DiscoveryItem a: hover, .content li.DiscoveryItem a: hover {
+    text-decoration: underline;
+}
+
+#content li.DiscoveryAllLinks, .content li.DiscoveryAllLinks {
+    text-align:right;
+    font-size:0.9em;
+    border-bottom:1px solid #CCCCCC;
+    padding-bottom: 0.3em;
+}
+
+#content li.DiscoveryAllLinks a, .content li.DiscoveryAllLinks a {
+    color: #CC0000;
+    text-decoration: underline;
+}
+
+/********************************************************************/
+/*  ComponentID=9685 /imported/WebDesign/LinkListPageSection_Css@1.3  */
+
+div.port li.item em.linklist.error{
+    color:#CC0000;
+    font-size: 1.2em;
+    background-color:#EAEBC8;
+}
+
+div.port.norender {
+    font-family: Arial,Lucida Sans,Trebuchet,Sans-Serif;
+}
+
+/********************************************************************/
+/*  ComponentID=452438 /imported/WebDesign/BriefLinkPageSection@2.5  */
+
+.brieflinkpopdesc { font-size: 0.95em; margin-top: 0.4em; }
+.supplemental .portlet .brieflinkpop { font-size: 1.2em; }
+.supplemental .portlet .brieflinkpop a {font-size: 1em;}
+
+/********************************************************************/
+/*  ComponentID=36029 /projects/entrez/pubmed/src/PubMedCitationDiscoveryAd_CSS@1.4  */
+
+div.brieflinkpop em.cit{
+    /*font-style:italic;
+    font-size: .85em;*/
+    display:block;
+    margin-top: 0.5em;
+}
+
+div.brieflinkpop em.author{
+   /* font-style:normal;
+    font-size: .85em;*/
+    display:block;
+    margin-top: 0.5em;
+    margin-bottom: -0.3em;
+}
+
+/* hide the review label in popper*/
+div.brieflinkpop span.invert {
+    display:none;
+}
+
+/********************************************************************/
+/*  ComponentID=2279 /projects/entrez/core/DiscoveryDbLinks_css@1.5  */
+
+/* override style from BriefLink */
+div.section.brieflink.window div.DiscoveryDbLinks{
+    margin-top: 0;
+    *margin-top: 0.75em; /* for IE6, 7 */
+    padding-top: 0;
+    border-top: none;
+}
+
+
+div.brieflink.window ul li.item{
+    height: auto;
+}
+
+/********************************************************************/
+/*  ComponentID=1872054 /projects/books/components/PBooksBookNavCSS@1.8  */
+
+.navwrap-bottom {
+  margin-top: 2em;
+  margin-bottom: 10px;
+  /*margin-bottom: -1em;*/
+}
+.navwrap-top {
+  margin-top: 2px;
+  margin-bottom: .5em;
+}
+
+.navigation-toc {
+  max-width: 600px;
+  max-height: 500px;
+  overflow: auto;
+}
+
+/*****************************************************/
+/* The 'Contents v' label that controls the popper.  */
+
+/*
+  I stole this from Entrez 3.15, Entrez_DisplayBarStyle css v. 1.7.
+  The following was designed for 12px font with 18px line-height
+*/
+.source-contents-label {
+  font-size: 1em;
+  background:transparent url(/portal/portal3rc.fcgi/2486979/img/27532) no-repeat 100% 100%;
+  padding-right: 17px;
+}
+.source-contents-label:active {
+  background:transparent url(/portal/portal3rc.fcgi/2486979/img/27532) no-repeat 100% 58%;
+  padding-right: 17px;
+}
+
+/**********************************/
+/* The "Contents" hyperlink       */
+
+div.content div.navigation-wrap a.navtrig {
+  color:  #336699;
+  text-decoration: none;
+  border-bottom: none;
+  margin: 2px 1.7em 2px 2px;
+}
+
+/************************************/
+/* The "Printer Friendly View" link */
+
+.print-link {
+  float: right;
+  margin-right: 1.7em;
+}
+
+/**********************************/
+/* The TOC popper area itself.    */
+
+.navigation-toc {
+  background-color: white;
+  -moz-box-shadow: 0.4em 0.4em 0.5em #999999;
+  padding: 0 2em 0 0;
+}
+
+.navigation-toc ul.toc-toggle {
+  padding-left: 3em;
+}
+.navigation-toc ul.toc-no-toggle {
+  padding-left: 2em;
+}
+
+.navigation-toc ul.toc ul.toc {
+  padding-left: 3em;
+  margin-top: 3px;
+}
+
+.navigation-toc li {
+  padding: 2px 0;
+}
+
+.navigation-toc a.toc-link {
+  color: #336699;
+  text-decoration: none;
+  padding: 1px;
+  border: 1px solid white;
+}
+.navigation-toc a.toc-link:hover {
+  background-color: #369;
+  color: #fff;
+  /*border: 1px solid #888;*/
+}
+.navigation-toc a.current-toc-entry {
+  color: #336699;
+  font-weight: bold;
+  padding: 2px;
+  /* took out the dark border, because it looks bad when the entry
+    is multi-line */
+  /*border: 1px solid #285078;*/
+  border: 1px solid white;
+}
+
+/***********************************************************/
+/* "Table of Contents Page" link at the top of the popper. */
+
+.toc-page-link {
+  float: right;
+  margin-top: 9px;
+  font-size: 110%;
+  /*font-style: italic;*/
+  /*font-weight: bold;*/
+}
+
+
+/********************/
+/* Glossary Control
+
+span.glossary-control {
+  margin-left: 2.4em;
+} */
+
+/*******************************/
+/* Prev and Next page buttons  */
+
+
+/* These styles were copied from PubMed search results */
+
+div.pagination {
+  font-size:0.916em;
+}
+
+/* They use <h3> for a pseudo-button in the middle that identifies the current
+  page number.  We don't have that.  */
+div.pagination h3  { font-size: 1em; }
+div.pagination h3 { font-weight: normal; }
+div.pagination h3 { display: inline; }
+
+div.pagination {
+  white-space: nowrap;
+  float: right;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+div.pagination .page_link {
+  padding: 1px 6px;
+  zoom:1;
+}
+div.pagination span.inactive {
+  color: #ccc;
+}
+div.pagination a.active {
+  border: 1px solid #ddd;
+  color: #336699;
+  padding: 2px 6px;
+  *padding: 0px 4px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+div.pagination a:hover {
+  background-color: #369;
+  color: #fff;
+  border: 1px solid #888;
+}
+div.pagination .prev {
+  margin-right: .6em;
+  margin-left: .2em;
+}
+div.pagination .next {
+  margin-left: .6em;
+  margin-right: .2em;
+}
+
+/*******************************/
+/* PDF link  */
+
+div.pdf-link {
+  white-space: nowrap;
+  float: right;
+}
+
+
+
+
+
+
+/********************************************************************/
+/*  ComponentID=1778673 /projects/books/components/PBooksPageTocHeaderCSS@1.4  */
+
+.page-toc-head {
+  border-top: 1px solid #C0C0C0;
+}
+
+h2.has-page-navigation, h3.has-page-navigation, h4.has-page-navigation {
+  margin-bottom: 0;
+}
+
+.page-toc-top-link {
+  float: right;
+}
+
+.content .page-toc-head a.page-toc-label,
+.content .page-toc-head a.top-link
+{
+  text-decoration: none;
+  border-bottom: none;
+  color: #808080;
+}
+
+/*****************************************************/
+/* The 'Contents v' label that controls the popper.  */
+
+/*
+  This is the same as is in PBooksBookNavCSS.
+  I stole this from Entrez 3.15, Entrez_DisplayBarStyle css v. 1.7.
+  The following was designed for 12px font with 18px line-height
+*/
+.page-toc-label {
+  font-size: 1em;
+  background:transparent url(/portal/portal3rc.fcgi/2486979/img/27532) no-repeat 100% 100%;
+  padding-right: 17px;
+  margin-right: 3px;
+}
+.page-toc-label:active {
+  background:transparent url(/portal/portal3rc.fcgi/2486979/img/27532) no-repeat 100% 58%;
+  padding-right: 17px;
+  margin-right: 3px;
+}
+
+/**********************************/
+/* The page-toc popper area itself.    */
+
+.page-toc-popper {
+  background-color: white;
+  -moz-box-shadow: 0.4em 0.4em 0.5em #999999;
+  padding: 0 2em 0 0;
+  max-height: 35em;
+  overflow: auto
+}
+
+.page-toc-popper ul {
+  list-style-type: none;
+}
+
+/********************************************************************/
+/*  ComponentID=3499 /projects/entrez/core/Entrez_SearchBarCSS@1.7  */
+
+/* typography */
+.search_bottom button { font-family: "Helvetica Neue", GillSans, helvetica, "lucida sans", arial, sans-serif; }
+.search_top label {font-size:1.4em; margin-right: .2em;}
+.search_extras .inline_list li a, rss_menu{ font-size: 1.2em; }
+
+/* similar, unrelated styles */
+.search_extras li { margin-right: 1.2em; }
+
+/* correct height/width issues in browsers by finding the parent that I *didn't* apply the correct font-size to... I applied it too far down in the tree */
+.search { width: 62em; margin:0; left: 20em; position: absolute; top: .9em;}
+.search_top, .search_bottom { background-color: #c0c0c0; border: 2px solid white; padding: 6px; padding-left: 8px; }
+.search_top { width: 25em; border-bottom: 0; border-radius: 6px 6px 0 0; -moz-border-radius: 6px 6px 0 0; -webkit-border-top-left-radius: 6px; -webkit-border-top-right-radius: 6px; z-index: 10; padding-bottom: 0px; position: relative; top: 0px; }
+.search_top select { width: 13em; }
+.search_bottom { width: 60em; border-radius: 0 6px 6px 6px; -moz-border-radius: 0 6px 6px 6px; -webkit-border-top-right-radius: 6px; -webkit-border-bottom-left-radius: 6px; -webkit-border-bottom-right-radius: 6px; position: relative; top: -2px; z-index: 5; *height: 2.5em;}
+.search_bottom input { width: 34em; }
+.search_extras { width: 40em; position: relative; top: -6.2em; left: 28em; *top: -6.7em; *left: 27.5em; *z-index: 4;  }
+
+.search_bottom button{ border: 0 none; cursor: pointer; overflow: visible; width: auto; background-color: #ddd; padding: .2em .4em; *padding: .2em .6em; _padding: .2em .4em; margin: 0 .2em; *margin: 0 .3em; *height: 1.8em; border-radius: 3px; -moz-border-radius: 3px; -webkit-border-radius: 3px; }
+.search_bottom button:active { background-color: #fcfcfc; }
+.search_bottom button.button_search { background-color: #369; font-weight: bold; color:#fff; *margin-left: .5em;}
+.search_bottom button.button_search:active { background-color: #4c96df; }
+.search_bottom button.button_preview { background-color: #A64D48; font-weight: bold; color: #fff; }
+.search_bottom button.button_preview:active { background-color: #F27069; }
+.print_term { display : none; }
+
+/* on adv search page */
+.search_top label.search_nodropdown{display: block; height: 22px;}
+.search_bottom input.search_short { width: 29.5em; }
+
+.rss_icon { position: relative; top: 3px;margin-right:.3em;}
+
+
+.search_extras .inline_list li { margin-right:1.2em;}
+.header .search_extras .inline_list li a {font-size:1.2em;}
+.search_extras .hidden {display: none;}
+.search_extras .visible {display: inline; }
+
+.rss_menu {top: 19px; left: 0px; z-index: 1001; display: none; font-size: 1.2em;}
+.rss_menu legend {font-weight:bold;margin: 2px 0 0 3px;}
+.rss_menu ul{ margin: 0; padding:0; list-style-type:none; padding-top: 5px}
+.rss_menu ul li { margin-bottom: .4em; }
+.rss_menu span, .rss_menu label {margin-right: 0.5em;}
+.rss_menu ul input {top: 0;}
+.rss_menu dd { margin-left: 0;margin-bottom:1em;}
+.rss_menu #rss_name { width: 15em;}
+.rss_menu button {margin-top: .5em;}
+.rss_menu label { display: block; }
+
+
+/* round corners, ie8, 7, and 6 hacks */
+.search { z-index: 0\0; *z-index: 0; height: 7.1em\0; *height: 7.1em; _width: 60.2em; }
+.search .search_top { z-index: 3\0; *z-index:3; }
+.search .search_bottom { z-index: 2\0; *z-index:2; }
+.search .tr, .search .tl, .search .br, .search .bl, .search .tr2 { display: block\0; *display:block; font-size: 0\0; *font-size:0; height: 6px\0; *height:6px; position: relative\0; *position:relative; background: url(/portal/portal3rc.fcgi/2486979/img/26974) no-repeat\0; *background:url(/portal/portal3rc.fcgi/2486979/img/26974) no-repeat; z-index: 5\0; *z-index:5; }
+.search .tr, .search .br, .search .tr2 { position: absolute\0; *position: absolute;}
+.search .tr, .search .tr2 {background-position: 100% 0\0; *background-position: 100% 0;}
+.search .tr {width: 43.2%\0; *width: 43.2%; _width: 41.5%; top: 0px\0; *top:0px;}
+.search .tl { background-position: 0 -12px\0; *background-position: 0 -12px;}
+.search .br { background-position: 100% -6px\0; *background-position: 100% -6px; bottom: 3px\0; *bottom: 2px; _bottom: 20px;}
+.search .bl { background-position: 0 -18px\0; *background-position: 0 -18px; left: 2px\0; *left:2px;}
+.search .tr2 { top: 28px\0; *top: 28px;}
+.search .br, .search .tr2 { width: 100%\0; *width:100%; right: 2px\0; *right:2px;}
+
+/********************************************************************/
+/*  ComponentID=13021 /projects/entrez/core/NCBISearchBarCSS@2.4  */
+
+
+/* Adapt global search bar to Entrez search bar CSS */
+.search_bottom input.button { font-family: "Helvetica Neue", GillSans, helvetica, "lucida sans", arial, sans-serif; width: auto;}
+.search_bottom input.button{ border: 0 none; cursor: pointer; overflow: visible; width: auto; background-color: #ddd; padding: .2em .4em; *padding: .2em .6em; _padding: .2em .4em; margin: 0 .2em; *margin: 0 .3em; *height: 1.8em; border-radius: 3px; -moz-border-radius: 3px; -webkit-border-radius: 3px; }
+.search_bottom input.button:active { background-color: #fcfcfc; }
+.search_bottom input.button.search_button { background-color: #369; font-weight: bold; color:#fff; *margin-left: .5em;}
+.search_bottom input.button.search_button:active { background-color: #4c96df; }
+
+
+/********************************************************************/
+/*  ComponentID=14534 /projects/PAF/BaseComponents/Support/PAFJSCheckCSS@1.2  */
+
+noscript p.nojs {
+	background: #ffb url(/portal/portal3rc.fcgi/2486979/img/25968) no-repeat 5px center;
+	padding: 4px;
+	padding-left: 28px;
+	margin:0;
+}
+
+/********************************************************************/
+/*  ComponentID=44577 /projects/standards/meyer_reset@1.1  */
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, font, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	font-weight: inherit;
+	font-style: inherit;
+	font-size: 100%;
+	font-family: inherit;
+	vertical-align: baseline;
+}
+/* remember to define focus styles! */
+:focus {
+	outline: 0;
+}
+body {
+	line-height: 1;
+	color: black;
+	background: white;
+}
+ol, ul {
+	list-style: none;
+}
+/* tables still need 'cellspacing="0"' in the markup */
+table {
+	border-collapse: separate;
+	border-spacing: 0;
+}
+caption, th, td {
+	text-align: left;
+	font-weight: normal;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: "";
+}
+blockquote, q {
+	quotes: "" "";
+}
+
+
+/********************************************************************/
+/*  ComponentID=1872055 /projects/books/components/PBooks_CSS@2.9  */
+
+/* what to do about content? */
+
+body{
+  _text-align:center;
+  background-color:#ccc;
+}
+body.objectonly {
+  background-color: white;
+}
+
+.content{
+  margin-left: 1.2307em;
+}
+/*fixes for standard links in discovery col*/
+.content .last a,.content a.img_link{color:#14376C;text-decoration:none;border:0}
+.content .last a:hover,.content a:active,.content a.img_link:hover,.content a.img_link:active{color:#985735;border:0}
+.content .last a:visited,.content a.img_link:visited{color:#642a8f;border:0}
+
+.header,.universal_header,.footer{font-size:.7692em}
+.four_col a{text-decoration:none}
+.shadow{
+  -moz-box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5);
+  -webkit-box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5);
+  box-shadow:4px 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+#source-thumb {
+  text-align: center;
+  margin-bottom: 1em;
+}
+#source-thumb a{border:0}
+#source-thumb img {
+  -moz-box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5);
+  -webkit-box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+#footer{
+  margin-bottom:3em;
+}
+
+
+/*.large_tbl{_width:65%;max-width:78em;min-width:52em;overflow-x:auto;overflow-y:hidden;border-top:1px solid #eee;}*/
+
+.contrib .affiliation {
+  line-height: 1.2727em
+} /* results in 14px */
+
+
+.NLMLogo, .NLMLogo a {
+  color: #6F6F6F;
+}
+.NLMLogo {
+  line-height:1.4em;
+}
+.res_logo .NLMLogo a:hover {
+  text-decoration: underline;
+}
+
+
+pre {
+  background: #eee;
+  border: 1px solid #C0C0C0;
+  overflow: auto;
+  max-width: none;
+  max-height: 500px;
+  font-family: Courier, Monospace;
+}
+
+/********************************************************************/
+/*  ComponentID=1401909 /projects/standards/standard_base_css@2.7  */
+
+/* typography */
+body{ font: 62.5%/1.3846 arial, helvetica, clean, sans-serif}
+.grid{font-size: 1.3em}
+
+/* re-reset styles when applicable*/
+h1,h2,h3,h4,h5,strong,th{font-weight:bold;}
+em{font-style:italic;}
+abbr,acronym{cursor:help;border-bottom:1px dotted #000;}
+p,table,pre,fieldset,dl{margin: .6923em 0;}
+ul,ol{margin:.6923em 1em;}
+blockquote{margin:1.3846em 1em;}
+pre,code,kbd,samp,tt {font-family:monospace;font-size:1.2296em;*font-size:1em;} /* need research to figure out both FF and IE, especially the large-sized IE8 font-sizes */
+ol,ul{margin-left:2.75em;*margin-left:3em}
+ol{list-style:decimal outside;}
+ul{list-style:disc outside;}
+dl dd{margin-left:1em;}
+th,td{padding:.2em;border:1px solid #ddd}
+th{text-align:center;background-color:#f0f0f0;}
+thead{border-bottom:1px solid #eee}
+tfoot{border-top:1px solid #eee}
+table{border-collapse:collapse;margin:1.3846em 0}
+caption{margin-bottom:.5em;text-align:center}
+
+/*todo: inputs */
+button{cursor:pointer}
+
+/* header typography */
+/* all should be used in the context of 13px font-size, try to add to multiple of 18px for consistent vertical rhythm */
+h1{font-size: 1.3846em; line-height:1.5; margin:1em 0 .5em; } /* font-size of 18px, line-height of 27px */
+h2{font-size: 1.2307em; line-height:1.125; margin:1.125em 0 .5625em; border-bottom: 1px solid rgb(151, 176, 200);} /* font-size of 16px, line-height of 18px */
+
+h3{font-size: 1.0769em; line-height:1.2857; margin:1.2856em 0 .6428em; } /* font-size of 14px, line-height of 18px */
+h4,h5,h6,h3.inline{font-size: 1em; margin:1.3846em 0 .6923em; } /* line-height of 18px */
+h5{font-style:italic;font-weight:normal;}
+
+/*h6{color:#985735;}
+h5{color:#724128;}*/
+h4{color:#59331f;}
+h3{color:#724128;}
+h2{color:#985735;}
+h1{color:#000;}
+
+
+
+
+h1::after,h2::after,h3::after,h4::after,h5::after,h6::after{/*content:""; display:block;font-size:3px;*/}
+h1::after,h2::after,h3::after,h4::after,h5::after,h6::after{/*margin:-1em;*/}
+h3.inline::after,h4.inline::after,h5.inline::after,h6.inline::after{/*content:none;*/}
+
+/*InlineHeaders*/
+h3.inline,h4.inline,h5.inline,h6.inline{display:inline;float:left;margin:0;padding-right:.3em;}
+
+
+/* typography helpers */
+/* use in context of 13px font-size */
+.whole_rhythm {margin: 1.3846em 0} /* 18px margin */
+.half_rhythm {margin: .6923em 0} /* 9px margin */
+.no_top_margin{margin-top:0}
+.no_bottom_margin{margin-bottom:0}
+.no_margin{margin:0}
+
+/* proposed link colors */
+.content a{color:#2f4a8b;border-bottom:1px solid #ddd;text-decoration:none;}
+.content a:hover,.content a:active{color:#985735;border-bottom:1px solid #888;}
+.content a:visited{color:#642a8f;border-bottom:1px solid #ddd;}
+
+
+/* need callout-y pullquote-y rules and rules for images and captions, etc as well */
+
+
+/*general*/
+img{border:0}
+.inline_list,.inline_list_right{list-style-type:none;margin:0;padding:0}
+.inline_list li{display:inline;margin-right:.3em}     /* needs to be a standard distance here and the next. */
+.inline_list_right li{display:inline;margin-left:.4em;}
+.column_list{list-style-type:none;margin:0;padding:0}
+.column_list li{float:left;width:8em}
+.offscreen{text-indent:-9999px}
+.offscreen_noflow{float:left;text-indent:-9999em;margin:0;padding:0;/*safari bugfix:*/height:0;}
+.left{float:left}
+.right{float:right}
+.align_right{text-align:right}
+.hidden{display:none}
+.nowrap{white-space:nowrap}
+.noborder{border:0}
+.inline_block{display:-moz-inline-box;display:inline-block;*display:inline;zoom:1;}
+.clearfix{display:block;zoom:1}
+.clearfix::after{clear:both;content:'.';display:block;font-size:0px;height:0px;line-height:0;visibility:hidden}
+
+.small,sup,sub{font-size:.8461em;} /*11px font-size */
+.small sup,.small sub{font-size:1em}
+.small{line-height:1.6363em}
+sup{vertical-align:super;}
+sub{vertical-align:sub;}
+
+
+/********************************************************************/
+/*  ComponentID=1883091 /projects/standards/standard_optional_helpers@1.12  */
+
+/*  optional standard helpers (pmc,books,pmhealth use) */
+.uppercase{text-transform: uppercase;letter-spacing:.06em;}
+.caps{text-transform:capitalize;}
+.small-caps{font-variant:small-caps;letter-spacing:.02em;}
+.overline{text-decoration:overline;}
+.roman{font-style:none}
+.greek{font-family:Georgia, Times,"Times New Roman", serif}
+
+
+/*list-style-types*/
+.lower-alpha{list-style-type:lower-alpha}
+.upper-alpha{list-style-type:upper-alpha}
+.lower-roman{list-style-type:lower-roman}
+.upper-roman{list-style-type:upper-roman}
+.circle{list-style-type:circle}
+.square{list-style-type:square}
+.simple-list{list-style-type:none}
+.first-line-outdent{list-style-type:none}
+.first-line-outdent li:first-letter{margin-left:-1.5em}
+
+/*left-leaning blocks (do I need this?)*/
+.labeled-list{}
+.labeled-list dt{float:left;margin-right:.8em}
+.labeled-list dd{vertical-align:top;display:table-cell;*display:inline-block}
+
+/*icon blocks*/
+.iconblock{overflow:hidden}
+.icnblk_img{text-decoration:none;float:left;margin-right:1em;cursor:pointer}
+.icnblk_cntnt{display:table-cell;vertical-align:top;*zoom:1}
+.icnblk_cntnt h1,.icnblk_cntnt h2,.icnblk_cntnt h3,.icnblk_cntnt h4{margin:0 0 .6923em}
+
+/*pages*/
+.no_max_width{max-width:none}
+
+/*labels in headings*/
+.label{margin-right:1em;}
+
+/*figures*/
+.figure{margin: 1.3846em 0}
+.eight_col img.fullwidth { width: 100% !important; }
+
+/*metadata*/
+.subtitle{font-weight:bold;margin-top:-.5em}
+
+/*definition-style links*/
+.def{cursor:help}
+
+/*warning indicator*/
+.box.warn {border:1px solid #000;margin:42px 0 45px 0;padding:0 0 35px 0;}
+.box.warn h3 {background-color:#f7d118;border-bottom:1px solid #000;height:21px;margin: 0 0 35px;padding-top:2px;text-align:center;}
+.box.warn p {padding: 0 35px 0 35px;}
+.box.warn * {color: #000;}
+
+
+
+
+/********************************************************************/
+/*  ComponentID=251719 /projects/standards/standard_resheader_css@1.4  */
+
+/* header css */
+.header { height: 9em; position: relative; background: #e5e5e5 url(/portal/portal3rc.fcgi/2486979/img/28042) repeat-x scroll left bottom; margin-bottom: 1.5em; }
+.header a {text-decoration: none;}
+.header a:hover{text-decoration: underline;}
+
+/* logo variants */
+.res_logo { width: 16.5em; left:1.6em; padding: .5em 0; position: absolute; line-height: 1.5em; color: #555; }
+.res_logo_long { padding: .2em 0 0; }
+.res_logo_oneword { padding: .8em 0 0; }
+.res_name { font-size: 2.5em; line-height: 1.12em; margin: 0.25em 0 .1em; font-weight: normal; }
+.res_logo_long .res_name, .res_logo_oneword .res_name { font-size: 1.8em; }
+.res_logo_long .res_name { line-height: 1;}
+.res_logo_oneword .res_name { margin: .4em 0 .35em; }
+.res_name a { color: #444; text-shadow: .1em .1em .2em rgba(40,40,40,.3); }
+.res_tagline {font-size: 1.4em; margin: 0.25em 0; font-weight: normal; color:black }
+.res_logo a, .res_logo a:hover, .res_logo a:visited { text-decoration: none;}
+
+/********************************************************************/
+/*  ComponentID=1398677 /projects/standards/standard_headerNavigation_css@1.6  */
+
+.hnav{overflow:visible;margin-bottom:1em}
+.hnav .goto{width:100%;border-top:2px solid #97B0C8;padding-top:.3em;height:1.3846em}
+.hnav .links{float:right;margin:0;*margin:-1.35em 0 0;list-style-type:none}
+.hnav .links a[href='#top']:visited{color:#2F4A8B}
+.hnav a,.hnav a:visited{border-bottom:0}
+
+/********************************************************************/
+/*  ComponentID=63266 /projects/standards/standard_popper_css@1.1  */
+
+.tabPopper{ position:absolute; top: 0; left:0; display: none; background-color:#fff; padding: .2em; margin-top: 3px; *padding-bottom:1em; box-shadow: .4em .4em .5em #999; -webkit-box-shadow: .4em .4em .5em #999; -moz-box-shadow: .4em .4em .5em #999; border: 1px solid #ccc; /* IE hack (6, 7, 8) */ border-bottom: 1px solid #666\0; border-right: 1px solid #666\0; }
+.tabPopperCover{ position:absolute; top:0px; left: 0px; height: 1px; background-color: #FFA600; overflow:hidden; }
+.tabPopper fieldset{border: 0;padding:0;margin:4px 10px;}
+.tabPopper fieldset ul, .tabPopper fieldset dl {border-top: 1px solid #ddd;padding-top:3px;}
+.tabPopper fieldset dl { margin: 0 0 6px 0;}
+.tabPopper fieldset input {position:relative;top:3px;*top:2px;}
+
+/********************************************************************/
+/*  ComponentID=67324 /projects/entrez/core/Entrez_MessagesStyle@1.11  */
+
+div.messagearea {
+    margin:0;
+    padding: 0;
+    border-bottom: solid 1px #888;
+    clear:both;
+}
+#messagearea.empty {border: none; clear:both;}
+ul.messages {
+    font-family: Arial;
+    margin: 0;
+    padding: 0;
+    list-style-type:none;
+    list-style-image:none;
+}
+ul.messages li {
+    font-size: 1em;
+    margin:0.22em 0 0.22em;
+    padding: 0.25em 0.25em 0.25em 28px;
+    background-position: 0.5em 0.3em;
+    background-repeat: no-repeat;
+    background-color: transparent;
+}
+ul.messages li.success {
+    background-image: url(/portal/portal3rc.fcgi/2486979/img/67325);
+}
+ul.messages li.error {
+    background-image: url(/portal/portal3rc.fcgi/2486979/img/67326);
+}
+ul.messages li.warn {
+    background-image: url(/portal/portal3rc.fcgi/2486979/img/67327);
+}
+ul.messages li.info {
+    background-image: url(/portal/portal3rc.fcgi/2486979/img/67328);
+}
+ul.messages li.suggest {
+    background-image: url(/portal/portal3rc.fcgi/2486979/img/26044);
+}
+ul.messages li.hi_warn {
+    background-image: url(/portal/portal3rc.fcgi/2486979/img/67327);
+    font-weight: bold;
+}
+div#messagearea ul.messages li.hi_warn { margin: 2.5em 0; }
+ul.messages li.hi_warn em.detail{
+    font-weight: normal;
+    font-style: normal;
+    padding-left: 0.5em;
+}
+/* Temporary fix for wide tables (adding scroll bars (CXX-3856)) */
+div.table-scroll {
+	overflow: auto;
+	max-width: none;
+	max-height: 500px;
+}
+/* Added top space for tables to display consecutive tables better (CXX-4144)) */
+div.table {
+ padding-top: 0.5em;
+ }
+
+/* Added padding for the sidebar top division */
+#source-branding {
+margin-top: 1.2em;
+}
+
+/* Added style to box-ed pieces of text */
+
+.box{
+font-family: arial,helvetica,clean,sans-serif;
+font-size: 13px;
+font-size-adjust: none;
+font-stretch: normal;
+font-style: normal;
+font-variant: normal;
+font-weight: 400;
+line-height: 18px;
+text-align: left;
+}
+table.ui-ncbigrid td {
+ border-collapse:collapse;
+ }
+ table.ui-ncbigrid td{
+    border: 1px solid #DDDDDD;
+}
+/* Remove underline for 'Go To' link and for the items from the drop down list (see CXX-4213) */
+
+a.jig-ncbiinpagenav-goto-heading, a.jig-ncbiinpagenav-goto-heading:hover  {
+	border: 0 none;
+	text-decoration: none;
+ }
+ul.ui-ncbibasicmenu li a, ul.ui-ncbibasicmenu li a:hover {
+	border: 0 none;
+	text-decoration: none;
+}
+

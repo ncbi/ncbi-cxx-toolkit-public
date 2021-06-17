@@ -1,0 +1,5 @@
+Line No    : 19
+Severity   : Fatal
+Problem    : Alignment.UnterminatedBlock
+Message    : The final data block does not end with a conservation line. Each Clustal data block must end with a line that can contain a mix of *.: characters and white space, which shows the degree of conservation for the segment of the alignment in the block.
+

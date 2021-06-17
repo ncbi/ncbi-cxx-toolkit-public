@@ -1,0 +1,313 @@
+suppression = {
+	name = "Suppress all memory leaks (1)"
+	type = {reachable_memory_leak}
+	stacks = {
+		{
+			
+		}
+	}
+}
+suppression = {
+	name = "Suppress all memory leaks (3)"
+	type = {unreachable_memory_leak}
+	stacks = {
+		{
+			
+		}
+	}
+}
+suppression = {
+	name = "Suppress all mismatched deallocation - VS2015 problem"
+	type = {mismatched_deallocation}
+	stacks = {
+		{
+			...;
+		}
+	}
+}
+suppression = {
+	name = "::putenv() - 1"
+	type = {invalid_deallocation}
+	stacks = {
+		{
+			!!!;
+			mod=ntdll.dll,func=RtlExpandEnvironmentStrings;
+		}
+	}
+}
+suppression = {
+	name = "ostrstream::operator<< - memory leak"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=operator<<,src=ostream;
+		}
+	}
+}
+suppression = {
+	name = "strstream::overflow() - memory leak"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=overflow,src=strstream;
+		}
+	}
+}
+suppression = {
+	name = "::CreateProcess()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=kernel32.dll,func=CreateProcessA;
+		}
+	}
+}
+suppression = {
+	name = "::GetNamedSecurityInfo()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ADVAPI32.dll,func=GetNamedSecurityInfoA;
+		}
+	}
+}
+suppression = {
+	name = "deque - memory leak 1"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			!!!;
+			func=push_back,src=deque;
+		}
+	}
+}
+suppression = {
+	name = "deque - memory leak 2"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			!!!;
+			func=_Growmap,src=deque,line=1818,func_line=16;
+		}
+	}
+}
+suppression = {
+	name = "deque - memory leak 3"
+	type = {unreachable_memory_leak}
+	stacks = {
+		allocation={
+			!!!;
+			func="deque<class ncbi::CException const *,class std::allocator<class ncbi::CException const *> >",src=deque,line=956,func_line=0;
+		}
+	}
+}
+suppression = {
+	name = "NSI.dll - handle leak"
+	type = {kernel_handle_leak}
+	stacks = {
+		allocation={
+			!!!;
+			func=NsiGetParameterEx,mod=NSI.dll;
+		}
+	}
+}
+suppression = {
+	name = "ODBC32.dll"
+	stacks = {
+		allocation={
+			...;
+			mod=ODBC32.dll;
+		}
+	}
+}
+suppression = {
+	name = "dbghelp.dll"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=dbghelp.dll;
+		}
+	}
+}
+suppression = {
+	name = "typename.cpp"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			mod=MSVCR110.dll,func=_Name_base_internal,src=typname.cpp;
+		}
+	}
+}
+suppression = {
+	name = "xtree::push_back()"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		allocation={
+			...;
+			func=_Buynode0,src=xtree;
+		}
+		{
+			...;
+			func=push_back,src=vector;
+		}
+	}
+}
+suppression = {
+	name = "GetUserName"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ADVAPI32.dll,func=GetUserNameA;
+		}
+	}
+}
+suppression = {
+	name = "libsybct64.dll internal problem"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			!!!;
+			mod=ntdll.dll,func=RtlCompareUnicodeStrings;
+			...;
+			mod=libsybct64.dll,func=ct_dynsqlda;
+		}
+	}
+}
+suppression = {
+	name = "Unreachable OLEAUT32.dll memory error in SysStringByteLen()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=OLEAUT32.dll,func=SysStringByteLen;
+		}
+	}
+}
+suppression = {
+	name = "Unreachable libgnutls-30.dll memory error in gnutls_psk_set_server_params_function()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			!!!;
+			mod=libgnutls-30.dll,func=gnutls_psk_set_server_params_function;
+		}
+	}
+}
+suppression = {
+	name = "gnutls_global_init() - memory leak"
+	stacks = {
+		allocation={
+			...;
+			func=gnutls_global_init;
+		}
+	}
+}
+suppression = {
+	name = "Invalid memory access in libgnutls"
+	type = {invalid_memory_access}
+	stacks = {
+		allocation = {
+			...;
+			func=gnutls_pkcs12_export2;
+		}
+	}
+}
+suppression = {
+	name = "False positive in gethostname()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		allocation={
+			...;
+			mod=WS2_32.dll,func=gethostname;
+		}
+	}
+}
+suppression = {
+	name = "False positive in getsockopt()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=WS2_32.dll,func=getsockopt;
+		}
+	}
+}
+suppression = {
+	name = "SHELL32.dll -- SHGetPathFromIDList() -- invalid memory access"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=SHELL32.dll,func=SHGetPathFromIDList;
+		}
+	}
+}
+suppression = {
+	name = "ucrtbase.dll -- get_initial_wide_environment() -- invalid memory access"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=get_initial_wide_environment;
+		}
+	}
+}
+suppression = {
+	name = "ucrtbase.dll -- system()/wspawnvpe()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=wspawnvpe;
+			func=System,src=ncbiexec.cpp;
+		}
+	}
+}
+
+suppression = {
+	name = "False positive in sscanf()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=stdio.h,func=sscanf;
+		}
+	}
+}
+suppression = {
+	name = "False positive in printf()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=stdio.h,func=printf;
+		}
+	}
+}
+suppression = {
+	name = "False positive in fprintf()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=stdio.h,func=fprintf;
+		}
+	}
+}
+suppression = {
+	name = "False positive in sprintf()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			func=sprintf,src=stdio.h;
+		}
+	}
+}

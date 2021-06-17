@@ -1,0 +1,7 @@
+# Meta-makefile for variation's dbSNP 2.0 ASN.1 objects
+#################################
+
+SUB_PROJ = dbsnp
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

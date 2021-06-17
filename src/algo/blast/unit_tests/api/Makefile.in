@@ -1,0 +1,158 @@
+# $Id$
+
+LIB_PROJ = blast_unit_test_util seqalign_util
+
+APP_PROJ = blast_unit_test \
+aalookup_unit_test  \
+seqsrc_unit_test \
+delta_unit_test \
+ntlookup_unit_test \
+seqinfosrc_unit_test \
+setupfactory_unit_test \
+search_strategy_unit_test \
+redoalignment_unit_test \
+queryinfo_unit_test \
+querydata_unit_test \
+pssmenginefreqratios_unit_test \
+blastsetup_unit_test \
+blastextend_unit_test \
+blastdiag_unit_test \
+pssmcreate_unit_test \
+psiblast_iteration_unit_test \
+hspfilter_besthit_unit_test \
+hspfilter_culling_unit_test \
+optionshandle_unit_test \
+msa2pssm_unit_test \
+tracebacksearch_unit_test \
+traceback_unit_test \
+psibl2seq_unit_test \
+psiblast_unit_test \
+prelimsearch_unit_test \
+phiblast_unit_test \
+split_query_unit_test \
+scoreblk_unit_test \
+hspstream_unit_test \
+rps_unit_test \
+gapinfo_unit_test \
+blasthits_unit_test \
+linkhsp_unit_test \
+blastengine_unit_test \
+subj_ranges_unit_test \
+version_reference_unit_test \
+ntscan_unit_test \
+aascan_unit_test \
+remote_blast_unit_test \
+uniform_search_unit_test \
+blastfilter_unit_test \
+blastoptions_unit_test \
+gencode_singleton_unit_test \
+bl2seq_unit_test \
+stat_unit_test \
+magicblast_unit_test \
+rmblast_blasthits_unit_test \
+rmblast_traceback_unit_test
+
+REQUIRES = Boost.Test.Included
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+.PHONY: all $(APP_PROJ)
+
+lib:
+	${MAKE} ${MFLAGS} -f Makefile.seqalign_util_lib
+	${MAKE} ${MFLAGS} -f Makefile.blast_unit_test_util_lib
+blast_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.blast_unit_test_app
+seqsrc_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.seqsrc_unit_test_app
+delta_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.delta_unit_test_app
+ntlookup_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.ntlookup_unit_test_app
+seqinfosrc_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.seqinfosrc_unit_test_app
+setupfactory_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.setupfactory_unit_test_app
+search_strategy_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.search_strategy_unit_test_app
+redoalignment_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.redoalignment_unit_test_app
+queryinfo_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.queryinfo_unit_test_app
+querydata_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.querydata_unit_test_app
+pssmenginefreqratios_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.pssmenginefreqratios_unit_test_app
+blastsetup_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.blastsetup_unit_test_app
+blastextend_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.blastextend_unit_test_app
+blastdiag_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.blastdiag_unit_test_app
+pssmcreate_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.pssmcreate_unit_test_app
+psiblast_iteration_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.psiblast_iteration_unit_test_app
+hspfilter_besthit_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.hspfilter_besthit_unit_test_app
+hspfilter_culling_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.hspfilter_culling_unit_test_app
+optionshandle_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.optionshandle_unit_test_app
+msa2pssm_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.msa2pssm_unit_test_app
+tracebacksearch_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.tracebacksearch_unit_test_app
+traceback_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.traceback_unit_test_app
+psibl2seq_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.psibl2seq_unit_test_app
+psiblast_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.psiblast_unit_test_app
+prelimsearch_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.prelimsearch_unit_test_app
+phiblast_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.phiblast_unit_test_app
+split_query_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.split_query_unit_test_app
+scoreblk_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.scoreblk_unit_test_app
+hspstream_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.hspstream_unit_test_app
+rps_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.rps_unit_test_app
+gapinfo_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.gapinfo_unit_test_app
+blasthits_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.blasthits_unit_test_app
+linkhsp_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.linkhsp_unit_test_app
+blastengine_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.blastengine_unit_test_app
+subj_ranges_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.subj_ranges_unit_test_app
+version_reference_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.version_reference_unit_test_app
+aalookup_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.aalookup_unit_test_app
+ntscan_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.ntscan_unit_test_app
+aascan_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.aascan_unit_test_app
+remote_blast_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.remote_blast_unit_test_app
+uniform_search_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.uniform_search_unit_test_app
+blastfilter_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.blastfilter_unit_test_app
+blastoptions_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.blastoptions_unit_test_app
+gencode_singleton_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.gencode_singleton_unit_test_app
+bl2seq_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.bl2seq_unit_test_app
+stat_unit_test: lib
+	${MAKE} ${MFLAGS} -f Makefile.stat_unit_test_app
+magicblast_unit_test:
+	${MAKE} ${MFLAGS} -f Makefile.magicblast_unit_test_app

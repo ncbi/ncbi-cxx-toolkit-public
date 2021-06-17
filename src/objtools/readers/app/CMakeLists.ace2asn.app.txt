@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(ace2asn)
+  NCBI_sources(ace2asn)
+  NCBI_uses_toolkit_libraries(xobjread)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()
+

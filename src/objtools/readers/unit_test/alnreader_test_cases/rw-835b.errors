@@ -1,0 +1,10 @@
+Line No    : 9
+Severity   : Warning
+Problem    : Alignment.UnterminatedCommand
+Message    : File format autocorrected to comply with Nexus rules. Unexpected "end;". Appending ';' to prior command. No action required.
+
+Line No    : None (Encountered during pre or post processing)
+Severity   : Fatal
+Problem    : Alignment.BadSequenceCount
+Message    : Only one sequence was detected in the alignment file. An alignment file must contain more than one sequence.
+

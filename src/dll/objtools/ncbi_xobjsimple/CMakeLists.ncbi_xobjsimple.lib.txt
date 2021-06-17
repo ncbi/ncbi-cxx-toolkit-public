@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xobjsimple SHARED)
+  NCBI_hosts_projects(
+    objtools/simple/xobjsimple
+  )
+  NCBI_add_definitions(NCBI_XOBJSIMPLE_EXPORTS)
+NCBI_end_lib()

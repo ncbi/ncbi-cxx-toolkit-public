@@ -1,0 +1,18 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_eutils SHARED)
+  NCBI_hosts_projects(
+    objtools/eutils/api/eutils
+    objtools/eutils/egquery/egquery
+    objtools/eutils/elink/elink
+    objtools/eutils/epost/epost
+    objtools/eutils/esearch/esearch
+    objtools/eutils/espell/espell
+    objtools/eutils/esummary/esummary
+    objtools/eutils/linkout/linkout
+    objtools/eutils/einfo/einfo
+    objtools/eutils/uilist/uilist
+    objtools/eutils/ehistory/ehistory
+  )
+  NCBI_add_definitions(NCBI_EUTILS_EXPORTS)
+NCBI_end_lib()

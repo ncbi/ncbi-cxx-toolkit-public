@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_algo_ms SHARED)
+  NCBI_hosts_projects(
+    algo/ms/omssa/xomssa
+    objects/omssa/omssa
+    algo/ms/formats/pepxml/pepXML
+#    internal/peptides/objects/unimod/unimod
+  )
+  NCBI_add_definitions(NCBI_ALGOMS_EXPORTS)
+NCBI_end_lib()

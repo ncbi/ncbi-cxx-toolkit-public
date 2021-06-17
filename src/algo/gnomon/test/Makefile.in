@@ -1,0 +1,5 @@
+APP_PROJ = test_chainer
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

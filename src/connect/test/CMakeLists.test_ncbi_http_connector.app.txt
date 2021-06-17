@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(test_ncbi_http_connector)
+  NCBI_sources(test_ncbi_http_connector ncbi_conntest)
+  NCBI_uses_toolkit_libraries(connssl)
+  NCBI_add_test()
+  NCBI_project_watchers(lavr)
+NCBI_end_app()
+

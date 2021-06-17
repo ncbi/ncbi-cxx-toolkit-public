@@ -1,0 +1,393 @@
+#!/bin/sh
+# $Id$
+
+# Note default paths to third-party libraries, whose location and even
+# presence varies somewhat from platform to platform.
+
+. `dirname $0`/../../scripts/common/common.sh
+ncbi_platform=`COMMON_DetectPlatform`
+
+case "$ncbi_platform" in
+    Linux64 )
+        ncbi_cv_prog_cxx_stdlib_libcxx=no
+        ;;
+    *MAC )
+        test() {
+            case "$#:$1:$2" in
+                2:-[dfx]:/* )
+                    if builtin test "$1" "$2"; then
+                        return 0
+                    else
+                        for x in /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/*.sdk"$2"; do
+                            if builtin test "$1" "$x"; then
+                                return 0
+                            fi
+                        done
+                        return 1
+                    fi
+                    ;;
+                * ) 
+                    builtin test "$@"
+                    ;;
+            esac
+        }
+        ;;
+esac
+
+try_local() {
+    # /sw (Mac)? /usr/sfw (Solaris)?
+    for d in /usr /usr/local /usr/X11 /opt/X11 /usr/openwin; do
+        test -d "$d"  ||  continue
+        test -f "$d/include/arrow"         &&  : ${APACHE_ARROW_PATH=$d}
+        test -f "$d/include/avro"          &&  : ${AVRO_PATH=$d}
+        test -f "$d/include/aws"           &&  : ${AWS_SDK_PATH=$d}
+        test -f "$d/include/backward.hpp"  &&  : ${BACKWARD_CPP_PATH=$d}
+        test -f "$d/include/db.h"          &&  : ${BERKELEYDB_PATH=$d}
+        test -d "$d/include/boost"         &&  : ${BOOST_PATH=$d}
+        test -f "$d/include/cassandra.h"   &&  : ${CASSANDRA_PATH=$d}
+        test -d "$d/include/cereal"        &&  : ${CEREAL_PATH=$d}
+        test -d "$d/include/cppkafka"      &&  : ${CPPKAFKA_PATH=$d}
+        test -d "$d/include/curl"          &&  : ${CURL_PATH=$d}
+        test -f "$d/include/expat.h"       &&  : ${EXPAT_PATH=$d}
+        test -f "$d/include/fastcgi.h"     &&  : ${FASTCGI_PATH=$d}
+        test -d "$d/include/FTGL"          &&  : ${FTGL_PATH=$d}
+        test -x "$d/bin/libgcrypt-config"  &&  : ${GCRYPT_PATH=$d}
+        test -f "$d/include/gif_lib.h"     &&  : ${GIF_PATH=$d}
+        test -f "$d/include/gl2ps.h"       &&  : ${GL2PS_PATH=$d}
+        test -f "$d/include/GL/glew.h"     &&  : ${GLEW_PATH=$d}
+        test -d "$d/include/gmock"         &&  : ${GMOCK_PATH=$d}
+        test -f "$d/include/gmp.h"         &&  : ${GMP_PATH=$d}
+        test -f "$d/include/gnutls/gnutls.h"  &&  : ${GNUTLS_PATH=$d}
+        test -f "$d/include/grpc++/grpc++.h"  &&  : ${GRPC_PATH=$d}
+        test -f "$d/include/stdsoap2.h"    &&  : ${GSOAP_PATH=$d}
+        test -f "$d/include/h2o.h"         &&  : ${H2O_PATH=$d}
+        test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
+        test -d "$d/include/hiredis"       &&  : ${HIREDIS_PATH=$d}
+        test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
+        test -f "$d/include/influxdb.hpp"  &&  : ${INFLUXDB_PATH=$d}
+        test -d "$d/include/jaegertracing" &&  : ${JAEGER_PATH=$d}
+        test -f "$d/include/jpeglib.h"     &&  : ${JPEG_PATH=$d}
+        test -x "$d/bin/krb5-config"       &&  : ${KRB5_PATH=$d}
+        test -d "$d/include/leveldb"       &&  : ${LEVELDB_PATH=$d}
+        test -f "$d/include/elfutils/libdw.h"  &&  : ${LIBDW_PATH=$d}
+        test -d "$d/include/librdkafka"    &&  : ${LIBRDKAFKA_PATH=$d}
+        test -f "$d/include/libssh2.h"     &&  : ${LIBSSH2_PATH=$d}
+        test -f "$d/include/unwind.h"      &&  : ${LIBUNWIND_PATH=$d}
+        test -f "$d/include/uv.h"          &&  : ${LIBUV_PATH=$d}
+        test -d "$d/include/libxslt"       &&  : ${LIBXML_PATH=$d}
+        test -f "$d/include/xlsxwriter.h"  &&  : ${LIBXLSXWRITER_PATH=$d}
+        test -f "$d/include/lmdb.h"        &&  : ${LMDB_PATH=$d}
+        test -f "$d/include/lzo/lzo1.h"    &&  : ${LZO_PATH=$d}
+        test -d "$d/include/mbedtls"       &&  : ${MBEDTLS_PATH=$d}
+        test -d "$d/include/mimetic"       &&  : ${MIMETIC_PATH=$d}
+        test -d "$d/include/mongo"         &&  : ${MONGODB_PATH=$d}
+        test -d "$d/include/mongocxx"      &&  : ${MONGODB3_PATH=$d}
+        test -f "$d/include/gsl/gsl"       &&  : ${MSGSL_PATH=$d}
+        test -d "$d/include/muParser"      &&  : ${MUPARSER_PATH=$d}
+        test -x "$d/bin/mysql-config"      &&  : ${MYSQL_PATH=$d}
+        test -d "$d/include/nettle"        &&  : ${NETTLE_PATH=$d}
+        test -d "$d/include/nghttp2"       &&  : ${NGHTTP2_PATH=$d}
+        test -d "$d/include/ngs-bam"       &&  : ${NGS_PATH=$d}
+        test -f "$d/include/nlohmann/json.hpp" && : ${NLOHMANN_JSON_PATH=$d}
+        test -d "$d/include/GL"            &&  : ${OPENGL_PATH=$d}
+        test -d "$d/include/opentracing"   &&  : ${OPENTRACING_PATH=$d}
+        test -d "$d/include/OB"            &&  : ${ORBACUS_PATH=$d}
+        test -f "$d/include/png.h"         &&  : ${PNG_PATH=$d}
+        test -x "$d/bin/sablot-config"     &&  : ${SABLOT_PATH=$d}
+        test -f "$d/include/SgmlParser.h"  &&  : ${SP_PATH=$d}
+        test -f "$d/include/sqlite3.h"     &&  : ${SQLITE3_PATH=$d}
+        test -d "$d/include/thrift"        &&  : ${THRIFT_PATH=$d}
+        test -f "$d/include/tiff.h"        &&  : ${TIFF_PATH=$d}
+        test -f "$d/include/gif_lib.h"     &&  : ${UNGIF_PATH=$d}
+        test -f "$d/include/sra/sradb.h"   &&  : ${VDB_PATH=$d}
+        test -x "$d/bin/wx-config"         &&  : ${WXWIDGETS_PATH=$d}
+        test -d "$d/include/xalanc"        &&  : ${XALAN_PATH=$d}
+        test -d "$d/include/xercesc"       &&  : ${XERCES_PATH=$d}
+        test -d "$d/include/yaml-cpp"      &&  : ${YAML_CPP_PATH=$d}
+        test -d "$d/include/zorba"         &&  : ${ZORBA_PATH=$d}
+        test -f "$d/include/zstd.h"        &&  : ${ZSTD_PATH=$d}
+    done
+}
+
+build_info=`dirname $0`/../../build_info
+if [ -f "$build_info" -a -r "$build_info" ]; then
+    while read name eq value; do
+        [ "x$eq" = 'x=' ]  &&  eval bi_$name='$value'
+    done < "$build_info"
+    case "$bi_CODEBASE:$bi_PURPOSE:$bi_CUSTOM_NAME:$bi_VERSION" in
+        # For trunk trial builds that run tests against Valgrind, use
+        # the mainstream VDB/SRA installation on even-numbered days of
+        # the month and the release candidate on odd-numbered days.
+        TRUNK:TRIAL::* | TRUNK:VALGRIND:HighFreq:*-?[13579]\ * )
+            case "$ncbi_platform" in Linux64 | *MAC ) : ${with_vdb=rc} ;; esac
+            ;;
+    esac
+fi
+
+if test "$ncbi_favor_std_packages" = yes; then
+    try_local
+fi
+
+case "$ncbi_platform" in
+    Linux64   )
+        ncbi_rpath_sed="s,\\(/netmnt/gridengine\\)/uge[0-9]*,\\1/current,"
+        ncbi_rpath_sed="$ncbi_rpath_sed; s,$NCBI/\\(.*\\),/opt/ncbi/64/\\1:&,"
+        ;;
+esac
+case "$with_vdb" in
+    rc | */* ) ;;
+    * )
+        ncbi_rpath_sed="$ncbi_rpath_sed; s,\\(/vdb-versions\\)/\\([1-9][0-9]*\\)[^/]*/,\\1/cxx_toolkit/\\2/,"
+        ;;
+esac
+if [ -d /panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software ]; then
+    ncbi_rpath_sed="$ncbi_rpath_sed; s,/net/.*/\\(trace_software.*\\),&:/panfs/traces01.be-md.ncbi.nlm.nih.gov/\\1,"
+fi
+
+case "$ncbi_platform" in
+    FreeBSD*   ) : ${MAKE=/usr/local/bin/gmake}; export MAKE ;;
+    Linux64    )
+        if [ -z "$CXX" -a "$NCBICXX_USE_DEFAULT_GCC" = 1 ]; then
+            CXX=/opt/ncbi/gcc/4.9.3/bin/g++
+            : ${CC=/opt/ncbi/gcc/4.9.3/bin/gcc}
+        fi
+        ;;
+esac
+
+: ${APACHE_ARROW_PATH=$NCBI/apache-arrow-3.0.0}
+
+: ${AVRO_PATH=$NCBI/avro-1.10.2}
+
+: ${AWS_SDK_PATH=$NCBI/aws-sdk-cpp-1.8.14}
+
+: ${BACKWARD_CPP_PATH=$NCBI/backward-cpp-1.3.20180206-44ae960}
+
+case "$ncbi_platform" in
+    FreeBSD*   ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
+    Linux*     ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
+    *MAC       ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.5.20}   ;;
+esac
+
+: ${BOOST_PATH=$NCBI/boost-1.76.0-ncbi1}
+
+: ${CASSANDRA_PATH=$NCBI/datastax-cpp-driver-2.15.1}
+
+: ${CEREAL_PATH=$NCBI/cereal-1.3.0}
+
+: ${CPPKAFKA_PATH=$NCBI/cppkafka-0.3.1+boost-1.76}
+
+: ${FASTCGI_PATH=$NCBI/fcgi-2.4.0}
+
+case "$ncbi_platform" in
+    *MAC       ) : ${FREETYPE_PATH=/opt/X11} ;;
+esac
+
+: ${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
+
+case "$ncbi_platform" in
+    FreeBSD64  ) : ${FTGL_PATH=$NCBI/ftgl-2.1.3-rc5-ncbi2} ;;
+    *          ) : ${FTGL_PATH=$NCBI/ftgl-2.1.3-rc5}       ;;
+esac
+
+case "$ncbi_platform" in
+    Linux*     ) : ${GCRYPT_PATH=$NCBI/libgcrypt-1.4.3} ;;
+    *MAC       ) : ${with_gcrypt=no} ;;
+esac
+
+: ${GL2PS_PATH=$NCBI/gl2ps-1.4.0}
+
+: ${GLEW_PATH=$NCBI/glew-1.5.8}
+
+: ${GMOCK_PATH=$NCBI/googletest-1.8.1}
+
+case "$ncbi_platform" in
+    Linux64    ) : ${GMP_PATH=$NCBI/gmp-6.0.0a} ;;
+    *MAC       ) : ${GMP_PATH=$NCBI/gmp-6.0.0a} ;;
+esac
+
+# NB: now used only when explicitly configured --with-gnutls
+case "$ncbi_platform" in
+    Linux64    ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
+    *MAC       ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
+esac
+
+: ${GRPC_PATH=$NCBI/grpc-1.36.4-ncbi1}
+
+case "$ncbi_platform" in
+    Linux64    ) : ${GSOAP_PATH=$NCBI/gsoap-2.8.15} ;;
+esac
+
+: ${H2O_PATH=$NCBI/h2o-2.2.6}
+
+: ${HDF5_PATH=$NCBI/hdf5-1.8.3}
+
+: ${HIREDIS_PATH=$NCBI/hiredis-0.14.0}
+
+case "$ncbi_platform" in
+    *MAC       ) ;;
+    Linux64    ) : ${ICU_PATH=$NCBI/icu-49.1.1} ;;
+    *          ) : ${ICU_PATH=$NCBI/icu-3.2} ;;
+esac
+
+: ${INFLUXDB_PATH=$NCBI/influxdb-cpp-0.0.20190416-31fe75d}
+
+: ${JAEGER_PATH=$NCBI/jaeger-client-cpp-0.7.0}
+
+: ${LEVELDB_PATH=$NCBI/leveldb-1.21}
+
+: ${LIBRDKAFKA_PATH=$NCBI/librdkafka-1.5.0}
+
+: ${LIBSSH2_PATH=$NCBI/libssh2-1.7.0}
+
+: ${LIBUNWIND_PATH=$NCBI/libunwind-1.1}
+
+: ${LIBUV_PATH=$NCBI/libuv-1.35.0}
+
+: ${LIBXML_PATH=$NCBI/libxml-2.7.8}
+
+: ${LIBXLSXWRITER_PATH=$NCBI/libxlsxwriter-0.6.9}
+
+: ${LMDB_PATH=$NCBI/lmdb-0.9.24}
+
+case "$ncbi_platform" in
+    FreeBSD64* ) : ${LZO_PATH=$NCBI/lzo-2.09} ;;
+    *          ) : ${LZO_PATH=$NCBI/lzo-2.05} ;;
+esac
+
+: ${MBEDTLS_PATH=$NCBI/mbedtls-2.16.10}
+
+: ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi2}
+
+: ${MONGODB_PATH=$NCBI/mongodb-1.1.2}
+
+: ${MONGODB3_PATH=$NCBI/mongodb-3.6.3}
+
+: ${MSGSL_PATH=$NCBI/msgsl-0.0.20171114-1c95f94}
+
+case "$ncbi_platform" in
+    FreeBSD64* ) : ${MUPARSER_PATH=$NCBI/muParser-1.30-ncbi1} ;;
+    *          ) : ${MUPARSER_PATH=$NCBI/muParser-1.30}       ;;
+esac
+
+case "$ncbi_platform" in
+    *MAC       ) : ${mysql_config=/usr/bin/false} ;;
+esac
+
+# C Toolkit (path overridden in stable components to avoid version skew)
+: ${NCBI_C_PATH=$NCBI}
+
+case "$ncbi_platform" in
+    Linux64    ) : ${NETTLE_PATH=$NCBI/nettle-3.1.1} ;;
+    *MAC       ) : ${NETTLE_PATH=$NCBI/nettle-3.1.1} ;;
+esac
+
+: ${NGHTTP2_PATH=$NCBI/nghttp2-1.40.0}
+
+: ${NGS_PATH=/net/snowman/vol/projects/trace_software/ngs/ngs-versions/2.11.0}
+
+: ${NLOHMANN_JSON_PATH=$NCBI/nlohmann-json-3.9.1}
+
+# : ${ODBC_PATH:="/opt/machine/merant"}
+
+case "$ncbi_platform" in
+    *MAC ) ;;
+    * ) : ${OPENGL_PATH=$NCBI/Mesa-7.0.2-ncbi2} ;;
+esac
+
+: ${OPENTRACING_PATH=$NCBI/opentracing-cpp-1.6.0}
+
+case "$ncbi_platform" in
+    Linux64    ) : ${ORBACUS_PATH=$NCBI/corba-4.2.0/GCC401-Release64MT}      ;;
+esac
+
+case "$ncbi_platform" in
+    *MAC       ) : ${PCRE_PATH=/usr} ;;
+esac
+
+case "$ncbi_platform" in
+    Linux*     ) : ${PERL=/usr/bin/perl5.16} ;;
+    *          ) : ${PERL_PATH=/usr} ;;
+esac
+
+case "$ncbi_platform" in
+    *MAC       ) : ${PNG_PATH=/opt/X11} ;;
+esac
+
+case "$ncbi_platform" in
+    *MAC )
+        : ${PYTHON_PATH=/usr}
+        : ${PYTHON25=/usr/bin/python2.5}
+        : ${PYTHON26=/usr/bin/python2.6}
+        : ${PYTHON27=/usr/bin/python2.7}
+        ;;
+    Linux* )
+        : ${PYTHON_PATH=/opt/python-all}
+        : ${PYTHON25=/opt/python-2.5.1/bin/python}
+        : ${PYTHON26=/usr/bin/python2.6}
+        : ${PYTHON27=/opt/python-2.7env/bin/python}
+        ;;
+esac
+
+: ${SABLOT_PATH=$NCBI/Sablot-1.0.2}
+
+: ${SGE_PATH=/netmnt/gridengine/uge867}
+
+: ${SQLITE3_PATH=$NCBI/sqlite-3.26.0-ncbi1}
+
+: ${SYBASE_PATH=/opt/sybase/clients/16.0-64bit}
+net_sybase_root="/netopt/Sybase/clients"
+local_sybase_root="/export/home/sybase/clients"
+
+: ${TCHECK_FALLBACK=/opt/intel/itt/bin/32e:/usr/local/intel/itt-3.1/tcheck/bin/32e}
+
+: ${THRIFT_PATH=$NCBI/thrift-0.11.0}
+
+net_vdb_base=/net/snowman/vol/projects/trace_software/vdb/vdb-versions
+local_vdb_base=/opt/ncbi/64/trace_software/vdb/vdb-versions
+case "$ncbi_platform" in
+    Linux64 )
+        if [ "x$with_vdb" = 'xrc' ]; then
+            # with_vdb=$local_vdb_base/cxx_toolkit/2
+            with_vdb=$net_vdb_base/cxx_toolkit/2-rc
+        else
+            : ${VDB_PATH=$local_vdb_base/2.11.0}
+        fi
+        : ${with_downloaded_vdb=no}
+        ;;
+    *MAC )
+        if [ "x$with_vdb" = 'xrc' ]; then
+            with_vdb=$net_vdb_base/cxx_toolkit/2-rc
+        else
+            : ${VDB_PATH=$net_vdb_base/2.11.0}
+        fi
+        : ${with_downloaded_vdb=no}
+        ;;
+esac
+
+case "$ncbi_platform" in
+    Linux64 ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.1.3-ncbi1} ;;
+    *MAC    ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.1.4-ncbi2} ;;
+    *       ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.1.0-ncbi2} ;;
+esac
+
+: ${XALAN_PATH=$NCBI/xalan-1.11}
+
+: ${XERCES_PATH=$NCBI/xerces-3.1.2}
+
+: ${YAML_CPP_PATH=$NCBI/yaml-cpp-0.6.3}
+
+# : ${ZORBA_PATH=$NCBI/zorba-2.2.0}
+
+for x in `set | grep '^[A-Z0-9_]*_PATH=' | fgrep "_PATH=${NCBI-/nonexistent}/"`
+do
+    d=`echo "$x" | cut -d= -f2`
+    if test \! -d "$d"; then
+        eval unset "`echo "$x" | cut -d= -f1`"
+    fi
+done
+
+try_local
+
+case "$ncbi_platform" in
+    *MAC ) unset -f test ;;
+esac

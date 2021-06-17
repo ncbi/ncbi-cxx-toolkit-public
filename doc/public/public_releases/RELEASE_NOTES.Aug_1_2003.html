@@ -1,0 +1,873 @@
+<html><head>		<meta http-equiv="Content-Type" content="text/html; charset=UTF-16"><title>RELEASE NOTES</title>
+<style type="text/css">
+<!--
+.sidebar-header
+{
+    FONT-SIZE: 90%;
+    BACKGROUND: #C8E4FC;
+    COLOR: #000000;
+    LINE-HEIGHT: 100%
+}
+.subsect1-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 150%;
+    COLOR: #154E7F
+}
+.intro-subsect-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 145%;
+    COLOR: #1205A9
+}
+
+.biblist-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 135%;
+    COLOR: #154E7F
+}
+.table-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 135%;
+    COLOR: #154E7F
+}
+.titlegrp-header
+{
+    FONT-WEIGHT: bold;
+	FONT-SIZE: 200%;
+    COLOR: #154E7F
+}
+.chapter-header
+{
+    FONT-WEIGHT: bold;
+	FONT-SIZE: 170%;
+    COLOR: #F57D09
+}
+.part-header
+{
+    FONT-WEIGHT: bold;
+	FONT-SIZE: 180%;
+    COLOR: #154E7F;
+	
+}
+.section-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 160%;
+    COLOR: #F57D09
+}
+.reviewers-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 160%;
+    COLOR: #154E7F
+}
+.preface-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 160%;
+    COLOR: #154E7F
+}
+.foreword-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 160%;
+    COLOR: #154E7F
+}
+.appendix-header, .appmat-header
+{
+   FONT-SIZE: 160%;
+    COLOR: #154E7F;
+}
+.ack-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 160%;
+    COLOR: #154E7F
+}
+.box-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 160%;
+    COLOR: #154E7F
+}
+.abstract-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 160%;
+    COLOR: #154E7F
+}
+.caption-header
+{
+    FONT-WEIGHT: bold;
+    COLOR: #154E7F
+}
+.figgrp-header
+{
+    FONT-WEIGHT: bold;
+    COLOR: #154E7F
+}
+.table-header
+{
+    FONT-WEIGHT: bold;
+    COLOR: #154E7F
+}
+.item-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 115%;
+    COLOR: #154E7F
+}
+.bq-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 105%;
+    COLOR: #154E7F
+}
+.bibsect-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 105%;
+    COLOR: #154E7F
+}
+.subsect2-header
+{
+    
+	FONT-SIZE: 140%;
+    COLOR: #154E7F;
+    FONT-STYLE: italic
+}
+.subsect3-header
+{
+    FONT-WEIGHT: bold;
+	FONT-SIZE: 120%;
+    COLOR: #154E7F;
+}
+
+.subsect4-header
+{
+    FONT-WEIGHT: bold;
+	FONT-SIZE: 115%;
+    COLOR: #154E7F;
+}
+
+
+.subsect5-header
+{
+    FONT-WEIGHT: bold;
+	FONT-SIZE: 105%;
+    COLOR: #154E7F;
+}
+
+.toolbar-link
+{
+    FONT-SIZE: small;
+    COLOR: #000000;
+    TEXT-DECORATION: underline
+}
+.toolbar-nolink
+{
+    FONT-SIZE: small;
+    COLOR: #154E7F
+}
+.toc-sidebar-active-0
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: small;
+    BACKGROUND: #8CBDE7;
+    COLOR: #000000;
+    FONT-STYLE: italic
+}
+.toc-sidebar-text
+{
+    COLOR: #000000
+}
+.toc-sidebar-passive-0
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: small;
+    COLOR: #000000;
+    FONT-STYLE: italic
+}
+.toc-sidebar-passive-1
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: small;
+    COLOR: #000000
+}
+.toc-sidebar-active-1
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: small;
+    BACKGROUND: #8CBDE7;
+    COLOR: #000000
+}
+.toc-sidebar-passive-2
+{
+    FONT-SIZE: small;
+    COLOR: #000000
+}
+.toc-sidebar-passive-3
+{
+    FONT-SIZE: small;
+    COLOR: #000000
+}
+.toc-sidebar-passive-4
+{
+    FONT-SIZE: small;
+    COLOR: #000000
+}
+.toc-sidebar-passive-5
+{
+    FONT-SIZE: small;
+    COLOR: #000000
+}
+.toc-sidebar-active-2
+{
+    FONT-SIZE: small;
+    BACKGROUND: #8CBDE7;
+    COLOR: #000000
+}
+.toc-sidebar-active-3
+{
+    FONT-SIZE: small;
+    BACKGROUND: #8CBDE7;
+    COLOR: #000000
+}
+.toc-sidebar-active-4
+{
+    FONT-SIZE: small;
+    BACKGROUND: #8CBDE7;
+    COLOR: #000000
+}
+.toc-sidebar-active-5
+{
+    FONT-SIZE: small;
+    BACKGROUND: #8CBDE7;
+    COLOR: #000000
+}
+.message
+{
+    BORDER-RIGHT: black 1px solid;
+    BORDER-TOP: black 1px solid;
+    FONT-SIZE: 85%;
+    BACKGROUND: #d6ceb5;
+    BORDER-LEFT: black 1px solid;
+    COLOR: #000000;
+    BORDER-BOTTOM: black 1px solid
+}
+.footnote
+{
+    FONT-SIZE: small
+}
+.table-foot
+{
+    FONT-SIZE: small
+}
+.text-ref
+{
+    COLOR: #0000CD;
+    TEXT-DECORATION: underline
+}
+.sidebar-ref
+{
+    FONT-SIZE: small;
+    COLOR: #000000;
+    TEXT-DECORATION: underline
+}
+.sidebar-table
+{
+    BORDER-RIGHT: black 1px solid;
+    BORDER-TOP: black 1px solid;
+    BACKGROUND: #ECF3F9;
+    BORDER-LEFT: black 1px solid;
+    BORDER-BOTTOM: black 1px solid
+}
+.toc-text
+{
+    FONT-SIZE: small;
+    MARGIN-LEFT: 2em;
+    COLOR: #000000
+}
+.toc-passive
+{
+    COLOR: #000000;
+    TEXT-DECORATION: underline
+}
+.question-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 115%;
+    COLOR: #000000
+}
+.answer-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 115%;
+    COLOR: #000000
+}
+.glossary-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 120%;
+    COLOR: #000000
+}
+.glossdiv-header
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 120%;
+    COLOR: #000000
+}
+.bb-header
+{
+    FONT-WEIGHT: normal;
+    COLOR: #000000
+}
+.monospaceText
+{
+    FONT-FAMILY: "Courier", "courier", courier, monospace
+}
+.ncbi_url
+{
+    COLOR: blue
+}
+.ncbi_platform
+{
+    FONT-SIZE: 100%;
+    FONT-FAMILY: monospace;
+    black: 
+}
+.ncbi_code
+{
+    FONT-SIZE: 100%;
+    COLOR: #008080;
+    FONT-FAMILY: Courier,monospace
+}
+.ncbi_output
+{
+    FONT-SIZE: 100%;
+    COLOR: #008080;
+    FONT-FAMILY: Courier,monospace
+}
+.ncbi_cmd
+{
+    FONT-SIZE: 100%;
+    COLOR: #a00000;
+    FONT-FAMILY: Courier,monospace
+}
+.ncbi_code_sm
+{
+    FONT-SIZE: 80%;
+    COLOR: #008080;
+    FONT-FAMILY: Courier,monospace
+}
+.ncbi_cmd_sm
+{
+    FONT-SIZE: 80%;
+    COLOR: #a00000;
+    FONT-FAMILY: Courier,monospace
+}
+.ncbi_app
+{
+    FONT-SIZE: 100%;
+    FONT-FAMILY: monospace
+}
+.ncbi_lib
+{
+    FONT-SIZE: 100%;
+    FONT-FAMILY: monospace
+}
+.ncbi_proj
+{
+    FONT-SIZE: 100%;
+    FONT-FAMILY: monospace
+}
+.ncbi_cgi
+{
+    FONT-SIZE: 100%;
+    FONT-FAMILY: monospace
+}
+.ncbi_interface
+{
+    FONT-SIZE: 100%;
+    FONT-FAMILY: monospace
+}
+.ncbi_env
+{
+    FONT-SIZE: 100%;
+    FONT-FAMILY: monospace
+}
+.ncbi_conf_var
+{
+    FONT-SIZE: 100%;
+    FONT-FAMILY: monospace
+}
+.ncbi_make_var
+{
+    FONT-SIZE: 100%;
+    FONT-FAMILY: monospace
+}
+.ncbi_var
+{
+    FONT-SIZE: 100%;
+    FONT-FAMILY: monospace
+}
+.ncbi_macro
+{
+    FONT-SIZE: 100%;
+    FONT-FAMILY: monospace
+}
+.ncbi_os
+{
+    FONT-SIZE: 100%;
+    FONT-FAMILY: monospace
+}
+.ncbi_compiler
+{
+    FONT-SIZE: 100%;
+    FONT-FAMILY: monospace
+}
+.ncbi_config
+{
+    FONT-SIZE: 100%;
+    FONT-FAMILY: monospace
+}
+.ncbi_file
+{
+    FONT-STYLE: italic
+}
+.ncbi_dir
+{
+    FONT-STYLE: italic
+}
+.ncbi_app_a
+{
+    FONT-STYLE: italic
+}
+.ncbi_util
+{
+    FONT-STYLE: italic
+}
+.ncbi_reg
+{
+    FONT-STYLE: italic
+}
+.ncbi_reg_var
+{
+    FONT-STYLE: italic
+}
+.ncbi_script_a
+{
+    FONT-STYLE: italic
+}
+.ncbi_conf_flag
+{
+    FONT-STYLE: italic
+}
+.ncbi_make_flag
+{
+    FONT-STYLE: italic
+}
+.ncbi_cvs_path
+{
+    FONT-STYLE: italic
+}
+.ncbi_cvs_rev
+{
+    FONT-STYLE: italic
+}
+.ncbi_cvs_date
+{
+    FONT-STYLE: italic
+}
+.ncbi_value
+{
+    FONT-STYLE: italic
+}
+.ncbi_menu
+{
+    FONT-STYLE: italic
+}
+.ncbi_keyword
+{
+    FONT-STYLE: italic
+}
+.ncbi_term
+{
+    FONT-STYLE: italic
+}
+.ncbi_ccode
+{
+    FONT-SIZE: 100%;
+    FONT-STYLE: italic
+}
+.ncbi_note
+{
+    FONT-WEIGHT: bold
+}
+.ncbi_class
+{
+    FONT-WEIGHT: bold;
+    FONT-STYLE: italic
+}
+.ncbi_func
+{
+    FONT-WEIGHT: bold;
+    FONT-STYLE: italic
+}
+.ncbi_type
+{
+    FONT-WEIGHT: bold;
+    FONT-STYLE: italic
+}
+.ncbi_script
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 100%;
+    FONT-STYLE: italic
+}
+.redHighlight
+{
+    COLOR: #FF0000
+}
+.blueHighlight
+{
+    COLOR: #0000FF
+}
+.greenHighlight
+{
+    COLOR: #228B22
+}
+.greyHighlight
+{
+    COLOR: #708090
+}
+
+-->
+</style></head><body><span class="chapter-header">NCBI C++ Toolkit Release (Aug 1, 2003)</span><br><br><span class="abstract-header">Outline of Topics</span><br><br><ul><li><a class="text-ref" href="#download_loc">Download Location</a></li><li><a class="text-ref" href="#source_archive">Source Archive Contents</a><ul><li><a class="text-ref" href="#source_code">Source Code Archives</a></li><li><a class="text-ref" href="#other_files">Other Files</a></li></ul>
+			</li><li><a class="text-ref" href="#new_development">New Development</a><ul><li><a class="text-ref" href="#corelib">CoreLib (corelib)</a></li><li><a class="text-ref" href="#connect">Data streaming, Networking, and Dispatching (connect)</a></li><li><a class="text-ref" href="#dbapi">
+			Database Connectivity (DBAPI) (dbapi)</a></li><li><a class="text-ref" href="#berkeley_dbapi">Berkeley DB API</a></li><li><a class="text-ref" href="#cgi">CGI/FastCGI Framework (cgi)</a></li><li><a class="text-ref" href="#serial">Data Serialization (serial)</a></li><li><a class="text-ref" href="#object_lib">Object Libraries</a></li><li><a class="text-ref" href="#obj_mgr">Object Manager (objects/objmgr)</a></li><li><a class="text-ref" href="#alnmgr">Alignment Manager (objects/alnmgr)</a></li><li><a class="text-ref" href="#misc">Miscellaneous Libs (additions and improvements)</a></li></ul>
+			</li><li><a class="text-ref" href="#build_framework">Build Framework</a><ul><li><a class="text-ref" href="#config_unix">Configuration on Unix</a></li><li><a class="text-ref" href="#build_macos">Building on the MacOS</a></li></ul>
+			</li><li><a class="text-ref" href="#documentation">Documentation</a><ul><li><a class="text-ref" href="#doc_loc">Document Location</a></li><li><a class="text-ref" href="#doc_changes">Document Content</a></li></ul>
+			</li><li><a class="text-ref" href="#backward_comp">Backward Compatibility</a><ul><li><a class="text-ref" href="#layout">Layout</a></li><li><a class="text-ref" href="#OBJMGR_LIBS">OBJMGR_LIBS</a></li></ul>
+			</li><li><a class="text-ref" href="#platforms">Platforms (OS's, compilers used inside NCBI)</a><ul><li><a class="text-ref" href="#platform_unix">Unix</a></li><li><a class="text-ref" href="#platform_windows">MS Windows</a></li><li><a class="text-ref" href="#platform_mac">Mac OS X</a></li></ul>
+			</li><li><a class="text-ref" href="#caveats">Caveats and Hints</a><ul><li><a class="text-ref" href="#macos_10x">MacOS 10.X / CodeWarrior 8.0 Update 8.3</a></li><li><a class="text-ref" href="#macos_10_2">MacOS 10.2/GCC 3.3</a></li><li><a class="text-ref" href="#gcc_3_0_4">GCC 3.0.4</a></li></ul>
+			</li><li><a class="text-ref" href="#appendix">Appendix</a></li></ul><a name="download_loc"></a><span class="section-header">Download Location</span><br><br><p><a class="text-ref" href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/Aug_01_2003/" target="_new">ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/Aug_01_2003/</a><a href="#top"></a></p><a name="source_archive"></a><span class="section-header">Source Archive Contents</span><br><br><a name="source_code"></a><span class="subsect1-header">Source Code Archives</span><br><br><ul><li>ncbi_cxx_unix.tar.gz    -- for UNIX'es (see the list of UNIX flavors below)</li><li>ncbi_cxx_win.exe  -- for MS-Windows / MSVC++ 6.0 (self-extracting)</li><li>ncbi_cxx_win.zip  -- for MS-Windows / MSVC++ 6.0</li><li>ncbi_cxx_mac_cw.sit     --  for MacOS 10.X / CodeWarrior 8.0 Update 8.3</li><li>ncbi_cxx_mac_cw.tar.gz     -- for MacOS 10.X / CodeWarrior 8.0 Update 8.3</li><li>ncbi_cxx_mac_gcc.tar.gz -- for MacOS 10.X / GCC</li><li>ncbi_cxx_mac_gcc.sit  -- for MacOS 10.X / GCC</li></ul><a name="other_files"></a><span class="subsect1-header">Other Files</span><br><br><ul><li>RELEASE_NOTES.html  -- this file</li><li>timestamp -- when the sources were checked </li></ul><a name="new_development"></a><span class="section-header">New Development</span><br><br><a name="corelib"></a><span class="subsect1-header">CoreLib (corelib)</span><br><br><br><span class="item-header">1. </span> Added CStringUTF8 class to support UTF-8 encoded strings.<br><span class="item-header">2. </span> Fixes in exception tracing to avoid printing of NUL chars ('\0') to log file/terminal.
+<br><span class="item-header">3. </span> Minor bug fixes for mutexes and threads.
+<br><span class="item-header">4. </span> Added complete set of constructors for C*MutexGuard.
+<br><span class="item-header">5. </span> Added typedefs TReadLockGuard and TWriteLockGuard to mutexes and rwlock.
+<br><span class="item-header">6. </span> Added inplace operators CObject::new and CObject::delete.
+<br><span class="item-header">7. </span> Fixes and extensions
+			<ul><li>Pipe
+API: rewritten the Unix version of the CPipeHandle class. Added CPipe/CPipeHandle::CloseHandle().
+ Added flushing a standard output streams before it redirecting. </li><li>Fixed CNcbiRegistry to handle the entries with leading spaces.</li><li>Fixed some memory leaks in the CTime class.</li></ul><br><a name="connect"></a><span class="subsect1-header">Data streaming, Networking, and Dispatching (connect)</span><br><br><br><span class="item-header">1. </span> Refined datagram socket API.<br><span class="item-header">2. </span>  Implemented C++ datagram socket API.<br><span class="item-header">3. </span>  UNIX socket acceptance in SOCK_CreateOnTop[Ex]() calls [still experimental].<br><span class="item-header">4. </span> Implemented 0-time connection timeouts for sockets and connectors. <br><span class="item-header">5. </span> Few fixes in HTTP connector code.<br><span class="item-header">6. </span> Fixed a bug in the CONNECT library that discouraged using functions from this library compiled as DLL.<br><p><a href="#top"></a></p><a name="dbapi"></a><span class="subsect1-header">
+			Database Connectivity (DBAPI) (dbapi)</span><br><br><br><span class="item-header">1. </span> The ODBC DBAPI driver, which had been specific to Windows, now also supports Unix.<br><p><a href="#top"></a></p><a name="berkeley_dbapi"></a><span class="subsect1-header">Berkeley DB API</span><br><br><br><span class="item-header">1. </span>
+Implemented BerkeleyDB abstraction layer library (BDB library). This includes
+classes to create local flat file databases and indexes. Those classes are
+tightly integrated with C++ Toolkit and it's error reporting and debugging
+facilities. As part of the library implemented first version of db_map and
+db_multimap template classes designed to imitate map and multimap templates
+coming with STL. Disk based templates offer controllable memory footprint
+and data persistance between program sessions. <br><span class="item-header">2. </span>  Local data storage. Implemented
+set of classes allowing you to create a local database of serialized biological
+objects. The database keeps meta-information about files, formats, types
+of objects, sequences stored and in files, annotations. Developed simple
+query API to retrieve the annotation information.<br><span class="item-header">3. </span> Developed object manager dataloader to work with local data storage.<br><p><a href="#top"></a></p><a name="cgi"></a><span class="subsect1-header">CGI/FastCGI Framework (cgi)</span><br><br><br><span class="item-header">1. </span> Fixed watch-file timeout logic.<br><span class="item-header">2. </span> Allowed to run FastCGI without web server in standalone mode.<br><p><a href="#top"></a></p><a name="serial"></a><span class="subsect1-header">Data Serialization (serial)</span><br><br><br><span class="item-header">1. </span>
+Added data initialization verification mechanism, which protects against
+accidental accessing or serialization of an uninitialized object data members.<br><span class="item-header">2. </span> New specification of IsSet() like methods of generated classes.  See CanGet() methods too.<br><span class="item-header">3. </span> Added possibility to reference XML schema when serializing an object in XML format.<br><span class="item-header">4. </span> Added support of different encodings in XML streams. Two encoding schemata are implemented: UTF-8 and ISO-8859-1.<br><span class="item-header">5. </span> Allow SET OF to be  implemented as vector&lt;&gt;.<br><span class="item-header">6. </span> Fixed thread safeness of object stream hooks.<br><p><a href="#top"></a></p><a name="object_lib"></a><span class="subsect1-header">Object Libraries</span><br><br><br><span class="item-header">1. </span>
+Minor bug fixes: compiler warnings, missing include statements, build order
+and dependencies, access to uninitialized members, CSeq_entry::Parentize(),
+Seq_feat::Compare(),CSeq_loc::GetTotalRange().<br><span class="item-header">2. </span> vector&lt;&gt; is used instead of list&lt;&gt; in several places for lesser  memory usage.<br><p><a href="#top"></a></p><a name="obj_mgr"></a><span class="subsect1-header">Object Manager (objects/objmgr)</span><br><br><br><span class="item-header">1. </span> Added possibility to set priorities for data sources.<br><span class="item-header">2. </span> Significantly improved GetBestOverlappingFeat() and supporting  functions.<br><span class="item-header">3. </span> Added CSeqVector_CI class for faster sequential access to the sequence data.<br><span class="item-header">4. </span> Improved processing of multi-ID seq-locs in the object manager  functions.<br><span class="item-header">5. </span> Fixed interaction of GenBank data loader garbage collector and TSE  locking mechanism.<br><span class="item-header">6. </span> Added CSeq_annot_CI class to fetch seq-annot objects rather than individual features, alignments and graphs.<br><span class="item-header">7. </span> Rewrote object manager internal structures to reduce memory usage  and object dependency.<br><span class="item-header">8. </span> Fixed interaction of GenBank data loader garbage collector and TSE  locking mechanism.<br><span class="item-header">9. </span>
+Rewrote GenBank readers: use pipelined data stream (with compression), SNP
+data are loaded separately, try to do strings' representation compression
+where possible to reduce memory usage.<br><span class="item-header">10. </span> Fixed locking of object manager classes in multi-threaded application. <br><span class="item-header">11. </span> Fixed reconnection to GenBank servers on timeout.<br><span class="item-header">12. </span> Added CSeqMap::FindResolved() with strand argument and constructor  of CSeqMap from CSeq_loc.<br><span class="item-header">13. </span> Fixed backward traversal of CSeqMap_CI.<br><span class="item-header">14. </span> New implementaion of CSeqVector uses CSeqVector_CI.<br><span class="item-header">15. </span> Fixed indexing and removal of multi-location annotations. <br><span class="item-header">16. </span> Fixed depth of recursion of annotation iterator.<br><span class="item-header">17. </span> Reduced memory usage by features' indexes.<br><span class="item-header">18. </span> Rewrote and simplified CSeq_id_Mapper and CSeq_id_Handle.<br><span class="item-header">19. </span> Added several CXxx_ScopeInfo classes for CScope related information. <br><span class="item-header">20. </span> CBioseq_Handle now uses reference to CBioseq_ScopeInfo. <br><span class="item-header">21. </span> Added public CScope::GetSynonyms() method. <br><span class="item-header">22. </span> Fixed conflict resolution in CScope::GetTSESetWithAnnots().<br><span class="item-header">23. </span> CPriority_I made to use less memory allocations/deallocations.<br><span class="item-header">24. </span>
+As part of the object manager utilities implemented new class CObjSniffer.
+Class can be used for reading ASN.1 and XML serialized objects of uncertain
+structure.<br><p><a href="#top"></a></p><a name="alnmgr"></a><span class="subsect1-header">Alignment Manager (objects/alnmgr)</span><br><br><br><span class="item-header">1. </span> Changes in CAlnMap:
+					<ul><li>Interface: optionally a chunk can be created for each segment</li><li>
+Internal: speed optimization via const refs to Dense-seg members; reworked
+some of the internal inefficient code; added caching for the end segments
+of sequences</li></ul><br><span class="item-header">2. </span> CAlnVec: optimized method for displaying sequences: GetWholeAlnSeqString<br><span class="item-header">3. </span> Changes in CAlnMix:
+					<ul><li>Several bug fixes and optimizations</li><li>Optional truncation or deletion for overlapping segments</li><li>Optional filling of the unaligned regions</li><li>Optional use of ObjMgr</li></ul><br><span class="item-header">4. </span> Demo programs added:
+					<ul><li>alnvwr demonstrates various display methods using CAlnMap and CAlnVec</li><li>alnmrg shows CAlnMix usage</li></ul><br><p><a href="#top"></a></p><a name="misc"></a><span class="subsect1-header">Miscellaneous Libs (additions and improvements)</span><br><br><br><span class="item-header">1. </span> `xutil' (util)
+					<ul><li> [md5] Computes MD5 digests (adapted from the version in the C Toolkit).</li><li>[checksum] Supports MD5.</li></ul><br><span class="item-header">2. </span>  `xobjread' (objtools/readers) -- NEW
+					<ul><li> [fasta]
+								<ul><li>Split out of Seq_entry.[ch]pp.</li><li>Properly handles comments and multiple-defline entries.</li><li>Optionally reports lowercase letters' location.</li></ul>
+			</li><li>[readfeat] Newly added code for reading Sequin-style feature tables, courtesy of Jonathan Kans.</li></ul><br><span class="item-header">3. </span> `xobjutil' (objects/util)
+					<ul><li>[genbank] Replaced with a trivial wrapper around the new generator in objtools/flat.</li></ul><br><span class="item-header">4. </span> `xhtml' (html)
+					<ul><li>Now handles large templates much faster, especially when not adding JavaScript menus..</li></ul><br><span class="item-header">5. </span> `compress'   (util/compress)
+					<ul><li> Implemented C++ wrappers for popular compression libraries (zlib, bzip2).</li><li>Added compression based i/o streams.</li></ul><br><span class="item-header">6. </span> `bzip2'   (util/compress/bzip2)
+					<ul><li> bzip2 library (see LICENSE) has been embedded into the Toolkit.</li></ul><br><span class="item-header">7. </span> `zlib'   (util/compress/zlib)
+					<ul><li>zlib library (see LICENSE) has been embedded into the Toolkit.</li></ul><br><span class="item-header">8. </span> cgi (cgi)
+					<ul><li>Added optional parameter to the URL_Encode() to enable mark characters encoding and also enlarged a test for this function</li></ul><br><span class="item-header">9. </span> Split up the "network client" part off for the objects libs in the MSVC++ static and DLL projects trees.<br><p><a href="#top"></a></p><a name="build_framework"></a><span class="section-header">Build Framework</span><br><br><a name="config_unix"></a><span class="subsect1-header">Configuration on Unix</span><br><br><p> 
+The Unix `configure' script now checks for several additional third-party
+libraries, including in particular the image-format libraries the new `ximage'
+library needs.  To deal with the hassle of finding lots of third-party libraries
+that may not all be in the same place, it also supports obtaining their locations
+from a file called `config.site'; `config.site.ex' is an example version
+showing the default settings.  (It is still also possible to specify these
+locations on the command line or in the environment.)		 				<a href="#top"></a></p><a name="build_macos"></a><span class="subsect1-header">Building on the MacOS</span><br><br><p> 
+We now build all the libraries and most of the applications including the
+Genome Workbench (gbench).  We do not build any of the many test or demo
+apps (except testvalidator).  We also build the fltk library's GUI editor,
+fluid. </p><p> All apps are built as application bundles except gbench_plugin_scan
+and datatool which are built as command line apps.  Any of the applications
+can be built as command line apps by tweaking the build scripts or the Codewarrior
+projects. </p><p> Build procedure is still the same: use an AppleScript editor to
+open and run the script files makeLibs.met and makeApps.met.  You must use
+a script editor capable of opening a script file larger than 32K, such as
+Apple's Script Editor v2.0, or Smile.  Script Editor v1.9 will not work since
+makeLibs.met just got too big.  The command line tool osascript also works. 
+</p><p> Projects include targets to compile with BSD/Apple headers and libraries
+and with MSL headers and libraries, but plugins (for gbench) built with MSL
+do not link properly, and so, because of lack of interest to keep up with
+changes, some source code does not currently  compile with MSL.  Hopefully
+this will become easier to work with and get fixed with Codewarrior v.9. </p><p> Targets to be compiled can be controlled by including an empty file
+or folder in the compilers:mac_prj folder with the name 'Build' followed
+by the keywords of the targets you want built.  The keywords are: MSL, BSD,
+Debug and Final.  For example, to build only the BSD Debug targets use: "Build
+BSD Debug", to build both BSD debug and release (final) versions: "Build
+BSD".  The default is to build everything. </p><p> If you install the C++ toolkit under a different name than "ncbi_cxx"
+or in a different location than your home directory, you can edit the  script's
+properties, pRootFolderName and pRootFolderPath, to override these defaults.
+ Note: these paths, and those mentioned below, must be entered in mac format
+(e.g. disk:Users:username:) not Unix format (e.g. /Users/username/).  The
+disk name (and its following colon) may be omitted. </p><p>
+Certain third party libraries (see <a class="text-ref" href="#third_party">Table 1</a>) 
+are required to build the C++ toolkit. The scripts will try and find them
+if they are in your home directory, or you can specify where they were installed
+using properties at the beginning of the script. </p><a name="third_party"></a><br><span class="table-header">
+	    Table 1.
+		</span><span class="table-header">Third Party Libraries</span><br><br><table width="100%">
+			<tbody><tr>
+				<td colspan="3">
+					<hr size="2" noshade="noshade">
+				</td>
+			</tr>
+			<tr>
+				<td colspan="3">
+					</td></tr><tr><td valign="top" align="left">Library</td><td valign="top" align="left">Property</td><td valign="top" align="left">Example</td>
+					</tr>
+				
+			
+			<tr>
+				<td colspan="3">
+					<hr size="1" noshade="noshade">
+				</td>
+			</tr>
+			<tr>
+				<td colspan="3">
+					</td></tr><tr>
+						<td valign="top" align="left"><span class="ncbi_lib">fltk</span></td>
+						<td valign="top" align="left"><span class="ncbi_var">pFLTKRootFolder</span></td>
+						<td valign="top" align="left"><span class="ncbi_value">"usr:local:src:fltk-1.1.4:"</span></td>
+					</tr>
+					<tr>
+						<td valign="top" align="left"><span class="ncbi_lib">bdb</span></td>
+						<td valign="top" align="left"><span class="ncbi_var">pBdbRootFolder</span></td>
+						<td valign="top" align="left"><span class="ncbi_value">"Users:myhome:mylibs:db-4.1.25"</span></td>
+					</tr>
+					<tr>
+						<td valign="top" align="left"><span class="ncbi_lib">dlcompat</span></td>
+						<td valign="top" align="left"><span class="ncbi_var">pDLRootFolder</span></td>
+						<td valign="top" align="left"><span class="ncbi_value">"usr:"</span></td>
+					</tr>
+				
+			
+			<tr>
+				<td colspan="3"><span class="table-foot"></span><hr size="2" noshade="noshade">
+				</td>
+			</tr>
+		</tbody></table><p>
+The latest release of fltk, 1.1.4x should be used.  
+</p><p> You do not have to build the fltk or bdb libraries separately.  This
+is done by the scripts and Codewarrior along with the toolkit libraries.
+ Just unpack the source bundles in your home directory or where ever you
+have specified in the appropriate properties.  The root folders for fltk
+and bdb do not have to have any particular names.  If there is more than
+one version the scripts will grab whichever is last alphabetically (e.g.
+fltk-1.1.4r2 will get used instead of fltk-1.1.3).   </p><p> The scripts normally halt on any Codewarrior compilation errors.
+ If you want them to continue and save errors, set the next script property,
+pSaveContinueOnErrors, to true.  Compilation errors for a project will be
+saved in a file in the same folder as the project being built, with a name
+in the following format: projectName-targetNumber.errs (e.g. xncbi-2.errs). 
+</p><p>
+The Genome Workbench's configuration file(s) is stored in the users Library:Application Support:gbench folder.
+</p><p>
+CFM builds are not supported.  OS 8 or 9 are not supported.  We know 10.2 works.  We think 10.1 still works.
+<a href="#top"></a></p><a name="documentation"></a><span class="section-header">Documentation</span><br><br><a name="doc_loc"></a><span class="subsect1-header">Document Location</span><br><br><p>
+The documentation is available  at
+</p>
+		<p><a class="text-ref" href="https://www.ncbi.nlm.nih.gov/books/NBK7160/" target="_new">
+https://www.ncbi.nlm.nih.gov/books/NBK7160/
+</a></p><p> as a book titled "The NCBI C++ Toolkit". This is an online searchable book. </p><p> 
+The C++ Toolkit book also provides PDF version of the chapters. Look for
+the Adobe Acrobat icon next to the chapter title in the table of contents.
+ </p><p> The older HTML documentation has been deprecated; it continues to
+be updated for the time being, but the future plan is to support only "The
+NCBI C++ Toolkit" online book at the previously listed URLs.  <a href="#top"></a></p><a name="doc_changes"></a><span class="subsect1-header">Document Content</span><br><br><p> 
+The documentation has undergone a major reorganization. Previous documentation
+has been grouped into chapters and sections that provide a more logical coherence
+and flow. New sections and paragraphs continue to be added to update and
+clarify the older documentation or provide new documentation. A new overview
+chapter titled "Introduction to the C++ Toolkit" has been added that gives
+an overview of the C++ Toolkit. This chapter contains links to other chapters
+containing more details on a specific topic.  </p><p> The DOXYGEN source browser is used to complement the traditional
+docs with structured DOXYGEN-generated "Library Reference" ones based on
+the in-source comments. You can access the DOXYGEN source browser for the
+NCBI code from:  </p>
+		<p><a class="text-ref" href="https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/" target="_new">https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/</a></p><p> 
+A major effort is under way to document all source files, so that the DOXYGEN
+source browser can generate a detailed API reference for the classes/methods.
+ <a href="#top"></a></p><a name="backward_comp"></a><span class="section-header">Backward Compatibility</span><br><br><a name="layout"></a><span class="subsect1-header">Layout</span><br><br><p> 
+The old `objects' tree has been split up; many of the headers are now under
+`objmgr' or `objtools'.  In conjunction, the libraries `seqalign', `seqblock',
+`seqfeat', `seqloc', and `seqres' (but NOT `seqcode' or `seqset') have been
+merged into `seq'; this change should be transparent on Unix if you've been
+using the $(SEQ_LIBS) variable. Likewise, the libraries `mmdb1', `mmdb2',
+and `mmdb3' have been merged into a single `mmdb' library.		 		</p><p> There are still forwarding headers in the old locations for code
+that moved to the objmgr or objtools tree; however, you should not rely on
+them, particularly given that some C++ compilers, including Sun WorkShop,
+fail to recognize the `#warning' directives they use.  The headers for the
+merged seq* and mmdb libraries have not moved. 		</p><p> In addition, the FASTA reader has moved out of Seq_entry.[ch]pp
+into its own library (xobjread) along with the new feature-table reader,
+and the generated RPC clients have been split into their own little *cli
+libraries and had their sources and headers renamed to repeat the module
+name for global uniqueness. 		<a href="#top"></a></p><a name="OBJMGR_LIBS"></a><span class="subsect1-header">OBJMGR_LIBS</span><br><br><p> 
+Due to possible changes in functionality of object manager, the list of libraries
+it depends on may change and so will the list of libraries required by the
+application which uses object manager. To reduce changes in makefiles, the
+Toolkit's framework provides a variable OBJMGR_LIBS which specifies what
+libraries are used by object manager (including libraries with generated
+objects). So you can put $(OBJMGR_LIBS) in the definition of LIB variable
+in your makefile in place of xobjmgr and other libraries used by object manager
+library.	 		<a href="#top"></a></p><a name="platforms"></a><span class="section-header">Platforms (OS's, compilers used inside NCBI)</span><br><br><a name="platform_unix"></a><span class="subsect1-header">Unix</span><br><br><a name="unix_os_comp"></a><br><span class="table-header">
+	    Table 2.
+		</span><span class="table-header">Unix OS's and Supported Compilers</span><br><br><table width="100%">
+			<tbody><tr>
+				<td colspan="3">
+					<hr size="2" noshade="noshade">
+				</td>
+			</tr>
+			<tr>
+				<td colspan="3">
+					</td></tr><tr><td valign="top" align="left">Operating System</td><td valign="top" align="left">Platform</td><td valign="top" align="left">Compilers</td>
+					</tr>
+				
+			
+			<tr>
+				<td colspan="3">
+					<hr size="1" noshade="noshade">
+				</td>
+			</tr>
+			<tr>
+				<td colspan="3">
+					</td></tr><tr>
+						<td valign="top" align="left"><span class="ncbi_os">Linux</span></td>
+						<td valign="top" align="left"><span class="ncbi_platform">INTEL</span></td>
+						<td valign="top" align="left"><span class="ncbi_compiler">GCC 3.0.4, 3.3.1</span></td>
+					</tr>
+					<tr>
+						<td valign="top" align="left"><span class="ncbi_os">Linux</span></td>
+						<td valign="top" align="left"><span class="ncbi_platform">INTEL</span></td>
+						<td valign="top" align="left"><span class="ncbi_compiler">ICC 7.1</span></td>
+					</tr>
+					<tr>
+						<td valign="top" align="left"><span class="ncbi_os">Solaris</span></td>
+						<td valign="top" align="left"><span class="ncbi_platform">SPARC</span></td>
+						<td valign="top" align="left"><span class="ncbi_compiler">WorkShop 6 update 2 C++ 5.3 Patch 111685-13  (64-bit, 32-bit)</span></td>
+					</tr>
+					<tr>
+						<td valign="top" align="left"><span class="ncbi_os">Solaris</span></td>
+						<td valign="top" align="left"><span class="ncbi_platform">SPARC</span></td>
+						<td valign="top" align="left"><span class="ncbi_compiler">GCC 2.95.3, 3.0.4</span></td>
+					</tr>
+					<tr>
+						<td valign="top" align="left"><span class="ncbi_os">Solaris</span></td>
+						<td valign="top" align="left"><span class="ncbi_platform">INTEL</span></td>
+						<td valign="top" align="left"><span class="ncbi_compiler">WorkShop 6 update 2 C++ 5.3 Patch 111685-13</span></td>
+					</tr>
+					<tr>
+						<td valign="top" align="left"><span class="ncbi_os">Solaris</span></td>
+						<td valign="top" align="left"><span class="ncbi_platform">INTEL</span></td>
+						<td valign="top" align="left"><span class="ncbi_compiler">GCC 3.0.4</span></td>
+					</tr>
+					<tr>
+						<td valign="top" align="left"><span class="ncbi_os">IRIX64</span></td>
+						<td valign="top" align="left"><span class="ncbi_platform">SGI-Mips</span></td>
+						<td valign="top" align="left"><span class="ncbi_compiler">MIPSpro 7.3.1.2m (64-bit, 32-bit)</span></td>
+					</tr>
+					<tr>
+						<td valign="top" align="left"><span class="ncbi_os">FreeBSD</span></td>
+						<td valign="top" align="left"><span class="ncbi_platform">INTEL</span></td>
+						<td valign="top" align="left"><span class="ncbi_compiler">GCC 3.0.4</span></td>
+					</tr>
+					<tr>
+						<td valign="top" align="left"><span class="ncbi_os">Tru64</span></td>
+						<td valign="top" align="left"><span class="ncbi_platform">ALPHA</span></td>
+						<td valign="top" align="left"><span class="ncbi_compiler">GCC 2.95.3</span></td>
+					</tr>
+					<tr>
+						<td valign="top" align="left"><span class="ncbi_os">Tru64</span></td>
+						<td valign="top" align="left"><span class="ncbi_platform">ALPHA</span></td>
+						<td valign="top" align="left"><span class="ncbi_compiler">Compaq C V6.3-029 / Compaq C++ V6.5-014</span></td>
+					</tr>
+				
+			
+			<tr>
+				<td colspan="3"><span class="table-foot"></span><hr size="2" noshade="noshade">
+				</td>
+			</tr>
+		</tbody></table><a name="platform_windows"></a><span class="subsect1-header">MS Windows</span><br><br><p>MSVC++ 6.0  Service Pack 5.....<a href="#top"></a></p><a name="platform_mac"></a><span class="subsect1-header">Mac OS X</span><br><br><a name="unix_os_comp"></a><br><span class="table-header">
+	    Table 3.
+		</span><span class="table-header">Mac OS,  and Supported Compilers</span><br><br><table width="100%">
+			<tbody><tr>
+				<td colspan="2">
+					<hr size="2" noshade="noshade">
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2">
+					</td></tr><tr><td valign="top" align="left">Operating System</td><td valign="top" align="left">Compilers</td>
+					</tr>
+				
+			
+			<tr>
+				<td colspan="2">
+					<hr size="1" noshade="noshade">
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2">
+					</td></tr><tr>
+						<td valign="top" align="left"><span class="ncbi_os">MacOS 10.1</span></td>
+						<td valign="top" align="left"><span class="ncbi_compiler">GCC 3.1 (patched, see "doc/config_darwin.html)</span></td>
+					</tr>
+					<tr>
+						<td valign="top" align="left"><span class="ncbi_os">MacOS 10.2</span></td>
+						<td valign="top" align="left"><span class="ncbi_compiler">GCC 3.1 (patched, see "doc/config_darwin.html), GCC 3.3</span></td>
+					</tr>
+					<tr>
+						<td valign="top" align="left"><span class="ncbi_os">MacOS 10.X</span></td>
+						<td valign="top" align="left"><span class="ncbi_compiler">CodeWarrior 8.0 Update 8.3</span></td>
+					</tr>
+				
+			
+			<tr>
+				<td colspan="2"><span class="table-foot"></span><hr size="2" noshade="noshade">
+				</td>
+			</tr>
+		</tbody></table><a name="caveats"></a><span class="section-header">Caveats and Hints</span><br><br><a name="macos_10x"></a><span class="subsect1-header">MacOS 10.X / CodeWarrior 8.0 Update 8.3</span><br><br><br><span class="item-header">1. </span> None of the test or demo applications are built.<br><span class="item-header">2. </span>
+The source code for the latest release  of fltk, 1.1.x and berkeley database
+(4.x) should be present. See the release notes (or installation instructions)
+for details. 					<br><p><a href="#top"></a></p><a name="macos_10_2"></a><span class="subsect1-header">MacOS 10.2/GCC 3.3</span><br><br><p>GCC 3.3 update for Dec. 2002 Developers Tools required from Apple. All C++ Toolkit configurations will build and run just fine.</p>
+		<p><a href="#top"></a></p><a name="gcc_3_0_4"></a><span class="subsect1-header">GCC 3.0.4</span><br><br><p>Detected two bugs in GCC-3.0.4 compiler:
+			
+			</p><ul><li>Destructor of constructed class member is not called when exception is thrown from a method called from class constructor body.<p>Fixed in GCC 3.3.<a href="#top"></a></p>
+				</li><li>STL stream uses locale in thread unsafe way which may result to segmentation fault.<p>Fixed in GCC 3.3.<a href="#top"></a></p>
+				</li></ul>
+		<p></p>
+		<p><a href="#top"></a></p><a name="appendix"></a><span class="section-header">Appendix</span><br><br><p>This document last updated on August 28, 2003<a href="#top"></a></p>
+	</body></html>

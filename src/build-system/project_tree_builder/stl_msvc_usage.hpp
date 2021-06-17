@@ -1,0 +1,9 @@
+#ifndef PROJECT_TREE_BUILDER__STL_MSVC_USAGE__HPP
+#define PROJECT_TREE_BUILDER__STL_MSVC_USAGE__HPP
+
+#ifdef _MSC_VER
+#pragma warning (disable : 4786 4251 4275)
+#endif
+
+#endif // PROJECT_TREE_BUILDER__STL_MSVC_USAGE__HPP
+

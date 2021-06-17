@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xreader_cache SHARED)
+  NCBI_hosts_projects(
+    objtools/data_loaders/genbank/cache/ncbi_xreader_cache
+  )
+  NCBI_add_definitions(NCBI_XREADER_CACHE_EXPORTS)
+NCBI_end_lib()

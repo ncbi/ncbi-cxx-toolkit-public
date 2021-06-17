@@ -1,0 +1,119 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "Annot:tRNA",
+      tag id 51459255
+    }
+  },
+  inst {
+    repr delta,
+    mol dna,
+    length 3518496,
+    topology not-set,
+    ext delta {
+      loc int {
+        from 0,
+        to 3518495,
+        id gi 51459255
+      }
+    }
+  },
+  annot {
+    {
+      db other,
+      name "Annot:tRNA",
+      desc {
+        name "tRNA",
+        title "tRNAscan-SE",
+        comment "Calculated by tRNAscan-SE"
+      },
+      data seq-table {
+        feat-type 5,
+        feat-subtype 11,
+        num-rows 8,
+        columns {
+          {
+            header {
+              field-name "disabled"
+            },
+            sparse indexes {
+                3
+            },
+            default bit TRUE
+          },
+          {
+            header {
+              field-name "data.rna.type"
+            },
+            default int 3
+          },
+          {
+            header {
+              field-name "data.rna.ext.tRNA.aa.ncbieaa"
+            },
+            data int {
+              71,
+              86,
+              71,
+              71,
+              71,
+              69,
+              78,
+              78
+            }
+          },
+          {
+            header {
+              field-id location-gi
+            },
+            default int 51459255
+          },
+          {
+            header {
+              field-id location-from
+            },
+            data int {
+              3446617,
+              3399338,
+              3397603,
+              3260000,
+              3265271,
+              3254611,
+              3251730,
+              3239917
+            }
+          },
+          {
+            header {
+              field-id location-to
+            },
+            data int {
+              3446687,
+              3399410,
+              3397673,
+              3270000,
+              3265341,
+              3254682,
+              3251803,
+              3239990
+            }
+          },
+          {
+            header {
+              field-id location-strand
+            },
+            data int {
+              1
+            },
+            default int 2
+          },
+          {
+            header {
+              field-name "xref.data.gene"
+            }
+          }
+        }
+      }
+    }
+  }
+}

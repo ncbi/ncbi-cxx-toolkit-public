@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xdbapi_ftds SHARED)
+  NCBI_hosts_projects(
+    dbapi/driver/ftds-default/ncbi_xdbapi_ftds
+  )
+  NCBI_add_definitions(NCBI_DBAPIDRIVER_CTLIB_EXPORTS)
+NCBI_end_lib()

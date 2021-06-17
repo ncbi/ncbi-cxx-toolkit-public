@@ -1,0 +1,2 @@
+MODULE_PATH = objects/seq
+MODULE_IMPORT = objects/general/general objects/biblio/biblio objects/pub/pub objects/medline/medline objects/seqloc/seqloc objects/seqblock/seqblock objects/seqalign/seqalign objects/seqfeat/seqfeat objects/seqres/seqres objects/seqtable/seqtable

@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile("APP" project)
+#################################
+
+APP_PROJ = vecscreen
+REQUIRES = objects algo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_app(writedb_unit_test)
+  NCBI_sources(writedb_unit_test criteria_unit_test)
+  NCBI_add_definitions(NCBI_MODULE=BLASTDB)
+  NCBI_uses_toolkit_libraries(writedb)
+
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_set_test_assets(writedb_unit_test.ini data)
+  NCBI_add_test()
+
+  NCBI_project_watchers(madden camacho fongah2 boratyng rackerst)
+NCBI_end_app()
+

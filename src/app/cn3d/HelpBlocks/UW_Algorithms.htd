@@ -1,0 +1,89 @@
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Microsoft FrontPage 5.0">
+<TITLE>Import Window : Algorithms</TITLE>
+</HEAD>
+<BODY>
+<H2>Import Window : Algorithms Commands</H2>
+<ul>
+  <li><a href="#block_single">Block align single</a></li>
+  <li><a href="#block_N">Block align N</a></li>
+  <li><a href="#blast_single">BLAST single</a></li>
+  <li><a href="#blast_pssm">BLAST/PSSM single</a></li>
+  <li><a href="#blast_neighbor">BLAST neighbor</a></li>
+  <li><a href="#thread_single">Thread single</a></li>
+  <li><a href="#thread_all">Thread all</a></li>
+  <li><a href="#extend_single">Extend single</a></li>
+  <li><a href="#extend_all">Extend all</a></li>
+  <li><a href="#set_region">Set region</a></li>
+  <li><a href="#reset_regions">Reset all regions</a></li>
+</ul>
+<h3><a name="block_single"></a>Block align single</h3>
+The block alignment algorithm is a new alignment method being developed at NCBI.
+Briefly, it uses a dynamic programming algorithm, except the alignment is created
+by searching with whole (gapless) blocks - corresponding to the blocks of the alignment in Cn3D -
+rather than one residue at a time as in traditional sequence alignments. See Kann M.G. et. al., Bioinformatics, 2005 Apr 15, 21(8):1451-6
+(<a href="https://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=pubmed&cmd=Retrieve&dopt=AbstractPlus&list_uids=15613392">PMID 15613392</a>).
+<p>The block alignment options panel contains numeric fields that correspond
+to the parameters of the block alignment algorithm. 
+The options at the bottom are: <b>Global alignment</b> to switch between
+global and local alignment modes, <b>Merge</b> to either never merge, merge in each 
+succesfully aligned row into the multiple alignment and recalculate the PSSM
+before proceeding with the next alignment, or merge after all alignments are completed, 
+and <b>Keep existing blocks</b> to control
+whether to freeze the alignment of existing blocks (as opposed to always
+realigning all blocks).
+<h3><a name="block_N"></a>Block align N</h3>
+Like <a href="#block_single">Block align single</a>, except it attempts to run 
+the block alignment algorithm on the first N import alignments; you will be prompted for how many (N)
+sequences to realign.
+<h3><a name="blast_single"></a>BLAST single</h3>
+Uses NCBI's BLAST-two-sequences algorithm with default parameters to align an import sequence
+to the current first sequence of the multiple alignment, discarding any existing alignment. This is not
+intended as a complete interface to the BLAST algorithm, but only to provide a
+starting point for aligning a new sequence. See NCBI's BLAST web pages for more
+complete BLAST functionality. The aligned region on the principal sequence will be
+limited to the aligned region in the multiple alignment window, if there is a
+multiple alignment present. The aligned region on the imported sequence will be
+unlimited, unless this sequence has been demoted from the multiple alignment, in
+which case the original aligned region is used as a guide. The sequence's aligned
+region can also be set manually using the <a href="#set_region">Set region</a>
+command.
+<h3><a name="blast_pssm"></a>BLAST/PSSM single</h3>
+Similar to <a href="#blast_single">BLAST single</a>, except that a sequence
+to profile BLAST alignment is performed, using a profile constructed from the
+current multiple alignment. Aligned region restrictions are the same as
+described above.
+<h3><a name="blast_neighbor"></a>BLAST neighbor</h3>
+Computes BLAST-two-sequences for the import and all rows of the multiple alignment. The highest scoring such pairwise alignment
+is then used to infer an alignment of the import with the principal sequence of the multiple alignment, and the import is merged
+accordingly.
+<h3><a name="thread_single"></a>Thread single</h3>
+This command is used to align a single sequence to the first structure of the multiple alignment,
+using NCBI's threading algorithm. When you select this item and then click on
+a sequence pair, a threading options panel comes up. A complete discussion of
+this algorithm and the details of these settings is beyond the scope of this document,
+and in many cases the default numerical values will be adequate. If <b>Merge results</b>
+is checked, then if the results of threading yield an alignment compatible with
+the current multiple alignment, then the new alignment will be merged in. If <b>Freeze
+blocks</b> is checked, then block boundaries that are not adjacent to realigned
+blocks are not allowed to move, which saves time in the threader.
+<h3><a name="thread_all"></a>Thread all</h3>
+This has the same effect as <a href="#thread_single">thread single</a>, except
+it will run the threader on all sequences in the import window, merging each one
+after it is threaded if <b>Merge results</b> is on.
+<h3><a name="extend_single"></a>Extend single</h3>
+This algorithm simply grows blocks of the selected sequence
+to either side, regardless of residue identity or any scoring, attempting only to make 
+blocks (just) large enough so that the import alignment can be merged into the multiple alignment. It will stop if there is 
+any ambiguity - for example where blocks on either side of a short insert would "compete" for residues.
+<h3><a name="extend_all"></a>Extend all</h3>
+Same as <a href="#extend_single">extend single</a>, except extension is performed on all import sequences.
+<h3><a name="set_region"></a>Set region</h3>
+Used to set the region of an imported sequence that is allowed to be aligned. This is useful, for example, if the imported sequence contains repeated regions
+and you'd like to construct an alignment across a specific repeat.
+<h3><a name="reset_regions"></a>Reset all regions</h3>
+Reset all regions on all sequences, so that alignments are unrestricted.
+</BODY>
+</HTML>

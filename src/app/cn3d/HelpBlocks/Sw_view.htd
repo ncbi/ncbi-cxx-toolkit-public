@@ -1,0 +1,58 @@
+<html>
+<HEAD>
+  <META NAME="Author" CONTENT="Windows Help Designer">
+  <META NAME="GENERATOR" CONTENT="Windows Help Designer (http://www.visagesoft.com)">
+<TITLE>Structure Window : View</TITLE>
+</HEAD>
+<BODY>
+<H2>Structure Window : View Commands</H2>
+<UL>
+  <li><A href="#in">Zoom in</A>
+  <LI><A href="#out">Zoom out</A>
+  <LI><A href="#restore">Restore</A>
+  <LI><A href="#reset">Reset</A>
+  <LI><A href="#next">Next frame</A>
+  <LI><A href="#previous">Previous frame</A>
+  <LI><A href="#first">First frame</A>
+  <LI><A href="#last">Last frame</A>
+  <LI><A href="#all">All frames</A>
+  <LI><A href="#animation">Animation</A></LI>
+  <LI><A href="#stereo">Stereo</A></LI>
+</UL>
+<h3><a name="in"></a>Zoom in</h3>
+<p>Zoom the camera in towards the structure - makes the structure bigger.</p>
+<h3><a name="out"></a>Zoom out</h3>
+Zoom the camera away from the structure - makes the structure smaller.
+<h3><a name="restore"></a>Restore</h3>
+Restore the camera angle stored the last time the structure was saved to a file.
+Same as <b>Reset</b> when no view information has been saved.
+<h3><a name="reset"></a>Reset</h3>
+Reset the camera angle so that the entire structure is visible inside the window.
+<h3><a name="next"></a>Next frame</h3>
+<p>Switch to the next frame, or the first frame if all frames are currently visible.
+</p>
+<p>A "frame" means different things depending on what type of data is
+  being viewed. If the structure is a single MMDB entry, but is for example an
+  NMR solution where the original PDB entry contains multiple models, then each
+  frame will contain one model. If it's a single structure, but the PDB entry
+  has disordered residues, then each frame will contain one ensemble of disordered
+  coordinates. If you're viewing a multiple-structure file (like a CDD or a VAST
+  alignment), then each frame contains a separate PDB structure.</p>
+<h3><a name="previous"></a>Previous frame</h3>
+Switch to the previous frame. (See the description of frames <A href="#next">above</A>.)
+<h3><a name="first"></a>First frame</h3>
+Switch to the first frame. (See the description of frames <A href="#next">above</A>.)
+<h3><a name="last"></a>Last frame</h3>
+Switch to the last frame. (See the description of frames <A href="#next">above</A>.)
+<h3><a name="all"></a>All frames</h3>
+Show all frames simultaneously. (See the description of frames <A href="#next">above</A>.)
+<h3><a name="animation"></a>Animation</h3>
+<p>There are two different types of animation available: frames and spinning.
+  <b>Play frames</b> will flip through the frames without moving the structure,
+  whereas <b>Spin</b> will continuously rotate the current structure. <b>Stop</b>
+  will discontinue either type of animation. <b>Set delay</b> allows you to specify
+  the time - in milliseconds - spent on each frame (and so applies to frame animation
+  only); a smaller value will make the animation go faster.</p>
+<h3><a name="stereo"></a>Stereo</h3>
+Show the structure in side-by-side stereo. Controls for specifics of the stereo view are in the <b>advanced</b> tab of the <a href="SW_File.htm#preferences">Preferences</a> panel.
+</BODY></HTML>

@@ -1,0 +1,4 @@
+unclustered_scaffold_7989	maker	CDS	834	935	.	+	0	ID=C3L33_23559-RA:cds;Parent=C3L33_23559-RA;
+unclustered_scaffold_7989	maker	exon	834	935	.	+	.	ID=C3L33_23559-RA:exon:67808;Parent=C3L33_23559-RA;
+unclustered_scaffold_7989	maker	gene	834	935	.	+	.	ID=C3L33_23559;Name=C3L33_23559;
+unclustered_scaffold_7989	maker	mRNA	834	935	.	+	.	ID=C3L33_23559-RA;Parent=C3L33_23559;Name=C3L33_23559-RA;

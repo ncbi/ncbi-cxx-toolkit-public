@@ -1,0 +1,22 @@
+[-]
+_export = NCBI_SEQFEAT_EXPORT
+
+[Cdregion]
+; Be conservative.
+gaps._type      = TSeqPos
+mismatch._type  = TSeqPos
+stops._type     = TSeqPos
+
+[Seq-feat]
+qual._type      = vector
+xref._type      = vector
+dbxref._type    = vector
+
+[Gene-ref]
+db._type        = vector
+
+[Org-ref]
+db._type        = vector
+
+[Prot-ref]
+db._type        = vector

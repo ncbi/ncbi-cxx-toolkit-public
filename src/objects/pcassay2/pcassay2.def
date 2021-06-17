@@ -1,0 +1,15 @@
+[-]
+_export =
+
+[NCBI-PCAssay2]
+_namespace = ncbi::objects::pcassay2
+
+[PC-AssaySubmit]
+data._type = vector
+revoke._type = vector
+
+[PC-AssayResults]
+data._type = vector
+
+[PC-AssayDescription]
+results._type = vector

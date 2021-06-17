@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<!DOCTYPE note PUBLIC "-//NCBI//alltest/EN" "alltest.dtd">
+<note partNum="partnum" weightKg="1.23" label="[BETH'U]">
+  <to gender="female">
+    <firstname>April</firstname>
+    <lastname>May</lastname>
+  </to>
+  <from>
+    <firstname>Jan</firstname>
+    <lastname>Feb</lastname>
+  </from>
+  <description type="complimentary"/>
+  <ordertype orderid="1">
+    <address>address 1</address>
+    <comment>order 1 comment 1</comment>
+    <item>order 1 item 1</item>
+    <ship.To>shipto1</ship.To>
+    <bill-To>billto1</bill-To>
+    <comment>order 1 comment 2</comment>
+    <item>order 1 item 2</item>
+  </ordertype>
+  <ordertype orderid="1">
+    <address>address 2</address>
+    <comment>order 2 comment 1</comment>
+    <item>order 2 item 1</item>
+    <ship.To>shipto2</ship.To>
+    <bill-To>billto2</bill-To>
+    <comment>order 2 comment 2</comment>
+    <item>order 2 item 2</item>
+  </ordertype>
+  <defaultElement>
+    <firstname/>
+    <lastname/>
+    <dob/>
+    <longid/>
+    <fraction/>
+    <flag/>
+    <langlist>English</langlist>
+    <langlist/>
+    <language>EN</language>
+    <language/>
+    <language>DE</language>
+    <language/>
+  </defaultElement>
+  <nillableElements>
+    <firstname nil="true"/>
+    <lastname nil="true"/>
+    <dob nil="true"/>
+    <longid nil="true"/>
+    <fraction nil="true"/>
+    <flag nil="true"/>
+    <langnil type="lang" nil="true"/>
+    <langlist nil="true"/>
+    <langlist>EN</langlist>
+    <fromnil nil="true"/>
+    <fromnilplus id="0" nil="true"/>
+    <fromnilplus id="1">
+      <name>name</name>
+      <number>number</number>
+    </fromnilplus>
+    <fromnilplus id="2" nil="true"/>
+  </nillableElements>
+</note>

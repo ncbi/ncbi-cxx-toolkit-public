@@ -1,0 +1,2 @@
+[Compiler.release]
+AdditionalOptions=/bigobj

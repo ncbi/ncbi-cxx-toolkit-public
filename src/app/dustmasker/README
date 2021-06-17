@@ -1,0 +1,94 @@
+ABSTRACT
+
+    DustMasker is a program that identifies and masks out low complexity
+    parts of a genome using a new and improved DUST algorithm. The main
+    advantages of the new algorithm are symmetry with respect to taking
+    reverse complements, context insensitivity, and much better performance.
+    The new DUST algorithm is described in [1]. Please cite this paper in
+    any publication that uses DustMasker.
+
+[1] Morgulis A, Gertz EM, Schaffer AA, Agarwala R. A Fast and Symmetric 
+    DUST Implementation to Mask Low-Complexity DNA Sequences.
+
+SYNOPSIS
+
+    dustmasker [-in input_file_name] [-out output_file_name] [-window
+    window_size] [-level level] [-linker linker] 
+    [-infmt input_format] [-outfmt output_format] 
+
+DESCRIPTIONS
+
+    DustMasker takes its input as a FASTA formatted file containing one
+    or more nucleotide sequences. It then identifies and masks out the
+    low complexity parts of the input sequences. The results are reported
+    as either a FASTA formatted file with low complexity regions appearing
+    in lower case letters, or on several more compact formats that just
+    least the low complexity intervals themselves. The behavior of 
+    DustMasker is configurable through command line options.
+
+OPTIONS
+
+    In this section, command line options to DustMasker are 
+    explained. 
+
+    -in input_file_name
+
+        default: "-"
+
+        Name of the input file (or "-" for standard input). If this option 
+        is not provided, standard input is used.
+
+    -infmt input_format
+
+        default: "fasta"
+
+        Input data format. Possible values are "fasta" and "blastdb".
+
+    -level dust_level
+
+        default: 20
+
+        10 times the score threshold used by symmetric DUST algorithm. 
+        For explanation, see [1].
+
+    -linker dust_linker
+
+        default: 1
+
+        Maximum difference between the start of a masked interval and 
+        the end of the previous masked interval at which those intervals
+        should be merged into one.
+
+    -outfmt output_format
+
+        default: interval
+
+        Possible values: interval, acclist, fasta.
+        Specifies the output format.
+
+        Output format 'interval'. For each input sequence the output
+        contains the defline (as it appears in the input file) followed
+        by the masked subinterval of the sequence, one subinterval per
+        line, in the form "begin - end".
+
+        Output format 'acclist'. Masked intervals are reported one per
+        line in the form: 'sequence_id begin end'.
+
+        Output format 'fasta'. Output file is in the FASTA format. The
+        content is identical to the input file except that the masked
+        parts are written in lower case letters.
+
+    -out output_file_name
+
+    default: "-"
+
+        Name of the output file ( or "-" for standard output ). If this option 
+        is not provided, standard output is used.
+
+    -window dust_window
+
+        default: 64
+
+        The length of the window used by symmetric DUST algorithm. For
+        explanation see [1].
+

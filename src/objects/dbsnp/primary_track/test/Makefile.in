@@ -1,0 +1,6 @@
+# $Id$
+
+APP_PROJ = snp_ptis_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

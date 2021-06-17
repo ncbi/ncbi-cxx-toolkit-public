@@ -1,0 +1,381 @@
+Oct 06, 2008
+First release using the release procedure
+
+January 28, 2009
+version 1.7.0
+Added support for Xcode build system version 3 (Mac OS X).
+Enhanced generation of flat makefile on Unix.
+Added protection against targets with the same name.
+
+February 10, 2009
+version 1.7.2
+Enhanced analysis of library-to-library dependencies
+
+February 12, 2009
+version 1.7.3
+Added possibility to specify USR_DEP macro in the toolkit makefiles
+to enforce static library build order.
+
+February 27, 2009
+version 1.7.4
+Corrected assembling DLLs in case of multiple projects with the same name
+Added 'rootdir' macro in ptb.ini
+Corrected DLL dependency analysis when working with import_project Windows script
+
+March 23, 2009
+version 1.7.5
+Produce list of generated and updated files.
+Optimize UNIX flat makefile to avoid attempts to build each project more than once.
+Check and exclude unneeded external projects.
+
+March 27, 2009
+version 1.7.6
+Bug fix: Corrected generation of unique build id in Unix flat makefile.
+
+April 21, 2009
+version 1.8.0
+Added generation of check commands lists on Xcode.
+Added possibility to specify target platform in command line.
+Modified generation of unique build id in Unix flat makefile to calculate it
+only once when building multiple targets.
+Added generation of Products group on Xcode.
+Added support of WATCHERS macro
+Merge Compiler.PreprocessorDefinitions defined in project and meta-msvc files.
+
+May 06, 2009
+version 1.8.1
+Corrected definition of NCBI_SIGNATURE on Xcode 
+Modified special handling of LibChoices on Unix
+
+June 10, 2009
+version 1.9.0
+Modified handling of ComponentChoices on Windows.
+Added processing of WSDL_PROJ macro in makefiles.
+Made it find Makefile.*.mk in 'src' tree
+and take into account macros defined there;
+also, find ncbiconf.*.h and include them into generated
+ncbiconf_msvc_site.h.
+Modified generation of makefile on Unix to avoid multipication
+of 'jobserver-fds' argument in parallel builds.
+
+July 13, 2009
+version 1.10.0
+Added possibility to customize locations of 3rd-party and NCBI C Toolkit libraries
+without editing project_tree_builder.ini
+
+August 07, 2009
+version 1.11.0
+Made it possible to modify parts of NCBI_SIGNATURE from project_tree_builder.ini
+
+October 29, 2009
+version 2.0.0
+Enforce existence of projects listed in ASN_DEP and USR_DEP
+(fail when such project cannot be found).
+Added communication mechanism for PTBGUI and reading command line arguments from a file.
+Allow hierarchical project tag definition.
+
+November 16, 2009
+version 2.1.0
+Corrected DLL dependencies analysis
+
+December 01, 2009
+version 2.2.0
+Added possibility to use previously saved configuration settings
+
+December 14, 2009
+version 2.3.0
+Added support of logical expressions when specifying project tags filter
+
+January 21, 2010
+version 2.4.0
+Changed processing of custom metadata to scan the whole source tree for such files.
+Modified generation of Unix makefile to allow for better parallelism.
+
+March 15, 2010
+version 2.5.0
+Added special project type to allow pre-generation of serialization classes
+during configuration stage
+
+March 25, 2010
+version 2.5.1
+Added option to request generation of dependencies on datatool.
+
+April 06, 2010
+version 2.6.0
+Reduced the number of warning messages, eliminated identical ones.
+Added possibility to define precompiled header settings locally.
+
+May 12, 2010
+version 2.7.0
+Modified Xcode project generation to make it re-link applications
+when dependent libraries are changed and to clean helper files
+when cleaning CONFIGURE project.
+Added possibility to define precompiled header settings in makefiles.
+
+June 02, 2010
+version 2.7.1
+Corrected file dependencies in Xcode project targets which use
+ASN.1 data specifications
+
+July 30, 2010
+version 3.0.0
+Added support of MSVC 2010
+
+September 02, 2010
+version 3.0.1
+Fixed bug in list of generated files
+
+September 29, 2010
+version 3.1.0
+Fixed to mark implied projects as expendable if everything that depends on them is.
+Added support of optional user requests (macro definitions).
+Corrected project that generates C++ code to remove unneeded specifications.
+
+November 16, 2010
+version 3.1.1
+Corrected to exclude configurable defines from list of libraries.
+
+November 22, 2010
+version 3.1.2
+Enable absolute path when specifying subtree.
+Changed the way Linker AdditionalOptions are handled.
+
+December 16, 2010
+version 3.2.0
+Added possibility of defining CharacterSet in makefiles.
+Added support of Unicode build configurations.
+Corrected generation of configuration header files.
+Corrected location of generated Utility projects for MSVC2010.
+
+December 20, 2010
+version 3.2.1
+Bug fix release
+
+December 28, 2010
+version 3.2.2
+Take into account Unicode settings when processing 3rd party libraries settings.
+Added possibility to add Unicode configurations by default.
+
+February 23, 2011
+version 3.3.0
+Improved the way project tree builder processes localization macros.
+In 3rd party library description, extended the meaning of FILES to include alternatives.
+
+February 25, 2011
+version 3.3.1
+Corrected handling of INCLUDE directives on XCode.
+
+April 08, 2011
+version 3.4.0
+Added possibility to collect settings from several makefiles.
+Changed build settings to give each project its own intermediate directory and
+to create disabled dummy build configuration when it should be omitted in fact.
+Corrected handling of unresolved macros.
+Make PTB look into src/build-system for custom metadata.
+Tuned up manifest generation.
+
+May 17, 2011
+version 3.5.0
+Corrected checking UserRequests in project requirements.
+Modified generation of Unix flat makefile to mark excluded projects as ones
+whose build errors can be ignored.
+Added possibility to use configurable macros in DLL dependencies description.
+
+October 14, 2011
+version 3.6.0
+Enhanced generation of Unix makefile to obviate slowdown due to locking.
+Added possibility to assign project tags to DLL projects.
+Added possibility to access list of enabled features from programs.
+Made it possible to generate flat makefile on Unix when importing projects.
+Enhanced GUI tool to show list of default project tags - from the current LST file.
+
+October 18, 2011
+version 3.6.1
+In folder targets of Unix makefile, removed subdirectories with projects excluded from the build.
+
+November 29, 2011
+version 3.7.0
+Added support of automatic and composite project tags, and tag-based build targets.
+Added support of Objective-C source files on MacOSX.
+Added support for Xcode build system version 4.
+
+December 07, 2011
+version 3.7.1
+Changed to always use absolute paths when referencing 3rd party libraries.
+
+February 16, 2012
+version 3.7.2
+Corrected MSVC2010 project generation to correctly pick up target name and extension from customization file.
+Enhanced MSVC2010 file filter comparison to avoid re-generating them too often.
+In UNIX flat makefile, added help and project lists targets.
+
+April 10, 2012
+version 3.7.3
+Added support of UNIX_PROJ on Unix.
+Corrected generation of project watchers list on MSVC2010.
+
+June 19, 2012
+version 3.8.0
+Added analysis of build order information and warnings on out of order builds.
+Added analysis of library order to report out of order and redundant entries.
+
+August 07, 2012
+version 3.8.1
+In MSVC2010 projects, corrected generation of output file name settings.
+
+August 28, 2012
+version 3.8.2
+Corrected to postpone initialization of LibChoices until after GUI validation of configuration paramaters.
+
+October 22, 2012
+version 3.8.3
+Corrected to make sure LIB projects never modify DLL ones.
+
+December 18, 2012
+version 3.8.4
+Corrected to recognize both user requests - NCBI-Unicode and NCBI_Unicode.
+
+February 04, 2013
+version 3.8.5
+Corrected MSVC2010 file filter comparison.
+
+July 30, 2013
+version 3.9.0
+Added support of MS Visual Studio 2012.
+Added possibility of creating custom file filters in MSVC projects.
+Reduced the number of VTune configurations, added Unicode with VTune one.
+Added generation of user settings - to customize PATH in debugging sessions.
+Added TargetMachine settings for Librarian.
+
+August 05, 2013
+version 3.10.0
+Changed utility projects names.
+
+May 19, 2014
+version 3.11.0
+Added option to generate CMake style makefile tree.
+Added option to generate and arrange library dependencies on Unix.
+Added support of Microsoft Visual Studio 2013.
+
+May 21, 2014
+version 3.11.1
+Fixed problem with import_project script
+
+July 09, 2014
+version 3.11.2
+Fixed additional problems with import_project script
+
+August 28, 2014
+version 3.11.3
+XCode-related bug fix.
+
+October 16, 2014
+version 3.12.0
+Added support of 64bits architectures on XCode
+
+October 30, 2014
+version 3.12.1
+Corrected to allow projects which use, but not require, absent 3rd party libraries.
+
+December 15,2014
+version 3.13.0
+Fixed errors in library dependency graph loading.
+Added support of external scripts on XCode.
+
+March 19, 2015
+version 4.0.0
+Added possibility of customization of BINPATH in component description
+Corrected project dependecies analysis to exclude unneeded projects
+Changed the way Microsoft Visual Studio project are generated to use property sheets.
+
+May 27, 2015
+version 4.1.1,   CXX-5962
+Corrected source files collection in ASN projects.
+Added recognition of static/dll suffixes in 3rd party libraries.
+Added possibility to configure Xcode projects to use C++11 compliant underlying compiler.
+Added macro resolution in .in and .dll files.
+
+June 01, 2015
+version 4.1.2,   CXX-6005
+Added analysis and reporting of cyclic library dependencies.
+
+March 09, 2016
+version 4.1.3, CXX-7917
+Added support for VS2015
+
+May 11, 2016
+version 4.1.4, CXX-8128
+Implemented library order analysis and generation.
+
+August 05, 2016
+version 4.1.5, CXX-8435
+Bug fixes.
+
+January 10, 2017
+version 4.2.0, CXX-8953
+Added random macro generation
+Removed CMake file generation
+
+January 23, 2017
+version 4.2.1, CXX-8983
+Bug fix.
+
+January 23, 2018
+version 4.3.0, CXX-9867
+Added support for VS2017
+
+May 31, 2018
+version 4.4.0, CXX-10052
+Added generation of build information macros.
+
+August 06, 2018
+version 4.5.0, CXX-10177
+Added support of PROTOBUF projects on Unix.
+
+August 09, 2018
+version 4.6.0, CXX-10179
+Added support of PROTOBUF code generation on Windows and XCode
+Added support of JSON schema projects.
+
+September 19, 2018
+version 4.6.1, CXX-10244
+Fixed bugs in PROTOBUF code generation support
+
+October 10, 2018
+version 4.6.2, CXX-10275
+Corrected list of generated files.
+
+December 11, 2018
+version 4.7.0, CXX-10351
+Fixed to work correctly on XCode 10.1.
+Added support of Metal libraries on XCode.
+Fixed to allow blanks in third party library include directories.
+
+December 18, 2018
+version 4.7.1, CXX-10397
+Added PreBuild script on XCode.
+
+October 01, 2019
+version 4.8.0, CXX-10947
+Added NCBI_APP_BUILT_AS definition into project settings.
+Corrected generation of build information headers.
+When adding metadata files, added checking their requirements.
+
+January 29, 2020
+version 4.8.1, CXX-11163
+Added possibility of disabling components using environment.
+Fixed problem with missing (generated) source files in XCode builds.
+
+December 18, 2020
+version 4.9.0, CXX-11626
+Corrected generation of flat makefile on Unix.
+Corrected getting SVN revision and SC version.
+
+May 26, 2021
+version 4.9.1, CXX-11931
+Added PreferredToolArchitecture setting.
+
+May 27, 2021
+version 4.9.2, CXX-11939
+Bug fix
+

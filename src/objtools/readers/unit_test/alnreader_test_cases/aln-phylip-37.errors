@@ -1,0 +1,5 @@
+Line No    : 16
+Severity   : Fatal
+Problem    : Alignment.BadDataCount
+Message    : Number of characters on sequence line is different from expected. Expected number of characters is 8. Actual number of characters is 7.
+

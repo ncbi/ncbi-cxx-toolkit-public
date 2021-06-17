@@ -1,0 +1,6 @@
+# $Id$
+
+SUB_PROJ = test demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

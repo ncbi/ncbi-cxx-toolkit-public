@@ -1,0 +1,8 @@
+# $Id$
+
+REQUIRES = objects algo
+
+APP_PROJ = blast_sample blast_demo remote_blast_demo vsrun_sample
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

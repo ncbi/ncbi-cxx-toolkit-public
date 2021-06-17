@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(test_edit_saver)
+  NCBI_sources(test_edit_saver)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank ncbi_xloader_patcher xobjutil)
+  NCBI_add_test(test_edit_saver -gi 45678)
+  NCBI_add_test(test_edit_saver -gi 21225451)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
+

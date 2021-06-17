@@ -1,0 +1,12 @@
+# $Id$
+
+DLL = pkg_alignment
+
+HOSTED_LIBS    = pkg_alignment
+
+DEPENDENCIES   = ncbi_core ncbi_seq ncbi_seqext \
+                 gui_objects gui_core gui_utils gui_widgets \
+				 gui_widgets_aln gui_config ncbi_trackmgr
+
+
+

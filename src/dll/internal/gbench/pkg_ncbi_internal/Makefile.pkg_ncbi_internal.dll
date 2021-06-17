@@ -1,0 +1,12 @@
+# $Id$
+
+DLL = pkg_ncbi_internal
+
+HOSTED_LIBS = pkg_ncbi_internal
+
+DEPENDENCIES = gui_core gui_widgets gui_widgets_misc gui_utils \
+			   ncbi_seq ncbi_general ncbi_dbapi \
+			   ncbi_dbapi_driver ncbi_core
+
+
+

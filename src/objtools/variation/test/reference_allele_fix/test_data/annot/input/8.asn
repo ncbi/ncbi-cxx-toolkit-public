@@ -1,0 +1,46 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type mnp,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "GC"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "AT"
+                    }
+                  }
+                },
+                observation asserted
+              }
+            }
+          }
+        }
+      },
+      location int {
+        from 123122,
+        to 123123,
+        strand plus,
+        id gi 568815597
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_app(asnwalk_write)
+  NCBI_sources(asnwalk_write)
+  NCBI_uses_toolkit_libraries(seqset)
+NCBI_end_app()

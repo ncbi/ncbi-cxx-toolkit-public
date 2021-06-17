@@ -1,0 +1,9 @@
+# Supported format is line based
+# Each line could be either:
+# - a portion of URL to be requested starting from seq_id
+# - a seq_id to be skipped; must start with SEQ_ID: ...
+SEQ_ID: MUS4.1SP
+
+seq_id=gnl%7CREF_WGS%3AAAXU%7CCONT2.1
+seq_id=gnl%7CREF_WGS%3AAAXU%7CCONT2.1&seq_id_type=11
+seq_id=REF_WGS%3AAAXU%7CCONT2.1&seq_id_type=11

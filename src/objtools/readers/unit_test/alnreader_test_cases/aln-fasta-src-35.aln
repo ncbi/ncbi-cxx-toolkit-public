@@ -1,0 +1,16 @@
+>seq1 [organism=val1][mating-type=val1]
+--GCAAGCATGCATGCAAAA
+TTTTGCGGCCCATGCATG--
+ATGCATGC
+>seq2 [organism=val1][mating_type=val1]
+AT--ATGGATGCATGCAAAA
+TTTTGGGCCCCATGCATGCC
+--GCATGC
+>seq3 [organism=val1][mating type=val1]
+ATGC--GCAAGCATGCAAAA
+TTTTGGGGCGCATGCATGCC
+AT--ATGC
+>seq4 [organism=val1][linkage-group=val1]
+ATGCAT--ATGGATGCAAAA
+TTTTGGGGCCCTTGCATGCC
+ATGC--GC

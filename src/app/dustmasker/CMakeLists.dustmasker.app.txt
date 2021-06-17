@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(dustmasker)
+  NCBI_sources(main dust_mask_app)
+  NCBI_uses_toolkit_libraries(seqmasks_io xalgodustmask seq)
+  NCBI_project_watchers(camacho fongah2)
+NCBI_end_app()
+

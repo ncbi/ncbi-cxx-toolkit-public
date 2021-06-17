@@ -1,0 +1,25 @@
+Gumbel parameters for sequence alignment statistics
+
+The NCBI Gumbel parameters library computes Gumbel parameters for an
+arbitrary scoring matrix and gap penalties. It also includes P-values
+calculation using a new more accurate finite size correction method.
+The parameters can be used for Basic Local Alignment Search Tool (BLAST).
+Parameters for a gapless scoring scheme can be calculated as an option.
+
+References
+1. Park, Y., Sheetlin, S. and Spouge, J.L. (2005) Accelerated convergence
+and robust asymptotic regression of the Gumbel scale parameter for gapped
+sequence alignment. Journal of Physics A: mathematical and general, 38,
+97-108.
+2. Sheetlin, S., Park, Y. and Spouge, J.L. (2005) The Gumbel pre-factor k
+for gapped local alignment can be estimated from simulations of global
+alignment. Nucleic Acids Research, 33, 4987-4994.
+3. Park, Y., Sheetlin, S. and Spouge, J.L. (2009) Estimating the Gumbel
+Scale Parameter for Local Alignment of Random Sequences by Importance
+Sampling with Stopping Times. Annals of Statistics.
+4. Park, Y., Sheetlin, S. and Spouge, J.L. (2009) On-line computation of
+statistical parameters for local alignment score distribution. In
+preparation.
+
+Additional information can be found here:
+http://www.ncbi.nlm.nih.gov/CBBresearch/Spouge/html.ncbi/blast/index.html

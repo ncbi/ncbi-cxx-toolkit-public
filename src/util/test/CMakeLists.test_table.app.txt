@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(test_ncbi_table)
+  NCBI_sources(test_table)
+  NCBI_uses_toolkit_libraries(xutil)
+  NCBI_add_test()
+  NCBI_project_watchers(kuznets)
+NCBI_end_app()
+

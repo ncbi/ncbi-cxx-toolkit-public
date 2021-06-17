@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xloader_vdbgraph SHARED)
+  NCBI_sources(vdbgraphloader vdbgraphloader_impl)
+  NCBI_add_definitions(NCBI_XLOADER_VDBGRAPH_EXPORTS)
+  NCBI_uses_toolkit_libraries(sraread seqset)
+  NCBI_project_tags(gbench)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+

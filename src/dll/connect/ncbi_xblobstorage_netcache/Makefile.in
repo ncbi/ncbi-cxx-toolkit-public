@@ -1,0 +1,8 @@
+#################################
+# $Id$
+#################################
+
+DLL_PROJ = ncbi_xblobstorage_netcache
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

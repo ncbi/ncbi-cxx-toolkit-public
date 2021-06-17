@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(tables)
+  NCBI_sources(raw_scoremat)
+  NCBI_project_watchers(ucko)
+NCBI_end_lib()
+

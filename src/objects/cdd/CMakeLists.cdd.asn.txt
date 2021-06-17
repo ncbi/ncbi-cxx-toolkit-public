@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(cdd)
+  NCBI_dataspecs(cdd.asn)
+  NCBI_uses_toolkit_libraries(cn3d scoremat)
+NCBI_end_lib()
+
+

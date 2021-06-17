@@ -1,0 +1,135 @@
+/* Hey, Emacs, treat this as -*- C -*- ! */
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ * 
+ * ===========================================================================
+ *
+ * Author:  Aaron Ucko
+ *
+ * File Description:
+ *   Access to miscellaneous global configuration settings
+ *
+ */
+
+#include <corelib/ncbicfg.h>
+#include <stdlib.h>
+
+#ifdef NCBI_OS_UNIX
+#  include <unistd.h>
+#endif
+
+/*
+
+ On UNIX the value of s_DefaultRunpath[] will be replaced at configure step
+ with runpath specified to configure.
+
+ On MS Windows you can set up a base directory for runpath using
+ environtment variable NCBI_INSTALL_PATH before building CONFIGURE
+ project in MSVC 7.* build tree. If this env.variable is not defined,
+ that current build path will be used as runpath.
+
+*/
+
+static const char s_DefaultRunpath[] = "@c_ncbi_runpath@";
+static const char *s_Runpath         = s_DefaultRunpath;
+
+static const char s_DefaultSybaseLocalPath[] = "@SYBASE_LCL_PATH@";
+static const char s_DefaultSybaseNetPath[]   = "@SYBASE_PATH@";
+static const char *s_DefaultSybasePath       = 0;
+static const char *s_SybasePath              = 0;
+
+static const char s_BuildFeatures[] = "@FEATURES@";
+
+const char* NCBI_GetDefaultRunpath(void)
+{
+    return s_DefaultRunpath;
+}
+
+
+const char* NCBI_GetRunpath(void)
+{
+    return s_Runpath;
+}
+
+
+void NCBI_SetRunpath(const char* runpath)
+{
+    s_Runpath = runpath;
+}
+
+
+const char* NCBI_GetDefaultSybasePath(void)
+{
+    if ( !s_DefaultSybasePath ) {
+#ifdef NCBI_OS_UNIX
+        if (sizeof(s_DefaultSybaseLocalPath) > 1
+            &&  access(s_DefaultSybaseLocalPath, R_OK | X_OK) >= 0) {
+            s_DefaultSybasePath = s_DefaultSybaseLocalPath;
+        } else {
+            s_DefaultSybasePath = s_DefaultSybaseNetPath;
+        }
+#else
+        s_DefaultSybasePath = s_DefaultSybaseNetPath;
+#endif
+    }
+    return s_DefaultSybasePath;
+}
+
+
+const char* NCBI_GetSybasePath(void)
+{
+    if ( !s_SybasePath ) {
+        s_SybasePath = NCBI_GetDefaultSybasePath();
+    }
+    return s_SybasePath;
+}
+
+
+void NCBI_SetSybasePath(const char* sybpath)
+{
+    s_SybasePath = sybpath;
+}
+
+
+const char* NCBI_GetBuildFeatures(void)
+{
+    return s_BuildFeatures;
+}
+
+double NCBI_GetCheckTimeoutMult(void)
+{
+    static double check_mult = 0;
+
+    if (check_mult == 0) {
+        double env_val = 0;
+        const char* env_str = getenv("NCBI_CHECK_TIMEOUT_MULT");
+        if (env_str)
+            env_val = strtod(env_str, NULL);
+        if (env_val <= 0)
+            env_val = 1;
+
+        check_mult = env_val;
+    }
+
+    return check_mult;
+}

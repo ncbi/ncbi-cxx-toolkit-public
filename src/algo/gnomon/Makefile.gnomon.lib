@@ -1,0 +1,18 @@
+# $Id$
+
+ASN_DEP = seqset
+ASN = gnomon
+SRC = $(ASN:%=%__) $(ASN:%=%___) \
+    gnomon_engine gnomon_objmgr score gnomon_model parse hmm gnomon_seq asn1 chainer id_handler \
+    annot select_alignments_alt aligncollapser glb_align variations
+LIB = xalgognomon
+DLL_LIB = xalgoseq xobjutil $(SOBJMGR_LIBS)
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+WATCHERS = chetvern souvorov
+
+
+USES_LIBRARIES =  \
+    xalgoseq

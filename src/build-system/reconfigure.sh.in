@@ -1,0 +1,11 @@
+@script_shell@
+
+# $Id$
+# Author:  Denis Vakatov, NCBI 
+# 
+#  Launcher for "scripts/common/impl/reconfigure.sh"
+
+builddir=@builddir@
+export builddir
+
+exec @abs_top_srcdir@/scripts/common/impl/reconfigure.sh "$@"

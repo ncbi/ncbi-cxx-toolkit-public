@@ -1,0 +1,262 @@
+Seq-entry ::= set {
+  level 1 ,
+  class nuc-prot ,
+  descr {
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Kayano" ,
+                      initials "H." } } } ,
+            affil
+              str "Hidekazu Kayano, Saitama Medical School, Department of
+ Pathology; 38 Moro-hougoh, Moroyama, Iruma, Saitama 350-0451, Japan
+ (E-mail:hidekazu@saitama-med.ac.jp, Tel:81-492-76-1159, Fax:81-492-76-1583)" } ,
+          medium email ,
+          date
+            std {
+              year 1998 ,
+              month 11 ,
+              day 9 } } } } ,
+    pub {
+      pub {
+        gen {
+          cit "Published Only in Database" ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Kayano" ,
+                      initials "H." } } } } ,
+          date
+            std {
+              year 1998 } ,
+          title "PCR amplified clone containing the rearranged immunoglobulin
+ heavy chain gene sequence from a patient KKa with hairy cell leukemia" } } ,
+      reftype no-target } ,
+    update-date
+      std {
+        year 2002 ,
+        month 3 ,
+        day 27 } ,
+    source {
+      org {
+        taxname "Homo sapiens" ,
+        common "human" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 9606 } } ,
+        orgname {
+          name
+            binomial {
+              genus "Homo" ,
+              species "sapiens" } ,
+          mod {
+            {
+              subtype isolate ,
+              subname "HCL patient KKa" } } ,
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+ Catarrhini; Hominidae; Homo" ,
+          gcode 1 ,
+          mgcode 2 ,
+          div "PRI" } } ,
+      subtype {
+        {
+          subtype chromosome ,
+          name "14" } ,
+        {
+          subtype clone ,
+          name "KKa-3" } ,
+        {
+          subtype sex ,
+          name "male" } ,
+        {
+          subtype cell-type ,
+          name "B lymphocyte" } ,
+        {
+          subtype rearranged ,
+          name "" } } } } ,
+  seq-set {
+    seq {
+      id {
+        ddbj {
+          accession "AB019592" ,
+          version 1 } ,
+        gi 3986303 } ,
+      descr {
+        title "Homo sapiens rearranged IgH gene for immunoglobulin heavy
+ chain, VDJ region, partial cds, clone:KKa-3." ,
+        genbank {
+          keywords {
+            "IgH" ,
+            "immunoglobulin heavy chain" } ,
+          div "HUM" } ,
+        molinfo {
+          biomol genomic } ,
+        create-date
+          std {
+            year 1998 ,
+            month 12 ,
+            day 9 } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 853 ,
+        seq-data
+          ncbi2na 'A82A9E8BABF4C4F2CB2EB2C5331C64877B82A58F45375221065081D1ECD
+E40E0497889628469EFCF1EE621BECB7973C738CB2E54A2A8AC7D8DDEA96E915EB47B75D2B8B54
+79255754B7DDED4A452949FDCAB7925A5EADE978A4452794D5EABF594EA793948B5EFB47C35EA9
+45E895501129EA159E9F796B489FD02B6524A58A92A1A82882FBA4897A9EA9EA67ABBD3B96A852
+9797F0EE3C42F7E851EA94A92D6516DD5EA06D2AD5E5EAF7795AA77BBA7AA12A1969E5DC77B9FA
+94EE153D8BB5E46A548F0EDEAC8321EED5EEE39FF8CDEA942915EB440'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  imp {
+                    key "V_segment" } ,
+                comment "DP58" ,
+                location
+                  int {
+                    from 0 ,
+                    to 170 ,
+                    id
+                      gi 3986303 } } ,
+              {
+                data
+                  imp {
+                    key "N_region" } ,
+                location
+                  int {
+                    from 171 ,
+                    to 184 ,
+                    id
+                      gi 3986303 } } ,
+              {
+                data
+                  imp {
+                    key "D_segment" } ,
+                comment "D21/9" ,
+                location
+                  int {
+                    from 185 ,
+                    to 203 ,
+                    id
+                      gi 3986303 } } ,
+              {
+                data
+                  imp {
+                    key "N_region" } ,
+                location
+                  int {
+                    from 204 ,
+                    to 215 ,
+                    id
+                      gi 3986303 } } ,
+              {
+                data
+                  imp {
+                    key "misc_feature" } ,
+                comment "J segment region (Jh2c-Jh3c)" ,
+                location
+                  int {
+                    from 216 ,
+                    to 852 ,
+                    id
+                      gi 3986303 } } ,
+              {
+                data
+                  gene {
+                    locus "IgH" } ,
+                partial TRUE ,
+                location
+                  int {
+                    from 0 ,
+                    to 226 ,
+                    id
+                      gi 3986303 ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    seq {
+      id {
+        ddbj {
+          accession "BAA35003" ,
+          version 1 } ,
+        gi 3986304 } ,
+      descr {
+        title "immunoglobulin heavy chain, partial [Homo sapiens]" ,
+        molinfo {
+          biomol peptide ,
+          completeness no-ends } ,
+        create-date
+          std {
+            year 1998 ,
+            month 12 ,
+            day 9 } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 75 ,
+        seq-data
+          ncbieaa "GKGLEWVSYISSSGSTIYYADSVKGRFTISRDNAKNSLYLQMNSLRAEDTAVYYCARRC
+SLPITMIVVPRRGGTS" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "immunoglobulin heavy chain" } } ,
+                partial TRUE ,
+                location
+                  int {
+                    from 0 ,
+                    to 74 ,
+                    id
+                      gi 3986304 } } } } } } } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              cdregion {
+                frame one ,
+                code {
+                  id 1 } } ,
+            partial TRUE ,
+            product
+              whole
+                gi 3986304 ,
+            location
+              int {
+                from 0 ,
+                to 226 ,
+                id
+                  gi 3986303 ,
+                fuzz-from
+                  lim lt ,
+                fuzz-to
+                  lim gt } ,
+            dbxref {
+              {
+                db "IMGT/LIGM" ,
+                tag
+                  str "AB019592" } } } } } } }
+

@@ -1,0 +1,15 @@
+# $Id$
+
+NCBI_begin_lib(align_format)
+  NCBI_sources(
+    format_flags align_format_util showdefline showalign tabular
+    vectorscreen seqalignfilter taxFormat aln_printer
+  )
+  NCBI_add_definitions(NCBI_MODULE=BLASTFORMAT)
+  NCBI_uses_toolkit_libraries(
+    blast_services gene_info ncbi_xloader_genbank
+    seqdb taxon1 xalnmgr
+    xcgi xhtml xobjread  )
+  NCBI_project_watchers(zaretska jianye madden camacho fongah2)
+NCBI_end_lib()
+

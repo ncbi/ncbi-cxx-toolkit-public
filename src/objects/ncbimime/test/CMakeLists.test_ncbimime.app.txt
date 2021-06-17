@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_ncbimime)
+  NCBI_sources(test_ncbimime)
+  NCBI_uses_toolkit_libraries(medlars medline)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
+

@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(test_scheduler)
+  NCBI_sources(test_scheduler)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xutil)
+  NCBI_add_test()
+  NCBI_project_watchers(vakatov)
+NCBI_end_app()
+

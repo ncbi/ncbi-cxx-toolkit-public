@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_scoremat)
+  NCBI_sources(test_scoremat)
+  NCBI_uses_toolkit_libraries(tables xncbi)
+  NCBI_project_watchers(ucko)
+NCBI_end_app()
+

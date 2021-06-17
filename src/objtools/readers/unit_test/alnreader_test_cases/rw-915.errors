@@ -1,0 +1,64 @@
+SeqID      : lcl|Seq1
+Line No    : 1
+Severity   : Warning
+Problem    : Mods.Deprecated
+Message    : Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene.
+Mod Name   : gene
+Mod Value  : normal_mod_that_will_be_disregarded
+
+SeqID      : lcl|Seq1
+Line No    : 1
+Severity   : Warning
+Problem    : Mods.Unrecognized
+Message    : Unrecognized modifier: also_bogus.
+Mod Name   : also_bogus
+Mod Value  : mod_disregarded_instead_of_unused
+
+SeqID      : lcl|Seq1
+Line No    : 1
+Severity   : Warning
+Problem    : Mods.Unrecognized
+Message    : Unrecognized modifier: bogus.
+Mod Name   : bogus
+Mod Value  : bad_mod
+
+SeqID      : lcl|Seq1
+Line No    : 1
+Severity   : Error
+Problem    : Mods.InvalidValue
+Message    : Invalid value: topology=mod_with_bad_value.
+Mod Name   : topology
+Mod Value  : mod_with_bad_value
+
+SeqID      : lcl|Seq2
+Line No    : 7
+Severity   : Warning
+Problem    : Mods.Deprecated
+Message    : Use of the following modifier in a sequence file is discouraged and the information will be ignored: gene.
+Mod Name   : gene
+Mod Value  : another_mod_that_will_be_disregarded
+
+SeqID      : lcl|Seq3
+Line No    : 13
+Severity   : Warning
+Problem    : Mods.Deprecated
+Message    : Use of the following modifier in a sequence file is discouraged and the information will be ignored: Gene.
+Mod Name   : Gene
+Mod Value  : test_case_sensitivity
+
+SeqID      : lcl|Seq4
+Line No    : 19
+Severity   : Warning
+Problem    : Mods.Unrecognized
+Message    : Unrecognized modifier: also-bogus.
+Mod Name   : also-bogus
+Mod Value  : mod_name_with_dashes_should_be_treated_same
+
+SeqID      : lcl|Seq4
+Line No    : 19
+Severity   : Warning
+Problem    : Mods.Unrecognized
+Message    : Unrecognized modifier: nathost.
+Mod Name   : nathost
+Mod Value  : a host 4
+

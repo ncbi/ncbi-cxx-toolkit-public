@@ -1,0 +1,13 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xreader_gicache SHARED)
+  NCBI_sources(reader_gicache gicache)
+  NCBI_add_include_directories(.)
+  NCBI_optional_components(NCBI_C)
+  NCBI_requires(LMDB unix)
+  NCBI_uses_toolkit_libraries(ncbi_xreader)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+
+include_directories(SYSTEM ${LMDB_INCLUDE})
+

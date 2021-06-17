@@ -1,0 +1,31 @@
+# $Id$
+
+
+LIB = hgvs
+SRC = hgvs_parser2 hgvs_writer2 variation_util2 \
+      seq_id_resolver objcoords sequtils hgvs_reader
+
+ASN_DEP = seq variation objcoords
+
+ifneq "" "$(filter GCC_41% GCC_42%,$(signature))"
+ ifneq "$(OSTYPE)" "darwin"
+  hgvs_parser.o hgvs_parser2.o: CXXFLAGS = $(ORIG_CXXFLAGS:-O2=-O)
+ endif
+endif
+
+DLL_LIB = objcoords xobjmgr entrez2cli entrez2
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -DBOOST_ERROR_CODE_HEADER_ONLY \
+           -DBOOST_SYSTEM_NO_DEPRECATED
+CXXFLAGS = $(ORIG_CXXFLAGS)
+LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)
+
+REQUIRES = Boost.Spirit
+
+WATCHERS = astashya
+
+PROJ_TAG = gbench
+
+USES_LIBRARIES =  \
+    $(OBJMGR_LIBS) $(OBJREAD_LIBS) entrez2cli objcoords xobjutil \
+    xregexp

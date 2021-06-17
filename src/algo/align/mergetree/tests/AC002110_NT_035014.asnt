@@ -1,0 +1,9290 @@
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 9457
+    },
+    {
+      id str "e_value",
+      value real { 0, 10, 0 }
+    },
+    {
+      id str "bit_score",
+      value real { 17464886056393, 10, -9 }
+    },
+    {
+      id str "num_ident",
+      value int 9720
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 988005692213865, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 64
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 89,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      0,
+      3631176,
+      -1,
+      3631401,
+      225,
+      3631402,
+      -1,
+      3640637,
+      9460,
+      3640638,
+      9461,
+      -1,
+      9462,
+      3640639,
+      -1,
+      3640648,
+      9471,
+      3640649,
+      -1,
+      3640650,
+      9472,
+      3640651,
+      -1,
+      3640652,
+      9473,
+      3640653,
+      -1,
+      3640654,
+      9474,
+      3640655,
+      9482,
+      -1,
+      9483,
+      3640663,
+      -1,
+      3640666,
+      9486,
+      3640668,
+      -1,
+      3640671,
+      9489,
+      3640672,
+      -1,
+      3640674,
+      9491,
+      3640677,
+      -1,
+      3640687,
+      9501,
+      3640689,
+      9504,
+      -1,
+      9505,
+      3640692,
+      9531,
+      -1,
+      9532,
+      3640718,
+      -1,
+      3640723,
+      9537,
+      3640724,
+      -1,
+      3640726,
+      9539,
+      3640727,
+      -1,
+      3640748,
+      9560,
+      3640749,
+      9561,
+      -1,
+      9562,
+      3640750,
+      -1,
+      3640759,
+      9571,
+      3640760,
+      -1,
+      3640762,
+      9573,
+      3640765,
+      9603,
+      -1,
+      9604,
+      3640795,
+      -1,
+      3640796,
+      9605,
+      3640797,
+      9613,
+      -1,
+      9614,
+      3640805,
+      -1,
+      3640808,
+      9617,
+      3640809,
+      9649,
+      -1,
+      9652,
+      3640841,
+      9655,
+      -1,
+      9656,
+      3640844,
+      9679,
+      -1,
+      9680,
+      3640867,
+      -1,
+      3640868,
+      9681,
+      3640869,
+      9688,
+      -1,
+      9689,
+      3640876,
+      9690,
+      -1,
+      9691,
+      3640877,
+      9692,
+      -1,
+      9693,
+      3640878,
+      9694,
+      -1,
+      9695,
+      3640879,
+      9702,
+      -1,
+      9703,
+      3640886,
+      -1,
+      3640890,
+      9707,
+      3640891,
+      9711,
+      -1,
+      9712,
+      3640895,
+      -1,
+      3640901,
+      9718,
+      3640902,
+      9719,
+      -1,
+      9720,
+      3640903,
+      -1,
+      3640924,
+      9741,
+      3640925,
+      -1,
+      3640949,
+      9765,
+      3640950,
+      9766,
+      -1,
+      9767,
+      3640951,
+      9780,
+      -1,
+      9781,
+      3640964,
+      9784,
+      -1,
+      9786,
+      3640967,
+      9787,
+      -1,
+      9789,
+      3640968,
+      -1,
+      3640984,
+      9805,
+      3640985
+    },
+    lens {
+      225,
+      1,
+      9235,
+      1,
+      1,
+      1,
+      9,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      8,
+      1,
+      3,
+      2,
+      3,
+      1,
+      2,
+      3,
+      10,
+      2,
+      3,
+      1,
+      26,
+      1,
+      5,
+      1,
+      2,
+      1,
+      21,
+      1,
+      1,
+      1,
+      9,
+      1,
+      2,
+      3,
+      30,
+      1,
+      1,
+      1,
+      8,
+      1,
+      3,
+      1,
+      32,
+      3,
+      3,
+      1,
+      23,
+      1,
+      1,
+      1,
+      7,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      7,
+      1,
+      4,
+      1,
+      4,
+      1,
+      6,
+      1,
+      1,
+      1,
+      21,
+      1,
+      24,
+      1,
+      1,
+      1,
+      13,
+      1,
+      3,
+      2,
+      1,
+      2,
+      16,
+      1,
+      4
+    },
+    strands {
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 7523
+    },
+    {
+      id str "e_value",
+      value real { 0, 10, 0 }
+    },
+    {
+      id str "bit_score",
+      value real { 138934656287715, 10, -10 }
+    },
+    {
+      id str "num_ident",
+      value int 7594
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 995673266028583, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 23
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 19,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      28226,
+      3656457,
+      28225,
+      -1,
+      25507,
+      3658405,
+      -1,
+      3661123,
+      25462,
+      3661124,
+      25460,
+      -1,
+      23821,
+      3661169,
+      23820,
+      -1,
+      23030,
+      3662808,
+      -1,
+      3663598,
+      23028,
+      3663599,
+      23027,
+      -1,
+      22803,
+      3663601,
+      22802,
+      -1,
+      22581,
+      3663825,
+      22580,
+      -1,
+      22575,
+      3664046,
+      22574,
+      -1,
+      22549,
+      3664051
+    },
+    lens {
+      1948,
+      1,
+      2718,
+      1,
+      45,
+      2,
+      1639,
+      1,
+      790,
+      1,
+      2,
+      1,
+      224,
+      1,
+      221,
+      1,
+      5,
+      1,
+      25
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 5356
+    },
+    {
+      id str "e_value",
+      value real { 0, 10, 0 }
+    },
+    {
+      id str "bit_score",
+      value real { 989177583215537, 10, -11 }
+    },
+    {
+      id str "num_ident",
+      value int 5472
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 990765888104291, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 23
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 39,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      22635,
+      3648655,
+      22634,
+      -1,
+      22632,
+      3648684,
+      22631,
+      -1,
+      22629,
+      3648686,
+      -1,
+      3648688,
+      22588,
+      3648690,
+      22587,
+      -1,
+      22586,
+      3648731,
+      22585,
+      -1,
+      22582,
+      3648732,
+      -1,
+      3648735,
+      22576,
+      3648736,
+      22575,
+      -1,
+      22568,
+      3648742,
+      -1,
+      3648749,
+      22565,
+      3648750,
+      22564,
+      -1,
+      22242,
+      3648753,
+      22241,
+      -1,
+      21191,
+      3649075,
+      21185,
+      -1,
+      21184,
+      3650125,
+      21181,
+      -1,
+      21180,
+      3650126,
+      21178,
+      -1,
+      21177,
+      3650127,
+      21176,
+      -1,
+      20793,
+      3650128,
+      20792,
+      -1,
+      19463,
+      3650511,
+      -1,
+      3651840,
+      18702,
+      3651841,
+      18701,
+      -1,
+      17161,
+      3652602,
+      17160,
+      -1,
+      17157,
+      3654142,
+      -1,
+      3654145,
+      17147,
+      3654146
+    },
+    lens {
+      29,
+      1,
+      2,
+      1,
+      2,
+      2,
+      41,
+      1,
+      1,
+      1,
+      3,
+      1,
+      6,
+      1,
+      7,
+      1,
+      3,
+      1,
+      322,
+      1,
+      1050,
+      6,
+      1,
+      3,
+      1,
+      2,
+      1,
+      1,
+      383,
+      1,
+      1329,
+      1,
+      761,
+      1,
+      1540,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 4709
+    },
+    {
+      id str "e_value",
+      value real { 0, 10, 0 }
+    },
+    {
+      id str "bit_score",
+      value real { 869699350709276, 10, -11 }
+    },
+    {
+      id str "num_ident",
+      value int 5380
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 947516731243396, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 148
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 235,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      8560,
+      3640063,
+      8563,
+      -1,
+      8564,
+      3640066,
+      8597,
+      -1,
+      8598,
+      3640099,
+      -1,
+      3640100,
+      8599,
+      3640102,
+      -1,
+      3640105,
+      8602,
+      3640106,
+      8605,
+      -1,
+      8606,
+      3640109,
+      -1,
+      3640116,
+      8613,
+      3640119,
+      -1,
+      3640121,
+      8615,
+      3640122,
+      8631,
+      -1,
+      8632,
+      3640138,
+      -1,
+      3640139,
+      8633,
+      3640140,
+      -1,
+      3640150,
+      8643,
+      3640151,
+      -1,
+      3640153,
+      8645,
+      3640156,
+      8689,
+      -1,
+      8690,
+      3640200,
+      8691,
+      -1,
+      8693,
+      3640201,
+      8696,
+      -1,
+      8698,
+      3640204,
+      8705,
+      -1,
+      8706,
+      3640211,
+      -1,
+      3640214,
+      8709,
+      3640216,
+      8735,
+      -1,
+      8736,
+      3640242,
+      -1,
+      3640245,
+      8739,
+      3640246,
+      -1,
+      3640291,
+      8784,
+      3640292,
+      8785,
+      -1,
+      8786,
+      3640293,
+      8794,
+      -1,
+      8795,
+      3640301,
+      -1,
+      3640304,
+      8798,
+      3640305,
+      -1,
+      3640306,
+      8799,
+      3640307,
+      8808,
+      -1,
+      8810,
+      3640316,
+      8811,
+      -1,
+      8812,
+      3640317,
+      8813,
+      -1,
+      8814,
+      3640318,
+      -1,
+      3640373,
+      8869,
+      3640375,
+      -1,
+      3640378,
+      8872,
+      3640379,
+      8885,
+      -1,
+      8886,
+      3640392,
+      8888,
+      -1,
+      8889,
+      3640394,
+      8890,
+      -1,
+      8891,
+      3640395,
+      8916,
+      -1,
+      8917,
+      3640420,
+      -1,
+      3640423,
+      8920,
+      3640424,
+      8927,
+      -1,
+      8928,
+      3640431,
+      -1,
+      3640432,
+      8929,
+      3640433,
+      8946,
+      -1,
+      8947,
+      3640450,
+      8966,
+      -1,
+      8968,
+      3640469,
+      -1,
+      3640489,
+      8988,
+      3640490,
+      -1,
+      3640491,
+      8989,
+      3640493,
+      -1,
+      3640496,
+      8992,
+      3640498,
+      -1,
+      3640529,
+      9023,
+      3640530,
+      -1,
+      3640532,
+      9025,
+      3640533,
+      -1,
+      3640534,
+      9026,
+      3640535,
+      -1,
+      3640536,
+      9027,
+      3640538,
+      9037,
+      -1,
+      9038,
+      3640548,
+      -1,
+      3640550,
+      9040,
+      3640551,
+      9049,
+      -1,
+      9050,
+      3640560,
+      -1,
+      3640570,
+      9060,
+      3640571,
+      -1,
+      3640576,
+      9065,
+      3640577,
+      9068,
+      -1,
+      9069,
+      3640580,
+      9070,
+      -1,
+      9071,
+      3640581,
+      -1,
+      3640585,
+      9075,
+      3640587,
+      9089,
+      -1,
+      9090,
+      3640601,
+      9092,
+      -1,
+      9093,
+      3640603,
+      9094,
+      -1,
+      9095,
+      3640604,
+      9139,
+      -1,
+      9140,
+      3640648,
+      -1,
+      3640649,
+      9141,
+      3640650,
+      9145,
+      -1,
+      9146,
+      3640654,
+      -1,
+      3640658,
+      9150,
+      3640659,
+      9162,
+      -1,
+      9163,
+      3640671,
+      -1,
+      3640673,
+      9165,
+      3640674,
+      9175,
+      -1,
+      9176,
+      3640684,
+      -1,
+      3640686,
+      9178,
+      3640687,
+      -1,
+      3640688,
+      9179,
+      3640690,
+      -1,
+      3640692,
+      9181,
+      3640693,
+      -1,
+      3640695,
+      9183,
+      3640696,
+      -1,
+      3640711,
+      9198,
+      3640712,
+      9202,
+      -1,
+      9203,
+      3640716,
+      -1,
+      3640719,
+      9206,
+      3640720,
+      -1,
+      3640733,
+      9219,
+      3640734,
+      -1,
+      3640735,
+      9220,
+      3640737,
+      -1,
+      3640739,
+      9222,
+      3640740,
+      -1,
+      3640741,
+      9223,
+      3640745,
+      -1,
+      3640761,
+      9239,
+      3640765,
+      -1,
+      3640771,
+      9245,
+      3640772,
+      9246,
+      -1,
+      9247,
+      3640773,
+      9253,
+      -1,
+      9254,
+      3640779,
+      -1,
+      3640781,
+      9256,
+      3640782,
+      9273,
+      -1,
+      9274,
+      3640799,
+      -1,
+      3640800,
+      9275,
+      3640802,
+      9285,
+      -1,
+      9286,
+      3640812,
+      -1,
+      3640815,
+      9289,
+      3640816,
+      9290,
+      -1,
+      9291,
+      3640817,
+      9294,
+      -1,
+      9295,
+      3640820,
+      -1,
+      3640839,
+      9314,
+      3640840,
+      9318,
+      -1,
+      9319,
+      3640844,
+      -1,
+      3640848,
+      9323,
+      3640851,
+      -1,
+      3640853,
+      9325,
+      3640854,
+      -1,
+      3643118,
+      11589,
+      3643119,
+      13775,
+      -1,
+      13776,
+      3645305,
+      -1,
+      3645310,
+      13781,
+      3645311,
+      -1,
+      3645341,
+      13811,
+      3645342,
+      13817,
+      -1,
+      13818,
+      3645348,
+      13839,
+      -1,
+      13841,
+      3645369,
+      13842,
+      -1,
+      13844,
+      3645370,
+      13865,
+      -1,
+      13866,
+      3645391,
+      -1,
+      3645396,
+      13871,
+      3645397,
+      13874,
+      -1,
+      13875,
+      3645400,
+      -1,
+      3645403,
+      13878,
+      3645404,
+      13898,
+      -1,
+      13899,
+      3645424,
+      -1,
+      3645425,
+      13900,
+      3645426,
+      -1,
+      3645437,
+      13911,
+      3645438,
+      13912,
+      -1,
+      13913,
+      3645439,
+      13918,
+      -1,
+      13919,
+      3645444,
+      13920,
+      -1,
+      13921,
+      3645445,
+      13922,
+      -1,
+      13923,
+      3645446,
+      13924,
+      -1,
+      13926,
+      3645447,
+      13953,
+      -1,
+      13954,
+      3645474,
+      -1,
+      3645499,
+      13979,
+      3645500,
+      -1,
+      3645501,
+      13980,
+      3645503,
+      -1,
+      3645505,
+      13982,
+      3645506,
+      14025,
+      -1,
+      14026,
+      3645549,
+      -1,
+      3645557,
+      14034,
+      3645559,
+      -1,
+      3645563,
+      14038,
+      3645565,
+      -1,
+      3645590,
+      14063,
+      3645591,
+      -1,
+      3645594,
+      14066,
+      3645595,
+      -1,
+      3645599,
+      14070,
+      3645601
+    },
+    lens {
+      3,
+      1,
+      33,
+      1,
+      1,
+      2,
+      3,
+      1,
+      3,
+      1,
+      7,
+      3,
+      2,
+      1,
+      16,
+      1,
+      1,
+      1,
+      10,
+      1,
+      2,
+      3,
+      44,
+      1,
+      1,
+      2,
+      3,
+      2,
+      7,
+      1,
+      3,
+      2,
+      26,
+      1,
+      3,
+      1,
+      45,
+      1,
+      1,
+      1,
+      8,
+      1,
+      3,
+      1,
+      1,
+      1,
+      9,
+      2,
+      1,
+      1,
+      1,
+      1,
+      55,
+      2,
+      3,
+      1,
+      13,
+      1,
+      2,
+      1,
+      1,
+      1,
+      25,
+      1,
+      3,
+      1,
+      7,
+      1,
+      1,
+      1,
+      17,
+      1,
+      19,
+      2,
+      20,
+      1,
+      1,
+      2,
+      3,
+      2,
+      31,
+      1,
+      2,
+      1,
+      1,
+      1,
+      1,
+      2,
+      10,
+      1,
+      2,
+      1,
+      9,
+      1,
+      10,
+      1,
+      5,
+      1,
+      3,
+      1,
+      1,
+      1,
+      4,
+      2,
+      14,
+      1,
+      2,
+      1,
+      1,
+      1,
+      44,
+      1,
+      1,
+      1,
+      4,
+      1,
+      4,
+      1,
+      12,
+      1,
+      2,
+      1,
+      10,
+      1,
+      2,
+      1,
+      1,
+      2,
+      2,
+      1,
+      2,
+      1,
+      15,
+      1,
+      4,
+      1,
+      3,
+      1,
+      13,
+      1,
+      1,
+      2,
+      2,
+      1,
+      1,
+      4,
+      16,
+      4,
+      6,
+      1,
+      1,
+      1,
+      6,
+      1,
+      2,
+      1,
+      17,
+      1,
+      1,
+      2,
+      10,
+      1,
+      3,
+      1,
+      1,
+      1,
+      3,
+      1,
+      19,
+      1,
+      4,
+      1,
+      4,
+      3,
+      2,
+      1,
+      2264,
+      1,
+      2186,
+      1,
+      5,
+      1,
+      30,
+      1,
+      6,
+      1,
+      21,
+      2,
+      1,
+      2,
+      21,
+      1,
+      5,
+      1,
+      3,
+      1,
+      3,
+      1,
+      20,
+      1,
+      1,
+      1,
+      11,
+      1,
+      1,
+      1,
+      5,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2,
+      27,
+      1,
+      25,
+      1,
+      1,
+      2,
+      2,
+      1,
+      43,
+      1,
+      8,
+      2,
+      4,
+      2,
+      25,
+      1,
+      3,
+      1,
+      4,
+      2,
+      79
+    },
+    strands {
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 3065
+    },
+    {
+      id str "e_value",
+      value real { 0, 10, 0 }
+    },
+    {
+      id str "bit_score",
+      value real { 56611014786493, 10, -10 }
+    },
+    {
+      id str "num_ident",
+      value int 3091
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 996132774734128, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 8
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 3,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      13995,
+      3645233,
+      -1,
+      3645290,
+      14052,
+      3645294
+    },
+    lens {
+      57,
+      4,
+      3042
+    },
+    strands {
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 630
+    },
+    {
+      id str "e_value",
+      value real { 0, 10, 0 }
+    },
+    {
+      id str "bit_score",
+      value real { 116450957520658, 10, -11 }
+    },
+    {
+      id str "num_ident",
+      value int 652
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 986384266263237, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 2
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 15,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      30224,
+      3666483,
+      30800,
+      -1,
+      30801,
+      3667059,
+      -1,
+      3667107,
+      30849,
+      3667108,
+      -1,
+      3667114,
+      30855,
+      3667115,
+      -1,
+      3667116,
+      30856,
+      3667117,
+      -1,
+      3667122,
+      30861,
+      3667123,
+      30872,
+      -1,
+      30873,
+      3667134,
+      30876,
+      -1,
+      30877,
+      3667137
+    },
+    lens {
+      576,
+      1,
+      48,
+      1,
+      6,
+      1,
+      1,
+      1,
+      5,
+      1,
+      11,
+      1,
+      3,
+      1,
+      4
+    },
+    strands {
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 221
+    },
+    {
+      id str "e_value",
+      value real { 760283885872954, 10, -127 }
+    },
+    {
+      id str "bit_score",
+      value real { 409229867400388, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 231
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 978813559322034, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 5
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3656361
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 221
+    },
+    {
+      id str "e_value",
+      value real { 760283885872954, 10, -127 }
+    },
+    {
+      id str "bit_score",
+      value real { 409229867400388, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 231
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 978813559322034, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 5
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3656385
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 215
+    },
+    {
+      id str "e_value",
+      value real { 164572553157764, 10, -123 }
+    },
+    {
+      id str "bit_score",
+      value real { 39814996948636, 10, -11 }
+    },
+    {
+      id str "num_ident",
+      value int 229
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 970338983050847, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 7
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3656409
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 212
+    },
+    {
+      id str "e_value",
+      value real { 76568161154322, 10, -121 }
+    },
+    {
+      id str "bit_score",
+      value real { 392610020529347, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 228
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 966101694915254, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 8
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3656289
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 209
+    },
+    {
+      id str "e_value",
+      value real { 356237002468718, 10, -120 }
+    },
+    {
+      id str "bit_score",
+      value real { 387070071572333, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 227
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 961864406779661, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 9
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3656073
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 209
+    },
+    {
+      id str "e_value",
+      value real { 356237002468718, 10, -120 }
+    },
+    {
+      id str "bit_score",
+      value real { 387070071572333, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 227
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 961864406779661, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 9
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3656313
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 209
+    },
+    {
+      id str "e_value",
+      value real { 356237002468718, 10, -120 }
+    },
+    {
+      id str "bit_score",
+      value real { 387070071572333, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 227
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 961864406779661, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 9
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3656337
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 206
+    },
+    {
+      id str "e_value",
+      value real { 165740955528651, 10, -118 }
+    },
+    {
+      id str "bit_score",
+      value real { 38153012261532, 10, -11 }
+    },
+    {
+      id str "num_ident",
+      value int 226
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 957627118644068, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 10
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3656145
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 206
+    },
+    {
+      id str "e_value",
+      value real { 165740955528651, 10, -118 }
+    },
+    {
+      id str "bit_score",
+      value real { 38153012261532, 10, -11 }
+    },
+    {
+      id str "num_ident",
+      value int 226
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 957627118644068, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 10
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3656241
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 203
+    },
+    {
+      id str "e_value",
+      value real { 771117659007428, 10, -117 }
+    },
+    {
+      id str "bit_score",
+      value real { 375990173658306, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 225
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 953389830508475, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 11
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3656049
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 200
+    },
+    {
+      id str "e_value",
+      value real { 358766149342213, 10, -115 }
+    },
+    {
+      id str "bit_score",
+      value real { 370450224701292, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 224
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 949152542372881, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 12
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3655977
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 200
+    },
+    {
+      id str "e_value",
+      value real { 358766149342213, 10, -115 }
+    },
+    {
+      id str "bit_score",
+      value real { 370450224701292, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 224
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 949152542372881, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 12
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3656121
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 200
+    },
+    {
+      id str "e_value",
+      value real { 358766149342213, 10, -115 }
+    },
+    {
+      id str "bit_score",
+      value real { 370450224701292, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 224
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 949152542372881, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 12
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3656217
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 197
+    },
+    {
+      id str "e_value",
+      value real { 166917653110823, 10, -113 }
+    },
+    {
+      id str "bit_score",
+      value real { 364910275744279, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 223
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 944915254237288, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 13
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3655497
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 197
+    },
+    {
+      id str "e_value",
+      value real { 166917653110823, 10, -113 }
+    },
+    {
+      id str "bit_score",
+      value real { 364910275744279, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 223
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 944915254237288, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 13
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3656169
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 192
+    },
+    {
+      id str "e_value",
+      value real { 100458561258003, 10, -110 }
+    },
+    {
+      id str "bit_score",
+      value real { 355677027482589, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 214
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 955357142857143, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 6
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3655062,
+      17330,
+      -1,
+      17328,
+      3655100,
+      -1,
+      3655102,
+      17161,
+      3655103,
+      17160,
+      -1,
+      17157,
+      3655270,
+      -1,
+      3655273,
+      17147,
+      3655274
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 191
+    },
+    {
+      id str "e_value",
+      value real { 361313252194059, 10, -110 }
+    },
+    {
+      id str "bit_score",
+      value real { 353830377830252, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 221
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 936440677966102, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 15
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3656001
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 189
+    },
+    {
+      id str "e_value",
+      value real { 46738822240671, 10, -108 }
+    },
+    {
+      id str "bit_score",
+      value real { 350137078525576, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 213
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 950892857142857, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 7
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3655014,
+      17330,
+      -1,
+      17328,
+      3655052,
+      -1,
+      3655054,
+      17161,
+      3655055,
+      17160,
+      -1,
+      17157,
+      3655222,
+      -1,
+      3655225,
+      17147,
+      3655226
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 186
+    },
+    {
+      id str "e_value",
+      value real { 21745458795042, 10, -106 }
+    },
+    {
+      id str "bit_score",
+      value real { 344597129568562, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 212
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 946428571428571, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 8
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654726,
+      17330,
+      -1,
+      17328,
+      3654764,
+      -1,
+      3654766,
+      17161,
+      3654767,
+      17160,
+      -1,
+      17157,
+      3654934,
+      -1,
+      3654937,
+      17147,
+      3654938
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 186
+    },
+    {
+      id str "e_value",
+      value real { 21745458795042, 10, -106 }
+    },
+    {
+      id str "bit_score",
+      value real { 344597129568562, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 212
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 946428571428571, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 8
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654774,
+      17330,
+      -1,
+      17328,
+      3654812,
+      -1,
+      3654814,
+      17161,
+      3654815,
+      17160,
+      -1,
+      17157,
+      3654982,
+      -1,
+      3654985,
+      17147,
+      3654986
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 186
+    },
+    {
+      id str "e_value",
+      value real { 21745458795042, 10, -106 }
+    },
+    {
+      id str "bit_score",
+      value real { 344597129568562, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 212
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 946428571428571, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 8
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654822,
+      17330,
+      -1,
+      17328,
+      3654860,
+      -1,
+      3654862,
+      17161,
+      3654863,
+      17160,
+      -1,
+      17157,
+      3655030,
+      -1,
+      3655033,
+      17147,
+      3655034
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 186
+    },
+    {
+      id str "e_value",
+      value real { 21745458795042, 10, -106 }
+    },
+    {
+      id str "bit_score",
+      value real { 344597129568562, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 212
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 946428571428571, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 8
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3655110,
+      17330,
+      -1,
+      17328,
+      3655148,
+      -1,
+      3655150,
+      17161,
+      3655151,
+      17160,
+      -1,
+      17157,
+      3655318,
+      -1,
+      3655321,
+      17147,
+      3655322
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 185
+    },
+    {
+      id str "e_value",
+      value real { 782105809529781, 10, -107 }
+    },
+    {
+      id str "bit_score",
+      value real { 342750479916224, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 219
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 927966101694915, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 17
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3655425
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 183
+    },
+    {
+      id str "e_value",
+      value real { 101171778735022, 10, -105 }
+    },
+    {
+      id str "bit_score",
+      value real { 339057180611549, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 209
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 945701357466063, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 8
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3653985,
+      17330,
+      -1,
+      17328,
+      3654020,
+      -1,
+      3654022,
+      17161,
+      3654023,
+      17160,
+      -1,
+      17157,
+      3654190,
+      -1,
+      3654193,
+      17147,
+      3654194
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 183
+    },
+    {
+      id str "e_value",
+      value real { 101171778735022, 10, -105 }
+    },
+    {
+      id str "bit_score",
+      value real { 339057180611549, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 209
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 945701357466063, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 8
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654105,
+      17330,
+      -1,
+      17328,
+      3654140,
+      -1,
+      3654142,
+      17161,
+      3654143,
+      17160,
+      -1,
+      17157,
+      3654310,
+      -1,
+      3654313,
+      17147,
+      3654314
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 183
+    },
+    {
+      id str "e_value",
+      value real { 101171778735022, 10, -105 }
+    },
+    {
+      id str "bit_score",
+      value real { 339057180611549, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 211
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 941964285714286, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 9
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654174,
+      17330,
+      -1,
+      17328,
+      3654212,
+      -1,
+      3654214,
+      17161,
+      3654215,
+      17160,
+      -1,
+      17157,
+      3654382,
+      -1,
+      3654385,
+      17147,
+      3654386
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 183
+    },
+    {
+      id str "e_value",
+      value real { 101171778735022, 10, -105 }
+    },
+    {
+      id str "bit_score",
+      value real { 339057180611549, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 211
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 941964285714286, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 9
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654870,
+      17330,
+      -1,
+      17328,
+      3654908,
+      -1,
+      3654910,
+      17161,
+      3654911,
+      17160,
+      -1,
+      17157,
+      3655078,
+      -1,
+      3655081,
+      17147,
+      3655082
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 183
+    },
+    {
+      id str "e_value",
+      value real { 101171778735022, 10, -105 }
+    },
+    {
+      id str "bit_score",
+      value real { 339057180611549, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 211
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 941964285714286, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 9
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654894,
+      17330,
+      -1,
+      17328,
+      3654932,
+      -1,
+      3654934,
+      17161,
+      3654935,
+      17160,
+      -1,
+      17157,
+      3655102,
+      -1,
+      3655105,
+      17147,
+      3655106
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 183
+    },
+    {
+      id str "e_value",
+      value real { 101171778735022, 10, -105 }
+    },
+    {
+      id str "bit_score",
+      value real { 339057180611549, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 209
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 945701357466063, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 8
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654945,
+      17330,
+      -1,
+      17328,
+      3654980,
+      -1,
+      3654982,
+      17161,
+      3654983,
+      17160,
+      -1,
+      17157,
+      3655150,
+      -1,
+      3655153,
+      17147,
+      3655154
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 183
+    },
+    {
+      id str "e_value",
+      value real { 101171778735022, 10, -105 }
+    },
+    {
+      id str "bit_score",
+      value real { 339057180611549, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 211
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 941964285714286, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 9
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654966,
+      17330,
+      -1,
+      17328,
+      3655004,
+      -1,
+      3655006,
+      17161,
+      3655007,
+      17160,
+      -1,
+      17157,
+      3655174,
+      -1,
+      3655177,
+      17147,
+      3655178
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 182
+    },
+    {
+      id str "e_value",
+      value real { 363878438504886, 10, -105 }
+    },
+    {
+      id str "bit_score",
+      value real { 337210530959211, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 218
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 923728813559322, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 18
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3655569
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 180
+    },
+    {
+      id str "e_value",
+      value real { 470706500556429, 10, -104 }
+    },
+    {
+      id str "bit_score",
+      value real { 333517231654535, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 210
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 9375, 10, -2 }
+    },
+    {
+      id str "num_mismatch",
+      value int 10
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654030,
+      17330,
+      -1,
+      17328,
+      3654068,
+      -1,
+      3654070,
+      17161,
+      3654071,
+      17160,
+      -1,
+      17157,
+      3654238,
+      -1,
+      3654241,
+      17147,
+      3654242
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 180
+    },
+    {
+      id str "e_value",
+      value real { 470706500556429, 10, -104 }
+    },
+    {
+      id str "bit_score",
+      value real { 333517231654535, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 208
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 941176470588235, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 9
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654057,
+      17330,
+      -1,
+      17328,
+      3654092,
+      -1,
+      3654094,
+      17161,
+      3654095,
+      17160,
+      -1,
+      17157,
+      3654262,
+      -1,
+      3654265,
+      17147,
+      3654266
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 180
+    },
+    {
+      id str "e_value",
+      value real { 470706500556429, 10, -104 }
+    },
+    {
+      id str "bit_score",
+      value real { 333517231654535, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 208
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 941176470588235, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 9
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654153,
+      17330,
+      -1,
+      17328,
+      3654188,
+      -1,
+      3654190,
+      17161,
+      3654191,
+      17160,
+      -1,
+      17157,
+      3654358,
+      -1,
+      3654361,
+      17147,
+      3654362
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 180
+    },
+    {
+      id str "e_value",
+      value real { 470706500556429, 10, -104 }
+    },
+    {
+      id str "bit_score",
+      value real { 333517231654535, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 210
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 9375, 10, -2 }
+    },
+    {
+      id str "num_mismatch",
+      value int 10
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654678,
+      17330,
+      -1,
+      17327,
+      3654716,
+      -1,
+      3654719,
+      17161,
+      3654720,
+      17160,
+      -1,
+      17157,
+      3654886,
+      -1,
+      3654889,
+      17147,
+      3654890
+    },
+    lens {
+      38,
+      1,
+      3,
+      1,
+      166,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 180
+    },
+    {
+      id str "e_value",
+      value real { 470706500556429, 10, -104 }
+    },
+    {
+      id str "bit_score",
+      value real { 333517231654535, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 210
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 9375, 10, -2 }
+    },
+    {
+      id str "num_mismatch",
+      value int 10
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654798,
+      17330,
+      -1,
+      17328,
+      3654836,
+      -1,
+      3654838,
+      17161,
+      3654839,
+      17160,
+      -1,
+      17157,
+      3655006,
+      -1,
+      3655009,
+      17147,
+      3655010
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 180
+    },
+    {
+      id str "e_value",
+      value real { 470706500556429, 10, -104 }
+    },
+    {
+      id str "bit_score",
+      value real { 333517231654535, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 216
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 923076923076923, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 18
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29940,
+      3655953
+    },
+    lens {
+      234
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 179
+    },
+    {
+      id str "e_value",
+      value real { 169296169898495, 10, -103 }
+    },
+    {
+      id str "bit_score",
+      value real { 331670582002197, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 217
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 919491525423729, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 19
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3655473
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 179
+    },
+    {
+      id str "e_value",
+      value real { 169296169898495, 10, -103 }
+    },
+    {
+      id str "bit_score",
+      value real { 331670582002197, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 217
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 919491525423729, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 19
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3655905
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 177
+    },
+    {
+      id str "e_value",
+      value real { 218998432602808, 10, -102 }
+    },
+    {
+      id str "bit_score",
+      value real { 327977282697521, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 207
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 936651583710407, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 10
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654009,
+      17330,
+      -1,
+      17328,
+      3654044,
+      -1,
+      3654046,
+      17161,
+      3654047,
+      17160,
+      -1,
+      17157,
+      3654214,
+      -1,
+      3654217,
+      17147,
+      3654218
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 177
+    },
+    {
+      id str "e_value",
+      value real { 218998432602808, 10, -102 }
+    },
+    {
+      id str "bit_score",
+      value real { 327977282697521, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 209
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 933035714285714, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 11
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654078,
+      17330,
+      -1,
+      17328,
+      3654116,
+      -1,
+      3654118,
+      17161,
+      3654119,
+      17160,
+      -1,
+      17157,
+      3654286,
+      -1,
+      3654289,
+      17147,
+      3654290
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 177
+    },
+    {
+      id str "e_value",
+      value real { 218998432602808, 10, -102 }
+    },
+    {
+      id str "bit_score",
+      value real { 327977282697521, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 208
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 932735426008969, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 13
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17161,
+      3654510,
+      17160,
+      -1,
+      17157,
+      3654718,
+      -1,
+      3654721,
+      17147,
+      3654722
+    },
+    lens {
+      208,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 177
+    },
+    {
+      id str "e_value",
+      value real { 218998432602808, 10, -102 }
+    },
+    {
+      id str "bit_score",
+      value real { 327977282697521, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 208
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 932735426008969, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 13
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17161,
+      3654582,
+      17160,
+      -1,
+      17157,
+      3654790,
+      -1,
+      3654793,
+      17147,
+      3654794
+    },
+    lens {
+      208,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 177
+    },
+    {
+      id str "e_value",
+      value real { 218998432602808, 10, -102 }
+    },
+    {
+      id str "bit_score",
+      value real { 327977282697521, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 209
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 933035714285714, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 11
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654702,
+      17330,
+      -1,
+      17327,
+      3654740,
+      -1,
+      3654743,
+      17161,
+      3654744,
+      17160,
+      -1,
+      17157,
+      3654910,
+      -1,
+      3654913,
+      17147,
+      3654914
+    },
+    lens {
+      38,
+      1,
+      3,
+      1,
+      166,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 177
+    },
+    {
+      id str "e_value",
+      value real { 218998432602808, 10, -102 }
+    },
+    {
+      id str "bit_score",
+      value real { 327977282697521, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 209
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 933035714285714, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 11
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654750,
+      17330,
+      -1,
+      17328,
+      3654788,
+      -1,
+      3654790,
+      17161,
+      3654791,
+      17160,
+      -1,
+      17157,
+      3654958,
+      -1,
+      3654961,
+      17147,
+      3654962
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 177
+    },
+    {
+      id str "e_value",
+      value real { 218998432602808, 10, -102 }
+    },
+    {
+      id str "bit_score",
+      value real { 327977282697521, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 209
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 933035714285714, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 11
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654918,
+      17330,
+      -1,
+      17328,
+      3654956,
+      -1,
+      3654958,
+      17161,
+      3654959,
+      17160,
+      -1,
+      17157,
+      3655126,
+      -1,
+      3655129,
+      17147,
+      3655130
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 177
+    },
+    {
+      id str "e_value",
+      value real { 218998432602808, 10, -102 }
+    },
+    {
+      id str "bit_score",
+      value real { 327977282697521, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 207
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 936651583710407, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 10
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654993,
+      17330,
+      -1,
+      17328,
+      3655028,
+      -1,
+      3655030,
+      17161,
+      3655031,
+      17160,
+      -1,
+      17157,
+      3655198,
+      -1,
+      3655201,
+      17147,
+      3655202
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 177
+    },
+    {
+      id str "e_value",
+      value real { 218998432602808, 10, -102 }
+    },
+    {
+      id str "bit_score",
+      value real { 327977282697521, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 209
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 933035714285714, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 11
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3655038,
+      17330,
+      -1,
+      17328,
+      3655076,
+      -1,
+      3655078,
+      17161,
+      3655079,
+      17160,
+      -1,
+      17157,
+      3655246,
+      -1,
+      3655249,
+      17147,
+      3655250
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 177
+    },
+    {
+      id str "e_value",
+      value real { 218998432602808, 10, -102 }
+    },
+    {
+      id str "bit_score",
+      value real { 327977282697521, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 209
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 933035714285714, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 11
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3655158,
+      17330,
+      -1,
+      17328,
+      3655196,
+      -1,
+      3655198,
+      17161,
+      3655199,
+      17160,
+      -1,
+      17157,
+      3655366,
+      -1,
+      3655369,
+      17147,
+      3655370
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 177
+    },
+    {
+      id str "e_value",
+      value real { 218998432602808, 10, -102 }
+    },
+    {
+      id str "bit_score",
+      value real { 327977282697521, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 208
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 932735426008969, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 13
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17161,
+      3655662,
+      17160,
+      -1,
+      17157,
+      3655870,
+      -1,
+      3655873,
+      17147,
+      3655874
+    },
+    lens {
+      208,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 176
+    },
+    {
+      id str "e_value",
+      value real { 787658462536668, 10, -102 }
+    },
+    {
+      id str "bit_score",
+      value real { 326130633045183, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 216
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 915254237288136, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 20
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3655449
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 176
+    },
+    {
+      id str "e_value",
+      value real { 787658462536668, 10, -102 }
+    },
+    {
+      id str "bit_score",
+      value real { 326130633045183, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 216
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 915254237288136, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 20
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3655521
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 176
+    },
+    {
+      id str "e_value",
+      value real { 787658462536668, 10, -102 }
+    },
+    {
+      id str "bit_score",
+      value real { 326130633045183, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 184
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 978723404255319, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 4
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29986,
+      3656505
+    },
+    lens {
+      188
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 174
+    },
+    {
+      id str "e_value",
+      value real { 101890059784159, 10, -100 }
+    },
+    {
+      id str "bit_score",
+      value real { 322437333740508, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 208
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 928571428571429, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 12
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654126,
+      17330,
+      -1,
+      17328,
+      3654164,
+      -1,
+      3654166,
+      17161,
+      3654167,
+      17160,
+      -1,
+      17157,
+      3654334,
+      -1,
+      3654337,
+      17147,
+      3654338
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 174
+    },
+    {
+      id str "e_value",
+      value real { 101890059784159, 10, -100 }
+    },
+    {
+      id str "bit_score",
+      value real { 322437333740508, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 206
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 932126696832579, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 11
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654225,
+      17330,
+      -1,
+      17328,
+      3654260,
+      -1,
+      3654262,
+      17161,
+      3654263,
+      17160,
+      -1,
+      17157,
+      3654430,
+      -1,
+      3654433,
+      17147,
+      3654434
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 174
+    },
+    {
+      id str "e_value",
+      value real { 101890059784159, 10, -100 }
+    },
+    {
+      id str "bit_score",
+      value real { 322437333740508, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 208
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 928571428571429, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 12
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17330,
+      3654606,
+      17329,
+      -1,
+      17327,
+      3654645,
+      -1,
+      3654647,
+      17161,
+      3654648,
+      17160,
+      -1,
+      17157,
+      3654814,
+      -1,
+      3654817,
+      17147,
+      3654818
+    },
+    lens {
+      39,
+      1,
+      2,
+      1,
+      166,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 174
+    },
+    {
+      id str "e_value",
+      value real { 101890059784159, 10, -100 }
+    },
+    {
+      id str "bit_score",
+      value real { 322437333740508, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 206
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 932126696832579, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 11
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654633,
+      17330,
+      -1,
+      17328,
+      3654668,
+      -1,
+      3654670,
+      17161,
+      3654671,
+      17160,
+      -1,
+      17157,
+      3654838,
+      -1,
+      3654841,
+      17147,
+      3654842
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 174
+    },
+    {
+      id str "e_value",
+      value real { 101890059784159, 10, -100 }
+    },
+    {
+      id str "bit_score",
+      value real { 322437333740508, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 208
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 928571428571429, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 12
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654654,
+      17330,
+      -1,
+      17327,
+      3654692,
+      -1,
+      3654695,
+      17161,
+      3654696,
+      17160,
+      -1,
+      17157,
+      3654862,
+      -1,
+      3654865,
+      17147,
+      3654866
+    },
+    lens {
+      38,
+      1,
+      3,
+      1,
+      166,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 174
+    },
+    {
+      id str "e_value",
+      value real { 101890059784159, 10, -100 }
+    },
+    {
+      id str "bit_score",
+      value real { 322437333740508, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 206
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 932126696832579, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 11
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654849,
+      17330,
+      -1,
+      17328,
+      3654884,
+      -1,
+      3654886,
+      17161,
+      3654887,
+      17160,
+      -1,
+      17157,
+      3655054,
+      -1,
+      3655057,
+      17147,
+      3655058
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 174
+    },
+    {
+      id str "e_value",
+      value real { 101890059784159, 10, -100 }
+    },
+    {
+      id str "bit_score",
+      value real { 322437333740508, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 208
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 928571428571429, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 12
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3655086,
+      17330,
+      -1,
+      17328,
+      3655124,
+      -1,
+      3655126,
+      17161,
+      3655127,
+      17160,
+      -1,
+      17157,
+      3655294,
+      -1,
+      3655297,
+      17147,
+      3655298
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 174
+    },
+    {
+      id str "e_value",
+      value real { 101890059784159, 10, -100 }
+    },
+    {
+      id str "bit_score",
+      value real { 322437333740508, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 207
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 928251121076233, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 14
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17161,
+      3655590,
+      17160,
+      -1,
+      17157,
+      3655798,
+      -1,
+      3655801,
+      17147,
+      3655802
+    },
+    lens {
+      208,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 174
+    },
+    {
+      id str "e_value",
+      value real { 101890059784159, 10, -100 }
+    },
+    {
+      id str "bit_score",
+      value real { 322437333740508, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 214
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 914529914529915, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 20
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29940,
+      3655881
+    },
+    lens {
+      234
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 173
+    },
+    {
+      id str "e_value",
+      value real { 366461836660335, 10, -100 }
+    },
+    {
+      id str "bit_score",
+      value real { 32059068408817, 10, -11 }
+    },
+    {
+      id str "num_ident",
+      value int 215
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 911016949152542, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 21
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3655929
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 171
+    },
+    {
+      id str "e_value",
+      value real { 47404833721565, 10, -98 }
+    },
+    {
+      id str "bit_score",
+      value real { 316897384783494, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 205
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 927601809954751, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 12
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654201,
+      17330,
+      -1,
+      17328,
+      3654236,
+      -1,
+      3654238,
+      17161,
+      3654239,
+      17160,
+      -1,
+      17157,
+      3654406,
+      -1,
+      3654409,
+      17147,
+      3654410
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 171
+    },
+    {
+      id str "e_value",
+      value real { 47404833721565, 10, -98 }
+    },
+    {
+      id str "bit_score",
+      value real { 316897384783494, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 207
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 924107142857143, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 13
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3655134,
+      17330,
+      -1,
+      17328,
+      3655172,
+      -1,
+      3655174,
+      17161,
+      3655175,
+      17160,
+      -1,
+      17157,
+      3655342,
+      -1,
+      3655345,
+      17147,
+      3655346
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 171
+    },
+    {
+      id str "e_value",
+      value real { 47404833721565, 10, -98 }
+    },
+    {
+      id str "bit_score",
+      value real { 316897384783494, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 207
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 924107142857143, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 13
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3655206,
+      17330,
+      -1,
+      17328,
+      3655244,
+      -1,
+      3655246,
+      17161,
+      3655247,
+      17160,
+      -1,
+      17157,
+      3655414,
+      -1,
+      3655417,
+      17147,
+      3655418
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 170
+    },
+    {
+      id str "e_value",
+      value real { 170498108146987, 10, -98 }
+    },
+    {
+      id str "bit_score",
+      value real { 315050735131156, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 214
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 906779661016949, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 22
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29938,
+      3655593
+    },
+    lens {
+      236
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 168
+    },
+    {
+      id str "e_value",
+      value real { 220553237963514, 10, -97 }
+    },
+    {
+      id str "bit_score",
+      value real { 31135743582648, 10, -11 }
+    },
+    {
+      id str "num_ident",
+      value int 206
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 919642857142857, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 14
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654270,
+      17330,
+      -1,
+      17328,
+      3654308,
+      -1,
+      3654310,
+      17161,
+      3654311,
+      17160,
+      -1,
+      17157,
+      3654478,
+      -1,
+      3654481,
+      17147,
+      3654482
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 168
+    },
+    {
+      id str "e_value",
+      value real { 220553237963514, 10, -97 }
+    },
+    {
+      id str "bit_score",
+      value real { 31135743582648, 10, -11 }
+    },
+    {
+      id str "num_ident",
+      value int 212
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 905982905982906, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 22
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      29940,
+      3655401
+    },
+    lens {
+      234
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 168
+    },
+    {
+      id str "e_value",
+      value real { 220553237963514, 10, -97 }
+    },
+    {
+      id str "bit_score",
+      value real { 31135743582648, 10, -11 }
+    },
+    {
+      id str "num_ident",
+      value int 203
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 922727272727273, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 15
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17161,
+      3655641,
+      17160,
+      -1,
+      17157,
+      3655846,
+      -1,
+      3655849,
+      17147,
+      3655850
+    },
+    lens {
+      205,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 165
+    },
+    {
+      id str "e_value",
+      value real { 102613440354839, 10, -95 }
+    },
+    {
+      id str "bit_score",
+      value real { 305817486869467, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 205
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 915178571428571, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 15
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654246,
+      17330,
+      -1,
+      17328,
+      3654284,
+      -1,
+      3654286,
+      17161,
+      3654287,
+      17160,
+      -1,
+      17157,
+      3654454,
+      -1,
+      3654457,
+      17147,
+      3654458
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 165
+    },
+    {
+      id str "e_value",
+      value real { 102613440354839, 10, -95 }
+    },
+    {
+      id str "bit_score",
+      value real { 305817486869467, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 202
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 918181818181818, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 16
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17161,
+      3654561,
+      17160,
+      -1,
+      17157,
+      3654766,
+      -1,
+      3654769,
+      17147,
+      3654770
+    },
+    lens {
+      205,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 165
+    },
+    {
+      id str "e_value",
+      value real { 102613440354839, 10, -95 }
+    },
+    {
+      id str "bit_score",
+      value real { 305817486869467, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 203
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 918552036199095, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 14
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3655713,
+      17330,
+      -1,
+      17328,
+      3655748,
+      -1,
+      3655750,
+      17161,
+      3655751,
+      17160,
+      -1,
+      17157,
+      3655918,
+      -1,
+      3655921,
+      17147,
+      3655922
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 162
+    },
+    {
+      id str "e_value",
+      value real { 477413899640793, 10, -94 }
+    },
+    {
+      id str "bit_score",
+      value real { 300277537912453, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 203
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 910313901345291, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 18
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17161,
+      3654534,
+      17160,
+      -1,
+      17157,
+      3654742,
+      -1,
+      3654745,
+      17147,
+      3654746
+    },
+    lens {
+      208,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 162
+    },
+    {
+      id str "e_value",
+      value real { 477413899640793, 10, -94 }
+    },
+    {
+      id str "bit_score",
+      value real { 300277537912453, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 202
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 914027149321267, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 15
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3655185,
+      17330,
+      -1,
+      17328,
+      3655220,
+      -1,
+      3655222,
+      17161,
+      3655223,
+      17160,
+      -1,
+      17157,
+      3655390,
+      -1,
+      3655393,
+      17147,
+      3655394
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 162
+    },
+    {
+      id str "e_value",
+      value real { 477413899640793, 10, -94 }
+    },
+    {
+      id str "bit_score",
+      value real { 300277537912453, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 203
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 910313901345291, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 18
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17161,
+      3655614,
+      17160,
+      -1,
+      17157,
+      3655822,
+      -1,
+      3655825,
+      17147,
+      3655826
+    },
+    lens {
+      208,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 158
+    },
+    {
+      id str "e_value",
+      value real { 798882313586452, 10, -92 }
+    },
+    {
+      id str "bit_score",
+      value real { 292890939303102, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 162
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 98780487804878, 10, -12 }
+    },
+    {
+      id str "num_mismatch",
+      value int 2
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      30010,
+      3656529
+    },
+    lens {
+      164
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 156
+    },
+    {
+      id str "e_value",
+      value real { 103341956651728, 10, -90 }
+    },
+    {
+      id str "bit_score",
+      value real { 289197639998426, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 200
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 904977375565611, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 17
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3655233,
+      17330,
+      -1,
+      17328,
+      3655268,
+      -1,
+      3655270,
+      17161,
+      3655271,
+      17160,
+      -1,
+      17157,
+      3655438,
+      -1,
+      3655441,
+      17147,
+      3655442
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 153
+    },
+    {
+      id str "e_value",
+      value real { 480803356275777, 10, -89 }
+    },
+    {
+      id str "bit_score",
+      value real { 283657691041412, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 198
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 9, 10, 1 }
+    },
+    {
+      id str "num_mismatch",
+      value int 20
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17161,
+      3654489,
+      17160,
+      -1,
+      17157,
+      3654694,
+      -1,
+      3654697,
+      17147,
+      3654698
+    },
+    lens {
+      205,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 150
+    },
+    {
+      id str "e_value",
+      value real { 223696042629736, 10, -87 }
+    },
+    {
+      id str "bit_score",
+      value real { 278117742084399, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 197
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 895454545454545, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 21
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17161,
+      3654441,
+      17160,
+      -1,
+      17157,
+      3654646,
+      -1,
+      3654649,
+      17147,
+      3654650
+    },
+    lens {
+      205,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 147
+    },
+    {
+      id str "e_value",
+      value real { 104075645136518, 10, -85 }
+    },
+    {
+      id str "bit_score",
+      value real { 272577793127385, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 199
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 888392857142857, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 21
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17331,
+      3654294,
+      17330,
+      -1,
+      17328,
+      3654332,
+      -1,
+      3654334,
+      17161,
+      3654335,
+      17160,
+      -1,
+      17157,
+      3654502,
+      -1,
+      3654505,
+      17147,
+      3654506
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      167,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 141
+    },
+    {
+      id str "e_value",
+      value real { 225284199230291, 10, -82 }
+    },
+    {
+      id str "bit_score",
+      value real { 261497895213358, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 163
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 942196531791908, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 6
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17283,
+      3653937,
+      -1,
+      3653972,
+      17281,
+      3653973,
+      17280,
+      -1,
+      17161,
+      3653975,
+      17160,
+      -1,
+      17157,
+      3654094,
+      -1,
+      3654097,
+      17147,
+      3654098
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      119,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 125
+    },
+    {
+      id str "e_value",
+      value real { 176637017071951, 10, -73 }
+    },
+    {
+      id str "bit_score",
+      value real { 231951500775952, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 135
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 964285714285714, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 5
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      30034,
+      3656553
+    },
+    lens {
+      140
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 111
+    },
+    {
+      id str "e_value",
+      value real { 107062859287583, 10, -65 }
+    },
+    {
+      id str "bit_score",
+      value real { 206098405643222, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 139
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 914473684210526, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 9
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17259,
+      3653934,
+      -1,
+      3653972,
+      17257,
+      3653973,
+      17256,
+      -1,
+      17161,
+      3653975,
+      17160,
+      -1,
+      17157,
+      3654070,
+      -1,
+      3654073,
+      17147,
+      3654074
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      95,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 104
+    },
+    {
+      id str "e_value",
+      value real { 833522630476852, 10, -62 }
+    },
+    {
+      id str "bit_score",
+      value real { 193171858076857, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 112
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 96551724137931, 10, -12 }
+    },
+    {
+      id str "num_mismatch",
+      value int 4
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      30058,
+      3656577
+    },
+    lens {
+      116
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 93
+    },
+    {
+      id str "e_value",
+      value real { 108588466695823, 10, -55 }
+    },
+    {
+      id str "bit_score",
+      value real { 17285871190114, 10, -11 }
+    },
+    {
+      id str "num_ident",
+      value int 117
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 9140625, 10, -5 }
+    },
+    {
+      id str "num_mismatch",
+      value int 7
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17235,
+      3653934,
+      -1,
+      3653972,
+      17233,
+      3653973,
+      17232,
+      -1,
+      17161,
+      3653975,
+      17160,
+      -1,
+      17157,
+      3654046,
+      -1,
+      3654049,
+      17147,
+      3654050
+    },
+    lens {
+      38,
+      1,
+      2,
+      1,
+      71,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 86
+    },
+    {
+      id str "e_value",
+      value real { 845400029496951, 10, -52 }
+    },
+    {
+      id str "bit_score",
+      value real { 159932164334775, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 90
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 978260869565217, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 2
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      30082,
+      3656601
+    },
+    lens {
+      92
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 66
+    },
+    {
+      id str "e_value",
+      value real { 110917735740795, 10, -40 }
+    },
+    {
+      id str "bit_score",
+      value real { 122999171288017, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 90
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 891089108910891, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 7
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 9,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17211,
+      3653937,
+      -1,
+      3653972,
+      17209,
+      3653973,
+      17208,
+      -1,
+      17161,
+      3653975,
+      17160,
+      -1,
+      17157,
+      3654022,
+      -1,
+      3654025,
+      17147,
+      3654026
+    },
+    lens {
+      35,
+      1,
+      2,
+      1,
+      47,
+      1,
+      3,
+      1,
+      10
+    },
+    strands {
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 65
+    },
+    {
+      id str "e_value",
+      value real { 39893113463554, 10, -39 }
+    },
+    {
+      id str "bit_score",
+      value real { 121152521635679, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 67
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 985294117647059, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 1
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      30106,
+      3656625
+    },
+    lens {
+      68
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "score",
+      value int 53
+    },
+    {
+      id str "e_value",
+      value real { 186922324982375, 10, -33 }
+    },
+    {
+      id str "bit_score",
+      value real { 98992725807625, 10, -12 }
+    },
+    {
+      id str "num_ident",
+      value int 65
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 915492957746479, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 6
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      genbank {
+        accession "AC002110",
+        version 1
+      },
+      other {
+        accession "NT_035014",
+        version 4
+      }
+    },
+    starts {
+      17298,
+      3656622
+    },
+    lens {
+      71
+    },
+    strands {
+      minus,
+      plus
+    }
+  }
+}

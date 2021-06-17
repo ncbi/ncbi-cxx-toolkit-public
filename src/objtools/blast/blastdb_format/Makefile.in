@@ -1,0 +1,7 @@
+# $Id$
+
+LIB_PROJ = blastdb_format
+SUB_PROJ = unit_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

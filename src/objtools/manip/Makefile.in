@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile ("objtools/manip" project)
+############################################
+
+LIB_PROJ = xobjmanip
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

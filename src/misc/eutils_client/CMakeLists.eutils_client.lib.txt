@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(eutils_client)
+  NCBI_sources(eutils_client)
+  NCBI_uses_toolkit_libraries(seq xmlwrapp)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()
+

@@ -1,0 +1,5 @@
+APP_PROJ = test_ncbimime
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

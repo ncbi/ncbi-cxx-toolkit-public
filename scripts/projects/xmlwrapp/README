@@ -1,0 +1,36 @@
+XmlWrapp 2.1.0 is a fork of the xmlwrapp-0.6.0 library from
+http://sourceforge.net/projects/xmlwrapp/, but has a separate versioning
+schema that started at 2.0.0.  XmlWrapp revises xmlwrapp's original API
+specifically to meet the needs of in-house NCBI developers, breaking
+compatibility with the original version.
+
+
+The main features of both versions include:
+- Tree parser (DOM)
+- Event parser (SAX)
+- Creation / removal of nodes, attributes and documents
+- Searching nodes and attributes
+- XSLT transformation support
+- DTD validation support
+- XML catalog support
+
+In addition, XmlWrapp enhances xmlwrapp with:
+- XPath support
+- Full-featured XML namespace support for both nodes and attributes
+- XSD validation support
+- Extended functionality of manipulating with default attributes
+- Safer iterator dereferencing
+- Extended error collection on parsing documents
+
+
+The XmlWrapp package has been tested on at least the following platforms:
+- Linux CentOS with GCC and ICC
+- Cygwin with GCC
+- SunOS on x86 with GCC and Sun WorkShop
+- SunOS on Sparc with GCC and Sun WorkShop
+- MAC on x86 with GCC and XCode
+- Windows with Visual Studio 2010
+- FreeBSD with GCC
+- Ubuntu with GCC
+- Fedora with GCC
+

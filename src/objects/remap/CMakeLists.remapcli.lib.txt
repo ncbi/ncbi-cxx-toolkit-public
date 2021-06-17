@@ -1,0 +1,10 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(remapcli)
+  NCBI_generated_sources(remap_client.cpp remap_client_.cpp)
+  NCBI_uses_toolkit_libraries(remap xconnect)
+  NCBI_project_watchers(jcherry)
+NCBI_end_lib()
+

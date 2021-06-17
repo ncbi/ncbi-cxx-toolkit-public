@@ -1,0 +1,20 @@
+CFeatureImportError:
+  Severity = Error
+  Message = "Invalid strand value"
+  LineNumber = 9
+
+CFeatureImportError:
+  Severity = Error
+  Message = "Inconsistent blocks information"
+  LineNumber = 11
+
+CFeatureImportError:
+  Severity = Error
+  Message = "Invalid blockSizes value"
+  LineNumber = 13
+
+CFeatureImportError:
+  Severity = Error
+  Message = "Inconsistent blocks information"
+  LineNumber = 15
+

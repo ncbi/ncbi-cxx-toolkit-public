@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile("UTIL demo" project)
+#################################
+
+APP_PROJ = cache_demo
+PROJ_TAG = demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

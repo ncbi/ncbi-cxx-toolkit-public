@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(readresult)
+  NCBI_sources(readresult)
+  NCBI_uses_toolkit_libraries(omssa)
+  NCBI_project_watchers(lewisg gorelenk)
+NCBI_end_app()
+

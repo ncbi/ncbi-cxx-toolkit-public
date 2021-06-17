@@ -1,0 +1,13 @@
+# =======================================
+# $Id$
+#
+# Metamakefile for 'entrez2client' app
+# Author: Mike DiCuccio
+# =======================================
+#
+
+APP_PROJ = entrez2client
+PROJ_TAG = demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

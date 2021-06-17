@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app( demo_align_cleanup)
+  NCBI_sources( demo_align_cleanup)
+  NCBI_uses_toolkit_libraries( xaligncleanup xobjutil xser data_loaders_util)
+NCBI_end_app()
+

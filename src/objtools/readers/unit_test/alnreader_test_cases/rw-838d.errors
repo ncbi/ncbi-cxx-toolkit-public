@@ -1,0 +1,5 @@
+Line No    : 10
+Severity   : Fatal
+Problem    : Alignment.UnexpectedCommandArgs
+Message    : Invalid command arguments. "nTax" must be immediately preceded by "newtaxa" in "CHARACTERS" block.
+

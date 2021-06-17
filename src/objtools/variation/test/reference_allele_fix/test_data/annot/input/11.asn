@@ -1,0 +1,34 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      data variation {
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 68910540,
+        id other {
+          accession "NC_000001",
+          version 10
+        }
+      }
+    }
+  }
+}

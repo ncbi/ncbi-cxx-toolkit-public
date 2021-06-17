@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(db100_setnull)
+  NCBI_sources(setnull common)
+  NCBI_add_test(test-db100 db100_setnull)
+NCBI_end_app()
+

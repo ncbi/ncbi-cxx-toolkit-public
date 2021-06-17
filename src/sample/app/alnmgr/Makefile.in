@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile
+#################################
+
+APP_PROJ = alnmgr_sample
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

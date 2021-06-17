@@ -1,0 +1,888 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+#
+# This template must be "configure"d and included in the very beginning
+# of all underlying configurable NCBI project makefiles exactly this way:
+#
+# srcdir = @srcdir@
+# include @builddir@/Makefile.mk
+#
+#################################
+
+
+### Make sure to use a right command shell
+
+@make_shell@
+
+### Configurable paths
+
+top_srcdir     = @top_srcdir@
+abs_top_srcdir = @abs_top_srcdir@
+build_root     = @build_root@
+builddir       = @builddir@
+status_dir     = @status_dir@
+
+
+### Other paths
+### includedir0 is reserved; user makefiles should only use includedir.
+
+includedir0 = $(top_srcdir)/include
+includedir  = $(includedir0)
+incdir      = $(build_root)/inc
+libdir      = $(build_root)/lib
+bindir      = $(build_root)/bin
+runpath     = @runpath@
+
+# Destination root for exported headers (overridden by import_project.sh)
+incdest     = $(incdir)
+
+### Optional top-level project groups
+
+OPT_GROUPS = @OPT_GROUPS@
+
+
+### Header dirs to include
+
+STD_INCLUDE = -I$(incdir) -I$(includedir0) $(OPT_GROUPS:%=-I$(includedir0)/%)
+
+
+### Auxiliary commands, filters
+
+RM       = /bin/rm -f
+RMDIR    = /bin/rm -rf
+COPY     = /bin/cp -p
+BINCOPY  = @BINCOPY@
+TOUCH    = @TOUCH@
+MKDIR    = /bin/mkdir
+BINTOUCH = $(TOUCH)
+LN_S     = @LN_S@
+GREP     = @GREP@
+LDD_R    = @LDD_R@
+SED      = @SED@
+
+### filters for screening out bogus messages
+CC_FILTER    = @CC_FILTER@
+CXX_FILTER   = @CXX_FILTER@
+AR_FILTER    = @AR_FILTER@
+LINK_FILTER  = @LINK_FILTER@
+
+### wrappers (ccache, purify, etc.)
+CC_WRAPPER   = @CC_WRAPPER@
+CXX_WRAPPER  = @CXX_WRAPPER@
+AR_WRAPPER   = @AR_WRAPPER@
+LINK_WRAPPER = @LINK_WRAPPER@
+
+CHECK_ARG = @CHECK_ARG@
+
+
+### Configurable compiler/librarian/linker binaries and options
+### (CONF-Set:  not to be alternated or used anywhere in the user makefiles!)
+
+CONF_CC     = @CC@
+CONF_CXX    = @CXX@
+CONF_CPP    = @CPP@
+CONF_CXXCPP = @CXXCPP@
+CONF_AR     = @AR@
+CONF_RANLIB = @RANLIB@
+CONF_LINK   = @LINK@
+CONF_C_LINK = @C_LINK@
+CONF_STRIP  = @STRIP@
+
+CONF_CFLAGS   = @CFLAGS@
+CONF_CXXFLAGS = @CXXFLAGS@
+CONF_CPPFLAGS = @CPPFLAGS@ $(STD_INCLUDE)
+CONF_DEPFLAGS = @DEPFLAGS@
+CONF_DEPFLAGS_POST = @DEPFLAGS_POST@
+CONF_LDFLAGS  = @LDFLAGS@
+CONF_APP_LDFLAGS = @APP_LDFLAGS@
+CONF_DLL_LDFLAGS = @DLL_LDFLAGS@ $(DLL_UNDEF_FLAGS)
+CONF_LIBS     = @LIBS@
+CONF_C_LIBS   = @C_LIBS@
+
+# Settings for building tools that shouldn't be cross-compiled, even
+# if everything else is.
+#
+# NB: Code using these settings should not attempt to use any
+# third-party packages, or even rely on settings from ncbiconf.h.
+# Also, it should require unix and -XCODE, since these macros are
+# otherwise undefined at the moment.
+
+CC_FOR_BUILD       = @CC_FOR_BUILD@
+CPP_FOR_BUILD      = @CPP_FOR_BUILD@
+CFLAGS_FOR_BUILD   = @CFLAGS_FOR_BUILD@
+CPPFLAGS_FOR_BUILD = @CPPFLAGS_FOR_BUILD@
+LDFLAGS_FOR_BUILD  = @LDFLAGS_FOR_BUILD@
+
+### Configurable compiler/librarian/linker binaries and options
+### (ORIG-Set:  not to be alternated, but can be used in the user makefiles
+### to alternate the value of relevant flags, e.g. CXX = $(ORIG_CXX) -DFOO_BAR)
+
+ORIG_CC     = $(CONF_CC)
+ORIG_CXX    = $(CONF_CXX)
+ORIG_CPP    = $(CONF_CPP)
+ORIG_CXXCPP = $(CONF_CXXCPP)
+ORIG_AR     = $(CONF_AR)
+ORIG_RANLIB = $(CONF_RANLIB)
+ORIG_LINK   = $(CONF_LINK)
+ORIG_C_LINK = $(CONF_C_LINK)
+ORIG_STRIP  = $(CONF_STRIP)
+
+ORIG_CFLAGS   = $(CONF_CFLAGS)
+ORIG_CXXFLAGS = $(CONF_CXXFLAGS)
+ORIG_CPPFLAGS = $(CONF_CPPFLAGS)
+ORIG_DEPFLAGS = $(CONF_DEPFLAGS)
+ORIG_DEPFLAGS_POST = $(CONF_DEPFLAGS_POST)
+ORIG_LDFLAGS  = $(CONF_LDFLAGS)
+ORIG_APP_LDFLAGS = $(CONF_APP_LDFLAGS)
+ORIG_DLL_LDFLAGS = $(CONF_DLL_LDFLAGS)
+ORIG_LIBS     = $(CONF_LIBS)
+ORIG_C_LIBS   = $(CONF_C_LIBS)
+
+
+### Configurable compiler/librarian/linker binaries and options
+### (WORK-Set:  to be used by standard build rules;
+###             can be modified to meet a particular project requirements)
+
+CC     = $(CONF_CC)
+CXX    = $(CONF_CXX)
+CPP    = $(CONF_CPP)
+CXXCPP = $(CONF_CXXCPP)
+AR     = $(CONF_AR)
+RANLIB = $(CONF_RANLIB)
+LINK   = $(CONF_LINK)
+# Linker for pure-C programs
+C_LINK = $(CONF_C_LINK)
+STRIP  = $(CONF_STRIP)
+
+CFLAGS   = $(CONF_CFLAGS)
+CXXFLAGS = $(CONF_CXXFLAGS)
+CPPFLAGS = $(CONF_CPPFLAGS)
+DEPFLAGS = $(CONF_DEPFLAGS)
+DEPFLAGS_POST = $(CONF_DEPFLAGS_POST)
+LDFLAGS  = $(CONF_LDFLAGS)
+APP_LDFLAGS = $(CONF_APP_LDFLAGS)
+DLL_LDFLAGS = $(CONF_DLL_LDFLAGS)
+LIBS     = $(CONF_LIBS)
+# Libraries for pure-C programs
+C_LIBS   = $(CONF_C_LIBS)
+PRE_LIBS =
+
+# To add directory /foo to the list to search at runtime, you can add
+# $(RUNPATH_FLAG)/foo to your LDFLAGS.
+RUNPATH_FLAG = @f_runpath@
+# Special case: add the searcher's current location (only works on
+# Linux and Solaris)
+RUNPATH_ORIGIN = @RUNPATH_ORIGIN@
+
+### Debug/release suffixes
+# "Debug" for debugging, "Release" for release
+DEBUG_SFX = @DEBUG_SFX@
+# 'd' for debugging, empty for release
+D_SFX=@D_SFX@
+
+### Muli-thread suffix
+# "MT" if multi-thread,  "" if single-thread
+MT_SFX = @MT_SFX@
+
+### Whether to build apps
+APP_OR_NULL = @APP_OR_NULL@
+
+### DLL specifics
+# whether to build the lib as static or dynamic; valid settings
+# are lib, dll, both, $(USUAL_AND_DLL), and $(USUAL_AND_LIB).
+ORIG_LIB_OR_DLL = @LIB_OR_DLL@
+LIB_OR_DLL    = $(ORIG_LIB_OR_DLL)
+USUAL_AND_DLL = @USUAL_AND_DLL@
+USUAL_AND_LIB = @USUAL_AND_LIB@
+
+# Library name suffix; either "-dll" or empty.  Normally EMPTY for
+# --with-dll configurations, which can simply exploit the linker's
+# general preference for dynamic libraries.
+DLL          = @DLL@
+# Library name suffix; either "-static" or empty.
+STATIC       = @STATIC@
+# Hard-coded; use only for "LIB_OR_DLL = both" libraries!
+FORCE_STATIC = -static
+
+LINK_DLL      = @LINK_DLL@
+LINK_LOADABLE = @LINK_LOADABLE@
+CFLAGS_DLL    = @CFLAGS_DLL@
+CXXFLAGS_DLL  = @CXXFLAGS_DLL@
+
+dll_ext      = @dll_ext@
+loadable_ext = @loadable_ext@
+
+# For various reasons, we traditionally allow shared libraries to have
+# undefined symbols; however, it's also possible to ask the linker to
+# be stricter by switching DLL_UNDEF_FLAGS to $(FORBID_UNDEF).
+ALLOW_UNDEF     = @ALLOW_UNDEF@
+FORBID_UNDEF    = @FORBID_UNDEF@
+DLL_UNDEF_FLAGS = $(ALLOW_UNDEF)
+LDFLAGS_DLL     = $(LDFLAGS)
+
+# Alternate DLL_LIB setting to use when configured --with-dll.
+DLL_DLIB = $(DLL_LIB)
+# Alternate LIB and LIBS settings to use when configured --without-dll.
+STATIC_LIB = $(LIB)
+STATIC_LIBS = $(LIBS)
+
+### To enable extra, potentially unsafe, optimization, use these flags
+### INSTEAD of $(ORIG_*FLAGS).
+### Note: If you have compiled any files with $(FAST_CXXFLAGS), you
+### should pass $(FAST_LDFLAGS) to the linker for consistency.
+FAST_CFLAGS   = @FAST_CFLAGS@
+FAST_CXXFLAGS = @FAST_CXXFLAGS@
+FAST_LDFLAGS  = @FAST_LDFLAGS@
+
+UNSAFE_MATH_FLAG = @UNSAFE_MATH_FLAG@
+SSE4_1_FLAG      = @SSE4_1_FLAG@
+AES_FLAG         = @AES_FLAG@
+
+COLOR_DIAGNOSTICS = @COLOR_DIAGNOSTICS@
+
+# Refrain from optimizations that assume no aliasing.
+NO_STRICT_ALIASING = @NO_STRICT_ALIASING@
+
+# Do/do not discard shared libraries that appear unnecessary.
+AS_NEEDED    = @AS_NEEDED@
+NO_AS_NEEDED = @NO_AS_NEEDED@
+
+# Do/do not link static archives in their entirety, even if some portions
+# appear unnecessary.
+WHOLE_ARCHIVE    = @WHOLE_ARCHIVE@
+NO_WHOLE_ARCHIVE = @NO_WHOLE_ARCHIVE@
+
+### For platform-specific includes
+COMPILER = @COMPILER@
+OSTYPE   = @OSTYPE@
+
+### Pointer size
+NCBI_PLATFORM_BITS = @NCBI_PLATFORM_BITS@
+
+### Support for Objective C++ (needed to use some Mac OS X APIs)
+OBJCXX_CXXFLAGS = @OBJCXX_CXXFLAGS@
+OBJCXX_LIBS     = @OBJCXX_LIBS@
+FOUNDATION_LIBS = @FOUNDATION_LIBS@
+
+### Support for OpenMP
+OPENMP_FLAGS = @OPENMP_FLAGS@
+
+### Post-link command (empty by default, historically needed for
+### graphical apps on Mac OS X)
+POST_LINK = @:
+
+### Configuration summary
+signature = @signature@
+
+### Do not use any default suffix rules
+.SUFFIXES:
+
+### Use automatic auto-dependencies (SunOS make, .KEEP_STATE:)
+@KeepStateTarget@
+### "rules"/"rules_with_autodep" (whether to build auto-deps for GNU make)
+Rules=@Rules@
+### Kludge module to workaround an RTTI bug (Sun WorkShop only)
+serial_ws50_rtti_kludge=@serial_ws50_rtti_kludge@
+### Special object file needed for atomic counters
+ncbicntr=@ncbicntr@
+### Holds Java Native Interface glue in --with-jni builds
+ncbi_java=@ncbi_java@
+
+#################################
+# Some platform-specific system libs that can be linked eventually
+THREAD_LIBS  = @THREAD_LIBS@
+NETWORK_LIBS = @NETWORK_LIBS@
+MATH_LIBS    = @MATH_LIBS@
+KSTAT_LIBS   = @KSTAT_LIBS@
+RPCSVC_LIBS  = @RPCSVC_LIBS@
+CRYPT_LIBS   = @CRYPT_LIBS@
+DL_LIBS      = @DL_LIBS@
+RT_LIBS      = @RT_LIBS@
+DEMANGLE_LIBS= @DEMANGLE_LIBS@
+ICONV_LIBS   = @ICONV_LIBS@
+UUID_LIBS    = @UUID_LIBS@
+
+# libconnect now uses NCBI_SwapPointers, which conditionally requires
+# LIB to include xncbi (depending on certain configuration details);
+# this macro always expands to the right value.
+NCBIATOMIC_LIB = @NCBIATOMIC_LIB@
+
+# This is a temporary workaround for Solaris/Intel platforms where
+# we had to do a kludgy patch to work around a faulty Sybase "tli" lib.
+# One can use this instead of $(NETWORK_LIBS) (which has the patch built in)
+# if he is not using Sybase libs (and maybe even does not have them installed).
+NETWORK_PURE_LIBS = @NETWORK_PURE_LIBS@
+
+# Extra name-resolution libraries; $(NETWORK[_PURE]_LIBS) should normally
+# suffice, but in some specialized cases you may need to prepend
+# $(RESOLVER_LIBS).
+RESOLVER_LIBS = @RESOLVER_LIBS@
+
+# Specialized call stack examination library; normally added to
+# baseline LIBS if present for the sake of corelib, but potentially
+# still useful with C_LIBS.
+LIBUNWIND_INCLUDE = @LIBUNWIND_INCLUDE@
+LIBUNWIND_LIBS    = @LIBUNWIND_LIBS@
+
+# Library for examining DWARF debugging info; normally added to
+# baseline LIBS if present for the sake of corelib, but potentially
+# still useful with C_LIBS.
+LIBDW_INCLUDE = @LIBDW_INCLUDE@
+LIBDW_LIBS    = @LIBDW_LIBS@
+
+# Library for producing prettier stack traces; LIBS here just arranges
+# for automatic stack traces on most fatal errors.
+BACKWARD_CPP_INCLUDE = @BACKWARD_CPP_INCLUDE@
+BACKWARD_CPP_LIBS    = @BACKWARD_CPP_LIBS@
+
+#################################
+# Optional variables that may be needed to build some projects
+# (see in "configure.ac" for the pre-set defaults)
+#
+
+# --with-local-lbsm:  --->  src/connect/Makefile.[x]connect.lib
+LOCAL_LBSM = @local_lbsm@
+# --with-ncbi-crypt:  --->  src/connect/ext/Makefile.connext.lib
+NCBI_CRYPT = @ncbi_crypt@
+
+# non-public (X)CONNECT extensions
+CONNEXT  = @CONNEXT@
+XCONNEXT = @XCONNEXT@
+
+# NCBI C++ API for BerkeleyDB
+BDB_LIB       = @BDB_LIB@
+BDB_CACHE_LIB = @BDB_CACHE_LIB@
+
+# NCBI C++ API for SQLite 3.x
+SQLITE3_WRAPPER = @SQLITE3_WRAPPER@
+
+# Possibly absent DBAPI drivers (depending on whether the relevant
+# 3rd-party libraries are present, and whether DBAPI was disabled altogether)
+DBAPI_DRIVER  = @DBAPI_DRIVER@
+DBAPI_CTLIB   = @DBAPI_CTLIB@
+DBAPI_FTDS    = @DBAPI_FTDS@
+DBAPI_FTDS100 = @DBAPI_FTDS100@
+DBAPI_MYSQL   = @DBAPI_MYSQL@
+DBAPI_ODBC    = @DBAPI_ODBC@
+
+# Compression libraries; the LIBS version goes in LIBS, and the LIB
+# version goes in LIB.
+Z_INCLUDE   = @Z_INCLUDE@
+Z_LIBS      = @Z_LIBS@
+Z_LIB       = @Z_LIB@
+BZ2_INCLUDE = @BZ2_INCLUDE@
+BZ2_LIBS    = @BZ2_LIBS@
+BZ2_LIB     = @BZ2_LIB@
+LZO_INCLUDE = @LZO_INCLUDE@
+LZO_LIBS    = @LZO_LIBS@
+ZSTD_INCLUDE= @ZSTD_INCLUDE@
+ZSTD_LIBS   = @ZSTD_LIBS@
+
+CMPRS_INCLUDE = $(Z_INCLUDE) $(BZ2_INCLUDE) $(LZO_INCLUDE)
+CMPRS_LIBS    = $(Z_LIBS) $(BZ2_LIBS) $(LZO_LIBS)
+CMPRS_LIB     = $(Z_LIB) $(BZ2_LIB)
+
+# Perl-Compatible Regular Expressions
+# For historical reasons, the bundled (LIB) version contains the POSIX
+# wrapper and goes by the name "regexp".
+PCRE_INCLUDE   = @PCRE_INCLUDE@
+PCRE_LIBS      = @PCRE_LIBS@
+PCREPOSIX_LIBS = @PCREPOSIX_LIBS@
+PCRE_LIB       = @PCRE_LIB@
+
+# mbedTLS, OpenSSL, GNUTLS, and potential supporting packages: headers and libs.
+# TLS_* covers *both* GNUTLS and mbedTLS.
+MBEDTLS_INCLUDE = @MBEDTLS_INCLUDE@
+MBEDTLS_LIBS    = @MBEDTLS_LIBS@
+GMP_INCLUDE     = @GMP_INCLUDE@
+GMP_LIBS        = @GMP_LIBS@
+GCRYPT_INCLUDE  = @GCRYPT_INCLUDE@
+GCRYPT_LIBS     = @GCRYPT_LIBS@
+NETTLE_INCLUDE  = @NETTLE_INCLUDE@
+NETTLE_LIBS     = @NETTLE_LIBS@
+GNUTLS_INCLUDE  = @GNUTLS_INCLUDE@
+GNUTLS_LIBS     = @GNUTLS_LIBS@
+OPENSSL_INCLUDE = @OPENSSL_INCLUDE@
+OPENSSL_LIBS    = @OPENSSL_LIBS@
+OPENSSL_STATIC_LIBS = @OPENSSL_STATIC_LIBS@
+TLS_INCLUDE     = $(GNUTLS_INCLUDE) $(MBEDTLS_INCLUDE)
+TLS_LIBS        = $(GNUTLS_LIBS) $(MBEDTLS_LIBS)
+
+# Kerberos 5 (via GSSAPI)
+KRB5_INCLUDE = @KRB5_INCLUDE@
+KRB5_LIBS    = @KRB5_LIBS@
+
+# Sybase:  headers and libs
+SYBASE_INCLUDE = @SYBASE_INCLUDE@
+SYBASE_LIBS    = @SYBASE_LIBS@
+SYBASE_DLLS    = @SYBASE_DLLS@
+SYBASE_DBLIBS  = @SYBASE_DBLIBS@
+
+# FreeTDS -- specific bundled versions, default
+FTDS100_CTLIB_LIBS    = @FTDS100_CTLIB_LIBS@
+FTDS100_CTLIB_LIB     = @FTDS100_CTLIB_LIB@
+FTDS100_CTLIB_INCLUDE = @FTDS100_CTLIB_INCLUDE@
+FTDS100_LIBS          = @FTDS100_LIBS@
+FTDS100_LIB           = @FTDS100_LIB@
+FTDS100_INCLUDE       = @FTDS100_INCLUDE@
+
+FTDS_LIBS    = @FTDS_LIBS@
+FTDS_LIB     = @FTDS_LIB@
+FTDS_INCLUDE = @FTDS_INCLUDE@
+
+# MySQL: headers and libs
+MYSQL_INCLUDE = @MYSQL_INCLUDE@
+MYSQL_LIBS    = @MYSQL_LIBS@
+
+# Berkeley DB: headers and libs
+BERKELEYDB_INCLUDE         = @BERKELEYDB_INCLUDE@
+BERKELEYDB_STATIC_LIBS     = @BERKELEYDB_STATIC_LIBS@
+BERKELEYDB_LIBS            = @BERKELEYDB_LIBS@
+BERKELEYDB_CXX_STATIC_LIBS = @BERKELEYDB_CXX_STATIC_LIBS@
+BERKELEYDB_CXX_LIBS        = @BERKELEYDB_CXX_LIBS@
+
+# ODBC: headers and libs
+ODBC_INCLUDE = @ODBC_INCLUDE@
+ODBC_LIBS    = @ODBC_LIBS@
+
+# PYTHON: headers and libs (default + specific versions)
+PYTHON_INCLUDE   = @PYTHON_INCLUDE@
+PYTHON_LIBS      = @PYTHON_LIBS@
+PYTHON25_INCLUDE = @PYTHON25_INCLUDE@
+PYTHON25_LIBS    = @PYTHON25_LIBS@
+PYTHON26_INCLUDE = @PYTHON26_INCLUDE@
+PYTHON26_LIBS    = @PYTHON26_LIBS@
+PYTHON27_INCLUDE = @PYTHON27_INCLUDE@
+PYTHON27_LIBS    = @PYTHON27_LIBS@
+PYTHON3_INCLUDE  = @PYTHON3_INCLUDE@
+PYTHON3_LIBS     = @PYTHON3_LIBS@
+
+# Perl: executable, headers and libs
+PERL         = @PERL@
+PERL_INCLUDE = @PERL_INCLUDE@
+PERL_LIBS    = @PERL_LIBS@
+
+# Java: headers and installation root
+JDK_INCLUDE = @JDK_INCLUDE@
+JDK_PATH    = @JDK_PATH@
+
+# Boost: headers and libs [use as $(BOOST_LIBPATH) $(BOOST_*_LIBS) $(RT_LIBS)]
+BOOST_INCLUDE              = @BOOST_INCLUDE@
+BOOST_LIBPATH              = @BOOST_LIBPATH@
+BOOST_TAG                  = @BOOST_TAG@
+BOOST_STATIC_TAG           = @BOOST_STATIC_TAG@
+BOOST_CHRONO_LIBS          = @BOOST_CHRONO_LIBS@
+BOOST_CHRONO_STATIC_LIBS   = @BOOST_CHRONO_STATIC_LIBS@
+BOOST_FILESYSTEM_LIBS      = @BOOST_FILESYSTEM_LIBS@
+BOOST_FILESYSTEM_STATIC_LIBS = @BOOST_FILESYSTEM_STATIC_LIBS@
+BOOST_IOSTREAMS_LIBS       = @BOOST_IOSTREAMS_LIBS@
+BOOST_IOSTREAMS_STATIC_LIBS = @BOOST_IOSTREAMS_STATIC_LIBS@
+BOOST_PROGRAM_OPTIONS_LIBS = @BOOST_PROGRAM_OPTIONS_LIBS@
+BOOST_PROGRAM_OPTIONS_STATIC_LIBS = @BOOST_PROGRAM_OPTIONS_STATIC_LIBS@
+BOOST_REGEX_LIBS           = @BOOST_REGEX_LIBS@
+BOOST_REGEX_STATIC_LIBS    = @BOOST_REGEX_STATIC_LIBS@
+BOOST_SERIALIZATION_LIBS   = @BOOST_SERIALIZATION_LIBS@
+BOOST_SERIALIZATION_STATIC_LIBS = @BOOST_SERIALIZATION_STATIC_LIBS@
+BOOST_SYSTEM_LIBS          = @BOOST_SYSTEM_LIBS@
+BOOST_SYSTEM_STATIC_LIBS   = @BOOST_SYSTEM_STATIC_LIBS@
+BOOST_TEST_PEM_LIBS        = @BOOST_TEST_PEM_LIBS@
+BOOST_TEST_PEM_STATIC_LIBS = @BOOST_TEST_PEM_STATIC_LIBS@
+BOOST_TEST_TEM_LIBS        = @BOOST_TEST_TEM_LIBS@
+BOOST_TEST_TEM_STATIC_LIBS = @BOOST_TEST_TEM_STATIC_LIBS@
+BOOST_TEST_UTF_LIBS        = @BOOST_TEST_UTF_LIBS@
+BOOST_TEST_UTF_STATIC_LIBS = @BOOST_TEST_UTF_STATIC_LIBS@
+BOOST_THREAD_LIBS          = @BOOST_THREAD_LIBS@
+BOOST_THREAD_STATIC_LIBS   = @BOOST_THREAD_STATIC_LIBS@
+BOOST_TEST_LIBS            = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS)
+BOOST_TEST_STATIC_LIBS     = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_STATIC_LIBS)
+# Temporary, for backward compatibility, to be removed later:
+BOOST_LIBS            = $(BOOST_TEST_LIBS)
+BOOST_STATIC_LIBS     = $(BOOST_TEST_STATIC_LIBS)
+
+# NCBI C Toolkit:  headers and libs
+NCBI_C_INCLUDE = @NCBI_C_INCLUDE@
+NCBI_C_LIBPATH = @NCBI_C_LIBPATH@
+NCBI_C_ncbi = @NCBI_C_ncbi@
+
+# OpenGL: headers and libs (including core X dependencies) for code
+# not using other toolkits.  (The wxWidgets variables already include
+# these as appropriate.)
+OPENGL_INCLUDE     = @OPENGL_INCLUDE@
+OPENGL_LIBS        = @OPENGL_LIBS@
+OPENGL_STATIC_LIBS = @OPENGL_STATIC_LIBS@
+OSMESA_INCLUDE     = @OSMESA_INCLUDE@
+OSMESA_LIBS        = @OSMESA_LIBS@
+OSMESA_STATIC_LIBS = @OSMESA_STATIC_LIBS@
+GLUT_INCLUDE       = @GLUT_INCLUDE@
+GLUT_LIBS          = @GLUT_LIBS@
+GLEW_INCLUDE       = @GLEW_INCLUDE@
+GLEW_LIBS          = @GLEW_LIBS@
+GLEW_STATIC_LIBS   = @GLEW_STATIC_LIBS@
+GL2PS_INCLUDE      = @GL2PS_INCLUDE@
+GL2PS_LIBS         = @GL2PS_LIBS@
+GL2PS_STATIC_LIBS  = @GL2PS_STATIC_LIBS@
+# Macro indicating optional use of GL2PS, for the sake of project_tree_builder.
+GL2PS_OPT          = OpenGL
+
+# wxWidgets (2.6 or newer):  headers and libs
+WXWIDGETS_INCLUDE        = @WXWIDGETS_INCLUDE@
+WXWIDGETS_LIBS           = @WXWIDGETS_LIBS@
+WXWIDGETS_STATIC_LIBS    = @WXWIDGETS_STATIC_LIBS@
+WXWIDGETS_GL_LIBS        = @WXWIDGETS_GL_LIBS@
+WXWIDGETS_GL_STATIC_LIBS = @WXWIDGETS_GL_STATIC_LIBS@
+# Assign WXWIDGETS_POST_LINK to POST_LINK when building WX apps.
+WXWIDGETS_POST_LINK      = @WXWIDGETS_POST_LINK@
+
+# Fast-CGI lib:  headers and libs
+FASTCGI_INCLUDE = @FASTCGI_INCLUDE@
+FASTCGI_LIBS    = @FASTCGI_LIBS@
+# Fast-CGI lib:  (module to add to the "xcgi" library)
+FASTCGI_OBJS    = @FASTCGI_OBJS@
+
+# NCBI SSS:  headers, library path, libraries
+NCBI_SSS_INCLUDE = @NCBI_SSS_INCLUDE@
+NCBI_SSS_LIBPATH = @NCBI_SSS_LIBPATH@
+LIBSSSUTILS      = @LIBSSSUTILS@
+LIBSSSDB         = @LIBSSSDB@
+sssutils         = @sssutils@
+NCBILS2_LIB      = ncbils2_cli ncbils2_asn ncbils2_cmn
+NCBILS_LIB       = $(NCBILS2_LIB)
+
+# NCBI SRA/VDB Toolkit
+VDB_INCLUDE     = @VDB_INCLUDE@
+VDB_LIBS        = @VDB_LIBS@
+VDB_STATIC_LIBS = @VDB_STATIC_LIBS@
+VDB_REQ         = @VDB_REQ@
+VDB_POST_LINK   = @VDB_POST_LINK@
+bamread               = @bamread@
+sraread               = @sraread@
+ncbi_id2proc_snp      = @ncbi_id2proc_snp@
+ncbi_id2proc_wgs      = @ncbi_id2proc_wgs@
+ncbi_xloader_bam      = @ncbi_xloader_bam@
+ncbi_xloader_csra     = @ncbi_xloader_csra@
+ncbi_xloader_snp      = @ncbi_xloader_snp@
+ncbi_xloader_sra      = @ncbi_xloader_sra@
+ncbi_xloader_vdbgraph = @ncbi_xloader_vdbgraph@
+ncbi_xloader_wgs      = @ncbi_xloader_wgs@
+
+# NCBI NGS SDK
+NGS_INCLUDE     = @NGS_INCLUDE@
+NGS_LIBS        = @NGS_LIBS@
+NGS_STATIC_LIBS = @NGS_STATIC_LIBS@
+
+# SP:  headers, libraries
+SP_INCLUDE = @SP_INCLUDE@
+SP_LIBS    = @SP_LIBS@
+
+# ORBacus CORBA headers, library path, libraries
+ORBACUS_INCLUDE = @ORBACUS_INCLUDE@
+ORBACUS_LIBPATH = @ORBACUS_LIBPATH@
+LIBOB           = @LIBOB@
+# LIBIMR should be empty for single-threaded builds
+LIBIMR          = @LIBIMR@
+
+# IBM's International Components for Unicode
+ICU_CONFIG      = @ICU_CONFIG@
+ICU_INCLUDE     = @ICU_INCLUDE@
+ICU_LIBS        = @ICU_LIBS@
+ICU_STATIC_LIBS = @ICU_STATIC_LIBS@
+
+# XML/XSL support:
+EXPAT_INCLUDE      = @EXPAT_INCLUDE@
+EXPAT_LIBS         = @EXPAT_LIBS@
+EXPAT_STATIC_LIBS  = @EXPAT_STATIC_LIBS@
+SABLOT_INCLUDE     = @SABLOT_INCLUDE@
+SABLOT_LIBS        = @SABLOT_LIBS@
+SABLOT_STATIC_LIBS = @SABLOT_STATIC_LIBS@
+LIBXML_INCLUDE     = @LIBXML_INCLUDE@
+LIBXML_LIBS        = @LIBXML_LIBS@
+LIBXML_STATIC_LIBS = @LIBXML_STATIC_LIBS@
+LIBXSLT_INCLUDE    = @LIBXSLT_INCLUDE@
+LIBXSLT_MAIN_LIBS  = @LIBXSLT_LIBS@
+LIBXSLT_MAIN_STATIC_LIBS = @LIBXSLT_STATIC_LIBS@
+XSLTPROC           = @XSLTPROC@
+LIBEXSLT_INCLUDE   = @LIBEXSLT_INCLUDE@
+LIBEXSLT_LIBS      = @LIBEXSLT_LIBS@
+LIBEXSLT_STATIC_LIBS=@LIBEXSLT_STATIC_LIBS@
+LIBXSLT_LIBS       = $(LIBEXSLT_LIBS) $(LIBXSLT_MAIN_LIBS)
+LIBXSLT_STATIC_LIBS= $(LIBEXSLT_STATIC_LIBS) $(LIBXSLT_MAIN_STATIC_LIBS)
+XERCES_INCLUDE     = @XERCES_INCLUDE@
+XERCES_LIBS        = @XERCES_LIBS@
+XERCES_STATIC_LIBS = @XERCES_STATIC_LIBS@
+XALAN_INCLUDE      = @XALAN_INCLUDE@
+XALAN_LIBS         = @XALAN_LIBS@
+XALAN_STATIC_LIBS  = @XALAN_STATIC_LIBS@
+ZORBA_INCLUDE      = @ZORBA_INCLUDE@
+ZORBA_LIBS         = @ZORBA_LIBS@
+ZORBA_STATIC_LIBS  = @ZORBA_STATIC_LIBS@
+
+# OpenEye OEChem library:
+OECHEM_INCLUDE = @OECHEM_INCLUDE@
+OECHEM_LIBS    = @OECHEM_LIBS@
+
+# Sun Grid Engine (libdrmaa):
+SGE_INCLUDE = @SGE_INCLUDE@
+SGE_LIBS    = @SGE_LIBS@
+
+# muParser
+MUPARSER_INCLUDE = @MUPARSER_INCLUDE@
+MUPARSER_LIBS    = @MUPARSER_LIBS@
+
+# HDF5
+HDF5_INCLUDE = @HDF5_INCLUDE@
+HDF5_LIBS    = @HDF5_LIBS@
+
+# SQLite 3.x
+SQLITE3_INCLUDE     = @SQLITE3_INCLUDE@
+SQLITE3_LIBS        = @SQLITE3_LIBS@
+SQLITE3_STATIC_LIBS = @SQLITE3_STATIC_LIBS@
+
+# Various image-format libraries
+JPEG_INCLUDE  = @JPEG_INCLUDE@
+JPEG_LIBS     = @JPEG_LIBS@
+PNG_INCLUDE   = @PNG_INCLUDE@
+PNG_LIBS      = @PNG_LIBS@
+TIFF_INCLUDE  = @TIFF_INCLUDE@
+TIFF_LIBS     = @TIFF_LIBS@
+GIF_INCLUDE   = @GIF_INCLUDE@
+GIF_LIBS      = @GIF_LIBS@
+UNGIF_INCLUDE = @UNGIF_INCLUDE@
+UNGIF_LIBS    = @UNGIF_LIBS@
+XPM_INCLUDE   = @XPM_INCLUDE@
+XPM_LIBS      = @XPM_LIBS@
+
+IMAGE_LIBS    = $(TIFF_LIBS) $(JPEG_LIBS) $(PNG_LIBS) $(GIF_LIBS) $(XPM_LIBS)
+
+# FreeType, FTGL
+FREETYPE_INCLUDE = @FREETYPE_INCLUDE@
+FREETYPE_LIBS    = @FREETYPE_LIBS@
+FTGL_INCLUDE     = @FTGL_INCLUDE@
+FTGL_LIBS        = @FTGL_LIBS@
+
+# libmagic (file-format identification)
+MAGIC_INCLUDE = @MAGIC_INCLUDE@
+MAGIC_LIBS    = @MAGIC_LIBS@
+
+# libcurl (URL retrieval)
+CURL_INCLUDE = @CURL_INCLUDE@
+CURL_LIBS    = @CURL_LIBS@
+
+# libmimetic (MIME handling)
+MIMETIC_INCLUDE = @MIMETIC_INCLUDE@
+MIMETIC_LIBS    = @MIMETIC_LIBS@
+
+# libgSOAP++
+GSOAP_PATH     = @GSOAP_PATH@
+GSOAP_INCLUDE  = @GSOAP_INCLUDE@
+GSOAP_LIBS     = @GSOAP_LIBS@
+GSOAP_SOAPCPP2 = @GSOAP_SOAPCPP2@
+GSOAP_WSDL2H   = @GSOAP_WSDL2H@
+
+# Apache Avro
+AVRO_INCLUDE     = @AVRO_INCLUDE@
+AVRO_LIBS        = @AVRO_LIBS@
+AVRO_STATIC_LIBS = @AVRO_STATIC_LIBS@
+AVROGENCPP       = @AVROGENCPP@
+
+# USC Cereal (header-only)
+CEREAL_INCLUDE = @CEREAL_INCLUDE@
+
+# SASL 2
+SASL2_INCLUDE = @SASL2_INCLUDE@
+SASL2_LIBS    = @SASL2_LIBS@
+
+# MongoDB (deprecated legacy interface)
+MONGODB_INCLUDE     = @MONGODB_INCLUDE@
+MONGODB_LIBS        = @MONGODB_LIBS@
+MONGODB_STATIC_LIBS = @MONGODB_STATIC_LIBS@
+
+# MongoDB 3.x
+MONGODB3_INCLUDE     = @MONGODB3_INCLUDE@
+MONGODB3_LIBS        = @MONGODB3_LIBS@
+MONGODB3_STATIC_LIBS = @MONGODB3_STATIC_LIBS@
+
+# LevelDB
+LEVELDB_INCLUDE = @LEVELDB_INCLUDE@
+LEVELDB_LIBS    = @LEVELDB_LIBS@
+
+# Google Mock
+GMOCK_INCLUDE     = @GMOCK_INCLUDE@
+GMOCK_LIBS        = @GMOCK_LIBS@
+GMOCK_STATIC_LIBS = @GMOCK_STATIC_LIBS@
+
+# LAPACK
+LAPACK_INCLUDE = @LAPACK_INCLUDE@
+LAPACK_LIBS    = @LAPACK_LIBS@
+
+# LMDB; a LIBS version goes in LIBS, and the LIB version goes in LIB.
+LMDB_INCLUDE = @LMDB_INCLUDE@
+LMDB_LIBS    = @LMDB_LIBS@
+LMDB_STATIC_LIBS = @LMDB_STATIC_LIBS@
+LMDB_LIB     = @LMDB_LIB@
+
+# libuv
+LIBUV_INCLUDE     = @LIBUV_INCLUDE@
+LIBUV_LIBS        = @LIBUV_LIBS@
+LIBUV_STATIC_LIBS = @LIBUV_STATIC_LIBS@
+
+# libssh2
+LIBSSH2_INCLUDE     = @LIBSSH2_INCLUDE@
+LIBSSH2_LIBS        = @LIBSSH2_LIBS@
+LIBSSH2_STATIC_LIBS = @LIBSSH2_STATIC_LIBS@
+
+# Datastax Cassandra driver
+CASSANDRA_INCLUDE     = @CASSANDRA_INCLUDE@
+CASSANDRA_LIBS        = @CASSANDRA_LIBS@
+CASSANDRA_STATIC_LIBS = @CASSANDRA_STATIC_LIBS@
+
+# HTTP/2 libraries
+NGHTTP2_INCLUDE     = @NGHTTP2_INCLUDE@
+NGHTTP2_LIBS        = @NGHTTP2_LIBS@
+NGHTTP2_STATIC_LIBS = @NGHTTP2_STATIC_LIBS@
+H2O_INCLUDE         = @H2O_INCLUDE@
+H2O_LIBS            = @H2O_LIBS@
+H2O_STATIC_LIBS     = @H2O_STATIC_LIBS@
+
+# InfluxDB support library
+INFLUXDB_INCLUDE = @INFLUXDB_INCLUDE@
+
+# libxlsxwriter
+LIBXLSXWRITER_INCLUDE     = @LIBXLSXWRITER_INCLUDE@
+LIBXLSXWRITER_LIBS        = @LIBXLSXWRITER_LIBS@
+LIBXLSXWRITER_STATIC_LIBS = @LIBXLSXWRITER_STATIC_LIBS@
+
+# gRPC and raw Protobuf
+PROTOBUF_INCLUDE     = @PROTOBUF_INCLUDE@
+PROTOBUF_LIBS        = @PROTOBUF_LIBS@
+PROTOBUF_BIN         = @PROTOBUF_BIN@
+GRPC_INCLUDE         = @GRPC_INCLUDE@
+GRPC_LIBS            = @GRPC_LIBS@
+GRPC_UNSECURE_LIBS   = @GRPC_UNSECURE_LIBS@
+GRPC_REFLECTION_LIBS = @GRPC_REFLECTION_LIBS@
+GRPC_BIN             = @GRPC_BIN@
+# Macro indicating optional use of PROTOBUF and GRPC
+PROTOBUF_OPT = objects
+GRPC_OPT     = objects
+
+# Microsoft Guidelines Support Library
+MSGSL_INCLUDE = @MSGSL_INCLUDE@
+
+# Amazon Web Services (just S3 for now)
+AWS_SDK_INCLUDE     = @AWS_SDK_INCLUDE@
+AWS_SDK_LIBS        = @AWS_SDK_LIBS@
+AWS_SDK_STATIC_LIBS = @AWS_SDK_STATIC_LIBS@
+
+# Hiredis
+HIREDIS_INCLUDE     = @HIREDIS_INCLUDE@
+HIREDIS_LIBS        = @HIREDIS_LIBS@
+HIREDIS_STATIC_LIBS = @HIREDIS_STATIC_LIBS@
+
+# Apache Arrow (specifically focusing on Parquet)
+APACHE_ARROW_INCLUDE     = @APACHE_ARROW_INCLUDE@
+APACHE_ARROW_LIBS        = @APACHE_ARROW_LIBS@
+APACHE_ARROW_STATIC_LIBS = @APACHE_ARROW_STATIC_LIBS@
+
+# Kafka
+LIBRDKAFKA_INCLUDE   = @LIBRDKAFKA_INCLUDE@
+LIBRDKAFKA_LIBS      = @LIBRDKAFKA_LIBS@
+LIBRDKAFKA_STATIC_LIBS = @LIBRDKAFKA_STATIC_LIBS@
+CPPKAFKA_INCLUDE     = @CPPKAFKA_INCLUDE@
+CPPKAFKA_LIBS        = @CPPKAFKA_LIBS@
+CPPKAFKA_STATIC_LIBS = @CPPKAFKA_STATIC_LIBS@
+
+# Apache Thrift (requires OPENSSL[_STATIC]_LIBS)
+THRIFT_INCLUDE     = @THRIFT_INCLUDE@
+THRIFT_LIBS        = @THRIFT_LIBS@
+THRIFT_STATIC_LIBS = @THRIFT_STATIC_LIBS@
+
+# Modern JSON for C++ (Niels Lohmann)
+NLOHMANN_JSON_INCLUDE = @NLOHMANN_JSON_INCLUDE@
+
+# yaml-cpp
+YAML_CPP_INCLUDE     = @YAML_CPP_INCLUDE@
+YAML_CPP_LIBS        = @YAML_CPP_LIBS@
+YAML_CPP_STATIC_LIBS = @YAML_CPP_STATIC_LIBS@
+
+# Jaeger tracing (requires OPENSSL*_LIBS) and underlying OpenTracing API
+OPENTRACING_INCLUDE     = @OPENTRACING_INCLUDE@
+OPENTRACING_LIBS        = @OPENTRACING_LIBS@
+OPENTRACING_STATIC_LIBS = @OPENTRACING_STATIC_LIBS@
+JAEGER_INCLUDE          = @JAEGER_INCLUDE@
+JAEGER_LIBS             = @JAEGER_LIBS@
+JAEGER_STATIC_LIBS      = @JAEGER_STATIC_LIBS@
+
+# Compress
+COMPRESS_LDEP = $(CMPRS_LIB)
+COMPRESS_LIBS = xcompress $(COMPRESS_LDEP)
+
+#################################
+# Useful sets of object libraries
+GENBANK_LDEP = \
+    ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_cache \
+    $(GENBANK_PSG_CLIENT_LDEP) $(GENBANK_READER_PUBSEQOS_LIBS)
+GENBANK_LIBS = ncbi_xloader_genbank $(GENBANK_LDEP)
+
+GENBANK_READER_LDEP = $(XCONNEXT) xconnect id1 id2 $(SOBJMGR_LIBS) $(COMPRESS_LIBS)
+GENBANK_READER_LIBS = ncbi_xreader $(GENBANK_READER_LDEP)
+
+# In-house-only PubSeqOS loader (not always built)
+ncbi_xreader_pubseqos = @ncbi_xreader_pubseqos@
+ncbi_xreader_pubseqos2 = @ncbi_xreader_pubseqos2@
+GENBANK_READER_PUBSEQOS_LDEP = $(DBAPI_DRIVER) $(GENBANK_READER_LIBS)
+# @UNLESS_PUBSEQOS@ GENBANK_READER_PUBSEQOS_LDEP = xconnect $(GENBANK_READER_LIBS)
+GENBANK_READER_PUBSEQOS_LIBS = $(ncbi_xreader_pubseqos) $(ncbi_xreader_pubseqos2) $(GENBANK_READER_PUBSEQOS_LDEP)
+
+GENBANK_READER_ID1_LDEP = xconnect id1 $(GENBANK_READER_LIBS)
+GENBANK_READER_ID1_LIBS = ncbi_xreader_id1 $(GENBANK_READER_ID1_LDEP)
+
+GENBANK_READER_ID2_LDEP = xconnect id2 seqsplit $(GENBANK_READER_LIBS)
+GENBANK_READER_ID2_LIBS = ncbi_xreader_id2 $(GENBANK_READER_ID2_LDEP)
+
+GENBANK_READER_CACHE_LDEP = $(GENBANK_READER_LIBS)
+GENBANK_READER_CACHE_LIBS = ncbi_xreader_cache $(GENBANK_READER_CACHE_LDEP)
+
+GENBANK_READER_GICACHE_LDEP = $(GENBANK_READER_LIBS)
+GENBANK_READER_GICACHE_LIBS = ncbi_xreader_gicache \
+        $(GENBANK_READER_GICACHE_LDEP)
+
+# Interdependent sequence libraries + seqcode.  Does not include seqset.
+SEQ_LIBS = seq seqcode sequtil
+SOBJMGR_LDEP = genome_collection seqedit seqsplit submit seqset $(SEQ_LIBS) \
+    pub medline biblio general xser xutil xncbi
+SOBJMGR_LIBS = xobjmgr $(SOBJMGR_LDEP)
+OBJMGR_LIBS = $(GENBANK_LIBS)
+
+# Overlapping with qall is poor, so we have a second macro to make it
+# easier to stay out of trouble.
+QOBJMGR_ONLY_LIBS = xobjmgr id2 seqsplit id1 genome_collection submit seqset \
+    $(SEQ_LIBS) pub medline biblio general xcompress $(CMPRS_LIB)
+QOBJMGR_LIBS = $(QOBJMGR_ONLY_LIBS) qall
+QOBJMGR_STATIC_LIBS = $(QOBJMGR_ONLY_LIBS:%=%$(STATIC)) qall
+
+# EUtils
+EUTILS_LIBS = eutils egquery elink epost esearch espell esummary \
+              einfo uilist ehistory
+
+# Object readers
+OBJREAD_LIBS = xobjread variation submit xlogging
+
+# formatting code
+XFORMAT_LIBS = xformat xcleanup gbseq $(OBJEDIT_LIBS)
+
+# object editing library
+OBJEDIT_LIBS = xobjedit $(EUTILS_LIBS) $(OBJREAD_LIBS) taxon3 mlacli mla medlars pubmed valid 
+
+# standard data loader configuration, plus supporting libraries
+DATA_LOADERS_UTIL_LIB = data_loaders_util \
+                        ncbi_xloader_asn_cache asn_cache bdb \
+                        ncbi_xloader_lds2 lds2 $(OBJREAD_LIBS) sqlitewrapp \
+                        ncbi_xloader_blastdb seqdb blastdb $(LMDB_LIB) \
+                        $(ncbi_xreader_pubseqos2) ncbi_xdbapi_ftds $(FTDS_LIB) \
+                        $(ncbi_xloader_wgs) $(ncbi_xloader_csra) \
+                        $(SRAREAD_LIBS)
+
+DATA_LOADERS_UTIL_LIBS = $(SQLITE3_LIBS) $(GENBANK_THIRD_PARTY_LIBS) \
+                         $(BERKELEYDB_LIBS) $(FTDS_LIBS) \
+                         $(VDB_LIBS) $(BLAST_THIRD_PARTY_LIBS)

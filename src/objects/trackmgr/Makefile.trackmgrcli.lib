@@ -1,0 +1,11 @@
+WATCHERS = meric
+
+ASN_DEP = trackmgr
+
+LIB = trackmgrcli
+SRC = trackmgr_client trackmgr_client_
+LIB_OR_DLL = lib
+
+
+USES_LIBRARIES =  \
+    trackmgr xconnect

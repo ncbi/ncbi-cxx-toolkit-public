@@ -1,0 +1,12 @@
+# $Id$
+
+LIB = eutils_client
+SRC = eutils_client
+
+ASN_DEP = seq
+
+DLL_LIB = xmlwrapp $(SOBJMGR_LIBS)
+
+WATCHERS = grichenk
+
+USES_LIBRARIES = xconnect xmlwrapp

@@ -1,0 +1,12 @@
+# $Id$
+
+SRC      = state object netstorage filetrack
+
+LIB      = netstorage
+LIBS     = $(NETWORK_LIBS)
+
+LIB_OR_DLL = lib
+
+WATCHERS = sadyrovr
+
+USES_LIBRARIES = ncbi_xcache_netcache

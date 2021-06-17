@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile ("XHTML" tests)
+#################################
+
+APP_PROJ = test_html
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

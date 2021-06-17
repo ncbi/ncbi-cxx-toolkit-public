@@ -1,0 +1,15 @@
+ 1.asn | Correct reference allele SNP
+ 2.asn | SNP with swapped alleles
+ 3.asn | SNP without reference to begin with in allele set
+ 4.asn | Fully shifted insertion (no reference to fix, as this is an insertion)
+ 5.asn | Fully shifted deletion with correct allele deleted
+ 6.asn | Fully shifted deletion, but with incorrect allele
+ 7.asn | Deletion, not shifted, with incorrect allele
+ 8.asn | MNP, with correct deletion
+ 9.asn | MNP with incorrect deletion
+ 10.asn | Intronic SNV where sequence is not in first delta-item VAR-1561
+ 11.asn | Identity Variation-inst in a set returns appropriate type
+ 12.asn | Large deletions should not have their reference allele fixed. VAR-1562
+ 13.asn | STR like NG_007070.1:g.10256_10258GAC[7] VAR-1563
+ 14.asn | Inversion like NG_007111.1:g.28602_28625inv24 VAR-1563
+ 15.asn | STR with uncertain range, like NG_007085.2:g.8385_8387(15_45) VAR-1563

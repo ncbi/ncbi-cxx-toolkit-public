@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(vsrun_sample)
+  NCBI_sources(vsrun_sample)
+  NCBI_uses_toolkit_libraries(blastinput xblastformat)
+  NCBI_project_watchers(camacho madden)
+NCBI_end_app()

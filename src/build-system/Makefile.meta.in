@@ -1,0 +1,62 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+# Meta-makefile(to be configured into "Makefile")
+# This can be used to build/install/clean [*_PROJ] makefiles
+# in current directory and in the below [SUB_PROJ] directories.
+#
+# LIB_PROJ = pl1 pl2 ...  // Makefile.pl1.lib Makefile.pl2.lib ...
+# APP_PROJ = pa1 pa2 ...  // Makefile.pa1.app Makefile.pa2.app ...
+# USR_PROJ = pu1 pu2 ...  // Makefile.pu1 Makefile.pu2 ...
+# SUB_PROJ = app sub_proj1 sub_proj2
+#
+# srcdir = @srcdir@
+# include @builddir@/Makefile.meta
+#################################
+
+builddir = @builddir@
+build_root = @build_root@
+top_srcdir = @top_srcdir@
+abs_top_srcdir = @abs_top_srcdir@
+rel_srcdir = $(srcdir:$(top_srcdir)/%=%)
+abs_srcdir = $(srcdir:$(top_srcdir)/%=$(abs_top_srcdir)/%)
+subdir     = $(rel_srcdir:src/%=%)
+status_dir = @status_dir@
+
+### Make sure we are using a right command shell
+
+@make_shell@
+RM    = /bin/rm
+TOUCH = @TOUCH@
+MKDIR = /bin/mkdir
+
+signature      = @signature@
+XUNIX_USR_PROJ = @UNIX_USR_PROJ@
+APP_NOCOPY     = @APP_NOCOPY@
+
+CPP       = @CPP@
+LN_S      = @LN_S@
+PROJECTS_ = @PROJECTS@
+DEPFLAGS  = @DEPFLAGS@
+DEPFLAGS_POST = @DEPFLAGS_POST@
+obj_ext   = @obj_ext@
+GREP      = @GREP@
+EGREP     = @EGREP@
+EGREP_Q   = @EGREP_Q@
+SED       = @SED@
+OSTYPE    = @OSTYPE@
+UUIDGEN   = @UUIDGEN@
+CD_REPORTER = @CD_REPORTER@
+PYTHON3   = @PYTHON3@
+
+deactivate = unlink
+@IF_DEACTIVATING@ deactivate = deactivate
+
+default_rule: all
+
+include $(top_srcdir)/src/build-system/Makefile.is_gmake
+include $(top_srcdir)/src/build-system/Makefile.meta.$(is_gmake)
+
+configurables = @configurables_mfname@
+include $(top_srcdir)/src/build-system/Makefile.$(configurables)

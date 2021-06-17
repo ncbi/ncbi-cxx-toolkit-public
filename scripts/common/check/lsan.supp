@@ -1,0 +1,5 @@
+# Linux libstdc++-v3 issue
+leak:^d_growable_string_callback_adapter$
+
+# ???
+leak:/libpython

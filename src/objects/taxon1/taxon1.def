@@ -1,0 +1,22 @@
+[-]
+_export = NCBI_TAXON1_EXPORT
+
+[Taxon1-req]
+id4gi._type = ncbi::TGi
+id4gi._storage_type = ncbi::TIntId
+
+[Taxon1-resp]
+maxtaxid._type = ncbi::TTaxId
+maxtaxid._storage_type = int
+getunique._type = ncbi::TTaxId
+getunique._storage_type = int
+id4gi._type = ncbi::TTaxId
+id4gi._storage_type = int
+
+[Taxon1-info]
+ival1._type = ncbi::TIntId
+ival2._type = ncbi::TIntId
+
+[Taxon1-name]
+taxid._type = ncbi::TTaxId
+taxid._storage_type = int

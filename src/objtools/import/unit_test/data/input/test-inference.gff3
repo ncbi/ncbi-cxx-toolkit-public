@@ -1,0 +1,2 @@
+D806	Prodigal:2.6	CDS	499	1692	.	+	.	ID=D806_00010;Parent=D806_00010_gene;inference=ab initio prediction:Prodigal:2.6,similar to AA sequence:INSD:ABK70300.1;locus_tag=D806_00010;note=reciprocal best blast hit to MSMEG_0001;product=DNA polymerase III%2C beta subunit
+D806	prokka	gene	499	1692	.	+	.	ID=D806_00010_gene;locus_tag=D806_00010

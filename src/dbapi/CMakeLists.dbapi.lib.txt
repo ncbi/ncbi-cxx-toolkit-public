@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_lib(dbapi)
+  NCBI_sources(
+    variant active_obj dbapi driver_mgr err_handler ds_impl conn_impl
+    stmt_impl rs_impl rsmeta_impl cstmt_impl bytestreambuf blobstream
+    cursor_impl bulkinsert rw_impl
+  )
+  NCBI_uses_toolkit_libraries(dbapi_driver)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_lib()
+

@@ -1,0 +1,5 @@
+Line No    : 24
+Severity   : Fatal
+Problem    : Alignment.IllegalDataLine
+Message    : Nested blocks detected. New block "ncbi" while still in "DATA" block. "DATA" block begins on line 2
+

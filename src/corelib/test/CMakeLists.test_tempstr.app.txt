@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(test_tempstr)
+  NCBI_sources(test_tempstr)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_add_test()
+  NCBI_project_watchers(vasilche ivanov)
+NCBI_end_app()
+

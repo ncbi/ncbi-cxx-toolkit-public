@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(blast_report)
+  NCBI_sources(blast_report)
+  NCBI_uses_toolkit_libraries(blast_app_util)
+  NCBI_add_definitions(NCBI_MODULE=BLASTFORMAT)
+NCBI_end_app()

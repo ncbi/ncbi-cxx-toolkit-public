@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<!DOCTYPE eLinkResult PUBLIC "-//NCBI//elink/EN" "elink.dtd">
+<eLinkResult>
+  <LinkSet>
+    <DbFrom>taxonomy</DbFrom>
+    <IdUrlList>
+      <IdUrlSet>
+        <Id>9606</Id>
+        <ObjUrl>
+          <Url>http://www.ncbi.nlm.nih.gov/genome/guide/H_sapiens.html</Url>
+          <SubjectType>organism-specific</SubjectType>
+          <ProviderName>NCBI Genome Guide</ProviderName>
+          <ProviderNameAbbr>ncbigg</ProviderNameAbbr>
+          <ProviderId>3218</ProviderId>
+        </ObjUrl>
+        <ObjUrl>
+          <Url>http://genome.ucsc.edu/cgi-bin/hgGateway?db=hg11</Url>
+          <SubjectType>sequence screening/similarity/alignment</SubjectType>
+          <ProviderName>UCSC Genome Browser</ProviderName>
+          <ProviderNameAbbr>UCSCgb</ProviderNameAbbr>
+          <ProviderId>3715</ProviderId>
+        </ObjUrl>
+      </IdUrlSet>
+    </IdUrlList>
+  </LinkSet>
+</eLinkResult>

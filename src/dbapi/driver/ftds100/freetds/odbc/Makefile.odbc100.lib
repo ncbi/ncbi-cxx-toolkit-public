@@ -1,0 +1,13 @@
+# $Id$
+
+LIB = odbc_ftds100
+SRC = odbc connectparams convert_tds2sql descriptor prepare_query odbc_util \
+      bcp native sql2tds error odbc_checks sqlwchar odbc_data
+
+CPPFLAGS = -D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H -DSQL_NOUNICODEMAP \
+           $(FTDS100_INCLUDE) $(ODBC_INCLUDE) $(ORIG_CPPFLAGS)
+DLL_LIB  = tds_ftds100
+LIBS     = $(FTDS100_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(C_LIBS)
+LINK     = $(C_LINK)
+
+WATCHERS = ucko satskyse

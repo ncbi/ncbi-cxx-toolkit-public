@@ -1,0 +1,43 @@
+INSTRUCTIONS FOR BUILDING WINDOWMASKER APPLICATION IN UNIX/LINUX ENVIRONMENT
+
+1. Getting the NCBI C++ Toolkit distribution.
+
+The distribution is available from ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/CURRENT/.
+The file name is ncbi_cxx--<date>.tar.gz.
+
+2. Unpacking.
+
+Enter the directory containing NCBI C++ Toolkit archive downloaded in the previous 
+step. Unpack the distribution using the following command:
+
+        gunzip -c ncbi_cxx--<date>.tar.gz | tar xvf -
+
+This will create a directory named ncbi_cxx--<date>/ and the Toolkit distribution
+will be unpacked into that directory.
+
+3. Configuration to build the complete toolkit.
+
+Enter the toolkit distribution directory:
+
+        cd ncbi_cxx--<date>
+
+Configure the toolkit with the following command:
+
+        ./configure --without-debug --with-optimization
+
+The configure script will create the build tree under <your_compiler_version>-Release/.
+
+4. Build of the complete toolkit.
+
+Enter the build directory:
+
+        cd <your_compiler_version>-Release/build
+
+Build the NCBI C++ Toolkit:
+
+        make all_r
+
+5. The windowmasker executable can be found in directory:
+
+<your_compiler_version>-Release/bin/
+

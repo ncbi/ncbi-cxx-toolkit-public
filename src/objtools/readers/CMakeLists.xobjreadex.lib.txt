@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_lib(xobjreadex)
+  NCBI_sources(
+    glimmer_reader idmapper idmapper_builtin idmapper_config
+    idmapper_database idmapper_gcassembly idmapper_scope
+    source_mod_parser_wrapper
+  )
+  NCBI_uses_toolkit_libraries(xobjread xobjutil seqset)
+  NCBI_project_watchers(dicuccio ludwigf gotvyans)
+NCBI_end_lib()
+

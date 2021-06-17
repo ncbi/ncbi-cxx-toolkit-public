@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(db100_t0021)
+  NCBI_sources(t0021 common)
+  NCBI_add_test()
+NCBI_end_app()
+

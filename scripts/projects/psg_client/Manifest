@@ -1,0 +1,32 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author:   Rafael Sadyrov
+#
+# Purpose: This file defines all the supported configurations of the psg_client package.
+#          It is used by the prepare_release system.
+#
+
+APP: psg_client
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+
+# --without-runpath here is because of SYS-244522
+# --without-bdb - ?
+# --with-mt - ?
+# --with-symbols - otherwise stripped?
+
+Linux64-Centos         : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb --without-runpath --without-dll --with-bin-release --with-local-lbsm --with-connext
+Linux64-Centos         : Debug : GCC.sh --with-debug --with-mt --without-bdb  --without-runpath
+Linux64-Ubuntu         : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb --without-runpath
+Linux64-Ubuntu         : Debug : GCC.sh --with-debug --with-mt --without-bdb  --without-runpath
+
+USE_COMPONENTS

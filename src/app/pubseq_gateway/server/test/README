@@ -1,0 +1,65 @@
+Performance testing
+-------------------
+These tests let to compare h2load collected values for two instances of the PSG server.
+Here is a typical scenario:
+
+- run PSG instance v1
+- modify performance.sh with the required host:port
+- rm -rf ./perf/
+- run ./performance.sh old
+  this will create ./perf/, run tests against PSG v1, collect h2load output and merge it
+- stop PSG v1
+- run PSG v2
+- run ./performance.sh new
+- run ./perf-diff.py ./perf
+  this will print on the stdout the difference for each test case between v1 and v2
+
+If the h2load aggregation data is required only for one version then run performance.sh
+once and then
+./perf-one.py ./perf  
+
+
+
+
+Unit tests
+----------
+
+The tests use the udc framework (see the udc NCBI facility).
+
+To run the tests:
+- make sure it is a Linux host
+- make sure udc is in PATH (e.g. 'which udc')
+- change the directory to this one
+- check the psg.bash source code that it connects to the proper server instance
+  (host:port are hardcoded there)
+- run ./run_tests.py
+
+It was forbidden to save the baseline files as is in SVN however it was allowed
+to save a tar archive. So the wrapper script basically unpacks the baseline
+files if needed and runs 'udc'.
+
+Note: after changing test cases prepare a new archive with the baseline (someone
+      insisted to have an archive in SVN)
+tar -czf baseline.tar.gz baseline/
+
+
+
+Manual tests for the resolution algorithm
+-----------------------------------------
+
+1. Make the csv snapshot of the SI2CSI table, e.g.
+  /panfs/pan1.be-md.ncbi.nlm.nih.gov/id_dumps/id_software/cassandra/test/bin/cqlsh idtest214 9042
+  cqlsh> COPY idmain.si2csi (sec_seq_id, sec_seq_id_type, accession, seq_id_type, version) TO './si2csi.cass.dump';
+
+2. Prepare the binary convert_to_fasta from the utils subdirectory
+
+3. Have
+   convert_to_fasta
+   convert_to_fasta.sh
+   si2csi_psg_test.py
+   si2csi.cass.dump
+
+   in the same directory and then run
+   python3 -u ./si2csi_psg_test.py > output 2>&1
+
+   NB: an exclusion file can also be supplied for the python script

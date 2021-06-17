@@ -1,0 +1,14 @@
+Contig602	AUGUSTUS	gene	1	684	0.46	-	.	g15
+Contig602	AUGUSTUS	transcript	1	684	0.46	-	.	g15.t1
+Contig602	AUGUSTUS	internal	1	442	0.79	-	1	transcript_id "g15.t1"; gene_id "g15";
+Contig602	AUGUSTUS	initial	659	684	0.46	-	0	transcript_id "g15.t1"; gene_id "g15";
+Contig602	AUGUSTUS	intron	443	658	0.75	-	.	transcript_id "g15.t1"; gene_id "g15";
+Contig602	AUGUSTUS	CDS	1	442	0.79	-	1	transcript_id "g15.t1"; gene_id "g15";
+Contig602	AUGUSTUS	CDS	659	684	0.46	-	0	transcript_id "g15.t1"; gene_id "g15";
+Contig602	AUGUSTUS	start_codon	682	684	.	-	0	transcript_id "g15.t1"; gene_id "g15";
+Contig602	AUGUSTUS	gene	1399	1762	0.59	+	.	g16
+Contig602	AUGUSTUS	transcript	1399	1762	0.59	+	.	g16.t1
+Contig602	AUGUSTUS	start_codon	1399	1401	.	+	0	transcript_id "g16.t1"; gene_id "g16";
+Contig602	AUGUSTUS	initial	1399	1719	0.59	+	0	transcript_id "g16.t1"; gene_id "g16";
+Contig602	AUGUSTUS	intron	1720	1762	0.6	+	.	transcript_id "g16.t1"; gene_id "g16";
+Contig602	AUGUSTUS	CDS	1399	1719	0.59	+	0	transcript_id "g16.t1"; gene_id "g16";

@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_lib(wx_tools)
+  NCBI_sources(wx_tools)
+  NCBI_requires(wxWidgets)
+  NCBI_uses_toolkit_libraries(xutil)
+  NCBI_project_watchers(kapustin dicuccio)
+NCBI_end_lib()
+

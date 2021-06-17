@@ -1,0 +1,5 @@
+#first case is normal, second does not have thick feature, third is invalid
+track name="test-9-col" description="track1"
+chr22 2000 3000 cloneB 900 - 2100 2800 0
+chr22 2200 2300 cloneC 900 - 2200 2200 0
+chr22 2400 2500 cloneD 900 - 2000 6000 0

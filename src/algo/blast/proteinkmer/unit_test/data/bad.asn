@@ -1,0 +1,22 @@
+Bioseq ::= {
+      id {
+        local id 4
+      },
+      descr {
+        user {
+          type str "CFastaReader",
+          data {
+            {
+              label str "DefLine",
+              data str ">empty"
+            }
+          }
+        },
+        title "empty"
+      },
+      inst {
+        repr virtual,
+        mol aa,
+        length 0
+      }
+}

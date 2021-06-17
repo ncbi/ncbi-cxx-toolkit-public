@@ -1,0 +1,8 @@
+corelib$
+corelib/test$
+connect$
+connect/ext
+connect/test
+connect/mbedtls
+util$
+util/bitset$

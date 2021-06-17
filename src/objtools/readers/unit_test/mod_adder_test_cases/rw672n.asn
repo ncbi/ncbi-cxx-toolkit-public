@@ -1,0 +1,49 @@
+Seq-entry ::= seq {
+  id {
+    local str "dummy"
+  },
+  descr {
+    molinfo {
+      biomol ncRNA,
+      tech both
+    }
+  },
+  inst {
+    repr not-set,
+    mol aa,
+    topology circular,
+    strand mixed,
+    hist {
+      replaces {
+        ids {
+          swissprot {
+            accession "dummy"
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data prot {
+            name {
+              "protein_name1",
+              "protein_name2"
+            },
+            desc "protein_descriptor",
+            ec {
+              "ec1",
+              "ec2"
+            },
+            activity {
+              "activity3, activity4"
+            }
+          },
+          location whole local str "dummy"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,59 @@
+3.21	2008/08/27
+	* Removed flag -y (replaced with -P, different meaning)
+	* Added flag -P phrapScore
+	* Added flag -C config-file
+	* Added flag -U version
+	* Added internal 1-channel quality encoding
+	* Added actual computation of the best score possible for the read
+	* Fixed output for paired reads - some hits did not have "target" columns set
+
+3.22    2008/09/03
+    * Added flag -R (mutual orientation)
+    * Added development version of di-nucleotide colorspace mapping
+
+3.23	2008/09/17
+	* Now -A1 -n1 allows one ambiguity per hash word on subject side - it gets considered as miamatch
+	* Option -W is added, now window may be longer then 15 bases (may be up to 24).
+
+3.28	2008/11/12
+	* A lot of chages:
+	 -w window/word    sets window size and word size (window may include two words)
+	 -H bits           now sets index part of hash, rest is hashed as sorted list
+	 -S stride         sets stride size
+	 -N count          sets maximal number of consecutive windows to hash
+	 -e 0|1            may allow indels to be hashed
+	 -k pos[,...]      allows to force certain positions of all reads to be skipped
+	 -x cnt            allows to reuse guide file hits having mismatches
+	 -R type           allows only four mutual orientations now
+	 -D min[-max]      now sets paired read range (instead of -z -Z)
+	 -m value          sets fuzz for -D values
+	 -a count          sets maximal number of ambiguities in window on read side now
+	 -A count          sets maximal number of ambiguities in window on subject side now
+	 -y seqid [-y ...] add seqid to the list of allowed subject ids to scan
+	 --pass0, --pass1  allow to select pass for which -w, -H, -S, -N, -e, -n will be applied
+	 -f                removed
+	 -z				   removed
+	 -Z                removed
+
+3.32	2008/11/24
+	* Added multiple windows option -N (affected by --pass?)
+	* Added --NaHSO3=+|- to process sodium bisulfite treated data
+	* Fixed some errors
+
+3.91	2009/02/20
+	* New way to align using adopted Smith-Waterman, and a lot of changes connected to it.
+	* No colorspace, bisulfite curation of quality scores are allowed yet
+	* Going towards 4.0
+
+3.99    2009/06/15
+    * SAM 1.2 hsould be used as guide file format
+
+3.101	2009/11/03
+	* SAM 1.2 is default format for output. 
+	* FASTA and FASTAq are supported as input
+	* Feature files (limit search to the given loci) are added
+	* Colorspace and bisulfite curation are back
+	* A number of small improvements, optimizations and bugfixes
+	* Improved SAM output for colorspace
+	* FASTA Seq-ids are not parsed anymore by default
+	* bmfilter added

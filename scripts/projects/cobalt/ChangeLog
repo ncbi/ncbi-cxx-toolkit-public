@@ -1,0 +1,29 @@
+June 30, 2010
+* First stand alone release
+
+March 7, 2011
+* 2.0.1 release
+* Maximum number of input sequences was increased to 15999.
+* Improvements to reduce time for pre-alignment sequence clustering.
+* Added limit on number of domain hits per input sequence that can
+  be set with the -num_domain_hits option.
+
+June 13, 2013
+2.0.2 release
+New features:
+* Align two multiple sequence alignments
+* Use pre-computed CDD search results in BLAST archive format
+Improvements:
+* BLAST+ 2.2.28
+Bug fixes:
+* Nexus alignment format
+* Segmentation fault on out-of-memory
+* Alignment problems with clustering input sequences
+
+January 31, 2017
+2.1.0 release
+Improvements:
+* More memory efficient sequence clustering
+* No longer prints warning message about all sequences in one cluster
+Bug fixes:
+* Fixed clustering results for sequences with ambiguous amino acids

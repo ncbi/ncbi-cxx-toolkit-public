@@ -1,0 +1,457 @@
+User-object ::= {
+  type str "TestFieldCollection",
+  data {
+    {
+      label str "TestModelEvidence",
+      data object {
+        type str "ModelEvidence",
+        data {
+          {
+            label str "Method",
+            data str "BestRefSeq"
+          }
+        }
+      }
+    },
+    {
+      label str "TestGenomeProjectsDB",
+      data object {
+        type str "GenomeProjectsDB",
+        data {
+          {
+            label str "ProjectID",
+            data int 20837
+          }
+        }
+      }
+    },
+    {
+      label str "TestFeatureFetchPolicy",
+      data object {
+        type str "FeatureFetchPolicy",
+        data {
+          {
+            label str "Policy",
+            data str "OnlyNearFeatures"
+          }
+        }
+      }
+    },
+    {
+      label str "TestGenomeBuild",
+      data object {
+        type str "GenomeBuild",
+        data {
+          {
+            label str "Assembly",
+            data str "HuRef"
+          },
+          {
+            label str "NcbiAnnotation",
+            data str "37"
+          },
+          {
+            label str "NcbiVersion",
+            data str "2"
+          }
+        }
+      }
+    },
+    {
+      label str "TestRefGeneTracking1",
+      data object {
+        type str "RefGeneTracking",
+        data {
+          {
+            label str "Status",
+            data str "Pipeline"
+          },
+          {
+            label str "IdenticalTo",
+            data fields {
+              {
+                label id 0,
+                data fields {
+                  {
+                    label str "accession",
+                    data str "DS486138.1"
+                  },
+                  {
+                    label str "gi",
+                    data int 157399176
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      label str "TestRefGeneTracking2",
+      data object {
+        type str "RefGeneTracking",
+        data {
+          {
+            label str "Status",
+            data str "Reviewed"
+          },
+          {
+            label str "Assembly",
+            data fields {
+              {
+                label id 0,
+                data fields {
+                  {
+                    label str "accession",
+                    data str "AC172750.1"
+                  }
+                }
+              },
+              {
+                label id 0,
+                data fields {
+                  {
+                    label str "accession",
+                    data str "AC167813.4"
+                  }
+                }
+              },
+              {
+                label id 0,
+                data fields {
+                  {
+                    label str "accession",
+                    data str "AC046145.16"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      label str "TestSeqFeat1",
+      data object {
+        type str "CombinedFeatureUserObjects",
+        data {
+          {
+            label str "TrackingId",
+            data int 122376
+          },
+          {
+            label str "ModelEvidence",
+            data object {
+              type str "ModelEvidence",
+              data {
+                {
+                  label str "Method",
+                  data str "BestRefSeq"
+                }
+              }
+            }
+          },
+          {
+            label str "MrnaProteinLink",
+            data object {
+              type str "MrnaProteinLink",
+              data {
+                {
+                  label str "protein seqID",
+                  data str "gi|11321601"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      label str "TestSeqFeat2",
+      data object {
+        type str "CombinedFeatureUserObjects",
+        data {
+          {
+            label str "TrackingId",
+            data int 122385
+          },
+          {
+            label str "ModelEvidence",
+            data object {
+              type str "ModelEvidence",
+              data {
+                {
+                  label str "Method",
+                  data str "Curated Genomic"
+                },
+                {
+                  label str "Source",
+                  data str "NG_023403.1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      label str "TestSeqFeat3",
+      data object {
+        type str "CombinedFeatureUserObjects",
+        data {
+          {
+            label id 0,
+            data object {
+              type str "ModelEvidence",
+              data {
+                {
+                  label str "Method",
+                  data str "GenomeScan"
+                }
+              }
+            }
+          },
+          {
+            label id 0,
+            data object {
+              type str "MrnaProteinLink",
+              data {
+                {
+                  label str "protein seqID",
+                  data str "ref|XP_061393|"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      label str "TestSeqFeat4",
+      data object {
+        type str "CombinedFeatureUserObjects",
+        data {
+          {
+            label id 0,
+            data object {
+              type str "ModelEvidence",
+              data {
+                {
+                  label str "Method",
+                  data str "BestRefSeq,BLAST"
+                },
+                {
+                  label str "mRNA",
+                  data fields {
+                    {
+                      label id 0,
+                      data fields {
+                        {
+                          label str "accession",
+                          data str "NM_002438.1"
+                        },
+                        {
+                          label str "exon count",
+                          data int 30
+                        },
+                        {
+                          label str "exon length",
+                          data int 5171
+                        }
+                      }
+                    },
+                    {
+                      label id 0,
+                      data fields {
+                        {
+                          label str "accession",
+                          data str "J05550.1"
+                        },
+                        {
+                          label str "exon count",
+                          data int 30
+                        },
+                        {
+                          label str "exon length",
+                          data int 5171
+                        }
+                      }
+                    },
+                    {
+                      label id 0,
+                      data fields {
+                        {
+                          label str "accession",
+                          data str "X55635.1"
+                        },
+                        {
+                          label str "exon count",
+                          data int 30
+                        },
+                        {
+                          label str "exon length",
+                          data int 5171
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            label id 0,
+            data object {
+              type str "MrnaProteinLink",
+              data {
+                {
+                  label str "protein seqID",
+                  data str "gi|4505245"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      label str "TestGeneOntology",
+      data object {
+        type str "CombinedFeatureUserObjects",
+        data {
+          {
+            label id 0,
+            data object {
+              type str "GeneOntology",
+              data {
+                {
+                  label str "Function",
+                  data fields {
+                    {
+                      label id 0,
+                      data fields {
+                        {
+                          label str "text string",
+                          data str "RNA binding"
+                        },
+                        {
+                          label str "go id",
+                          data str "0003723"
+                        },
+                        {
+                          label str "evidence",
+                          data str "IEA"
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  label str "Process",
+                  data fields {
+                    {
+                      label id 0,
+                      data fields {
+                        {
+                          label str "text string",
+                          data str "mRNA metabolism"
+                        },
+                        {
+                          label str "go id",
+                          data str "0016071"
+                        },
+                        {
+                          label str "evidence",
+                          data str "IEA"
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  label str "Component",
+                  data fields {
+                    {
+                      label id 0,
+                      data fields {
+                        {
+                          label str "text string",
+                          data str "nucleus"
+                        },
+                        {
+                          label str "go id",
+                          data str "0005634"
+                        },
+                        {
+                          label str "evidence",
+                          data str "TAS"
+                        }
+                      }
+                    },
+                    {
+                      label id 0,
+                      data fields {
+                        {
+                          label str "text string",
+                          data str "spliceosome complex"
+                        },
+                        {
+                          label str "go id",
+                          data str "0005681"
+                        },
+                        {
+                          label str "evidence",
+                          data str "IEA"
+                        }
+                      }
+                    },
+                    {
+                      label id 0,
+                      data fields {
+                        {
+                          label str "text string",
+                          data str "ribonucleoprotein complex"
+                        },
+                        {
+                          label str "go id",
+                          data str "0030529"
+                        },
+                        {
+                          label str "evidence",
+                          data str "IEA"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      label str "TestNesting",
+      data fields {
+        {
+          label str "StrField",
+          data str "Str"
+        },
+        {
+          label str "IntField",
+          data int 100
+        },
+        {
+          label str "FieldsField",
+          data fields {
+            {
+              label str "Nested",
+              data str "NestedStr"
+            }
+          }
+        }
+      }
+    }
+  }
+}

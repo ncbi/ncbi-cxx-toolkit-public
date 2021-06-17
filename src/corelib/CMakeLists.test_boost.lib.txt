@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_lib(test_boost)
+  NCBI_sources(test_boost teamcity_messages)
+  NCBI_headers(test_boost.hpp)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_tags(test)
+  NCBI_project_watchers(vakatov satskyse)
+NCBI_end_lib()
+

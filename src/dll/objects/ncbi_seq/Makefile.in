@@ -1,0 +1,6 @@
+# $Id$
+
+DLL_PROJ = ncbi_seq
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

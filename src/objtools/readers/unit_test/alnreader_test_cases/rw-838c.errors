@@ -1,0 +1,10 @@
+Line No    : 18
+Severity   : Warning
+Problem    : Alignment.UnterminatedCommand
+Message    : File format autocorrected to comply with Nexus rules. Unexpected "end;". Appending ';' to prior command. No action required.
+
+Line No    : 14
+Severity   : Fatal
+Problem    : Alignment.UnexpectedSeqId
+Message    : Duplicate ID: "fish" has already appeared in this block, on line 13.
+

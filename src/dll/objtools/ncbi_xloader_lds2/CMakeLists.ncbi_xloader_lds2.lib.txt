@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(ncbi_xloader_lds2 SHARED)
+  NCBI_hosts_projects(
+    objtools/data_loaders/lds2/ncbi_xloader_lds2
+  )
+  NCBI_add_definitions(NCBI_XLOADER_LDS2_EXPORTS)
+NCBI_end_lib()

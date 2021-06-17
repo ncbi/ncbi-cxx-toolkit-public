@@ -1,0 +1,31 @@
+# $Id$
+
+NCBI_begin_lib(xobjread)
+  NCBI_sources(
+    reader_message reader_listener reader_message_handler 
+    read_util format_guess_ex seqid_validate
+    acc_pattern agp_read agp_seq_entry agp_util agp_validate_reader 
+    aln_scanner aln_scanner_clustal aln_scanner_nexus aln_scanner_phylip 
+    aln_scanner_sequin aln_scanner_fastagap aln_scanner_multalign
+    aln_reader aln_errors aln_error_reporter aln_formatguess aln_util 
+    aln_formats alnread
+    bed_reader bed_autosql bed_autosql_standard bed_autosql_custom bed_column_data
+    cigar fasta
+    fasta_aln_builder fasta_reader_utils getfeature track_data reader_data
+    microarray_reader phrap reader_base readfeat rm_reader
+    wiggle_reader gff3_reader gtf_reader 
+	gff3_location_merger gtf_location_merger
+    gff_base_columns gff2_data gff2_reader
+    gvf_reader
+    vcf_reader
+    psl_reader psl_data
+    best_feat_finder source_mod_parser fasta_exception agp_converter
+    ucscregion_reader struct_cmt_reader
+    mod_reader mod_error descr_mod_apply feature_mod_apply mod_to_enum
+    message_listener line_error
+	gff_reader
+  )
+  NCBI_uses_toolkit_libraries(submit xlogging)
+  NCBI_project_watchers(jcherry sapojnik bollin ludwigf ucko gotvyans foleyjp)
+NCBI_end_lib()
+

@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_lib(submit)
+  NCBI_dataspecs(submit.asn)
+  NCBI_uses_toolkit_libraries(seqset)
+NCBI_end_lib()
+

@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_app(test_compress_mt)
+  NCBI_sources(test_compress_mt)
+  NCBI_headers(test_compress*.inl)
+  NCBI_uses_toolkit_libraries(xcompress test_mt)
+  NCBI_add_test(test_compress_mt z)
+  NCBI_add_test(test_compress_mt bz2)
+  NCBI_add_test(test_compress_mt lzo)
+  NCBI_project_watchers(ivanov)
+NCBI_end_app()
+

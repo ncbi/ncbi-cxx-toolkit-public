@@ -1,0 +1,150 @@
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      id str "pct_identity_gap",
+      value real { 998122546509643, 10, -13 }
+    },
+    {
+      id str "num_ident",
+      value int 11696
+    },
+    {
+      id str "num_mismatch",
+      value int 7
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 99940186277023, 10, -12 }
+    },
+    {
+      id str "gap_count",
+      value int 8
+    },
+    {
+      id str "pct_coverage",
+      value real { 12952279333883, 10, -15 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 12952279333883, 10, -15 }
+    },
+    {
+      id str "num_ident_quantized",
+      value int 4
+    },
+    {
+      id str "genomic_to_genomic",
+      value int 1
+    },
+    {
+      id str "chromosome_to_alt",
+      value int 1
+    },
+    {
+      id str "reciprocity",
+      value int 1
+    },
+    {
+      id str "best_on_subject",
+      value int 1
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 16,
+    ids {
+      gi 568815402,
+      gi 224589807
+    },
+    starts {
+      -1,
+      15034117,
+      779586,
+      15034119,
+      -1,
+      15037001,
+      782468,
+      15037002,
+      783929,
+      -1,
+      783930,
+      15038463,
+      784231,
+      -1,
+      784232,
+      15038764,
+      -1,
+      15039124,
+      784592,
+      15039126,
+      784759,
+      -1,
+      784760,
+      15039293,
+      788486,
+      -1,
+      788490,
+      15043019,
+      788853,
+      -1,
+      788856,
+      15043382
+    },
+    lens {
+      2,
+      2882,
+      1,
+      1461,
+      1,
+      301,
+      1,
+      360,
+      2,
+      167,
+      1,
+      3726,
+      4,
+      363,
+      3,
+      2443
+    },
+    strands {
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus,
+      plus
+    }
+  },
+  id {
+    str "ffc8861b-7d3e-4a85-96be-aa40e6c372c0"
+  }
+}

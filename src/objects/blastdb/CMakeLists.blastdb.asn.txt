@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(blastdb)
+  NCBI_dataspecs(blastdb.asn)
+  NCBI_uses_toolkit_libraries(xnetblast)
+  NCBI_project_watchers(camacho)
+NCBI_end_lib()
+

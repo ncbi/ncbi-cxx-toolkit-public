@@ -1,0 +1,5 @@
+TEST_CCPP_READ
+Performance test of serialization:
+reading and writing ASN text and binary data.
+From version to version, the test does not change much;
+but serial library does.

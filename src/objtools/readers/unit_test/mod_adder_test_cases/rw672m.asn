@@ -1,0 +1,64 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      org {
+        taxname "Homo sapiens"
+      },
+      subtype {
+        {
+          subtype other,
+          name "val246_0"
+        }
+      }
+    },
+    genbank {
+      extra-accessions {
+        "M10101",
+        "M10102",
+        "Q8Y7J9",
+        "Q8Y7J8"
+      },
+      keywords {
+        "dummy"
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "dummy"
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          tech both
+        }
+      },
+      inst {
+        repr not-set,
+        mol dna,
+        topology circular,
+        strand other,
+        hist {
+          replaces {
+            ids {
+              genbank {
+                accession "M10101"
+              },
+              genbank {
+                accession "M10102"
+              },
+              swissprot {
+                accession "Q8Y7J9"
+              },
+              swissprot {
+                accession "Q8Y7J8"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

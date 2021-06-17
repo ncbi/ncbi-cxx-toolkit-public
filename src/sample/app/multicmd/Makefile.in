@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile
+#################################
+
+APP_PROJ = multi_command
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

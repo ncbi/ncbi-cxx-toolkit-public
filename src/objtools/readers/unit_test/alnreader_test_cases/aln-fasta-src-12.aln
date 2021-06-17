@@ -1,0 +1,16 @@
+>seq1 [organism=val1][gb_anamorph=val1]
+--GCAAGCATGCATGCAAAA
+TTTTGCGGCCCATGCATG--
+ATGCATGC
+>seq2 [organism=val1][gb anamorph=val1]
+AT--ATGGATGCATGCAAAA
+TTTTGGGCCCCATGCATGCC
+--GCATGC
+>seq3 [organism=val1][gb-synonym=val1]
+ATGC--GCAAGCATGCAAAA
+TTTTGGGGCGCATGCATGCC
+AT--ATGC
+>seq4 [organism=val1][gb_synonym=val1]
+ATGCAT--ATGGATGCAAAA
+TTTTGGGGCCCTTGCATGCC
+ATGC--GC

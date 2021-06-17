@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(srsearch)
+  NCBI_sources(main srsearch_app)
+  NCBI_uses_toolkit_libraries(xalgoblastdbindex xalgoblastdbindex_search)
+  NCBI_project_watchers(morgulis)
+NCBI_end_app()
+

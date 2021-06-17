@@ -1,0 +1,6 @@
+# $Id$
+
+APP_PROJ = wig2table
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

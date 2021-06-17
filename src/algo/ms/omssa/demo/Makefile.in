@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile (omssa demo apps)
+#################################
+
+APP_PROJ = readresult
+PROJ_TAG = demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_lib(bz2)
+  NCBI_sources(
+    blocksort huffman crctable randtable ncbi_bz2_compress decompress bzlib
+  )
+  NCBI_disable_pch()
+  NCBI_requires(LocalBZ2)
+  NCBI_project_watchers(ivanov)
+NCBI_end_lib()
+

@@ -1,0 +1,80 @@
+--$Revision$
+--**********************************************************************
+--
+--  NCBI Taxonomy Server
+--  by James Ostell, 1995
+--  Version 3.0 - May 2004
+--
+--**********************************************************************
+
+
+NCBI-Taxon3 DEFINITIONS ::=
+BEGIN
+
+IMPORTS Org-ref FROM NCBI-Organism;
+
+Taxon3-request ::= SEQUENCE {
+    request SEQUENCE OF T3Request ,
+    options BIT STRING OPTIONAL
+}
+
+SequenceOfInt ::= SEQUENCE OF INTEGER
+
+T3Request ::= CHOICE {
+    taxid INTEGER ,
+    name VisibleString ,
+    org Org-ref ,
+    join SequenceOfInt
+}
+
+Taxon3-reply ::= SEQUENCE {
+    reply SEQUENCE OF T3Reply
+}
+
+T3Reply ::= CHOICE {
+    error T3Error ,
+    data T3Data
+}
+
+T3Error ::= SEQUENCE {
+    level ENUMERATED {
+        none (0) ,    -- not an error, just a message
+        info (1) ,    -- informational error
+        warn (2) ,
+        error (3) ,
+        fatal (4) } ,
+    message VisibleString ,
+    taxid INTEGER OPTIONAL ,
+    name VisibleString OPTIONAL ,
+    org Org-ref OPTIONAL
+}
+
+T3Data ::= SEQUENCE {
+    org Org-ref ,
+    blast-name-lineage SEQUENCE OF VisibleString OPTIONAL ,
+    status SEQUENCE OF T3StatusFlags OPTIONAL ,
+    refresh T3RefreshFlags OPTIONAL
+}
+
+T3StatusFlags ::= SEQUENCE {
+    property VisibleString ,
+    value CHOICE {
+        bool BOOLEAN ,
+        int INTEGER ,
+        str VisibleString
+   }
+}
+
+T3RefreshFlags ::= SEQUENCE {
+    taxid-changed BOOLEAN ,
+    taxname-changed BOOLEAN ,
+    division-changed BOOLEAN ,
+    lineage-changed BOOLEAN ,
+    gc-changed BOOLEAN ,
+    mgc-changed BOOLEAN ,
+    orgmod-changed BOOLEAN ,
+    pgc-changed BOOLEAN OPTIONAL
+}
+
+END
+

@@ -1,0 +1,133 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      genome proviral,
+      origin natural,
+      org {
+        taxname "taxname",
+        common "common_name",
+        db {
+          {
+            db "?",
+            tag str "tag1"
+          },
+          {
+            db "db2",
+            tag str "tag2"
+          },
+          {
+            db "db3",
+            tag str "tag3"
+          }
+        },
+        orgname {
+          mod {
+            {
+              subtype breed,
+              subname "breed"
+            },
+            {
+              subtype group,
+              subname "group"
+            },
+            {
+              subtype nat-host,
+              subname "host1"
+            },
+            {
+              subtype nat-host,
+              subname "host2"
+            },
+            {
+              subtype nat-host,
+              subname "nat-host1"
+            },
+            {
+              subtype nat-host,
+              subname "nat-host2"
+            },
+            {
+              subtype sub-species,
+              subname "subspecies"
+            }
+          },
+          lineage "lineage",
+          gcode 123,
+          mgcode 456,
+          div "division",
+          pgcode 789
+        }
+      },
+      subtype {
+        {
+          subtype subclone,
+          name "sub-clone"
+        }
+      },
+      is-focus NULL
+    },
+    pub {
+      pub {
+        pmid 0
+      }
+    },
+    comment "dummy comment",
+    genbank {
+      extra-accessions {
+        "dummy1",
+        "dummy2",
+        "dummy3"
+      },
+      keywords {
+        "dummy"
+      }
+    },
+    pub {
+      pub {
+        pmid 1111,
+        pmid 2222,
+        muid 1
+      }
+    },
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "Sequence Read Archive",
+          data strs {
+            "dummy"
+          }
+        }
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "dummy"
+      },
+      descr {
+        molinfo {
+          biomol ncRNA,
+          tech both
+        }
+      },
+      inst {
+        repr not-set,
+        mol rna,
+        topology circular,
+        strand mixed,
+        hist {
+          replaces {
+            ids {
+              swissprot {
+                accession "dummy"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

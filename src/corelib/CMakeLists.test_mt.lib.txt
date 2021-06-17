@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_lib(test_mt)
+  NCBI_sources(test_mt)
+  NCBI_headers(test_mt.hpp)
+  NCBI_disable_pch()
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_tags(test)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()
+

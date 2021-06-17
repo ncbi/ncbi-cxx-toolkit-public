@@ -1,0 +1,51 @@
+suppression = {
+	name = "ncbilog - Creating critical section"
+	type = {kernel_handle_leak}
+	stacks = {
+		allocation={
+			!!!;
+			func=NcbiLog_Default_MTLock_Handler,src=ncbi_c_log.c;
+		}
+	}
+}
+suppression = {
+	name = "ncbilog - NcbiLog_InitForAttachedContext() memory leak"
+	type = {reachable_memory_leak}
+	stacks = {
+		allocation={
+			...;
+			func=NcbiLog_InitForAttachedContext,src=ncbi_c_log.c;
+		}
+	}
+}
+suppression = {
+	name = "Deallocation without allocation in KNgcObjWriteToFile() at ncbi_vdb.dll - False positive"
+	type = {invalid_deallocation}
+	stacks = {
+		{
+			...;
+			func=KNgcObjWriteToFile;
+		}
+	}
+}
+suppression = {
+	name = "Missing allocation in vdbread.cpp:707 - False positive"
+	type = {invalid_deallocation}
+	stacks = {
+		{
+			!!!;
+			src=vdbread.cpp,func=Init;
+		}
+	}
+}
+suppression = {
+	name = "Invalid memory access in vdbread.cpp:477 - False positive"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			src=vdbread.cpp,func=CVDB;
+		}
+	}
+}
+
