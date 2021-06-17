@@ -191,8 +191,14 @@ public:
     /// without default value, and if it was not passed a value in the command
     /// line.  On attempt to retrieve the value from such "no-value" argument,
     /// exception will be thrown.
+    ///
+    /// NOTE: HasValue() and operator bool() check if the argument has any value,
+    /// they do not return the actual value of boolean arguments.
+    ///   if (args["bv"]) ... - check if "bv" has any value
+    ///   if (args["bv"].AsBoolean()) ... - check the actual value of "bv" argument
     virtual bool HasValue(void) const = 0;
 
+    /// Synonym for HasValue().
     DECLARE_OPERATOR_BOOL(HasValue());
 
     /// Get the argument's string value.
@@ -243,8 +249,13 @@ public:
     ///
     /// If you request a wrong value type, such as a call to "AsBoolean()"
     /// for a "integer" argument, an exception is thrown.
+    ///
+    /// NOTE: Do not confuse HasValue(), operator bool() and AsBoolean().
+    /// The former two methods check if the argument has any value, they
+    /// do not return its actual value.
+    ///
     /// @sa
-    ///   AsString(), AsInt8(), AsInteger, AsDouble()
+    ///   HasValue(), AsString(), AsInt8(), AsInteger, AsDouble()
     virtual bool   AsBoolean(void) const = 0;
 
     enum EFileFlags {
@@ -386,6 +397,10 @@ public:
     /// Check existence of argument description.
     ///
     /// Return TRUE if arg "name" was described in the parent CArgDescriptions.
+    ///
+    /// NOTE: Do not confuse this method with CArgValue::HasValue() which checks
+    /// if the argument not just exists, but was assigned a value (possibly the
+    /// default one).
     bool Exist(const string& name) const;
 
     /// Get value of argument by name. If the name starts with '-'
