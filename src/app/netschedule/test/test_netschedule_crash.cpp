@@ -181,10 +181,8 @@ void CTestNetScheduleCrash::Init(void)
                              "Number of clients to simulate",
                              CArgDescriptions::eInteger);
 
-    arg_desc->AddOptionalKey("main",
-                             "main",
-                             "Main loop (submit-get-put) only",
-                             CArgDescriptions::eBoolean);
+    arg_desc->AddFlag("main",
+                      "Main loop (submit-get-put) only");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
