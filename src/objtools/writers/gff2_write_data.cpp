@@ -66,81 +66,10 @@ CGffWriteRecord::CGffWriteRecord(
 };
 
 //  ----------------------------------------------------------------------------
-CGffWriteRecord::CGffWriteRecord(
-    const CGffWriteRecord& other ): CGffFeatureRecord(other),
-    m_fc( other.m_fc )
-//  ----------------------------------------------------------------------------
-{
-    mAttributes.insert(
-        other.mAttributes.begin(), other.mAttributes.end() );
-};
-
-//  ----------------------------------------------------------------------------
 CGffWriteRecord::~CGffWriteRecord()
 //  ----------------------------------------------------------------------------
 {
 };
-
-//  ----------------------------------------------------------------------------
-void CGffWriteRecord::x_StrAttributesAppendValue(
-    const string& strKey,
-    const string& attr_separator,
-    const string& multivalue_separator,
-    map<string, vector<string> >& attrs,
-    string& strAttributes ) const
-//  ----------------------------------------------------------------------------
-{
-    TAttrIt it = attrs.find( strKey );
-    if ( it == attrs.end() ) {
-        return;
-    }
-    string strValue;
-    vector<string> tags = it->second;
-    for ( vector<string>::iterator pTag = tags.begin(); pTag != tags.end(); pTag++ ) {
-        if ( !strValue.empty() ) {
-            strValue += multivalue_separator;
-        }
-        string strTag = CWriteUtil::UrlEncode( *pTag );
-        if (CWriteUtil::NeedsQuoting(strTag)) {
-            strTag = string("\"") + strTag + string("\"");
-        }
-        strValue += strTag;
-    }
-
-    if ( ! strAttributes.empty() ) {
-        strAttributes += attr_separator;
-    }
-    strAttributes += strKey;
-    strAttributes += "=";
-    strAttributes += strValue;
-
-    attrs.erase(it);
-}
-
-
-//  ----------------------------------------------------------------------------
-bool CGffWriteRecord::x_AssignAttributes(
-    const CMappedFeat& mapped_feat,
-    unsigned int )
-//  ----------------------------------------------------------------------------
-{
-    cerr << "FIXME: CGffWriteRecord::x_AssignAttributes" << endl;
-    return true;
-}
-
-
-//  ----------------------------------------------------------------------------
-bool CGffWriteRecord::AssignFromAsn(
-    const CMappedFeat& mapped_feature,
-    unsigned int flags )
-//  ----------------------------------------------------------------------------
-{
-    if ( ! x_AssignAttributes( mapped_feature, flags ) ) {
-        return false;
-    }
-    return true;
-}
-
 
 END_objects_SCOPE
 END_NCBI_SCOPE

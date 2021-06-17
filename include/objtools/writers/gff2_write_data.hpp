@@ -59,8 +59,6 @@ public:
     CGffWriteRecord(
         CGffFeatureContext& fc,
         const string& id="" );
-    CGffWriteRecord(
-        const CGffWriteRecord& );
     virtual ~CGffWriteRecord();
 
     //
@@ -72,26 +70,10 @@ public:
         return true;
     };
 
-    virtual bool AssignFromAsn(
-        const CMappedFeat&,
-        unsigned int =0);
-
     virtual string StrStructibutes() const { return ""; };
 
 protected:
-    virtual bool x_AssignAttributes(
-        const CMappedFeat&,
-        unsigned int =0);
-
-    virtual void x_StrAttributesAppendValue(
-        const string&,
-        const string&,
-        const string&,
-        map<string, vector<string> >&,
-        string& ) const;
-
     CGffFeatureContext& m_fc;
-
     static const char* ATTR_SEPARATOR;
 };
 
