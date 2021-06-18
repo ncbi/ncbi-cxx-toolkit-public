@@ -18,7 +18,9 @@
 #to debug
 #set(NCBI_TRACE_COMPONENT_GRPC ON)
 #############################################################################
-if("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 15 2017 Win64")
+if("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 16 2019")
+    set(NCBI_ThirdPartyCompiler vs2017.64)
+elseif("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 15 2017 Win64")
     set(NCBI_ThirdPartyCompiler vs2017.64)
 elseif("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 15 2017")
     if("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "x64" OR "${CMAKE_GENERATOR_PLATFORM}" STREQUAL "Win64")
