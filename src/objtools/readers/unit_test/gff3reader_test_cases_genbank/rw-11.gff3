@@ -3,7 +3,7 @@
 #!genome-build ASM584v2
 #!genome-build-accession NCBI_Assembly:GCA_000005845.2
 ##sequence-region U00096.3
-##species http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=511145
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=511145
 U00096.3	EcoCyc	gene	190	255	.	+	.	ID=gene0;Dbxref=EcoGene:EG11277;gene=thrL;gene_synonym=ECK0001,JW4367;locus_tag=b0001
 U00096.3	EcoCyc	cds	190	255	.	+	0	ID=cds0;Parent=gene0;Dbxref=ASAP:ABE-0000006,UniProtKB/Swiss-Prot:P0AD86;product=thr operon leader peptide;protein_id=gb|AAC73112;function=leader%3B Amino acid biosynthesis: Threonine;go_process=threonine biosynthetic process|0009088
 U00096.3	EcoCyc	gene	337	2799	.	+	.	ID=gene1;Dbxref=EcoGene:EG10998;gene=thrA;gene_synonym=ECK0002,Hs,JW0001,thrA1,thrA2,thrD;locus_tag=b0002

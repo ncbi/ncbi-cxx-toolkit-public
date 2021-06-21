@@ -4,7 +4,7 @@
 #!genome-build ASM1560v1
 #!genome-build-accession NCBI_Assembly:GCF_000015605.1
 ##sequence-region NC_008836.1 1 3458208
-##species http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=412022
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=412022
 NC_008836.1	RefSeq	gene	722382	723919	.	-	.	ID=gene649;Name=BMA10229_RS12890;gbkey=Gene;gene_biotype=rRNA;locus_tag=BMA10229_RS12890;old_locus_tag=BMA10229_A0702
 NC_008836.1	RefSeq	rRNA	722382	723919	.	-	.	ID=rna9;Parent=gene649;gbkey=rRNA;product=16S ribosomal RNA
 NC_008836.1	RefSeq	exon	722382	723919	.	-	.	ID=id29;Parent=rna9;gbkey=rRNA;product=16S ribosomal RNA
