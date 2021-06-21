@@ -135,7 +135,7 @@ You might want to use following tools to generate input files:
 
 tbl2asn - often used for genome submission.
 
-http://www.ncbi.nlm.nih.gov/Genbank/tbl2asn2.html
+https://www.ncbi.nlm.nih.gov/Genbank/tbl2asn2.html
 
 asn2all - to extract nucleotide and protein sequences from the input ASN.1 file. 
 
@@ -161,14 +161,14 @@ BLAST - either standalone or web-based tool, both available at NCBI - to run
   -FT -IT -e 1e-06 -z 500000000
 
 RPSBLAST - either standalone (rpsblast) or web-based 
-  (http://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi) tool, both available at 
+  (https://www.ncbi.nlm.nih.gov/Structure/cdd/wrpsb.cgi) tool, both available at 
   NCBI - to run protein sequences against CDD (conserved domain database: 
   ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd). 
 
 tRNAscan-SE - tRNA prediction tool (http://lowelab.ucsc.edu/tRNAscan-SE/) - to
   predict tRNA locations given your nucleotide sequence.
 
-cmsearch - RNA prediction tool (http://www.sanger.ac.uk/Software/Rfam/) - to
+cmsearch - RNA prediction tool (https://www.sanger.ac.uk/Software/Rfam/) - to
   predict 5S rRNA locations given your nucleotide sequence. The INFERNAL software
   package contains cmsearch. (http://infernal.janelia.org/).
 
