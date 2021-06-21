@@ -14,7 +14,7 @@ NCBI_add_app(
   test_ncbiexpt test_ncbi_process test_ncbi_os_unix test_ncbi_tree 
   test_plugins test_ncbidiag_p test_ncbidiag_f_mt test_objstore 
   test_hash test_param_mt test_diag_parser test_fstream_pushback 
-  test_stacktrace test_tempstr test_ncbi_config test_ncbicfg 
+  test_stacktrace test_strdbl test_tempstr test_ncbi_config test_ncbicfg 
   test_weakref test_request_control test_expr test_sub_reg 
   test_resource_info test_interprocess_lock test_ncbithr_native 
   test_ncbi_rwstream test_condvar test_base64 test_trial_check 
