@@ -1250,8 +1250,9 @@ void CTestApp::RunD2SPrecisionBenchmark(void)
         dbls.push_back( GenerateDouble());
     }
 
+    i = 0;
     for (vector<double>::const_iterator d=dbls.begin(); d != dbls.end(); ++d) {
-
+        ++i;
         buffer1[ NStr::DoubleToStringPosix( *d, precision, buffer1, sizeof(buffer1)) ] = '\0';
         sprintf(buffer2, "%.*g", precision, *d);
 
@@ -1436,6 +1437,7 @@ bool CTestApp::CompareSerialization(double data, unsigned int digits)
             // ensure buffer is large enough to fit result
             // (additional bytes are for sign, dot and exponent)
             _ASSERT(sizeof(buffer) > digits + 16);
+#if 0
             int width = sprintf(buffer, "%.*e", int(digits-1), data);
             _ASSERT(int(strlen(buffer)) == width);
             char* dotPos = strchr(buffer, '.');
@@ -1465,6 +1467,40 @@ bool CTestApp::CompareSerialization(double data, unsigned int digits)
             asntext_old += string(", 10, ");
             asntext_old += NStr::NumericToString(exp - fractDigits);
             asntext_old += string(" }");
+#else
+            int width = sprintf(buffer, "%.*g", int(digits), data);
+            _ASSERT(int(strlen(buffer)) == width);
+
+            int exp = 0;
+            const char* ePos = strchr(buffer, 'e');
+            if (ePos) {
+                sscanf(ePos + 1, "%d", &exp);
+            } else {
+                ePos = buffer + strlen(buffer);
+            }
+            char* dotPos = strchr(buffer, '.');
+            if (!dotPos) {
+                dotPos = strchr(buffer, ','); // non-C locale?
+            }
+            if (dotPos) {
+                exp -= (int)(ePos - dotPos - 1);
+                memmove(dotPos, dotPos+1, strlen(dotPos+1));
+                --ePos;
+            }
+            while ( ePos[-1] == '0' ) {
+                ++exp;
+                --ePos;
+            }
+            const char *start = buffer;
+            while ( *start == '0' ) {
+                ++start;
+            }
+            asntext_old = "{ ";
+            asntext_old += string(start, ePos - start);
+            asntext_old += string(", 10, ");
+            asntext_old += NStr::NumericToString(exp);
+            asntext_old += string(" }");
+#endif
 
         }
     }}
