@@ -926,7 +926,7 @@ s_MatchingSequenceRelease(BlastCompo_MatchingSequence * self)
  * followed by two identical matches. This is a simplified version of the
  * Danielle and Jean Thierry-Miegs' jumper
  * alignment implemented in NCBI Magic
- * http://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/Download/Downloads.html
+ * https://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/Download/Downloads.html
  *
  * @param query_seq Query sequence [in]
  * @param query_len Query length [in]

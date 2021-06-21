@@ -126,7 +126,7 @@ and finally sigma is the alpha parameter for the covariance of length correction
 Note: in Spouge's theory, beta, beta_v, and tau are dependent variables.
 
 The values tabulated below are based on the following URL:
-http://www.ncbi.nlm.nih.gov/CBBresearch/Spouge/html.ncbi/blast/index.html
+https://www.ncbi.nlm.nih.gov/CBBresearch/Spouge/html.ncbi/blast/index.html
 
 Take BLOSUM45 (below) as an example.  Currently (5/17/02) there are
 14 different allowed combinations (specified by "#define BLOSUM45_VALUES_MAX 14").
