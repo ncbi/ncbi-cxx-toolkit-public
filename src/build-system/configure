@@ -9430,7 +9430,7 @@ case "$host_os:$compiler" in
       *64 ) : ${with_64=yes} ;;
       *   ) : ${with_64=no}  ;;
    esac
-   # Per <http://fink.sourceforge.net/doc/porting/shared.php>, it was
+   # Per <https://fink.sourceforge.net/doc/porting/shared.php>, it was
    # historically necessary to build plugins as Mach-O bundles rather than
    # dynamic libraries.  That's not such a big deal on modern Mac OS X
    # versions, so the Toolkit now defaults to building only the latter.
@@ -12531,7 +12531,7 @@ case "$compiler" in
         FORBID_UNDEF="-Wl,-z,defs"
         ;;
       darwin* )
-        # Per <http://fink.sourceforge.net/doc/porting/shared.php>, it was
+        # Per <https://fink.sourceforge.net/doc/porting/shared.php>, it was
         # historically necessary to build plugins as Mach-O bundles rather than
         # dynamic libraries.  That's not such a big deal on modern Mac OS X
         # versions, so the Toolkit now defaults to building only the latter.
@@ -37151,7 +37151,7 @@ fi
 cat << EOCONF
 ===============================================================================
 NCBI C++ Toolkit documentation:
-  Online:   http://www.ncbi.nlm.nih.gov/toolkit/doc/book/
+  Online:   https://www.ncbi.nlm.nih.gov/toolkit/doc/book/
   Local:    ./doc/public/index.html
 For the available configuration flags run:  ./configure --help
 
