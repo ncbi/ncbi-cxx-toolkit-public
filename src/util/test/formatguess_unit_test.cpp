@@ -120,7 +120,7 @@ static const string kData_Gff2 =
 // Test for handling cases with huge comments
 static const string kData_Gff3_Comment = 
     "##gff-version 3\n"
-    "##species http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606\n"
+    "##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606\n"
     "##date 2009-11-04\n"
     "# Study_accession: nstd17\n"
     "# Display_name: Conrad et al 2006\n"
