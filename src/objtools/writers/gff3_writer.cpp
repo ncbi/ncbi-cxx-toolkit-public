@@ -173,39 +173,6 @@ string sBestMatchType(
 
 }
 
-
-//  ----------------------------------------------------------------------------
-bool sFeatureHasChildOfSubtype(
-    const CMappedFeat& mf,
-    CSeqFeatData::ESubtype subtype,
-    feature::CFeatTree* pTree = 0)
-//  ----------------------------------------------------------------------------
-{
-    bool bTreeIsMine = false;
-    if (!pTree) {
-        pTree = new feature::CFeatTree;
-        pTree->AddFeaturesFor(mf, subtype, mf.GetFeatSubtype());
-        bTreeIsMine = true;
-    }
-    vector<CMappedFeat> c = pTree->GetChildren(mf);
-    for (vector<CMappedFeat>::iterator it = c.begin(); it != c.end(); it++) {
-        CMappedFeat f = *it;
-        if (f.GetFeatSubtype() == subtype) {
-            return true;
-        }
-        else {
-            if (sFeatureHasChildOfSubtype(f, subtype, pTree)) {
-                return true;
-            }
-        }
-    }
-    if (bTreeIsMine) {
-        delete pTree;
-    }
-    return false;
-}
-
-
 //  ----------------------------------------------------------------------------
 CGff3Writer::CGff3Writer(
     CScope& scope,
