@@ -108,9 +108,9 @@ BALiBASE test set.
 2)  Input & Output formats:
 
 The native format for alignments is the same as that used by CDD
-(http://www.ncbi.nlm.nih.gov/Structure/cdd/cdd.shtml) and the 3D structure
+(https://www.ncbi.nlm.nih.gov/Structure/cdd/cdd.shtml) and the 3D structure
 viewer/alignment editor Cn3D
-(http://www.ncbi.nlm.nih.gov/Structure/CN3D/cn3d.shtml).  Namely, the
+(https://www.ncbi.nlm.nih.gov/Structure/CN3D/cn3d.shtml).  Namely, the
 bma_refiner takes so-called CD files with a default file extension
 '.cn3'. [Formerly called 'acd' files, only the default file extension has been
 changed and the data in the files remains unchanged.  The bma_refiner program
@@ -123,7 +123,7 @@ specification in ASN.1.  See the NCBI & CDD web sites for details.
 To support user-created alignments a utility, 'fa2cd' [formerly named
 'fasta2cd'], to convert FASTA-formatted multiple alignments to a CD file is
 available.  See section (4) below for more details, or the web site
-http://www.ncbi.nlm.nih.gov/Structure/cdtree/fa2cd.shtml.   
+https://www.ncbi.nlm.nih.gov/Structure/cdtree/fa2cd.shtml.   
 
 The .cn3 file created by the bma_refiner program can be loaded into Cn3D and
 saved as FASTA, if desired.  Also, a command-line utility program called 'cddalignview'
@@ -239,7 +239,7 @@ column in the output alignment (3 is often a good choice).
 A few notes on FASTA file format:
 
 a)  In general, input FASTA files are expected to follow the standard protein
-FASTA file format (for example, http://www.ncbi.nlm.nih.gov/blast/fasta.shtml).
+FASTA file format (for example, https://www.ncbi.nlm.nih.gov/blast/fasta.shtml).
 Further, it is important that each sequence input has a unique identifier to
 avoid downstream errors.  By default, fa2cd assigns each sequence an integer as
 its local accession.  With the '-parseIds' option you instruct fa2cd to use
@@ -262,10 +262,10 @@ have already used.  Future versions of fa2cd will fix such conflicts.
 
 
 [Information about fa2cd is also available at
-http://www.ncbi.nlm.nih.gov/Structure/cdtree/cdtree.shtml.  fa2cd is also
+https://www.ncbi.nlm.nih.gov/Structure/cdtree/cdtree.shtml.  fa2cd is also
 distributed as part of the CDTree software, a GUI-based application to aid in
 the classification of protein sequences and investigate their evolutionary
-relationships.  See http://www.ncbi.nlm.nih.gov/Structure/cdtree/cdtree.shtml to
+relationships.  See https://www.ncbi.nlm.nih.gov/Structure/cdtree/cdtree.shtml to
 learn more about CDTree.] 
 
 
