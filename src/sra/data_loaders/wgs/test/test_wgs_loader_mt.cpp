@@ -103,7 +103,7 @@ CRef<CObjectManager> sx_InitOM(EMasterDescrType master_descr_type)
 }
 
 
-static const size_t kStackSize = 2<<17;
+static const size_t kStackSize = 2<<20;
 
 
 BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
