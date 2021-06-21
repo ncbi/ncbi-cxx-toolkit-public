@@ -224,6 +224,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, unsigned digits)
         // ensure buffer is large enough to fit result
         // (additional bytes are for sign, dot and exponent)
         _ASSERT(sizeof(buffer) > digits + 16);
+#if 0
         int width = sprintf(buffer, "%.*e", int(digits-1), data);
         if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
             ThrowError(fOverflow, "buffer overflow");
@@ -261,6 +262,43 @@ void CObjectOStreamAsn::WriteDouble2(double data, unsigned digits)
         m_Output.PutString(", 10, ");
         m_Output.PutInt4(exp - fractDigits);
         m_Output.PutString(" }");
+#else
+        int width = sprintf(buffer, "%.*g", int(digits), data);
+        if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
+            ThrowError(fOverflow, "buffer overflow");
+        _ASSERT(int(strlen(buffer)) == width);
+
+        int exp = 0;
+        const char* ePos = strchr(buffer, 'e');
+        if (ePos) {
+            if ( sscanf(ePos + 1, "%d", &exp) != 1 )
+                ThrowError(fInvalidData, "double value conversion error");
+        } else {
+            ePos = buffer + strlen(buffer);
+        }
+        char* dotPos = strchr(buffer, '.');
+        if (!dotPos) {
+            dotPos = strchr(buffer, ','); // non-C locale?
+        }
+        if (dotPos) {
+            exp -= (int)(ePos - dotPos - 1);
+            memmove(dotPos, dotPos+1, strlen(dotPos+1));
+            --ePos;
+        }
+        while ( ePos[-1] == '0' ) {
+            ++exp;
+            --ePos;
+        }
+        const char *start = buffer;
+        while ( *start == '0' ) {
+            ++start;
+        }
+        m_Output.PutString("{ ");
+        m_Output.PutString(start, ePos - start);
+        m_Output.PutString(", 10, ");
+        m_Output.PutString(NStr::NumericToString(exp));
+        m_Output.PutString(" }");
+#endif
     }
 }
 
