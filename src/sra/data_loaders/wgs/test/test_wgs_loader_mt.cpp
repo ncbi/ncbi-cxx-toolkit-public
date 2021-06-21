@@ -51,7 +51,7 @@
 #include <serial/iterator.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <util/random_gen.hpp>
-#include <thread>
+#include <boost/thread.hpp>
 #include "../../bam/test/vdb_user_agent.hpp"
 
 #include <corelib/test_boost.hpp>
@@ -103,6 +103,9 @@ CRef<CObjectManager> sx_InitOM(EMasterDescrType master_descr_type)
 }
 
 
+static const size_t kStackSize = 2<<17;
+
+
 BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
 {
     LOG_POST("Checking WGS master sequence descriptors");
@@ -136,10 +139,12 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
             ids[k].push_back(id);
         }
     }
-    vector<thread> tt(NQ);
+    boost::thread::attributes attrs;
+    attrs.set_stack_size(kStackSize);
+    vector<boost::thread> tt(NQ);
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i] =
-            thread([&](const vector<string>& ids)
+            boost::thread(attrs, bind([&](const vector<string>& ids)
                    {
                        CScope scope(*CObjectManager::GetInstance());
                        scope.AddDefaults();
@@ -185,7 +190,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
                                throw;
                            }
                        }
-                   }, ids[i]);
+                   }, ids[i]));
     }
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i].join();
@@ -229,10 +234,12 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescrProt)
             LOG_POST("WGS "<<accs[k]<<" testing "<<ids[k].size()<<" proteins");
         }
     }}
-    vector<thread> tt(NQ);
+    boost::thread::attributes attrs;
+    attrs.set_stack_size(kStackSize);
+    vector<boost::thread> tt(NQ);
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i] =
-            thread([&](const vector<string>& ids)
+            boost::thread(attrs, bind([&](const vector<string>& ids)
                    {
                        CScope scope(*CObjectManager::GetInstance());
                        scope.AddDefaults();
@@ -278,7 +285,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescrProt)
                                throw;
                            }
                        }
-                   }, ids[i]);
+                   }, ids[i]));
     }
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i].join();
@@ -365,10 +372,12 @@ BOOST_AUTO_TEST_CASE(CheckWGSUserAgent)
             CVDBUserAgentMonitor::SetExpectedUserAgentValues(accs[i]+suffix, values);
         }
     }
-    vector<thread> tt(NQ);
+    boost::thread::attributes attrs;
+    attrs.set_stack_size(kStackSize);
+    vector<boost::thread> tt(NQ);
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i] =
-            thread([&](size_t index, const vector<string>& ids)
+            boost::thread(attrs, bind([&](size_t index, const vector<string>& ids)
                 {
                     try {
                         CScope scope(*CObjectManager::GetInstance());
@@ -435,7 +444,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSUserAgent)
                         ERR_POST("MT4["<<i<<"]: "<<exc);
                         BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
                     }
-                }, i, ids[i]);
+                }, i, ids[i]));
     }
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i].join();
