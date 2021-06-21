@@ -1354,6 +1354,7 @@ DISCREPANCY_AUTOFIX(MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
 
     for (auto& feat : features) {
         edit::ReverseComplementFeature(*feat, context.GetScope());
+        ++n;
     }
     obj->SetFixed();
     return CRef<CAutofixReport>(n ? new CAutofixReport("MRNA_SEQUENCE_MINUS_STRAND_FEATURES: [n] sequence[s] [is] converted to reverse complement[s]", n) : nullptr);
