@@ -950,6 +950,16 @@ else()
 endif()
 
 #############################################################################
+# Boost.Thread
+if(Boost_FOUND)
+  set(NCBI_COMPONENT_Boost.Thread_FOUND YES)
+  set(NCBI_COMPONENT_Boost.Thread_INCLUDE ${Boost_INCLUDE_DIRS})
+  set(NCBI_COMPONENT_Boost.Thread_LIBS    ${Boost_LIBRARIES})
+else()
+  set(NCBI_COMPONENT_Boost.Thread_FOUND NO)
+endif()
+
+#############################################################################
 # Boost
 if(Boost_FOUND)
   set(NCBI_COMPONENT_Boost_FOUND YES)

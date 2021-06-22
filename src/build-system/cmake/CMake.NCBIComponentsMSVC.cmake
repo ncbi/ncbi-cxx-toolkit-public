@@ -223,6 +223,13 @@ if(NCBI_COMPONENT_Boost.Spirit_FOUND)
 endif()
 
 #############################################################################
+# Boost.Thread
+NCBI_define_Wcomponent(Boost.Thread libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
+if(NCBI_COMPONENT_Boost.Thread_FOUND)
+    set(NCBI_COMPONENT_Boost.Thread_DEFINES BOOST_AUTO_LINK_NOMANGLE)
+endif()
+
+#############################################################################
 # Boost
 NCBI_define_Wcomponent(Boost boost_filesystem.lib boost_iostreams.lib boost_date_time.lib boost_regex.lib  boost_system.lib)
 

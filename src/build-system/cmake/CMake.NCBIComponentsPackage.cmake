@@ -184,6 +184,16 @@ else()
 endif()
 
 #############################################################################
+# Boost.Thread
+if(Boost_FOUND)
+  set(NCBI_COMPONENT_Boost.Thread_FOUND YES)
+  set(NCBI_COMPONENT_Boost.Thread_INCLUDE ${NCBI_COMPONENT_Boost_INCLUDE})
+#  set(NCBI_COMPONENT_Boost.Thread_LIBS    ${Boost_LIBRARIES})
+else()
+  set(NCBI_COMPONENT_Boost.Thread_FOUND NO)
+endif()
+
+#############################################################################
 # JPEG
 NCBI_define_Pkgcomponent(NAME JPEG PACKAGE libjpeg)
 
