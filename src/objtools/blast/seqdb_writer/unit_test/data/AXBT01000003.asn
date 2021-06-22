@@ -180,9 +180,6 @@ Seq-entry ::= seq {
             str "##Genome-Annotation-Data-END##" } } } ,
     comment "Bacteria available from Dr. Bradley S. Stevenson. Source DNA
  available from Dr. Bradley S. Stevenson." ,
-    comment "Annotation was added by the NCBI Prokaryotic Genome Annotation
- Pipeline (released 2013). Information about the Pipeline can be found here:
- http://www.ncbi.nlm.nih.gov/genome/annotation_prok/" ,
     pub {
       pub {
         gen {
