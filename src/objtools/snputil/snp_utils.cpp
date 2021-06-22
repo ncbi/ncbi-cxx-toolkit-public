@@ -665,8 +665,6 @@ void NSNPVariationHelper::VariantPropAsStrings(list<string>& ResList, const CVar
                 ResList.push_back("");
             if(resource_link & CVariantProperties::eResource_link_genotypeKit)
                 ResList.push_back("");
-            if(resource_link & CVariantProperties::eResource_link_has3D)
-                ResList.push_back("http://www.ncbi.nlm.nih.gov/SNP/snp3D.cgi?rsnum=" + sResourceLink_RsID);
             if(resource_link & CVariantProperties::eResource_link_submitterLinkout)
                 ResList.push_back("");
         }
