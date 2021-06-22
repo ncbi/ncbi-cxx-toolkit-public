@@ -1,0 +1,16 @@
+# $Id$
+
+NCBI_begin_app(test_wgs_loader_mt)
+  NCBI_sources(test_wgs_loader_mt ../../bam/test/vdb_user_agent)
+  NCBI_requires(Boost.Test.Included Boost.Thread)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank ncbi_xloader_wgs xobjutil)
+
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_set_test_assets(test_wgs_loader_mt.ini)
+  NCBI_set_test_timeout(300)
+  NCBI_add_test()
+
+  NCBI_project_watchers(vasilche ucko)
+
+NCBI_end_app()
+
