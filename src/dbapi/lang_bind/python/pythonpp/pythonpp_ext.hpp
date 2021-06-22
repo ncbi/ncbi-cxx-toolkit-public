@@ -1033,6 +1033,16 @@ private:
 bool CThreadingGuard::sm_MayRelease = false;
 #endif
 
+
+class CStateGuard {
+public:
+    CStateGuard() : m_State(PyGILState_Ensure()) { }
+    ~CStateGuard() { PyGILState_Release(m_State); }
+
+private:
+    PyGILState_STATE m_State;
+};
+
 }                                       // namespace pythonpp
 
 END_NCBI_SCOPE

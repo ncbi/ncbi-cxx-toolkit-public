@@ -4441,6 +4441,7 @@ CPythonDiagHandler::CPythonDiagHandler()
 
 void CPythonDiagHandler::Post(const SDiagMessage& mess)
 {
+    pythonpp::CStateGuard guard;
     pythonpp::CTuple args(2);
     pythonpp::CString format("%s", 2);
     pythonpp::CString buffer(mess.m_Buffer, mess.m_BufferLen);
