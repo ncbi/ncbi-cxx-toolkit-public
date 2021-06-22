@@ -1,3 +1,6 @@
+Version 1.23.1 (2021-06-22):
+* Fix crashes in release_global_lock mode when (automatically) logging.
+
 Version 1.23.0 (2021-03-04):
 * Advance to version 25.0 of the stable C++ Toolkit components.
 * Update Python version coverage, substituting 3.9 for 3.6 (and keeping
