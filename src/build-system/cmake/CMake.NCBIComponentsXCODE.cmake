@@ -173,6 +173,10 @@ NCBI_define_Xcomponent(NAME Boost.Test LIB boost_unit_test_framework-clang-darwi
 NCBI_define_Xcomponent(NAME Boost.Spirit LIB boost_thread-mt)
 
 #############################################################################
+# Boost.Thread
+NCBI_define_Xcomponent(NAME Boost.Thread LIB boost_thread-mt)
+
+#############################################################################
 # JPEG
 NCBI_define_Xcomponent(NAME JPEG MODULE libjpeg PACKAGE JPEG LIB jpeg)
 

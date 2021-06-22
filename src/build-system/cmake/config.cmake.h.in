@@ -823,11 +823,11 @@
 /* Define to 1 if the `Boost.Spirit' headers are available. */
 #cmakedefine HAVE_BOOST_SPIRIT 1
 
+/* Define to 1 if the `Boost.Thread' headers are available. */
+#cmakedefine HAVE_BOOST_THREAD 1
+
 /* Define to 1 if the `Boost.Test' libraries are available. */
 #cmakedefine HAVE_BOOST_TEST 1
-
-/* Define to 1 if the `Boost.Threads' library is available. */
-#define HAVE_BOOST_THREAD 1
 
 /* Define to 1 if FreeType is available. */
 #cmakedefine HAVE_FREETYPE 1
