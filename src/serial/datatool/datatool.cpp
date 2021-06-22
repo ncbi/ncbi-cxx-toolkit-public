@@ -278,7 +278,7 @@ bool CDataTool::ProcessModules(void)
             } else if (NStr::CompareNocase(v,"keep_nestedelem")==0) {
                 m_codestyle |= FCodeGenerationStyle(ePreserveNestedElements);
             } else if (NStr::CompareNocase(v,"xmlelem_enums")==0) {
-                m_codestyle |= FCodeGenerationStyle(eXmlElementEnums);
+                m_codestyle |= FCodeGenerationStyle(eXmlElementEnums);6
             } else if (NStr::CompareNocase(v,"no_restrictions")==0) {
                 m_codestyle |= FCodeGenerationStyle(eNoRestrictions);
             } else {
@@ -662,7 +662,7 @@ bool CDataTool::GenerateCode(bool undo)
                 string root = opt;
                 if (root.empty()) {
                     // default
-                    root = "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source";
+                    root = "https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source";
                 }
                 CClassCode::SetDocRootURL(root);
             }
