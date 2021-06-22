@@ -278,7 +278,7 @@ bool CDataTool::ProcessModules(void)
             } else if (NStr::CompareNocase(v,"keep_nestedelem")==0) {
                 m_codestyle |= FCodeGenerationStyle(ePreserveNestedElements);
             } else if (NStr::CompareNocase(v,"xmlelem_enums")==0) {
-                m_codestyle |= FCodeGenerationStyle(eXmlElementEnums);6
+                m_codestyle |= FCodeGenerationStyle(eXmlElementEnums);
             } else if (NStr::CompareNocase(v,"no_restrictions")==0) {
                 m_codestyle |= FCodeGenerationStyle(eNoRestrictions);
             } else {
