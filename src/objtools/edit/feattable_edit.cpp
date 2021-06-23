@@ -309,7 +309,6 @@ void CFeatTableEdit::SubmitFixProducts()
 //  ----------------------------------------------------------------------------
 {
     SAnnotSelector sel;
-    //sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
     sel.IncludeFeatType(CSeqFeatData::e_Rna);
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
     for (CFeat_CI it(mHandle, sel); it; ++it) {
@@ -457,25 +456,22 @@ void CFeatTableEdit::GenerateProteinAndTranscriptIds()
 // ---------------------------------------------------------------------------
 {
     mProcessedMrnas.clear();
-
-    { {
-            SAnnotSelector sel;
-            sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
-            for (CFeat_CI it(mHandle, sel); it; ++it) {
-                CMappedFeat cds = *it;
-                xAddTranscriptAndProteinIdsToCdsAndParentMrna(cds);
-            }
-        }}
-
-    { {
-            SAnnotSelector sel;
-            sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
-            for (CFeat_CI it(mHandle, sel); it; ++it) {
-                CMappedFeat mrna = *it;
-                xAddTranscriptAndProteinIdsToUnmatchedMrna(mrna);
-            }
-        }}
-
+    {
+        SAnnotSelector sel;
+        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+        for (CFeat_CI it(mHandle, sel); it; ++it) {
+            CMappedFeat cds = *it;
+            xAddTranscriptAndProteinIdsToCdsAndParentMrna(cds);
+        }
+    }
+    {
+        SAnnotSelector sel;
+        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+        for (CFeat_CI it(mHandle, sel); it; ++it) {
+            CMappedFeat mrna = *it;
+            xAddTranscriptAndProteinIdsToUnmatchedMrna(mrna);
+        }
+    }
 }
 
 
@@ -530,22 +526,22 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& 
     bool is_genbank_transcript = NStr::StartsWith(transcript_id, "gb|");
 
 
-    if ((is_genbank_protein ||
-        NStr::StartsWith(protein_id, "gnl|")) &&
-        (is_genbank_transcript ||
-            NStr::StartsWith(transcript_id, "gnl|"))) { // No further processing of ids is required - simply assign to features
-        if (no_protein_id_qual) { // protein_id from ID qualifier or mRNA => need to add protein_id qual to CDS
+    if ((is_genbank_protein  ||  NStr::StartsWith(protein_id, "gnl|")) &&
+            (is_genbank_transcript  ||  NStr::StartsWith(transcript_id, "gnl|"))) { 
+        
+        // No further processing of ids is required - simply assign to features
+        if (no_protein_id_qual) { 
+            // protein_id from ID qualifier or mRNA => need to add protein_id qual to CDS
             xFeatureSetQualifier(cds, "protein_id", protein_id);
         }
 
-        if (no_transcript_id_qual) { // transcript_id from mRNA => need to add transcript_id qual to CDS
+        if (no_transcript_id_qual) { 
+            // transcript_id from mRNA => need to add transcript_id qual to CDS
             xFeatureSetQualifier(cds, "transcript_id", transcript_id);
         }
 
         if (mrna) {
-            xAddTranscriptAndProteinIdsToMrna(transcript_id,
-                protein_id,
-                mrna);
+            xAddTranscriptAndProteinIdsToMrna(transcript_id, protein_id, mrna);
         }
         return;
     }
@@ -554,32 +550,25 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& 
     bool has_protein_id = !NStr::IsBlank(protein_id);
     bool has_transcript_id = !NStr::IsBlank(transcript_id);
 
-    if (has_protein_id &&
-        has_transcript_id) {
-        if (!is_genbank_protein &&
-            (transcript_id == protein_id)) {
+    if (has_protein_id  &&  has_transcript_id) {
+        if (!is_genbank_protein  &&  (transcript_id == protein_id)) {
             protein_id = "cds." + protein_id;
         }
     }
     else {
-        if (has_protein_id &&
-            !is_genbank_protein) {
+        if (has_protein_id  &&  !is_genbank_protein) {
             transcript_id = "mrna." + protein_id;
             has_transcript_id = true;
-
         }
-        else
-            if (has_transcript_id &&
-                !is_genbank_transcript) {
-                protein_id = "cds." + transcript_id;
-                has_protein_id = true;
-            }
+        else if (has_transcript_id  &&  !is_genbank_transcript) {
+            protein_id = "cds." + transcript_id;
+            has_protein_id = true;
+        }
 
         // Generate new transcript_id and protein_id if necessary
         if (!has_transcript_id) {
             transcript_id = xNextTranscriptId(cds);
         }
-
         if (!has_protein_id) {
             protein_id = xNextProteinId(cds);
         }
@@ -588,11 +577,8 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& 
     xConvertToGeneralIds(cds, transcript_id, protein_id);
 
     if (mrna) {
-        xAddTranscriptAndProteinIdsToMrna(transcript_id,
-            protein_id,
-            mrna);
+        xAddTranscriptAndProteinIdsToMrna(transcript_id, protein_id, mrna);
     }
-
 
     xFeatureSetQualifier(cds, "transcript_id", transcript_id);
     xFeatureSetQualifier(cds, "protein_id", protein_id);
@@ -600,10 +586,11 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToCdsAndParentMrna(CMappedFeat& 
 
 
 // ---------------------------------------------------------------------------
-void CFeatTableEdit::xAddTranscriptAndProteinIdsToMrna(const string& cds_transcript_id,
+void CFeatTableEdit::xAddTranscriptAndProteinIdsToMrna(
+    const string& cds_transcript_id,
     const string& cds_protein_id,
     CMappedFeat& mrna)
-    // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 {
     if (mProcessedMrnas.find(mrna) != mProcessedMrnas.end()) {
         return;
@@ -624,15 +611,15 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToMrna(const string& cds_transcr
         protein_id = cds_protein_id;
     }
     else {
-        if ((protein_id == transcript_id) &&
-            !NStr::StartsWith(protein_id, "gb|")) {
+        if ((protein_id == transcript_id)  &&  !NStr::StartsWith(protein_id, "gb|")) {
             protein_id = "cds." + protein_id;
         }
         use_local_ids = true;
     }
 
-    if (use_local_ids) { // protein id and/or transcript id specified on mRNA.
-                         // Process these ids and check that the processed quals match the qualifiers on the child CDS feature
+    if (use_local_ids) { 
+        // protein id and/or transcript id specified on mRNA.
+        // Process these ids and check that the processed quals match the qualifiers on the child CDS feature
         xConvertToGeneralIds(mrna, transcript_id, protein_id);
 
         if (transcript_id != cds_transcript_id) {
