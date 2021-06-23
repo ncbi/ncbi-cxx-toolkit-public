@@ -56,7 +56,7 @@ public:
      **
      **/
     CMaskWriterFasta( CNcbiOstream & arg_os, bool hard_masking = false)
-        : m_HardMasking(hard_masking), CMaskWriter( arg_os ) {}
+        : CMaskWriter( arg_os ), m_HardMasking(hard_masking) {}
 
     /**
      **\brief Object destructor.
