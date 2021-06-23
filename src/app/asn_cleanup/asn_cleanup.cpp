@@ -124,7 +124,7 @@ private:
     // types
 
     CObjectIStream* x_OpenIStream(const CArgs& args, const string& filename, ESerialDataFormat&, EAsnType&);
-    void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true, bool binary = false);
+    void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true);
     void x_CloseOStream();
     bool x_ProcessSeqSubmit(unique_ptr<CObjectIStream>& is);
     bool x_ProcessBigFile(unique_ptr<CObjectIStream>& is, EAsnType asn_type);
@@ -571,7 +571,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     bool opened_output = false;
 
     if (!args["o"] && args["outdir"]) {
-        x_OpenOStream(filename, args["outdir"].AsString(), true, (serial==eSerial_AsnBinary));
+        x_OpenOStream(filename, args["outdir"].AsString());
         opened_output = true;
     }
 
@@ -1259,7 +1259,7 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
 }
 
 
-void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool remove_orig_dir, bool binary)
+void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool remove_orig_dir)
 {
     ESerialDataFormat outFormat = eSerial_AsnText;
 
@@ -1274,10 +1274,6 @@ void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool 
         else if (args["outformat"].AsString() == "JSON") {
             outFormat = eSerial_Json;
         }
-    }
-    else if (binary && args["bigfile"]) {
-        // Set the same format as the input one
-        outFormat = eSerial_AsnBinary;
     }
 
     if (NStr::IsBlank(filename)) {
