@@ -81,19 +81,6 @@ void SeqDB_ThrowException(CSeqDBException::EErrCode code, const string & msg)
     }
 }
 
-/// Build and throw a file-not-found exception.
-///
-/// @param fname The name of the unfound file. [in]
-
-static void s_SeqDB_FileNotFound(const string & fname)
-{
-    string msg("File [");
-    msg += fname;
-    msg += "] not found.";
-    SeqDB_ThrowException(CSeqDBException::eFileErr, msg);
-}
-
-
 /// Check the size of a number relative to the scope of a numeric type.
 
 template<class TIn, class TOut>
