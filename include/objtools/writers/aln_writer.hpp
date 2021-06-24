@@ -60,13 +60,30 @@ public:
 
     virtual ~CAlnWriter() = default;
 
+    bool WriteAnnot(
+        const CSeq_annot& annot,
+        const string& name = "",
+        const string& descr= "") override
+    {
+        if (!annot.IsAlign()) {
+            return false;
+        }
+        const auto& alignments = annot.GetData().GetAlign();
+        for (const auto& align: alignments) {
+            if (!WriteAlign(*align, name, descr)) {
+                return false;
+            }
+        }
+        return true;
+    };
+
     virtual bool WriteAlign(
         const CSeq_align& align,
         const string& name="",
         const string& descr="");
 
 
-    void SetLineWidth(unsigned int width);
+    //void SetLineWidth(unsigned int width);
 
 protected:
     bool WriteAlignDenseSeg(const CDense_seg& denseg);
