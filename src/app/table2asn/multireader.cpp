@@ -750,7 +750,7 @@ void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeq_descr & source
 
 void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeqdesc & source)
 {
-    bool duplicates = (m_allowed_duplicates.find(source.Which()) == m_allowed_duplicates.end());
+    bool duplicates = (m_allowed_duplicates.find(source.Which()) != m_allowed_duplicates.end());
 
     CAutoAddDesc desc(dest, source.Which());
     desc.Set(duplicates).Assign(source);
