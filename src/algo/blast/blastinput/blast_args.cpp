@@ -2335,7 +2335,7 @@ static void s_GetTaxIDList(const string & in, bool isFile, bool isNegativeList, 
     		}
     		tax_ids.insert(NStr::StringToNumeric<TTaxId>(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
     	}
-    	catch(CException & e){
+    	catch(CException &){
     		NCBI_THROW(CInputException, eInvalidInput, "Invalid taxidlist file ");
     	}
     }
