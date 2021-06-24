@@ -602,6 +602,8 @@ int CPubseqGatewayApp::Run(void)
                                                m_ListenerBacklog,
                                                m_TcpMaxConn));
 
+    // The binder must be initialized after the UV main loop has been created
+    m_UvLoopBinder.reset(new CPSGS_UvLoopBinder(GetUVLoop()));
 
 
     // Run the monitoring thread

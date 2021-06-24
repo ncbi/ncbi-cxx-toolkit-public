@@ -52,6 +52,7 @@
 #include "timing.hpp"
 #include "psgs_dispatcher.hpp"
 #include "osg_connection.hpp"
+#include "psgs_uv_loop_binder.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -264,7 +265,13 @@ public:
         return m_Counters;
     }
 
-uv_loop_t *  GetUVLoop(void) { return m_TcpDaemon->GetUVLoop(); }
+    uv_loop_t *  GetUVLoop(void)
+    { return m_TcpDaemon->GetUVLoop(); }
+
+    CPSGS_UvLoopBinder &  GetUvLoopBinder(void)
+    {
+        return *(m_UvLoopBinder.get());
+    }
 
 private:
     struct SRequestParameter
@@ -404,6 +411,7 @@ private:
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;
     unique_ptr<CHttpDaemon<CPendingOperation>>
                                         m_TcpDaemon;
+    unique_ptr<CPSGS_UvLoopBinder>      m_UvLoopBinder;
 
     unique_ptr<CExcludeBlobCache>       m_ExcludeBlobCache;
 

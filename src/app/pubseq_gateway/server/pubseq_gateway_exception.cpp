@@ -112,6 +112,17 @@ const char *  CPubseqGatewayException::GetErrCodeString(void) const
             return "eVersionMismatch";
         case eSeqIdMismatch:
             return "eSeqIdMismatch";
+        case eInvalidPollInit:
+            return "eInvalidPollInit";
+        case eInvalidPollStart:
+            return "eInvalidPollStart";
+        case eInvalidTimerInit:
+            return "eInvalidTimerInit";
+        case eInvalidTimerStart:
+            return "eInvalidTimerStart";
+        case eInvalidAsyncInit:
+            return "eInvalidAsyncInit";
+
         default:
             return CException::GetErrCodeString();
     }
