@@ -205,58 +205,10 @@ shared_ptr<CPSG_Reply> CPsgClientContext_Bulk::GetReply(void)
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-// CPsgClientThread
-/////////////////////////////////////////////////////////////////////////////
-
-class CPsgClientThread : public CThread
-{
-public:
-    CPsgClientThread(shared_ptr<CPSG_Queue> queue) : m_Queue(queue), m_WakeSema(0, kMax_UInt) {}
-
-    void Stop(void)
-    {
-        m_Stop = true;
-        Wake();
-    }
-
-    void Wake()
-    {
-        m_WakeSema.Post();
-    }
-
-protected:
-    void* Main(void) override;
-
-private:
-    bool m_Stop = false;
-    shared_ptr<CPSG_Queue> m_Queue;
-    CSemaphore m_WakeSema;
-};
-
-
 const unsigned int kMaxWaitSeconds = 3;
 const unsigned int kMaxWaitMillisec = 0;
 
 #define DEFAULT_DEADLINE CDeadline(kMaxWaitSeconds, kMaxWaitMillisec)
-
-void* CPsgClientThread::Main(void)
-{
-    for (;;) {
-        m_WakeSema.Wait();
-        if (m_Stop) break;
-        shared_ptr<CPSG_Reply> reply;
-        do {
-            reply = m_Queue->GetNextReply(DEFAULT_DEADLINE);
-        }
-        while (!reply && !m_Stop);
-        if (m_Stop) break;
-        auto context = reply->GetRequest()->GetUserContext<CPsgClientContext>();
-        context->SetReply(reply);
-    }
-    return nullptr;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 // CPSGBioseqCache
@@ -782,15 +734,6 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
     }
 
     m_Queue = make_shared<CPSG_Queue>(service_name);
-    m_Thread.Reset(new CPsgClientThread(m_Queue));
-    m_Thread->Run();
-}
-
-
-CPSGDataLoader_Impl::~CPSGDataLoader_Impl(void)
-{
-    m_Thread->Stop();
-    m_Thread->Join();
 }
 
 
@@ -2284,8 +2227,9 @@ CPSG_BioId CPSGDataLoader_Impl::x_GetBioId(const CSeq_id_Handle& idh)
 
 void CPSGDataLoader_Impl::x_SendRequest(shared_ptr<CPSG_Request> request)
 {
-    m_Queue->SendRequest(request, DEFAULT_DEADLINE);
-    m_Thread->Wake();
+    auto context = request->GetUserContext<CPsgClientContext>();
+    auto reply = m_Queue->SendRequestAndGetReply(request, DEFAULT_DEADLINE);
+    context->SetReply(reply);
 }
 
 

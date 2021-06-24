@@ -126,7 +126,6 @@ private:
 };
 
 
-class CPsgClientThread;
 class CPSGBioseqCache;
 class CPSGBlobMap;
 class CPsgClientContext_Bulk;
@@ -137,7 +136,6 @@ class CPSGDataLoader_Impl : public CObject
 {
 public:
     explicit CPSGDataLoader_Impl(const CGBLoaderParams& params);
-    ~CPSGDataLoader_Impl(void);
 
     typedef CDataLoader::TIds TIds;
     typedef CDataLoader::TGis TGis;
@@ -238,7 +236,6 @@ private:
     bool m_NoSplit = false;
     bool m_AddWGSMasterDescr = true;
     shared_ptr<CPSG_Queue> m_Queue;
-    CRef<CPsgClientThread> m_Thread;
     unique_ptr<CPSGBlobMap> m_BlobMap;
     unique_ptr<CPSGBioseqCache> m_BioseqCache;
     unique_ptr<CThreadPool> m_ThreadPool;
