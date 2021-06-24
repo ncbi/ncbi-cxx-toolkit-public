@@ -124,22 +124,6 @@ InitializeRemoteBlast(CRef<blast::IQueryFactory> queries,
     return retval;
 }
 
-static string s_FindBlastDbDataLoaderName(const string& dbname, bool is_protein)
-{
-    // This string is built based on the knowledge of how the BLAST DB data
-    // loader names are created, see 
-    // {CBlastDbDataLoader,CRemoteBlastDbDataLoader}::GetLoaderNameFromArgs
-    const string str2find(string("_") + dbname + string(is_protein ? "P" : "N"));
-    CObjectManager::TRegisteredNames loader_names;
-    CObjectManager::GetInstance()->GetRegisteredNames(loader_names);
-    ITERATE(CObjectManager::TRegisteredNames, loader_name, loader_names) {
-        if (NStr::Find(*loader_name, str2find) != NPOS) {
-            return *loader_name;
-        }
-    }
-    return kEmptyStr;
-}
-
 blast::SDataLoaderConfig 
 InitializeQueryDataLoaderConfiguration(bool query_is_protein, 
                                        CRef<blast::CLocalDbAdapter> db_adapter)
@@ -1008,7 +992,7 @@ void CheckMTByQueries_DBSize(CRef<CLocalDbAdapter> & db_adapter, const CBlastOpt
 		return;
 	}
 
-	EProgram prog = opt.GetProgram();
+	//EProgram prog = opt.GetProgram();
 	CRef<CSeqDB> seqdb = sdb->GetSeqDb();
 	Uint8 total_length = seqdb->GetTotalLength();
 	Uint8 length_limit = 0;
