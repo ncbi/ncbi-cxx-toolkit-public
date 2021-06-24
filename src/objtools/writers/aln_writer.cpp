@@ -386,19 +386,29 @@ void CAlnWriter::AddGaps(
     int product_pos = 0;
     unsigned int interval_width = 0;
     for (CRef<CSpliced_exon_chunk> exon_chunk : exon_chunks) {
-        switch(exon_chunk->Which()) {
+        auto chunk_type = exon_chunk->Which();
+        switch(chunk_type) {
         case CSpliced_exon_chunk::e_Match:
-            interval_width = exon_chunk->GetMatch();
         case CSpliced_exon_chunk::e_Mismatch:
-            interval_width = exon_chunk->GetMismatch();
         case CSpliced_exon_chunk::e_Diag:
-            interval_width = exon_chunk->GetDiag();
-
+            switch(chunk_type) {
+                default:
+                    // compiler, shut up!
+                    break;
+                case CSpliced_exon_chunk::e_Match:
+                    interval_width = exon_chunk->GetMatch();
+                    break;
+                case CSpliced_exon_chunk::e_Mismatch:
+                    interval_width = exon_chunk->GetMismatch();
+                    break;
+                case CSpliced_exon_chunk::e_Diag:
+                    interval_width = exon_chunk->GetDiag();
+                    break;
+            }
             genomic_string.append(genomic_seq, genomic_pos, interval_width);
             product_string.append(product_seq, product_pos, (interval_width + (res_width-1))/res_width);
             genomic_pos += interval_width;
             product_pos += interval_width/res_width;
-
             break;
 
         case CSpliced_exon_chunk::e_Genomic_ins:
@@ -534,6 +544,8 @@ bool CAlnWriter::WriteSparseAlign(const CSparse_align& sparse_align)
 
 void CAlnWriter::WriteContiguous(const string& defline, const string& seqdata)
 {
+    cerr << defline << endl;
+    cerr << seqdata << endl;
     if (defline.back() == '|' && defline.size() > 1)
     {
         const auto length = defline.size();
