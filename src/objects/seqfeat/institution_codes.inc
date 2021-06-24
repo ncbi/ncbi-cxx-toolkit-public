@@ -3607,7 +3607,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KCOM\tc\tKorean Collection for Oral Microbiology\t\t\t",
 "KCS\ts\tUniversity of London, King's College, Botany Department\t\t\t",
 "KCSU\ts\tKarachay-Circassian State University\t\t\t",
-"KCTC\tc\tKorean Collection for Type Cultures\t\thttps://kctc.kribb.re.kr/En/jsearch/j_sview.aspx?sn=\t",
+"KCTC\tc\tKorean Collection for Type Cultures\t\thttps://kctc.kribb.re.kr/EN/search/resourceDetail?sn=\t",
 "KDL\ts\tKendal Museum\t\t\t",
 "KDR\ts\tBewdley Museum\t\t\t",
 "KE\ts\tKent State University, Biological Sciences Department\t\t\t",

@@ -3574,7 +3574,7 @@ KCMH	s	Kushiro City Museum
 KCOM	c	Korean Collection for Oral Microbiology			
 KCS	s	University of London, King's College, Botany Department			
 KCSU	s	Karachay-Circassian State University			
-KCTC	c	Korean Collection for Type Cultures		https://kctc.kribb.re.kr/En/jsearch/j_sview.aspx?sn=	
+KCTC	c	Korean Collection for Type Cultures		https://kctc.kribb.re.kr/EN/search/resourceDetail?sn=	
 KDL	s	Kendal Museum			
 KDR	s	Bewdley Museum			
 KE	s	Kent State University, Biological Sciences Department			
