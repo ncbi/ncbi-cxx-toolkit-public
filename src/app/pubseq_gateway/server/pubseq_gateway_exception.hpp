@@ -84,7 +84,9 @@ public:
         eInvalidPollInit,
         eInvalidPollStart,
         eInvalidTimerInit,
-        eInvalidTimerStart
+        eInvalidTimerStart,
+
+        eInvalidAsyncInit
     };
 
     virtual const char *  GetErrCodeString(void) const;
