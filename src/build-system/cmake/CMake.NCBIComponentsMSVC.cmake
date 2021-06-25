@@ -71,8 +71,8 @@ set(NCBI_ThirdParty_VDB        ${NCBI_ThirdParty_VDBROOT}/vdb-versions/cxx_toolk
     endif()
 
 set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python38 CACHE PATH "PYTHON root")
-set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.28.1 CACHE PATH "PROTOBUF root")
-set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.28.1 CACHE PATH "GRPC root")
+set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.36.4-ncbi1 CACHE PATH "PROTOBUF root")
+set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.36.4-ncbi1 CACHE PATH "GRPC root")
 set(NCBI_ThirdParty_XALAN       ${NCBI_ThirdPartyBasePath}/xalan/${NCBI_ThirdPartyCompiler}/1.10.0-20080814 CACHE PATH "XALAN root")
 set(NCBI_ThirdParty_XERCES      ${NCBI_ThirdPartyBasePath}/xerces/${NCBI_ThirdPartyCompiler}/2.8.0 CACHE PATH "XERCES root")
 set(NCBI_ThirdParty_FTGL        ${NCBI_ThirdPartyBasePath}/ftgl/${NCBI_ThirdPartyCompiler}/2.1.3-rc5 CACHE PATH "FTGL root")
@@ -388,10 +388,23 @@ if(NOT EXISTS "${NCBI_PROTOC_APP}")
     message("NOT FOUND: ${NCBI_PROTOC_APP}")
 else()
 NCBI_define_Wcomponent(PROTOBUF libprotobuf.lib)
-NCBI_define_Wcomponent(GRPC grpc++.lib grpc.lib gpr.lib address_sorting.lib cares.lib libprotobuf.lib
-                           upb.lib crypto.lib ssl.lib absl_throw_delegate.lib absl_strings.lib
-                           absl_bad_optional_access.lib  absl_str_format_internal.lib
-                           absl_raw_logging_internal.lib absl_int128.lib)
+NCBI_define_Wcomponent(GRPC
+    grpc++.lib grpc.lib gpr.lib address_sorting.lib cares.lib libprotobuf.lib  libprotoc.lib  upb.lib boringcrypto.lib
+    boringssl.lib re2.lib absl_bad_any_cast_impl.lib absl_bad_optional_access.lib absl_bad_variant_access.lib absl_base.lib
+    absl_city.lib absl_civil_time.lib absl_cord.lib absl_debugging_internal.lib absl_demangle_internal.lib absl_examine_stack.lib
+    absl_exponential_biased.lib absl_failure_signal_handler.lib absl_flags.lib absl_flags_commandlineflag.lib
+    absl_flags_commandlineflag_internal.lib absl_flags_config.lib absl_flags_internal.lib absl_flags_marshalling.lib
+    absl_flags_parse.lib absl_flags_private_handle_accessor.lib absl_flags_program_name.lib absl_flags_reflection.lib
+    absl_flags_usage.lib absl_flags_usage_internal.lib absl_graphcycles_internal.lib absl_hash.lib absl_hashtablez_sampler.lib
+    absl_int128.lib absl_leak_check.lib absl_leak_check_disable.lib absl_log_severity.lib absl_malloc_internal.lib
+    absl_periodic_sampler.lib absl_random_distributions.lib absl_random_internal_distribution_test_util.lib
+    absl_random_internal_platform.lib absl_random_internal_pool_urbg.lib absl_random_internal_randen.lib
+    absl_random_internal_randen_hwaes.lib absl_random_internal_randen_hwaes_impl.lib absl_random_internal_randen_slow.lib
+    absl_random_internal_seed_material.lib absl_random_seed_gen_exception.lib absl_random_seed_sequences.lib absl_raw_hash_set.lib
+    absl_raw_logging_internal.lib absl_scoped_set_env.lib absl_spinlock_wait.lib absl_stacktrace.lib absl_status.lib
+    absl_statusor.lib absl_str_format_internal.lib absl_strerror.lib absl_strings.lib absl_strings_internal.lib absl_symbolize.lib
+    absl_synchronization.lib absl_throw_delegate.lib absl_time.lib absl_time_zone.lib
+)
 if(NCBI_COMPONENT_GRPC_FOUND)
     set(NCBI_COMPONENT_GRPC_DEFINES _WIN32_WINNT=0x0600)
 endif()
