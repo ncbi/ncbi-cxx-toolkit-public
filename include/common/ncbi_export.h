@@ -929,6 +929,14 @@
 #  define NCBI_VALID_EXPORT NCBI_DLL_IMPORT
 #endif
 
+/* Export specifier for library vdb2blast
+ */
+#ifdef NCBI_VDB2BLAST_EXPORTS
+#  define NCBI_VDB2BLAST_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_VDB2BLAST_EXPORT NCBI_DLL_IMPORT
+#endif
+
 /* Export specifier for library discrepancy_report
  */
 #ifdef NCBI_DISCREPANCY_REPORT_EXPORTS
