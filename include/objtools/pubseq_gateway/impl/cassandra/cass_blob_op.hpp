@@ -51,6 +51,7 @@
 #include "blob_record.hpp"
 #include "nannot/record.hpp"
 #include "id2_split/record.hpp"
+#include "acc_ver_hist/record.hpp"
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -506,6 +507,19 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         TDataErrorCallback error_cb,
         unique_ptr<CCassBlobWaiter> & waiter
     );
+
+    void FetchAccVerHistory(
+        unsigned int op_timeout_ms,
+        unsigned int max_retries,
+        const string & accession,
+        TAccVerHistConsumeCallback consume_callback,
+        TDataErrorCallback error_cb,
+        unique_ptr<CCassBlobWaiter> & waiter,
+        int16_t version = 0,
+        int16_t seq_id_type = 0
+    );
+
+  
     void DeleteBlobExtended(unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,
                          TDataErrorCallback error_cb,
