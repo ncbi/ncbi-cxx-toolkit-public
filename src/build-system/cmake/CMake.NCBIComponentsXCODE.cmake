@@ -129,6 +129,9 @@ endif()
 
 #############################################################################
 # Z
+set(NCBI_COMPONENT_LocalZ_FOUND NO)
+list(REMOVE_ITEM NCBI_ALL_REQUIRES LocalZ)
+
 NCBI_define_Xcomponent(NAME Z MODULE zlib PACKAGE ZLIB LIB z)
 if(NOT NCBI_COMPONENT_Z_FOUND)
     set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
@@ -139,6 +142,9 @@ endif()
 
 #############################################################################
 #BZ2
+set(NCBI_COMPONENT_LocalBZ2_FOUND NO)
+list(REMOVE_ITEM NCBI_ALL_REQUIRES LocalBZ2)
+
 NCBI_define_Xcomponent(NAME BZ2 PACKAGE BZip2 LIB bz2)
 if(NOT NCBI_COMPONENT_BZ2_FOUND)
     set(NCBI_COMPONENT_BZ2_FOUND ${NCBI_COMPONENT_LocalBZ2_FOUND})
@@ -282,6 +288,10 @@ NCBI_define_Xcomponent(NAME XML MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLU
 if(NCBI_COMPONENT_XML_FOUND)
     list(APPEND NCBI_ALL_LEGACY LIBXML)
     set(NCBI_COMPONENT_LIBXML_FOUND XML)
+
+    string(REPLACE ";" "?" _x "${NCBI_COMPONENT_XML_LIBS}")
+    string(REPLACE "-L/sw/lib?" "" _x "${_x}")
+    string(REPLACE "?" ";" NCBI_COMPONENT_XML_LIBS "${_x}")
 endif()
 
 #############################################################################
@@ -298,6 +308,10 @@ if(NCBI_COMPONENT_XSLT_FOUND)
     if(NCBI_XSLTPROCTOOL)
         set(NCBI_REQUIRE_XSLTPROCTOOL_FOUND YES)
     endif()
+
+    string(REPLACE ";" "?" _x "${NCBI_COMPONENT_XSLT_LIBS}")
+    string(REPLACE "-L/sw/lib?" "" _x "${_x}")
+    string(REPLACE "?" ";" NCBI_COMPONENT_XSLT_LIBS "${_x}")
 endif()
 if(NCBI_COMPONENT_XSLT_FOUND)
     list(APPEND NCBI_ALL_LEGACY LIBXSLT)
@@ -309,6 +323,10 @@ endif()
 NCBI_define_Xcomponent(NAME EXSLT MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT)
 if(NCBI_COMPONENT_EXSLT_FOUND)
     set(NCBI_COMPONENT_EXSLT_LIBS ${LIBXSLT_EXSLT_LIBRARIES} ${NCBI_COMPONENT_EXSLT_LIBS})
+
+    string(REPLACE ";" "?" _x "${NCBI_COMPONENT_EXSLT_LIBS}")
+    string(REPLACE "-L/sw/lib?" "" _x "${_x}")
+    string(REPLACE "?" ";" NCBI_COMPONENT_EXSLT_LIBS "${_x}")
 endif()
 if(NCBI_COMPONENT_EXSLT_FOUND)
     list(APPEND NCBI_ALL_LEGACY LIBEXSLT)
