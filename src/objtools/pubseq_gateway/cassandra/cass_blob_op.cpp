@@ -42,6 +42,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/delete_expired.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/nannot_task/fetch.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/acc_ver_hist/tasks.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/SyncObj.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
@@ -279,6 +280,24 @@ void CCassBlobOp::FetchNAnnot(
         op_timeout_ms, max_retries, m_Conn, m_Keyspace,
         accession, version, seq_id_type,
         move(consume_callback), move(error_cb)
+    ));
+}
+
+void CCassBlobOp::FetchAccVerHistory(
+    unsigned int op_timeout_ms,
+    unsigned int max_retries,
+    const string & accession,
+    TAccVerHistConsumeCallback consume_callback,
+    TDataErrorCallback error_cb,
+    unique_ptr<CCassBlobWaiter> & waiter,
+    int16_t version,
+    int16_t seq_id_type
+)
+{
+    waiter.reset(new CCassAccVerHistoryTaskFetch(
+        op_timeout_ms, max_retries, m_Conn, m_Keyspace,
+        accession,
+        move(consume_callback), move(error_cb), version, seq_id_type
     ));
 }
 
