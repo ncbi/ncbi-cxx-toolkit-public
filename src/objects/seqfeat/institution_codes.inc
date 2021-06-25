@@ -5194,6 +5194,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NIHHS\ts\tNational Institute of Horticultural and Herbal Science, RDA\t\t\t",
 "NIM\ts\tMuseum d'histoire naturelle de Nimes\t\t\t",
 "NIMM\ts\tNational Institute of Medicinal Materials\t\t\t",
+"NIMR\ts\tNigerian Institute of Medical Research\t\t\t",
 "NINF\ts\tNewfoundland Insectarium\t\t\t",
 "NIO\ts\tNational Institute of Oceanography\t\t\t",
 "NIOCC\tc\tNational Institute of Oceanography Culture Collection\t\t\t",

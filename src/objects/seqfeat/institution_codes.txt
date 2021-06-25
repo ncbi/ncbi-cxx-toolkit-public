@@ -5161,6 +5161,7 @@ NIGP	s	Naking Institute of Geology and Palaeontology
 NIHHS	s	National Institute of Horticultural and Herbal Science, RDA			
 NIM	s	Museum d'histoire naturelle de Nimes			
 NIMM	s	National Institute of Medicinal Materials			
+NIMR	s	Nigerian Institute of Medical Research			
 NINF	s	Newfoundland Insectarium			
 NIO	s	National Institute of Oceanography			
 NIOCC	c	National Institute of Oceanography Culture Collection			
