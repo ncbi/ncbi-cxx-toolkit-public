@@ -57,6 +57,12 @@ struct SAccVerHistRec
     int32_t sat_key = 0;     // VAL TSatKey
     int16_t sat = 0;         // VAL TSatId
     int64_t chain = 0;       // TBiSiGi
+
+    SAccVerHistRec() :
+        gi( 0), accession( ""), version( 0), seq_id_type( 0), date( 0),
+        sat_key( 0), sat( 0), chain( 0)
+    {}
+    
     SAccVerHistRec& operator=(const SAccVerHistRec& rec)
     {
         gi          = rec.gi;
@@ -73,33 +79,7 @@ struct SAccVerHistRec
     }
 };
 
-//::::::::
-class CCassAccVerHistoryTaskInsert
-    : public CCassBlobWaiter
-{
-    enum EAccVerHistoryInserterState {
-        eInit = 0,
-        eWaitingRecordInserted,
-        eDone = CCassBlobWaiter::eDone,
-        eError = CCassBlobWaiter::eError
-    };
-
- public:
-    CCassAccVerHistoryTaskInsert(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        SAccVerHistRec * record,
-        unsigned int max_retries,
-        TDataErrorCallback data_error_cb
-    );
-
- protected:
-    virtual void Wait1(void) override;
-
- private:
-    SAccVerHistRec * m_Record;
-};
+using TAccVerHistConsumeCallback = function<bool( SAccVerHistRec &&, bool last)>;
 
 END_IDBLOB_SCOPE
 
