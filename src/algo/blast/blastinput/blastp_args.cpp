@@ -149,7 +149,7 @@ CBlastpNodeArgs::GetOutputStream()
 
 CBlastpNodeArgs::CBlastpNodeArgs(const string & input)
 {
-	m_InputStream = new CNcbiIstrstream(input.c_str(), input.length());
+	m_InputStream = new CNcbiIstrstream(input);
 }
 
 CBlastpNodeArgs::~CBlastpNodeArgs()
