@@ -33,15 +33,12 @@
 
 #include <ncbi_pch.hpp>
 
-#include <objtools/pubseq_gateway/impl/cassandra/acc_ver_hist/record.hpp>
-
 #include <memory>
 #include <string>
 #include <utility>
 
-#include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/acc_ver_hist/tasks.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/changelog/writer.hpp>
 
 BEGIN_IDBLOB_SCOPE
