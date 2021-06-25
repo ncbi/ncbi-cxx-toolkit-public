@@ -306,7 +306,7 @@ s_InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
             isRemote = true;
             LOG_POST(Info <<"Remote " << search_db->GetDatabaseName());
             }
-            catch (CException & e) {
+            catch (CException & ) {
             	SetDiagPostLevel(eDiag_Warning);
             	NCBI_THROW(CException, eUnknown, "Fail to initialize local or remote DB" );
             }
@@ -319,7 +319,7 @@ s_InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
         string genbank_loader = CGBDataLoader::RegisterInObjectManager
             (*( CObjectManager::GetInstance()), reader,CObjectManager::eNonDefault).GetLoader()->GetName();
         scope->AddDataLoader(genbank_loader, kGenbankLoaderPriority);
-    } catch (const CException& e) {
+    } catch (const CException& ) {
     	LOG_POST(Info << "Failed to add genbank dataloader");
     	// It's ok not to have genbank loader
     }
