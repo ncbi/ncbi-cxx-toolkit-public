@@ -3408,6 +3408,27 @@ void CFeatureItem::x_AddQualsSite(
 
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualsExt(
+    const CUser_field& field, const CSeq_feat::TExt& ext )
+//  ----------------------------------------------------------------------------
+{
+    if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() ) {
+        const string& oid = field.GetLabel().GetStr();
+        if ( oid == "ModelEvidence" ) {
+            FOR_EACH_GBQUAL_ON_SEQFEAT (gbq_itr, m_Feat) {
+                const CGb_qual& gbq = **gbq_itr;
+                if (gbq.IsSetQual()) {
+                    if (NStr::Equal (gbq.GetQual(), "experiment")) return;
+                }
+            }
+            x_AddQual(eFQ_modelev, new CFlatModelEvQVal(ext));
+        } else if ( oid == "Process" || oid == "Component" || oid == "Function" ) {
+            x_AddGoQuals(field);
+        }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualsExt(
     const CSeq_feat::TExt& ext )
 //  ----------------------------------------------------------------------------
 {
@@ -3423,6 +3444,11 @@ void CFeatureItem::x_AddQualsExt(
             ITERATE (CUser_field::C_Data::TObjects, o, field.GetData().GetObjects()) {
                 x_AddQualsExt(**o);
             }
+          } else if ( field.GetData().IsFields() ) {
+              ITERATE (CUser_field::C_Data::TFields, o, field.GetData().GetFields()) {
+                  // x_AddGoQuals(**o);
+                  x_AddQualsExt(**o, ext);
+              }
         }
     }
     if ( ext.IsSetType()  &&  ext.GetType().IsStr() ) {
@@ -3469,6 +3495,50 @@ void CFeatureItem::x_AddQualDbXref(
         return ;
     }
     x_AddQual( eFQ_db_xref, new CFlatXrefQVal( m_Feat.GetDbxref(), &m_Quals ) );
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddGoQuals(
+    const CUser_field& field )
+//  ----------------------------------------------------------------------------
+{
+    if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() ) {
+        const string& label = field.GetLabel().GetStr();
+        EFeatureQualifier slot = eFQ_none;
+        if ( label == "Process" ) {
+            slot = eFQ_go_process;
+        } else if ( label == "Component" ) {
+            slot = eFQ_go_component;
+        } else if ( label == "Function" ) {
+            slot = eFQ_go_function;
+        }
+        if ( slot == eFQ_none ) {
+            return;
+        }
+
+        ITERATE (CUser_field::TData::TFields, it, field.GetData().GetFields()) {
+            if ( (*it)->GetData().IsFields() ) {
+                CRef<CFlatGoQVal> go_val( new CFlatGoQVal(**it) );
+
+                bool okay_to_add = true;
+
+                // check for dups
+                CFeatureItem::TQCI iter = x_GetQual(slot);
+                for ( ; iter != m_Quals.end()  &&  iter->first == slot; ++iter) {
+                    const CFlatGoQVal & qual = dynamic_cast<const CFlatGoQVal &>( *iter->second );
+                    if( qual.Equals(*go_val) )
+                    {
+                        okay_to_add = false;
+                        break;
+                    }
+                }
+
+                if( okay_to_add ) {
+                    x_AddQual(slot, go_val);
+                }
+            }
+        }
+    }
 }
 
 //  ----------------------------------------------------------------------------

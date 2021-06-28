@@ -234,6 +234,7 @@ protected:
         bool pseudo);
     virtual void x_AddQualsRna(const CMappedFeat& feat, CBioseqContext& ctx,
          bool pseudo);
+    void x_AddQualsExt( const CUser_field& field, const CSeq_feat::TExt& ext );
     void x_AddQualsExt( const CSeq_feat::TExt& );
     void x_AddQualsBond( CBioseqContext& );
     void x_AddQualsSite( CBioseqContext& );
@@ -254,6 +255,7 @@ protected:
     void x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot);
     void x_AddQualsGene(const CBioseqContext& ctx, const CGene_ref*, CConstRef<CSeq_feat>&,
         bool from_overlap);
+    void x_AddGoQuals(const CUser_field& field);
     void x_AddGoQuals(const CUser_object& uo);
     void x_ImportQuals(CBioseqContext& ctx);
     void x_AddRptUnitQual(const string& rpt_unit);
