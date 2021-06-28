@@ -975,6 +975,17 @@ bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids,
     bool    locmap = true;
     int        num_errs;
 
+    TSeqIdList tids;
+    for(TSeqIdList::iterator tid = ids.begin(); tid != ids.end(); tid++)
+    {
+        CRef<ncbi::objects::CSeq_id> new_id(new objects::CSeq_id);
+        CRef<ncbi::objects::CTextseq_id> new_text_id(new objects::CTextseq_id);
+        const objects::CTextseq_id *text_id = (*tid)->GetTextseq_Id();
+        new_text_id->Assign(*text_id);
+        SetTextId((*tid)->Which(), *new_id, *new_text_id);
+        tids.push_back(new_id);
+    }
+
     *hard_err = false;
     num_errs = 0;
 
@@ -986,7 +997,7 @@ bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids,
     //CRef<objects::CSeq_loc> loc = GetSeqLocFromString(location, first_id, &helper);
 
     CRef<objects::CSeq_loc> loc = xgbparseint_ver(location, locmap, sitesmap,
-                                                              num_errs, ids, pp->accver);
+                                                              num_errs, tids, pp->accver);
 
     if (loc.NotEmpty())
     {
@@ -1001,7 +1012,7 @@ bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids,
     {
         feat.ResetLocation();
         objects::CSeq_loc& cur_loc = feat.SetLocation();
-        cur_loc.SetWhole(*(*ids.begin()));
+        cur_loc.SetWhole(*(*tids.begin()));
         *hard_err = true;
     }
     else if(!feat.GetLocation().IsEmpty())
@@ -5979,13 +5990,21 @@ void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
     Int4        col_data;
     Int2        type;
     Int4        i = 0;
+    CRef<objects::CSeq_id> pat_seq_id;
 
     xinstall_gbparse_range_func(pp, flat2asn_range_func);
 
     ibp = pp->entrylist[pp->curindx];
 
     CRef<objects::CSeq_id> seq_id =
-        MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, true, ibp->is_tpa);
+        MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum,
+                     true, ibp->is_tpa);
+    if(pp->source == Parser::ESource::USPTO)
+    {
+        pat_seq_id = new objects::CSeq_id;
+        CRef<objects::CPatent_seq_id> pat_id = MakeUsptoPatSeqId(ibp->acnum);
+        pat_seq_id->SetPatent(*pat_id);
+    }
 
     if (!seq_id) {
         if (ibp->acnum && !NStr::IsBlank(ibp->acnum)) {
@@ -6151,7 +6170,8 @@ void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
 
             fta_check_artificial_location(*feat, fbp->key);
 
-            if (CheckForeignLoc(feat->GetLocation(), *seq_id))
+            if(CheckForeignLoc(feat->GetLocation(),
+               (pp->source == Parser::ESource::USPTO) ? *pat_seq_id : *seq_id))
             {
                 ErrPostEx(SEV_WARNING, ERR_LOCATION_FailedCheck,
                           "Location pointing outside the entry [%s]",
