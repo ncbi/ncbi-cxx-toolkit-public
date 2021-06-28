@@ -7,10 +7,11 @@ NCBI_begin_lib(psg_cassandra)
     blob_task/load_blob blob_task/delete_expired blob_task/fetch_split_history blob_storage
     fullscan/plan fullscan/seg_plan fullscan/runner fullscan/worker changelog/record changelog/writer
     nannot/record nannot_task/insert nannot_task/delete nannot_task/fetch
+    id2_split_task/insert
     si2csi/record si2csi_task/fetch si2csi_task/update si2csi_task/delete
     bioseq_info/record bioseq_info_task/fetch bioseq_info_task/update bioseq_info_task/delete
-    id2_split_task/insert status_history/insert status_history/delete status_history/get_public_comment
-    status_history/fetch
+    status_history/insert status_history/delete status_history/get_public_comment status_history/fetch
+    acc_ver_hist/insert acc_ver_hist/fetch
   )
   NCBI_uses_toolkit_libraries(connect xncbi)
   NCBI_requires(CASSANDRA)
