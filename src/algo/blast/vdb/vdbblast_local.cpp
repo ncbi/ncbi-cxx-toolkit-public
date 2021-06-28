@@ -47,8 +47,8 @@ static char const rcsid[] = "";
 #include <corelib/ncbiexpt.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
 #include <algo/blast/api/tblastn_options.hpp>
-#include <internal/blast/vdb/vdb2blast_util.hpp>
-#include <internal/blast/vdb/vdbblast_local.hpp>
+#include <algo/blast/vdb/vdb2blast_util.hpp>
+#include <algo/blast/vdb/vdbblast_local.hpp>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
