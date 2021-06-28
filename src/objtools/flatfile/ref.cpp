@@ -445,19 +445,25 @@ static CRef<objects::CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<objects::C
                    "Too many patent references for patent sequence; ignoring all but the first.");
     }
 
-    q = (pp->format == Parser::EFormat::EMBL) ? (char*) "Patent number" :
-                                       (char*) "Patent:";
-    size_t len = StringLen(q);
-    if(StringNICmp(q, bptr, len) != 0)
+    if(pp->source == Parser::ESource::USPTO)
+        s = bptr;
+    else
     {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
-                  "Illegal format: \"%s\"", temp);
-        MemFree(temp);
-        return cit_pat;
+        q = (pp->format == Parser::EFormat::EMBL) ? (char *) "Patent number" :
+                                                    (char *) "Patent:";
+        size_t len = StringLen(q);
+        if(StringNICmp(q, bptr, len) != 0)
+        {
+            ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
+                      "Illegal format: \"%s\"", temp);
+            MemFree(temp);
+            return cit_pat;
+        }
+
+        for(s = bptr + len; *s == ' ';)
+            s++;
     }
 
-    for(s = bptr + len; *s == ' ';)
-        s++;
     for(country = s, q = s; isalpha((int) *s) != 0 || *s == ' '; s++)
         if(*s != ' ')
             q = s;
@@ -470,7 +476,8 @@ static CRef<objects::CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<objects::C
     }
     s = q + 1;
 
-    if(pp->format != Parser::EFormat::EMBL)
+    if(pp->format != Parser::EFormat::EMBL &&
+       pp->format != Parser::EFormat::XML)
         *s++ = '\0';
     while(*s == ' ')
         s++;
@@ -542,7 +549,8 @@ static CRef<objects::CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<objects::C
         *p = ch;
 
     std::string msg = NStr::Sanitize(number);
-    if(pp->format == Parser::EFormat::EMBL)
+    if(pp->format == Parser::EFormat::EMBL ||
+       pp->source == Parser::ESource::USPTO)
         *number = '\0';
 
     cit_pat.Reset(new objects::CCit_pat);
@@ -579,6 +587,8 @@ static CRef<objects::CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<objects::C
         ibp->psip->SetCit().SetCountry(country);
         ibp->psip->SetCit().SetId().SetNumber(msg);
         ibp->psip->SetSeqid(app != NULL ? atoi(app) : 0);
+        if(type)
+            ibp->psip->SetCit().SetDoc_type(type);
     }
 
     MemFree(temp);
@@ -1776,14 +1786,16 @@ CRef<objects::CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<objects::
 
         ret->SetSub(*cit_sub);
     }
-    else if(StringNCmp("Patent", p, 6) == 0)
+    else if(StringNCmp("Patent", p, 6) == 0 ||
+            pp->source == Parser::ESource::USPTO)
     {
         retval = ParFlat_PATENT_CITATION;
 
         if (pp->seqtype == objects::CSeq_id::e_Genbank || pp->seqtype == objects::CSeq_id::e_Ddbj ||
             pp->seqtype == objects::CSeq_id::e_Embl || pp->seqtype == objects::CSeq_id::e_Other ||
             pp->seqtype == objects::CSeq_id::e_Tpe || pp->seqtype == objects::CSeq_id::e_Tpg ||
-            pp->seqtype == objects::CSeq_id::e_Tpd)
+            pp->seqtype == objects::CSeq_id::e_Tpd ||
+            pp->source == Parser::ESource::USPTO)
         {
             CRef<objects::CCit_pat> cit_pat = get_pat(pp, bptr, auth_list, title, eptr);
             if (cit_pat.Empty())
@@ -2133,7 +2145,7 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
             title = clean_up(p);
             if(title != NULL)
             {
-                title_art->SetName(title);
+                title_art->SetName(tata_save(title));
                 MemFree(title);
             }
         }
