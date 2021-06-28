@@ -28,6 +28,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <common/ncbi_export.h>
 #include <algo/blast/vdb/vdb2blast_util.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <sra/data_loaders/csra/impl/csraloader_impl.hpp>
