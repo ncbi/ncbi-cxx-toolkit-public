@@ -2503,6 +2503,11 @@ static void fta_fix_seq_id(objects::CSeq_loc& loc, objects::CSeq_id& id, Indexbl
         id.SetGeneral().SetDb("FlyBase");
         id.SetGeneral().SetTag().SetStr(acc);
     }
+    else if(source == Parser::ESource::USPTO)
+    {
+        CRef<objects::CPatent_seq_id> pat_id = MakeUsptoPatSeqId((char *) accession);
+        id.SetPatent(*pat_id);
+    }
     else
     {
         if(StringLen(location) > 50)
