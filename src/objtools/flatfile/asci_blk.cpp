@@ -39,6 +39,8 @@
 
 #include "ftacpp.hpp"
 
+#include <objects/biblio/Id_pat.hpp>
+#include <objects/biblio/Id_pat_.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/general/Object_id.hpp>
@@ -900,6 +902,40 @@ void GetLenSubNode(DataBlkPtr dbp)
     }
 }
 
+/**********************************************************/
+CRef<objects::CPatent_seq_id> MakeUsptoPatSeqId(char *acc)
+{
+    CRef<objects::CPatent_seq_id> pat_id;
+    char                          *p;
+    char                          *q;
+
+    if(acc == NULL || *acc == '\0')
+        return(pat_id);
+
+    pat_id = new objects::CPatent_seq_id;
+
+    p = StringChr(acc, '|');
+
+    q = StringChr(p + 1, '|');
+    *q = '\0';
+    pat_id->SetCit().SetCountry(p + 1);
+    *q = '|';
+
+    p = StringChr(q + 1, '|');
+    *p = '\0';
+    pat_id->SetCit().SetId().SetNumber(q + 1);
+    *p = '|';
+
+    q = StringChr(p + 1, '|');
+    *q = '\0';
+    pat_id->SetCit().SetDoc_type(p + 1);
+    *q = '|';
+
+    pat_id->SetSeqid(atoi(q + 1));
+
+    return(pat_id);
+}
+
 /**********************************************************
 *
 *   static Uint ValidSeqType(accession, type, is_nuc, is_tpa):
@@ -1083,6 +1119,13 @@ CRef<objects::CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc)
 
     /* get the SeqId
     */
+    if(pp->source == Parser::ESource::USPTO)
+    {
+        CRef<objects::CSeq_id> id(new objects::CSeq_id);
+        CRef<objects::CPatent_seq_id> psip = MakeUsptoPatSeqId(acc);
+        id->SetPatent(*psip);
+        return(res);
+    }
     if (pp->source == Parser::ESource::EMBL && ibp->is_tpa)
         seqtype = objects::CSeq_id::e_Tpe;
     else
@@ -2755,7 +2798,7 @@ void BuildBioSegHeader(ParserPtr pp, TEntryList& entries,
 **********************************************************/
 bool IsSegBioseq(const objects::CSeq_id* id)
 {
-    if (id == nullptr)
+    if(id == nullptr || id->Which() == objects::CSeq_id::e_Patent)
         return false;
 
     const objects::CTextseq_id* text_id = id->GetTextseq_Id();
@@ -3766,7 +3809,7 @@ void fta_set_strandedness(TEntryList& seq_entries)
                 objects::CSeq_inst::EMol mol = bioseq->GetInst().GetMol();
                 if (mol == objects::CSeq_inst::eMol_dna)
                     bioseq->SetInst().SetStrand(objects::CSeq_inst::eStrand_ds);
-                else if (mol == objects::CSeq_inst::eMol_rna || objects::CSeq_inst::eMol_aa)
+                else if (mol == objects::CSeq_inst::eMol_rna || mol == objects::CSeq_inst::eMol_aa)
                     bioseq->SetInst().SetStrand(objects::CSeq_inst::eStrand_ss);
             }
         }
