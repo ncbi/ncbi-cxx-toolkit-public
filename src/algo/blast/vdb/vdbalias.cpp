@@ -34,8 +34,8 @@
 #include <algorithm>
 #include <sstream>
 
-#include <internal/blast/vdb/vdb2blast_util.hpp>
-#include <internal/blast/vdb/vdbalias.hpp>
+#include <algo/blast/vdb/vdb2blast_util.hpp>
+#include <algo/blast/vdb/vdbalias.hpp>
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 #include <objtools/blast/seqdb_reader/impl/seqdbfile.hpp>
 
