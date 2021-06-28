@@ -461,6 +461,8 @@ static void SetReleaseStr(ParserPtr pp)
             pp->release_str = "source:pir, format:pir";
         else if(pp->source == Parser::ESource::PRF)
             pp->release_str = "source:prf, format:prf";
+        else if(pp->source == Parser::ESource::USPTO)
+            pp->release_str = "source:uspto, format:xml";
         else
             pp->release_str = "source:unknown, format:unknown";
     }
@@ -716,10 +718,24 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
             pp.source = Parser::ESource::NCBI;
         }
     }
+    else if(NStr::EqualNocase(source, "USPTO"))
+    {
+        if(pp.format != Parser::EFormat::XML)
+        {
+            ErrPostEx(SEV_FATAL, 0, 0,
+                      "Source \"USPTO\" requires format \"XML\" only.");
+            return(false);
+        }
+
+        pp.acprefix = ParFlat_SPROT_AC;
+        pp.seqtype = objects::CSeq_id::e_Other;
+        pp.source = Parser::ESource::USPTO;
+        pp.accver = false;
+    }
     else
     {
         ErrPostEx(SEV_FATAL, 0, 0,
-                  "Sorry, %s is not a valid source. Valid source ==> PIR, SPROT, LANL, NCBI, EMBL, DDBJ, FLYBASE, REFSEQ", source.c_str());
+                  "Sorry, %s is not a valid source. Valid source ==> PIR, SPROT, LANL, NCBI, EMBL, DDBJ, FLYBASE, REFSEQ, USPTO", source.c_str());
         return false;
     }
 
