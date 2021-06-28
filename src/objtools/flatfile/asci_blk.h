@@ -42,6 +42,7 @@ BEGIN_NCBI_SCOPE
 
 CRef<objects::CSeq_id> StrToSeqId(char* pch, bool pid);
 CRef<objects::CSeq_id> MakeAccSeqId(char* acc, Uint1 seqtype, bool accver, Int2 vernum, bool is_nuc, bool is_tpa);
+CRef<objects::CPatent_seq_id> MakeUsptoPatSeqId(char *acc);
 CRef<objects::CSeq_id> MakeLocusSeqId(char* locus, Uint1 seqtype);
 CRef<objects::CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc);
 
