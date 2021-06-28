@@ -79,6 +79,7 @@ struct Parser {
         PRF,
         Refseq,
         Flybase,
+        USPTO,
         All
     };
 
