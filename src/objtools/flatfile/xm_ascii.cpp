@@ -1488,8 +1488,9 @@ bool XMLAscii(ParserPtr pp)
                 AssemblyGapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
         }
 
-        if (no_date(pp->format, bioseq->GetDescr().Get()) && pp->debug == false &&
-           pp->no_date == false && pp->xml_comp == false)
+        if(no_date(pp->format, bioseq->GetDescr().Get()) &&
+           pp->debug == false && pp->no_date == false &&
+           pp->xml_comp == false && pp->source != Parser::ESource::USPTO)
         {
             ibp->drop = 1;
             ErrPostStr(SEV_ERROR, ERR_DATE_IllegalDate,
@@ -1659,7 +1660,14 @@ bool XMLAscii(ParserPtr pp)
                 }
             }
 
-            DealWithGenes(seq_entries, pp);
+            if(pp->source == Parser::ESource::USPTO)
+            {
+                GeneRefFeats gene_refs;
+                gene_refs.valid = false;
+                ProcNucProt(pp, seq_entries, gene_refs);
+            }
+            else
+                DealWithGenes(seq_entries, pp);
 
             if (seq_entries.empty())
             {
