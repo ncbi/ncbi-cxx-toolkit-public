@@ -572,13 +572,18 @@ static void XMLInitialEntry(IndexblkPtr ibp, char* entry, bool accver,
     if(ibp == NULL || ibp->xip == NULL || entry == NULL)
         return;
     xip = ibp->xip;
+
+    if(source == Parser::ESource::USPTO)
+        ibp->is_pat = true;
+
     ibp->locusname[0] = '\0';
     ibp->acnum[0] = '\0';
     for(xip = ibp->xip; xip != NULL; xip = xip->next)
     {
         if(xip->tag == INSDSEQ_LOCUS && ibp->locusname[0] == '\0')
         {
-            if(xip->start == 0 || xip->end == 0 || xip->start >= xip->end)
+            if(xip->start == 0 || xip->end == 0 || xip->start >= xip->end ||
+               source == Parser::ESource::USPTO)
             {
                 StringCpy(ibp->locusname, "???");
                 StringCpy(ibp->blocusname, "???");
@@ -978,7 +983,7 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
     ibp->is_contig = false;
     for(xip = ibp->xip; xip != NULL; xip = xip->next)
     {
-        if(xip->tag == INSDSEQ_LOCUS)
+        if(xip->tag == INSDSEQ_LOCUS && pp->source != Parser::ESource::USPTO)
             got_locus = true;
         else if(xip->tag == INSDSEQ_LENGTH)
             got_length = true;
@@ -1010,7 +1015,7 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
             ibp->origin = true;
     }
 
-    if(got_locus == false)
+    if(got_locus == false && pp->source != Parser::ESource::USPTO)
         ret = XMLErrField(INSDSEQ_LOCUS);
     if(got_length == false)
         ret = XMLErrField(INSDSEQ_LENGTH);
@@ -1018,7 +1023,7 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
         ret = XMLErrField(INSDSEQ_MOLTYPE);
     if(got_division == false)
         ret = XMLErrField(INSDSEQ_DIVISION);
-    if(got_update_date == false)
+    if(got_update_date == false && pp->source != Parser::ESource::USPTO)
         ret = XMLErrField(INSDSEQ_UPDATE_DATE);
     if(got_definition == false)
         ret = XMLErrField(INSDSEQ_DEFINITION);
@@ -1028,8 +1033,18 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
                   "No accession number for this record. Entry dropped.");
         ret = false;
     }
-    if(got_version == false && pp->accver)
-        ret = XMLErrField(INSDSEQ_ACCESSION_VERSION);
+    if(got_version == false)
+    {
+        if(pp->accver != false)
+            ret = XMLErrField(INSDSEQ_ACCESSION_VERSION);
+    }
+    else if(pp->source == Parser::ESource::USPTO)
+    {
+        ErrPostEx(SEV_REJECT, ERR_ENTRY_InvalidLineType,
+                  "Line type %s is not allowed for USPTO records. Entry dropped.",
+                  XMLStringByTag(xmkwl, INSDSEQ_PRIMARY));
+        ret = false;
+    }
     if(got_source == false)
         ret = XMLErrField(INSDSEQ_SOURCE);
     if(got_organism == false)
