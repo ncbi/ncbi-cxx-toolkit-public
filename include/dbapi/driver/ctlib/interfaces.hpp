@@ -627,7 +627,13 @@ protected:
         return GetConnection().GetClientEncoding();
     }
 
-    virtual bool x_Cancel(void)
+    enum ECancelType
+    {
+        eAsyncCancel = CS_CANCEL_ATTN,
+        eSyncCancel  = CS_CANCEL_ALL
+    };
+
+    virtual bool x_Cancel(ECancelType)
     {
         return Cancel();
     }
@@ -746,7 +752,7 @@ protected:
     inline CTL_RowResult& GetResult(void);
     inline void DeleteResult(void);
     inline void DeleteResultInternal(void);
-    inline void MarkEndOfReply(void);
+    virtual void MarkEndOfReply(void);
 
     inline bool HaveResult(void) const;
     void SetResult(CTL_RowResult* result)
@@ -798,7 +804,39 @@ protected:
     CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
 
     bool SendInternal(void);
-    bool x_Cancel(void) override;
+    void MarkEndOfReply(void) override;
+    bool x_Cancel(ECancelType cancel_type) override;
+    
+    class CCancelModeGuard
+    {
+    public:
+        enum EContext {
+            eCancel,
+            eOther
+        };
+        
+        CCancelModeGuard(CTL_LRCmd& cmd, EContext ctx = eOther);
+        ~CCancelModeGuard();
+
+        bool IsForCancelInProgress(void) { return m_ForCancelInProgress; }
+
+    private:
+        // For the sake of DATABASE_DRIVER_ERROR
+        const TDbgInfo&  GetDbgInfo()    { return m_Cmd.GetDbgInfo();    }
+        CTL_Connection&  GetConnection() { return m_Cmd.GetConnection(); }
+        const CDBParams* GetLastParams() { return m_Cmd.GetLastParams(); }
+        
+        CTL_LRCmd& m_Cmd;
+        bool       m_ForCancelInProgress;
+    };
+
+private:
+    friend class CCancelModeGuard;
+
+    CMutex       m_CancelLogisticsMutex;
+    unsigned int m_ActivityLevel;
+    bool         m_CancelRequested;
+    bool         m_CancelInProgress;
 };
 
 
@@ -1571,6 +1609,13 @@ void CTL_Cmd::MarkEndOfReply(void)
     if (HaveResult()) {
         m_Res->m_EOR = true;
     }
+}
+
+inline
+void CTL_LRCmd::MarkEndOfReply(void)
+{
+    CTL_Cmd::MarkEndOfReply();
+    m_CancelRequested = false;
 }
 
 /////////////////////////////////////////////////////////////////////////////
