@@ -2026,8 +2026,9 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
     list<string> tokens;
     bool get = true;
 
-    if (skip != 2 && parseInfo.source == Parser::ESource::Flybase)
-            return true;
+    if((skip != 2 && parseInfo.source == Parser::ESource::Flybase) ||
+       parserInfo.source == Parser::ESource::USPTO)
+        return true;
 
     NStr::Split(str, " ;", tokens, NStr::fSplit_Tokenize);
 
@@ -2188,7 +2189,8 @@ bool GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip)
     bool            get = true;
     Int4            i;
 
-    if(skip != 2 && pp->source == Parser::ESource::Flybase)
+    if((skip != 2 && pp->source == Parser::ESource::Flybase) ||
+       pp->source == Parser::ESource::USPTO)
         return true;
 
     line = StringSave(str);
