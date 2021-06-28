@@ -295,7 +295,7 @@ void CDiscrepancyContext::OutputXML(ostream& out, unsigned short flags)
         Indent(out, 1);
         out << "</test>\n";
     }
-    out << "</discrepancy_report>";
+    out << "</discrepancy_report>\n";
 }
 
 
