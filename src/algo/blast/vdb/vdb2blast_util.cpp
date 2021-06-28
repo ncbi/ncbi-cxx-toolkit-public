@@ -28,7 +28,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <internal/blast/vdb/vdb2blast_util.hpp>
+#include <algo/blast/vdb/vdb2blast_util.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <sra/data_loaders/csra/impl/csraloader_impl.hpp>
 #include "vdb_priv.h"
