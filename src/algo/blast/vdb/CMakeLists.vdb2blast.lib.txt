@@ -1,0 +1,21 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(vdb2blast)
+  NCBI_sources(
+      common_priv
+      error_priv
+      seqsrc_vdb
+      vdb2blast_util
+      vdb_priv
+      vdbsequtil
+      vdbalias
+      vdbblast_local
+      blastn_vdb_args
+      tblastn_vdb_args
+  )
+  NCBI_uses_toolkit_libraries(xblast)
+  NCBI_requires(VDB)
+  NCBI_add_definitions(NCBI_VDB2BLAST_EXPORTS)
+NCBI_end_lib()
