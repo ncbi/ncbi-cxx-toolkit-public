@@ -371,6 +371,16 @@ static void GetProtRefSeqId(objects::CBioseq::TId& ids, InfoBioseqPtr ibp, int* 
         return; 
     }
 
+    if(pp->source == Parser::ESource::USPTO)
+    {
+        protacc = CpTheQualValue(cds.SetQual(), "protein_id");
+        CRef<objects::CSeq_id> pat_seq_id(new objects::CSeq_id);
+        CRef<objects::CPatent_seq_id> pat_id = MakeUsptoPatSeqId(protacc);
+        pat_seq_id->SetPatent(*pat_id);
+        ids.push_back(pat_seq_id);
+        return;
+    }
+
     const objects::CTextseq_id* text_id = nullptr;
     ITERATE(TSeqIdList, id, ibp->ids)
     {
@@ -2614,7 +2624,8 @@ static void FindCd(TEntryList& seq_entries, CScope& scope, ParserPtr pp, GeneRef
                 continue;
 
             InfoBioseqFree(pbp->ibp);
-            CpSeqId(pbp->ibp, first_id);
+            if(pp->source != Parser::ESource::USPTO)
+                CpSeqId(pbp->ibp, first_id);
 
             if (bioseq->IsSetAnnot()) {
                 for (objects::CBioseq::TAnnot::iterator annot = bioseq->SetAnnot().begin(); annot != bioseq->SetAnnot().end();) {
