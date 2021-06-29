@@ -379,6 +379,8 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_Connection : public impl::CConnection
     friend class CTL_Cmd;
     friend class CTL_CmdBase;
     friend class CTL_LRCmd;
+    friend class CTL_LangCmd;
+    friend class CTL_RPCCmd;
     friend class CTL_SendDataCmd;
     friend class CTL_BCPInCmd;
     friend class CTL_CursorCmd;
@@ -530,6 +532,35 @@ private:
     int                 m_TDSVersion; // as CS_TDS_nn
     bool                m_TextPtrProcsLoaded;
     bool                m_CancelInProgress;
+    bool                m_CancelRequested;
+    unsigned int        m_ActivityLevel;
+    CMutex              m_CancelLogisticsMutex;
+
+    class CCancelModeGuard
+    {
+    public:
+        enum EContext {
+            eAsyncCancel,
+            eSyncCancel,
+            eOther
+        };
+        
+        CCancelModeGuard(CTL_Connection& conn, EContext ctx = eOther);
+        ~CCancelModeGuard();
+
+        bool IsForCancelInProgress(void) { return m_ForCancelInProgress; }
+
+    private:
+        // For the sake of DATABASE_DRIVER_ERROR
+        const TDbgInfo&  GetDbgInfo()    { return m_Conn.GetDbgInfo();    }
+        CTL_Connection&  GetConnection() { return m_Conn;                 }
+        const CDBParams* GetLastParams() { return m_Conn.GetLastParams(); }
+        
+        CTL_Connection& m_Conn;
+        bool            m_ForCancelInProgress;
+    };
+
+    friend class CCancelModeGuard;
 
 #ifdef FTDS_IN_USE
     class CAsyncCancelGuard
@@ -752,7 +783,7 @@ protected:
     inline CTL_RowResult& GetResult(void);
     inline void DeleteResult(void);
     inline void DeleteResultInternal(void);
-    virtual void MarkEndOfReply(void);
+    inline void MarkEndOfReply(void);
 
     inline bool HaveResult(void) const;
     void SetResult(CTL_RowResult* result)
@@ -804,39 +835,7 @@ protected:
     CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
 
     bool SendInternal(void);
-    void MarkEndOfReply(void) override;
     bool x_Cancel(ECancelType cancel_type) override;
-    
-    class CCancelModeGuard
-    {
-    public:
-        enum EContext {
-            eCancel,
-            eOther
-        };
-        
-        CCancelModeGuard(CTL_LRCmd& cmd, EContext ctx = eOther);
-        ~CCancelModeGuard();
-
-        bool IsForCancelInProgress(void) { return m_ForCancelInProgress; }
-
-    private:
-        // For the sake of DATABASE_DRIVER_ERROR
-        const TDbgInfo&  GetDbgInfo()    { return m_Cmd.GetDbgInfo();    }
-        CTL_Connection&  GetConnection() { return m_Cmd.GetConnection(); }
-        const CDBParams* GetLastParams() { return m_Cmd.GetLastParams(); }
-        
-        CTL_LRCmd& m_Cmd;
-        bool       m_ForCancelInProgress;
-    };
-
-private:
-    friend class CCancelModeGuard;
-
-    CMutex       m_CancelLogisticsMutex;
-    unsigned int m_ActivityLevel;
-    bool         m_CancelRequested;
-    bool         m_CancelInProgress;
 };
 
 
@@ -1609,13 +1608,7 @@ void CTL_Cmd::MarkEndOfReply(void)
     if (HaveResult()) {
         m_Res->m_EOR = true;
     }
-}
-
-inline
-void CTL_LRCmd::MarkEndOfReply(void)
-{
-    CTL_Cmd::MarkEndOfReply();
-    m_CancelRequested = false;
+    GetConnection().m_CancelRequested = false;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -163,6 +163,8 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 , m_TDSVersion(0)
 , m_TextPtrProcsLoaded(false)
 , m_CancelInProgress(false)
+, m_CancelRequested(false)
+, m_ActivityLevel(0)
 #ifdef FTDS_IN_USE
 #  if NCBI_FTDS_VERSION >= 95
 , m_OrigIntHandler(NULL)
@@ -1642,6 +1644,7 @@ void CTL_Connection::DeferTimeout(void)
 #endif
 }
 
+
 #undef NCBI_DATABASE_THROW
 #undef NCBI_DATABASE_RETHROW
 
@@ -1651,6 +1654,49 @@ void CTL_Connection::DeferTimeout(void)
 #define NCBI_DATABASE_RETHROW(prev_ex, ex_class, message, err_code, severity) \
     NCBI_DATABASE_RETHROW_ANNOTATED(prev_ex, ex_class, message, err_code, \
         severity, GetDbgInfo(), GetConnection(), GetLastParams())
+
+
+CTL_Connection::CCancelModeGuard::CCancelModeGuard(CTL_Connection& conn,
+                                                   EContext ctx)
+    : m_Conn(conn), m_ForCancelInProgress(false)
+{
+    CMutexGuard guard(conn.m_CancelLogisticsMutex);
+    switch (ctx) {
+    case eAsyncCancel:
+        if (conn.m_ActivityLevel > 0) {
+            break;
+        }
+        NCBI_FALLTHROUGH;
+    case eSyncCancel:
+        conn.m_CancelInProgress = true;
+        m_ForCancelInProgress = true;
+        break;
+    default:
+        if (conn.m_CancelRequested  ||  conn.m_CancelInProgress) {
+            DATABASE_DRIVER_ERROR("Command was canceled." + GetDbgInfo(),
+                                  121006);
+            break;
+        }
+    }
+    ++conn.m_ActivityLevel;
+}
+
+
+CTL_Connection::CCancelModeGuard::~CCancelModeGuard()
+{
+    CMutexGuard guard(m_Conn.m_CancelLogisticsMutex);
+    if (m_ForCancelInProgress) {
+        m_Conn.m_CancelInProgress = false;
+    }
+    if (--m_Conn.m_ActivityLevel == 0  &&  m_Conn.m_CancelRequested) {
+        auto cmd = m_Conn.m_ActiveCmd;
+        if (cmd != nullptr) {
+            cmd->x_Cancel(CTL_CmdBase::eSyncCancel);
+        }
+    }
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

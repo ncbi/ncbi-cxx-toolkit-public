@@ -652,8 +652,7 @@ void CTL_Cmd::GetRowCount(int* cnt)
 
 CTL_LRCmd::CTL_LRCmd(CTL_Connection& conn,
                      const string& query)
-    : CTL_Cmd(conn, query), m_ActivityLevel(0), m_CancelRequested(false),
-      m_CancelInProgress(false)
+    : CTL_Cmd(conn, query)
 {
 }
 
@@ -710,7 +709,7 @@ CTL_LRCmd::MakeResultInternal(void)
         // return NULL;
     }
 
-    CCancelModeGuard mode_guard(*this);
+    CTL_Connection::CCancelModeGuard mode_guard(GetConnection());
 #ifdef FTDS_IN_USE
     unique_ptr<CTL_Connection::CAsyncCancelGuard> async_guard
         (new CTL_Connection::CAsyncCancelGuard(GetConnection()));
@@ -850,14 +849,15 @@ bool
 CTL_LRCmd::Cancel(void)
 {
     if (WasSent()) {
+        auto& conn = GetConnection();
 #ifdef FTDS_IN_USE
-        if (GetConnection().AsyncCancel(*this)) {
+        if (conn.AsyncCancel(*this)) {
             return true;
         }
 #endif
-        CMutexGuard guard(m_CancelLogisticsMutex);
-        m_CancelRequested = true;
-        return x_Cancel(m_ActivityLevel > 0 ? eAsyncCancel : eSyncCancel);
+        CMutexGuard guard(conn.m_CancelLogisticsMutex);
+        conn.m_CancelRequested = true;
+        return x_Cancel(conn.m_ActivityLevel > 0 ? eAsyncCancel : eSyncCancel);
     } else {
         return true;
     }
@@ -872,7 +872,13 @@ CTL_LRCmd::x_Cancel(ECancelType cancel_type)
         if (!IsDead()  &&  GetConnection().IsAlive()) {
             size_t was_timeout = GetConnection().PrepareToCancel();
             try {
-                CCancelModeGuard guard(*this, CCancelModeGuard::eCancel);
+                typedef CTL_Connection::CCancelModeGuard TGuard;
+                TGuard::EContext guard_ctx;
+                switch (cancel_type) {
+                case eAsyncCancel:  guard_ctx = TGuard::eAsyncCancel;  break;
+                case eSyncCancel:   guard_ctx = TGuard::eSyncCancel;   break;
+                }
+                TGuard guard(GetConnection(), guard_ctx);
                 if ( !guard.IsForCancelInProgress() ) {
                     return true;
                 }
@@ -913,7 +919,7 @@ CTL_LRCmd::x_Cancel(ECancelType cancel_type)
             return false;
         }
     } else {
-        m_CancelRequested = false;
+        GetConnection().m_CancelRequested = false;
     }
 
     return true;
@@ -930,7 +936,7 @@ CTL_LRCmd::SendInternal(void)
     }
 
     try {
-        CCancelModeGuard guard(*this);
+        CTL_Connection::CCancelModeGuard guard(GetConnection());
         rc = Check(ct_send(x_GetSybaseCmd()));
     } catch (...) {
         SetHasFailed();
@@ -972,35 +978,6 @@ CTL_LRCmd::SendInternal(void)
 }
 
 
-CTL_LRCmd::CCancelModeGuard::CCancelModeGuard(CTL_LRCmd& cmd, EContext ctx)
-    : m_Cmd(cmd), m_ForCancelInProgress(false)
-{
-    CMutexGuard guard(cmd.m_CancelLogisticsMutex);
-    if (ctx == eCancel) {
-        if ( !cmd.m_CancelInProgress ) {
-            cmd.m_CancelInProgress = true;
-            m_ForCancelInProgress = true;
-        }
-    } else if (cmd.m_CancelRequested  ||  cmd.m_CancelInProgress) {
-        DATABASE_DRIVER_ERROR("Command was canceled." + GetDbgInfo(),
-                              121006);
-    }
-    ++cmd.m_ActivityLevel;
-}
-
-
-CTL_LRCmd::CCancelModeGuard::~CCancelModeGuard()
-{
-    CMutexGuard guard(m_Cmd.m_CancelLogisticsMutex);
-    if (m_ForCancelInProgress) {
-        m_Cmd.m_CancelInProgress = false;
-    }
-    if (--m_Cmd.m_ActivityLevel == 0  &&  m_Cmd.m_CancelRequested) {
-        m_Cmd.x_Cancel(eSyncCancel);
-    }
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CTL_LangCmd::
@@ -1026,7 +1003,7 @@ bool CTL_LangCmd::Send()
 
     CTempString dyn_id = x_GetDynamicID();
     if (dyn_id.empty()) {
-        CCancelModeGuard guard(*this);
+        CTL_Connection::CCancelModeGuard guard(GetConnection());
         CheckSFB(ct_command(x_GetSybaseCmd(), CS_LANG_CMD,
                             const_cast<char*>(GetQuery().data()),
                             GetQuery().size(), CS_END),
@@ -1034,7 +1011,7 @@ bool CTL_LangCmd::Send()
     } else if (dyn_id == "!") {
         return false;
     } else {
-        CCancelModeGuard guard(*this);
+        CTL_Connection::CCancelModeGuard guard(GetConnection());
         CheckSFB(ct_dynamic(x_GetSybaseCmd(), CS_EXECUTE,
                             const_cast<char*>(dyn_id.data()), dyn_id.size(),
                             NULL, 0),
