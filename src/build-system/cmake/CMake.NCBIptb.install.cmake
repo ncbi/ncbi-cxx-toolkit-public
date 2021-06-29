@@ -137,7 +137,7 @@ function(NCBI_internal_install_target _variable _access)
                     CONFIGURATIONS ${_cfg}
                 )
             endif()
-            if (WIN32)
+            if (WIN32 AND NOT NCBI_PTBCFG_PACKAGE)
                 if (_haspdb)
                     install(FILES $<TARGET_PDB_FILE:${NCBI_PROJECT}>
                             DESTINATION ${_dest}/${_cfg} OPTIONAL
@@ -245,6 +245,9 @@ function(NCBI_internal_install_root _variable _access)
     NCBI_internal_export_buildinfo(${_buildinfo})
     if (EXISTS ${_buildinfo})
         install( FILES ${_buildinfo} DESTINATION ${_dest} RENAME buildinfo)
+    endif()
+    if (NCBI_PTBCFG_PACKAGE AND EXISTS ${NCBI_TREE_ROOT}/doc/public/LICENSE)
+        install( FILES ${NCBI_TREE_ROOT}/doc/public/LICENSE DESTINATION licenses)
     endif()
 
     if (WIN32 OR XCODE)
