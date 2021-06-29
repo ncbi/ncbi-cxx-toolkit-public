@@ -40,12 +40,6 @@ Seq-annot ::= {
           id local id 381
         },
         int {
-          from 799,
-          to 850,
-          strand plus,
-          id local id 381
-        },
-        int {
           from 500,
           to 649,
           strand plus,
@@ -54,6 +48,12 @@ Seq-annot ::= {
         int {
           from 699,
           to 799,
+          strand plus,
+          id local id 381
+        },
+        int {
+          from 799,
+          to 850,
           strand plus,
           id local id 381
         },
