@@ -165,7 +165,7 @@ bool CGtfLocationRecord::CompareTypeAndPartNumbers(
         if (lhs.mPartNum == rhs.mPartNum) {
             return (lhs.mStrand == eNa_strand_minus ?
                 lhs.mStart > rhs.mStart :
-                lhs.mStart < lhs.mStart);
+                lhs.mStart < rhs.mStart);
         }
         return (lhs.mPartNum < rhs.mPartNum);
     }
