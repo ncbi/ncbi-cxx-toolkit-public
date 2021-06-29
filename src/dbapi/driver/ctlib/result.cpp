@@ -267,6 +267,7 @@ bool CTL_RowResult::Fetch()
 
     CheckIsDead();
 
+    CTL_Connection::CCancelModeGuard guard(GetConnection());
     switch ( Check(ct_fetch(x_GetSybaseCmd(), CS_UNUSED, CS_UNUSED, CS_UNUSED, 0)) ) {
     case CS_SUCCEED:
         SetCurrentItemNum(0);
@@ -317,6 +318,7 @@ CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd,
 
     if(item > m_BindedCols) {
         // Not bound ...
+        CTL_Connection::CCancelModeGuard guard(GetConnection());
         CS_RETCODE rc = Check(ct_get_data(cmd, item, buffer, buflen, outlen));
         if ((rc == CS_END_ITEM || rc == CS_END_DATA)) {
             if (outlen) {
