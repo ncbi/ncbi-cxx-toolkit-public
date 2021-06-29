@@ -8,29 +8,6 @@
 ##    Author: Andrei Gourianov, gouriano@ncbi
 ##
 
-
-##############################################################################
-macro(NCBI_internal_process_ncbi_test_requires _test)
-    set(NCBITEST_REQUIRE_NOTFOUND "")
-    set(_all ${NCBITEST__REQUIRES} ${NCBITEST_${_test}_REQUIRES})
-    if (NOT "${_all}" STREQUAL "")
-        list(REMOVE_DUPLICATES _all)
-    endif()
-
-    foreach(_req IN LISTS _all)
-        NCBI_util_parse_sign( ${_req} _value _negate)
-        if (${_value} OR NCBI_REQUIRE_${_value}_FOUND OR NCBI_COMPONENT_${_value}_FOUND)
-            if (_negate)
-                set(NCBITEST_REQUIRE_NOTFOUND ${NCBITEST_REQUIRE_NOTFOUND} ${_req})
-            endif()
-        else()
-            if (NOT _negate)
-                set(NCBITEST_REQUIRE_NOTFOUND ${NCBITEST_REQUIRE_NOTFOUND} ${_req})
-            endif()
-        endif()     
-    endforeach()
-endmacro()
-
 ##############################################################################
 function(NCBI_internal_add_ncbi_test _test)
     if( NOT DEFINED NCBITEST_${_test}_CMD)
@@ -55,14 +32,6 @@ function(NCBI_internal_add_ncbi_test _test)
     string(REPLACE ";" " " _requires "${_requires}")
     string(REPLACE ";" " " _watcher  "${_watcher}")
     file(RELATIVE_PATH _outdir "${NCBI_SRC_ROOT}" "${NCBI_CURRENT_SOURCE_DIR}")
-
-    NCBI_internal_process_ncbi_test_requires(${_test})
-    if ( NOT "${NCBITEST_REQUIRE_NOTFOUND}" STREQUAL "")
-        if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
-            message("${NCBI_PROJECT} (${NCBI_CURRENT_SOURCE_DIR}): Test ${_test} is excluded because of unmet requirements: ${NCBITEST_REQUIRE_NOTFOUND}")
-        endif()
-        return()
-    endif()
 
     set(_resources "")
     set(_all ${NCBITEST__RESOURCES} ${NCBITEST_${_test}_RESOURCES})

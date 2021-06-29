@@ -577,31 +577,27 @@ RunTest()
     fi
     test -d \${x_work_dir} || mkdir -p \${x_work_dir}
 
+
+    # Check requirements
+    
+    x_unmet_requires=""
     for x_req in \$x_requires; do
-      t_sub=\${x_req::1}
-      t_res="yes"
-      if test \$t_sub = "-"; then
-          t_sub=\${x_req:1}
-          if test -f "\$conf_dir/status/\$t_sub.enabled" ; then
-            t_res="no"
-          fi
-      else
-          t_sub=\${x_req}
-          if test ! -f "\$conf_dir/status/\$t_sub.enabled" ; then
-            t_res="no"
-          fi
-      fi
-      if test "\$t_res" = "no"; then
-           x_test_out="\$x_wlog_dir/\$x_name.test_out\$x_ext"
-           echo NCBI_UNITTEST_SKIPPED > \$x_test_out
-           echo "t_cmd=\\"[\$r_id/\$x_TestsTotal \$x_work_dir_tail] \$x_name (unmet CHECK_REQUIRES=\$x_req)\\"" > \$x_info
-           echo "t_test_out=\\"\$x_test_out\\"" >> \$x_info
-           mv \$x_info "\${x_done}.done"
-           touch "\$checkdir/~RUN_CHECKS.next"
-           rm -rf "\${x_work_dir}"
-           return 0
-      fi
+        t_minus=\${x_req::1}
+        if test \$t_minus = "-"; then
+           t_req=\${x_req:1}
+           if test -f "\$conf_dir/status/\${t_req}.enabled" ; then
+              x_unmet_requires="\${x_unmet_requires}\${x_req} "
+           fi
+        else
+           if test ! -f "\$conf_dir/status/\${x_req}.enabled" ; then
+              x_unmet_requires="\${x_unmet_requires}\${x_req} "
+           fi
+        fi
     done
+    is_not_skipped=true
+    if test -n "\$x_unmet_requires"; then
+        is_not_skipped=false
+    fi
 
     if test -n "\$x_resources"; then
         for r in \$x_resources ; do
@@ -795,6 +791,8 @@ RunTest()
 
                 # Run check
                 start_time="\`date +'$x_date_format'\`"
+
+                if \$is_not_skipped; then
                         
                 # Use separate shell to run test.
                 # This will allow to know execution time for applications with timeout.
@@ -867,6 +865,18 @@ EOF_launch
                     
                 esac
 
+                else # skipped
+                    echo "Test disabled due unmet check requires: \$x_unmet_requires" >> \$x_test_out
+                    echo NCBI_UNITTEST_DISABLED >> \$x_test_out
+                    echo >> \$x_test_out
+                    # Define necessary variables to write into the test footer
+                    result=99
+                    stop_time="\$start_time"
+                    load_avg=""
+                    exec_time="real 0.0, user 0.0, sys 0.0"
+                    runid=""
+                fi
+
                 # Write result of the test into the his output file
                 echo "Start time   : \$start_time"   >> \$x_test_out
                 echo "Stop time    : \$stop_time"    >> \$x_test_out
@@ -893,19 +903,14 @@ EOF_launch
                 if \$is_automated; then
                     if grep NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
                         echo "DIS" >> "\$x_test_rep"
-
                     elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
                         echo "SKP" >> "\$x_test_rep"
-
                     elif grep NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS \$x_test_out >/dev/null; then
                         echo "TO" >> "\$x_test_rep"
-
                     elif echo "\$exec_time" | egrep 'Maximum execution .* is exceeded' >/dev/null || egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
                         echo "TO" >> "\$x_test_rep"
-
                     elif test \$result -eq 0; then
                         echo "OK" >> "\$x_test_rep"
-
                     else
                         echo "ERR" >> "\$x_test_rep"
                     fi

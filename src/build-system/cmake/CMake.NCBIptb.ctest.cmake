@@ -28,6 +28,12 @@ if (WIN32)
     endforeach()
 endif()
 
+set(IS_AUTOMATED NO)
+if ($ENV{NCBI_AUTOMATED_BUILD})
+    set(IS_AUTOMATED YES)
+endif()
+
+
 ##############################################################################
 
 macro(NCBI_internal_process_cmake_test_requires _test)
@@ -49,6 +55,8 @@ macro(NCBI_internal_process_cmake_test_requires _test)
             endif()
         endif()     
     endforeach()
+
+    string(REPLACE ";" " " NCBITEST_REQUIRE_NOTFOUND "${NCBITEST_REQUIRE_NOTFOUND}")
 endmacro()
 
 ##############################################################################
@@ -121,7 +129,7 @@ function(NCBI_internal_add_cmake_test _test)
         if(EXISTS ${NCBI_CURRENT_SOURCE_DIR}/${NCBITEST_${_test}_CMD})
             set(NCBITEST_${_test}_ASSETS   ${NCBITEST_${_test}_ASSETS}   ${NCBITEST_${_test}_CMD})
         endif()
-    elseif($ENV{NCBI_AUTOMATED_BUILD})
+    elseif(IS_AUTOMATED)
         if(NCBI_REQUIRE_CygwinTest_FOUND AND WIN32)
             set(_extra ${_extra} -DNCBITEST_CYGWIN=${NCBI_CygwinTest_PATH})
         endif()
@@ -139,19 +147,23 @@ function(NCBI_internal_add_cmake_test _test)
     string(REPLACE ";" " " _assets  "${_assets}")
     string(REPLACE ";" " " _watcher "${_watcher}")
 
-    NCBI_internal_process_cmake_test_requires(${_test})
-    if ( NOT "${NCBITEST_REQUIRE_NOTFOUND}" STREQUAL "")
-        if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
-            message("${NCBI_PROJECT} (${NCBI_CURRENT_SOURCE_DIR}): Test ${_test} is excluded because of unmet requirements: ${NCBITEST_REQUIRE_NOTFOUND}")
-        endif()
-        return()
-    endif()
-
     file(RELATIVE_PATH _xoutdir "${NCBI_SRC_ROOT}" "${NCBI_CURRENT_SOURCE_DIR}")
     if(DEFINED NCBI_EXTERNAL_TREE_ROOT)
         set(_root ${NCBI_EXTERNAL_TREE_ROOT})
     else()
         set(_root ${NCBI_TREE_ROOT})
+    endif()
+
+    NCBI_internal_process_cmake_test_requires(${_test})
+    # Run tests that does not met requires for automated builds only, to report them to database.
+    # Otherwise just exclude it.
+    if (NOT IS_AUTOMATED)
+        if (NOT "${NCBITEST_REQUIRE_NOTFOUND}" STREQUAL "")
+            if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
+                message("${NCBI_PROJECT} (${NCBI_CURRENT_SOURCE_DIR}): Test ${_test} is excluded because of unmet requirements: ${NCBITEST_REQUIRE_NOTFOUND}")
+            endif()
+            return()
+        endif()
     endif()
 
     add_test(NAME ${_test} COMMAND ${CMAKE_COMMAND}
@@ -165,6 +177,7 @@ function(NCBI_internal_add_cmake_test _test)
         -DNCBITEST_XOUTDIR=${_xoutdir}
         -DNCBITEST_WATCHER=${_watcher}
         -DNCBITEST_PARAMS=${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/TestParams.cmake
+        -DNCBITEST_REQUIRE_NOTFOUND=${NCBITEST_REQUIRE_NOTFOUND}
         ${_extra}
         -P ${_root}/${NCBITEST_DRIVER}
         WORKING_DIRECTORY .
@@ -298,7 +311,7 @@ function(NCBI_internal_FinalizeCMakeTest)
     # Check on uptime (for autimated builds)
 
     set(_uptime 0)
-    if(UNIX AND DEFINED $ENV{NCBI_AUTOMATED_BUILD})
+    if(UNIX AND IS_AUTOMATED)
         execute_process(
             COMMAND which uptime
             RESULT_VARIABLE _retcode

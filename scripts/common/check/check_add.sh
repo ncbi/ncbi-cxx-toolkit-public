@@ -74,7 +74,7 @@ if grep -c '^ *CHECK_CMD' $x_srcdir/Makefile.$x_test.app > /dev/null ; then
             dt=`echo $s | sed 's|\(....\)-\(..\)-\(..\):.*|\1\2\3|'`
             if [ -z "$dt" -o  "$dc" -lt "$dt" ]; then
                # Date is defined, but not arrived yet
-               echo "SKIP -- $x_tpath"
+               echo "SKIP -- $x_tpath (ignore list)"
                exit 0
             fi
          fi

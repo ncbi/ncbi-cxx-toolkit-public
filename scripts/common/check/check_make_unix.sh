@@ -530,6 +530,7 @@ RunTest()
     x_ext="\$6"
     x_timeout="\$7"
     x_authors="\$8"
+    x_unmet_req="\$9"
 
     if test -f "/etc/nologin"; then
         echo "Nologin detected, probably host going to reboot. Skipping test:" \$x_name
@@ -538,6 +539,10 @@ RunTest()
     if \$is_report_err; then
         # Authors are not defined for this test
         test -z "\$x_authors"  &&  return 0
+    fi
+    is_not_skipped=true
+    if test -n "\$x_unmet_req"; then
+        is_not_skipped=false
     fi
 
     count_total=\`expr \$count_total + 1\`
@@ -628,7 +633,7 @@ RunTest()
                     MailToAuthors "\$x_authors" "\$x_test_out"
                     continue
                 fi
-         
+
                 echo \$x_run | grep '\.sh' > /dev/null 2>&1 
                 if test \$? -eq 0;  then
                     # Run script without any check tools.
@@ -687,6 +692,8 @@ RunTest()
 
                 # Run check
                 start_time="\`date +'$x_date_format'\`"
+
+                if \$is_not_skipped; then
                         
                 # Use separate shell to run test.
                 # This will allow to know execution time for applications with timeout.
@@ -758,6 +765,18 @@ EOF_launch
                                fi
                     
                 esac
+
+                else # skipped
+                    echo "Test disabled due unmet check requires: \$x_unmet_req" >> \$x_test_out
+                    echo NCBI_UNITTEST_DISABLED >> \$x_test_out
+                    echo >> \$x_test_out
+                    # Define necessary variables to write into the test footer
+                    result=99
+                    stop_time="\$start_time"
+                    load_avg=""
+                    exec_time="real 0.0, user 0.0, sys 0.0"
+                    runid=""
+                fi
 
                 # Write result of the test into the his output file
                 echo "Start time   : \$start_time"   >> \$x_test_out
@@ -948,17 +967,18 @@ for x_row in $x_tests; do
    x_work_dir_tail="`echo \"$x_row\" | sed -e 's/~.*$//'`"
    x_work_dir="$x_compile_dir/$x_work_dir_tail"
 
-   # Check application requirements ($CHECK_REQUIRES)
+   # Check requirements ($CHECK_REQUIRES)
+   x_unmet_requires=""
    for x_req in $x_requires; do
       if test ! -f "$x_conf_dir/status/$x_req.enabled" ; then
-         echo "SKIP -- $x_work_dir_tail/$x_app (unmet CHECK_REQUIRES)"
-         continue 2
+         # save unmet requires
+         x_unmet_requires="${x_unmet_requires}${x_req} "
       fi
    done
 
    # Copy specified files to the build directory
 
-   if test "$x_import_prj" = "no"; then
+   if test "$x_import_prj" = "no"  -a  -z "$x_unmet_requires"; then
       # Automatically copy .ini file if exists
       x_copy="$x_src_dir/$x_app.ini"
       test -f $x_copy  &&  cp -pf "$x_copy" "$x_work_dir"
@@ -999,7 +1019,8 @@ RunTest "$x_work_dir_tail" \\
         "$x_name" \\
         "$x_test_ext" \\
         "$x_timeout" \\
-        "$x_authors"
+        "$x_authors" \\
+        "$x_unmet_requires"
 EOF
 
 #//////////////////////////////////////////////////////////////////////////
