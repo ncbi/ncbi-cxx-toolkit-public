@@ -541,14 +541,15 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
     auto reply = queue.SendRequestAndGetReply(request, CDeadline::eInfinite);
     _ASSERT(reply);
 
-    const CTimeout kTryTimeout(0.1);
     EPSG_Status status = EPSG_Status::eInProgress;
     bool end_of_reply = false;
     list<shared_ptr<CPSG_ReplyItem>> reply_items;
 
     while ((status == EPSG_Status::eInProgress) || !end_of_reply || !reply_items.empty()) {
+        queue.WaitForEvents(CDeadline::eInfinite);
+
         if (status == EPSG_Status::eInProgress) {
-            status = reply->GetStatus(kTryTimeout);
+            status = reply->GetStatus(CDeadline::eNoWait);
 
             switch (status) {
                 case EPSG_Status::eSuccess:    break;
@@ -565,9 +566,10 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
         }
 
         if (!end_of_reply) {
-            if (auto reply_item = reply->GetNextItem(kTryTimeout)) {
+            while (auto reply_item = reply->GetNextItem(CDeadline::eNoWait)) {
                 if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) {
                     end_of_reply = true;
+                    break;
                 } else {
                     reply_items.emplace_back(move(reply_item));
                 }
@@ -576,7 +578,7 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
 
         for (auto it = reply_items.begin(); it != reply_items.end();) {
             auto reply_item = *it;
-            auto reply_item_status = reply_item->GetStatus(kTryTimeout);
+            auto reply_item_status = reply_item->GetStatus(CDeadline::eNoWait);
 
             if (reply_item_status != EPSG_Status::eInProgress) {
                 it = reply_items.erase(it);
