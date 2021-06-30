@@ -1,4 +1,3 @@
-
 /*  $Id$
  * ===========================================================================
  *
@@ -319,28 +318,31 @@ bool CAlnWriter::WriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
         // product_length is now given in nucleotide units
         const int product_length = product_end - product_start;
 
-        CBioseq_Handle bsh;
-        CRange<TSeqPos> genomic_range;
-        ProcessSeqId(genomic_id, bsh, genomic_range);
-        if (!bsh) {
+        CBioseq_Handle genomic_bsh;
+        if (m_pScope) {
+            genomic_bsh = m_pScope->GetBioseqHandle(genomic_id);
+        }
+        if (!genomic_bsh) {
             NCBI_THROW(CObjWriterException,
                 eBadInput,
                 "Unable to resolve genomic sequence");
         }
-
+        CRange<TSeqPos> genomic_range(genomic_start, genomic_end+1);
         string genomic_seq;
-        GetSeqString(bsh, genomic_range, genomic_strand, genomic_seq);
+        GetSeqString(genomic_bsh, genomic_range, genomic_strand, genomic_seq);
 
-        CRange<TSeqPos> product_range;
-        ProcessSeqId(product_id, bsh, product_range);
-        if (!bsh) {
+        CBioseq_Handle product_bsh;
+        if (m_pScope) {
+            product_bsh = m_pScope->GetBioseqHandle(product_id);
+        }
+        if (!product_bsh) {
             NCBI_THROW(CObjWriterException,
                 eBadInput,
                 "Unable to resolve product sequence");
         }
-
+        CRange<TSeqPos> product_range(product_start, product_end+1);
         string product_seq;
-        GetSeqString(bsh, product_range, product_strand, product_seq);
+        GetSeqString(product_bsh, product_range, product_strand, product_seq);
 
         if (exon->IsSetParts()) {
             AddGaps(product_type, exon->GetParts(), genomic_seq, product_seq);
@@ -353,7 +355,6 @@ bool CAlnWriter::WriteSplicedExons(const list<CRef<CSpliced_exon>>& exons,
         }
 
         WriteContiguous(">" + GetBestId(genomic_id), genomic_seq);
-
         WriteContiguous(">" + GetBestId(product_id), product_seq);
     }
 
@@ -544,8 +545,6 @@ bool CAlnWriter::WriteSparseAlign(const CSparse_align& sparse_align)
 
 void CAlnWriter::WriteContiguous(const string& defline, const string& seqdata)
 {
-    cerr << defline << endl;
-    cerr << seqdata << endl;
     if (defline.back() == '|' && defline.size() > 1)
     {
         const auto length = defline.size();
