@@ -1302,6 +1302,49 @@ void CFlatSubSourcePrimer::Format(
     }
 }
 
+string s_TruncateLatLon( string &subname ) {
+    string lat;
+    string north_or_south;
+    string lon;
+    string east_or_west;
+
+    // extract the pieces
+    CNcbiIstrstream lat_lon_stream( subname );
+    lat_lon_stream >> lat;
+    lat_lon_stream >> north_or_south;
+    lat_lon_stream >> lon;
+    lat_lon_stream >> east_or_west;
+    if( lat_lon_stream.bad() ) {
+        return subname;
+    }
+
+    if( north_or_south != "N" && north_or_south != "S" ) {
+        return subname;
+    }
+
+    if( east_or_west != "E" && east_or_west != "W" ) {
+        return subname;
+    }
+
+    size_t pos = NStr::Find(lat, ".");
+    if (pos > 0) {
+        size_t len = lat.length();
+        if (pos + 9 < len) {
+            lat.erase(pos + 9);
+        }
+    }
+
+    pos = NStr::Find(lon, ".");
+    if (pos > 0) {
+        size_t len = lon.length();
+        if (pos + 9 < len) {
+            lon.erase(pos + 9);
+        }
+    }
+
+    return lat + " " + north_or_south + " " + lon + " " + east_or_west;
+}
+
 void CFlatSubSourceQVal::Format(TFlatQuals& q, const CTempString& name,
                               CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
@@ -1353,6 +1396,7 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const CTempString& name,
             break;
 
         case CSubSource::eSubtype_lat_lon:
+            subname = s_TruncateLatLon(subname);
             if( ctx.Config().DoHTML() ) {
                 s_HtmlizeLatLon(subname);
             }
