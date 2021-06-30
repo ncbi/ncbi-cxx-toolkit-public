@@ -1104,7 +1104,7 @@ BOOST_AUTO_TEST_CASE(Test_LatLonTrimming)
     changes = cleanup.ExtendedCleanup(*entry);
     ITERATE(CBioseq::TDescr::Tdata, d, entry->GetDescr().Get()) {
         if ((*d)->IsSource()) {
-            BOOST_CHECK_EQUAL((*d)->GetSource().GetSubtype().back()->GetName(), "3.12516554 N 2.5665974512 E");
+            BOOST_CHECK_EQUAL((*d)->GetSource().GetSubtype().back()->GetName(), "3.12516554 N 2.56659745 E");
         }
     }
 
