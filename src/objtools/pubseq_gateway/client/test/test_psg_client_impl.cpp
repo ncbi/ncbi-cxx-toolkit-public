@@ -257,7 +257,8 @@ void SFixture::MtReading()
     const unsigned kReadingDeadline = 300;
 
     const SPSG_Params params;
-    auto reply = make_shared<SPSG_Reply>("", params);
+    auto queue = make_shared<TPSG_Queue>();
+    auto reply = make_shared<SPSG_Reply>("", params, queue);
     map<SPSG_Reply::SItem::TTS*, thread> readers;
 
 
@@ -393,7 +394,8 @@ BOOST_AUTO_TEST_CASE(Request)
     const size_t kSizeMax = 1024 * 1024;
 
     const SPSG_Params params;
-    auto reply = make_shared<SPSG_Reply>("", params);
+    auto queue = make_shared<TPSG_Queue>();
+    auto reply = make_shared<SPSG_Reply>("", params, queue);
 
 
     // Reading

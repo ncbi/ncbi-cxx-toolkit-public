@@ -299,8 +299,9 @@ struct SPSG_Reply
     SThreadSafe<list<SItem::TTS>> items;
     SItem::TTS reply_item;
     SDebugPrintout debug_printout;
+    shared_ptr<TPSG_Queue> queue;
 
-    SPSG_Reply(string id, const SPSG_Params& params) : debug_printout(move(id), params) {}
+    SPSG_Reply(string id, const SPSG_Params& params, shared_ptr<TPSG_Queue> q) : debug_printout(move(id), params), queue(move(q)) {}
     void SetSuccess();
     void AddError(string message);
 };

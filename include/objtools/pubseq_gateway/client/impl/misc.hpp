@@ -244,6 +244,7 @@ struct CPSG_WaitingStack : private CPSG_Stack<TValue>
     }
 
     const atomic_bool& Stopped() const { return m_Stopped; }
+    SPSG_CV<>& CV() { return m_CV; }
     bool Empty() const { return m_Stopped && CPSG_Stack<TValue>::Empty(); }
 
 private:

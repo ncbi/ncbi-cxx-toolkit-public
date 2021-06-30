@@ -215,6 +215,8 @@ void SPSG_Reply::SetSuccess()
     for (auto& item : *items_locked) {
         item.GetLock()->SetSuccess();
     }
+
+    queue->CV().NotifyOne();
 }
 
 void SPSG_Reply::AddError(string message)
@@ -347,6 +349,7 @@ void SPSG_Request::AddIo()
 
     reply_item_ts->NotifyOne();
     item_ts->NotifyOne();
+    reply->queue->CV().NotifyOne();
 }
 
 void SPSG_Request::Add()
@@ -456,6 +459,7 @@ void SPSG_Request::Add()
     // Item must be unlocked before notifying
     item_ts->NotifyOne();
 
+    reply->queue->CV().NotifyOne();
     m_Buffer = SBuffer();
 }
 

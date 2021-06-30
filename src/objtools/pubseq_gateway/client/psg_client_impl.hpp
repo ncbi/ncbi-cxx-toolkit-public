@@ -96,6 +96,12 @@ struct CPSG_Queue::SImpl
     bool SendRequest(shared_ptr<CPSG_Request> request, CDeadline deadline);
     shared_ptr<CPSG_Reply> SendRequestAndGetReply(shared_ptr<CPSG_Request> request, CDeadline deadline);
 
+    bool WaitForEvents(CDeadline deadline)
+    {
+        _ASSERT(queue);
+        return queue->CV().WaitUntil(queue->Stopped(), move(deadline));
+    }
+
     bool RejectsRequests() const { return m_Service.ioc.RejectsRequests(); }
 
     static TApiLock GetApiLock() { return CService::GetMap(); }
