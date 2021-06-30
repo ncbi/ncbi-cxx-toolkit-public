@@ -3759,8 +3759,11 @@ bool CTimeout::operator<= (const CTimeout& t) const
 CDeadline::CDeadline(unsigned int seconds, unsigned int nanoseconds)
     : m_Seconds(0), m_Nanoseconds(0), m_Infinite(false)
 {
-    x_Now();
-    x_Add(seconds, nanoseconds);
+    // Unless expires immediately
+    if (seconds || nanoseconds) {
+        x_Now();
+        x_Add(seconds, nanoseconds);
+    }
 }
 
 
@@ -3769,6 +3772,9 @@ CDeadline::CDeadline(const CTimeout& timeout)
 {
     if (timeout.IsInfinite()) {
         m_Infinite = true;
+    }
+    else if (timeout.IsZero()) {
+        return;
     }
     else if (timeout.IsFinite()) {
         x_Now();
@@ -3782,8 +3788,8 @@ CDeadline::CDeadline(const CTimeout& timeout)
 }
 
 
-CDeadline::CDeadline(EType)
-    : m_Seconds(0), m_Nanoseconds(0), m_Infinite(true)
+CDeadline::CDeadline(EType type)
+    : m_Seconds(0), m_Nanoseconds(0), m_Infinite(type == eInfinite)
 {
 }
 
@@ -3861,6 +3867,11 @@ CNanoTimeout CDeadline::GetRemainingTime(void) const
                    "Cannot convert from " +
                    s_SpecialValueName(CTimeout::eInfinite) +
                    " deadline value");
+    }
+
+    // CDeadline::eNoWait / CDeadline(0, 0) / CDeadline(CTimeout::eZero)
+    if (!m_Seconds) {
+        return CNanoTimeout(0, 0);
     }
 
     CDeadline now(0,0);
