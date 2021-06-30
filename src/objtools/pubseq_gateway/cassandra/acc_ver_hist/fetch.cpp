@@ -63,7 +63,9 @@ CCassAccVerHistoryTaskFetch::CCassAccVerHistoryTaskFetch(
 )
     : CCassBlobWaiter(
         timeout_ms, connection, keyspace,
-        0, true, max_retries, move(data_error_cb)
+        0,
+        true, // false, // m_Async
+        max_retries, move(data_error_cb)
     )
     , m_Accession( move( accession))
     , m_Version( version)
@@ -87,7 +89,7 @@ void CCassAccVerHistoryTaskFetch::SetDataReadyCB(
            "CCassAccVerHistoryTaskFetch: DataReadyCB can't be assigned "
            "after the loading process has started");
     }
-    CCassBlobWaiter::SetDataReadyCB3(callback);
+    CCassBlobWaiter::SetDataReadyCB3( callback);
 }
 
 void CCassAccVerHistoryTaskFetch::Wait1()
@@ -138,7 +140,7 @@ void CCassAccVerHistoryTaskFetch::Wait1()
                 m_QueryArr[0].query->BindInt16( param, m_SeqIdType);
             }
 
-            SetupQueryCB3(m_QueryArr[0].query);
+            SetupQueryCB3( m_QueryArr[0].query);
             UpdateLastActivity();
             m_QueryArr[0].query->Query( CASS_CONSISTENCY_LOCAL_QUORUM,
                                         m_Async, true, m_PageSize);
