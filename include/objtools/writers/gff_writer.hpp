@@ -375,12 +375,6 @@ protected:
         const string&,
         const string& );
 
-    virtual bool x_WriteBrowserLine(
-        const CRef< CUser_object > );
-
-    virtual bool x_WriteTrackLine(
-        const CRef< CUser_object > );
-
     virtual bool xGeneratingMissingTranscripts() const
     {
         return (m_uFlags & fGenerateMissingTranscripts);

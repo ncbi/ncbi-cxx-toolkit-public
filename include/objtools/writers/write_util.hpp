@@ -90,10 +90,6 @@ public:
         const CCode_break&,
         string& );
 
-    static bool GetGeneRefGene(
-        const CGene_ref&,
-        string& );
-
     static bool GetTrnaProductName(
         const CTrna_ext&,
         string& );
@@ -124,9 +120,6 @@ public:
 
     static bool IsSequenceCircular(
         CBioseq_Handle );
-
-    static string UrlEncode(
-        const string& );
 
     static bool NeedsQuoting(
         const string& );
