@@ -107,6 +107,21 @@ public:
         return m_Keyspace;
     }
 
+    string GetAccession() const
+    {
+        return m_Accession;
+    }
+
+    int16_t GetVersion() const
+    {
+        return m_Version;
+    }
+
+    int16_t GetSeqIdType() const
+    {
+        return m_SeqIdType;
+    }
+
 protected:
     virtual void Wait1(void) override;
 
