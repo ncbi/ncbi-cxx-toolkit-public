@@ -1743,7 +1743,7 @@ static char* GetDRToken(char** ptr)
 /**********************************************************/
 static CRef<objects::CSeq_id> AddPIDToSeqId(char* str, char* acc)
 {
-    long        lID;
+    long long lID;
     char*     end = NULL;
 
     CRef<objects::CSeq_id> sid;
@@ -1758,8 +1758,8 @@ static CRef<objects::CSeq_id> AddPIDToSeqId(char* str, char* acc)
         return sid;
     }
     errno = 0;                  /* clear errors, the error flag from stdlib */
-    lID = strtol(str + 1, &end, 10);
-    if((lID == 0 && str + 1 == end) || (lID == LONG_MAX && errno == ERANGE))
+    lID = strtoll(str + 1, &end, 10);
+    if((lID == 0 && str + 1 == end) || (lID == LLONG_MAX && errno == ERANGE))
     {
         /* Bad or too large number
          */
@@ -1771,7 +1771,7 @@ static CRef<objects::CSeq_id> AddPIDToSeqId(char* str, char* acc)
     if (*str == 'G')
     {
         sid.Reset(new objects::CSeq_id);
-        sid->SetGi( GI_FROM(long, lID) );
+        sid->SetGi( GI_FROM(long long, lID) );
     }
     else if(*str == 'E' || *str == 'D')
     {
