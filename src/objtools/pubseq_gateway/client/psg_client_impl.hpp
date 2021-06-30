@@ -87,8 +87,10 @@ private:
     TReplyItem* CreateImpl(TReplyItem* item, const vector<SPSG_Chunk>& chunks);
 };
 
-struct CPSG_Queue::SImpl : CPSG_WaitingStack<shared_ptr<CPSG_Reply>>
+struct CPSG_Queue::SImpl
 {
+    shared_ptr<TPSG_Queue> queue;
+
     SImpl(const string& service);
 
     bool SendRequest(shared_ptr<CPSG_Request> request, CDeadline deadline);

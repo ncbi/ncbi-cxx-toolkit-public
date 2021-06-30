@@ -434,6 +434,7 @@ shared_ptr<CPSG_Queue::SImpl::CService::TMap> CPSG_Queue::SImpl::CService::GetMa
 
 
 CPSG_Queue::SImpl::SImpl(const string& service) :
+    queue(make_shared<TPSG_Queue>()),
     m_Service(service)
 {
 }
@@ -566,6 +567,8 @@ void CPSG_Request_Chunk::x_GetAbsPathRef(ostream& os) const
 
 shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG_Request> r, CDeadline deadline)
 {
+    _ASSERT(queue);
+
     auto user_request = const_pointer_cast<const CPSG_Request>(r);
     auto& ioc = m_Service.ioc;
     auto& params = ioc.params;
@@ -577,7 +580,7 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
     auto abs_path_ref = x_GetAbsPathRef(user_request);
     auto request = make_shared<SPSG_Request>(move(abs_path_ref), reply, user_request->m_RequestContext, params);
 
-    if (ioc.AddRequest(request, Stopped(), deadline)) {
+    if (ioc.AddRequest(request, queue->Stopped(), deadline)) {
         shared_ptr<CPSG_Reply> user_reply(new CPSG_Reply);
         user_reply->m_Impl->reply = move(reply);
         user_reply->m_Impl->user_reply = user_reply;
@@ -590,8 +593,10 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
 
 bool CPSG_Queue::SImpl::SendRequest(shared_ptr<CPSG_Request> request, CDeadline deadline)
 {
+    _ASSERT(queue);
+
     if (auto user_reply = SendRequestAndGetReply(move(request), move(deadline))) {
-        Push(move(user_reply));
+        queue->Push(move(user_reply));
         return true;
     }
 
@@ -999,9 +1004,9 @@ bool CPSG_Queue::SendRequest(shared_ptr<CPSG_Request> request, CDeadline deadlin
 shared_ptr<CPSG_Reply> CPSG_Queue::GetNextReply(CDeadline deadline)
 {
     _ASSERT(m_Impl);
-
+    _ASSERT(m_Impl->queue);
     shared_ptr<CPSG_Reply> rv;
-    m_Impl->Pop(rv, deadline);
+    m_Impl->queue->Pop(rv, deadline);
     return rv;
 }
 
@@ -1014,19 +1019,22 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SendRequestAndGetReply(shared_ptr<CPSG_Reques
 void CPSG_Queue::Stop()
 {
     _ASSERT(m_Impl);
-    m_Impl->Stop(CPSG_Queue::SImpl::eDrain);
+    _ASSERT(m_Impl->queue);
+    m_Impl->queue->Stop(m_Impl->queue->eDrain);
 }
 
 void CPSG_Queue::Reset()
 {
     _ASSERT(m_Impl);
-    m_Impl->Stop(CPSG_Queue::SImpl::eClear);
+    _ASSERT(m_Impl->queue);
+    m_Impl->queue->Stop(m_Impl->queue->eClear);
 }
 
 bool CPSG_Queue::IsEmpty() const
 {
     _ASSERT(m_Impl);
-    return m_Impl->Empty();
+    _ASSERT(m_Impl->queue);
+    return m_Impl->queue->Empty();
 }
 
 bool CPSG_Queue::RejectsRequests() const
