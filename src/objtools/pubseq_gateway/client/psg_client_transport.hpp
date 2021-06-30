@@ -239,6 +239,8 @@ private:
     const TArg* m_Arg;
 };
 
+using TPSG_Queue = CPSG_WaitingStack<shared_ptr<CPSG_Reply>>;
+
 struct SPSG_Reply
 {
     struct SState
