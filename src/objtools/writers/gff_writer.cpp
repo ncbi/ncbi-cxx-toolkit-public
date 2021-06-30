@@ -108,16 +108,6 @@ bool CGff2Writer::x_WriteAnnot(
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CUser_object > pBrowserInfo = CWriteUtil::GetDescriptor(
-        annot, "browser" );
-    if ( pBrowserInfo ) {
-        x_WriteBrowserLine( pBrowserInfo );
-    }
-    CRef< CUser_object > pTrackInfo = CWriteUtil::GetDescriptor(
-        annot, "track" );
-    if ( pTrackInfo ) {
-        x_WriteTrackLine( pTrackInfo );
-    }
     CSeq_annot_Handle sah = m_pScope->AddSeq_annot( annot );
     bool bWrite = x_WriteSeqAnnotHandle( sah );
     m_pScope->RemoveSeq_annot( sah );
@@ -340,60 +330,6 @@ bool CGff2Writer::x_WriteAlign(
 {
     return false;
 }
-
-//  ----------------------------------------------------------------------------
-bool CGff2Writer::x_WriteBrowserLine(
-    const CRef< CUser_object > pBrowserInfo )
-//  ----------------------------------------------------------------------------
-{
-    string strBrowserLine( "browser" );
-    const vector< CRef< CUser_field > > fields = pBrowserInfo->GetData();
-    vector< CRef< CUser_field > >::const_iterator cit;
-    for ( cit = fields.begin(); cit != fields.end(); ++cit ) {
-        if ( ! (*cit)->CanGetLabel() || ! (*cit)->GetLabel().IsStr() ) {
-            continue;
-        }
-        if ( ! (*cit)->CanGetData() || ! (*cit)->GetData().IsStr() ) {
-            continue;
-        }
-        strBrowserLine += " ";
-        strBrowserLine += (*cit)->GetLabel().GetStr();
-        strBrowserLine += " ";
-        strBrowserLine += (*cit)->GetData().GetStr();
-    }
-    m_Os << strBrowserLine << '\n';
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Writer::x_WriteTrackLine(
-    const CRef< CUser_object > pTrackInfo )
-//  ----------------------------------------------------------------------------
-{
-    string strTrackLine( "track" );
-    const vector< CRef< CUser_field > > fields = pTrackInfo->GetData();
-    vector< CRef< CUser_field > >::const_iterator cit;
-    for ( cit = fields.begin(); cit != fields.end(); ++cit ) {
-        if ( ! (*cit)->CanGetLabel() || ! (*cit)->GetLabel().IsStr() ) {
-            continue;
-        }
-        if ( ! (*cit)->CanGetData() || ! (*cit)->GetData().IsStr() ) {
-            continue;
-        }
-        string strKey = (*cit)->GetLabel().GetStr();
-        string strValue = (*cit)->GetData().GetStr();
-        if ( CWriteUtil::NeedsQuoting( strValue ) ) {
-            strValue = string( "\"" ) + strValue + string( "\"" );
-        }
-        strTrackLine += " ";
-        strTrackLine += strKey;
-        strTrackLine += "=";
-        strTrackLine += strValue;
-    }
-    m_Os << strTrackLine << '\n';
-    return true;
-}
-
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::WriteHeader()
