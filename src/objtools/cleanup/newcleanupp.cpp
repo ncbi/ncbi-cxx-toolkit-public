@@ -1566,6 +1566,49 @@ static string s_RepairISOCollDateTimePair (string& coll_date)
     return coll_date;
 }
 
+string s_CleanupLatLon( string &subname ) {
+    string lat;
+    string north_or_south;
+    string lon;
+    string east_or_west;
+
+    // extract the pieces
+    CNcbiIstrstream lat_lon_stream( subname );
+    lat_lon_stream >> lat;
+    lat_lon_stream >> north_or_south;
+    lat_lon_stream >> lon;
+    lat_lon_stream >> east_or_west;
+    if( lat_lon_stream.bad() ) {
+        return subname;
+    }
+
+    if( north_or_south != "N" && north_or_south != "S" ) {
+        return subname;
+    }
+
+    if( east_or_west != "E" && east_or_west != "W" ) {
+        return subname;
+    }
+
+    size_t pos = NStr::Find(lat, ".");
+    if (pos > 0) {
+        size_t len = lat.length();
+        if (pos + 9 < len) {
+            lat.erase(pos + 9);
+        }
+    }
+
+    pos = NStr::Find(lon, ".");
+    if (pos > 0) {
+        size_t len = lon.length();
+        if (pos + 9 < len) {
+            lon.erase(pos + 9);
+        }
+    }
+
+    return lat + " " + north_or_south + " " + lon + " " + east_or_west;
+}
+
 void CNewCleanup_imp::BiosourceBC (
     CBioSource& biosrc
 )
@@ -1640,6 +1683,16 @@ void CNewCleanup_imp::BiosourceBC (
                         altitude = new_altitude;
                         ChangeMade(CCleanupChange::eCleanSubsource);
                     }
+                }
+            }
+
+            if( chs == NCBI_SUBSOURCE(lat_lon) ) {
+                string &lat_lon = GET_MUTABLE(sbs, Name);
+
+                string subname = s_CleanupLatLon(lat_lon);
+                if ( lat_lon != subname ) {
+                    lat_lon = subname;
+                    ChangeMade(CCleanupChange::eCleanSubsource);
                 }
             }
 
