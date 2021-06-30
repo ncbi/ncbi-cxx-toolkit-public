@@ -1843,10 +1843,11 @@ public:
     /// Type of special deadlines.
     enum EType : unsigned {
         eInfinite = numeric_limits<unsigned>::max(), ///< Infinite deadline.
+        eNoWait = 0u,                                ///< No-wait, expires immediately.
     };
 
     /// Initialize deadline of specified type.
-    CDeadline(EType);
+    CDeadline(EType type);
 
     /// Check if the deadline is infinite.
     bool IsInfinite(void) const { return m_Infinite; }
