@@ -162,7 +162,7 @@ private:
 
 CCleanupApp::CCleanupApp()
 {
-    SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
+    SetVersion(CVersionInfo(2, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
 }
 
 void CCleanupApp::Init()
