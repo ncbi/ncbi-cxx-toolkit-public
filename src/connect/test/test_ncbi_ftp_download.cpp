@@ -327,7 +327,7 @@ size_t CNullProcessor::Run(void)
         filesize += m_Stream->gcount();
     } while (*m_Stream);
 
-    if (s_Signaled) {
+    if (s_Signaled  ||  !m_Stream->eof()) {
         return 0;
     }
     CTar::TFile file = make_pair(m_Dlcbdata->GetFilename(), filesize);
@@ -806,7 +806,7 @@ int CTestFTPDownloadApp::Run(void)
     // NB: Can use "CONN_GetPosition(ftp.GetCONN(), eIO_Open)" to clear again
     _ASSERT(!CONN_GetPosition(ftp.GetCONN(), eIO_Read));
     // Set a fine read timeout and handle the actual timeout in callbacks
-    static const STimeout second = {1, 0};
+    static const STimeout second = { 1, 0 };
     // NB: also "ftp.SetTimeout(eIO_Read, &second)"
     ftp >> SetReadTimeout(&second);
     // Set all relevant CONN callbacks
@@ -836,7 +836,9 @@ int CTestFTPDownloadApp::Run(void)
     // All other processors actually stop reading at EOF, so they reach it.
     // This dummy read makes it to proceed to closing the data connection for
     // tar;  for all others, it will be a no-op (read failure because of EOF).
-    ftp >> val;  // dummy read to finalize tar processing, if any active
+    if (files) {
+        ftp >> val;  // dummy read to finalize tar processing, if any active
+    }
 
     // These should not matter, and can be issued in any order
     // ...so do the "wrong" order on purpose for the proof of concept!
