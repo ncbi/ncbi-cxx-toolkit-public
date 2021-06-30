@@ -382,7 +382,7 @@ private:
 // constructor
 CAsn2FlatApp::CAsn2FlatApp()
 {
-    const CVersionInfo vers (8,1,0);
+    const CVersionInfo vers (6, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY);
     SetVersion (vers);
 }
 
