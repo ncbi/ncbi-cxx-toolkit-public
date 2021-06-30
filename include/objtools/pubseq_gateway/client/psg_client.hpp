@@ -922,6 +922,13 @@ public:
                                                   CDeadline                deadline);
 
 
+    /// Wait for events on this queue, on replies returned by this queue and/or
+    /// on reply items returned by the replies returned by this queue.
+    /// @param deadline
+    ///  For how long to wait for events in the queue.
+    bool WaitForEvents(CDeadline deadline);
+
+
     /// Stop accepting new requests.
     /// All already accepted requests will be processed as usual.
     /// No requests are accepted after the stop.

@@ -576,7 +576,7 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
     auto user_context = params.client_mode == EPSG_PsgClientMode::eOff ?
         nullptr : user_request->GetUserContext<string>();
     const auto request_id = user_context ? *user_context : ioc.GetNewRequestId();
-    auto reply = make_shared<SPSG_Reply>(move(request_id), params);
+    auto reply = make_shared<SPSG_Reply>(move(request_id), params, queue);
     auto abs_path_ref = x_GetAbsPathRef(user_request);
     auto request = make_shared<SPSG_Request>(move(abs_path_ref), reply, user_request->m_RequestContext, params);
 
@@ -1021,6 +1021,12 @@ void CPSG_Queue::Stop()
     _ASSERT(m_Impl);
     _ASSERT(m_Impl->queue);
     m_Impl->queue->Stop(m_Impl->queue->eDrain);
+}
+
+bool CPSG_Queue::WaitForEvents(CDeadline deadline)
+{
+    _ASSERT(m_Impl);
+    return m_Impl->WaitForEvents(move(deadline));
 }
 
 void CPSG_Queue::Reset()
