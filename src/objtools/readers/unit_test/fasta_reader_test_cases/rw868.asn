@@ -1,0 +1,26 @@
+Seq-entry ::= seq {
+  id {
+    local str "Seq1[organism=Felis"
+  },
+  descr {
+    user {
+      type str "CFastaReader",
+      data {
+        {
+          label str "DefLine",
+          data str ">Seq1[organism=Felis catus]"
+        }
+      }
+    },
+    molinfo {
+      biomol genomic
+    },
+    title "catus]"
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 25,
+    seq-data ncbi2na '1E700EAAAAA700'H
+  }
+}
