@@ -154,54 +154,54 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
     const TSeqPos& lineNumber = info.lineNumber;
     data.has_range = false;
 
-        const size_t len = defline.length();
-        if (len <= 1 ||
-            NStr::IsBlank(defline.substr(1))) {
-            return;
+    const size_t len = defline.length();
+    if (len <= 1 ||
+        NStr::IsBlank(defline.substr(1))) {
+        return;
+    }
+
+    if (defline[0] != '>') {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+            "Invalid defline. First character is not '>'", 0);
+    }
+
+    // ignore spaces between '>' and the sequence ID
+    size_t start;
+    for(start = 1 ; start < len; ++start ) {
+        if( ! isspace(defline[start]) ) {
+            break;
+        }
+    }
+
+    size_t pos;
+    size_t title_start = NPOS;
+    if ((fFastaFlags & CFastaReader::fNoParseID)) {
+        title_start = start;
+    }
+    else
+    {
+        pos = start;
+        while (pos < len && defline[pos] > ' ') {
+            pos++;
         }
 
-        if (defline[0] != '>') {
+        if ( ! (fFastaFlags & CFastaReader::fDisableParseRange) ) {
+            range_len = ParseRange(defline.substr(start, pos - start),
+                    data.range_start, data.range_end, pMessageListener);
+        }
+
+        auto id_string = defline.substr(start, pos - start - range_len);
+        if (NStr::IsBlank(id_string)) {
             NCBI_THROW2(CObjReaderParseException, eFormat,
-                "Invalid defline. First character is not '>'", 0);
+                "Unable to locate sequence id in definition line", 0);
         }
-
-        // ignore spaces between '>' and the sequence ID
-        size_t start;
-        for(start = 1 ; start < len; ++start ) {
-            if( ! isspace(defline[start]) ) {
-                break;
-            }
-        }
-
-        size_t pos;
-        size_t title_start = NPOS;
-        if ((fFastaFlags & CFastaReader::fNoParseID)) {
-            title_start = start;
-        }
-        else
-        {
-            pos = start;
-            while (pos < len && defline[pos] > ' ') {
-                pos++;
-            }
-
-            if ( ! (fFastaFlags & CFastaReader::fDisableParseRange) ) {
-                range_len = ParseRange(defline.substr(start, pos - start),
-                                       data.range_start, data.range_end, pMessageListener);
-            }
-
-            auto id_string = defline.substr(start, pos - start - range_len);
-            if (NStr::IsBlank(id_string)) {
-                NCBI_THROW2(CObjReaderParseException, eFormat,
-                    "Unable to locate sequence id in definition line", 0);
-            }
 
         title_start = pos;
         x_ProcessIDs(id_string,
-            info,
-            data.ids,
-            pMessageListener,
-            fn_idcheck);
+                info,
+                data.ids,
+                pMessageListener,
+                fn_idcheck);
 
         data.has_range = (range_len>0);
     }
