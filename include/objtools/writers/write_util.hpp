@@ -127,11 +127,6 @@ public:
     static void ChangeToPackedInt(
         CSeq_loc& loc);
 
-    static bool GetQualifier(
-        CMappedFeat mf,
-        const string& key,
-        string& value);
-
     static CConstRef<CUser_object> GetUserObjectByType(
         const CUser_object& uo,
         const string& strType);

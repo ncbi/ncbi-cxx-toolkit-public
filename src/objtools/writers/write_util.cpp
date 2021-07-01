@@ -599,30 +599,6 @@ bool CWriteUtil::GetBestId(
     return CGenbankIdResolve::Get().GetBestId(mf, best_id);
 }
 
-//  ----------------------------------------------------------------------------
-bool CWriteUtil::GetQualifier(
-    CMappedFeat mf,
-    const string& key,
-    string& value)
-//  ----------------------------------------------------------------------------
-{
-    if (!mf.IsSetQual()) {
-        return false;
-    }
-    const vector<CRef<CGb_qual> >& quals = mf.GetQual();
-    vector<CRef<CGb_qual> >::const_iterator it = quals.begin();
-    for (; it != quals.end(); ++it) {
-        if (!(*it)->CanGetQual() || !(*it)->CanGetVal()) {
-            continue;
-        }
-        if ((*it)->GetQual() == key) {
-            value = (*it)->GetVal();
-            return true;
-        }
-    }
-    return false;
-}
-
 //  ---------------------------------------------------------------------------
 void CGffFeatureContext::xAssignSequenceIsGenomicRecord()
 //  ---------------------------------------------------------------------------
