@@ -1869,8 +1869,7 @@ public:
 private:
     CDeadline(CTimeout::EType);
 
-    void x_Now(void);
-    void x_Add(unsigned int seconds, unsigned int nanoseconds);
+    void x_SetNowPlus(unsigned int seconds, unsigned int nanoseconds);
 
     time_t       m_Seconds;
     unsigned int m_Nanoseconds;
