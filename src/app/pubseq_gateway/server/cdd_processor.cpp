@@ -152,10 +152,9 @@ void CPSGS_CDDProcessor::x_ProcessResolveRequest(void)
         x_Finish(ePSGS_NotFound);
         return;
     }
-    CSeq_id_Handle idh;
     try {
         CSeq_id id(annot_request.m_SeqId);
-        idh = CSeq_id_Handle::GetHandle(id);
+        m_SeqId = CSeq_id_Handle::GetHandle(id);
     }
     catch (exception& e) {
         ERR_POST("Bad seq-id: " << annot_request.m_SeqId);
@@ -167,34 +166,12 @@ void CPSGS_CDDProcessor::x_ProcessResolveRequest(void)
         annot_request.m_TSEOption == SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_WholeTSE ||
         annot_request.m_TSEOption == SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_OrigTSE) {
         // Send whole TSE.
-        CCDDClientPool::TSeq_idSet ids;
-        ids.insert(idh);
-        CCDDClientPool::SCDDBlob cdd_blob = m_ClientPool->GetBlobBySeq_ids(ids);
-        if ( !cdd_blob.info  ||  !cdd_blob.data ) {
-            x_Finish(ePSGS_NotFound);
-            return;
-        }
-        if (SignalStartProcessing() == ePSGS_Cancel) {
-            x_Finish(ePSGS_Cancelled);
-            return;
-        }
-        x_SendAnnotInfo(*cdd_blob.info);
-        x_SendAnnot(cdd_blob.info->GetBlob_id(), cdd_blob.data);
+        m_Thread.reset(new thread(bind(&CPSGS_CDDProcessor::x_GetBlobBySeqIdAsync, this)));
     }
     else {
         // Send annot info only.
-        CCDDClientPool::TBlobInfo blob_info = m_ClientPool->GetBlobIdBySeq_id(idh);
-        if ( !blob_info ) {
-            x_Finish(ePSGS_NotFound);
-            return;
-        }
-        if (SignalStartProcessing() == ePSGS_Cancel) {
-            x_Finish(ePSGS_Cancelled);
-            return;
-        }
-        x_SendAnnotInfo(*blob_info);
+        m_Thread.reset(new thread(bind(&CPSGS_CDDProcessor::x_GetBlobIdAsync, this)));
     }
-    x_Finish(ePSGS_Found);
 }
 
 
@@ -202,14 +179,34 @@ void CPSGS_CDDProcessor::x_ProcessGetBlobRequest(void)
 {
     SPSGS_BlobBySatSatKeyRequest blob_request =
         GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
-    CRef<CCDDClientPool::TBlobId> blob_id =
-        CCDDClientPool::StringToBlobId(blob_request.m_BlobId.GetId());
-    if ( !blob_id ) {
+    m_BlobId = CCDDClientPool::StringToBlobId(blob_request.m_BlobId.GetId());
+    if ( !m_BlobId ) {
         x_Finish(ePSGS_NotFound);
         return;
     }
-    CCDDClientPool::TBlobData annot = m_ClientPool->GetBlobByBlobId(*blob_id);
-    if ( !annot ) {
+    m_Thread.reset(new thread(bind(&CPSGS_CDDProcessor::x_GetBlobByBlobIdAsync, this)));
+}
+
+
+static void s_OnGotBlobBySeqIdCallback(void* proc)
+{
+    static_cast<CPSGS_CDDProcessor*>(proc)->OnGotBlobBySeqId();
+}
+
+
+void CPSGS_CDDProcessor::x_GetBlobBySeqIdAsync(void)
+{
+    CCDDClientPool::TSeq_idSet ids;
+    ids.insert(m_SeqId);
+    m_CDDBlob = m_ClientPool->GetBlobBySeq_ids(ids);
+    CPubseqGatewayApp::GetInstance()->GetUvLoopBinder().PostponeInvoke(
+        s_OnGotBlobBySeqIdCallback, this);
+}
+
+
+void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
+{
+    if ( !m_CDDBlob.info  ||  !m_CDDBlob.data ) {
         x_Finish(ePSGS_NotFound);
         return;
     }
@@ -217,9 +214,66 @@ void CPSGS_CDDProcessor::x_ProcessGetBlobRequest(void)
         x_Finish(ePSGS_Cancelled);
         return;
     }
+    x_SendAnnotInfo(*m_CDDBlob.info);
+    x_SendAnnot(m_CDDBlob.info->GetBlob_id(), m_CDDBlob.data);
+    x_Finish(ePSGS_Found);
+}
 
-    x_SendAnnot(*blob_id, annot);
 
+static void s_OnGotBlobIdCallback(void* proc)
+{
+    static_cast<CPSGS_CDDProcessor*>(proc)->OnGotBlobId();
+}
+
+
+void CPSGS_CDDProcessor::x_GetBlobIdAsync(void)
+{
+    m_CDDBlob.info = m_ClientPool->GetBlobIdBySeq_id(m_SeqId);
+    CPubseqGatewayApp::GetInstance()->GetUvLoopBinder().PostponeInvoke(
+        s_OnGotBlobIdCallback, this);
+}
+
+
+void CPSGS_CDDProcessor::OnGotBlobId(void)
+{
+    if ( !m_CDDBlob.info ) {
+        x_Finish(ePSGS_NotFound);
+        return;
+    }
+    if (SignalStartProcessing() == ePSGS_Cancel) {
+        x_Finish(ePSGS_Cancelled);
+        return;
+    }
+    x_SendAnnotInfo(*m_CDDBlob.info);
+    x_Finish(ePSGS_Found);
+}
+
+
+static void s_OnGotBlobByBlobIdCallback(void* proc)
+{
+    static_cast<CPSGS_CDDProcessor*>(proc)->OnGotBlobByBlobId();
+}
+
+
+void CPSGS_CDDProcessor::x_GetBlobByBlobIdAsync(void)
+{
+    m_CDDBlob.data = m_ClientPool->GetBlobByBlobId(*m_BlobId);
+    CPubseqGatewayApp::GetInstance()->GetUvLoopBinder().PostponeInvoke(
+        s_OnGotBlobByBlobIdCallback, this);
+}
+
+
+void CPSGS_CDDProcessor::OnGotBlobByBlobId(void)
+{
+    if ( !m_CDDBlob.data ) {
+        x_Finish(ePSGS_NotFound);
+        return;
+    }
+    if (SignalStartProcessing() == ePSGS_Cancel) {
+        x_Finish(ePSGS_Cancelled);
+        return;
+    }
+    x_SendAnnot(*m_BlobId, m_CDDBlob.data);
     x_Finish(ePSGS_Found);
 }
 
@@ -338,6 +392,7 @@ bool CPSGS_CDDProcessor::x_NameIncluded(const vector<string>& names) const
 void CPSGS_CDDProcessor::x_Finish(EPSGS_Status status)
 {
     if (status != ePSGS_Cancelled) m_Status = status;
+    if (m_Thread) m_Thread->detach();
     SignalFinishProcessing();
 }
 
