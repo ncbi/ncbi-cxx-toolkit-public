@@ -1461,7 +1461,11 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     }
 
     k = makefile.m_Contents.find("CHECK_CMD");
-    if ( check_requires_ok && k != makefile.m_Contents.end() ) {
+// !!!
+// Disable checking test requires in PTB, move checks back to scripts to correctly 
+// process disabled tests due requires and report it to DB.
+//    if ( check_requires_ok && k != makefile.m_Contents.end() ) {
+    if ( k != makefile.m_Contents.end() ) {
         const list<string> check_cmd_list = k->second;
         string test_name("/CHECK_NAME=");
         ITERATE(list<string>, i, check_cmd_list) {
