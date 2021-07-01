@@ -123,7 +123,7 @@ void CCassAccVerHistoryTaskFetch::Wait1()
             }
             if( m_SeqIdType > 0)
             {
-                sql += " AND id_type = ?";
+                sql += " AND id_type = ? ALLOW FILTERING";
                 ++params;
             }
             
