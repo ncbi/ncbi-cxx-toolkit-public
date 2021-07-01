@@ -1532,6 +1532,7 @@ variation_lib needs variation_utils
 variation_utils needs variation
 variation_utils needs xobjutil
 varrep needs xser
+vdb2blast needs $(BLAST_INPUT_LIBS)
 vdb2blast needs $(BLAST_LIBS)
 vdb2blast needs3party $(BLAST_THIRD_PARTY_LIBS)
 vdb2blast needs3party $(VDB_LIBS)
