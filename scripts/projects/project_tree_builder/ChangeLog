@@ -379,3 +379,7 @@ May 27, 2021
 version 4.9.2, CXX-11939
 Bug fix
 
+July 01, 2021
+version 4.9.3, CXX-11988
+Disabled checking test requirements, leave it to scripts.
+
