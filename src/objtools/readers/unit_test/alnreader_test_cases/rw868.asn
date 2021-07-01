@@ -1,0 +1,77 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        local str "seq1"
+      },
+      descr {
+        source {
+          org {
+            taxname "animal 1"
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '909393900FF9A54E4E3939'H
+      }
+    },
+    seq {
+      id {
+        local str "seq2[org=animal"
+      },
+      descr {
+        title "2]"
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 44,
+        seq-data ncbi2na '33A393900FFA954E4E5939'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 2,
+          segs denseg {
+            dim 2,
+            numseg 6,
+            ids {
+              local str "seq1",
+              local str "seq2[org=animal"
+            },
+            starts {
+              -1,
+              0,
+              0,
+              -1,
+              2,
+              2,
+              -1,
+              36,
+              36,
+              -1,
+              38,
+              38
+            },
+            lens {
+              2,
+              2,
+              34,
+              2,
+              2,
+              6
+            }
+          }
+        }
+      }
+    }
+  }
+}

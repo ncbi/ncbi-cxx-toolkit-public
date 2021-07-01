@@ -1,0 +1,6 @@
+SeqID      : seq2[org=animal
+Line No    : 5
+Severity   : Error
+Problem    : Alignment.IllegalSequenceId
+Message    : At ID 'seq2[org=animal': 'seq2[org=animal' is not a valid local ID
+
