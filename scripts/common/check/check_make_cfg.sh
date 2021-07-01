@@ -408,6 +408,13 @@ RunTest() {
     x_ext="\$6"
     x_timeout="\$7"
     x_authors="\$8"
+    x_unmet_req="\$9"
+
+    # Check if test don't met requires: so don't run, but mark as "disabled"
+    is_not_skipped=true
+    if test -n "\$x_unmet_req"; then
+        is_not_skipped=false
+    fi
  
     x_work_dir="\$check_dir/\$x_wdir"
     mkdir -p "\$x_work_dir" > /dev/null 2>&1 
@@ -521,6 +528,8 @@ RunTest() {
            start_time="\`date +'$x_date_format'\`"
            check_exec="\$root_dir/scripts/common/check/check_exec.sh"
            
+           if \$is_not_skipped; then
+
            # Generate PHID and SID for a new test
            logfile=\$NCBI_CONFIG__LOG__FILE
            NCBI_CONFIG__LOG__FILE=
@@ -571,6 +580,18 @@ RunTest() {
            fi
            rm -f $x_tmp/\$\$.out
            rm -f \$x_test_out.\$\$
+
+           else # skipped
+               echo "Test disabled due unmet check requires: \$x_unmet_req" >> \$x_test_out
+               echo NCBI_UNITTEST_DISABLED >> \$x_test_out
+               echo >> \$x_test_out
+               # Define necessary variables to write into the test footer
+               stop_time="\$start_time"
+               load_avg=""
+               result=0
+               exec_time="real 0.0, user 0.0, sys 0.0"
+               runid=""
+           fi
 
            # Write result of the test into the his output file
            echo "Start time   : \$start_time"   >> \$x_test_out
@@ -651,7 +672,7 @@ RunTest() {
            fi
            case "$x_compiler" in
              MSVC )
-                test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "\$build_dir/test_stat_load.log" 2>&1
+echo                test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "\$build_dir/test_stat_load.log" 2>&1
                 ;;        
              XCODE ) 
                 $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\$build_dir/test_stat_load.log" 2>&1
@@ -705,7 +726,7 @@ x_test_prev=""
 # For all tests
 for x_row in $x_tests; do
    # Get one row from list
-   x_row=`echo "$x_row" | sed -e 's/%gj_s4%/ /g' -e 's/^ *//' -e 's/ ____ /~/g'`
+   x_row=`echo "$x_row" | sed -e 's/%gj_s4%/ /g' -e 's/^ *//' -e 's/ ____ /~/g' | tr -d '\r'`
 
    # Split it to parts
    x_rel_dir=`echo \$x_row | sed -e 's/~.*$//'`
@@ -716,22 +737,21 @@ for x_row in $x_tests; do
    x_name=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_files=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_timeout=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   ###x_requires=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
+   x_requires=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_authors=`echo "$x_row" | sed -e 's/.*~//'`
 
    # Default timeout
    test -z "$x_timeout"  &&  x_timeout=$NCBI_CHECK_TIMEOUT_DEFAULT
 
-   # Check application requirements
-   # TODO:
-   #    This check can be removed later, when project_tree_builder starts to check requiments
-   #    on check list generation step.
-   ###for x_req in $x_requires; do
-   ###   (echo "$x_features" | grep " $x_req " > /dev/null)  ||  continue 2
-   ###done
+   # Check requirements ($CHECK_REQUIRES)
+   x_unmet_requires=""
+   for x_req in $x_requires; do
+      # save unmet requires
+      (echo "$x_features" | grep " $x_req " > /dev/null)  ||  x_unmet_requires="${x_unmet_requires}${x_req} "
+   done
    
    # Copy specified files into the check tree
-   if test ! -z "$x_files" ; then
+   if test ! -z "$x_files"  -a  -z "$x_unmet_requires"; then
       x_path="$x_check_dir/$x_rel_dir"
       mkdir -p "$x_path"
       # Automatically copy .ini file if exists
@@ -764,6 +784,7 @@ for x_row in $x_tests; do
    fi
    x_test_prev="$x_test"
 
+
    # Write current test commands into a script file
    cat >> $x_out <<EOF
 ######################################################################
@@ -774,7 +795,8 @@ RunTest "$x_rel_dir"  \\
         "$x_name"     \\
         "$x_test_ext" \\
         "$x_timeout"  \\
-        "$x_authors"
+        "$x_authors"  \\
+        "$x_unmet_requires"
 EOF
 
 #//////////////////////////////////////////////////////////////////////////
