@@ -3761,8 +3761,7 @@ CDeadline::CDeadline(unsigned int seconds, unsigned int nanoseconds)
 {
     // Unless expires immediately
     if (seconds || nanoseconds) {
-        x_Now();
-        x_Add(seconds, nanoseconds);
+        x_SetNowPlus(seconds, nanoseconds);
     }
 }
 
@@ -3777,10 +3776,9 @@ CDeadline::CDeadline(const CTimeout& timeout)
         return;
     }
     else if (timeout.IsFinite()) {
-        x_Now();
         unsigned int sec, usec;
         timeout.Get(&sec, &usec);
-        x_Add(sec, usec * (unsigned int)(kNanoSecondsPerSecond / kMicroSecondsPerSecond));
+        x_SetNowPlus(sec, usec * (unsigned int)(kNanoSecondsPerSecond / kMicroSecondsPerSecond));
     }
     else if (timeout.IsDefault()) {
         NCBI_THROW(CTimeException, eArgument, "Cannot convert from default CTimeout");
@@ -3794,7 +3792,7 @@ CDeadline::CDeadline(EType type)
 }
 
 
-void CDeadline::x_Now(void)
+void CDeadline::x_SetNowPlus(unsigned int seconds, unsigned int nanoseconds)
 {
 #if defined(NCBI_OS_MSWIN)
     FILETIME systime;
@@ -3829,12 +3827,8 @@ void CDeadline::x_Now(void)
     }
 #  endif
 #endif
-}
 
-
-void CDeadline::x_Add(unsigned int seconds, unsigned int nanoseconds)
-{
-    if (!m_Infinite  &&  (seconds | nanoseconds)) {
+    if (seconds || nanoseconds) {
         nanoseconds  += m_Nanoseconds;
         seconds      += nanoseconds / (unsigned int)kNanoSecondsPerSecond;
         m_Nanoseconds = nanoseconds % (unsigned int)kNanoSecondsPerSecond;
@@ -3875,6 +3869,10 @@ CNanoTimeout CDeadline::GetRemainingTime(void) const
     }
 
     CDeadline now(0,0);
+
+    // Immediately expiring deadlines do not get actual seconds/nanoseconds anymore,
+    // so the latter are explicitly set here for 'now' using x_SetNowPlus()
+    now.x_SetNowPlus(0, 0);
 
     time_t       thenS  = m_Seconds;
     unsigned int thenNS = m_Nanoseconds;
