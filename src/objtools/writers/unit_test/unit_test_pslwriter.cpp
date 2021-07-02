@@ -61,8 +61,6 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-const CPslWriter::TFlags writerFlags = CPslWriter::fDebugOutput;
-
 //  ============================================================================
 //  Customization data:
 const string extInput("asn1");
@@ -141,7 +139,6 @@ public:
             BOOST_REQUIRE( test_info_to_load.mErrorFile.GetPath().empty() );
             test_info_to_load.mErrorFile = file;
         }
-
         else {
             BOOST_FAIL("Unknown file type " << sFileName << ".");
         }
@@ -179,7 +176,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     unique_ptr<CObjectIStream> pI(CObjectIStream::Open(eSerial_AsnText, ifstr));
 
     CNcbiOfstream ofstr(output.c_str());
-    CPslWriter* pWriter = new CPslWriter(*pScope, ofstr, writerFlags);
+    CPslWriter* pWriter = new CPslWriter(*pScope, ofstr, 0);
 
     CRef<CSeq_annot> pAnnot(new CSeq_annot);
     *pI >> *pAnnot;
@@ -244,7 +241,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
-    CPslWriter* pWriter = new CPslWriter(*pScope, ofstr, writerFlags);
+    CPslWriter* pWriter = new CPslWriter(*pScope, ofstr, 0);
 
     CRef<CSeq_annot> pAnnot(new CSeq_annot);
     *pI >> *pAnnot;

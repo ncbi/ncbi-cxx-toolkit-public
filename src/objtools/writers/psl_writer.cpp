@@ -119,13 +119,6 @@ bool CPslWriter::WriteAlign(
     }
 
     ++mRecordCounter;
-    if (m_uFlags & CPslWriter::fDebugOutput) {
-        cerr << ".";
-        if (0 == mRecordCounter % 50) {
-            cerr << " " << mRecordCounter << endl;
-        }
-    }
-
     try {
         CPslRecord record(mpMessageListener);
         auto segType = align.GetSegs().Which();
@@ -155,13 +148,13 @@ bool CPslWriter::WriteAlign(
         }
         record.Finalize();
 
-        CPslFormatter formatter(m_Os, m_uFlags);
+        CPslFormatter formatter(m_Os);
         formatter.Format(record);
     }
     catch(CWriterMessage& writerMessage) {
         switch(writerMessage.GetSeverity()) {
             case eDiag_Fatal:
-                throw;
+                throw; 
             default:
                 PutMessage(writerMessage);
                 break;
