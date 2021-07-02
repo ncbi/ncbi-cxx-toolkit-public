@@ -771,7 +771,7 @@ EOF_launch
                     echo NCBI_UNITTEST_DISABLED >> \$x_test_out
                     echo >> \$x_test_out
                     # Define necessary variables to write into the test footer
-                    result=99
+                    result=0
                     stop_time="\$start_time"
                     load_avg=""
                     exec_time="real 0.0, user 0.0, sys 0.0"
