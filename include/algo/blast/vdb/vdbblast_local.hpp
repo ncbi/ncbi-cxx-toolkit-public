@@ -30,6 +30,7 @@
 #ifndef ALGO_BLAST_VDB___VDBBLAST_LOCAL_HPP
 #define ALGO_BLAST_VDB___VDBBLAST_LOCAL_HPP
 
+#include <common/ncbi_export.h>
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/api/setup_factory.hpp>

@@ -34,6 +34,7 @@
 #ifndef ALGO_BLAST_VDB___BLASTN_VDB_ARGS__HPP
 #define ALGO_BLAST_VDB___BLASTN_VDB_ARGS__HPP
 
+#include <common/ncbi_export.h>
 #include <algo/blast/blastinput/blast_args.hpp>
 
 BEGIN_NCBI_SCOPE

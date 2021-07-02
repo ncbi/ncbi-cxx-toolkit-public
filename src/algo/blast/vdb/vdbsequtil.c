@@ -395,7 +395,7 @@ Boolean s_GetSeq4na(TVDBData * vdbData, TByteArray* dataSeq,
 					TNuclDataRequest* req4na, TVDBErrMsg * vdbErrMsg)
 {
 	uint32_t status = eVdbBlastNoErr;
-	uint64_t seqLength = 0;
+	size_t seqLength = 0;
 	const uint8_t * data;
 	uint64_t  sizeOut;
 	uint8_t* dataOut;
@@ -547,7 +547,7 @@ VDBSRC_Get4naSequenceAsString(TVDBData* vdbData,
     req.convertDataToBlastna = FALSE;
     req.readId = oid;
 
-    if((vdbData->reader_4na == NULL )) {
+    if(vdbData->reader_4na == NULL) {
     	VDBSRC_Init4naReader(vdbData, vdbErrMsg);
     }
     if(vdbErrMsg->isError)
