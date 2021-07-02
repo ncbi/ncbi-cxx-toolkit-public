@@ -45,8 +45,7 @@ class CPslFormatter
 {
 public:
     CPslFormatter(
-        CNcbiOstream& ostr,
-        bool debugMode);
+        CNcbiOstream& ost);
 
     ~CPslFormatter() = default;
 
@@ -100,7 +99,7 @@ protected:
 
 
     CNcbiOstream& mOstr;
-    bool mDebugMode;
+    //bool mDebugMode;
 };
 
 END_objects_SCOPE
