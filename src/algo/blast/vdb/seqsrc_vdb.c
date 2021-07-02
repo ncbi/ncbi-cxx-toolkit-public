@@ -186,7 +186,7 @@ s_VDBSRC_GetSequence(void* vdbDataHandle, BlastSeqSrcGetSeqArg* args)
    //Get the sequence buffer and length
    if (req.read4na)
    {
-	   if((vdbData->reader_4na == NULL ))
+	   if(vdbData->reader_4na == NULL)
 	   {
 		   VDBSRC_Init4naReader(vdbData, &vdbErrMsg);
 
@@ -202,7 +202,7 @@ s_VDBSRC_GetSequence(void* vdbDataHandle, BlastSeqSrcGetSeqArg* args)
    }
    else
    {
-	   if((vdbData->reader_2na == NULL ))
+	   if(vdbData->reader_2na == NULL)
 	   {
 		   VDBSRC_InitErrorMsg(&vdbErrMsg, retval,  eVDBSRC_READER_2NA_ERROR);
 		   return retval;

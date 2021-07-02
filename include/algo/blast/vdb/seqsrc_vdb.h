@@ -47,6 +47,8 @@
 // ==========================================================================//
 
 // Blast includes
+
+#include <common/ncbi_export.h>
 #include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_seqsrc.h>

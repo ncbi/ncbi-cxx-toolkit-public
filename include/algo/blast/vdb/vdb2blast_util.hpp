@@ -42,6 +42,7 @@
 #include "seqsrc_vdb.h"
 
 #include <corelib/ncbiobj.hpp>
+#include <common/ncbi_export.h>
 
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/blast_seqinfosrc.hpp>

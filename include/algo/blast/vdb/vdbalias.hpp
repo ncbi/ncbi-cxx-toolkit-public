@@ -12,6 +12,7 @@
 //#include <iostream>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <common/ncbi_export.h>
 
 
 

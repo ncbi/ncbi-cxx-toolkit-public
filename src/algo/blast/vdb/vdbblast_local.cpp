@@ -30,10 +30,6 @@
 /** @file vdbblast_local.cpp
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -422,7 +418,7 @@ static void
 s_RemoveNonCSRAEntry(vector<SSortStruct> & in_list)
 {
 	vector<SSortStruct>  filtered_list;
-	for(unsigned int i; i < in_list.size(); i++) {
+	for(unsigned int i = 0; i < in_list.size(); i++) {
 		if(in_list[i].db_name == k_NOT_CSRA_DB)
 			continue;
 
