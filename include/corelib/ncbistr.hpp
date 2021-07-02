@@ -5631,8 +5631,8 @@ CUtf8::x_AsBasicString(const CTempString& str,
         if (ch > max_char) {
             if (sizeof(TChar) == 2) {
                 ch -= 0x10000;
-                TChar hi = ch / 0x400 + 0xD800;
-                TChar lo = ch % 0x400 + 0xDC00;
+                TUnicodeSymbol hi = ch / 0x400 + 0xD800;
+                TUnicodeSymbol lo = ch % 0x400 + 0xDC00;
                 result.append(1, (TChar)hi);
                 result.append(1, (TChar)lo);
                 continue;
