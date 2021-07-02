@@ -1,3 +1,7 @@
+Release 4.42.3 cloned from 4.42.2 (2021-07-02)
+
+    * NetSchedule: fail to load the dump (CXX-11914)
+
 Release 4.42.2 based on SC-25 (2021-02-04)
 
     * NetSchedule should allow anyone to read its configuraion (CXX-11655)
