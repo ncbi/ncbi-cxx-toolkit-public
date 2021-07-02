@@ -364,7 +364,7 @@ endif()
 
 else()
     # Define necessary variables to write into the test footer for a skipped test
-    set(_result 99)
+    set(_result 0)
     set(_out "Test disabled due unmet check requires: ${NCBITEST_REQUIRE_NOTFOUND}\nNCBI_UNITTEST_DISABLED\n\n")
     set(_test_stop ${_test_start})
     set(_uptime "")
