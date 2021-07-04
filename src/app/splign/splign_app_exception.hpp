@@ -52,7 +52,7 @@ public:
 	eNoHits,
 	eGeneral
     };
-    virtual const char* GetErrCodeString(void) const {
+    virtual const char* GetErrCodeString(void) const override {
         switch ( GetErrCode() ) {
         case eInternal:
             return "Internal error";
