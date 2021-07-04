@@ -1134,7 +1134,7 @@ bool CNWAligner::x_CheckMemoryLimit()
 
 void CNWAligner::EnableMultipleThreads(bool enable)
 {
-    m_maxthreads = (m_mt = enable)? GetCpuCount(): 1;
+    m_maxthreads = (m_mt = enable)? CSystemInfo::GetCpuCount(): 1;
 }
 
 
