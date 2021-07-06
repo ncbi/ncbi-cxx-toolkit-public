@@ -2125,8 +2125,8 @@ void CBioseqIndex::x_InitFeats (CSeq_loc* slpp)
 
                 bool gapIsSame = false;
                 if ( subtype == CSeqFeatData::eSubtype_gap && prev_loc && !m_SfxList.empty() ) {
-                    if ( feat_loc->GetStart(eExtreme_Positional) == prev_loc->GetStart(eExtreme_Positional) &&
-                        feat_loc->GetStop(eExtreme_Positional) == prev_loc->GetStop(eExtreme_Positional) ) {
+                    if ( feat_loc->GetStart(eExtreme_Positional) == prev_loc->GetStart(eExtreme_Positional) /* &&
+                        feat_loc->GetStop(eExtreme_Positional) == prev_loc->GetStop(eExtreme_Positional) */ ) {
                         gapIsSame = true;
                     }
                 }
