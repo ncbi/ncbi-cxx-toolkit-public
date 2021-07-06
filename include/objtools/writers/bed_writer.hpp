@@ -123,12 +123,6 @@ protected:
     bool xWriteFeature(
         CFeat_CI) override;
 
-    bool xWriteFeature(const CMappedFeat& feat,
-        CSeq_annot_Handle annot_handle,
-        CBioseq_Handle bioseq_handle);
-
-
-
     CScope& m_Scope;
     unsigned int m_colCount;
 };
