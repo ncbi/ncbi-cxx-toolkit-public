@@ -191,11 +191,9 @@ protected:
 
     virtual SAnnotSelector& xSetJunkFilteringAnnotSelector();
 
-    virtual bool xWriteAlign(
-        CAlign_CI align_it) override;
     bool xWriteAlign(
         const CSeq_align&,
-        const string& = "");
+        const string& = "") override;
     virtual bool xWriteAlignDenseg(
         const CSeq_align&,
         const string& = "");

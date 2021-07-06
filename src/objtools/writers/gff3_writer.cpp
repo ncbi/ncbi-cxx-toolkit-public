@@ -296,19 +296,6 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteAlign(
-    CAlign_CI align_it)
-//  ----------------------------------------------------------------------------
-{
-    if (!align_it) {
-        return false;
-    }
-
-    return xWriteAlign(*align_it);
-}
-
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xWriteAlign(
     const CSeq_align& align,
     const string& alignId)
 //  ----------------------------------------------------------------------------

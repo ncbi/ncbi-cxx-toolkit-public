@@ -289,7 +289,9 @@ public:
 class NCBI_XOBJWRITE_EXPORT CAlignWriter
 {
 protected:
-    virtual bool xWriteAlign(CAlign_CI align_it) = 0;
+    virtual bool xWriteAlign(
+        const CSeq_align&,
+        const string& ="") = 0;
 
 public:
     virtual ~CAlignWriter(void) = default;
@@ -297,7 +299,7 @@ public:
     bool WriteAlignments(CAlign_CI first) {
         auto it = first;
         while (it) {
-            if (!xWriteAlign(it)) {
+            if (!xWriteAlign(*it)) {
                 return false;
             }
             ++it;
