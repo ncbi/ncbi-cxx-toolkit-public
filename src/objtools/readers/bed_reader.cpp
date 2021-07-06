@@ -848,6 +848,7 @@ void CBedReader::xSetFeatureDisplayData(
                 "score",
                 NStr::StringToInt(columnData[4],
                     NStr::fConvErr_NoThrow|NStr::fAllowTrailingSymbols) );
+            feature->AddOrReplaceQualifier("score", columnData[4]);
         }
         else {
             display_data->AddField(
