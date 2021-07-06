@@ -119,7 +119,7 @@ private:
 
     unique_ptr<CObjectIStream> OpenFile(const string& fname, string& asn_type);
 
-    CConstRef<CValidError> ProcessCatenated();
+    void ProcessCatenated();
     CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
     CConstRef<CValidError> ProcessSeqEntry();
     CConstRef<CValidError> ProcessSeqSubmit();
@@ -369,13 +369,11 @@ CConstRef<CValidError> CAsnvalApp::ValidateInput(string asn_type)
     CConstRef<CValidError> eval;
     string header = m_In->ReadFileHeader();
 
-    if (m_obj_type == "c") {
-        eval = ProcessCatenated();
-    } else if (asn_type == "Seq-submit") {          // Seq-submit
+    if (asn_type == "Seq-submit") {                 // Seq-submit
         eval = ProcessSeqSubmit();
     } else if (asn_type == "Seq-entry") {           // Seq-entry
         eval = ProcessSeqEntry();
-    } else if ( asn_type == "Seq-annot") {          // Seq-annot
+    } else if (asn_type == "Seq-annot") {           // Seq-annot
         eval = ProcessSeqAnnot();
     } else if (asn_type == "Seq-feat") {            // Seq-feat
         eval = ProcessSeqFeat();
@@ -452,6 +450,8 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                 } else {
                     LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is neither a Seq-submit nor Bioseq-set; do not use -batch to process.");
                 }
+            } else if (m_obj_type == "c") {
+                ProcessCatenated();
             } else {
                 size_t num_validated = 0;
                 while (true) {
@@ -789,8 +789,11 @@ CRef<CValidError> CAsnvalApp::ReportReadFailure(const CException* p_exception)
 }
 
 
-CConstRef<CValidError> CAsnvalApp::ProcessCatenated()
+void CAsnvalApp::ProcessCatenated()
 {
+    const CArgs& args = GetArgs();
+    string header = m_In->ReadFileHeader();
+
     try {
         while (true) {
             // Get seq-entry to validate
@@ -808,12 +811,13 @@ CConstRef<CValidError> CAsnvalApp::ProcessCatenated()
             }
             catch (const CException& e) {
                 ERR_POST(Error << e);
-                return ReportReadFailure(&e);
+                PrintValidError(ReportReadFailure(&e), args);
+                return;
             }
             try {
                 CConstRef<CValidError> eval = ProcessSeqEntry(*se);
                 if ( eval ) {
-                    PrintValidError(eval, GetArgs());
+                    PrintValidError(eval, args);
                 }
             }
             catch (const CObjMgrException& om_ex) {
@@ -821,7 +825,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessCatenated()
                     se->ReassignConflictingIds();
                 CConstRef<CValidError> eval = ProcessSeqEntry(*se);
                 if ( eval ) {
-                    PrintValidError(eval, GetArgs());
+                    PrintValidError(eval, args);
                 }
             }
             try {
@@ -834,10 +838,8 @@ CConstRef<CValidError> CAsnvalApp::ProcessCatenated()
     }
     catch (const CException& e) {
         ERR_POST(Error << e);
-        return ReportReadFailure(&e);
+        return PrintValidError(ReportReadFailure(&e), args);
     }
-
-    return CConstRef<CValidError>();
 }
 
 CConstRef<CValidError> CAsnvalApp::ProcessBioseq()
