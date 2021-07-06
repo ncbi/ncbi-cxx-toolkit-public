@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <internal/blast/vdb/vdb2blast_util.hpp>
+#include <algo/blast/vdb/vdb2blast_util.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/vdb/vdbalias.hpp>
