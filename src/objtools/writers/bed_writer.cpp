@@ -63,8 +63,6 @@ class CThreeFeatRecord
 
 public:
     CThreeFeatRecord() {};
-    CThreeFeatRecord(
-        const CSeq_feat&);
     ~CThreeFeatRecord() {};
 
     bool AddFeature(
@@ -88,14 +86,6 @@ private:
     vector<int> mFeatsAll;
     vector<int> mFeatsFound;
 };
-
-//  ----------------------------------------------------------------------------
-CThreeFeatRecord::CThreeFeatRecord(
-    const CSeq_feat& feat)
-//  ----------------------------------------------------------------------------
-{
-    AddFeature(feat);
-}
 
 //  ----------------------------------------------------------------------------
 bool CThreeFeatRecord::AddFeature(
@@ -543,25 +533,6 @@ bool CBedWriter::xWriteAnnotThreeFeatData(
     return (!pMf);
 }
 
-
-
-bool CBedWriter::xWriteFeature(
-    const CMappedFeat& mapped_feat,
-    CSeq_annot_Handle annot_handle,
-    CBioseq_Handle dummy_arg)
-{
-    // Inefficient!
-    // Store track and annot_handle, and only recreate track
-    // if the annot_handle has changed since the last call.
-    CBedTrackRecord track;
-    if ( ! track.Assign(*(annot_handle.GetCompleteSeq_annot())) ) {
-        return false;
-    }
-
-    return xWriteFeature(track, mapped_feat);
-}
-
-
 //  ----------------------------------------------------------------------------
 bool CBedWriter::xWriteFeature(
     CFeat_CI feat_it)
@@ -607,8 +578,7 @@ bool CBedWriter::xWriteFeature(
 
     if (!pPackedInt->IsPacked_int() || !pPackedInt->GetPacked_int().CanGet()) {
         // nothing to do
-        return true;
-    }
+        return true;    }
 
     const list<CRef<CSeq_interval> >& sublocs = pPackedInt->GetPacked_int().Get();
     list<CRef<CSeq_interval> >::const_iterator it;
