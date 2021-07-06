@@ -63,7 +63,7 @@ set(SRC_BLAST_C_CORE
 
 NCBI_add_subdirectory(
   composition_adjustment core dbindex dbindex_search api proteinkmer
-  format blastinput blast_sra_input igblast gumbel_params unit_tests
+  format blastinput blast_sra_input igblast gumbel_params vdb unit_tests
 )
 
 NCBI_project_watchers(camacho madden fongah2)
