@@ -15,7 +15,7 @@ NCBI_begin_lib(vdb2blast)
       blastn_vdb_args
       tblastn_vdb_args
   )
-  NCBI_uses_toolkit_libraries(xblast)
+  NCBI_uses_toolkit_libraries(xblast blastinput)
   NCBI_requires(VDB)
   NCBI_add_definitions(NCBI_VDB2BLAST_EXPORTS)
 NCBI_end_lib()
