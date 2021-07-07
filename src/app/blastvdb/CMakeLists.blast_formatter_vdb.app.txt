@@ -1,0 +1,8 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(blast_formatter_vdb)
+  NCBI_sources(blast_vdb_app_util blast_formatter_vdb)
+  NCBI_uses_toolkit_libraries(vdb2blast ncbi_xloader_csra ncbi_xloader_wgs blast_app_util)
+NCBI_end_app()
