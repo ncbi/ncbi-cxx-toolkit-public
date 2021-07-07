@@ -64,9 +64,6 @@ protected:
         CSeq_annot_Handle ) override;
 
     virtual bool xWriteFeature(
-        CFeat_CI) override;
-
-    virtual bool xWriteFeature(
         CGffFeatureContext&,
         const CMappedFeat& ) override;
 

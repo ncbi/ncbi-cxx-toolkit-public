@@ -142,18 +142,6 @@ bool CGvfWriter::WriteHeader()
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriter::xWriteFeature(
-    CFeat_CI feat_it)
-//  ----------------------------------------------------------------------------
-{
-    if (!feat_it) {
-        return false;
-    }
-    CGffFeatureContext fc(feat_it, CBioseq_Handle(), feat_it.GetAnnot());
-    return xWriteFeature(fc, *feat_it);
-}
-
-//  ----------------------------------------------------------------------------
-bool CGvfWriter::xWriteFeature(
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------

@@ -636,7 +636,7 @@ bool CAnnotWriterApp::xProcessInputObject(
 //  -----------------------------------------------------------------------------
 {
     if (!GetArgs()["skip-headers"]) {
-        m_pWriter->WriteHeader();
+        m_pWriter->WriteHeader(annot);
     }
     m_pWriter->WriteAnnot(annot, xAssemblyName(), xAssemblyAccession());
     m_pWriter->WriteFooter();
