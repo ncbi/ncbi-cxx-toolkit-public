@@ -205,6 +205,14 @@ public:
     ///
     virtual bool WriteHeader() { return true; };
 
+    /// Write a file header, using annotation information.
+    /// Header syntax and rules depend on the file format. This do-nothing
+    /// implementation should therefore be re-implemented in format specific
+    /// subclasses.
+    ///
+    virtual bool WriteHeader(
+        const CSeq_annot&) { return WriteHeader(); };
+
     /// Write a file trailer.
     /// Trailer syntax and rules depend on the file format. This do-nothing
     /// implementation should therefore be re-implemented in format specific
@@ -267,7 +275,7 @@ protected:
 class NCBI_XOBJWRITE_EXPORT CFeatWriter
 {
 protected:
-    virtual bool xWriteFeature(CFeat_CI feat) = 0;
+    virtual bool xWriteFeature(CFeat_CI feat) { return false; };
 
 public:
     virtual ~CFeatWriter(void) = default;
