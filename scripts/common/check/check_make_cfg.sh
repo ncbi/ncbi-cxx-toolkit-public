@@ -672,7 +672,7 @@ RunTest() {
            fi
            case "$x_compiler" in
              MSVC )
-echo                test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "\$build_dir/test_stat_load.log" 2>&1
+                test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "\$build_dir/test_stat_load.log" 2>&1
                 ;;        
              XCODE ) 
                 $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\$build_dir/test_stat_load.log" 2>&1
