@@ -1,0 +1,8 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(blast_vdb_cmd)
+  NCBI_sources(blast_vdb_cmd)
+  NCBI_uses_toolkit_libraries(vdb2blast xobjutil)
+NCBI_end_app()
