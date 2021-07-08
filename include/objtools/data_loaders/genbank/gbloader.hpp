@@ -280,15 +280,15 @@ public:
         CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(const CGBLoaderParams& params);
 
-    CConstRef<CSeqref> GetSatSatkey(const CSeq_id_Handle& idh);
-    CConstRef<CSeqref> GetSatSatkey(const CSeq_id& id);
-
     virtual TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh) = 0;
     virtual TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh,
         const string& named_acc) = 0;
 
-    const TRealBlobId& GetRealBlobId(const TBlobId& blob_id) const;
-    const TRealBlobId& GetRealBlobId(const CTSE_Info& tse_info) const;
+    CConstRef<CSeqref> GetSatSatkey(const CSeq_id_Handle& idh);
+    CConstRef<CSeqref> GetSatSatkey(const CSeq_id& id);
+
+    TRealBlobId GetRealBlobId(const TBlobId& blob_id) const;
+    TRealBlobId GetRealBlobId(const CTSE_Info& tse_info) const;
 
     // params modifying access methods
     // argument params should be not-null
@@ -401,6 +401,7 @@ private:
     CGBDataLoader(const CGBDataLoader&);
     CGBDataLoader& operator=(const CGBDataLoader&);
 
+    virtual TRealBlobId x_GetRealBlobId(const TBlobId& blob_id) const = 0;
 public:
     static bool IsUsingPSGLoader(void);
 };

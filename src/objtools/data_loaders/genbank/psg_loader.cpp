@@ -53,7 +53,82 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CDataLoader;
+/////////////////////////////////////////////////////////////////////////////
+// CPsgBlobId
+/////////////////////////////////////////////////////////////////////////////
+
+
+CPsgBlobId::CPsgBlobId(const string& id)
+    : m_Id(id)
+{
+}
+
+
+CPsgBlobId::CPsgBlobId(const string& id, const string& id2_info)
+    : m_Id(id),
+      m_Id2Info(id2_info)
+{
+}
+
+
+CPsgBlobId::~CPsgBlobId()
+{
+}
+
+
+string CPsgBlobId::ToString(void) const
+{
+    return m_Id;
+}
+
+
+bool CPsgBlobId::operator==(const CBlobId& id_ref) const
+{
+    const CPsgBlobId* id = dynamic_cast<const CPsgBlobId*>(&id_ref);
+    return id && m_Id == id->m_Id;
+}
+
+
+bool CPsgBlobId::operator<(const CBlobId& id_ref) const
+{
+    const CPsgBlobId* id = dynamic_cast<const CPsgBlobId*>(&id_ref);
+    if ( !id ) {
+        return LessByTypeId(id_ref);
+    }
+    return m_Id < id->m_Id;
+}
+
+
+bool CPsgBlobId::GetSatSatkey(int& sat, int& satkey) const
+{
+    string ssat, ssatkey;
+    NStr::SplitInTwo(m_Id, ".", ssat, ssatkey);
+    if (ssat.empty() || ssatkey.empty()) return false;
+    try {
+        sat = NStr::StringToNumeric<int>(ssat);
+        satkey = NStr::StringToNumeric<int>(ssatkey);
+    }
+    catch (CStringException&) {
+        return false;
+    }
+    return true;
+}
+
+
+CPsgBlobId CPsgBlobId::GetPsgBlobId(const CBlobId& blob_id)
+{
+    const CPsgBlobId* psg_blob_id = dynamic_cast<const CPsgBlobId*>(&blob_id);
+    if (psg_blob_id) return *psg_blob_id;
+    const CBlob_id* gb_blob_id = dynamic_cast<const CBlob_id*>(&blob_id);
+    if (!gb_blob_id) {
+        NCBI_THROW(CLoaderException, eOtherError, "Incompatible blob-id: " + blob_id.ToString());
+    }
+    return CPsgBlobId(
+        NStr::NumericToString(gb_blob_id->GetSat()) +
+        '.' +
+        NStr::NumericToString(gb_blob_id->GetSatKey()));
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CPSGDataLoader
@@ -248,7 +323,7 @@ CDataLoader::TTSE_Lock
 CPSGDataLoader::GetBlobById(const TBlobId& blob_id)
 {
     return m_Impl->GetBlobById(GetDataSource(),
-                               dynamic_cast<const CPsgBlobId&>(*blob_id));
+                               CPsgBlobId::GetPsgBlobId(*blob_id));
 }
 
 
@@ -408,6 +483,25 @@ CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih,
     */
 
     return names;
+}
+
+
+CGBDataLoader::TRealBlobId
+CPSGDataLoader::x_GetRealBlobId(const TBlobId& blob_id) const
+{
+    const CPsgBlobId* psg_blob_id = dynamic_cast<const CPsgBlobId*>(&*blob_id);
+    if (psg_blob_id) {
+        int sat, satkey;
+        if (psg_blob_id->GetSatSatkey(sat, satkey)) {
+            CBlob_id gb_blob_id;
+            gb_blob_id.SetSat(sat);
+            gb_blob_id.SetSatKey(satkey);
+            return gb_blob_id;
+        }
+    }
+    const CBlob_id* gb_blob_id = dynamic_cast<const CBlob_id*>(&*blob_id);
+    if (gb_blob_id) return *gb_blob_id;
+    return CBlob_id();
 }
 
 

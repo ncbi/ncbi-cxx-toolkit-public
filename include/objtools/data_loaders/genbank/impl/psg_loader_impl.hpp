@@ -48,38 +48,6 @@ class CThreadPool;
 
 BEGIN_SCOPE(objects)
 
-class CBlobId;
-
-class CPsgBlobId : public CBlobId
-{
-public:
-    explicit CPsgBlobId(const string& id);
-    CPsgBlobId(const string& id, const string& id2_info);
-    virtual ~CPsgBlobId();
-    
-    const string& ToPsgId() const
-        {
-            return m_Id;
-        }
-    
-    virtual string ToString(void) const override;
-    virtual bool operator<(const CBlobId& id) const override;
-    virtual bool operator==(const CBlobId& id) const override;
-
-    const string& GetId2Info() const
-        {
-            return m_Id2Info;
-        }
-    void SetId2Info(const string& id2_info)
-        {
-            m_Id2Info = id2_info;
-        }
-    
-private:
-    string m_Id;
-    string m_Id2Info;
-};
-
 struct SPsgBioseqInfo
 {
     SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info);

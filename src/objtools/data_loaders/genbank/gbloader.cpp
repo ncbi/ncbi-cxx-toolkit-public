@@ -545,7 +545,7 @@ CConstRef<CSeqref> CGBDataLoader::GetSatSatkey(const CSeq_id_Handle& sih)
 {
     TBlobId id = GetBlobId(sih);
     if (id) {
-        const TRealBlobId& blob_id = GetRealBlobId(id);
+        TRealBlobId blob_id = GetRealBlobId(id);
         return ConstRef(new CSeqref(ZERO_GI, blob_id.GetSat(), blob_id.GetSatKey()));
     }
     return CConstRef<CSeqref>();
@@ -558,14 +558,14 @@ CConstRef<CSeqref> CGBDataLoader::GetSatSatkey(const CSeq_id& id)
 }
 
 
-const CGBDataLoader::TRealBlobId&
+CGBDataLoader::TRealBlobId
 CGBDataLoader::GetRealBlobId(const TBlobId& blob_id) const
 {
-    return dynamic_cast<const CBlob_id&>(*blob_id);
+    return x_GetRealBlobId(blob_id);
 }
 
 
-const CGBDataLoader::TRealBlobId&
+CGBDataLoader::TRealBlobId
 CGBDataLoader::GetRealBlobId(const CTSE_Info& tse_info) const
 {
     if (&tse_info.GetDataSource() != GetDataSource()) {
