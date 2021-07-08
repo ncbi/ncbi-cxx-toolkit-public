@@ -463,6 +463,9 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                         }
                         num_validated++;
                     }
+                    catch (const CEofException&) {
+                        break;
+                    }
                     catch (const CException& e) {
                         if (num_validated == 0) {
                             throw(e);
@@ -792,7 +795,6 @@ CRef<CValidError> CAsnvalApp::ReportReadFailure(const CException* p_exception)
 void CAsnvalApp::ProcessCatenated()
 {
     const CArgs& args = GetArgs();
-    string header = m_In->ReadFileHeader();
 
     try {
         while (true) {
@@ -800,14 +802,19 @@ void CAsnvalApp::ProcessCatenated()
             CRef<CSeq_entry> se(new CSeq_entry);
 
             try {
+                m_In->SkipFileHeader(CSeq_entry::GetTypeInfo());
+            }
+            catch (const CEofException&) {
+                break;
+            }
+
+            try {
                 m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
+            } catch (const CEofException&) {
+                break;
             }
             catch (const CSerialException& e) {
-                if (e.GetErrCode() == CSerialException::eEOF) {
-                    break;
-                } else {
-                    throw;
-                }
+                throw(e);
             }
             catch (const CException& e) {
                 ERR_POST(Error << e);
@@ -828,17 +835,11 @@ void CAsnvalApp::ProcessCatenated()
                     PrintValidError(eval, args);
                 }
             }
-            try {
-                m_In->SkipFileHeader(CSeq_entry::GetTypeInfo());
-            }
-            catch (const CEofException&) {
-                break;
-            }
         }
     }
     catch (const CException& e) {
         ERR_POST(Error << e);
-        return PrintValidError(ReportReadFailure(&e), args);
+        PrintValidError(ReportReadFailure(&e), args);
     }
 }
 
