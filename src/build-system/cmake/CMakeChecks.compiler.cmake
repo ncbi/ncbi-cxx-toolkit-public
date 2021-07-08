@@ -325,6 +325,7 @@ set(buildconf "${STD_BUILD_TYPE}MT64")
 
 if(MaxDebug IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     add_definitions(-D_GLIBCXX_DEBUG)
+    set(Boost_USE_DEBUG_RUNTIME 1)
     set(NCBI_PTBCFG_INSTALL_SUFFIX "${NCBI_PTBCFG_INSTALL_SUFFIX}MaxDebug")
 endif()
 
