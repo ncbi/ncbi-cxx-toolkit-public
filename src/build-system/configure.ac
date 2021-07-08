@@ -5795,7 +5795,13 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
                ;;
          esac
          test "$with_mt"    = "yes"  &&  BOOST_MT=-mt
-         test "$with_debug" = "no"   ||  BOOST_D=-d
+	 if test "$with_max_debug" = yes; then
+	    BOOST_D="-gd -d"
+	 elif test "$with_debug" = no; then
+	    BOOST_D=
+	 else
+	    BOOST_D=-d
+	 fi
          test "$bit64_sfx"  = "64"   &&  BOOST_64=-64
          case "$host_cpu" in
             i?86 | x86_64 ) BOOST_ARCH=-x$NCBI_PLATFORM_BITS ;;
@@ -5812,7 +5818,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
            for bvers in "-$ncbi_cv_lib_boost_version" ''; do
              for bvers2 in "$BOOST_ARCH$bvers" "$bvers$BOOST_64" "$bvers"; do
                for bmt in "$BOOST_MT" '-mt' ''; do
-                 for bd in "$BOOST_D" '' '-d'; do
+                 for bd in $BOOST_D '' '-d'; do
                    bsfx=$bmt$bd$bvers2
                    if ls $BOOST_LIBPATH_/libboost*$base$bsfx.* >/dev/null 2>&1;
                    then
@@ -5845,7 +5851,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
             bvers=-$ncbi_cv_lib_boost_version
             bvers2=$BOOST_ARCH$bvers
             bmt=$BOOST_MT
-            bd=$BOOST_D
+            bd=${BOOST_D%% *}
             bsfx=$cvers$bmt$bd$bvers2
          fi
 
@@ -5862,7 +5868,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
          ;;
    esac
    BOOST_STATIC_TAG=`echo "_$BOOST_TAG-s" \
-     | sed -e 's/^_//; s/-d-s$/-sd/; s/-\(d-.*\)-s$/-s\1/; s/\(-[[a-z][36][24]].*\)-s$/-s\1/; s/\(-[[1-9]].*\)-s$/-s\1/'`
+     | sed -e 's/^_//; s/-\(g*d\)-s$/-s\1/; s/-\(g*d-.*\)-s$/-s\1/; s/\(-[[a-z][36][24]].*\)-s$/-s\1/; s/\(-[[1-9]].*\)-s$/-s\1/'`
 
    test "$with_mt" = yes  || \
       BOOST_INCLUDE="$BOOST_INCLUDE -DBOOST_DISABLE_THREADS"
