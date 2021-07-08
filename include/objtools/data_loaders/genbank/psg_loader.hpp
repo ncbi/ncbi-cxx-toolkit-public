@@ -49,6 +49,41 @@ BEGIN_SCOPE(objects)
 
 class CPSGDataLoader_Impl;
 
+class NCBI_XLOADER_GENBANK_EXPORT CPsgBlobId : public CBlobId
+{
+public:
+    explicit CPsgBlobId(const string& id);
+    CPsgBlobId(const string& id, const string& id2_info);
+    virtual ~CPsgBlobId();
+    
+    const string& ToPsgId() const
+        {
+            return m_Id;
+        }
+    
+    virtual string ToString(void) const override;
+    virtual bool operator<(const CBlobId& id) const override;
+    virtual bool operator==(const CBlobId& id) const override;
+
+    const string& GetId2Info() const
+        {
+            return m_Id2Info;
+        }
+    void SetId2Info(const string& id2_info)
+        {
+            m_Id2Info = id2_info;
+        }
+    
+    bool GetSatSatkey(int& sat, int& satkey) const;
+
+    static CPsgBlobId GetPsgBlobId(const CBlobId& blob_id);
+
+private:
+    string m_Id;
+    string m_Id2Info;
+};
+
+
 class NCBI_XLOADER_GENBANK_EXPORT CPSGDataLoader : public CGBDataLoader
 {
 public:
@@ -126,6 +161,8 @@ public:
 private:
     typedef CParamLoaderMaker<CPSGDataLoader, CGBLoaderParams> TMaker;
     friend class CParamLoaderMaker<CPSGDataLoader, CGBLoaderParams>;
+
+    TRealBlobId x_GetRealBlobId(const TBlobId& blob_id) const override;
 
     static TRegisterLoaderInfo ConvertRegInfo(const TMaker::TRegisterInfo& info);
 

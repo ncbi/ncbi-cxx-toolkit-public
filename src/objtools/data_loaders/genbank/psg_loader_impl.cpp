@@ -67,9 +67,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
 
-
-class CBlobId;
-
 const int kSplitInfoChunkId = 999999999;
 
 NCBI_PARAM_DECL(unsigned int, PSG_LOADER, DEBUG);
@@ -83,52 +80,6 @@ static unsigned int s_GetDebugLevel()
     static auto value = TPSG_Debug::GetDefault();
     return value;
 }
-
-/////////////////////////////////////////////////////////////////////////////
-// CPsgBlobId
-/////////////////////////////////////////////////////////////////////////////
-
-
-CPsgBlobId::CPsgBlobId(const string& id)
-    : m_Id(id)
-{
-}
-
-
-CPsgBlobId::CPsgBlobId(const string& id, const string& id2_info)
-    : m_Id(id),
-      m_Id2Info(id2_info)
-{
-}
-
-
-CPsgBlobId::~CPsgBlobId()
-{
-}
-
-
-string CPsgBlobId::ToString(void) const
-{
-    return m_Id;
-}
-
-
-bool CPsgBlobId::operator==(const CBlobId& id_ref) const
-{
-    const CPsgBlobId* id = dynamic_cast<const CPsgBlobId*>(&id_ref);
-    return id && m_Id == id->m_Id;
-}
-
-
-bool CPsgBlobId::operator<(const CBlobId& id_ref) const
-{
-    const CPsgBlobId* id = dynamic_cast<const CPsgBlobId*>(&id_ref);
-    if ( !id ) {
-        return LessByTypeId(id_ref);
-    }
-    return m_Id < id->m_Id;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 // CPsgClientContext

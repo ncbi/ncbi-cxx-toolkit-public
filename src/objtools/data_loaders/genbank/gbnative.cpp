@@ -286,6 +286,13 @@ CObjectManager::TPriority CGBDataLoader_Native::GetDefaultPriority(void) const
 }
 
 
+CGBDataLoader::TRealBlobId
+CGBDataLoader_Native::x_GetRealBlobId(const TBlobId& blob_id) const
+{
+    return dynamic_cast<const CBlob_id&>(*blob_id);
+}
+
+
 void CGBDataLoader_Native::x_CreateDriver(const CGBLoaderParams& params)
 {
     unique_ptr<TParamTree> app_params;
@@ -959,7 +966,7 @@ void CGBDataLoader_Native::GetSequenceHashes(const TIds& ids, TLoaded& loaded,
 
 CDataLoader::TBlobVersion CGBDataLoader_Native::GetBlobVersion(const TBlobId& id)
 {
-    const TRealBlobId& blob_id = GetRealBlobId(id);
+    TRealBlobId blob_id = GetRealBlobId(id);
     CGBReaderRequestResult result(this, CSeq_id_Handle());
     CLoadLockBlobVersion lock(result, blob_id);
     if ( !lock.IsLoadedBlobVersion() ) {
@@ -980,7 +987,7 @@ CGBDataLoader_Native::ResolveConflict(const CSeq_id_Handle& handle,
 
     ITERATE(TTSE_LockSet, sit, tse_set) {
         const CTSE_Info& tse = **sit;
-
+        TRealBlobId rbid = GetRealBlobId(tse);
         CLoadLockBlob blob(result, GetRealBlobId(tse));
         _ASSERT(blob);
 
@@ -1201,7 +1208,7 @@ bool CGBDataLoader_Native::CanGetBlobById(void) const
 CDataLoader::TTSE_Lock
 CGBDataLoader_Native::GetBlobById(const TBlobId& id)
 {
-    const TRealBlobId& blob_id = GetRealBlobId(id);
+    TRealBlobId blob_id = GetRealBlobId(id);
 
     CGBReaderRequestResult result(this, CSeq_id_Handle());
     CLoadLockBlob blob(result, blob_id);
