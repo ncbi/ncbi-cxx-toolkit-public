@@ -2550,8 +2550,8 @@ CDiagContext_Extra::Print(const string& name, const string& value)
         m_Args->rbegin()->first.assign(name);
     }
     else {
-        string renamed = "auto_renamed_applog_keyword__";
-        m_Args->rbegin()->first.assign(renamed + name);
+        string renamed = "auto_renamed_applog_keyword__" + name;
+        m_Args->rbegin()->first.assign(renamed);
         ERR_POST("'" << name
             << "' is a reserved NCBI AppLog keyword, so it has been renamed to "
             << renamed);
