@@ -119,7 +119,6 @@ private:
 
     unique_ptr<CObjectIStream> OpenFile(const string& fname, string& asn_type);
 
-    void ProcessCatenated();
     CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
     CConstRef<CValidError> ProcessSeqEntry();
     CConstRef<CValidError> ProcessSeqSubmit();
@@ -188,7 +187,6 @@ private:
     EDiagSev m_HighCutoff;
 
     EVerbosity m_verbosity;
-    string     m_obj_type;
     bool m_batch = false;
 
     CNcbiOstream* m_ValidErrorStream;
@@ -450,8 +448,6 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                 } else {
                     LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is neither a Seq-submit nor Bioseq-set; do not use -batch to process.");
                 }
-            } else if (m_obj_type == "c") {
-                ProcessCatenated();
             } else {
                 size_t num_validated = 0;
                 while (true) {
@@ -582,14 +578,13 @@ int CAsnvalApp::Run()
     // at a time.
     m_Reported = 0;
 
-    m_obj_type = args["a"].AsString();
+    string m_obj_type = args["a"].AsString();
 
     if (!m_obj_type.empty()) {
         if (m_obj_type == "t" || m_obj_type == "u") {
             m_batch = true;
             cerr << "Warning: -a t and -a u are deprecated; use -batch instead." << endl;
-        } else if (m_obj_type != "c") {
-            // -a c still in use
+        } else {
             cerr << "Warning: -a is deprecated; ASN.1 type is now autodetected." << endl;
         }
     }
@@ -791,57 +786,6 @@ CRef<CValidError> CAsnvalApp::ReportReadFailure(const CException* p_exception)
     return errors;
 }
 
-
-void CAsnvalApp::ProcessCatenated()
-{
-    const CArgs& args = GetArgs();
-
-    try {
-        while (true) {
-            // Get seq-entry to validate
-            CRef<CSeq_entry> se(new CSeq_entry);
-
-            try {
-                m_In->SkipFileHeader(CSeq_entry::GetTypeInfo());
-            }
-            catch (const CEofException&) {
-                break;
-            }
-
-            try {
-                m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
-            } catch (const CEofException&) {
-                break;
-            }
-            catch (const CSerialException& e) {
-                throw(e);
-            }
-            catch (const CException& e) {
-                ERR_POST(Error << e);
-                PrintValidError(ReportReadFailure(&e), args);
-                return;
-            }
-            try {
-                CConstRef<CValidError> eval = ProcessSeqEntry(*se);
-                if ( eval ) {
-                    PrintValidError(eval, args);
-                }
-            }
-            catch (const CObjMgrException& om_ex) {
-                if (om_ex.GetErrCode() == CObjMgrException::eAddDataError)
-                    se->ReassignConflictingIds();
-                CConstRef<CValidError> eval = ProcessSeqEntry(*se);
-                if ( eval ) {
-                    PrintValidError(eval, args);
-                }
-            }
-        }
-    }
-    catch (const CException& e) {
-        ERR_POST(Error << e);
-        PrintValidError(ReportReadFailure(&e), args);
-    }
-}
 
 CConstRef<CValidError> CAsnvalApp::ProcessBioseq()
 {
