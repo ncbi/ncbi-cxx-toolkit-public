@@ -56,7 +56,7 @@ USING_SCOPE(ncbi::objects);
 
 const char GAP_CHAR='-'; // used in dna and protein text
 const char INTRON_CHAR='.'; // protein
-const char SPACE_CHAR=' '; // translation and protein
+_DEBUG_ARG(const char SPACE_CHAR=' '); // translation and protein; to be used only in _ASSERT and other _DEBUG-dependent constructs.
 const char INTRON_OR_GAP[] = {INTRON_CHAR,GAP_CHAR,0};
 
 // used in match text
