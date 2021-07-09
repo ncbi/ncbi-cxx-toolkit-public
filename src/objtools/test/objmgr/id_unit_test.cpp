@@ -1717,10 +1717,12 @@ BOOST_AUTO_TEST_CASE(TestGetBlobByIdSat)
     BOOST_REQUIRE(loader);
     CScope::TBlobId om_blob_id;
     if (CGBDataLoader::IsUsingPSGLoader()) {
+#if defined(HAVE_PSG_LOADER)
         string blobid_str = NStr::NumericToString(sat)+'.'+NStr::NumericToString(sat_key);
         CRef<CPsgBlobId> real_blob_id;
         real_blob_id = new CPsgBlobId(blobid_str);
         om_blob_id = CScope::TBlobId(real_blob_id);
+#endif
     }
     else {
         CRef<CBlob_id> real_blob_id(new CBlob_id);
