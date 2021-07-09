@@ -136,14 +136,16 @@ static char* x_ServiceName(unsigned int depth,
             if (tr)
                 memcpy(buf, svc, len);  /* re-copy */
             buf[len++] = '\0';
-            if (!CORE_REG_GET(buf, buf + len, tmp, sizeof(tmp), 0))
-                *tmp = '\0';
-            s = tmp;
+            if (CORE_REG_GET(buf, buf + len, tmp, sizeof(tmp), 0))
+                strcpy(buf, tmp);
+            else
+                *buf = '\0';
+            s = buf;
         }
         if (*s) {
             CORE_TRACEF(("[%s]  CONN_ServiceName(\"%s\"): \"%s\"",
                          service, svc, s));
-            if (strcasecmp(s, svc) != 0) {
+            if (strcasecmp(svc, s) != 0) {
                 if (depth++ < SERV_SERVICE_NAME_RECURSION)
                     return x_ServiceName(depth, service, s, ismask, isfast);
                 CORE_LOGF_X(8, eLOG_Error,
@@ -151,7 +153,7 @@ static char* x_ServiceName(unsigned int depth,
                              " depth reached: %u", service, depth));
                 return 0/*failure*/;
             } else
-                *isfast = 1/*true*/;
+                svc = s, *isfast = 1/*true*/;
         } else
             *isfast = 0/*false*/;
     } else
