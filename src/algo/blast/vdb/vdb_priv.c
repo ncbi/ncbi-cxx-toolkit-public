@@ -51,13 +51,16 @@ VDBSRC_GetMaxSeqLen(TVDBData* vdbData)
 {
     ASSERT(vdbData);
 
-    if (!vdbData->isInitialized || NULL == vdbData->runSet)
+    if (!vdbData->isInitialized || NULL == vdbData->runSet) {
         return 0;
+	}
 
-    if(vdbData->refSet == NULL)
+    if(vdbData->refSet == NULL) {
     	return VdbBlastRunSetGetMaxSeqLen(vdbData->runSet);
-    else
+	}
+    else {
     	return 10000;
+	}
 }
 
 uint64_t
@@ -65,13 +68,16 @@ VDBSRC_GetAvgSeqLen(TVDBData* vdbData)
 {
     ASSERT(vdbData);
 
-    if (!vdbData->isInitialized || NULL == vdbData->runSet)
+    if (!vdbData->isInitialized || NULL == vdbData->runSet) {
     	return 0;
+	}
 
-    if(vdbData->refSet == NULL)
+    if(vdbData->refSet == NULL) {
     	return VdbBlastRunSetGetAvgSeqLen(vdbData->runSet);
-    else
+	}
+    else {
     	return 200;
+	}
 }
 
 uint64_t
@@ -81,8 +87,9 @@ VDBSRC_GetTotSeqLen(TVDBData* vdbData)
     uint64_t len = 0;
     ASSERT(vdbData);
 
-    if (!vdbData->isInitialized || NULL == vdbData->runSet)
+    if (!vdbData->isInitialized || NULL == vdbData->runSet) {
         return 0;
+	}
 
     if(vdbData->refSet == NULL){
     	len = VdbBlastRunSetGetTotalLength(vdbData->runSet, &status);
@@ -230,8 +237,9 @@ VDBSRC_InitData(TVDBData* vdbData,
 
     if(getStats){
     	vdbData->numSeqs = VdbBlastRunSetGetNumSequences(vdbData->runSet, &status);
-    	if(status == eVdbBlastTooExpensive)
+    	if(status == eVdbBlastTooExpensive) {
     		vdbData->numSeqs = VdbBlastRunSetGetNumSequencesApprox(vdbData->runSet);
+		}
     	else if(status != eVdbBlastNoErr) {
     		vdbArgs->status = -1;
     		VDBSRC_InitErrorMsg(vdbErrMsg, status, eVDBSRC_GET_RUNSET_NUM_SEQ_ERROR);
@@ -556,8 +564,9 @@ Int2 VDBSRC_Load2naSeqToBuffer(TVDBData * vdbData, TVDBErrMsg * vdbErrMsg)
 		return BLAST_SEQSRC_ERROR;
 	}
 
-	if(0 == r2na->max_index)
+	if(0 == r2na->max_index) {
 	    return BLAST_SEQSRC_EOF;
+	}
 
     r2na->current_index = 0;
     return BLAST_SEQSRC_SUCCESS;
@@ -643,8 +652,9 @@ VDBSRC_GetIsProtein(TVDBData* vdbData)
 {
     ASSERT(vdbData);
 
-    if (!vdbData->isInitialized || NULL == vdbData->runSet)
+    if (!vdbData->isInitialized || NULL == vdbData->runSet) {
         return false;
+	}
 
     return VdbBlastRunSetIsProtein ( vdbData->runSet );
 }
@@ -660,13 +670,15 @@ VDBSRC_GetOIDFromReadName(TVDBData* vdbData,
 
 	ASSERT(vdbData);
 	ASSERT(nameRun);
-    if (!vdbData->isInitialized || NULL == vdbData->runSet)
+    if (!vdbData->isInitialized || NULL == vdbData->runSet) {
         return false;
+	}
 
 	*oid = 0;
 
-	if(nameLength == 0)
+	if(nameLength == 0) {
 		return false;
+	}
 	if(vdbData->refSet == NULL) {
 		status = VdbBlastRunSetGetReadId(vdbData->runSet, nameRun, nameLength, &read_id);
 	}
@@ -675,11 +687,13 @@ VDBSRC_GetOIDFromReadName(TVDBData* vdbData,
 		read_id &=(~REF_SEQ_ID_MASK);
 	}
 
-	if(status != eVdbBlastNoErr)
+	if(status != eVdbBlastNoErr) {
 		return false;
+	}
 
-	if(read_id > kMax_I4)
+	if(read_id > kMax_I4) {
 		return false;
+	}
 	*oid = read_id;
 
 	return TRUE;
@@ -731,8 +745,9 @@ VDBSRC_IsCSRA(const char * run)
 	uint32_t status;
 	int isCSRA = 0;
 	VdbBlastMgr * mgr = s_VDBManager(&status, true);
-	if(mgr == NULL || status != 0)
+	if(mgr == NULL || status != 0) {
 		return -1;
+	}
 
 	isCSRA = VdbBlastMgrIsCSraRun(mgr, run) ? 1:0;
 	return isCSRA;

@@ -254,9 +254,9 @@ s_VDBSRC_GetSeqLen(void* vdbDataHandle, void* oid)
     Int4 * id = (Int4 *) oid;
     uint64_t retval = 0;
 
-    if (!vdbData || oid == NULL)
+    if (!vdbData || oid == NULL) {
       	return 0;
-
+	}
 
    	retval = VDBSRC_GetSeqLen(vdbData, (uint64_t) (*id));
 
