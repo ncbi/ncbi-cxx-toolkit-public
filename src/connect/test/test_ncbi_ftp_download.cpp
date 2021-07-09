@@ -633,7 +633,7 @@ void CTestFTPDownloadApp::Init(void)
                                kDefaultTestURL);
 
     args->AddOptionalPositional("throttle",
-                                "Delay in msec",
+                                "Delay in msec (negative for random)",
                                 CArgDescriptions::eString);
 
     args->AddOptionalPositional("offset",
@@ -715,11 +715,11 @@ int CTestFTPDownloadApp::Run(void)
         ERR_POST(Fatal << "Cannot parse URL \"" << url << '"');
     }
 
-    if        (net_info->scheme == eURL_Unspec) {
+    if (net_info->scheme == eURL_Unspec) {
         if (NStr::strcasecmp(net_info->host, DEF_CONN_HOST) == 0) {
             strcpy(net_info->host, CONN_NCBI_FTP_HOST);
         }
-        net_info->scheme = eURL_Ftp;
+        net_info->scheme  = eURL_Ftp;
     } else if (net_info->scheme != eURL_Ftp) {
         ERR_POST(Fatal << "URL scheme must be FTP (ftp://) if specified");
     }
