@@ -76,7 +76,7 @@ public:
     
     bool GetSatSatkey(int& sat, int& satkey) const;
 
-    static CPsgBlobId GetPsgBlobId(const CBlobId& blob_id);
+    static CConstRef<CPsgBlobId> GetPsgBlobId(const CBlobId& blob_id);
 
 private:
     string m_Id;

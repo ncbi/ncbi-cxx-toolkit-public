@@ -115,18 +115,19 @@ bool CPsgBlobId::GetSatSatkey(int& sat, int& satkey) const
 }
 
 
-CPsgBlobId CPsgBlobId::GetPsgBlobId(const CBlobId& blob_id)
+CConstRef<CPsgBlobId> CPsgBlobId::GetPsgBlobId(const CBlobId& blob_id)
 {
-    const CPsgBlobId* psg_blob_id = dynamic_cast<const CPsgBlobId*>(&blob_id);
-    if (psg_blob_id) return *psg_blob_id;
+    if ( auto psg_blob_id = dynamic_cast<const CPsgBlobId*>(&blob_id) ) {
+        return ConstRef(psg_blob_id);
+    }
     const CBlob_id* gb_blob_id = dynamic_cast<const CBlob_id*>(&blob_id);
     if (!gb_blob_id) {
         NCBI_THROW(CLoaderException, eOtherError, "Incompatible blob-id: " + blob_id.ToString());
     }
-    return CPsgBlobId(
-        NStr::NumericToString(gb_blob_id->GetSat()) +
-        '.' +
-        NStr::NumericToString(gb_blob_id->GetSatKey()));
+    return ConstRef(new CPsgBlobId(
+                        NStr::NumericToString(gb_blob_id->GetSat()) +
+                        '.' +
+                        NStr::NumericToString(gb_blob_id->GetSatKey())));
 }
 
 
@@ -323,7 +324,7 @@ CDataLoader::TTSE_Lock
 CPSGDataLoader::GetBlobById(const TBlobId& blob_id)
 {
     return m_Impl->GetBlobById(GetDataSource(),
-                               CPsgBlobId::GetPsgBlobId(*blob_id));
+                               *CPsgBlobId::GetPsgBlobId(*blob_id));
 }
 
 
