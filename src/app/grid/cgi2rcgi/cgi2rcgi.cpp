@@ -195,7 +195,9 @@ CDeadline SInputValidator::GetDeadline(const string& value)
 
 void SInputValidator::CheckJobKey(const string& value)
 {
-    CNetScheduleKey key(value);
+    // Pool is required to check compound IDs
+    CCompoundIDPool pool;
+    CNetScheduleKey key(value, pool);
 
     if (!key.version) {
         // CNetScheduleKey allows anything if that starts with a digit, so the additional check
