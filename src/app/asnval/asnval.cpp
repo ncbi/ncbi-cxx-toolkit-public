@@ -130,7 +130,7 @@ private:
     CConstRef<CValidError> ProcessBioseq();
     CConstRef<CValidError> ProcessSeqDesc();
 
-    CConstRef<CValidError> ValidateInput(string asn_type);
+    CConstRef<CValidError> ValidateInput();
     void ValidateOneDirectory(string dir_name, bool recurse);
     void ValidateOneFile(const string& fname);
     void ProcessBSSReleaseFile();
@@ -357,13 +357,25 @@ void CAsnvalApp::Init()
 }
 
 
-CConstRef<CValidError> CAsnvalApp::ValidateInput(string asn_type)
+CConstRef<CValidError> CAsnvalApp::ValidateInput()
 {
+    static const set<TTypeInfo> known_types {
+        CSeq_submit::GetTypeInfo(), CSeq_entry::GetTypeInfo(), CSeq_annot::GetTypeInfo(),
+        CSeq_feat::GetTypeInfo(),   CBioSource::GetTypeInfo(), CPubdesc::GetTypeInfo(),
+        CBioseq_set::GetTypeInfo(), CBioseq::GetTypeInfo(),    CSeqdesc::GetTypeInfo(),
+    };
+
+    // Determine ASN.1 content type
+    set<TTypeInfo> matching_types = m_In->GuessDataType(const_cast<set<TTypeInfo>&>(known_types));
+    if (matching_types.empty()) {
+        NCBI_THROW(CException, eUnknown, "Unidentifiable object");
+    } else if (matching_types.size() > 1) {
+        NCBI_THROW(CException, eUnknown, "Ambiguous object");
+    }
+    TTypeInfo ti = *matching_types.cbegin();
+    string asn_type = ti->GetName();
+
     // Process file based on its content
-    // Unless otherwise specifien we assume the file in hand is
-    // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
-    // Release file (batch processing) where we process each Seq-entry
-    // at a time.
     CConstRef<CValidError> eval;
     string header = m_In->ReadFileHeader();
 
@@ -453,7 +465,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                 while (true) {
                     CStopWatch sw(CStopWatch::eStart);
                     try {
-                        CConstRef<CValidError> eval = ValidateInput(asn_type);
+                        CConstRef<CValidError> eval = ValidateInput();
                         if (eval) {
                             PrintValidError(eval, args);
                         }
