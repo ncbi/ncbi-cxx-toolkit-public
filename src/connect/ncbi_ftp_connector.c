@@ -89,7 +89,7 @@ typedef struct {
     const SConnNetInfo*   info;    /* connection parameters                  */
     unsigned              sync:1;  /* true when last cmd acked (cntl synced) */
     unsigned              send:1;  /* true when in send mode (STOR/APPE)     */
-    unsigned              open:1;  /* true when data open ok in send mode    */
+    unsigned              open:1;  /* true when data opened ok in send mode  */
     unsigned              rclr:1;  /* true when "rest" to clear by next cmd  */
     unsigned              abor:1;  /* last cmd was ABOR (proftpd bug w/450)  */
     unsigned              free:1;  /* unused                                 */
@@ -231,7 +231,7 @@ static EIO_Status x_FTPParseReply(SFTPConnector* xxx, int* code,
             break;
         }
         msg = buf;
-        if (!lineno  ||  isdigit((unsigned char)(*buf))) {
+        if (!lineno  ||  strchr(kDigits, (unsigned char)(*buf))) {
             if (sscanf(buf, "%d%n", &c, &m) < 1  ||  m != 3  ||  !c
                 ||  (buf[m]  &&  buf[m] != ' '  &&  buf[m] != '-')
                 ||  (lineno  &&  c != *code)) {
@@ -878,8 +878,8 @@ static EIO_Status x_FTPPasv(SFTPConnector*  xxx,
                             unsigned short* port)
 {
     EIO_Status status;
-    int  code, o[6];
     unsigned int i;
+    int code, o[6];
     char buf[128];
 
     status = s_FTPCommand(xxx, "PASV", 0);
@@ -889,38 +889,38 @@ static EIO_Status x_FTPPasv(SFTPConnector*  xxx,
     if (status != eIO_Success  ||  code != 227)
         return eIO_Unknown;
     for (;;) {
-        char* c;
-        size_t len;
+        char* c, q;
         /* RFC 1123 4.1.2.6 says that ()'s in PASV reply MUST NOT be assumed */
-        for (c = buf;  *c;  ++c) {
-            if (isdigit((unsigned char)(*c)))
-                break;
-        }
-        if (!*c)
+        if (!*(c = buf + strcspn(buf, kDigits)))
             return eIO_Unknown;
-        len = 0;
+        q = c > buf ? c[-1] : '\0';
         for (i = 0;  i < (unsigned int)(sizeof(o) / sizeof(o[0]));  ++i) {
-            if (sscanf(c + len, &",%d%n"[!i], &o[i], &code) < 1)
+            if (sscanf(c, &",%d%n"[!i], &o[i], &code) < 1)
                 break;
-            len += (size_t) code;
+            assert(code > 0);
+            c += code;
         }
-        if (i >= (unsigned int)(sizeof(o) / sizeof(o[0])))
-            break;
-        if (!len) {
-            len = strspn(c, kDigits);
-            assert(len > 0);
-        }
-        memmove(buf, c + len, strlen(c + len) + 1);
+        if (i >= (unsigned int)(sizeof(o) / sizeof(o[0]))) {
+            if (!q  ||  q != '('  ||  *c == ')')
+                break;
+        } else if (!i)
+            return eIO_Unknown;
+        assert(c > buf);
+        memmove(buf, c, strlen(c) + 1);
     }
-    for (i = 0;  i < (unsigned int)(sizeof(o) / sizeof(o[0]));  ++i) {
+    assert(i == (unsigned int)(sizeof(o) / sizeof(o[0])));
+    while (i--) {
         if (o[i] < 0  ||  o[i] > 255)
             return eIO_Unknown;
     }
     if (!(i = (unsigned int)((((((o[0]<<8) | o[1])<<8) | o[2])<<8) | o[3])))
         return eIO_Unknown;
+    if (i == (unsigned int)(-1L))
+        return eIO_Unknown;
     *host = SOCK_HostToNetLong(i);
     if (!(i = (unsigned int)((o[4]<<8) | o[5])))
         return eIO_Unknown;
+    assert(i <= 0xFFFF);
     *port = (unsigned short) i;
     return eIO_Success;
 }
@@ -994,7 +994,7 @@ static EIO_Status x_FTPEprt(SFTPConnector* xxx,
         return eIO_NotSupported;
     memcpy(buf, "|1|", 3); /*IPv4*/
     SOCK_ntoa(host, buf + 3, sizeof(buf) - 3);
-    sprintf(buf + 3 + strlen(buf + 3), "|%hu|", port);
+    sprintf((buf + 3) + strlen(buf + 3), "|%hu|", port);
     status = s_FTPCommand(xxx, "EPRT", buf);
     if (status != eIO_Success)
         return status;
@@ -1045,8 +1045,8 @@ static EIO_Status x_FTPActive(SFTPConnector*  xxx,
     unsigned short port;
 
     /* NB: Apache FTP proxy re-uses SOCK_LocalPort(xxx->cntl);
-     * which is the default port for user-end data port per RFC959,
-     * other implementations don't do that leaving OS to decide,
+     * which is the default port for user-end data port per RFC959 3.2,
+     * other implementations don't do that leaving for OS to decide,
      * since the PORT command will be issued, anyways... */
     status = LSOCK_CreateEx(0, 1, lsock, xxx->flag & fFTP_LogControl
                             ? fSOCK_LogOn : fSOCK_LogDefault);
