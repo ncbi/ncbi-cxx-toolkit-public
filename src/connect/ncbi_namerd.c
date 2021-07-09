@@ -720,28 +720,29 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         /* Make sure the server type matches an allowed type */
         if ((!data->types  &&    atype == fSERV_Dns)  ||
             ( data->types  &&  !(atype & data->types))) {
-            CORE_TRACEF(("Ignoring server info %s:%d with mismatching server"
-                         " type '%s'(0x%04X) - allowed types = 0x%04X",
-                         host, port, type, atype, data->types));
+            CORE_TRACEF(("[%s]  Ignoring server info %s:%d with mismatching"
+                         " server type '%s'(0x%04X) - allowed types = 0x%04X",
+                         iter->name, host, port, type, atype, data->types));
             continue;
         }
         /* Make sure no stateful JSON for a stateless SERV_ITER */
         if (*stateful  &&  (iter->types & fSERV_Stateless)) {
-            CORE_TRACEF(("Ignoring stateful server info %s:%d '%s' in"
-                         " stateless search", host, port, type));
+            CORE_TRACEF(("[%s]  Ignoring stateful server info %s:%d '%s' in"
+                         " stateless search", iter->name, host, port, type));
             continue;
         }
         /* Make sure no local/private servers in external search */
         if (iter->external  &&  (*privat  ||  *local != 'N')) {
-            CORE_TRACEF(("Ignoring %s server info %s:%d '%s' in"
-                         " external search", *privat ? "private" : "local",
-                         host, port, type));
+            CORE_TRACEF(("[%s]  Ignoring %s server info %s:%d '%s' in"
+                         " external search", iter->name,
+                         *privat ? "private" : "local", host, port, type));
             continue;
         }
         /* Make sure no regular entries if in standby mode already */
         if (rate >= LBSM_STANDBY_THRESHOLD  &&  data->standby) {
-            CORE_TRACEF(("Ignoring regular server info %s:%d '%s' with rate"
-                         " %.2lf in standby search", host, port, type, rate));
+            CORE_TRACEF(("[%s]  Ignoring regular server info %s:%d '%s' with"
+                         " rate %.2lf in standby search", iter->name,
+                         host, port, type, rate));
             continue;
         }
 
@@ -777,7 +778,8 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             continue;
         }
         free(infostr);
-        CORE_TRACEF(("Created server info: \"%s\" %p", iter->name, info));
+        CORE_TRACEF(("[%s]  Created server info: \"%s\" %p", iter->name,
+                     SERV_NameOfInfo(info), info));
 
         /*FIXME: the skip array*/
 
@@ -789,7 +791,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                              )) {
             CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
                         ("[%s]  Failed to add server info", iter->name));
-            CORE_TRACEF(("Freeing server info: \"%s\" %p", iter->name, info));
+            CORE_TRACEF(("[%s]  Freeing server info: %p", iter->name, info));
             free(info); /* not freed by failed s_AddServerInfo() */
             goto out;
         }
@@ -863,8 +865,8 @@ static int/*bool*/ s_IsUpdateNeeded(struct SNAMERD_Data* data, TNCBI_Time now
     for (i = data->n_cand;  i > 0;  ) {
         const SSERV_Info* info = data->cand[--i].info;
         if (info->time < now) {
-            CORE_TRACEF(("NAMERD expired server info (%u < %u): \"%s\" %p",
-                         info->time, now, name, info));
+            CORE_TRACEF(("[%s]  NAMERD expired server info (%u < %u): %p",
+                         name, info->time, now, info));
             s_RemoveServerInfo(data, i, 1/*del*/
 #ifdef _DEBUG
                                , name
@@ -943,8 +945,9 @@ static void s_Reset(SERV_ITER iter)
         size_t i;
         assert(data->a_cand  &&  data->n_cand <= data->a_cand);
         for (i = 0;  i < data->n_cand;  ++i) {
-            CORE_TRACEF(("Freeing server info " FMT_SIZE_T ": \"%s\" %p",
-                         i, iter->name, data->cand[i].info));
+            CORE_TRACEF(("[%s]  Freeing server info " FMT_SIZE_T ": \"%s\" %p",
+                         iter->name, i, SERV_NameOfInfo(data->cand[i].info),
+                         data->cand[i].info));
             free((void*) data->cand[i].info);
         }
         data->n_cand = 0;
