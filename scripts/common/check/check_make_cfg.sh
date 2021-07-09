@@ -743,11 +743,16 @@ for x_row in $x_tests; do
    # Default timeout
    test -z "$x_timeout"  &&  x_timeout=$NCBI_CHECK_TIMEOUT_DEFAULT
 
-   # Check requirements ($CHECK_REQUIRES)
+   # Check requirements and save unmet requires for later reporting as disabled test
    x_unmet_requires=""
    for x_req in $x_requires; do
-      # save unmet requires
-      (echo "$x_features" | grep " $x_req " > /dev/null)  ||  x_unmet_requires="${x_unmet_requires}${x_req} "
+       t_minus=${x_req::1}
+       if test $t_minus = "-"; then
+          t_req=${x_req:1}
+          (echo "$x_features" | grep " $t_req " > /dev/null)  &&  x_unmet_requires="${x_unmet_requires}${x_req} "
+       else
+          (echo "$x_features" | grep " $x_req " > /dev/null)  ||  x_unmet_requires="${x_unmet_requires}${x_req} "
+       fi
    done
    
    # Copy specified files into the check tree
