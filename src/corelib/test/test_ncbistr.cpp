@@ -3756,9 +3756,11 @@ BOOST_AUTO_TEST_CASE(s_ReferenceCounting)
             LOG_POST("Calling " << type);
             if ( i&1 ) {
                 auto dummy = s2.begin();
+                dummy++; // to avoid warnings
             }
             else {
                 auto dummy = s1.c_str();
+                dummy++; // to avoid warnings
             }
             if ( s1.data() == s2.data() ) {
                 LOG_POST("GOOD: " << type << " doesn't affect reference counting");
