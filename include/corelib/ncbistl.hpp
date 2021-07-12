@@ -152,7 +152,7 @@ namespace DummyNS { class CDummyClassToEatSemicolon; }
 # define for if(0);else for
 #endif
 
-#ifdef NCBI_COMPILER_ICC
+#if defined(NCBI_COMPILER_ICC)  &&  NCBI_COMPILER_VERSION < 2000
 /// ICC may fail to generate code preceded by "template<>".
 #define EMPTY_TEMPLATE
 #else
