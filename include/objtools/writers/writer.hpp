@@ -275,7 +275,7 @@ protected:
 class NCBI_XOBJWRITE_EXPORT CFeatWriter
 {
 protected:
-    virtual bool xWriteFeature(CFeat_CI feat) { return false; };
+    virtual bool xWriteFeature(CFeat_CI /*feat*/) { return false; };
 
 public:
     virtual ~CFeatWriter(void) = default;
