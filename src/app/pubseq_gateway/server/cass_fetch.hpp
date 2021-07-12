@@ -44,6 +44,8 @@
 #include <objtools/pubseq_gateway/impl/cassandra/si2csi_task/fetch.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/fetch_split_history.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/status_history/get_public_comment.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/acc_ver_hist/tasks.hpp>
+
 USING_IDBLOB_SCOPE;
 
 
@@ -186,6 +188,37 @@ public:
 
     CCassNAnnotTaskFetch * GetLoader(void)
     { return static_cast<CCassNAnnotTaskFetch *>(m_Loader.get()); }
+
+public:
+    virtual void ResetCallbacks(void);
+};
+
+
+class CCassAccVerHistoryFetch : public CCassFetch
+{
+public:
+    CCassAccVerHistoryFetch(const SPSGS_AccessionVersionHistoryRequest &  acc_version_history_request)
+    {
+        m_FetchType = ePSGS_AccVerHistoryFetch;
+    }
+
+    CCassAccVerHistoryFetch()
+    {}
+
+    virtual ~CCassAccVerHistoryFetch()
+    {}
+
+    virtual string Serialize(void) const
+    {
+        return "CCassAccVerHistoryFetch";
+    }
+
+public:
+    void SetLoader(CCassAccVerHistoryTaskFetch *  fetch)
+    { m_Loader.reset(fetch); }
+
+    CCassAccVerHistoryTaskFetch * GetLoader(void)
+    { return static_cast<CCassAccVerHistoryTaskFetch *>(m_Loader.get()); }
 
 public:
     virtual void ResetCallbacks(void);

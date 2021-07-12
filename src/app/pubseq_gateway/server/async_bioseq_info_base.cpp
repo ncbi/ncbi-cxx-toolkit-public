@@ -78,15 +78,15 @@ CPSGS_AsyncBioseqInfoBase::x_MakeRequest(void)
 
     CBioseqInfoFetchRequest     bioseq_info_request;
     bioseq_info_request.SetAccession(
-                            m_BioseqResolution.m_BioseqInfo.GetAccession());
+                            m_BioseqResolution.GetBioseqInfo().GetAccession());
 
-    auto    version = m_BioseqResolution.m_BioseqInfo.GetVersion();
-    auto    gi = m_BioseqResolution.m_BioseqInfo.GetGI();
+    auto    version = m_BioseqResolution.GetBioseqInfo().GetVersion();
+    auto    gi = m_BioseqResolution.GetBioseqInfo().GetGI();
 
     if (version != -1)
         bioseq_info_request.SetVersion(version);
     if (m_WithSeqIdType) {
-        auto    seq_id_type = m_BioseqResolution.m_BioseqInfo.GetSeqIdType();
+        auto    seq_id_type = m_BioseqResolution.GetBioseqInfo().GetSeqIdType();
         if (seq_id_type != -1)
             bioseq_info_request.SetSeqIdType(seq_id_type);
     }
@@ -168,7 +168,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
                                   m_BioseqRequestStart);
         app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoNotFound);
 
-        if (IsINSDCSeqIdType(m_BioseqResolution.m_BioseqInfo.GetSeqIdType())) {
+        if (IsINSDCSeqIdType(m_BioseqResolution.GetBioseqInfo().GetSeqIdType())) {
             // Second try without seq_id_type
             m_WithSeqIdType = false;
             x_MakeRequest();
@@ -182,7 +182,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
         m_ErrorCB(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
                   eDiag_Error, "Could not resolve seq_id " +
-                  m_BioseqResolution.m_BioseqInfo.GetAccession());
+                  m_BioseqResolution.GetBioseqInfo().GetAccession());
         return;
     }
 
@@ -197,7 +197,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                                   m_BioseqRequestStart);
         app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundOne);
-        m_BioseqResolution.m_BioseqInfo = move(records[0]);
+        m_BioseqResolution.SetBioseqInfo(records[0]);
         m_FinishedCB(move(m_BioseqResolution));
         return;
     }
@@ -238,7 +238,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                               m_BioseqRequestStart);
     app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundOne);
-    m_BioseqResolution.m_BioseqInfo = move(records[index]);
+    m_BioseqResolution.SetBioseqInfo(records[index]);
     m_FinishedCB(move(m_BioseqResolution));
 }
 
@@ -250,7 +250,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
     m_NoSeqIdTypeFetch->SetReadFinished();
 
     auto                app = CPubseqGatewayApp::GetInstance();
-    auto                request_version = m_BioseqResolution.m_BioseqInfo.GetVersion();
+    auto                request_version = m_BioseqResolution.GetBioseqInfo().GetVersion();
     SINSDCDecision      decision = DecideINSDC(records, request_version);
 
     if (m_NeedTrace) {
@@ -274,7 +274,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
             app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                                       m_BioseqRequestStart);
             app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundOne);
-            m_BioseqResolution.m_BioseqInfo = move(records[decision.index]);
+            m_BioseqResolution.SetBioseqInfo(records[decision.index]);
 
             // Data callback
             m_FinishedCB(move(m_BioseqResolution));
@@ -293,7 +293,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
             // Data Callback
             m_ErrorCB(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
                       eDiag_Error, "Could not resolve seq_id " +
-                      m_BioseqResolution.m_BioseqInfo.GetAccession());
+                      m_BioseqResolution.GetBioseqInfo().GetAccession());
             break;
         case CRequestStatus::e500_InternalServerError:
             if (m_NeedTrace)

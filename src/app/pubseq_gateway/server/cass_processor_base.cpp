@@ -177,3 +177,40 @@ CPSGS_CassProcessorBase::IsCassandraProcessorEnabled(
     return enabled;
 }
 
+
+
+SCass_BlobId
+CPSGS_CassProcessorBase::TranslateSatToKeyspace(CBioseqInfoRecord::TSat  sat,
+                                                CBioseqInfoRecord::TSatKey  sat_key,
+                                                const string &  seq_id)
+{
+    SCass_BlobId    blob_id(sat, sat_key);
+
+    if (blob_id.MapSatToKeyspace()) {
+        // All good, the translation has been done successfully
+        return blob_id;
+    }
+
+    // No translation => send an error message
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
+    string      msg = "Unknown satellite number " + to_string(blob_id.m_Sat) +
+                      " for bioseq info with seq_id '" +
+                      seq_id + "'";
+    app->GetCounters().Increment(CPSGSCounters::ePSGS_ServerSatToSatNameError);
+
+    IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
+        item_id, GetName(), msg, CRequestStatus::e500_InternalServerError,
+        ePSGS_UnknownResolvedSatellite, eDiag_Error);
+    IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id, GetName(), 2);
+
+    UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+    PSG_ERROR(msg);
+
+    m_Completed = true;
+    SignalFinishProcessing();
+
+    // Return invalid blob id
+    return SCass_BlobId();
+}
+

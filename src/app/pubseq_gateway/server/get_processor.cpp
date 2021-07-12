@@ -167,32 +167,16 @@ CPSGS_GetProcessor::x_OnSeqIdResolveFinished(
     x_SendBioseqInfo(bioseq_resolution);
 
     // Translate sat to keyspace
-    auto *          app = CPubseqGatewayApp::GetInstance();
-    SCass_BlobId    blob_id(bioseq_resolution.m_BioseqInfo.GetSat(),
-                            bioseq_resolution.m_BioseqInfo.GetSatKey());
-    if (app->SatToKeyspace(blob_id.m_Sat, blob_id.m_Keyspace)) {
-        m_BlobId = blob_id;
+    // In case of errors it:
+    // - sends a message to the client
+    // - sets the processor return code
+    // - signals that the processor finished
+    m_BlobId = TranslateSatToKeyspace(bioseq_resolution.GetBioseqInfo().GetSat(),
+                                      bioseq_resolution.GetBioseqInfo().GetSatKey(),
+                                      m_BlobRequest->m_SeqId);
+    if (m_BlobId.IsValid()) {
         x_GetBlob();
-        return;
     }
-
-    // It is an error of the sat to keyspace translation
-    size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
-    string      msg = "Unknown satellite number " + to_string(blob_id.m_Sat) +
-                      " for bioseq info with seq_id '" +
-                      m_BlobRequest->m_SeqId + "'";
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_ServerSatToSatNameError);
-
-    IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
-        item_id, GetName(), msg, CRequestStatus::e500_InternalServerError,
-        ePSGS_UnknownResolvedSatellite, eDiag_Error);
-    IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id, GetName(), 2);
-
-    UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-    PSG_ERROR(msg);
-
-    m_Completed = true;
-    SignalFinishProcessing();
 }
 
 
@@ -204,7 +188,7 @@ CPSGS_GetProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
         AdjustBioseqAccession(bioseq_resolution);
 
     size_t  item_id = IPSGS_Processor::m_Reply->GetItemId();
-    auto    data_to_send = ToJson(bioseq_resolution.m_BioseqInfo,
+    auto    data_to_send = ToJson(bioseq_resolution.GetBioseqInfo(),
                                   SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                                         Repr(CJsonNode::fStandardJson);
 

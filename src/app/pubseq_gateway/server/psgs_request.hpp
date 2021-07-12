@@ -105,7 +105,7 @@ public:
         ePSGS_BlobBySatSatKeyRequest,
         ePSGS_AnnotationRequest,
         ePSGS_TSEChunkRequest,
-        ePSGS_AccessionBlobHistoryRequest,
+        ePSGS_AccessionVersionHistoryRequest,
 
         ePSGS_UnknownRequest
     };
@@ -113,13 +113,13 @@ public:
     static string TypeToString(EPSGS_Type  req_type)
     {
         switch (req_type) {
-            case ePSGS_ResolveRequest:              return "ResolveRequest";
-            case ePSGS_BlobBySeqIdRequest:          return "BlobBySeqIdRequest";
-            case ePSGS_BlobBySatSatKeyRequest:      return "BlobBySatSatKeyRequest";
-            case ePSGS_AnnotationRequest:           return "AnnotationRequest";
-            case ePSGS_TSEChunkRequest:             return "TSEChunkRequest";
-            case ePSGS_AccessionBlobHistoryRequest: return "AccessionBlobHistoryRequest";
-            case ePSGS_UnknownRequest:              return "UnknownRequest";
+            case ePSGS_ResolveRequest:                  return "ResolveRequest";
+            case ePSGS_BlobBySeqIdRequest:              return "BlobBySeqIdRequest";
+            case ePSGS_BlobBySatSatKeyRequest:          return "BlobBySatSatKeyRequest";
+            case ePSGS_AnnotationRequest:               return "AnnotationRequest";
+            case ePSGS_TSEChunkRequest:                 return "TSEChunkRequest";
+            case ePSGS_AccessionVersionHistoryRequest:  return "AccessionVersionHistoryRequest";
+            case ePSGS_UnknownRequest:                  return "UnknownRequest";
             default: break;
         }
         return "UnknownRequestTypeValue";
@@ -697,13 +697,13 @@ struct SPSGS_TSEChunkRequest : public SPSGS_RequestBase
 };
 
 
-struct SPSGS_AccessionBlobHistoryRequest : public SPSGS_RequestBase
+struct SPSGS_AccessionVersionHistoryRequest : public SPSGS_RequestBase
 {
     string                      m_SeqId;
     int                         m_SeqIdType;
     EPSGS_CacheAndDbUse         m_UseCache;
 
-    SPSGS_AccessionBlobHistoryRequest(
+    SPSGS_AccessionVersionHistoryRequest(
                          const string &  seq_id,
                          int  seq_id_type,
                          EPSGS_CacheAndDbUse  use_cache,
@@ -719,27 +719,27 @@ struct SPSGS_AccessionBlobHistoryRequest : public SPSGS_RequestBase
         m_UseCache(use_cache)
     {}
 
-    SPSGS_AccessionBlobHistoryRequest() :
+    SPSGS_AccessionVersionHistoryRequest() :
         m_SeqIdType(-1),
         m_UseCache(ePSGS_UnknownUseCache)
     {}
 
     virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
     {
-        return CPSGS_Request::ePSGS_AccessionBlobHistoryRequest;
+        return CPSGS_Request::ePSGS_AccessionVersionHistoryRequest;
     }
 
     virtual string GetName(void) const
     {
-        return "ID/accession_blob_history";
+        return "ID/accession_version_history";
     }
 
     virtual CJsonNode Serialize(void) const;
 
-    SPSGS_AccessionBlobHistoryRequest(const SPSGS_AccessionBlobHistoryRequest &) = default;
-    SPSGS_AccessionBlobHistoryRequest(SPSGS_AccessionBlobHistoryRequest &&) = default;
-    SPSGS_AccessionBlobHistoryRequest &  operator=(const SPSGS_AccessionBlobHistoryRequest &) = default;
-    SPSGS_AccessionBlobHistoryRequest &  operator=(SPSGS_AccessionBlobHistoryRequest &&) = default;
+    SPSGS_AccessionVersionHistoryRequest(const SPSGS_AccessionVersionHistoryRequest &) = default;
+    SPSGS_AccessionVersionHistoryRequest(SPSGS_AccessionVersionHistoryRequest &&) = default;
+    SPSGS_AccessionVersionHistoryRequest &  operator=(const SPSGS_AccessionVersionHistoryRequest &) = default;
+    SPSGS_AccessionVersionHistoryRequest &  operator=(SPSGS_AccessionVersionHistoryRequest &&) = default;
 };
 
 #endif  // PSGS_REQUEST__HPP

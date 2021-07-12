@@ -1,5 +1,5 @@
-#ifndef PSGS_ACCESSIONBLOBHISTORYPROC__HPP
-#define PSGS_ACCESSIONBLOBHISTORYPROC__HPP
+#ifndef PSGS_ACCESSIONVERHISTORYPROC__HPP
+#define PSGS_ACCESSIONVERHISTORYPROC__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,7 +28,7 @@
  *
  * Authors: Sergey Satskiy
  *
- * File Description: accession blob history processor
+ * File Description: accession version history processor
  *
  */
 
@@ -41,7 +41,7 @@ USING_IDBLOB_SCOPE;
 class CCassFetch;
 
 
-class CPSGS_AccessionBlobHistoryProcessor : public CPSGS_ResolveBase
+class CPSGS_AccessionVersionHistoryProcessor : public CPSGS_ResolveBase
 {
 public:
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
@@ -54,11 +54,11 @@ public:
     virtual void ProcessEvent(void);
 
 public:
-    CPSGS_AccessionBlobHistoryProcessor();
-    CPSGS_AccessionBlobHistoryProcessor(shared_ptr<CPSGS_Request> request,
-                                        shared_ptr<CPSGS_Reply> reply,
-                                        TProcessorPriority  priority);
-    virtual ~CPSGS_AccessionBlobHistoryProcessor();
+    CPSGS_AccessionVersionHistoryProcessor();
+    CPSGS_AccessionVersionHistoryProcessor(shared_ptr<CPSGS_Request> request,
+                                           shared_ptr<CPSGS_Reply> reply,
+                                           TProcessorPriority  priority);
+    virtual ~CPSGS_AccessionVersionHistoryProcessor();
 
 private:
     void x_OnResolutionGoodData(void);
@@ -70,6 +70,14 @@ private:
     void x_OnSeqIdResolveFinished(
                         SBioseqResolution &&  bioseq_resolution);
     void x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution);
+    bool x_OnAccVerHistData(SAccVerHistRec &&  acc_ver_hist_record,
+                            bool  last,
+                            CCassAccVerHistoryFetch *  fetch_details);
+    void x_OnAccVerHistError(CCassAccVerHistoryFetch *  fetch_details,
+                             CRequestStatus::ECode  status,
+                             int  code,
+                             EDiagSev  severity,
+                             const string &  message);
 
 private:
     void x_Peek(bool  need_wait);
@@ -77,8 +85,9 @@ private:
                 bool  need_wait);
 
 private:
-    SPSGS_AccessionBlobHistoryRequest *     m_AccBlobHistoryRequest;
+    size_t                                  m_RecordCount;
+    SPSGS_AccessionVersionHistoryRequest *  m_AccVerHistoryRequest;
 };
 
-#endif  // PSGS_ACCESSIONBLOBHISTORYPROC__HPP
+#endif  // PSGS_ACCESSIONVERHISTORYPROC__HPP
 

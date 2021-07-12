@@ -78,7 +78,8 @@ enum EPSGOperation {
     eNARetrieve,
 
     eSplitHistoryRetrieve,
-    ePublicCommentRetrieve
+    ePublicCommentRetrieve,
+    eAccVerHistRetrieve
 };
 
 
@@ -303,6 +304,18 @@ class CPublicCommentRetrieveTiming : public CPSGTimingBase
 };
 
 
+// Accession version history retrieval
+class CAccVerHistoryRetrieveTiming : public CPSGTimingBase
+{
+    public:
+        CAccVerHistoryRetrieveTiming(unsigned long  min_stat_value,
+                                     unsigned long  max_stat_value,
+                                     unsigned long  n_bins,
+                                     TOnePSGTiming::EScaleType  stat_type,
+                                     bool &  reset_to_default);
+};
+
+
 // Resolution
 class CResolutionTiming : public CPSGTimingBase
 {
@@ -364,6 +377,7 @@ class COperationTiming
         vector<unique_ptr<CNARetrieveTiming>>               m_NARetrieveTiming;
         vector<unique_ptr<CSplitHistoryRetrieveTiming>>     m_SplitHistoryRetrieveTiming;
         vector<unique_ptr<CPublicCommentRetrieveTiming>>    m_PublicCommentRetrieveTiming;
+        vector<unique_ptr<CAccVerHistoryRetrieveTiming>>    m_AccVerHistoryRetrieveTiming;
 
         // The index is calculated basing on the blob size
         vector<unique_ptr<CBlobRetrieveTiming>>             m_BlobRetrieveTiming;

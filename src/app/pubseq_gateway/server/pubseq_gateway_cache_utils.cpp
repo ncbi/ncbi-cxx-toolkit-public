@@ -50,12 +50,12 @@ CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
     if (cache == nullptr)
         return ePSGS_CacheNotHit;
 
-    auto    version = bioseq_resolution.m_BioseqInfo.GetVersion();
-    auto    seq_id_type = bioseq_resolution.m_BioseqInfo.GetSeqIdType();
-    auto    gi = bioseq_resolution.m_BioseqInfo.GetGI();
+    auto    version = bioseq_resolution.GetBioseqInfo().GetVersion();
+    auto    seq_id_type = bioseq_resolution.GetBioseqInfo().GetSeqIdType();
+    auto    gi = bioseq_resolution.GetBioseqInfo().GetGI();
 
     CBioseqInfoFetchRequest     fetch_request;
-    fetch_request.SetAccession(bioseq_resolution.m_BioseqInfo.GetAccession());
+    fetch_request.SetAccession(bioseq_resolution.GetBioseqInfo().GetAccession());
     if (version >= 0)
         fetch_request.SetVersion(version);
     if (seq_id_type >= 0)
@@ -98,7 +98,7 @@ CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
                 break;
             case 1:
                 cache_hit = true;
-                bioseq_resolution.m_BioseqInfo = std::move(records[0]);
+                bioseq_resolution.SetBioseqInfo(records[0]);
                 break;
             default:
                 // More than one record; may be need to pick the latest version
@@ -130,7 +130,7 @@ CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
                 }
 
                 cache_hit = true;
-                bioseq_resolution.m_BioseqInfo = std::move(records[index_to_pick]);
+                bioseq_resolution.SetBioseqInfo(records[index_to_pick]);
 
                 break;
         }
@@ -175,11 +175,11 @@ CPSGCache::x_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution)
     auto                    app = CPubseqGatewayApp::GetInstance();
     CPubseqGatewayCache *   cache = app->GetLookupCache();
 
-    auto    version = bioseq_resolution.m_BioseqInfo.GetVersion();
-    auto    gi = bioseq_resolution.m_BioseqInfo.GetGI();
+    auto    version = bioseq_resolution.GetBioseqInfo().GetVersion();
+    auto    gi = bioseq_resolution.GetBioseqInfo().GetGI();
 
     CBioseqInfoFetchRequest     fetch_request;
-    fetch_request.SetAccession(bioseq_resolution.m_BioseqInfo.GetAccession());
+    fetch_request.SetAccession(bioseq_resolution.GetBioseqInfo().GetAccession());
     if (version >= 0)
         fetch_request.SetVersion(version);
     if (gi > 0)
@@ -215,7 +215,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution)
         switch (decision.status) {
             case CRequestStatus::e200_Ok:
                 cache_hit = true;
-                bioseq_resolution.m_BioseqInfo = std::move(records[decision.index]);
+                bioseq_resolution.SetBioseqInfo(records[decision.index]);
                 break;
             case CRequestStatus::e404_NotFound:
                 cache_hit = false;
@@ -277,10 +277,10 @@ CPSGCache::x_LookupSi2csi(SBioseqResolution &  bioseq_resolution)
     if (cache == nullptr)
         return ePSGS_CacheNotHit;
 
-    auto    seq_id_type = bioseq_resolution.m_BioseqInfo.GetSeqIdType();
+    auto    seq_id_type = bioseq_resolution.GetBioseqInfo().GetSeqIdType();
 
     CSi2CsiFetchRequest     fetch_request;
-    fetch_request.SetSecSeqId(bioseq_resolution.m_BioseqInfo.GetAccession());
+    fetch_request.SetSecSeqId(bioseq_resolution.GetBioseqInfo().GetAccession());
     if (seq_id_type >= 0)
         fetch_request.SetSecSeqIdType(seq_id_type);
 
@@ -311,10 +311,15 @@ CPSGCache::x_LookupSi2csi(SBioseqResolution &  bioseq_resolution)
                 break;
             case 1:
                 cache_hit = true;
-                bioseq_resolution.m_BioseqInfo.SetAccession(records[0].GetAccession());
-                bioseq_resolution.m_BioseqInfo.SetVersion(records[0].GetVersion());
-                bioseq_resolution.m_BioseqInfo.SetSeqIdType(records[0].GetSeqIdType());
-                bioseq_resolution.m_BioseqInfo.SetGI(records[0].GetGI());
+                {
+                    CBioseqInfoRecord   bioseq_info;
+                    bioseq_info.SetAccession(records[0].GetAccession());
+                    bioseq_info.SetVersion(records[0].GetVersion());
+                    bioseq_info.SetSeqIdType(records[0].GetSeqIdType());
+                    bioseq_info.SetGI(records[0].GetGI());
+
+                    bioseq_resolution.SetBioseqInfo(bioseq_info);
+                }
                 break;
             default:
                 if (m_NeedTrace) {

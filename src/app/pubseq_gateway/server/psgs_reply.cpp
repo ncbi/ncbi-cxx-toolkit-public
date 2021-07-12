@@ -738,6 +738,32 @@ void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
 }
 
 
+void CPSGS_Reply::PrepareAccVerHistoryData(const string &  processor_id,
+                                           const string &  content)
+{
+    size_t      item_id = GetItemId();
+    string      header = GetAccVerHistoryHeader(item_id, processor_id,
+                                                content.size());
+
+    // There are always 2 chunks
+    string      acc_ver_hist_meta = GetAccVerHistCompletionHeader(item_id,
+                                                                  processor_id,
+                                                                  2);
+    while (m_ChunksLock.exchange(true)) {}
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(content.data()), content.size()));
+    ++m_TotalSentReplyChunks;
+
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(acc_ver_hist_meta.data()),
+                acc_ver_hist_meta.size()));
+    ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
+}
+
+
 void CPSGS_Reply::PrepareReplyCompletion(void)
 {
     while (m_ChunksLock.exchange(true)) {}

@@ -60,6 +60,9 @@ protected:
     void UpdateOverallStatus(CRequestStatus::ECode  status);
     bool IsCassandraProcessorEnabled(shared_ptr<CPSGS_Request> request) const;
     void CancelLoaders(void);
+    SCass_BlobId TranslateSatToKeyspace(CBioseqInfoRecord::TSat  sat,
+                                        CBioseqInfoRecord::TSatKey  sat_key,
+                                        const string &  seq_id);
 
 private:
     IPSGS_Processor::EPSGS_Status x_GetProcessorStatus(void) const;

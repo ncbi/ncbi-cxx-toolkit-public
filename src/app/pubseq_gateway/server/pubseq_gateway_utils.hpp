@@ -112,6 +112,9 @@ struct SBioseqResolution
         m_AdjustmentTried = false;
         m_AccessionAdjustmentResult = ePSGS_NotRequired;
         m_AdjustmentError.clear();
+
+        m_OriginalAccession.clear();
+        m_OriginalSeqIdType = -1;
     }
 
     EPSGS_AccessionAdjustmentResult
@@ -121,9 +124,6 @@ struct SBioseqResolution
     EPSGS_ResolutionResult          m_ResolutionResult;
     size_t                          m_CassQueryCount;
 
-    // In case of the SI2CSI the only key fields are filled
-    CBioseqInfoRecord               m_BioseqInfo;
-
     // It could be a parsing error, retrieval error etc.
     SResolveInputSeqIdError         m_Error;
 
@@ -132,6 +132,31 @@ struct SBioseqResolution
     bool                            m_AdjustmentTried;
     EPSGS_AccessionAdjustmentResult m_AccessionAdjustmentResult;
     string                          m_AdjustmentError;
+
+    void SetBioseqInfo(const CBioseqInfoRecord &  record)
+    {
+        m_BioseqInfo = record;
+
+        // The bioseq record can by adjusted so the original accession and
+        // seqidtype need to be saved
+        m_OriginalAccession = record.GetAccession();
+        m_OriginalSeqIdType = record.GetSeqIdType();
+    }
+
+    CBioseqInfoRecord &  GetBioseqInfo(void)
+    { return m_BioseqInfo; }
+
+    CBioseqInfoRecord::TAccession  GetOriginalAccession(void) const
+    { return  m_OriginalAccession; }
+    CBioseqInfoRecord::TSeqIdType  GetOriginalSeqIdType(void) const
+    { return  m_OriginalSeqIdType; }
+
+    private:
+        // In case of the SI2CSI the only key fields are filled
+        CBioseqInfoRecord               m_BioseqInfo;
+
+        CBioseqInfoRecord::TAccession   m_OriginalAccession;
+        CBioseqInfoRecord::TSeqIdType   m_OriginalSeqIdType;
 };
 
 
@@ -280,6 +305,13 @@ string GetPublicCommentCompletionHeader(size_t  item_id,
                                         const string &  processor_id,
                                         size_t  chunk_count);
 
+// Accession version history
+string GetAccVerHistoryHeader(size_t  item_id,
+                              const string &  processor_id,
+                              size_t  msg_size);
+string GetAccVerHistCompletionHeader(size_t  item_id,
+                                     const string &  processor_id,
+                                     size_t  chunk_count);
 
 // Reset the request context if necessary
 class CRequestContextResetter

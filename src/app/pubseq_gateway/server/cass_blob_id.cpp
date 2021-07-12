@@ -54,7 +54,7 @@ SCass_BlobId::SCass_BlobId(const string &  blob_id) :
 }
 
 
-// Maps integer sat to a 
+// Maps integer sat to a keyspace
 bool SCass_BlobId::MapSatToKeyspace(void)
 {
     auto * app = CPubseqGatewayApp::GetInstance();
