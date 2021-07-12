@@ -540,6 +540,9 @@
 /* Define to 1 if you have the `readpassphrase' function. */
 #define HAVE_READPASSPHRASE 1
 
+/* Define to 1 if you have the `readv' function. */
+#define HAVE_READV 1
+
 /* Define to 1 if your C compiler supports some variant of the C99 `restrict'
    keyword. */
 #define HAVE_RESTRICT_C 1
