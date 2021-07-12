@@ -406,7 +406,8 @@ static SourceFeatBlkPtr CollectSourceFeats(DataBlkPtr dbp, Int2 type)
         }
     }
     tsfbp = sfbp->next;
-    MemFree(sfbp);
+    delete sfbp;
+    //MemFree(sfbp);
     return(tsfbp);
 }
 

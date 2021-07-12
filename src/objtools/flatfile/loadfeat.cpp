@@ -975,29 +975,11 @@ bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids,
     bool    locmap = true;
     int        num_errs;
 
-    TSeqIdList tids;
-    for(TSeqIdList::iterator tid = ids.begin(); tid != ids.end(); tid++)
-    {
-        CRef<ncbi::objects::CSeq_id> new_id(new objects::CSeq_id);
-        CRef<ncbi::objects::CTextseq_id> new_text_id(new objects::CTextseq_id);
-        const objects::CTextseq_id *text_id = (*tid)->GetTextseq_Id();
-        new_text_id->Assign(*text_id);
-        SetTextId((*tid)->Which(), *new_id, *new_text_id);
-        tids.push_back(new_id);
-    }
-
     *hard_err = false;
     num_errs = 0;
 
-    //objects::CGetSeqLocFromStringHelper helper;
-    //const objects::CSeq_id* first_id = nullptr;
-    //if (!ids.empty())
-    //    first_id = ids.front();
-
-    //CRef<objects::CSeq_loc> loc = GetSeqLocFromString(location, first_id, &helper);
-
     CRef<objects::CSeq_loc> loc = xgbparseint_ver(location, locmap, sitesmap,
-                                                              num_errs, tids, pp->accver);
+                                                              num_errs, ids, pp->accver);
 
     if (loc.NotEmpty())
     {
@@ -1012,7 +994,7 @@ bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids,
     {
         feat.ResetLocation();
         objects::CSeq_loc& cur_loc = feat.SetLocation();
-        cur_loc.SetWhole(*(*tids.begin()));
+        cur_loc.SetWhole(*(*ids.begin()));
         *hard_err = true;
     }
     else if(!feat.GetLocation().IsEmpty())
