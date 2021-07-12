@@ -3,6 +3,7 @@
 # Adjust ICC flags to avoid problematic references to __svml_* functions.
 
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
+ ifneq "" "$(filter -static-intel,$(LDFLAGS))"
   compo_mode_condition.o: $(srcdir)/compo_mode_condition.c
 	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-acos $< -o $@ \
 	    $(CC_FILTER)
@@ -18,4 +19,5 @@ ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
   redo_alignment.o: $(srcdir)/redo_alignment.c
 	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-exp $< -o $@ \
 	    $(CC_FILTER)
+ endif
 endif

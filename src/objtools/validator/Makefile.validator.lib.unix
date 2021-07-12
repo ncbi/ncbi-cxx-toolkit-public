@@ -5,8 +5,12 @@
 
 lat_lon_country_map.o: $(srcdir)/lat_lon_country_map.cpp
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
+ ifneq "" "$(filter -static-intel,$(LDFLAGS))"
 	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) -fno-builtin-atan2 \
 	    -fno-builtin-cos -fno-builtin-sin $< -o $@ $(CXX_FILTER)
+ else
+	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) $< -o $@ $(CXX_FILTER)
+ endif
 else
 	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL:-xO%=) $< -o $@ $(CXX_FILTER)
 endif

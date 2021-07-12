@@ -4,7 +4,9 @@
 # __intel_sse2_str* functions (as of ICC [20]13)
 
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
+ ifneq "" "$(filter -static-intel,$(LDFLAGS))"
   alnread.o: $(srcdir)/alnread.c
 	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-strcat \
 	    -fno-builtin-strcspn -fno-builtin-strspn $< -o $@ $(CC_FILTER)
+ endif
 endif
