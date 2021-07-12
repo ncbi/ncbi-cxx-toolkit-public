@@ -292,9 +292,6 @@ protected:
     virtual bool xParseTrackLine(
         const string&);
 
-    virtual bool xParseBrowserLine(
-        const string&);
-
     virtual void xSetBrowserRegion(
         const string&,
         CAnnot_descr&);

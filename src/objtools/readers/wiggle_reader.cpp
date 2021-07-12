@@ -153,12 +153,12 @@ CWiggleReader::xGetData(
 void
 CWiggleReader::xProcessData(
     const TReaderData& readerData,
-    CSeq_annot&)
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     for (auto curData = readerData.begin(); curData != readerData.end(); curData++) {
         auto line = curData->mData;
-        if (xParseBrowserLine(line)) {
+        if (xParseBrowserLine(line, annot)) {
             continue;
         }
         if (xParseTrackLine(line)) {
@@ -827,7 +827,8 @@ void CWiggleReader::xSetChrom(
 
 //  ----------------------------------------------------------------------------
 bool CWiggleReader::xParseBrowserLine(
-    const string& line)
+    const string& line,
+    CSeq_annot&)
 //  ----------------------------------------------------------------------------
 {
     if (!NStr::StartsWith(line, "browser")) {

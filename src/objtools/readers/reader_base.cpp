@@ -571,14 +571,6 @@ bool CReaderBase::xParseTrackLine(
 }
 
 //  ----------------------------------------------------------------------------
-bool CReaderBase::xParseBrowserLine(
-    const string& strLine)
-//  ----------------------------------------------------------------------------
-{
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CReaderBase::xParseComment(
     const CTempString& record,
     CRef<CSeq_annot>& annot )
