@@ -126,9 +126,7 @@ class CBiosampleHandler
 public:
     CBiosampleHandler() : 
         m_ReportStream(0),
-        m_UseDevServer(false),
-        m_Username(""),
-        m_Password("")
+        m_UseDevServer(false)
         {}
 
     virtual ~CBiosampleHandler() {}
@@ -142,8 +140,6 @@ public:
 protected:
     CNcbiOstream* m_ReportStream;
     bool m_UseDevServer;
-    string m_Username;
-    string m_Password;
 };
 
 
@@ -279,15 +275,15 @@ private:
     bool m_CompareStructuredComments;
     bool m_UseDevServer;
     bool m_FirstSeqOnly;
-    string m_Username;
-    string m_Password;
     string m_IDPrefix;
     string m_HUPDate;
     string m_BioSampleAccession;
     string m_BioProjectAccession;
     string m_Owner;
     string m_Comment;
-
+    
+    string m_BioSampleWebAPIKey;
+    
     size_t m_Processed;
     size_t m_Unprocessed;
 
@@ -376,12 +372,7 @@ void CBiosampleChkApp::Init(void)
         "bioproject", "BioProjectAccession", "BioProject Accession to use for sequences in record. Report error if sequences contain a reference to a different BioProject accession.", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("comment", "BioSampleComment", "Comment to use for creating new BioSample xml", CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey
-        ("authorize", "AuthorizeFile", "Username and Password File",
-        CArgDescriptions::eInputFile);
-
-    arg_desc->AddOptionalKey("username", "ApiUsername", "Username", CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("password", "ApiPassword", "Password", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("apikey_file", "BioSampleWebAPIKey", "File containing Web API Key needed to update BioSample database", CArgDescriptions::eString);
 
     // Program description
     string prog_description = "BioSample Checker\n";
@@ -699,6 +690,12 @@ int CBiosampleChkApp::Run(void)
     m_BioSampleAccession = args["biosample"] ? args["biosample"].AsString() : "";
     m_BioProjectAccession = args["bioproject"] ? args["bioproject"].AsString() : "";
     m_Comment = args["comment"] ? args["comment"].AsString() : "";
+    
+    string apikey_file = args["apikey_file"] ? args["apikey_file"].AsString() : "";
+    if (!apikey_file.empty()) {
+        ifstream is(apikey_file.c_str());
+        is >> m_BioSampleWebAPIKey;
+    }
 
     if (m_Mode == e_report_status) {
         m_Handler = new CBiosampleStatusReport();
@@ -745,25 +742,6 @@ int CBiosampleChkApp::Run(void)
     }
 
     m_UseDevServer = args["d"].AsBoolean();
-
-    if (args["authorize"]) {
-        CNcbiIfstream infile(args["authorize"].AsString().c_str());
-        string line;
-        while (NcbiGetlineEOL(infile, line)) {
-            if (m_Username.empty()) {
-                m_Username = line;
-            } else if (m_Password.empty()) {
-                m_Password = line;
-            } else {
-                break;
-            }
-        }
-    } else {
-      m_Username = args["username"] ? args["username"].AsString() : "";
-      m_Password = args["password"] ? args["password"].AsString() : "";
-    }
-    NStr::TruncateSpacesInPlace(m_Username);
-    NStr::TruncateSpacesInPlace(m_Password);
 
     if (!NStr::IsBlank(m_StructuredCommentPrefix) && m_Mode != e_generate_biosample) {
         // error
@@ -981,47 +959,6 @@ void CBiosampleChkApp::PrintResults(biosample_util::TBiosampleFieldDiffList & di
 }
 
 
-// RAII idiom to make sure we sign out of MyNCBI even when exceptions are thrown
-class CMyNCBISession
-{
-public:     
-    CMyNCBISession() {};
-    
-    virtual ~CMyNCBISession() {
-        // MyNCBI signout
-        m_session.Get(kSign_out_url);        
-    };
-    
-    CHttpRequest Sign_in() {
-        return m_session.NewRequest(kSign_in_url, CHttpSession::ePost);
-    }
-    
-    CHttpCookies& Cookies(void) { 
-        return m_session.Cookies(); 
-    };
-    
-    CHttpResponse Post(const CUrl&     url,
-                       CTempString     data,
-                       CTempString     content_type = CTempString(),
-                       const CTimeout& timeout = CTimeout(CTimeout::eDefault),
-                       THttpRetries    retries = null) 
-    {
-        return m_session.Post(url, data, content_type, timeout, retries);
-    }
-    
-private:
-    CHttpSession m_session;
-    
-private:
-    static const string kSign_in_url;
-    static const string kSign_out_url;
-};
-
-
-const string CMyNCBISession::kSign_in_url = "https://www.ncbi.nlm.nih.gov/portal/signin.cgi?js";
-const string CMyNCBISession::kSign_out_url = "https://www.ncbi.nlm.nih.gov/account/signout/";
-
-
 void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampleFieldDiffList & diffs, bool del_okay)
 {
     if (diffs.empty()) {
@@ -1126,32 +1063,6 @@ void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampl
 
     NcbiCout << sData << endl;
 
-    if (m_Username == "" || m_Password == "") {
-        *m_LogStream << "ERROR: Username and password are needed with -m 7." << endl;
-        exit(6);
-    }
-
-    // MyNCBI signin
-    CMyNCBISession session;
-    CHttpRequest request = session.Sign_in();
-    request.SetRetries(0);
-
-    CHttpFormData& data = request.FormData();
-    data.AddEntry("cmd", "signin");
-    data.AddEntry("surl", "dummy");
-    data.AddEntry("furl", "dummy");
-    data.AddEntry("rrme", "1");
-    data.AddEntry("uname", m_Username);
-    data.AddEntry("upasswd", m_Password);
-
-    // get authentication cookie
-    CHttpResponse response = request.Execute();
-
-    if (response.GetStatusCode() != 200) {
-        *m_LogStream << "ERROR: Unable to login to MyNCBI." << endl;
-        exit(6);
-    }
-
     // BioSample update
     string sUrl = "https://api-int.ncbi.nlm.nih.gov/biosample/update/";
     if (m_UseDevServer) {
@@ -1159,22 +1070,10 @@ void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampl
     }
     string sContentType = "application/json; charset=utf-8";
 
-    CHttpCookie m_cookie;
-    m_cookie.Reset();
-
-    // Getting cookies - need WebCubbyUser
-    ITERATE(CHttpCookies, it, session.Cookies())
-    {
-        if ( it->GetName() == "WebCubbyUser")
-        {
-            m_cookie = *it;
-            break;
-        }
-    }
-
-    // send biosample request
-    session.Cookies().Add(m_cookie);
-    response = session.Post(sUrl, sData, sContentType);
+    CUrl curl(sUrl);
+    CHttpHeaders headers;
+    headers.SetValue("NCBI-BioSample-Authorization", m_BioSampleWebAPIKey);
+    CHttpResponse response = g_HttpPost(curl, headers, sData, sContentType);
 
     if (response.GetStatusCode() != 200) {
         NcbiStreamCopy(cout, response.ErrorStream());
