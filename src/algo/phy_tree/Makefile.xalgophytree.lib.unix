@@ -1,0 +1,3 @@
+ifneq "" "$(filter icx %/icx,$(firstword $(CC)))"
+  dist_methods.o: CXXFLAGS = $(FAST_CXXFLAGS:-ffp-model%=-ffp-model=precise)
+endif
