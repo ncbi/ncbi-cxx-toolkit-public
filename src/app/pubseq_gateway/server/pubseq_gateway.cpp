@@ -59,6 +59,7 @@
 #include "tse_chunk_processor.hpp"
 #include "osg_processor.hpp"
 #include "cdd_processor.hpp"
+#include "accession_version_history_processor.hpp"
 #include "favicon.hpp"
 
 
@@ -497,10 +498,10 @@ int CPubseqGatewayApp::Run(void)
                 return OnGetNA(req, reply);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
-            "/ID/accession_blob_history",
+            "/ID/accession_version_history",
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {
-                return OnAccessionBlobHistory(req, reply);
+                return OnAccessionVersionHistory(req, reply);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/health",
@@ -1581,6 +1582,8 @@ void CPubseqGatewayApp::x_RegisterProcessors(void)
         unique_ptr<IPSGS_Processor>(new psg::osg::CPSGS_OSGProcessor()));
     m_RequestDispatcher.AddProcessor(
         unique_ptr<IPSGS_Processor>(new psg::cdd::CPSGS_CDDProcessor()));
+    m_RequestDispatcher.AddProcessor(
+        unique_ptr<IPSGS_Processor>(new CPSGS_AccessionVersionHistoryProcessor()));
 }
 
 

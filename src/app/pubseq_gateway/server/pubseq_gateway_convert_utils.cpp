@@ -84,6 +84,9 @@ static const string     kBlopPropProvided = "blob_prop_provided";
 static const string     kChunksRequested = "chunk_requested";
 static const string     kAnnotNames = "annotation_names";
 
+static const string     kDate = "date";
+static const string     kChain = "chain";
+
 
 string ToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info)
 {
@@ -407,6 +410,36 @@ CJsonNode ToJson(const CCassStatusHistoryTaskGetPublicComment &  request)
     json.SetString(kRequest, "Public comment request");
     json.SetString(kSatName, request.GetKeySpace());
     json.SetInteger(kSatKey, request.key());
+    return json;
+}
+
+
+CJsonNode ToJson(const CCassAccVerHistoryTaskFetch &  request)
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetString(kRequest, "Accession version history request");
+    json.SetString(kSatName, request.GetKeyspace());
+    json.SetString(kAccession, request.GetAccession());
+    json.SetInteger(kVersion, request.GetVersion());
+    json.SetInteger(kSeqIdType, request.GetSeqIdType());
+
+    return json;
+}
+
+
+CJsonNode ToJson(const SAccVerHistRec &  history_record)
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetInteger(kGi, history_record.gi);
+    json.SetString(kAccession, history_record.accession);
+    json.SetInteger(kVersion, history_record.version);
+    json.SetInteger(kSeqIdType, history_record.seq_id_type);
+    json.SetInteger(kDate, history_record.date);
+    json.SetInteger(kSatKey, history_record.sat_key);
+    json.SetInteger(kSat, history_record.sat);
+    json.SetInteger(kChain, history_record.chain);
     return json;
 }
 

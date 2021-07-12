@@ -95,6 +95,8 @@ CPSGS_ResolveBase::x_GetRequestUseCache(void)
             return m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>().m_UseCache;
         case CPSGS_Request::ePSGS_AnnotationRequest:
             return m_Request->GetRequest<SPSGS_AnnotRequest>().m_UseCache;
+        case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
+            return m_Request->GetRequest<SPSGS_AccessionVersionHistoryRequest>().m_UseCache;
         default:
             break;
     }
@@ -312,9 +314,11 @@ CPSGS_ResolveBase::x_ResolvePrimaryOSLTInCache(
         CPSGCache           psg_cache(true, m_Request, m_Reply);
 
         // Try BIOSEQ_INFO
-        bioseq_resolution.m_BioseqInfo.SetAccession(primary_id);
-        bioseq_resolution.m_BioseqInfo.SetVersion(effective_version);
-        bioseq_resolution.m_BioseqInfo.SetSeqIdType(effective_seq_id_type);
+        CBioseqInfoRecord   bioseq_info;
+        bioseq_info.SetAccession(primary_id);
+        bioseq_info.SetVersion(effective_version);
+        bioseq_info.SetSeqIdType(effective_seq_id_type);
+        bioseq_resolution.SetBioseqInfo(bioseq_info);
 
         bioseq_cache_lookup_result = psg_cache.LookupBioseqInfo(
                                         bioseq_resolution);
@@ -335,8 +339,11 @@ CPSGS_ResolveBase::x_ResolveSecondaryOSLTInCache(
                                 int16_t  effective_seq_id_type,
                                 SBioseqResolution &  bioseq_resolution)
 {
-    bioseq_resolution.m_BioseqInfo.SetAccession(secondary_id);
-    bioseq_resolution.m_BioseqInfo.SetSeqIdType(effective_seq_id_type);
+    CBioseqInfoRecord               bioseq_info;
+
+    bioseq_info.SetAccession(secondary_id);
+    bioseq_info.SetSeqIdType(effective_seq_id_type);
+    bioseq_resolution.SetBioseqInfo(bioseq_info);
 
     CPSGCache   psg_cache(true, m_Request, m_Reply);
     auto        si2csi_cache_lookup_result =
@@ -498,7 +505,7 @@ CPSGS_ResolveBase::ResolveInputSeqId(void)
             bool    continue_with_cassandra = false;
             if (bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiCache) {
                 if (!CanSkipBioseqInfoRetrieval(
-                            bioseq_resolution.m_BioseqInfo)) {
+                            bioseq_resolution.GetBioseqInfo())) {
                     // This is an optimization. Try to find the record in the
                     // BIOSEQ_INFO only if needed.
                     CPSGCache   psg_cache(true, m_Request, m_Reply);
@@ -670,7 +677,7 @@ void CPSGS_ResolveBase::x_OnSeqIdResolveFinished(
         // We have the following fields at hand:
         // - accession, version, seq_id_type, gi
         // May be it is what the user asked for
-        if (!CanSkipBioseqInfoRetrieval(bioseq_resolution.m_BioseqInfo)) {
+        if (!CanSkipBioseqInfoRetrieval(bioseq_resolution.GetBioseqInfo())) {
             // Need to pull the full bioseq info
             CPSGCache   psg_cache(m_Request, m_Reply);
             auto        cache_lookup_result =

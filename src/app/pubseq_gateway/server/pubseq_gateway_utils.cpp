@@ -155,6 +155,7 @@ static string   s_Message = "message";
 static string   s_Protobuf = "protobuf";
 static string   s_Json = "json";
 static string   s_BioseqNA = "bioseq_na";
+static string   s_AccVerHistory = "acc_ver_history";
 static string   s_Excluded = "excluded";
 static string   s_InProgress = "inprogress";
 static string   s_Sent = "sent";
@@ -178,6 +179,8 @@ static string   s_BlobPropItem = s_ItemType + s_BlobProp;
 static string   s_AndBlobPropItem = "&" + s_BlobPropItem;
 static string   s_BioseqNAItem = s_ItemType + s_BioseqNA;
 static string   s_AndBioseqNAItem = "&" + s_BioseqNAItem;
+static string   s_AccVerHistoryItem = s_ItemType + s_AccVerHistory;
+static string   s_AndAccVerHistoryItem = "&" + s_AccVerHistoryItem;
 static string   s_BlobItem = s_ItemType + s_Blob;
 static string   s_AndBlobItem = "&" + s_BlobItem;
 static string   s_ReplyItem = s_ItemType + s_Reply;
@@ -766,6 +769,41 @@ string GetNamedAnnotationCompletionHeader(size_t  item_id,
                 .append(s_AndProcessorId)
                 .append(NStr::URLEncode(processor_id))
                 .append(s_AndBioseqNAItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndNChunks)
+                .append(to_string(chunk_count))
+                .append(1, '\n');
+}
+
+
+string GetAccVerHistoryHeader(size_t  item_id,
+                              const string &  processor_id,
+                              size_t  msg_size)
+{
+    // E.g. PSG-Reply-Chunk: item_id=1&processor_id=cass-acc-blob-hist&item_type=acc_ver_history&chunk_type=data&size=150
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndAccVerHistoryItem)
+                .append(s_AndDataChunk)
+                .append(s_AndSize)
+                .append(to_string(msg_size))
+                .append(1, '\n');
+}
+
+
+string GetAccVerHistCompletionHeader(size_t  item_id,
+                                     const string &  processor_id,
+                                     size_t  chunk_count)
+{
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndAccVerHistoryItem)
                 .append(s_AndMetaChunk)
                 .append(s_AndNChunks)
                 .append(to_string(chunk_count))

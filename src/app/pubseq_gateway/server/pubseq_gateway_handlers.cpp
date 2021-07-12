@@ -815,8 +815,8 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnAccessionBlobHistory(CHttpRequest &  req,
-                                              shared_ptr<CPSGS_Reply>  reply)
+int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
+                                                 shared_ptr<CPSGS_Reply>  reply)
 {
     auto                    now = chrono::high_resolution_clock::now();
     CRequestContextResetter context_resetter;
@@ -862,9 +862,9 @@ int CPubseqGatewayApp::OnAccessionBlobHistory(CHttpRequest &  req,
             return 0;
 
         // Parameters processing has finished
-        m_Counters.Increment(CPSGSCounters::ePSGS_AccessionBlobHistory);
+        m_Counters.Increment(CPSGSCounters::ePSGS_AccessionVersionHistory);
         unique_ptr<SPSGS_RequestBase>
-            req(new SPSGS_AccessionBlobHistoryRequest(
+            req(new SPSGS_AccessionVersionHistoryRequest(
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, use_cache, hops, trace,
                         enabled_processors, disabled_processors,
@@ -874,14 +874,14 @@ int CPubseqGatewayApp::OnAccessionBlobHistory(CHttpRequest &  req,
 
         x_DispatchRequest(request, reply);
     } catch (const exception &  exc) {
-        string      msg = "Exception when handling an accession_blob_history request: " +
+        string      msg = "Exception when handling an accession_version_history request: " +
                           string(exc.what());
         x_SendMessageAndCompletionChunks(reply, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_UnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
-        string      msg = "Unknown exception when handling an accession_blob_history request";
+        string      msg = "Unknown exception when handling an accession_version_history request";
         x_SendMessageAndCompletionChunks(reply, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_UnknownError, eDiag_Error);

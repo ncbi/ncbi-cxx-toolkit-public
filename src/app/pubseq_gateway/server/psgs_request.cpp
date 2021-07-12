@@ -201,7 +201,7 @@ CJsonNode SPSGS_AnnotRequest::Serialize(void) const
 }
 
 
-CJsonNode SPSGS_AccessionBlobHistoryRequest::Serialize(void) const
+CJsonNode SPSGS_AccessionVersionHistoryRequest::Serialize(void) const
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 

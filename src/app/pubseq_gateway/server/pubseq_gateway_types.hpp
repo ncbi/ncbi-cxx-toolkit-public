@@ -116,6 +116,7 @@ enum EPSGS_DbFetchType {
     ePSGS_Si2csiFetch,
     ePSGS_SplitHistoryFetch,
     ePSGS_PublicCommentFetch,
+    ePSGS_AccVerHistoryFetch,
     ePSGS_UnknownFetch
 };
 

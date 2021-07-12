@@ -43,6 +43,8 @@
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/fetch_split_history.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/status_history/get_public_comment.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/acc_ver_hist/record.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/acc_ver_hist/tasks.hpp>
 
 #include "pubseq_gateway_types.hpp"
 #include "pubseq_gateway_utils.hpp"
@@ -62,6 +64,7 @@ CJsonNode ToJson(const CBioseqInfoRecord &  bioseq_info,
 CJsonNode ToJson(const CBlobRecord &  blob);
 CJsonNode ToJson(const CNAnnotRecord &  annot_record, int32_t  sat,
                  const string &  custom_blob_id = "");
+CJsonNode ToJson(const SAccVerHistRec &  history_record);
 
 CJsonNode ToJson(const CBioseqInfoFetchRequest &  request);
 CJsonNode ToJson(const CSi2CsiFetchRequest &  request);
@@ -73,5 +76,6 @@ CJsonNode ToJson(const CCassBlobTaskLoadBlob &  request);
 CJsonNode ToJson(const CCassBlobTaskFetchSplitHistory &  request);
 CJsonNode ToJson(const CCassNAnnotTaskFetch &  request);
 CJsonNode ToJson(const CCassStatusHistoryTaskGetPublicComment &  request);
+CJsonNode ToJson(const CCassAccVerHistoryTaskFetch &  request);
 
 #endif

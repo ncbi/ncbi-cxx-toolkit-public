@@ -101,6 +101,18 @@ void CCassNamedAnnotFetch::ResetCallbacks(void)
 }
 
 
+void CCassAccVerHistoryFetch::ResetCallbacks(void)
+{
+    if (m_Loader) {
+        CCassAccVerHistoryTaskFetch *      loader =
+                    static_cast<CCassAccVerHistoryTaskFetch *>(m_Loader.get());
+        loader->SetDataReadyCB(nullptr);
+        loader->SetConsumeCallback(nullptr);
+        loader->SetErrorCB(nullptr);
+    }
+}
+
+
 size_t CCassBlobFetch::GetBlobPropItemId(CPSGS_Reply *  reply)
 {
     if (m_BlobPropItemId == 0)

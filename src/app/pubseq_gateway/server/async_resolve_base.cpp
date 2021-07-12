@@ -124,6 +124,8 @@ CPSGS_AsyncResolveBase::GetRequestSeqId(void)
             return m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqId;
         case CPSGS_Request::ePSGS_AnnotationRequest:
             return m_Request->GetRequest<SPSGS_AnnotRequest>().m_SeqId;
+        case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
+            return m_Request->GetRequest<SPSGS_AccessionVersionHistoryRequest>().m_SeqId;
         default:
             break;
     }
@@ -143,6 +145,8 @@ CPSGS_AsyncResolveBase::GetRequestSeqIdType(void)
             return m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqIdType;
         case CPSGS_Request::ePSGS_AnnotationRequest:
             return m_Request->GetRequest<SPSGS_AnnotRequest>().m_SeqIdType;
+        case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
+            return m_Request->GetRequest<SPSGS_AccessionVersionHistoryRequest>().m_SeqIdType;
         default:
             break;
     }
@@ -216,6 +220,8 @@ CPSGS_AsyncResolveBase::GetAccessionSubstitutionOption(void)
             return m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>().m_AccSubstOption;
         case CPSGS_Request::ePSGS_AnnotationRequest:
             return SPSGS_RequestBase::ePSGS_DefaultAccSubstitution;
+        case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
+            return SPSGS_RequestBase::ePSGS_DefaultAccSubstitution;
         default:
             break;
     }
@@ -229,7 +235,7 @@ EPSGS_AccessionAdjustmentResult
 CPSGS_AsyncResolveBase::AdjustBioseqAccession(
                                     SBioseqResolution &  bioseq_resolution)
 {
-    if (CanSkipBioseqInfoRetrieval(bioseq_resolution.m_BioseqInfo)) {
+    if (CanSkipBioseqInfoRetrieval(bioseq_resolution.GetBioseqInfo())) {
         if (m_Request->NeedTrace()) {
             m_Reply->SendTrace("Accession adjustment is not required "
                                "(bioseq info is not provided)",
@@ -249,7 +255,7 @@ CPSGS_AsyncResolveBase::AdjustBioseqAccession(
     }
 
     if (acc_subst_option == SPSGS_RequestBase::ePSGS_LimitedAccSubstitution &&
-        bioseq_resolution.m_BioseqInfo.GetSeqIdType() != CSeq_id::e_Gi) {
+        bioseq_resolution.GetBioseqInfo().GetSeqIdType() != CSeq_id::e_Gi) {
         if (m_Request->NeedTrace()) {
             m_Reply->SendTrace("Accession adjustment is not required "
                                "(substitute option is 'limited' and seq_id_type is not gi)",
@@ -333,10 +339,10 @@ void CPSGS_AsyncResolveBase::x_Process(void)
             // What is done is defined in the found or error callbacks.
             // true => with seq_id_type
             x_PreparePrimaryBioseqInfoQuery(
-                m_BioseqResolution.m_BioseqInfo.GetAccession(),
-                m_BioseqResolution.m_BioseqInfo.GetVersion(),
-                m_BioseqResolution.m_BioseqInfo.GetSeqIdType(),
-                m_BioseqResolution.m_BioseqInfo.GetGI(),
+                m_BioseqResolution.GetBioseqInfo().GetAccession(),
+                m_BioseqResolution.GetBioseqInfo().GetVersion(),
+                m_BioseqResolution.GetBioseqInfo().GetSeqIdType(),
+                m_BioseqResolution.GetBioseqInfo().GetGI(),
                 true);
             break;
 
@@ -344,7 +350,7 @@ void CPSGS_AsyncResolveBase::x_Process(void)
         default:
             // 'not found' of PendingOperation
             m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
-            m_BioseqResolution.m_BioseqInfo.Reset();
+            m_BioseqResolution.GetBioseqInfo().Reset();
 
             x_OnSeqIdAsyncResolutionFinished(move(m_BioseqResolution));
     }
@@ -590,13 +596,13 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
                     CRequestStatus::e502_BadGateway,
                     ePSGS_BioseqInfoNotFoundForGi, eDiag_Error,
                     "Data inconsistency. More than one BIOSEQ_INFO table record is found for "
-                    "accession " + m_BioseqResolution.m_BioseqInfo.GetAccession());
+                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession());
             } else {
                 m_ErrorCB(
                     CRequestStatus::e502_BadGateway,
                     ePSGS_BioseqInfoNotFoundForGi, eDiag_Error,
                     "Data inconsistency. A BIOSEQ_INFO table record is not found for "
-                    "accession " + m_BioseqResolution.m_BioseqInfo.GetAccession());
+                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession());
             }
             return;
         }
@@ -623,7 +629,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
     }
 
     m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
-    m_BioseqResolution.m_BioseqInfo = std::move(records[index_to_pick]);
+    m_BioseqResolution.SetBioseqInfo(records[index_to_pick]);
 
     // Adjust accession if needed
     auto    adj_result = AdjustBioseqAccession(m_BioseqResolution);
@@ -673,7 +679,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
             app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                                       m_BioseqInfoStart);
             app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundOne);
-            m_BioseqResolution.m_BioseqInfo = std::move(records[decision.index]);
+            m_BioseqResolution.SetBioseqInfo(records[decision.index]);
 
             // Data callback
             x_OnSeqIdAsyncResolutionFinished(move(m_BioseqResolution));
@@ -687,7 +693,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
                     CRequestStatus::e502_BadGateway,
                     ePSGS_BioseqInfoNotFoundForGi, eDiag_Error,
                     "Data inconsistency. A BIOSEQ_INFO table record is not found for "
-                    "accession " + m_BioseqResolution.m_BioseqInfo.GetAccession());
+                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession());
             } else {
                 // Move to the next stage
                 x_Process();
@@ -702,7 +708,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
                     CRequestStatus::e502_BadGateway,
                     ePSGS_BioseqInfoNotFoundForGi, eDiag_Error,
                     "Data inconsistency. More than one BIOSEQ_INFO table record is found for "
-                    "accession " + m_BioseqResolution.m_BioseqInfo.GetAccession());
+                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession());
 
             } else {
                 // Move to the next stage
@@ -778,14 +784,17 @@ void CPSGS_AsyncResolveBase::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
                               m_Si2csiStart);
     app->GetCounters().Increment(CPSGSCounters::ePSGS_Si2csiFoundOne);
 
+    CBioseqInfoRecord               bioseq_info;
+    bioseq_info.SetAccession(records[0].GetAccession());
+    bioseq_info.SetVersion(records[0].GetVersion());
+    bioseq_info.SetSeqIdType(records[0].GetSeqIdType());
+    bioseq_info.SetGI(records[0].GetGI());
+
+    m_BioseqResolution.SetBioseqInfo(bioseq_info);
     m_BioseqResolution.m_ResolutionResult = ePSGS_Si2csiDB;
-    m_BioseqResolution.m_BioseqInfo.SetAccession(records[0].GetAccession());
-    m_BioseqResolution.m_BioseqInfo.SetVersion(records[0].GetVersion());
-    m_BioseqResolution.m_BioseqInfo.SetSeqIdType(records[0].GetSeqIdType());
-    m_BioseqResolution.m_BioseqInfo.SetGI(records[0].GetGI());
 
     // Special case for the seq_id like gi|156232
-    if (!CanSkipBioseqInfoRetrieval(m_BioseqResolution.m_BioseqInfo)) {
+    if (!CanSkipBioseqInfoRetrieval(m_BioseqResolution.GetBioseqInfo())) {
         m_ResolveStage = ePostSi2Csi;
         x_Process();
         return;

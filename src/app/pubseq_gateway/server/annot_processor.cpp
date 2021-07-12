@@ -196,14 +196,17 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
         unique_ptr<CCassNamedAnnotFetch>   details;
         details.reset(new CCassNamedAnnotFetch(*m_AnnotRequest));
 
+        // Note: the accession and seq_id_type may be adjusted in the bioseq
+        // info record. However the request must be done using the original
+        // accession and seq_id_type
         CCassNAnnotTaskFetch *  fetch_task =
                 new CCassNAnnotTaskFetch(app->GetCassandraTimeout(),
                                          app->GetCassandraMaxRetries(),
                                          app->GetCassandraConnection(),
                                          bioseq_na_keyspace.first,
-                                         bioseq_resolution.m_BioseqInfo.GetAccession(),
-                                         bioseq_resolution.m_BioseqInfo.GetVersion(),
-                                         bioseq_resolution.m_BioseqInfo.GetSeqIdType(),
+                                         bioseq_resolution.GetOriginalAccession(),
+                                         bioseq_resolution.GetBioseqInfo().GetVersion(),
+                                         bioseq_resolution.GetOriginalSeqIdType(),
                                          m_ValidNames,
                                          nullptr, nullptr);
         details->SetLoader(fetch_task);
@@ -279,7 +282,7 @@ CPSGS_AnnotProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
         AdjustBioseqAccession(bioseq_resolution);
 
     size_t  item_id = IPSGS_Processor::m_Reply->GetItemId();
-    auto    data_to_send = ToJson(bioseq_resolution.m_BioseqInfo,
+    auto    data_to_send = ToJson(bioseq_resolution.GetBioseqInfo(),
                                   SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                                         Repr(CJsonNode::fStandardJson);
 
