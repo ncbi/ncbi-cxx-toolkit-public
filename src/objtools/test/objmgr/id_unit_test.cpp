@@ -53,12 +53,9 @@
 #include <algorithm>
 
 //#define RUN_SLOW_MT_TESTS
-#if defined(RUN_SLOW_MT_TESTS) && defined(NCBI_THREADS)
-# include <objtools/simple/simple_om.hpp>
-# include <future>
-#endif
+#include <objtools/simple/simple_om.hpp>
 #if defined(NCBI_THREADS)
-# include <thread>
+# include <future>
 #endif
 
 #include <objects/general/general__.hpp>
@@ -1546,7 +1543,7 @@ BOOST_AUTO_TEST_CASE(CheckSplitSeqData)
 }
 
 
-#if defined(RUN_SLOW_MT_TESTS) && defined(NCBI_THREADS)
+#if defined(NCBI_THREADS)
 BOOST_AUTO_TEST_CASE(MTCrash1)
 {
     CRef<CScope> scope = CSimpleOM::NewScope();
@@ -1706,6 +1703,27 @@ BOOST_AUTO_TEST_CASE(TestGetBlobById)
 }
 
 
+static CScope::TBlobId s_MakeBlobId(int sat, int sat_key)
+{
+    CScope::TBlobId ret;
+    if (CGBDataLoader::IsUsingPSGLoader()) {
+#if defined(HAVE_PSG_LOADER)
+        string blobid_str = NStr::NumericToString(sat)+'.'+NStr::NumericToString(sat_key);
+        CRef<CPsgBlobId> real_blob_id;
+        real_blob_id = new CPsgBlobId(blobid_str);
+        ret = CScope::TBlobId(real_blob_id);
+#endif
+    }
+    else {
+        CRef<CBlob_id> real_blob_id(new CBlob_id);
+        real_blob_id->SetSat(sat);
+        real_blob_id->SetSatKey(sat_key);
+        ret = CScope::TBlobId(real_blob_id);
+    }
+    return ret;
+}
+
+
 BOOST_AUTO_TEST_CASE(TestGetBlobByIdSat)
 {
     const int sat = 4;
@@ -1715,22 +1733,7 @@ BOOST_AUTO_TEST_CASE(TestGetBlobByIdSat)
     CDataLoader* loader =
         CObjectManager::GetInstance()->FindDataLoader(CGBDataLoader::GetLoaderNameFromArgs());
     BOOST_REQUIRE(loader);
-    CScope::TBlobId om_blob_id;
-    if (CGBDataLoader::IsUsingPSGLoader()) {
-#if defined(HAVE_PSG_LOADER)
-        string blobid_str = NStr::NumericToString(sat)+'.'+NStr::NumericToString(sat_key);
-        CRef<CPsgBlobId> real_blob_id;
-        real_blob_id = new CPsgBlobId(blobid_str);
-        om_blob_id = CScope::TBlobId(real_blob_id);
-#endif
-    }
-    else {
-        CRef<CBlob_id> real_blob_id(new CBlob_id);
-        real_blob_id->SetSat(sat);
-        real_blob_id->SetSatKey(sat_key);
-        om_blob_id = CScope::TBlobId(real_blob_id);
-    }
-    CSeq_entry_Handle seh = scope->GetSeq_entryHandle(loader, om_blob_id);
+    CSeq_entry_Handle seh = scope->GetSeq_entryHandle(loader, s_MakeBlobId(sat, sat_key));
     BOOST_REQUIRE(seh);
 }
 
@@ -1747,32 +1750,18 @@ BOOST_AUTO_TEST_CASE(TestGetBlobByIdSatMT)
     BOOST_REQUIRE(loader);
 
     const int NQ = 20;
-    vector<std::thread> tt(NQ);
+    vector<future<bool>> res;
     for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i] =
-            std::thread([&](const int add_sat_key)
-                {
-                    CScope::TBlobId om_blob_id;
-                    int sat_key = sat_key_0 + add_sat_key;
-                    if (CGBDataLoader::IsUsingPSGLoader()) {
-                        string blobid_str = NStr::NumericToString(sat)+'.'+NStr::NumericToString(sat_key);
-                        CRef<CPsgBlobId> real_blob_id;
-                        real_blob_id = new CPsgBlobId(blobid_str);
-                        om_blob_id = CScope::TBlobId(real_blob_id);
-                    }
-                    else {
-                        CRef<CBlob_id> real_blob_id(new CBlob_id);
-                        real_blob_id->SetSat(sat);
-                        real_blob_id->SetSatKey(sat_key);
-                        om_blob_id = CScope::TBlobId(real_blob_id);
-                    }
-                    CSeq_entry_Handle seh = scope->GetSeq_entryHandle(loader, om_blob_id);
-                    BOOST_REQUIRE_MT_SAFE(seh);
-                }, i/2);
+        res.emplace_back(async(launch::async, [&](int add_sat_key)->bool {
+            int sat_key = sat_key_0 + add_sat_key;
+            CSeq_entry_Handle seh = scope->GetSeq_entryHandle(loader, s_MakeBlobId(sat, sat_key));
+            return seh;
+        }, i/2));
     }
-    for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i].join();
-    }
+    bool all_is_good = all_of(res.begin(), res.end(), [](future<bool>& f) {
+        return f.get();
+    });
+    BOOST_CHECK(all_is_good);
 }
 #endif
 
@@ -1832,6 +1821,9 @@ NCBITEST_INIT_TREE()
          (!s_HaveID2(eExcludePubseqos2) || s_HaveCache()) ) {
         NCBITEST_DISABLE(TestGetBlobById);
     }    
+#if defined(NCBI_THREADS) && !defined(RUN_SLOW_MT_TESTS)
+    NCBITEST_DISABLE(MTCrash1);
+#endif
 #if !defined(HAVE_PUBSEQ_OS) || (defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT))
     // HUP test needs multiple PubSeqOS readers
     NCBITEST_DISABLE(Test_HUP);
