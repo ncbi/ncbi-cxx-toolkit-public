@@ -293,7 +293,8 @@ protected:
 
     bool
     xParseBrowserLine(
-        const string&) override;
+        const string&,
+        CSeq_annot&) override;
 
     bool
     xParseTrackLine(
