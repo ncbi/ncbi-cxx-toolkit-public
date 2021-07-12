@@ -4,6 +4,7 @@
 # functions (as of ICC [20]17).
 
 ifeq "$(COMPILER)" "icc"
+ ifneq "" "$(filter -static-intel,$(LDFLAGS))"
   bulk.o:       CFLAGS += -fno-builtin-strcat -fno-builtin-strchr \
                           -fno-builtin-strcpy
   config.o:     CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy
@@ -13,6 +14,7 @@ ifeq "$(COMPILER)" "icc"
   login.o:      CFLAGS += -fno-builtin-strcat -fno-builtin-strchr
   query.o:      CFLAGS += -fno-builtin-strcat
   threadsafe.o: CFLAGS += -fno-builtin-strcat
+ endif
 endif
 
 # Limit usage of KRB5_INCLUDE to avoid iconv header/library skew that

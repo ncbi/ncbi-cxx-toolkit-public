@@ -4,9 +4,11 @@
 # functions (as of ICC [20]17).
 
 ifeq "$(COMPILER)" "icc"
+ ifneq "" "$(filter -static-intel,$(LDFLAGS))"
   cs.o:     CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy
   ct.o:     CFLAGS += -fno-builtin-strcpy -fno-builtin-strncat \
                       -fno-builtin-strncmp -fno-builtin-strpbrk \
                       -fno-builtin-strspn
   ctutil.o: CFLAGS += -fno-builtin-strcpy
+ endif
 endif

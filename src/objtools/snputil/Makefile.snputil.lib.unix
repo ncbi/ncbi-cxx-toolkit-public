@@ -3,7 +3,9 @@
 # Adjust ICC flags to avoid problematic references to __libm_sse2_* functions.
 
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
+ ifneq "" "$(filter -static-intel,$(LDFLAGS))"
   snp_bins.o: $(srcdir)/snp_bins.cpp
 	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) -fno-builtin-log10 \
 	    $< -o $@ $(CXX_FILTER)
+ endif
 endif

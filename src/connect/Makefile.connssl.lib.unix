@@ -4,5 +4,7 @@
 # __intel_sse2_str* functions (as of ICC [20]15)
 
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
+ ifneq "" "$(filter -static-intel,$(LDFLAGS))"
   mbedtls/x509_create.o: CFLAGS += -fno-builtin-strncmp
+ endif
 endif

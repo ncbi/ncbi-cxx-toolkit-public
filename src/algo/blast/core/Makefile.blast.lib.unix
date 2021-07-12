@@ -6,6 +6,7 @@
 CORE_SRCDIR ?= $(srcdir)
 
 ifeq "$(COMPILER)-$(DEBUG_SFX)" "icc-Release"
+ ifneq "" "$(filter -static-intel,$(LDFLAGS))"
   $(CORE)blast_aalookup.o: $(CORE_SRCDIR)/$(CORE)blast_aalookup.c
 	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-pow $< -o $@ \
 	    $(CC_FILTER)
@@ -30,4 +31,5 @@ ifeq "$(COMPILER)-$(DEBUG_SFX)" "icc-Release"
   $(CORE)ncbi_math.o: $(CORE_SRCDIR)/$(CORE)ncbi_math.c
 	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-exp -fno-builtin-log \
 	    -fno-builtin-sin $< -o $@ $(CC_FILTER)
+ endif
 endif
