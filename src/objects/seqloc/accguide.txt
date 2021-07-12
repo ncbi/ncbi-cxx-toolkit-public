@@ -3728,6 +3728,31 @@ special  CAJJIM000000000-CAJJIM999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJJIQ000000000-CAJJJK999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJJJM000000000-CAJMTE999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJSFZ000000000-CAJSGD999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJTIX000000000-CAJTJC999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJTJE000000000-CAJTJH999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJTJJ000000000-CAJTJJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJTJS000000000-CAJTJT999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJTJV000000000-CAJTJV999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJTJY000000000-CAJTKB999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJTKE000000000-CAJTKE999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJTKG000000000-CAJTKL999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJTKS000000000-CAJTKS999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJTKU000000000-CAJTXH999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJTXK000000000-CAJUPH999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJUPJ000000000-CAJURP999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJURR000000000-CAJURR999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJURT000000000-CAJURT999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJURV000000000-CAJUSB999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJUSD000000000-CAJUSU999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJUSW000000000-CAJUSW999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJUSZ000000000-CAJUTC999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJUTE000000000-CAJUTE999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJUTH000000000-CAJUTH999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJUTJ000000000-CAJUTM999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJUTQ000000000-CAJUTQ999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJUTS000000000-CAJUTS999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJUTV000000000-CAJUTW999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJUTY000000000-CAJUUA999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" 8- and 10-character protein accessions are really third-party
 # annotations.
