@@ -68,6 +68,8 @@ CAlnScannerSequin::xImportAlignmentData(
 
     while (iStr.ReadLine(line, lineCount)) {
 
+        NStr::TruncateSpacesInPlace(line);
+
         if (line.empty()) {
             if (processingData) {
                 if (lineInBlock != mSeqIds.size()) {
@@ -86,8 +88,6 @@ CAlnScannerSequin::xImportAlignmentData(
             }
             continue;
         }
-
-        NStr::TruncateSpacesInPlace(line);
 
         if (xIsSequinOffsetsLine(line)) {
             if (processingData) {
