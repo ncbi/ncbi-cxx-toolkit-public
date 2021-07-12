@@ -470,7 +470,7 @@ bool CBedWriter::xWriteAnnotFeatureTable(
                 eInterrupted,
                 "Processing terminated by user");
         }
-        if (!xWriteFeature(track, *pMf)) {
+        if (!xWriteTrackedFeature(track, *pMf)) {
             return false;
         }
     }
@@ -534,30 +534,7 @@ bool CBedWriter::xWriteAnnotThreeFeatData(
 }
 
 //  ----------------------------------------------------------------------------
-bool CBedWriter::xWriteFeature(
-    CFeat_CI feat_it)
-//  ----------------------------------------------------------------------------
-{
-    if (!feat_it) {
-        return false;
-    }
-
-    const auto& annot_handle = feat_it.GetAnnot();
-
-    // Inefficient!
-    // Store track and annot_handle, and only recreate track
-    // if the annot_handle has changed since the last call.
-    CBedTrackRecord track;
-    if ( ! track.Assign(*(annot_handle.GetCompleteSeq_annot())) ) {
-        return false;
-    }
-
-    return xWriteFeature(track, *feat_it);
-}
-
-
-//  ----------------------------------------------------------------------------
-bool CBedWriter::xWriteFeature(
+bool CBedWriter::xWriteTrackedFeature(
     const CBedTrackRecord& track,
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------

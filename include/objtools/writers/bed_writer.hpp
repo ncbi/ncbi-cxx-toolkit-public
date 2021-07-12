@@ -92,8 +92,6 @@ public:
         const string& = "",
         const string& = "") override;
 
-//    virtual SAnnotSelector GetAnnotSelector();
-
     bool WriteSeqEntryHandle(
         CSeq_entry_Handle seh,
         const string& asmblyName="",
@@ -116,12 +114,9 @@ protected:
         const CBedTrackRecord&,
         const CSeq_annot_Handle&);
 
-    bool xWriteFeature(
+    bool xWriteTrackedFeature(
         const CBedTrackRecord&,
         const CMappedFeat&);
-
-    bool xWriteFeature(
-        CFeat_CI) override;
 
     CScope& m_Scope;
     unsigned int m_colCount;
