@@ -2883,7 +2883,7 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
     const string& in_seq_data = in_seq.GetIupacna().Get();
 
     // Out sequence may contain unfinished byte from the previous segment
-    if (*out_seq_length == 0)
+    if (out_seq_length != nullptr  &&  *out_seq_length == 0)
        out_seq->Reset();
     // Get vector where the out sequence will go
     vector<char>& out_seq_data = out_seq->SetNcbi2na().Set();
@@ -3185,7 +3185,7 @@ TSeqPos CSeqportUtil_implementation::MapNcbi4naToNcbi2na(
     const vector<char>& in_seq_data = in_seq.GetNcbi4na().Get();
 
     // Out sequence may contain unfinished byte from a previous segment.
-    if (*out_seq_length == 0)
+    if (out_seq_length != nullptr  &&  *out_seq_length == 0)
        out_seq->Reset();
     // Get vector where the out sequence will go
     vector<char>& out_seq_data = out_seq->SetNcbi2na().Set();
