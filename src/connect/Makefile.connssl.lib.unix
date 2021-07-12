@@ -8,3 +8,6 @@ ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
   mbedtls/x509_create.o: CFLAGS += -fno-builtin-strncmp
  endif
 endif
+ifneq "" "$(filter icx %/icx,$(firstword $(CC)))"
+  mbedtls/bignum.o: CFLAGS := $(CFLAGS:-O%=-O)
+endif
