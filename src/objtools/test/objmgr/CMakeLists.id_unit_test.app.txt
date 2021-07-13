@@ -3,7 +3,7 @@
 NCBI_begin_app(id_unit_test)
   NCBI_sources(id_unit_test)
   NCBI_requires(FreeTDS Boost.Test.Included)
-  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank ncbi_xreader_pubseqos ncbi_xreader_pubseqos2)
+  NCBI_uses_toolkit_libraries(xobjsimple ncbi_xloader_genbank ncbi_xreader_pubseqos ncbi_xreader_pubseqos2)
 
   NCBI_begin_test(id_unit_test)
     NCBI_set_test_command(all_readers.sh id_unit_test)
