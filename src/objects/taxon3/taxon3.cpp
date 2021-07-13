@@ -54,9 +54,13 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 CTaxon3::CTaxon3()
 {
-    return;
 }
 
+CTaxon3::CTaxon3(const STimeout& timeout, unsigned reconnect_attempts, bool exponential)
+  : m_exponential(exponential)
+{
+    CTaxon3::Init(&timeout, reconnect_attempts);
+}
 
 CTaxon3::~CTaxon3()
 {
@@ -110,6 +114,12 @@ CTaxon3::SendRequest(const CTaxon3_request& request)
     SetLastError(NULL);
 
 	unsigned reconnect_attempts = 0;
+    const STimeout* pTimeout = m_timeout;
+    STimeout to;
+    if (m_exponential) {
+        to = m_timeout_value;
+        pTimeout = &to;
+    }
 
 	while (reconnect_attempts < m_nReconnectAttempts) {
 		try {
@@ -117,7 +127,7 @@ CTaxon3::SendRequest(const CTaxon3_request& request)
             unique_ptr<CObjectIStream> pIn;
             unique_ptr<CConn_ServiceStream>
 			    pServer( new CConn_ServiceStream(m_sService, fSERV_Any,
-							     0, 0, m_timeout) );
+							     0, 0, pTimeout) );
 
 			pOut.reset( CObjectOStream::Open(m_eDataFormat, *pServer) );
 			pIn.reset( CObjectIStream::Open(m_eDataFormat, *pServer) );
@@ -150,6 +160,15 @@ CTaxon3::SendRequest(const CTaxon3_request& request)
 			SetLastError( e.what() );
 		}
 		reconnect_attempts++;
+        if (m_exponential) {
+            // double the value
+            to.sec <<= 1;
+            to.usec <<= 1;
+            if (to.usec >= 1'000'000) {
+                to.sec++;
+                to.usec -= 1'000'000;
+            }
+        }
 	}
 
 	// return NULL
