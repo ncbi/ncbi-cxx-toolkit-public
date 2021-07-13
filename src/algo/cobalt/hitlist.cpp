@@ -270,7 +270,6 @@ CHitList::MatchOverlappingSubHits(CHitList& matched_list)
                     // their sequence 2 ranges overlap
 
                     CHit *new_subhit = x_MatchSubHits(*itr1, *itr2);
-                    CHit::TSubHit& subhits = new_hit->GetSubHit();
                     if (new_subhit != 0) {
                         if (new_hit == 0) {
                             // create the first subhit of a new hit
@@ -278,11 +277,13 @@ CHitList::MatchOverlappingSubHits(CHitList& matched_list)
                             new_hit = new CHit(hit1->m_SeqIndex1, 
                                                hit2->m_SeqIndex1);
                             new_hit->InsertSubHit(new_subhit);
+                            continue;
                         }
-                        else if (new_subhit->m_SeqRange1.GetFrom() -
-                                   subhits.back()->m_SeqRange1.GetTo() !=
-                                 new_subhit->m_SeqRange2.GetFrom() -
-                                   subhits.back()->m_SeqRange2.GetTo()) {
+                        CHit::TSubHit& subhits = new_hit->GetSubHit();
+                        if (new_subhit->m_SeqRange1.GetFrom() -
+                              subhits.back()->m_SeqRange1.GetTo() !=
+                            new_subhit->m_SeqRange2.GetFrom() -
+                              subhits.back()->m_SeqRange2.GetTo()) {
 
                             // the current generated subhit does not
                             // start the same distance away from the
