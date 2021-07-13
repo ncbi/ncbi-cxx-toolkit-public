@@ -58,6 +58,7 @@ class NCBI_TAXON3_EXPORT CTaxon3 : public ITaxon3 {
 public:
 
     CTaxon3();
+    CTaxon3(const STimeout& timeout, unsigned reconnect_attempts=5, bool exponential=false);
     virtual ~CTaxon3();
 
     //---------------------------------------------
@@ -97,10 +98,11 @@ private:
 
     ESerialDataFormat             m_eDataFormat;
     string                        m_sService;
-    STimeout*                     m_timeout;  // NULL, or points to "m_timeout_value"
+    const STimeout*               m_timeout;  // NULL, or points to "m_timeout_value"
     STimeout                      m_timeout_value;
 
     unsigned                      m_nReconnectAttempts;
+    bool                          m_exponential{ false }; // double the timeout with each attempt
 
     string                        m_sLastError;
 
