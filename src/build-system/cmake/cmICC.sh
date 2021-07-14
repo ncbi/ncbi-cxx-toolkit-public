@@ -56,18 +56,29 @@ if test -z "$cxx_version"; then
   exit 1
 fi
 
+case "$cxx_version" in
+  [2-9][0-9] | [2-9][0-9].* )
+    CC=icx
+    CXX=icpx
+    cxx_path=$cxx_version/compiler/latest/linux
+    ;;
+  * )
+    cxx_path=$cxx_version
+    ;;      
+esac
+
 # Look for the specified version in various reasonable places
 # (tuned for NCBI's installations).
 case "$cxx_version" in
   [1-9]*)
-     if $intel_root/Compiler/$cxx_version/bin/$CXX -dumpversion >/dev/null 2>&1; then
-       CXX=$intel_root/Compiler/$cxx_version/bin/$CXX
-       CC=$intel_root/Compiler/$cxx_version/bin/$CC
-       libICC=$intel_root/Compiler/$cxx_version/lib/intel64 
+     if $intel_root/Compiler/$cxx_path/bin/$CXX -dumpversion >/dev/null 2>&1; then
+       CXX=$intel_root/Compiler/$cxx_path/bin/$CXX
+       CC=$intel_root/Compiler/$cxx_path/bin/$CC
+       libICC=$intel_root/Compiler/$cxx_path/compiler/lib/intel64 
        gccver=7.3.0
      else
-       if [ -x $intel_root/Compiler/$cxx_version/bin/$CXX ]; then
-         $intel_root/Compiler/$cxx_version/bin/$CXX -dumpversion >/dev/null
+       if [ -x $intel_root/Compiler/$cxx_path/bin/$CXX ]; then
+         $intel_root/Compiler/$cxx_path/bin/$CXX -dumpversion >/dev/null
        fi
        cat <<EOF 1>&2
 ERROR:  cannot find ICC version $cxx_version; you may need to adjust PATH explicitly.
@@ -92,6 +103,16 @@ ERROR:  cannot find ICC compiler ($CXX)
 EOF
     exit 1
 fi
+
+case $cxx_version in
+  [2-9][0-9] | [2-9][0-9].* )
+    NCBI_CLANG_CC=$CC
+    NCBI_CLANG_CXX=$CXX
+    export NCBI_CLANG_CC NCBI_CLANG_CXX libICC
+    exec "`dirname $0`"/cmClang.sh "$@"
+    ;;
+esac
+  
 
 # Intel C++ Compiler: GCC* Compatibility and Interoperability
 # https://software.intel.com/en-us/cpp-compiler-developer-guide-and-reference-gcc-compatibility-and-interoperability

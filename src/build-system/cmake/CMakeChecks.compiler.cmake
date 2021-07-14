@@ -294,13 +294,17 @@ string(REPLACE "." ";" _tmp "${_tmp}")
 list(GET _tmp 0 _v1)
 list(GET _tmp 1 _v2)
 list(GET _tmp 2 _v3)
+if("${NCBI_COMPILER}" STREQUAL "IntelLLVM" AND ${_v1} GREATER 2000)
+    math(EXPR _v1 "${_v1} - 2000")
+endif()
 set(NCBI_COMPILER_VERSION ${_v1}${_v2}${_v3})
 set(NCBI_COMPILER_VERSION_DOTTED ${_v1}.${_v2}.${_v3})
 
 if ("${NCBI_COMPILER}" STREQUAL "GNU")
     set(NCBI_COMPILER_GCC 1)
     set(NCBI_COMPILER "GCC")
-elseif ("${NCBI_COMPILER}" STREQUAL "Intel")
+elseif ("${NCBI_COMPILER}" STREQUAL "Intel"
+        OR "${NCBI_COMPILER}" STREQUAL "IntelLLVM")
     set(NCBI_COMPILER_ICC 1)
     set(NCBI_COMPILER "ICC")
 elseif ("${NCBI_COMPILER}" STREQUAL "AppleClang")
@@ -418,10 +422,15 @@ elseif(NCBI_COMPILER_ICC)
 # -we70: "incomplete type is not allowed" should be an error, not a warning!
 # -wd2651: Suppress spurious "attribute does not apply to any entity"
 #          when deprecating enum values (via NCBI_STD_DEPRECATED).
-    set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -fPIC")
-    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -we70 -wd2651 -fPIC")
-    set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
+    if("${NCBI_COMPILER_VERSION}" GREATER 2000)
+        set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -ffp-model=precise -fPIC")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -ffp-model=precise -fPIC")
+    else()
+        set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -fPIC")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -we70 -wd2651 -fPIC")
+        set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
+    endif()
 
 elseif(NCBI_COMPILER_APPLE_CLANG)
 
