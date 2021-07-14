@@ -104,7 +104,7 @@ static CFastaReader::TFlags s_StringToFastaFlag(const string& flag_string)
         return static_cast<CFastaReader::TFlags>(it->second);
     }
 
-    string message = "Unrecognized FASTA flag : " + it->second;
+    string message = "Unrecognized FASTA flag : " + flag_string;
     NCBI_THROW(CException, eUnknown, message);
 
     return 0;

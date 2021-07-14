@@ -218,6 +218,44 @@ inline static bool s_ASCII_IsUnAmbigNuc(unsigned char c)
     }
 }
 
+void
+CFastaReader::AddStringFlags(
+    const list<string>& stringFlags,
+    TFlags& baseFlags)
+{
+    static const map<string, CFastaReader::TReaderFlags> flagsMap = {
+        { "fAssumeNuc",    CFastaReader::fAssumeNuc},
+        { "fAssumeProt",   CFastaReader::fAssumeProt},
+        { "fForceType",    CFastaReader::fForceType},
+        { "fNoParseID",    CFastaReader::fNoParseID},
+        { "fParseGaps",    CFastaReader::fParseGaps},
+        { "fOneSeq",       CFastaReader::fOneSeq},
+        { "fNoSeqData",    CFastaReader::fNoSeqData},
+        { "fRequireID",    CFastaReader::fRequireID},
+        { "fDLOptional",   CFastaReader::fDLOptional},
+        { "fParseRawID",   CFastaReader::fParseRawID},
+        { "fSkipCheck",    CFastaReader::fSkipCheck},
+        { "fNoSplit",      CFastaReader::fNoSplit},
+        { "fValidate",     CFastaReader::fValidate},
+        { "fUniqueIDs",    CFastaReader::fUniqueIDs},
+        { "fStrictGuess",  CFastaReader::fStrictGuess},
+        { "fLaxGuess",     CFastaReader::fLaxGuess},
+        { "fAddMods",      CFastaReader::fAddMods},
+        { "fLetterGaps",   CFastaReader::fLetterGaps},
+        { "fNoUserObjs",   CFastaReader::fNoUserObjs},
+        { "fLeaveAsText",  CFastaReader::fLeaveAsText},
+        { "fQuickIDCheck", CFastaReader::fQuickIDCheck},
+        { "fUseIupacaa",   CFastaReader::fUseIupacaa},
+        { "fHyphensIgnoreAndWarn", CFastaReader::fHyphensIgnoreAndWarn},
+        { "fDisableNoResidues",    CFastaReader::fDisableNoResidues},
+        { "fDisableParseRange",    CFastaReader::fDisableParseRange},
+        { "fIgnoreMods",           CFastaReader::fIgnoreMods}
+    };
+
+    return CReaderBase::xAddStringFlagsWithMap(stringFlags, flagsMap, baseFlags);
+};
+
+
 CFastaReader::CFastaReader(ILineReader& reader, TFlags flags, FIdCheck f_idcheck)
     : m_LineReader(&reader), m_MaskVec(0),
       m_gapNmin(0), m_gap_Unknown_length(0),
