@@ -9,3 +9,8 @@ NCBI_begin_lib(xxconnect)
   NCBI_project_watchers(lavr)
 NCBI_end_lib()
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM"
+   AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set_source_files_properties(${NCBI_CURRENT_SOURCE_DIR}/mbedtls/bignum.c
+        PROPERTIES COMPILE_OPTIONS "-O")
+endif()
