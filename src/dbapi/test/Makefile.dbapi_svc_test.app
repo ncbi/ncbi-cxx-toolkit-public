@@ -1,7 +1,7 @@
 # $Id$
 
 # Temporarily disable on Windows due to missing devops support.
-REQUIRES = -MSWin
+REQUIRES = Sybase -MSWin
 
 APP = dbapi_svc_test
 SRC = dbapi_svc_test
