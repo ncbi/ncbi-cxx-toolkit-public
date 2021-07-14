@@ -1546,7 +1546,7 @@ if test "$with_mt" != "no" ; then
         case "$host_cpu" in
            i?86 | powerpc* | ppc* | x86_64 | sparc* | aarch64 )
               NCBIATOMIC_LIB=
-	      ;;
+              ;;
            * ) NCBIATOMIC_LIB=xncbi ;;
         esac
         ;;
@@ -5833,13 +5833,13 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
                ;;
          esac
          test "$with_mt"    = "yes"  &&  BOOST_MT=-mt
-	 if test "$with_max_debug" = yes; then
-	    BOOST_D="-gd -d"
-	 elif test "$with_debug" = no; then
-	    BOOST_D=
-	 else
-	    BOOST_D=-d
-	 fi
+         if test "$with_max_debug" = yes; then
+            BOOST_D="-gd -d"
+         elif test "$with_debug" = no; then
+            BOOST_D=
+         else
+            BOOST_D=-d
+         fi
          test "$bit64_sfx"  = "64"   &&  BOOST_64=-64
          case "$host_cpu" in
             i?86 | x86_64 ) BOOST_ARCH=-x$NCBI_PLATFORM_BITS ;;
