@@ -13,8 +13,8 @@ script_name=`basename $0`
 script_args="$@"
 
 ## Path to the compiler
-CXX="clang++"
-CC="clang"
+CXX=${NCBI_CLANG_CXX-clang++}
+CC=${NCBI_CLANG_CC-clang}
 
 Usage() {
     echo "USAGE:   $script_name [version] [configure-flags] | -h]"
@@ -50,8 +50,10 @@ fi
 
 # Look for the specified version in various reasonable places
 # (tuned for NCBI's installations).
-case "$cxx_version" in
-  [1-9]*)
+case "$CXX:$cxx_version" in
+  /* )
+     ;;
+  *:[1-9]*)
      if /usr/local/llvm/$cxx_version/bin/$CXX -dumpversion >/dev/null 2>&1; then
        CXX=/usr/local/llvm/$cxx_version/bin/$CXX
        CC=/usr/local/llvm/$cxx_version/bin/$CC
@@ -93,6 +95,12 @@ if test -x /opt/ncbi/gcc/${gccver}/bin/gcc; then
   NCBI_COMPILER_C_FLAGS="-nostdinc++ -isystem ${inc1} -isystem ${inc2} -isystem ${inc3}"
   NCBI_COMPILER_CXX_FLAGS="-nostdinc++ -isystem ${inc1} -isystem ${inc2} -isystem ${inc3}"
   NCBI_COMPILER_EXE_LINKER_FLAGS="-L${libgnu} -B${libgnu} -L${lib64} -Wl,-rpath,${lib64}"
+  NCBI_COMPILER_SHARED_LINKER_FLAGS="${NCBI_COMPILER_EXE_LINKER_FLAGS}"
+fi
+if test -n "$libICC"; then
+  NCBI_COMPILER_C_FLAGS="$NCBI_COMPILER_C_FLAGS -ffp-model=precise"
+  NCBI_COMPILER_CXX_FLAGS="$NCBI_COMPILER_CXX_FLAGS -ffp-model=precise"
+  NCBI_COMPILER_EXE_LINKER_FLAGS="-L$libICC -Wl,-rpath,$libICC -lintlc $NCBI_COMPILER_EXE_LINKER_FLAGS"
   NCBI_COMPILER_SHARED_LINKER_FLAGS="${NCBI_COMPILER_EXE_LINKER_FLAGS}"
 fi
 export NCBI_COMPILER_C_FLAGS NCBI_COMPILER_CXX_FLAGS NCBI_COMPILER_EXE_LINKER_FLAGS NCBI_COMPILER_SHARED_LINKER_FLAGS

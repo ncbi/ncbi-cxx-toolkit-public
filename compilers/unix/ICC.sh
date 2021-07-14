@@ -18,6 +18,8 @@ Usage() {
     exit $1
 }
 
+os=`uname -s | tr A-Z a-z`
+
 case "`uname -m`" in
     x86_64 ) arch=intel64 ;;
     *      ) arch=ia32    ;;
@@ -41,6 +43,11 @@ case "$1" in
   15* | 2015  ) search=$intel_root/Compiler/15.0/bin             ;;
   17* | 2017  ) search=$intel_root/Compiler/17.0/bin             ;;
   19* | 2019  ) search=$intel_root/Compiler/19.0/bin             ;;
+  21* | 2021  )
+      search=$intel_root/Compiler/21.0/compiler/latest/$os/bin
+      CC=icx
+      CXX=icpx
+      ;;
   *           ) search=                                          ;;
 esac
 
@@ -59,6 +66,10 @@ if [ -n "$search" ]; then
     done
 fi
 
+if [ "$CXX" = icpc ] && command -v icpx >/dev/null 2>&1; then
+    CC=icx
+    CXX=icpx
+fi
 $CXX -V -help >/dev/null 2>&1
 status=$?
 if test "$status" -ne 0 ; then

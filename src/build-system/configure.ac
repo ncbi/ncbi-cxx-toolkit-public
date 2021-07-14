@@ -1078,7 +1078,7 @@ AC_DEFINE_UNQUOTED(HOST_OS,     "$host_os",     [System OS only])
 #### Make some provisions for traditional operation
 AC_PROG_INSTALL
 
-#### Point ICC at a suitable GCC version ASAP.
+#### Help ICC get off the ground ASAP.
 case "/$CXX" in
    */icpc )
       if test -d /opt/ncbi/gcc -o -d /usr/local/gcc; then
@@ -1107,12 +1107,29 @@ case "/$CXX" in
          done
       fi
       ;;
+   */icpx )
+      case "$host_cpu" in
+         i?86   ) intel_cpu_name=ia32      ;;
+         x86_64 ) intel_cpu_name=intel64   ;;
+         *      ) intel_cpu_name=$host_cpu ;;
+      esac
+
+      set $CXX
+      x_CXX="`type $1 | sed 's/.* \([^ ]*\)$/\1/'`"
+      if test ! -x "$x_CXX" ; then
+         x_CXX="`which $1 2>/dev/null`"
+      fi
+
+      compiler_root=${x_CXX%/bin/*}
+      icc_libdir=$compiler_root/compiler/lib/$intel_cpu_name
+      LDFLAGS="-L$icc_libdir -Wl,-rpath,$icc_libdir -lintlc $LDFLAGS"
+      ;;
 esac
 
 #### Don't let Clang pick up old (pre-C++14) system standard
 #### library installations on Linux.
 case "$host_os:/$CXX" in
-   linux*:*/clang* )
+   linux*:*/clang* | */icpx )
       case "`$CXX --version`" in
          *version\ 3.* )
             gccver=5.3.0
@@ -1192,7 +1209,7 @@ fi
 
 #### Detect ICC compiler (newer versions of which configure can mis-ID as GCC)
 if test "$KCC" != "yes"; then
-   icc_ver="`$real_CXX -V 2>&1 | grep '^Intel(R) C'`"
+   icc_ver="`$real_CXX -V 2>&1 | grep '^Intel(R) '`"
    icc_license="`$real_CXX -c 2>&1 | grep '^icc: NOTE: The evaluation period for this product ends on '`"
    case "$icc_ver" in
       Intel*C*Compiler* )  ICC="yes"; GCC="no" ;;
@@ -1392,6 +1409,8 @@ case "$compiler:$ncbi_compiler_ver" in
     GCC:??.?.? | ICC:??.?.? | ICC:??.?.?.* | *Clang:??.?.? )
        ncbi_compiler_sed='s/\([0-9][0-9]\)\.\([0-9]\)\.\([0-9]\).*/\1\2\3/' ;;
     GCC:?? )    ncbi_compiler_sed='s/\([0-9][0-9]\)/\100/' ;;
+    ICC:20??.?.? | ICC:20??.?.?.* )
+       ncbi_compiler_sed='s/20\([0-9][0-9]\)\.\([0-9]\)\.\([0-9]\).*/\1\2\3/' ;;
     *:?.?.?)    ncbi_compiler_sed='s/\([0-9]\)\.\([0-9]\)\.\([0-9]\)/\1\2\3/' ;;
     *:?.??*)    ncbi_compiler_sed='s/\([0-9]\)\.\([0-9][0-9]\).*/\1\2/' ;;
     *:?.?)      ncbi_compiler_sed='s/\([0-9]\).\([0-9]\)/\1\20/' ;;
@@ -1576,17 +1595,17 @@ DEPFLAGS="-M"
 DEPFLAGS_POST="" # Needed for VisualAge
 OBJCXX_CXXFLAGS=
 OBJCXX_LIBS=
-case "$host_os:$compiler" in
- solaris2\.6:GCC )
+case "$host_os:$compiler:$compiler_version" in
+ solaris2\.6:GCC:* )
    echo "GCC compiler is not supported for:  $host"
    compiler=
    ;;
 
- solaris*:GCC )
+ solaris*:GCC:* )
    STRIP="@:"
    ;;
 
- linux*:ICC )
+ linux*:ICC:??? | linux*:ICC:1??? )
    # -we70: "incomplete type is not allowed" should be an error, not a warning!
    # -wd2651: Suppress spurious "attribute does not apply to any entity"
    #          when deprecating enum values (via NCBI_STD_DEPRECATED).
@@ -1595,7 +1614,7 @@ case "$host_os:$compiler" in
    MATH_LIBS=-Wl,-lm # avoid static libimf in shared libs
    ;;
 
- linux*:GCC )
+ linux*:GCC:* )
     if test -r $srcdir/src/build-system/config.site.ncbi && test -d "$NCBI"
     then
        case "$compiler_version" in
@@ -1604,7 +1623,7 @@ case "$host_os:$compiler" in
     fi
     ;;
 
- irix*:GCC )
+ irix*:GCC:* )
    if test "$with_debug" != "no" ; then
       LDFLAGS="-LD_LAYOUT:lgot_buffer=32 $LDFLAGS"
    fi
@@ -1637,7 +1656,7 @@ case "$host_os:$compiler" in
    serial_ws50_rtti_kludge="rtti"
    ;;
 
- irix*:MIPSpro73 )
+ irix*:MIPSpro73:* )
    COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared"
    # Warnings we disable (messages courtesy of "gettxt cc.cat.m:N")
    # 1107: A signed bit field has a length of 1 bit.
@@ -1655,14 +1674,14 @@ case "$host_os:$compiler" in
    CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/unix/cxx_filter.$compiler.sh"
    ;;
 
- cygwin*:GCC )
+ cygwin*:GCC:* )
    CPPFLAGS="-D_GLIBCXX_USE_C99 $CPPFLAGS"
    with_dll="no"
    # : ${NETWORK_LIBS:="-lws2_32"}
    CONF_exe_ext=".exe"
    ;;
 
- cygwin*:MSVC )
+ cygwin*:MSVC:* )
    with_dll="no"
    CFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
    CXXFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
@@ -1687,7 +1706,7 @@ case "$host_os:$compiler" in
    make_shell=""
    ;;
 
- *:VisualAge)
+ *:VisualAge:* )
    # 1506-1108 (I) The use of keyword '__attribute__' is non-portable.
    CFLAGS="-qlanglvl=extc99 -qsuppress=1506-1108 $CFLAGS"
    # 1540-1663 (W) Incorrect assignment of a restrict qualified pointer.
@@ -1696,7 +1715,7 @@ case "$host_os:$compiler" in
    DEPFLAGS_POST='>/dev/null 2>&1; (cat $*.u; rm -f $*.u)'
    ;;
 
- *:Compaq)
+ *:Compaq:* )
    CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
    CXXFLAGS="-tweak -nocompress -distinguish_nested_enums $CXXFLAGS"
    DEPFLAGS="$DEPFLAGS -distinguish_nested_enums"
@@ -1711,7 +1730,7 @@ case "$host_os:$compiler" in
    esac
    ;;
 
- darwin*:GCC | darwin*:*Clang )
+ darwin*:GCC:* | darwin*:*Clang:* )
    case `uname -m` in
       *64 ) : ${with_64=yes} ;;
       *   ) : ${with_64=no}  ;;
@@ -2243,9 +2262,12 @@ if test "$skip_fast_flags" = no -a -z "$DEF_FAST_FLAGS" ; then
            solaris* )  DEF_FAST_FLAGS="$DEF_FAST_FLAGS -fast $ARCH_CFLAGS" ;;
         esac
         ;;
-      ICC:* )
+      ICC:??? | ICC:1??? )
         # Core 2; ICC 11 goes up to SSE4.2 (i7), ICC 12 up to CORE-AVX-I
         DEF_FAST_FLAGS="-O3 -axSSSE3 -ip"
+        ;;
+      ICC:* )
+        DEF_FAST_FLAGS="-O3 -ffp-model=fast -march=corei7" # -ipo
         ;;
       MIPSpro* )
         # -Ofast would be preferable, but runs into resource limits when
@@ -2380,16 +2402,16 @@ case "$compiler:$compiler_version:$with_bin_release:$ncbi_cv_prog_cxx_stdlib_lib
         esac
     fi
     ;;
-  ICC:6* )
+  ICC:6?? )
     # Seems to use libcxa.so.1 even without -i_dynamic...
     LDFLAGS="$CONF_f_runpath$compiler_root/lib $LDFLAGS"
     ;;
-  ICC:7* )
+  ICC:7?? )
     # Favor the static version, as libcxa.so.3 isn't exactly common....
     # (Undocumented, and unavailable at all in older versions. :-/)
     LDFLAGS="-static-libcxa $LDFLAGS"
     ;;
-  ICC:8* )
+  ICC:8?? )
     # In principle, these settings should work, and avoid the need to
     # depend on Intel's libraries at runtime.
     #  APP_LDFLAGS="-static-libcxa $APP_LDFLAGS"
@@ -2397,7 +2419,7 @@ case "$compiler:$compiler_version:$with_bin_release:$ncbi_cv_prog_cxx_stdlib_lib
     # In practice, they can break applications that use plugins. :-/
     LDFLAGS="$CONF_f_runpath$compiler_root/lib $LDFLAGS"
     ;;
-  ICC:9* )
+  ICC:9?? )
     # -i-static moved from common LDFLAGS to accommodate those few
     # DLLs (plugins for external programs such as Python) that need to
     # link ICC's libraries dynamically.
@@ -2431,6 +2453,11 @@ case "$compiler:$compiler_version:$with_bin_release:$ncbi_cv_prog_cxx_stdlib_lib
     # Defining _GCC_NEXT_LIMITS_H ensures that <limits.h> chaining doesn't
     # stop short, as can otherwise happen. :-/
     CPPFLAGS="$CPPFLAGS -D_GCC_NEXT_LIMITS_H"
+    ;;
+   ICC:* )
+    CPPFLAGS="$CPPFLAGS -D_GCC_NEXT_LIMITS_H"
+    CFLAGS="$CFLAGS -ffp-model=precise"
+    CXXFLAGS="$CXXFLAGS -ffp-model=precise"
     ;;
 esac
 
@@ -3497,6 +3524,15 @@ changequote(, )dnl
          FAST_CXXFLAGS="$CXXFLAGS"
          FAST_LDFLAGS="$LDFLAGS"
       else
+         case "$compiler:$compiler_version" in
+            ICC:[2-9]??? )
+               NOPT_CFLAGS=`echo " $NOPT_CFLAGS" \
+                            | sed -e 's/ -ffp-model=[^ ]*//'`
+               NOPT_CXXFLAGS=`echo " $NOPT_CXXFLAGS" \
+                              | sed -e 's/ -ffp-model=[^ ]*//'`
+               # NOPT_LDFLAGS="$NOPT_LDFLAGS -fuse-ld=lld"
+               ;;
+         esac
          FAST_CFLAGS="$NOPT_CFLAGS $FAST_CFLAGS"
          FAST_CXXFLAGS="$NOPT_CXXFLAGS $FAST_CXXFLAGS"
          FAST_LDFLAGS="$NOPT_LDFLAGS $FAST_LDFLAGS"
@@ -4285,10 +4321,12 @@ AC_CACHE_CHECK([whether $CC supports -maes], ncbi_cv_cc_aes,
            }], [])],
        [ncbi_cv_cc_aes=yes], [ncbi_cv_cc_aes=no])])
 
-if test "$compiler" = ICC; then
-   # ICC noisily ignores this flag, so explicitly blacklist it.
+case "$compiler:$compiler_version" in
+ ICC:??? | ICC:1??? )
+   # Pre-(20)21 ICC noisily ignores this flag, so explicitly blacklist it.
    ncbi_cv_cc_fdiagnostics_color_always=no
-fi
+   ;;
+esac
 AC_CACHE_CHECK([whether $CC supports -fdiagnostics-color=always],
    ncbi_cv_cc_fdiagnostics_color_always,
    [CFLAGS="$orig_CFLAGS -fdiagnostics-color=always"
