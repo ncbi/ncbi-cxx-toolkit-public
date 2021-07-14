@@ -181,14 +181,13 @@ private:
     CFormatGuess::EFormat m_uFormat;
     bool m_bCheckOnly;
     bool m_bDumpStats;
-    int  m_iFlags;
+    long  m_iFlags;
     string m_AnnotName;
     string m_AnnotTitle;
     bool m_bXmlMessages;
     bool m_showingProgress;
 
     unique_ptr<CIdMapper> m_pMapper;
-    //unique_ptr<CMessageListenerBase> m_pErrors;
     unique_ptr<CMessageListenerBase> m_pErrors;
     unique_ptr<CObjtoolsListener> m_pEditErrors;
 };
@@ -384,8 +383,8 @@ void CMultiReaderApp::Init()
 
     arg_desc->AddDefaultKey(
         "flags",
-        "INTEGER",
-        "Additional flags passed to the reader",
+        "STRING",
+        "Additional flags passed to the reader, as a single flag integer or comma separated flag names",
         CArgDescriptions::eString,
         "0" );
 
@@ -761,10 +760,10 @@ CMultiReaderApp::xProcessSingleFile(
     CNcbiOstream& ostr)
 //  -----------------------------------------------------------------------------
 {
-    xSetFlags(args, args["input"].AsString());
-
     bool retCode = true;
+
     try {
+        xSetFlags(args, args["input"].AsString());
         switch( m_uFormat ) {
             default:
                 xProcessDefault(args, istr, ostr);
@@ -829,7 +828,7 @@ CMultiReaderApp::xProcessSingleFile(
         message.Dump(cerr);
         retCode = false;
     }
-    catch(const ILineError & reader_ex) {
+    catch(const ILineError&) {
         AutoPtr<ILineError> line_error_p =
             sCreateSimpleMessage(
                 eDiag_Fatal, "Reading aborted due to fatal error.");
@@ -1185,20 +1184,9 @@ void CMultiReaderApp::xProcessFasta(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    CFastaReader::TFlags fFlags = 0;
-    fFlags |= CFastaReader::fNoSplit
-           |  CFastaReader::fDisableParseRange;
-
-    if( args["parse-mods"] ) {
-        fFlags |= CFastaReader::fAddMods;
-    }
-    if( args["parse-gaps"] ) {
-        fFlags |= CFastaReader::fParseGaps;
-    }
-
     CStreamLineReader line_reader(istr);
 
-    CFastaReader reader(line_reader, fFlags);
+    CFastaReader reader(line_reader, m_iFlags);
     CRef<CSeq_entry> pSeqEntry = reader.ReadSeqEntry(line_reader, m_pErrors.get());
     xWriteObject(args, *pSeqEntry, ostr);
 }
@@ -1342,12 +1330,17 @@ void CMultiReaderApp::xSetFlags(
     if (m_uFormat == CFormatGuess::eUnknown) {
         xSetFormat(args, istr);
     }
-    m_iFlags = NStr::StringToInt(
-        args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
+
+    m_AnnotName = args["name"].AsString();
+    m_AnnotTitle = args["title"].AsString();
+    m_bCheckOnly = args["checkonly"];
+    m_bXmlMessages = args["xmlmessages"];
 
     switch( m_uFormat ) {
 
     case CFormatGuess::eWiggle:
+        m_iFlags = NStr::StringToInt(
+            args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
         if ( args["join-same"] ) {
             m_iFlags |= CWiggleReader::fJoinSame;
         }
@@ -1365,6 +1358,8 @@ void CMultiReaderApp::xSetFlags(
         break;
 
     case CFormatGuess::eBed:
+        m_iFlags = NStr::StringToInt(
+            args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
         if ( args["all-ids-as-local"] ) {
             m_iFlags |= CBedReader::fAllIdsAsLocal;
         }
@@ -1383,6 +1378,8 @@ void CMultiReaderApp::xSetFlags(
         break;
 
     case CFormatGuess::eGtf:
+        m_iFlags = NStr::StringToInt(
+            args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
         if ( args["all-ids-as-local"] ) {
             m_iFlags |= CBedReader::fAllIdsAsLocal;
         }
@@ -1404,6 +1401,8 @@ void CMultiReaderApp::xSetFlags(
         break;
 
     case CFormatGuess::eGff3:
+        m_iFlags = NStr::StringToInt(
+            args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
         if ( args["gene-xrefs"] ) {
             m_iFlags |= CGff3Reader::fGeneXrefs;
         }
@@ -1420,13 +1419,32 @@ void CMultiReaderApp::xSetFlags(
         }
         break;
 
-    default:
+    case CFormatGuess::eFasta: {
+        auto flagsStr = args["flags"].AsString();
+        m_iFlags = (CFastaReader::fNoSplit | CFastaReader::fDisableParseRange);
+        if( args["parse-mods"] ) {
+            m_iFlags |= CFastaReader::fAddMods;
+        }
+        if( args["parse-gaps"] ) {
+            m_iFlags |= CFastaReader::fParseGaps;
+        }
+
+        try {
+            m_iFlags |= NStr::StringToInt(flagsStr, 0, 16);
+        }
+        catch(const CStringException&) {
+            list<string> stringFlags;
+            NStr::Split(flagsStr, ",", stringFlags);
+            CFastaReader::AddStringFlags(stringFlags, m_iFlags);
+        }
         break;
     }
-    m_AnnotName = args["name"].AsString();
-    m_AnnotTitle = args["title"].AsString();
-    m_bCheckOnly = args["checkonly"];
-    m_bXmlMessages = args["xmlmessages"];
+
+    default:
+        m_iFlags = NStr::StringToInt(
+            args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
+        break;
+    }
 }
 
 //  ----------------------------------------------------------------------------

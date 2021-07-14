@@ -114,6 +114,9 @@ public:
         fIgnoreMods           = 1<<28  ///< Ignore mods entirely. Incompatible with fAddMods.
     };
     using TFlags = long; ///< binary OR of EFlags
+    static void AddStringFlags(
+        const list<string>& stringFlags,
+        TFlags& baseFlags);
 
     using SDefLineParseInfo = CFastaDeflineReader::SDeflineParseInfo;
     using FIdCheck = CFastaDeflineReader::FIdCheck;
@@ -393,8 +396,6 @@ protected:
     CSourceModParser::TMods m_BadMods;
     CSourceModParser::TMods m_UnusedMods;
     Uint4                   m_MaxIDLength;
-
-
 
     using TCountToLinkEvidMap = map<TSeqPos, SGap::TLinkEvidSet>;
     TCountToLinkEvidMap     m_GapsizeToLinkageEvidence;

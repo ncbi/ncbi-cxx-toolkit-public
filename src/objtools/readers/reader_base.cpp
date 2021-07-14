@@ -454,6 +454,25 @@ CReaderBase::ProcessWarning(
  }
 
 //  ----------------------------------------------------------------------------
+void
+CReaderBase::xAddStringFlagsWithMap(
+    const list<string>& stringFlags,
+    const map<string, TReaderFlags> flagMap,
+    TReaderFlags& baseFlags)
+//  ----------------------------------------------------------------------------
+{
+    for (auto stringFlag: stringFlags) {
+        auto flagEntry = flagMap.find(stringFlag);
+        if (flagEntry == flagMap.end()) {
+            string message = "Unrecognized FASTA flag : " + stringFlag;
+            NCBI_THROW(CException, eUnknown, message);
+        }
+        baseFlags |= flagEntry->second;
+    }
+};
+        
+        
+//  ----------------------------------------------------------------------------
 void CReaderBase::xSetBrowserRegion(
     const string& strRaw,
     CAnnot_descr& desc)

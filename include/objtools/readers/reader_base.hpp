@@ -81,7 +81,7 @@ public:
 
         fAsRaw = 1<<3,
     };
-    typedef unsigned int TReaderFlags;
+    typedef long TReaderFlags;
     enum ObjectType {
         OT_UNKNOWN,
         OT_SEQANNOT,
@@ -352,6 +352,13 @@ protected:
     xProcessUnknownException(
         const CException&);
 
+    static void
+    xAddStringFlagsWithMap(
+        const list<string>& stringFlags,
+        const  map<string, TReaderFlags> flagMap,
+        TReaderFlags& baseFlags);
+        
+        
     //
     //  Data:
     //
