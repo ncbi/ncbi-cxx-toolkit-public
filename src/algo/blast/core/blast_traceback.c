@@ -1516,7 +1516,8 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
         }
 
 #pragma omp parallel for default(none) num_threads(actual_num_threads) schedule(guided) if (actual_num_threads > 1) \
-        shared(retval, thread_data, batches, score_params, program_number, sbp, hit_params, pattern_blk, query, ext_params, query_info, default_db_genetic_code, has_been_interrupted, interrupt_search, progress_info)
+        shared(retval, thread_data, batches, score_params, program_number, sbp, hit_params, pattern_blk, query, \
+        	   ext_params, query_info, default_db_genetic_code, has_been_interrupted, interrupt_search, progress_info, actual_num_threads)
         for (i = 0; i < batches->num_batches; i++) {
             BlastSeqSrcGetSeqArg seq_arg = {0,0,0,0,NULL,NULL};
             Int4 hsplist_itr = 0;
@@ -1537,7 +1538,8 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
             perform_partial_fetch = BlastSeqSrcGetSupportsPartialFetching(seqsrc);
 
             /* check for interrupt */
-            if (interrupt_search && (*interrupt_search)(progress_info) == TRUE) {
+            if ((interrupt_search && (*interrupt_search)(progress_info) == TRUE)  &&
+            	(actual_num_threads > 1)){
                 batches->array_of_batches[i] = Blast_HSPStreamResultBatchReset(batch);
 #pragma omp critical(retval)
                 {
@@ -1578,14 +1580,18 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
                 * code for all subjects (as in the C toolkit) */
                 if (Blast_SubjectIsTranslated(program_number) &&
                     seq_arg.seq->gen_code_string == NULL) {
+                	if(actual_num_threads > 1) {
 #pragma omp critical(tback_gen_code)
-                    {
                         seq_arg.seq->gen_code_string =
                             GenCodeSingletonFind(default_db_genetic_code);
 #ifndef _OPENMP
                         ASSERT(seq_arg.seq->gen_code_string);
 #endif
                     }
+                	else {
+                        seq_arg.seq->gen_code_string =
+                            GenCodeSingletonFind(default_db_genetic_code);
+                	}
                 }
 
                 if (BlastSeqSrcGetTotLen(seqsrc) == 0) {
@@ -1608,8 +1614,12 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
                                 seq_arg.seq->length, score_params->options,
                                 qi, sbp, hp, NULL, elp)) != 0) {
                         batches->array_of_batches[i] = Blast_HSPStreamResultBatchReset(batch);
+                        if (actual_num_threads >1) {
 #pragma omp critical(retval)
-                        {
+                            retval = status;
+                            has_been_interrupted = TRUE;
+                        }
+                        else {
                             retval = status;
                             has_been_interrupted = TRUE;
                         }
@@ -1648,14 +1658,18 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
                             /* The C toolkit will erase genetic_code, so do it again */
                             if (Blast_SubjectIsTranslated(program_number) &&
                                 seq_arg.seq->gen_code_string == NULL) {
+                            	if (actual_num_threads > 1) {
 #pragma omp critical(tback_gen_code)
-                                {
                                     seq_arg.seq->gen_code_string =
                                         GenCodeSingletonFind(default_db_genetic_code);
 #ifndef _OPENMP
                                     ASSERT(seq_arg.seq->gen_code_string);
 #endif
                                 }
+                            	else {
+                                    seq_arg.seq->gen_code_string =
+                                        GenCodeSingletonFind(default_db_genetic_code);
+                            	}
                             }
 
                             /* Retry the alignment with fence_hit set*/
