@@ -497,6 +497,29 @@ CJsonNode  GetIdGetNaRequestNode(void)
 }
 
 
+CJsonNode  GetIdAccessionVersionHistoryRequestNode(void)
+{
+    CJsonNode   id_acc_ver_hist(CJsonNode::NewObjectNode());
+    id_acc_ver_hist.SetString("description",
+        "Retrieves accession version history");
+    CJsonNode   id_acc_ver_hist_params(CJsonNode::NewObjectNode());
+
+    AppendSeqIdParameter(id_acc_ver_hist_params);
+    AppendSeqIdTypeParameter(id_acc_ver_hist_params);
+    AppendUseCacheParameter(id_acc_ver_hist_params);
+    AppendTraceParameter(id_acc_ver_hist_params);
+    id_acc_ver_hist.SetByKey("parameters", id_acc_ver_hist_params);
+
+    CJsonNode   id_acc_ver_hist_reply(CJsonNode::NewObjectNode());
+    id_acc_ver_hist_reply.SetString("description",
+        "The PSG protocol is used in the HTML content. "
+        "The bioseq info and accession version history chunks are provided.");
+    id_acc_ver_hist.SetByKey("reply", id_acc_ver_hist_reply);
+
+    return id_acc_ver_hist;
+}
+
+
 CJsonNode  GetAdminConfigRequestNode(void)
 {
     CJsonNode   admin_config(CJsonNode::NewObjectNode());
@@ -713,6 +736,7 @@ CJsonNode   GetRequestsNode(void)
     requests_node.SetByKey("ID/get_tse_chunk", GetIdGetTseChunkRequestNode());
     requests_node.SetByKey("ID/resolve", GetIdResolveRequestNode());
     requests_node.SetByKey("ID/get_na", GetIdGetNaRequestNode());
+    requests_node.SetByKey("ID/accession_version_history", GetIdAccessionVersionHistoryRequestNode());
     requests_node.SetByKey("ADMIN/config", GetAdminConfigRequestNode());
     requests_node.SetByKey("ADMIN/info", GetAdminInfoRequestNode());
     requests_node.SetByKey("ADMIN/status", GetAdminStatusRequestNode());
