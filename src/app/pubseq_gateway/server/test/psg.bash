@@ -94,7 +94,8 @@ TESTS="many_chunk_blob get_auto_blob_skipping_no2 get_auto_blob_skipping_no1
        getna_smart_send_if_small_50 getna_smart_send_if_small_50000
        getna_slim_send_if_small_50_2 getna_slim_send_if_small_50000_2
        getna_smart_send_if_small_50_2 getna_smart_send_if_small_50000_2
-       getna_auto_exclude_1 getna_auto_exclude_2"
+       getna_auto_exclude_1 getna_auto_exclude_2
+       acc_ver_hist_1 acc_ver_hist_2"
 if echo $TESTS | grep -w $obasename > /dev/null; then
     # The chunks may come in an arbitrary order so diff may fail
     curl "${curl_https}" -s -i "${full_url}" | grep --text '^PSG-Reply-Chunk: ' | sed  -r 's/item_id=[0-9]+&//g' | sort > $ofile
