@@ -1295,6 +1295,7 @@ CMNZ	s	Canterbury Museum
 CMPH	s	Colegio de Postgraduados			
 CMPR	s	Centre for Medicinal Plants Research			
 CMPUJ	c	Coleccion de Microorganismos de la Pontificia Universidad Javeriana (Collection Microorganisms of the Pontificia Universidad Javeriana)	CMDM-PUJ		
+CMRP	s	Microbiological Collections of Parana Network			
 CMS	s	Christian Missionary Society College			
 CMSK	s	City Museum, Sheffield			
 CMSU	s	Central Missouri State University			

@@ -1328,6 +1328,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CMPH\ts\tColegio de Postgraduados\t\t\t",
 "CMPR\ts\tCentre for Medicinal Plants Research\t\t\t",
 "CMPUJ\tc\tColeccion de Microorganismos de la Pontificia Universidad Javeriana (Collection Microorganisms of the Pontificia Universidad Javeriana)\tCMDM-PUJ\t\t",
+"CMRP\ts\tMicrobiological Collections of Parana Network\t\t\t",
 "CMS\ts\tChristian Missionary Society College\t\t\t",
 "CMSK\ts\tCity Museum, Sheffield\t\t\t",
 "CMSU\ts\tCentral Missouri State University\t\t\t",
