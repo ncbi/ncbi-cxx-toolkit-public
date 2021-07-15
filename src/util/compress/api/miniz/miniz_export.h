@@ -1,1 +1,0 @@
-#define MINIZ_EXPORT
