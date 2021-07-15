@@ -1,0 +1,14 @@
+# $Id$
+
+SRC = jaeger_tracer
+LIB = jaeger_tracer
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(JAEGER_INCLUDE) $(BOOST_INCLUDE)
+LIBS    = $(JAEGER_LIBS) $(OPENSSL_LIBS) $(ORIG_LIBS)
+
+REQUIRES = JAEGER
+
+WATCHERS = grichenk
+
+USES_LIBRARIES =  \
+    xncbi

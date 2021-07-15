@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(jaeger_tracer)
+  NCBI_sources(jaeger_tracer)
+  NCBI_requires(JAEGER)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()

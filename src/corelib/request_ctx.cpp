@@ -238,12 +238,18 @@ void CRequestContext::StartRequest(void)
     GetRequestTimer().Restart();
     m_IsRunning = true;
     x_LogHitID();
+    if (m_Tracer) {
+        m_Tracer->OnRequestStart(*this);
+    }
 }
 
 
 void CRequestContext::StopRequest(void)
 {
     if (!x_CanModify()) return;
+    if (m_Tracer) {
+        m_Tracer->OnRequestStop(*this);
+    }
     if ((m_HitIDLoggedFlag & fLoggedOnRequest) == 0) {
         // Hit id has not been set or logged yet. Try to log the default one.
         x_GetHitID(CDiagContext::eHitID_NoCreate);
