@@ -498,7 +498,7 @@ int CPubseqGatewayApp::Run(void)
                 return OnGetNA(req, reply);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
-            "/ID/accession_version_history",
+            "/ID/get_acc_ver_history",
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {
                 return OnAccessionVersionHistory(req, reply);
