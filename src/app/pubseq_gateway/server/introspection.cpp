@@ -736,7 +736,7 @@ CJsonNode   GetRequestsNode(void)
     requests_node.SetByKey("ID/get_tse_chunk", GetIdGetTseChunkRequestNode());
     requests_node.SetByKey("ID/resolve", GetIdResolveRequestNode());
     requests_node.SetByKey("ID/get_na", GetIdGetNaRequestNode());
-    requests_node.SetByKey("ID/accession_version_history", GetIdAccessionVersionHistoryRequestNode());
+    requests_node.SetByKey("ID/get_acc_ver_history", GetIdAccessionVersionHistoryRequestNode());
     requests_node.SetByKey("ADMIN/config", GetAdminConfigRequestNode());
     requests_node.SetByKey("ADMIN/info", GetAdminInfoRequestNode());
     requests_node.SetByKey("ADMIN/status", GetAdminStatusRequestNode());
