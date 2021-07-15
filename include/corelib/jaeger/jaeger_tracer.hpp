@@ -61,13 +61,24 @@ private:
 };
 
 
+/// IRequestTracer implementation for Jaeger tracing.
 class NCBI_JAEGER_TRACER_EXPORT CJaegerTracer : public IRequestTracer
 {
 public:
+    /// Create tracer using values form the environment variables
+    /// JAEGER_SERVICE_NAME, JAEGER_SAMPLER_TYPE etc. - see Jaeger client
+    /// documentation:
+    /// https://github.com/jaegertracing/jaeger-client-cpp
     CJaegerTracer(void);
+
+    /// Create tracer using the service name and the environment
+    /// varibles to populate configuration.
     CJaegerTracer(const string& service_name);
+
+    /// Create tracer using the service name and config.
     CJaegerTracer(const string& service_name,
                   const jaegertracing::Config& config);
+
     ~CJaegerTracer(void);
 
     void OnRequestStart(CRequestContext& context) override;
