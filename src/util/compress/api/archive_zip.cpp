@@ -57,9 +57,6 @@ BEGIN_NCBI_SCOPE
 #endif
 
 #include "miniz/miniz.c"
-#include "miniz/miniz_zip.c"
-#include "miniz/miniz_tdef.c"
-#include "miniz/miniz_tinfl.c"
 
 
 /////////////////////////////////////////////////////////////////////////
