@@ -525,12 +525,43 @@ find_program(CCACHE_EXECUTABLE ccache
 find_program(DISTCC_EXECUTABLE
              NAMES distcc.sh distcc
              HINTS $ENV{NCBI}/bin )
-
+if(CCACHE_EXECUTABLE)
+    message(STATUS "Found CCACHE: ${CCACHE_EXECUTABLE}")
+endif()
+if(DISTCC_EXECUTABLE)
+    message(STATUS "Found DISTCC: ${DISTCC_EXECUTABLE}")
+endif()
+if (CMAKE_USE_DISTCC AND DISTCC_EXECUTABLE)
+    set(ENV{DISTCC_FALLBACK} 0)
+    set(_testdir   ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/CMakeFiles)
+    set(_testfile  ${_testdir}/distcctest.c)
+    if (EXISTS ${_testfile})
+        file(REMOVE ${_testfile})
+    endif()
+    file(APPEND ${_testfile} "#include <stddef.h>\n")
+    file(APPEND ${_testfile} "#if !defined(__GNUC__)  &&  !defined(offsetof)\n")
+    file(APPEND ${_testfile} "#  define offsetof(T, F) ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))\n")
+    file(APPEND ${_testfile} "#endif\n")
+    file(APPEND ${_testfile} "struct S { int x; };\n")
+    file(APPEND ${_testfile} "int f() { return offsetof(struct S, x); }\n")
+    execute_process(
+        COMMAND ${DISTCC_EXECUTABLE} ${CMAKE_C_COMPILER} -c ${_testfile}
+        WORKING_DIRECTORY ${_testdir}
+        RESULT_VARIABLE FAILED_DISTCC
+        OUTPUT_QUIET ERROR_QUIET
+        )
+    file(REMOVE ${_testfile})
+    unset(ENV{DISTCC_FALLBACK})
+    if(NOT "${FAILED_DISTCC}" STREQUAL 0)
+        message("DISTCC not available for this compiler")
+        set(CMAKE_USE_DISTCC NO CACHE STRING "DISTCC not available" FORCE)
+        unset(DISTCC_EXECUTABLE CACHE)
+    endif()
+endif()
 
 set(NCBI_COMPILER_WRAPPER "")
-if (CMAKE_USE_DISTCC AND DISTCC_EXECUTABLE AND
-    CMAKE_USE_CCACHE AND CCACHE_EXECUTABLE)
-set(NCBI_COMPILER_WRAPPER "CCACHE_BASEDIR=${top_src_dir} CCACHE_PREFIX=${DISTCC_EXECUTABLE} ${CCACHE_EXECUTABLE} ${NCBI_COMPILER_WRAPPER}")
+if (CMAKE_USE_DISTCC AND DISTCC_EXECUTABLE AND CMAKE_USE_CCACHE AND CCACHE_EXECUTABLE)
+    set(NCBI_COMPILER_WRAPPER "CCACHE_BASEDIR=${top_src_dir} CCACHE_PREFIX=${DISTCC_EXECUTABLE} ${CCACHE_EXECUTABLE} ${NCBI_COMPILER_WRAPPER}")
 elseif (CMAKE_USE_DISTCC AND DISTCC_EXECUTABLE)
     set(NCBI_COMPILER_WRAPPER "${DISTCC_EXECUTABLE} ${NCBI_COMPILER_WRAPPER}")
 elseif(CMAKE_USE_CCACHE AND CCACHE_EXECUTABLE)
