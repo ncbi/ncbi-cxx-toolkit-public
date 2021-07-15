@@ -90,9 +90,9 @@ Authors:  Jean-loup Gailly and Mark Adler
 License:  BSDish [include/util/compress/zlib/zlib.h]
 
 Location: src/util/compress/api/miniz
-Authors:  RAD Game Tools and Valve Software, Rich Geldreich, Martin Raiber
+Authors:  RAD Game Tools and Valve Software, Rich Geldreich and Tenacious Software LLC
 License:  MIT [src/util/compress/api/miniz/LICENSE]
-	  https://github.com/uroni/miniz/blob/master/LICENSE
+          https://github.com/richgel999/miniz/blob/master/LICENSE
 
 Location: src/util/diff/diff_match_patch
 Authors:  Neil Fraser
