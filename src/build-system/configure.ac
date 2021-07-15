@@ -7993,6 +7993,9 @@ if test "$with_avro" != no; then
    esac
    NCBI_FIND_ARCH_PATH(AVRO)
    AVRO_PATH=$AVRO_ARCH_PATH
+   if test -d "$AVRO_PATH$asan_sfx"; then
+      AVRO_PATH="$AVRO_PATH$asan_sfx"
+   fi
    if test -d "$AVRO_PATH"; then
       NCBI_FIX_DIR(AVRO_PATH)
    fi
@@ -8088,6 +8091,9 @@ if test "$with_mongodb3" != no; then
    esac
    NCBI_FIND_ARCH_PATH(MONGODB3)
    MONGODB3_PATH=$MONGODB3_ARCH_PATH
+   if test -d "$MONGODB3_PATH$asan_sfx"; then
+      MONGODB3_PATH="$MONGODB3_PATH$asan_sfx"
+   fi
    if test -d "$MONGODB3_PATH"; then
       NCBI_FIX_DIR(MONGODB3_PATH)
    fi
@@ -8657,6 +8663,9 @@ esac
 if test -d "$CPPKAFKA_PATH"; then
    NCBI_FIND_ARCH_PATH(CPPKAFKA)
    CPPKAFKA_PATH=$CPPKAFKA_ARCH_PATH
+   if test -d "$CPPKAFKA_PATH$asan_sfx"; then
+      CPPKAFKA_PATH="$CPPKAFKA_PATH$asan_sfx"
+   fi
    NCBI_FIX_DIR(CPPKAFKA_PATH)
 fi
 
@@ -8679,6 +8688,9 @@ esac
 if test -d "$THRIFT_PATH"; then
    NCBI_FIND_ARCH_PATH(THRIFT)
    THRIFT_PATH=$THRIFT_ARCH_PATH
+   if test -d "$THRIFT_PATH$asan_sfx"; then
+      THRIFT_PATH="$THRIFT_PATH$asan_sfx"
+   fi
    NCBI_FIX_DIR(THRIFT_PATH)
 fi
 
@@ -8780,6 +8792,9 @@ esac
 if test -d "$JAEGER_PATH"; then
    NCBI_FIND_ARCH_PATH(JAEGER)
    JAEGER_PATH=$JAEGER_ARCH_PATH
+   if test -d "$JAEGER_PATH$asan_sfx"; then
+      JAEGER_PATH="$JAEGER_PATH$asan_sfx"
+   fi
    NCBI_FIX_DIR(JAEGER_PATH)
 fi
 if test -d $JAEGER_PATH/lib${bit64_sfx}; then
