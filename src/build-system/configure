@@ -29959,6 +29959,9 @@ for d in "$AVRO_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
    fi
 done
    AVRO_PATH=$AVRO_ARCH_PATH
+   if test -d "$AVRO_PATH$asan_sfx"; then
+      AVRO_PATH="$AVRO_PATH$asan_sfx"
+   fi
    if test -d "$AVRO_PATH"; then
       ncbi_fix_dir_tmp=`if cd $AVRO_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
@@ -30566,6 +30569,9 @@ for d in "$MONGODB3_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
    fi
 done
    MONGODB3_PATH=$MONGODB3_ARCH_PATH
+   if test -d "$MONGODB3_PATH$asan_sfx"; then
+      MONGODB3_PATH="$MONGODB3_PATH$asan_sfx"
+   fi
    if test -d "$MONGODB3_PATH"; then
       ncbi_fix_dir_tmp=`if cd $MONGODB3_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
@@ -33936,6 +33942,9 @@ for d in "$CPPKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
    fi
 done
    CPPKAFKA_PATH=$CPPKAFKA_ARCH_PATH
+   if test -d "$CPPKAFKA_PATH$asan_sfx"; then
+      CPPKAFKA_PATH="$CPPKAFKA_PATH$asan_sfx"
+   fi
    ncbi_fix_dir_tmp=`if cd $CPPKAFKA_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $CPPKAFKA_PATH && $smart_pwd 2>/dev/null`
@@ -34105,6 +34114,9 @@ for d in "$THRIFT_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
    fi
 done
    THRIFT_PATH=$THRIFT_ARCH_PATH
+   if test -d "$THRIFT_PATH$asan_sfx"; then
+      THRIFT_PATH="$THRIFT_PATH$asan_sfx"
+   fi
    ncbi_fix_dir_tmp=`if cd $THRIFT_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $THRIFT_PATH && $smart_pwd 2>/dev/null`
@@ -34683,6 +34695,9 @@ for d in "$JAEGER_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
    fi
 done
    JAEGER_PATH=$JAEGER_ARCH_PATH
+   if test -d "$JAEGER_PATH$asan_sfx"; then
+      JAEGER_PATH="$JAEGER_PATH$asan_sfx"
+   fi
    ncbi_fix_dir_tmp=`if cd $JAEGER_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $JAEGER_PATH && $smart_pwd 2>/dev/null`
