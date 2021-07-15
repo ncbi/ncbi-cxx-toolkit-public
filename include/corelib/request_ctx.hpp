@@ -129,6 +129,21 @@ private:
 class CMask;
 class CMaskFileName;
 
+class IRequestTracer
+{
+public:
+    virtual ~IRequestTracer(void) {}
+    virtual void OnRequestStart(CRequestContext& context) = 0;
+    virtual void OnRequestStop(CRequestContext& context) = 0;
+};
+
+
+class ITracerSpan
+{
+public:
+    virtual ~ITracerSpan(void) {}
+};
+
 
 class NCBI_XNCBI_EXPORT CRequestContext : public CObject
 {
@@ -354,6 +369,13 @@ public:
     /// session id).
     TVersion GetVersion(void) const { return m_Version; }
 
+    /// Set request tracer to be called on context events (start/stop etc.).
+    /// @sa IRequestTracer
+    void SetRequestTracer(const shared_ptr<IRequestTracer>& tracer) { m_Tracer = tracer; }
+
+    void SetTracerSpan(const shared_ptr<ITracerSpan>& span) { m_TracerSpan = span; }
+    shared_ptr<ITracerSpan> GetTracerSpan(void) { return m_TracerSpan; }
+
 private:
     // Prohibit copying
     CRequestContext(const CRequestContext&);
@@ -462,6 +484,9 @@ private:
     // Access to passable properties.
     friend class CRequestContext_PassThrough;
     mutable TPassThroughProperties m_PassThroughProperties;
+
+    shared_ptr<IRequestTracer> m_Tracer;
+    shared_ptr<ITracerSpan> m_TracerSpan;
 
     // Patterns from NCBI_CONTEXT_FIELDS variable.
     static unique_ptr<CMaskFileName> sm_ContextFields;
