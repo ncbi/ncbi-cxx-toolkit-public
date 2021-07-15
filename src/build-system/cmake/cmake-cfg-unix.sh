@@ -32,11 +32,13 @@ fi
 
 ############################################################################# 
 # defaults
-BUILD_TYPE="Debug"
-BUILD_SHARED_LIBS="OFF"
-USE_CCACHE="OFF"
-USE_DISTCC="ON"
-SKIP_ANALYSIS="OFF"
+if [ -z "$CMAKECFGRECURSIONGUARD" ]; then
+  BUILD_TYPE="Debug"
+  BUILD_SHARED_LIBS="OFF"
+  USE_CCACHE="OFF"
+  USE_DISTCC="ON"
+  SKIP_ANALYSIS="OFF"
+fi
 
 ############################################################################# 
 Check_function_exists() {
@@ -247,6 +249,8 @@ if [ -z "$CMAKECFGRECURSIONGUARD" -a -n "$cxx_name" ]; then
     exec $script_dir/cmake-cfg-xcode.sh  "$@"
     exit $?
   elif [ -x "$script_dir/cm${cxx_name}.sh" ]; then
+    USE_DISTCC="OFF"
+    export BUILD_TYPE BUILD_SHARED_LIBS USE_CCACHE  USE_DISTCC  SKIP_ANALYSIS
     export CMAKECFGRECURSIONGUARD="lock"
     exec $script_dir/cm${cxx_name}.sh  "$@"
     exit $?
@@ -324,6 +328,11 @@ if [ -n "$CC" ]; then
         CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $3}' | sed 's/[.]//g'`
       fi
     ;;
+    icx|icpx)
+      CC_NAME="ICC"
+      CC_VERSION=`$CC --version | awk 'NR==1{print $5}' | sed 's/[.]//g'`
+      CC_VERSION=${CC_VERSION: -4}
+    ;;
     *)
       if test $host_os = "Darwin" -o $host_os = "FreeBSD"; then
         CC_NAME=`$CC --version 2>/dev/null | awk 'NR==1{print $2}'`
@@ -346,6 +355,7 @@ else
   CC_NAME="CXX"
   CC_VERSION=""
 fi
+
 ############################################################################# 
 
 if [ -n "$CC" ]; then
