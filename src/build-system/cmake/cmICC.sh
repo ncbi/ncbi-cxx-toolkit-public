@@ -74,7 +74,7 @@ case "$cxx_version" in
      if $intel_root/Compiler/$cxx_path/bin/$CXX -dumpversion >/dev/null 2>&1; then
        CXX=$intel_root/Compiler/$cxx_path/bin/$CXX
        CC=$intel_root/Compiler/$cxx_path/bin/$CC
-       libICC=$intel_root/Compiler/$cxx_path/compiler/lib/intel64 
+       libICC=$intel_root/Compiler/$cxx_path/lib/intel64 
        gccver=7.3.0
      else
        if [ -x $intel_root/Compiler/$cxx_path/bin/$CXX ]; then
@@ -108,6 +108,7 @@ case $cxx_version in
   [2-9][0-9] | [2-9][0-9].* )
     NCBI_CLANG_CC=$CC
     NCBI_CLANG_CXX=$CXX
+    libICC=$intel_root/Compiler/$cxx_path/compiler/lib/intel64 
     export NCBI_CLANG_CC NCBI_CLANG_CXX libICC
     exec "`dirname $0`"/cmClang.sh "$@"
     ;;
