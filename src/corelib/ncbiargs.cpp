@@ -3156,6 +3156,9 @@ void CArgDescriptions::SetUsageContext
  SIZE_TYPE     usage_width)
 {
     m_UsageName        = usage_name;
+#if defined(NCBI_OS_MSWIN)
+    NStr::TrimSuffixInPlace(m_UsageName, ".exe", NStr::eNocase);
+#endif
     m_UsageDescription = usage_description;
     usage_sort_args ? SetMiscFlags(fUsageSortArgs) : ResetMiscFlags(fUsageSortArgs);
 
