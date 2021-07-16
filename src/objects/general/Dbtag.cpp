@@ -696,7 +696,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_dbSTS, "https://www.ncbi.nlm.nih.gov/nuccore/" },
     { CDbtag::eDbtagType_dictyBase, "https://dictybase.org/db/cgi-bin/gene_page.pl?dictybaseid=" },
     { CDbtag::eDbtagType_miRBase, "http://www.mirbase.org/cgi-bin/mirna_entry.pl?acc=" }, // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_niaEST, "http://lgsun.grc.nia.nih.gov/cgi-bin/pro3?sname1=" }, // https not available tested 7/13/2016
+    { CDbtag::eDbtagType_niaEST, "https://lgsun.grc.nia.nih.gov/cgi-bin/pro3?sname1=" }, // project appears to be abandoned, tested 7/16/2021
     { CDbtag::eDbtagType_taxon, "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" },
     { CDbtag::eDbtagType_BEEBASE, "http://hymenopteragenome.org/cgi-bin/gb2/gbrowse/bee_genome45/?name=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_NASONIABASE, "http://hymenopteragenome.org/cgi-bin/gbrowse/nasonia10_scaffold/?name=" }, // https not available tested 7/13/2016
@@ -1009,7 +1009,7 @@ string CDbtag::GetUrl(const string & genus,
                     if (*tag_iter == 'P') {
                         ++tag_iter;
                         if (*tag_iter == '_') {
-                            prefix = "http://www.ncbi.nlm.nih.gov/protein/";
+                            prefix = "https://www.ncbi.nlm.nih.gov/protein/";
                         }
                     }
                 }
