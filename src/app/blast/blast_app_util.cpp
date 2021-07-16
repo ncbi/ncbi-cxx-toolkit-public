@@ -933,15 +933,18 @@ void LogQueryInfo(CBlastUsageReport & report, const CBlastInput & q_info)
 }
 
 
-void LogRPSBlastOptions(blast::CBlastUsageReport & report, const CBlastOptions & opt)
+void LogBlastOptions(blast::CBlastUsageReport & report, const CBlastOptions & opt)
 {
-	report.AddParam(CBlastUsageReport::eProgram, Blast_ProgramNameFromType(opt.GetProgramType()));
+	EBlastProgramType prog_type = opt.GetProgramType();
+	report.AddParam(CBlastUsageReport::eProgram, Blast_ProgramNameFromType(prog_type));
 	report.AddParam(CBlastUsageReport::eEvalueThreshold, opt.GetEvalueThreshold());
 	report.AddParam(CBlastUsageReport::eHitListSize, opt.GetHitlistSize());
-    report.AddParam(CBlastUsageReport::eCompBasedStats, opt.GetCompositionBasedStats());
+	if (!Blast_ProgramIsNucleotide(prog_type)) {
+		report.AddParam(CBlastUsageReport::eCompBasedStats, opt.GetCompositionBasedStats());
+	}
 }
 
-void LogRPSCmdOptions(blast::CBlastUsageReport & report, const CBlastAppArgs & args)
+void LogCmdOptions(blast::CBlastUsageReport & report, const CBlastAppArgs & args)
 {
 	if (args.GetBlastDatabaseArgs().NotEmpty() &&
 		args.GetBlastDatabaseArgs()->GetSearchDatabase().NotEmpty() &&

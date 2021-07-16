@@ -218,6 +218,7 @@ CTblastnNode::Main()
                     }
                 }
             }
+            SetQueriesLength(input->GetTotalLengthProcessed());
 
         } else {
             SaveSearchStrategy(args, m_CmdLineArgs, query_factory, opts_hndl, pssm);

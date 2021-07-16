@@ -316,8 +316,8 @@ void QueryBatchCleanup();
 void LogQueryInfo(blast::CBlastUsageReport & report, const blast::CBlastInput & q_info);
 
 /// Log blast usage opts for rpsblast apps
-void LogRPSBlastOptions(blast::CBlastUsageReport & report, const blast::CBlastOptions & opt);
-void LogRPSCmdOptions(blast::CBlastUsageReport & report, const blast::CBlastAppArgs & args);
+void LogBlastOptions(blast::CBlastUsageReport & report, const blast::CBlastOptions & opt);
+void LogCmdOptions(blast::CBlastUsageReport & report, const blast::CBlastAppArgs & args);
 
 int GetMTByQueriesBatchSize(blast::EProgram p, int num_threads);
 

@@ -201,6 +201,8 @@ CBlastxNode::Main()
             opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
         }
 
+        SetQueriesLength(input.GetTotalLengthProcessed());
+
     } CATCH_ALL(status)
 
 	SetStatus(status);

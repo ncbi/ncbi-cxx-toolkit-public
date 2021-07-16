@@ -270,6 +270,10 @@ int CBlastpApp::x_RunMTBySplitQuery()
     	CNcbiOstream & out_stream = m_CmdLineArgs->GetOutputStream();
     	const int kMaxNumOfThreads =  m_CmdLineArgs->GetNumThreads();
 		CBlastMasterNode master_node(out_stream, kMaxNumOfThreads);
+
+   		LogBlastOptions(m_UsageReport, opts_hndl->GetOptions());
+   		LogCmdOptions(m_UsageReport, *m_CmdLineArgs);
+
    		int chunk_num = 0;
    	    int batch_size = GetMTByQueriesBatchSize(opts_hndl->GetOptions().GetProgram(), kMaxNumOfThreads);
    		INFO_POST("Batch Size: " << batch_size);
@@ -296,12 +300,20 @@ int CBlastpApp::x_RunMTBySplitQuery()
 		if(chunk_num < kMaxNumOfThreads){
 			CheckMTByQueries_QuerySize(opts_hndl->GetOptions().GetProgram(), batch_size);
 		}
+
+		m_UsageReport.AddParam(CBlastUsageReport::eNumQueryBatches, chunk_num);
+		m_UsageReport.AddParam(CBlastUsageReport::eNumQueries, master_node.GetNumOfQueries());
+		m_UsageReport.AddParam(CBlastUsageReport::eTotalQueryLength, master_node.GetQueriesLength());
+		m_UsageReport.AddParam(CBlastUsageReport::eNumErrStatus, master_node.GetNumErrStatus());
+
 	} CATCH_ALL (status)
 
     if(!bah.GetMessages().empty()) {
     	const CArgs & a = GetArgs();
     	PrintErrorArchive(a, bah.GetMessages());
     }
+    m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
 }
 #ifndef SKIP_DOXYGEN_PROCESSING

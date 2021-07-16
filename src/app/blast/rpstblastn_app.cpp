@@ -272,8 +272,8 @@ int CRPSTBlastnApp::x_RunMTBySplitQuery(void)
 		CBlastMasterNode master_node(out_stream, kMaxNumOfThreads);
    		int chunk_num = 0;
 
-   		LogRPSBlastOptions(m_UsageReport, opts_hndl->GetOptions());
-   		LogRPSCmdOptions(m_UsageReport, *m_CmdLineArgs);
+   		LogBlastOptions(m_UsageReport, opts_hndl->GetOptions());
+   		LogCmdOptions(m_UsageReport, *m_CmdLineArgs);
    		CBlastNodeInputReader input(m_CmdLineArgs->GetInputStream(), batch_size, 4500);
 		while (master_node.Processing()) {
 			if (!input.AtEOF()) {
