@@ -605,7 +605,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_CDD, "https://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=" },
     { CDbtag::eDbtagType_CGNC, "http://birdgenenames.org/cgnc/GeneReport?id=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_CK, "http://flybane.berkeley.edu/cgi-bin/cDNA/CK_clone.pl?db=CK&dbid=" }, // url not found tested 7/13/2016
-    { CDbtag::eDbtagType_COG, "http://www.ncbi.nlm.nih.gov/COG/new/release/cow.cgi?cog=" }, // url not found tested 7/13/2016
+    { CDbtag::eDbtagType_COG, "https://www.ncbi.nlm.nih.gov/research/cog/cog/" },
     { CDbtag::eDbtagType_CollecTF, "https://collectf.umbc.edu/" },
     { CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object=" }, // https does not result in security cert warning, but "page can't be displayed", tested 7/13/2016  
     { CDbtag::eDbtagType_ENSEMBL, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016  
