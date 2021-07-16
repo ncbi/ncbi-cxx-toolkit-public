@@ -17,9 +17,9 @@
 # ASN_PROJ =
 # DTD_PROJ =
 # XSD_PROJ =
-# LIB_PROJ =
 # WSDL_PROJ =
 # PROTOBUF_PROJ =
+# LIB_PROJ =
 # EXPENDABLE_LIB_PROJ =
 
 ## Applications to be built as usual.
