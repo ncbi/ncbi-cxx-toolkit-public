@@ -917,6 +917,7 @@ ipg_storage needs $(SEQ_LIBS)
 ipg_storage needs psg_cassandra
 ipg_storage needs psg_diag
 ipg_storage needs pub
+jaeger_tracer needs xncbi
 jiracli needs jirasvc
 jiracli needs xconnect
 jirasvc needs xser
@@ -1455,6 +1456,13 @@ test_boost includes3party $(BOOST_TEST_LIBS)
 test_boost needs xncbi
 test_dll needs3party $(ORIG_LIBS)
 test_mt needs xncbi
+test_stat_ext needs $(COMPRESS_LIBS)
+test_stat_ext needs $(XCONNEXT)
+test_stat_ext needs dbapi
+test_stat_ext needs ncbi_xdbapi_ftds
+test_stat_ext needs xconnect
+test_stat_ext needs xregexp
+test_stat_ext needs xutil
 tiff needs $(Z_LIB)
 tiff needs3party $(JPEG_LIBS)
 tiff needs3party $(ORIG_LIBS)
