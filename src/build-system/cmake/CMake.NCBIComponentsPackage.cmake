@@ -248,4 +248,7 @@ NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE libnghttp2)
 
 ##############################################################################
 # GRPC/PROTOBUF
+set(NCBI_PROTOC_APP "${CONAN_BIN_DIRS_PROTOBUF}/protoc.exe")
+set(NCBI_GRPC_PLUGIN "${CONAN_BIN_DIRS_GRPC}/grpc_cpp_plugin.exe")
 NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE protobuf)
+NCBI_define_Pkgcomponent(NAME GRPC PACKAGE grpc)
