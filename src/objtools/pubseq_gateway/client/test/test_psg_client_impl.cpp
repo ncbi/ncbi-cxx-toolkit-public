@@ -376,7 +376,7 @@ void SFixture::MtReading()
         } while (chunk_stream);
     }
 
-    reply->SetSuccess();
+    reply->SetComplete();
 
 
     // Waiting
@@ -413,7 +413,7 @@ BOOST_AUTO_TEST_CASE(Request)
         } while (chunk_stream);
     }
 
-    reply->SetSuccess();
+    reply->SetComplete();
 
 
     // Checking
