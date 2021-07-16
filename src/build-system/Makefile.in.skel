@@ -18,6 +18,7 @@
 # DTD_PROJ =
 # XSD_PROJ =
 # WSDL_PROJ =
+# JSD_PROJ =
 # PROTOBUF_PROJ =
 # LIB_PROJ =
 # EXPENDABLE_LIB_PROJ =
@@ -25,6 +26,9 @@
 ## Applications to be built as usual.
 # APP_PROJ =
 # EXPENDABLE_APP_PROJ =
+
+## METAL resources (macOS only).
+# METAL_PROJ =
 
 ## Subdirectories to traverse.
 # SUB_PROJ =
