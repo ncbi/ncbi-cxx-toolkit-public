@@ -603,6 +603,18 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<CPSG_Request> request, CDeadline 
     return false;
 }
 
+bool CPSG_Queue::SImpl::WaitForEvents(CDeadline deadline)
+{
+    _ASSERT(queue);
+
+    if (queue->CV().WaitUntil(queue->Stopped(), move(deadline), false, true)) {
+        queue->CV().Reset();
+        return true;
+    }
+
+    return false;
+}
+
 EPSG_Status s_GetStatus(SPSG_Reply::SItem::TTS* ts, const CDeadline& deadline)
 {
     assert(ts);
