@@ -64,6 +64,8 @@ public:
         return GetThis().x_WaitUntil(forward<TArgs>(args)...);
     }
 
+    bool Reset() volatile { return GetThis().x_Reset(); }
+
 private:
     using clock = chrono::system_clock;
 
@@ -133,6 +135,12 @@ private:
     {
         lock_guard<mutex> lock(SThreadSafe<TType>::m_Mutex);
         m_Signal++;
+    }
+
+    bool x_Reset()
+    {
+        lock_guard<mutex> lock(SThreadSafe<TType>::m_Mutex);
+        return exchange(m_Signal, 0);
     }
 
     SPSG_CV& GetThis() volatile { return const_cast<SPSG_CV&>(*this); }
