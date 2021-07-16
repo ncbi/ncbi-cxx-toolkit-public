@@ -3155,7 +3155,14 @@ void CArgDescriptions::SetUsageContext
  bool          usage_sort_args,
  SIZE_TYPE     usage_width)
 {
-    m_UsageName        = usage_name;
+    if (usage_name.empty()) {
+      CNcbiApplicationAPI* app = CNcbiApplicationAPI::Instance();
+      if (app) {
+        m_UsageName = app->GetProgramDisplayName();
+      }
+    } else {
+        m_UsageName        = usage_name;
+    }
 #if defined(NCBI_OS_MSWIN)
     NStr::TrimSuffixInPlace(m_UsageName, ".exe", NStr::eNocase);
 #endif
