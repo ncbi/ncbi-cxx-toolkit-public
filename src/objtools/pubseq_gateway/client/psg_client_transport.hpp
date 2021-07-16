@@ -272,9 +272,10 @@ struct SPSG_Reply
             }
         }
 
-        void AddError(string message, EState new_state = eError);
-        void SetReturned() volatile { bool expected = false; m_Returned.compare_exchange_strong(expected, true); }
-        void SetNotEmpty() volatile { bool expected = true; m_Empty.compare_exchange_strong(expected, false); }
+        void AddError(string message) { m_Messages.push_back(move(message)); }
+        void SetComplete() { SetState(m_Messages.empty() ? eSuccess : eError); }
+        void SetReturned() volatile { m_Returned.store(true); }
+        void SetNotEmpty() volatile { m_Empty.store(false); }
 
     private:
         atomic<EState> m_State;
@@ -292,8 +293,6 @@ struct SPSG_Reply
         SPSG_Nullable<size_t> expected;
         size_t received = 0;
         SState state;
-
-        void SetSuccess();
     };
 
     SThreadSafe<list<SItem::TTS>> items;
@@ -302,8 +301,8 @@ struct SPSG_Reply
     shared_ptr<TPSG_Queue> queue;
 
     SPSG_Reply(string id, const SPSG_Params& params, shared_ptr<TPSG_Queue> q) : debug_printout(move(id), params), queue(move(q)) {}
-    void SetSuccess();
-    void AddError(string message);
+    void SetComplete();
+    void SetFailed(string message, bool is_error = true);
 };
 
 struct SPSG_Request

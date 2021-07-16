@@ -167,24 +167,6 @@ SDebugPrintout::~SDebugPrintout()
     }
 }
 
-void SPSG_Reply::SState::AddError(string message, EState new_state)
-{
-    const auto state = m_State.load();
-
-    switch (state) {
-        case eInProgress:
-            SetState(new_state);
-            /* FALL THROUGH */
-
-        case eError:
-            m_Messages.push_back(move(message));
-            return;
-
-        default:
-            ERR_POST("Unexpected state " << state << " for error '" << message << '\'');
-    }
-}
-
 string SPSG_Reply::SState::GetError()
 {
     if (m_Messages.empty()) return {};
@@ -194,40 +176,50 @@ string SPSG_Reply::SState::GetError()
     return rv;
 }
 
-void SPSG_Reply::SItem::SetSuccess()
+void SPSG_Reply::SetComplete()
 {
-    if (expected.template Cmp<equal_to>(received)) {
-        state.SetState(SPSG_Reply::SState::eSuccess);
+    // If it were 'more' (instead of 'less'), items would not be in progress then
+    const auto message = "Protocol error: received less than expected";
+    bool missing = false;
 
-    } else if (state.InProgress()) {
-        // If it were 'more' (instead of 'less'), it would not be in progress then
-        state.AddError("Protocol error: received less than expected");
+    if (auto items_locked = items.GetLock()) {
+        for (auto& item : *items_locked) {
+            if (item.GetMTSafe().state.InProgress()) {
+                item.GetLock()->state.AddError(message);
+                item.GetMTSafe().state.SetState(SState::eError);
+                missing = true;
+            }
+        }
     }
-}
 
-void SPSG_Reply::SetSuccess()
-{
-    reply_item.GetLock()->SetSuccess();
-    reply_item.NotifyOne();
+    if (auto reply_item_locked = reply_item.GetLock()) {
+        if (missing || reply_item_locked->expected.Cmp<greater>(reply_item_locked->received)) {
+            reply_item_locked->state.AddError(message);
+        }
 
-    auto items_locked = items.GetLock();
-
-    for (auto& item : *items_locked) {
-        item.GetLock()->SetSuccess();
+        reply_item_locked->state.SetComplete();
     }
 
     queue->CV().NotifyOne();
 }
 
-void SPSG_Reply::AddError(string message)
+void SPSG_Reply::SetFailed(string message, bool is_error)
 {
-    reply_item.GetLock()->state.AddError(message);
-
-    auto items_locked = items.GetLock();
-
-    for (auto& item : *items_locked) {
-        item.GetLock()->state.AddError(message);
+    if (auto items_locked = items.GetLock()) {
+        for (auto& item : *items_locked) {
+            if (item.GetMTSafe().state.InProgress()) {
+                item.GetLock()->state.AddError(message);
+                item.GetMTSafe().state.SetState(SState::eError);
+            }
+        }
     }
+
+    if (auto reply_item_locked = reply_item.GetLock()) {
+        reply_item_locked->state.AddError(message);
+        reply_item_locked->state.SetState(is_error ? SState::eError : SState::eNotFound);
+    }
+
+    queue->CV().NotifyOne();
 }
 
 SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params) :
@@ -364,7 +356,9 @@ void SPSG_Request::Add()
     auto item_type = args->GetValue("item_type");
     SPSG_Reply::SItem::TTS* item_ts = nullptr;
 
-    if (item_type.empty() || (item_type == "reply")) {
+    const bool is_reply = item_type.empty() || (item_type == "reply");
+
+    if (is_reply) {
         item_ts = &reply->reply_item;
 
     } else {
@@ -404,10 +398,6 @@ void SPSG_Request::Add()
         auto& item = *item_locked;
         ++item.received;
 
-        if (item.expected.Cmp<less>(item.received)) {
-            item.state.AddError("Protocol error: received more than expected");
-        }
-
         auto chunk_type = args->GetValue("chunk_type");
 
         if (chunk_type == "meta") {
@@ -420,10 +410,6 @@ void SPSG_Request::Add()
                     item.state.AddError("Protocol error: contradicting n_chunks");
                 } else {
                     item.expected = expected;
-
-                    if (item.expected.Cmp<less>(item.received)) {
-                        item.state.AddError("Protocol error: received more than expected");
-                    }
                 }
             }
 
@@ -437,9 +423,12 @@ void SPSG_Request::Add()
             } else if (severity == "trace") {
                 ERR_POST(Trace << chunk);
             } else {
-                bool not_found = args->GetValue("status") == "404";
-                auto new_state = not_found ? SPSG_Reply::SState::eNotFound : SPSG_Reply::SState::eError;
-                item.state.AddError(move(chunk), new_state);
+                item.state.AddError(move(chunk));
+
+                // Any message leads to eError when item completes, so need to set eNotFound early
+                if (args->GetValue("status") == "404") {
+                    item.state.SetState(SPSG_Reply::SState::eNotFound);
+                }
             }
 
         } else if (chunk_type == "data") {
@@ -453,6 +442,19 @@ void SPSG_Request::Add()
 
         } else {
             item.state.AddError("Protocol error: unknown chunk type");
+        }
+
+        if (item.expected.Cmp<less>(item.received)) {
+            item.state.AddError("Protocol error: received more than expected");
+
+            // If item is not a reply itself, add the error to its reply as well
+            if (!is_reply) {
+                reply->reply_item.GetLock()->state.AddError("Protocol error: received more than expected");
+            }
+
+        // Set item complete if received everything. Reply is set complete when stream closes
+        } else if (!is_reply && item.expected.Cmp<equal_to>(item.received)) {
+            item.state.SetComplete();
         }
     }
 
@@ -526,7 +528,7 @@ bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error&
     }
 
     debug_printout << error << endl;
-    req->reply->AddError(error);
+    req->reply->SetFailed(error);
     _DEBUG_ARG(const auto& server_name = server.address.AsString());
     PSG_THROTTLING_TRACE("Server '" << server_name << "' failed to process request '" <<
             debug_printout.id << '\'');
@@ -553,7 +555,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
                 ERR_POST("Request failed with " << error);
             }
         } else {
-            req->reply->SetSuccess();
+            req->reply->SetComplete();
             server.throttling.AddSuccess();
             _DEBUG_ARG(const auto& server_name = server.address.AsString());
             PSG_THROTTLING_TRACE("Server '" << server_name << "' processed request '" <<
@@ -581,12 +583,10 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
         if (it != m_Requests.end()) {
             auto status = atoi(status_str);
 
-            if (status == CRequestStatus::e404_NotFound) {
-                it->second->reply->reply_item.GetMTSafe().state.SetState(SPSG_Reply::SState::eNotFound);
-
-            } else if (status != CRequestStatus::e200_Ok) {
-                it->second->reply->reply_item.GetLock()->state.AddError(to_string(status) + ' ' +
+            if (status != CRequestStatus::e200_Ok) {
+                auto error(to_string(status) + ' ' +
                         CRequestStatus::GetStdStatusMessage((CRequestStatus::ECode)status));
+                it->second->reply->SetFailed(error, status != CRequestStatus::e404_NotFound);
             }
         }
     }
@@ -1107,7 +1107,7 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
             SContextSetter setter(req->context);
             auto& debug_printout = req->reply->debug_printout;
             debug_printout << error << endl;
-            req->reply->AddError(error);
+            req->reply->SetFailed(error);
             PSG_IO_TRACE("No servers to process request '" << debug_printout.id << '\'');
         }
     }
