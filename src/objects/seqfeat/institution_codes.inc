@@ -4421,7 +4421,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MGUWR\ts\tInstitute of Geological Sciences, University of Wroclaw\t\t\t",
 "MH<CHE>\ts\tNaturhistorisches Museum, Basel\t\t\t",
 "MH<IND>\ts\tTamil Nadu Agricultural University\t\t\t",
-"MHA\ts\tMain Botanical Garden of the Russian Academy of Sciences\t\t\t",
+"MHA\tsc\tMain Botanical Garden of the Russian Academy of Sciences\t\t\t",
 "MHES\ts\tMuseo de Historia Natural de El Salvador\t\t\t",
 "MHH\tc\tInstitute of Virology\t\t\t",
 "MHHNU\ts\tMycological Herbarium of Hunan Normal University\t\t\t",
