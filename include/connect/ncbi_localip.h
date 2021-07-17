@@ -31,6 +31,12 @@
  * File Description:
  *   Determine IP locality (within NCBI) of a given address
  *
+ * @warning
+ *   Use <connect/ncbi_localip.hpp> in C++ code!
+ *
+ * @note
+ *   This API works correctly only if used within NCBI.
+ *
  */
 
 #include <connect/ncbi_ipv6.h>
@@ -42,18 +48,11 @@ extern "C" {
 
 
 /**
- * Init local IP classification.
- * NB: This call invalidates any domain information returned to client via the
- *     NcbiIsLocalIPEx() calls.
- */
-extern NCBI_XCONNECT_EXPORT
-void NcbiInitLocalIP(void);
-
-
-/**
  * Return non-zero (true) if the IP address (in network byte order) provided as
- * an agrument, is a local one (i.e. belongs to NCBI); return zero (false)
+ * an agrument, is a local one (i.e. belongs to NCBI);  return zero (false)
  * otherwise.
+ * @sa
+ *   NcbiIsLocalIPEx
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/ NcbiIsLocalIP(unsigned int ip);
@@ -68,14 +67,29 @@ typedef struct {
 /**
  * Return non-zero (true) if the IP address (in network byte order) provided as
  * an agrument, is a local one (i.e. belongs to NCBI), and update domain info
- * (when passed non-NULL) of the address, if available; return zero (false)
+ * (when passed non-NULL) of the address, if available;  return zero (false)
  * otherwise.
  * NB: Domain information remains valid until a call for NcbiInitLocalIP().
+ * @sa
+ *   NcbiIsLocalIP, NcbiInitLocalIP
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/ NcbiIsLocalIPEx
 (const TNCBI_IPv6Addr* addr,
  SNcbiDomainInfo*      info);
+
+
+/**
+ * Init local IP classification.
+ * @note that generally the initialization is done internally, and this call
+ * need *not* to be used explicitly.
+ * @warning This call invalidates any domain information returned to client
+ * via the NcbiIsLocalIPEx() calls.
+ * @sa
+ *   NcbiIsLocalIPEx, NcbiIsLocalIP
+ */
+extern NCBI_XCONNECT_EXPORT
+void NcbiInitLocalIP(void);
 
 
 #ifdef __cplusplus
