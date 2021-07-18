@@ -2035,7 +2035,7 @@ unsigned short SOCK_htons(unsigned short);
  *  Zero on success, non-zero on error.  See BSD gethostname().
  *  On error (incl. insufficient room) "name" returned empty (name[0] == '\0').
  * @sa
- *  SOCK_gethostname
+ *  SOCK_gethostname, SOCK_gethostbyaddr
  */
 extern NCBI_XCONNECT_EXPORT int SOCK_gethostnameEx
 (char*   name,
@@ -2044,9 +2044,9 @@ extern NCBI_XCONNECT_EXPORT int SOCK_gethostnameEx
  );
 
 
-/** Same as SOCK_gethostnameEx(,,eOff)
+/** Same as SOCK_gethostnameEx(,,<current API data logging>)
  * @sa
- *  SOCK_gethostnameEx
+ *  SOCK_gethostnameEx, SOCK_gethostbyaddrEx, SOCK_SetDataLoggingAPI
  */
 extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
 (char*  name,
@@ -2068,7 +2068,7 @@ extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
  *  "123.45.67.89\0").  Return 0 on error.
  * @note "0.0.0.0" and "255.255.255.255" are both considered invalid.
  * @sa
- *  SOCK_gethostbyname, SOCK_gethostname
+ *  SOCK_gethostbyname, SOCK_gethostname, NcbiStringToIPv4
  */
 extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbynameEx
 (const char* hostname,
@@ -2076,9 +2076,9 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbynameEx
  );
 
 
-/** Same as SOCK_gethostbynameEx(,eOff)
+/** Same as SOCK_gethostbynameEx(,<current API data logging>)
  * @sa
- *  SOCK_gethostbynameEx
+ *  SOCK_gethostbynameEx, SOCK_SetDataLoggingAPI
  */
 extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbyname
 (const char* hostname
@@ -2100,7 +2100,7 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbyname
  *  Value 0 means error;  success is denoted by the 'name' argument returned.
  *  Note that on error the name gets emptied (name[0] == '\0').
  * @sa
- *  SOCK_gethostbyaddr
+ *  SOCK_gethostbyaddr, SOCK_gethostname
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddrEx
 (unsigned int addr,
@@ -2110,9 +2110,9 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddrEx
  );
 
 
-/** Same as SOCK_gethostbyaddrEx(,,eOff)
+/** Same as SOCK_gethostbyaddrEx(,,<current API data logging>)
  * @sa
- *  SOCK_gethostbyaddrEx
+ *  SOCK_gethostbyaddrEx, SOCK_gethostnameEx, SOCK_SetDataLoggingAPI
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddr
 (unsigned int addr,
@@ -2130,9 +2130,9 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLoopbackAddress(void);
 
 /** Get (and cache for faster follow-up retrievals) IPv4 address of local host
  * @param reget
- *  eOn      to forcibly recache and return the address;
- *  eDefault to recache only if unknown, return the cached value;
- *  eOff     not to recache even if unknown, return whatever is available.
+ *  eOn      to forcibly re-cache and return the address;
+ *  eDefault to re-cache only if unknown, return the [new] cached value;
+ *  eOff     not to re-cache even if unknown, return whatever is available.
  * @return
  *  Local address (in network byte order).
  * @sa
