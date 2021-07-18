@@ -1900,7 +1900,6 @@ SConnNetInfo* ConnNetInfo_CloneInternal(const SConnNetInfo* info)
 
     x_info->magic                 = CONN_NET_INFO_MAGIC;
     return x_info;
-
 }
 
 
