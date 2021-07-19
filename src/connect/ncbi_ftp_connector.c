@@ -394,8 +394,8 @@ static EIO_Status s_FTPCommandEx(SFTPConnector* xxx,
 static const char* x_4Word(const char* line, const char word[4+1])
 {
     const char* s = strstr(line, word);
-    return !s  ||  ((s == line  ||  isspace((unsigned char) s[-1]))
-                    &&  !isalpha((unsigned char) s[4])) ? s : 0;
+    return s  &&  ((s == line  ||  isspace((unsigned char) s[-1]))
+                   &&  !isalpha((unsigned char) s[4])) ? s : 0;
 }
 
 
@@ -486,11 +486,14 @@ static EIO_Status x_FTPHelp(SFTPConnector* xxx)
     if (status != eIO_Success)
         return status;
     feat = xxx->feat;
+    xxx->feat = 0;
     status = s_FTPReply(xxx, &code, 0, 0, x_FTPHelpCB);
     if (status != eIO_Success  ||  (code != 211  &&  code != 214)) {
         xxx->feat = feat;
         return status != eIO_Success ? status : eIO_NotSupported;
     }
+    CORE_TRACEF(("FTP features parsed from HELP: 0x%04hX", xxx->feat));
+    xxx->feat |= feat;
     return eIO_Success;
 }
 
@@ -537,11 +540,14 @@ static EIO_Status x_FTPFeat(SFTPConnector* xxx)
     if (status != eIO_Success)
         return status;
     feat = xxx->feat;
+    xxx->feat = 0;
     status = s_FTPReply(xxx, &code, 0, 0, x_FTPFeatCB);
     if (status != eIO_Success  ||  code != 211) {
         xxx->feat = feat;
         return status != eIO_Success ? status : eIO_NotSupported;
     }
+    CORE_TRACEF(("FTP features parsed from FEAT: 0x%04hX", xxx->feat));
+    xxx->feat |= feat;
     return eIO_Success;
 }
 
