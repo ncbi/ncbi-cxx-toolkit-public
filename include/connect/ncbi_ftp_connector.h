@@ -137,10 +137,6 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * implementation of FTP servers).  Just "\n" on its own encodes an empty
  * string command, and is treated just the same as "NOOP\n".
  *
- * (*) Note that any subsequent command aborts any unfinished command (if any
- * in progress), so even "NOOP" executed in that context can cause the server
- * to terminate the current transfer (see below).
- *
  * <SP> denotes exactly one space character, a blank means any number of space
  * or tab characters.  Single filenames(f), directories(d), and paths(p) span
  * up to the end of the command ('\n'), and do not require any quoting for
@@ -158,6 +154,10 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  *
  * Current implementation forbids file names to contain '\0', '\r', or '\n'
  * (even though FTP takes special precautions how to deal with such names).
+ *
+ * (*) Note that any subsequent command aborts any unfinished command (if any
+ * in progress), so even "NOOP" executed in that context can cause the server
+ * to terminate the current transfer (see below).
  *
  * Normally, FTP connection operates in READ mode:  commands are written and
  * responses are read.  In this mode the connection consumes any command, but
