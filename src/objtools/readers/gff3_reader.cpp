@@ -867,7 +867,7 @@ void CGff3Reader::xVerifyCdsParents(
         return;
     }
     record.GetAttribute("Parent", parents);
-    if (parents.empty()) {
+    if (false  &&  parents.empty()) {
         CReaderMessage error(
             eDiag_Error,
             m_uLineNumber,
