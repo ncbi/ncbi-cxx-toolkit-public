@@ -199,7 +199,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Resolve>(CArgDescriptions& arg_de
     arg_desc.SetDependency("id-file", CArgDescriptions::eExcludes, "ID");
     arg_desc.AddOptionalKey("type", "TYPE", "Type of bio ID(s)", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
-    arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of different worker threads", CArgDescriptions::eString, "", CArgDescriptions::fHidden);
+    arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
 
     for (const auto& f : SRequestBuilder::GetInfoFlags()) {
         arg_desc.AddFlag(f.name, f.desc);
@@ -239,7 +239,7 @@ void CPsgClientApp::s_InitRequest<SInteractive>(CArgDescriptions& arg_desc)
 {
     arg_desc.AddDefaultKey("input-file", "FILENAME", "File containing JSON-RPC requests (one per line)", CArgDescriptions::eInputFile, "-");
     arg_desc.AddFlag("echo", "Echo all incoming requests");
-    arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of different worker threads", CArgDescriptions::eString, "", CArgDescriptions::fHidden);
+    arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
 }
 
 template <>

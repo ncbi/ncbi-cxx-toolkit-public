@@ -610,34 +610,21 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
 }
 
 CParallelProcessing::CParallelProcessing(const string& service, bool pipe, const CArgs& args, bool echo, bool batch_resolve) :
-    m_PsgQueue(service),
     m_JsonOut(pipe)
 {
-    enum EType : size_t { eReporter, eSubmitter };
-    vector<CTempString> threads;
-    NStr::Split(args["worker-threads"].AsString(), ":", threads);
+    const int kMin = 1;
+    const int kMax = 10;
 
-    auto threads_number = [&threads](EType type, size_t default_value)
-    {
-        const size_t kMin = 1;
-        const size_t kMax = 10;
-        const size_t n = threads.size() <= type ? default_value : NStr::StringToNumeric<size_t>(threads[type]);
-        return max(min(n, kMax), kMin);
-    };
+    for (int n = max(kMin, min(kMax, args["worker-threads"].AsInteger())); n > 0; --n) {
+        m_PsgQueues.emplace_back(service);
+        auto& queue = m_PsgQueues.back();
 
-    for (size_t n = threads_number(eReporter, 7); n; --n) {
         if (batch_resolve) {
-            m_Threads.emplace_back(&BatchResolve::Reporter, ref(m_ReplyQueue), ref(m_JsonOut));
+            m_Threads.emplace_back(&BatchResolve::Reporter, ref(queue), ref(m_JsonOut));
+            m_Threads.emplace_back(&BatchResolve::Submitter, ref(m_InputQueue), ref(queue), cref(args));
         } else {
-            m_Threads.emplace_back(&Interactive::Reporter, ref(m_ReplyQueue), ref(m_JsonOut));
-        }
-    }
-
-    for (size_t n = threads_number(eSubmitter, 3); n; --n) {
-        if (batch_resolve) {
-            m_Threads.emplace_back(&BatchResolve::Submitter, ref(m_InputQueue), ref(m_PsgQueue), ref(m_ReplyQueue), cref(args));
-        } else {
-            m_Threads.emplace_back(&Interactive::Submitter, ref(m_InputQueue), ref(m_PsgQueue), ref(m_ReplyQueue), ref(m_JsonOut), echo);
+            m_Threads.emplace_back(&Interactive::Reporter, ref(queue), ref(m_JsonOut));
+            m_Threads.emplace_back(&Interactive::Submitter, ref(m_InputQueue), ref(queue), ref(m_JsonOut), echo);
         }
     }
 }
@@ -647,11 +634,8 @@ CParallelProcessing::~CParallelProcessing()
     m_InputQueue.Stop(m_InputQueue.eDrain);
 }
 
-void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue& queue, TReplyQueue& output, const CArgs& args)
+void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue& output, const CArgs& args)
 {
-    static atomic_size_t instances(0);
-    instances++;
-
     auto request_context = CDiagContext::GetRequestContext().Clone();
     auto type(args["type"].HasValue() ? SRequestBuilder::GetBioIdType(args["type"].AsString()) : CPSG_BioId::TType());
     auto include_info(SRequestBuilder::GetIncludeInfo(SRequestBuilder::GetSpecified<CPSG_Request_Resolve>(args)));
@@ -666,22 +650,14 @@ void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue
 
         request->IncludeInfo(include_info);
 
-        auto reply = queue.SendRequestAndGetReply(move(request), CDeadline::eInfinite);
-        _ASSERT(reply);
-
-        output.Push(move(reply));
+        _VERIFY(output.SendRequest(move(request), CDeadline::eInfinite));
     }
 
-    if (--instances == 0) {
-        output.Stop(output.eDrain);
-    }
+    output.Stop();
 }
 
-void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue& queue, TReplyQueue& output, SJsonOut& json_out, bool echo)
+void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, bool echo)
 {
-    static atomic_size_t instances(0);
-    instances++;
-
     CJson_Document json_schema_doc(CProcessing::RequestSchema());
     // cout << boolalpha << json_schema_doc.ReadSucceeded() << '|' << json_schema_doc.GetReadError() << endl;
     // cout << json_schema_doc.ToString() << endl;
@@ -711,85 +687,123 @@ void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue&
             auto request_context = new_request_start.Clone();
 
             if (auto request = SRequestBuilder::Build(method, params.GetObject(), move(user_context), move(request_context))) {
-                auto reply = queue.SendRequestAndGetReply(move(request), CDeadline::eInfinite);
-                _ASSERT(reply);
-
-                output.Push(move(reply));
+                _VERIFY(output.SendRequest(move(request), CDeadline::eInfinite));
             }
         }
     }
 
-    if (--instances == 0) {
-        output.Stop(output.eDrain);
+    output.Stop();
+}
+
+void CParallelProcessing::BatchResolve::Reporter(CPSG_Queue& input, SJsonOut& output)
+{
+    list<shared_ptr<CPSG_Reply>> replies;
+    list<shared_ptr<CPSG_ReplyItem>> reply_items;
+
+    while (!input.IsEmpty() || !replies.empty() || !reply_items.empty()) {
+        input.WaitForEvents(CDeadline::eInfinite);
+
+        while (auto reply = input.GetNextReply(CDeadline::eNoWait)) {
+            replies.emplace_back(move(reply));
+        }
+
+        for (auto it = replies.begin(); it != replies.end();) {
+            auto& reply = *it;
+
+            while (auto reply_item = reply->GetNextItem(CDeadline::eNoWait)) {
+                if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) {
+                    break;
+                } else {
+                    reply_items.emplace_back(move(reply_item));
+                }
+            }
+
+            auto status = reply->GetStatus(CDeadline::eNoWait);
+
+            if (status == EPSG_Status::eInProgress) {
+                ++it;
+            } else {
+                if (status != EPSG_Status::eSuccess) {
+                    CJsonResponse result_doc(status, reply);
+                    output << result_doc;
+                }
+
+                it = replies.erase(it);
+            }
+        }
+
+        for (auto it = reply_items.begin(); it != reply_items.end();) {
+            auto item = *it;
+            auto status = item->GetStatus(CDeadline::eNoWait);
+
+            if (status != EPSG_Status::eInProgress) {
+                CJsonResponse result_doc(status, item);
+                output << result_doc;
+                it = reply_items.erase(it);
+            } else {
+                ++it;
+            }
+        }
     }
 }
 
-void CParallelProcessing::BatchResolve::Reporter(TReplyQueue& input, SJsonOut& output)
+void CParallelProcessing::Interactive::Reporter(CPSG_Queue& input, SJsonOut& output)
 {
-    shared_ptr<CPSG_Reply> reply;
+    list<shared_ptr<CPSG_Reply>> replies;
+    list<shared_ptr<CPSG_ReplyItem>> reply_items;
 
-    while (input.Pop(reply)) {
-        _ASSERT(reply);
+    while (!input.IsEmpty() || !replies.empty() || !reply_items.empty()) {
+        input.WaitForEvents(CDeadline::eInfinite);
 
-        for (;;) {
-            auto item = reply->GetNextItem(CDeadline::eInfinite);
-            _ASSERT(item);
+        while (auto reply = input.GetNextReply(CDeadline::eNoWait)) {
+            replies.emplace_back(move(reply));
+        }
 
-            if (item->GetType() == CPSG_ReplyItem::eEndOfReply) {
-                break;
+        for (auto it = replies.begin(); it != replies.end();) {
+            auto& reply = *it;
+
+            while (auto reply_item = reply->GetNextItem(CDeadline::eNoWait)) {
+                if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) {
+                    break;
+                } else {
+                    reply_items.emplace_back(move(reply_item));
+                }
             }
 
-            auto status = item->GetStatus(CDeadline::eInfinite);
-            _ASSERT(status != EPSG_Status::eInProgress);
+            auto status = reply->GetStatus(CDeadline::eNoWait);
 
-            CJsonResponse result_doc(status, item);
-            output << result_doc;
-        }
+            if (status == EPSG_Status::eInProgress) {
+                ++it;
+            } else {
+                const auto request = reply->GetRequest();
+                CRequestContextGuard_Base guard(request->GetRequestContext());
+                guard.SetStatus(s_PsgStatusToRequestStatus(status));
 
-        auto status = reply->GetStatus(CDeadline::eInfinite);
-        _ASSERT(status != EPSG_Status::eInProgress);
+                if (status != EPSG_Status::eSuccess) {
+                    const auto& request_id = *request->GetUserContext<string>();
 
-        if (status != EPSG_Status::eSuccess) {
-            CJsonResponse result_doc(status, reply);
-            output << result_doc;
-        }
-    }
-}
+                    CJsonResponse result_doc(status, reply);
+                    output << CJsonResponse(request_id, result_doc);
+                }
 
-void CParallelProcessing::Interactive::Reporter(TReplyQueue& input, SJsonOut& output)
-{
-    shared_ptr<CPSG_Reply> reply;
-
-    while (input.Pop(reply)) {
-        _ASSERT(reply);
-
-        const auto request = reply->GetRequest();
-        const auto& request_id = *request->GetUserContext<string>();
-
-        for (;;) {
-            auto item = reply->GetNextItem(CDeadline::eInfinite);
-            _ASSERT(item);
-
-            if (item->GetType() == CPSG_ReplyItem::eEndOfReply) {
-                break;
+                it = replies.erase(it);
             }
-
-            auto status = item->GetStatus(CDeadline::eInfinite);
-            _ASSERT(status != EPSG_Status::eInProgress);
-
-            CJsonResponse result_doc(status, item);
-            output << CJsonResponse(request_id, result_doc);
         }
 
-        auto status = reply->GetStatus(CDeadline::eInfinite);
-        _ASSERT(status != EPSG_Status::eInProgress);
+        for (auto it = reply_items.begin(); it != reply_items.end();) {
+            auto item = *it;
+            auto status = item->GetStatus(CDeadline::eNoWait);
 
-        CRequestContextGuard_Base guard(request->GetRequestContext());
-        guard.SetStatus(s_PsgStatusToRequestStatus(status));
+            if (status != EPSG_Status::eInProgress) {
+                const auto request = item->GetReply()->GetRequest();
+                const auto& request_id = *request->GetUserContext<string>();
 
-        if (status != EPSG_Status::eSuccess) {
-            CJsonResponse result_doc(status, reply);
-            output << CJsonResponse(request_id, result_doc);
+                CJsonResponse result_doc(status, item);
+                output << CJsonResponse(request_id, result_doc);
+                it = reply_items.erase(it);
+            } else {
+                ++it;
+            }
         }
     }
 }
