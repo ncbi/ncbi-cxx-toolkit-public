@@ -3,7 +3,7 @@
 #############################################################################
 
 NCBI_begin_app(blastn_vdb)
-  NCBI_sources(blastn_vdb_args blast_vdb_app_util blastn_vdb)
+  NCBI_sources(blast_vdb_app_util blastn_vdb)
   NCBI_uses_toolkit_libraries(vdb2blast ncbi_xloader_csra ncbi_xloader_wgs blast_app_util)
   NCBI_requires(VDB)
 NCBI_end_app()
