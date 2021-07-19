@@ -995,6 +995,8 @@ public:
     void Delete(const string& name);
 
     /// Set extra info to be used by PrintUsage().
+    /// If "usage_name" is empty, it will be initialized using
+    /// CNcbiApplicationAPI::GetProgramDisplayName
     /// @sa SetDetailedDescription
     void SetUsageContext(const string& usage_name,           ///< Program name  
                          const string& usage_description,    ///< Usage descr.
