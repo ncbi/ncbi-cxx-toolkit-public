@@ -703,6 +703,9 @@ int CTestFTPDownloadApp::Run(void)
 
     // Initialize all connection parameters for FTP
     SConnNetInfo* net_info = ConnNetInfo_Create("_FTP");
+    if (!net_info) {
+        ERR_POST(Fatal << "Cannot create net_info: check your environment");
+    }
     net_info->path[0] = '\0';
     if (net_info->http_referer) {
         free((void*) net_info->http_referer);

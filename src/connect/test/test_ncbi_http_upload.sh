@@ -8,7 +8,7 @@ export TEST_NCBI_HTTP_UPLOAD_TOKEN
 
 if [ ! -f "$TEST_NCBI_HTTP_UPLOAD_TOKEN" ]; then
   echo "NCBI_UNITTEST_SKIPPED"
-  exit 0
+  exit
 fi
 
 : ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT
