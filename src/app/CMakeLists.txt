@@ -14,7 +14,6 @@ NCBI_add_subdirectory(
   biosample_chk
   blast
   blastdb
-  blastvdb
   bsdiff
   compart
   convert_seq
