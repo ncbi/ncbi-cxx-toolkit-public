@@ -662,6 +662,12 @@ void CMultiReaderApp::Init()
         "parse-gaps",
         "Make a delta sequence if gaps found.");
 
+    arg_desc->AddDefaultKey(
+        "max-id-length",
+        "INTEGER",
+        "Maximum permissible ID length",
+        CArgDescriptions::eInteger,
+        "0" );
     arg_desc->SetCurrentGroup("");
 
     SetupArgDescriptions(arg_desc.release());
@@ -1187,6 +1193,11 @@ void CMultiReaderApp::xProcessFasta(
     CStreamLineReader line_reader(istr);
 
     CFastaReader reader(line_reader, m_iFlags);
+    auto maxIdLength = args["max-id-length"].AsInteger();
+    if (maxIdLength != 0) {
+        reader.SetMaxIDLength(maxIdLength);
+    } 
+
     CRef<CSeq_entry> pSeqEntry = reader.ReadSeqEntry(line_reader, m_pErrors.get());
     xWriteObject(args, *pSeqEntry, ostr);
 }
