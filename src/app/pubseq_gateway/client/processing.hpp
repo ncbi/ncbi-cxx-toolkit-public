@@ -143,18 +143,17 @@ public:
 
 private:
     using TInputQueue = CPSG_WaitingStack<string>;
-    using TReplyQueue = CPSG_WaitingStack<shared_ptr<CPSG_Reply>>;
 
     struct BatchResolve
     {
-        static void Submitter(TInputQueue& input, CPSG_Queue& queue, TReplyQueue& output, const CArgs& args);
-        static void Reporter(TReplyQueue& input, SJsonOut& output);
+        static void Submitter(TInputQueue& input, CPSG_Queue& output, const CArgs& args);
+        static void Reporter(CPSG_Queue& input, SJsonOut& output);
     };
 
     struct Interactive
     {
-        static void Submitter(TInputQueue& input, CPSG_Queue& queue, TReplyQueue& output, SJsonOut& json_out, bool echo);
-        static void Reporter(TReplyQueue& input, SJsonOut& output);
+        static void Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, bool echo);
+        static void Reporter(CPSG_Queue& input, SJsonOut& output);
     };
 
     struct SThread
@@ -168,8 +167,7 @@ private:
     };
 
     TInputQueue m_InputQueue;
-    CPSG_Queue m_PsgQueue;
-    TReplyQueue m_ReplyQueue;
+    list<CPSG_Queue> m_PsgQueues;
     SJsonOut m_JsonOut;
     list<SThread> m_Threads;
 };
@@ -255,7 +253,7 @@ private:
     static string GetAccSubstitution(const CArgs& input) { return input["acc-substitution"].HasValue() ? input["acc-substitution"].AsString() : ""; }
     static string GetAccSubstitution(const CJson_ConstObject& input) { return input.has("acc_substitution") ? input["acc_substitution"].GetValue().GetString() : ""; }
 
-    static ESwitch GetAutoBlobSkipping(const CArgs& input) { return eDefault; }
+    static ESwitch GetAutoBlobSkipping(const CArgs&) { return eDefault; }
     static ESwitch GetAutoBlobSkipping(const CJson_ConstObject& input) { return !input.has("auto_blob_skipping") ? eDefault : input["auto_blob_skipping"].GetValue().GetBool() ? eOn : eOff; }
 
     template <class TRequest>
