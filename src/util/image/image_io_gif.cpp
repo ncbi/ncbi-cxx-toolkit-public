@@ -39,10 +39,15 @@
 // alas, poor giflib... it isn't extern'ed
 extern "C" {
 #  include <gif_lib.h>
+#if defined(GIFLIB_MAJOR) && GIFLIB_MAJOR > 4
+#define USE_NEW_GIFLIB_API 1
+#endif
 
+#if !USE_NEW_GIFLIB_API
     /// !@#$%^ libunfig mis-spelled the prototype in their header,
     /// so we must add it here
     GifFileType *EGifOpen(void *userPtr, OutputFunc writeFunc);
+#endif
 
 };
 #endif
@@ -102,7 +107,12 @@ CImage* CImageIOGif::ReadImage(CNcbiIstream& istr)
 
     try {
         // open our file for reading
+#if USE_NEW_GIFLIB_API
+        int Error=0;
+        fp = DGifOpen(&istr, s_GifRead, &Error);
+#else
         fp = DGifOpen(&istr, s_GifRead);
+#endif
         if ( !fp ) {
             NCBI_THROW(CImageException, eReadError,
                        "CImageIOGif::ReadImage(): "
@@ -203,10 +213,19 @@ CImage* CImageIOGif::ReadImage(CNcbiIstream& istr)
         }
 
         // close up and exit
+#if USE_NEW_GIFLIB_API
+        DGifCloseFile(fp, &Error);
+#else
         DGifCloseFile(fp);
+#endif
     }
     catch (...) {
+#if USE_NEW_GIFLIB_API
+        int Error=0;
+        DGifCloseFile(fp, &Error);
+#else
         DGifCloseFile(fp);
+#endif
         fp = NULL;
         throw;
     }
@@ -235,7 +254,12 @@ bool CImageIOGif::ReadImageInfo(CNcbiIstream& istr,
     GifFileType* fp = NULL;
     try {
         // open our file for reading
+#if USE_NEW_GIFLIB_API
+        int Error=0;
+        fp = DGifOpen(&istr, s_GifRead, &Error);
+#else
         fp = DGifOpen(&istr, s_GifRead);
+#endif
         if ( !fp ) {
             NCBI_THROW(CImageException, eReadError,
                        "CImageIOGif::ReadImageInfo(): "
@@ -254,11 +278,20 @@ bool CImageIOGif::ReadImageInfo(CNcbiIstream& istr,
         }
 
         // close up and exit
+#if USE_NEW_GIFLIB_API
+        DGifCloseFile(fp, &Error);
+#else
         DGifCloseFile(fp);
+#endif
         return true;
     }
     catch (...) {
+#if USE_NEW_GIFLIB_API
+        int Error=0;
+        DGifCloseFile(fp, &Error);
+#else
         DGifCloseFile(fp);
+#endif
         fp = NULL;
     }
 
@@ -272,6 +305,12 @@ bool CImageIOGif::ReadImageInfo(CNcbiIstream& istr,
 void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
                              CImageIO::ECompress)
 {
+#if USE_NEW_GIFLIB_API
+// it is not working. Probably because of 'QuantizeBuffer'?
+    NCBI_THROW(CImageException, eUnsupported,
+               "CImageIOBmp::WriteImage(): GIF format write unimplemented");
+#endif
+
     if ( !image.GetData() ) {
         NCBI_THROW(CImageException, eWriteError,
                    "CImageIOGif::WriteImage(): "
@@ -335,7 +374,11 @@ void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
 
         // now, create a GIF color map object
         int cmap_size = 256;
+#if USE_NEW_GIFLIB_API
+        cmap = GifMakeMapObject(cmap_size, NULL);
+#else
         cmap = MakeMapObject(cmap_size, NULL);
+#endif
         if ( !cmap ) {
             NCBI_THROW(CImageException, eWriteError,
                        "CImageIOGif::WriteImage(): failed to allocate color map");
@@ -345,6 +388,7 @@ void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
         vector<unsigned char> qdata(size);
         unsigned char* qdata_ptr = &qdata[0];
 
+#if !USE_NEW_GIFLIB_API
         // quantize our colors
         if (QuantizeBuffer((unsigned int)image.GetWidth(),
                            (unsigned int)image.GetHeight(), &cmap_size,
@@ -354,13 +398,19 @@ void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
             NCBI_THROW(CImageException, eWriteError,
                        "CImageIOGif::WriteImage(): failed to quantize image");
         }
+#endif
 
         //
         // we are now ready to write our file
         //
 
         // open our file
+#if USE_NEW_GIFLIB_API
+        int Error=0;
+        fp = EGifOpen(&ostr, s_GifWrite, &Error);
+#else
         fp = EGifOpen(&ostr, s_GifWrite);
+#endif
         if ( !fp ) {
             NCBI_THROW(CImageException, eWriteError,
                        "CImageIOGif::WriteImage(): failed to open file");
@@ -394,20 +444,36 @@ void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
         }
 
         // clean-up and close
+#if USE_NEW_GIFLIB_API
+        if (EGifCloseFile(fp, &Error) == GIF_ERROR) {
+            fp = NULL;
+            NCBI_THROW(CImageException, eWriteError,
+                       "CImageIOGif::WriteImage(): error closing file");
+        }
+#else
         if (EGifCloseFile(fp) == GIF_ERROR) {
             fp = NULL;
             NCBI_THROW(CImageException, eWriteError,
                        "CImageIOGif::WriteImage(): error closing file");
         }
+#endif
 
         free(cmap);
     }
     catch (...) {
         if (fp) {
+#if USE_NEW_GIFLIB_API
+            int Error=0;
+            if (EGifCloseFile(fp, &Error) == GIF_ERROR) {
+                ERR_POST_X(11, Error
+                    << "CImageIOGif::WriteImage(): error closing file");
+            }
+#else
             if (EGifCloseFile(fp) == GIF_ERROR) {
                 ERR_POST_X(11, Error
                     << "CImageIOGif::WriteImage(): error closing file");
             }
+#endif
             fp = NULL;
         }
 
@@ -463,7 +529,12 @@ void CImageIOGif::x_UnpackData(GifFileType* fp,
 void CImageIOGif::x_ReadLine(GifFileType* fp, unsigned char* data)
 {
     if ( DGifGetLine(fp, data, fp->Image.Width) == GIF_ERROR) {
+#if USE_NEW_GIFLIB_API
+        int Error=0;
+        DGifCloseFile(fp, &Error);
+#else
         DGifCloseFile(fp);
+#endif
         string msg("CImageIOGif::ReadImage(): error reading file");
         NCBI_THROW(CImageException, eReadError, msg);
     }
