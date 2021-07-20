@@ -5750,15 +5750,18 @@ mz_bool mz_zip_writer_init_heap(mz_zip_archive *pZip, size_t size_to_reserve_at_
 static size_t mz_zip_file_write_func(void *pOpaque, mz_uint64 file_ofs, const void *pBuf, size_t n)
 {
     mz_zip_archive *pZip = (mz_zip_archive *)pOpaque;
-    mz_int64 cur_ofs = MZ_FTELL64(pZip->m_pState->m_pFile);
 
-    file_ofs += pZip->m_pState->m_file_archive_start_ofs;
-
-    if (((mz_int64)file_ofs < 0) || (((cur_ofs != (mz_int64)file_ofs)) && (MZ_FSEEK64(pZip->m_pState->m_pFile, (mz_int64)file_ofs, SEEK_SET))))
-    {
-        mz_zip_set_error(pZip, MZ_ZIP_FILE_SEEK_FAILED);
-        return 0;
-    }
+    // Inside NCBI we use MZ_ZIP_TYPE_CFILE type without fseek/ftell checks because it can be based on a socket descriptor
+    // NCBI:
+    if( pZip->m_zip_type != MZ_ZIP_TYPE_CFILE) { 
+        mz_int64 cur_ofs = MZ_FTELL64(pZip->m_pState->m_pFile);
+        file_ofs += pZip->m_pState->m_file_archive_start_ofs;
+        if (((mz_int64)file_ofs < 0) || (((cur_ofs != (mz_int64)file_ofs)) && (MZ_FSEEK64(pZip->m_pState->m_pFile, (mz_int64)file_ofs, SEEK_SET))))
+        {
+            mz_zip_set_error(pZip, MZ_ZIP_FILE_SEEK_FAILED);
+            return 0;
+        }
+    } // end additional MZ_ZIP_TYPE_CFILE check
 
     return MZ_FWRITE(pBuf, 1, n, pZip->m_pState->m_pFile);
 }
