@@ -213,7 +213,7 @@ public:
     /// @sa 
     ///   ExtractFileToMemory, EctractFileToCallback, CArchiveEntryInfo::GetSize, List
     virtual void ExtractFileToHeap(const CArchiveEntryInfo& info,
-                                   void** buf_ptr, size_t* buf_size_ptr);
+                                   void** buf_ptr, size_t* buf_size_ptr); 
 
     /// Extract single file entry using user-defined callback.
     /// 
@@ -362,14 +362,16 @@ public:
     /// Use HaveSupport() to check that current archive format have support for
     /// specific feature.
     /// @enum eType
-    ///    Check that archive can store entries with specific directory entry type.
+    ///    Check that archive can store entries with specific directory entry type,
+    ///    specified by 'param'.
     /// @enum eAbsolutePath
     ///    Archive can store full absolute path entries. Otherwise they will
     ///    be converted to relative path from root directory.
     /// @sa HaveSupport  
-    enum ESupport {
-        eType,
-        eAbsolutePath
+    enum ESupportFeature {
+        eFeature_Type,
+        eFeature_AbsolutePath,
+        eFeature_FileStream
     };
 
     /// Check that current archive format have support for specific features.
@@ -379,7 +381,7 @@ public:
     /// @param param
     ///   Additional parameter (for eType only).
     /// @sa ESupport
-    bool HaveSupport(ESupport feature, int param = 0);
+    bool HaveSupport(ESupportFeature feature, int param = 0);
 
 protected:
     /// Archive open mode
@@ -619,6 +621,86 @@ private:
     // Prohibit assignment and copy
     CArchiveMemory& operator=(const CArchiveMemory&);
     CArchiveMemory(const CArchiveMemory&);
+};
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+///
+/// CArchiveCompressionFileStream -- file stream/descriptor based compression stream archive.
+///
+/// Allow to stream compressed data to specified already opened FILE*-based
+/// file stream or file/socket descriptor. Only allowed operations are:
+/// - Create() - optional, used by default in the constructor
+/// - Append()
+/// - AppendFileFromMemory()
+/// - Close()
+/// All other archive operations are prohibited. 
+/// 
+/// Throws exceptions on errors.
+
+class NCBI_XUTIL_EXPORT CArchiveCompressionFileStream : public CArchive
+{
+public:
+    /// Constructor for stream-based archive.
+    ///
+    /// @param format
+    ///   Archive format.
+    /// @param fd
+    ///   File/socket descriptor to write archive to.
+    ///   Socket descriptor should be already connected and file descriptor
+    ///   should be opened for writing before creating an archive.
+    /// @sa
+    ///   Append, AppendFileFromMemory, Close
+    CArchiveCompressionFileStream(EFormat format, int fd);
+
+    /// Create new archive on a base of already opened FILE* stream, 
+    /// beginning at the current FILE* position.
+    ///
+    /// @param format
+    ///   Archive format.
+    /// @param filestream
+    ///   File stream that can be used for archive operations.
+    ///   It should be opened for writing binary data.
+    /// @sa
+    ///   Append, AppendFileFromMemory, Close
+    CArchiveCompressionFileStream(EFormat format, FILE* filestream);
+
+    /// Destructor
+    ///
+    /// Close the archive if currently open.
+    /// @sa
+    ///   Close
+    virtual ~CArchiveCompressionFileStream(void);
+
+    /// Create a new empty archive.
+    /// Calling this method is optional, new archive is created by default in the constructor.
+    /// But if you want to add another archive using current CArchiveCompressionFileStream object,
+    /// you can use Create() after Close().
+    /// @sa
+    ///   Append, Close
+    virtual void Create(void);
+
+    /// Close archive.
+    /// 
+    /// Writes all remaining data into the file descriptor/stream.
+    /// CArchiveCompressionFileStream object cannot be used for any archive
+    /// operation after this call.
+    /// The file stream/descriptor will not be closed.
+    virtual void Close(void);
+
+protected:
+    /// Open the archive for specified action.
+    virtual void Open(EAction action);
+
+protected:
+    FILE* m_FileStream; ///< File stream, can be based on m_fd
+    int   m_fd;         ///< File/socket descriptor
+
+private:
+    // Prohibit assignment and copy
+    CArchiveCompressionFileStream& operator=(const CArchiveCompressionFileStream&);
+    CArchiveCompressionFileStream(const CArchiveCompressionFileStream&);
 };
 
 

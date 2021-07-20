@@ -81,6 +81,19 @@ public:
     ///   CreateMemory, AddEntryFromFile, AddEntryFromMemory
     virtual void CreateFile(const string& filename);
 
+    /// Create new archive file on top of a FILE stream.
+    ///
+    /// @param filestream
+    ///   File stream that can be used for archive operations.
+    /// @note
+    ///   File stream should be opened with necessary flags to allow read/write,
+    ///   depending on performing archive operations.
+    /// @note
+    ///   The file stream will not be closed after closing archive with Close() .
+    /// @sa
+    ///   CreateFile, CreateMemory, AddEntryFromFile, AddEntryFromMemory
+    virtual void CreateFileStream(FILE* filestream);
+
     /// Create new archive located in memory.
     ///
     /// @param initial_allocation_size
@@ -97,7 +110,23 @@ public:
     /// @sa
     ///   CreateFile, OpenMemory, ExtractEntryToFileSystem, ExtractEntryToMemory
     virtual void OpenFile(const string& filename);
-    
+
+    /// Open archive from a FILE stream, beginning at the current file position.
+    ///
+    /// @param filestream
+    ///   File stream that can be used for archive operations.
+    /// @param archive_size
+    ///   The archive is assumed to be 'archive_size' bytes long. If it is 0,
+    ///   then the entire rest of the file is assumed to contain the archive.
+    /// @note
+    ///   File stream should be opened with necessary flags to allow read/write,
+    ///   depending on performing archive operations.
+    /// @note
+    ///   The file stream will not be closed after closing archive with Close() .
+    /// @sa
+    ///   CreateFileStream, CreateFile, OpenFile, AddEntryFromFile, AddEntryFromMemory
+    virtual void OpenFileStream(FILE* filestream, Uint8 archive_size = 0);
+
     /// Open archive located in memory for reading.
     /// @param buf
     ///   Pointer to an archive located in memory. Used only to open already
@@ -115,7 +144,7 @@ public:
     /// This method will be automatically called from destructor
     /// if you forgot to call it directly. But note, that if the archive
     /// is created in memory, it will be lost. You should call 
-    /// FinalizeMemory() to get it.
+    /// FinalizeMemory() to get data before closing archive.
     /// @sa
     ///   FinalizeMemory, OpenFile, OpenMemory
     virtual void Close(void);
@@ -156,6 +185,7 @@ public:
     /// @sa CArchive
     virtual bool HaveSupport_Type(CDirEntry::EType type);
     virtual bool HaveSupport_AbsolutePath(void) { return false; };
+    virtual bool HaveSupport_FileStream(void)   { return true; };
 
     /// Extracts an archive entry to file system.
     /// 

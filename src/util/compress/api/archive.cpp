@@ -40,6 +40,13 @@
 #  error "Class CArchive can be defined on MS-Windows and UNIX platforms only!"
 #endif
 
+// for fdopen
+#if defined(NCBI_OS_MSWIN)
+#  include <io.h>
+#elif defined(NCBI_OS_UNIX)
+#  include <unistd.h>
+#endif
+
 #define NCBI_USE_ERRCODE_X  Util_Compress
 
 
@@ -213,7 +220,7 @@ CArchive::CArchive(EFormat format)
             m_Archive.reset(new CArchiveZip());
             break;
         default:
-            _TROUBLE;
+            ARCHIVE_THROW(eUnsupported, "Unknown compression format " + NStr::IntToString((int)format));
     }
     if ( !ARCHIVE ) {
         ARCHIVE_THROW(eMemory, "Cannot create archive object");
@@ -259,7 +266,7 @@ void CArchive::SetMask(CMask* mask, EOwnership  own, EMaskType type, NStr::ECase
             m = &m_MaskPattern;
             break;
         default:
-            _TROUBLE;
+            ARCHIVE_THROW(eUnsupported, "Unknown mask type " + NStr::IntToString((int)type));
     }
     if (m->owned) {
         delete m->mask;
@@ -294,14 +301,16 @@ void CArchive::SetBaseDir(const string& dirname)
 }
 
 
-bool CArchive::HaveSupport(ESupport feature, int param)
+bool CArchive::HaveSupport(ESupportFeature feature, int param)
 {
     ARCHIVE_CHECK;
     switch (feature) {
-    case eType:
+    case eFeature_Type:
         return ARCHIVE->HaveSupport_Type((CDirEntry::EType)param);
-    case eAbsolutePath:
+    case eFeature_AbsolutePath:
         return ARCHIVE->HaveSupport_AbsolutePath();
+    case eFeature_FileStream:
+        return ARCHIVE->HaveSupport_FileStream();
     }
     return false;
 }
@@ -463,7 +472,7 @@ CArchive::AppendFileFromMemory(const string& name_in_archive, void* buf, size_t 
     m_Current = CArchiveEntryInfo();
 
     // Get name of the current entry in archive
-    string temp = s_ToArchiveName(kEmptyStr, name_in_archive, HaveSupport(eAbsolutePath));
+    string temp = s_ToArchiveName(kEmptyStr, name_in_archive, HaveSupport(eFeature_AbsolutePath));
     if (temp.empty()) {
         ARCHIVE_THROW(eBadName, "Empty entry name is not allowed");
     }
@@ -478,7 +487,7 @@ CArchive::AppendFileFromMemory(const string& name_in_archive, void* buf, size_t 
     if (m_Format == eZip) {
 //???
     } else {
-        _TROUBLE;
+        ARCHIVE_THROW(eUnsupported, "Selected archive format doesn't allow to append files from memory");
     }
 #endif
     ARCHIVE->AddEntryFromMemory(m_Current, buf, buf_size, level);
@@ -554,11 +563,17 @@ void CArchive::AppendEntry(const string& path, ELevel level)
 
 void CArchive::x_Open(EAction action)
 {
+    if (m_Location == IArchive::eFileStream) {
+        if (action != eCreate  &&  action != eAppend) {
+            ARCHIVE_THROW(eUnsupported, "File streams allow writing to it only, any other operations are prohibited");
+        }
+        // Do nothing for file streams, it should be opened by calling Open() directly
+        return;
+    }
     EOpenMode new_open_mode = EOpenMode(int(action) & eRW);
 
     if (m_OpenMode != eWO  &&  action == eAppend) {
-        // Appending to an existing archive is not implemented yet
-        _TROUBLE;
+        ARCHIVE_THROW(eUnsupported, "Append to an existing archive is not implemented");
     }
     if (new_open_mode != m_OpenMode) {
         Close();
@@ -773,7 +788,6 @@ void CArchive::x_ExtractEntry(const TEntries* prev_entries)
     } else if (type == CDirEntry::eDir) {
         // Do nothing
     } else {
-        //???
         ARCHIVE_THROW1(eUnsupportedEntryType);
     }
 
@@ -903,7 +917,7 @@ unique_ptr<CArchive::TEntries> CArchive::x_Append(const string&   src_path,
     CDirEntry::EType type = CDirEntry::GetType(st.orig);
 
     // Get name of the current entry in archive
-    string temp = s_ToArchiveName(m_BaseDir, path, HaveSupport(eAbsolutePath));
+    string temp = s_ToArchiveName(m_BaseDir, path, HaveSupport(eFeature_AbsolutePath));
     if (temp.empty()) {
         ARCHIVE_THROW(eBadName, "Empty entry name in archive");
     }
@@ -1116,6 +1130,7 @@ CArchiveFile::CArchiveFile(EFormat format, const string& filename)
 
 void CArchiveFile::Open(EAction action)
 {
+    ARCHIVE_CHECK;
     bool isread = (action & eRO) > 0;
     if (isread) {
         ARCHIVE->OpenFile(m_FileName);
@@ -1165,6 +1180,7 @@ void CArchiveMemory::Create(size_t initial_allocation_size)
 
 void CArchiveMemory::Open(EAction action)
 {
+    ARCHIVE_CHECK;
     bool isread = (action & eRO) > 0;
     if (isread) {
         ARCHIVE->OpenMemory(m_Buf, m_BufSize);
@@ -1234,6 +1250,67 @@ void CArchiveMemory::Load(const string& filename)
     m_OwnBuf  = tmp;
     m_Buf     = m_OwnBuf.get();
     m_BufSize = n_read;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CArchiveCompressionFileStream
+//
+
+CArchiveCompressionFileStream::CArchiveCompressionFileStream(EFormat format, int fd) 
+    : CArchive(format)
+{  
+    m_Location = IArchive::eFileStream;
+    m_fd = fd;
+    m_FileStream = fdopen(NcbiSys_dup(fd), "ab");  // binary, appending from a current position
+    if (!m_FileStream) {
+        ARCHIVE_THROW(eOpen, "Cannot create file stream from the file descriptor");
+    }
+    Create();
+}
+
+CArchiveCompressionFileStream::CArchiveCompressionFileStream(EFormat format, FILE* filestream) 
+    : CArchive(format)
+{  
+    m_Location = IArchive::eFileStream;
+    m_fd = -1;
+    m_FileStream = filestream;
+    Create();
+}
+
+CArchiveCompressionFileStream::~CArchiveCompressionFileStream(void)
+{
+    if (m_fd != -1  &&  m_FileStream) {
+        // Close duplicated file stream
+        fclose(m_FileStream);
+    }
+}
+
+void CArchiveCompressionFileStream::Create(void)
+{
+    if (m_OpenMode != eNone) {
+        // The archive already created, close it and create new one
+        Close();
+    }
+    Open(CArchive::eCreate);
+}
+
+void CArchiveCompressionFileStream::Open(EAction action)
+{
+    if (action != eCreate  &&  action != eAppend) {
+        _TROUBLE;
+    }
+    // Open archiver for writing only
+    ARCHIVE_CHECK;
+    ARCHIVE->CreateFileStream(m_FileStream);
+    m_OpenMode = eWO;
+    return;
+}
+
+void CArchiveCompressionFileStream::Close(void)
+{
+    CArchive::Close();
 }
 
 
