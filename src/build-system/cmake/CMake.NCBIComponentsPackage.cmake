@@ -150,6 +150,10 @@ if(NOT NCBI_COMPONENT_BZ2_FOUND)
 endif()
 
 #############################################################################
+# LZO
+NCBI_define_Pkgcomponent(NAME LZO PACKAGE lzo)
+
+#############################################################################
 # Boost
 NCBI_define_Pkgcomponent(NAME Boost PACKAGE boost)
 
