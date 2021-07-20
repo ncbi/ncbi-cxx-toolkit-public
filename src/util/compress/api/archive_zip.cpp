@@ -123,8 +123,22 @@ void CArchiveZip::CreateFile(const string& filename)
     m_Location = eFile;
     mz_bool status = mz_zip_writer_init_file(ZIP_HANDLE, filename.c_str(), 0);
     if (!status) {
-        m_Handle = NULL;
+        ZIP_DELETE;
         ZIP_THROW(eCreate, "Cannot create archive file '" + filename + "'");
+    }
+    return;
+}
+
+
+void CArchiveZip::CreateFileStream(FILE* filestream)
+{
+    ZIP_NEW;
+    m_Mode = eWrite;
+    m_Location = eFileStream;
+    mz_bool status = mz_zip_writer_init_cfile(ZIP_HANDLE, filestream, 0);
+    if (!status) {
+        ZIP_DELETE;
+        ZIP_THROW(eCreate, "Cannot create archive file from a FILE* stream");
     }
     return;
 }
@@ -137,7 +151,7 @@ void CArchiveZip::CreateMemory(size_t initial_allocation_size)
     m_Location = eMemory;
     mz_bool status = mz_zip_writer_init_heap(ZIP_HANDLE, 0, initial_allocation_size);
     if (!status) {
-        m_Handle = NULL;
+        ZIP_DELETE;
         ZIP_THROW(eCreate, "Cannot create archive in memory");
     }
     return;
@@ -153,6 +167,20 @@ void CArchiveZip::OpenFile(const string& filename)
     if (!status) {
         ZIP_DELETE;
         ZIP_THROW(eOpen, "Cannot open archive file '" + filename + "'");
+    }
+    return;
+}
+
+
+void CArchiveZip::OpenFileStream(FILE* filestream, Uint8 archive_size)
+{
+    ZIP_NEW;
+    m_Mode = eRead;
+    m_Location = eFileStream;
+    mz_bool status = mz_zip_reader_init_cfile(ZIP_HANDLE, filestream, archive_size, 0);
+    if (!status) {
+        ZIP_DELETE;
+        ZIP_THROW(eOpen, "Cannot open archive from a FILE* stream");
     }
     return;
 }
@@ -207,11 +235,10 @@ void CArchiveZip::Close(void)
         status = mz_zip_reader_end(ZIP_HANDLE);
         break;
     case eWrite:
-        // Automatically finalize file archive only.
-        // The archive located in memory will be lost
-        // on this step, unless FinalizeMemory() was
-        // not called before.
-        if (m_Location == eFile) {
+        // Automatically finalize file archive.
+        // For an archive located in memory FinalizeMemory() should be called first,
+        // or archive will be lost on this step. 
+        if (m_Location == eFile  ||  m_Location == eFileStream) {
             status = mz_zip_writer_finalize_archive(ZIP_HANDLE);
         }
         if ( !mz_zip_writer_end(ZIP_HANDLE) ) {
