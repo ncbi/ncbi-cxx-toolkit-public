@@ -62,7 +62,7 @@ $CHECK_EXEC test_ncbi_ftp_download $url 2>&1
 exit_code=$?
 
 if [ "$exit code" != "0" ]; then
-  if echo "$url" | grep -q 'ftp.hp.com'  &&  grep -qs '^500 OOPS:' $log ; then
+  if echo "$url" | grep -q 'ftp.hp.com'  &&  grep -qs '500 OOPS:' $log ; then
     # ftp.hp.com is known to often malfunction with the following error:
     # "500 OOPS: failed to open vsftpd log file:/opt/webhost/logs/vsftpd/vsftpd.log"
     echo "NCBI_UNITTEST_SKIPPED"
