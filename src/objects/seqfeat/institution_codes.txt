@@ -8089,7 +8089,8 @@ WLK	s	British Columbia Ministry of Forests
 WLM	s	Jardin Botanico El Charco del Ingenio			
 WLMH	s	West Lake Musuem			
 WLU	s	Wilfrid Laurier University, Biology Department			
-WM	s	Gezira Research Station			
+WM	sc	Westmead Medical Mycology Collection			
+WM<SDN>	s	Gezira Research Station			
 WMGC	s	Gordon College, Biology Department			
 WMM	s	Witte Memorial Museum			
 WMNH	s	Wakayama Prefectural Museum of Natural History			
