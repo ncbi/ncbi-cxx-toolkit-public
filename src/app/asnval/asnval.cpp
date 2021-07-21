@@ -335,7 +335,7 @@ void CAsnvalApp::Init()
     arg_desc->SetConstraint("v", v_constraint);
 
     arg_desc->AddFlag("cleanup", "Perform BasicCleanup before validating (to match C Toolkit)");
-    arg_desc->AddFlag("batch", "Produce release files (Seq-submit or Bioseq-set inputs only)");
+    arg_desc->AddFlag("batch", "Process NCBI release file (Seq-submit or Bioseq-set only)");
 
     arg_desc->AddOptionalKey(
         "D", "String", "Path to lat_lon country data files",
