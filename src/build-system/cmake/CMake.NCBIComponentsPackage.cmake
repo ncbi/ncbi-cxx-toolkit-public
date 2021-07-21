@@ -112,6 +112,7 @@ endif()
 
 #############################################################################
 # LMDB
+NCBI_define_Pkgcomponent(NAME LMDB PACKAGE lmdb)
 if(NOT NCBI_COMPONENT_LMDB_FOUND)
     set(NCBI_COMPONENT_LMDB_FOUND ${NCBI_COMPONENT_LocalLMDB_FOUND})
     set(NCBI_COMPONENT_LMDB_INCLUDE ${NCBI_COMPONENT_LocalLMDB_INCLUDE})
@@ -261,3 +262,7 @@ else()
 endif()
 NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE protobuf)
 NCBI_define_Pkgcomponent(NAME GRPC PACKAGE grpc)
+
+#############################################################################
+# CASSANDRA
+NCBI_define_Pkgcomponent(NAME CASSANDRA PACKAGE cassandra-cpp-driver)
