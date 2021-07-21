@@ -1211,7 +1211,7 @@ struct SCommandDefinition {
         "\n\nThe following output formats are supported: \""
         RAW_OUTPUT_FORMAT "\" and \"" JSON_OUTPUT_FORMAT "\". "
         "The default is \"" RAW_OUTPUT_FORMAT "\".",
-        {eCommand, eNetCache, eNetSchedule, eQueue, eMultiline,
+        {eCommand, eNetCache, eWorkerNode, eNetSchedule, eQueue, eMultiline,
             eLoginToken, eAuth, eClientNode, eClientSession, eOutputFormat,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1},
         {eRaw, eJSON, -1}},

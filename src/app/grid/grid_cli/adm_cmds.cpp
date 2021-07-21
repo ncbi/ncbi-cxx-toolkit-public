@@ -703,6 +703,7 @@ int CGridCommandLineInterfaceApp::Cmd_Exec()
         break;
 
     case eNetScheduleAdmin:
+    case eWorkerNodeAdmin:
         service = m_NetScheduleAPI.GetService();
         break;
 
