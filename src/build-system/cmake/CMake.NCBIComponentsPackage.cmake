@@ -266,3 +266,7 @@ NCBI_define_Pkgcomponent(NAME GRPC PACKAGE grpc)
 #############################################################################
 # CASSANDRA
 NCBI_define_Pkgcomponent(NAME CASSANDRA PACKAGE cassandra-cpp-driver)
+
+#############################################################################
+# MySQL
+NCBI_define_Pkgcomponent(NAME MySQL PACKAGE libmysqlclient)
