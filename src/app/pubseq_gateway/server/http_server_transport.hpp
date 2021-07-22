@@ -259,11 +259,13 @@ public:
         }
     }
 
-    void CancelPending(void)
+    void CancelPending(bool  from_flush=false)
     {
-        if (!m_Postponed)
-            NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
-                       "Request has not been postponed");
+        if (!from_flush) {
+            if (!m_Postponed)
+                NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
+                           "Request has not been postponed");
+        }
         x_DoCancel();
     }
 
