@@ -82,14 +82,9 @@ typedef std::set<std::string> TLocusTagSet;
 
 struct AccMinMax {
     string acc;
-    Int2 ver;
-    Int4 min;
-    Int4 max;
-/*
     Int2        ver=INT2_MIN;
     Int4        min=-1;
     Int4        max=-1;
-    */
 };
 
 using AccMinMaxPtr = AccMinMax*;
@@ -121,7 +116,7 @@ struct SeqlocInfoblk {
 using SeqlocInfoblkPtr = SeqlocInfoblk*;
 
 struct MixLoc {
-    char*   acc=nullptr;
+    string  acc;
     Int4    ver;
     Uint1   acc_cho;
     Int4    min;
@@ -136,10 +131,10 @@ struct MixLoc {
 
 using MixLocPtr = MixLoc*;
 
-typedef struct gene_list {
-    char*               locus;        /* the name of the gene,
+struct GeneList {
+    string               locus;        /* the name of the gene,
                                            copy the value */
-    char*               locus_tag;
+    string               locus_tag;
     char*               pseudogene;
     char*               maploc;       /* the map of the gene,
                                            copy the value */
@@ -167,11 +162,11 @@ typedef struct gene_list {
     char*               location;
     bool                  todel;
     bool                  circular;
-    struct gene_list* next;
+    GeneList* next;
 
-    gene_list() :
-        locus(NULL),
-        locus_tag(NULL),
+    GeneList() :
+        //locus(NULL),
+        //locus_tag(NULL),
         pseudogene(NULL),
         maploc(NULL),
         slibp(NULL),
@@ -190,14 +185,18 @@ typedef struct gene_list {
         next(NULL)
     {}
 
-} GeneList, *GeneListPtr;
+};
 
-typedef struct cdss_list {
+using GeneListPtr = GeneList*;
+
+struct CdssList {
     Int4                  from;
     Int4                  to;
     Int4                  segnum;
-    struct cdss_list* next;
-} CdssList, *CdssListPtr;
+    CdssList*             next;
+};
+
+using CdssListPtr = CdssList*;
 
 struct GeneNode {
     bool        flag;                   /* TRUE, if a level has been found
@@ -439,25 +438,25 @@ static Int4 fta_cmp_locusyn(GeneListPtr glp1, GeneListPtr glp2)
     if(glp2 == NULL)
         return(1);
 
-    if(glp1->locus == NULL && glp2->locus == NULL)
+    if(glp1->locus.empty() && glp2->locus.empty())
     {
         res = fta_cmp_gene_syns(glp1->syn, glp2->syn);
         if(res != 0)
             return(res);
-        return(fta_cmp_locus_tags(glp1->locus_tag, glp2->locus_tag));
+        return(fta_cmp_locus_tags(glp1->locus_tag.c_str(), glp2->locus_tag.c_str()));
     }
-    if(glp1->locus == NULL)
+    if(glp1->locus.empty())
         return(-1);
-    if(glp2->locus == NULL)
+    if(glp2->locus.empty())
         return(1);
 
-    res = StringICmp(glp1->locus, glp2->locus);
+    res = StringICmp(glp1->locus.c_str(), glp2->locus.c_str());
     if(res != 0)
         return(res);
     res = fta_cmp_gene_syns(glp1->syn, glp2->syn);
     if(res != 0)
         return(res);
-    return(fta_cmp_locus_tags(glp1->locus_tag, glp2->locus_tag));
+    return(fta_cmp_locus_tags(glp1->locus_tag.c_str(), glp2->locus_tag.c_str()));
 }
 
 /**********************************************************/
@@ -587,9 +586,10 @@ static void MixLocFree(MixLocPtr mlp)
     for(; mlp != NULL; mlp = next)
     {
         next = mlp->next;
-        if(mlp->acc != NULL)
-            MemFree(mlp->acc);
-        MemFree(mlp);
+        //if(mlp->acc != NULL)
+        //    MemFree(mlp->acc);
+        //MemFree(mlp);
+        delete mlp;
     }
 }
 
@@ -603,11 +603,11 @@ static void GeneListFree(GeneListPtr glp)
         glpnext = glp->next;
         glp->next = NULL;
 
-        if(glp->locus != NULL)
-            MemFree(glp->locus);
+       // if(glp->locus != NULL)
+       //     MemFree(glp->locus);
 
-        if(glp->locus_tag != NULL)
-            MemFree(glp->locus_tag);
+       // if(glp->locus_tag != NULL)
+       //     MemFree(glp->locus_tag);
 
         if(glp->pseudogene != NULL)
             MemFree(glp->pseudogene);
@@ -639,7 +639,7 @@ static void CdssListFree(CdssListPtr clp)
     for(; clp != NULL; clp = clpnext)
     {
         clpnext = clp->next;
-        MemFree(clp);
+        delete clp;
     }
 }
 
@@ -818,9 +818,9 @@ static void AddGeneFeat(GeneListPtr glp, char* maploc, TSeqFeatList& feats)
     CRef<CSeq_feat> feat(new CSeq_feat);
     CGene_ref& gene_ref = feat->SetData().SetGene();
 
-    if(glp->locus != NULL)
+    if(!glp->locus.empty())
         gene_ref.SetLocus(glp->locus);
-    if(glp->locus_tag != NULL)
+    if(!glp->locus_tag.empty())
         gene_ref.SetLocus_tag(glp->locus_tag);
     if (maploc != NULL)
         gene_ref.SetMaploc(maploc);
@@ -855,8 +855,8 @@ static void AddGeneFeat(GeneListPtr glp, char* maploc, TSeqFeatList& feats)
         if (glp->wormbase.size() > 1)
             ErrPostEx(SEV_WARNING, ERR_FEATURE_MultipleWBGeneXrefs,
                       "Multiple WormBase WBGene /db_xref qualifiers found for feature with Gene Symbol \"%s\" and Locus Tag \"%s\".",
-                      (glp->locus == NULL) ? "NONE" : glp->locus,
-                      (glp->locus_tag == NULL) ? "NONE" : glp->locus_tag);
+                      (glp->locus.empty()) ? "NONE" : glp->locus.c_str(),
+                      (glp->locus_tag.empty()) ? "NONE" : glp->locus_tag.c_str());
 
         for (TWormbaseSet::const_iterator it = glp->wormbase.begin(); it != glp->wormbase.end(); ++it)
         {
@@ -877,8 +877,8 @@ static void AddGeneFeat(GeneListPtr glp, char* maploc, TSeqFeatList& feats)
         if (glp->olt.size() > 1)
             ErrPostEx(SEV_WARNING, ERR_FEATURE_MultipleOldLocusTags,
                       "Multiple /old_locus_tag qualifiers found for feature with Gene Symbol \"%s\" and Locus Tag \"%s\".",
-                      (glp->locus == NULL) ? "NONE" : glp->locus,
-                      (glp->locus_tag == NULL) ? "NONE" : glp->locus_tag);
+                      (glp->locus.empty()) ? "NONE" : glp->locus.c_str(),
+                      (glp->locus_tag.empty()) ? "NONE" : glp->locus_tag.c_str());
 
         for (TLocusTagSet::const_iterator it = glp->olt.begin(); it != glp->olt.end(); ++it)
         {
@@ -900,10 +900,9 @@ static void AddGeneFeat(GeneListPtr glp, char* maploc, TSeqFeatList& feats)
 /**********************************************************/
 static MixLocPtr MixLocCopy(MixLocPtr mlp)
 {
-    MixLocPtr res;
+    MixLocPtr res = new MixLoc();
 
-    res = (MixLocPtr) MemNew(sizeof(MixLoc));
-    res->acc = StringSave(mlp->acc);
+    res->acc = mlp->acc;
     res->ver = mlp->ver;
     res->acc_cho = mlp->acc_cho;
     res->min = mlp->min;
@@ -914,7 +913,7 @@ static MixLocPtr MixLocCopy(MixLocPtr mlp)
     res->numloc = mlp->numloc;
     res->numint = mlp->numint;
     res->next = NULL;
-    return(res);
+    return res;
 }
 
 /**********************************************************/
@@ -946,7 +945,7 @@ static MixLocPtr EasySeqLocMerge(MixLocPtr first, MixLocPtr second, bool join)
             next = MixLocCopy(mlp);
             for(res = tres->next; res != NULL; res = res->next)
             {
-                if(StringCmp(res->acc, next->acc) != 0 ||
+                if(StringCmp(res->acc.c_str(), next->acc.c_str()) != 0 ||
                    res->ver != next->ver || res->strand != next->strand)
                     continue;
 
@@ -963,7 +962,7 @@ static MixLocPtr EasySeqLocMerge(MixLocPtr first, MixLocPtr second, bool join)
                 ttt = prev->next;
                 for(res = mlp->next; res != NULL; res = res->next)
                 {
-                    if(StringCmp(res->acc, ttt->acc) == 0 &&
+                    if(StringCmp(res->acc.c_str(), ttt->acc.c_str()) == 0 &&
                        res->ver == ttt->ver && res->strand == ttt->strand)
                         break;
                 }
@@ -986,18 +985,17 @@ static MixLocPtr EasySeqLocMerge(MixLocPtr first, MixLocPtr second, bool join)
         got = 0;
         for(tres = res; tres != NULL; tres = tres->next)
         {
-            if(tres->acc == NULL)
+            if(tres->acc.empty())
                 continue;
             for(mlp = tres->next; mlp != NULL; mlp = mlp->next)
             {
-                if(mlp->acc == NULL || StringCmp(tres->acc, mlp->acc) != 0 ||
+                if(mlp->acc.empty() || StringCmp(tres->acc.c_str(), mlp->acc.c_str()) != 0 ||
                    tres->ver != mlp->ver || tres->strand != mlp->strand)
                     continue;
 
                 if(tres->min == mlp->min && tres->max == mlp->max)
                 {
-                    MemFree(mlp->acc);
-                    mlp->acc = NULL;
+                    mlp->acc.clear();
                     if(tres->noleft == false)
                         tres->noleft = mlp->noleft;
                     if(tres->noright == false)
@@ -1030,8 +1028,7 @@ static MixLocPtr EasySeqLocMerge(MixLocPtr first, MixLocPtr second, bool join)
                         tres->max = mlp->max;
                         tres->noright = mlp->noright;
                     }
-                    MemFree(mlp->acc);
-                    mlp->acc = NULL;
+                    mlp->acc.clear();
                     got = 1;
                 }
             }
@@ -1111,8 +1108,8 @@ static void fta_check_pseudogene(GeneListPtr tglp, GeneListPtr glp)
         {
             ErrPostEx(SEV_ERROR, ERR_FEATURE_InconsistentPseudogene,
                       "All /pseudogene qualifiers for a given Gene and/or Locus-Tag should be uniform. But pseudogenes \"%s\" vs. \"%s\" exist for the features with Gene Symbol \"%s\" and Locus Tag \"%s\".",
-                      (glp->locus == NULL) ? "NONE" : glp->locus,
-                      (glp->locus_tag == NULL) ? "NONE" : glp->locus_tag,
+                      (glp->locus.empty()) ? "NONE" : glp->locus.c_str(),
+                      (glp->locus_tag.empty()) ? "NONE" : glp->locus_tag.c_str(),
                       tglp->pseudogene, glp->pseudogene);
             tglp->pseudogene[0] = '\0';
             glp->pseudogene[0] = '\0';
@@ -1254,14 +1251,14 @@ static bool fta_check_feat_overlap(GeneLocsPtr gelop, GeneListPtr c,
            max < gelop->verymin)
             continue;
 
-        if(fta_strings_same(c->locus, gelop->gene.c_str()) && fta_strings_same(c->locus_tag, gelop->locus.c_str()))
+        if(fta_strings_same(c->locus.c_str(), gelop->gene.c_str()) && fta_strings_same(c->locus_tag.c_str(), gelop->locus.c_str()))
             continue;
         auto it = gelop->ammp.begin();
         for (; it != gelop->ammp.end(); ++it) {
             auto ammp = *it;
             if(max < ammp.min || min > ammp.max || ammp.ver != mlp->ver)
                 continue;
-            if(StringCmp(ammp.acc.c_str(), mlp->acc) == 0)
+            if(StringCmp(ammp.acc.c_str(), mlp->acc.c_str()) == 0)
                 break;
         }
         if (it != gelop->ammp.end()) {
@@ -1353,8 +1350,8 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
             return;
         }
 
-        mlp = (MixLocPtr) MemNew(sizeof(MixLoc));
-        mlp->acc = StringSave(text_id->GetAccession().c_str());
+        mlp = new MixLoc();
+        mlp->acc = text_id->GetAccession();
         mlp->ver = text_id->IsSetVersion() ? text_id->GetVersion() : INT2_MIN;
         mlp->acc_cho = choice;
         mlp->min = c->slibp->from;
@@ -1435,8 +1432,8 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
 
         if (mlp == NULL)
         {
-            mlp = (MixLocPtr)MemNew(sizeof(MixLoc));
-            mlp->acc = StringSave(text_id->GetAccession().c_str());
+            mlp = new MixLoc();
+            mlp->acc = text_id->GetAccession().c_str();
             mlp->ver = text_id_ver;
             mlp->acc_cho = id->Which();
             mlp->min = from;
@@ -1475,9 +1472,9 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
             if (tmlp->next != NULL)
                 continue;
 
-            tmlp->next = (MixLocPtr)MemNew(sizeof(MixLoc));
+            tmlp->next = new MixLoc();
             tmlp = tmlp->next;
-            tmlp->acc = StringSave(text_id->GetAccession().c_str());
+            tmlp->acc = text_id->GetAccession();
             tmlp->ver = text_id_ver;
             tmlp->acc_cho = id->Which();
             tmlp->min = from;
@@ -1590,10 +1587,10 @@ static Int2 GetMergeOrder(MixLocPtr first, MixLocPtr second)
     count = 0;
     for(mlp = second; mlp != NULL; mlp = mlp->next)
     {
-        if(mlp->acc == NULL)
+        if(mlp->acc.empty())
             continue;
         for(tmlp = second; tmlp < mlp; tmlp = tmlp->next)
-            if(tmlp->acc != NULL && StringCmp(tmlp->acc, mlp->acc) == 0)
+            if(!tmlp->acc.empty() && StringCmp(tmlp->acc.c_str(), mlp->acc.c_str()) == 0)
                 break;
         if(tmlp < mlp)
             continue;
@@ -1601,10 +1598,10 @@ static Int2 GetMergeOrder(MixLocPtr first, MixLocPtr second)
     }
     for(mlp = first; mlp != NULL; mlp = mlp->next)
     {
-        if(mlp->acc == NULL)
+        if(mlp->acc.empty())
             continue;
         for(tmlp = first; tmlp < mlp; tmlp = tmlp->next)
-            if(tmlp->acc != NULL && StringCmp(tmlp->acc, mlp->acc) == 0)
+            if(!tmlp->acc.empty() && StringCmp(tmlp->acc.c_str(), mlp->acc.c_str()) == 0)
                 break;
         if(tmlp < mlp)
             continue;
@@ -1761,7 +1758,7 @@ static void SortMixLoc(GeneListPtr c)
     {
         for(tmlp = mlp->next; tmlp != NULL; tmlp = tmlp->next)
         {
-            if(StringCmp(mlp->acc, tmlp->acc) != 0 || mlp->ver != tmlp->ver ||
+            if(StringCmp(mlp->acc.c_str(), tmlp->acc.c_str()) != 0 || mlp->ver != tmlp->ver ||
                mlp->strand != tmlp->strand)
                 break;
             if(mlp->strand == 2)
@@ -1852,8 +1849,8 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
             {
                 ErrPostEx(SEV_WARNING, ERR_GENEREF_NoUniqMaploc,
                           "Two different cdregions for one gene %s\"%s\".",
-                          (c->locus == NULL) ? "with locus_tag " : "",
-                          (c->locus == NULL) ? c->locus_tag : c->locus);
+                          (c->locus.empty()) ? "with locus_tag " : "",
+                          (c->locus.empty()) ? c->locus_tag.c_str() : c->locus.c_str());
             }
         }
     }
@@ -2035,8 +2032,8 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
             {
                 ErrPostEx(SEV_WARNING, ERR_GENEREF_NoUniqMaploc,
                           "Different maplocs in the gene %s\"%s\".",
-                          (c->locus == NULL) ? "with locus_tag " : "",
-                          (c->locus == NULL) ? c->locus_tag : c->locus);
+                          (c->locus.empty()) ? "with locus_tag " : "",
+                          (c->locus.empty()) ? c->locus_tag.c_str() : c->locus.c_str());
             }
         }
         for(cn = c; cn != NULL; cn = cn->next)
@@ -2541,8 +2538,13 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp,
 
         pseudogene = CpTheQualValue((*feat)->GetQual(), "pseudogene");
         newglp = new GeneList;
-        newglp->locus = gene;
-        newglp->locus_tag = locus_tag;
+        if (gene) {
+            newglp->locus = gene;
+        }
+        if (locus_tag) {
+            newglp->locus_tag = locus_tag;
+        }
+
         newglp->pseudogene = pseudogene;
         fta_collect_wormbases(newglp, *(*feat));
         fta_collect_olts(newglp, *(*feat));
@@ -2629,7 +2631,7 @@ static CdssListPtr SrchCdss(CSeq_annot::C_Data::TFtable& feats, CdssListPtr clp,
         if(slip == NULL)
             continue;
 
-        newclp = (CdssListPtr) MemNew(sizeof(CdssList));
+        newclp = new CdssList();
         newclp->segnum = segnum;
         newclp->from = slip->from;
         newclp->to = slip->to;
@@ -2700,12 +2702,12 @@ static void GeneCheckForStrands(GeneListPtr glp)
 
     while(glp != NULL)
     {
-        if(glp->locus == NULL && glp->locus_tag == NULL)
+        if(glp->locus.empty() && glp->locus_tag.empty())
             continue;
         bool got = false;
         for(tglp = glp->next; tglp != NULL; tglp = tglp->next)
         {
-            if(tglp->locus == NULL && tglp->locus_tag == NULL)
+            if(tglp->locus.empty() && tglp->locus_tag.empty())
                 continue;
             if(fta_cmp_locusyn(glp, tglp) != 0)
                 break;
@@ -2717,21 +2719,11 @@ static void GeneCheckForStrands(GeneListPtr glp)
         {
             ErrPostEx(SEV_WARNING, ERR_GENEREF_BothStrands,
                       "Gene name %s\"%s\" has been used for features on both strands.",
-                      (glp->locus == NULL) ? "with locus_tag " : "",
-                      (glp->locus == NULL) ? glp->locus_tag : glp->locus);
+                      (glp->locus.empty()) ? "with locus_tag " : "",
+                      (glp->locus.empty()) ? glp->locus_tag.c_str() : glp->locus.c_str());
         }
         glp = tglp;
     }
-}
-
-/**********************************************************/
-static bool fta_strings_i_same(char* s1, char* s2)
-{
-    if(s1 == NULL && s2 == NULL)
-        return true;
-    if(s1 == NULL || s2 == NULL || StringICmp(s1, s2) != 0)
-        return false;
-    return true;
 }
 
 /**********************************************************/
@@ -2751,40 +2743,40 @@ static bool LocusTagCheck(GeneListPtr glp, bool& resort)
     glpstop = NULL;
     for(ret = true; glp != NULL; glp = glpstop->next)
     {
-        if(glp->locus == NULL && glp->locus_tag == NULL)
+        if(glp->locus.empty() && glp->locus_tag.empty())
             continue;
 
         glpstart = glp;
         glpstop = glp;
         for(tglp = glp->next; tglp != NULL; tglp = tglp->next)
         {
-            if(fta_strings_i_same(glp->locus, tglp->locus) == false ||
-               fta_strings_i_same(glp->locus_tag, tglp->locus_tag) == false)
+            if(NStr::EqualNocase(glp->locus, tglp->locus) == false ||
+               NStr::EqualNocase(glp->locus_tag, tglp->locus_tag) == false)
                 break;
             glpstop = tglp;
         }
 
         for(tglp = glpstop->next; tglp != NULL; tglp = tglp->next)
         {
-            if(tglp->locus == NULL && tglp->locus_tag == NULL)
+            if(tglp->locus.empty() && tglp->locus_tag.empty())
                 continue;
 
-            same_gn = fta_strings_i_same(glpstart->locus, tglp->locus);
-            same_lt = fta_strings_i_same(glpstart->locus_tag, tglp->locus_tag);
+            same_gn = NStr::EqualNocase(glpstart->locus, tglp->locus);
+            same_lt = NStr::EqualNocase(glpstart->locus_tag, tglp->locus_tag);
 
             if((same_gn == false && same_lt == false) || (same_gn && same_lt) ||
-               same_gn || glpstart->locus_tag == NULL)
+               same_gn || glpstart->locus_tag.empty())
                 continue;
 
             for(glp = glpstart;; glp = glp->next)
             {
                 ErrPostEx(SEV_REJECT, ERR_FEATURE_InconsistentLocusTagAndGene,
                           "Inconsistent pairs /gene+/locus_tag are encountered: \"%s\"+\"%s\" : %s feature at %s : \"%s\"+\"%s\" : %s feature at %s. Entry dropped.",
-                          (glp->locus == NULL) ? "(NULL)" : glp->locus,
-                          (glp->locus_tag == NULL) ? "(NULL)" : glp->locus_tag,
+                          (glp->locus.empty()) ? "(NULL)" : glp->locus.c_str(),
+                          (glp->locus_tag.empty()) ? "(NULL)" : glp->locus_tag.c_str(),
                           glp->fname, glp->location,
-                          (tglp->locus == NULL) ? "(NULL)" : tglp->locus,
-                          (tglp->locus_tag == NULL) ? "(NULL)" : tglp->locus_tag,
+                          (tglp->locus.empty()) ? "(NULL)" : tglp->locus.c_str(),
+                          (tglp->locus_tag.empty()) ? "(NULL)" : tglp->locus_tag.c_str(),
                           tglp->fname, tglp->location);
                 if(glp == glpstop)
                     break;
@@ -2792,13 +2784,14 @@ static bool LocusTagCheck(GeneListPtr glp, bool& resort)
             ret = false;
         }
 
-        if(glpstart->locus != NULL && glpstart->locus_tag != NULL &&
-           StringCmp(glpstart->locus, glpstart->locus_tag) == 0)
+        if(!glpstart->locus.empty()  && !glpstart->locus_tag.empty() &&
+           NStr::EqualCase(glpstart->locus.c_str(), glpstart->locus_tag.c_str()))
         {
             for(glp = glpstart;; glp = glp->next)
             {
-                MemFree(glp->locus);
-                glp->locus = NULL;
+                glp->locus.clear();
+                //MemFree(glp->locus);
+                //glp->locus = NULL;
                 resort = true;
                 if(glp == glpstop)
                     break;
@@ -2820,7 +2813,7 @@ static void MiscFeatsWithoutGene(GeneNodePtr gnp)
 
     for(glp = gnp->glp; glp != NULL; glp = glp->next)
     {
-        if(glp->locus_tag == NULL || glp->locus != NULL ||
+        if(glp->locus_tag.empty() || !glp->locus.empty() ||
            glp->fname == NULL || StringCmp(glp->fname, "misc_feature") != 0)
             continue;
 
@@ -2829,10 +2822,10 @@ static void MiscFeatsWithoutGene(GeneNodePtr gnp)
             if(tglp->fname == NULL ||
                StringCmp(tglp->fname, "misc_feature") == 0)
                 continue;
-            if(tglp->locus == NULL || tglp->locus[0] == '\0' ||
-               fta_cmp_locus_tags(glp->locus_tag, tglp->locus_tag) != 0)
+            if(tglp->locus.empty() || tglp->locus[0] == '\0' ||
+               fta_cmp_locus_tags(glp->locus_tag.c_str(), tglp->locus_tag.c_str()) != 0)
                 continue;
-            glp->locus = StringSave(tglp->locus);
+            glp->locus = tglp->locus;
             break;
         }
     }
@@ -2861,8 +2854,8 @@ static void RemoveUnneededMiscFeats(GeneNodePtr gnp)
             if(tglp->todel || tglp->fname == NULL ||
                StringCmp(tglp->fname, "misc_feature") == 0)
                 continue;
-            if(fta_cmp_locus_tags(glp->locus, tglp->locus) != 0 ||
-               fta_cmp_locus_tags(glp->locus_tag, tglp->locus_tag) != 0)
+            if(fta_cmp_locus_tags(glp->locus.c_str(), tglp->locus.c_str()) != 0 ||
+               fta_cmp_locus_tags(glp->locus_tag.c_str(), tglp->locus_tag.c_str()) != 0)
                 continue;
             if(tglp->syn.empty())
             {
