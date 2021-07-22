@@ -163,7 +163,7 @@ static void TEST__client_1(SOCK sock)
     assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
 
     /* Shutdown on read */
-    assert(SOCK_Shutdown(sock, eIO_Read)  == eIO_Success);
+    verify(SOCK_Shutdown(sock, eIO_Read)  == eIO_Success);
     assert(SOCK_Status  (sock, eIO_Write) == eIO_Success);
     assert(SOCK_Status  (sock, eIO_Read)  == eIO_Closed);
     assert(SOCK_Read    (sock, 0,  0,&n_io_done,eIO_ReadPlain) == eIO_Unknown);
@@ -176,7 +176,7 @@ static void TEST__client_1(SOCK sock)
     assert(SOCK_Status  (sock, eIO_Write) == eIO_Success);
 
     /* Shutdown on write */
-    assert(SOCK_Shutdown(sock, eIO_Write)          == eIO_Success);
+    verify(SOCK_Shutdown(sock, eIO_Write)          == eIO_Success);
     assert(SOCK_Status  (sock, eIO_Write)          == eIO_Closed);
     assert(SOCK_Write   (sock, 0, 0, &n_io_done, eIO_WritePersist)
                                                    == eIO_Closed);
@@ -257,9 +257,9 @@ static void TEST__server_1(SOCK sock)
 
     /* Shutdown on write */
 #ifdef NCBI_OS_MSWIN
-    assert(SOCK_Shutdown(sock, eIO_ReadWrite) == eIO_Success);
+    verify(SOCK_Shutdown(sock, eIO_ReadWrite) == eIO_Success);
 #else
-    assert(SOCK_Shutdown(sock, eIO_Write)     == eIO_Success);
+    verify(SOCK_Shutdown(sock, eIO_Write)     == eIO_Success);
 #endif
     assert(SOCK_Status  (sock, eIO_Write)     == eIO_Closed);
     assert(SOCK_Write   (sock, 0, 0, &n_io_done, eIO_WritePersist)
@@ -270,7 +270,7 @@ static void TEST__server_1(SOCK sock)
 #else
     assert(SOCK_Status  (sock, eIO_Read)      == eIO_Success);
 #endif
-    assert(SOCK_Close   (sock)                == eIO_Success);
+    verify(SOCK_Close   (sock)                == eIO_Success);
 }
 
 
@@ -339,7 +339,7 @@ static void TEST__client_2(SOCK sock)
                 assert(SOCK_Status(sock, eIO_Read)  == eIO_Success);
                 assert(SOCK_Status(sock, eIO_Write) == eIO_Success);
 
-                /* give a break to let server reset the listening socket */
+                /* give it a break to let server reset the listening socket */
                 X_SLEEP(1);
             } while ( j-- );
         }
@@ -366,7 +366,7 @@ static void TEST__client_2(SOCK sock)
             } else {
                 const STimeout* x_to;
                 assert(status == eIO_Success  ||  status == eIO_Timeout);
-                x_to = SOCK_GetTimeout(sock, eIO_Write);
+                verify((x_to = SOCK_GetTimeout(sock, eIO_Write)) != 0);
                 assert(w_to.sec == x_to->sec  &&  w_to.usec == x_to->usec);
             }
             n_io  -= n_io_done;
@@ -416,7 +416,7 @@ static void TEST__client_2(SOCK sock)
             } else {
                 const STimeout* x_to;
                 assert(status == eIO_Success  ||  status == eIO_Timeout);
-                x_to = SOCK_GetTimeout(sock, eIO_Read);
+                verify((x_to = SOCK_GetTimeout(sock, eIO_Read)) != 0);
                 assert(r_to.sec == x_to->sec  &&  r_to.usec == x_to->usec);
             }
 
@@ -935,12 +935,12 @@ extern int main(int argc, const char* argv[])
                                      TEST_LockHandler, TEST_LockCleanup) );
 
         SOCK_SetDataLoggingAPI(eOn);
-        assert(SOCK_InitializeAPI() == eIO_Success);
+        verify(SOCK_InitializeAPI() == eIO_Success);
         SOCK_SetDataLoggingAPI(eOff);
 
         {{
             char local_host[64];
-            assert(SOCK_gethostname(local_host, sizeof(local_host)) == 0);
+            verify(SOCK_gethostname(local_host, sizeof(local_host)) == 0);
             CORE_LOGF(eLOG_Note,
                       ("Running NCBISOCK test on host \"%s\"", local_host));
         }}
@@ -953,7 +953,7 @@ extern int main(int argc, const char* argv[])
         TEST_OnTopSock();
 #endif/*NCBI_OS_LINUX*/
 
-        assert(SOCK_ShutdownAPI() == eIO_Success);
+        verify(SOCK_ShutdownAPI() == eIO_Success);
 
         CORE_SetLOCK(0);
         break;
@@ -961,7 +961,7 @@ extern int main(int argc, const char* argv[])
     case 2: {
         /*** SERVER ***/
         TEST__server(argv[1]);
-        assert(SOCK_ShutdownAPI() == eIO_Success);
+        verify(SOCK_ShutdownAPI() == eIO_Success);
         CORE_SetLOG(0);
         return 0;
     }
@@ -993,7 +993,7 @@ extern int main(int argc, const char* argv[])
             tmo = 0/*infinite*/;
 
         TEST__client(host, port, tmo);
-        assert(SOCK_ShutdownAPI() == eIO_Success);
+        verify(SOCK_ShutdownAPI() == eIO_Success);
         CORE_SetLOG(0);
         return 0;
     }
