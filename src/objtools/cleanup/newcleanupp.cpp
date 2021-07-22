@@ -1572,6 +1572,14 @@ string s_CleanupLatLon( string &subname ) {
     string lon;
     string east_or_west;
 
+    if (subname.length() < 1) {
+       return subname;
+    }
+    char ch = subname[0];
+    if (ch < '0' || ch > '9') {
+        return subname;
+    }
+
     // extract the pieces
     CNcbiIstrstream lat_lon_stream( subname );
     lat_lon_stream >> lat;
