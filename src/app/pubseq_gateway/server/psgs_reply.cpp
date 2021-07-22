@@ -64,7 +64,7 @@ void CPSGS_Reply::Flush(bool  is_last)
     m_ChunksLock = false;
 
     if (is_last)
-        m_Reply->CancelPending();
+        m_Reply->CancelPending(true);
 }
 
 
