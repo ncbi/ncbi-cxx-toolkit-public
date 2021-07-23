@@ -117,17 +117,12 @@ struct SeqlocInfoblk {
 using SeqlocInfoblkPtr = SeqlocInfoblk*;
 
 struct MixLoc {
-    //string  acc;
-    //Int4    ver;
-    //Uint1   acc_cho;
-
     CRef<CSeq_id> pId;
     Int4    min;
     Int4    max;
     Uint1   strand;
     bool    noleft;
     bool    noright;
-    Int4    numloc;
     Int4    numint;
     MixLoc* next=nullptr;
 };
@@ -874,16 +869,12 @@ static void AddGeneFeat(GeneListPtr glp, const string& maploc, TSeqFeatList& fea
 static MixLocPtr MixLocCopy(MixLocPtr mlp)
 {
     MixLocPtr res = new MixLoc();
-//    res->acc = mlp->acc;
-//    res->ver = mlp->ver;
-//    res->acc_cho = mlp->acc_cho;
     res->pId = mlp->pId;
     res->min = mlp->min;
     res->max = mlp->max;
     res->strand = mlp->strand;
     res->noleft = mlp->noleft;
     res->noright = mlp->noright;
-    res->numloc = mlp->numloc;
     res->numint = mlp->numint;
     res->next = NULL;
     return res;
@@ -1297,14 +1288,13 @@ static bool ConfirmCircular(MixLocPtr mlp)
         return true;
 
     for (tmlp = mlp; tmlp != NULL; tmlp = tmlp->next) {
-        tmlp->numloc = 0;
         tmlp->numint = 0;
     }
     return false;
 }
 
 /**********************************************************/
-static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
+static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop)
 {
     Int4         from;
     Int4         to;
@@ -1363,7 +1353,6 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
         mlp->strand = c->slibp->strand;
         mlp->noleft = c->slibp->noleft;
         mlp->noright = c->slibp->noright;
-        mlp->numloc = 0;
         mlp->numint = 0;
         c->mlp = mlp;
         return;
@@ -1451,7 +1440,6 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
             mlp->strand = strand;
             mlp->noleft = noleft;
             mlp->noright = noright;
-            mlp->numloc = num;
             mlp->numint = i++;
             continue;
         }
@@ -1489,7 +1477,6 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
             tmlp->strand = strand;
             tmlp->noleft = noleft;
             tmlp->noright = noright;
-            tmlp->numloc = num;
             tmlp->numint = i++;
             break;
         }
@@ -1745,7 +1732,6 @@ static void SortMixLoc(GeneListPtr c)
     Int4      min;
     Int4      max;
     Int4      numint;
-    Int4      numloc;
 
     if(c->mlp == NULL || c->mlp->next == NULL)
         return;
@@ -1802,19 +1788,16 @@ static void SortMixLoc(GeneListPtr c)
             noleft = mlp->noleft;
             noright = mlp->noright;
             numint = mlp->numint;
-            numloc = mlp->numloc;
             mlp->min = tmlp->min;
             mlp->max = tmlp->max;
             mlp->noleft = tmlp->noleft;
             mlp->noright = tmlp->noright;
             mlp->numint = tmlp->numint;
-            mlp->numloc = tmlp->numloc;
             tmlp->min = min;
             tmlp->max = max;
             tmlp->noleft = noleft;
             tmlp->noright = noright;
             tmlp->numint = numint;
-            tmlp->numloc = numloc;
         }
     }
 }
@@ -1853,7 +1836,7 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
     bool circular = false;
     for (j = 1, c = gnp->glp; c != NULL; c = c->next, j++) {
 
-        FixMixLoc(c, gnp->gelop, j);
+        FixMixLoc(c, gnp->gelop);
         if (gnp->circular && ConfirmCircular(c->mlp))
             circular = true;
     }
