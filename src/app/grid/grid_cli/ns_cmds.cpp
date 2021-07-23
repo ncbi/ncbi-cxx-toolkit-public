@@ -883,6 +883,12 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJob()
 
     if (!IsOptionSet(eConfirmRead) && !IsOptionSet(eFailRead) &&
             !IsOptionSet(eRollbackRead)) {
+        if (IsOptionSet(eJobId)) {
+            fprintf(stderr, GRID_APP_NAME " " READJOB_COMMAND
+                ": option '--" JOB_ID_OPTION "' cannot be used in simple mode.\n");
+            return 2;
+        }
+
         CNetScheduleJob job;
         CNetScheduleAPI::EJobStatus job_status;
 
