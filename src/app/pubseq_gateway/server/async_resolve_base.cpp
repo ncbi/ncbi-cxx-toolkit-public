@@ -45,6 +45,7 @@
 #include "async_resolve_base.hpp"
 #include "insdc_utils.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
+#include "bioseq_info_record_selector.hpp"
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -543,28 +544,10 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
         m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
     }
 
-    size_t  index_to_pick = 0;
+    ssize_t  index_to_pick = 0;
     if (record_count > 1) {
-        // Multiple records:
-        // => choose the highest version;
-        //    if more than one with the highest version then choose the highest
-        //    date changed
-        auto        version = records[0].GetVersion();
-        auto        date_changed = records[0].GetDateChanged();
-        for (size_t  k = 0; k < records.size(); ++k) {
-            if (records[k].GetVersion() > version) {
-                index_to_pick = k;
-                version = records[k].GetVersion();
-                date_changed = records[k].GetDateChanged();
-            } else {
-                if (records[k].GetVersion() == version) {
-                    if (records[k].GetDateChanged() > date_changed) {
-                        index_to_pick = k;
-                        date_changed = records[k].GetDateChanged();
-                    }
-                }
-            }
-        }
+        index_to_pick = SelectBioseqInfoRecord(records);
+
         // Pretend there was exactly one record
         record_count = 1;
     }
@@ -619,8 +602,9 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
         if (records.size() == 1)
             prefix = "Selected record:\n";
         else
-            prefix = "Selected (out of multiple records) the record with the highest version "
-                     "(and with highest date changed if more than one with highest version):\n";
+            prefix = "Record with max version (and max date changed if "
+                     "more than one with max version) selected "
+                     "(SEQ_STATE_LIFE records are checked first)\n";
         m_Reply->SendTrace(
             prefix +
             ToJson(records[index_to_pick], SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
