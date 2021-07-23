@@ -256,7 +256,6 @@ static void s_SimpleTest()
     vector<Uint8> src;
     src.resize(kSrcSize / sizeof(Uint8));
     auto random_uint8 = bind(uniform_int_distribution<Uint8>(), mt19937());
-    generate_n(src.begin(), src.size(), random_uint8);
 
     vector<char> buf;
     buf.resize(kBufSize);
@@ -271,6 +270,7 @@ static void s_SimpleTest()
 
         try {
             // Creating blob
+            generate_n(src.begin(), src.size(), random_uint8);
             auto ptr = reinterpret_cast<const char*>(src.data());
 
             api.Store(ctx.key, ctx.version, ctx.subkey, ptr, kSrcSize);
@@ -451,7 +451,7 @@ static void s_AsyncTest()
     vector<string> subkeys;
 
     {
-        CAsyncWriteCache async_api(main_cache.release(), writer_cache.release(), 100.0);
+        CAsyncWriteCache async_api(main_cache.release(), writer_cache.release(), 200.0);
         vector<unique_ptr<IWriter>> writers;
 
 
