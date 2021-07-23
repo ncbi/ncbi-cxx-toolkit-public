@@ -81,8 +81,9 @@ typedef std::set<std::string> TWormbaseSet;
 typedef std::set<std::string> TLocusTagSet;
 
 struct AccMinMax {
-    string acc;
-    Int2        ver=INT2_MIN;
+    CRef<CSeq_id> pId;
+//    string acc;
+//    Int2        ver=INT2_MIN;
     Int4        min=-1;
     Int4        max=-1;
 };
@@ -116,9 +117,11 @@ struct SeqlocInfoblk {
 using SeqlocInfoblkPtr = SeqlocInfoblk*;
 
 struct MixLoc {
-    string  acc;
-    Int4    ver;
-    Uint1   acc_cho;
+    //string  acc;
+    //Int4    ver;
+    //Uint1   acc_cho;
+
+    CRef<CSeq_id> pId;
     Int4    min;
     Int4    max;
     Uint1   strand;
@@ -533,10 +536,7 @@ static GeneNodePtr sort_gnp_list(GeneNodePtr gnp)
     for(index = 0, glp = gnp->glp; glp != NULL; glp = glp->next)
         temp[index++] = glp;
 
-    // TODO: should be switched anyway. The order of equal items is slightly different
     std::sort(temp, temp + index, CompareGeneListName);
-    //HeapSort((VoidPtr) temp, (size_t) index, sizeof(GeneListPtr),
-    //         CompareGeneListName);
 
     gnp->glp = glp = temp[0];
     for(index = 0; index < total - 1; glp = glp->next, index++)
@@ -874,10 +874,10 @@ static void AddGeneFeat(GeneListPtr glp, const string& maploc, TSeqFeatList& fea
 static MixLocPtr MixLocCopy(MixLocPtr mlp)
 {
     MixLocPtr res = new MixLoc();
-
-    res->acc = mlp->acc;
-    res->ver = mlp->ver;
-    res->acc_cho = mlp->acc_cho;
+//    res->acc = mlp->acc;
+//    res->ver = mlp->ver;
+//    res->acc_cho = mlp->acc_cho;
+    res->pId = mlp->pId;
     res->min = mlp->min;
     res->max = mlp->max;
     res->strand = mlp->strand;
@@ -887,6 +887,20 @@ static MixLocPtr MixLocCopy(MixLocPtr mlp)
     res->numint = mlp->numint;
     res->next = NULL;
     return res;
+}
+/**********************************************************/
+
+static bool s_IdsMatch(const CRef<CSeq_id>& pId1, const CRef<CSeq_id>& pId2)
+{
+    if (!pId1 && !pId2) {
+        return true;
+    }
+
+    if (!pId1 || !pId2) {
+        return false;
+    }
+
+    return (pId1->Compare(*pId2) == CSeq_id::e_YES);
 }
 
 /**********************************************************/
@@ -918,8 +932,8 @@ static MixLocPtr EasySeqLocMerge(MixLocPtr first, MixLocPtr second, bool join)
             next = MixLocCopy(mlp);
             for(res = tres->next; res != NULL; res = res->next)
             {
-                if(StringCmp(res->acc.c_str(), next->acc.c_str()) != 0 ||
-                   res->ver != next->ver || res->strand != next->strand)
+                if(!s_IdsMatch(res->pId, next->pId) ||
+                   res->strand != next->strand)
                     continue;
 
                 ttt = res->next;
@@ -935,8 +949,8 @@ static MixLocPtr EasySeqLocMerge(MixLocPtr first, MixLocPtr second, bool join)
                 ttt = prev->next;
                 for(res = mlp->next; res != NULL; res = res->next)
                 {
-                    if(StringCmp(res->acc.c_str(), ttt->acc.c_str()) == 0 &&
-                       res->ver == ttt->ver && res->strand == ttt->strand)
+                    if(s_IdsMatch(res->pId, ttt->pId) && 
+                       res->strand == ttt->strand)
                         break;
                 }
                 if(res != NULL)
@@ -958,17 +972,18 @@ static MixLocPtr EasySeqLocMerge(MixLocPtr first, MixLocPtr second, bool join)
         got = 0;
         for(tres = res; tres != NULL; tres = tres->next)
         {
-            if(tres->acc.empty())
+            if(!tres->pId)
                 continue;
             for(mlp = tres->next; mlp != NULL; mlp = mlp->next)
             {
-                if(mlp->acc.empty() || StringCmp(tres->acc.c_str(), mlp->acc.c_str()) != 0 ||
-                   tres->ver != mlp->ver || tres->strand != mlp->strand)
+                if(!mlp->pId || 
+                   !s_IdsMatch(tres->pId, mlp->pId) || 
+                   tres->strand != mlp->strand)
                     continue;
 
                 if(tres->min == mlp->min && tres->max == mlp->max)
                 {
-                    mlp->acc.clear();
+                    mlp->pId.Reset();
                     if(tres->noleft == false)
                         tres->noleft = mlp->noleft;
                     if(tres->noright == false)
@@ -1001,7 +1016,7 @@ static MixLocPtr EasySeqLocMerge(MixLocPtr first, MixLocPtr second, bool join)
                         tres->max = mlp->max;
                         tres->noright = mlp->noright;
                     }
-                    mlp->acc.clear();
+                    mlp->pId.Reset();
                     got = 1;
                 }
             }
@@ -1010,7 +1025,7 @@ static MixLocPtr EasySeqLocMerge(MixLocPtr first, MixLocPtr second, bool join)
     for(mlp = NULL, tres = res; tres != NULL; tres = next)
     {
         next = tres->next;
-        if(tres->acc != NULL)
+        if(tres->pId)
         {
             mlp = tres;
             continue;
@@ -1229,16 +1244,21 @@ static bool fta_check_feat_overlap(GeneLocsPtr gelop, GeneListPtr c,
         auto it = gelop->ammp.begin();
         for (; it != gelop->ammp.end(); ++it) {
             auto ammp = *it;
-            if(max < ammp.min || min > ammp.max || ammp.ver != mlp->ver)
+            int ver1=0;
+            string label1;
+            ammp.pId->GetLabel(&label1, &ver1);
+            string label2;
+            int ver2=0;
+            mlp->pId->GetLabel(&label2, &ver2);
+            if(max < ammp.min || min > ammp.max || ver1 != ver2)
                 continue;
-            if(StringCmp(ammp.acc.c_str(), mlp->acc.c_str()) == 0)
+            if(label1 != label2)
                 break;
         }
         if (it != gelop->ammp.end()) {
             break;
         }
     /*
-        for(ammp = gelop->ammp; ammp != NULL; ammp = ammp->next)
         {
             if(max < ammp->min || min > ammp->max || ammp->ver != mlp->ver)
                 continue;
@@ -1300,6 +1320,19 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
 
     if (c->feat.Empty() || !c->feat->IsSetLocation())
     {
+       CRef<CSeq_id> pTempId;
+       for (auto pId : c->slibp->ids) {
+           if (pId) {
+                pTempId = pId;
+                break;
+           }
+       }
+
+       if (!pTempId) {
+           return;
+       }
+        
+/*
         const CTextseq_id* text_id = nullptr;
         Uint1 choice = 0;
         ITERATE(TSeqIdList, cur_id, c->slibp->ids)
@@ -1322,11 +1355,9 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
         if (!text_id) {
             return;
         }
-
+*/
         mlp = new MixLoc();
-        mlp->acc = text_id->GetAccession();
-        mlp->ver = text_id->IsSetVersion() ? text_id->GetVersion() : INT2_MIN;
-        mlp->acc_cho = choice;
+        mlp->pId = pTempId;
         mlp->min = c->slibp->from;
         mlp->max = c->slibp->to;
         mlp->strand = c->slibp->strand;
@@ -1351,14 +1382,16 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
     {
         noleft = false;
         noright = false;
-        const CSeq_id* id = nullptr;
+        CRef<CSeq_id> pId;
 
         CConstRef<CSeq_loc> cur_loc = loc.GetRangeAsSeq_loc();
         if (cur_loc->IsInt())
         {
             const CSeq_interval& interval = cur_loc->GetInt();
-            if (interval.IsSetId())
-                id = &interval.GetId();
+            if (interval.IsSetId()) {
+                pId = Ref(new CSeq_id());
+                pId->Assign(interval.GetId());
+            }
 
             from = interval.IsSetFrom() ? interval.GetFrom() : 0;
             to = interval.IsSetTo() ? interval.GetTo() : 0;
@@ -1373,8 +1406,10 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
         else if (cur_loc->IsPnt())
         {
             const CSeq_point& point = cur_loc->GetPnt();
-            if (point.IsSetId())
-                id = &point.GetId();
+            if (point.IsSetId()) {
+                pId = Ref(new CSeq_id());
+                pId->Assign(point.GetId());
+             }
 
             from = point.IsSetPoint() ? point.GetPoint() : 0;
             to = from;
@@ -1391,9 +1426,11 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
         else
             continue;
 
-        if (from < 0 || to < 0)
+        if (!pId || from < 0 || to < 0) {
             continue;
+        }
 
+/*
         const CTextseq_id* text_id = nullptr;
         if (id != nullptr)
             text_id = id->GetTextseq_Id();
@@ -1402,13 +1439,13 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
             continue;
 
         int text_id_ver = text_id->IsSetVersion() ? text_id->GetVersion() : INT2_MIN;
+*/
+
 
         if (mlp == NULL)
         {
             mlp = new MixLoc();
-            mlp->acc = text_id->GetAccession().c_str();
-            mlp->ver = text_id_ver;
-            mlp->acc_cho = id->Which();
+            mlp->pId = pId;
             mlp->min = from;
             mlp->max = to;
             mlp->strand = strand;
@@ -1422,8 +1459,7 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
         for (tmlp = mlp; ;tmlp = tmlp->next)
         {
             tempcirc = false;
-            if (text_id->GetAccession() == tmlp->acc &&
-                tmlp->ver == text_id_ver && tmlp->strand == strand)
+            if (s_IdsMatch(pId, tmlp->pId) && tmlp->strand == strand)
             {
                 if (tempcirc == false && ((tmlp->min <= to && tmlp->max >= from) ||
                     fta_check_feat_overlap(gelop, c, tmlp, from, to) == false))
@@ -1447,9 +1483,7 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
 
             tmlp->next = new MixLoc();
             tmlp = tmlp->next;
-            tmlp->acc = text_id->GetAccession();
-            tmlp->ver = text_id_ver;
-            tmlp->acc_cho = id->Which();
+            tmlp->pId = pId;
             tmlp->min = from;
             tmlp->max = to;
             tmlp->strand = strand;
@@ -1464,17 +1498,6 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop, Int4 num)
     c->mlp = mlp;
 }
 
-/**********************************************************/
-static void fta_make_seq_id(MixLocPtr mlp, CSeq_id& id)
-{
-    CRef<CTextseq_id> text_id(new CTextseq_id);
-    text_id->SetAccession(mlp->acc);
-
-    if (mlp->ver != INT2_MIN)
-        text_id->SetVersion(mlp->ver);
-
-    SetTextId(mlp->acc_cho, id, *text_id);
-}
 
 /**********************************************************/
 static void fta_make_seq_int(MixLocPtr mlp, bool noleft, bool noright, CSeq_interval& interval)
@@ -1484,8 +1507,8 @@ static void fta_make_seq_int(MixLocPtr mlp, bool noleft, bool noright, CSeq_inte
 
     interval.SetFrom(mlp->min);
     interval.SetTo(mlp->max);
-
-    fta_make_seq_id(mlp, interval.SetId());
+    
+    interval.SetId(*(mlp->pId));
 
     if(mlp->noleft || noleft)
     {
@@ -1505,7 +1528,7 @@ static void fta_make_seq_pnt(MixLocPtr mlp, bool noleft, bool noright, CSeq_poin
         point.SetStrand(static_cast<CSeq_point::TStrand>(mlp->strand));
     point.SetPoint(mlp->min);
 
-    fta_make_seq_id(mlp, point.SetId());
+    point.SetId(*(mlp->pId));
 
     if(mlp->noleft || mlp->noright || noleft || noright)
     {
@@ -1560,10 +1583,10 @@ static Int2 GetMergeOrder(MixLocPtr first, MixLocPtr second)
     count = 0;
     for(mlp = second; mlp != NULL; mlp = mlp->next)
     {
-        if(mlp->acc.empty())
+        if(!mlp->pId)
             continue;
         for(tmlp = second; tmlp < mlp; tmlp = tmlp->next)
-            if(!tmlp->acc.empty() && StringCmp(tmlp->acc.c_str(), mlp->acc.c_str()) == 0)
+            if(tmlp->pId && s_IdsMatch(tmlp->pId, mlp->pId))
                 break;
         if(tmlp < mlp)
             continue;
@@ -1571,10 +1594,10 @@ static Int2 GetMergeOrder(MixLocPtr first, MixLocPtr second)
     }
     for(mlp = first; mlp != NULL; mlp = mlp->next)
     {
-        if(mlp->acc.empty())
+        if(!mlp->pId)
             continue;
         for(tmlp = first; tmlp < mlp; tmlp = tmlp->next)
-            if(!tmlp->acc.empty() && StringCmp(tmlp->acc.c_str(), mlp->acc.c_str()) == 0)
+            if(tmlp->pId && s_IdsMatch(tmlp->pId, mlp->pId))
                 break;
         if(tmlp < mlp)
             continue;
@@ -1731,7 +1754,7 @@ static void SortMixLoc(GeneListPtr c)
     {
         for(tmlp = mlp->next; tmlp != NULL; tmlp = tmlp->next)
         {
-            if(StringCmp(mlp->acc.c_str(), tmlp->acc.c_str()) != 0 || mlp->ver != tmlp->ver ||
+            if(!s_IdsMatch(mlp->pId, tmlp->pId) ||
                mlp->strand != tmlp->strand)
                 break;
             if(mlp->strand == 2)
@@ -2282,11 +2305,14 @@ static list<AccMinMax> fta_get_acc_minmax_strand(const CSeq_loc* location,
         for (CSeq_loc_CI loc(*location); loc; ++loc)
         {
             CConstRef<CSeq_loc> cur_loc = loc.GetRangeAsSeq_loc();
-            const CSeq_id* id = nullptr;
+            CRef<CSeq_id> pId;
             if (cur_loc->IsInt())
             {
                 const CSeq_interval& interval = cur_loc->GetInt();
-                id = &interval.GetId();
+                if (interval.IsSetId()) {
+                    pId = Ref(new CSeq_id());
+                    pId->Assign(interval.GetId());
+                }
                 from = interval.GetFrom();
                 to = interval.GetTo();
 
@@ -2299,7 +2325,10 @@ static list<AccMinMax> fta_get_acc_minmax_strand(const CSeq_loc* location,
             else if (cur_loc->IsPnt())
             {
                 const CSeq_point& point = cur_loc->GetPnt();
-                id = &point.GetId();
+                if (point.IsSetId()) {
+                    pId = Ref(new CSeq_id());
+                    pId->Assign(point.GetId());
+                }
                 from = point.GetPoint();
                 to = from;
 
@@ -2311,7 +2340,7 @@ static list<AccMinMax> fta_get_acc_minmax_strand(const CSeq_loc* location,
             }
             else
                 continue;
-
+/*
             acc = "unknown";
             ver = 0;
             if (id != nullptr)
@@ -2323,33 +2352,33 @@ static list<AccMinMax> fta_get_acc_minmax_strand(const CSeq_loc* location,
                     ver = text_id->IsSetVersion() ? text_id->GetVersion() : INT2_MIN;
                 }
             }
+*/
+            _ASSERT(pId);
 
             if (gelop->verymin > from)
                 gelop->verymin = from;
             if (gelop->verymax < to)
                 gelop->verymax = to;
 
-            bool found_accession=false;
+            bool found_id=false;
             auto it = ammps.begin();
-            while (!found_accession && it != ammps.end()) {
+            while (!found_id && it != ammps.end()) {
                 auto ammp = *it;
-                if (StringCmp(ammp.acc.c_str(), acc) == 0 && ammp.ver == ver) {
+                if (s_IdsMatch(ammp.pId, pId)) {
                     if (from < ammp.min) {
                         ammp.min = from;
                     }
                     if (to > ammp.max) {
                         ammp.max = to;
                     }
-                    found_accession=true;
+                    found_id=true;
                 }
                 ++it;
             }
 
-            if (!found_accession) {
+            if (!found_id) {
                 AccMinMax ammp;
-                //ammp.acc = StringSave(acc);
-                ammp.acc = acc;
-                ammp.ver = ver;
+                ammp.pId = pId;
                 ammp.min = from;
                 ammp.max = to;
                 ammps.push_back(ammp);
