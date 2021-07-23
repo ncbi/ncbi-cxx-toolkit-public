@@ -36,6 +36,7 @@
 #include "pubseq_gateway_convert_utils.hpp"
 #include "insdc_utils.hpp"
 #include "pending_operation.hpp"
+#include "bioseq_info_record_selector.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -102,27 +103,12 @@ CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
                 break;
             default:
                 // More than one record; may be need to pick the latest version
-                auto    ver = records[0].GetVersion();
-                auto    date_changed = records[0].GetDateChanged();
-                size_t  index_to_pick = 0;
-                for (size_t  k = 0; k < records.size(); ++k) {
-                    if (records[k].GetVersion() > ver) {
-                        index_to_pick = k;
-                        ver = records[k].GetVersion();
-                        date_changed = records[k].GetDateChanged();
-                    } else {
-                        if (records[k].GetVersion() == ver) {
-                            if (records[k].GetDateChanged() > date_changed) {
-                                index_to_pick = k;
-                                date_changed = records[k].GetDateChanged();
-                            }
-                        }
-                    }
-                }
+                ssize_t     index_to_pick = SelectBioseqInfoRecord(records);
                 if (m_NeedTrace) {
                     m_Reply->SendTrace(
                         "Record with max version (and max date changed if "
-                        "more than one with max version) selected\n" +
+                        "more than one with max version) selected "
+                        "(SEQ_STATE_LIFE records are checked first)\n" +
                         ToJson(records[index_to_pick],
                                SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                             Repr(CJsonNode::fStandardJson),

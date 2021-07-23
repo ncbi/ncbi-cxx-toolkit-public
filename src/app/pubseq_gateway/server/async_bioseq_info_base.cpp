@@ -36,6 +36,7 @@
 #include "insdc_utils.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
 #include "async_bioseq_info_base.hpp"
+#include "bioseq_info_record_selector.hpp"
 
 using namespace std::placeholders;
 
@@ -201,32 +202,15 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         m_FinishedCB(move(m_BioseqResolution));
         return;
     }
-
-    // Here: there are more than one records. There could be multiple records
-    // with the same version. So select the highest version and the highest
-    // date changed within the highest version
-    size_t                              index = 0;
-    CBioseqInfoRecord::TVersion         version = records[0].GetVersion();
-    CBioseqInfoRecord::TDateChanged     date_changed = records[0].GetDateChanged();
-    for (size_t  k = 0; k < records.size(); ++k) {
-        if (records[k].GetVersion() > version) {
-            index = k;
-            version = records[k].GetVersion();
-            date_changed = records[k].GetDateChanged();
-        } else {
-            if (records[k].GetVersion() == version) {
-                if (records[k].GetDateChanged() > date_changed) {
-                    index = k;
-                    date_changed = records[k].GetDateChanged();
-                }
-            }
-        }
-    }
+    // Here: there are more than one records so a record will be picked for
+    // sure.
+    ssize_t     index = SelectBioseqInfoRecord(records);
 
     if (m_NeedTrace) {
         m_Reply->SendTrace(
             "Record with max version (and max date changed if "
-            "more than one with max version) selected\n" +
+            "more than one with max version) selected "
+            "(SEQ_STATE_LIFE records are checked first)\n" +
             ToJson(records[index], SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                 Repr(CJsonNode::fStandardJson) +
             "\nReport found",
