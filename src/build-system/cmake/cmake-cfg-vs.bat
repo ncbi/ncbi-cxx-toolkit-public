@@ -27,7 +27,7 @@ if not exist "%CMAKE_CMD%" (
 REM #########################################################################
 REM defaults
 set BUILD_SHARED_LIBS=OFF
-set VISUAL_STUDIO=2017
+set VISUAL_STUDIO=2019
 set SKIP_ANALYSIS=OFF
 
 goto :RUN
@@ -65,8 +65,8 @@ echo                  examples:    --with-features="StrictGI"
 echo   --with-build-root=name   -- specify a non-default build directory name
 echo   --without-analysis       -- skip source tree analysis
 echo   --with-vs=N              -- use Visual Studio N generator 
-echo                  examples:    --with-vs=2017  (default)
-echo                               --with-vs=2019
+echo                  examples:    --with-vs=2019  (default)
+echo                               --with-vs=2017
 echo   --with-generator="X"     -- use generator X
 
 if defined have_configure_ext_Usage (
