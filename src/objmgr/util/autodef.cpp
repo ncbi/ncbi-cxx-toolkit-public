@@ -1211,6 +1211,7 @@ string CAutoDef::x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_obje
     string locus_name;
     string allele;
     string repeat;
+    string flanking;
     string assay;
 
     if (comment.IsSetData()) {
@@ -1224,6 +1225,8 @@ string CAutoDef::x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_obje
                     allele = (*it)->GetData().GetStr();
                 } else if (NStr::EqualNocase(label, "Bracketed repeat")) {
                     repeat = (*it)->GetData().GetStr();
+                } else if (NStr::EqualNocase(label, "Flanking region")) {
+                    flanking = (*it)->GetData().GetStr();
                 } else if (NStr::EqualNocase(label, "Sequencing assay code")) {
                     assay = (*it)->GetData().GetStr();
                 }
@@ -1247,6 +1250,9 @@ string CAutoDef::x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_obje
             }             
         }
         ++f;
+    }
+    if (flanking != "") {
+        clause += " " + flanking;
     }
     if (assay != "") {
         clause += " " + assay;
