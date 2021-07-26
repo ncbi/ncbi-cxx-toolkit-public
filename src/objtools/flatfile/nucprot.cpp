@@ -2620,7 +2620,7 @@ static void FindCd(TEntryList& seq_entries, CScope& scope, ParserPtr pp, GeneRef
     {
         for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
             const objects::CSeq_id& first_id = *(*bioseq->GetId().begin());
-            if (IsSegBioseq(&first_id))
+            if (IsSegBioseq(first_id))
                 continue;
 
             InfoBioseqFree(pbp->ibp);
