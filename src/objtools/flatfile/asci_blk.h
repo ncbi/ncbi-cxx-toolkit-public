@@ -78,7 +78,7 @@ void BuildBioSegHeader(ParserPtr pp, TEntryList& entries,
                        const objects::CSeq_loc& seqloc);
 // LCOV_EXCL_STOP
 
-bool        IsSegBioseq(const objects::CSeq_id* id);
+bool        IsSegBioseq(const objects::CSeq_id& id);
 char*     check_div(bool pat_acc, bool pat_ref, bool est_kwd,
                             bool sts_kwd, bool gss_kwd, bool if_cds, char* div, unsigned char* tech, size_t bases,
                             Parser::ESource source, bool& drop);

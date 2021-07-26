@@ -2796,12 +2796,12 @@ void BuildBioSegHeader(ParserPtr pp, TEntryList& entries,
 *                                              8-16-93
 *
 **********************************************************/
-bool IsSegBioseq(const objects::CSeq_id* id)
+bool IsSegBioseq(const objects::CSeq_id& id)
 {
-    if(id == nullptr || id->Which() == objects::CSeq_id::e_Patent)
+    if(id.Which() == objects::CSeq_id::e_Patent)
         return false;
 
-    const objects::CTextseq_id* text_id = id->GetTextseq_Id();
+    const objects::CTextseq_id* text_id = id.GetTextseq_Id();
 
     if(!text_id)
         return(false);

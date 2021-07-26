@@ -252,6 +252,9 @@ static bool fta_seqid_same(const CSeq_id& sid, const Char* acnum, const CSeq_id*
     if(acnum == NULL)
         return true;
 
+    auto id_string = sid.GetSeqIdString();
+    return NStr::EqualCase(id_string, acnum);
+/*
     if (!sid.IsGenbank() && !sid.IsEmbl() && !sid.IsDdbj() &&
         !sid.IsPir() && !sid.IsSwissprot() && !sid.IsOther() &&
         !sid.IsPrf() && !sid.IsTpg() && !sid.IsTpd() &&
@@ -264,6 +267,7 @@ static bool fta_seqid_same(const CSeq_id& sid, const Char* acnum, const CSeq_id*
         return false;
 
     return true;
+    */
 }
 
 /**********************************************************/
@@ -1249,16 +1253,6 @@ static bool fta_check_feat_overlap(GeneLocsPtr gelop, GeneListPtr c,
         if (it != gelop->ammp.end()) {
             break;
         }
-    /*
-        {
-            if(max < ammp->min || min > ammp->max || ammp->ver != mlp->ver)
-                continue;
-            if(StringCmp(ammp->acc, mlp->acc) == 0)
-                break;
-        }
-        if(ammp != NULL)
-            break;
-            */
     }
 
     return gelop != NULL;
@@ -1322,30 +1316,6 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop)
            return;
        }
         
-/*
-        const CTextseq_id* text_id = nullptr;
-        Uint1 choice = 0;
-        ITERATE(TSeqIdList, cur_id, c->slibp->ids)
-        {
-            if (!(*cur_id)->IsGenbank() && !(*cur_id)->IsEmbl() && !(*cur_id)->IsDdbj() &&
-                !(*cur_id)->IsPir() && !(*cur_id)->IsSwissprot() && !(*cur_id)->IsOther() &&
-                !(*cur_id)->IsPrf() && !(*cur_id)->IsTpg() && !(*cur_id)->IsTpd() &&
-                !(*cur_id)->IsTpe() && !(*cur_id)->IsGpipe())
-                continue;
-
-            text_id = (*cur_id)->GetTextseq_Id();
-            if (text_id != nullptr && text_id->IsSetAccession())
-            {
-                choice = (*cur_id)->Which();
-                break;
-            }
-            text_id = nullptr;
-        }
-
-        if (!text_id) {
-            return;
-        }
-*/
         mlp = new MixLoc();
         mlp->pId = pTempId;
         mlp->min = c->slibp->from;
@@ -1418,17 +1388,6 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop)
         if (!pId || from < 0 || to < 0) {
             continue;
         }
-
-/*
-        const CTextseq_id* text_id = nullptr;
-        if (id != nullptr)
-            text_id = id->GetTextseq_Id();
-
-        if (text_id == nullptr || !text_id->IsSetAccession())
-            continue;
-
-        int text_id_ver = text_id->IsSetVersion() ? text_id->GetVersion() : INT2_MIN;
-*/
 
 
         if (mlp == NULL)
@@ -1650,7 +1609,6 @@ static void CircularSeqLocFormat(GeneListPtr c)
 
                 if(mlp->min != tmlp->min || mlp->max != tmlp->max)
                     continue;
-
                 if(tmlp->numint == 0)
                 {
                     if(tmlp->noleft)
@@ -2026,33 +1984,18 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
 }
 
 /**********************************************************/
-static CRef<CSeq_id> CpSeqIdAcOnly(const CSeq_id* id, bool accver)
+static CRef<CSeq_id> CpSeqIdAcOnly(const CSeq_id& id, bool accver)
 {
-    CRef<CSeq_id> new_id;
+    auto new_id = Ref(new CSeq_id());
+    new_id->Assign(id);
 
-    if (id == nullptr)
-    {
-        ErrPostStr(SEV_WARNING, ERR_SEQID_NoSeqId,
-                   "Seqid value not found for the entry");
-        return new_id;
+    if (!accver) {
+        const CTextseq_id* pTextId = new_id->GetTextseq_Id();
+        if (pTextId && pTextId->IsSetVersion()) {
+            const_cast<CTextseq_id*>(pTextId)->ResetVersion();
+        }   
     }
-
-    new_id.Reset(new CSeq_id);
     
-    CRef<CTextseq_id> text_id(new CTextseq_id);
-    const CTextseq_id* old_text_id = id->GetTextseq_Id();
-
-    if (old_text_id != nullptr)
-    {
-        if (old_text_id->IsSetAccession())
-            text_id->SetAccession(old_text_id->GetAccession());
-        else if (old_text_id->IsSetName())
-            text_id->SetName(old_text_id->GetName());
-        if (accver && old_text_id->IsSetVersion())
-            text_id->SetVersion(old_text_id->GetVersion());
-    }
-
-    SetTextId(id->Which(), *new_id, *text_id);
     return new_id;
 }
 
@@ -2321,21 +2264,10 @@ static list<AccMinMax> fta_get_acc_minmax_strand(const CSeq_loc* location,
                 else if (gelop->strand != strand)
                     gelop->strand = -1;
             }
-            else
+            else {
                 continue;
-/*
-            acc = "unknown";
-            ver = 0;
-            if (id != nullptr)
-            {
-                const CTextseq_id* text_id = id->GetTextseq_Id();
-                if (text_id != nullptr && text_id->IsSetAccession())
-                {
-                    acc = text_id->GetAccession().c_str();
-                    ver = text_id->IsSetVersion() ? text_id->GetVersion() : INT2_MIN;
-                }
             }
-*/
+
             _ASSERT(pId);
 
             if (gelop->verymin > from)
@@ -2651,7 +2583,11 @@ static void FindGene(CBioseq& bioseq, GeneNodePtr gene_node)
     if (!bioseq.GetId().empty())
         first_id = *bioseq.GetId().begin();
 
-    if (IsSegBioseq(first_id))
+    if (!first_id) {
+        return;
+    }
+
+    if (IsSegBioseq(*first_id))
         return;                         /* process this bioseq */
 
     if (bioseq.GetInst().GetTopology() == CSeq_inst::eTopology_circular)
@@ -2665,7 +2601,7 @@ static void FindGene(CBioseq& bioseq, GeneNodePtr gene_node)
         if (!(*annot)->IsFtable())
             continue;
 
-        CRef<CSeq_id> id = CpSeqIdAcOnly(first_id, gene_node->accver);
+        CRef<CSeq_id> id = CpSeqIdAcOnly(*first_id, gene_node->accver);
 
         ++(gene_node->segindex);              /* > 1, if segment set */
 

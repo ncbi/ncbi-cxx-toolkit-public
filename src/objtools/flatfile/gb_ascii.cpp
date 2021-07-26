@@ -2178,7 +2178,7 @@ static void FindFeatSeqLoc(TEntryList& seq_entries, TSeqFeatList& feats)
         for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
         {
             const objects::CSeq_id& first_id = *(*bioseq->GetId().begin());
-            if (IsSegBioseq(&first_id) || !bioseq->IsSetAnnot())
+            if (IsSegBioseq(first_id) || !bioseq->IsSetAnnot())
                 continue;
 
             /* process this bioseq entry
