@@ -280,7 +280,7 @@ protected:
 public:
     virtual ~CFeatWriter(void) = default;
 
-    bool WriteFeatures(CFeat_CI first) {
+    bool WriteFeatures(CFeat_CI& first) {
         auto it = first;
         while (it) {
             if (!xWriteFeature(it)) {
