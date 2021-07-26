@@ -184,7 +184,7 @@
             usage_str += "    [builddir]  -- path to the pre-built NCBI C++ toolkit\n";
             usage_str += "                       default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
             usage_str += "                       you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
-            usage_str += "    [-msvc nn]  -- MSVC version: 140, 140x64, 150, 150x64; default is " + GetDefaultMsvcVer() + "\n";
+            usage_str += "    [-msvc nn]  -- MSVC version: 160x64, 150x64; default is " + GetDefaultMsvcVer() + "\n";
             usage_str += "    [-dll]      -- use  NCBI C++ toolkit DLLs' instead of static libraries\n";
             usage_str += "    [-b]        -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
             usage_str += "    [-v]        -- show details about what is being made\n";
