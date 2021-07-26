@@ -524,6 +524,8 @@ int CBlastFormatterApp::Run(void)
                 NCBI_RETHROW(e, CInputException, eInvalidInput,
                              "Invalid input format for BLAST Archive.");
             }
+            x_AddCmdOptions();
+            m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     	    return status;
         }
 
