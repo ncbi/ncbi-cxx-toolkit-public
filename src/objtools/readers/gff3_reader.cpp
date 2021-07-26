@@ -867,13 +867,6 @@ void CGff3Reader::xVerifyCdsParents(
         return;
     }
     record.GetAttribute("Parent", parents);
-    if (parents.empty()) {
-        CReaderMessage error(
-            eDiag_Error,
-            m_uLineNumber,
-            "Bad data line: CDS record is missing mandatory Parent attribute.");
-        throw error;
-    }
     map<string, string>::iterator it = mCdsParentMap.find(id);
     if (it == mCdsParentMap.end()) {
         mCdsParentMap[id] = parents;

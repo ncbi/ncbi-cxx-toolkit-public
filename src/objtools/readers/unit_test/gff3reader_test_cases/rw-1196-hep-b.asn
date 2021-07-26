@@ -1,30 +1,266 @@
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 9
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
       id local id 1,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2306,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 1622,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24660.1"
+        },
+        {
+          qual "part",
+          val "1"
+        },
+        {
+          qual "product",
+          val "polymerase"
+        },
+        {
+          qual "protein_id",
+          val "AAF24660.1"
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24660.1"
+        }
+      }
+    },
+    {
+      id local id 2,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 2847,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24661.1"
+        },
+        {
+          qual "part",
+          val "1"
+        },
+        {
+          qual "product",
+          val "large S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24661.1"
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24661.1"
+        }
+      }
+    },
+    {
+      id local id 3,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 3171,
+          to 3181,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        },
+        int {
+          from 0,
+          to 834,
+          strand plus,
+          id genbank {
+            accession "AF121239",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24662.1"
+        },
+        {
+          qual "part",
+          val "1"
+        },
+        {
+          qual "product",
+          val "middle S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24662.1"
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24662.1"
+        }
+      }
+    },
+    {
+      id local id 4,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 154,
+        to 834,
+        strand plus,
+        id genbank {
+          accession "AF121239",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24663.1"
+        },
+        {
+          qual "product",
+          val "S protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24663.1"
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24663.1"
+        }
+      }
+    },
+    {
+      id local id 5,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1373,
+        to 1837,
+        strand plus,
+        id genbank {
+          accession "AF121239",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24659.1"
+        },
+        {
+          qual "product",
+          val "X peptide"
+        },
+        {
+          qual "protein_id",
+          val "AAF24659.1"
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24659.1"
+        }
+      }
+    },
+    {
+      id local id 6,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 1900,
+        to 2451,
+        strand plus,
+        id genbank {
+          accession "AF121239",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds-AAF24664.1"
+        },
+        {
+          qual "product",
+          val "core protein"
+        },
+        {
+          qual "protein_id",
+          val "AAF24664.1"
+        }
+      },
+      dbxref {
+        {
+          db "NCBI_GP",
+          tag str "AAF24664.1"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 7,
       data biosrc {
         genome genomic,
         org {
@@ -83,7 +319,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 2,
+      id local id 8,
       data gene {
         locus "X"
       },
@@ -112,12 +348,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 3
+          id local id 9
         }
       }
     },
     {
-      id local id 3,
+      id local id 9,
       data cdregion {
         frame one
       },
@@ -154,7 +390,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local id 8
         }
       },
       dbxref {
@@ -165,7 +401,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 10,
       data gene {
         locus "C"
       },
@@ -194,12 +430,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 5
+          id local id 11
         }
       }
     },
     {
-      id local id 5,
+      id local id 11,
       data cdregion {
         frame one
       },
@@ -236,7 +472,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 4
+          id local id 10
         }
       },
       dbxref {
@@ -247,7 +483,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 6,
+      id local id 12,
       data imp {
         key "misc_feature"
       },
@@ -273,7 +509,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 13,
       data gene {
         locus "P"
       },
@@ -313,12 +549,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 8
+          id local id 14
         }
       }
     },
     {
-      id local id 8,
+      id local id 14,
       data cdregion {
         frame one
       },
@@ -366,7 +602,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 7
+          id local id 13
         }
       },
       dbxref {
@@ -377,7 +613,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 9,
+      id local id 15,
       data gene {
         locus "S"
       },
@@ -417,12 +653,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 10
+          id local id 16
         }
       }
     },
     {
-      id local id 10,
+      id local id 16,
       data cdregion {
         frame one
       },
@@ -497,7 +733,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 9
+          id local id 15
         }
       },
       dbxref {
@@ -510,32 +746,9 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 9
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
-      id local id 11,
+      id local id 17,
       data biosrc {
         org {
           orgname {
@@ -593,7 +806,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 12,
+      id local id 18,
       data gene {
         locus "X"
       },
@@ -622,12 +835,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 13
+          id local id 19
         }
       }
     },
     {
-      id local id 13,
+      id local id 19,
       data cdregion {
         frame one
       },
@@ -664,7 +877,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 12
+          id local id 18
         }
       },
       dbxref {
@@ -675,7 +888,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 14,
+      id local id 20,
       data gene {
         locus "C"
       },
@@ -704,12 +917,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 15
+          id local id 21
         }
       }
     },
     {
-      id local id 15,
+      id local id 21,
       data cdregion {
         frame one
       },
@@ -757,7 +970,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 14
+          id local id 20
         }
       },
       dbxref {
@@ -768,7 +981,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 22,
       data gene {
         locus "P"
       },
@@ -808,12 +1021,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 17
+          id local id 23
         }
       }
     },
     {
-      id local id 17,
+      id local id 23,
       data cdregion {
         frame one
       },
@@ -861,7 +1074,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 16
+          id local id 22
         }
       },
       dbxref {
@@ -872,7 +1085,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 18,
+      id local id 24,
       data gene {
         locus "S"
       },
@@ -912,12 +1125,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 19
+          id local id 25
         }
       }
     },
     {
-      id local id 19,
+      id local id 25,
       data cdregion {
         frame one
       },
@@ -992,7 +1205,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 18
+          id local id 24
         }
       },
       dbxref {
@@ -1005,32 +1218,9 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 9
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
-      id local id 20,
+      id local id 26,
       data biosrc {
         org {
           orgname {
@@ -1088,7 +1278,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 21,
+      id local id 27,
       data gene {
         locus "X"
       },
@@ -1117,12 +1307,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 22
+          id local id 28
         }
       }
     },
     {
-      id local id 22,
+      id local id 28,
       data cdregion {
         frame one
       },
@@ -1159,7 +1349,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 21
+          id local id 27
         }
       },
       dbxref {
@@ -1170,7 +1360,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 23,
+      id local id 29,
       data gene {
         locus "C"
       },
@@ -1199,12 +1389,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 24
+          id local id 30
         }
       }
     },
     {
-      id local id 24,
+      id local id 30,
       data cdregion {
         frame one
       },
@@ -1252,7 +1442,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 23
+          id local id 29
         }
       },
       dbxref {
@@ -1263,7 +1453,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 31,
       data gene {
         locus "P"
       },
@@ -1303,12 +1493,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 26
+          id local id 32
         }
       }
     },
     {
-      id local id 26,
+      id local id 32,
       data cdregion {
         frame one
       },
@@ -1356,7 +1546,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 25
+          id local id 31
         }
       },
       dbxref {
@@ -1367,7 +1557,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 27,
+      id local id 33,
       data gene {
         locus "S"
       },
@@ -1407,12 +1597,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 28
+          id local id 34
         }
       }
     },
     {
-      id local id 28,
+      id local id 34,
       data cdregion {
         frame one
       },
@@ -1487,7 +1677,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 27
+          id local id 33
         }
       },
       dbxref {
@@ -1500,32 +1690,9 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 9
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
-      id local id 29,
+      id local id 35,
       data biosrc {
         org {
           orgname {
@@ -1583,7 +1750,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 30,
+      id local id 36,
       data gene {
         locus "X"
       },
@@ -1612,12 +1779,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 31
+          id local id 37
         }
       }
     },
     {
-      id local id 31,
+      id local id 37,
       data cdregion {
         frame one
       },
@@ -1654,7 +1821,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 30
+          id local id 36
         }
       },
       dbxref {
@@ -1665,7 +1832,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 32,
+      id local id 38,
       data gene {
         locus "C"
       },
@@ -1694,12 +1861,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 33
+          id local id 39
         }
       }
     },
     {
-      id local id 33,
+      id local id 39,
       data cdregion {
         frame one
       },
@@ -1736,7 +1903,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 32
+          id local id 38
         }
       },
       dbxref {
@@ -1747,7 +1914,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 40,
       data imp {
         key "misc_feature"
       },
@@ -1773,7 +1940,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 35,
+      id local id 41,
       data gene {
         locus "P"
       },
@@ -1813,12 +1980,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 36
+          id local id 42
         }
       }
     },
     {
-      id local id 36,
+      id local id 42,
       data cdregion {
         frame one
       },
@@ -1866,7 +2033,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 35
+          id local id 41
         }
       },
       dbxref {
@@ -1877,7 +2044,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 43,
       data gene {
         locus "S"
       },
@@ -1917,12 +2084,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 38
+          id local id 44
         }
       }
     },
     {
-      id local id 38,
+      id local id 44,
       data cdregion {
         frame one
       },
@@ -1997,7 +2164,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 37
+          id local id 43
         }
       },
       dbxref {
@@ -2010,32 +2177,9 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 9
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
-      id local id 39,
+      id local id 45,
       data biosrc {
         org {
           orgname {
@@ -2093,7 +2237,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 46,
       data gene {
         locus "X"
       },
@@ -2122,12 +2266,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 41
+          id local id 47
         }
       }
     },
     {
-      id local id 41,
+      id local id 47,
       data cdregion {
         frame one
       },
@@ -2164,7 +2308,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 40
+          id local id 46
         }
       },
       dbxref {
@@ -2175,7 +2319,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 42,
+      id local id 48,
       data gene {
         locus "C"
       },
@@ -2204,12 +2348,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 43
+          id local id 49
         }
       }
     },
     {
-      id local id 43,
+      id local id 49,
       data cdregion {
         frame one
       },
@@ -2257,7 +2401,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 42
+          id local id 48
         }
       },
       dbxref {
@@ -2268,7 +2412,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 44,
+      id local id 50,
       data gene {
         locus "P"
       },
@@ -2308,12 +2452,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 45
+          id local id 51
         }
       }
     },
     {
-      id local id 45,
+      id local id 51,
       data cdregion {
         frame one
       },
@@ -2361,7 +2505,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 44
+          id local id 50
         }
       },
       dbxref {
@@ -2372,7 +2516,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 52,
       data gene {
         locus "S"
       },
@@ -2412,12 +2556,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 47
+          id local id 53
         }
       }
     },
     {
-      id local id 47,
+      id local id 53,
       data cdregion {
         frame one
       },
@@ -2492,7 +2636,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 46
+          id local id 52
         }
       },
       dbxref {
@@ -2505,32 +2649,9 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 9
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
-      id local id 48,
+      id local id 54,
       data biosrc {
         org {
           orgname {
@@ -2588,7 +2709,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 55,
       data gene {
         locus "X"
       },
@@ -2617,12 +2738,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 50
+          id local id 56
         }
       }
     },
     {
-      id local id 50,
+      id local id 56,
       data cdregion {
         frame one
       },
@@ -2659,7 +2780,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 49
+          id local id 55
         }
       },
       dbxref {
@@ -2670,7 +2791,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 51,
+      id local id 57,
       data gene {
         locus "C"
       },
@@ -2699,12 +2820,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 52
+          id local id 58
         }
       }
     },
     {
-      id local id 52,
+      id local id 58,
       data cdregion {
         frame one
       },
@@ -2752,7 +2873,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 51
+          id local id 57
         }
       },
       dbxref {
@@ -2763,7 +2884,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 53,
+      id local id 59,
       data gene {
         locus "P"
       },
@@ -2803,12 +2924,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 54
+          id local id 60
         }
       }
     },
     {
-      id local id 54,
+      id local id 60,
       data cdregion {
         frame one
       },
@@ -2856,7 +2977,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 53
+          id local id 59
         }
       },
       dbxref {
@@ -2867,7 +2988,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 61,
       data gene {
         locus "S"
       },
@@ -2907,12 +3028,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 56
+          id local id 62
         }
       }
     },
     {
-      id local id 56,
+      id local id 62,
       data cdregion {
         frame one
       },
@@ -2987,7 +3108,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 55
+          id local id 61
         }
       },
       dbxref {
@@ -3000,32 +3121,9 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 9
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
-      id local id 57,
+      id local id 63,
       data biosrc {
         org {
           orgname {
@@ -3083,7 +3181,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 64,
       data gene {
         locus "X"
       },
@@ -3112,12 +3210,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 59
+          id local id 65
         }
       }
     },
     {
-      id local id 59,
+      id local id 65,
       data cdregion {
         frame one
       },
@@ -3154,7 +3252,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 58
+          id local id 64
         }
       },
       dbxref {
@@ -3165,7 +3263,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 60,
+      id local id 66,
       data gene {
         locus "C"
       },
@@ -3194,12 +3292,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 61
+          id local id 67
         }
       }
     },
     {
-      id local id 61,
+      id local id 67,
       data cdregion {
         frame one
       },
@@ -3247,7 +3345,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 60
+          id local id 66
         }
       },
       dbxref {
@@ -3258,7 +3356,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 62,
+      id local id 68,
       data gene {
         locus "P"
       },
@@ -3298,12 +3396,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 63
+          id local id 69
         }
       }
     },
     {
-      id local id 63,
+      id local id 69,
       data cdregion {
         frame one
       },
@@ -3351,7 +3449,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 62
+          id local id 68
         }
       },
       dbxref {
@@ -3362,7 +3460,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 70,
       data gene {
         locus "S"
       },
@@ -3402,12 +3500,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 65
+          id local id 71
         }
       }
     },
     {
-      id local id 65,
+      id local id 71,
       data cdregion {
         frame one
       },
@@ -3482,7 +3580,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 64
+          id local id 70
         }
       },
       dbxref {
@@ -3495,32 +3593,9 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 9
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
-      id local id 66,
+      id local id 72,
       data biosrc {
         org {
           orgname {
@@ -3578,7 +3653,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 73,
       data gene {
         locus "X"
       },
@@ -3607,12 +3682,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 68
+          id local id 74
         }
       }
     },
     {
-      id local id 68,
+      id local id 74,
       data cdregion {
         frame one
       },
@@ -3649,7 +3724,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 67
+          id local id 73
         }
       },
       dbxref {
@@ -3660,7 +3735,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 69,
+      id local id 75,
       data gene {
         locus "C"
       },
@@ -3689,12 +3764,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 70
+          id local id 76
         }
       }
     },
     {
-      id local id 70,
+      id local id 76,
       data cdregion {
         frame one
       },
@@ -3742,7 +3817,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 69
+          id local id 75
         }
       },
       dbxref {
@@ -3753,7 +3828,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 71,
+      id local id 77,
       data gene {
         locus "P"
       },
@@ -3793,12 +3868,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 72
+          id local id 78
         }
       }
     },
     {
-      id local id 72,
+      id local id 78,
       data cdregion {
         frame one
       },
@@ -3846,7 +3921,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 71
+          id local id 77
         }
       },
       dbxref {
@@ -3857,7 +3932,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 79,
       data gene {
         locus "S"
       },
@@ -3897,12 +3972,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 74
+          id local id 80
         }
       }
     },
     {
-      id local id 74,
+      id local id 80,
       data cdregion {
         frame one
       },
@@ -3977,7 +4052,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 73
+          id local id 79
         }
       },
       dbxref {
@@ -3990,32 +4065,9 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 9
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
-      id local id 75,
+      id local id 81,
       data biosrc {
         org {
           orgname {
@@ -4073,7 +4125,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 76,
+      id local id 82,
       data gene {
         locus "X"
       },
@@ -4102,12 +4154,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 77
+          id local id 83
         }
       }
     },
     {
-      id local id 77,
+      id local id 83,
       data cdregion {
         frame one
       },
@@ -4144,7 +4196,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 76
+          id local id 82
         }
       },
       dbxref {
@@ -4155,7 +4207,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 78,
+      id local id 84,
       data gene {
         locus "C"
       },
@@ -4184,12 +4236,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 79
+          id local id 85
         }
       }
     },
     {
-      id local id 79,
+      id local id 85,
       data cdregion {
         frame one
       },
@@ -4237,7 +4289,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 78
+          id local id 84
         }
       },
       dbxref {
@@ -4248,7 +4300,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 80,
+      id local id 86,
       data gene {
         locus "P"
       },
@@ -4288,12 +4340,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 81
+          id local id 87
         }
       }
     },
     {
-      id local id 81,
+      id local id 87,
       data cdregion {
         frame one
       },
@@ -4341,7 +4393,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 80
+          id local id 86
         }
       },
       dbxref {
@@ -4352,7 +4404,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 82,
+      id local id 88,
       data gene {
         locus "S"
       },
@@ -4392,12 +4444,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 83
+          id local id 89
         }
       }
     },
     {
-      id local id 83,
+      id local id 89,
       data cdregion {
         frame one
       },
@@ -4472,7 +4524,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 82
+          id local id 88
         }
       },
       dbxref {
@@ -4485,32 +4537,9 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 9
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
-      id local id 84,
+      id local id 90,
       data biosrc {
         org {
           orgname {
@@ -4568,7 +4597,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 85,
+      id local id 91,
       data gene {
         locus "X"
       },
@@ -4597,12 +4626,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 86
+          id local id 92
         }
       }
     },
     {
-      id local id 86,
+      id local id 92,
       data cdregion {
         frame one
       },
@@ -4639,7 +4668,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 85
+          id local id 91
         }
       },
       dbxref {
@@ -4650,7 +4679,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 87,
+      id local id 93,
       data gene {
         locus "C"
       },
@@ -4679,12 +4708,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 88
+          id local id 94
         }
       }
     },
     {
-      id local id 88,
+      id local id 94,
       data cdregion {
         frame one
       },
@@ -4721,7 +4750,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 87
+          id local id 93
         }
       },
       dbxref {
@@ -4732,7 +4761,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 89,
+      id local id 95,
       data imp {
         key "misc_feature"
       },
@@ -4758,7 +4787,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 90,
+      id local id 96,
       data gene {
         locus "P"
       },
@@ -4798,12 +4827,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 91
+          id local id 97
         }
       }
     },
     {
-      id local id 91,
+      id local id 97,
       data cdregion {
         frame one
       },
@@ -4851,7 +4880,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 90
+          id local id 96
         }
       },
       dbxref {
@@ -4862,7 +4891,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 92,
+      id local id 98,
       data gene {
         locus "S"
       },
@@ -4902,12 +4931,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 93
+          id local id 99
         }
       }
     },
     {
-      id local id 93,
+      id local id 99,
       data cdregion {
         frame one
       },
@@ -4982,7 +5011,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 92
+          id local id 98
         }
       },
       dbxref {
@@ -4995,32 +5024,9 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 9
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
-      id local id 94,
+      id local id 100,
       data biosrc {
         org {
           orgname {
@@ -5078,7 +5084,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 95,
+      id local id 101,
       data gene {
         locus "X"
       },
@@ -5107,12 +5113,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 96
+          id local id 102
         }
       }
     },
     {
-      id local id 96,
+      id local id 102,
       data cdregion {
         frame one
       },
@@ -5149,7 +5155,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 95
+          id local id 101
         }
       },
       dbxref {
@@ -5160,7 +5166,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 97,
+      id local id 103,
       data gene {
         locus "C"
       },
@@ -5189,12 +5195,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 98
+          id local id 104
         }
       }
     },
     {
-      id local id 98,
+      id local id 104,
       data cdregion {
         frame one
       },
@@ -5242,7 +5248,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 97
+          id local id 103
         }
       },
       dbxref {
@@ -5253,7 +5259,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 99,
+      id local id 105,
       data gene {
         locus "P"
       },
@@ -5293,12 +5299,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 100
+          id local id 106
         }
       }
     },
     {
-      id local id 100,
+      id local id 106,
       data cdregion {
         frame one
       },
@@ -5346,7 +5352,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 99
+          id local id 105
         }
       },
       dbxref {
@@ -5357,7 +5363,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 101,
+      id local id 107,
       data gene {
         locus "S"
       },
@@ -5397,12 +5403,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 102
+          id local id 108
         }
       }
     },
     {
-      id local id 102,
+      id local id 108,
       data cdregion {
         frame one
       },
@@ -5477,7 +5483,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 101
+          id local id 107
         }
       },
       dbxref {
@@ -5490,32 +5496,9 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 9
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
-      id local id 103,
+      id local id 109,
       data biosrc {
         org {
           orgname {
@@ -5573,7 +5556,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 104,
+      id local id 110,
       data gene {
         locus "X"
       },
@@ -5602,12 +5585,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 105
+          id local id 111
         }
       }
     },
     {
-      id local id 105,
+      id local id 111,
       data cdregion {
         frame one
       },
@@ -5644,7 +5627,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 104
+          id local id 110
         }
       },
       dbxref {
@@ -5655,7 +5638,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 106,
+      id local id 112,
       data gene {
         locus "C"
       },
@@ -5684,12 +5667,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 107
+          id local id 113
         }
       }
     },
     {
-      id local id 107,
+      id local id 113,
       data cdregion {
         frame one
       },
@@ -5726,7 +5709,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 106
+          id local id 112
         }
       },
       dbxref {
@@ -5737,7 +5720,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 108,
+      id local id 114,
       data imp {
         key "misc_feature"
       },
@@ -5763,7 +5746,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 109,
+      id local id 115,
       data gene {
         locus "P"
       },
@@ -5803,12 +5786,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 110
+          id local id 116
         }
       }
     },
     {
-      id local id 110,
+      id local id 116,
       data cdregion {
         frame one
       },
@@ -5856,7 +5839,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 109
+          id local id 115
         }
       },
       dbxref {
@@ -5867,7 +5850,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 111,
+      id local id 117,
       data gene {
         locus "S"
       },
@@ -5907,12 +5890,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 112
+          id local id 118
         }
       }
     },
     {
-      id local id 112,
+      id local id 118,
       data cdregion {
         frame one
       },
@@ -5987,7 +5970,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 111
+          id local id 117
         }
       },
       dbxref {
@@ -6000,32 +5983,9 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 9
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    }
-  },
   data ftable {
     {
-      id local id 113,
+      id local id 119,
       data biosrc {
         org {
           orgname {
@@ -6083,7 +6043,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 114,
+      id local id 120,
       data gene {
         locus "X"
       },
@@ -6112,12 +6072,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 115
+          id local id 121
         }
       }
     },
     {
-      id local id 115,
+      id local id 121,
       data cdregion {
         frame one
       },
@@ -6154,7 +6114,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 114
+          id local id 120
         }
       },
       dbxref {
@@ -6165,7 +6125,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 116,
+      id local id 122,
       data gene {
         locus "C"
       },
@@ -6194,12 +6154,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 117
+          id local id 123
         }
       }
     },
     {
-      id local id 117,
+      id local id 123,
       data cdregion {
         frame one
       },
@@ -6236,7 +6196,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 116
+          id local id 122
         }
       },
       dbxref {
@@ -6247,7 +6207,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 118,
+      id local id 124,
       data imp {
         key "misc_feature"
       },
@@ -6273,7 +6233,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 119,
+      id local id 125,
       data gene {
         locus "P"
       },
@@ -6313,12 +6273,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 120
+          id local id 126
         }
       }
     },
     {
-      id local id 120,
+      id local id 126,
       data cdregion {
         frame one
       },
@@ -6366,7 +6326,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 119
+          id local id 125
         }
       },
       dbxref {
@@ -6377,7 +6337,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 121,
+      id local id 127,
       data gene {
         locus "S"
       },
@@ -6417,12 +6377,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 122
+          id local id 128
         }
       }
     },
     {
-      id local id 122,
+      id local id 128,
       data cdregion {
         frame one
       },
@@ -6497,7 +6457,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 121
+          id local id 127
         }
       },
       dbxref {

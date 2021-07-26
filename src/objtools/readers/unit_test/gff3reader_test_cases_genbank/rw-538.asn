@@ -36,6 +36,28 @@ Seq-annot ::= {
     },
     {
       id local id 3,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 62,
+        to 1066,
+        strand minus,
+        id local str "Contig001"
+      },
+      qual {
+        {
+          qual "ID",
+          val "2701068364"
+        },
+        {
+          qual "product",
+          val "hypothetical protein"
+        }
+      }
+    },
+    {
+      id local id 4,
       data rna {
         type tmRNA
       },
@@ -57,7 +79,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 5,
       data rna {
         type tRNA
       },
@@ -79,7 +101,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 5,
+      id local id 6,
       data rna {
         type rRNA
       },
