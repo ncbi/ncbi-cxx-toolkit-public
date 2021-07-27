@@ -1247,7 +1247,7 @@ static bool fta_check_feat_overlap(GeneLocsPtr gelop, GeneListPtr c,
             mlp->pId->GetLabel(&label2, &ver2);
             if(max < ammp.min || min > ammp.max || ver1 != ver2)
                 continue;
-            if(label1 != label2)
+            if(label1 == label2)
                 break;
         }
         if (it != gelop->ammp.end()) {
