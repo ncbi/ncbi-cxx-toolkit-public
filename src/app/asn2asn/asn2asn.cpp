@@ -789,10 +789,10 @@ void MergeExternal(CObjectIStream& in, CObjectOStream& out, TGi gi,
     // external annotations sat is 26 (all except CDD).
     int sat = add_ext_feat == 8? 10: 26;
     CDB_SmallInt satIn(sat); 
-    CDB_Int satKeyIn(GI_TO(int, gi)); // sat_key is equal to GI.
+    CDB_BigInt satKeyIn(GI_TO(TIntId, gi)); // sat_key is equal to GI.
     CDB_Int ext_feat(add_ext_feat); // ext_feat mask.
 
-    cmd->SetParam("@sat_key", &satKeyIn);
+    cmd->SetParam("@gi", &satKeyIn);
     cmd->SetParam("@sat", &satIn);
     cmd->SetParam("@ext_feat", &ext_feat);
     cmd->Send();
