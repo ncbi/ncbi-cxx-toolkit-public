@@ -81,6 +81,8 @@ public:
     /// Constructor, sets up the version info.
     CVDBBlastnApp();
 
+    ~CVDBBlastnApp();
+
 private:
     /// Initialize the application.
     virtual void Init(void);
@@ -101,10 +103,16 @@ private:
 
     /// This application's command line arguments.
     CRef<CBlastnVdbAppArgs> m_CmdLineArgs;
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
 
 // ==========================================================================//
 // Various helper functions
+
+CVDBBlastnApp::~CVDBBlastnApp() {
+   	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
+}
 
 
 void CVDBBlastnApp::x_SetupLocalVDBSearch()
@@ -133,6 +141,11 @@ CVDBBlastnApp::CVDBBlastnApp()
     CRef<CVersion> version(new CVersion());
     version->SetVersionInfo(new CBlastVdbVersion);
     SetFullVersion(version);
+    m_StopWatch.Start();
+    if (m_UsageReport.IsEnabled()) {
+        m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+    }
+
 }
 
 void CVDBBlastnApp::Init(void)
@@ -167,6 +180,7 @@ int CVDBBlastnApp::Run(void)
     {
         // Allow the fasta reader to complain on invalid sequence input
         SetDiagPostLevel(eDiag_Warning);
+        SetDiagPostPrefix("blastn_vdb");
 
         // Get the arguments
         const CArgs& args = GetArgs();
@@ -277,6 +291,8 @@ int CVDBBlastnApp::Run(void)
         }
         // End Blast output
         formatter.PrintEpilog(opt);
+        LogQueryInfo(m_UsageReport, input);
+        formatter.LogBlastSearchInfo(m_UsageReport);
 
         // Optional debug output
         if (m_CmdLineArgs->ProduceDebugOutput()) {
@@ -311,6 +327,8 @@ int CVDBBlastnApp::Run(void)
         status = BLAST_SRA_UNKNOWN_ERROR;
     }
 
+    m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
 }
 

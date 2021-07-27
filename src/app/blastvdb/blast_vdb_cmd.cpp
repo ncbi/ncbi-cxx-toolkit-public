@@ -33,6 +33,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <algo/blast/vdb/vdb2blast_util.hpp>
+#include <algo/blast/api/blast_usage_report.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/vdb/vdbalias.hpp>
@@ -47,7 +48,10 @@ class CBlastVdbCmdApp : public CNcbiApplication
 {
 public:
     /** @inheritDoc */
-    CBlastVdbCmdApp() {}
+    CBlastVdbCmdApp();
+    ~CBlastVdbCmdApp() {
+    	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
+    }
 private:
     /** @inheritDoc */
     virtual void Init();
@@ -87,11 +91,27 @@ private:
 
     string x_FormatRuntime(const CStopWatch& sw) const;
 
+    void x_AddCmdOptions();
+
     // Store all db names
     string m_allDbs;
     string m_origDbs;
     bool m_isRef;
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
+
+
+CBlastVdbCmdApp::CBlastVdbCmdApp(): m_allDbs(kEmptyStr), m_origDbs(kEmptyStr), m_isRef(false) {
+        CRef<CVersion> version(new CVersion());
+        version->SetVersionInfo(new CBlastVersion());
+        SetFullVersion(version);
+        m_StopWatch.Start();
+        if (m_UsageReport.IsEnabled()) {
+        	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+        	m_UsageReport.AddParam(CBlastUsageReport::eProgram, (string) "blast_vdb_cmd");
+        }
+    }
 
 /** Class to extract FASTA (as returned by the blast_sra library) from SRA
  * data.
@@ -662,6 +682,8 @@ int CBlastVdbCmdApp::Run(void)
     int status = 0;
     const CArgs& args = GetArgs();
 
+    SetDiagPostLevel(eDiag_Warning);
+    SetDiagPostPrefix("blast_vdb_cmd");
    	x_InitApplicationData();
     try {
        	if(args["paths"].HasValue()) {
@@ -695,7 +717,30 @@ int CBlastVdbCmdApp::Run(void)
         cerr << "Unknown exception!" << endl;
         status = 1;
     }
+    x_AddCmdOptions();
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
+}
+
+void CBlastVdbCmdApp::x_AddCmdOptions()
+{
+    const CArgs & args = GetArgs();
+    if (args["info"]) {
+         m_UsageReport.AddParam(CBlastUsageReport::eDBInfo, true);
+    }
+    else if(args["entry"].HasValue() || args["entry_batch"].HasValue()) {
+         m_UsageReport.AddParam(CBlastUsageReport::eDBEntry, true);
+         if (args["entry"].HasValue() && args["entry"].AsString() == "all") {
+            m_UsageReport.AddParam(CBlastUsageReport::eDBDumpAll, true);
+        }
+    }
+    if(args["outfmt"].HasValue()) {
+        m_UsageReport.AddParam(CBlastUsageReport::eOutputFmt, args["outfmt"].AsString());
+    }
+
+    if (m_origDbs != kEmptyStr) {
+    	m_UsageReport.AddParam(CBlastUsageReport::eDBName, m_origDbs);
+    }
 }
 
 

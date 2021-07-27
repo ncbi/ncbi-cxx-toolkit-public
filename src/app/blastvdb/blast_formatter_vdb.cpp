@@ -45,10 +45,8 @@
 #include <algo/blast/vdb/vdbalias.hpp>
 #include "blast_vdb_app_util.hpp"
 
-#ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
-#endif
 
 /// The application class
 class CBlastFormatterVdbApp : public CNcbiApplication
@@ -60,8 +58,14 @@ public:
         version->SetVersionInfo(new CBlastVersion());
         SetFullVersion(version);
         m_LoadFromArchive = false;
-
+        m_StopWatch.Start();
+        if (m_UsageReport.IsEnabled()) {
+            m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+            m_UsageReport.AddParam(CBlastUsageReport::eProgram, (string) "blast_formatter_vdb");
+        }
     }
+    ~CBlastFormatterVdbApp();
+
 private:
     /** @inheritDoc */
     virtual void Init();
@@ -85,6 +89,8 @@ private:
     /// @param scope Scope object to add the sequence data to [in|out]
     SSeqLoc x_QueryBioseqToSSeqLoc(const CBioseq& bioseq, CRef<CScope> scope);
 
+    void x_AddCmdOptions();
+
     /// Our link to the NCBI BLAST service
     CRef<CRemoteBlast> m_RmtBlast;
 
@@ -93,7 +99,13 @@ private:
 
     /// Tracks whether results come from an archive file.
     bool m_LoadFromArchive;
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
+
+CBlastFormatterVdbApp::~CBlastFormatterVdbApp() {
+   	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
+}
 
 void CBlastFormatterVdbApp::Init()
 {
@@ -361,6 +373,8 @@ int CBlastFormatterVdbApp::Run(void)
                 NCBI_RETHROW(e, CInputException, eInvalidInput,
                              "Invalid input format for BLAST Archive.");
             }
+            x_AddCmdOptions();
+            m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     	    return status;
         }
 
@@ -401,9 +415,25 @@ int CBlastFormatterVdbApp::Run(void)
         }
 
     } CATCH_ALL(status)
+    x_AddCmdOptions();
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
 }
 
+void CBlastFormatterVdbApp::x_AddCmdOptions()
+{
+    const CArgs & args = GetArgs();
+    if (args[kArgRid].HasValue()) {
+         m_UsageReport.AddParam(CBlastUsageReport::eRIDInput, args[kArgRid].AsString());
+    }
+    else if (args[kArgArchive].HasValue()) {
+         m_UsageReport.AddParam(CBlastUsageReport::eArchiveInput, true);
+    }
+
+    if(args["outfmt"].HasValue()) {
+        m_UsageReport.AddParam(CBlastUsageReport::eOutputFmt, args["outfmt"].AsString());
+    }
+}
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)

@@ -54,11 +54,9 @@
 
 #include "CBlastVdbVersion.hpp" // CBlastVdbVersion
 
-#ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
-#endif
 
 // ==========================================================================//
 
@@ -83,6 +81,8 @@ public:
     /// Constructor, sets up the version info.
     CVDBTblastnApp();
 
+    ~CVDBTblastnApp();
+
 private:
     /// Initialize the application.
     virtual void Init(void);
@@ -103,10 +103,16 @@ private:
 
     /// This application's command line arguments.
     CRef<CTblastnVdbAppArgs> m_CmdLineArgs;
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
 
 // ==========================================================================//
 // Various helper functions
+
+CVDBTblastnApp::~CVDBTblastnApp() {
+   	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
+}
 
 
 void CVDBTblastnApp::x_SetupLocalVDBSearch()
@@ -135,6 +141,11 @@ CVDBTblastnApp::CVDBTblastnApp()
     CRef<CVersion> version(new CVersion());
     version->SetVersionInfo(new CBlastVdbVersion);
     SetFullVersion(version);
+    m_StopWatch.Start();
+    if (m_UsageReport.IsEnabled()) {
+        m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+    }
+
 }
 
 void CVDBTblastnApp::Init(void)
@@ -169,6 +180,7 @@ int CVDBTblastnApp::Run(void)
     {
         // Allow the fasta reader to complain on invalid sequence input
         SetDiagPostLevel(eDiag_Warning);
+        SetDiagPostPrefix("tblastn_vdb");
 
         // Get the arguments
         const CArgs& args = GetArgs();
@@ -267,6 +279,7 @@ int CVDBTblastnApp::Run(void)
             		}
             	}
         	}
+        	LogQueryInfo(m_UsageReport, input);
         }
         else {
         	 _ASSERT(pssm->HasQuery());
@@ -303,6 +316,7 @@ int CVDBTblastnApp::Run(void)
 
         // End Blast output
         formatter.PrintEpilog(opt);
+        formatter.LogBlastSearchInfo(m_UsageReport);
 
         // Optional debug output
         if (m_CmdLineArgs->ProduceDebugOutput()) {
@@ -337,6 +351,8 @@ int CVDBTblastnApp::Run(void)
         status = BLAST_SRA_UNKNOWN_ERROR;
     }
 
+    m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
 }
 
