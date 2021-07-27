@@ -73,7 +73,10 @@ public:
         fAllIdsAsLocal          = (1<<8), ///< = 0xA0 (Do not attempt to parse accessions)
         fPreferGenbankId        = (1<<9), ///< = 0xB0 (Prefer Genbank accession ids)
     };
-    typedef int TFlags;
+    using TFlags = long; ///< binary OR of EFlags
+    static void AddStringFlags(
+        const list<string>& stringFlags,
+        TFlags& baseFlags);
 
     CFeature_table_reader(TReaderFlags fReaderFlags = 0);
 

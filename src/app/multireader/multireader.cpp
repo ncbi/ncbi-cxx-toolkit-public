@@ -678,6 +678,8 @@ int
 CMultiReaderApp::Run()
 //  ----------------------------------------------------------------------------
 {
+    m_iFlags = 0;
+
     const CArgs& args = GetArgs();
     string argInFile = args["input"].AsString();
     string argOutFile = args["output"].AsString();
@@ -1148,7 +1150,7 @@ void CMultiReaderApp::xProcess5ColFeatTable(
     if (!istr) {
         return;
     }
-    CFeature_table_reader reader;
+    CFeature_table_reader reader(m_iFlags);
     CRef<ILineReader> pLineReader = ILineReader::New(istr);
     while(!pLineReader->AtEOF()) {
         CRef<CSeq_annot> pSeqAnnot =
@@ -1447,6 +1449,19 @@ void CMultiReaderApp::xSetFlags(
             list<string> stringFlags;
             NStr::Split(flagsStr, ",", stringFlags);
             CFastaReader::AddStringFlags(stringFlags, m_iFlags);
+        }
+        break;
+    }
+
+    case CFormatGuess::eFiveColFeatureTable: {
+        auto flagsStr = args["flags"].AsString();
+        try {
+            m_iFlags |= NStr::StringToInt(flagsStr, 0, 16);
+        }
+        catch (const CStringException&) {
+            list<string> stringFlags;
+            NStr::Split(flagsStr, ",", stringFlags);
+            CFeature_table_reader::AddStringFlags(stringFlags, m_iFlags);
         }
         break;
     }
