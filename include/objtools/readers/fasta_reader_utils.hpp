@@ -91,13 +91,6 @@ public:
         TSeqTitles titles;
     };
 
-    static bool ParseIDs(
-        const CTempString& id_string,
-        const SDeflineParseInfo& info,
-        const TIgnoredProblems& ignoredErrors,
-        TIds& ids,
-        ILineErrorListener* pMessageListener);
-
     static void ParseDefline(const CTempString& defline,
         const SDeflineParseInfo& info,
         const TIgnoredProblems& ignoredErrors,
