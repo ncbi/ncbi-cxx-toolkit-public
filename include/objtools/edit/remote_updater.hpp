@@ -109,6 +109,7 @@ public:
 
     void UpdateOrgFromTaxon(CSeq_entry& entry);
     void UpdateOrgFromTaxon(CSeqdesc& desc);
+    void SetTaxonTimeout(unsigned seconds, unsigned retries, bool exponential);
 
     void ClearCache();
     static void ConvertToStandardAuthors(CAuth_list& auth_list);
@@ -133,6 +134,11 @@ private:
 
     std::mutex m_Mutex;
     int m_MaxMlaAttempts=3;
+
+    bool m_TaxonTimeoutSet = false;
+    unsigned m_TaxonTimeout = 20;   // in seconds
+    unsigned m_TaxonAttempts = 5;
+    unsigned m_TaxonExponential = false;
 };
 
 END_SCOPE(edit)

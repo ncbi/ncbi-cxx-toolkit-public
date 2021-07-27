@@ -143,10 +143,20 @@ public:
 
     void Init()
     {
-        if (m_taxon.get() == 0)
+        if (!m_taxon)
         {
             m_taxon.reset(new CTaxon3);
             m_taxon->Init();
+            m_cache.reset(new CCachedReplyMap);
+        }
+    }
+
+    void InitWithTimeout(unsigned seconds, unsigned retries, bool exponential)
+    {
+        if (!m_taxon)
+        {
+            const STimeout timeout = { seconds, 0 };
+            m_taxon.reset(new CTaxon3(timeout, retries, exponential));
             m_cache.reset(new CCachedReplyMap);
         }
     }
@@ -257,6 +267,14 @@ void CRemoteUpdater::SetMaxMlaAttempts(int maxAttempts)
     m_MaxMlaAttempts = maxAttempts;
 }
 
+void CRemoteUpdater::SetTaxonTimeout(unsigned seconds, unsigned retries, bool exponential)
+{
+    m_TaxonTimeoutSet = true;
+    m_TaxonTimeout = seconds;
+    m_TaxonAttempts = retries;
+    m_TaxonExponential = exponential;
+}
+
 void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeqdesc& desc)
 {
     if (desc.IsOrg())
@@ -278,10 +296,13 @@ void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org, FLogger logger)
     if (taxid == ZERO_TAX_ID && !org.IsSetTaxname())
         return;
 
-    if (m_taxClient.get() == 0)
+    if (!m_taxClient)
     {
         m_taxClient.reset(new CCachedTaxon3_impl);
-        m_taxClient->Init();
+        if (m_TaxonTimeoutSet)
+            m_taxClient->InitWithTimeout(m_TaxonTimeout, m_TaxonAttempts, m_TaxonExponential);
+        else
+            m_taxClient->Init();
     }
 
     CRef<COrg_ref> new_org = m_taxClient->GetOrg(org, logger);
@@ -503,10 +524,13 @@ void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeq_entry& entry)
 
     std::lock_guard<std::mutex> guard(m_Mutex);
 
-    if (m_taxClient.get() == 0)
+    if (!m_taxClient)
     {
         m_taxClient.reset(new CCachedTaxon3_impl);
-        m_taxClient->Init();
+        if (m_TaxonTimeoutSet)
+            m_taxClient->InitWithTimeout(m_TaxonTimeout, m_TaxonAttempts, m_TaxonExponential);
+        else
+            m_taxClient->Init();
     }
 
     for (auto& it: org_to_update)
