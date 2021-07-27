@@ -861,6 +861,7 @@ CFeatureTableReader_Imp::~CFeatureTableReader_Imp(void)
 {
 }
 
+
 bool CFeatureTableReader_Imp::x_TryToParseOffset(
     const CTempString & sLine, Int4 & out_offset )
 {
@@ -3604,7 +3605,7 @@ CRef<CSeq_annot>
 CFeature_table_reader::ReadSeqAnnot(
     ILineReader &lr, ILineErrorListener *pMessageListener)
 {
-    return ReadSequinFeatureTable(lr, 0, pMessageListener);
+    return ReadSequinFeatureTable(lr, m_iFlags, pMessageListener);
 }
 
 
@@ -3731,6 +3732,28 @@ void CFeature_table_reader::ReadSequinFeatureTables(
     CStreamLineReader reader(ifs);
     return ReadSequinFeatureTables(reader, entry, flags, pMessageListener, filter);
 }
+
+void
+CFeature_table_reader::AddStringFlags(
+    const list<string>& stringFlags,
+    TFlags& baseFlags)
+{
+    static const map<string, CFeature_table_reader::TReaderFlags> flagsMap = {
+        { "ReportBadKey", CFeature_table_reader::fReportBadKey},
+        { "KeepBadKey", CFeature_table_reader::fKeepBadKey},
+        { "TranslateBadKey", CFeature_table_reader::fTranslateBadKey},
+        { "IgnoreWebComments", CFeature_table_reader::fIgnoreWebComments},
+        { "CreateGenesFromCDSs", CFeature_table_reader::fCreateGenesFromCDSs},
+        { "CDSsMustBeInTheirGenes", CFeature_table_reader::fCDSsMustBeInTheirGenes},
+        { "ReportDiscouragedKey", CFeature_table_reader::fReportDiscouragedKey},
+        { "LeaveProteinIds", CFeature_table_reader::fLeaveProteinIds},
+        { "AllIdsAsLocal", CFeature_table_reader::fAllIdsAsLocal},
+        { "PreferGenbankId", CFeature_table_reader::fPreferGenbankId},
+    };
+
+    return CReaderBase::xAddStringFlagsWithMap(stringFlags, flagsMap, baseFlags);
+};
+
 
 struct SCSeqidCompare
 {
