@@ -3119,7 +3119,9 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                 {
                     unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                     BOOST_CHECK( rs.get() != NULL );
-                    BOOST_CHECK( rs->Next() );
+                    if (rs.get() != NULL) {
+                        BOOST_CHECK( rs->Next() );
+                    }
                 }
                 auto_stmt->Cancel();
                 auto_stmt->Cancel();
@@ -3132,8 +3134,10 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                     int i = 0;
                     unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     BOOST_CHECK(rs.get() != NULL);
-                    while (rs->Next()) {
-                        ++i;
+                    if (rs.get() != NULL) {
+                        while (rs->Next()) {
+                            ++i;
+                        }
                     }
                     BOOST_CHECK(i > 0);
                 }
@@ -3194,7 +3198,9 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                 {
                     unique_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
                     BOOST_CHECK(rs.get() != NULL);
-                    BOOST_CHECK(rs->Next());
+                    if (rs.get() != NULL) {
+                        BOOST_CHECK(rs->Next());
+                    }
                 }
                 auto_stmt->Cancel();
                 auto_stmt->Cancel();
@@ -3208,8 +3214,10 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                     int i = 0;
                     unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     BOOST_CHECK(rs.get() != NULL);
-                    while (rs->Next()) {
-                        ++i;
+                    if (rs.get() != NULL) {
+                        while (rs->Next()) {
+                            ++i;
+                        }
                     }
                     BOOST_CHECK(i > 0);
                 }
@@ -3252,7 +3260,9 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                     BOOST_CHECK( auto_stmt->HasRows() );
                     unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     BOOST_CHECK(rs.get() != NULL);
-                    rs->Next();
+                    if (rs.get() != NULL) {
+                        rs->Next();
+                    }
                 } catch(const CDB_Exception& _DEBUG_ARG(ex))
                 {
                     _TRACE(ex);
@@ -3272,11 +3282,13 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                     BOOST_CHECK( auto_stmt->HasRows() );
                     unique_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     BOOST_CHECK(rs.get() != NULL);
-                    while (rs->Next()) {
-                        ++i;
+                    if (rs.get() != NULL) {
+                        while (rs->Next()) {
+                            ++i;
+                        }
+                        BOOST_CHECK(i > 0);
+                        rs->Next();
                     }
-                    BOOST_CHECK(i > 0);
-                    rs->Next();
                 } catch(const CDB_Exception& _DEBUG_ARG(ex))
                 {
                     _TRACE(ex);
