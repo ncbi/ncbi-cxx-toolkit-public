@@ -72,8 +72,8 @@ private:
 int CNCBITestHttp2SessionApp::Run(void)
 {
     const size_t kThreadNum = 4;
-    const string kGoodUrl("http://psg21.be-md.ncbi.nlm.nih.gov:10000/ID/resolve?seq_id=3150015&all_info=yes&use_cache=no");
-    const string kBadUrl("http://psg21.be-md.ncbi.nlm.nih.gov:10000/ID/resolve?seq_id=abc&all_info=yes");
+    const string kGoodUrl("https://www.ncbi.nlm.nih.gov/Service/dispd.cgi?service=test");
+    const string kBadUrl("https://www.ncbi.nlm.nih.gov/Service/404");
     atomic_size_t wait(kThreadNum);
     SOut out;
 
