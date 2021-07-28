@@ -40,6 +40,7 @@ class NCBI_XXCONNECT2_EXPORT CHttpSessionImpl2
 {
     friend class CHttpSessionTmpl<CHttpSessionImpl2>;
 
+    static auto GetDefaultProtocol() { return CHttpSession_Base::eHTTP_2; }
     static void StartRequest(CHttpSession_Base::EProtocol protocol, CHttpRequest& req, bool use_form_data);
     static void UpdateResponse(CHttpRequest& req, CHttpHeaders::THeaders headers);
     static bool Downgrade(CHttpResponse& resp, CHttpSession_Base::EProtocol& protocol);

@@ -1035,8 +1035,8 @@ CHttpRequest& CHttpRequest::SetRetryProcessing(ESwitch on_off)
 //
 
 
-CHttpSession_Base::CHttpSession_Base(void)
-    : m_Protocol(eHTTP_10),
+CHttpSession_Base::CHttpSession_Base(EProtocol protocol)
+    : m_Protocol(protocol),
       m_HttpFlags(0)
 {
 }
