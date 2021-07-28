@@ -229,8 +229,8 @@ int CHttpSessionApp::Run(void)
     if ( args["http-11"] ) {
         session.SetProtocol(CHttpSession::eHTTP_11);
 
-    } else if ( args["http-2"] ) {
-        session.SetProtocol(CHttpSession::eHTTP_2);
+    } else if (!args["http-2"]) {
+        session.SetProtocol(CHttpSession::eHTTP_10);
     }
 
     if (args["cert-file"]) {

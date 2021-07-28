@@ -738,7 +738,7 @@ public:
     void SetCredentials(shared_ptr<CTlsCertCredentials> cred);
     shared_ptr<CTlsCertCredentials> GetCredentials(void) const { return m_Credentials; }
 
-    CHttpSession_Base(void);
+    CHttpSession_Base(EProtocol protocol);
     virtual ~CHttpSession_Base(void) {}
 
 private:
@@ -764,6 +764,10 @@ private:
 template <class TImpl>
 class CHttpSessionTmpl : public CHttpSession_Base
 {
+public:
+    CHttpSessionTmpl() : CHttpSession_Base(TImpl::GetDefaultProtocol()) {}
+
+private:
     void x_StartRequest(EProtocol protocol, CHttpRequest& req, bool use_form_data) override
     {
         TImpl::StartRequest(protocol, req, use_form_data);
@@ -779,6 +783,11 @@ class CHttpSessionTmpl : public CHttpSession_Base
 class CHttpSessionImpl1x
 {
     friend class CHttpSessionTmpl<CHttpSessionImpl1x>;
+
+    static auto GetDefaultProtocol()
+    {
+        return CHttpSession_Base::eHTTP_10;
+    }
 
     static void StartRequest(CHttpSession_Base::EProtocol _DEBUG_ARG(protocol), CHttpRequest& req, bool use_form_data)
     {
