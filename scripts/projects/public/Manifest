@@ -26,11 +26,14 @@ Win64_17        : MSVC17-64     : static 64 ReleaseMT
 
 Cygwin64        : GCC       : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
 
-Linux64-Centos  : GCC510    : GCC.sh 5.1.0 --without-debug --with-mt --with-flat-makefile --without-ncbi-c
-Linux64-Centos  : GCC530    : GCC.sh 5.3.0 --without-debug --with-mt --with-flat-makefile --without-ncbi-c
-Linux64-Centos  : ICC170    : ICC.sh 17.0  --without-debug --with-mt --with-dll --with-runpath --without-ncbi-c
-Linux64-Centos  : ICC170d   : ICC.sh 17.0  --with-debug --with-mt --with-3psw=system --with-runpath --without-ncbi-c
-Linux64-Centos  : Clang     : Clang.sh 3.8.0 --with-debug --with-mt --with-flat-makefile --without-ncbi-c
+Linux64-Centos  : GCC730    : GCC.sh 7.3.0    --without-debug --with-mt --with-flat-makefile --without-ncbi-c
+Linux64-Centos  : GCC830    : GCC.sh 8.3.0    --without-debug --with-mt --with-flat-makefile --without-ncbi-c
+Linux64-Centos  : GCC910    : GCC.sh 9.1.0    --without-debug --with-mt --with-flat-makefile --without-ncbi-c
+Linux64-Centos  : GCC1020   : GCC.sh 10.2.0   --without-debug --with-mt --with-flat-makefile --without-ncbi-c
+Linux64-Centos  : ICC1903   : ICC.sh 19.0     --without-debug --with-mt --with-dll --with-runpath --without-ncbi-c
+Linux64-Centos  : ICC2120   : ICC.sh 21.0     --with-debug --with-mt --with-3psw=system --with-runpath --without-ncbi-c
+Linux64-Centos  : Clang7    : Clang.sh 7.0.0  --with-debug --with-mt --with-flat-makefile --without-ncbi-c
+Linux64-Centos  : Clang12   : Clang.sh 12.0.0 --with-debug --with-mt --with-flat-makefile --without-ncbi-c
 
 Linux64-Ubuntu         : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
 Linux64-Ubuntu-Public  : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
