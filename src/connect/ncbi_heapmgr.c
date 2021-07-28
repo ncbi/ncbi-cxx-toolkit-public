@@ -173,7 +173,7 @@ static int/*bool*/ s_HEAP_fast = 1/*true*/;
 
 #define _HEAP_ALIGN_EX(a, b)  ((((unsigned long)(a) + ((b) - 1)) / (b)) * (b))
 #define _HEAP_ALIGN_2(a, b)   (( (unsigned long)(a) + ((b) - 1)) \
-                               & (unsigned long)(~((b) - 1)))
+                               & (unsigned long)(~((b) - 1)/*or -(b)*/))
 #define _HEAP_SIZESHIFT       4
 #define HEAP_BLOCKS(s)        ((s) >> _HEAP_SIZESHIFT)
 #define HEAP_EXTENT(b)        ((b) << _HEAP_SIZESHIFT)
