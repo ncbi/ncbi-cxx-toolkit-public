@@ -2278,7 +2278,7 @@ static list<AccMinMax> fta_get_acc_minmax_strand(const CSeq_loc* location,
             bool found_id=false;
             auto it = ammps.begin();
             while (!found_id && it != ammps.end()) {
-                auto ammp = *it;
+                auto& ammp = *it;
                 if (s_IdsMatch(ammp.pId, pId)) {
                     if (from < ammp.min) {
                         ammp.min = from;
