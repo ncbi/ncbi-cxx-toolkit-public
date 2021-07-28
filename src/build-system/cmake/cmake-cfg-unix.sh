@@ -298,7 +298,11 @@ else
     CXX=$CMAKE_CXX_COMPILER
   fi
   if [ -z "$CC" ]; then
-    CC=`which gcc 2>/dev/null`
+    if test $host_os = "Darwin"; then
+      CC=`which clang 2>/dev/null`
+    else
+      CC=`which gcc 2>/dev/null`
+    fi
     if test $? -ne 0; then
       CC=`which cc 2>/dev/null`
       if test $? -ne 0; then
@@ -307,7 +311,11 @@ else
     fi
   fi
   if [ -z "$CXX" ]; then
-    CXX=`which g++ 2>/dev/null`
+    if test $host_os = "Darwin"; then
+      CXX=`which clang++ 2>/dev/null`
+    else
+      CXX=`which g++ 2>/dev/null`
+    fi
     if test $? -ne 0; then
       CXX=`which c++ 2>/dev/null`
       if test $? -ne 0; then
