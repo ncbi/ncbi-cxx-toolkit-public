@@ -139,6 +139,7 @@ private:
     unsigned m_TaxonTimeout = 20;   // in seconds
     unsigned m_TaxonAttempts = 5;
     unsigned m_TaxonExponential = false;
+    bool xSetTaxonTimeoutFromConfig();
 };
 
 END_SCOPE(edit)
