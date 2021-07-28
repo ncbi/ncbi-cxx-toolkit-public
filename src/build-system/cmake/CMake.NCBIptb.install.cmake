@@ -246,9 +246,6 @@ function(NCBI_internal_install_root _variable _access)
     if (EXISTS ${_buildinfo})
         install( FILES ${_buildinfo} DESTINATION ${_dest} RENAME buildinfo)
     endif()
-    if (NCBI_PTBCFG_PACKAGE AND EXISTS ${NCBI_TREE_ROOT}/doc/public/LICENSE)
-        install( FILES ${NCBI_TREE_ROOT}/doc/public/LICENSE DESTINATION licenses)
-    endif()
 
     if (WIN32 OR XCODE)
         foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
@@ -265,22 +262,28 @@ function(NCBI_internal_install_root _variable _access)
         )
     endif()
 
+# install licenses
+    if (NCBI_PTBCFG_PACKAGE AND EXISTS ${NCBI_TREE_ROOT}/doc/public/LICENSE)
+        install( FILES ${NCBI_TREE_ROOT}/doc/public/LICENSE DESTINATION licenses)
+    endif()
 # install headers
-    get_property(_all_subdirs GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR)
-    list(APPEND _all_subdirs ${NCBI_DIRNAME_COMMON_INCLUDE})
-    foreach(_dir IN LISTS _all_subdirs)
-        if (EXISTS ${NCBI_INC_ROOT}/${_dir})
-            if(NCBI_PTBCFG_PACKAGE)
-                install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}
-                    REGEX "/[.]svn$" EXCLUDE)
-            else()
-                install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}
-                    REGEX "/[.].*$" EXCLUDE)
+    if (NOT $ENV{NCBIPTB_INSTALL_BARE})
+        get_property(_all_subdirs GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR)
+        list(APPEND _all_subdirs ${NCBI_DIRNAME_COMMON_INCLUDE})
+        foreach(_dir IN LISTS _all_subdirs)
+            if (EXISTS ${NCBI_INC_ROOT}/${_dir})
+                if(NCBI_PTBCFG_PACKAGE)
+                    install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}
+                        REGEX "/[.]svn$" EXCLUDE)
+                else()
+                    install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}
+                        REGEX "/[.].*$" EXCLUDE)
+                endif()
             endif()
-        endif()
-    endforeach()
-    file(GLOB _files LIST_DIRECTORIES false "${NCBI_INC_ROOT}/*")
-    install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_INCLUDE})
+        endforeach()
+        file(GLOB _files LIST_DIRECTORIES false "${NCBI_INC_ROOT}/*")
+        install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_INCLUDE})
+    endif()
 
     if(NCBI_PTBCFG_PACKAGE)
         if (WIN32 OR XCODE)
@@ -300,30 +303,32 @@ function(NCBI_internal_install_root _variable _access)
             REGEX "/[.].*$" EXCLUDE)
 
 # install sources
-    if ($ENV{NCBIPTB_INSTALL_SRC})
-        get_property(_all_subdirs GLOBAL PROPERTY PROPERTY NCBI_PTBPROP_SOURCE_DIR)
-        foreach(_dir IN LISTS _all_subdirs)
-            if (EXISTS ${NCBI_SRC_ROOT}/${_dir})
-                get_filename_component(_path ${_dir} DIRECTORY)
-                if(NOT "${_path}" STREQUAL "")
-                    set(_path "/${_path}")
+    if (NOT $ENV{NCBIPTB_INSTALL_BARE})
+        if ($ENV{NCBIPTB_INSTALL_SRC})
+            get_property(_all_subdirs GLOBAL PROPERTY PROPERTY NCBI_PTBPROP_SOURCE_DIR)
+            foreach(_dir IN LISTS _all_subdirs)
+                if (EXISTS ${NCBI_SRC_ROOT}/${_dir})
+                    get_filename_component(_path ${_dir} DIRECTORY)
+                    if(NOT "${_path}" STREQUAL "")
+                        set(_path "/${_path}")
+                    endif()
+                    install( DIRECTORY ${NCBI_SRC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_SRC}${_path}
+                        FILES_MATCHING  PATTERN "*.c" PATTERN "*.c?" PATTERN "*.c??" 
+                        REGEX "/[.].*$" EXCLUDE REGEX "${NCBI_SRC_ROOT}/${_dir}/.*/[^/]" EXCLUDE)
                 endif()
-                install( DIRECTORY ${NCBI_SRC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_SRC}${_path}
-                    FILES_MATCHING  PATTERN "*.c" PATTERN "*.c?" PATTERN "*.c??" 
-                    REGEX "/[.].*$" EXCLUDE REGEX "${NCBI_SRC_ROOT}/${_dir}/.*/[^/]" EXCLUDE)
-            endif()
-        endforeach()
-        file(GLOB _files LIST_DIRECTORIES false "${NCBI_SRC_ROOT}/*")
-        install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_SRC})
+            endforeach()
+            file(GLOB _files LIST_DIRECTORIES false "${NCBI_SRC_ROOT}/*")
+            install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_SRC})
+        endif()
+
+        file(GLOB _files LIST_DIRECTORIES false "${NCBI_TREE_BUILDCFG}/*")
+        install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_BUILDCFG})
+        install( DIRECTORY ${NCBI_TREE_CMAKECFG} DESTINATION ${NCBI_DIRNAME_BUILDCFG}
+                USE_SOURCE_PERMISSIONS REGEX "/[.].*$" EXCLUDE)
+
+        install( DIRECTORY ${NCBI_TREE_ROOT}/${NCBI_DIRNAME_SCRIPTS} DESTINATION "."
+                USE_SOURCE_PERMISSIONS REGEX "/[.].*$" EXCLUDE)
     endif()
-
-    file(GLOB _files LIST_DIRECTORIES false "${NCBI_TREE_BUILDCFG}/*")
-    install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_BUILDCFG})
-    install( DIRECTORY ${NCBI_TREE_CMAKECFG} DESTINATION ${NCBI_DIRNAME_BUILDCFG}
-            USE_SOURCE_PERMISSIONS REGEX "/[.].*$" EXCLUDE)
-
-    install( DIRECTORY ${NCBI_TREE_ROOT}/${NCBI_DIRNAME_SCRIPTS} DESTINATION "."
-            USE_SOURCE_PERMISSIONS REGEX "/[.].*$" EXCLUDE)
 
 # test results
     if ($ENV{NCBIPTB_INSTALL_CHECK})
