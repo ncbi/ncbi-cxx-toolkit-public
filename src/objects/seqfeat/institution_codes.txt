@@ -3265,6 +3265,7 @@ IPHG	s	Institut fur Palaeontologie und Historische Geologie
 IPK	sb	Leibniz Institute of Plant Genetics and Crop Plant Research			
 IPKUP	s	Paleontologiscsky Institute			
 IPLA	c	Instituto de Productos Lacteos de Asturias			
+IPMA	c	Portuguese Institute for the Sea and Atmosphere			
 IPMB<DEU>	s	Institut fur Pharmazie und Molekulare Biotechnologie			
 IPMC	s	Institut Paleontologic Dr. M. Crusfafont Sabadell			
 IPMGO	s	Institut fur Paleontologie und Museum, Gottingen Universitat			

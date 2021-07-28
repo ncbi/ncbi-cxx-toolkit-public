@@ -3298,6 +3298,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IPK\tsb\tLeibniz Institute of Plant Genetics and Crop Plant Research\t\t\t",
 "IPKUP\ts\tPaleontologiscsky Institute\t\t\t",
 "IPLA\tc\tInstituto de Productos Lacteos de Asturias\t\t\t",
+"IPMA\tc\tPortuguese Institute for the Sea and Atmosphere\t\t\t",
 "IPMB<DEU>\ts\tInstitut fur Pharmazie und Molekulare Biotechnologie\t\t\t",
 "IPMC\ts\tInstitut Paleontologic Dr. M. Crusfafont Sabadell\t\t\t",
 "IPMGO\ts\tInstitut fur Paleontologie und Museum, Gottingen Universitat\t\t\t",
