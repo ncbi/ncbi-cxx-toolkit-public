@@ -341,7 +341,7 @@ static Int4 fta_cmp_gene_syns(const TSynSet& syn1, const TSynSet& syn2)
 
     for(; it1 != syn1.end() && it2 != syn2.end(); ++it1, ++it2)
     {
-        i = StringICmp(it1->c_str(), it2->c_str());
+        i = NStr::CompareNocase(*it1, *it2);
         if(i != 0)
             break;
     }
@@ -355,17 +355,6 @@ static Int4 fta_cmp_gene_syns(const TSynSet& syn1, const TSynSet& syn2)
     return(i);
 }
 
-/**********************************************************/
-static Int4 fta_cmp_locus_tags(const Char* lt1, const Char* lt2)
-{
-    if(lt1 == NULL && lt2 == NULL)
-        return(0);
-    if(lt1 == NULL)
-        return(-1);
-    if(lt2 == NULL)
-        return(1);
-    return(StringICmp(lt1, lt2));
-}
 
 /**********************************************************/
 static Int4 fta_cmp_gene_refs(const CGene_ref& grp1, const CGene_ref& grp2)
@@ -385,8 +374,8 @@ static Int4 fta_cmp_gene_refs(const CGene_ref& grp1, const CGene_ref& grp2)
         res = fta_cmp_gene_syns(syn1, syn2);
         if(res != 0)
             return(res);
-        return(fta_cmp_locus_tags(grp1.IsSetLocus_tag() ? grp1.GetLocus_tag().c_str() : NULL,
-                                  grp2.IsSetLocus_tag() ? grp2.GetLocus_tag().c_str() : NULL));
+        return(NStr::CompareNocase(grp1.IsSetLocus_tag() ? grp1.GetLocus_tag() : "",
+                                  grp2.IsSetLocus_tag() ? grp2.GetLocus_tag() : ""));
     }
 
     if (!grp1.IsSetLocus())
@@ -394,7 +383,7 @@ static Int4 fta_cmp_gene_refs(const CGene_ref& grp1, const CGene_ref& grp2)
     if (!grp2.IsSetLocus())
         return(1);
 
-    res = StringICmp(grp1.GetLocus().c_str(), grp2.GetLocus().c_str());
+    res = NStr::CompareNocase(grp1.GetLocus(), grp2.GetLocus());
     if(res != 0)
         return(res);
 
@@ -402,8 +391,8 @@ static Int4 fta_cmp_gene_refs(const CGene_ref& grp1, const CGene_ref& grp2)
     if(res != 0)
         return(res);
 
-    return(fta_cmp_locus_tags(grp1.IsSetLocus_tag() ? grp1.GetLocus_tag().c_str() : NULL,
-                              grp2.IsSetLocus_tag() ? grp2.GetLocus_tag().c_str() : NULL));
+    return(NStr::CompareNocase(grp1.IsSetLocus_tag() ? grp1.GetLocus_tag() : "",
+                               grp2.IsSetLocus_tag() ? grp2.GetLocus_tag() : ""));
 }
 
 /**********************************************************/
@@ -423,20 +412,20 @@ static Int4 fta_cmp_locusyn(GeneListPtr glp1, GeneListPtr glp2)
         res = fta_cmp_gene_syns(glp1->syn, glp2->syn);
         if(res != 0)
             return(res);
-        return(fta_cmp_locus_tags(glp1->locus_tag.c_str(), glp2->locus_tag.c_str()));
+        return(NStr::CompareNocase(glp1->locus_tag, glp2->locus_tag));
     }
     if(glp1->locus.empty())
         return(-1);
     if(glp2->locus.empty())
         return(1);
 
-    res = StringICmp(glp1->locus.c_str(), glp2->locus.c_str());
+    res = NStr::CompareNocase(glp1->locus, glp2->locus);
     if(res != 0)
         return(res);
     res = fta_cmp_gene_syns(glp1->syn, glp2->syn);
     if(res != 0)
         return(res);
-    return(fta_cmp_locus_tags(glp1->locus_tag.c_str(), glp2->locus_tag.c_str()));
+    return(NStr::CompareNocase(glp1->locus_tag, glp2->locus_tag));
 }
 
 /**********************************************************/
@@ -2053,7 +2042,7 @@ static void GetGeneSyns(const TQualVector& quals, char* name, TSynSet& syns)
     {
         if (!(*qual)->IsSetQual() || !(*qual)->IsSetVal() ||
             (*qual)->GetQual() != "gene" ||
-            StringICmp((*qual)->GetVal().c_str(), name) == 0)
+            NStr::EqualNocase((*qual)->GetVal(), name))
             continue;
 
         syns.insert((*qual)->GetVal());
@@ -2063,7 +2052,7 @@ static void GetGeneSyns(const TQualVector& quals, char* name, TSynSet& syns)
     {
         if (!(*qual)->IsSetQual() || !(*qual)->IsSetVal() ||
             (*qual)->GetQual() != "gene_synonym" ||
-            StringICmp((*qual)->GetVal().c_str(), name) == 0)
+            NStr::EqualNocase((*qual)->GetVal(), name))
             continue;
 
         syns.insert((*qual)->GetVal());
@@ -2754,7 +2743,7 @@ static void MiscFeatsWithoutGene(GeneNodePtr gnp)
                 continue;
             }
             if(tglp->locus.empty() || tglp->locus[0] == '\0' ||
-               fta_cmp_locus_tags(glp->locus_tag.c_str(), tglp->locus_tag.c_str()) != 0)
+               !NStr::EqualNocase(glp->locus_tag, tglp->locus_tag))
                 continue;
             glp->locus = tglp->locus;
             break;
@@ -2783,8 +2772,8 @@ static void RemoveUnneededMiscFeats(GeneNodePtr gnp)
         {
             if(tglp->todel || (tglp->fname == "misc_feature"))
                 continue;
-            if(fta_cmp_locus_tags(glp->locus.c_str(), tglp->locus.c_str()) != 0 ||
-               fta_cmp_locus_tags(glp->locus_tag.c_str(), tglp->locus_tag.c_str()) != 0)
+            if(!NStr::EqualNocase(glp->locus, tglp->locus) ||
+               !NStr::EqualNocase(glp->locus_tag, tglp->locus_tag))
                 continue;
             if(tglp->syn.empty())
             {
