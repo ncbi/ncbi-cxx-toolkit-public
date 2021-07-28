@@ -277,25 +277,22 @@ void CRemoteUpdater::SetTaxonTimeout(unsigned seconds, unsigned retries, bool ex
 
 bool CRemoteUpdater::xSetTaxonTimeoutFromConfig()
 {
-    try {
-        CNcbiApplicationAPI* app = CNcbiApplicationAPI::Instance();
-        if (app) {
-            const CNcbiRegistry& cfg = app->GetConfig();
-            if (cfg.HasEntry("RemoteTaxonomyUpdate"))
-            {
-                int delay = cfg.GetInt("RemoteTaxonomyUpdate", "RetryDelay", 20);
-                if (delay < 0)
-                    delay = 20;
-                int count = cfg.GetInt("RemoteTaxonomyUpdate", "RetryCount", 5);
-                if (count < 0)
-                    count = 5;
-                bool exponential = cfg.GetBool("RemoteTaxonomyUpdate", "RetryExponentially", false);
+    CNcbiApplicationAPI* app = CNcbiApplicationAPI::Instance();
+    if (app) {
+        const CNcbiRegistry& cfg = app->GetConfig();
+        if (cfg.HasEntry("RemoteTaxonomyUpdate"))
+        {
+            int delay = cfg.GetInt("RemoteTaxonomyUpdate", "RetryDelay", 20);
+            if (delay < 0)
+                delay = 20;
+            int count = cfg.GetInt("RemoteTaxonomyUpdate", "RetryCount", 5);
+            if (count < 0)
+                count = 5;
+            bool exponential = cfg.GetBool("RemoteTaxonomyUpdate", "RetryExponentially", false);
 
-                SetTaxonTimeout(static_cast<unsigned>(delay), static_cast<unsigned>(count), exponential);
-                return true;
-            }
+            SetTaxonTimeout(static_cast<unsigned>(delay), static_cast<unsigned>(count), exponential);
+            return true;
         }
-    } catch (...) {
     }
 
     return false;
