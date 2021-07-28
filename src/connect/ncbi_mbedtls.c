@@ -948,7 +948,7 @@ NCBI_CRED NcbiCreateMbedTlsCertCredentials(const void* cert,
     ncbi_cred->type = eNcbiCred_MbedTls;
     ncbi_cred->data = xcred;
 
-    /* these are not technically necessary as they just zero the memory */
+    /* these are not technically necessary as they just zero up the memory */
     mbedtls_x509_crt_init(xcred->cert);
     mbedtls_pk_init      (xcred->pkey);
 
