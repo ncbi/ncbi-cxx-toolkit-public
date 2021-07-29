@@ -224,7 +224,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, unsigned digits)
         // ensure buffer is large enough to fit result
         // (additional bytes are for sign, dot and exponent)
         _ASSERT(sizeof(buffer) > digits + 16);
-#if 0
+#if !defined(NCBI_COMPILER_MSVC)
         int width = sprintf(buffer, "%.*e", int(digits-1), data);
         if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
             ThrowError(fOverflow, "buffer overflow");
