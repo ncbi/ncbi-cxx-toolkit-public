@@ -632,19 +632,22 @@ static void s_Init(const IRWRegistry* reg  = 0,
            + NStr::IntToString(int(how))                    + ')');
     _ASSERT(how != eConnectInit_Intact);
 
-    TCORE_Set set = 0;
+    if (s_ConnectInit == how  &&  how == eConnectInit_Explicit)
+        ERR_POST_X(11, "CONNECT_Init() called more than once");
+
+    TCORE_Set x_set = 0;
     if (!(g_CORE_Set & eCORE_SetLOCK)) {
         NCBI_LSAN_DISABLE_GUARD;  
         CORE_SetLOCK(MT_LOCK_cxx2c(lock, !!(flag & eConnectInit_OwnLock)));
-        set |= eCORE_SetLOCK;
+        x_set |= eCORE_SetLOCK;
     }
     if (!(g_CORE_Set & eCORE_SetLOG)) {
         CORE_SetLOG(LOG_cxx2c());
-        set |= eCORE_SetLOG;
+        x_set |= eCORE_SetLOG;
     }
     if (!(g_CORE_Set & eCORE_SetREG)) {
         CORE_SetREG(REG_cxx2c(reg, !!(flag & eConnectInit_OwnRegistry)));
-        set |= eCORE_SetREG;
+        x_set |= eCORE_SetREG;
     }
     if (!(g_CORE_Set & eCORE_SetSSL)) {
         EIO_Status status = SOCK_SetupSSLInternalEx(ssl, 1/*init*/);
@@ -652,16 +655,17 @@ static void s_Init(const IRWRegistry* reg  = 0,
             ERR_POST_X(10, Critical << "Failed to initialize SSL: "
                        << IO_StatusStr(status));
         }
-        set |= ssl ? eCORE_SetSSL : 0;
+        if (ssl)
+            x_set |= eCORE_SetSSL;
     }
-    g_CORE_Set &= ~set;
-    s_CORE_Set |=  set;
+    g_CORE_Set &= ~x_set;
+    s_CORE_Set |=  x_set;
 
     if (s_ConnectInit == eConnectInit_Intact) {
         g_NCBI_ConnectRandomSeed
             = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
         srand(g_NCBI_ConnectRandomSeed);
-        if (atexit(s_Fini) != 0)
+        if (x_set  &&  atexit(s_Fini) != 0)
             ERR_POST_X(9, Critical << "Failed to register exit handler");
     }
 
@@ -676,7 +680,10 @@ static void s_Init(const IRWRegistry* reg  = 0,
     CMonkey::Instance();
 #endif //NCBI_MONKEY
 
-    s_ConnectInit = g_CORE_Set ? eConnectInit_Strong : how;
+    if (how < eConnectInit_Strong  &&  g_CORE_Set)
+        how = eConnectInit_Strong;
+    if (s_ConnectInit < how  ||  s_ConnectInit == eConnectInit_Intact)
+        s_ConnectInit = how;
 }
 
 
