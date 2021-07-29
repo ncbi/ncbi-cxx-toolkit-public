@@ -538,7 +538,12 @@ CPSG_Task::EStatus CPSG_Task::Execute(void)
     try {
         DoExecute();
     }
-    catch (...) {
+    catch (CException& exc) {
+        LOG_POST("CPSGDataLoader: exception in retrieval thread: "<<exc);
+        return eFailed;
+    }
+    catch (exception& exc) {
+        LOG_POST("CPSGDataLoader: exception in retrieval thread: "<<exc.what());
         return eFailed;
     }
     return m_Status;
@@ -1973,6 +1978,9 @@ s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info,
     // detailed annot info
     set<string> names;
     for ( auto& annot_info_ref : psg_annot_info.GetId2AnnotInfoList() ) {
+        if ( s_GetDebugLevel() >= 8 ) {
+            LOG_POST(Info<<"PSG loader: NA info "<<MSerial_AsnText<<*annot_info_ref);
+        }
         const CID2S_Seq_annot_Info& annot_info = *annot_info_ref;
         // create special external annotations blob
         CAnnotName name(annot_info.GetName());
@@ -2264,6 +2272,14 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
             ret = task->m_ReplyResult;
         }
     }
+    else if ( !GetGetBlobByIdShouldFail() &&
+              (lock_asap || load_lock) && !task->m_ReplyResult.blob_id.empty() ) {
+        // blob is required, but not received, yet blob_id is known, so we retry
+        ret = x_RetryBlobRequest(task->m_ReplyResult.blob_id, data_source, req_idh);
+        if ( !ret.lock ) {
+            _TRACE("Failed to load blob for " << req_idh.AsString());
+        }
+    }
     else {
         _TRACE("Failed to load blob for " << req_idh.AsString());
     }
@@ -2309,6 +2325,7 @@ shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Ha
     auto reply = context->GetReply();
     if (!reply) {
         _TRACE("Request failed: null reply");
+        NCBI_THROW(CLoaderException, eLoaderFailed, "null reply for "+idh.AsString());
         return nullptr;
     }
 
@@ -2318,8 +2335,12 @@ shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Ha
     group.AddTask(task);
     group.WaitAll();
 
-    if (task->GetStatus() != CThreadPool_Task::eCompleted || !task->m_BioseqInfo) {
+    if (task->GetStatus() != CThreadPool_Task::eCompleted) {
         _TRACE("Failed to get bioseq info for " << idh.AsString());
+        NCBI_THROW(CLoaderException, eLoaderFailed, "failed to get bioseq info for "+idh.AsString());
+    }
+    if (!task->m_BioseqInfo) {
+        _TRACE("No bioseq info for " << idh.AsString());
         return nullptr;
     }
 
