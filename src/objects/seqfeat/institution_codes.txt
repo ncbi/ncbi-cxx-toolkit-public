@@ -1880,6 +1880,7 @@ ECOCHM	s	Coleccion de Mamiferos del Museo de Zoologia-ECOSUR
 ECOL	s	Collection du Laborataire d'Ecologie			
 ECOMAR<FRA>	s	ECOMAR lab University of Reunion			
 ECON	s	Harvard University			
+ECOSC/ADN	s	Unidad San Cristobal de Las Casas			
 ECOSCM	s	Coleccion Mastozoologica de El Colegio de la Frontera Sur, Unidad San  Cristobal	ECO-SC-M		
 ECOSUR	s	El Colegio de la Frontera Sur (Mexico)			
 ECOT	s	EcoTarium Worcester Historical Museum			

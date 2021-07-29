@@ -1913,6 +1913,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ECOL\ts\tCollection du Laborataire d'Ecologie\t\t\t",
 "ECOMAR<FRA>\ts\tECOMAR lab University of Reunion\t\t\t",
 "ECON\ts\tHarvard University\t\t\t",
+"ECOSC/ADN\ts\tUnidad San Cristobal de Las Casas\t\t\t",
 "ECOSCM\ts\tColeccion Mastozoologica de El Colegio de la Frontera Sur, Unidad San  Cristobal\tECO-SC-M\t\t",
 "ECOSUR\ts\tEl Colegio de la Frontera Sur (Mexico)\t\t\t",
 "ECOT\ts\tEcoTarium Worcester Historical Museum\t\t\t",
