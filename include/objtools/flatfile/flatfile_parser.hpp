@@ -65,6 +65,10 @@ public:
     CFlatFileParser(objects::IObjtoolsListener* pMessageListener);
     virtual ~CFlatFileParser(void);
     CRef<CSerialObject> Parse(Parser& parseInfo);
+    CRef<CSerialObject> Parse(Parser& parseInfo, CNcbiIstream& istr);
+
+private:
+    objects::IObjtoolsListener* m_pMessageListener = nullptr;
 };
 
 

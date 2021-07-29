@@ -41,12 +41,13 @@
 BEGIN_NCBI_SCOPE
 
 // some forward declarations
-struct file_buf;
+struct FileBuf;
 struct indexblk_struct;
 struct protein_block;
 struct _fta_operon;
 
-typedef struct file_buf* FileBufPtr;
+
+typedef struct FileBuf* FileBufPtr;
 typedef struct indexblk_struct* IndexblkPtr;
 typedef struct protein_block* ProtBlkPtr;
 typedef struct _fta_operon* FTAOperonPtr;

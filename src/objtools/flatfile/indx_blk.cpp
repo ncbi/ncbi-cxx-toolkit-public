@@ -2411,9 +2411,9 @@ void ResetParserStruct(ParserPtr pp)
         pp->pbp = NULL;
     }
 
-    if(pp->ffbuf != NULL)
+    if(pp->ffbuf)
     {
-        MemFree(pp->ffbuf);
+        delete pp->ffbuf;
         pp->ffbuf = NULL;
     }
 
