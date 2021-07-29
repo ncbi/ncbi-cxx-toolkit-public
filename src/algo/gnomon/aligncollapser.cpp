@@ -220,7 +220,7 @@ void CAlignCollapser::SetupArgDescriptions(CArgDescriptions* arg_desc) {
                             "Minimal splice expression relative exon expression",
                             CArgDescriptions::eDouble, "0.03");
 
-    arg_desc->AddDefaultKey("end-pair-support-cutoff", "EndOairSupportCutoff",
+    arg_desc->AddDefaultKey("end-pair-support-cutoff", "EndPairSupportCutoff",
                             "Minimal expression relative to the mean for introns with the same splice",
                             CArgDescriptions::eDouble, "0.1");
 
@@ -235,6 +235,9 @@ void CAlignCollapser::SetupArgDescriptions(CArgDescriptions* arg_desc) {
     arg_desc->AddDefaultKey("sharp-boundary", "SharpBoundary",
                             "Minimal relative expression for crossing splice",
                             CArgDescriptions::eDouble, "0.2");
+
+    arg_desc->SetCurrentGroup("CAGE/PolyA arguments");
+    arg_desc->AddFlag("use-long-read-tss","Treat 5' ends of long reads like CAGE");
 
     arg_desc->SetCurrentGroup("");
 }
@@ -303,6 +306,7 @@ CAlignCollapser::CAlignCollapser(string contig, CScope* scope, bool nofilteringc
         m_collapssr = args["collapssr"];
     }
     m_fillgenomicgaps = args["fillgenomicgaps"];
+    m_use_long_reads_tss = args["use-long-read-tss"];
 
     if(m_scope != 0 && contig != "") {
         m_range = TSignedSeqRange::GetWhole();
@@ -2284,6 +2288,45 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
         return;
     }
 
+    //Capinfo from not capped long reads
+    if(m_use_long_reads_tss) {
+        bool use_alignment = !(a.Status()&CGeneModel::eCap) && acc.find("SRA") != string::npos && acc.find("RNASEQ_COLLAPSE") == string::npos; // not capped long read 
+        if(a.Status()&CGeneModel::eUnknownOrientation)
+            use_alignment = false; // not oriented
+        TSignedSeqRange tlim = a.TranscriptLimits();
+        int not_aligned_5p = tlim.GetFrom();
+        int not_aligned_3p = a.TargetLen()-1-tlim.GetTo();
+        if(a.Status()&CGeneModel::eReversed)
+            swap(not_aligned_5p, not_aligned_3p);
+        if(not_aligned_5p > NOT_ALIGNED_PHONY_CAGE)
+            use_alignment = false; // not aligned
+
+        if(use_alignment) { 
+            status = CGeneModel::eCap;
+            int spec_extend = SPECIAL_ALIGN_LEN-1;
+            CGeneModel galign(a.Strand(), a.ID(), CGeneModel::eSR);
+            galign.SetWeight(a.Weight());
+            int pos;
+            if(a.Strand() == ePlus) {
+                pos = a.Limits().GetFrom();
+                galign.AddExon(TSignedSeqRange(pos, pos+spec_extend));
+                status |= CGeneModel::eRightFlexible;
+            } else {
+                pos = a.Limits().GetTo();
+                galign.AddExon(TSignedSeqRange(pos-spec_extend, pos));
+                status |= CGeneModel::eLeftFlexible;
+            }
+            if(galign.Limits().GetFrom() >= 0) { // can't check right end because we don't know the contig length yet (will check in chainer)   
+                galign.Status() |= status;
+                auto rslt = m_special_aligns.emplace(make_tuple(status, pos), CAlignModel(galign, galign.GetAlignMap()));
+                if(!rslt.second) { // same position exists  
+                    auto& stored = rslt.first->second;
+                    stored.SetWeight(stored.Weight()+a.Weight());
+                }
+            }
+        }
+    }
+    
     if((a.Type()&CGeneModel::eSR) && !a.Continuous())   // ignore SR with internal gaps
         return;
 

@@ -2962,6 +2962,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
         }
         //make flexible from normal cap/polya   
         int contig_len = m_gnomon->GetSeq().size();
+        int spec_extend = SPECIAL_ALIGN_LEN-1;
         for(TGeneModelList::iterator it = clust.begin(); it != clust.end(); ++it) {
             if(it->Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible))
                 continue;
@@ -2975,11 +2976,11 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
                 int status = CGeneModel::eCap;
                 if(it->Strand() == ePlus) {
                     pos = it->Limits().GetFrom();
-                    galign.AddExon(TSignedSeqRange(pos, pos+99));
+                    galign.AddExon(TSignedSeqRange(pos, pos+spec_extend));
                     status |= CGeneModel::eRightFlexible;
                 } else {
                     pos = it->Limits().GetTo();
-                    galign.AddExon(TSignedSeqRange(pos-99, pos));
+                    galign.AddExon(TSignedSeqRange(pos-spec_extend, pos));
                     status |= CGeneModel::eLeftFlexible;
                 }
                 if(galign.Limits().GetFrom() >= 0 && galign.Limits().GetTo() < contig_len) {
@@ -3002,11 +3003,11 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
                 int status = CGeneModel::ePolyA;
                 if(it->Strand() == eMinus) {
                     pos = it->Limits().GetFrom();
-                    galign.AddExon(TSignedSeqRange(pos, pos+99));
+                    galign.AddExon(TSignedSeqRange(pos, pos+spec_extend));
                     status |= CGeneModel::eRightFlexible;
                 } else {
                     pos = it->Limits().GetTo();
-                    galign.AddExon(TSignedSeqRange(pos-99, pos));
+                    galign.AddExon(TSignedSeqRange(pos-spec_extend, pos));
                     status |= CGeneModel::eLeftFlexible;
                 }
                 if(galign.Limits().GetFrom() >= 0 && galign.Limits().GetTo() < contig_len) {
@@ -3022,11 +3023,11 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
             }
         }
 
-        //remove below threshold
+        //remove below threshold and crossing contig boundaries
         for(auto& sa : special_aligns) {
             auto ialign = sa.second;
             double min_pos_weight = ((ialign->Status()&CGeneModel::eCap) ? min_cap_weight : min_polya_weight);
-            if(ialign->Weight() < min_pos_weight)
+            if(ialign->Limits().GetFrom() < 0 || ialign->Limits().GetTo() >= contig_len || ialign->Weight() < min_pos_weight)
                 clust.erase(ialign);            
         }
 

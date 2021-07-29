@@ -215,6 +215,7 @@ private:
     bool m_filtermrna;
     bool m_filterprots;
     bool m_fillgenomicgaps;
+    bool m_use_long_reads_tss;
 
     CScope* m_scope;
     TIntMap m_genomic_gaps_len;
@@ -227,6 +228,9 @@ private:
 
     SCorrectionData m_correction_data;
 };
+
+#define SPECIAL_ALIGN_LEN 110
+#define NOT_ALIGNED_PHONY_CAGE 10
 
 END_SCOPE(gnomon)
 END_SCOPE(ncbi)
