@@ -890,13 +890,13 @@ CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, CNcbiIstream& istr
     os << istr.rdbuf();
     string buffer = os.str();
 
+    parseInfo.ffbuf = new FileBuf();
     parseInfo.ffbuf->start = buffer.c_str();
     parseInfo.ffbuf->current = parseInfo.ffbuf->start;
 
     if (sParseFlatfile(pResult, &parseInfo)) {
         return pResult;
     }
-
     return CRef<CSerialObject>();
 }
 
