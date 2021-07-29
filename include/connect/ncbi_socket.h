@@ -40,8 +40,9 @@
  *
  *  SOCK_InitializeAPI
  *  SOCK_ShutdownAPI
- *  SOCK_AllowSigPipeAPI
  *  SOCK_OSHandleSize
+ *  SOCK_AllowSigPipeAPI
+ *  SOCK_SetApproveHookAPI
  *
  * Event trigger (handle TRIGGER):
  *
@@ -124,6 +125,17 @@
  *  SOCK_SetDataLogging
  *  SOCK_SetErrHookAPI
  *
+ * Generic POLLABLE API:
+ *
+ *  POLLABLE_Poll
+ *  POLLABLE_What
+ *  POLLABLE_FromSOCK
+ *  POLLABEL_FromLSOCK
+ *  POLLABLE_FromTrigger
+ *  POLLABLE_ToSOCK
+ *  POLLABLE_ToLSOCK
+ *  POLLABLE_ToTrigger
+ *
  * Auxiliary:
  *
  *  SOCK_ntoa
@@ -178,6 +190,24 @@ typedef enum {
     eNH_HostByteOrder,
     eNH_NetworkByteOrder
 } ENH_ByteOrder;
+
+
+/** Socket type (internal)
+ */
+typedef enum {
+    eSOCK_Listening = 0,
+    eSOCK_Trigger   = 1,
+    eSOCK_Socket    = 2,
+    eSOCK_Datagram  = 3/*2|1*/
+} ESOCK_Type;
+
+
+/** Sides of socket
+ */
+typedef enum {
+    eSOCK_Server = 0,
+    eSOCK_Client = 1
+} ESOCK_Side;
 
 
 /** Forward declarations of the hidden socket internal structures, and
@@ -264,6 +294,15 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_InitializeAPI(void);
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ShutdownAPI(void);
 
 
+/** Get size of OS-dependent native socket handle.
+ * @return
+ *  OS-dependent handle size or 0 in case of an error
+ * @sa
+ *  SOCK_GetOSHandle
+ */
+extern NCBI_XCONNECT_EXPORT size_t SOCK_OSHandleSize(void);
+
+
 /** By default (on UNIX platforms) the SOCK API functions automagically call
  * "signal(SIGPIPE, SIG_IGN)" on initialization.  To prohibit this feature you
  * must call SOCK_AllowSigPipeAPI() before you call any other function from the
@@ -272,13 +311,52 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ShutdownAPI(void);
 extern NCBI_XCONNECT_EXPORT void SOCK_AllowSigPipeAPI(void);
 
 
-/** Get size of OS-dependent native socket handle.
- * @return
- *  OS-dependent handle size or 0 in case of an error
+/** User-level connection approval hook.
+ * The hook (when installed) gets called for any attempt to establish an
+ * outgoing(eSOCK_Client) or incoming(eSOCK_Server) connection(eSOCK_Socket),
+ * or to send(eSOCK_Client) or receive(eSOCK_Server) a message packet on a
+ * datagram socket(eSOCK_Datagram).  The peer end is always identified with the
+ * "addr:port" pair (which is non-0 in both parts).  Optionally for outgoing
+ * transaction, a textual hostname("host") can be provided (to which "addr"
+ * corresponds to).  If the action was requested by a plain IP address, the
+ * "host" field is set to NULL.
+ *
+ * The hook is expected to return eIO_Success to approve the action, or any
+ * other status code to deny.  Note that either eIO_Timeout or eIO_Closed
+ * returned from the hook, will get converted to eIO_Unknown;  and other codes
+ * get passed through to the caller "as is".
+ * @warning
+ *   Although returning eIO_Interrupt may be helpful to prevent the upper-lever
+ *   connection (CONN) layer from processing further I/O on this communication
+ *   channel, it may also be just an undesireable side-effect -- so it should
+ *   be used with caution.
+ * @note
+ *   When the hook is not installed, all the actions described above are
+ *   treated as allowed.
  * @sa
- *  SOCK_GetOSHandle
+ *   SOCK_Create, SOCK_Reconnect, LSOCK_Accept, DSOCK_SendMsg, DSOCK_RecvMsg
  */
-extern NCBI_XCONNECT_EXPORT size_t SOCK_OSHandleSize(void);
+
+typedef struct {
+    const char*    host;  /**< Textual hostname if provided for outgoing     */
+    unsigned int   addr;  /**< IPv4 (or -1 if unknown / broadcast), never 0  */
+    unsigned short port;  /**< Port number, host byte order, never 0         */
+    ESOCK_Type     type;  /**< eSOCK_Socket (conn) / eSOCK_Datagram (packet) */
+    ESOCK_Side     side;  /**< eSOCK_Client (out) / eSOCK_Server (in)        */
+} SSOCK_ApproveInfo;
+
+
+/** The approve hook is global per API and gets called with an arbitrary
+ * user "data", if so desired as a second argument, which was specified when
+ * the hook was installed with the SOCK_SetApproveHookAPI() call.
+ */
+typedef EIO_Status (*FSOCK_ApproveHook)(const SSOCK_ApproveInfo* info,
+                                        void*                    data);
+
+/** The hook is installed when non-NULL, and uninstalled otherwise. */
+extern NCBI_XCONNECT_EXPORT
+void SOCK_SetApproveHookAPI(FSOCK_ApproveHook hook,  /**< the hook function  */
+                            void*             data); /**< optional user data */
 
 
 /** This is a helper call that can improve I/O behavior.
@@ -1847,7 +1925,7 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLogging
  );
 
 
-/*  User-level error hook.
+/** User-level error hook.
  */
 
 typedef enum {
@@ -1866,11 +1944,12 @@ typedef struct {
 } SSOCK_ErrInfo;
 
 
-typedef void (*FSOCK_ErrHook)(const SSOCK_ErrInfo* info, void* data);
+typedef void (*FSOCK_ErrHook)(const SSOCK_ErrInfo* info,
+                              void*                data);
 
-
-extern NCBI_XCONNECT_EXPORT void SOCK_SetErrHookAPI(FSOCK_ErrHook hook,
-                                                    void*         data);
+extern NCBI_XCONNECT_EXPORT
+void SOCK_SetErrHookAPI(FSOCK_ErrHook hook,
+                        void*         data);
 
 
 
@@ -1915,9 +1994,13 @@ extern NCBI_XCONNECT_EXPORT EIO_Status POLLABLE_Poll
  );
 
 
+/** Identifies a non-NULL POLLABLE. */
+extern NCBI_XCONNECT_EXPORT ESOCK_Type POLLABLE_What(POLLABLE);
+
+
 /** Conversion utilities from handles to POLLABLEs, and back.
  * @return
- *  Return 0 if conversion cannot be made; otherwise the converted handle
+ *  Return 0 if conversion cannot be made; otherwise the converted handle.
  */
 extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromSOCK   (SOCK);
 extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromLSOCK  (LSOCK);
@@ -2156,6 +2239,7 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLocalHostAddress
  *  If no host/port detected, return 'str'.  On format error, return 0.
  *  If either host or port fragment is missing, then the corresponding 'host'/
  *  'port' parameters get a value of 0.
+ * @note  "0.0.0.0" for the host part gets the host returned as 0 as well.
  * @note  'host' gets returned in network byte order, unlike 'port', which
  *        always comes out in host (native) byte order.
  * @note  ":0" is accepted to denote no-host:zero-port.  
@@ -2172,7 +2256,7 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
 /** Print numeric string "host:port" into a buffer provided, not to exceed
  * 'bufsize' bytes (including the teminating '\0' character).  Suppress
  * printing the "host" if the 'host' parameter is zero.  Suppress printing the
- * ":port" part if 'port' passed as zero.  If both the 'host' and the 'port'
+ * ":port" part if 'port' passed as zero, but if both the 'host' and the 'port'
  * parameters are zero, output is the literal ":0".
  * @param host
  *  IPv4 in network byte order
@@ -2207,7 +2291,7 @@ typedef struct SNcbiCred* NCBI_CRED;
 
 /*fwdecl*/
 struct SOCKSSL_struct;
-/** Opaque type for SSL impelentation */
+/** Opaque type for SSL implementation */
 typedef const struct SOCKSSL_struct* SOCKSSL;
 
 
@@ -2219,7 +2303,7 @@ typedef SOCKSSL (*FSSLSetup)(void);
  * @param setup
  *  non-NULL SSL setup routine, or NULL to shut the SSL down
  * @warning
- *  Do not use this function unless you know what you're doing.
+ *  Do _not_ use this function unless you know what you're doing.
  *  Use other means of initialization such as CONNECT_Init() or CConnIniter.
  * @sa
  *  SOCK_SetupSSLEx, CONNECT_Init, CConnIniter
@@ -2233,7 +2317,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetupSSL(FSSLSetup setup);
  * @return
  *  eIO_Success if successful, other code on error.
  * @warning
- *  Do not use this function unless you know what you're doing.
+ *  Do _not_ use this function unless you know what you're doing.
  *  Use other means of initialization such as CONNECT_Init() or CConnIniter.
  * @sa
  *  SOCK_SetupSSL, CONNECT_Init, CConnIniter

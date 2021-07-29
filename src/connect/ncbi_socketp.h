@@ -136,6 +136,14 @@ typedef int TRIGGER_Handle;
 #endif
 
 
+typedef struct {
+    void*       sess;           /* secure session handle, 0 if none          */
+    NCBI_CRED   cred;           /* secure session credential(s), 0 if none   */
+    SOCK        sock;           /* sock that the above session handle using  */
+    const char* host;           /* hostname for named SSL extension          */
+} SNcbiSSLctx;
+
+
 #if 0/*defined(__GNUC__)*/
 typedef ESwitch    EBSwitch;
 typedef EIO_Status EBIO_Status;
@@ -144,23 +152,8 @@ typedef unsigned   EBSwitch;
 typedef unsigned   EBIO_Status;
 #endif
 
-
-typedef enum {
-    eListening = 0,
-    eTrigger   = 1,
-    eSocket    = 2,
-    eDatagram  = 3/*2|1*/
-} ESOCK_Type;
-
-typedef unsigned TBSOCK_Type;
-
-
-typedef struct {
-    void*       sess;           /* secure session handle, 0 if none          */
-    NCBI_CRED   cred;           /* secure session credential(s), 0 if none   */
-    SOCK        sock;           /* sock that the above session handle using  */
-    const char* host;           /* hostname for named SSL extension          */
-} SNcbiSSLctx;
+typedef unsigned   TBSOCK_Type;
+typedef unsigned   EBSOCK_Side;
 
 
 /* Event trigger
@@ -193,16 +186,6 @@ typedef struct TRIGGER_tag {
     int                out;     /* write end of the pipe                     */
 #endif /*NCBI_OS_UNIX*/
 } TRIGGER_struct;
-
-
-/* Sides of socket
- */
-typedef enum {
-    eSOCK_Server = 0,
-    eSOCK_Client = 1
-} ESOCK_Side;
-
-typedef unsigned EBSOCK_Side;
 
 
 /* Listening socket [must be in one-2-one binary correspondene with TRIGGER]
