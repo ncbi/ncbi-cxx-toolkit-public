@@ -72,10 +72,12 @@ typedef std::list<CRef<objects::CDelta_seq> > TDeltaList;
 #define FTA_HTGSCON_MODE     2
 */
 
-typedef struct file_buf {
+struct FileBuf {
     const char* start;
     const char* current;
-} FileBuf, *FileBufPtr;
+};
+
+using FileBufPtr = FileBuf*;
 
 typedef struct info_bioseq {
     TSeqIdList ids;                       /* for this Bioseq */

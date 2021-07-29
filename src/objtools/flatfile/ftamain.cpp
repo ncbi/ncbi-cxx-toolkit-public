@@ -58,6 +58,7 @@
 
 #include "flatfile_message_reporter.hpp"
 #include "ftaerr.hpp"
+#include <objtools/logging/listener.hpp>
 #include "indx_blk.h"
 #include "asci_blk.h"
 #include "add.h"
@@ -510,7 +511,7 @@ static CRef<CSerialObject> CloseAll(ParserPtr pp)
 }
 
 
-static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already)
+static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already=false)
 {
     if(pp->output_format == Parser::EOutput::BioseqSet)
         SetReleaseStr(pp);
@@ -806,7 +807,7 @@ void Flat2AsnCheck(char* ffentry, char* source, char* format,
     pp->qsfd = NULL;
     pp->qamode = false;
 
-    pp->ffbuf = (FileBufPtr) MemNew(sizeof(FileBuf));
+    pp->ffbuf = new FileBuf();
     pp->ffbuf->start = ffentry;
     pp->ffbuf->current = pp->ffbuf->start;
 
@@ -838,6 +839,7 @@ public:
 */
 
 CFlatFileParser::CFlatFileParser(IObjtoolsListener* pMessageListener)
+    : m_pMessageListener(pMessageListener)
 {
     FtaErrInit();
     CFlatFileMessageReporter::GetInstance().SetListener(pMessageListener);
@@ -857,11 +859,45 @@ CFlatFileParser::~CFlatFileParser()
 CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo)
 {
     CRef<CSerialObject> pResult;
-    if (sParseFlatfile(pResult, &parseInfo, false)) {
+    if (sParseFlatfile(pResult, &parseInfo)) {
         return pResult;
     }
 
    return CRef<CSerialObject>();
+}
+
+
+CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, CNcbiIstream& istr)
+{
+    CRef<CSerialObject> pResult;
+    if (parseInfo.ifp) {
+        string msg = "Ambiguous input. File pointer and input stream both specified";
+        if (!m_pMessageListener) {
+            NCBI_THROW(CException, eUnknown, msg);
+        }   
+        m_pMessageListener->PutMessage(CObjtoolsMessage(msg, eDiag_Fatal));  
+    }
+
+    if (parseInfo.ffbuf) {
+        string msg = "Attempting to reinitialize input buffer";
+        if (!m_pMessageListener) { // Throw an exception it no listener
+            NCBI_THROW(CException, eUnknown, msg);
+        }
+        m_pMessageListener->PutMessage(CObjtoolsMessage(msg, eDiag_Fatal));
+    }
+
+    ostringstream os;
+    os << istr.rdbuf();
+    string buffer = os.str();
+
+    parseInfo.ffbuf->start = buffer.c_str();
+    parseInfo.ffbuf->current = parseInfo.ffbuf->start;
+
+    if (sParseFlatfile(pResult, &parseInfo)) {
+        return pResult;
+    }
+
+    return CRef<CSerialObject>();
 }
 
 
@@ -876,7 +912,7 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 
     FtaInstallPrefix(PREFIX_LOCUS, (char *) "SET-UP", NULL);
 
-    pp.ffbuf = (FileBufPtr)MemNew(sizeof(FileBuf));
+    pp.ffbuf = new FileBuf();
     pp.ffbuf->start = buf;
     pp.ffbuf->current = buf;
 
