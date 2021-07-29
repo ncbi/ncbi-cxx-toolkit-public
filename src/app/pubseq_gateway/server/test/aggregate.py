@@ -39,7 +39,7 @@ def convertToBytesPerSecond(s):
 def processFile(content, name, stat):
     stat[name] = {
         'finished': {'time': '', 'req/s': '', 'data': ''},
-        'requests': {'total': '', 'started': '', 'done': '', 'succeeded': '', 'failed': '', 'errored': '', 'timeout': ''},
+        'requests': {'total': 0, 'started': 0, 'done': 0, 'succeeded': 0, 'failed': 0, 'errored': 0, 'timeout': 0},
         'status codes': {'2xx': '', '3xx': '', '4xx': '', '5xx': ''},
         'traffic': {'total': '', 'headers': '', 'data': ''},
         'time for request': {'min': '', 'max': '', 'mean': '', 'sd': '', '+/- sd': ''},
