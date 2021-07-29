@@ -198,7 +198,7 @@ void CDownloadCallbackData::Append(const CTar::TFile* current)
         m_Filelist.push_back(m_Current);
     } else {
         // first time
-        _ASSERT(m_Filelist.empty());
+        assert(m_Filelist.empty());
     }
     m_Current = current ? *current : pair<string, Uint8>(kEmptyStr, 0);
 }
@@ -492,7 +492,7 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
 
     double time = dlcbdata->GetElapsed(update);
     if (!time) {
-        _ASSERT(!update);
+        assert(!update);
         return status;
     }
 
@@ -542,7 +542,7 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
 
     if (type == eCONN_OnClose) {
         NcbiCerr << NcbiEndl << "Connection closed" << NcbiEndl;
-        _ASSERT(status == eIO_Success);
+        assert(status == eIO_Success);
     } else if (s_Signaled) {
         NcbiCerr << NcbiEndl << "Canceled" << NcbiEndl;
         if (status == eIO_Success) {
@@ -565,7 +565,7 @@ static void s_TryAskFtpFilesize(CNcbiIostream& ios, const char* filename)
     // If SIZE command is not understood, the file size can be captured
     // later when the download (RETR) starts if it is reported by the server
     // in a compatible format (there's the callback set for that, too).
-    _ASSERT(!(ios >> testval));  //  NB: we're getting a callback instead
+    assert(!(ios >> testval));  //  NB: we're getting a callback instead
     ios.clear();
 }
 
@@ -807,7 +807,7 @@ int CTestFTPDownloadApp::Run(void)
     free((void*) url);
 
     // NB: Can use "CONN_GetPosition(ftp.GetCONN(), eIO_Open)" to clear again
-    _ASSERT(!CONN_GetPosition(ftp.GetCONN(), eIO_Read));
+    assert(!CONN_GetPosition(ftp.GetCONN(), eIO_Read));
     // Set a fine read timeout and handle the actual timeout in callbacks
     static const STimeout second = { 1, 0 };
     // NB: also "ftp.SetTimeout(eIO_Read, &second)"
