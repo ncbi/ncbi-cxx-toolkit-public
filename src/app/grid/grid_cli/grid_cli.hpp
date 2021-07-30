@@ -122,6 +122,8 @@
 #define SIZE_OPTION "length"
 #define FT_TOKEN_OPTION "ft-token"
 #define DIRECT_MODE_OPTION "direct"
+#define CLIENT_SESSION_OPTION "client-session"
+
 #define ATTR_VALUE_ARG "ATTR_VALUE"
 
 #define LOGIN_COMMAND "login"
