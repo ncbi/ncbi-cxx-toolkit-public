@@ -116,39 +116,64 @@ function(NCBI_internal_install_target _variable _access)
     endif()
     set(_exp "")
     if (WIN32 OR XCODE)
-        foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
-            if(_doexport)
-                set(_exp EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg})
-            endif()
-            if (DEFINED _dest_ar)
-                install(
-                    TARGETS ${NCBI_PROJECT}
-                    ${_exp}
-                    RUNTIME DESTINATION ${_dest}/${_cfg}
-                    CONFIGURATIONS ${_cfg}
-                    ARCHIVE DESTINATION ${_dest_ar}/${_cfg}
-                    CONFIGURATIONS ${_cfg}
-                )
-            else()
-                install(
-                    TARGETS ${NCBI_PROJECT}
-                    ${_exp}
-                    DESTINATION ${_dest}/${_cfg}
-                    CONFIGURATIONS ${_cfg}
-                )
-            endif()
-            if (WIN32 AND NOT NCBI_PTBCFG_PACKAGE)
-                if (_haspdb)
-                    install(FILES $<TARGET_PDB_FILE:${NCBI_PROJECT}>
-                            DESTINATION ${_dest}/${_cfg} OPTIONAL
-                            CONFIGURATIONS ${_cfg})
-                else()
-                    install(FILES $<TARGET_FILE:${NCBI_PROJECT}>.pdb
-                            DESTINATION ${_dest}/${_cfg} OPTIONAL
-                            CONFIGURATIONS ${_cfg})
+        if(NCBI_PTBCFG_PACKAGE)
+            foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
+                if(_doexport)
+                    set(_exp EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg})
                 endif()
-            endif()
-        endforeach()
+                if (DEFINED _dest_ar)
+                    install(
+                        TARGETS ${NCBI_PROJECT}
+                        ${_exp}
+                        RUNTIME DESTINATION ${_dest}
+                        CONFIGURATIONS ${_cfg}
+                        ARCHIVE DESTINATION ${_dest_ar}
+                        CONFIGURATIONS ${_cfg}
+                    )
+                else()
+                    install(
+                        TARGETS ${NCBI_PROJECT}
+                        ${_exp}
+                        DESTINATION ${_dest}
+                        CONFIGURATIONS ${_cfg}
+                    )
+                endif()
+            endforeach()
+        else()
+            foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
+                if(_doexport)
+                    set(_exp EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg})
+                endif()
+                if (DEFINED _dest_ar)
+                    install(
+                        TARGETS ${NCBI_PROJECT}
+                        ${_exp}
+                        RUNTIME DESTINATION ${_dest}/${_cfg}
+                        CONFIGURATIONS ${_cfg}
+                        ARCHIVE DESTINATION ${_dest_ar}/${_cfg}
+                        CONFIGURATIONS ${_cfg}
+                    )
+                else()
+                    install(
+                        TARGETS ${NCBI_PROJECT}
+                        ${_exp}
+                        DESTINATION ${_dest}/${_cfg}
+                        CONFIGURATIONS ${_cfg}
+                    )
+                endif()
+                if (WIN32 AND NOT NCBI_PTBCFG_PACKAGE)
+                    if (_haspdb)
+                        install(FILES $<TARGET_PDB_FILE:${NCBI_PROJECT}>
+                                DESTINATION ${_dest}/${_cfg} OPTIONAL
+                                CONFIGURATIONS ${_cfg})
+                    else()
+                        install(FILES $<TARGET_FILE:${NCBI_PROJECT}>.pdb
+                                DESTINATION ${_dest}/${_cfg} OPTIONAL
+                                CONFIGURATIONS ${_cfg})
+                    endif()
+                endif()
+            endforeach()
+        endif()
     else()
         if(_doexport)
             set(_exp EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT})
@@ -199,6 +224,20 @@ function(NCBI_internal_export_hostinfo _file)
 endfunction()
 
 ##############################################################################
+function(NCBI_internal_export_tools _file)
+    if(EXISTS ${_file})
+        file(REMOVE ${_file})
+    endif()
+    set(_data)
+    string(APPEND _data "set(___silent \${CONAN_CMAKE_SILENT_OUTPUT})\n")
+    string(APPEND _data "set(CONAN_CMAKE_SILENT_OUTPUT TRUE)\n")
+    string(APPEND _data "conan_define_targets()\n")
+    string(APPEND _data "set(CONAN_CMAKE_SILENT_OUTPUT \${___silent})\n")
+    string(APPEND _data "include(\${CMAKE_CURRENT_LIST_DIR}/${NCBI_PTBCFG_INSTALL_EXPORT}.cmake)\n")
+    file(WRITE ${_file} ${_data})
+endfunction()
+
+##############################################################################
 function(NCBI_internal_export_buildinfo _file)
     if(EXISTS ${_file})
         file(REMOVE ${_file})
@@ -241,6 +280,13 @@ function(NCBI_internal_install_root _variable _access)
     if (EXISTS ${_hostinfo})
         install( FILES ${_hostinfo} DESTINATION ${_dest} RENAME ${NCBI_PTBCFG_INSTALL_EXPORT}.hostinfo)
     endif()
+    if(NCBI_PTBCFG_PACKAGE)
+        set(_tools ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/${CMAKE_PROJECT_NAME}.tools)
+        NCBI_internal_export_tools(${_tools})
+        if (EXISTS ${_tools})
+            install( FILES ${_tools} DESTINATION ${_dest} RENAME ${NCBI_PTBCFG_INSTALL_EXPORT}.tools)
+        endif()
+    endif()
     set(_buildinfo ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/${CMAKE_PROJECT_NAME}.buildinfo)
     NCBI_internal_export_buildinfo(${_buildinfo})
     if (EXISTS ${_buildinfo})
@@ -267,7 +313,7 @@ function(NCBI_internal_install_root _variable _access)
         install( FILES ${NCBI_TREE_ROOT}/doc/public/LICENSE DESTINATION licenses)
     endif()
 # install headers
-    if (NOT $ENV{NCBIPTB_INSTALL_BARE})
+    if (NOT "$ENV{NCBIPTB_INSTALL_BARE}")
         get_property(_all_subdirs GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR)
         list(APPEND _all_subdirs ${NCBI_DIRNAME_COMMON_INCLUDE})
         foreach(_dir IN LISTS _all_subdirs)
@@ -303,7 +349,7 @@ function(NCBI_internal_install_root _variable _access)
             REGEX "/[.].*$" EXCLUDE)
 
 # install sources
-    if (NOT $ENV{NCBIPTB_INSTALL_BARE})
+    if (NOT "$ENV{NCBIPTB_INSTALL_BARE}")
         if ($ENV{NCBIPTB_INSTALL_SRC})
             get_property(_all_subdirs GLOBAL PROPERTY PROPERTY NCBI_PTBPROP_SOURCE_DIR)
             foreach(_dir IN LISTS _all_subdirs)
