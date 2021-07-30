@@ -9,6 +9,6 @@ APP_PROJ = flat2asn
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
-REQUIRES = LIBXSLT 
+REQUIRES = BerkeleyDB LIBXSLT 
 
 WATCHERS = kachalos foleyjp

@@ -13,7 +13,7 @@ LIB = xalgoseq xobjwrite $(XFORMAT_LIBS) variation_utils $(OBJEDIT_LIBS) xalnmgr
 
 LIBS = $(DATA_LOADERS_UTIL_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = objects -Cygwin
+REQUIRES = BerkeleyDB objects -Cygwin
 
 WATCHERS = ludwigf
 
