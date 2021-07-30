@@ -881,11 +881,22 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJob()
 {
     SetUp_NetScheduleCmd(eNetScheduleSubmitter);
 
-    if (!IsOptionSet(eConfirmRead) && !IsOptionSet(eFailRead) &&
-            !IsOptionSet(eRollbackRead)) {
+    const bool reliable_first = IsOptionSet(eReliableRead);
+    const bool reliable_second = IsOptionSet(eConfirmRead) || IsOptionSet(eFailRead) || IsOptionSet(eRollbackRead);
+
+    // Option eClientSession is also set when login token is specified
+    if ((reliable_first || reliable_second) && !IsOptionSet(eClientSession)) {
+        fprintf(stderr, GRID_APP_NAME " " READJOB_COMMAND
+            ": Either option '--" LOGIN_TOKEN_OPTION "' or '--" CLIENT_SESSION_OPTION
+            "' is required in reliable mode (same session must be used for both steps).\n");
+        return 2;
+    }
+
+    if (!reliable_second) {
         if (IsOptionSet(eJobId)) {
             fprintf(stderr, GRID_APP_NAME " " READJOB_COMMAND
-                ": option '--" JOB_ID_OPTION "' cannot be used in simple mode.\n");
+                ": option '--" JOB_ID_OPTION "' cannot be used in %s.\n",
+                reliable_first ? "the first step of reliable mode" : "simple mode");
             return 2;
         }
 
@@ -909,7 +920,7 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJob()
             PrintLine(job.job_id);
             PrintLine(CNetScheduleAPI::StatusToString(job_status));
 
-            if (IsOptionSet(eReliableRead))
+            if (reliable_first)
                 PrintLine(job.auth_token);
             else {
                 if (job_status == CNetScheduleAPI::eDone) {

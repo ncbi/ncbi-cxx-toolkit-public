@@ -467,7 +467,7 @@ struct SOptionDefinition {
         "client-node", "Client application identifier.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eClientSession),
-        "client-session", "Client session identifier.", {-1}},
+        CLIENT_SESSION_OPTION, "Client session identifier.", {-1}},
 
     {OPT_DEF(ePositionalArgument, eCommand), "COMMAND", NULL, {-1}},
 
