@@ -20,7 +20,7 @@ LIBS = $(DATA_LOADERS_UTIL_LIBS) $(SRA_SDK_SYSLIBS) \
 
 POST_LINK = $(VDB_POST_LINK)
 
-REQUIRES = objects
+REQUIRES = BerkeleyDB objects
 
 
 WATCHERS = ludwigf foleyjp
