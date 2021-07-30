@@ -373,8 +373,7 @@ may be implemented in the future; RW-1253
     SetupArgDescriptions(arg_desc.release());
 }
 
-static bool
-IsOlderThanYear()
+static bool s_IsOlderThanYear()
 {
     string m; int d, y;
     stringstream(__DATE__) >> m >> d >> y;
@@ -389,7 +388,7 @@ int CTbl2AsnApp::Run()
 
     Setup(args);
 
-    if (IsOlderThanYear())
+    if (s_IsOlderThanYear())
     {
         NcbiCerr << "This copy of " << GetProgramDisplayName()
                  << " is more than 1 year old. Please download the current version if it is newer." << endl;

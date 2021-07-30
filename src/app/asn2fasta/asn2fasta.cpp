@@ -434,11 +434,25 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
     return fasta_os.release();
 }
 
+static bool s_IsOlderThanYear()
+{
+    string m; int d, y;
+    stringstream(__DATE__) >> m >> d >> y;
+    CTime expires(y, CTime::MonthNameToNum(m), d);
+    expires.AddYear();
+    return (expires < CTime(CTime::eCurrent));
+}
 
 //  --------------------------------------------------------------------------
 int CAsn2FastaApp::Run()
 //  --------------------------------------------------------------------------
 {
+    if (s_IsOlderThanYear())
+    {
+        NcbiCerr << "This copy of " << GetProgramDisplayName()
+                 << " is more than 1 year old. Please download the current version if it is newer." << endl;
+    }
+
     // initialize conn library
     CONNECT_Init(&GetConfig());
     // create object manager

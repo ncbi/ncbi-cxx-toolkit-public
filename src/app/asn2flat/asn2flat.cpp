@@ -516,9 +516,23 @@ static void s_INSDSetClose(bool is_insdseq, CNcbiOstream* os) {
     }
 }
 
+static bool s_IsOlderThanYear()
+{
+    string m; int d, y;
+    stringstream(__DATE__) >> m >> d >> y;
+    CTime expires(y, CTime::MonthNameToNum(m), d);
+    expires.AddYear();
+    return (expires < CTime(CTime::eCurrent));
+}
 
 int CAsn2FlatApp::Run()
 {
+    if (s_IsOlderThanYear())
+    {
+        NcbiCerr << "This copy of " << GetProgramDisplayName()
+                 << " is more than 1 year old. Please download the current version if it is newer." << endl;
+    }
+
     m_Exception = false;
     m_FetchFail = false;
 
