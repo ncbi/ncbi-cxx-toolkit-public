@@ -4946,6 +4946,7 @@ NAAG	s	Naturama Aargau
 NABDA	s	National Biotechnology Development Agency, Abuja, Nigeria			
 NABG	s	Botanical Garden			
 NAC	s	Nagano Nature Conservation Research Institute			
+NAFUPYR	s	Northwest A & F University			
 NAI	s	University of Nairobi, Botany Department			
 NAIC	s	National Agricultural Insect Collection			
 NAKU	s	Namik Kemal University			
@@ -5158,6 +5159,7 @@ NICH	s	Hattori Botanical Laboratory
 NIES	c	Microbial Culture Collection	MCC-NIES,NIES-MCC		
 NIFI	s	National Inland Fisheries Institute			
 NIFRS	s	National Research Institute of Fisheries Science			
+NIFS	s	National Institute of Fundamental Studies of Sri Lanka			
 NIG	s	Nanjing Geographical Institute	NGI		
 NIGL	s	Nanjing Institute of Geography and Limnology			
 NIGP	s	Naking Institute of Geology and Palaeontology			
