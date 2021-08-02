@@ -112,10 +112,6 @@ protected:
     void xPostProcessAnnot(
         CSeq_annot&) override;
 
-    CRef<CSeq_annot> x_GetAnnotById(
-        TAnnots& annots,
-        const string& strId );
-
     virtual bool xMergeRecord(
         const CGvfReadRecord&,
         CSeq_annot&,
@@ -132,18 +128,6 @@ protected:
     bool xFeatureSetLocationPoint(
         const CGff2Record&,
         CSeq_feat&);
-
-    bool xSetLocation(
-        const CGff2Record&,
-        CSeq_loc&);
-
-    bool xSetLocationInterval(
-        const CGff2Record&,
-        CSeq_loc&);
-
-    bool xSetLocationPoint(
-        const CGff2Record&,
-        CSeq_loc&);
 
     bool xFeatureSetVariation(
         const CGvfReadRecord&,
