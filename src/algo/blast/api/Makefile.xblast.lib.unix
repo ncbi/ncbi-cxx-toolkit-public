@@ -6,7 +6,7 @@ CORE_SRCDIR = .
 include $(srcdir)/../core/Makefile.blast.lib.unix
 
 ifeq "$(COMPILER)-$(DEBUG_SFX)" "icc-Release"
- ifneq "" "$(filter -static-intel,$(LDFLAGS))"
+ ifneq "" "$(filter -static-intel,$(DLL_LDFLAGS))"
   blast_setup_cxx.o: $(srcdir)/blast_setup_cxx.cpp
 	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL:-O3=-O2) $< -o $@ $(CXX_FILTER)
 

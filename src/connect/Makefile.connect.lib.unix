@@ -4,7 +4,7 @@
 # functions (as of ICC [20]17)
 
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
- ifneq "" "$(filter -static-intel,$(LDFLAGS))"
+ ifneq "" "$(filter -static-intel,$(DLL_LDFLAGS))"
   ncbi_ansi_ext.o:       CFLAGS += -fno-builtin-strncat
   ncbi_connutil.o:       CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy \
                                    -fno-builtin-strcspn -fno-builtin-strnlen \
