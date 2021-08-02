@@ -1,0 +1,56 @@
+LOCUS       MH011443                 123 bp    DNA     linear   PRI 09-OCT-2018
+DEFINITION  Homo sapiens TP53 (TP53) gene, exon 5 and partial cds.
+ACCESSION   MH011443
+VERSION     MH011443.1
+KEYWORDS    .
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 123)
+  AUTHORS   Elfaki,R.E.
+  TITLE     Molecular and In Silico Analysis of Novel Single Nucleotide
+            Polymorphism Met160Val Targeting Human TP53 Gene in Sudanese
+            Esophageal Cancer Patients
+  JOURNAL   Unpublished
+REFERENCE   2  (bases 1 to 123)
+  AUTHORS   Elfaki,R.E.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (22-FEB-2018) Histopathology and Cytology, Sudan
+            University For Science and Technology, Algaba Street, Khartoum,
+            Khartoum 11111, Sudan
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..123
+                     /organism="Homo sapiens"
+                     /mol_type="genomic DNA"
+                     /isolation_source="tissue"
+                     /db_xref="taxon:9606"
+                     /country="Sudan"
+     gene            <1..>123
+                     /gene="TP53"
+     mRNA            <1..>123
+                     /gene="TP53"
+                     /product="TP53"
+     CDS             <1..>123
+                     /gene="TP53"
+                     /codon_start=1
+                     /product="TP53"
+                     /protein_id="AYF55702.1"
+                     /translation="WVDSTPPPGTRVRAVAIYKQSQHMTEVVRRCPHHERCSDSD"
+     exon            <1..>123
+                     /gene="TP53"
+                     /number=5
+     variation       1..123
+                     /gene="TP53"
+                     /note="results in methionine to valine substitution"
+                     /replace="a"
+ORIGIN      
+        1 tgggttgatt ccacaccccc gcccggcacc cgcgtccgcg ccgtggccat ctacaagcag
+       61 tcacagcaca tgacggaggt tgtgaggcgc tgcccccacc atgagcgctg ctcagatagc
+      121 gat
+//
+

@@ -1,0 +1,271 @@
+Seq-submit ::= {
+  sub {
+    contact {
+    },
+    cit {
+      authors {
+        names str {
+          "National Center for Biotechnology Information"
+        }
+      }
+    }
+  },
+  data entrys {
+    set {
+      level 1,
+      class nuc-prot,
+      descr {
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Elfaki",
+                      initials "R.E."
+                    }
+                  }
+                }
+              },
+              title "Molecular and In Silico Analysis of Novel Single
+ Nucleotide Polymorphism Met160Val Targeting Human TP53 Gene in Sudanese
+ Esophageal Cancer Patients"
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Elfaki",
+                      initials "R.E."
+                    }
+                  }
+                },
+                affil str "Histopathology and Cytology, Sudan University For
+ Science and Technology, Algaba Street, Khartoum, Khartoum 11111, Sudan"
+              },
+              medium other,
+              date std {
+                year 2018,
+                month 2,
+                day 22
+              }
+            }
+          }
+        },
+        update-date std {
+          year 2018,
+          month 10,
+          day 9
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "MH011443"
+          },
+          descr {
+            source {
+              org {
+                taxname "Homo sapiens",
+                orgname {
+                  lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+ Catarrhini; Hominidae; Homo"
+                }
+              },
+              subtype {
+                {
+                  subtype country,
+                  name "Sudan"
+                },
+                {
+                  subtype isolation-source,
+                  name "tissue"
+                }
+              }
+            },
+            title "Homo sapiens TP53 (TP53) gene, exon 5 and partial cds.",
+            molinfo {
+              biomol genomic
+            },
+            genbank {
+              source "Homo sapiens (human)",
+              div "PRI"
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 123,
+            seq-data ncbi2na 'EAF8F5115595A4566D665BA5371092D1244E1A2BEE299E55
+453899E748C98C'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type mRNA,
+                    ext name "TP53"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 122,
+                    id local str "MH011443",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                },
+                {
+                  data imp {
+                    key "exon"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 122,
+                    id local str "MH011443",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  },
+                  qual {
+                    {
+                      qual "number",
+                      val "5"
+                    }
+                  }
+                },
+                {
+                  data imp {
+                    key "variation"
+                  },
+                  comment "results in methionine to valine substitution",
+                  location int {
+                    from 0,
+                    to 122,
+                    id local str "MH011443"
+                  },
+                  qual {
+                    {
+                      qual "replace",
+                      val "a"
+                    }
+                  }
+                },
+                {
+                  data gene {
+                    locus "TP53"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 122,
+                    id local str "MH011443",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            genbank {
+              accession "AYF55702",
+              version 1
+            }
+          },
+          descr {
+            molinfo {
+              biomol peptide,
+              completeness no-ends
+            },
+            title "TP53 [Homo sapiens]"
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 41,
+            seq-data ncbieaa "WVDSTPPPGTRVRAVAIYKQSQHMTEVVRRCPHHERCSDSD"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "TP53"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 40,
+                    id genbank {
+                      accession "AYF55702",
+                      version 1
+                    },
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole genbank {
+                accession "AYF55702",
+                version 1
+              },
+              location int {
+                from 0,
+                to 122,
+                id local str "MH011443",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
