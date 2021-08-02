@@ -47,46 +47,51 @@ typedef string  TAuthToken;
 
 // Error codes for the PSG protocol messages
 enum EPSGS_PubseqGatewayErrorCode {
-    ePSGS_UnknownSatellite = 300,
-    ePSGS_BadURL,
-    ePSGS_NoUsefulCassandra,
-    ePSGS_MissingParameter,
-    ePSGS_MalformedParameter,
-    ePSGS_UnknownResolvedSatellite,
-    ePSGS_NoBioseqInfo,
-    ePSGS_BioseqInfoError,
-    ePSGS_BadID2Info,
-    ePSGS_UnpackingError,
-    ePSGS_UnknownError,
-    ePSGS_BlobPropsNotFound,
-    ePSGS_UnresolvedSeqId,
-    ePSGS_InsufficientArguments,
-    ePSGS_InvalidId2Info,
-    ePSGS_SplitHistoryNotFound,
-    ePSGS_BioseqInfoNotFoundForGi,       // whole bioseq_info record not found
-    ePSGS_BioseqInfoGiNotFoundForGi,     // gi is not found in in the seq_ids field
-                                         // in the bioseq_info record
-    ePSGS_BioseqInfoMultipleRecords,
-    ePSGS_ServerLogicError,
-    ePSGS_BioseqInfoAccessionAdjustmentError,
-    ePSGS_NoProcessor,
-    ePSGS_ShuttingDown,
-    ePSGS_Unauthorised,
+    ePSGS_UnknownSatellite                   = 300,
+    ePSGS_BadURL                             = 301,
+    ePSGS_NoUsefulCassandra                  = 302,
+    ePSGS_MissingParameter                   = 303,
+    ePSGS_MalformedParameter                 = 304,
+    ePSGS_UnknownResolvedSatellite           = 305,
+    ePSGS_NoBioseqInfo                       = 306,
+    ePSGS_BioseqInfoError                    = 307,
+    ePSGS_BadID2Info                         = 308,
+    ePSGS_UnpackingError                     = 309,
+    ePSGS_UnknownError                       = 310,
+    ePSGS_BlobPropsNotFound                  = 311,
+    ePSGS_UnresolvedSeqId                    = 312,
+    ePSGS_InsufficientArguments              = 313,
+    ePSGS_InvalidId2Info                     = 314,
+    ePSGS_SplitHistoryNotFound               = 315,
 
-    ePSGS_TestIOError,          // Exceptions when handling certain requests
-    ePSGS_StatisticsError,      //
-    ePSGS_AckAlertError,        //
-    ePSGS_GetAlertsError,       //
-    ePSGS_ShutdownError,        //
-    ePSGS_StatusError,          //
-    ePSGS_InfoError,            //
-    ePSGS_ConfigError,          //
-    ePSGS_HealthError,          //
+    // whole bioseq_info record not found
+    ePSGS_BioseqInfoNotFoundForGi            = 316,
 
-    ePSGS_TooManyRequests,
-    ePSGS_RequestCancelled,
+    // gi is not found in in the seq_ids field
+    // in the bioseq_info record
+    ePSGS_BioseqInfoGiNotFoundForGi          = 317,
+    ePSGS_BioseqInfoMultipleRecords          = 318,
+    ePSGS_ServerLogicError                   = 319,
+    ePSGS_BioseqInfoAccessionAdjustmentError = 320,
+    ePSGS_NoProcessor                        = 321,
+    ePSGS_ShuttingDown                       = 322,
+    ePSGS_Unauthorised                       = 323,
 
-    ePSGS_BlobRetrievalIsNotAuthorized
+    // Exceptions when handling certain requests
+    ePSGS_TestIOError                        = 324,
+    ePSGS_StatisticsError                    = 325,
+    ePSGS_AckAlertError                      = 326,
+    ePSGS_GetAlertsError                     = 327,
+    ePSGS_ShutdownError                      = 328,
+    ePSGS_StatusError                        = 329,
+    ePSGS_InfoError                          = 330,
+    ePSGS_ConfigError                        = 331,
+    ePSGS_HealthError                        = 332,
+
+    ePSGS_TooManyRequests                    = 333,
+    ePSGS_RequestCancelled                   = 334,
+
+    ePSGS_BlobRetrievalIsNotAuthorized       = 335
 };
 
 
