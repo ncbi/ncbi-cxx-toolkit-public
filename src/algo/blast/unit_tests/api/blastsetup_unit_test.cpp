@@ -1288,7 +1288,7 @@ BOOST_AUTO_TEST_CASE(GetSubjectTranslations)
 
     Uint1* translation_buffer = NULL;
     Uint1* mixed_seq = NULL;
-    Int4* frame_offsets = NULL;
+    Uint4* frame_offsets = NULL;
     int nucl_length = nucl_seq.length;
 
     BLAST_GetAllTranslations(nucl_seq.data.get(), kEncoding, nucl_seq.length,

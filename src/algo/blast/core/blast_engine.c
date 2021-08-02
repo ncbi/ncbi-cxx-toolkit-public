@@ -719,8 +719,8 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
 {
     BlastHSPList* hsp_list_out=NULL;
     Uint1* translation_buffer = NULL;
-    Int4* frame_offsets   = NULL;
-    Int4* frame_offsets_a = NULL; /* Will be freed if non-null */
+    Uint4* frame_offsets   = NULL;
+    Uint4* frame_offsets_a = NULL; /* Will be freed if non-null */
     BlastHitSavingOptions* hit_options = hit_params->options;
     BlastScoringOptions* score_options = score_params->options;
     Int2 status = 0;
