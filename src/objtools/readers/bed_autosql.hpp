@@ -70,10 +70,6 @@ public:
         CSeq_feat& feat,
         CReaderMessageHandler&) const;
 
-    void
-    Dump(
-        ostream&);
-
 protected:
     int mBedFlags;
     map<string, string> mParameters;

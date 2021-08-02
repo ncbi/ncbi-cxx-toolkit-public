@@ -58,18 +58,6 @@ CAutoSqlCustomField::FormatHandlers  CAutoSqlCustomField::mFormatHandlers = {
 };
 
 //  ============================================================================
-void
-CAutoSqlCustomField::Dump(
-    ostream& ostr)
-//  ============================================================================
-{
-    ostr << "    column=\"" << mColIndex << "\""
-            << "    name=\"" << mName << "\""
-            << "    format=\"" << mFormat << "\""
-            << "    description=\"" << mDescription << "\"\n";
-}
-
-//  ============================================================================
 CAutoSqlCustomField::CAutoSqlCustomField(
     size_t colIndex, string format, string name, string description):
 //  ============================================================================
@@ -348,18 +336,6 @@ CAutoSqlCustomFields::Append(
 //  ============================================================================
 {
     mFields.push_back(columnInfo);
-}
-
-//  ============================================================================
-void
-CAutoSqlCustomFields::Dump(
-    ostream& ostr)
-//  ============================================================================
-{
-    ostr << "  Custom Fields:\n";
-    for (auto colInfo: mFields) {
-        colInfo.Dump(ostr);
-    }
 }
 
 //  ============================================================================

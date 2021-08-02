@@ -184,32 +184,5 @@ CAutoSqlStandardFields::Validate(
     return true;
 }
 
-//  ============================================================================
-void
-CAutoSqlStandardFields::Dump(
-    ostream& ostr) const
-//  ============================================================================
-{
-    ostr << "  Well known fields:\n";
-    if (mColChrom != -1) {
-        ostr << "    colChrom=\"" << mColChrom << "\"\n";
-    }
-    if (mColSeqStart != -1) {
-        ostr << "    colSeqStart=\"" << mColSeqStart << "\"\n";
-    }
-    if (mColSeqStop != -1) {
-        ostr << "    colSeqStop=\"" << mColSeqStop << "\"\n";
-    }
-    if (mColStrand != -1) {
-        ostr << "    colStrand=\"" << mColStrand << "\"\n";
-    }
-    if (mColName != -1) {
-        ostr << "    colName=\"" << mColName << "\"\n";
-    }
-    if (mColScore != -1) {
-        ostr << "    colScore=\"" << mColScore << "\"\n";
-    }
-}
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
