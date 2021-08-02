@@ -344,9 +344,8 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(TBlobChunkCB  blob_chunk_cb,
     // The auto blob skipping needs to be copied
     cass_blob_fetch->SetAutoBlobSkipping(fetch_details->GetAutoBlobSkipping());
 
-    if (x_CheckExcludeBlobCache(cass_blob_fetch.get()) == ePSGS_InCache) {
+    if (x_CheckExcludeBlobCache(cass_blob_fetch.get()) == ePSGS_InCache)
         return;
-    }
 
     load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
@@ -651,7 +650,6 @@ CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details)
         auto    request_type = m_Request->GetRequestType();
         if (request_type == CPSGS_Request::ePSGS_BlobBySeqIdRequest ||
             request_type == CPSGS_Request::ePSGS_AnnotationRequest) {
-            x_PrepareBlobPropCompletion(fetch_details);
             if (completed)
                 x_PrepareBlobExcluded(fetch_details, ePSGS_BlobSent);
             else
@@ -1107,17 +1105,11 @@ void
 CPSGS_CassBlobBase::x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
                                           EPSGS_BlobSkipReason  skip_reason)
 {
-    if (NeedToAddId2CunkId2Info()) {
-        m_Reply->PrepareTSEBlobExcluded(
-            m_ProcessorId, x_GetId2ChunkNumber(fetch_details),
-            m_Id2Info->Serialize(), skip_reason);
-    } else {
-        // There is no id2info in the originally requested blob
-        // so just send blob prop completion without id2_chunk/id2_info
-        m_Reply->PrepareBlobExcluded(fetch_details->GetBlobId().ToString(),
-                                     m_ProcessorId, skip_reason,
-                                     m_LastModified);
-    }
+    // The skipped blobs must always have just the blob_id (no
+    // id2_chunk/id2_info) field in the reply chunk
+    m_Reply->PrepareBlobExcluded(fetch_details->GetBlobId().ToString(),
+                                 m_ProcessorId, skip_reason,
+                                 m_LastModified);
 }
 
 
