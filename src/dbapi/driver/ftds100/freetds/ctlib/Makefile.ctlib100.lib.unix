@@ -4,7 +4,7 @@
 # functions (as of ICC [20]17).
 
 ifeq "$(COMPILER)" "icc"
- ifneq "" "$(filter -static-intel,$(LDFLAGS))"
+ ifneq "" "$(filter -static-intel,$(DLL_LDFLAGS))"
   cs.o:     CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy
   ct.o:     CFLAGS += -fno-builtin-strcpy -fno-builtin-strncat \
                       -fno-builtin-strncmp -fno-builtin-strpbrk \

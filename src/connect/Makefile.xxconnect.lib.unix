@@ -1,6 +1,6 @@
 # $Id$
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
- ifneq "" "$(filter -static-intel,$(LDFLAGS))"
+ ifneq "" "$(filter -static-intel,$(DLL_LDFLAGS))"
   ncbi_conn_stream.o: CXXFLAGS += -fno-builtin-strspn
   ncbi_conn_test.o:   CXXFLAGS += -fno-builtin-strcpy
   ncbi_localip_cxx.o: CXXFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
