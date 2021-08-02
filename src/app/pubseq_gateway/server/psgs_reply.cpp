@@ -575,22 +575,6 @@ void CPSGS_Reply::PrepareBlobExcluded(const string &           blob_id,
 }
 
 
-void CPSGS_Reply::PrepareTSEBlobExcluded(const string &  processor_id,
-                                         int64_t  id2_chunk,
-                                         const string &  id2_info,
-                                         EPSGS_BlobSkipReason  skip_reason)
-{
-    string  exclude = GetTSEBlobExcludeHeader(GetItemId(), processor_id,
-                                              id2_chunk, id2_info, skip_reason);
-    while (m_ChunksLock.exchange(true)) {}
-    m_Chunks.push_back(m_Reply->PrepareChunk(
-                    (const unsigned char *)(exclude.data()),
-                    exclude.size()));
-    ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
-}
-
-
 void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
                                       const string &        processor_id,
                                       const string &        blob_id,

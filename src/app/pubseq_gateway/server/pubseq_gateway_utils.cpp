@@ -529,30 +529,6 @@ string  GetBlobExcludeHeader(size_t  item_id,
 }
 
 
-string  GetTSEBlobExcludeHeader(size_t  item_id,
-                                const string &  processor_id,
-                                int64_t  id2_chunk,
-                                const string &  id2_info,
-                                EPSGS_BlobSkipReason  skip_reason)
-{
-    string      reply(s_ReplyBegin);
-
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndId2Chunk)
-                .append(to_string(id2_chunk))
-                .append(s_AndId2Info)
-                .append(id2_info)
-                .append(s_AndBlobItem)
-                .append(s_AndMetaChunk)
-                .append(s_AndNChunksOne)
-                .append(s_AndReason)
-                .append(SkipReasonToString(skip_reason))
-                .append(1, '\n');
-}
-
-
 string  GetBlobCompletionHeader(size_t  item_id,
                                 const string &  processor_id,
                                 size_t  chunk_count)
