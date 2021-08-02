@@ -1044,22 +1044,24 @@ s_BlastGetTranslationTable(const Uint1* genetic_code, Boolean reverse_complement
 
 Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, EBlastEncoding encoding,
         Int4 nucl_length, const Uint1* genetic_code,
-        Uint1** translation_buffer_ptr, Int4** frame_offsets_ptr,
+        Uint1** translation_buffer_ptr, Uint4** frame_offsets_ptr,
         Uint1** mixed_seq_ptr)
 {
    Uint1* translation_buffer,* mixed_seq;
    Uint1* translation_table = NULL,* translation_table_rc = NULL;
    Uint1* nucl_seq_rev;
-   Int4 offset = 0, length;
+   Uint4 offset = 0, length;
    Int4 context; 
-   Int4* frame_offsets;
+   Uint4* frame_offsets;
    Int2 frame;
    
+   Uint4 buffer_length =2*(nucl_length+1)+2;
+
    if (encoding != eBlastEncodingNcbi2na && encoding != eBlastEncodingNcbi4na)
       return -1;
 
    if ((translation_buffer = 
-        (Uint1*) malloc(2*(nucl_length+1)+2)) == NULL)
+        (Uint1*) malloc(buffer_length)) == NULL)
       return -1;
 
    if (encoding == eBlastEncodingNcbi4na) {
@@ -1071,7 +1073,7 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, EBlastEncoding encoding,
       translation_table_rc = s_BlastGetTranslationTable(genetic_code, TRUE);
    } 
 
-   frame_offsets = (Int4*) malloc((NUM_FRAMES+1)*sizeof(Int4));
+   frame_offsets = (Uint4*) malloc((NUM_FRAMES+1)*sizeof(Uint4));
 
    frame_offsets[0] = 0;
    
@@ -1167,8 +1169,8 @@ int Blast_GetPartialTranslation(const Uint1* nucl_seq,
    } else {
        Int2 index;
        Int2 frame_sign = ((frame < 0) ? -1 : 1);
-       Int4 offset = 0;
-       Int4 frame_offsets[CODON_LENGTH];
+       Uint4 offset = 0;
+       Uint4 frame_offsets[CODON_LENGTH];
        Uint1* seq;
        
        if ((translation_buffer = (Uint1*) malloc(nucl_length+2)) == NULL)

@@ -288,7 +288,7 @@ Int2 BLAST_CreateMixedFrameDNATranslation(BLAST_SequenceBlk* query_blk,
 NCBI_XBLAST_EXPORT
 Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, EBlastEncoding encoding,
         Int4 nucl_length, const Uint1* genetic_code, 
-        Uint1** translation_buffer_ptr, Int4** frame_offsets_ptr,
+        Uint1** translation_buffer_ptr, Uint4** frame_offsets_ptr,
         Uint1** mixed_seq_ptr);
 
 /** Get one frame translation - needed when only parts of subject sequences
