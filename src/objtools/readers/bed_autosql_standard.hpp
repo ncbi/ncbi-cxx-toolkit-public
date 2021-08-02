@@ -61,10 +61,6 @@ public:
         CSeq_feat&,
         CReaderMessageHandler&) const;
 
-    void
-    Dump(
-        ostream&) const;
-
     bool
     ProcessTableRow(
         size_t,

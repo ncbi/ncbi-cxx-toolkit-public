@@ -60,21 +60,6 @@ CBedAutoSql::~CBedAutoSql()
 }
 
 //  ============================================================================
-void
-CBedAutoSql::Dump(
-    ostream& ostr)
-//  ============================================================================
-{
-    ostr << "CAutoSql:\n";
-    ostr << "  Parameters:\n";
-    for (auto item: mParameters) {
-        ostr << "    \"" << item.first << "\" = \"" << item.second << "\"\n";
-    }
-    mWellKnownFields.Dump(ostr);
-    mCustomFields.Dump(ostr);
-}
-
-//  ============================================================================
 bool
 CBedAutoSql::xParseAutoSqlColumnDef(
     const string& line,

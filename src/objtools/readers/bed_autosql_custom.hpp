@@ -56,10 +56,6 @@ public:
         CUser_object&,
         CReaderMessageHandler&) const;
 
-    void
-    Dump(
-        ostream&);
-
     bool Validate(
         CReaderMessageHandler&) const;
 
