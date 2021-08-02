@@ -1783,6 +1783,9 @@ CBedReader::xReadBedRecordRaw(
     //  parse
     NStr::Split(linecopy, " \t", columns, NStr::fSplit_MergeDelimiters);
     xCleanColumnValues(columns);
+    if (mRealColumnCount == 0) {
+        mRealColumnCount = columns.size();
+    }
     if (columns.size() != mRealColumnCount) {
         CReaderMessage error(
             eDiag_Error,
