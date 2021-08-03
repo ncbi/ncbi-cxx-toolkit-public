@@ -55,10 +55,13 @@ BOOST_AUTO_TEST_CASE(TestIstreamInterface)
 
     string filestub = "TP53_MH011443";
 
-    auto pIstr = make_unique<CNcbiIfstream>(filestub + ".gb");
+    string inputFile = filestub + ".gb";
+    BOOST_REQUIRE(CDirEntry(inputFile).Exists());
+
+    auto pIstr = make_unique<CNcbiIfstream>(inputFile);
     CFlatFileParser ffparser(nullptr);
     auto pResult = ffparser.Parse(*pConfig, *pIstr);
-    BOOST_REQUIRE(pResult);
+    BOOST_REQUIRE(pResult.NotNull());
 
     const string& outputName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(outputName);
@@ -66,6 +69,8 @@ BOOST_AUTO_TEST_CASE(TestIstreamInterface)
     ofstr.close();
 
     CFile goldenFile(filestub + ".asn");
+    BOOST_REQUIRE(goldenFile.Exists());
+
     bool success = goldenFile.CompareTextContents(outputName, CFile::eIgnoreWs);
 
     if (!success) {
