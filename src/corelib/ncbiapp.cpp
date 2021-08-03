@@ -658,9 +658,10 @@ void CNcbiApplicationAPI::x_TryMain(EAppDiagStream diag,
         if (e.GetErrCode() == CArgHelpException::eHelpXml) {
             m_ArgDesc->PrintUsageXml(cout);
         } else {
+            CArgHelpException::TErrCode code =  e.GetErrCode();
             string str;
-            m_ArgDesc->PrintUsage
-                (str, e.GetErrCode() == CArgHelpException::eHelpFull);
+            m_ArgDesc->ShowAllArguments(code == CArgHelpException::eHelpShowAll)->PrintUsage
+                (str, code == CArgHelpException::eHelpFull || code == CArgHelpException::eHelpShowAll);
             cout << str;
         }
         *exit_code = e.GetErrCode() == CArgHelpException::eHelpErr ? 2 : 0;
@@ -1332,6 +1333,7 @@ void CNcbiApplicationAPI::x_SetupStdio(void)
 void CNcbiApplicationAPI::x_AddDefaultArgs(void)
 {
     if ( !m_DisableArgDesc ) {
+        bool first = true;
         for(CArgDescriptions* desc : m_ArgDesc->GetAllDescriptions())
         {
             if (desc->IsAutoHelpEnabled()) {
@@ -1380,7 +1382,7 @@ void CNcbiApplicationAPI::x_AddDefaultArgs(void)
                     desc->Delete(s_ArgVersion + 1);
                 }
             } else {
-                if (!desc->Exist(s_ArgVersion + 1)) {
+                if (first && !desc->Exist(s_ArgVersion + 1)) {
                     desc->AddFlag
                         (s_ArgVersion + 1,
                             "Print version number;  ignore other arguments");
@@ -1397,20 +1399,22 @@ void CNcbiApplicationAPI::x_AddDefaultArgs(void)
                     desc->Delete(s_ArgFullVersionJson + 1);
                 }
             } else {
-                if (!desc->Exist(s_ArgFullVersion + 1)) {
-                    desc->AddFlag
-                        (s_ArgFullVersion + 1,
-                            "Print extended version data;  ignore other arguments");
-                }
-                if (!desc->Exist(s_ArgFullVersionXml + 1)) {
-                    desc->AddFlag
-                        (s_ArgFullVersionXml + 1,
-                            "Print extended version data in XML format;  ignore other arguments");
-                }
-                if (!desc->Exist(s_ArgFullVersionJson + 1)) {
-                    desc->AddFlag
-                        (s_ArgFullVersionJson + 1,
-                            "Print extended version data in JSON format;  ignore other arguments");
+                if (first) {
+                    if (!desc->Exist(s_ArgFullVersion + 1)) {
+                        desc->AddFlag
+                            (s_ArgFullVersion + 1,
+                                "Print extended version data;  ignore other arguments");
+                    }
+                    if (!desc->Exist(s_ArgFullVersionXml + 1)) {
+                        desc->AddFlag
+                            (s_ArgFullVersionXml + 1,
+                                "Print extended version data in XML format;  ignore other arguments");
+                    }
+                    if (!desc->Exist(s_ArgFullVersionJson + 1)) {
+                        desc->AddFlag
+                            (s_ArgFullVersionJson + 1,
+                                "Print extended version data in JSON format;  ignore other arguments");
+                    }
                 }
             }
             if ((m_HideArgs & fHideDryRun) != 0) {
@@ -1424,6 +1428,7 @@ void CNcbiApplicationAPI::x_AddDefaultArgs(void)
                             "Dry run the application: do nothing, only test all preconditions");
                 }
             }
+            first = false;
         }
     }
 }
