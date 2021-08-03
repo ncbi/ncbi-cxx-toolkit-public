@@ -1,3 +1,11 @@
+Release 2.3.1 based on SC-25 (2021-08-03)
+
+    * PSG -- also use "seq_state" (and "date_changed") for the accession
+      resolution (CXX-12024)
+    * PSG server: incorrect ret code in applog (CXX-12026)
+    * PSG - /ID/get_tse_chunk to use status 4XX on invalid request (CXX-12028)
+    * id[64]_unit_test_psg -- broke due to PSG change (CXX-12031)
+
 Release 1.10.0 (2020-07-10)
 
     * PSG: add anti recursion flag (CXX-11438)
