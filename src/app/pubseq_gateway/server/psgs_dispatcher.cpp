@@ -291,6 +291,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                 request_status = CRequestStatus::e200_Ok;
                 break;
             case IPSGS_Processor::ePSGS_NotFound:
+            case IPSGS_Processor::ePSGS_Cancelled:  // not found because it was not let to finish
                 request_status = CRequestStatus::e404_NotFound;
                 break;
             default:

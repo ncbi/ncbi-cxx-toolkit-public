@@ -121,14 +121,10 @@ void CPSGS_CassProcessorBase::CancelLoaders(void)
 IPSGS_Processor::EPSGS_Status
 CPSGS_CassProcessorBase::x_GetProcessorStatus(void) const
 {
-    switch (m_Status) {
-        case CRequestStatus::e200_Ok:
-            return IPSGS_Processor::ePSGS_Found;
-        case CRequestStatus::e404_NotFound:
-            return IPSGS_Processor::ePSGS_NotFound;
-        default:
-            break;
-    }
+    if (m_Status < 300)
+        return IPSGS_Processor::ePSGS_Found;
+    if (m_Status < 500)
+        return IPSGS_Processor::ePSGS_NotFound; // 300 never actually happens
     return IPSGS_Processor::ePSGS_Error;
 }
 
