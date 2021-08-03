@@ -388,7 +388,7 @@ template<class TReply> void ReportStatus(TReply reply, EPSG_Status status)
     while (true) {
         string msg = reply->GetNextMessage();
         if (msg.empty()) break;
-        _TRACE("Request failed: " << sstatus << " - " << msg);
+        _TRACE("Request failed: " << sstatus << " - " << msg << " @ "<<CStackTrace());
     }
 }
 
@@ -992,7 +992,7 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobById(CDataSource* data_source, const CPsgB
         ret = x_ProcessBlobReply(reply, data_source, CSeq_id_Handle(), true, false, &load_lock).lock;
     }
     if (!ret) {
-        _TRACE("Failed to load blob for " << blob_id.ToPsgId());
+        _TRACE("Failed to load blob for " << blob_id.ToPsgId()<<" @ "<<CStackTrace());
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "CPSGDataLoader::GetBlobById("+blob_id.ToPsgId()+") failed");
     }
@@ -1244,7 +1244,7 @@ void CPSG_Blob_Task::DoExecute(void)
     }
     if (m_ReplyResult.blob_id.empty()) {
         _TRACE("no blob_id");
-        m_Status = eFailed;
+        m_Status = eCompleted;
         return;
     }
 
@@ -2272,16 +2272,17 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
             ret = task->m_ReplyResult;
         }
     }
-    else if ( !GetGetBlobByIdShouldFail() &&
-              (lock_asap || load_lock) && !task->m_ReplyResult.blob_id.empty() ) {
-        // blob is required, but not received, yet blob_id is known, so we retry
-        ret = x_RetryBlobRequest(task->m_ReplyResult.blob_id, data_source, req_idh);
-        if ( !ret.lock ) {
-            _TRACE("Failed to load blob for " << req_idh.AsString());
-        }
-    }
     else {
-        _TRACE("Failed to load blob for " << req_idh.AsString());
+        if ( !GetGetBlobByIdShouldFail() &&
+             (lock_asap || load_lock) && !task->m_ReplyResult.blob_id.empty() ) {
+            // blob is required, but not received, yet blob_id is known, so we retry
+            ret = x_RetryBlobRequest(task->m_ReplyResult.blob_id, data_source, req_idh);
+        }
+        if ( !ret.lock ) {
+            _TRACE("Failed to load blob for " << req_idh.AsString()<<" @ "<<CStackTrace());
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "CPSGDataLoader::GetRecords("+req_idh.AsString()+") failed");
+        }
     }
     return ret;
 }
@@ -2336,7 +2337,7 @@ shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Ha
     group.WaitAll();
 
     if (task->GetStatus() != CThreadPool_Task::eCompleted) {
-        _TRACE("Failed to get bioseq info for " << idh.AsString());
+        _TRACE("Failed to get bioseq info for " << idh.AsString() << " @ "<<CStackTrace());
         NCBI_THROW(CLoaderException, eLoaderFailed, "failed to get bioseq info for "+idh.AsString());
     }
     if (!task->m_BioseqInfo) {
