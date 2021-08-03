@@ -243,7 +243,7 @@ public:
     CHTMLPage&    GetHTMLPage()       { return m_Page; }
 
     // Get the self URL
-    string        GetSelfURL() const;
+    string        GetSelfURL(bool include_entries = true) const;
 
     // Get current job progress message
     const string& GetJobProgressMessage() const
@@ -267,9 +267,6 @@ public:
     bool HasCtgTime() const { return m_PersistentEntries.find(kSinceTime) != m_PersistentEntries.end(); }
 
     void LoadQueryStringTags(CHTMLPlainText::EEncodeMode encode_mode);
-
-    // Get CGI Context
-    CCgiContext& GetCGIContext() { return m_CgiContext; }
 
     void SelectView(const string& view_name);
     bool NeedRenderPage() const { return m_NeedRenderPage; }
@@ -327,9 +324,14 @@ CGridCgiContext::CGridCgiContext(SInputValidator& input_validator, CHTMLPage& pa
     m_NeedMetaRefresh = no_meta_refresh.empty() || no_meta_refresh == "0";
 }
 
-string CGridCgiContext::GetSelfURL() const
+string CGridCgiContext::GetSelfURL(bool include_entries) const
 {
-    string url = m_CgiContext.GetSelfURL();
+    string url = NStr::URLEncode(m_CgiContext.GetSelfURL(), NStr::eUrlEnc_URIPath);
+
+    if (!include_entries) {
+        return url;
+    }
+
     bool first = true;
     TPersistentEntries::const_iterator it;
     for (it = m_PersistentEntries.begin();
@@ -1419,7 +1421,7 @@ bool CCgi2RCgiApp::CheckIfJobDone(
         grid_ctx.SelectView("JOB_CANCELED");
 
         DefineRefreshTags(grid_ctx, m_FallBackUrl.empty() ?
-            grid_ctx.GetCGIContext().GetSelfURL() : m_FallBackUrl,
+            grid_ctx.GetSelfURL(false) : m_FallBackUrl,
                 m_CancelGoBackDelay);
         break;
 
@@ -1561,7 +1563,7 @@ void CCgi2RCgiApp::OnJobFailed(const string& msg,
     ctx.SelectView("JOB_FAILED");
 
     string fall_back_url = m_FallBackUrl.empty() ?
-        ctx.GetCGIContext().GetSelfURL() : m_FallBackUrl;
+        ctx.GetSelfURL(false) : m_FallBackUrl;
     DefineRefreshTags(ctx, fall_back_url, m_FallBackDelay);
 
     ctx.GetHTMLPage().AddTagMap("MSG",
