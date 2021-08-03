@@ -3849,7 +3849,9 @@ string CDeflineGenerator::GenerateDefline (
             ++desc;
         }
         bool ok = true;
-        bool listAllFeatures = false;
+        bool limitAutoDef = true;
+        /*
+        bool limitAutoDef = false;
         if (desc) {
             const CUser_object& uo = desc->GetUser();
             if( uo.IsSetData() ) {
@@ -3859,15 +3861,19 @@ string CDeflineGenerator::GenerateDefline (
                         ! field.IsSetLabel() || ! field.GetLabel().IsStr() ) {
                         continue;
                     }
-                    if( field.GetLabel().GetStr() == "FeatureListType" && 
-                        field.GetData().GetStr() == "List All Features" ) 
-                    {
-                        listAllFeatures = true;
+                    if ( field.GetLabel().GetStr() == "FeatureListType" ) {
+                        string featlisttype = field.GetData().GetStr();
+                        if ( featlisttype == "List All Features" ||
+                             featlisttype == "Complete Sequence" ||
+                             featlisttype == "Complete Genome" ) {
+                            limitAutoDef = true;
+                        }
                     }
                 }
             }
         }
-        if (listAllFeatures) {
+        */
+        if (limitAutoDef) {
             int numGenes = 0;
             int numCDSs = 0;
             CSeq_annot_CI annot_ci(bsh);
@@ -3886,7 +3892,7 @@ string CDeflineGenerator::GenerateDefline (
                     }
                 }
             }
-            if (numGenes + numCDSs > 20) {
+            if (numGenes + numCDSs > 40) {
                 ok = false;
             }
         }
