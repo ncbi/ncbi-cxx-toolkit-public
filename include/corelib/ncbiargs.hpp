@@ -161,6 +161,7 @@ public:
     enum EErrCode {
         eHelp,          ///< Error code for short help message
         eHelpFull,      ///< Error code for detailed help message
+        eHelpShowAll,   ///< Error code for detailed help message which includes hidden arguments
         eHelpXml,       ///< Error code for XML formatted help message
         eHelpErr        ///< Show short help message and return error
     };
@@ -1080,6 +1081,9 @@ public:
         return m_AutoHelp;
     }
 
+    /// Include hidden arguments into USAGE
+    CArgDescriptions* ShowAllArguments(bool show_all);
+
 private:
     typedef set< AutoPtr<CArgDesc> >  TArgs;    ///< Argument descr. type
     typedef TArgs::iterator           TArgsI;   ///< Arguments iterator
@@ -1123,6 +1127,7 @@ protected:
     string    m_DetailedDescription;  ///< Program long description
     SIZE_TYPE m_UsageWidth;        ///< Maximum length of a usage line
     bool      m_AutoHelp;          ///< Special flag "-h" activated
+    bool      m_ShowAll;           ///< Include hidden arguments into USAGE
     friend class CCommandArgDescriptions;
 
 private:
@@ -1197,6 +1202,8 @@ private:
 
     /// Returns TRUE if parameter supports multiple arguments
     bool x_IsMultiArg(const string& name) const;
+
+    void x_AddShowAllFlag(void);
 
 protected:
 

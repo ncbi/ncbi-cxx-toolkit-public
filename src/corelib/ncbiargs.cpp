@@ -75,6 +75,7 @@ BEGIN_NCBI_SCOPE
 
 static const char* s_AutoHelp     = "h";
 static const char* s_AutoHelpFull = "help";
+static const char* s_AutoHelpShowAll  = "help-full";
 static const char* s_AutoHelpXml  = "xmlhelp";
 static const char* s_ExtraName    = "....";
 
@@ -2186,6 +2187,7 @@ CArgDescriptions::CArgDescriptions(bool              auto_help,
       m_PositionalMode(ePositionalMode_Strict),
       m_MiscFlags(fMisc_Default),
       m_AutoHelp(auto_help),
+      m_ShowAll(false),
       m_ErrorHandler(err_handler)
 {
     if ( !m_ErrorHandler ) {
@@ -2213,6 +2215,22 @@ CArgDescriptions::~CArgDescriptions(void)
     return;
 }
 
+void CArgDescriptions::x_AddShowAllFlag(void)
+{
+    if (!Exist(s_AutoHelpShowAll)) {
+        AddFlag(s_AutoHelpShowAll,
+                "Print USAGE, DESCRIPTION and ARGUMENTS, including hidden ones;"
+                " ignore all other parameters");
+    }
+}
+
+CArgDescriptions* CArgDescriptions::ShowAllArguments(bool show_all)
+{
+    for(CArgDescriptions* desc : GetAllDescriptions()) {
+        desc->m_ShowAll = show_all;
+    }
+    return this;
+}
 
 void CArgDescriptions::SetArgsType(EArgSetType args_type)
 {
@@ -2703,6 +2721,8 @@ void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
         NCBI_THROW(CArgHelpException,eHelpFull,kEmptyStr);
     } else if (arg.compare(string("-") + s_AutoHelpXml) == 0) {
         NCBI_THROW(CArgHelpException,eHelpXml,kEmptyStr);
+    } else if (arg.compare(string("-") + s_AutoHelpShowAll) == 0) {
+        NCBI_THROW(CArgHelpException,eHelpShowAll,kEmptyStr);
     }
 }
 
@@ -3222,7 +3242,9 @@ void CArgDescriptions::x_AddDesc(CArgDesc& arg)
         NCBI_THROW(CArgException,eSynopsis,
             "Argument with this name is already defined: " + name);
     }
-
+    if (arg.GetFlags() & CArgDescriptions::fHidden) {
+        x_AddShowAllFlag();
+    }
     arg.SetGroup(m_CurrentGroup);
 
     if (s_IsKey(arg)  ||  s_IsFlag(arg)) {
@@ -3405,6 +3427,7 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
 {
     typedef list<const CArgDesc*> TList;
     typedef TList::iterator       TListI;
+    bool show_all = desc.m_ShowAll;
 
     m_args.push_front(0);
     TListI it_pos = m_args.begin();
@@ -3414,7 +3437,7 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
          name != desc.m_OpeningArgs.end();  ++name) {
         TArgsCI it = desc.x_Find(*name);
         _ASSERT(it != desc.m_Args.end());
-        if (it->get()->GetFlags() & CArgDescriptions::fHidden)
+        if (!show_all && (it->get()->GetFlags() & CArgDescriptions::fHidden))
         {
             continue;
         }
@@ -3431,7 +3454,7 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
 
         for (TArgsCI it = desc.m_Args.begin();  it != desc.m_Args.end();  ++it) {
             const CArgDesc* arg = it->get();
-            if (it->get()->GetFlags() & CArgDescriptions::fHidden)
+            if (!show_all && (it->get()->GetFlags() & CArgDescriptions::fHidden))
             {
                 continue;
             }
@@ -3444,7 +3467,8 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
             } else if (dynamic_cast<const CArgDesc_Flag*> (arg)) {
                 if ((desc.m_AutoHelp &&
                     strcmp(s_AutoHelp,     (arg->GetName()).c_str()) == 0) ||
-                    strcmp(s_AutoHelpFull, (arg->GetName()).c_str()) == 0)
+                    strcmp(s_AutoHelpFull, (arg->GetName()).c_str()) == 0  ||
+                    strcmp(s_AutoHelpShowAll,  (arg->GetName()).c_str()) == 0)
                     m_args.push_front(arg);
                 else
                     m_args.insert(it_flags, arg);
@@ -3458,7 +3482,7 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
              name != desc.m_KeyFlagArgs.end();  ++name) {
             TArgsCI it = desc.x_Find(*name);
             _ASSERT(it != desc.m_Args.end());
-            if (it->get()->GetFlags() & CArgDescriptions::fHidden)
+            if (!show_all && (it->get()->GetFlags() & CArgDescriptions::fHidden))
             {
                 continue;
             }
@@ -3472,7 +3496,7 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
          name != desc.m_PosArgs.end();  ++name) {
         TArgsCI it = desc.x_Find(*name);
         _ASSERT(it != desc.m_Args.end());
-        if (it->get()->GetFlags() & CArgDescriptions::fHidden)
+        if (!show_all && (it->get()->GetFlags() & CArgDescriptions::fHidden))
         {
             continue;
         }
@@ -3491,7 +3515,7 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
     {{
         TArgsCI it = desc.x_Find(kEmptyStr);
         if (it != desc.m_Args.end()) {
-            if ((it->get()->GetFlags() & CArgDescriptions::fHidden) == 0)
+            if (show_all || (it->get()->GetFlags() & CArgDescriptions::fHidden) == 0)
             {
                 m_args.push_back(it->get());
             }
@@ -3879,6 +3903,9 @@ void CCommandArgDescriptions::AddCommand(
         }
         if (description->Exist(s_AutoHelpXml)) {
             description->Delete(s_AutoHelpXml);
+        }
+        if (description->Exist(s_AutoHelpShowAll)) {
+            description->Delete(s_AutoHelpShowAll);
         }
 
         if (m_CurrentCmdGroup == 0) {
@@ -4968,6 +4995,7 @@ const char* CArgHelpException::GetErrCodeString(void) const
     switch (GetErrCode()) {
     case eHelp:     return "eHelp";
     case eHelpFull: return "eHelpFull";
+    case eHelpShowAll:  return "eHelpShowAll";
     case eHelpXml:  return "eHelpXml";
     case eHelpErr:  return "eHelpErr";
     default:    return CException::GetErrCodeString();
