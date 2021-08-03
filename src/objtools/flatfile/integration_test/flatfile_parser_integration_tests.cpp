@@ -53,7 +53,9 @@ BOOST_AUTO_TEST_CASE(TestIstreamInterface)
     string source {"ncbi"};
     fta_set_format_source(*pConfig, format, source);
 
-    auto pIstr = make_unique<CNcbiIfstream>("TP53_MH011443.gb");
+    string filestub = "TP53_MH011443";
+
+    auto pIstr = make_unique<CNcbiIfstream>(filestub + ".gb");
     CFlatFileParser ffparser(nullptr);
     auto pResult = ffparser.Parse(*pConfig, *pIstr);
     BOOST_REQUIRE(pResult);
@@ -63,9 +65,25 @@ BOOST_AUTO_TEST_CASE(TestIstreamInterface)
     ofstr << MSerial_AsnText << *pResult;
     ofstr.close();
 
-    CFile goldenFile("TP53_MH011443.asn");
+    CFile goldenFile(filestub + ".asn");
     bool success = goldenFile.CompareTextContents(outputName, CFile::eIgnoreWs);
 
+    if (!success) {
+        const auto& args = CNcbiApplication::Instance()->GetArgs();
+        if (args["keep-diffs"]) {
+            CDirEntry outputFile(outputName);
+            outputFile.Copy(filestub + ".new");
+        }
+    }
+
     BOOST_REQUIRE(success);
+}
+
+
+NCBITEST_INIT_CMDLINE(argDescrs) 
+{
+    argDescrs->AddFlag("keep-diffs",
+            "Keep output files that are different from expected.",
+            true);
 }
 
