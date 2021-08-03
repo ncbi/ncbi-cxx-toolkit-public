@@ -1016,7 +1016,7 @@ CPSGS_TSEChunkProcessor::x_ValidateTSEChunkNumber(
             app->GetCounters().Increment(CPSGSCounters::ePSGS_MalformedArgs);
             x_SendProcessorError(msg, CRequestStatus::e400_BadRequest,
                                  ePSGS_MalformedParameter);
-            UpdateOverallStatus(CRequestStatus::e400_BadRequest);
+            UpdateOverallStatus(CRequestStatus::e422_UnprocessableEntity);
             m_Completed = true;
             SignalFinishProcessing();
         } else {
