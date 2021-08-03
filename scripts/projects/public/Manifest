@@ -30,7 +30,7 @@ Linux64-Centos  : GCC730    : GCC.sh 7.3.0    --without-debug --with-mt --with-f
 Linux64-Centos  : GCC830    : GCC.sh 8.3.0    --without-debug --with-mt --with-flat-makefile --without-ncbi-c
 Linux64-Centos  : GCC910    : GCC.sh 9.1.0    --without-debug --with-mt --with-flat-makefile --without-ncbi-c
 Linux64-Centos  : GCC1020   : GCC.sh 10.2.0   --without-debug --with-mt --with-flat-makefile --without-ncbi-c
-Linux64-Centos  : ICC1903   : ICC.sh 19.0     --without-debug --with-mt --with-runpath --without-ncbi-c
+Linux64-Centos  : ICC1903   : ICC.sh 19.0     --without-debug --with-dll --with-mt --with-runpath --without-ncbi-c
 Linux64-Centos  : ICC2120   : ICC.sh 21.0     --with-debug --with-mt --with-3psw=system --with-runpath --without-ncbi-c
 Linux64-Centos  : Clang7    : Clang.sh 7.0.0  --with-debug --with-mt --with-flat-makefile --without-ncbi-c
 #Linux64-Centos  : Clang12   : Clang.sh 12.0.0 --with-debug --with-mt --with-flat-makefile --without-ncbi-c
