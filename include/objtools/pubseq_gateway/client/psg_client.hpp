@@ -971,6 +971,107 @@ private:
 };
 
 
+
+/// A class derived from the queue class that additionally allows to run event loop.
+///
+/// Call SendRequest() (possibly from other threads) to add requests to the queue.
+/// Call RunOnce() to run the event loop once, use IsEmpty() to check
+/// if all processing is complete. Or, call Run() to run the event loop until all
+/// processing is complete.
+///
+/// NOTE: Requests can be added to the queue at any time, including in parallel with
+/// calling Run() and RunOnce() methods of the event loop. However, do remember to
+/// call Stop() once all required requests have been added to the queue as this will
+/// help the event loop to stop promptly, as soon as all submitted requests have
+/// been processed.
+///
+/// Derived (the event loop) part of the instance is not MT-safe,
+/// one event loop cannot be run by multiple threads.
+/// Base class methods are MT-safe.
+///
+/// The queue base can be used by more than one thread,
+/// usually to add requests and stop the queue after.
+/// If needed, it can also be used to wait for events and to manually retrieve replies.
+/// Manually retrieved replies will not be processed by the event loop though.
+///
+/// Results for the requests which were pushed into a given instance
+/// will be processed using this (and only this) instance
+/// regardless of which threads were used to push the requests.
+///
+/// If more than one request was pushed into the instance, then the replies to all
+/// of the requests may come, in any order.
+///
+
+class CPSG_EventLoop : public CPSG_Queue
+{
+public:
+    using TItemComplete  = function<void(EPSG_Status, const shared_ptr<CPSG_ReplyItem>&)>;
+    using TReplyComplete = function<void(EPSG_Status, const shared_ptr<CPSG_Reply>&)>;
+    using TNewItem       = function<void(const shared_ptr<CPSG_ReplyItem>&)>;
+
+    /// Creates an uninitialized instance.
+    /// It allows to postpone queue initialization until later.
+    /// The uninitialized instances can then be initialized using
+    /// regular constructor and move assignment operator.
+    CPSG_EventLoop();
+
+    /// @param service
+    ///  Either a name of service (which can be resolved into a set of PSG
+    ///  servers) or a single fixed PSG server (in format "host:port")
+    /// @param item_complete
+    ///  Mandatory user callback to call when an item is complete (i.e. not eInProgress)
+    /// @param reply_complete
+    ///  Mandatory user callback to call when a reply and all its items are complete
+    /// @param new_item
+    ///  Optional user callback to call when new item arrives
+    CPSG_EventLoop(const string&  service,
+                   TItemComplete  item_complete,
+                   TReplyComplete reply_complete,
+                   TNewItem       new_item = nullptr);
+
+    /// Check whether the queue is empty and all processing is complete
+    bool IsEmpty() const { return CPSG_Queue::IsEmpty() && m_Replies.empty(); }
+
+    /// Wait once for events in the queue and process any.
+    /// @param deadline
+    ///  For how long to wait for events in the queue.
+    /// @return
+    ///  - TRUE if there have been some events
+    ///  - FALSE on timeout (i.e. if there have been no events before the specified deadline)
+    bool RunOnce(CDeadline deadline);
+
+    /// Process everything in the queue until it's empty or times out.
+    /// @param deadline
+    ///  For how long to process events in the queue.
+    /// @return
+    ///  - TRUE if everything has been processed
+    ///  - FALSE on timeout (i.e. if it's still not empty before the specified deadline)
+    bool Run(CDeadline deadline);
+
+    CPSG_EventLoop(CPSG_EventLoop&&);
+    CPSG_EventLoop& operator=(CPSG_EventLoop&&);
+
+private:
+    TItemComplete m_ItemComplete;
+    TReplyComplete m_ReplyComplete;
+    TNewItem m_NewItem;
+    list<pair<shared_ptr<CPSG_Reply>, list<shared_ptr<CPSG_ReplyItem>>>> m_Replies;
+};
+
+
+
+inline bool CPSG_EventLoop::Run(CDeadline deadline)
+{
+    while (!IsEmpty()) {
+        if (!RunOnce(deadline)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
 DECLARE_SAFE_FLAGS(CPSG_Request_Resolve::EIncludeInfo);
 
 END_NCBI_SCOPE

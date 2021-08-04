@@ -1068,6 +1068,80 @@ CPSG_Queue::TApiLock CPSG_Queue::GetApiLock()
 }
 
 
+CPSG_EventLoop::CPSG_EventLoop() = default;
+CPSG_EventLoop::CPSG_EventLoop(CPSG_EventLoop&&) = default;
+CPSG_EventLoop& CPSG_EventLoop::operator=(CPSG_EventLoop&&) = default;
+
+CPSG_EventLoop::CPSG_EventLoop(const string&  service, TItemComplete item_complete, TReplyComplete reply_complete, TNewItem new_item) :
+    CPSG_Queue(service),
+    m_ItemComplete(move(item_complete)),
+    m_ReplyComplete(move(reply_complete)),
+    m_NewItem(move(new_item))
+{
+    if (!m_ItemComplete) {
+        NCBI_THROW(CPSG_Exception, eParameterMissing, "item_complete cannot be empty");
+    }
+
+    if (!m_ReplyComplete) {
+        NCBI_THROW(CPSG_Exception, eParameterMissing, "reply_complete cannot be empty");
+    }
+}
+
+bool CPSG_EventLoop::RunOnce(CDeadline deadline)
+{
+    if (!WaitForEvents(deadline)) {
+        return false;
+    }
+
+    while (auto reply = GetNextReply(CDeadline::eNoWait)) {
+        m_Replies.emplace_back(move(reply), 0);
+    }
+
+    for (auto i = m_Replies.begin(); i != m_Replies.end();) {
+        auto& reply = i->first;
+        auto& items = i->second;
+
+        while (auto item = reply->GetNextItem(CDeadline::eNoWait)) {
+            if (item->GetType() == CPSG_ReplyItem::eEndOfReply) {
+                break;
+            }
+
+            if (m_NewItem) {
+                m_NewItem(item);
+            }
+
+            items.emplace_back(move(item));
+        }
+
+        for (auto j = items.begin(); j != items.end();) {
+            auto& item = *j;
+            auto status = item->GetStatus(CDeadline::eNoWait);
+
+            if (status == EPSG_Status::eInProgress) {
+                ++j;
+            } else {
+                m_ItemComplete(status, item);
+                j = items.erase(j);
+            }
+        }
+
+        // Allow reply complete event only after all its items are complete
+        if (items.empty()) {
+            auto status = reply->GetStatus(CDeadline::eNoWait);
+
+            if (status == EPSG_Status::eInProgress) {
+                ++i;
+            } else {
+                m_ReplyComplete(status, reply);
+                i = m_Replies.erase(i);
+            }
+        }
+    }
+
+    return true;
+}
+
+
 END_NCBI_SCOPE
 
 #endif

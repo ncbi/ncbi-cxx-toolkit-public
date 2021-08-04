@@ -147,13 +147,11 @@ private:
     struct BatchResolve
     {
         static void Submitter(TInputQueue& input, CPSG_Queue& output, const CArgs& args);
-        static void Reporter(CPSG_Queue& input, SJsonOut& output);
     };
 
     struct Interactive
     {
         static void Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, bool echo);
-        static void Reporter(CPSG_Queue& input, SJsonOut& output);
         static void ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
         static void ReplyComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
     };
@@ -169,7 +167,7 @@ private:
     };
 
     TInputQueue m_InputQueue;
-    list<CPSG_Queue> m_PsgQueues;
+    list<CPSG_EventLoop> m_PsgQueues;
     SJsonOut m_JsonOut;
     list<SThread> m_Threads;
 };
