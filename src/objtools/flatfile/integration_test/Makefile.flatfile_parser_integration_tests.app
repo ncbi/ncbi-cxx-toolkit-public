@@ -10,4 +10,7 @@ LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(GENBANK_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(
 
 REQUIRES = Boost.Test.Included
 
+CHECK_CMD =
+CHECK_COPY = test_data
+
 WATCHERS = foleyjp

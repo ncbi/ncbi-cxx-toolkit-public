@@ -46,6 +46,8 @@ USING_SCOPE(objects);
 
 BOOST_AUTO_TEST_CASE(TestIstreamInterface)
 {
+    string test_data_dir {"test_data"};
+
     unique_ptr<Parser> pConfig(new Parser()); 
     pConfig->mode = Parser::EMode::Relaxed;
     pConfig->output_format = Parser::EOutput::Seqsubmit;
@@ -53,8 +55,7 @@ BOOST_AUTO_TEST_CASE(TestIstreamInterface)
     string source {"ncbi"};
     fta_set_format_source(*pConfig, format, source);
 
-    string filestub = "TP53_MH011443";
-
+    string filestub = CDir::ConcatPath(test_data_dir, "TP53_MH011443");
     string inputFile = filestub + ".gb";
     BOOST_REQUIRE(CDirEntry(inputFile).Exists());
 
