@@ -154,6 +154,8 @@ private:
     {
         static void Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, bool echo);
         static void Reporter(CPSG_Queue& input, SJsonOut& output);
+        static void ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
+        static void ReplyComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
     };
 
     struct SThread
@@ -202,6 +204,9 @@ public:
     static int Testing(const string& service);
     static int Io(const string& service, time_t start_time, int duration, int user_threads, int download_size);
     static int JsonCheck(istream* schema_is, istream& doc_is);
+
+    static void ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
+    static void ReplyComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
 
     static CJson_Document RequestSchema();
 

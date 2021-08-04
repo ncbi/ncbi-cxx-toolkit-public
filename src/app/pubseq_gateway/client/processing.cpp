@@ -391,16 +391,45 @@ struct SDataOnlyCopy
 {
     SDataOnlyCopy(const CProcessing::SParams::SDataOnly& params) : m_Params(params) {}
 
-    void operator()(shared_ptr<CPSG_BlobInfo> blob_info);
-    void operator()(shared_ptr<CPSG_BlobData> blob_data);
-    void operator()(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info);
+    void ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
+    void ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
 
 private:
+    void Process(shared_ptr<CPSG_BlobInfo> blob_info);
+    void Process(shared_ptr<CPSG_BlobData> blob_data);
+    void Process(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info);
     void Process(shared_ptr<CPSG_BlobInfo> blob_info, shared_ptr<CPSG_BlobData> blob_data);
 
     const CProcessing::SParams::SDataOnly& m_Params;
     unordered_map<string, pair<shared_ptr<CPSG_BlobInfo>, shared_ptr<CPSG_BlobData>>> m_Data;
 };
+
+void SDataOnlyCopy::ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
+{
+    if (status != EPSG_Status::eSuccess) {
+        stringstream ss;
+        s_ReportErrors(ss, status, item, "Item error: ");
+        cerr << ss.rdbuf();
+
+    } else if (item->GetType() == CPSG_ReplyItem::eBlobInfo) {
+        Process(static_pointer_cast<CPSG_BlobInfo>(item));
+
+    } else if (item->GetType() == CPSG_ReplyItem::eBlobData) {
+        Process(static_pointer_cast<CPSG_BlobData>(item));
+
+    } else if (item->GetType() == CPSG_ReplyItem::eNamedAnnotInfo) {
+        Process(static_pointer_cast<CPSG_NamedAnnotInfo>(item));
+    }
+}
+
+void SDataOnlyCopy::ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+{
+    if (status != EPSG_Status::eSuccess) {
+        stringstream ss;
+        s_ReportErrors(ss, status, reply, "Reply error: ");
+        cerr << ss.rdbuf();
+    }
+}
 
 ESerialDataFormat s_GetInputFormat(const string& format)
 {
@@ -436,7 +465,7 @@ TTypeInfo s_GetInputType(const shared_ptr<CPSG_BlobData>& blob_data)
     return CSeq_entry::GetTypeInfo();
 }
 
-void SDataOnlyCopy::operator()(shared_ptr<CPSG_BlobInfo> blob_info)
+void SDataOnlyCopy::Process(shared_ptr<CPSG_BlobInfo> blob_info)
 {
     auto& p = m_Data[blob_info->GetId()->Repr()];
 
@@ -447,7 +476,7 @@ void SDataOnlyCopy::operator()(shared_ptr<CPSG_BlobInfo> blob_info)
     }
 }
 
-void SDataOnlyCopy::operator()(shared_ptr<CPSG_BlobData> blob_data)
+void SDataOnlyCopy::Process(shared_ptr<CPSG_BlobData> blob_data)
 {
     auto& p = m_Data[blob_data->GetId()->Repr()];
 
@@ -496,7 +525,7 @@ void SDataOnlyCopy::Process(shared_ptr<CPSG_BlobInfo> blob_info, shared_ptr<CPSG
     cout << ss.rdbuf();
 }
 
-void SDataOnlyCopy::operator()(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
+void SDataOnlyCopy::Process(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
 {
     if (m_Params.output_format == eSerial_None) {
         cout << NStr::Base64Decode(named_annot_info->GetId2AnnotInfo());
@@ -518,6 +547,20 @@ CProcessing::SParams::SParams(const CArgs& args) :
     latency({args["latency"].HasValue(), args["debug-printout"].HasValue()}),
     data_only({s_GetDataOnly(args), s_GetOutputFormat(args)})
 {
+}
+
+void CProcessing::ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
+{
+    CJsonResponse result_doc(status, item);
+    output << result_doc;
+}
+
+void CProcessing::ReplyComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+{
+    if (status != EPSG_Status::eSuccess) {
+        CJsonResponse result_doc(status, reply);
+        output << result_doc;
+    }
 }
 
 int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> request, SParams params)
@@ -556,11 +599,9 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
                 case EPSG_Status::eInProgress: break;
                 default:
                     if (params.data_only.enabled) {
-                        stringstream ss;
-                        s_ReportErrors(ss, status, reply, "Reply error: ");
-                        cerr << ss.rdbuf();
+                        data_only_copy.ReplyComplete(status, reply);
                     } else {
-                        json_out << CJsonResponse(status, reply);
+                        CProcessing::ReplyComplete(json_out, status, reply);
                     }
             }
         }
@@ -583,22 +624,10 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
             if (reply_item_status != EPSG_Status::eInProgress) {
                 it = reply_items.erase(it);
 
-                if (!params.data_only.enabled) {
-                    json_out << CJsonResponse(reply_item_status, reply_item);
-
-                } else if (reply_item_status != EPSG_Status::eSuccess) {
-                    stringstream ss;
-                    s_ReportErrors(ss, reply_item_status, reply_item, "Item error: ");
-                    cerr << ss.rdbuf();
-
-                } else if (reply_item->GetType() == CPSG_ReplyItem::eBlobInfo) {
-                    data_only_copy(static_pointer_cast<CPSG_BlobInfo>(reply_item));
-
-                } else if (reply_item->GetType() == CPSG_ReplyItem::eBlobData) {
-                    data_only_copy(static_pointer_cast<CPSG_BlobData>(reply_item));
-
-                } else if (reply_item->GetType() == CPSG_ReplyItem::eNamedAnnotInfo) {
-                    data_only_copy(static_pointer_cast<CPSG_NamedAnnotInfo>(reply_item));
+                if (params.data_only.enabled) {
+                    data_only_copy.ItemComplete(reply_item_status, reply_item);
+                } else {
+                    CProcessing::ItemComplete(json_out, reply_item_status, reply_item);
                 }
             } else {
                 ++it;
@@ -723,11 +752,7 @@ void CParallelProcessing::BatchResolve::Reporter(CPSG_Queue& input, SJsonOut& ou
             if (status == EPSG_Status::eInProgress) {
                 ++it;
             } else {
-                if (status != EPSG_Status::eSuccess) {
-                    CJsonResponse result_doc(status, reply);
-                    output << result_doc;
-                }
-
+                CProcessing::ReplyComplete(output, status, reply);
                 it = replies.erase(it);
             }
         }
@@ -737,8 +762,7 @@ void CParallelProcessing::BatchResolve::Reporter(CPSG_Queue& input, SJsonOut& ou
             auto status = item->GetStatus(CDeadline::eNoWait);
 
             if (status != EPSG_Status::eInProgress) {
-                CJsonResponse result_doc(status, item);
-                output << result_doc;
+                CProcessing::ItemComplete(output, status, item);
                 it = reply_items.erase(it);
             } else {
                 ++it;
@@ -775,17 +799,7 @@ void CParallelProcessing::Interactive::Reporter(CPSG_Queue& input, SJsonOut& out
             if (status == EPSG_Status::eInProgress) {
                 ++it;
             } else {
-                const auto request = reply->GetRequest();
-                CRequestContextGuard_Base guard(request->GetRequestContext());
-                guard.SetStatus(s_PsgStatusToRequestStatus(status));
-
-                if (status != EPSG_Status::eSuccess) {
-                    const auto& request_id = *request->GetUserContext<string>();
-
-                    CJsonResponse result_doc(status, reply);
-                    output << CJsonResponse(request_id, result_doc);
-                }
-
+                ReplyComplete(output, status, reply);
                 it = replies.erase(it);
             }
         }
@@ -795,17 +809,36 @@ void CParallelProcessing::Interactive::Reporter(CPSG_Queue& input, SJsonOut& out
             auto status = item->GetStatus(CDeadline::eNoWait);
 
             if (status != EPSG_Status::eInProgress) {
-                const auto request = item->GetReply()->GetRequest();
-                const auto& request_id = *request->GetUserContext<string>();
-
-                CJsonResponse result_doc(status, item);
-                output << CJsonResponse(request_id, result_doc);
+                ItemComplete(output, status, item);
                 it = reply_items.erase(it);
             } else {
                 ++it;
             }
         }
     }
+}
+
+void CParallelProcessing::Interactive::ReplyComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+{
+    if (status != EPSG_Status::eSuccess) {
+        const auto request = reply->GetRequest();
+        CRequestContextGuard_Base guard(request->GetRequestContext());
+        guard.SetStatus(s_PsgStatusToRequestStatus(status));
+
+        const auto& request_id = *request->GetUserContext<string>();
+
+        CJsonResponse result_doc(status, reply);
+        output << CJsonResponse(request_id, result_doc);
+    }
+}
+
+void CParallelProcessing::Interactive::ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
+{
+    const auto request = item->GetReply()->GetRequest();
+    const auto& request_id = *request->GetUserContext<string>();
+
+    CJsonResponse result_doc(status, item);
+    output << CJsonResponse(request_id, result_doc);
 }
 
 shared_ptr<CPSG_Reply> s_GetReply(shared_ptr<CPSG_ReplyItem>& item)
