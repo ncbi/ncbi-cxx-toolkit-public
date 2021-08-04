@@ -169,7 +169,7 @@ typedef int (*FStrNCmp)(const char* s1, const char* s2, size_t n);
  *    if strncmp()'s address is passed in, "param" is assumed all-CAPS and is
  *    not uppercased unnecessarily (compared to when strncasecmp() passed in).
  */
-static const char* x_GetValue(const char* svc, size_t svclen,
+static const char* x_GetValue(const char* svc/*ign if !svclen*/, size_t svclen,
                               const char* param, char* value,
                               size_t value_size, const char* def_value,
                               int* /*bool*/ generic, FStrNCmp strncompar)
@@ -278,7 +278,7 @@ static const char* x_GetValue(const char* svc, size_t svclen,
 
 /* Trim leading and trailing spaces first, then drop enveloping quotes, if any.
  * Do not trim any spaces within the quotes, though. */
-static void s_Trim(char* str)
+static void x_Trim(char* str)
 {
     size_t len;
     char*  ptr = str;
@@ -309,7 +309,7 @@ static const char* s_GetValue(const char* svc, size_t svclen,
     if (retval) {
         assert(value == retval);
         if (*value)
-            s_Trim(value);
+            x_Trim(value);
     }
     if (*value) {
         CORE_TRACEF(("ConnNetInfo(%s%.*s%s%s=\"%s\"): %s%s%s", &"\""[!svclen],
@@ -326,8 +326,10 @@ const char* ConnNetInfo_GetValueInternal(const char* service,const char* param,
                                          const char* def_value)
 {
     int/*bool*/ service_only = 0/*false*/;
-    assert(!service  ||  !strpbrk(service, "?*["));
-    assert(value  &&  value_size  &&  param  &&  *param);
+    assert(!service  ||  (!NCBI_HasSpaces(service, strlen(service))
+                          &&  !strpbrk(service, "?*[")));
+    assert(param  &&  *param  &&  !NCBI_HasSpaces(param, strlen(param)));
+    assert(value  &&  value_size);
     *value = '\0';
     return s_GetValue(service, service  &&  *service ? strlen(service) : 0,
                       param, value, value_size, def_value,
@@ -342,8 +344,10 @@ const char* ConnNetInfo_GetValueService(const char* service, const char* param,
 {
     const char* retval;
     int/*bool*/ service_only = 1/*true*/;
-    assert(service  &&  *service  &&  !strpbrk(service, "?*["));
-    assert(value  &&  value_size  &&  param  &&  *param);
+    assert(service  &&  *service  &&  !NCBI_HasSpaces(service, strlen(service))
+           &&  !strpbrk(service, "?*["));
+    assert(param  &&  *param  &&  !NCBI_HasSpaces(param, strlen(param)));
+    assert(value  &&  value_size);
     *value = '\0';
     retval = s_GetValue(service, strlen(service),
                         param, value, value_size, def_value,
@@ -364,7 +368,7 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
     if (!value  ||  !value_size)
         return 0;
     *value = '\0';
-    if (!param  ||  !*param)
+    if (!param  ||  !*param  ||  NCBI_HasSpaces(param, strlen(param)))
         return 0;
 
     if (service) {
@@ -600,17 +604,23 @@ static int/*bool*/ s_InfoIsValid(const SConnNetInfo* info)
 }
 
 
+
+/****************************************************************************
+ * ConnNetInfo API
+ */
+
 /*fwdecl*/
 static int/*bool*/ x_SetArgs(SConnNetInfo* info, const char* args);
 
-static SConnNetInfo* s_CreateNetInfo(const char* service, FStrNCmp strncompar)
+/* Note that all PARAMS are all-CAPS here */
+SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
 {
 #define REG_VALUE(name, value, def_value)                               \
     generic = 0;                                                        \
     *value = '\0';                                                      \
     if (!s_GetValue(service, len,                                       \
                     name, value, sizeof(value), def_value,              \
-                    &generic, strncompar))                              \
+                    &generic, strncmp))                                 \
         goto err/*memory or truncation error*/
 
     char str[(CONN_PATH_LEN + 1)/2];
@@ -621,8 +631,9 @@ static SConnNetInfo* s_CreateNetInfo(const char* service, FStrNCmp strncompar)
     double dbl;
     char*  e;
 
-    assert(!service  ||  !strpbrk(service, "?*["));
     len = service  &&  *service ? strlen(service) : 0;
+    assert(!len  ||  (!NCBI_HasSpaces(service, len)
+                      &&  !strpbrk(service, "?*[")));
 
     /* NB: created *NOT* cleared up with all 0s */
     if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + len)))
@@ -765,7 +776,7 @@ static SConnNetInfo* s_CreateNetInfo(const char* service, FStrNCmp strncompar)
     /* default referer ([in] "generic" irrelevant), all error(s) ignored */
     *str = '\0';
     s_GetValue(0, 0, REG_CONN_HTTP_REFERER, str, sizeof(str),
-               DEF_CONN_HTTP_REFERER, &generic, strncompar);
+               DEF_CONN_HTTP_REFERER, &generic, strncmp);
     assert(generic);
     if (*str)
         info->http_referer = strdup(str);
@@ -828,16 +839,6 @@ static SConnNetInfo* s_CreateNetInfo(const char* service, FStrNCmp strncompar)
 }
 
 
-/****************************************************************************
- * ConnNetInfo API
- */
-
-SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
-{
-    return s_CreateNetInfo(service, strncmp);
-}
-
-
 extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 {
     const char* x_service;
@@ -850,7 +851,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     } else
         x_service = 0;
 
-    retval = s_CreateNetInfo(x_service, strncasecmp);
+    retval = ConnNetInfo_CreateInternal(x_service);
 
     if (x_service)
         free((void*) x_service);
