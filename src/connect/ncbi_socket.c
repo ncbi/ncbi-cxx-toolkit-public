@@ -2063,13 +2063,14 @@ static EIO_Status s_Select_(size_t                n,
 #    define NPOLLS  ((3 * sizeof(fd_set)) / sizeof(struct pollfd))
 
 
-static size_t x_CountPolls(size_t n, SSOCK_Poll polls[])
+static size_t x_AutoCountPolls(size_t n, SSOCK_Poll polls[])
 {
     int/*bool*/ bigfd = 0/*false*/;
     int/*bool*/ good  = 1/*true*/;
     size_t      count = 0;
     size_t      i;
 
+    assert(s_IOWaitSysAPI == eSOCK_IOWaitSysAPIAuto);
     for (i = 0;  i < n;  ++i) {
         if (!polls[i].sock) {
             assert(!polls[i].revent/*eIO_Open*/);
@@ -2090,15 +2091,13 @@ static size_t x_CountPolls(size_t n, SSOCK_Poll polls[])
         }
 #    ifdef FD_SETSIZE
         if (polls[i].sock->sock >= FD_SETSIZE
-            &&  (s_IOWaitSysAPI == eSOCK_IOWaitSysAPIPoll
-                 ||  !x_TryLowerSockFileno(polls[i].sock))) {
+            &&  !x_TryLowerSockFileno(polls[i].sock)) {
             bigfd = 1/*true*/;
         }
 #    endif /*FD_SETSIZE*/
         ++count;
     }
-    return good  &&  (s_IOWaitSysAPI != eSOCK_IOWaitSysAPIAuto
-                      ||  count <= NPOLLS  ||  bigfd) ? count : 0;
+    return good  &&  (count <= NPOLLS  ||  bigfd) ? count : 0;
 }
 
 
@@ -2124,7 +2123,7 @@ static EIO_Status s_Poll_(size_t                n,
         m = n;
     else
 #    endif /*FD_SETSIZE*/
-    if (!(m = x_CountPolls(n, polls)))
+    if (!(m = x_AutoCountPolls(n, polls)))
         return s_Select_(n, polls, tv, asis);
 
     if (m <= NPOLLS)
@@ -3113,9 +3112,9 @@ static EIO_Status s_Read_(SOCK    sock,
         if (!size  &&  peek >= 0) {
             status = (EIO_Status) sock->r_status;
             if (status == eIO_Closed)
-                status = eIO_Unknown;
+                status  = eIO_Unknown;
             else if (sock->eof)
-                status = eIO_Closed;
+                status  = eIO_Closed;
             return status;
         }
     }
@@ -3167,7 +3166,7 @@ static EIO_Status s_Read_(SOCK    sock,
             x_buf  = p_buf;
         }
         if (sock->sslctx) {
-            int error;
+            int error = 0;
             FSSLRead sslread = s_SSL ? s_SSL->Read : 0;
             if (!sslread) {
                 if (p_buf)
@@ -3267,7 +3266,8 @@ static EIO_Status s_Read_(SOCK    sock,
     if (!(rtv_set & 2)  &&  (sock->r_tv_set = rtv_set & 1) != 0)
         x_tvcpy(&sock->r_tv, &rtv);
 
-    return *n_read ? eIO_Success : status;
+    assert(*n_read  ||  status != eIO_Success);
+    return *n_read ? eIO_Success : status/*non-eIO_Success*/;
 }
 
 
@@ -3278,9 +3278,7 @@ static EIO_Status s_Read(SOCK    sock,
                          int     peek)
 {
     EIO_Status status = s_Read_(sock, buf, size, n_read, peek);
-    if (s_ErrHook  &&  status != eIO_Success
-        &&  (status != eIO_Closed
-             ||  !(sock->r_status == eIO_Success  &&  sock->eof))) {
+    if (s_ErrHook  &&  status != eIO_Success  &&  status != eIO_Closed) {
         SSOCK_ErrInfo info;
         char          addr[40];
         memset(&info, 0, sizeof(info));
@@ -3536,7 +3534,7 @@ static EIO_Status s_Send(SOCK        sock,
                     s_AddTimeout(&waited, wait_buf_ms);
                     if (s_IsSmallerTimeout(SOCK_GET_TIMEOUT(sock, w),&waited)){
                         sock->w_status = eIO_Timeout;
-                        return eIO_Timeout;
+                        break/*timeout*/;
                     }
                     if (wait_buf_ms == 0)
                         wait_buf_ms  = 10;
@@ -3642,6 +3640,7 @@ static EIO_Status s_Send(SOCK        sock,
         size_t n_done = 0;
         status = s_Send_(sock, data, n_todo, &n_done, flag);
         assert((status == eIO_Success) == (n_done > 0));
+        assert(n_done <= n_todo);
         if (status != eIO_Success)
             break;
         *n_written += n_done;
@@ -3673,11 +3672,12 @@ static EIO_Status s_WriteData(SOCK        sock,
                               size_t*     n_written,
                               int/*bool*/ oob)
 {
+    EIO_Status status;
+
     assert(sock->type == eSOCK_Socket  &&  !sock->pending  &&  size);
 
     if (sock->sslctx) {
-        int error;
-        EIO_Status status;
+        int error = 0;
         FSSLWrite sslwrite = s_SSL ? s_SSL->Write : 0;
         if (!sslwrite  ||  oob) {
             *n_written = 0;
@@ -3686,7 +3686,6 @@ static EIO_Status s_WriteData(SOCK        sock,
         status = sslwrite(sock->sslctx->sess, data, size, n_written, &error);
         assert((status == eIO_Success) == (*n_written > 0));
         assert(status == eIO_Success  ||  error);
-        assert(*n_written <= size);
 
         /* statistics & logging */
         if ((status != eIO_Success  &&  sock->log != eOff)  ||
@@ -3703,7 +3702,9 @@ static EIO_Status s_WriteData(SOCK        sock,
     }
 
     *n_written = 0;
-    return s_Send(sock, data, size, n_written, oob ? -1 : 0);
+    status = s_Send(sock, data, size, n_written, oob ? -1 : 0);
+    assert((status == eIO_Success) == (*n_written > 0));
+    return status;
 }
 
 
@@ -3713,23 +3714,23 @@ struct XWriteBufCtx {
 };
 
 
-static size_t x_WriteBuf(void* data, const void* buf, size_t size)
+static size_t x_WriteBuf(void* x_ctx, const void* data, size_t size)
 {
-    struct XWriteBufCtx* ctx = (struct XWriteBufCtx*) data;
+    struct XWriteBufCtx* ctx = (struct XWriteBufCtx*) x_ctx;
     size_t n_written = 0;
 
-    assert(buf  &&  size  &&  ctx->status == eIO_Success);
+    assert(data  &&  size  &&  ctx->status == eIO_Success);
 
     do {
         size_t x_written;
-        ctx->status = s_WriteData(ctx->sock, buf, size, &x_written, 0);
+        ctx->status = s_WriteData(ctx->sock, data, size, &x_written, 0);
         assert((ctx->status == eIO_Success) == (x_written > 0));
         assert(x_written <= size);
         if (ctx->status != eIO_Success)
             break;
         n_written += x_written;
         size      -= x_written;
-        buf        = (const char*) buf + x_written;
+        data       = (const char*) data + x_written;
     } while (size);
 
     assert(!size/*n_written == initial size*/  ||  ctx->status != eIO_Success);
@@ -5861,6 +5862,7 @@ static EIO_Status s_RecvMsg(SOCK            sock,
         sock->r_status = eIO_Unknown;
         return eIO_Unknown;
     }
+    sock->r_status = eIO_Success;
 
     for (;;) { /* auto-resume if either blocked or interrupted (optional) */
         ssize_t            x_read;
@@ -5884,7 +5886,7 @@ static EIO_Status s_RecvMsg(SOCK            sock,
 
         if (x_read >= 0) {
             /* got a message */
-            sock->r_status = eIO_Success;
+            assert(sock->r_status == eIO_Success);
             sock->r_len = (TNCBI_BigCount) x_read;
             if ( msglen )
                 *msglen = (size_t) x_read;
@@ -5937,6 +5939,10 @@ static EIO_Status s_RecvMsg(SOCK            sock,
             poll.revent = eIO_Open;
             status = s_Select(1, &poll, SOCK_GET_TIMEOUT(sock, r), 1/*asis*/);
             assert(poll.event == eIO_Read);
+            if (status == eIO_Timeout) {
+                sock->r_status = eIO_Timeout;
+                break/*timeout*/;
+            }
             if (status != eIO_Success)
                 break;
             if (poll.revent != eIO_Close) {
@@ -5961,7 +5967,7 @@ static EIO_Status s_RecvMsg(SOCK            sock,
         }
         /* don't want to handle all possible errors... let them be "unknown" */
         sock->r_status = status = eIO_Unknown;
-        break;
+        break/*unknown*/;
     }
 
     if (x_msgsize > bufsize  &&  x_msg != w)
@@ -5998,6 +6004,7 @@ static EIO_Status s_SendMsg(SOCK           sock,
         assert(sock->w_len == 0);
     } else
         sock->w_len = 0;
+    sock->w_status = eIO_Success;
     sock->eof = 1/*true - finalized message*/;
 
     x_port = port ? port : sock->port;
@@ -6076,10 +6083,11 @@ static EIO_Status s_SendMsg(SOCK           sock,
                              s_ID(sock, w + sizeof(w)/2),
                              (unsigned long) x_written,
                              (unsigned long) x_msgsize, *w ? " to " : "", w));
-                break;
+                break/*closed*/;
             }
-            sock->w_status = status = eIO_Success;
-            break;
+            assert(sock->w_status == eIO_Success);
+            status = eIO_Success;
+            break/*success*/;
         }
 
 #ifdef NCBI_OS_MSWIN
@@ -6097,11 +6105,15 @@ static EIO_Status s_SendMsg(SOCK           sock,
             poll.revent = eIO_Open;
             status = s_Select(1, &poll, SOCK_GET_TIMEOUT(sock, w), 1/*asis*/);
             assert(poll.event == eIO_Write);
+            if (status == eIO_Timeout) {
+                sock->w_status = eIO_Timeout;
+                break/*timeout*/;
+            }
             if (status != eIO_Success)
                 break;
             if (poll.revent != eIO_Close) {
                 assert(poll.revent == eIO_Write);
-                continue;
+                continue/*send again*/;
             }
         } else if (error == SOCK_EINTR) {
             if (sock->i_on_sig == eOn
@@ -6125,7 +6137,7 @@ static EIO_Status s_SendMsg(SOCK           sock,
         }
         /* don't want to handle all possible errors... let them be "unknown" */
         sock->w_status = status = eIO_Unknown;
-        break;
+        break/*unknown*/;
     }
 
     if (x_msg  &&  x_msg != w)
@@ -6678,15 +6690,13 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
 #endif /*NCBI_OS_UNIX*/
 
     /* special treatment for server-side socket */
-    if (sock->side == eSOCK_Server) {
-        if (!host  ||  !port) {
-            CORE_LOGF_X(51, eLOG_Error,
-                        ("%s[SOCK::Reconnect] "
-                         " Attempt to reconnect server-side socket as"
-                         " client one to its peer address",
-                         s_ID(sock, _id)));
-            return eIO_InvalidArg;
-        }
+    if (sock->side == eSOCK_Server  &&  (!host  ||  !port)) {
+        CORE_LOGF_X(51, eLOG_Error,
+                    ("%s[SOCK::Reconnect] "
+                     " Attempt to reconnect server-side socket as"
+                     " client one to its peer address",
+                     s_ID(sock, _id)));
+        return eIO_InvalidArg;
     }
 
     /* close the socket if necessary */
@@ -7208,7 +7218,7 @@ extern EIO_Status SOCK_Read(SOCK           sock,
 }
 
 
-#define s_Pushback(s, b, n)  BUF_Pushback(&(s)->r_buf, b, n)
+#define s_Pushback(s, d, n)  BUF_Pushback(&(s)->r_buf, d, n)
 
 
 extern EIO_Status SOCK_ReadLine(SOCK    sock,
@@ -7217,6 +7227,7 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
                                 size_t* n_read)
 {
     unsigned int/*bool*/ cr_seen, done;
+    char        _id[MAXIDLEN];
     EIO_Status  status;
     size_t      len;
 
@@ -7227,7 +7238,6 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
         return eIO_InvalidArg;
     }
     if (sock->sock == SOCK_INVALID) {
-        char _id[MAXIDLEN];
         CORE_LOGF_X(125, eLOG_Error,
                     ("%s[SOCK::ReadLine] "
                      " Invalid socket",
@@ -7235,58 +7245,89 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
         return eIO_Unknown;
     }
 
-    cr_seen = done = 0/*false*/;
     len = 0;
+    cr_seen = done = 0/*false*/;
     do {
-        size_t i;
+        size_t i, x_size;
         char   w[1024], c;
-        size_t x_size = BUF_Size(sock->r_buf);
-        char*  x_buf  = size - len < sizeof(w) - cr_seen ? w : line + len;
-        if (!x_size  ||  x_size > sizeof(w) - cr_seen)
+        char*  x_buf = size - len < sizeof(w) - cr_seen ? w : line + len;
+        if (!(x_size = BUF_Size(sock->r_buf)) ||  x_size > sizeof(w) - cr_seen)
             x_size = sizeof(w) - cr_seen;
-        status = s_Read(sock, x_buf + cr_seen, x_size, &x_size, 0/*read*/);
+
+        status = s_Read(sock, x_buf + cr_seen, x_size, &x_size, 0/*read!*/);
         assert(status == eIO_Success  ||  !x_size);
-        if (!x_size)
-            done = 1/*true*/;
-        else if (cr_seen)
-            x_size++;
+        if (cr_seen)
+            ++x_size;
+
         i = cr_seen;
         while (i < x_size  &&  len < size) {
             c = x_buf[i++];
             if (c == '\n') {
-                cr_seen = 0/*false*/;
+                /*cr_seen = 0//false;*/
+                status = eIO_Success;
                 done = 1/*true*/;
                 break;
             }
-            if (c == '\r'  &&  !cr_seen) {
-                cr_seen = 1/*true*/;
-                continue;
-            }
-            if (cr_seen)
+            if (cr_seen) {
                 line[len++] = '\r';
-            cr_seen = 0/*false*/;
-            if (len >= size) {
-                --i; /* have to read it again */
-                break;
+                cr_seen = 0/*false*/;
+                --i;  /*have to re-read*/
+                continue;
             }
             if (c == '\r') {
                 cr_seen = 1/*true*/;
                 continue;
-            } else if (!c) {
+            }
+            if (!c) {
+                status = eIO_Success;
+                assert(!cr_seen);
                 done = 1/*true*/;
                 break;
             }
             line[len++] = c;
         }
-        if (len >= size)
-            done = 1/*true*/;
-        if (done  &&  cr_seen) {
-            c = '\r';
-            if (!s_Pushback(sock, &c, 1))
-                status = eIO_Unknown;
+        if (len >= size) {
+            /* out of room */
+            assert(!done  &&  len);
+            if (cr_seen) {
+                c = '\r';
+                if (!s_Pushback(sock, &c, 1)) {
+                    CORE_LOGF_X(165, eLOG_Error,
+                                ("%s[SOCK::ReadLine] "
+                                 " Cannot pushback extra CR",
+                                 s_ID(sock, _id)));
+                    /* register a severe error */
+                    sock->r_status = eIO_Closed;
+                    sock->eof = 1/*true*/;
+                    status = eIO_Unknown;
+                    assert(!done);
+                } else {
+                    status = eIO_Success;
+                    done = 1/*true*/;
+                }
+            } else {
+                status = eIO_Success;
+                done = 1/*true*/;
+            }
         }
-        if (i < x_size  &&  !s_Pushback(sock, &x_buf[i], x_size - i))
-            status = eIO_Unknown;
+        if (i < x_size) {
+            /* pushback excess */
+            assert(done  ||  len >= size);
+            if (done) {
+                if (!s_Pushback(sock, &x_buf[i], x_size - i)) {
+                    CORE_LOGF_X(166, eLOG_Error,
+                                ("%s[SOCK::ReadLine] "
+                                 " Cannot pushback extra data",
+                                 s_ID(sock, _id)));
+                    /* register a severe error */
+                    sock->r_status = eIO_Closed;
+                    sock->eof = 1/*true*/;
+                    status = eIO_Unknown;
+                } else
+                    status = eIO_Success;
+            }
+            break;
+        }
     } while (!done  &&  status == eIO_Success);
 
     if (len < size)
@@ -7299,10 +7340,10 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
 
 
 extern EIO_Status SOCK_Pushback(SOCK        sock,
-                                const void* buf,
+                                const void* data,
                                 size_t      size)
 {
-    if (size  &&  !buf) {
+    if (size  &&  !data) {
         assert(0);
         return eIO_InvalidArg;
     }
@@ -7314,7 +7355,7 @@ extern EIO_Status SOCK_Pushback(SOCK        sock,
                      s_ID(sock, _id)));
         return eIO_Closed;
     }
-    return s_Pushback(sock, buf, size) ? eIO_Success : eIO_Unknown;
+    return s_Pushback(sock, data, size) ? eIO_Success : eIO_Unknown;
 }
 
 
@@ -7346,7 +7387,7 @@ extern EIO_Status SOCK_Status(SOCK      sock,
 
 
 extern EIO_Status SOCK_Write(SOCK            sock,
-                             const void*     buf,
+                             const void*     data,
                              size_t          size,
                              size_t*         n_written,
                              EIO_WriteMethod how)
@@ -7355,7 +7396,7 @@ extern EIO_Status SOCK_Write(SOCK            sock,
     size_t     x_written;
     char       _id[MAXIDLEN];
 
-    if (size  &&  !buf) {
+    if (size  &&  !data) {
         if ( n_written )
             *n_written = 0;
         assert(0);
@@ -7376,7 +7417,7 @@ extern EIO_Status SOCK_Write(SOCK            sock,
             /*FALLTHRU*/
 
         case eIO_WritePlain:
-            status = s_Write(sock, buf, size, &x_written,
+            status = s_Write(sock, data, size, &x_written,
                              how == eIO_WriteOutOfBand ? 1 : 0);
             break;
 
@@ -7384,7 +7425,7 @@ extern EIO_Status SOCK_Write(SOCK            sock,
             x_written = 0;
             do {
                 size_t xx_written;
-                status = s_Write(sock, (char*) buf + x_written,
+                status = s_Write(sock, (char*) data + x_written,
                                  size, &xx_written, 0);
                 x_written += xx_written;
                 size      -= xx_written;
