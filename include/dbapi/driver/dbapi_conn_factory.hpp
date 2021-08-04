@@ -134,6 +134,10 @@ protected:
             {
                 if (server.NotEmpty()) {
                     m_Mapper->Exclude(m_ServiceName, server);
+                    if (m_Dispatched.NotEmpty()
+                        &&  *server == *m_Dispatched) {
+                        m_Dispatched.Reset();
+                    }
                 }
             }
         void CleanExcluded(void)
