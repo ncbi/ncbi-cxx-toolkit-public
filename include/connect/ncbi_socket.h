@@ -1113,7 +1113,7 @@ extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
  * @param how
  *  [in]  how to read the data
  * @sa
- *  SOCK_SetTimeout
+ *  SOCK_SetTimeout, SOCK_PushBack
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Read
 (SOCK           sock,
@@ -1124,52 +1124,61 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Read
  );
 
 
-/** Read a line from SOCK.  A line is terminated by either '\n' (with
- * an optional preceding '\r') or '\0'.  Returned result is always '\0'-
- * terminated and having '\r'(if any)'\n' stripped.  *n_read (if 'n_read'
- * passed non-NULL) contains the numbed of characters written into
- * 'buf' (not counting the terminating '\0').  If 'buf', whose size is
- * specified via 'size' parameter, is not big enough to contain the
- * line, all 'size' bytes will be filled, with *n_read == size upon
- * return.  Note that there will be no terminating '\0' in this
- * (and the only) case, which the caller can easily distinguish.
+/** Read a line from SOCK.  A line is terminated by either '\n' (with an
+ * optional preceding '\r') or '\0', and is stored in the buffer "line" of
+ * "size" characters long.  "*n_read" (if "n_read" passed non-NULL) receives
+ * the number of characters written into "line", not counting the terminating
+ * '\0'.  Returned result is '\0'-terminated (and has '\r'(if any)'\n'
+ * stripped) but only if "size" is big enough to contain the entire line.
+ * Otherwise, all "size" bytes are filled, and "*n_read" == "size" upon return,
+ * and there is no terminating '\0' in this (and the only!) case, which the
+ * caller can easily distinguish.  The remainder of the line can be read with
+ * successive call(s) to SOCK_ReadLine() until the '\0' terminator is received
+ * in the buffer.
  * @param sock
  *  [in]  socket handle
- * @param buf
- *  [out] data buffer to read to
+ * @param line
+ *  [out] line buffer to read to, non-NULL
  * @param size
- *  [in]  max # of bytes to read to "buf"
+ *  [in]  max # of bytes to read to "line", non-0
  * @param n_read
- *  [out] # of bytes read  (can be NULL)
+ *  [out] # of bytes read  (optional, can be NULL)
  * @return
- *  Return code eIO_Success upon successful completion, other - upon
- *  an error.  Note that *n_read must be analyzed prior to return code,
- *  because the buffer could have received some contents before
- *  the indicated error occurred (especially when connection closed).
+ *  Return eIO_Success upon successful completion:  either a line separator is
+ *  encountered or the buffer is filled up completely, and any excess read has
+ *  been successfully saved for further I/O.  Other code, otherwise.
+ * @note that "*n_read" should be analyzed prior to the return status, because
+ *  the buffer could have received some contents before the indicated error
+ *  occurred (e.g. when the connection closes before a line separator is seen).
  * @sa
- *  SOCK_SetTimeout
+ *  SOCK_SetTimeout, SOCK_PushBack
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ReadLine
 (SOCK    sock,
- char*   buf,
+ char*   line,
  size_t  size,
  size_t* n_read
  );
 
 
-/** Push the specified data back to the socket input queue (in the socket's
- * internal read buffer). These can be any data, not necessarily the data
- * previously read from the socket.
+/** Push the specified data back to the socket's input queue (in the socket's
+ * internal read buffer).  These can be any data, not necessarily the data
+ * previously read from the socket.  The most recently pushed back data are the
+ * data that will be read from the socket first (by either SOCK_ReadLine() or
+ * SOCK_Read()).  The presence of pushed back data makes the socket ready
+ * for read immediately (SOCK_Wait(sock, eIO_Read) succeeds without waiting).
  * @param sock
  *  [in]  socket handle
- * @param buf
+ * @param data
  *  [in]  data to push back to the socket's local buffer
  * @param size
- *  [in]  # of bytes (starting at "buf") to push back
+ *  [in]  # of bytes (starting at "data") to push back
+ * @sa
+ *   SOCK_Read, SOCK_ReadLine, SOCK_Wait
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Pushback
 (SOCK        sock,
- const void* buf,
+ const void* data,
  size_t      size
  );
 
@@ -1209,29 +1218,29 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Status
  );
 
 
-/** Write "size" bytes from buffer "buf" to "sock".
+/** Write "size" bytes of "data" to "sock".
  * @param sock
  *  [in]  socket handle
- * @param buf
+ * @param data
  *  [in]  data to write to the socket
  * @param size
- *  [in]  # of bytes (starting at "buf") to write
+ *  [in]  # of bytes (starting at "data") to write
  * @param n_written
  *  [out] # of written bytes (can be NULL)
  * @param how
- *  [in]  eIO_WritePlain | eIO_WritePersist
+ *  [in]  either eIO_WritePlain or eIO_WritePersist
  * @return
  *  In "*n_written", return the number of bytes actually written.
  *  eIO_WritePlain   -- write as many bytes as possible at once and return
- *                      immediately; if no bytes can be written then wait
+ *                      immediately;  if no bytes can be written then wait
  *                      at most WRITE timeout, try again and return.
  *  eIO_WritePersist -- write all data (doing an internal retry loop
- *                      if necessary); if any single write attempt times out
+ *                      if necessary);  if any single write attempt times out
  *                      or fails then stop writing and return (error code).
  *  Return status: eIO_Success -- some bytes were written successfully  [Plain]
  *                             -- all bytes were written successfully [Persist]
  *                 other code denotes an error, but some bytes might have
- *                 been sent nevertheless (always check *n_written to know).
+ *                 been sent nevertheless (always check "*n_written" to know).
  *
  * @note  With eIO_WritePlain the call returns eIO_Success if and only if
  *        some data were actually written to the socket.  If no data could
@@ -1249,7 +1258,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Status
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Write
 (SOCK            sock,
- const void*     buf,
+ const void*     data,
  size_t          size,
  size_t*         n_written,
  EIO_WriteMethod how
@@ -1451,7 +1460,7 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWriteAPI
  * @param sock
  *  [in]  socket handle
  * @param on_off
- *
+ *  [in]  R-on-W setting for this socket
  * @return
  *  Prior setting
  * @sa
@@ -1492,7 +1501,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
  * Disabling the Nagle algorithm causes all internally pending yet
  * untransmitted data to flush down to the hardware.
  * @note The setting is overridden by SOCK_SetCork() but it still performs the
- * flush, if set to disable.
+ *       flush, if set to disable.
  * @param sock
  *  [in]  socket handle [stream socket only]
  * @param on_off
@@ -1513,16 +1522,16 @@ extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
  *  How the datagram exchange API works:
  *
  *  Datagram socket is created with special DSOCK_Create[Ex]() calls but the
- *  resulting object is a SOCK handle.  That is, almost all SOCK routines
+ *  resulting object is still a SOCK handle.  That is, almost all SOCK routines
  *  may be applied to the handle.  There are few exceptions, though.
- *  In datagram sockets I/O differs from how it is done in stream sockets:
+ *  In datagram sockets the I/O differs from how it is done in stream sockets:
  *
  *  SOCK_Write() writes data into an internal message buffer, appending new
  *  data as they come with each SOCK_Write().  When the message is complete,
- *  SOCK_SendMsg() should be called (optionally with additional last,
+ *  SOCK_SendMsg() should be called (optionally with an additional last,
  *  or the only [if no SOCK_Write() preceded the call] message fragment)
  *  to actually send the message down the wire.  If successful, SOCK_SendMsg()
- *  cleans the internal buffer, and the process may repeat.  If unsuccessful,
+ *  clears the internal buffer, and the process may repeat.  If unsuccessful,
  *  SOCK_SendMsg() can be repeated with restiction that no additional data are
  *  provided in the call.  This way, the entire message will be attempted to
  *  be sent again.  On the other hand, if after any SOCK_SendMsg() new data
@@ -1539,7 +1548,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
  *  in the internal buffer].  Optimized version can supply a maximal message
  *  size (if known in advance), or 0 to get a message of any allowed size.
  *  The actual size of the received message can be obtained via a
- *  pointer-type argument 'msgsize'.  The message kept in the internal buffer
+ *  pointer-type argument "msgsize".  The message kept in the internal buffer
  *  can be read out in several SOCK_Read() calls, last returning eIO_Closed,
  *  when all data have been taken out.  SOCK_Wait() returns eIO_Success while
  *  there are data in the internal message buffer that SOCK_Read() can read.
