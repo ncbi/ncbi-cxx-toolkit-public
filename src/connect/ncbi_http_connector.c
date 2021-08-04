@@ -340,7 +340,7 @@ static int/*bool*/ x_SamePort(unsigned short port1, EBURLScheme scheme1,
 static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
 {
     int retval;
-    SConnNetInfo* net_info = ConnNetInfo_Clone(uuu->net_info);
+    SConnNetInfo* net_info = ConnNetInfo_CloneInternal(uuu->net_info);
     if (!net_info)
         return 0/*failure*/;
     retval = uuu->adjust(uuu->net_info, uuu->user_data, arg);
@@ -2720,11 +2720,21 @@ static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
         sprintf(buf, "User-Agent: %.80s", s);
         ConnNetInfo_ExtendUserHeader(net_info, buf);
     }
-    if (has_ref <= 0  &&  net_info->http_referer  &&  *net_info->http_referer
-        &&  (s = (char*) malloc(strlen(net_info->http_referer) + 10)) != 0) {
-        sprintf((char*) s, "Referer: %s", net_info->http_referer);
-        ConnNetInfo_AppendUserHeader(net_info, s);
-        free((void*) s);
+    if ((s = net_info->http_referer) != 0) {
+        char* ref;
+        if (has_ref <= 0  &&  *s) {
+            size_t len = strlen(s);
+            if ((ref = (char*) realloc((char*) s, 10 + len)) != 0) {
+                memmove(ref + 9, ref, len + 1);
+                memcpy(ref, "Referer: ", 9);
+                ConnNetInfo_AppendUserHeader(net_info, ref);
+            } else
+                ref = (char*) s;
+        } else
+            ref = (char*) s;
+        net_info->http_referer = 0;
+        assert(ref);
+        free(ref);
     }
     if (net_info->external)
         ConnNetInfo_OverrideUserHeader(net_info, NCBI_EXTERNAL ": Y");
