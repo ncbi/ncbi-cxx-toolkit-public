@@ -41,7 +41,10 @@
 BEGIN_NCBI_SCOPE
 
 // some forward declarations
-struct FileBuf;
+struct FileBuf {
+    const char* start=nullptr;
+    const char* current=nullptr;
+};
 struct indexblk_struct;
 struct protein_block;
 struct _fta_operon;
