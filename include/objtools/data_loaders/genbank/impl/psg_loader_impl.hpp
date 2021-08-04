@@ -184,9 +184,10 @@ private:
 
     typedef map<void*, size_t> TIdxMap;
 
-    void x_GetBulkBioseqInfo(CPSG_Request_Resolve::EIncludeInfo info,
+    // returns pair(number of loaded infos, number of failed infos)
+    pair<size_t, size_t> x_GetBulkBioseqInfo(CPSG_Request_Resolve::EIncludeInfo info,
         const TIds& ids,
-        TLoaded& loaded,
+        const TLoaded& loaded,
         TBioseqInfos& ret);
 
     shared_ptr<CPSG_Request_Blob>
