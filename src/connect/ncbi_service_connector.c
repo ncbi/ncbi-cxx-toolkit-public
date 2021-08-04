@@ -726,7 +726,6 @@ static void x_SetDefaultReferer(SConnNetInfo* net_info, SERV_ITER iter)
             strcpy(strcpy(str, "?service="/*9*/) + 9, name);
     } else
         return;
-    assert(referer);
     net_info->http_referer = referer;
 }
 
