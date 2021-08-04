@@ -85,6 +85,7 @@ public:
     virtual void    Exclude      (const string&    service,
                                   const TSvrRef&   server);
     virtual void    CleanExcluded(const string&    service);
+    virtual bool    HasExclusions(const string&    service) const;
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100.0);

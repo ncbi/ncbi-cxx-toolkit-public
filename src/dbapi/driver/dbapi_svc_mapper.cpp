@@ -213,6 +213,16 @@ CDBServiceMapperCoR::CleanExcluded(const string&  service)
     }
 }
 
+bool CDBServiceMapperCoR::HasExclusions(const string& service) const
+{
+    ITERATE (TDelegates, dg_it, m_Delegates) {
+        if ((*dg_it)->HasExclusions(service)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void
 CDBServiceMapperCoR::SetPreference(const string&  service,
                                    const TSvrRef& preferred_server,
