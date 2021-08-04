@@ -765,7 +765,7 @@ extern const char* CORE_GetPlatform(void)
  * CORE_GetUsername
  */
 
-static char* x_Savestr(const char* str, char* buf, size_t bufsize)
+static char* x_SaveStr(const char* str, char* buf, size_t bufsize)
 {
     assert(str);
     if (buf) {
@@ -835,13 +835,13 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
         assert(size < sizeof(temp)/sizeof(temp[0]) - 1);
         temp[size] = (TCHAR) '\0';
         login = UTIL_TcharToUtf8(temp);
-        buf = x_Savestr(login, buf, bufsize);
+        buf = x_SaveStr(login, buf, bufsize);
         UTIL_ReleaseBuffer(login);
         return buf;
     }
     CORE_LOCK_READ;
     if ((login = x_getenv("USERNAME")) != 0) {
-        buf = x_Savestr(login, buf, bufsize);
+        buf = x_SaveStr(login, buf, bufsize);
         CORE_UNLOCK;
         return buf;
     }
@@ -874,7 +874,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
         CORE_LOCK_WRITE;
 #    endif /*!NCBI_OS_SOLARIS*/
         if ((login = getlogin()) != 0)
-            buf = x_Savestr(login, buf, bufsize);
+            buf = x_SaveStr(login, buf, bufsize);
 #    ifndef NCBI_OS_SOLARIS
         CORE_UNLOCK;
 #    endif /*!NCBI_OS_SOLARIS*/
@@ -883,7 +883,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
 #  else
         if (getlogin_r(temp, sizeof(temp) - 1) == 0) {
             temp[sizeof(temp) - 1] = '\0';
-            return x_Savestr(temp, buf, bufsize);
+            return x_SaveStr(temp, buf, bufsize);
         }
 #  endif /*NCBI_OS_SOLARIS || !HAVE_GETLOGIN_R*/
         /*FALLTHRU*/
@@ -904,7 +904,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
 #    endif /*!NCBI_OS_SOLARIS*/
     if ((pwd = getpwuid(uid)) != 0) {
         if (pwd->pw_name)
-            buf = x_Savestr(pwd->pw_name, buf, bufsize);
+            buf = x_SaveStr(pwd->pw_name, buf, bufsize);
         else
             pwd = 0;
     }
@@ -928,7 +928,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
 #      error "Unknown value of NCBI_HAVE_GETPWUID_R: 4 or 5 expected."
 #    endif /*NCBI_HAVE_GETPWUID_R*/
     if (pwd  &&  pwd->pw_name)
-        return x_Savestr(pwd->pw_name, buf, bufsize);
+        return x_SaveStr(pwd->pw_name, buf, bufsize);
 #  endif /*NCBI_HAVE_GETPWUID_R*/
 
 #endif /*!NCBI_OS_UNIX*/
@@ -937,7 +937,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
     CORE_LOCK_READ;
     if (!(login = x_getenv("USER"))  &&  !(login = x_getenv("LOGNAME")))
         login = "";
-    buf = x_Savestr(login, buf, bufsize);
+    buf = x_SaveStr(login, buf, bufsize);
     CORE_UNLOCK;
     return buf;
 }
