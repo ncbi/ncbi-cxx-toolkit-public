@@ -227,7 +227,7 @@ static EIO_Status x_FTPParseReply(SFTPConnector* xxx, int* code,
             break;
         }
         if (len == sizeof(buf)) {
-            status = eIO_Unknown/*line too long*/;
+            status = eIO_NotSupported/*line too long*/;
             break;
         }
         msg = buf;
