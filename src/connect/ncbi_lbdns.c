@@ -1546,17 +1546,19 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
                        "LBDNS failed to create private data structure");
         goto err;
     }
-    data->debug = ConnNetInfo_Boolean(ConnNetInfo_GetValue
+    data->debug = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
                                       (0, REG_CONN_LBDNS_DEBUG,
                                        val, sizeof(val), 0));
-    data->check = ConnNetInfo_Boolean(ConnNetInfo_GetValue
+    data->check = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
                                       (0, "CONN_LBDNS_CHECK", /*private*/
                                        val, sizeof(val), 0));
     data->a_cand = LBDNS_INITIAL_ALLOC;
     iter->data = data;
 
-    if (!ConnNetInfo_GetValue(0, REG_CONN_LBDNS_DOMAIN, val, sizeof(val), 0))
+    if (!ConnNetInfo_GetValueInternal(0, REG_CONN_LBDNS_DOMAIN,
+                                      val, sizeof(val), 0)) {
         goto out;
+    }
     if (!*val) {
         domain = s_SysGetDomainName(val, sizeof(val));
         if (!x_CheckDomain(domain)) {
@@ -1579,8 +1581,10 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     assert(1 < data->domlen  &&  data->domlen <= NS_MAXCDNAME);
     assert(data->domain[0] != '.'  &&  data->domain[data->domlen - 1] != '.');
 
-    if (!ConnNetInfo_GetValue(0, REG_CONN_LBDNS_PORT, val, sizeof(val), 0))
+    if (!ConnNetInfo_GetValueInternal(0, REG_CONN_LBDNS_PORT,
+                                      val, sizeof(val), 0)) {
         goto out;
+    }
     if (!*val)
         port = 0;
     else if (!isdigit((unsigned char)(*val)))
@@ -1595,8 +1599,10 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
             port = NS_DEFAULTPORT;
     }
     if (port) {
-        if (!ConnNetInfo_GetValue(0, REG_CONN_LBDNS_HOST, val, sizeof(val), 0))
+        if (!ConnNetInfo_GetValueInternal(0, REG_CONN_LBDNS_HOST,
+                                          val, sizeof(val), 0)) {
             goto out;
+        }
         if (!*val)
             port = 0;
         else if (!(data->host = SOCK_gethostbyname(val)))
