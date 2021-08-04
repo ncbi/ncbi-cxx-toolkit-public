@@ -674,7 +674,7 @@ extern EIO_Status CONN_Wait
 
 static EIO_Status s_CONN_Write
 (CONN         conn,
- const void*  buf,
+ const void*  data,
  const size_t size,
  size_t*      n_written)
 {
@@ -699,7 +699,7 @@ static EIO_Status s_CONN_Write
                    ? conn->meta.default_timeout
                    : conn->w_timeout);
         assert(timeout != kDefaultTimeout);
-        status = conn->meta.write(conn->meta.c_write, buf, size,
+        status = conn->meta.write(conn->meta.c_write, data, size,
                                   n_written, timeout);
         assert(status != eIO_Success  ||  *n_written  ||  !size);
         assert(*n_written <= size);
@@ -739,7 +739,7 @@ static EIO_Status s_CONN_Write
 
 static EIO_Status s_CONN_WritePersist
 (CONN         conn,
- const void*  buf,
+ const void*  data,
  const size_t size,
  size_t*      n_written)
 {
@@ -749,7 +749,7 @@ static EIO_Status s_CONN_WritePersist
 
     do {
         size_t x_written = 0;
-        status = s_CONN_Write(conn, (char*) buf + *n_written,
+        status = s_CONN_Write(conn, (char*) data + *n_written,
                               size - *n_written, &x_written);
         *n_written += x_written;
         if (*n_written == size)
@@ -762,20 +762,24 @@ static EIO_Status s_CONN_WritePersist
 
 extern EIO_Status CONN_Write
 (CONN            conn,
- const void*     buf,
+ const void*     data,
  size_t          size,
  size_t*         n_written,
  EIO_WriteMethod how)
 {
     EIO_Status status;
 
-    CONN_NOT_NULL(18, Write);
-
-    if (!n_written)
+    if (!n_written) {
+        assert(0);
         return eIO_InvalidArg;
+    }
     *n_written = 0;
-    if (size  &&  !buf)
+    if (size  &&  !data) {
+        assert(0);
         return eIO_InvalidArg;
+    }
+
+    CONN_NOT_NULL(18, Write);
 
     /* open connection, if not yet opened */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
@@ -784,10 +788,10 @@ extern EIO_Status CONN_Write
 
     switch (how) {
     case eIO_WritePlain:
-        status = s_CONN_Write(conn, buf, size, n_written);
+        status = s_CONN_Write(conn, data, size, n_written);
         break;
     case eIO_WritePersist:
-        return s_CONN_WritePersist(conn, buf, size, n_written);
+        return s_CONN_WritePersist(conn, data, size, n_written);
     default:
         assert(0);
         return eIO_NotSupported;
@@ -804,6 +808,11 @@ extern EIO_Status CONN_Pushback
  const void* data,
  size_t      size)
 {
+    if (size  &&  !data) {
+        assert(0);
+        return eIO_InvalidArg;
+    }
+
     CONN_NOT_NULL(19, Pushback);
 
     if (conn->state == eCONN_Unusable)
@@ -979,13 +988,17 @@ extern EIO_Status CONN_Read
 {
     EIO_Status status;
 
-    CONN_NOT_NULL(24, Read);
-
-    if (!n_read)
+    if (!n_read) {
+        assert(0);
         return eIO_InvalidArg;
+    }
     *n_read = 0;
-    if (size  &&  !buf)
+    if (size  &&  !buf) {
+        assert(0);
         return eIO_InvalidArg;
+    }
+
+    CONN_NOT_NULL(24, Read);
 
     /* perform open, if not opened yet */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
@@ -1028,16 +1041,17 @@ extern EIO_Status CONN_ReadLine
     int/*bool*/ done;
     size_t      len;
 
-    CONN_NOT_NULL(25, ReadLine);
-
-    if (!n_read)
+    if (!n_read) {
+        assert(0);
         return eIO_InvalidArg;
-    *n_read = 0;
-    if (size) {
-        if (!line)
-            return eIO_InvalidArg;
-        *line = '\0';
     }
+    *n_read = 0;
+    if (!size  ||  !line) {
+        assert(0);
+        return eIO_InvalidArg;
+    }
+
+    CONN_NOT_NULL(25, ReadLine);
 
     /* perform open, if not opened yet */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
@@ -1047,24 +1061,24 @@ extern EIO_Status CONN_ReadLine
     len = 0;
     done = 0/*false*/;
     do {
-        size_t i;
         char   w[1024];
-        size_t x_read = 0;
-        size_t x_size = BUF_Size(conn->buf);
-        char*  x_buf  = size - len < sizeof(w) ? w : line + len;
-        if (x_size == 0  ||  x_size > sizeof(w))
-            x_size  = sizeof(w);
+        size_t i, x_size, x_read = 0;
+        char*  x_buf = size - len < sizeof(w) ? w : line + len;
+        if (!(x_size = BUF_Size(conn->buf))  ||  x_size > sizeof(w))
+            x_size = sizeof(w);
 
         /* keep flushing any pending unwritten output data then read */
         if (!(conn->flags & (fCONN_Untie | fCONN_Flush)))
             x_Flush(conn, conn->r_timeout, 0/*no-flush*/);
-        status = s_CONN_Read(conn, x_buf, size ? x_size : 0, &x_read, 0);
+        status = s_CONN_Read(conn, x_buf, x_size, &x_read, 0);
+        assert(x_read <= x_size);
 
-        for (i = 0;  i < x_read  &&  len < size;  ++i) {
-            char c = x_buf[i];
+        i = 0;
+        while (i < x_read  &&  len < size) {
+            char c = x_buf[i++];
             if (c == '\n') {
+                status = eIO_Success;
                 done = 1/*true*/;
-                ++i;
                 break;
             }
             if (x_buf == w)
@@ -1072,6 +1086,7 @@ extern EIO_Status CONN_ReadLine
             ++len;
         }
         if (i < x_read) {
+            /* pushback excess */
             assert(done  ||  len >= size);
             if (!BUF_Pushback(&conn->buf, x_buf + i, x_read - i)) {
                 static const STimeout* timeout = 0/*dummy*/;
@@ -1083,7 +1098,15 @@ extern EIO_Status CONN_ReadLine
                 status = eIO_Success;
             break;
         }
-    } while (!done  &&  len < size  &&  status == eIO_Success);
+        if (len >= size) {
+            /* out of room */
+            assert(!done  &&  len);
+            if (!(conn->flags & fCONN_Supplement))
+                status = eIO_Success;
+            break;
+        }
+    } while (!done  &&  status == eIO_Success);
+
     if (len < size)
         line[len] = '\0';
     *n_read = len;
@@ -1188,11 +1211,11 @@ extern EIO_Status CONN_GetSOCK(CONN conn, SOCK* sock)
     EIO_Status status;
     CONNECTOR  x_conn;
 
-    CONN_NOT_NULL(36, GetSOCK);
-
     if (!sock)
         return eIO_InvalidArg;
     *sock = 0;
+
+    CONN_NOT_NULL(36, GetSOCK);
 
     /* perform open, if not opened yet */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)

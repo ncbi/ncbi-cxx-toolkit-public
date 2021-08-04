@@ -67,8 +67,8 @@ typedef struct SConnectionTag* CONN;  /**< connection handle */
 /** CONN flags should be kept compatible with CConn_IOStream::TConn_Flags.
  */
 enum ECONN_Flag {
-    fCONN_Untie      = 1,  /**< do not call flush method prior to every read */
-    fCONN_Supplement = 64  /**< supplement I/O with extended return codes    */
+    fCONN_Untie      = 1,  /**< do not call flush method prior to reading */
+    fCONN_Supplement = 64  /**< supplement I/O with extended return codes */
 };
 typedef unsigned int TCONN_Flags;  /**< bitwise OR of ECONN_Flag */
 
@@ -140,8 +140,8 @@ extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
  * format, and is intended solely for something like logging and debugging.
  * Return NULL if the connection cannot provide any description information (or
  * if it is in a bad state).  Application program must call free() to
- * deallocate the space occupied by the returned string when the returned
- * description is no longer needed.
+ * deallocate the space occupied by the returned string when the description
+ * is no longer needed.
  */
 extern NCBI_XCONNECT_EXPORT char* CONN_Description
 (CONN conn  /**< [in] connection handle */
@@ -263,15 +263,15 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Write
  * @note The data pushed back may not necessarily be the same as previously
  *       obtained from the connection.
  *
- * @note Upon a following read operation, the pushed back data are taken out
- *       first.
+ * @note Upon a following read operation, the most recently pushed back data
+ *       are taken out first.
  *
  * @note As the pushback data do not actually go back into the underlying
  *       CONNECTOR (but stored internally into a pending input buffer of CONN),
  *       that can desynchronize the CONNECTOR (so use it wisely).
  *
  * @sa
- *  CONN_Read, CONN_Write
+ *  CONN_Read, CONN_ReadLine
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Pushback
 (CONN        conn,  /**< [in] connection handle                     */
@@ -336,7 +336,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Flush
  * @note See CONN_SetTimeout() for how to set the read timeout.
  *
  * @sa
- *  CONN_SetTimeout, CONN_ReadLine
+ *  CONN_SetTimeout, CONN_ReadLine, CONN_PushBack
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Read
 (CONN           conn,    /**< [in]  connection handle                  */
@@ -353,10 +353,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Read
  * stored in "line", not including the terminating '\0'.  If there was not
  * enough space provided in "line" to accomodate the '\0'-termination, then
  * all "size" bytes are used up, and "*n_read" is equal to "size" upon return -
- * this is the _only_ case when "line" will _not_ be '\0'-terminated.
+ * this is the _only_ case when "line" is _not_ be '\0'-terminated.
  *
  * Return code advises the caller whether another read can be attempted:
- *   * eIO_Success -- read completed successfully, keep reading;
+ *   * eIO_Success -- read completed successfully ('\n' is seen or the buffer
+ *                    has been filled up completely), keep reading;
  *   * other code  -- an error occurred, and further read attempt may fail.
  *
  * @note
@@ -366,18 +367,18 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Read
  * This call utilizes eIO_Read timeout as set by CONN_SetTimeout().
  *
  * @sa
- *  CONN_Read, CONN_SetTimeout
+ *  CONN_SetTimeout, CONN_Read, CONN_PushBack
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReadLine
-(CONN    conn,   /**< [in]  connection handle */
- char*   line,   /**< [out] buffer to read to */
- size_t  size,   /**< [in]  buffer size       */
- size_t* n_read  /**< [out] line length       */
+(CONN    conn,   /**< [in]  connection handle            */
+ char*   line,   /**< [out] buffer to read to, non-NULL  */
+ size_t  size,   /**< [in]  buffer size (may not be 0)   */
+ size_t* n_read  /**< [out] line length, may not be NULL */
  );
 
 
 /** Obtain status of the last I/O operation.  This is NOT a completion code of
- * the last CONN call, but rather some status from a lower level  CONNECTOR's
+ * the last CONN call, but rather some status from a lower level CONNECTOR's
  * layer (if available).
  *
  * @note eIO_Open as "dir" checks whether the connection is in an open state
@@ -394,8 +395,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReadLine
  *  CONN_Create, CONN_Read, CONN_Write, CONN_Flush
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Status
-(CONN      conn,  /**< [in] connection handle                */
- EIO_Event dir    /**< [in] eIO_Open, eIO_Read, or eIO_Write */
+(CONN      conn,  /**< [in] connection handle                               */
+ EIO_Event dir    /**< [in] eIO_Open, eIO_Read, eIO_Write, or eIO_ReadWrite */
  );
 
 
