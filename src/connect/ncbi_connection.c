@@ -1085,9 +1085,14 @@ extern EIO_Status CONN_ReadLine
                 line[len] = c;
             ++len;
         }
+        if (len >= size) {
+            /* out of room */
+            assert(!done  &&  len);
+            done = 1/*true*/;
+        }
         if (i < x_read) {
             /* pushback excess */
-            assert(done  ||  len >= size);
+            assert(done);
             if (!BUF_Pushback(&conn->buf, x_buf + i, x_read - i)) {
                 static const STimeout* timeout = 0/*dummy*/;
                 CONN_LOG_EX(35, ReadLine, eLOG_Critical,
@@ -1098,20 +1103,13 @@ extern EIO_Status CONN_ReadLine
                 status = eIO_Success;
             break;
         }
-        if (len >= size) {
-            /* out of room */
-            assert(!done  &&  len);
-            if (!(conn->flags & fCONN_Supplement))
-                status = eIO_Success;
-            break;
-        }
     } while (!done  &&  status == eIO_Success);
 
     if (len < size)
         line[len] = '\0';
     *n_read = len;
 
-    return status;
+    return done  &&  !(conn->flags & fCONN_Supplement) ? eIO_Success : status;
 }
 
 
