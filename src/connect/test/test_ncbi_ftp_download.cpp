@@ -628,21 +628,53 @@ void CTestFTPDownloadApp::Init(void)
     }
 
     args->AddDefaultPositional("url",
-                               "URL to test",
+                               "URL to test (download)",
                                CArgDescriptions::eString,
                                kDefaultTestURL);
 
     args->AddOptionalPositional("throttle",
-                                "Delay in msec (negative for random)",
+                                "Delay in msec (negative for random modulus"
+                                " the absolute value of throttle)",
                                 CArgDescriptions::eString);
 
     args->AddOptionalPositional("offset",
-                                "If set, a \"REST %position%\" FTP command"
-                                " gets issued to the server, where this"
-                                " parameter is the value for %position%",
+                                "If set, a \"REST offset\" FTP command"
+                                " gets issued to the server, with the"
+                                " specified value.  Also, a Boolean setting ["
+                                DEF_CONN_REG_SECTION "]DELAY_RESTART controls"
+                                " whether this command is delayed [may be"
+                                " required for old(er) FTP servers], or not"
+                                " [by default]",
                                 CArgDescriptions::eString);
+
     args->SetUsageContext(GetArguments().GetProgramBasename(),
-                          "FTP test download utility");
+                          "Test FTP download utility");
+
+    args->SetDetailedDescription("The test does not store any downloaded data"
+                                 " into any files anywhere on the system.\n"
+                                 "The following settings can be used to modify"
+                                 " the test behavior:\n"
+                                 "[" DEF_CONN_REG_SECTION "]"
+                                 "USE_FEAT\n"
+                                 " = a Boolean setting whether to use the FEAT"
+                                 " (features) FTP command to learn about"
+                                 " available FTP server capabilities (disabled"
+                                 " by default);\n"
+                                 "[" DEF_CONN_REG_SECTION "]"
+                                 REG_CONN_REQ_METHOD "\n"
+                                 " = \"GET\" to download only in active"
+                                 " FTP mode;\n"
+                                 " = \"POST\" to download only in passive"
+                                 " FTP mode;\n"
+                                 " = \"ANY\" (or by default) to download in"
+                                 " auto-mode;\n"
+                                 "[" DEF_CONN_REG_SECTION "]"
+                                 REG_CONN_DEBUG_PRINTOUT "\n"
+                                 " = \"SOME\" to log only control connection"
+                                 " (FTP commands);\n"
+                                 " = \"ALL\" (or \"DATA\") to log both control"
+                                 " and data connections.");
+
     SetupArgDescriptions(args.release());
 }
 
