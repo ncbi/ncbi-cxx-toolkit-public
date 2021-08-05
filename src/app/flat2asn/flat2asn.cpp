@@ -137,46 +137,39 @@ static bool InitConfig(const CArgs& args, Parser& config)
     return(retval);
 }
 
-class CFlat2AsnApp : public ncbi::CNcbiApplication
-{
-public:
-    void Init() override;
-    int Run() override;
-
-private:
-    unique_ptr<TConfig> x_ParseArgs(const CArgs& args, IObjtoolsListener& listener);
-    bool x_OpenFiles(const CArgs& args, TConfig& config, IObjtoolsListener& listener);
-    unique_ptr<CMemoryFileMap> m_pFileMap;
-    bool m_DelInput=false;
-    string m_InputFile;
-};
-
 /**********************************************************/
-bool CFlat2AsnApp::x_OpenFiles(const CArgs& args, TConfig& config, IObjtoolsListener& listener)
+static bool OpenFiles(const CArgs& args, TConfig& config, IObjtoolsListener& listener)
 {
     Char      str[1000];
     bool delin=false;
 
-    m_InputFile = args["i"].AsString();
-    if (m_InputFile == "stdin")
+    std::string infile = args["i"].AsString();
+    if (infile == "stdin")
     {
-        m_InputFile = CDirEntry::GetTmpName(CFile::eTmpFileCreate);
-        m_DelInput = true;
-        auto fd = fopen(m_InputFile.c_str(), "w");
+        infile = CDirEntry::GetTmpName(CFile::eTmpFileCreate);
+        delin = true;
+        auto fd = fopen(infile.c_str(), "w");
 
         while(fgets(str, 999, stdin))
             fprintf(fd, "%s", str);
         fclose(fd);
     }
 
-    m_pFileMap.reset(new CMemoryFileMap(m_InputFile));
-    auto fileSize = m_pFileMap->GetFileSize();
-    config.ffbuf.start = (const char*)m_pFileMap->Map(0, fileSize);  
-    config.ffbuf.current = config.ffbuf.start;
+#ifdef WIN32
+    config.ifp = fopen(infile.c_str(), "rb");
+#else
+    config.ifp = fopen(infile.c_str(), "r");
+#endif
 
-    if (!config.ffbuf.start) {
+    if (delin) {
+        CDirEntry de(infile);
+        de.Remove();
+    }
+
+    if(!config.ifp)
+    {
         listener.PutMessage(
-                CObjtoolsMessage("Failed to open input flatfile " + m_InputFile, eDiag_Fatal));
+                CObjtoolsMessage("Failed to open input flatfile " + infile, eDiag_Fatal));
         return false;
     }
 
@@ -188,15 +181,18 @@ bool CFlat2AsnApp::x_OpenFiles(const CArgs& args, TConfig& config, IObjtoolsList
         {
             listener.PutMessage(
                    CObjtoolsMessage("Failed to open Quality Scores file " + string(config.qsfile), eDiag_Fatal));
-            config.ffbuf.start = nullptr;
+
+            fclose(config.ifp);
+            config.ifp = nullptr;
             return false;
         }
     }
+
     return true;
 }
 
 /**********************************************************/
-unique_ptr<TConfig> CFlat2AsnApp::x_ParseArgs(const CArgs& args, IObjtoolsListener& listener)
+static unique_ptr<TConfig> ParseArgs(const CArgs& args, char* pgmname, IObjtoolsListener& listener)
 {
     unique_ptr<Parser> pConfig(new TConfig());
 
@@ -209,13 +205,23 @@ unique_ptr<TConfig> CFlat2AsnApp::x_ParseArgs(const CArgs& args, IObjtoolsListen
         return nullptr;
     }
 
-    if(!x_OpenFiles(args, *pConfig, listener))
+    if(!OpenFiles(args, *pConfig, listener))
     {
         return nullptr;
     }
 
     return pConfig;
 }
+
+class CFlat2AsnApp : public ncbi::CNcbiApplication
+{
+public:
+    void Init() override;
+    int Run() override;
+
+private:
+
+};
 
 void CFlat2AsnApp::Init()
 {
@@ -319,6 +325,7 @@ private:
 
 int CFlat2AsnApp::Run()
 {
+    char* pgmname = (char *) "flat2asn Revision: 1.3 ";
     const auto& args = GetArgs();
 
     CNcbiOstream* pLogStream = args["l"] ?
@@ -327,7 +334,7 @@ int CFlat2AsnApp::Run()
 
     CFlat2AsnListener messageListener(args["l"] ? "" : "[" + CNcbiApplication::GetAppName() + "]");
 
-    auto pConfig = x_ParseArgs(args, messageListener);
+    auto pConfig = ParseArgs(args, pgmname, messageListener);
     if (!pConfig)
     {
         return 1;
@@ -335,10 +342,7 @@ int CFlat2AsnApp::Run()
 
     CFlatFileParser ffparser(&messageListener);
     auto pSerialObject = ffparser.Parse(*pConfig);
-    m_pFileMap.reset();
-    if (m_DelInput) {
-        CDirEntry(m_InputFile).Remove();
-    }
+
 
     if (messageListener.Count() > 0) {
         messageListener.Dump(*pLogStream);
