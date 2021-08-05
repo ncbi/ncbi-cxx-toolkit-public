@@ -3239,7 +3239,7 @@ static EIO_Status s_Read_(SOCK    sock,
                     free(p_buf);
             }
             if (sock->eof) {
-                CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
+                CORE_LOGF_ERRNO_X(8, eLOG_Critical, errno,
                                   ("%s[SOCK::Read] "
                                    " Cannot save %lu byte%s of unread data",
                                    s_ID(sock, _id), (unsigned long) x_save,
@@ -3808,6 +3808,7 @@ static EIO_Status s_Write_(SOCK        sock,
                            size_t*     n_written,
                            int/*bool*/ oob)
 {
+    char _id[MAXIDLEN];
     EIO_Status status;
 
     assert(sock->type & eSOCK_Socket);
@@ -3822,6 +3823,15 @@ static EIO_Status s_Write_(SOCK        sock,
             *n_written = size;
             sock->w_status = eIO_Success;
         } else {
+            int error = errno;
+            CORE_LOGF_ERRNO_X(154, eLOG_Error, error,
+                              ("%s%s "
+                               " Failed to %s message (%lu + %lu byte%s)",
+                               s_ID(sock, _id),
+                               oob ? "[DSOCK::SendMsg]" : "[SOCK::Write]",
+                               oob ? "finalize"         : "store",
+                               (unsigned long) BUF_Size(sock->w_buf),
+                               (unsigned long) size, &"s"[size == 1]));
             *n_written = 0;
             sock->w_status = eIO_Unknown;
         }
@@ -3830,7 +3840,6 @@ static EIO_Status s_Write_(SOCK        sock,
 
     if (sock->w_status == eIO_Closed) {
         if (size) {
-            CORE_DEBUG_ARG(char _id[MAXIDLEN];)
             CORE_TRACEF(("%s[SOCK::Write] "
                          " Socket already shut down for writing",
                          s_ID(sock, _id)));
@@ -4695,10 +4704,11 @@ static EIO_Status s_Create(const char*       hostpath,
     if (size
         &&  (BUF_SetChunkSize(&x_sock->w_buf, size) < size
              ||  !BUF_Write(&x_sock->w_buf, init ? init->data : 0, size))) {
-        CORE_LOGF_ERRNO_X(27, eLOG_Error, errno,
+        CORE_LOGF_ERRNO_X(27, eLOG_Critical, errno,
                           ("%s[SOCK::Create] "
-                           " Cannot store initial data",
-                           s_ID(x_sock, _id)));
+                           " Cannot store initial data (%lu byte%s)",
+                           s_ID(x_sock, _id), (unsigned long) size,
+                           &"s"[size == 1]));
         SOCK_Destroy(x_sock);
         return eIO_Unknown;
     }
@@ -4925,10 +4935,11 @@ static EIO_Status s_CreateOnTop(const void*       handle,
     if (size
         &&  (BUF_SetChunkSize(&w_buf, size) < size
              ||  !BUF_Write(&w_buf, init ? init->data : 0, size))) {
-        CORE_LOGF_ERRNO_X(49, eLOG_Error, errno,
+        CORE_LOGF_ERRNO_X(49, eLOG_Critical, errno,
                           ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
-                           " Cannot store initial data",
-                           x_id, (unsigned int) fd));
+                           " Cannot store initial data (%lu byte%s)",
+                           x_id, (unsigned int) fd, (unsigned long) size,
+                           &"s"[size == 1]));
         goto errout;
     }
 
@@ -5905,7 +5916,7 @@ static EIO_Status s_RecvMsg(SOCK            sock,
                 &&  !BUF_Write(&sock->r_buf,
                                (char*) x_msg  + bufsize,
                                (size_t)x_read - bufsize)) {
-                CORE_LOGF_X(20, eLOG_Error,
+                CORE_LOGF_X(20, eLOG_Critical,
                             ("%s[DSOCK::RecvMsg] "
                              " Message truncated: %lu/%lu",
                              s_ID(sock, w),
@@ -5991,15 +6002,9 @@ static EIO_Status s_SendMsg(SOCK           sock,
     struct sockaddr_in sin;
 
     if (datalen) {
-        status = s_Write_(sock, data, datalen, &x_msgsize, 0/*no OOB*/);
-        if (status != eIO_Success) {
-            CORE_LOGF_ERRNO_X(154, eLOG_Error, errno,
-                              ("%s[DSOCK::SendMsg] "
-                               " Failed to finalize message (%lu byte%s)",
-                               s_ID(sock, w), (unsigned long) datalen,
-                               &"s"[datalen == 1]));
+        status = s_Write_(sock, data, datalen, &x_msgsize, 1/*SendMsg*/);
+        if (status != eIO_Success)
             return status;
-        }
         assert(x_msgsize == datalen);
         assert(sock->w_len == 0);
     } else
@@ -7263,8 +7268,7 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
         while (i < x_size  &&  len < size) {
             c = x_buf[i++];
             if (c == '\n') {
-                /*cr_seen = 0//false;*/
-                status = eIO_Success;
+                cr_seen = 0/*false*/;
                 done = 1/*true*/;
                 break;
             }
@@ -7279,52 +7283,45 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
                 continue;
             }
             if (!c) {
-                status = eIO_Success;
                 assert(!cr_seen);
                 done = 1/*true*/;
                 break;
             }
             line[len++] = c;
         }
+        assert(!done  ||  !cr_seen);
         if (len >= size) {
             /* out of room */
             assert(!done  &&  len);
             if (cr_seen) {
                 c = '\r';
                 if (!s_Pushback(sock, &c, 1)) {
-                    CORE_LOGF_X(165, eLOG_Error,
+                    CORE_LOGF_X(165, eLOG_Critical,
                                 ("%s[SOCK::ReadLine] "
                                  " Cannot pushback extra CR",
                                  s_ID(sock, _id)));
                     /* register a severe error */
                     sock->r_status = eIO_Closed;
                     sock->eof = 1/*true*/;
-                    status = eIO_Unknown;
-                    assert(!done);
-                } else {
-                    status = eIO_Success;
-                    done = 1/*true*/;
-                }
-            } else {
-                status = eIO_Success;
-                done = 1/*true*/;
+                } else
+                    cr_seen = 0/*false*/;
             }
+            done = 1/*true*/;
         }
         if (i < x_size) {
             /* pushback excess */
-            assert(done  ||  len >= size);
-            if (done) {
-                if (!s_Pushback(sock, &x_buf[i], x_size - i)) {
-                    CORE_LOGF_X(166, eLOG_Error,
+            assert(done);
+            if (!cr_seen) {
+                if (!s_Pushback(sock, &x_buf[i], x_size -= i)) {
+                    CORE_LOGF_X(166, eLOG_Critical,
                                 ("%s[SOCK::ReadLine] "
-                                 " Cannot pushback extra data",
-                                 s_ID(sock, _id)));
+                                 " Cannot pushback extra data (%lu byte%s)",
+                                 s_ID(sock, _id), (unsigned long) x_size,
+                                 &"s"[x_size == 1]));
                     /* register a severe error */
                     sock->r_status = eIO_Closed;
                     sock->eof = 1/*true*/;
-                    status = eIO_Unknown;
-                } else
-                    status = eIO_Success;
+                }
             }
             break;
         }
@@ -7335,7 +7332,7 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
     if ( n_read )
         *n_read = len;
 
-    return status;
+    return done ? eIO_Success : status;
 }
 
 
