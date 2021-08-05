@@ -69,13 +69,13 @@ BEGIN_NCBI_SCOPE
 //  Constants
 //
 
-static const char* s_ArgLogFile         = "-logfile";
-static const char* s_ArgCfgFile         = "-conffile";
-static const char* s_ArgVersion         = "-version";
-static const char* s_ArgFullVersion     = "-version-full";
-static const char* s_ArgFullVersionXml  = "-version-full-xml";
-static const char* s_ArgFullVersionJson = "-version-full-json";
-static const char* s_ArgDryRun          = "-dryrun";
+extern const char* s_ArgLogFile;
+extern const char* s_ArgCfgFile;
+extern const char* s_ArgVersion;
+extern const char* s_ArgFullVersion;
+extern const char* s_ArgFullVersionXml;
+extern const char* s_ArgFullVersionJson;
+extern const char* s_ArgDryRun;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1156,27 +1156,7 @@ void CNcbiApplicationAPI::SetupArgDescriptions(CArgDescriptions* arg_desc)
     if ( arg_desc ) {
         if ( !m_DisableArgDesc ) {
             for(CArgDescriptions* desc : m_ArgDesc->GetAllDescriptions()) {
-            // Add logfile and conffile arguments
-            if (!desc->Exist(s_ArgLogFile + 1) ) {
-                desc->AddOptionalKey
-                    (s_ArgLogFile+1, "File_Name",
-                        "File to which the program log should be redirected",
-                        CArgDescriptions::eOutputFile);
-            }
-            if (!desc->Exist(s_ArgCfgFile + 1) ) {
-                if (m_DefaultConfig.empty()) {
-                    desc->AddOptionalKey
-                        (s_ArgCfgFile + 1, "File_Name",
-                            "Program's configuration (registry) data file",
-                            CArgDescriptions::eInputFile);
-                } else {
-                    desc->AddDefaultKey
-                        (s_ArgCfgFile + 1, "File_Name",
-                            "Program's configuration (registry) data file",
-                            CArgDescriptions::eInputFile,
-                            m_DefaultConfig);
-                }
-            }
+                desc->AddDefaultFileArguments(m_DefaultConfig);
             }
         }
         m_Args.reset(arg_desc->CreateArgs(GetArguments()));
@@ -1333,102 +1313,11 @@ void CNcbiApplicationAPI::x_SetupStdio(void)
 void CNcbiApplicationAPI::x_AddDefaultArgs(void)
 {
     if ( !m_DisableArgDesc ) {
-        bool first = true;
+        THideStdArgs mask = m_HideArgs;
         for(CArgDescriptions* desc : m_ArgDesc->GetAllDescriptions())
         {
-            if (desc->IsAutoHelpEnabled()) {
-                if ((m_HideArgs & fHideHelp) != 0) {
-                    if (desc->Exist("h")) {
-                        desc->Delete("h");
-                    }
-                }
-            }
-            if ((m_HideArgs & fHideFullHelp) != 0) {
-                if (desc->Exist("help")) {
-                    desc->Delete("help");
-                }
-            }
-            if ((m_HideArgs & fHideXmlHelp) != 0) {
-                if (desc->Exist("xmlhelp")) {
-                    desc->Delete("xmlhelp");
-                }
-            }
-            if ((m_HideArgs & fHideLogfile) != 0) {
-                if (desc->Exist(s_ArgLogFile + 1)) {
-                    desc->Delete(s_ArgLogFile + 1);
-                }
-            } else {
-                if (!desc->Exist(s_ArgLogFile + 1)) {
-                    desc->AddOptionalKey
-                        (s_ArgLogFile+1, "File_Name",
-                            "File to which the program log should be redirected",
-                            CArgDescriptions::eOutputFile);
-                }
-            }
-            if ((m_HideArgs & fHideConffile) != 0) {
-                if (desc->Exist(s_ArgCfgFile + 1)) {
-                    desc->Delete(s_ArgCfgFile + 1);
-                }
-            } else {
-                if (!desc->Exist(s_ArgCfgFile + 1)) {
-                    desc->AddOptionalKey
-                        (s_ArgCfgFile + 1, "File_Name",
-                            "Program's configuration (registry) data file",
-                            CArgDescriptions::eInputFile);
-                }
-            }
-            if ((m_HideArgs & fHideVersion) != 0) {
-                if (desc->Exist(s_ArgVersion + 1)) {
-                    desc->Delete(s_ArgVersion + 1);
-                }
-            } else {
-                if (first && !desc->Exist(s_ArgVersion + 1)) {
-                    desc->AddFlag
-                        (s_ArgVersion + 1,
-                            "Print version number;  ignore other arguments");
-                }
-            }
-            if ((m_HideArgs & fHideFullVersion) != 0) {
-                if (desc->Exist(s_ArgFullVersion + 1)) {
-                    desc->Delete(s_ArgFullVersion + 1);
-                }
-                if (desc->Exist(s_ArgFullVersionXml+ 1)) {
-                    desc->Delete(s_ArgFullVersionXml + 1);
-                }
-                if (desc->Exist(s_ArgFullVersionJson + 1)) {
-                    desc->Delete(s_ArgFullVersionJson + 1);
-                }
-            } else {
-                if (first) {
-                    if (!desc->Exist(s_ArgFullVersion + 1)) {
-                        desc->AddFlag
-                            (s_ArgFullVersion + 1,
-                                "Print extended version data;  ignore other arguments");
-                    }
-                    if (!desc->Exist(s_ArgFullVersionXml + 1)) {
-                        desc->AddFlag
-                            (s_ArgFullVersionXml + 1,
-                                "Print extended version data in XML format;  ignore other arguments");
-                    }
-                    if (!desc->Exist(s_ArgFullVersionJson + 1)) {
-                        desc->AddFlag
-                            (s_ArgFullVersionJson + 1,
-                                "Print extended version data in JSON format;  ignore other arguments");
-                    }
-                }
-            }
-            if ((m_HideArgs & fHideDryRun) != 0) {
-                if (desc->Exist(s_ArgDryRun + 1)) {
-                    desc->Delete(s_ArgDryRun + 1);
-                }
-            } else {
-                if (!desc->Exist(s_ArgDryRun + 1)) {
-                    desc->AddFlag
-                        (s_ArgDryRun + 1,
-                            "Dry run the application: do nothing, only test all preconditions");
-                }
-            }
-            first = false;
+            desc->AddStdArguments(mask);
+            mask = mask | fHideFullVersion | fHideVersion;
         }
     }
 }

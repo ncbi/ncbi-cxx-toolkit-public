@@ -438,15 +438,15 @@ protected:
     /// flags in the usage message. Note that you still can pass them in
     /// the command line.
     enum EHideStdArgs {
-        fHideLogfile     = 0x01,  ///< Hide log file description
-        fHideConffile    = 0x02,  ///< Hide configuration file description
-        fHideVersion     = 0x04,  ///< Hide version description
-        fHideFullVersion = 0x08,  ///< Hide full version description
-        fHideDryRun      = 0x10,  ///< Hide dryrun description
-        fHideHelp        = 0x20,  ///< Hide help description
-        fHideFullHelp    = 0x40,  ///< Hide full help description
-        fHideXmlHelp     = 0x80,  ///< Hide XML help description
-        fHideAll         = 0xFF   ///< Hide all standard argument descriptions
+        fHideLogfile     = CArgDescriptions::fHideLogfile,      ///< Hide log file description
+        fHideConffile    = CArgDescriptions::fHideConffile,     ///< Hide configuration file description
+        fHideVersion     = CArgDescriptions::fHideVersion,      ///< Hide version description
+        fHideFullVersion = CArgDescriptions::fHideFullVersion,  ///< Hide full version description
+        fHideDryRun      = CArgDescriptions::fHideDryRun,       ///< Hide dryrun description
+        fHideHelp        = CArgDescriptions::fHideHelp,         ///< Hide help description
+        fHideFullHelp    = CArgDescriptions::fHideFullHelp,     ///< Hide full help description
+        fHideXmlHelp     = CArgDescriptions::fHideXmlHelp,      ///< Hide XML help description
+        fHideAll         = CArgDescriptions::fHideAll           ///< Hide all standard argument descriptions
     };
     typedef int THideStdArgs;  ///< Binary OR of "EHideStdArgs"
 

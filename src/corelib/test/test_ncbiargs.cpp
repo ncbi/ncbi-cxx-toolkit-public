@@ -277,7 +277,8 @@ static void s_InitTest3(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("k2",
                             "secondOptionalKey",
                             "This is an optional argument",
-                            CArgDescriptions::eString);
+                            CArgDescriptions::eString,
+                            CArgDescriptions::fHidden);
 
     arg_desc.AddFlag("f1", "Flag 1");
     arg_desc.AddFlag("f2", "Flag 2");

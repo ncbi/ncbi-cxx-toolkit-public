@@ -1053,6 +1053,26 @@ public:
         return (m_MiscFlags & flag) != 0;
     }
 
+    /// Which standard flag's descriptions should not be displayed in
+    /// the usage message.
+    ///
+    /// Do not display descriptions of the standard flags such as the
+    ///    -h, -logfile, -conffile, -version
+    /// flags in the usage message. Note that you still can pass them in
+    /// the command line.
+    enum EHideStdArgs {
+        fHideLogfile     = 0x01,  ///< Hide log file description
+        fHideConffile    = 0x02,  ///< Hide configuration file description
+        fHideVersion     = 0x04,  ///< Hide version description
+        fHideFullVersion = 0x08,  ///< Hide full version description
+        fHideDryRun      = 0x10,  ///< Hide dryrun description
+        fHideHelp        = 0x20,  ///< Hide help description
+        fHideFullHelp    = 0x40,  ///< Hide full help description
+        fHideXmlHelp     = 0x80,  ///< Hide XML help description
+        fHideAll         = 0xFF   ///< Hide all standard argument descriptions
+    };
+    typedef int THideStdArgs;  ///< Binary OR of "EHideStdArgs"
+
     /// Print usage message to end of specified string.
     ///
     /// Printout USAGE and append to the string "str" using  provided
@@ -1083,6 +1103,11 @@ public:
 
     /// Include hidden arguments into USAGE
     CArgDescriptions* ShowAllArguments(bool show_all);
+
+    /// Add standard arguments
+    virtual void AddStdArguments(THideStdArgs mask);
+    /// Add logfile and conffile arguments
+    void AddDefaultFileArguments(const string& default_config);
 
 private:
     typedef set< AutoPtr<CArgDesc> >  TArgs;    ///< Argument descr. type
@@ -1127,7 +1152,7 @@ protected:
     string    m_DetailedDescription;  ///< Program long description
     SIZE_TYPE m_UsageWidth;        ///< Maximum length of a usage line
     bool      m_AutoHelp;          ///< Special flag "-h" activated
-    bool      m_ShowAll;           ///< Include hidden arguments into USAGE
+    bool      m_HasHidden;         ///< Has hidden arguments
     friend class CCommandArgDescriptions;
 
 private:
@@ -1202,8 +1227,6 @@ private:
 
     /// Returns TRUE if parameter supports multiple arguments
     bool x_IsMultiArg(const string& name) const;
-
-    void x_AddShowAllFlag(void);
 
 protected:
 
@@ -1403,6 +1426,8 @@ public:
 
     /// Parse command-line arguments 'argv'
     virtual CArgs* CreateArgs(const CNcbiArguments& argv) const;
+
+    virtual void AddStdArguments(THideStdArgs mask);
 
     /// Print usage message to end of specified string.
     ///

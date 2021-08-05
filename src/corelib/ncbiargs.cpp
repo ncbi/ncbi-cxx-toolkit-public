@@ -79,6 +79,13 @@ static const char* s_AutoHelpShowAll  = "help-full";
 static const char* s_AutoHelpXml  = "xmlhelp";
 static const char* s_ExtraName    = "....";
 
+const char* s_ArgLogFile         = "-logfile";
+const char* s_ArgCfgFile         = "-conffile";
+const char* s_ArgVersion         = "-version";
+const char* s_ArgFullVersion     = "-version-full";
+const char* s_ArgFullVersionXml  = "-version-full-xml";
+const char* s_ArgFullVersionJson = "-version-full-json";
+const char* s_ArgDryRun          = "-dryrun";
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2187,7 +2194,7 @@ CArgDescriptions::CArgDescriptions(bool              auto_help,
       m_PositionalMode(ePositionalMode_Strict),
       m_MiscFlags(fMisc_Default),
       m_AutoHelp(auto_help),
-      m_ShowAll(false),
+      m_HasHidden(false),
       m_ErrorHandler(err_handler)
 {
     if ( !m_ErrorHandler ) {
@@ -2204,6 +2211,9 @@ CArgDescriptions::CArgDescriptions(bool              auto_help,
     AddFlag(s_AutoHelpFull,
             "Print USAGE, DESCRIPTION and ARGUMENTS;"
             " ignore all other parameters");
+    AddFlag(s_AutoHelpShowAll,
+            "Print USAGE, DESCRIPTION and ARGUMENTS, including hidden ones;"
+            " ignore all other parameters");
     AddFlag(s_AutoHelpXml,
             "Print USAGE, DESCRIPTION and ARGUMENTS in XML format;"
             " ignore all other parameters");
@@ -2215,19 +2225,134 @@ CArgDescriptions::~CArgDescriptions(void)
     return;
 }
 
-void CArgDescriptions::x_AddShowAllFlag(void)
+void CArgDescriptions::AddDefaultFileArguments(const string& default_config)
 {
-    if (!Exist(s_AutoHelpShowAll)) {
-        AddFlag(s_AutoHelpShowAll,
-                "Print USAGE, DESCRIPTION and ARGUMENTS, including hidden ones;"
-                " ignore all other parameters");
+    if (!Exist(s_ArgLogFile + 1) ) {
+        AddOptionalKey
+            (s_ArgLogFile+1, "File_Name",
+                "File to which the program log should be redirected",
+                CArgDescriptions::eOutputFile);
+    }
+    if (!Exist(s_ArgCfgFile + 1) ) {
+        if (default_config.empty()) {
+            AddOptionalKey
+                (s_ArgCfgFile + 1, "File_Name",
+                    "Program's configuration (registry) data file",
+                    CArgDescriptions::eInputFile);
+        } else {
+            AddDefaultKey
+                (s_ArgCfgFile + 1, "File_Name",
+                    "Program's configuration (registry) data file",
+                    CArgDescriptions::eInputFile,
+                    default_config);
+        }
+    }
+}
+
+void CArgDescriptions::AddStdArguments(THideStdArgs mask)
+{
+    if (m_AutoHelp) {
+        if ((mask & fHideHelp) != 0) {
+            if (Exist(s_AutoHelp)) {
+                Delete(s_AutoHelp);
+            }
+        }
+    }
+    if ((mask & fHideFullHelp) != 0) {
+        if (Exist(s_AutoHelpFull)) {
+            Delete(s_AutoHelpFull);
+        }
+    }
+    if ((mask & fHideFullHelp) != 0 || !m_HasHidden) {
+        if (Exist(s_AutoHelpShowAll)) {
+            Delete(s_AutoHelpShowAll);
+        }
+    }
+
+    if ((mask & fHideXmlHelp) != 0) {
+        if (Exist(s_AutoHelpXml)) {
+            Delete(s_AutoHelpXml);
+        }
+    }
+    if ((mask & fHideLogfile) != 0) {
+        if (Exist(s_ArgLogFile + 1)) {
+            Delete(s_ArgLogFile + 1);
+        }
+    } else {
+        if (!Exist(s_ArgLogFile + 1)) {
+            AddOptionalKey
+                (s_ArgLogFile+1, "File_Name",
+                    "File to which the program log should be redirected",
+                    CArgDescriptions::eOutputFile);
+        }
+    }
+    if ((mask & fHideConffile) != 0) {
+        if (Exist(s_ArgCfgFile + 1)) {
+            Delete(s_ArgCfgFile + 1);
+        }
+    } else {
+        if (!Exist(s_ArgCfgFile + 1)) {
+            AddOptionalKey
+                (s_ArgCfgFile + 1, "File_Name",
+                    "Program's configuration (registry) data file",
+                    CArgDescriptions::eInputFile);
+        }
+    }
+    if ((mask & fHideVersion) != 0) {
+        if (Exist(s_ArgVersion + 1)) {
+            Delete(s_ArgVersion + 1);
+        }
+    } else {
+        if (!Exist(s_ArgVersion + 1)) {
+            AddFlag
+                (s_ArgVersion + 1,
+                    "Print version number;  ignore other arguments");
+        }
+    }
+    if ((mask & fHideFullVersion) != 0) {
+        if (Exist(s_ArgFullVersion + 1)) {
+            Delete(s_ArgFullVersion + 1);
+        }
+        if (Exist(s_ArgFullVersionXml+ 1)) {
+            Delete(s_ArgFullVersionXml + 1);
+        }
+        if (Exist(s_ArgFullVersionJson + 1)) {
+            Delete(s_ArgFullVersionJson + 1);
+        }
+    } else {
+        if (!Exist(s_ArgFullVersion + 1)) {
+            AddFlag
+                (s_ArgFullVersion + 1,
+                    "Print extended version data;  ignore other arguments");
+        }
+        if (!Exist(s_ArgFullVersionXml + 1)) {
+            AddFlag
+                (s_ArgFullVersionXml + 1,
+                    "Print extended version data in XML format;  ignore other arguments");
+        }
+        if (!Exist(s_ArgFullVersionJson + 1)) {
+            AddFlag
+                (s_ArgFullVersionJson + 1,
+                    "Print extended version data in JSON format;  ignore other arguments");
+        }
+    }
+    if ((mask & fHideDryRun) != 0) {
+        if (Exist(s_ArgDryRun + 1)) {
+            Delete(s_ArgDryRun + 1);
+        }
+    } else {
+        if (!Exist(s_ArgDryRun + 1)) {
+            AddFlag
+                (s_ArgDryRun + 1,
+                    "Dry run the application: do nothing, only test all preconditions");
+        }
     }
 }
 
 CArgDescriptions* CArgDescriptions::ShowAllArguments(bool show_all)
 {
     for(CArgDescriptions* desc : GetAllDescriptions()) {
-        desc->m_ShowAll = show_all;
+        desc->m_HasHidden = !show_all;
     }
     return this;
 }
@@ -3242,9 +3367,7 @@ void CArgDescriptions::x_AddDesc(CArgDesc& arg)
         NCBI_THROW(CArgException,eSynopsis,
             "Argument with this name is already defined: " + name);
     }
-    if (arg.GetFlags() & CArgDescriptions::fHidden) {
-        x_AddShowAllFlag();
-    }
+    m_HasHidden = m_HasHidden || (arg.GetFlags() & CArgDescriptions::fHidden);
     arg.SetGroup(m_CurrentGroup);
 
     if (s_IsKey(arg)  ||  s_IsFlag(arg)) {
@@ -3427,7 +3550,7 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
 {
     typedef list<const CArgDesc*> TList;
     typedef TList::iterator       TListI;
-    bool show_all = desc.m_ShowAll;
+    bool show_all = !desc.m_HasHidden;
 
     m_args.push_front(0);
     TListI it_pos = m_args.begin();
@@ -3437,7 +3560,7 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
          name != desc.m_OpeningArgs.end();  ++name) {
         TArgsCI it = desc.x_Find(*name);
         _ASSERT(it != desc.m_Args.end());
-        if (!show_all && (it->get()->GetFlags() & CArgDescriptions::fHidden))
+        if ((it->get()->GetFlags() & CArgDescriptions::fHidden) && !show_all)
         {
             continue;
         }
@@ -3454,7 +3577,7 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
 
         for (TArgsCI it = desc.m_Args.begin();  it != desc.m_Args.end();  ++it) {
             const CArgDesc* arg = it->get();
-            if (!show_all && (it->get()->GetFlags() & CArgDescriptions::fHidden))
+            if ((it->get()->GetFlags() & CArgDescriptions::fHidden) && !show_all)
             {
                 continue;
             }
@@ -3482,7 +3605,7 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
              name != desc.m_KeyFlagArgs.end();  ++name) {
             TArgsCI it = desc.x_Find(*name);
             _ASSERT(it != desc.m_Args.end());
-            if (!show_all && (it->get()->GetFlags() & CArgDescriptions::fHidden))
+            if ((it->get()->GetFlags() & CArgDescriptions::fHidden) && !show_all)
             {
                 continue;
             }
@@ -3515,7 +3638,7 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
     {{
         TArgsCI it = desc.x_Find(kEmptyStr);
         if (it != desc.m_Args.end()) {
-            if (show_all || (it->get()->GetFlags() & CArgDescriptions::fHidden) == 0)
+            if ((it->get()->GetFlags() & CArgDescriptions::fHidden) == 0 || show_all)
             {
                 m_args.push_back(it->get());
             }
@@ -3914,6 +4037,8 @@ void CCommandArgDescriptions::AddCommand(
         m_Commands.remove(command);
         if (flags != eHidden) {
             m_Commands.push_back(command);
+        } else {
+            m_HasHidden = true;
         }
         m_Description[command] = description;
         m_Groups[command] = m_CurrentCmdGroup;
@@ -3986,6 +4111,14 @@ CArgs* CCommandArgDescriptions::CreateArgs(const CNcbiArguments& argv) const
     return CArgDescriptions::CreateArgs(argv)->SetCommand(kEmptyStr);
 }
 
+void CCommandArgDescriptions::AddStdArguments(THideStdArgs mask)
+{
+    if (x_IsCommandMandatory()) {
+        mask = mask | fHideLogfile | fHideConffile | fHideDryRun;
+    }
+    CArgDescriptions::AddStdArguments(mask);
+}
+
 string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
 {
     const CArgDescriptions* argdesc = NULL;
@@ -4053,10 +4186,8 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
 
     arr.push_back("USAGE");
     arr.push_back(string("  ")+ m_UsageName +" <command> [options]");
-    if (!x_IsCommandMandatory()) {
-        arr.push_back("or");
-        x.AddSynopsis(arr, m_UsageName,"    ");
-    }
+    arr.push_back("or");
+    x.AddSynopsis(arr, m_UsageName,"    ");
 
     arr.push_back(kEmptyStr);
     x.AddDescription(arr, detailed);
@@ -4074,6 +4205,13 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
     max_cmd_len += 2;
 
     list<string> cmds = m_Commands;
+    if (!m_HasHidden && m_Description.size() != cmds.size()) {
+        for( const auto& t : m_Description) {
+            if (find(m_Commands.begin(), m_Commands.end(), t.first) == m_Commands.end()) {
+                cmds.push_back(t.first);
+            }
+        }
+    }
     if ((m_Cmd_req & eNoSortCommands)==0) {
         cmds.sort();
     }
@@ -4114,7 +4252,7 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
         }
     }
 
-    if (!x_IsCommandMandatory() && detailed) {
+    if (detailed) {
         arr.push_back(kEmptyStr);
         arr.push_back("Missing command:");
         x.AddDetails(arr);
