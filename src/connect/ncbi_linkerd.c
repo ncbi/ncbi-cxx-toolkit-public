@@ -180,7 +180,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         CORE_LOGF_X(host ? eLSub_TooLong : eLSub_BadData, eLOG_Error,
                     ("[%s]  Cannot convert \"%s:%hu\": %s", iter->name,
                      net_info->host, net_info->port,
-                     host ? "too long" : "host unknown"));
+                     host ? "Too long" : "Host unknown"));
         return 0/*failure*/;
     }
 
