@@ -183,6 +183,9 @@ extern "C" {
  *  TYPEDEFS & MACROS
  */
 
+typedef unsigned EBIO_Event;
+typedef unsigned EBIO_Status;
+
 
 /** Network and host byte order enumeration type
  */
@@ -314,17 +317,17 @@ extern NCBI_XCONNECT_EXPORT void SOCK_AllowSigPipeAPI(void);
 /** User-level connection approval hook.
  * The hook (when installed) gets called for any attempt to establish an
  * outgoing(eSOCK_Client) or incoming(eSOCK_Server) connection(eSOCK_Socket),
- * or to send(eSOCK_Client) or receive(eSOCK_Server) a message packet on a
- * datagram socket(eSOCK_Datagram).  The peer end is always identified with the
+ * or to send(eSOCK_Client) or receive(eSOCK_Server) a message packet in a
+ * datagram socket(eSOCK_Datagram).  The peer end is always identified by the
  * "addr:port" pair (which is non-0 in both parts).  Optionally for outgoing
  * transaction, a textual hostname("host") can be provided (to which "addr"
- * corresponds to).  If the action was requested by a plain IP address, the
- * "host" field is set to NULL.
+ * corresponds).  If the action was requested by a plain IP address, the "host"
+ * field is set to NULL.
  *
  * The hook is expected to return eIO_Success to approve the action, or any
  * other status code to deny.  Note that either eIO_Timeout or eIO_Closed
  * returned from the hook, will get converted to eIO_Unknown;  and other codes
- * get passed through to the caller "as is".
+ * will get passed through to the caller "as is".
  * @warning
  *   Although returning eIO_Interrupt may be helpful to prevent the upper-lever
  *   connection (CONN) layer from processing further I/O on this communication
@@ -332,7 +335,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_AllowSigPipeAPI(void);
  *   be used with caution.
  * @note
  *   When the hook is not installed, all the actions described above are
- *   treated as allowed.
+ *   treated as allowed (as if eIO_Success was returned).
  * @sa
  *   SOCK_Create, SOCK_Reconnect, LSOCK_Accept, DSOCK_SendMsg, DSOCK_RecvMsg
  */
@@ -341,8 +344,8 @@ typedef struct {
     const char*    host;  /**< Textual hostname if provided for outgoing     */
     unsigned int   addr;  /**< IPv4 (or -1 if unknown / broadcast), never 0  */
     unsigned short port;  /**< Port number, host byte order, never 0         */
+    ESOCK_Side     side;  /**< eSOCK_Client (out)  / eSOCK_Server (in)       */
     ESOCK_Type     type;  /**< eSOCK_Socket (conn) / eSOCK_Datagram (packet) */
-    ESOCK_Side     side;  /**< eSOCK_Client (out) / eSOCK_Server (in)        */
 } SSOCK_ApproveInfo;
 
 
@@ -353,7 +356,7 @@ typedef struct {
 typedef EIO_Status (*FSOCK_ApproveHook)(const SSOCK_ApproveInfo* info,
                                         void*                    data);
 
-/** The hook is installed when non-NULL, and uninstalled otherwise. */
+/** The hook is installed when non-NULL, and de-installed otherwise. */
 extern NCBI_XCONNECT_EXPORT
 void SOCK_SetApproveHookAPI(FSOCK_ApproveHook hook,  /**< the hook function  */
                             void*             data); /**< optional user data */
@@ -1948,7 +1951,7 @@ typedef struct {
     SOCK           sock;    /**< Non-NULL when SOCK-related                  */
     const char*    host;    /**< Host name/IP (or path for non-IP SOCK)      */
     unsigned short port;    /**< Port (host byte order), 0 for non-IP SOCK   */
-    EIO_Event      event;   /**< Meaningful only for eSOCK_ErrIO             */
+    EIO_Event      event;   /**< Meaningful only for the eSOCK_ErrIO type    */
     EIO_Status     status;  /**< Status code about to be returned (if known) */
 } SSOCK_ErrInfo;
 
