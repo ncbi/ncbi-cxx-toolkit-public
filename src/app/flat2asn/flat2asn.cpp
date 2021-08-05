@@ -171,12 +171,10 @@ bool CFlat2AsnApp::x_OpenFiles(const CArgs& args, TConfig& config, IObjtoolsList
 
     m_pFileMap.reset(new CMemoryFileMap(m_InputFile));
     auto fileSize = m_pFileMap->GetFileSize();
-    config.ffbuf = new FileBuf();
-    config.ffbuf->start = (const char*)m_pFileMap->Map(0, fileSize);  
-    config.ffbuf->current = config.ffbuf->start;
+    config.ffbuf.start = (const char*)m_pFileMap->Map(0, fileSize);  
+    config.ffbuf.current = config.ffbuf.start;
 
-    if (!config.ffbuf->start) {
-        delete config.ffbuf;
+    if (!config.ffbuf.start) {
         listener.PutMessage(
                 CObjtoolsMessage("Failed to open input flatfile " + m_InputFile, eDiag_Fatal));
         return false;
@@ -190,8 +188,7 @@ bool CFlat2AsnApp::x_OpenFiles(const CArgs& args, TConfig& config, IObjtoolsList
         {
             listener.PutMessage(
                    CObjtoolsMessage("Failed to open Quality Scores file " + string(config.qsfile), eDiag_Fatal));
-            delete config.ffbuf;
-            config.ffbuf = nullptr;
+            config.ffbuf.start = nullptr;
             return false;
         }
     }

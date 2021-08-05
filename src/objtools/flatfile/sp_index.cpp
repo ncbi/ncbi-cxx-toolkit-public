@@ -247,7 +247,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
             }
 
             if(pp->ifp == NULL)
-                entry->len = (size_t) (pp->ffbuf->current - pp->ffbuf->start) -
+                entry->len = (size_t) (pp->ffbuf.current - pp->ffbuf.start) -
                              entry->offset;
             else
                 entry->len = (size_t) ftell(pp->ifp) - entry->offset;

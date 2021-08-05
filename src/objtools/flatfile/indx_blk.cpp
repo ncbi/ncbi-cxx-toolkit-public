@@ -319,18 +319,18 @@ bool XReadFile(FILE* fp, FinfoBlkPtr finfo)
 }
 
 /**********************************************************/
-static Int2 FileGetsBuf(char* res, Int4 size, FileBufPtr fpbuf)
+static Int2 FileGetsBuf(char* res, Int4 size, FileBuf& fbuf)
 {
     const char* p = nullptr;
     char* q;
     Int4    l;
     Int4    i;
 
-    if(*fpbuf->current == '\0')
+    if(*fbuf.current == '\0')
         return(0);
 
     l = size - 1;
-    for(p = fpbuf->current, q = res, i = 0; i < l; i++, p++)
+    for(p = fbuf.current, q = res, i = 0; i < l; i++, p++)
     {
         *q++ = *p;
         if(*p == '\n' || *p == '\r')
@@ -341,20 +341,20 @@ static Int2 FileGetsBuf(char* res, Int4 size, FileBufPtr fpbuf)
     }
 
     *q = '\0';
-    fpbuf->current = p;
+    fbuf.current = p;
     return(1);
 }
 
 /**********************************************************/
-bool XReadFileBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo)
+bool XReadFileBuf(FileBuf& fbuf, FinfoBlkPtr finfo)
 {
     bool end_of_file = false;
 
     StringCpy(finfo->str, "\n");
     while(!end_of_file && StringNCmp(finfo->str, "\n", 1) == 0)
     {
-        finfo->pos = (size_t) (fpbuf->current - fpbuf->start);
-        if(FileGetsBuf(finfo->str, sizeof(finfo->str) - 1, fpbuf) == 0)
+        finfo->pos = (size_t) (fbuf.current - fbuf.start);
+        if(FileGetsBuf(finfo->str, sizeof(finfo->str) - 1, fbuf) == 0)
             end_of_file = true;
         else
             ++(finfo->line);
@@ -390,19 +390,19 @@ bool SkipTitle(FILE* fp, FinfoBlkPtr finfo, const CTempString& keyword)
 }
 
 /**********************************************************/
-bool SkipTitleBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo, const char *str, Int2 len)
+bool SkipTitleBuf(FileBuf& fbuf, FinfoBlkPtr finfo, const char *str, Int2 len)
 {
-    bool end_of_file = XReadFileBuf(fpbuf, finfo);
+    bool end_of_file = XReadFileBuf(fbuf, finfo);
     while(!end_of_file && StringNCmp(finfo->str, str, len) != 0)
-        end_of_file = XReadFileBuf(fpbuf, finfo);
+        end_of_file = XReadFileBuf(fbuf, finfo);
 
     return(end_of_file);
 }
 
 
-bool SkipTitleBuf(FileBufPtr fpbuf, FinfoBlkPtr finfo, const CTempString& keyword)
+bool SkipTitleBuf(FileBuf& fbuf, FinfoBlkPtr finfo, const CTempString& keyword)
 {
-    return SkipTitleBuf(fpbuf, finfo, keyword.data(), keyword.size());
+    return SkipTitleBuf(fbuf, finfo, keyword.data(), keyword.size());
 }
 
 
@@ -2411,11 +2411,6 @@ void ResetParserStruct(ParserPtr pp)
         pp->pbp = NULL;
     }
 
-    if(pp->ffbuf)
-    {
-        delete pp->ffbuf;
-        pp->ffbuf = NULL;
-    }
 
     if(pp->operon != NULL)
     {
@@ -2503,19 +2498,19 @@ bool FindNextEntry(bool end_of_file, FILE* ifp, FinfoBlkPtr finfo, const CTempSt
 }
 
 /**********************************************************/
-bool FindNextEntryBuf(bool end_of_file, FileBufPtr ifpbuf, FinfoBlkPtr finfo, const char *str, Int2 len)
+bool FindNextEntryBuf(bool end_of_file, FileBuf& fbuf, FinfoBlkPtr finfo, const char *str, Int2 len)
 {
     bool done = end_of_file;
     while (!done && StringNCmp(finfo->str, str, len) != 0)
-        done = XReadFileBuf(ifpbuf, finfo);
+        done = XReadFileBuf(fbuf, finfo);
 
     return(done);
 }
 
 
-bool FindNextEntryBuf(bool end_of_file, FileBufPtr ifpbuf, FinfoBlkPtr finfo, const CTempString& keyword)
+bool FindNextEntryBuf(bool end_of_file, FileBuf& fbuf, FinfoBlkPtr finfo, const CTempString& keyword)
 {
-    return FindNextEntryBuf(end_of_file, ifpbuf, finfo, keyword.data(), keyword.size());
+    return FindNextEntryBuf(end_of_file, fbuf, finfo, keyword.data(), keyword.size());
 }
 
 

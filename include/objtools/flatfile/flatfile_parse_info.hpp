@@ -50,7 +50,6 @@ struct protein_block;
 struct _fta_operon;
 
 
-typedef struct FileBuf* FileBufPtr;
 typedef struct indexblk_struct* IndexblkPtr;
 typedef struct protein_block* ProtBlkPtr;
 typedef struct _fta_operon* FTAOperonPtr;
@@ -109,7 +108,7 @@ struct Parser {
      * executed except the input file which located in the argument path
      */
     FILE*            ifp=nullptr;               /* a file pointer for input */
-    FileBufPtr       ffbuf=nullptr;             /* a buffer pointer for input */
+    FileBuf       ffbuf;             
 
     string      release_str;
     string      authors_str;

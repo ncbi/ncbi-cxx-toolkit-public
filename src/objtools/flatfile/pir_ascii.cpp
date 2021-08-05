@@ -2662,7 +2662,6 @@ static void subdbp_func(DataBlkPtr dbp)
 /**********************************************************/
 static char* fta_get_pir_line(char* line, Int4 len, ParserPtr pp)
 {
-    FileBufPtr fbp;
     const char* p = nullptr;
     char*    q;
     Int4       i;
@@ -2670,13 +2669,13 @@ static char* fta_get_pir_line(char* line, Int4 len, ParserPtr pp)
     if(pp->ifp != NULL)
         return(fgets(line, len, pp->ifp));
 
-    fbp = pp->ffbuf;
-    if(fbp == NULL || fbp->start == NULL || fbp->current == NULL ||
-       fbp->current < fbp->start || *fbp->start == '\0' ||
-       *fbp->current == '\0')
+    auto& fileBuf = pp->ffbuf;
+    if(fileBuf.start == NULL || fileBuf.current == NULL ||
+       fileBuf.current < fileBuf.start || *fileBuf.start == '\0' ||
+       *fileBuf.current == '\0')
         return(NULL);
 
-    for(i = 0, q = line, p = fbp->current; i < len && *p != '\0'; i++, p++)
+    for(i = 0, q = line, p = fileBuf.current; i < len && *p != '\0'; i++, p++)
     {
         *q++ = *p;
         if(*p == '\n')
@@ -2686,7 +2685,7 @@ static char* fta_get_pir_line(char* line, Int4 len, ParserPtr pp)
         }
     }
     *q = '\0';
-    fbp->current = p;
+    fileBuf.current = p;
     return(line);
 }
 
@@ -2712,8 +2711,9 @@ bool PirAscii(ParserPtr pp)
 
     if(pp->ifp != NULL)
         rewind(pp->ifp);
-    else if(pp->ffbuf != NULL)
-        pp->ffbuf->current = pp->ffbuf->start;
+    else {
+        pp->ffbuf.current = pp->ffbuf.start;
+    }
 
     auto protconv = GetProteinConv();        /* set up sequence alphabets
                                            in block.c */
