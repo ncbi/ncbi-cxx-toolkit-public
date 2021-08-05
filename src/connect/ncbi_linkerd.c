@@ -60,10 +60,10 @@ enum ELINKERD_Subcodes {
 };
 
 
-/*  Registry entry names and default values for LINKERD "SConnNetInfo" fields.
-    Note that these are purely for the LINKERD API; they don't relate to any
-    other part of the connect library, returned endpoints, or client code.
-    Therefore, they are independent of other connect library macros.
+/* Registry entry names and default values for LINKERD "SConnNetInfo" fields.
+ * We just override the given fields (which are populated for the service in
+ * question), so there are some standard keys plus some additional ones, which
+ * are purely for LINKERD.
  */
 #define DEF_LINKERD_REG_SECTION  "_LINKERD"
 
@@ -71,8 +71,8 @@ enum ELINKERD_Subcodes {
 #define DEF_LINKERD_SCHEME       ""
 
 #define REG_LINKERD_HOST         REG_CONN_HOST
-/*  LINKERD_TODO - "temporarily" support plain "linkerd" on Unix only */
-#if defined(NCBI_OS_UNIX)  &&  ! defined(NCBI_OS_CYGWIN)
+/* LINKERD_TODO - "temporarily" support plain "linkerd" on Unix only */
+#if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
 #  define DEF_LINKERD_HOST       "linkerd"
 #else
 #  define DEF_LINKERD_HOST       \

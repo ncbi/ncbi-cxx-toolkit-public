@@ -73,11 +73,11 @@ enum ENAMERD_Subcodes {
 };
 
 
-/*  Registry entry names and default values for NAMERD "SConnNetInfo" fields.
-    We just override the given fields (which were collected for the service in
-    question), so there are some standard keys plus some additional ones, which
-    are purely for NAMERD.  Note that the namerd API doesn't support a port.
-*/
+/* Registry entry names and default values for NAMERD "SConnNetInfo" fields.
+ * We just override the given fields (which are populated for the service in
+ * question), so there are some standard keys plus some additional ones, which
+ * are purely for NAMERD.  Note that the namerd API doesn't support a port.
+ */
 #define DEF_NAMERD_REG_SECTION       "_NAMERD"
 
 #define REG_NAMERD_API_SCHEME        "SCHEME"
@@ -93,7 +93,7 @@ enum ENAMERD_Subcodes {
 #define DEF_NAMERD_API_HOST          "namerd-api.linkerd.ncbi.nlm.nih.gov"
 
 #define REG_NAMERD_API_PORT          REG_CONN_PORT
-#define DEF_NAMERD_API_PORT          0
+#define DEF_NAMERD_API_PORT          0/*unsupported*/
 
 #define REG_NAMERD_API_PATH          REG_CONN_PATH
 #define DEF_NAMERD_API_PATH          "/api/1/resolve"
@@ -105,7 +105,7 @@ enum ENAMERD_Subcodes {
 #define DEF_NAMERD_API_ARGS          "path=/service/"
 
 #define REG_NAMERD_PROXY_HOST        REG_CONN_HTTP_PROXY_HOST
-/*  NAMERD_TODO - "temporarily" support plain "linkerd" on Unix only */
+/* NAMERD_TODO - "temporarily" support plain "linkerd" on Unix only */
 #if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
 #define DEF_NAMERD_PROXY_HOST        "linkerd"
 #else
