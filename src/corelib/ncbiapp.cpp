@@ -1312,13 +1312,11 @@ void CNcbiApplicationAPI::x_SetupStdio(void)
 
 void CNcbiApplicationAPI::x_AddDefaultArgs(void)
 {
-    if ( !m_DisableArgDesc ) {
-        THideStdArgs mask = m_HideArgs;
-        for(CArgDescriptions* desc : m_ArgDesc->GetAllDescriptions())
-        {
-            desc->AddStdArguments(mask);
-            mask = mask | fHideFullVersion | fHideVersion;
-        }
+    THideStdArgs mask = m_DisableArgDesc ? (fHideAll & ~fHideFullHelp & ~fHideHelp) : m_HideArgs;
+    for(CArgDescriptions* desc : m_ArgDesc->GetAllDescriptions())
+    {
+        desc->AddStdArguments(mask);
+        mask = mask | fHideFullVersion | fHideVersion;
     }
 }
 
