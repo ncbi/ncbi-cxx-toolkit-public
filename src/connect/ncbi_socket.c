@@ -1523,8 +1523,8 @@ static const char* s_gethostbyaddr(unsigned int host, char* name,
 
 
 static EIO_Status s_ApproveCallback(const char*    host, unsigned int addr,
-                                    unsigned short port, ESOCK_Type   type,
-                                    ESOCK_Side     side, SOCK         sock)
+                                    unsigned short port, ESOCK_Side   side,
+                                    ESOCK_Type     type, SOCK         sock)
 {
     EIO_Status        status = eIO_Success;
     FSOCK_ApproveHook hook;
@@ -1544,8 +1544,8 @@ static EIO_Status s_ApproveCallback(const char*    host, unsigned int addr,
         info.host = host;
         info.addr = addr;
         info.port = port;
-        info.type = type;
         info.side = side;
+        info.type = type;
         assert(addr  &&  port);
         assert(!host  ||  (*host  &&  !SOCK_isip(host)));
         assert(type == eSOCK_Socket  ||  type == eSOCK_Datagram);
@@ -4371,7 +4371,7 @@ static EIO_Status s_Connect_(SOCK            sock,
         if (s_ApproveHook) {
             status = s_ApproveCallback(host  &&  *host  &&  !SOCK_isip(host)
                                        ? host : 0, sock->host, sock->port,
-                                       eSOCK_Socket, eSOCK_Client, sock);
+                                       eSOCK_Client, eSOCK_Socket, sock);
             if (status != eIO_Success)
                 return status;
         }
@@ -5613,7 +5613,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
         assert(port);
         if (s_ApproveHook) {
             EIO_Status status = s_ApproveCallback(0, host, port,
-                                                  eSOCK_Socket, eSOCK_Server,
+                                                  eSOCK_Server, eSOCK_Socket,
                                                   (SOCK) lsock);
             if (status != eIO_Success) {
                 SOCK_ABORT(fd);
@@ -5908,7 +5908,7 @@ static EIO_Status s_RecvMsg(SOCK            sock,
             if (s_ApproveHook) {
                 status = s_ApproveCallback(0, sin.sin_addr.s_addr,
                                            ntohs(sin.sin_port),
-                                           eSOCK_Datagram, eSOCK_Server, sock);
+                                           eSOCK_Server, eSOCK_Datagram, sock);
                 if (status != eIO_Success)
                     break;
             }
@@ -6035,7 +6035,7 @@ static EIO_Status s_SendMsg(SOCK           sock,
     if (s_ApproveHook) {
         status = s_ApproveCallback(host  &&  *host  &&  !SOCK_isip(host)
                                    ? host : 0, x_host, x_port,
-                                   eSOCK_Datagram, eSOCK_Client, sock);
+                                   eSOCK_Client, eSOCK_Datagram, sock);
         if (status != eIO_Success)
             return status;
     }

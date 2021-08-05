@@ -136,24 +136,17 @@ typedef int TRIGGER_Handle;
 #endif
 
 
+typedef unsigned EBSwitch;
+typedef unsigned TBSOCK_Type;
+typedef unsigned EBSOCK_Side;
+
+
 typedef struct {
     void*       sess;           /* secure session handle, 0 if none          */
     NCBI_CRED   cred;           /* secure session credential(s), 0 if none   */
     SOCK        sock;           /* sock that the above session handle using  */
     const char* host;           /* hostname for named SSL extension          */
 } SNcbiSSLctx;
-
-
-#if 0/*defined(__GNUC__)*/
-typedef ESwitch    EBSwitch;
-typedef EIO_Status EBIO_Status;
-#else
-typedef unsigned   EBSwitch;
-typedef unsigned   EBIO_Status;
-#endif
-
-typedef unsigned   TBSOCK_Type;
-typedef unsigned   EBSOCK_Side;
 
 
 /* Event trigger
