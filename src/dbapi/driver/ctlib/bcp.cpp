@@ -172,6 +172,15 @@ CTL_BCPInCmd::x_GetStringValue(unsigned int i)
 // #endif
 
     value.GetBulkInsertionData(&ts);
+#ifdef USE_STRUCT_CS_VARCHAR
+    static const auto kMax = numeric_limits<decltype(CS_VARCHAR::len)>::max();
+    if (ts.size() > kMax) {
+        string msg = FORMAT("Value for column " << (i + 1)
+                            << " is too wide for [N]VARCHAR: " << ts.size()
+                            << " > " << kMax);
+        DATABASE_DRIVER_ERROR(msg, 123004);
+    }
+#endif
     SBcpBind& b = GetBind()[i];
     b.varchar.SetValue(ts);
     return b.varchar.GetValue();
