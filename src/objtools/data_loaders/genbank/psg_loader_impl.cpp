@@ -834,23 +834,24 @@ int CPSGDataLoader_Impl::GetSequenceState(const CSeq_id_Handle& idh)
     if ( CannotProcess(idh) ) {
         return kNotFound;
     }
-    auto blob_id_ref = GetBlobId(idh);
-    if (!blob_id_ref) {
+    auto seq_info = x_GetBioseqInfo(idh);
+    if (!seq_info) {
         return kNotFound;
     }
-    string blob_id = blob_id_ref->ToPsgId();
-    auto blob_info = m_BlobMap->FindBlob(blob_id);
-    if (!blob_info) {
-        // Force load blob-info even if it's being loaded by another thread.
-        CPSG_BioId bio_id = x_GetBioId(idh);
-        auto context = make_shared<CPsgClientContext>();
-        auto request = make_shared<CPSG_Request_Biodata>(move(bio_id), context);
-        request->IncludeData(CPSG_Request_Biodata::eNoTSE);
-        auto reply = x_ProcessRequest(request);
-        blob_id = x_ProcessBlobReply(reply, nullptr, idh, true).blob_id;
-        blob_info = m_BlobMap->FindBlob(blob_id);
+    if (seq_info->included_info & CPSG_Request_Resolve::fState) {
+        switch (seq_info->state) {
+        case CPSG_BioseqInfo::eDead:
+            return CBioseq_Handle::fState_dead;
+        case CPSG_BioseqInfo::eReserved:
+            return CBioseq_Handle::fState_suppress_perm;
+        case CPSG_BioseqInfo::eLive:
+            return CBioseq_Handle::fState_none;
+        default:
+            LOG_POST(Warning << "CPSGDataLoader: uknown " << idh << " state: " << seq_info->state);
+            return CBioseq_Handle::fState_none;
+        }
     }
-    return blob_info ? blob_info->blob_state : kNotFound;
+    return CBioseq_Handle::fState_none;
 }
 
 
@@ -1028,10 +1029,10 @@ public:
     ~CPSG_Blob_Task(void) override {}
 
     struct SAutoReleaseLock {
-        SAutoReleaseLock(CTSE_LoadLock*& lock_ptr)
+        SAutoReleaseLock(bool lock_asap, CTSE_LoadLock*& lock_ptr)
             : m_LockPtr(lock_ptr)
             {
-                if ( !m_LockPtr ) {
+                if ( lock_asap && !m_LockPtr ) {
                     m_LockPtr = &m_LocalLock;
                 }
             }
@@ -1229,7 +1230,7 @@ void CPSG_Blob_Task::DoExecute(void)
 {
     _TRACE("CPSG_Blob_Task::DoExecute()");
     if (!CheckReplyStatus()) return;
-    SAutoReleaseLock lock_guard(m_LoadLockPtr);
+    SAutoReleaseLock lock_guard(m_LockASAP, m_LoadLockPtr);
     ReadReply();
     if (m_Status == eFailed) return;
     if (m_Skipped) {
@@ -1254,6 +1255,11 @@ void CPSG_Blob_Task::DoExecute(void)
     }
 
     _TRACE("tse_id="<<m_ReplyResult.blob_id);
+    if ( !m_LoadLockPtr ) {
+        // to TSE requested
+        m_Status = eCompleted;
+        return;
+    }
 
     const TBlobSlot* main_blob_slot = GetTSESlot(m_ReplyResult.blob_id);
     if ( !main_blob_slot || !main_blob_slot->first ) {
@@ -1482,7 +1488,7 @@ void CPSGDataLoader_Impl::GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_
         request->IncludeData(m_NoSplit ? CPSG_Request_Biodata::eOrigTSE : CPSG_Request_Biodata::eWholeTSE);
         auto reply = x_ProcessRequest(request);
         CRef<CPSG_Blob_Task> task(
-            new CPSG_Blob_Task(reply, group, id, data_source, *this));
+            new CPSG_Blob_Task(reply, group, id, data_source, *this, true));
         group.AddTask(task);
     }
     // Waiting for skipped blobs can block all pool threads. To prevent this postpone
@@ -1904,7 +1910,7 @@ void CPSGDataLoader_Impl::LoadChunks(CDataSource* data_source,
         CDataLoader::TChunk chunk = chunk_it->second;
         chunk_map.erase(chunk_it);
         if ( chunk->GetChunkId() == kDelayedMain_ChunkId ) {
-            CRef<CPSG_Blob_Task> task(new CPSG_Blob_Task(reply, group, CSeq_id_Handle(), data_source, *this));
+            CRef<CPSG_Blob_Task> task(new CPSG_Blob_Task(reply, group, CSeq_id_Handle(), data_source, *this, true));
             task->SetDLBlobId(dynamic_cast<const CPSG_Request_Blob&>(*reply->GetRequest()).GetBlobId().GetId(),
                               chunk->GetBlobId());
             guards.push_back(make_shared<CPSG_Task_Guard>(*task));
@@ -1917,6 +1923,14 @@ void CPSGDataLoader_Impl::LoadChunks(CDataSource* data_source,
         }
     }
     group.WaitAll();
+    // check if all chunks are loaded
+    ITERATE(CDataLoader::TChunkSet, it, chunks) {
+        const CTSE_Chunk_Info & chunk = **it;
+        if (!chunk.IsLoaded()) {
+            _TRACE("Failed to load chunk " << chunk.GetChunkId() << " of " << dynamic_cast<const CPsgBlobId&>(*chunk.GetBlobId()).ToPsgId());
+            NCBI_THROW(CLoaderException, eLoaderFailed, "failed to load some chunks");
+        }
+    }
 }
 
 
