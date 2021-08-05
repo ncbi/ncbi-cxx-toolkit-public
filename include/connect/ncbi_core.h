@@ -35,8 +35,8 @@
  * I/O status and direction:
  *    enum:       EIO_ReadMethod
  *    enum:       EIO_WriteMethod
- *    enum:       EIO_Status,  verbal: IO_StatusStr()
  *    enum:       EIO_Event
+ *    enum:       EIO_Status,  verbal: IO_StatusStr()
  *
  * Critical section (basic multi-thread synchronization):
  *    handle:     MT_LOCK
@@ -110,8 +110,8 @@ typedef enum {
  *  be changed in this header.  On the other hand, user code should not rely
  *  on the values of these constants, either.
  * @warning
- *  Careful with an unfortunate naming similarity of eIO_Close from this set
- *  and eIO_Closed from EIO_Status -- do not mix the two!
+ *  Careful with an unfortunate naming similarity of eIO_Close from this enum
+ *  and EIO_Status::eIO_Closed -- do not mix the two!
  * @sa
  *  SOCK_Wait, SOCK_Poll, CONN_Wait, SOCK_SetTimeout, CONN_SetTimeout
  */
@@ -126,8 +126,8 @@ typedef enum {
 
 /** I/O status.
  * @warning
- *  Careful with an unfortunate naming similarity of eIO_Closed from this set
- *  and eIO_Close from EIO_Event -- do not mix the two!
+ *  Careful with an unfortunate naming similarity of eIO_Closed from this enum
+ *  and EIO_Event::eIO_Close -- do not mix the two!
  */
 typedef enum {
     eIO_Success = 0,    /**< everything is fine, no error occurred           */

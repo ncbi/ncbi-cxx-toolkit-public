@@ -346,7 +346,7 @@ extern NCBI_XCONNECT_EXPORT unsigned int g_NCBI_ConnectSrandAddend(void);
 
 
 /******************************************************************************
- *  App name support (may return NULL; gets converted to "" at the user level).
+ *  App name support (may return NULL; gets converted to "" at the user level)
  *  The name is assumed to have static storage (not to be free()'d after use).
  */
 
@@ -355,7 +355,7 @@ extern NCBI_XCONNECT_EXPORT FNcbiGetAppName g_CORE_GetAppName;
 
 
 /******************************************************************************
- *  Referer support (return NULL or non-empty dynamically malloc()'ed string).
+ *  Referer support (return NULL or non-empty dynamically malloc()'ed string)
  */
 
 typedef const char* (*FNcbiGetReferer)(void);
