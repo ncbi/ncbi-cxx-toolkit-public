@@ -4116,6 +4116,11 @@ void CCommandArgDescriptions::AddStdArguments(THideStdArgs mask)
     if (x_IsCommandMandatory()) {
         mask = mask | fHideLogfile | fHideConffile | fHideDryRun;
     }
+    if (!m_HasHidden) {
+        for( const auto& t : m_Description) {
+            m_HasHidden = m_HasHidden || t.second->m_HasHidden;
+        }
+    }
     CArgDescriptions::AddStdArguments(mask);
 }
 
