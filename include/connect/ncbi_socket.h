@@ -387,13 +387,14 @@ typedef enum {
     eSOCK_IOWaitSysAPISelect  /**< always use select()                       */
 } ESOCK_IOWaitSysAPI;
 
-/** This is a helper call that can improve I/O behavior (ignored for Windows).
+/** This is a helper call that can improve I/O performance (ignored for MSVC).
  * @param api
  *  [in]  Default behavior is to wait for I/O such a way that accomodates the
  *  requested sockets accordingly.  There is a known limitation of the select()
- *  API that requires all sockets to have low-level IO descriptors less than
- *  1024, but works faster than the poll() API that does not have limits on the
- *  numeric values of the descriptors.  Either API can be enforced here.
+ *  API that requires all sockets to have numeric values of their low-level I/O
+ *  handles less than (as little as) 1024, but works faster than the poll() API
+ *  that does not have limits on the number or numeric values of the handles.
+ *  Either API can be enforced here.
  * @return
  *  Previous value of the API selector
  * @sa
@@ -510,7 +511,7 @@ typedef unsigned int TSOCK_Flags;  /**< bitwise "OR" of ESOCK_Flags */
 /** [SERVER-side]  Create and initialize the server-side(listening) socket
  * (socket() + bind() + listen())
  * @param port
- *  [in]  the port to listen at (0 to select first available)
+ *  [in]  the port to listen at (0 to choose first available)
  * @param backlog
  *  [in]  maximal # of pending connections
  *  @note  On some systems, "backlog" may be silently limited down to 128
@@ -1588,12 +1589,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Create
  * busy") unless SOCK_SetReuseAddress() is called, which then allows multiple
  * sockets to bind to the same port, and receive messages, in undefined order,
  * arriving at that port.
- * Passing 0 will ask the OS to automatically select an unused port, which then
+ * Passing 0 will ask the OS to automatically choose an unused port, which then
  * can be obtained via SOCK_GetLocalPort().
  * @param sock
  *  [in]  SOCK from DSOCK_Create[Ex]()
  * @param port
- *  [in]  port to bind to (0 to auto-select)
+ *  [in]  port to bind to (0 to auto-choose)
  * @sa
  *  SOCK_SetReuseAddress, SOCK_GetLocalPort
  */
