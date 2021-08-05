@@ -722,7 +722,45 @@ static bool CannotProcess(const CSeq_id_Handle& sih)
 }
 
 
+template<class Call>
+typename std::result_of<Call()>::type
+CPSGDataLoader_Impl::CallWithRetry(Call&& call,
+                                   const char* name,
+                                   int retry_count)
+{
+    if ( retry_count == 0 ) {
+        retry_count = 4;
+    }
+    for ( int t = 1; t < retry_count; ++ t ) {
+        try {
+            return call();
+        }
+        catch ( CException& exc ) {
+            LOG_POST(Warning<<"CPSGDataLoader::"<<name<<"() try "<<t<<" exception: "<<exc);
+        }
+        catch ( exception& exc ) {
+            LOG_POST(Warning<<"CPSGDataLoader::"<<name<<"() try "<<t<<" exception: "<<exc.what());
+        }
+        catch ( ... ) {
+            LOG_POST(Warning<<"CPSGDataLoader::"<<name<<"() try "<<t<<" exception");
+        }
+        double wait_sec = 1<<(t-1);
+        LOG_POST(Warning<<"CPSGDataLoader: waiting "<<wait_sec<<"s before retry");
+        SleepMilliSec(Uint4(wait_sec*1000));
+    }
+    return call();
+}
+
+
 void CPSGDataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
+{
+    CallWithRetry(bind(&CPSGDataLoader_Impl::GetIdsOnce, this,
+                       cref(idh), ref(ids)),
+                  "GetIds");
+}
+
+
+void CPSGDataLoader_Impl::GetIdsOnce(const CSeq_id_Handle& idh, TIds& ids)
 {
     if ( CannotProcess(idh) ) {
         return;
@@ -738,6 +776,15 @@ void CPSGDataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 
 CDataLoader::SGiFound
 CPSGDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
+{
+    return CallWithRetry(bind(&CPSGDataLoader_Impl::GetGiOnce, this,
+                              cref(idh)),
+                         "GetGi");
+}
+
+
+CDataLoader::SGiFound
+CPSGDataLoader_Impl::GetGiOnce(const CSeq_id_Handle& idh)
 {
     if ( CannotProcess(idh) ) {
         return CDataLoader::SGiFound();
@@ -757,6 +804,15 @@ CPSGDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 CDataLoader::SAccVerFound
 CPSGDataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 {
+    return CallWithRetry(bind(&CPSGDataLoader_Impl::GetAccVerOnce, this,
+                              cref(idh)),
+                         "GetAccVer");
+}
+
+
+CDataLoader::SAccVerFound
+CPSGDataLoader_Impl::GetAccVerOnce(const CSeq_id_Handle& idh)
+{
     if ( CannotProcess(idh) ) {
         return CDataLoader::SAccVerFound();
     }
@@ -774,6 +830,14 @@ CPSGDataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 
 TTaxId CPSGDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
 {
+    return CallWithRetry(bind(&CPSGDataLoader_Impl::GetTaxIdOnce, this,
+                              cref(idh)),
+                         "GetTaxId");
+}
+
+
+TTaxId CPSGDataLoader_Impl::GetTaxIdOnce(const CSeq_id_Handle& idh)
+{
     if ( CannotProcess(idh) ) {
         return INVALID_TAX_ID;
     }
@@ -783,6 +847,14 @@ TTaxId CPSGDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
 
 
 TSeqPos CPSGDataLoader_Impl::GetSequenceLength(const CSeq_id_Handle& idh)
+{
+    return CallWithRetry(bind(&CPSGDataLoader_Impl::GetSequenceLengthOnce, this,
+                              cref(idh)),
+                         "GetSequenceLength");
+}
+
+
+TSeqPos CPSGDataLoader_Impl::GetSequenceLengthOnce(const CSeq_id_Handle& idh)
 {
     if ( CannotProcess(idh) ) {
         return kInvalidSeqPos;
@@ -794,6 +866,15 @@ TSeqPos CPSGDataLoader_Impl::GetSequenceLength(const CSeq_id_Handle& idh)
 
 CDataLoader::SHashFound
 CPSGDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
+{
+    return CallWithRetry(bind(&CPSGDataLoader_Impl::GetSequenceHashOnce, this,
+                              cref(idh)),
+                         "GetSequenceHash");
+}
+
+
+CDataLoader::SHashFound
+CPSGDataLoader_Impl::GetSequenceHashOnce(const CSeq_id_Handle& idh)
 {
     if ( CannotProcess(idh) ) {
         return CDataLoader::SHashFound();
@@ -814,6 +895,15 @@ CPSGDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
 CDataLoader::STypeFound
 CPSGDataLoader_Impl::GetSequenceType(const CSeq_id_Handle& idh)
 {
+    return CallWithRetry(bind(&CPSGDataLoader_Impl::GetSequenceTypeOnce, this,
+                              cref(idh)),
+                         "GetSequenceType");
+}
+
+
+CDataLoader::STypeFound
+CPSGDataLoader_Impl::GetSequenceTypeOnce(const CSeq_id_Handle& idh)
+{
     if ( CannotProcess(idh) ) {
         return CDataLoader::STypeFound();
     }
@@ -828,6 +918,14 @@ CPSGDataLoader_Impl::GetSequenceType(const CSeq_id_Handle& idh)
 
 
 int CPSGDataLoader_Impl::GetSequenceState(const CSeq_id_Handle& idh)
+{
+    return CallWithRetry(bind(&CPSGDataLoader_Impl::GetSequenceStateOnce, this,
+                              cref(idh)),
+                         "GetSequenceState");
+}
+
+
+int CPSGDataLoader_Impl::GetSequenceStateOnce(const CSeq_id_Handle& idh)
 {
     const int kNotFound = (CBioseq_Handle::fState_not_found |
                            CBioseq_Handle::fState_no_data);
@@ -857,6 +955,17 @@ int CPSGDataLoader_Impl::GetSequenceState(const CSeq_id_Handle& idh)
 
 CDataLoader::TTSE_LockSet
 CPSGDataLoader_Impl::GetRecords(CDataSource* data_source,
+    const CSeq_id_Handle& idh,
+    CDataLoader::EChoice choice)
+{
+    return CallWithRetry(bind(&CPSGDataLoader_Impl::GetRecordsOnce, this,
+                              data_source, cref(idh), choice),
+                         "GetRecords");
+}
+
+
+CDataLoader::TTSE_LockSet
+CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
     const CSeq_id_Handle& idh,
     CDataLoader::EChoice choice)
 {
@@ -903,6 +1012,14 @@ CPSGDataLoader_Impl::GetRecords(CDataSource* data_source,
 
 
 CRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobId(const CSeq_id_Handle& idh)
+{
+    return CallWithRetry(bind(&CPSGDataLoader_Impl::GetBlobIdOnce, this,
+                              cref(idh)),
+                         "GetBlobId");
+}
+
+
+CRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& idh)
 {
     if ( CannotProcess(idh) ) {
         return null;
@@ -954,6 +1071,15 @@ bool CPSGDataLoader_Impl::GetGetBlobByIdShouldFail()
 
 
 CTSE_Lock CPSGDataLoader_Impl::GetBlobById(CDataSource* data_source, const CPsgBlobId& blob_id)
+{
+    return CallWithRetry(bind(&CPSGDataLoader_Impl::GetBlobByIdOnce, this,
+                              data_source, cref(blob_id)),
+                         "GetBlobById",
+                         GetGetBlobByIdShouldFail()? 1: 0);
+}
+
+
+CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const CPsgBlobId& blob_id)
 {
     if (!data_source) return CTSE_Lock();
 
@@ -1478,6 +1604,14 @@ CPSGDataLoader_Impl::SReplyResult CPSG_Blob_Task::WaitForSkipped(void)
 
 void CPSGDataLoader_Impl::GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_sets)
 {
+    CallWithRetry(bind(&CPSGDataLoader_Impl::GetBlobsOnce, this,
+                       data_source, ref(tse_sets)),
+                  "GetBlobs");
+}
+
+
+void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TTSE_LockSets& tse_sets)
+{
     if (!data_source) return;
     auto context = make_shared<CPsgClientContext_Bulk>();
     CPSG_TaskGroup group(*m_ThreadPool);
@@ -1860,6 +1994,15 @@ CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
 void CPSGDataLoader_Impl::LoadChunks(CDataSource* data_source,
                                      const CDataLoader::TChunkSet& chunks)
 {
+    CallWithRetry(bind(&CPSGDataLoader_Impl::LoadChunksOnce, this,
+                       data_source, cref(chunks)),
+                  "LoadChunks");
+}
+
+
+void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
+                                     const CDataLoader::TChunkSet& chunks)
+{
     if (chunks.empty()) return;
 
     typedef map<void*, CDataLoader::TChunk> TChunkMap;
@@ -2068,6 +2211,18 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNA(
     const SAnnotSelector* sel,
     CDataLoader::TProcessedNAs* processed_nas)
 {
+    return CallWithRetry(bind(&CPSGDataLoader_Impl::GetAnnotRecordsNAOnce, this,
+                              data_source, cref(idh), sel, processed_nas),
+                         "GetAnnotRecordsNA");
+}
+
+
+CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
+    CDataSource* data_source,
+    const CSeq_id_Handle& idh,
+    const SAnnotSelector* sel,
+    CDataLoader::TProcessedNAs* processed_nas)
+{
     CDataLoader::TTSE_LockSet locks;
     if ( !data_source ) {
         return locks;
@@ -2173,6 +2328,15 @@ void CPSGDataLoader_Impl::DropTSE(const CPsgBlobId& blob_id)
 
 void CPSGDataLoader_Impl::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
+    CallWithRetry(bind(&CPSGDataLoader_Impl::GetAccVersOnce, this,
+                       cref(ids), ref(loaded), ref(ret)),
+                  "GetAccVers",
+                  6);
+}
+
+
+void CPSGDataLoader_Impl::GetAccVersOnce(const TIds& ids, TLoaded& loaded, TIds& ret)
+{
     vector<shared_ptr<SPsgBioseqInfo>> infos;
     infos.resize(ret.size());
     auto counts = x_GetBulkBioseqInfo(CPSG_Request_Resolve::fCanonicalId, ids, loaded, infos);
@@ -2194,6 +2358,15 @@ void CPSGDataLoader_Impl::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret
 
 
 void CPSGDataLoader_Impl::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
+{
+    CallWithRetry(bind(&CPSGDataLoader_Impl::GetGisOnce, this,
+                       cref(ids), ref(loaded), ref(ret)),
+                  "GetAccVers",
+                  8);
+}
+
+
+void CPSGDataLoader_Impl::GetGisOnce(const TIds& ids, TLoaded& loaded, TGis& ret)
 {
     vector<shared_ptr<SPsgBioseqInfo>> infos;
     infos.resize(ret.size());

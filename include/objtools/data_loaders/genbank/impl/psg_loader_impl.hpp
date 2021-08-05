@@ -111,28 +111,49 @@ public:
     typedef CDataLoader::TTSE_LockSets TTSE_LockSets;
 
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
+    void GetIdsOnce(const CSeq_id_Handle& idh, TIds& ids);
     CDataLoader::SGiFound GetGi(const CSeq_id_Handle& idh);
+    CDataLoader::SGiFound GetGiOnce(const CSeq_id_Handle& idh);
     CDataLoader::SAccVerFound GetAccVer(const CSeq_id_Handle& idh);
+    CDataLoader::SAccVerFound GetAccVerOnce(const CSeq_id_Handle& idh);
     TTaxId GetTaxId(const CSeq_id_Handle& idh);
+    TTaxId GetTaxIdOnce(const CSeq_id_Handle& idh);
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
+    TSeqPos GetSequenceLengthOnce(const CSeq_id_Handle& idh);
     CDataLoader::SHashFound GetSequenceHash(const CSeq_id_Handle& idh);
+    CDataLoader::SHashFound GetSequenceHashOnce(const CSeq_id_Handle& idh);
     CDataLoader::STypeFound GetSequenceType(const CSeq_id_Handle& idh);
+    CDataLoader::STypeFound GetSequenceTypeOnce(const CSeq_id_Handle& idh);
     int GetSequenceState(const CSeq_id_Handle& idh);
+    int GetSequenceStateOnce(const CSeq_id_Handle& idh);
 
     CDataLoader::TTSE_LockSet GetRecords(CDataSource* data_source,
                                          const CSeq_id_Handle& idh,
                                          CDataLoader::EChoice choice);
+    CDataLoader::TTSE_LockSet GetRecordsOnce(CDataSource* data_source,
+                                         const CSeq_id_Handle& idh,
+                                         CDataLoader::EChoice choice);
     CRef<CPsgBlobId> GetBlobId(const CSeq_id_Handle& idh);
+    CRef<CPsgBlobId> GetBlobIdOnce(const CSeq_id_Handle& idh);
     CTSE_Lock GetBlobById(CDataSource* data_source,
+                              const CPsgBlobId& blob_id);
+    CTSE_Lock GetBlobByIdOnce(CDataSource* data_source,
                               const CPsgBlobId& blob_id);
     void LoadChunk(CDataSource* data_source,
                    CTSE_Chunk_Info& chunk_info);
     void LoadChunks(CDataSource* data_source,
                     const CDataLoader::TChunkSet& chunks);
+    void LoadChunksOnce(CDataSource* data_source,
+                    const CDataLoader::TChunkSet& chunks);
 
     void GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_sets);
+    void GetBlobsOnce(CDataSource* data_source, TTSE_LockSets& tse_sets);
 
     CDataLoader::TTSE_LockSet GetAnnotRecordsNA(CDataSource* data_source,
+                                                const CSeq_id_Handle& idh,
+                                                const SAnnotSelector* sel,
+                                                CDataLoader::TProcessedNAs* processed_nas);
+    CDataLoader::TTSE_LockSet GetAnnotRecordsNAOnce(CDataSource* data_source,
                                                 const CSeq_id_Handle& idh,
                                                 const SAnnotSelector* sel,
                                                 CDataLoader::TProcessedNAs* processed_nas);
@@ -140,7 +161,9 @@ public:
     void DropTSE(const CPsgBlobId& blob_id);
 
     void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
+    void GetAccVersOnce(const TIds& ids, TLoaded& loaded, TIds& ret);
     void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret);
+    void GetGisOnce(const TIds& ids, TLoaded& loaded, TGis& ret);
 
     static CObjectIStream* GetBlobDataStream(const CPSG_BlobInfo& blob_info, const CPSG_BlobData& blob_data);
 
@@ -154,6 +177,12 @@ public:
     static void NCBI_XLOADER_GENBANK_EXPORT SetGetBlobByIdShouldFail(bool value);
     static bool NCBI_XLOADER_GENBANK_EXPORT GetGetBlobByIdShouldFail();
 
+    template<class Call>
+    typename std::result_of<Call()>::type
+    CallWithRetry(Call&& call,
+                  const char* name,
+                  int retry_count = 0);
+    
 private:
     friend class CPSG_Blob_Task;
 
