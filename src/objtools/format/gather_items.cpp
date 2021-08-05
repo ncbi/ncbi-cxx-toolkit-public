@@ -4401,7 +4401,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProductIdx(
 
         item = ConstRef( x_NewFeatureItem(*it, ctx, 
             s_NormalizeNullsBetween(loc), m_Feat_Tree,
-            CFeatureItem::eMapped_from_prot, true,
+            CFeatureItem::eMapped_from_prot, false,
             cdsFeatureItem ) );
 
         *m_ItemOS << item;
@@ -4514,7 +4514,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
 
         item = ConstRef( x_NewFeatureItem(*it, ctx, 
             s_NormalizeNullsBetween(loc), m_Feat_Tree,
-            CFeatureItem::eMapped_from_prot, true,
+            CFeatureItem::eMapped_from_prot, false,
             cdsFeatureItem ) );
 
         *m_ItemOS << item;
