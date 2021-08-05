@@ -1049,13 +1049,17 @@ extern const STimeout* SOCK_SetSelectInternalRestartTimeout(const STimeout* t)
 extern ESOCK_IOWaitSysAPI SOCK_SetIOWaitSysAPI(ESOCK_IOWaitSysAPI api)
 {
     ESOCK_IOWaitSysAPI retval = s_IOWaitSysAPI;
-#if !defined(NCBI_OS_UNIX)  ||  !defined(HAVE_POLL_H)
+#ifndef NCBI_OS_MSWIN
+#  if defined(NCBI_OS_DARWIN)  ||  !defined(HAVE_POLL_H)
     if (api == eSOCK_IOWaitSysAPIPoll) {
         CORE_LOG_X(149, eLOG_Critical, "[SOCK::SetIOWaitSysAPI] "
                    " Poll API requested but not supported on this platform");
     } else
-#endif /*!NCBI_OS_UNIX || !HAVE_POLL_H*/
+#  endif /*NCBI_OS_DARWIN || !HAVE_POLL_H*/
         s_IOWaitSysAPI = api;
+#else
+    (void) api;
+#endif /*NCBI_OS_MSWIN*/
     return retval;
 }
 
@@ -4842,7 +4846,7 @@ static EIO_Status s_CreateOnTop(const void*       handle,
       defined(NCBI_OS_DARWIN)  ||  \
       defined(NCBI_OS_IRIX)
             if (peer.sa.sa_family != AF_UNSPEC/*0*/)
-#  endif /*NCBI_OS_???*/
+#  endif /*NCBI_OS*/
 #else
         if (peer.sa.sa_family != AF_INET)
 #endif /*NCBI_OS_UNIX*/
