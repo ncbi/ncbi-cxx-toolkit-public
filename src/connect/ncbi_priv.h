@@ -50,6 +50,7 @@
  *    macro:           NCBI_CONNECT_SRAND_ADDEND
  * App name / NCBI ID / DTab support
  *    private globals: g_CORE_GetAppName
+ *                     g_CORE_GetReferer
  *                     g_CORE_GetRequestID
  *                     g_CORE_GetRequestDtab
  *
@@ -345,11 +346,20 @@ extern NCBI_XCONNECT_EXPORT unsigned int g_NCBI_ConnectSrandAddend(void);
 
 
 /******************************************************************************
- *  App name support (may return NULL; gets converted to "" at the user level)
+ *  App name support (may return NULL; gets converted to "" at the user level).
+ *  The name is assumed to have static storage (not to be free()'d after use).
  */
 
 typedef const char* (*FNcbiGetAppName)(void);
 extern NCBI_XCONNECT_EXPORT FNcbiGetAppName g_CORE_GetAppName;
+
+
+/******************************************************************************
+ *  Referer support (return NULL or non-empty dynamically malloc()'ed string).
+ */
+
+typedef const char* (*FNcbiGetReferer)(void);
+extern NCBI_XCONNECT_EXPORT FNcbiGetReferer g_CORE_GetReferer;
 
 
 /******************************************************************************

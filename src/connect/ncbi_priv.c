@@ -50,6 +50,7 @@ LOG                 g_CORE_Log               = 0;
 REG                 g_CORE_Registry          = 0;
 unsigned int        g_NCBI_ConnectRandomSeed = 0;
 FNcbiGetAppName     g_CORE_GetAppName        = 0;
+FNcbiGetReferer     g_CORE_GetReferer        = 0;
 FNcbiGetRequestID   g_CORE_GetRequestID      = 0;
 FNcbiGetRequestDtab g_CORE_GetRequestDtab    = 0;
 
