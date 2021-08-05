@@ -807,9 +807,8 @@ void Flat2AsnCheck(char* ffentry, char* source, char* format,
     pp->qsfd = NULL;
     pp->qamode = false;
 
-    pp->ffbuf = new FileBuf();
-    pp->ffbuf->start = ffentry;
-    pp->ffbuf->current = pp->ffbuf->start;
+    pp->ffbuf.start = ffentry;
+    pp->ffbuf.current = pp->ffbuf.start;
 
     fta_fill_find_pub_option(pp, false, false);
     fta_main(pp, true);
@@ -878,7 +877,7 @@ CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, CNcbiIstream& istr
         m_pMessageListener->PutMessage(CObjtoolsMessage(msg, eDiag_Fatal));  
     }
 
-    if (parseInfo.ffbuf) {
+    if (parseInfo.ffbuf.start) {
         string msg = "Attempting to reinitialize input buffer";
         if (!m_pMessageListener) { // Throw an exception it no listener
             NCBI_THROW(CException, eUnknown, msg);
@@ -890,9 +889,8 @@ CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, CNcbiIstream& istr
     os << istr.rdbuf();
     string buffer = os.str();
 
-    parseInfo.ffbuf = new FileBuf();
-    parseInfo.ffbuf->start = buffer.c_str();
-    parseInfo.ffbuf->current = parseInfo.ffbuf->start;
+    parseInfo.ffbuf.start = buffer.c_str();
+    parseInfo.ffbuf.current = parseInfo.ffbuf.start;
 
     if (sParseFlatfile(pResult, &parseInfo)) {
         return pResult;
@@ -912,9 +910,8 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 
     FtaInstallPrefix(PREFIX_LOCUS, (char *) "SET-UP", NULL);
 
-    pp.ffbuf = new FileBuf();
-    pp.ffbuf->start = buf;
-    pp.ffbuf->current = buf;
+    pp.ffbuf.start = buf;
+    pp.ffbuf.current = buf;
 
     FtaDeletePrefix(PREFIX_LOCUS);
 
@@ -1096,7 +1093,6 @@ void fta_init_pp(Parser& pp)
 	pp.entrylist = nullptr;
 	pp.curindx = 0;
 	pp.ifp = nullptr;
-	pp.ffbuf = nullptr;
 	pp.seqtype = 0;
 	pp.num_drop = 0;
 	pp.acprefix = nullptr;

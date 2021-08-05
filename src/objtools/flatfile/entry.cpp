@@ -51,16 +51,16 @@
 BEGIN_NCBI_SCOPE
 
 /**********************************************************/
-static size_t FileReadBuf(char* to, size_t len, FileBufPtr ffbuf)
+static size_t FileReadBuf(char* to, size_t len, FileBuf& ffbuf)
 {
     const char* p = nullptr;
     char* q;
     size_t   i;
 
-    for(p = ffbuf->current, q = to, i = 0; i < len && *p != '\0'; i++)
+    for(p = ffbuf.current, q = to, i = 0; i < len && *p != '\0'; i++)
         *q++ = *p++;
 
-    ffbuf->current = p;
+    ffbuf.current = p;
     return(i);
 }
 
@@ -87,7 +87,7 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
 
     if (pp->ifp == NULL)
     {
-        pp->ffbuf->current = pp->ffbuf->start + offset;
+        pp->ffbuf.current = pp->ffbuf.start + offset;
         i = 0;
     }
     else
