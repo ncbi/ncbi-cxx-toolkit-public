@@ -399,13 +399,13 @@ def main():
                       action="store_true", dest="https", default=False,
                       help="Use https (default: False)")
     parser.add_option("--runs",
-                      dest="runs", default="10",
+                      dest="runs", default="50",
                       help="The number of runs against each server")
     parser.add_option("--delay",
                       dest="delay", default="1",
                       help="Delay between runs in minutes")
     parser.add_option("--throws",
-                      dest="throws", default="2",
+                      dest="throws", default="5",
                       help="Number of worst/best run results to throw away")
     parser.add_option("--h2load-count",
                       dest="h2loadcount", default="10",
