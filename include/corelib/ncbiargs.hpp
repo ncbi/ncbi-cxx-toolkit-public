@@ -1014,7 +1014,7 @@ public:
     /// @param usage_description
     ///    Detailed usage description
     /// @sa SetUsageContext
-    void SetDetailedDescription( const string& usage_description);
+    void SetDetailedDescription(const string& usage_description);
 
     /// Print usage and exit.
     ///
