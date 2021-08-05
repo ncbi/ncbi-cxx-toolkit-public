@@ -773,6 +773,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     info->max_try = (unsigned short)(val > 0 ? val : DEF_CONN_MAX_TRY);
 
     /* connection timeout */
+    info->tmo = g_NcbiDefConnTimeout;
     REG_VALUE(REG_CONN_TIMEOUT, str, 0);
     val = *str ? (long) strlen(str) : 0;
     if (val < 3  ||  8 < val
@@ -782,8 +783,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
             info->tmo.usec     = (unsigned int)((dbl - info->tmo.sec) * 1.0e6);
             if (dbl  &&  !(info->tmo.sec | info->tmo.usec))
                 info->tmo.usec = 1/*protect from underflow*/;
-        } else
-            info->tmo          = g_NcbiDefConnTimeout;
+        }
         info->timeout = &info->tmo;
     } else
         info->timeout = kInfiniteTimeout/*0*/;
