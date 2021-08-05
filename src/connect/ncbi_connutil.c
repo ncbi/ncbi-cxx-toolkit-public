@@ -182,6 +182,7 @@ static const char* x_GetValue(const char* svc/*ign if !svclen*/, size_t svclen,
     assert(!svclen  ||  (svclen == strlen(svc)));
     assert(value  &&  value_size  &&  !*value);
     assert(param  &&  *param);
+    assert(generic);
 
     parlen = strlen(param) + 1;
     if (svclen) {
@@ -573,6 +574,25 @@ static int/*tri-state*/ x_SetupSystemHttpProxy(SConnNetInfo* info)
 }
 
 
+static const char* x_GetReferer(char* str, size_t size)
+{
+    int generic;
+    if (g_CORE_GetReferer) {
+        const char* referer = g_CORE_GetReferer();
+        assert(!referer  ||  *referer);
+        if (referer)
+            return referer;
+    }
+    /* default referer ([in] "generic" irrelevant), all error(s) ignored */
+    *str = '\0';
+    generic = 0;
+    s_GetValue(0, 0, REG_CONN_HTTP_REFERER, str, size,
+               DEF_CONN_HTTP_REFERER, &generic, strncmp);
+    assert(generic);
+    return *str ? strdup(str) : 0;
+}
+
+
 static void x_DestroyNetInfo(SConnNetInfo* info, unsigned int magic)
 {
     assert(info);
@@ -710,7 +730,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     REG_VALUE(REG_CONN_HTTP_PROXY_SKIP, str, DEF_CONN_HTTP_PROXY_SKIP);
     info->http_proxy_skip = ConnNetInfo_Boolean(str) ? 1 : 0;
 
-    /* HTTP proxy only for HTTP (loaded from "$http_proxy" */
+    /* HTTP proxy only for HTTP (loaded from "$http_proxy") */
     info->http_proxy_only = 0/*false*/;
 
     /* username */
@@ -773,13 +793,8 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     if (!x_StrcatCRLF((char**) &info->http_user_header, str))
         goto err;
 
-    /* default referer ([in] "generic" irrelevant), all error(s) ignored */
-    *str = '\0';
-    s_GetValue(0, 0, REG_CONN_HTTP_REFERER, str, sizeof(str),
-               DEF_CONN_HTTP_REFERER, &generic, strncmp);
-    assert(generic);
-    if (*str)
-        info->http_referer = strdup(str);
+    /* HTTP referer */
+    info->http_referer = x_GetReferer(str, sizeof(str));
 
     /* credentials */
     info->credentials = 0;

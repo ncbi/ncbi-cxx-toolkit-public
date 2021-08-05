@@ -435,6 +435,21 @@ static const char* s_GetAppName(void)
 
 
 /***********************************************************************
+ *                               Referer                               *
+ ***********************************************************************/
+
+
+extern "C" {
+static const char* s_GetReferer(void)
+{
+    const string& referer
+        = CDiagContext::GetRequestContext().GetProperty("SELF_URL");
+    return referer.empty() ? 0 : strdup(referer.c_str());
+}
+}
+
+
+/***********************************************************************
  *                           NCBI Request ID                           *
  ***********************************************************************/
 
@@ -670,6 +685,7 @@ static void s_Init(const IRWRegistry* reg  = 0,
     }
 
     g_CORE_GetAppName     = s_GetAppName;
+    g_CORE_GetReferer     = s_GetReferer;
     g_CORE_GetRequestID   = s_GetRequestID;
     g_CORE_GetRequestDtab = s_GetRequestDTab;
 
