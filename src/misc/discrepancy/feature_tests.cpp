@@ -1683,7 +1683,7 @@ DISCREPANCY_CASE(UNWANTED_SPACER, FEAT, eOncaller, "Intergenic spacer without pl
     for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
             for (size_t i = 0; i < kIntergenicSpacerNames_len; i++) {
-                if (NStr::FindNoCase(feat.GetComment(), kIntergenicSpacerNames[i]) != NPOS) {
+                if (feat.IsSetComment() && NStr::FindNoCase(feat.GetComment(), kIntergenicSpacerNames[i]) != NPOS) {
                     m_Objs["[n] suspect intergenic spacer note[s] not organelle"].Add(*context.SeqFeatObjRef(feat));
                     break;
                 }
