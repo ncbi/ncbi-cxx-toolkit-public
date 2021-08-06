@@ -87,7 +87,8 @@ enum {
     NCBI_gb_state_eWGSGenBankReplaced = 2,
     NCBI_gb_state_eWGSGenBankWithdrawn = 3,
     NCBI_gb_state_eWGSGenBankUnverified = 4,
-    NCBI_gb_state_eWGSGenBankMissing = 5
+    NCBI_gb_state_eWGSGenBankMissing = 5,
+    NCBI_gb_state_eWGSGenBankMigrated = 6
 };
 
 
