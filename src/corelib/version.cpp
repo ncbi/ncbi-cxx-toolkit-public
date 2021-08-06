@@ -566,7 +566,6 @@ string SBuildInfo::PrintXml(void) const
     return CNcbiOstrstreamToString(os);
 }
 
-
 string SBuildInfo::PrintJson(void) const
 {
     CNcbiOstrstream os;
@@ -588,6 +587,17 @@ string SBuildInfo::PrintJson(void) const
     }
     os << '}';
     return CNcbiOstrstreamToString(os);
+}
+
+CTime SBuildInfo::GetBuildTime(void) const
+{
+    // According to the documentation, if the compiler cannot get the time of day 
+    // it will give you question marks for __DATE__ and __TIME__. 
+    try {
+        return CTime(date, "b D Y h:m:s");
+    }
+    catch (CTimeException&) {}
+    return CTime();
 }
 
 
