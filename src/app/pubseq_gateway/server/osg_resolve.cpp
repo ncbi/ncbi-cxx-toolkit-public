@@ -280,6 +280,10 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
         SendBlob();
         FinalizeResult(ePSGS_Found);
     }
+    else if ( GetRequest()->GetRequest<SPSGS_BlobBySeqIdRequest>().m_TSEOption == SPSGS_BlobBySeqIdRequest::ePSGS_NoneTSE ) {
+        SendBioseqInfo(SPSGS_ResolveRequest::ePSGS_UnknownFormat);
+        FinalizeResult(ePSGS_Found);
+    }
     else if ( BlobIsExcluded(m_BlobId) ) {
         SendBioseqInfo(SPSGS_ResolveRequest::ePSGS_UnknownFormat);
         SendExcludedBlob(m_BlobId);
