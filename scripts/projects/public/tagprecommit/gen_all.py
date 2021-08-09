@@ -10,7 +10,8 @@ if(rc!=0):
   raise Exception(rc)
 
 updated = subprocess.run(['svn', 'status'], capture_output=True)
-updated = updated.stdout.split('\n')
+updated = updated.stdout
+updated = updated.decode('utf-8').split('\n')
 
 for fname in updated:
   if not fname.startswith('?'):
