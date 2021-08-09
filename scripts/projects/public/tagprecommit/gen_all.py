@@ -9,7 +9,7 @@ rc=os.system('scripts/common/impl/generate_all_objects.sh --clients')
 if(rc!=0):
   raise Exception(rc)
 
-updated = subprocess.run(['scripts/common/impl/generate_all_objects.sh', '--clients'], capture_output=True)
+updated = subprocess.run(['svn', 'status'], capture_output=True)
 updated = updated.stdout.split('\n')
 
 for fname in updated:
