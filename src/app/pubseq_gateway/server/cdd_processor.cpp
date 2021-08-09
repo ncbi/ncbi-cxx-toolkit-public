@@ -196,9 +196,7 @@ static void s_OnGotBlobBySeqIdCallback(void* proc)
 
 void CPSGS_CDDProcessor::x_GetBlobBySeqIdAsync(void)
 {
-    CCDDClientPool::TSeq_idSet ids;
-    ids.insert(m_SeqId);
-    m_CDDBlob = m_ClientPool->GetBlobBySeq_ids(ids);
+    m_CDDBlob = m_ClientPool->GetBlobBySeq_id(m_SeqId);
     CPubseqGatewayApp::GetInstance()->GetUvLoopBinder().PostponeInvoke(
         s_OnGotBlobBySeqIdCallback, this);
 }
