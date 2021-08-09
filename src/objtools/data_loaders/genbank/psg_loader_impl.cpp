@@ -2295,6 +2295,12 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
                 gi = id;
                 continue;
             }
+            if ( id.Which() == CSeq_id::e_Pdb ) {
+                if ( !acc_ver ) {
+                    acc_ver = id;
+                }
+                continue;
+            }
             auto seq_id = id.GetSeqId();
             if ( auto text_id = seq_id->GetTextseq_Id() ) {
                 auto acc_type = seq_id->IdentifyAccession();
