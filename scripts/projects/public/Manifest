@@ -11,7 +11,8 @@
 
 USE_COMPONENTS
 
-TAG_PRE_COMMIT: tagprecommit/run.sh
+TAG_PRE_COMMIT: tagprecommit/use_embedded_ptb.py
+TAG_PRE_COMMIT: tagprecommit/gen_all.py
 # Each line describes a single configuration
 # The format is as follows:
 # <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
