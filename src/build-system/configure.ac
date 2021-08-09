@@ -78,7 +78,8 @@ case "$with_3psw" in
                      z, bz2, lzo, zstd, pcre, mbedtls,
                      gmp, gcrypt, nettle, gnutls, openssl, krb5, boost, lmdb,
                      sybase, ftds, mysql, opengl, mesa, glut, glew, gl2ps,
-                     wxwidgets, freetype, ftgl, fastcgi, bdb, orbacus, odbc,
+                     wxwidgets, freetype, ftgl, fastcgi, fastcgipp,
+                     bdb, orbacus, odbc,
                      python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm, magic,
@@ -389,6 +390,10 @@ AC_ARG_WITH(fastcgi,
    [ --with-fastcgi=VERSION  use Fast-CGI installation in \$NCBI/fcgi-VERSION])
 AC_ARG_WITH(fastcgi,
    [ --with-fastcgi=DIR      use Fast-CGI installation in DIR])
+AC_ARG_WITH(fastcgipp,
+   [ --without-fastcgipp     do not use fastcgipp library])
+AC_ARG_WITH(fastcgipp,
+   [ --with-fastcgipp=DIR    use fastcgipp installation in DIR])
 AC_ARG_WITH(bdb,
    [ --without-bdb           do not use Berkeley DB library])
 AC_ARG_WITH(bdb,
@@ -683,7 +688,8 @@ lfs limited-linker skew-guard openmp \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
-ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
+ncbi-c wxwidgets wxwidgets-ucs fastcgi fastcgipp \
+sss sssdb sssutils included-sss \
 geo included-geo vdb downloaded-vdb static-vdb ngs libunwind libdw \
 backward-cpp backward-cpp-sig \
 z bz2 lzo zstd pcre mbedtls \
@@ -762,7 +768,8 @@ for x_arg in "$@" ; do
       | --with-opengl=* | --with-mesa=* | --with-glut=* | --with-glew=* \
       | --with-gl2ps=* \
       | --with-wxwidgets=* | --with-freetype=* | --with-ftgl=* \
-      | --with-fastcgi=*/* | --with-bdb=*/* | --with-orbacus=* \
+      | --with-fastcgi=*/* | --with-fastcgipp=* | --with-bdb=*/* \
+      | --with-orbacus=* \
       | --with-odbc=* | --with-python=* | --with-perl=* | --with-jni=* \
       | --with-boost=* | --with-sqlite3=* | --with-icu=* | --with-expat=* \
       | --with-sablot=* | --with-libxml=* | --with-libxslt=* | --with-exslt=* \
@@ -6744,6 +6751,21 @@ else
    AC_DEFINE(HAVE_LIBFASTCGI, 1,
              [Define to 1 if FastCGI libraries are available.])
 fi
+
+
+## FastCGI++ (MT-capable)
+case "$with_fastcgipp" in
+   yes | no | '' ) ;;
+   *             ) FASTCGIPP_PATH=$with_fastcgipp ;;
+esac
+if test -d "$FASTCGIPP_PATH"; then
+   NCBI_FIND_ARCH_PATH(FASTCGIPP)
+   FASTCGIPP_PATH=$FASTCGIPP_ARCH_PATH
+   NCBI_FIX_DIR(FASTCGIPP_PATH)
+fi
+NCBI_CHECK_THIRD_PARTY_LIB(fastcgipp,
+  [AC_LANG_PROGRAM([[@%:@include <fastcgi++/http.hpp>]],
+      [[Fastcgipp::Http::SessionId sid;]])])
 
 
 ## NCBI SSS libraries
