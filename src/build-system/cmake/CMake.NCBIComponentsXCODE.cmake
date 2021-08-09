@@ -254,6 +254,7 @@ if(NCBI_COMPONENT_VDB_FOUND)
         ${NCBI_COMPONENT_VDB_INCLUDE}/cc/gcc/${NCBI_ThirdParty_VDB_ARCH}
         ${NCBI_COMPONENT_VDB_INCLUDE}/cc/gcc
     )
+    set(NCBI_COMPONENT_VDB_BINPATH ${NCBI_ThirdParty_VDB}/mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib)
     set(HAVE_NCBI_VDB 1)
 endif()
 
