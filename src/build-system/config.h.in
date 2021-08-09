@@ -357,6 +357,9 @@
 /* Define to 1 if FastCGI libraries are available. */
 #undef HAVE_LIBFASTCGI
 
+/* Define to 1 if libfastcgipp is available. */
+#undef HAVE_LIBFASTCGIPP
+
 /* Define to 1 if FreeTDS libraries are available. */
 #undef HAVE_LIBFTDS
 

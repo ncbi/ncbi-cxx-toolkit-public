@@ -50,6 +50,7 @@ try_local() {
         test -d "$d/include/curl"          &&  : ${CURL_PATH=$d}
         test -f "$d/include/expat.h"       &&  : ${EXPAT_PATH=$d}
         test -f "$d/include/fastcgi.h"     &&  : ${FASTCGI_PATH=$d}
+        test -d "$d/include/fastcgi++"     &&  : ${FASTCGIPP_PATH=$d}
         test -d "$d/include/FTGL"          &&  : ${FTGL_PATH=$d}
         test -x "$d/bin/libgcrypt-config"  &&  : ${GCRYPT_PATH=$d}
         test -f "$d/include/gif_lib.h"     &&  : ${GIF_PATH=$d}
@@ -177,6 +178,8 @@ esac
 : ${CPPKAFKA_PATH=$NCBI/cppkafka-0.3.1+boost-1.76}
 
 : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0}
+
+: ${FASTCGIPP_PATH=$NCBI/fastcgi++-3.0}
 
 case "$ncbi_platform" in
     *MAC       ) : ${FREETYPE_PATH=/opt/X11} ;;

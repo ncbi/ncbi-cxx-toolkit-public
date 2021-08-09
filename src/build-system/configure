@@ -1022,6 +1022,8 @@ SABLOT_LIBS
 SABLOT_INCLUDE
 EXPAT_LIBS
 EXPAT_INCLUDE
+FASTCGIPP_LIBS
+FASTCGIPP_INCLUDE
 wxconf
 X_EXTRA_LIBS
 X_LIBS
@@ -1288,6 +1290,7 @@ with_wxwidgets_ucs
 with_freetype
 with_ftgl
 with_fastcgi
+with_fastcgipp
 with_bdb
 with_sp
 with_orbacus
@@ -1913,7 +1916,8 @@ lfs limited-linker skew-guard openmp \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
-ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
+ncbi-c wxwidgets wxwidgets-ucs fastcgi fastcgipp \
+sss sssdb sssutils included-sss \
 geo included-geo vdb downloaded-vdb static-vdb ngs libunwind libdw \
 backward-cpp backward-cpp-sig \
 z bz2 lzo zstd pcre mbedtls \
@@ -1990,7 +1994,8 @@ for x_arg in "$@" ; do
       | --with-opengl=* | --with-mesa=* | --with-glut=* | --with-glew=* \
       | --with-gl2ps=* \
       | --with-wxwidgets=* | --with-freetype=* | --with-ftgl=* \
-      | --with-fastcgi=*/* | --with-bdb=*/* | --with-orbacus=* \
+      | --with-fastcgi=*/* | --with-fastcgipp=* | --with-bdb=*/* \
+      | --with-orbacus=* \
       | --with-odbc=* | --with-python=* | --with-perl=* | --with-jni=* \
       | --with-boost=* | --with-sqlite3=* | --with-icu=* | --with-expat=* \
       | --with-sablot=* | --with-libxml=* | --with-libxslt=* | --with-exslt=* \
@@ -2261,6 +2266,8 @@ Optional Packages:
  --without-fastcgi       do not use Fast-CGI library
  --with-fastcgi=VERSION  use Fast-CGI installation in \$NCBI/fcgi-VERSION
  --with-fastcgi=DIR      use Fast-CGI installation in DIR
+ --without-fastcgipp     do not use fastcgipp library
+ --with-fastcgipp=DIR    use fastcgipp installation in DIR
  --without-bdb           do not use Berkeley DB library
  --with-bdb=VERSION      use DB installation in \$NCBI/BerkeleyDB-VERSION
  --with-bdb=DIR          use Berkeley DB installation in DIR
@@ -3765,6 +3772,11 @@ case "$with_3psw" in
          else
             with_fastcgi=no
          fi
+        if test "${with_fastcgipp-no}" != "no"; then
+            as_fn_error $? "incompatible options: --with-fastcgipp but --without-3psw"
+         else
+            with_fastcgipp=no
+         fi
         if test "${with_bdb-no}" != "no"; then
             as_fn_error $? "incompatible options: --with-bdb but --without-3psw"
          else
@@ -5175,6 +5187,18 @@ fi
 # Check whether --with-fastcgi was given.
 if test "${with_fastcgi+set}" = set; then :
   withval=$with_fastcgi;
+fi
+
+
+# Check whether --with-fastcgipp was given.
+if test "${with_fastcgipp+set}" = set; then :
+  withval=$with_fastcgipp;
+fi
+
+
+# Check whether --with-fastcgipp was given.
+if test "${with_fastcgipp+set}" = set; then :
+  withval=$with_fastcgipp;
 fi
 
 
@@ -24715,6 +24739,169 @@ $as_echo "#define HAVE_LIBFASTCGI 1" >>confdefs.h
 fi
 
 
+## FastCGI++ (MT-capable)
+case "$with_fastcgipp" in
+   yes | no | '' ) ;;
+   *             ) FASTCGIPP_PATH=$with_fastcgipp ;;
+esac
+if test -d "$FASTCGIPP_PATH"; then
+   FASTCGIPP_ARCH_PATH=$FASTCGIPP_PATH
+for d in "$FASTCGIPP_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$FASTCGIPP_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$FASTCGIPP_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$FASTCGIPP_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      FASTCGIPP_ARCH_PATH=$d
+      break
+   fi
+done
+   FASTCGIPP_PATH=$FASTCGIPP_ARCH_PATH
+   ncbi_fix_dir_tmp=`if cd $FASTCGIPP_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $FASTCGIPP_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            FASTCGIPP_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$FASTCGIPP_PATH" in
+               /*) ;;
+               * ) FASTCGIPP_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) FASTCGIPP_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+fi
+if test "$with_fastcgipp" != "no"; then
+    case "$FASTCGIPP_PATH:$with_fastcgipp" in
+       *:yes | *: | $with_fastcgipp* ) ;;
+       * ) FASTCGIPP_PATH=$with_fastcgipp ;;
+    esac
+    if test "$FASTCGIPP_PATH" != /usr -a -d "$FASTCGIPP_PATH"; then
+       in_path=" in $FASTCGIPP_PATH"
+       if test -z "$FASTCGIPP_INCLUDE" -a -d "$FASTCGIPP_PATH/include"; then
+          FASTCGIPP_INCLUDE="-I$FASTCGIPP_PATH/include"
+       fi
+       if test -n "$FASTCGIPP_LIBPATH"; then
+          :
+       elif test -d "$FASTCGIPP_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $FASTCGIPP_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    FASTCGIPP_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $FASTCGIPP_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    FASTCGIPP_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$FASTCGIPP_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $FASTCGIPP_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    FASTCGIPP_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $FASTCGIPP_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    FASTCGIPP_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       FASTCGIPP_LIBS="$FASTCGIPP_LIBPATH -lfastcgipp "
+    else
+       FASTCGIPP_INCLUDE=""
+       FASTCGIPP_LIBS="-lfastcgipp "
+       in_path=
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libfastcgipp$in_path" >&5
+$as_echo_n "checking for libfastcgipp$in_path... " >&6; }
+if ${ncbi_cv_lib_fastcgipp+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS=" $FASTCGIPP_INCLUDE $orig_CPPFLAGS"
+       LIBS="$FASTCGIPP_LIBS  $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <fastcgi++/http.hpp>
+int
+main ()
+{
+Fastcgipp::Http::SessionId sid;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_fastcgipp=yes
+else
+  ncbi_cv_lib_fastcgipp=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_fastcgipp" >&5
+$as_echo "$ncbi_cv_lib_fastcgipp" >&6; }
+    if test "$ncbi_cv_lib_fastcgipp" = "no"; then
+       if test "${with_fastcgipp:=no}" != no; then
+       as_fn_error $? "--with-fastcgipp explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+    fi
+ fi
+ if test "$with_fastcgipp" = "no"; then
+    FASTCGIPP_PATH="No_FASTCGIPP"
+    FASTCGIPP_INCLUDE=
+    FASTCGIPP_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}FASTCGIPP"; WithPackagesSep=" "
+    FASTCGIPP_INCLUDE=" $FASTCGIPP_INCLUDE"
+
+$as_echo "#define HAVE_LIBFASTCGIPP 1" >>confdefs.h
+
+ fi
+
+
+
+
+
 ## NCBI SSS libraries
 if test "$with_sybase" = "no" ; then
    if test "${with_sssdb:=no}" != no; then
@@ -35279,7 +35466,7 @@ for x in ChaosMonkey Int4GI Int8GI StrictGI PSGLoader BM64 GCC KCC ICC AppleClan
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
