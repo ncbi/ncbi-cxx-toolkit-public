@@ -124,6 +124,7 @@ public:
     };
     typedef SCDDBlob TBlob;
 
+    SCDDBlob GetBlobBySeq_id(CSeq_id_Handle idh);
     SCDDBlob GetBlobBySeq_ids(const TSeq_idSet& ids);
     TBlobInfo GetBlobIdBySeq_id(CSeq_id_Handle idh);
     TBlobData GetBlobByBlobId(const TBlobId& blob_id);

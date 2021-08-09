@@ -340,6 +340,57 @@ CCDDClientPool::~CCDDClientPool(void)
 }
 
 
+CCDDClientPool::SCDDBlob CCDDClientPool::GetBlobBySeq_id(CSeq_id_Handle idh)
+{
+    SCDDBlob ret = m_Cache->Get(idh);
+    if (ret.data) return ret;
+
+    if (ret.info) {
+        // Have blob info only, request blob data.
+        ret.data = x_RequestBlobData(ret.info->GetBlob_id());
+        if (ret.data) {
+            m_Cache->Add(ret);
+        }
+        return ret;
+    }
+
+    // Make a blob-by-seq-id request.
+    int serial = x_NextSerialNumber();
+    CCDD_Request_Packet cdd_packet;
+    CRef<CCDD_Request> cdd_request(new CCDD_Request);
+    cdd_request->SetSerial_number(serial);
+
+
+    CConstRef<CSeq_id> id(idh.GetSeqId());
+    if (!IsValidId(*id)) return ret;
+    CRef<CSeq_id> nc_id(new CSeq_id);
+    nc_id->Assign(*id);
+    cdd_request->SetRequest().SetGet_blob_by_seq_id(*nc_id);
+    cdd_packet.Set().push_back(cdd_request);
+
+    CCDDClientGuard client(*this);
+    CRef<CCDD_Reply> cdd_reply(new CCDD_Reply);
+    try {
+        client.Get().Ask(cdd_packet, *cdd_reply);
+        if (!x_CheckReply(cdd_reply, serial, CCDD_Reply::TReply::e_Get_blob_by_seq_id)) {
+            return ret;
+        }
+        auto& cdd_blob = cdd_reply->SetReply().SetGet_blob_by_seq_id();
+        ret.info.Reset(&cdd_blob.SetBlob_id());
+        ret.data.Reset(&cdd_blob.SetBlob());
+        m_Cache->Add(ret);
+    }
+    catch (exception& e) {
+        ERR_POST("CDD - get-blob-by-seq-id request failed: " << e.what());
+        client.Discard();
+    }
+    catch (...) {
+        client.Discard();
+    }
+    return ret;
+}
+
+
 CCDDClientPool::SCDDBlob CCDDClientPool::GetBlobBySeq_ids(const TSeq_idSet& ids)
 {
     SCDDBlob ret;
