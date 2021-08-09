@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import subprocess
 
 os.chdir('c++')
 
@@ -12,6 +13,9 @@ updated = subprocess.run(['scripts/common/impl/generate_all_objects.sh', '--clie
 updated = updated.stdout.split('\n')
 
 for fname in updated:
+  if not fname.startswith('?'):
+    continue
+  fname = fname[1:].strip()
   rc=os.system(f'svn add {fname}')
   if rc !=0:
     raise Exception(rc)
