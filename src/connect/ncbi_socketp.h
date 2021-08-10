@@ -379,6 +379,15 @@ const char* SOCK_StringToHostPortEx(const char*     str,
                                     unsigned short* port,
                                     int/*bool*/     flag);
 
+/* Addtl socket API for internal use:  if flag != 0 and host != 0, then
+ * surround the host IP with square brackets.
+ */
+size_t SOCK_HostPortToStringEx(unsigned int   host,
+                               unsigned short port,
+                               char*          buf,
+                               size_t         size,
+                               int/*bool*/    flag);
+
 
 /* See: SOCK_SetupSSL[Ex] */
 void SOCK_SetupSSLInternal(FSSLSetup setup, int/*bool*/ init);

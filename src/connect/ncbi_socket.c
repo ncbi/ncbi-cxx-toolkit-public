@@ -1554,15 +1554,9 @@ static EIO_Status s_ApproveCallback(const char*    host, unsigned int addr,
         assert(!host  ||  (*host  &&  !SOCK_isip(host)));
         assert(type == eSOCK_Socket  ||  type == eSOCK_Datagram);
 #ifdef _DEBUG
-        if (type == eSOCK_Datagram  ||  side == eSOCK_Server) {
-            SOCK_ntoa(addr, cp + (host ? 1 : 0), sizeof(cp) - 10);
-            if (host) {
-                size_t len = strlen(cp + 1) + 1;
-                *cp = '[';
-                cp[len++] = ']';
-                sprintf(cp + len, ":%hu", port);
-            }
-        }
+        if (type == eSOCK_Datagram  ||  side == eSOCK_Server)
+            SOCK_HostPortToStringEx(addr, port, cp, sizeof(cp), !!host);
+        /* else: "cp" is shown as part of s_ID() of the socket */
 #endif /*_DEBUG*/
         CORE_TRACEF(("%s[SOCK::ApproveHook] "
                      " Seeking approval for %s %s%s%s%s%s%s",
@@ -1574,15 +1568,8 @@ static EIO_Status s_ApproveCallback(const char*    host, unsigned int addr,
                      &"\""[!host], host ? host : "", &"\""[!host], cp));
         status = hook(&info, data);
         if (status != eIO_Success) {
-            if (!*cp  &&  (type == eSOCK_Datagram  ||  side == eSOCK_Server)) {
-                SOCK_ntoa(addr, cp + (host ? 1 : 0), sizeof(cp) - 10);
-                if (host) {
-                    size_t len = strlen(cp + 1) + 1;
-                    *cp = '[';
-                    cp[len++] = ']';
-                    sprintf(cp + len, ":%hu", port);
-                }
-            }
+            if (!*cp  &&  (type == eSOCK_Datagram  ||  side == eSOCK_Server))
+                SOCK_HostPortToStringEx(addr, port, cp, sizeof(cp), !!host);
             CORE_LOGF_X(163, eLOG_Error,
                         ("%s[SOCK::ApproveHook] "
                          " Approval denied for %s %s%s%s%s%s%s: %s",
@@ -8810,33 +8797,48 @@ extern const char* SOCK_StringToHostPort(const char*     str,
 }
 
 
-extern size_t SOCK_HostPortToString(unsigned int   host,
-                                    unsigned short port,
-                                    char*          buf,
-                                    size_t         bufsize)
+size_t SOCK_HostPortToStringEx(unsigned int   host,
+                               unsigned short port,
+                               char*          buf,
+                               size_t         size,
+                               int/*bool*/    flag)
 {
-    char   x_buf[16/*sizeof("255.255.255.255")*/ + 6/*:port#*/];
-    size_t len;
+    char   x_buf[18/*sizeof("[255.255.255.255]")*/ + 6/*:port#*/];
+    size_t x_len;
 
-    if (!buf  ||  !bufsize)
+    if (!buf  ||  !size)
         return 0;
     if (!host) {
-        *x_buf = '\0';
-        len = 0;
-    } else if (SOCK_ntoa(host, x_buf, sizeof(x_buf)) != 0) {
+        x_buf[0] = '\0';
+        x_len = 0;
+    } else if (SOCK_ntoa(host, x_buf + !!flag, sizeof(x_buf) - 8) != 0) {
         *buf = '\0';
         return 0;
-    } else
-        len = strlen(x_buf);
+    } else {
+        if (flag)
+            x_buf[0] = '[';
+        x_len = strlen(x_buf);
+        if (flag)
+            x_buf[x_len++] = ']';
+    }
     if (port  ||  !host)
-        len += (size_t) sprintf(x_buf + len, ":%hu", port);
-    assert(len < sizeof(x_buf));
-    if (len >= bufsize) {
+        x_len += (size_t) sprintf(x_buf + x_len, ":%hu", port);
+    assert(x_len < sizeof(x_buf));
+    if (x_len++ >= size) {
         *buf = '\0';
         return 0;
     }
-    memcpy(buf, x_buf, len + 1);
-    return len;
+    memcpy(buf, x_buf, x_len);
+    return x_len;
+}
+
+
+extern size_t SOCK_HostPortToString(unsigned int   host,
+                                    unsigned short port,
+                                    char*          buf,
+                                    size_t         size)
+{
+    return SOCK_HostPortToStringEx(host, port, buf, size, 0);
 }
 
 

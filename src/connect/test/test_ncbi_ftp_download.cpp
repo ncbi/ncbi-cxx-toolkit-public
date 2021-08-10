@@ -711,6 +711,21 @@ static void s_FTPStat(iostream& ftp)
 }
 
 
+#if 0
+extern "C" {
+
+static EIO_Status s_FtpOnly(const SSOCK_ApproveInfo* info, void*/*unused*/)
+{
+    assert(info);
+    return  info->type == eSOCK_Socket
+        &&  info->side == eSOCK_Client
+        &&  info->port != CONN_PORT_FTP ? eIO_NotSupported : eIO_Success;
+}
+
+}
+#endif /*0*/
+
+
 int CTestFTPDownloadApp::Run(void)
 {
     enum EProcessor {
@@ -722,6 +737,10 @@ int CTestFTPDownloadApp::Run(void)
     typedef unsigned int TProcessor;
 
     const CArgs& args = GetArgs();
+
+#if 0
+    SOCK_SetApproveHookAPI(s_FtpOnly, 0/*unused*/);
+#endif /*0*/
 
     // Process command line parameters (up to 3)
     Uint8 offset = 0;
