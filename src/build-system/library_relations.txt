@@ -477,6 +477,8 @@ freetype needs3party $(BZ2_LIBS)
 freetype needs3party $(ORIG_LIBS)
 freetype needs3party $(PNG_LIBS)
 fscr1 needs agp_lookup
+fscr_pass1_common needs $(SEQ_LIBS)
+fscr_pass1_common needs pub
 ftgl needs $(BZ2_LIB)
 ftgl needs3party $(BZ2_LIBS)
 ftgl needs3party $(FREETYPE_LIBS)
