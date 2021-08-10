@@ -66,6 +66,7 @@ public:
     virtual ~CFlatFileParser(void);
     CRef<CSerialObject> Parse(Parser& parseInfo);
     CRef<CSerialObject> Parse(Parser& parseInfo, CNcbiIstream& istr);
+    CRef<CSerialObject> Parse(Parser& parseInfo, const string& filename);
 
 private:
     objects::IObjtoolsListener* m_pMessageListener = nullptr;

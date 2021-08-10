@@ -121,12 +121,8 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
     finfo = (FinfoBlkPtr) MemNew(sizeof(FinfoBlk));
 
-    if(pp->ifp == NULL)
-        end_of_file = SkipTitleBuf(pp->ffbuf, finfo, spkwl[ParFlatSP_ID].str,
-                                   spkwl[ParFlatSP_ID].len);
-    else
-        end_of_file = SkipTitle(pp->ifp, finfo, spkwl[ParFlatSP_ID].str,
-                                spkwl[ParFlatSP_ID].len);
+    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, spkwl[ParFlatSP_ID].str,
+                               spkwl[ParFlatSP_ID].len);
     if(end_of_file)
     {
         MsgSkipTitleFail("Swiss-Prot", finfo);
@@ -217,10 +213,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
                     FreeTokenstatblk(stoken);
                 }
 
-                if(pp->ifp == NULL)
-                    end_of_file = XReadFileBuf(pp->ffbuf, finfo);
-                else
-                    end_of_file = XReadFile(pp->ifp, finfo);
+                end_of_file = XReadFileBuf(pp->ffbuf, finfo);
 
             } /* while, end of one entry */
 
@@ -246,11 +239,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
                     entry->drop = sp_err_field("SQ (sequence data)");
             }
 
-            if(pp->ifp == NULL)
-                entry->len = (size_t) (pp->ffbuf.current - pp->ffbuf.start) -
-                             entry->offset;
-            else
-                entry->len = (size_t) ftell(pp->ifp) - entry->offset;
+            entry->len = (size_t) (pp->ffbuf.current - pp->ffbuf.start) - entry->offset;
 
             if(fun != NULL)
             {
@@ -261,23 +250,13 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
         } /* if, entry */
         else
         {
-            if(pp->ifp == NULL)
-                end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                               spkwl[ParFlatSP_END].str,
-                                               spkwl[ParFlatSP_END].len);
-            else
-                end_of_file = FindNextEntry(end_of_file, pp->ifp, finfo,
-                                            spkwl[ParFlatSP_END].str,
-                                            spkwl[ParFlatSP_END].len);
-        }
-        if(pp->ifp == NULL)
             end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                           spkwl[ParFlatSP_ID].str,
-                                           spkwl[ParFlatSP_ID].len);
-        else
-            end_of_file = FindNextEntry(end_of_file, pp->ifp, finfo,
-                                        spkwl[ParFlatSP_ID].str,
-                                        spkwl[ParFlatSP_ID].len);
+                                           spkwl[ParFlatSP_END].str,
+                                           spkwl[ParFlatSP_END].len);
+        }
+        end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
+                                       spkwl[ParFlatSP_ID].str,
+                                       spkwl[ParFlatSP_ID].len);
 
     } /* while, end_of_file */
 

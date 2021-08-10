@@ -1353,15 +1353,17 @@ CRef<CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat format, const
                 "This flat file format is not supported: " + filename, 0);
             break;
     }
+/*
 #ifdef WIN32
     pp->ifp = fopen(filename.c_str(), "rb");
 #else
     pp->ifp = fopen(filename.c_str(), "r");
 #endif
+*/
     pp->output_format = Parser::EOutput::BioseqSet;
 
     CFlatFileParser ffparser(m_context.m_logger);
-    auto obj = ffparser.Parse(*pp);
+    auto obj = ffparser.Parse(*pp, filename);
     if (obj.NotEmpty())
     {
         if (obj->GetThisTypeInfo() == CBioseq_set::GetTypeInfo())

@@ -106,12 +106,8 @@ bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
 
     finfo = (FinfoBlkPtr) MemNew(sizeof(FinfoBlk));
 
-    if(pp->ifp == NULL)
-        end_of_file = SkipTitleBuf(pp->ffbuf, finfo, prfkwl[ParFlatPRF_ref].str,
-                                   prfkwl[ParFlatPRF_ref].len);
-    else
-        end_of_file = SkipTitle(pp->ifp, finfo, prfkwl[ParFlatPRF_ref].str,
-                                prfkwl[ParFlatPRF_ref].len);
+    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, prfkwl[ParFlatPRF_ref].str, prfkwl[ParFlatPRF_ref].len);
+
     if(end_of_file)
     {
         MsgSkipTitleFail("PRF", finfo);
@@ -220,10 +216,7 @@ bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
                     got_SEQUENCE = i;
                 }
 
-                if(pp->ifp == NULL)
-                    end_of_file = XReadFileBuf(pp->ffbuf, finfo);
-                else
-                    end_of_file = XReadFile(pp->ifp, finfo);
+                end_of_file = XReadFileBuf(pp->ffbuf, finfo);
             }
 
             if(entry->drop != 1)
@@ -259,11 +252,8 @@ bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
                 if(got_SOURCE > -1 && got_SOURCE < got_NAME)
                     entry->drop = prf_err_order("SOURCE", "NAME");
             }
-            if(pp->ifp == NULL)
-                entry->len = (size_t) (pp->ffbuf.current - pp->ffbuf.start) -
-                             entry->offset;
-            else
-                entry->len = (size_t) ftell(pp->ifp) - entry->offset;
+            
+            entry->len = (size_t) (pp->ffbuf.current - pp->ffbuf.start) - entry->offset;
 
             if(fun != NULL)
             {
@@ -274,23 +264,13 @@ bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
         } /* if, entry */
         else
         {
-            if(pp->ifp == NULL)
-                end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                               prfkwl[ParFlatPRF_END].str,
-                                               prfkwl[ParFlatPRF_END].len);
-            else
-                end_of_file = FindNextEntry(end_of_file, pp->ifp, finfo,
-                                            prfkwl[ParFlatPRF_END].str,
-                                            prfkwl[ParFlatPRF_END].len);
-        }
-        if(pp->ifp == NULL)
             end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                           prfkwl[ParFlatPRF_ref].str,
-                                           prfkwl[ParFlatPRF_ref].len);
-        else
-            end_of_file = FindNextEntry(end_of_file, pp->ifp, finfo,
-                                        prfkwl[ParFlatPRF_ref].str,
-                                        prfkwl[ParFlatPRF_ref].len);
+                                           prfkwl[ParFlatPRF_END].str,
+                                           prfkwl[ParFlatPRF_END].len);
+        }
+        end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
+                                       prfkwl[ParFlatPRF_ref].str,
+                                       prfkwl[ParFlatPRF_ref].len);
 
     } /* while, end_of_file */
 

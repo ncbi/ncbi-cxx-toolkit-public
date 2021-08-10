@@ -2666,8 +2666,6 @@ static char* fta_get_pir_line(char* line, Int4 len, ParserPtr pp)
     char*    q;
     Int4       i;
 
-    if(pp->ifp != NULL)
-        return(fgets(line, len, pp->ifp));
 
     auto& fileBuf = pp->ffbuf;
     if(fileBuf.start == NULL || fileBuf.current == NULL ||
@@ -2709,11 +2707,7 @@ bool PirAscii(ParserPtr pp)
     char*     end_entry;
     char*     cur_entry;
 
-    if(pp->ifp != NULL)
-        rewind(pp->ifp);
-    else {
-        pp->ffbuf.current = pp->ffbuf.start;
-    }
+    pp->ffbuf.current = pp->ffbuf.start;
 
     auto protconv = GetProteinConv();        /* set up sequence alphabets
                                            in block.c */

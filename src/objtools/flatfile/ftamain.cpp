@@ -865,24 +865,56 @@ CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo)
    return CRef<CSerialObject>();
 }
 
-
-CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, CNcbiIstream& istr)
+static void s_ReportFatalError(const string& msg, IObjtoolsListener* pListener)
 {
-    CRef<CSerialObject> pResult;
-    if (parseInfo.ifp) {
-        string msg = "Ambiguous input. File pointer and input stream both specified";
-        if (!m_pMessageListener) {
-            NCBI_THROW(CException, eUnknown, msg);
-        }   
-        m_pMessageListener->PutMessage(CObjtoolsMessage(msg, eDiag_Fatal));  
+    if (pListener) {
+        pListener->PutMessage(CObjtoolsMessage(msg, eDiag_Fatal));
+        return;
     }
+    NCBI_THROW(CException, eUnknown, msg);
+}
+
+CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, const string& filename)
+{
+    CDirEntry dirEntry(filename);
+    if (!dirEntry.Exists()) {
+        string msg = filename + " does not exist";
+        s_ReportFatalError(msg, m_pMessageListener);
+    }
+
+    if (!dirEntry.IsFile()) {
+        string msg = filename + " is not a valid file";
+        s_ReportFatalError(msg, m_pMessageListener);
+    }
+
 
     if (parseInfo.ffbuf.start) {
         string msg = "Attempting to reinitialize input buffer";
-        if (!m_pMessageListener) { // Throw an exception it no listener
-            NCBI_THROW(CException, eUnknown, msg);
-        }
-        m_pMessageListener->PutMessage(CObjtoolsMessage(msg, eDiag_Fatal));
+        s_ReportFatalError(msg, m_pMessageListener);
+    }
+
+    auto pFileMap = make_unique<CMemoryFileMap>(filename);
+    const auto fileSize = pFileMap->GetFileSize();
+    parseInfo.ffbuf.start = (const char*)pFileMap->Map(0, fileSize);
+    parseInfo.ffbuf.current =  parseInfo.ffbuf.start;
+
+    if (!parseInfo.ffbuf.current) {
+        string msg = "Failed to open input file " + filename;
+        s_ReportFatalError(msg, m_pMessageListener);
+    }
+
+    CRef<CSerialObject> pResult;
+    if (sParseFlatfile(pResult, &parseInfo)) {
+        return pResult;
+    }
+    return CRef<CSerialObject>();
+}
+
+CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, CNcbiIstream& istr)
+{
+    if (parseInfo.ffbuf.start) {
+        string msg = "Attempting to reinitialize input buffer";
+        s_ReportFatalError(msg, m_pMessageListener);
     }
 
     ostringstream os;
@@ -892,6 +924,7 @@ CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, CNcbiIstream& istr
     parseInfo.ffbuf.start = buffer.c_str();
     parseInfo.ffbuf.current = parseInfo.ffbuf.start;
 
+    CRef<CSerialObject> pResult;
     if (sParseFlatfile(pResult, &parseInfo)) {
         return pResult;
     }
@@ -906,7 +939,6 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     }
     pp.entrez_fetch = pp.taxserver = pp.medserver = 1;
 
-//    CErrorMgr err_mgr;
 
     FtaInstallPrefix(PREFIX_LOCUS, (char *) "SET-UP", NULL);
 
@@ -1092,7 +1124,6 @@ void fta_init_pp(Parser& pp)
 	pp.indx = 0;
 	pp.entrylist = nullptr;
 	pp.curindx = 0;
-	pp.ifp = nullptr;
 	pp.seqtype = 0;
 	pp.num_drop = 0;
 	pp.acprefix = nullptr;

@@ -391,10 +391,8 @@ bool GenBankIndex(ParserPtr pp)
 
     finfo = (FinfoBlkPtr) MemNew(sizeof(FinfoBlk));
 
-    if(pp->ifp == NULL)
-        end_of_file = SkipTitleBuf(pp->ffbuf, finfo, "LOCUS");
-    else
-        end_of_file = SkipTitle(pp->ifp, finfo, "LOCUS");
+    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, "LOCUS");
+
     if(end_of_file)
     {
         MsgSkipTitleFail((char*) "GenBank", finfo);
@@ -688,10 +686,7 @@ bool GenBankIndex(ParserPtr pp)
                         break;
                 } /* switch */
 
-                if(pp->ifp == NULL)
-                    end_of_file = XReadFileBuf(pp->ffbuf, finfo);
-                else
-                    end_of_file = XReadFile(pp->ifp, finfo);
+                end_of_file = XReadFileBuf(pp->ffbuf, finfo);
 
                 while (!end_of_file && (finfo->str[0] == ' ' || finfo->str[0] == '\t'))
                 {
@@ -715,10 +710,7 @@ bool GenBankIndex(ParserPtr pp)
                        GetAccession(pp, finfo->str, entry, 0) == false)
                         pp->num_drop++;
 
-                    if(pp->ifp == NULL)
-                        end_of_file = XReadFileBuf(pp->ffbuf, finfo);
-                    else
-                        end_of_file = XReadFile(pp->ifp, finfo);
+                    end_of_file = XReadFileBuf(pp->ffbuf, finfo);
                 }
 
 
@@ -820,11 +812,9 @@ bool GenBankIndex(ParserPtr pp)
                 MemFree(line_nid);
                 line_nid = NULL;
             }
-            if(pp->ifp == NULL)
-                entry->len = (size_t) (pp->ffbuf.current - pp->ffbuf.start) -
+            entry->len = (size_t) (pp->ffbuf.current - pp->ffbuf.start) -
                              entry->offset;
-            else
-                entry->len = (size_t) ftell(pp->ifp) - entry->offset;
+
             if(acwflag == false &&
                pp->mode != Parser::EMode::Relaxed)
             {
@@ -841,16 +831,10 @@ bool GenBankIndex(ParserPtr pp)
         } /* if, entry */
         else
         {
-            if(pp->ifp == NULL)
-                end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo, "//");
-            else
-                end_of_file = FindNextEntry(end_of_file, pp->ifp, finfo, "//");
+            end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo, "//");
         }
 
-        if(pp->ifp == NULL)
-            end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo, "LOCUS");
-        else
-            end_of_file = FindNextEntry(end_of_file, pp->ifp, finfo, "LOCUS");
+        end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo, "LOCUS");
 
     } /* while, end_of_file */
 
