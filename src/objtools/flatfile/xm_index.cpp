@@ -327,42 +327,24 @@ static void XMLGetSegment(char* entry, IndexblkPtr ibp)
     MemFree(buf);
 }
 
-template<bool useFilePtr>
-bool s_HasInput(const Parser& config) {
-    return (config.ifp != nullptr);
-}
 
-template<>
-bool s_HasInput<false>(const Parser& config) {
+static bool s_HasInput(const Parser& config) {
     return (config.ffbuf.start != nullptr);
 }
 
-template<bool useFilePtr>
-int s_GetCharAndAdvance(Parser& config) {
-    return fgetc(config.ifp);
-}
 
-template<>
-int s_GetCharAndAdvance<false>(Parser& config) {
+static int s_GetCharAndAdvance(Parser& config) {
     if (*config.ffbuf.current == '\0') {
         return -1;
     }
     return *(config.ffbuf.current++);
 }
 
-template<bool useFilePtr>
 void s_SetPointer(Parser& config, int offset) {
-    fseek(config.ifp, static_cast<long>(offset), 0);   
-}
-
-
-template<>
-void s_SetPointer<false>(Parser& config, int offset) {
     config.ffbuf.current = config.ffbuf.start + offset;
 }
 
 /**********************************************************/
-template<bool useFilePtr>
 static void XMLPerformIndex(ParserPtr pp)
 {
     XmlKwordBlkPtr xkbp;
@@ -378,10 +360,8 @@ static void XMLPerformIndex(ParserPtr pp)
     Int4           c;
     Int4           i;
 
-//    if(pp == NULL || pp->ifp == NULL)
-//        return;
 
-    if (!pp || !s_HasInput<useFilePtr>(*pp)) {
+    if (!pp || !s_HasInput(*pp)) {
         return;
     }
 
@@ -398,7 +378,7 @@ static void XMLPerformIndex(ParserPtr pp)
     {
         if(c != '<')
         {
-            c = s_GetCharAndAdvance<useFilePtr>(*pp);
+            c = s_GetCharAndAdvance(*pp);
             if(c < 0)
                 break;
             count++;
@@ -411,7 +391,7 @@ static void XMLPerformIndex(ParserPtr pp)
         s[0] = '<';
         for(i = 1; i < 50; i++)
         {
-            c = s_GetCharAndAdvance<useFilePtr>(*pp);
+            c = s_GetCharAndAdvance(*pp);
             if(c < 0)
                 break;
             count++;
@@ -1115,19 +1095,15 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
 }
 
 /**********************************************************/
-template<bool useFilePtr>
-static char* s_XMLLoadEntry(ParserPtr pp, bool err)
+char* XMLLoadEntry(ParserPtr pp, bool err)
 {
     IndexblkPtr ibp;
     char*     entry;
     char*     p;
     size_t      i;
     Int4        c;
-/*
-    if(pp == NULL || pp->ifp == NULL)
-        return(NULL);
-*/
-    if (!pp || !s_HasInput<useFilePtr>(*pp)) {
+
+    if (!pp || !s_HasInput(*pp)) {
         return nullptr;
     }
 
@@ -1136,14 +1112,12 @@ static char* s_XMLLoadEntry(ParserPtr pp, bool err)
         return(NULL);
 
     entry = (char*) MemNew(ibp->len + 1);
-    s_SetPointer<useFilePtr>(*pp, ibp->offset);
-    //fseek(pp->ifp, static_cast<long>(ibp->offset), 0);
+    s_SetPointer(*pp, ibp->offset);
 
 
     for(p = entry, i = 0; i < ibp->len; i++)
     {
-        //c = fgetc(pp->ifp);
-        c = s_GetCharAndAdvance<useFilePtr>(*pp);
+        c = s_GetCharAndAdvance(*pp);
         if(c < 0)
             break;
         if (c == 13) {
@@ -1170,18 +1144,6 @@ static char* s_XMLLoadEntry(ParserPtr pp, bool err)
     return(entry);
 }
 
-char* XMLLoadEntry(ParserPtr pp, bool err)
-{
-    if (!pp) {
-        return nullptr;
-    }
-
-    if (pp->ifp) {
-        return s_XMLLoadEntry<true>(pp, err);
-    }
-
-    return s_XMLLoadEntry<false>(pp, err);
-}
 
 /**********************************************************/
 static bool XMLIndexSubTags(char* entry, XmlIndexPtr xip, XmlKwordBlkPtr xkbp)
@@ -1689,12 +1651,7 @@ bool XMLIndex(ParserPtr pp)
     IndexblkPtr      ibp;
     char*          entry;
     
-    if (pp->ifp) {
-        XMLPerformIndex<true>(pp);
-    }
-    else {
-        XMLPerformIndex<false>(pp);
-    }
+    XMLPerformIndex(pp);
 
     if(pp->indx == 0)
         return false;

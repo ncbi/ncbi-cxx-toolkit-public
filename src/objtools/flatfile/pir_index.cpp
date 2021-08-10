@@ -196,17 +196,13 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
     char*       p;
     char*       q;
 
-   // finfo = (FinfoBlkPtr) MemNew(sizeof(FinfoBlk));
 
     finfo = new FinfoBlk();
 
-    if(pp->ifp == NULL)
-        end_of_file = SkipTitleBuf(pp->ffbuf, finfo,
-                                   pirkwl[ParFlatPIR_ENTRY].str,
-                                   pirkwl[ParFlatPIR_ENTRY].len);
-    else
-        end_of_file = SkipTitle(pp->ifp, finfo, pirkwl[ParFlatPIR_ENTRY].str,
-                                pirkwl[ParFlatPIR_ENTRY].len);
+    end_of_file = SkipTitleBuf(pp->ffbuf, finfo,
+                               pirkwl[ParFlatPIR_ENTRY].str,
+                               pirkwl[ParFlatPIR_ENTRY].len);
+
     if(end_of_file)
     {
         MsgSkipTitleFail("PIR", finfo);
@@ -271,10 +267,8 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
                     q = StringSave(finfo->str);
                     for(;;)
                     {
-                        if(pp->ifp == NULL)
-                            end_of_file = XReadFileBuf(pp->ffbuf, finfo);
-                        else
-                            end_of_file = XReadFile(pp->ifp, finfo);
+                        end_of_file = XReadFileBuf(pp->ffbuf, finfo);
+
                         if(end_of_file)
                             break;
                         if(finfo->str[0] != ' ' && finfo->str[0] != '\t')
@@ -293,10 +287,7 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
                     continue;
                 }
 
-                if(pp->ifp == NULL)
-                    end_of_file = XReadFileBuf(pp->ffbuf, finfo);
-                else
-                    end_of_file = XReadFile(pp->ifp, finfo);
+                end_of_file = XReadFileBuf(pp->ffbuf, finfo);
             }
 
             if(entry->drop != 1)
@@ -311,11 +302,7 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
                     entry->drop = pir_err_field("SEQUENCE");
             }
 
-            if(pp->ifp == NULL)
-                entry->len = (size_t) (pp->ffbuf.current - pp->ffbuf.start) -
-                             entry->offset;
-            else
-                entry->len = (size_t) ftell(pp->ifp) - entry->offset;
+            entry->len = (size_t) (pp->ffbuf.current - pp->ffbuf.start) - entry->offset;
 
             if(fun != NULL)
             {
@@ -326,23 +313,13 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
         }
         else
         {
-            if(pp->ifp == NULL)
-                end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                               pirkwl[ParFlatPIR_END].str,
-                                               pirkwl[ParFlatPIR_END].len);
-            else
-                end_of_file = FindNextEntry(end_of_file, pp->ifp, finfo,
-                                            pirkwl[ParFlatPIR_END].str,
-                                            pirkwl[ParFlatPIR_END].len);
-        }
-        if(pp->ifp == NULL)
             end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                           pirkwl[ParFlatPIR_ENTRY].str,
-                                           pirkwl[ParFlatPIR_ENTRY].len);
-        else
-            end_of_file = FindNextEntry(end_of_file, pp->ifp, finfo,
-                                        pirkwl[ParFlatPIR_ENTRY].str,
-                                        pirkwl[ParFlatPIR_ENTRY].len);
+                                           pirkwl[ParFlatPIR_END].str,
+                                           pirkwl[ParFlatPIR_END].len);
+        }
+        end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
+                                       pirkwl[ParFlatPIR_ENTRY].str,
+                                       pirkwl[ParFlatPIR_ENTRY].len);
     }
 
     pp->indx = indx;

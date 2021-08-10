@@ -107,7 +107,6 @@ struct Parser {
     /* all the files will be produced in the directory where the program was
      * executed except the input file which located in the argument path
      */
-    FILE*            ifp=nullptr;               /* a file pointer for input */
     FileBuf       ffbuf;             
 
     string      release_str;

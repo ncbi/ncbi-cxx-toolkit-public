@@ -2449,11 +2449,6 @@ void FreeParser(ParserPtr pp)
  **********************************************************/
 void CloseFiles(ParserPtr pp)
 {
-    if (pp->ifp != NULL)
-    {
-        fclose(pp->ifp);
-        pp->ifp = NULL;
-    }
     if(pp->qsfd != NULL)
     {
         fclose(pp->qsfd);
@@ -2476,26 +2471,6 @@ void MsgSkipTitleFail(const char *flatfile, FinfoBlkPtr finfo)
     MemFree(finfo);
 }
 
-/**********************************************************
- *
- *   bool FindNextEntry(end_of_file, ifp, finfo, str, len):
- *
- *                                              10-6-93
- *
- **********************************************************/
-bool FindNextEntry(bool end_of_file, FILE* ifp, FinfoBlkPtr finfo, const char *str, Int2 len)
-{
-    bool done = end_of_file;
-    while (!done && StringNCmp(finfo->str, str, len) != 0)
-        done = XReadFile(ifp, finfo);
-
-    return(done);
-}
-
-bool FindNextEntry(bool end_of_file, FILE* ifp, FinfoBlkPtr finfo, const CTempString& keyword) 
-{
-    return FindNextEntry(end_of_file, ifp, finfo, keyword.data(), keyword.size());
-}
 
 /**********************************************************/
 bool FindNextEntryBuf(bool end_of_file, FileBuf& fbuf, FinfoBlkPtr finfo, const char *str, Int2 len)

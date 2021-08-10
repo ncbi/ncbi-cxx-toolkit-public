@@ -59,20 +59,13 @@ typedef struct ind_blk_next {
 CRef<objects::CDate_std> GetUpdateDate(char* ptr, Parser::ESource source);
 
 /**********************************************************/
-bool        XReadFile(FILE* fp, FinfoBlkPtr finfo);
 bool        XReadFileBuf(FileBuf& fileBuf, FinfoBlkPtr finfo);
-bool        SkipTitle(FILE* fp, FinfoBlkPtr finfo, const Char *str, Int2 len);
 bool        SkipTitleBuf(FileBuf& fileBuf, FinfoBlkPtr finfo, const Char *str, Int2 len);
-bool        SkipTitle(FILE* fp, FinfoBlkPtr finfo, const CTempString& keyword);
 bool        SkipTitleBuf(FileBuf& fileBuf, FinfoBlkPtr finfo, const CTempString& keyword);
-bool        FindNextEntry(bool end_of_file, FILE* ifp,
-                                FinfoBlkPtr finfo, const Char *str, Int2 len);
 bool        FindNextEntryBuf(bool end_of_file, FileBuf& fileBuf,
-                                   FinfoBlkPtr finfo, const Char *str, Int2 len);
-bool        FindNextEntry(bool end_of_file, FILE* ifp,
-                                FinfoBlkPtr finfo, const CTempString& keyword);
-bool        FindNextEntryBuf(bool end_of_file, FileBuf& fileBuf,
-                                   FinfoBlkPtr finfo, const CTempString& keyword);
+                             FinfoBlkPtr finfo, const char* str, Int2 len);
+bool        FindNextEntryBuf(bool end_of_file, FileBuf& fileBuf, 
+                             FinfoBlkPtr finfo, const CTempString& keyword);
 
 IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo);
 bool        GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip);

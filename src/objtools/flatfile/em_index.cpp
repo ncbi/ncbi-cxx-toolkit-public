@@ -223,12 +223,8 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
     finfo = new FinfoBlk();
 
 
-    if(pp->ifp == NULL)
-        end_of_file = SkipTitleBuf(pp->ffbuf, finfo, emblkwl[ParFlat_ID].str,
-                                   emblkwl[ParFlat_ID].len);
-    else
-        end_of_file = SkipTitle(pp->ifp, finfo, emblkwl[ParFlat_ID].str,
-                                emblkwl[ParFlat_ID].len);
+    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, emblkwl[ParFlat_ID].str,
+                               emblkwl[ParFlat_ID].len);
     if(end_of_file)
     {
         MsgSkipTitleFail((char*) "Embl", finfo);
@@ -423,10 +419,8 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     FreeTokenstatblk(stoken);
                 }
 
-                if(pp->ifp == NULL)
-                    end_of_file = XReadFileBuf(pp->ffbuf, finfo);
-                else
-                    end_of_file = XReadFile(pp->ifp, finfo);
+                end_of_file = XReadFileBuf(pp->ffbuf, finfo);
+
                 if(finfo->str[0] != ' ' && finfo->str[0] != '\t')
                 {
                     if(CheckLineType(finfo->str, finfo->line,
@@ -489,11 +483,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                 line_sv = NULL;
             }
 
-            if(pp->ifp == NULL)
-                entry->len = (size_t) (pp->ffbuf.current - pp->ffbuf.start) -
-                             entry->offset;
-            else
-                entry->len = (size_t) ftell(pp->ifp) - entry->offset;
+            entry->len = (size_t) (pp->ffbuf.current - pp->ffbuf.start) - entry->offset;
 
             if(fun != NULL)
             {
@@ -504,24 +494,14 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
         } /* if, entry */
         else
         {
-            if(pp->ifp == NULL)
-                end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                               emblkwl[ParFlatEM_END].str,
-                                               emblkwl[ParFlatEM_END].len);
-            else
-                end_of_file = FindNextEntry(end_of_file, pp->ifp, finfo,
-                                            emblkwl[ParFlatEM_END].str,
-                                            emblkwl[ParFlatEM_END].len);
+            end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
+                                           emblkwl[ParFlatEM_END].str,
+                                           emblkwl[ParFlatEM_END].len);
         }
 
-        if(pp->ifp == NULL)
-            end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                           emblkwl[ParFlat_ID].str,
-                                           emblkwl[ParFlat_ID].len);
-        else
-            end_of_file = FindNextEntry(end_of_file, pp->ifp, finfo,
-                                        emblkwl[ParFlat_ID].str,
-                                        emblkwl[ParFlat_ID].len);
+        end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
+                                       emblkwl[ParFlat_ID].str,
+                                       emblkwl[ParFlat_ID].len);
 
     } /* while, end_of_file */
 

@@ -85,29 +85,16 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
     char*    q;
     size_t     i;
 
-    if (pp->ifp == NULL)
-    {
-        pp->ffbuf.current = pp->ffbuf.start + offset;
-        i = 0;
-    }
-    else
-        i = (size_t)fseek(pp->ifp, static_cast<long>(offset), SEEK_SET);
-    if (i != 0)                          /* hardware problem */
-    {
-        ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry,
-                  "Failed to fseek() in input file (buffer).");
-        return(NULL);
-    }
+    pp->ffbuf.current = pp->ffbuf.start + offset;
+    i = 0;
 
     entry = (DataBlkPtr)MemNew(sizeof(DataBlk));
     entry->type = ParFlat_ENTRYNODE;
     entry->next = NULL;                 /* assume no segment at this time */
     entry->offset = (char*)MemNew(len + 1); /* plus 1 for null byte */
 
-    if (pp->ifp == NULL)
-        entry->len = FileReadBuf(entry->offset, len, pp->ffbuf);
-    else
-        entry->len = fread(entry->offset, 1, len, pp->ifp);
+    entry->len = FileReadBuf(entry->offset, len, pp->ffbuf);
+
     if ((size_t)entry->len != len)  /* hardware problem */
     {
         ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry,
