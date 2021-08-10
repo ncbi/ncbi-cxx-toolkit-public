@@ -1,3 +1,13 @@
+1.5.12 (08/09/2021)
+    - Fix parsing host OS name and ignore extra dots in its version.
+    - Sanitize and merge spaces in some read parameters, to ignore cosmetics in test descriptions. CXX-12059
+
+1.5.11 (06/10/21)
+    - Show SKIPPED and DISABLED test results in per-test view. CXX-11952
+
+1.5.10 (06/02/21) 
+    - Add mapping for TC hosts. CXX-11910
+
 1.5.9 (05/03/2021)
     - Add application lock on MSSQL DB to prevent races on loading results. CXX-11875 
 
