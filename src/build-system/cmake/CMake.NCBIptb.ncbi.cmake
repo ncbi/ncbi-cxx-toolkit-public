@@ -95,7 +95,24 @@ function(NCBI_internal_postproc_NCBI_tree)
 endfunction()
 
 #############################################################################
+function(NCBI_internal_handle_VDB_rpath)
+    get_property(_req GLOBAL PROPERTY NCBI_PTBPROP_REQUIRES_${NCBI_PROJECT})
+    if(VDB IN_LIST _req AND NOT "${NCBI_${NCBI_PROJECT}_TYPE}" STREQUAL "STATIC")
+        get_filename_component(_fullver ${NCBI_ThirdParty_VDB} NAME)
+        string(REPLACE "." ";" _ver ${_fullver})
+        list(GET _ver 0 _major)
+        add_custom_command(TARGET ${NCBI_PROJECT} POST_BUILD COMMAND 
+#            install_name_tool -change @executable_path/../lib/libncbi-vdb.${_fullver}.dylib @rpath/libncbi-vdb.${_major}.dylib
+            install_name_tool -change @executable_path/../lib/libncbi-vdb.${_fullver}.dylib ${NCBI_COMPONENT_VDB_LIBPATH}/libncbi-vdb.${_major}.dylib
+            $<TARGET_FILE:${NCBI_PROJECT}>)
+    endif()
+endfunction()
+
+#############################################################################
 NCBI_register_hook(TARGET_ADDED NCBI_internal_add_NCBI_definitions)
+if(APPLE)
+    NCBI_register_hook(TARGET_ADDED NCBI_internal_handle_VDB_rpath)
+endif()
 if(UNIX AND NOT APPLE)
-NCBI_register_hook(ALL_ADDED    NCBI_internal_postproc_NCBI_tree)
+    NCBI_register_hook(ALL_ADDED    NCBI_internal_postproc_NCBI_tree)
 endif()
