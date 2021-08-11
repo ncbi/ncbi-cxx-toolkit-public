@@ -55,6 +55,31 @@ CPSGS_OSGProcessor::~CPSGS_OSGProcessor()
 }
 
 
+static pair<bool, CPSGS_OSGProcessorBase::TEnabledFlags> s_ParseEnabledFlags(const vector<string>& names)
+{
+    pair<bool, CPSGS_OSGProcessorBase::TEnabledFlags> ret(false, 0);
+    for (const auto& name : names ) {
+        if ( NStr::EqualNocase(name, "osg") ) {
+            ret.first = true;
+            continue;
+        }
+        if ( NStr::EqualNocase(name, "osg-wgs") ) {
+            ret.second |= CPSGS_OSGProcessorBase::fEnabledWGS;
+            continue;
+        }
+        if ( NStr::EqualNocase(name, "osg-snp") ) {
+            ret.second |= CPSGS_OSGProcessorBase::fEnabledSNP;
+            continue;
+        }
+        if ( NStr::EqualNocase(name, "osg-cdd") ) {
+            ret.second |= CPSGS_OSGProcessorBase::fEnabledCDD;
+            continue;
+        }
+    }
+    return ret;
+}
+
+
 IPSGS_Processor*
 CPSGS_OSGProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                     shared_ptr<CPSGS_Reply> reply,
@@ -64,58 +89,50 @@ CPSGS_OSGProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
     if ( req_base.m_Hops > 0 ) {
         return nullptr;
     }
+    auto enabled_explicitly = s_ParseEnabledFlags(req_base.m_EnabledProcessors);
+    auto disabled_explicitly = s_ParseEnabledFlags(req_base.m_DisabledProcessors);
     auto app = CPubseqGatewayApp::GetInstance();
-    bool enabled = app->GetOSGProcessorsEnabled();
-    if ( enabled ) {
-        for (const auto& name : req_base.m_DisabledProcessors ) {
-            if ( NStr::EqualNocase(name, "osg") ) {
-                enabled = false;
-                break;
-            }
-        }
-    }
-    else {
-        for (const auto& name : req_base.m_EnabledProcessors ) {
-            if ( NStr::EqualNocase(name, "osg") ) {
-                enabled = true;
-                break;
-            }
-        }
-    }
-    if ( !enabled ) {
+    auto conn_pool = app->GetOSGConnectionPool();
+    bool enabled_main = app->GetOSGProcessorsEnabled();
+    enabled_main |= enabled_explicitly.first;
+    enabled_main &= !disabled_explicitly.first;
+    CPSGS_OSGProcessorBase::TEnabledFlags enabled_flags = enabled_main? conn_pool->GetDefaultEnabledFlags(): 0;
+    enabled_flags |= enabled_explicitly.second;
+    enabled_flags &= ~disabled_explicitly.second;
+    if ( !enabled_flags ) {
         return nullptr;
     }
     
     switch ( request->GetRequestType() ) {
     case CPSGS_Request::ePSGS_ResolveRequest:
         // VDB WGS sequences
-        if ( CPSGS_OSGResolve::CanProcess(request->GetRequest<SPSGS_ResolveRequest>()) ) {
-            return new CPSGS_OSGResolve(app->GetOSGConnectionPool(), request, reply, priority);
+        if ( CPSGS_OSGResolve::CanProcess(enabled_flags, request) ) {
+            return new CPSGS_OSGResolve(enabled_flags, conn_pool, request, reply, priority);
         }
         return nullptr;
 
     case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
         // VDB WGS sequences
-        if ( CPSGS_OSGGetBlobBySeqId::CanProcess(request->GetRequest<SPSGS_BlobBySeqIdRequest>()) ) {
-            return new CPSGS_OSGGetBlobBySeqId(app->GetOSGConnectionPool(), request, reply, priority);
+        if ( CPSGS_OSGGetBlobBySeqId::CanProcess(enabled_flags, request) ) {
+            return new CPSGS_OSGGetBlobBySeqId(enabled_flags, conn_pool, request, reply, priority);
         }
         return nullptr;
 
     case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-        if ( CPSGS_OSGGetBlob::CanProcess(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>()) ) {
-            return new CPSGS_OSGGetBlob(app->GetOSGConnectionPool(), request, reply, priority);
+        if ( CPSGS_OSGGetBlob::CanProcess(enabled_flags, request) ) {
+            return new CPSGS_OSGGetBlob(enabled_flags, conn_pool, request, reply, priority);
         }
         return nullptr;
 
     case CPSGS_Request::ePSGS_TSEChunkRequest:
-        if ( CPSGS_OSGGetChunks::CanProcess(request->GetRequest<SPSGS_TSEChunkRequest>()) ) {
-            return new CPSGS_OSGGetChunks(app->GetOSGConnectionPool(), request, reply, priority);
+        if ( CPSGS_OSGGetChunks::CanProcess(enabled_flags, request) ) {
+            return new CPSGS_OSGGetChunks(enabled_flags, conn_pool, request, reply, priority);
         }
         return nullptr;
 
     case CPSGS_Request::ePSGS_AnnotationRequest:
-        if ( CPSGS_OSGAnnot::CanProcess(request->GetRequest<SPSGS_AnnotRequest>(), priority) ) {
-            return new CPSGS_OSGAnnot(app->GetOSGConnectionPool(), request, reply, priority);
+        if ( CPSGS_OSGAnnot::CanProcess(enabled_flags, request, priority) ) {
+            return new CPSGS_OSGAnnot(enabled_flags, conn_pool, request, reply, priority);
         }
         return nullptr;
 

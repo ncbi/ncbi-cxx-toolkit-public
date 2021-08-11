@@ -72,7 +72,7 @@ void CPSGS_OSGGetBlobBase::ProcessBlobReply(const CID2_Reply& reply)
 {
     switch ( reply.GetReply().Which() ) {
     case CID2_Reply::TReply::e_Get_blob:
-        if ( IsOSGBlob(reply.GetReply().GetGet_blob().GetBlob_id()) ) {
+        if ( IsEnabledOSGBlob(reply.GetReply().GetGet_blob().GetBlob_id()) ) {
             if ( 0 && reply.GetReply().GetGet_blob().GetBlob_id().GetSat() == 8087 ) {
                 ERR_POST("OSG: simulating CDD blob read failure");
                 return;
@@ -85,7 +85,7 @@ void CPSGS_OSGGetBlobBase::ProcessBlobReply(const CID2_Reply& reply)
         }
         break;
     case CID2_Reply::TReply::e_Get_split_info:
-        if ( IsOSGBlob(reply.GetReply().GetGet_split_info().GetBlob_id()) ) {
+        if ( IsEnabledOSGBlob(reply.GetReply().GetGet_split_info().GetBlob_id()) ) {
             if ( 0 && reply.GetReply().GetGet_blob().GetBlob_id().GetSat() == 8087 ) {
                 ERR_POST("OSG: simulating CDD blob read failure");
                 return;
@@ -98,7 +98,7 @@ void CPSGS_OSGGetBlobBase::ProcessBlobReply(const CID2_Reply& reply)
         }
         break;
     case CID2_Reply::TReply::e_Get_chunk:
-        if ( IsOSGBlob(reply.GetReply().GetGet_chunk().GetBlob_id()) ) {
+        if ( IsEnabledOSGBlob(reply.GetReply().GetGet_chunk().GetBlob_id()) ) {
             if ( m_Chunk ) {
                 ERR_POST(GetName()<<": "
                          "Duplicate blob reply: "<<MSerial_AsnText<<reply);
@@ -364,23 +364,27 @@ static const int kOSG_Sat_CDD_max = 8088;
 //static const int kOSG_Sat_NAGraph_max = 8000;
 
 
-static bool s_IsOSGBlob(Int4 sat, Int4 /*subsat*/, Int4 /*satkey*/)
+static inline bool s_IsEnabledOSGSat(CPSGS_OSGProcessorBase::TEnabledFlags enabled_flags, Int4 sat)
 {
     if ( sat >= kOSG_Sat_WGS_min &&
-         sat <= kOSG_Sat_WGS_max ) {
+         sat <= kOSG_Sat_WGS_max &&
+         (enabled_flags & CPSGS_OSGProcessorBase::fEnabledWGS) ) {
         return true;
     }
     if ( sat >= kOSG_Sat_SNP_min &&
-         sat <= kOSG_Sat_SNP_max ) {
+         sat <= kOSG_Sat_SNP_max &&
+         (enabled_flags & CPSGS_OSGProcessorBase::fEnabledSNP) ) {
         return true;
     }
     if ( sat >= kOSG_Sat_CDD_min &&
-         sat <= kOSG_Sat_CDD_max ) {
+         sat <= kOSG_Sat_CDD_max &&
+         (enabled_flags & CPSGS_OSGProcessorBase::fEnabledCDD) ) {
         return true;
     }
     /*
     if ( sat >= kOSG_Sat_NAGraph_min &&
-         sat <= kOSG_Sat_NAGraph_max ) {
+         sat <= kOSG_Sat_NAGraph_max &&
+         (enabled_flags & CPSGS_OSGProcessorBase::fEnabledNAGraph) ) {
         return true;
     }
     */
@@ -388,13 +392,45 @@ static bool s_IsOSGBlob(Int4 sat, Int4 /*subsat*/, Int4 /*satkey*/)
 }
 
 
-static bool s_IsCDDBlob(Int4 sat, Int4 /*subsat*/, Int4 /*satkey*/)
+static inline bool s_IsEnabledCDDSat(CPSGS_OSGProcessorBase::TEnabledFlags enabled_flags, Int4 sat)
 {
     if ( sat >= kOSG_Sat_CDD_min &&
-         sat <= kOSG_Sat_CDD_max ) {
+         sat <= kOSG_Sat_CDD_max &&
+         (enabled_flags & CPSGS_OSGProcessorBase::fEnabledCDD) ) {
         return true;
     }
     return false;
+}
+
+
+static bool s_IsOSGSat(Int4 sat)
+{
+    return s_IsEnabledOSGSat(CPSGS_OSGProcessorBase::fEnabledAll, sat);
+}
+
+
+static bool s_IsCDDSat(Int4 sat)
+{
+    return s_IsEnabledCDDSat(CPSGS_OSGProcessorBase::fEnabledCDD, sat);
+}
+
+
+static bool s_IsOSGBlob(Int4 sat, Int4 /*subsat*/, Int4 /*satkey*/)
+{
+    return s_IsOSGSat(sat);
+}
+
+
+static bool s_IsEnabledOSGBlob(CPSGS_OSGProcessorBase::TEnabledFlags enabled_flags,
+                               Int4 sat, Int4 /*subsat*/, Int4 /*satkey*/)
+{
+    return s_IsEnabledOSGSat(enabled_flags, sat);
+}
+
+
+static bool s_IsCDDBlob(Int4 sat, Int4 /*subsat*/, Int4 /*satkey*/)
+{
+    return s_IsCDDSat(sat);
 }
 
 
@@ -449,6 +485,9 @@ static bool s_ParseOSGBlob(CTempString& s,
         return false;
     }
     if ( !s_ParseInt(s, sat) ) {
+        return false;
+    }
+    if ( !s_IsOSGSat(sat) ) {
         return false;
     }
     if ( !s_Skip(s, kSubSatSeparator) ) {
@@ -541,6 +580,12 @@ CPSGS_OSGGetBlobBase::ParsePSGId2Info(const string& id2_info)
     id->SetSat_key(satkey);
     id->SetVersion(tse_version);
     return SParsedId2Info{id, split_version};
+}
+
+
+bool CPSGS_OSGGetBlobBase::IsEnabledOSGBlob(TEnabledFlags enabled_flags, const CID2_Blob_Id& blob_id)
+{
+    return s_IsEnabledOSGBlob(enabled_flags, blob_id.GetSat(), blob_id.GetSub_sat(), blob_id.GetSat_key());
 }
 
 

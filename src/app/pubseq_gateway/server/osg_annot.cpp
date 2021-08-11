@@ -48,11 +48,12 @@ BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
 
-CPSGS_OSGAnnot::CPSGS_OSGAnnot(const CRef<COSGConnectionPool>& pool,
+CPSGS_OSGAnnot::CPSGS_OSGAnnot(TEnabledFlags enabled_flags,
+                               const CRef<COSGConnectionPool>& pool,
                                const shared_ptr<CPSGS_Request>& request,
                                const shared_ptr<CPSGS_Reply>& reply,
                                TProcessorPriority priority)
-    : CPSGS_OSGProcessorBase(pool, request, reply, priority)
+    : CPSGS_OSGProcessorBase(enabled_flags, pool, request, reply, priority)
 {
 }
 
@@ -68,13 +69,18 @@ string CPSGS_OSGAnnot::GetName() const
 }
 
 
-bool CPSGS_OSGAnnot::CanProcess(SPSGS_AnnotRequest& request,
+bool CPSGS_OSGAnnot::CanProcess(TEnabledFlags enabled_flags,
+                                shared_ptr<CPSGS_Request>& request,
                                 TProcessorPriority priority)
 {
+    if ( !(enabled_flags&fEnabledAllAnnot) ) {
+        return false;
+    }
+    auto& psg_req = request->GetRequest<SPSGS_AnnotRequest>();
     // check if id is good enough
     CSeq_id id;
     try {
-        SetSeqId(id, request.m_SeqIdType, request.m_SeqId);
+        SetSeqId(id, psg_req.m_SeqIdType, psg_req.m_SeqId);
     }
     catch ( exception& /*ignore*/ ) {
         return false;
@@ -85,16 +91,17 @@ bool CPSGS_OSGAnnot::CanProcess(SPSGS_AnnotRequest& request,
     //if ( !CanResolve(request.m_SeqIdType, request.m_SeqId) ) {
     //    return false;
     //}
-    return !GetNamesToProcess(request, priority).empty();
+    return !GetNamesToProcess(enabled_flags, psg_req, priority).empty();
 }
 
 
-set<string> CPSGS_OSGAnnot::GetNamesToProcess(SPSGS_AnnotRequest& request,
+set<string> CPSGS_OSGAnnot::GetNamesToProcess(TEnabledFlags enabled_flags,
+                                              SPSGS_AnnotRequest& request,
                                               TProcessorPriority priority)
 {
     set<string> ret;
     for ( auto& name : request.GetNotProcessedName(priority) ) {
-        if ( CanProcessAnnotName(name) ) {
+        if ( CanProcessAnnotName(enabled_flags, name) ) {
             ret.insert(name);
         }
     }
@@ -128,13 +135,16 @@ static bool IsSNPName(const string& name)
 }
 
 
-bool CPSGS_OSGAnnot::CanProcessAnnotName(const string& name)
+bool CPSGS_OSGAnnot::CanProcessAnnotName(TEnabledFlags enabled_flags,
+                                         const string& name)
 {
-    auto app = CPubseqGatewayApp::GetInstance();
-    auto& config = *app->GetOSGConnectionPool();
-    return
-        (config.GetEnabledCDD() && IsCDDName(name)) ||
-        (config.GetEnabledSNP() && IsSNPName(name));
+    if ( (enabled_flags & fEnabledSNP) && IsSNPName(name) ) {
+        return true;
+    }
+    if ( (enabled_flags & fEnabledCDD) && IsCDDName(name) ) {
+        return true;
+    }
+    return false;
 }
 
 
@@ -146,7 +156,7 @@ void CPSGS_OSGAnnot::CreateRequests()
     SetSeqId(req.SetSeq_id().SetSeq_id().SetSeq_id(), psg_req.m_SeqIdType, psg_req.m_SeqId);
     m_NamesToProcess.clear();
     m_ApplyCDDFix = false;
-    for ( auto& name : GetNamesToProcess(psg_req, GetPriority()) ) {
+    for ( auto& name : GetNamesToProcess(GetEnabledFlags(), psg_req, GetPriority()) ) {
         m_NamesToProcess.insert(name);
         if ( IsCDDName(name) ) {
             // CDD are external annotations in OSG
@@ -447,7 +457,7 @@ void CPSGS_OSGAnnot::SendReplies()
     }
     auto& psg_req = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
     for ( auto& r : m_BlobIds ) {
-        if ( !CPSGS_OSGGetBlobBase::IsOSGBlob(r->GetBlob_id()) ) {
+        if ( !CPSGS_OSGGetBlobBase::IsEnabledAnnotBlob(GetEnabledFlags(), r->GetBlob_id()) ) {
             continue;
         }
         string psg_blob_id = CPSGS_OSGGetBlobBase::GetPSGBlobId(r->GetBlob_id());
@@ -513,7 +523,7 @@ bool CPSGS_OSGAnnot::IsCDDReply(const CID2_Reply& reply) const
     }
     
     const CID2_Reply_Get_Blob_Id& blob_id = reply.GetReply().GetGet_blob_id();
-    if ( !blob_id.IsSetBlob_id() || !CPSGS_OSGGetBlobBase::IsOSGBlob(blob_id.GetBlob_id()) ) {
+    if ( !blob_id.IsSetBlob_id() || !CPSGS_OSGGetBlobBase::IsEnabledCDDBlob(GetEnabledFlags(), blob_id.GetBlob_id()) ) {
         return false;
     }
 

@@ -50,11 +50,12 @@ BEGIN_NAMESPACE(osg);
 static const bool kAlwaysAskForBlobId = true;
 
 
-CPSGS_OSGResolve::CPSGS_OSGResolve(const CRef<COSGConnectionPool>& pool,
+CPSGS_OSGResolve::CPSGS_OSGResolve(TEnabledFlags enabled_flags,
+                                   const CRef<COSGConnectionPool>& pool,
                                    const shared_ptr<CPSGS_Request>& request,
                                    const shared_ptr<CPSGS_Reply>& reply,
                                    TProcessorPriority priority)
-    : CPSGS_OSGProcessorBase(pool, request, reply, priority)
+    : CPSGS_OSGProcessorBase(enabled_flags, pool, request, reply, priority)
 {
 }
 
@@ -70,9 +71,14 @@ string CPSGS_OSGResolve::GetName() const
 }
 
 
-bool CPSGS_OSGResolve::CanProcess(SPSGS_ResolveRequest& request)
+bool CPSGS_OSGResolve::CanProcess(TEnabledFlags enabled_flags,
+                                  shared_ptr<CPSGS_Request>& request)
 {
-    return CanResolve(request.m_SeqIdType, request.m_SeqId);
+    if ( !(enabled_flags & fEnabledWGS) ) {
+        return false;
+    }
+    auto& psg_req = request->GetRequest<SPSGS_ResolveRequest>();
+    return CanResolve(psg_req.m_SeqIdType, psg_req.m_SeqId);
 }
 
 
@@ -187,11 +193,12 @@ void CPSGS_OSGResolve::ProcessReplies()
 }
 
 
-CPSGS_OSGGetBlobBySeqId::CPSGS_OSGGetBlobBySeqId(const CRef<COSGConnectionPool>& pool,
+CPSGS_OSGGetBlobBySeqId::CPSGS_OSGGetBlobBySeqId(TEnabledFlags enabled_flags,
+                                                 const CRef<COSGConnectionPool>& pool,
                                                  const shared_ptr<CPSGS_Request>& request,
                                                  const shared_ptr<CPSGS_Reply>& reply,
                                                  TProcessorPriority priority)
-    : CPSGS_OSGProcessorBase(pool, request, reply, priority)
+    : CPSGS_OSGProcessorBase(enabled_flags, pool, request, reply, priority)
 {
 }
 
@@ -207,9 +214,14 @@ string CPSGS_OSGGetBlobBySeqId::GetName() const
 }
 
 
-bool CPSGS_OSGGetBlobBySeqId::CanProcess(SPSGS_BlobBySeqIdRequest& request)
+bool CPSGS_OSGGetBlobBySeqId::CanProcess(TEnabledFlags enabled_flags,
+                                         shared_ptr<CPSGS_Request>& request)
 {
-    return CanResolve(request.m_SeqIdType, request.m_SeqId);
+    if ( !(enabled_flags & fEnabledWGS) ) {
+        return false;
+    }
+    auto& psg_req = request->GetRequest<SPSGS_BlobBySeqIdRequest>();
+    return CanResolve(psg_req.m_SeqIdType, psg_req.m_SeqId);
 }
 
 

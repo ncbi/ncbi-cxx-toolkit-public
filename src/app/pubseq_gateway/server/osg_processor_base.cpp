@@ -43,6 +43,7 @@
 #include <objects/id2/ID2_Params.hpp>
 #include <objects/id2/ID2_Param.hpp>
 #include <objects/id2/ID2_Reply.hpp>
+#include <thread>
 
 
 BEGIN_NCBI_NAMESPACE;
@@ -50,15 +51,18 @@ BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
 
-CPSGS_OSGProcessorBase::CPSGS_OSGProcessorBase(const CRef<COSGConnectionPool>& pool,
+CPSGS_OSGProcessorBase::CPSGS_OSGProcessorBase(TEnabledFlags enabled_flags,
+                                               const CRef<COSGConnectionPool>& pool,
                                                const shared_ptr<CPSGS_Request>& request,
                                                const shared_ptr<CPSGS_Reply>& reply,
                                                TProcessorPriority priority)
     : m_Context(request->GetRequestContext()),
       m_ConnectionPool(pool),
+      m_EnabledFlags(enabled_flags),
       m_Status(IPSGS_Processor::ePSGS_InProgress),
       m_Canceled(false)
 {
+    //LOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CPSGS_OSGProcessorBase()");
     m_Request = request;
     m_Reply = reply;
     m_Priority = priority;
@@ -106,6 +110,8 @@ IPSGS_Processor* CPSGS_OSGProcessorBase::CreateProcessor(shared_ptr<CPSGS_Reques
 
 CPSGS_OSGProcessorBase::~CPSGS_OSGProcessorBase()
 {
+    //LOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() status: "<<m_Status);
+    _ASSERT(m_Status != IPSGS_Processor::ePSGS_InProgress);
 }
 
 
@@ -114,6 +120,38 @@ void CPSGS_OSGProcessorBase::Process()
     if ( m_Canceled ) {
         return;
     }
+    if ( 1 ) {
+        ProcessSync();
+    }
+    else {
+        ProcessAsync();
+    }
+}
+
+
+void CPSGS_OSGProcessorBase::ProcessSync()
+{
+    //LOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SyncProcess()");
+    _ASSERT(m_Status == IPSGS_Processor::ePSGS_InProgress);
+    try {
+        DoProcess();
+    }
+    catch ( exception& exc ) {
+        ERR_POST("OSG: DoProcess() failed: "<<exc.what());
+        FinalizeResult(ePSGS_Error);
+    }
+    //LOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SyncProcess() finished: "<<m_Status);
+}
+
+
+void CPSGS_OSGProcessorBase::ProcessAsync()
+{
+    thread(bind(&CPSGS_OSGProcessorBase::ProcessSync, this)).detach();
+}
+
+
+void CPSGS_OSGProcessorBase::DoProcess()
+{
     if ( m_Fetches.empty() ) {
         CreateRequests();
     }
