@@ -96,7 +96,8 @@ public:
                        bool                    protein,
                        int                     index,
                        CRef<CWriteDB_IsamData> datafile,
-                       bool                    sparse);
+                       bool                    sparse,
+                       Int8                    max_file_size=0);
     
     /// Destructor.
     ~CWriteDB_IsamIndex();
