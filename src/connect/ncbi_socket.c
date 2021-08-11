@@ -8824,11 +8824,11 @@ size_t SOCK_HostPortToStringEx(unsigned int   host,
     if (port  ||  !host)
         x_len += (size_t) sprintf(x_buf + x_len, ":%hu", port);
     assert(x_len < sizeof(x_buf));
-    if (x_len++ >= size) {
+    if (x_len >= size) {
         *buf = '\0';
         return 0;
     }
-    memcpy(buf, x_buf, x_len);
+    memcpy(buf, x_buf, x_len + 1);
     return x_len;
 }
 
