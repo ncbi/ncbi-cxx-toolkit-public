@@ -42,7 +42,8 @@ BEGIN_NAMESPACE(osg);
 class CPSGS_OSGGetBlob : public CPSGS_OSGGetBlobBase
 {
 public:
-    CPSGS_OSGGetBlob(const CRef<COSGConnectionPool>& pool,
+    CPSGS_OSGGetBlob(TEnabledFlags enabled_flags,
+                     const CRef<COSGConnectionPool>& pool,
                      const shared_ptr<CPSGS_Request>& request,
                      const shared_ptr<CPSGS_Reply>& reply,
                      TProcessorPriority priority);
@@ -50,7 +51,8 @@ public:
 
     virtual string GetName() const override;
 
-    static bool CanProcess(SPSGS_BlobBySatSatKeyRequest& request);
+    static bool CanProcess(TEnabledFlags enabled_flags,
+                           shared_ptr<CPSGS_Request>& request);
     
     virtual void NotifyOSGCallStart() override;
     virtual void NotifyOSGCallReply(const CID2_Reply& reply) override;
@@ -70,7 +72,8 @@ private:
 class CPSGS_OSGGetChunks : public CPSGS_OSGGetBlobBase
 {
 public:
-    CPSGS_OSGGetChunks(const CRef<COSGConnectionPool>& pool,
+    CPSGS_OSGGetChunks(TEnabledFlags enabled_flags,
+                       const CRef<COSGConnectionPool>& pool,
                        const shared_ptr<CPSGS_Request>& request,
                        const shared_ptr<CPSGS_Reply>& reply,
                        TProcessorPriority priority);
@@ -78,7 +81,8 @@ public:
     
     virtual string GetName() const override;
 
-    static bool CanProcess(SPSGS_TSEChunkRequest& request);
+    static bool CanProcess(TEnabledFlags enabled_flags,
+                           shared_ptr<CPSGS_Request>& request);
     
     virtual void CreateRequests() override;
     virtual void ProcessReplies() override;

@@ -53,7 +53,8 @@ class CPSGS_OSGAnnot : virtual public CPSGS_OSGProcessorBase,
                        public CPSGS_OSGResolveBase
 {
 public:
-    CPSGS_OSGAnnot(const CRef<COSGConnectionPool>& pool,
+    CPSGS_OSGAnnot(TEnabledFlags enabled_flags,
+                   const CRef<COSGConnectionPool>& pool,
                    const shared_ptr<CPSGS_Request>& request,
                    const shared_ptr<CPSGS_Reply>& reply,
                    TProcessorPriority priority);
@@ -61,9 +62,14 @@ public:
 
     virtual string GetName() const override;
 
-    static bool CanProcess(SPSGS_AnnotRequest& request, TProcessorPriority priority);
-    static set<string> GetNamesToProcess(SPSGS_AnnotRequest& request, TProcessorPriority priority);
-    static bool CanProcessAnnotName(const string& name);
+    static bool CanProcess(TEnabledFlags enabled_flags,
+                           shared_ptr<CPSGS_Request>& request,
+                           TProcessorPriority priority);
+    static set<string> GetNamesToProcess(TEnabledFlags enabled_flags,
+                                         SPSGS_AnnotRequest& request,
+                                         TProcessorPriority priority);
+    static bool CanProcessAnnotName(TEnabledFlags enabled_flags,
+                                    const string& name);
 
     virtual void CreateRequests() override;
     virtual void ProcessReplies() override;

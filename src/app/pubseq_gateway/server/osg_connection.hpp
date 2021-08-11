@@ -129,14 +129,9 @@ public:
         return size_t(m_RetryCount);
     }
 
-    bool GetEnabledCDD() const {
-        return m_EnabledCDD;
-    }
-    bool GetEnabledSNP() const {
-        return m_EnabledSNP;
-    }
-    bool GetEnabledWGS() const {
-        return m_EnabledWGS;
+    typedef int TEnabledFlags;
+    TEnabledFlags GetDefaultEnabledFlags() const {
+        return m_DefaultEnabledFlags;
     }
 
     double GetCDDRetryTimeout() const {
@@ -161,9 +156,7 @@ private:
     double m_ReadTimeout;
     double m_CDDRetryTimeout;
     int m_RetryCount;
-    bool m_EnabledCDD;
-    bool m_EnabledSNP;
-    bool m_EnabledWGS;
+    TEnabledFlags m_DefaultEnabledFlags;
     CMutex m_Mutex;
     CSemaphore m_WaitConnectionSlot;
     size_t m_NextConnectionID;

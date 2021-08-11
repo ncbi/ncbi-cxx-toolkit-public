@@ -44,11 +44,12 @@ BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
 
-CPSGS_OSGGetBlob::CPSGS_OSGGetBlob(const CRef<COSGConnectionPool>& pool,
+CPSGS_OSGGetBlob::CPSGS_OSGGetBlob(TEnabledFlags enabled_flags,
+                                   const CRef<COSGConnectionPool>& pool,
                                    const shared_ptr<CPSGS_Request>& request,
                                    const shared_ptr<CPSGS_Reply>& reply,
                                    TProcessorPriority priority)
-    : CPSGS_OSGProcessorBase(pool, request, reply, priority)
+    : CPSGS_OSGProcessorBase(enabled_flags, pool, request, reply, priority)
 {
 }
 
@@ -64,9 +65,10 @@ string CPSGS_OSGGetBlob::GetName() const
 }
 
 
-bool CPSGS_OSGGetBlob::CanProcess(SPSGS_BlobBySatSatKeyRequest& request)
+bool CPSGS_OSGGetBlob::CanProcess(TEnabledFlags enabled_flags,
+                                  shared_ptr<CPSGS_Request>& request)
 {
-    return ParsePSGBlobId(request.m_BlobId);
+    return IsEnabledOSGBlob(enabled_flags, ParsePSGBlobId(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId));
 }
 
 
@@ -167,11 +169,12 @@ void CPSGS_OSGGetBlob::ProcessReplies()
 }
 
 
-CPSGS_OSGGetChunks::CPSGS_OSGGetChunks(const CRef<COSGConnectionPool>& pool,
+CPSGS_OSGGetChunks::CPSGS_OSGGetChunks(TEnabledFlags enabled_flags,
+                                       const CRef<COSGConnectionPool>& pool,
                                        const shared_ptr<CPSGS_Request>& request,
                                        const shared_ptr<CPSGS_Reply>& reply,
                                        TProcessorPriority priority)
-    : CPSGS_OSGProcessorBase(pool, request, reply, priority)
+    : CPSGS_OSGProcessorBase(enabled_flags, pool, request, reply, priority)
 {
 }
 
@@ -187,9 +190,10 @@ string CPSGS_OSGGetChunks::GetName() const
 }
 
 
-bool CPSGS_OSGGetChunks::CanProcess(SPSGS_TSEChunkRequest& request)
+bool CPSGS_OSGGetChunks::CanProcess(TEnabledFlags enabled_flags,
+                                    shared_ptr<CPSGS_Request>& request)
 {
-    return ParsePSGId2Info(request.m_Id2Info);
+    return IsEnabledOSGBlob(enabled_flags, ParsePSGId2Info(request->GetRequest<SPSGS_TSEChunkRequest>().m_Id2Info).tse_id);
 }
 
 

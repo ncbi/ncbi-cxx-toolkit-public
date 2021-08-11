@@ -53,7 +53,8 @@ class CPSGS_OSGResolve : virtual public CPSGS_OSGProcessorBase,
                          public CPSGS_OSGResolveBase
 {
 public:
-    CPSGS_OSGResolve(const CRef<COSGConnectionPool>& pool,
+    CPSGS_OSGResolve(TEnabledFlags enabled_flags,
+                     const CRef<COSGConnectionPool>& pool,
                      const shared_ptr<CPSGS_Request>& request,
                      const shared_ptr<CPSGS_Reply>& reply,
                      TProcessorPriority priority);
@@ -61,7 +62,8 @@ public:
 
     virtual string GetName() const override;
 
-    static bool CanProcess(SPSGS_ResolveRequest& request);
+    static bool CanProcess(TEnabledFlags enabled_flags,
+                           shared_ptr<CPSGS_Request>& request);
     
     virtual void CreateRequests() override;
     virtual void ProcessReplies() override;
@@ -73,7 +75,8 @@ class CPSGS_OSGGetBlobBySeqId : virtual public CPSGS_OSGProcessorBase,
                                 public CPSGS_OSGGetBlobBase
 {
 public:
-    CPSGS_OSGGetBlobBySeqId(const CRef<COSGConnectionPool>& pool,
+    CPSGS_OSGGetBlobBySeqId(TEnabledFlags enabled_flags,
+                            const CRef<COSGConnectionPool>& pool,
                             const shared_ptr<CPSGS_Request>& request,
                             const shared_ptr<CPSGS_Reply>& reply,
                             TProcessorPriority priority);
@@ -81,7 +84,8 @@ public:
 
     virtual string GetName() const override;
     
-    static bool CanProcess(SPSGS_BlobBySeqIdRequest& request);
+    static bool CanProcess(TEnabledFlags enabled_flags,
+                           shared_ptr<CPSGS_Request>& request);
     
     virtual void CreateRequests() override;
     virtual void ProcessReplies() override;

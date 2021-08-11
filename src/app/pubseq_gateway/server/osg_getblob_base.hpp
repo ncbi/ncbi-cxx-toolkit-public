@@ -75,9 +75,30 @@ public:
     
     static bool IsOSGBlob(const CID2_Blob_Id& blob_id);
     static bool IsCDDBlob(const CID2_Blob_Id& blob_id);
+    
+    static bool IsEnabledOSGBlob(TEnabledFlags enabled_flags, const CID2_Blob_Id& blob_id);
+    static bool IsEnabledOSGBlob(TEnabledFlags enabled_flags, const CRef<CID2_Blob_Id>& blob_id)
+        {
+            return blob_id && IsEnabledOSGBlob(enabled_flags, *blob_id);
+        }
+    bool IsEnabledOSGBlob(const CID2_Blob_Id& blob_id) const
+        {
+            return IsEnabledOSGBlob(GetEnabledFlags(), blob_id);
+        }
+    static bool IsEnabledAnnotBlob(TEnabledFlags enabled_flags, const CID2_Blob_Id& blob_id)
+        {
+            return IsEnabledOSGBlob(enabled_flags&fEnabledAllAnnot, blob_id);
+        }
+    static bool IsEnabledCDDBlob(TEnabledFlags enabled_flags, const CID2_Blob_Id& blob_id)
+        {
+            return IsEnabledOSGBlob(enabled_flags&fEnabledCDD, blob_id);
+        }
+    
     static SParsedId2Info ParsePSGId2Info(const string& idsss2_info);
     static string GetPSGId2Info(const CID2_Blob_Id& tse_id,
                                 TID2SplitVersion split_version);
+
+    
 protected:
     void ProcessBlobReply(const CID2_Reply& reply);
     bool HasBlob() const;

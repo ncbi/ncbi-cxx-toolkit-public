@@ -81,7 +81,17 @@ USING_SCOPE(objects);
 class CPSGS_OSGProcessorBase : public IPSGS_Processor
 {
 public:
-    CPSGS_OSGProcessorBase(const CRef<COSGConnectionPool>& pool,
+    enum EEnabledFlags {
+        fEnabledWGS = 1<<0,
+        fEnabledSNP = 1<<1,
+        fEnabledCDD = 1<<2,
+        fEnabledAllAnnot = fEnabledSNP | fEnabledCDD,
+        fEnabledAll = fEnabledWGS | fEnabledSNP | fEnabledCDD
+    };
+    typedef int TEnabledFlags;
+    
+    CPSGS_OSGProcessorBase(TEnabledFlags enabled_flags,
+                           const CRef<COSGConnectionPool>& pool,
                            const shared_ptr<CPSGS_Request>& request,
                            const shared_ptr<CPSGS_Reply>& reply,
                            TProcessorPriority priority);
@@ -99,6 +109,11 @@ public:
             return m_Canceled;
         }
 
+    TEnabledFlags GetEnabledFlags() const
+        {
+            return m_EnabledFlags;
+        }
+    
     // notify processor about communication events
     virtual void NotifyOSGCallStart();
     virtual void NotifyOSGCallReply(const CID2_Reply& reply);
@@ -114,6 +129,10 @@ protected:
     COSGConnectionPool& GetConnectionPool() const {
         return m_ConnectionPool.GetNCObject();
     }
+
+    void ProcessSync();
+    void ProcessAsync();
+    void DoProcess();
     
     void SetFinalStatus(EPSGS_Status status);
     void FinalizeResult(EPSGS_Status status);
@@ -131,6 +150,7 @@ protected:
 private:
     CRef<CRequestContext> m_Context;
     CRef<COSGConnectionPool> m_ConnectionPool;
+    TEnabledFlags m_EnabledFlags;
     CRef<COSGConnection> m_Connection;
     TFetches m_Fetches;
     EPSGS_Status m_Status;

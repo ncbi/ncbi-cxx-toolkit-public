@@ -86,9 +86,14 @@ static const int kMinRetryCount = 1;
 static const int kDefaultRetryCount = 3;
 static const char kDefaultPreferredServer[] = "localhost";
 static const int kDefaultPreference = 90;
-static const int kDefaultEnabledCDD = false;
-static const int kDefaultEnabledSNP = true;
-static const int kDefaultEnabledWGS = true;
+static const bool kDefaultEnabledCDD = false;
+static const bool kDefaultEnabledSNP = true;
+static const bool kDefaultEnabledWGS = true;
+static const COSGConnectionPool::TEnabledFlags kDefaultEnabledFlags =
+    (kDefaultEnabledWGS? CPSGS_OSGProcessorBase::fEnabledWGS: 0) |
+    (kDefaultEnabledSNP? CPSGS_OSGProcessorBase::fEnabledSNP: 0) |
+    (kDefaultEnabledCDD? CPSGS_OSGProcessorBase::fEnabledCDD: 0);
+    
 
 static const int kNonResolutionTimeout = 5;
 
@@ -297,9 +302,7 @@ COSGConnectionPool::COSGConnectionPool()
       m_ReadTimeout(kDefaultReadTimeout),
       m_CDDRetryTimeout(kDefaultCDDRetryTimeout),
       m_RetryCount(kDefaultRetryCount),
-      m_EnabledCDD(kDefaultEnabledCDD),
-      m_EnabledSNP(kDefaultEnabledSNP),
-      m_EnabledWGS(kDefaultEnabledWGS),
+      m_DefaultEnabledFlags(kDefaultEnabledFlags),
       m_WaitConnectionSlot(0, kMax_Int),
       m_NextConnectionID(1),
       m_ConnectionCount(0),
@@ -406,15 +409,23 @@ void COSGConnectionPool::LoadConfig(const CNcbiRegistry& registry, string sectio
     }
     m_Mapper = service_mapper;
 
-    m_EnabledCDD = registry.GetBool(section,
-                                    kParamEnabledCDD,
-                                    kDefaultEnabledCDD);
-    m_EnabledSNP = registry.GetBool(section,
-                                    kParamEnabledSNP,
-                                    kDefaultEnabledSNP);
-    m_EnabledWGS = registry.GetBool(section,
-                                    kParamEnabledWGS,
-                                    kDefaultEnabledWGS);
+    TEnabledFlags enabled_flags = 0;
+    if ( registry.GetBool(section,
+                          kParamEnabledWGS,
+                          kDefaultEnabledWGS) ) {
+        enabled_flags |= CPSGS_OSGProcessorBase::fEnabledWGS;
+    }
+    if ( registry.GetBool(section,
+                          kParamEnabledSNP,
+                          kDefaultEnabledSNP) ) {
+        enabled_flags |= CPSGS_OSGProcessorBase::fEnabledSNP;
+    }
+    if ( registry.GetBool(section,
+                          kParamEnabledCDD,
+                          kDefaultEnabledCDD) ) {
+        enabled_flags |= CPSGS_OSGProcessorBase::fEnabledCDD;
+    }
+    m_DefaultEnabledFlags = enabled_flags;
 }
 
 
