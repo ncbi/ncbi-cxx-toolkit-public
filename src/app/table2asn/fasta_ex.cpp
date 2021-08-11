@@ -53,12 +53,14 @@ USING_SCOPE(objects);
 
 
 CFastaReaderEx::CFastaReaderEx(CTable2AsnContext& context, std::istream& instream, TFlags flags) :
-    CFastaReader(instream, flags), m_context(context),
-    m_gap_editor((CSeq_gap::EType)m_context.m_gap_type,
-            m_context.m_DefaultEvidence,
-            m_context.m_GapsizeToEvidence,
-            m_context.m_gapNmin,
-            m_context.m_gap_Unknown_length)
+    CFastaReader(instream, flags),
+    m_context{context},
+    m_gap_editor(
+        (CSeq_gap::EType)m_context.m_gap_type,
+        m_context.m_DefaultEvidence,
+        m_context.m_GapsizeToEvidence,
+        m_context.m_gapNmin,
+        m_context.m_gap_Unknown_length)
 {
 }
 
@@ -129,5 +131,128 @@ void CFastaReaderEx::AssembleSeq(ILineErrorListener * pMessageListener)
 
 }
 
-END_NCBI_SCOPE
+CHugeFastaReader::CHugeFastaReader(CTable2AsnContext& context)
+: m_context{context}
+{
+}
 
+CHugeFastaReader::~CHugeFastaReader()
+{
+}
+
+void CHugeFastaReader::Open(CHugeFile* file, objects::ILineErrorListener * pMessageListener)
+{
+    int m_iFlags = CFastaReader::fNoUserObjs;
+
+    if (m_context.m_gapNmin > 0)
+    {
+        m_iFlags |= CFastaReader::fParseGaps
+                 |  CFastaReader::fLetterGaps;
+    }
+    else
+    {
+        m_iFlags |= CFastaReader::fNoSplit;
+//                 |  CFastaReader::fLeaveAsText;
+    }
+
+    if (m_context.m_d_fasta)
+    {
+        m_iFlags |= CFastaReader::fParseGaps;
+    }
+
+    m_iFlags |= CFastaReader::fIgnoreMods
+             |  CFastaReader::fValidate
+             |  CFastaReader::fHyphensIgnoreAndWarn
+             |  CFastaReader::fDisableParseRange;
+
+    if (m_context.m_allow_accession)
+        m_iFlags |= CFastaReader::fParseRawID;
+
+
+    m_iFlags |= CFastaReader::fAssumeNuc
+             |  CFastaReader::fForceType;
+
+    m_fasta.reset(new CFastaReaderEx(m_context, *file->m_stream, m_iFlags));
+    if (!m_fasta) {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+            "File format not supported", 0);
+    }
+    if (m_context.m_gapNmin > 0)
+    {
+        m_fasta->SetMinGaps(m_context.m_gapNmin, m_context.m_gap_Unknown_length);
+    }
+
+    //if (m_context.m_gap_evidences.size() > 0 || m_context.m_gap_type >= 0)
+    if (!m_context.m_GapsizeToEvidence.empty() ||
+        !m_context.m_DefaultEvidence.empty() ||
+        m_context.m_gap_type >= 0) {
+        m_fasta->SetGapLinkageEvidence(
+                (CSeq_gap::EType)m_context.m_gap_type,
+                m_context.m_DefaultEvidence,
+                m_context.m_GapsizeToEvidence);
+    }
+}
+
+bool CHugeFastaReader::GetNextBlob()
+{// there is only one 'blob' in fasta files
+    if (m_fasta)
+    {
+        auto seq = xLoadNextSeq();
+        if (seq)
+            m_seqs.push_back(seq);
+        seq = xLoadNextSeq();
+        if (seq)
+            m_seqs.push_back(seq);
+
+        m_is_multi = m_seqs.size()>1;
+
+        return !m_seqs.empty();
+    }
+    return false;
+}
+
+CRef<objects::CSeq_entry> CHugeFastaReader::GetNextSeqEntry()
+{
+    if (!m_seqs.empty())
+    {
+        auto result = m_seqs.front();
+        m_seqs.pop_front();
+        return result;
+    }
+
+    if (!m_fasta || m_fasta->AtEOF())
+    {
+        m_fasta.reset();
+        return {};
+    }
+
+    return xLoadNextSeq();
+}
+
+CRef<objects::CSeq_entry> CHugeFastaReader::xLoadNextSeq()
+{
+    if (!m_fasta || m_fasta->AtEOF())
+        return {};
+
+    CRef<CSeq_entry> result;
+    if (m_context.m_di_fasta)
+        result = m_fasta->ReadDeltaFasta(m_context.m_logger);
+    else if (m_context.m_d_fasta)
+        result = m_fasta->ReadDeltaFasta(m_context.m_logger);
+    else
+        result = m_fasta->ReadOneSeq(m_context.m_logger);
+
+    m_context.MakeGenomeCenterId(*result);
+
+#if 0
+    if (result->IsSet())
+    {
+        result->SetSet().SetClass(m_context.m_ClassValue);
+    }
+#endif
+
+    return result;
+}
+
+
+END_NCBI_SCOPE
