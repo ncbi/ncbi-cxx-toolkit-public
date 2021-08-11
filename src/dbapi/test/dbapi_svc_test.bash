@@ -14,6 +14,15 @@ else
     SYB_ENV=""
 fi
 
+HOST=`hostname`
+HOST=tcbuilder11
+
+if [[ "$HOST" == tcbuilder* ]]; then
+   if [[ "$CHECK_SIGNATURE" == *Release* ]]; then
+      SYB_ENV="TDSDUMP=stderr $SYB_ENV"
+   fi
+fi
+
 if [[ -z "$CHECK_EXEC" ]]; then
     run_local="./"
 else
