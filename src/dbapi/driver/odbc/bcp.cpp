@@ -151,9 +151,9 @@ CODBC_BCPInCmd::x_GetBCPDataType(EDB_Type type)
     case eDB_DateTime:
         bcp_datatype = SQLDATETIME;
         break;
-#ifdef SQLDATETIME2
+#ifdef SQLDATETIME2N
     case eDB_BigDateTime:
-        bcp_datatype = SQLDATETIME2;
+        bcp_datatype = SQLDATETIME2N;
         break;
 #endif
     case eDB_Text:
@@ -443,18 +443,18 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 pb = (void*) (dt + 1);
             }
             break;
-#if defined(SQLDATETIME2)
+#if defined(SQLDATETIME2N)
             case CDB_BigDateTime: {
                 CDB_BigDateTime& val = dynamic_cast<CDB_BigDateTime&> (param);
                 CTime            lt  = val.GetCTime().GetLocalTime();
                 DBTIMESTAMP*     dt  = (DBTIMESTAMP*) pb;
-                dt.year     = lt.Year();
-                dt.month    = lt.Month();
-                dt.day      = lt.Day();
-                dt.hour     = lt.Hour();
-                dt.minute   = lt.Minute();
-                dt.second   = lt.Second();
-                dt.fraction = lt.Nanosecond() / 100 * 100;
+                dt->year     = lt.Year();
+                dt->month    = lt.Month();
+                dt->day      = lt.Day();
+                dt->hour     = lt.Hour();
+                dt->minute   = lt.Minute();
+                dt->second   = lt.Second();
+                dt->fraction = lt.Nanosecond() / 100 * 100;
                 r = bcp_colptr(GetHandle(), (BYTE*) dt, i + 1)
                     == SUCCEED &&
                     bcp_collen(GetHandle(), sizeof(DBTIMESTAMP), i + 1)
