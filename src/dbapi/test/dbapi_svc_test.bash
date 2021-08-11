@@ -15,7 +15,6 @@ else
 fi
 
 HOST=`hostname`
-HOST=tcbuilder11
 
 if [[ "$HOST" == tcbuilder* ]]; then
    if [[ "$CHECK_SIGNATURE" == *Release* ]]; then
