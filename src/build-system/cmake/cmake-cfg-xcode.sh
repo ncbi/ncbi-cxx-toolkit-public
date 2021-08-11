@@ -25,6 +25,7 @@ if test ! -x $CMAKE_CMD; then
     fi
   fi
 fi
+$CMAKE_CMD --version
 
 ############################################################################# 
 # defaults
