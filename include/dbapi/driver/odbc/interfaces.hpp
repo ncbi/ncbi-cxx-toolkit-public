@@ -668,10 +668,10 @@ private:
         return m_Cmd;
     }
     bool x_AssignParams(void* p);
-    static int x_GetBCPDataType(EDB_Type type);
+    static int x_GetBCPDataType(const CDB_Object& param);
     static size_t x_GetBCPDataSize(EDB_Type type);
-    static void* x_GetDataTerminator(EDB_Type type);
-    static size_t x_GetDataTermSize(EDB_Type type);
+    static const void* x_GetDataTerminator(const CDB_Object& param);
+    static size_t x_GetDataTermSize(const CDB_Object& param);
     static const void* x_GetDataPtr(EDB_Type type, void* pb);
 
     SQLHDBC m_Cmd;
@@ -755,6 +755,8 @@ protected:
     virtual ~CODBC_RowResult(void);
 
 protected:
+    typedef AutoPtr<char, ArrayDeleter<char>> TItemBuffer;
+
     virtual EDB_ResType     ResultType(void) const;
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
@@ -768,7 +770,9 @@ protected:
     virtual bool            SkipItem(void);
 
     int xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
-        SQLINTEGER buffer_size);
+                 SQLINTEGER buffer_size, bool* more = NULL);
+    int x_GetVarLenData(SQLSMALLINT target_type, TItemBuffer& buffer,
+                        SQLINTEGER buffer_size);
     CDB_Object* x_LoadItem(I_Result::EGetItem policy, CDB_Object* item_buf);
     CDB_Object* x_MakeItem(void);
 
