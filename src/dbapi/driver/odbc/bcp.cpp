@@ -444,7 +444,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
             }
             break;
 #if defined(SQLDATETIME2N)
-            case CDB_BigDateTime: {
+            case eDB_BigDateTime: {
                 CDB_BigDateTime& val = dynamic_cast<CDB_BigDateTime&> (param);
                 CTime            lt  = val.GetCTime().GetLocalTime();
                 DBTIMESTAMP*     dt  = (DBTIMESTAMP*) pb;
@@ -454,7 +454,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 dt->hour     = lt.Hour();
                 dt->minute   = lt.Minute();
                 dt->second   = lt.Second();
-                dt->fraction = lt.Nanosecond() / 100 * 100;
+                dt->fraction = lt.NanoSecond() / 100 * 100;
                 r = bcp_colptr(GetHandle(), (BYTE*) dt, i + 1)
                     == SUCCEED &&
                     bcp_collen(GetHandle(), sizeof(DBTIMESTAMP), i + 1)
