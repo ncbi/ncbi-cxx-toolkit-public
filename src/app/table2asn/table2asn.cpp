@@ -1073,15 +1073,18 @@ void CTbl2AsnApp::ProcessOneEntry(
     }
 }
 
-void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSeq_entry>& entry)
+void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSeq_submit> submit, CRef<CSeq_entry>& entry)
 {
-    CRef<CSeq_submit> submit;
+    if (inputFormat == CFormatGuess::eFasta)
+        m_context.MergeWithTemplate(*entry);
 
-    //m_reader->GetSeqEntry(entry, submit, obj);
+    CRef<CSerialObject> obj;
+    if (submit)
+        obj = submit;
+    else
+        obj = entry;
 
-    //bool avoid_submit_block = false;
-
-    entry->Parentize();
+    //entry->Parentize();
 
     if (m_context.m_SetIDFromFile)
     {
@@ -1160,7 +1163,7 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
 
     if (m_context.m_RemotePubLookup)
     {
-        m_context.m_remote_updater->UpdatePubReferences(*entry);
+        m_context.m_remote_updater->UpdatePubReferences(*obj);
     }
     if (m_context.m_postprocess_pubs)
     {
@@ -1189,9 +1192,9 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
         if (m_context.m_run_discrepancy)
         {
             if(m_context.m_split_discrepancy)
-                m_validator->ReportDiscrepancy(*entry, m_context.m_eukaryote, m_context.m_disc_lineage);
+                m_validator->ReportDiscrepancy(*obj, m_context.m_eukaryote, m_context.m_disc_lineage);
             else
-                m_validator->CollectDiscrepancies(*entry, m_context.m_eukaryote, m_context.m_disc_lineage);
+                m_validator->CollectDiscrepancies(*obj, m_context.m_eukaryote, m_context.m_disc_lineage);
         }
 
         if (m_context.m_make_flatfile)
@@ -1256,11 +1259,9 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
         }
         else {
 
-#if 0
             if (m_context.m_use_huge_files)
                 ProcessHugeFile(output);
             else
-#endif
                 ProcessOneFile(output);
 
             ReportUnusedSourceQuals();

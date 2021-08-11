@@ -4,6 +4,7 @@ NCBI_begin_app(table2asn)
   NCBI_sources(
     table2asn multireader struc_cmt_reader table2asn_context feature_table_reader
     fcs_reader table2asn_validator src_quals fasta_ex suspect_feat
+    table2asn_huge huge_asn_reader huge_file
   )
   NCBI_uses_toolkit_libraries(
     data_loaders_util prosplign xdiscrepancy xflatfile
@@ -11,5 +12,3 @@ NCBI_begin_app(table2asn)
   )
   NCBI_project_watchers(bollin gotvyans)
 NCBI_end_app()
-
-
