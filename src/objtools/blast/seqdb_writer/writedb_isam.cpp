@@ -113,7 +113,8 @@ CWriteDB_Isam::CWriteDB_Isam(EIsamType      itype,
                                          protein,
                                          index,
                                          m_DFile,
-                                         sparse));
+                                         sparse,
+                                         max_file_size));
 }
 
 CWriteDB_Isam::~CWriteDB_Isam()
@@ -161,11 +162,12 @@ CWriteDB_IsamIndex::CWriteDB_IsamIndex(EWriteDBIsamType        itype,
                                        bool                    protein,
                                        int                     index,
                                        CRef<CWriteDB_IsamData> datafile,
-                                       bool                    sparse)
+                                       bool                    sparse,
+                                       Int8                    max_file_size)
     : CWriteDB_File  (dbname,
                       s_IsamExtension(itype, protein, true),
                       index,
-                      0,
+                      max_file_size,
                       false),
       m_Type         (itype),
       m_Sparse       (sparse),
