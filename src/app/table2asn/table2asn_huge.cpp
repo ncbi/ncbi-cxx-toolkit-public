@@ -46,7 +46,11 @@
 
 #include <objects/submit/Seq_submit.hpp>
 #include <objtools/cleanup/cleanup.hpp>
-#include <cxxabi.h>
+
+#if defined(NCBI_OS_UNIX) && defined(_DEBUG)
+#   include <cxxabi.h>
+#   define TABLE2ASN_DEBUG_EXCEPTIOONS
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -206,22 +210,22 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
         catch(const CException& ex)
         { // ASN writer populates exception with a call stack which is not neccessary
           // we need the original exception
-        #ifdef _DEBUG
+#           ifdef TABLE2ASN_DEBUG_EXCEPTIOONS
             int status;
-            char * demangled = abi::__cxa_demangle(typeid(ex).name(),0,0,&status);
-        #endif
+            char * demangled = abi::__cxa_demangle(typeid(ex).name(), 0, 0, &status);
+#           endif
             // ASN.1 writer populates exception with a call stack, we need to dig out the original exception
             const CException* original = &ex;
             while (original->GetPredecessor())
             {
-#ifdef _DEBUG
+#               ifdef TABLE2ASN_DEBUG_EXCEPTIOONS
                 cerr << demangled << ":" << ex.GetMsg() << std::endl;
-#endif
+#               endif
                 original = original->GetPredecessor();
             }
-        #ifdef _DEBUG
+#           ifdef TABLE2ASN_DEBUG_EXCEPTIOONS
             free(demangled);
-        #endif
+#           endif
 
             throw *original;
         }
