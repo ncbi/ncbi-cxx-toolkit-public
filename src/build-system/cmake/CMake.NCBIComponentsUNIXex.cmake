@@ -41,6 +41,7 @@ set(NCBI_ThirdParty_Boost_VERSION "1.76.0")
 set(NCBI_ThirdParty_Boost         ${NCBI_TOOLS_ROOT}/boost-${NCBI_ThirdParty_Boost_VERSION}-ncbi1 CACHE PATH "Boost root")
 set(NCBI_ThirdParty_FASTCGI       ${NCBI_TOOLS_ROOT}/fcgi-2.4.0 CACHE PATH "FASTCGI root")
 set(NCBI_ThirdParty_FASTCGI_SHLIB ${NCBI_ThirdParty_FASTCGI})
+set(NCBI_ThirdParty_FASTCGIPP     ${NCBI_TOOLS_ROOT}/fastcgi++-3.1~a1+20210601 CACHE PATH "FASTCGIPP root")
 set(NCBI_ThirdParty_SQLITE3       ${NCBI_TOOLS_ROOT}/sqlite-3.26.0-ncbi1 CACHE PATH "SQLITE3 root")
 set(NCBI_ThirdParty_BerkeleyDB    ${NCBI_TOOLS_ROOT}/BerkeleyDB-4.6.21.1 CACHE PATH "BerkeleyDB root")
 set(NCBI_ThirdParty_SybaseNetPath "/opt/sybase/clients/16.0-64bit" CACHE PATH "SybaseNetPath")
@@ -323,6 +324,10 @@ if(NCBI_COMPONENT_FASTCGI_FOUND)
     list(APPEND NCBI_ALL_LEGACY Fast-CGI)
     set(NCBI_COMPONENT_Fast-CGI_FOUND FASTCGI)
 endif()
+
+#############################################################################
+# FASTCGIPP
+NCBI_define_Xcomponent(NAME FASTCGIPP LIB fastcgipp)
 
 #############################################################################
 # SQLITE3
