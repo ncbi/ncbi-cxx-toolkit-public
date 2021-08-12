@@ -402,6 +402,7 @@ set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} ${NCBI_COMPILER_SHA
 
 set(_ggdb3 "-ggdb3")
 set(_ggdb1 "-ggdb1")
+set(_gdw4r "-gdwarf-4")
 if(NCBI_COMPILER_GCC)
 
     if("${NCBI_COMPILER_VERSION}" LESS "730")
@@ -415,6 +416,7 @@ elseif(NCBI_COMPILER_ICC)
     endif()
     set(_ggdb3 "-g")
     set(_ggdb1 "")
+    set(_gdw4r "")
     unset(CMAKE_POSITION_INDEPENDENT_CODE)
 # Defining _GCC_NEXT_LIMITS_H ensures that <limits.h> chaining doesn't
 # stop short, as can otherwise happen.
@@ -445,11 +447,11 @@ elseif(NCBI_COMPILER_LLVM_CLANG)
 endif()
 
 if (CMAKE_DEBUG_SYMBOLS)
-    set(CMAKE_CXX_FLAGS_RELEASE "-gdwarf-4 ${_ggdb3} -O3 -DNDEBUG" CACHE STRING "" FORCE)
-    set(CMAKE_C_FLAGS_RELEASE   "-gdwarf-4 ${_ggdb3} -O3 -DNDEBUG" CACHE STRING "" FORCE)
+    set(CMAKE_CXX_FLAGS_RELEASE "${_gdw4r} ${_ggdb3} -O3 -DNDEBUG" CACHE STRING "" FORCE)
+    set(CMAKE_C_FLAGS_RELEASE   "${_gdw4r} ${_ggdb3} -O3 -DNDEBUG" CACHE STRING "" FORCE)
 else()
-    set(CMAKE_CXX_FLAGS_RELEASE "-gdwarf-4 ${_ggdb1} -O3 -DNDEBUG" CACHE STRING "" FORCE)
-    set(CMAKE_C_FLAGS_RELEASE   "-gdwarf-4 ${_ggdb1} -O3 -DNDEBUG" CACHE STRING "" FORCE)
+    set(CMAKE_CXX_FLAGS_RELEASE "${_gdw4r} ${_ggdb1} -O3 -DNDEBUG" CACHE STRING "" FORCE)
+    set(CMAKE_C_FLAGS_RELEASE   "${_gdw4r} ${_ggdb1} -O3 -DNDEBUG" CACHE STRING "" FORCE)
 endif()
 set(CMAKE_CXX_FLAGS_DEBUG "-gdwarf-4 ${_ggdb3} -O0 -D_DEBUG" CACHE STRING "" FORCE)
 set(CMAKE_C_FLAGS_DEBUG   "-gdwarf-4 ${_ggdb3} -O0 -D_DEBUG" CACHE STRING "" FORCE)
