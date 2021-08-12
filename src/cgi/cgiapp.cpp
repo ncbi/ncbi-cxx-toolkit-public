@@ -473,6 +473,8 @@ int CCgiApplication::Run(void)
         return result;
     }
 
+    CCgiRequestProcessor& processor = x_CreateProcessor();
+
     /// Run as a plain CGI application
 
     // Make sure to restore old diagnostic state after the Run()
@@ -510,95 +512,99 @@ int CCgiApplication::Run(void)
     //int orig_fd = -1;
     CNcbiStrstream result_copy;
     unique_ptr<CNcbiOstream> new_stream;
+    shared_ptr<CCgiContext> context;
+    unique_ptr<ICache> cache;
 
     try {
         _TRACE("(CGI) CCgiApplication::Run: calling ProcessRequest");
         GetDiagContext().SetAppState(eDiagAppState_RequestBegin);
 
-        m_Context.reset( CreateContext() );
-        _ASSERT(m_Context.get());
+        context.reset(CreateContext());
+        _ASSERT(context);
+        processor.SetContext(context);
 
-        ConfigureDiagnostics(*m_Context);
+        ConfigureDiagnostics(*context);
         x_AddLBCookie();
         try {
             // Print request start message
             x_OnEvent(eStartRequest, 0);
 
-            VerifyCgiContext(*m_Context);
+            VerifyCgiContext(*context);
             ProcessHttpReferer();
-            LogRequest();
+            LogRequest(*context);
 
-            m_Context->CheckStatus();
+            context->CheckStatus();
             
             try {
-                m_Cache.reset( GetCacheStorage() );
+                cache.reset( GetCacheStorage() );
             } catch (const exception& ex) {
                 ERR_POST_X(1, "Couldn't create cache : " << ex.what());
             }
             bool skip_process_request = false;
-            bool caching_needed = IsCachingNeeded(m_Context->GetRequest());
-            if (m_Cache.get() && caching_needed) {
-                skip_process_request = GetResultFromCache(m_Context->GetRequest(),
-                                                           m_Context->GetResponse().out());
+            bool caching_needed = IsCachingNeeded(context->GetRequest());
+            if (cache && caching_needed) {
+                skip_process_request = GetResultFromCache(context->GetRequest(),
+                                                          context->GetResponse().out(),
+                                                          *cache);
             }
             if (!skip_process_request) {
-                if( m_Cache.get() ) {
+                if( cache ) {
                     CCgiStreamWrapper* wrapper = dynamic_cast<CCgiStreamWrapper*>(
-                        m_Context->GetResponse().GetOutput());
+                        context->GetResponse().GetOutput());
                     if ( wrapper ) {
                         wrapper->SetCacheStream(result_copy);
                     }
                     else {
                         list<CNcbiOstream*> slist;
-                        orig_stream = m_Context->GetResponse().GetOutput();
+                        orig_stream = context->GetResponse().GetOutput();
                         slist.push_back(orig_stream);
                         slist.push_back(&result_copy);
                         new_stream.reset(new CWStream(new CMultiWriter(slist), 1, 0,
                                                       CRWStreambuf::fOwnWriter));
-                        m_Context->GetResponse().SetOutput(new_stream.get());
+                        context->GetResponse().SetOutput(new_stream.get());
                     }
                 }
                 GetDiagContext().SetAppState(eDiagAppState_Request);
-                if (x_ProcessHelpRequest() ||
-                    x_ProcessVersionRequest() ||
-                    CCgiContext::ProcessCORSRequest(m_Context->GetRequest(), m_Context->GetResponse()) ||
-                    x_ProcessAdminRequest()) {
+                if (x_ProcessHelpRequest(processor) ||
+                    x_ProcessVersionRequest(processor) ||
+                    CCgiContext::ProcessCORSRequest(context->GetRequest(), context->GetResponse()) ||
+                    x_ProcessAdminRequest(processor)) {
                     result = 0;
                 }
                 else {
-                    if (!ValidateSynchronizationToken()) {
+                    if (!processor.ValidateSynchronizationToken()) {
                         NCBI_CGI_THROW_WITH_STATUS(CCgiRequestException, eData,
                             "Invalid or missing CSRF token.", CCgiException::e403_Forbidden);
                     }
-                    result = ProcessRequest(*m_Context);
+                    result = processor.ProcessRequest(*context);
                 }
                 GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
-                m_Context->GetResponse().Finalize();
+                context->GetResponse().Finalize();
                 if (result != 0) {
-                    SetHTTPStatus(500);
-                    m_ErrorStatus = true;
-                    m_Context->GetResponse().AbortChunkedTransfer();
+                    processor.SetHTTPStatus(500);
+                    processor.SetErrorStatus(true);
+                    context->GetResponse().AbortChunkedTransfer();
                 } else {
-                    m_Context->GetResponse().FinishChunkedTransfer();
-                    if (m_Cache.get()) {
-                        m_Context->GetResponse().Flush();
-                        if (m_IsResultReady) {
+                    context->GetResponse().FinishChunkedTransfer();
+                    if ( cache ) {
+                        context->GetResponse().Flush();
+                        if (processor.GetResultReady()) {
                             if(caching_needed)
-                                SaveResultToCache(m_Context->GetRequest(), result_copy);
+                                SaveResultToCache(context->GetRequest(), result_copy, *cache);
                             else {
-                                unique_ptr<CCgiRequest> request(GetSavedRequest(m_RID));
+                                unique_ptr<CCgiRequest> request(GetSavedRequest(processor.GetRID(), *cache));
                                 if (request.get()) 
-                                    SaveResultToCache(*request, result_copy);
+                                    SaveResultToCache(*request, result_copy, *cache);
                             }
                         } else if (caching_needed) {
-                            SaveRequest(m_RID, m_Context->GetRequest());
+                            SaveRequest(processor.GetRID(), context->GetRequest(), *cache);
                         }
                     }
                 }
             }
         }
         catch (const CCgiException& e) {
-            if ( x_DoneHeadRequest() ) {
+            if ( x_DoneHeadRequest(*context) ) {
                 // Ignore errors after HEAD request has been finished.
                 GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
             }
@@ -607,12 +613,12 @@ int CCgiApplication::Run(void)
                      e.GetStatusCode() >= CCgiException::e400_BadRequest ) {
                     throw;
                 }
-                m_Context->GetResponse().FinishChunkedTransfer();
+                context->GetResponse().FinishChunkedTransfer();
                 GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
                 // If for some reason exception with status 2xx was thrown,
                 // set the result to 0, update HTTP status and continue.
-                m_Context->GetResponse().SetStatus(e.GetStatusCode(),
-                                                   e.GetStatusMessage());
+                context->GetResponse().SetStatus(e.GetStatusCode(),
+                                                 e.GetStatusMessage());
             }
             result = 0;
         }
@@ -627,24 +633,24 @@ int CCgiApplication::Run(void)
 #endif
 
         _TRACE("CCgiApplication::Run: flushing");
-        m_Context->GetResponse().Flush();
+        context->GetResponse().Flush();
         _TRACE("CCgiApplication::Run: return " << result);
         x_OnEvent(result == 0 ? eSuccess : eError, result);
         x_OnEvent(eExit, result);
     }
     catch (exception& e) {
-        if ( m_Context.get() ) {
-            m_Context->GetResponse().AbortChunkedTransfer();
+        if ( context ) {
+            context->GetResponse().AbortChunkedTransfer();
         }
         GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
-        if ( x_DoneHeadRequest() ) {
+        if ( x_DoneHeadRequest(*context) ) {
             // Ignore errors after HEAD request has been finished.
             result = 0;
             x_OnEvent(eSuccess, result);
         }
         else {
             // Call the exception handler and set the CGI exit code
-            result = OnException(e, NcbiCout);
+            result = processor.OnException(e, NcbiCout);
             x_OnEvent(eException, result);
 
             // Logging
@@ -662,8 +668,8 @@ int CCgiApplication::Run(void)
 
             // Exception reporting. Use different severity for broken connection.
             ios_base::failure* fex = dynamic_cast<ios_base::failure*>(&e);
-            CNcbiOstream* os = m_Context.get() ? m_Context->GetResponse().GetOutput() : NULL;
-            if ((fex  &&  os  &&  !os->good())  ||  m_OutputBroken) {
+            CNcbiOstream* os = context ? context->GetResponse().GetOutput() : NULL;
+            if ((fex  &&  os  &&  !os->good())  ||  processor.GetOutputBroken()) {
                 if ( !TClientConnIntOk::GetDefault() ) {
                     ERR_POST_X(13, Severity(TClientConnIntSeverity::GetDefault()) <<
                         "Connection interrupted");
@@ -686,40 +692,40 @@ int CCgiApplication::Run(void)
     x_OnEvent(eEndRequest, 120);
     x_OnEvent(eExit, result);
 
-    if (m_Context.get()) {
-        m_Context->GetResponse().SetOutput(NULL);
+    if ( context ) {
+        context->GetResponse().SetOutput(NULL);
     }
     return result;
 }
 
 
-const char* kExtraType_CGI = "NCBICGI";
-
 void CCgiApplication::ProcessHttpReferer(void)
 {
     // Set HTTP_REFERER
-    CCgiContext& ctx = GetContext();
-    string ref = ctx.GetSelfURL();
+    string ref = x_GetProcessor().GetSelfReferer();
     if ( !ref.empty() ) {
-        string args =
-            ctx.GetRequest().GetProperty(eCgi_QueryString);
-        if ( !args.empty() ) {
-            ref += "?" + args;
-        }
         GetRWConfig().Set("CONN", "HTTP_REFERER", ref);
+        CDiagContext::GetRequestContext().SetProperty("SELF_URL", ref);
     }
 }
 
 
 void CCgiApplication::LogRequest(void) const
 {
-    const CCgiContext& ctx = GetContext();
+    LogRequest(GetContext());
+}
+
+void CCgiApplication::LogRequest(const CCgiContext& ctx) const
+{
+    const auto& req = ctx.GetRequest();
+    const auto& diag = GetDiagContext();
+
     string str;
     if (TPrintRequestMethodParam::GetDefault()) {
         // Print request method
-        string method = ctx.GetRequest().GetRequestMethodName();
+        string method = req.GetRequestMethodName();
         if (!method.empty()) {
-            GetDiagContext().Extra().Print("REQUEST_METHOD", method);
+            diag.Extra().Print("REQUEST_METHOD", method);
         }
     }
     if ( TPrintSelfUrlParam::GetDefault() ) {
@@ -727,50 +733,50 @@ void CCgiApplication::LogRequest(void) const
         string self_url = ctx.GetSelfURL();
         if ( !self_url.empty() ) {
             string args =
-                ctx.GetRequest().GetRandomProperty("REDIRECT_QUERY_STRING", false);
+                req.GetRandomProperty("REDIRECT_QUERY_STRING", false);
             if ( args.empty() ) {
-                args = ctx.GetRequest().GetProperty(eCgi_QueryString);
+                args = req.GetProperty(eCgi_QueryString);
             }
             if ( !args.empty() ) {
                 self_url += "?" + args;
             }
         }
         // Add target url
-        string target_url = ctx.GetRequest().GetProperty(eCgi_ScriptName);
+        string target_url = req.GetProperty(eCgi_ScriptName);
         if ( !target_url.empty() ) {
-            bool secure = AStrEquiv(ctx.GetRequest().GetRandomProperty("HTTPS",
+            bool secure = AStrEquiv(req.GetRandomProperty("HTTPS",
                 false), "on", PNocase());
-            string host = (secure ? "https://" : "http://") + GetDiagContext().GetHost();
-            string port = ctx.GetRequest().GetProperty(eCgi_ServerPort);
+            string host = (secure ? "https://" : "http://") + diag.GetHost();
+            string port = req.GetProperty(eCgi_ServerPort);
             if (!port.empty()  &&  port != (secure ? "443" : "80")) {
                 host += ":" + port;
             }
             target_url = host + target_url;
         }
         if ( !self_url.empty()  ||  !target_url.empty() ) {
-            GetDiagContext().Extra().Print("SELF_URL", self_url).
+            diag.Extra().Print("SELF_URL", self_url).
                 Print("TARGET_URL", target_url);
         }
     }
     // Print HTTP_REFERER
     if ( TPrintRefererParam::GetDefault() ) {
-        str = ctx.GetRequest().GetProperty(eCgi_HttpReferer);
+        str = req.GetProperty(eCgi_HttpReferer);
         if ( !str.empty() ) {
-            GetDiagContext().Extra().Print("HTTP_REFERER", str);
+            diag.Extra().Print("HTTP_REFERER", str);
         }
     }
     // Print USER_AGENT
     if ( TPrintUserAgentParam::GetDefault() ) {
-        str = ctx.GetRequest().GetProperty(eCgi_HttpUserAgent);
+        str = req.GetProperty(eCgi_HttpUserAgent);
         if ( !str.empty() ) {
-            GetDiagContext().Extra().Print("USER_AGENT", str);
+            diag.Extra().Print("USER_AGENT", str);
         }
     }
     // Print NCBI_LOG_FIELDS
     CNcbiLogFields f("http");
     map<string, string> env;
     list<string> names;
-    const CNcbiEnvironment& rq_env = ctx.GetRequest().GetEnvironment();
+    const CNcbiEnvironment& rq_env = req.GetEnvironment();
     rq_env.Enumerate(names);
     ITERATE(list<string>, it, names) {
         if (!NStr::StartsWith(*it, "HTTP_")) continue;
@@ -793,11 +799,11 @@ void CCgiApplication::SetupArgDescriptions(CArgDescriptions* arg_desc)
 
 CCgiContext& CCgiApplication::x_GetContext( void ) const
 {
-    if ( !m_Context.get() ) {
+    if ( !x_IsSetProcessor() || !x_GetProcessor().IsSetContext() ) {
         ERR_POST_X(2, "CCgiApplication::GetContext: no context set");
         throw runtime_error("no context set");
     }
-    return *m_Context;
+    return x_GetProcessor().GetContext();
 }
 
 
@@ -808,6 +814,36 @@ CNcbiResource& CCgiApplication::x_GetResource( void ) const
         throw runtime_error("no resource set");
     }
     return *m_Resource;
+}
+
+
+bool CCgiApplication::x_IsSetProcessor(void) const
+{
+    return m_Processor->GetValue();
+}
+
+
+CCgiRequestProcessor& CCgiApplication::x_GetProcessor(void) const
+{
+    auto proc = m_Processor->GetValue();
+    if (!proc) {
+        ERR_POST_X(17, "CCgiApplication::GetResource: no processor set");
+        throw runtime_error("no request processor set");
+    }
+    return *proc;
+}
+
+
+CCgiRequestProcessor* CCgiApplication::x_GetProcessorOrNull(void) const
+{
+    return m_Processor->GetValue();
+}
+
+
+CCgiRequestProcessor& CCgiApplication::x_CreateProcessor(void)
+{
+    m_Processor->SetValue(CreateRequestProcessor());
+    return x_GetProcessor();
 }
 
 
@@ -834,7 +870,8 @@ void CCgiApplication::Init(void)
 
 void CCgiApplication::Exit(void)
 {
-    m_Resource.reset(0);
+    m_Processor->Reset();
+    m_Resource.reset();
     CParent::Exit();
 }
 
@@ -872,8 +909,21 @@ CCgiContext* CCgiApplication::CreateContextWithFlags
  int               ofd,
  int               flags)
 {
-    m_OutputBroken = false; // reset failure flag
+    return CreateContextWithFlags_Default(x_GetProcessor(),
+        args, env, inp, out, ifd, ofd, flags);
+}
 
+
+CCgiContext* CCgiApplication::CreateContextWithFlags_Default(
+    CCgiRequestProcessor& processor,
+    CNcbiArguments* args,
+    CNcbiEnvironment* env,
+    CNcbiIstream* inp,
+    CNcbiOstream* out,
+    int ifd,
+    int ofd,
+    int flags)
+{
     int errbuf_size =
         GetConfig().GetInt("CGI", "RequestErrBufSize", 256, 0,
                            CNcbiRegistry::eReturn);
@@ -887,36 +937,42 @@ CCgiContext* CCgiApplication::CreateContextWithFlags
 
     if ( TCGI_Count_Transfered::GetDefault() ) {
         if ( !inp ) {
-            if ( !m_InputStream.get() ) {
-                m_InputStream.reset(
+            if ( !processor.IsSetInputStream() ) {
+                processor.SetInputStream(
                     new CRStream(new CCGIStreamReader(std::cin), 0, 0,
                                 CRWStreambuf::fOwnReader));
             }
-            inp = m_InputStream.get();
+            inp = &processor.GetInputStream();
             ifd = 0;
         }
     }
     if ( need_output_wrapper ) {
         if ( !out ) {
-            if ( !m_OutputStream.get() ) {
-                m_OutputStream.reset(new CCgiStreamWrapper(std::cout));
+            if ( !processor.IsSetOutputStream() ) {
+                processor.SetOutputStream(new CCgiStreamWrapper(std::cout));
             }
-            out = m_OutputStream.get();
+            out = &processor.GetOutputStream();
             ofd = 1;
-            if ( m_InputStream.get() ) {
+            if ( processor.IsSetInputStream() ) {
                 // If both streams are created by the application, tie them.
                 inp->tie(out);
             }
         }
         else {
-            m_OutputStream.reset(new CCgiStreamWrapper(*out));
-            out = m_OutputStream.get();
+            processor.SetOutputStream(new CCgiStreamWrapper(*out));
+            out = &processor.GetOutputStream();
         }
     }
     return
         new CCgiContext(*this, args, env, inp, out, ifd, ofd,
                         (errbuf_size >= 0) ? (size_t) errbuf_size : 256,
                         flags);
+}
+
+
+CCgiRequestProcessor* CCgiApplication::CreateRequestProcessor(void)
+{
+    return new CCgiRequestProcessor(*this);
 }
 
 
@@ -962,16 +1018,11 @@ private:
 CCgiApplication::CCgiApplication(const SBuildInfo& build_info) 
  : CNcbiApplication(build_info),
    m_RequestFlags(0),
-   m_HostIP(0), 
-   m_Iteration(0),
-   m_ArgContextSync(false),
-   m_OutputBroken(false),
-   m_IsResultReady(true),
-   m_ShouldExit(false),
    m_CaughtSigterm(false),
-   m_RequestStartPrinted(false),
-   m_ErrorStatus(false)
+   m_Processor(new CTls<CCgiRequestProcessor>()),
+   m_HostIP(0)
 {
+    m_Iteration.Set(0);
     // Disable system popup messages
     SuppressSystemMessageBox();
 
@@ -999,110 +1050,27 @@ CCgiApplication::~CCgiApplication(void)
 
 int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
 {
-    // Discriminate between different types of error
-    string status_str = "500 Server Error";
-    string message = "";
-
-    // Save current HTTP status. Later it may be changed to 299 or 499
-    // depending on this value.
-    m_ErrorStatus = CDiagContext::GetRequestContext().GetRequestStatus() >= 400;
-    SetHTTPStatus(500);
-
-    CException* ce = dynamic_cast<CException*> (&e);
-    if ( ce ) {
-        message = ce->GetMsg();
-        CCgiException* cgi_e = dynamic_cast<CCgiException*>(&e);
-        if ( cgi_e ) {
-            if ( cgi_e->GetStatusCode() != CCgiException::eStatusNotSet ) {
-                SetHTTPStatus(cgi_e->GetStatusCode());
-                status_str = NStr::IntToString(cgi_e->GetStatusCode()) +
-                    " " + cgi_e->GetStatusMessage();
-            }
-            else {
-                // Convert CgiRequestException and CCgiArgsException
-                // to error 400
-                if (dynamic_cast<CCgiRequestException*> (&e)  ||
-                    dynamic_cast<CUrlException*> (&e)) {
-                    SetHTTPStatus(400);
-                    status_str = "400 Malformed HTTP Request";
-                }
-            }
-        }
-    }
-    else {
-        message = e.what();
-    }
-
-    // Don't try to write to a broken output
-    if (!os.good()  ||  m_OutputBroken) {
-        return -1;
-    }
-
-    try {
-        // HTTP header
-        os << "Status: " << status_str << HTTP_EOL;
-        os << "Content-Type: text/plain" HTTP_EOL HTTP_EOL;
-
-        // Message
-        os << "ERROR:  " << status_str << " " HTTP_EOL HTTP_EOL;
-        os << NStr::HtmlEncode(message);
-
-        if ( dynamic_cast<CArgException*> (&e) ) {
-            string ustr;
-            const CArgDescriptions* descr = GetArgDescriptions();
-            if (descr) {
-                os << descr->PrintUsage(ustr) << HTTP_EOL HTTP_EOL;
-            }
-        }
-
-        // Check for problems in sending the response
-        if ( !os.good() ) {
-            ERR_POST_X(4, "CCgiApplication::OnException() failed to send error page"
-                          " back to the client");
-            return -1;
-        }
-    }
-    catch (const exception& ex) {
-        NCBI_REPORT_EXCEPTION_X(14, "(CGI) CCgiApplication::Run", ex);
-    }
-    return 0;
+    return x_IsSetProcessor() ? x_GetProcessor().OnException(e, os) : -1;
 }
 
 
 const CArgs& CCgiApplication::GetArgs(void) const
 {
     // Are there no argument descriptions or no CGI context (yet?)
-    if (!GetArgDescriptions()  ||  !m_Context.get())
-        return CParent::GetArgs();
-
-    // Is everything already in-sync
-    if ( m_ArgContextSync )
-        return *m_CgiArgs;
-
-    // Create CGI version of args, if necessary
-    if ( !m_CgiArgs.get() )
-        m_CgiArgs.reset(new CArgs());
-
-    // Copy cmd-line arg values to CGI args
-    m_CgiArgs->Assign(CParent::GetArgs());
-
-    // Add CGI parameters to the CGI version of args
-    GetArgDescriptions()->ConvertKeys(m_CgiArgs.get(),
-                                      GetContext().GetRequest().GetEntries(),
-                                      true /*update=yes*/);
-
-    m_ArgContextSync = true;
-    return *m_CgiArgs;
+    if (!GetArgDescriptions()  ||  !x_IsSetProcessor()) return CParent::GetArgs();
+    return x_GetProcessor().GetArgs();
 }
 
 
-void CCgiApplication::x_OnEvent(EEvent event, int status)
+void CCgiApplication::x_OnEvent(CCgiRequestProcessor* pprocessor, EEvent event, int status)
 {
     switch ( event ) {
     case eStartRequest:
         {
             // Set context properties
-            const CCgiRequest& req = m_Context->GetRequest();
+            if (!pprocessor) break;
+            CCgiRequestProcessor& processor = *pprocessor;
+            const CCgiRequest& req = processor.GetContext().GetRequest();
 
             // Print request start message
             if ( !CDiagContext::IsSetOldPostFormat() ) {
@@ -1111,20 +1079,19 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                 GetDiagContext().PrintRequestStart()
                     .AllowBadSymbolsInArgNames()
                     .Print(collector.GetArgs());
-                m_RequestStartPrinted = true;
+                processor.SetRequestStartPrinted(true);
             }
 
             // Set default HTTP status code (reset above by PrintRequestStart())
-            SetHTTPStatus(200);
-            m_ErrorStatus = false;
+            processor.SetHTTPStatus(200);
+            processor.SetErrorStatus(false);
 
             // This will log ncbi_phid as a separate 'extra' message
             // if not yet logged.
             CDiagContext::GetRequestContext().GetHitID();
 
             // Check if ncbi_st cookie is set
-            const CCgiCookie* st = req.GetCookies().Find(
-                g_GetNcbiString(eNcbiStrings_Stat));
+            const CCgiCookie* st = req.GetCookies().Find(g_GetNcbiString(eNcbiStrings_Stat));
             if ( st ) {
                 CUrlArgs pg_info(st->GetValue());
                 // Log ncbi_st values
@@ -1135,54 +1102,63 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                 }
                 extra.Flush();
             }
+            processor.OnEvent(event, status);
             break;
         }
     case eSuccess:
     case eError:
     case eException:
         {
+            if (!pprocessor) break;
+            CCgiRequestProcessor& processor = *pprocessor;
             CRequestContext& rctx = GetDiagContext().GetRequestContext();
             try {
-                if ( m_InputStream.get() ) {
-                    if ( !m_InputStream->good() ) {
-                        m_InputStream->clear();
+                if ( processor.IsSetInputStream() ) {
+                    auto& in = processor.GetInputStream();
+                    if ( !in.good() ) {
+                        in.clear();
                     }
-                    rctx.SetBytesRd(NcbiStreamposToInt8(m_InputStream->tellg()));
+                    rctx.SetBytesRd(NcbiStreamposToInt8(in.tellg()));
                 }
             }
             catch (const exception&) {
             }
             try {
-                if ( m_OutputStream.get() ) {
-                    if ( !m_OutputStream->good() ) {
-                        m_OutputBroken = true; // set flag to indicate broken output
-                        m_OutputStream->clear();
+                if ( processor.IsSetOutputStream() ) {
+                    auto& out = processor.GetOutputStream();
+                    if ( !out.good() ) {
+                        processor.SetOutputBroken(true); // set flag to indicate broken output
+                        out.clear();
                     }
-                    rctx.SetBytesWr(NcbiStreamposToInt8(m_OutputStream->tellp()));
+                    rctx.SetBytesWr(NcbiStreamposToInt8(out.tellp()));
                 }
             }
             catch (const exception&) {
             }
+            processor.OnEvent(event, status);
             break;
         }
     case eEndRequest:
         {
-            CDiagContext& ctx = GetDiagContext();
-            CRequestContext& rctx = ctx.GetRequestContext();
+            if (!pprocessor) break;
+            CCgiRequestProcessor& processor = *pprocessor;
+            CCgiContext& cgi_ctx = processor.GetContext();
+            CDiagContext& diag_ctx = GetDiagContext();
+            CRequestContext& rctx = CDiagContext::GetRequestContext();
             // If an error status has been set by ProcessRequest, don't try
             // to check the output stream and change the status to 299/499.
-            if ( !m_ErrorStatus ) {
+            if ( !processor.GetErrorStatus() ) {
                 // Log broken connection as 299/499 status
-                CNcbiOstream* os = m_Context.get() ?
-                    m_Context->GetResponse().GetOutput() : NULL;
-                if ((os  &&  !os->good())  ||  m_OutputBroken) {
+                CNcbiOstream* os = processor.IsSetContext() ?
+                    cgi_ctx.GetResponse().GetOutput() : NULL;
+                if ((os  &&  !os->good())  ||  processor.GetOutputBroken()) {
                     // 'Accept-Ranges: bytes' indicates a request for
                     // content length, broken connection is OK.
                     // If Content-Range is also set, the client was downloading
                     // partial data. Broken connection is not OK in this case.
                     if (TClientConnIntOk::GetDefault()  ||
-                        (m_Context->GetResponse().AcceptRangesBytes()  &&
-                        !m_Context->GetResponse().HaveContentRange())) {
+                        (cgi_ctx.GetResponse().AcceptRangesBytes()  &&
+                        !cgi_ctx.GetResponse().HaveContentRange())) {
                         rctx.SetRequestStatus(
                             CRequestStatus::e299_PartialContentBrokenConnection);
                     }
@@ -1193,13 +1169,14 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                 }
             }
             if (!CDiagContext::IsSetOldPostFormat()) {
-                if (m_RequestStartPrinted) {
+                if (processor.GetRequestStartPrinted()) {
                     // This will also reset request context
-                    ctx.PrintRequestStop();
-                    m_RequestStartPrinted = false;
+                    diag_ctx.PrintRequestStop();
+                    processor.SetRequestStartPrinted(false);
                 }
                 rctx.Reset();
             }
+            processor.OnEvent(event, status);
             break;
         }
     case eExit:
@@ -1217,10 +1194,10 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
 }
 
 
-void CCgiApplication::OnEvent(EEvent /*event*/,
-                              int    /*exit_code*/)
+void CCgiApplication::OnEvent(EEvent event,
+                              int    exit_code)
 {
-    return;
+    if (x_IsSetProcessor()) x_GetProcessor().OnEvent(event, exit_code);
 }
 
 
@@ -1396,7 +1373,7 @@ bool CCgiApplication::IsCachingNeeded(const CCgiRequest& /*request*/) const
 }
 
 
-ICache* CCgiApplication::GetCacheStorage() const
+ICache* CCgiApplication::GetCacheStorage(void) const
 { 
     return NULL;
 }
@@ -1429,19 +1406,18 @@ CCgiApplication::PreparseArgs(int                argc,
 
 void CCgiApplication::SetRequestId(const string& rid, bool is_done)
 {
-    m_RID = rid;
-    m_IsResultReady = is_done;
+    x_GetProcessor().SetRequestId(rid, is_done);
 }
 
 
-bool CCgiApplication::GetResultFromCache(const CCgiRequest& request, CNcbiOstream& os)
+bool CCgiApplication::GetResultFromCache(const CCgiRequest& request, CNcbiOstream& os, ICache& cache)
 {
     string checksum, content;
     if (!request.CalcChecksum(checksum, content))
         return false;
 
     try {
-        CCacheHashedContent helper(*m_Cache);
+        CCacheHashedContent helper(cache);
         unique_ptr<IReader> reader( helper.GetHashedContent(checksum, content));
         if (reader.get()) {
             //cout << "(Read) " << checksum << " --- " << content << endl;
@@ -1455,13 +1431,13 @@ bool CCgiApplication::GetResultFromCache(const CCgiRequest& request, CNcbiOstrea
 }
 
 
-void CCgiApplication::SaveResultToCache(const CCgiRequest& request, CNcbiIstream& is)
+void CCgiApplication::SaveResultToCache(const CCgiRequest& request, CNcbiIstream& is, ICache& cache)
 {
     string checksum, content;
     if ( !request.CalcChecksum(checksum, content) )
         return;
     try {
-        CCacheHashedContent helper(*m_Cache);
+        CCacheHashedContent helper(cache);
         unique_ptr<IWriter> writer( helper.StoreHashedContent(checksum, content) );
         if (writer.get()) {
             //        cout << "(Write) : " << checksum << " --- " << content << endl;
@@ -1474,12 +1450,12 @@ void CCgiApplication::SaveResultToCache(const CCgiRequest& request, CNcbiIstream
 }
 
 
-void CCgiApplication::SaveRequest(const string& rid, const CCgiRequest& request)
+void CCgiApplication::SaveRequest(const string& rid, const CCgiRequest& request, ICache& cache)
 {    
     if (rid.empty())
         return;
     try {
-        unique_ptr<IWriter> writer( m_Cache->GetWriteStream(rid, 0, "NS_JID") );
+        unique_ptr<IWriter> writer( cache.GetWriteStream(rid, 0, "NS_JID") );
         if (writer.get()) {
             CWStream cache_stream(writer.get());            
             request.Serialize(cache_stream);
@@ -1490,12 +1466,12 @@ void CCgiApplication::SaveRequest(const string& rid, const CCgiRequest& request)
 }
 
 
-CCgiRequest* CCgiApplication::GetSavedRequest(const string& rid)
+CCgiRequest* CCgiApplication::GetSavedRequest(const string& rid, ICache& cache)
 {
     if (rid.empty())
         return NULL;
     try {
-        unique_ptr<IReader> reader(m_Cache->GetReadStream(rid, 0, "NS_JID"));
+        unique_ptr<IReader> reader(cache.GetReadStream(rid, 0, "NS_JID"));
         if (reader.get()) {
             CRStream cache_stream(reader.get());
             unique_ptr<CCgiRequest> request(new CCgiRequest);
@@ -1509,7 +1485,7 @@ CCgiRequest* CCgiApplication::GetSavedRequest(const string& rid)
 }
 
 
-void CCgiApplication::x_AddLBCookie()
+void CCgiApplication::AddLBCookie(CCgiCookies& cookies)
 {
     const CNcbiRegistry& reg = GetConfig();
 
@@ -1567,8 +1543,13 @@ void CCgiApplication::x_AddLBCookie()
         cookie.SetExpTime(exp_time);
     }
     cookie.SetSecure(secure);
+    cookies.Add(cookie);
+}
 
-    GetContext().GetResponse().Cookies().Add(cookie);
+
+void CCgiApplication::x_AddLBCookie()
+{
+    AddLBCookie(GetContext().GetResponse().Cookies());
 }
 
 
@@ -1647,8 +1628,8 @@ string CCgiApplication::GetDefaultLogPath(void) const
 
 void CCgiApplication::SetHTTPStatus(unsigned int status, const string& reason)
 {
-    if ( m_Context.get() ) {
-        m_Context->GetResponse().SetStatus(status, reason);
+    if ( x_IsSetProcessor() ) {
+        x_GetProcessor().SetHTTPStatus(status, reason);
     }
     else {
         CDiagContext::GetRequestContext().SetRequestStatus(status);
@@ -1656,12 +1637,10 @@ void CCgiApplication::SetHTTPStatus(unsigned int status, const string& reason)
 }
 
 
-bool CCgiApplication::x_DoneHeadRequest(void) const
+bool CCgiApplication::x_DoneHeadRequest(CCgiContext& context) const
 {
-    if (!m_Context.get()) return false; // There was an error initializing context
-    const CCgiContext& ctx = GetContext();
-    const CCgiRequest& req = ctx.GetRequest();
-    const CCgiResponse& res = ctx.GetResponse();
+    const CCgiRequest& req = context.GetRequest();
+    const CCgiResponse& res = context.GetResponse();
     if (req.GetRequestMethod() != CCgiRequest::eMethod_HEAD  ||
         !res.IsHeaderWritten() ) {
         return false;
@@ -1696,47 +1675,9 @@ bool CCgiApplication::SAcceptEntry::operator<(const SAcceptEntry& entry) const
 }
 
 
-void CCgiApplication::ParseAcceptHeader(TAcceptEntries& entries) const {
-    string accept = m_Context->GetRequest().GetProperty(eCgi_HttpAccept);
-    if (accept.empty()) return;
-    list<string> types;
-    NStr::Split(accept, ",", types, NStr::fSplit_MergeDelimiters);
-    ITERATE(list<string>, type_it, types) {
-        list<string> parts;
-        NStr::Split(NStr::TruncateSpaces(*type_it), ";", parts, NStr::fSplit_MergeDelimiters);
-        if ( parts.empty() ) continue;
-        entries.push_back(SAcceptEntry());
-        SAcceptEntry& entry = entries.back();
-        NStr::SplitInTwo(NStr::TruncateSpaces(parts.front()), "/", entry.m_Type, entry.m_Subtype);
-        NStr::TruncateSpacesInPlace(entry.m_Type);
-        NStr::TruncateSpacesInPlace(entry.m_Subtype);
-        list<string>::const_iterator ext_it = parts.begin();
-        ++ext_it; // skip type/subtype
-        bool aparams = false;
-        while (ext_it != parts.end()) {
-            string name, value;
-            NStr::SplitInTwo(NStr::TruncateSpaces(*ext_it), "=", name, value);
-            NStr::TruncateSpacesInPlace(name);
-            NStr::TruncateSpacesInPlace(value);
-            if (name == "q") {
-                entry.m_Quality = NStr::StringToNumeric<float>(value, NStr::fConvErr_NoThrow);
-                if (entry.m_Quality == 0 && errno != 0) {
-                    entry.m_Quality = 1;
-                }
-                aparams = true;
-                ++ext_it;
-                continue;
-            }
-            if (aparams) {
-                entry.m_AcceptParams[name] = value;
-            }
-            else {
-                 entry.m_MediaRangeParams += ";" + name + "=" + value;
-            }
-            ++ext_it;
-        }
-    }
-    entries.sort();
+void CCgiApplication::ParseAcceptHeader(TAcceptEntries& entries) const
+{
+    x_GetProcessor().ParseAcceptHeader(entries);
 }
 
 
@@ -1746,15 +1687,15 @@ NCBI_PARAM_DEF_EX(bool, CGI, EnableHelpRequest, true,
 typedef NCBI_PARAM_TYPE(CGI, EnableHelpRequest) TEnableHelpRequest;
 
 
-bool CCgiApplication::x_ProcessHelpRequest(void)
+bool CCgiApplication::x_ProcessHelpRequest(CCgiRequestProcessor& processor)
 {
     if (!TEnableHelpRequest::GetDefault()) return false;
-    CCgiRequest& request = m_Context->GetRequest();
+    CCgiRequest& request = processor.GetContext().GetRequest();
     if (request.GetRequestMethod() != CCgiRequest::eMethod_GET) return false;
     bool found = false;
     string format = request.GetEntry("ncbi_help", &found);
     if ( !found ) return false;
-    ProcessHelpRequest(format);
+    processor.ProcessHelpRequest(format);
     return true;
 }
 
@@ -1772,111 +1713,7 @@ inline string FindContentType(CTempString format) {
 
 void CCgiApplication::ProcessHelpRequest(const string& format)
 {
-    string base_name = GetProgramExecutablePath();
-    string fname;
-    string content_type;
-    // If 'format' is set, try to find <basename>.help.<format> or help.<format> file.
-    if ( !format.empty() ) {
-        string fname_fmt = base_name + ".help." + format;
-        if ( CFile(fname_fmt).Exists() ) {
-            fname = fname_fmt;
-            content_type = FindContentType(format);
-        }
-        else {
-            fname_fmt = "help." + format;
-            if ( CFile(fname_fmt).Exists() ) {
-                fname = fname_fmt;
-                content_type = FindContentType(format);
-            }
-        }
-    }
-
-    // If 'format' is not set or there's no file of the specified format, check
-    // 'Accept:' header.
-    if ( fname.empty() ) {
-        TAcceptEntries entries;
-        ParseAcceptHeader(entries);
-        ITERATE(TAcceptEntries, it, entries) {
-            string fname_accept = base_name + ".help." + it->m_Subtype + it->m_MediaRangeParams;
-            if ( CFile(fname_accept).Exists() ) {
-                fname = fname_accept;
-                content_type = it->m_Type + "/" + it->m_Subtype;
-                break;
-            }
-        }
-        if ( fname.empty() ) {
-            ITERATE(TAcceptEntries, it, entries) {
-                string fname_accept = "help." + it->m_Subtype + it->m_MediaRangeParams;
-                if ( CFile(fname_accept).Exists() ) {
-                    fname = fname_accept;
-                    content_type = it->m_Type + "/" + it->m_Subtype;
-                    break;
-                }
-            }
-        }
-    }
-
-    // Finally, check standard formats: html/xml/json
-    if ( fname.empty() ) {
-        for (size_t i = 0; i < sizeof(kStdFormats) / sizeof(kStdFormats[0]); ++i) {
-            string fname_std = base_name + ".help." + kStdFormats[i];
-            if ( CFile(fname_std).Exists() ) {
-                fname = fname_std;
-                content_type = kStdContentTypes[i];
-                break;
-            }
-        }
-    }
-    if ( fname.empty() ) {
-        for (size_t i = 0; i < sizeof(kStdFormats) / sizeof(kStdFormats[0]); ++i) {
-            string fname_std = string("help.") + kStdFormats[i];
-            if ( CFile(fname_std).Exists() ) {
-                fname = fname_std;
-                content_type = kStdContentTypes[i];
-                break;
-            }
-        }
-    }
-
-    CCgiResponse& response = m_Context->GetResponse();
-    if ( !fname.empty() ) {
-        CNcbiIfstream in(fname.c_str());
-
-        // Check if the file starts with "Content-type:" header followed by double-eol.
-        bool ct_found = false;
-        string ct;
-        getline(in, ct);
-        if ( NStr::StartsWith(ct, "content-type:", NStr::eNocase) ) {
-            string eol;
-            getline(in, eol);
-            if ( eol.empty() ) {
-                ct_found = true;
-                content_type = NStr::TruncateSpaces(ct.substr(13));
-            }
-        }
-        if ( !ct_found ) {
-            in.seekg(0);
-        }
-
-        if ( !content_type.empty()) {
-            response.SetContentType(content_type);
-        }
-        response.WriteHeader();
-        NcbiStreamCopy(*response.GetOutput(), in);
-    }
-    else {
-        // Could not find help file, use arg descriptions instead.
-        const CArgDescriptions* args = GetArgDescriptions();
-        if ( args ) {
-            response.SetContentType("text/xml");
-            response.WriteHeader();
-            args->PrintUsageXml(*response.GetOutput());
-        }
-        else {
-            NCBI_THROW(CCgiRequestException, eData,
-                "Can not find help for CGI application");
-        }
-    }
+    x_GetProcessor().ProcessHelpRequest(format);
 }
 
 
@@ -1886,9 +1723,9 @@ NCBI_PARAM_DEF_EX(string, CGI, EnableVersionRequest, "t",
 typedef NCBI_PARAM_TYPE(CGI, EnableVersionRequest) TEnableVersionRequest;
 
 
-bool CCgiApplication::x_ProcessVersionRequest(void)
+bool CCgiApplication::x_ProcessVersionRequest(CCgiRequestProcessor& processor)
 {
-    CCgiRequest& request = m_Context->GetRequest();
+    CCgiRequest& request = processor.GetContext().GetRequest();
     if (request.GetRequestMethod() != CCgiRequest::eMethod_GET) return false;
 
     // If param value is a bool, enable the default ncbi_version CGI arg.
@@ -1926,70 +1763,19 @@ bool CCgiApplication::x_ProcessVersionRequest(void)
         NCBI_THROW(CCgiRequestException, eEntry,
             "Unsupported ncbi_version argument value");
     }
-    ProcessVersionRequest(vt);
+    processor.ProcessVersionRequest(vt);
     return true;
 }
 
 
 void CCgiApplication::ProcessVersionRequest(EVersionType ver_type)
 {
-    string format = "plain";
-    string content_type = "text/plain";
-    TAcceptEntries entries;
-    ParseAcceptHeader(entries);
-    ITERATE(TAcceptEntries, it, entries) {
-        if (it->m_Subtype == "xml" || it->m_Subtype == "json" ||
-            (it->m_Type == "text" && it->m_Subtype == "plain")) {
-            format = it->m_Subtype;
-            content_type = it->m_Type + "/" + it->m_Subtype;
-            break;
-        }
-    }
-
-    CCgiResponse& response = m_Context->GetResponse();
-    response.SetContentType(content_type);
-    response.WriteHeader();
-    CNcbiOstream& out = *response.GetOutput();
-    if (format == "plain") {
-        switch (ver_type) {
-        case eVersion_Short:
-            out << GetVersion().Print();
-            break;
-        case eVersion_Full:
-            out << GetFullVersion().Print(GetAppName());
-            break;
-        }
-    }
-    else if (format == "xml") {
-        switch (ver_type) {
-        case eVersion_Short:
-            out << GetFullVersion().PrintXml(kEmptyStr, CVersion::fVersionInfo);
-            break;
-        case eVersion_Full:
-            out << GetFullVersion().PrintXml(GetAppName());
-            break;
-        }
-    }
-    else if (format == "json") {
-        switch (ver_type) {
-        case eVersion_Short:
-            out << GetFullVersion().PrintJson(kEmptyStr, CVersion::fVersionInfo);
-            break;
-        case eVersion_Full:
-            out << GetFullVersion().PrintJson(GetAppName());
-            break;
-        }
-    }
-    else {
-        NCBI_THROW(CCgiRequestException, eData,
-            "Unsupported version format");
-    }
+    x_GetProcessor().ProcessVersionRequest(ver_type);
 }
 
-
-bool CCgiApplication::x_ProcessAdminRequest(void)
+bool CCgiApplication::x_ProcessAdminRequest(CCgiRequestProcessor& processor)
 {
-    CCgiRequest& request = m_Context->GetRequest();
+    CCgiRequest& request = processor.GetContext().GetRequest();
     if (request.GetRequestMethod() != CCgiRequest::eMethod_GET) return false;
 
     bool found = false;
@@ -2012,21 +1798,13 @@ bool CCgiApplication::x_ProcessAdminRequest(void)
 
     // If the overriden method failed or refused to process a command,
     // fallback to the default processing which returns true for all known commands.
-    return ProcessAdminRequest(cmd) || CCgiApplication::ProcessAdminRequest(cmd);
+    return processor.ProcessAdminRequest(cmd) || processor.ProcessAdminRequest_Base(cmd);
 }
 
 
 bool CCgiApplication::ProcessAdminRequest(EAdminCommand cmd)
 {
-    if (cmd == eAdmin_Unknown) return false;
-
-    // By default report status 200 and write headers for any command.
-    CCgiResponse& response = m_Context->GetResponse();
-    response.SetContentType("text/plain");
-    SetHTTPStatus(CCgiException::e200_Ok,
-        CCgiException::GetStdStatusMessage(CCgiException::e200_Ok));
-    response.WriteHeader();
-    return true;
+    return x_GetProcessor().ProcessAdminRequest(cmd);
 }
 
 
@@ -2039,10 +1817,212 @@ static const char* kCSRFTokenName = "NCBI_CSRF_TOKEN";
 
 bool CCgiApplication::ValidateSynchronizationToken(void)
 {
-    if (!TParamValidateCSRFToken::GetDefault()) return true;
-    const CCgiRequest& req = GetContext().GetRequest();
-    const string& token = req.GetRandomProperty(kCSRFTokenName, false);
-    return !token.empty() && token == req.GetTrackingCookie();
+    return x_GetProcessor().ValidateSynchronizationToken();
+}
+
+
+string CCgiApplication::GetFastCGIStandaloneServer(void) const
+{
+    string path;
+    const char* p = getenv("FCGI_STANDALONE_SERVER");
+    if (p  &&  *p) {
+        path = p;
+    } else {
+        path = GetConfig().Get("FastCGI", "StandaloneServer");
+    }
+    return path;
+}
+
+
+bool CCgiApplication::GetFastCGIStatLog(void) const
+{
+    return GetConfig().GetBool("CGI", "StatLog", false, 0, CNcbiRegistry::eReturn);
+}
+
+
+unsigned int CCgiApplication::GetFastCGIIterations(unsigned int def_iter) const
+{
+    int ret = def_iter;
+    int x_iterations = GetConfig().GetInt("FastCGI", "Iterations", (int) def_iter, 0, CNcbiRegistry::eErrPost);
+    if (x_iterations > 0) {
+        ret = (unsigned int) x_iterations;
+    } else {
+        ERR_POST_X(6, "CCgiApplication::x_RunFastCGI:  invalid "
+                      "[FastCGI].Iterations config.parameter value: "
+                      << x_iterations);
+        _ASSERT(def_iter);
+        ret = def_iter;
+    }
+
+    int iterations_rnd_inc = GetConfig().
+        GetInt("FastCGI", "Iterations_Random_Increase", 0, 0, CNcbiRegistry::eErrPost);
+    if (iterations_rnd_inc > 0) {
+        ret += rand() % iterations_rnd_inc;
+    }
+
+    _TRACE("CCgiApplication::Run: FastCGI limited to "
+            << ret << " iterations");
+    return ret;
+}
+
+
+bool CCgiApplication::GetFastCGIComplete_Request_On_Sigterm(void) const
+{
+    return GetConfig().GetBool("FastCGI", "Complete_Request_On_Sigterm", false);
+}
+
+
+CCgiWatchFile* CCgiApplication::CreateFastCGIWatchFile(void) const
+{
+    const string& orig_filename = GetConfig().Get("FastCGI", "WatchFile.Name");
+    if ( !orig_filename.empty() ) {
+        string filename = CDirEntry::CreateAbsolutePath
+            (orig_filename, CDirEntry::eRelativeToExe);
+        if (filename != orig_filename) {
+            _TRACE("Adjusted relative CGI watch file name " << orig_filename
+                    << " to " << filename);
+        }
+        int limit = GetConfig().GetInt("FastCGI", "WatchFile.Limit", -1, 0,
+                                CNcbiRegistry::eErrPost);
+        if (limit <= 0) {
+            limit = 1024; // set a reasonable default
+        }
+        return new CCgiWatchFile(filename, limit);
+    }
+    return nullptr;
+}
+
+
+unsigned int CCgiApplication::GetFastCGIWatchFileTimeout(bool have_watcher) const
+{
+    int ret = GetConfig().GetInt("FastCGI", "WatchFile.Timeout", 0, 0, CNcbiRegistry::eErrPost);
+    if (ret <= 0) {
+        if ( have_watcher ) {
+            ERR_POST_X(7, "CCgiApplication::x_RunFastCGI:  non-positive "
+                "[FastCGI].WatchFile.Timeout conf.param. value ignored: " << ret);
+        }
+        return 0;
+    }
+    return (unsigned int) ret;
+}
+
+
+int CCgiApplication::GetFastCGIWatchFileRestartDelay(void) const
+{
+    int ret = GetConfig().GetInt("FastCGI", "WatchFile.RestartDelay", 0, 0, CNcbiRegistry::eErrPost);
+    if (ret <= 0) return 0;
+    // CRandom is higher-quality, but would introduce an extra
+    // dependency on libxutil; rand() should be good enough here.
+    srand(CCurrentProcess::GetPid());
+    double r = rand() / (RAND_MAX + 1.0);
+    return 1 + (int)(ret * r);
+}
+
+
+bool CCgiApplication::GetFastCGIChannelErrors(void) const
+{
+    return GetConfig().GetBool("FastCGI", "ChannelErrors", false, 0, CNcbiRegistry::eReturn);
+}
+
+
+bool CCgiApplication::GetFastCGIHonorExitRequest(void) const
+{
+    return GetConfig().GetBool("FastCGI", "HonorExitRequest", false, 0, CNcbiRegistry::eErrPost);
+}
+
+bool CCgiApplication::GetFastCGIDebug(void) const
+{
+    return GetConfig().GetBool("FastCGI", "Debug", false, 0, CNcbiRegistry::eErrPost);
+}
+
+
+bool CCgiApplication::GetFastCGIStopIfFailed(void) const
+{
+    return GetConfig().GetBool("FastCGI","StopIfFailed", false, 0, CNcbiRegistry::eErrPost);
+}
+
+
+CTime CCgiApplication::GetFileModificationTime(const string& filename)
+{
+    CTime mtime;
+    if ( !CDirEntry(filename).GetTime(&mtime) ) {
+        NCBI_THROW(CCgiErrnoException, eModTime,
+                   "Cannot get modification time of the CGI executable "
+                   + filename);
+    }
+    return mtime;
+}
+
+
+bool CCgiApplication::CheckMemoryLimit(void)
+{
+    Uint8 limit = NStr::StringToUInt8_DataSize(
+        GetConfig().GetString("FastCGI", "TotalMemoryLimit", "0", CNcbiRegistry::eReturn),
+        NStr::fConvErr_NoThrow);
+    if ( limit ) {
+        CCurrentProcess::SMemoryUsage memory_usage;
+        if ( !CCurrentProcess::GetMemoryUsage(memory_usage) ) {
+            ERR_POST("Could not check self memory usage" );
+        }
+        else if (memory_usage.total > limit) {
+            ERR_POST(Warning << "Memory usage (" << memory_usage.total <<
+                ") is above the configured limit (" <<
+                limit << ")");
+            return true;
+        }
+    }
+    return false;
+}
+
+
+DEFINE_STATIC_FAST_MUTEX(s_RestartReasonMutex);
+
+CCgiApplication::ERestartReason CCgiApplication::ShouldRestart(CTime& mtime, CCgiWatchFile* watcher, int delay)
+{
+    static CSafeStatic<CTime> restart_time;
+    static ERestartReason restart_reason = eSR_None;
+
+    CFastMutexGuard guard(s_RestartReasonMutex);
+    if (restart_reason != eSR_None) return restart_reason;
+
+    // Check if this CGI executable has been changed
+    CTime mtimeNew = CCgiApplication::GetFileModificationTime(
+        CCgiApplication::Instance()->GetArguments().GetProgramName());
+    if ( mtimeNew != mtime) {
+        _TRACE("CCgiApplication::x_RunFastCGI: "
+               "the program modification date has changed");
+        restart_reason = eSR_Executable;
+    } else if ( watcher  &&  watcher->HasChanged()) {
+        // Check if the file we're watching (if any) has changed
+        // (based on contents, not timestamp!)
+        ERR_POST_X(3, Warning <<
+            "Scheduling restart of Fast-CGI, as its watch file has changed");
+        restart_reason = eSR_WatchFile;
+    }
+
+    if (restart_reason != eSR_None) {
+        if (restart_time->IsEmpty()) {
+            restart_time->SetTimeZone(CTime::eGmt);
+            restart_time->SetCurrent();
+            restart_time->AddSecond(delay);
+            _TRACE("Will restart Fast-CGI in " << delay << " seconds, at "
+                   << restart_time->GetLocalTime().AsString("h:m:s"));
+        }
+        if (CurrentTime(CTime::eGmt) >= *restart_time) {
+            return restart_reason;
+        }
+    }
+
+    return eSR_None;
+}
+
+
+void CCgiApplication::InitArgs(CArgs& args, CCgiContext& context) const
+{
+    // Copy cmd-line arg values to CGI args
+    args.Assign(CParent::GetArgs());
+    // Add CGI parameters to the CGI version of args
+    GetArgDescriptions()->ConvertKeys(&args, context.GetRequest().GetEntries(), true /*update=yes*/);
 }
 
 
@@ -2148,11 +2128,8 @@ string CCgiStatistics::Compose_Timing(const CTime& end_time)
 
 string CCgiStatistics::Compose_Entries(void)
 {
-    const CCgiContext* ctx = m_CgiApp.m_Context.get();
-    if ( !ctx )
-        return kEmptyStr;
-
-    const CCgiRequest& cgi_req = ctx->GetRequest();
+    if (!m_CgiApp.x_GetProcessor().IsSetContext()) return kEmptyStr;
+    const CCgiRequest& cgi_req = m_CgiApp.x_GetProcessor().GetContext().GetRequest();
 
     // LogArgs - list of CGI arguments to log.
     // Can come as list of arguments (LogArgs = param1;param2;param3),
@@ -2212,6 +2189,421 @@ string CCgiStatistics::Compose_Result(void)
 string CCgiStatistics::Compose_ErrMessage(void)
 {
     return m_ErrMsg;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CCgiWatchFile
+
+int CCgiWatchFile::x_Read(char* buf)
+{
+    CNcbiIfstream in(m_Filename.c_str());
+    if (in) {
+        in.read(buf, m_Limit);
+        return (int) in.gcount();
+    } else {
+        return -1;
+    }
+}
+
+CCgiWatchFile::CCgiWatchFile(const string& filename, int limit)
+        : m_Filename(filename), m_Limit(limit), m_Buf(new char[limit])
+{
+    m_Count = x_Read(m_Buf.get());
+    if (m_Count < 0) {
+        ERR_POST_X(2, "Failed to open CGI watch file " << filename);
+    }
+}
+
+bool CCgiWatchFile::HasChanged(void)
+{
+    TBuf buf(new char[m_Limit]);
+    if (x_Read(buf.get()) != m_Count) {
+        return true;
+    } else if (m_Count == -1) { // couldn't be opened
+        return false;
+    } else {
+        return memcmp(buf.get(), m_Buf.get(), m_Count) != 0;
+    }
+    // no need to update m_Count or m_Buf, since the CGI will restart
+    // if there are any discrepancies.
+}
+
+
+///////////////////////////////////////////////////////
+// CCgiRequestProcessor
+//
+
+
+CCgiRequestProcessor::CCgiRequestProcessor(CCgiApplication& app)
+    : m_App(app)
+{
+}
+
+
+CCgiRequestProcessor::~CCgiRequestProcessor(void)
+{
+}
+
+
+int CCgiRequestProcessor::ProcessRequest(CCgiContext& context)
+{
+    _ASSERT(m_Context.get() == &context);
+    return m_App.ProcessRequest(context);
+}
+
+
+void CCgiRequestProcessor::ProcessHelpRequest(const string& format)
+{
+    string base_name = m_App.GetProgramExecutablePath();
+    string fname;
+    string content_type;
+    // If 'format' is set, try to find <basename>.help.<format> or help.<format> file.
+    if ( !format.empty() ) {
+        string fname_fmt = base_name + ".help." + format;
+        if ( CFile(fname_fmt).Exists() ) {
+            fname = fname_fmt;
+            content_type = FindContentType(format);
+        }
+        else {
+            fname_fmt = "help." + format;
+            if ( CFile(fname_fmt).Exists() ) {
+                fname = fname_fmt;
+                content_type = FindContentType(format);
+            }
+        }
+    }
+
+    // If 'format' is not set or there's no file of the specified format, check
+    // 'Accept:' header.
+    if ( fname.empty() ) {
+        TAcceptEntries entries;
+        ParseAcceptHeader(entries);
+        ITERATE(TAcceptEntries, it, entries) {
+            string fname_accept = base_name + ".help." + it->m_Subtype + it->m_MediaRangeParams;
+            if ( CFile(fname_accept).Exists() ) {
+                fname = fname_accept;
+                content_type = it->m_Type + "/" + it->m_Subtype;
+                break;
+            }
+        }
+        if ( fname.empty() ) {
+            ITERATE(TAcceptEntries, it, entries) {
+                string fname_accept = "help." + it->m_Subtype + it->m_MediaRangeParams;
+                if ( CFile(fname_accept).Exists() ) {
+                    fname = fname_accept;
+                    content_type = it->m_Type + "/" + it->m_Subtype;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Finally, check standard formats: html/xml/json
+    if ( fname.empty() ) {
+        for (size_t i = 0; i < sizeof(kStdFormats) / sizeof(kStdFormats[0]); ++i) {
+            string fname_std = base_name + ".help." + kStdFormats[i];
+            if ( CFile(fname_std).Exists() ) {
+                fname = fname_std;
+                content_type = kStdContentTypes[i];
+                break;
+            }
+        }
+    }
+    if ( fname.empty() ) {
+        for (size_t i = 0; i < sizeof(kStdFormats) / sizeof(kStdFormats[0]); ++i) {
+            string fname_std = string("help.") + kStdFormats[i];
+            if ( CFile(fname_std).Exists() ) {
+                fname = fname_std;
+                content_type = kStdContentTypes[i];
+                break;
+            }
+        }
+    }
+
+    CCgiResponse& response = GetContext().GetResponse();
+    if ( !fname.empty() ) {
+        CNcbiIfstream in(fname.c_str());
+
+        // Check if the file starts with "Content-type:" header followed by double-eol.
+        bool ct_found = false;
+        string ct;
+        getline(in, ct);
+        if ( NStr::StartsWith(ct, "content-type:", NStr::eNocase) ) {
+            string eol;
+            getline(in, eol);
+            if ( eol.empty() ) {
+                ct_found = true;
+                content_type = NStr::TruncateSpaces(ct.substr(13));
+            }
+        }
+        if ( !ct_found ) {
+            in.seekg(0);
+        }
+
+        if ( !content_type.empty()) {
+            response.SetContentType(content_type);
+        }
+        response.WriteHeader();
+        NcbiStreamCopy(*response.GetOutput(), in);
+    }
+    else {
+        // Could not find help file, use arg descriptions instead.
+        const CArgDescriptions* args = m_App.GetArgDescriptions();
+        if ( args ) {
+            response.SetContentType("text/xml");
+            response.WriteHeader();
+            args->PrintUsageXml(*response.GetOutput());
+        }
+        else {
+            NCBI_THROW(CCgiRequestException, eData,
+                "Can not find help for CGI application");
+        }
+    }
+}
+
+
+void CCgiRequestProcessor::ProcessVersionRequest(CCgiApplication::EVersionType ver_type)
+{
+    string format = "plain";
+    string content_type = "text/plain";
+    TAcceptEntries entries;
+    ParseAcceptHeader(entries);
+    ITERATE(TAcceptEntries, it, entries) {
+        if (it->m_Subtype == "xml" || it->m_Subtype == "json" ||
+            (it->m_Type == "text" && it->m_Subtype == "plain")) {
+            format = it->m_Subtype;
+            content_type = it->m_Type + "/" + it->m_Subtype;
+            break;
+        }
+    }
+
+    CCgiResponse& response = GetContext().GetResponse();
+    response.SetContentType(content_type);
+    response.WriteHeader();
+    CNcbiOstream& out = *response.GetOutput();
+    if (format == "plain") {
+        switch (ver_type) {
+        case CCgiApplication::eVersion_Short:
+            out << m_App.GetVersion().Print();
+            break;
+        case CCgiApplication::eVersion_Full:
+            out << m_App.GetFullVersion().Print(m_App.GetAppName());
+            break;
+        }
+    }
+    else if (format == "xml") {
+        switch (ver_type) {
+        case CCgiApplication::eVersion_Short:
+            out << m_App.GetFullVersion().PrintXml(kEmptyStr, CVersion::fVersionInfo);
+            break;
+        case CCgiApplication::eVersion_Full:
+            out << m_App.GetFullVersion().PrintXml(m_App.GetAppName());
+            break;
+        }
+    }
+    else if (format == "json") {
+        switch (ver_type) {
+        case CCgiApplication::eVersion_Short:
+            out << m_App.GetFullVersion().PrintJson(kEmptyStr, CVersion::fVersionInfo);
+            break;
+        case CCgiApplication::eVersion_Full:
+            out << m_App.GetFullVersion().PrintJson(m_App.GetAppName());
+            break;
+        }
+    }
+    else {
+        NCBI_THROW(CCgiRequestException, eData,
+            "Unsupported version format");
+    }
+}
+
+
+bool CCgiRequestProcessor::ProcessAdminRequest(CCgiApplication::EAdminCommand cmd)
+{
+    return ProcessAdminRequest_Base(cmd);
+}
+
+
+bool CCgiRequestProcessor::ProcessAdminRequest_Base(CCgiApplication::EAdminCommand cmd)
+{
+    if (cmd == CCgiApplication::eAdmin_Unknown) return false;
+
+    // By default report status 200 and write headers for any command.
+    CCgiResponse& response = GetContext().GetResponse();
+    response.SetContentType("text/plain");
+    SetHTTPStatus(CCgiException::e200_Ok,
+        CCgiException::GetStdStatusMessage(CCgiException::e200_Ok));
+    response.WriteHeader();
+    return true;
+}
+
+
+bool CCgiRequestProcessor::ValidateSynchronizationToken(void)
+{
+    if (!TParamValidateCSRFToken::GetDefault()) return true;
+    const CCgiRequest& req = GetContext().GetRequest();
+    const string& token = req.GetRandomProperty(kCSRFTokenName, false);
+    return !token.empty() && token == req.GetTrackingCookie();
+}
+
+
+string CCgiRequestProcessor::GetSelfReferer(void) const
+{
+    string ref = m_Context->GetSelfURL();
+    if ( !ref.empty() ) {
+        string args = m_Context->GetRequest().GetProperty(eCgi_QueryString);
+        if ( !args.empty() ) ref += "?" + args;
+    }
+    return ref;
+}
+
+
+int CCgiRequestProcessor::OnException(std::exception& e, CNcbiOstream& os)
+{
+    // Discriminate between different types of error
+    string status_str = "500 Server Error";
+    string message = "";
+
+    // Save current HTTP status. Later it may be changed to 299 or 499
+    // depending on this value.
+    SetErrorStatus(CDiagContext::GetRequestContext().GetRequestStatus() >= 400);
+    SetHTTPStatus(500);
+
+    CException* ce = dynamic_cast<CException*> (&e);
+    if ( ce ) {
+        message = ce->GetMsg();
+        CCgiException* cgi_e = dynamic_cast<CCgiException*>(&e);
+        if ( cgi_e ) {
+            if ( cgi_e->GetStatusCode() != CCgiException::eStatusNotSet ) {
+                SetHTTPStatus(cgi_e->GetStatusCode());
+                status_str = NStr::IntToString(cgi_e->GetStatusCode()) +
+                    " " + cgi_e->GetStatusMessage();
+            }
+            else {
+                // Convert CgiRequestException and CCgiArgsException
+                // to error 400
+                if (dynamic_cast<CCgiRequestException*> (&e)  ||
+                    dynamic_cast<CUrlException*> (&e)) {
+                    SetHTTPStatus(400);
+                    status_str = "400 Malformed HTTP Request";
+                }
+            }
+        }
+    }
+    else {
+        message = e.what();
+    }
+
+    // Don't try to write to a broken output
+    if (!os.good()  ||  GetOutputBroken()) {
+        return -1;
+    }
+
+    try {
+        // HTTP header
+        os << "Status: " << status_str << HTTP_EOL;
+        os << "Content-Type: text/plain" HTTP_EOL HTTP_EOL;
+
+        // Message
+        os << "ERROR:  " << status_str << " " HTTP_EOL HTTP_EOL;
+        os << NStr::HtmlEncode(message);
+
+        if ( dynamic_cast<CArgException*> (&e) ) {
+            string ustr;
+            const CArgDescriptions* descr = m_App.GetArgDescriptions();
+            if (descr) {
+                os << descr->PrintUsage(ustr) << HTTP_EOL HTTP_EOL;
+            }
+        }
+
+        // Check for problems in sending the response
+        if ( !os.good() ) {
+            ERR_POST_X(4, "CCgiApplication::OnException() failed to send error page"
+                          " back to the client");
+            return -1;
+        }
+    }
+    catch (const exception& ex) {
+        NCBI_REPORT_EXCEPTION_X(14, "(CGI) CCgiApplication::Run", ex);
+    }
+    return 0;
+}
+
+
+void CCgiRequestProcessor::OnEvent(CCgiApplication::EEvent /*event*/, int /*status*/)
+{
+    return;
+}
+
+
+void CCgiRequestProcessor::SetHTTPStatus(unsigned int status, const string& reason)
+{
+    if ( m_Context.get() ) {
+        m_Context->GetResponse().SetStatus(status, reason);
+    }
+    else {
+        CDiagContext::GetRequestContext().SetRequestStatus(status);
+    }
+}
+
+
+void CCgiRequestProcessor::SetRequestId(const string& rid, bool is_done)
+{
+    m_RID = rid;
+    m_IsResultReady = is_done;
+}
+
+
+void CCgiRequestProcessor::ParseAcceptHeader(TAcceptEntries& entries) const
+{
+    string accept = GetContext().GetRequest().GetProperty(eCgi_HttpAccept);
+    if (accept.empty()) return;
+    list<string> types;
+    NStr::Split(accept, ",", types, NStr::fSplit_MergeDelimiters);
+    ITERATE(list<string>, type_it, types) {
+        list<string> parts;
+        NStr::Split(NStr::TruncateSpaces(*type_it), ";", parts, NStr::fSplit_MergeDelimiters);
+        if ( parts.empty() ) continue;
+        entries.push_back(TAcceptEntry());
+        TAcceptEntry& entry = entries.back();
+        NStr::SplitInTwo(NStr::TruncateSpaces(parts.front()), "/", entry.m_Type, entry.m_Subtype);
+        NStr::TruncateSpacesInPlace(entry.m_Type);
+        NStr::TruncateSpacesInPlace(entry.m_Subtype);
+        list<string>::const_iterator ext_it = parts.begin();
+        ++ext_it; // skip type/subtype
+        bool aparams = false;
+        while (ext_it != parts.end()) {
+            string name, value;
+            NStr::SplitInTwo(NStr::TruncateSpaces(*ext_it), "=", name, value);
+            NStr::TruncateSpacesInPlace(name);
+            NStr::TruncateSpacesInPlace(value);
+            if (name == "q") {
+                entry.m_Quality = NStr::StringToNumeric<float>(value, NStr::fConvErr_NoThrow);
+                if (entry.m_Quality == 0 && errno != 0) {
+                    entry.m_Quality = 1;
+                }
+                aparams = true;
+                ++ext_it;
+                continue;
+            }
+            if (aparams) {
+                entry.m_AcceptParams[name] = value;
+            }
+            else {
+                 entry.m_MediaRangeParams += ";" + name + "=" + value;
+            }
+            ++ext_it;
+        }
+    }
+    entries.sort();
+}
+
+
+void CCgiRequestProcessor::x_InitArgs(void) const
+{
+    m_CgiArgs.reset(new CArgs());
+    m_App.InitArgs(*m_CgiArgs, *m_Context);
 }
 
 /////////////////////////////////////////////////////////////////////////////

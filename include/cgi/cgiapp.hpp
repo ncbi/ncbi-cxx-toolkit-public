@@ -53,7 +53,7 @@ class CCgiWatchFile;
 class ICgiSessionStorage;
 class CCgiSessionParameters;
 class ICache;
-
+class CCgiRequestProcessor;
 
 /////////////////////////////////////////////////////////////////////////////
 //  CCgiApplication::
@@ -62,9 +62,12 @@ class ICache;
 class NCBI_XCGI_EXPORT CCgiApplication : public CNcbiApplication
 {
     friend class CCgiStatistics;
-    typedef CNcbiApplication CParent;
+    friend class CCgiRequestProcessor;
+    friend void s_ScheduleFastCGIExit(void);
 
 public:
+    typedef CNcbiApplication CParent;
+
     CCgiApplication(const SBuildInfo& build_info = NCBI_SBUILDINFO_DEFAULT());
     ~CCgiApplication(void);
 
@@ -85,10 +88,10 @@ public:
     ///
     /// 1-based for FastCGI (but 0 before the first iteration starts);
     /// always 0 for regular (i.e. not "fast") CGIs.
-    unsigned int GetFCgiIteration(void) const { return m_Iteration; }
+    unsigned int GetFCgiIteration(void) const { return (unsigned int)(m_Iteration.Get()); }
 
     /// Return TRUE if it is running as a "fast" CGI
-    bool IsFastCGI(void) const;
+    virtual bool IsFastCGI(void) const;
 
     /// This method is called on the CGI application initialization -- before
     /// starting to process a HTTP request or even receiving one.
@@ -155,17 +158,6 @@ public:
     /// @sa CCgiSession
     virtual bool ValidateSynchronizationToken(void);
 
-private:
-    virtual ICache* GetCacheStorage() const;
-    virtual bool IsCachingNeeded(const CCgiRequest& request) const;
-    bool GetResultFromCache(const CCgiRequest& request, CNcbiOstream& os);
-    void SaveResultToCache(const CCgiRequest& request, CNcbiIstream& is);
-    void SaveRequest(const string& rid, const CCgiRequest& request);
-    CCgiRequest* GetSavedRequest(const string& rid);
-    bool x_ProcessHelpRequest(void);
-    bool x_ProcessVersionRequest(void);
-    bool x_ProcessAdminRequest(void);
-
 protected:
     /// Check the command line arguments before parsing them.
     /// If '-version' or '-version-full' is the only argument,
@@ -230,9 +222,7 @@ protected:
     ///  loop immediately.
     /// @note
     ///  It is a no-op for the regular CGI.
-    void FASTCGI_ScheduleExit(void) { m_ShouldExit = true; }
-
-    friend void s_ScheduleFastCGIExit(void);
+    virtual void FASTCGI_ScheduleExit(void) { m_ShouldExit = true; }
 
     /// Factory method for the Context object construction
     virtual CCgiContext*   CreateContext(CNcbiArguments*   args = 0,
@@ -247,6 +237,11 @@ protected:
     virtual CCgiContext* CreateContextWithFlags(CNcbiArguments* args,
         CNcbiEnvironment* env, CNcbiIstream* inp, CNcbiOstream* out,
             int ifd, int ofd, int flags);
+
+    /// Default implementation of CreateContextWithFlags.
+    CCgiContext* CreateContextWithFlags_Default(CCgiRequestProcessor& processor,
+        CNcbiArguments* args, CNcbiEnvironment* env, CNcbiIstream* inp, CNcbiOstream* out,
+        int ifd, int ofd, int flags);
 
     void                   RegisterDiagFactory(const string& key,
                                                CDiagFactory* fact);
@@ -361,17 +356,23 @@ protected:
     /// Parse "Accept:" header, put entries to the list, more specific first.
     void ParseAcceptHeader(TAcceptEntries& entries) const;
 
+    /// Create request processor to process the request. If the method returns null,
+    /// the application's ProcessRequest() method is used for the request. Otherwise
+    /// request is passed to the processor.
+    /// @sa CCgiRequestProcessor
+    virtual CCgiRequestProcessor* CreateRequestProcessor(void);
+
 protected:
     /// Set CONN_HTTP_REFERER, print self-URL and referer to log.
     void ProcessHttpReferer(void);
 
+    /// @deprecated Use LogRequest(const CCgiContext&) instead.
+    NCBI_DEPRECATED void LogRequest(void) const;
     /// Write the required values to log (user-agent, self-url, referer etc.)
-    void LogRequest(void) const;
+    void LogRequest(const CCgiContext& ctx) const;
 
     /// Bit flags for CCgiRequest
     int m_RequestFlags;
-
-private:
 
     // If FastCGI-capable, and run as a Fast-CGI, then iterate through
     // the FastCGI loop (doing initialization and running ProcessRequest()
@@ -379,23 +380,72 @@ private:
     // Return FALSE overwise.
     // In the "result", return # of requests whose processing has failed
     // (exception was thrown or ProcessRequest() returned non-zero value)
-    bool x_RunFastCGI(int* result, unsigned int def_iter = 10);
+    virtual bool x_RunFastCGI(int* result, unsigned int def_iter = 10);
+
+    string GetFastCGIStandaloneServer(void) const;
+    bool GetFastCGIStatLog(void) const;
+    unsigned int GetFastCGIIterations(unsigned int def_iter) const;
+    bool GetFastCGIComplete_Request_On_Sigterm(void) const;
+    CCgiWatchFile* CreateFastCGIWatchFile(void) const;
+    unsigned int GetFastCGIWatchFileTimeout(bool have_watcher) const;
+    int GetFastCGIWatchFileRestartDelay(void) const;
+    bool GetFastCGIChannelErrors(void) const;
+    bool GetFastCGIHonorExitRequest(void) const;
+    bool GetFastCGIDebug(void) const;
+    bool GetFastCGIStopIfFailed(void) const;
+    static CTime GetFileModificationTime(const string& filename);
+    // Return true if current memory usage is above the limit.
+    bool CheckMemoryLimit(void);
+    void InitArgs(CArgs& args, CCgiContext& context) const;
+    void AddLBCookie(CCgiCookies& cookies);
+    virtual ICache* GetCacheStorage(void) const;
+    virtual bool IsCachingNeeded(const CCgiRequest& request) const;
+    bool GetResultFromCache(const CCgiRequest& request, CNcbiOstream& os, ICache& cache);
+    void SaveResultToCache(const CCgiRequest& request, CNcbiIstream& is, ICache& cache);
+    void SaveRequest(const string& rid, const CCgiRequest& request, ICache& cache);
+    CCgiRequest* GetSavedRequest(const string& rid, ICache& cache);
+    bool x_ProcessHelpRequest(CCgiRequestProcessor& processor);
+    bool x_ProcessVersionRequest(CCgiRequestProcessor& processor);
+    bool x_ProcessAdminRequest(CCgiRequestProcessor& processor);
+
+    enum ERestartReason {
+        eSR_None       = 0,
+        eSR_Executable = 111,
+        eSR_WatchFile  = 112
+    };
+    // Decide if this FastCGI process should be finished prematurely, right now
+    // (the criterion being whether the executable or a special watched file
+    // has changed since the last iteration)
+    // NOTE: The method is not MT-safe.
+    static ERestartReason ShouldRestart(CTime& mtime, CCgiWatchFile* watcher, int delay);
 
     // Write message to the application log, call OnEvent()
-    void x_OnEvent(EEvent event, int status);
+    void x_OnEvent(CCgiRequestProcessor* pprocessor, EEvent event, int status);
+    // Backward compatibility
+    void x_OnEvent(EEvent event, int status) { x_OnEvent(x_GetProcessorOrNull(), event, status); }
+
+    // Create processor and store it in TLS.
+    CCgiRequestProcessor& x_CreateProcessor(void);
+
+    bool m_CaughtSigterm;
+    CRef<CTls<CCgiRequestProcessor>> m_Processor;
+    CAtomicCounter            m_Iteration;   // (always 0 for plain CGI)
+
+private:
 
     // Add cookie with load balancer information
     void x_AddLBCookie();
 
     CCgiContext&   x_GetContext (void) const;
     CNcbiResource& x_GetResource(void) const;    
+    bool x_IsSetProcessor(void) const;
+    CCgiRequestProcessor& x_GetProcessor(void) const;
+    CCgiRequestProcessor* x_GetProcessorOrNull(void) const;
 
     // Check if HEAD request has been served.
-    bool x_DoneHeadRequest(void) const;
+    bool x_DoneHeadRequest(CCgiContext& context) const;
 
-    unique_ptr<CNcbiResource>   m_Resource;
-    unique_ptr<CCgiContext>     m_Context;
-    unique_ptr<ICache>          m_Cache;
+    unique_ptr<CNcbiResource>        m_Resource;
 
     typedef map<string, CDiagFactory*> TDiagFactoryMap;
     TDiagFactoryMap           m_DiagFactories;
@@ -403,35 +453,11 @@ private:
     unique_ptr<CCookieAffinity> m_Caf;         // Cookie affinity service pointer
     char*                     m_HostIP;      // Cookie affinity host IP buffer
 
-    unsigned int              m_Iteration;   // (always 0 for plain CGI)
-
     // Environment var. value to put to the diag.prefix;  [CGI].DiagPrefixEnv
     string                    m_DiagPrefixEnv;
 
-    /// Flag, indicates arguments are in sync with CGI context
-    /// (becomes TRUE on first call of GetArgs())
-    mutable bool              m_ArgContextSync;
-
-    /// Parsed cmd.-line args (cmdline + CGI)
-    mutable unique_ptr<CArgs>   m_CgiArgs;
-
-    /// Wrappers for cin and cout
-    unique_ptr<CNcbiIstream>    m_InputStream;
-    unique_ptr<CNcbiOstream>    m_OutputStream;
-    bool                      m_OutputBroken;
-
-    string m_RID;
-    bool m_IsResultReady;
-
     /// @sa FASTCGI_ScheduleExit()
     bool m_ShouldExit;
-    bool m_CaughtSigterm;
-
-    /// Remember if request-start was printed, don't print request-stop
-    /// without request-start.
-    bool m_RequestStartPrinted;
-
-    bool m_ErrorStatus; // True if HTTP status was set to a value >=400
 
     // forbidden
     CCgiApplication(const CCgiApplication&);
@@ -448,6 +474,7 @@ private:
 class NCBI_XCGI_EXPORT CCgiStatistics
 {
     friend class CCgiApplication;
+    friend class CFastCgiApplicationMT;
 public:
     virtual ~CCgiStatistics();
 
@@ -486,6 +513,32 @@ protected:
 
 
 /////////////////////////////////////////////////////////////////////////////
+//  CCgiWatchFile::
+//
+//    Aux. class for noticing changes to a file
+//
+
+class CCgiWatchFile
+{
+public:
+    // ignores changes after the first LIMIT bytes
+    CCgiWatchFile(const string& filename, int limit = 1024);
+    bool HasChanged(void);
+
+private:
+    typedef AutoPtr<char, ArrayDeleter<char> > TBuf;
+
+    string m_Filename;
+    int    m_Limit;
+    int    m_Count;
+    TBuf   m_Buf;
+
+    // returns count of bytes read (up to m_Limit), or -1 if opening failed.
+    int x_Read(char* buf);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
 //  CCgiStreamWrapper::
 //
 //    CGI stream with special processing.
@@ -515,6 +568,112 @@ public:
 
 private:
     CCgiStreamWrapperWriter* m_Writer;
+};
+
+
+/// Base class for request processors.
+/// @sa CCgiApplication::CreateRequestProcessor()
+class NCBI_XCGI_EXPORT CCgiRequestProcessor
+{
+    friend class CCgiApplication;
+
+public:
+    CCgiRequestProcessor(CCgiApplication& app);
+    virtual ~CCgiRequestProcessor(void);
+
+    /// Process request provided by the context. By default calls application's ProcessRequest.
+    virtual int ProcessRequest(CCgiContext& context);
+
+    const CNcbiResource& GetResource(void) const { return m_App.GetResource(); }
+    CNcbiResource&       GetResource(void)       { return m_App.GetResource(); }
+
+    virtual bool ValidateSynchronizationToken(void);
+
+    /// Get self-URL to be used as referer.
+    string GetSelfReferer(void) const;
+
+protected:
+    virtual void ProcessHelpRequest(const string& format);
+    virtual void ProcessVersionRequest(CCgiApplication::EVersionType ver_type);
+    virtual bool ProcessAdminRequest(CCgiApplication::EAdminCommand cmd);
+    virtual int OnException(std::exception& e, CNcbiOstream& os);
+    virtual void OnEvent(CCgiApplication::EEvent event, int status);
+
+    void SetHTTPStatus(unsigned int status, const string& reason = kEmptyStr);
+    void SetRequestId(const string& rid, bool is_done);
+
+    typedef CCgiApplication::TAcceptEntries TAcceptEntries;
+    typedef CCgiApplication::SAcceptEntry TAcceptEntry;
+    void ParseAcceptHeader(TAcceptEntries& entries) const;
+
+private:
+    void x_InitArgs(void) const;
+    // If ProcessAdminRequest is overridden, the base method may still be called.
+    bool ProcessAdminRequest_Base(CCgiApplication::EAdminCommand cmd);
+
+    CCgiApplication&                m_App;
+    shared_ptr<CCgiContext>         m_Context;
+    // Parsed cmd.-line args (cmdline + CGI).
+    mutable unique_ptr<CArgs>       m_CgiArgs;
+    // Wrappers for cin and cout
+    unique_ptr<CNcbiIstream>        m_InputStream;
+    unique_ptr<CNcbiOstream>        m_OutputStream;
+    bool                            m_OutputBroken = false;
+    // Remember if request-start was printed, don't print request-stop
+    // without request-start.
+    bool                            m_RequestStartPrinted = false;
+    bool                            m_ErrorStatus = false; // True if HTTP status was set to a value >=400
+    string                          m_RID;
+    bool                            m_IsResultReady = true;
+
+public:
+    CCgiApplication& GetApp(void) { return m_App; }
+    const CCgiApplication& GetApp(void) const { return m_App; }
+
+    CCgiContext& GetContext(void) { return *m_Context; }
+    const CCgiContext& GetContext(void) const { return *m_Context; }
+    void SetContext(shared_ptr<CCgiContext> context) { m_Context = context; }
+    bool IsSetContext(void) const { return bool(m_Context); }
+
+    CArgs& GetArgs(void) { if (!m_CgiArgs) x_InitArgs(); return *m_CgiArgs; }
+    const CArgs& GetArgs(void) const { if (!m_CgiArgs) x_InitArgs(); return *m_CgiArgs; }
+    bool IsSetArgs(void) const { return bool(m_CgiArgs); }
+
+    CNcbiIstream& GetInputStream(void) { return *m_InputStream; }
+    const CNcbiIstream& GetInputStream(void) const { return *m_InputStream; }
+    void SetInputStream(CNcbiIstream* in) { m_InputStream.reset(in); }
+    bool IsSetInputStream(void) const { return bool(m_InputStream); }
+
+    CNcbiOstream& GetOutputStream(void) { return *m_OutputStream; }
+    const CNcbiOstream& GetOutputStream(void) const { return *m_OutputStream; }
+    void SetOutputStream(CNcbiOstream* out) { m_OutputStream.reset(out); }
+    bool IsSetOutputStream(void) const { return bool(m_OutputStream); }
+
+    bool GetOutputBroken(void) const { return m_OutputBroken; }
+    void SetOutputBroken(bool val) { m_OutputBroken = val; }
+
+    bool GetRequestStartPrinted(void) const { return m_RequestStartPrinted; }
+    void SetRequestStartPrinted(bool val) { m_RequestStartPrinted = val; }
+
+    bool GetErrorStatus(void) const { return m_ErrorStatus; }
+    void SetErrorStatus(bool val) { m_ErrorStatus = val; }
+
+    string GetRID(void) const { return m_RID; }
+    void SetRID(const string& val) { m_RID = val; }
+
+    bool GetResultReady(void) const { return m_IsResultReady; }
+    void SetResultReady(bool val) { m_IsResultReady = val; }
+};
+
+
+// Aux. class to provide timely reset of "m_Processor" in RunFastCGI()
+class CCgiProcessorGuard
+{
+public:
+    CCgiProcessorGuard(CTls<CCgiRequestProcessor>& proc) : m_Proc(&proc) {}
+    ~CCgiProcessorGuard(void) { if (m_Proc) m_Proc->Reset(); }
+private:
+    CTls<CCgiRequestProcessor>* m_Proc;
 };
 
 

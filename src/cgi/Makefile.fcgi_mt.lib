@@ -1,0 +1,14 @@
+# $Id$
+
+# Build library "XFCGI_MT" -- the multithreaded version of FastCGI
+#################################
+
+SRC = fcgiapp_mt
+LIB = xfcgi_mt
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGIPP_INCLUDE) -DNCBI_XFCGI_MT_EXPORTS
+LIBS = $(FASTCGIPP_LIBS) $(ORIG_LIBS)
+
+REQUIRES=FASTCGIPP MT
+
+WATCHERS = grichenk

@@ -57,8 +57,10 @@ public:
 
     virtual void Init(void);
 
+protected:
+    ICache* GetCacheStorage() const override;
+
 private:
-    virtual ICache* GetCacheStorage() const;
 
     const TPluginManagerParamTree* m_CacheTreeParams;
     string m_CacheDriverName;

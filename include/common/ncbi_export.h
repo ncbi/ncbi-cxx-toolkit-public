@@ -1105,6 +1105,14 @@
 #  define NCBI_XCGI_EXPORT NCBI_DLL_IMPORT
 #endif
 
+/* Export specifier for library xfcgi_mt
+ */
+#if defined(NCBI_XFCGI_MT_EXPORTS)
+#  define NCBI_XFCGI_MT_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_XFCGI_MT_EXPORT NCBI_DLL_IMPORT
+#endif
+
 /* Export specifier for library xcgi_redirect
  */
 #ifdef NCBI_XCGI_REDIRECT_EXPORTS
