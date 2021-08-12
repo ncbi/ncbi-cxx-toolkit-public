@@ -31,6 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <common/ncbi_source_ver.h>
 #include <corelib/ncbiapp.hpp>
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 #include <misc/discrepancy/discrepancy.hpp>
