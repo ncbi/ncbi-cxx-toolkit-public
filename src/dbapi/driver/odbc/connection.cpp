@@ -38,14 +38,11 @@
 #include <string.h>
 
 #ifdef HAVE_ODBCSS_H
-// #include <odbcss.h>
-#include <msodbcsql.h>
+#include <odbcss.h>
 #endif
 
 #include "odbc_utils.hpp"
 
-// #define DEFAULT_ODBC_DRIVER_NAME "SQL Server"
-#define DEFAULT_ODBC_DRIVER_NAME "ODBC Driver 17 for SQL Server"
 
 #define NCBI_USE_ERRCODE_X   Dbapi_Odbc_Conn
 
@@ -187,7 +184,7 @@ void CODBC_Connection::x_Connect(
 
             connect_str = "DRIVER={" + driver_name + "}";
         } else {
-            connect_str = "DRIVER={" DEFAULT_ODBC_DRIVER_NAME "}";
+            connect_str = "DRIVER={SQL Server}";
         }
 
         connect_str += conn_str_suffix;
@@ -262,8 +259,7 @@ CODBC_Connection::x_GetDriverName(const IRegistry& registry)
     enum EState {eStInitial, eStSingleQuote};
     vector<string> driver_names;
     const string odbc_driver_name =
-        registry.GetString("ODBC", "DRIVER_NAME",
-                           "'" DEFAULT_ODBC_DRIVER_NAME "'");
+        registry.GetString("ODBC", "DRIVER_NAME", "'SQL Server'");
 
     NStr::Split(odbc_driver_name, " ", driver_names,
                 NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
@@ -618,7 +614,6 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
         if (stmt.IsMultibyteClientEncoding()) {
             c_type = SQL_C_WCHAR;
             sql_type = SQL_WLONGVARCHAR;
-            *ph = SQL_DATA_AT_EXEC;
         } else {
             c_type = SQL_C_CHAR;
             sql_type = SQL_LONGVARCHAR;
@@ -743,7 +738,7 @@ CODBC_Connection::x_SendData(CDB_BlobDescriptor::ETDescriptorType descr_type,
             // Encoding is always eEncoding_UTF8 in here.
             TSqlString ss = x_MakeTSqlString(CTempString(buff, valid_len),
                                              eEncoding_UTF8);
-            odbc::TChar* tchar_str = const_cast<odbc::TChar*>(ss.c_str());
+            odbc::TChar* tchar_str = const_cast<odbc::TChar*>(ss.data());
 
             rc = SQLPutData(stmt.GetHandle(),
                             static_cast<SQLPOINTER>(tchar_str),
