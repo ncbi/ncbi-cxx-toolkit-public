@@ -3,7 +3,7 @@
 # Meta-makefile
 #################################
 
-APP_PROJ = cgi_sample fcgi_sample cgi_session_sample
+APP_PROJ = cgi_sample fcgi_sample fcgi_mt_sample cgi_session_sample
 SUB_PROJ = cgires
 
 srcdir = @srcdir@
