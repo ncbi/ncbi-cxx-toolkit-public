@@ -275,6 +275,11 @@ public:
     virtual void SetIncludeHUP(bool include_hup = true,
                                const string& web_cookie = NcbiEmptyString);
 
+#if 0
+/*
+*   On Windows this works with ostrstream,
+    but does not work with ostringstream
+*/
     class NCBI_XREADER_EXPORT CDebugPrinter : public CNcbiOstrstream
     {
     public:
@@ -282,6 +287,26 @@ public:
         CDebugPrinter(const char* name);
         ~CDebugPrinter();
     };
+#else
+    class NCBI_XREADER_EXPORT CDebugPrinter
+    {
+    public:
+        CDebugPrinter(TConn conn, const char* name);
+        CDebugPrinter(const char* name);
+        ~CDebugPrinter();
+
+        operator CNcbiOstrstream&(void) {
+            return m_os;
+        }
+        template<typename T>
+        friend CDebugPrinter& operator<<( CDebugPrinter& pr, const T& obj) {
+            pr.m_os << obj;
+            return pr;
+        }
+    private:
+        CNcbiOstrstream m_os;
+    };
+#endif
     
 protected:
     CReadDispatcher* m_Dispatcher;
