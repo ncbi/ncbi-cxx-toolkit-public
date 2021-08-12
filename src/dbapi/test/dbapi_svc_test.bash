@@ -14,14 +14,14 @@ else
     SYB_ENV=""
 fi
 
-HOST=`hostname`
-
-if [[ "$HOST" == tcbuilder* ]]; then
-   if [[ "$CHECK_SIGNATURE" == *Release* ]]; then
-      SYB_ENV="TDSDUMP=stderr $SYB_ENV"
-      export EXCEPTION_STACK_TRACE_LEVEL="Fatal"
-   fi
-fi
+#HOST=`hostname`
+#
+#if [[ "$HOST" == tcbuilder* ]]; then
+#   if [[ "$CHECK_SIGNATURE" == *Release* ]]; then
+#      SYB_ENV="TDSDUMP=stderr $SYB_ENV"
+#      export EXCEPTION_STACK_TRACE_LEVEL="Fatal"
+#   fi
+#fi
 
 if [[ -z "$CHECK_EXEC" ]]; then
     run_local="./"
