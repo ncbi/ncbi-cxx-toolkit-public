@@ -71,7 +71,6 @@
 #include <objtools/validator/validator.hpp>
 
 #include <objtools/readers/message_listener.hpp>
-#include <common/ncbi_source_ver.h>
 
 #include "table2asn_validator.hpp"
 
