@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(xfcgi_mt)
+  NCBI_sources( fcgiapp_mt)
+  NCBI_requires(FASTCGIPP)
+  NCBI_add_definitions(NCBI_XFCGI_MT_EXPORTS)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()
