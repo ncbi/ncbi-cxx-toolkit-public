@@ -82,7 +82,6 @@ set(NCBI_ThirdParty_wxWidgets   ${NCBI_ThirdPartyBasePath}/wxwidgets/${NCBI_Thir
 set(NCBI_ThirdParty_UV          ${NCBI_ThirdPartyBasePath}/uv/${NCBI_ThirdPartyCompiler}/1.35.0 CACHE PATH "UV root")
 set(NCBI_ThirdParty_NGHTTP2     ${NCBI_ThirdPartyBasePath}/nghttp2/${NCBI_ThirdPartyCompiler}/1.40.0 CACHE PATH "NGHTTP2 root")
 set(NCBI_ThirdParty_GL2PS       ${NCBI_ThirdPartyBasePath}/gl2ps/${NCBI_ThirdPartyCompiler}/1.4.0 CACHE PATH "GL2PS root")
-set(NCBI_ThirdParty_SQLServer   "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/SDK")
 
 #############################################################################
 #############################################################################
@@ -134,9 +133,7 @@ set(NCBI_COMPONENT_MySQL_FOUND NO)
 # ODBC
 if(NOT NCBI_COMPONENT_ODBC_DISABLED)
     set(NCBI_COMPONENT_ODBC_FOUND YES)
-    set(NCBI_COMPONENT_ODBC_LIBS odbc32.lib odbccp32.lib
-        # odbcbcp.lib
-	)
+    set(NCBI_COMPONENT_ODBC_LIBS odbc32.lib odbccp32.lib odbcbcp.lib)
     set(HAVE_ODBC 1)
     set(HAVE_ODBCSS_H 1)
     list(APPEND NCBI_ALL_COMPONENTS ODBC)
@@ -144,8 +141,6 @@ else()
     set(NCBI_COMPONENT_ODBC_FOUND NO)
     message("DISABLED ODBC")
 endif()
-
-NCBI_define_Wcomponent(SQLServer "x64/msodbcsql17.lib")
 
 ##############################################################################
 # OpenGL

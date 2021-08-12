@@ -35,8 +35,8 @@
 #include <dbapi/error_codes.hpp>
 #include <string.h>
 
-// #include <odbcss.h>
-#include <msodbcsql.h>
+#include <odbcss.h>
+// #include <sqlncli.h>
 
 #include "odbc_utils.hpp"
 
@@ -61,7 +61,6 @@ BEGIN_NCBI_SCOPE
 #define DBDATETIME4_mins(x) ((x)->nummins)
 #define DBNUMERIC_val(x) ((x)->val)
 #define SQL_VARLEN_DATA (-10)
-typedef SQL_SS_TIMESTAMPOFFSET_STRUCT DBTIMESTAMP;
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -98,11 +97,11 @@ bool CODBC_BCPInCmd::Bind(unsigned int column_num, CDB_Object* param_ptr)
 
 
 int
-CODBC_BCPInCmd::x_GetBCPDataType(const CDB_Object& param)
+CODBC_BCPInCmd::x_GetBCPDataType(EDB_Type type)
 {
     int bcp_datatype = 0;
 
-    switch (param.GetType()) {
+    switch (type) {
     case eDB_Int:
         bcp_datatype = SQLINT4;
         break;
@@ -118,17 +117,15 @@ CODBC_BCPInCmd::x_GetBCPDataType(const CDB_Object& param)
     case eDB_Char:
     case eDB_VarChar:
     case eDB_LongChar:
-        if (static_cast<const CDB_String&>(param).GetBulkInsertionEnc()
-            == eBulkEnc_RawBytes) {
-            bcp_datatype = SQLCHARACTER;
-        } else {
-            bcp_datatype = SQLNCHAR;
-        }
+#ifdef UNICODE
+        bcp_datatype = SQLNCHAR;
+#else
+        bcp_datatype = SQLCHARACTER;
+#endif
         break;
     case eDB_Binary:
     case eDB_VarBinary:
     case eDB_LongBinary:
-    case eDB_VarBinaryMax:
         bcp_datatype = SQLBINARY;
         break;
         /*
@@ -160,23 +157,16 @@ CODBC_BCPInCmd::x_GetBCPDataType(const CDB_Object& param)
         break;
 #endif
     case eDB_Text:
-        if (static_cast<const CDB_Text&>(param).GetEncoding()
-            == eBulkEnc_RawBytes) {
-            bcp_datatype = SQLTEXT;
-        } else {
-            bcp_datatype = SQLNTEXT;
-        }
-        break;
     case eDB_VarCharMax:
-        if (static_cast<const CDB_VarCharMax&>(param).GetEncoding()
-            == eBulkEnc_RawBytes) {
-            bcp_datatype = SQLCHARACTER;
-        } else {
-            bcp_datatype = SQLNCHAR;
-        }
+//TODO: Make different type depending on type of underlying column
+/*#ifdef UNICODE
+        bcp_datatype = SQLNTEXT;
+#else*/
+        bcp_datatype = SQLTEXT;
+//#endif
         break;
     case eDB_Image:
-    // case eDB_VarBinaryMax:
+    case eDB_VarBinaryMax:
         bcp_datatype = SQLIMAGE;
         break;
     case eDB_Bit:
@@ -191,54 +181,38 @@ CODBC_BCPInCmd::x_GetBCPDataType(const CDB_Object& param)
 
 
 size_t
-CODBC_BCPInCmd::x_GetDataTermSize(const CDB_Object& param)
+CODBC_BCPInCmd::x_GetDataTermSize(EDB_Type type)
 {
-    EBulkEnc bulk_enc;
-    switch (param.GetType()) {
+    switch (type) {
     case eDB_Char:
     case eDB_VarChar:
     case eDB_LongChar:
-        bulk_enc = static_cast<const CDB_String&>(param).GetBulkInsertionEnc();
-        break;
     case eDB_Text:
-        bulk_enc = static_cast<const CDB_Text&>(param).GetEncoding();
-        break;
     case eDB_VarCharMax:
-        bulk_enc = static_cast<const CDB_VarCharMax&>(param).GetEncoding();
-        break;
+        return sizeof(odbc::TChar);
     default:
-        return 0;
+        break;
     }
 
-    return bulk_enc == eBulkEnc_RawBytes ? 1 : sizeof(odbc::TChar);
+    return 0;
 }
 
 
-const void*
-CODBC_BCPInCmd::x_GetDataTerminator(const CDB_Object& param)
+void*
+CODBC_BCPInCmd::x_GetDataTerminator(EDB_Type type)
 {
-    EBulkEnc bulk_enc;
-    switch (param.GetType()) {
+    switch (type) {
     case eDB_Char:
     case eDB_VarChar:
     case eDB_LongChar:
-        bulk_enc = static_cast<const CDB_String&>(param).GetBulkInsertionEnc();
-        break;
     case eDB_Text:
-        bulk_enc = static_cast<const CDB_Text&>(param).GetEncoding();
-        break;
     case eDB_VarCharMax:
-        bulk_enc = static_cast<const CDB_VarCharMax&>(param).GetEncoding();
-        break;
+        return _T_NCBI_ODBC("");
     default:
-        return NULL;
+        break;
     }
 
-    if (bulk_enc == eBulkEnc_RawBytes) {
-        return kEmptyCStr;
-    } else {
-        return _T_NCBI_ODBC("");
-    }
+    return NULL;
 }
 
 
@@ -285,9 +259,9 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                              static_cast<LPCBYTE>(const_cast<void*>(x_GetDataPtr(data_type, pb))),
                              0,
                              static_cast<DBINT>(x_GetBCPDataSize(data_type)),
-                             static_cast<LPCBYTE>(x_GetDataTerminator(param)),
-                             static_cast<INT>(x_GetDataTermSize(param)),
-                             x_GetBCPDataType(param),
+                             static_cast<LPCBYTE>(x_GetDataTerminator(data_type)),
+                             static_cast<INT>(x_GetDataTermSize(data_type)),
+                             x_GetBCPDataType(data_type),
                              i + 1);
 
                 m_HasBlob = m_HasBlob || CDB_Object::IsBlobType(data_type);
@@ -501,9 +475,10 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 else {
                     r = bcp_bind(GetHandle(), (BYTE*) NULL, 0, (DBINT) val.Size(),
                                  static_cast<LPCBYTE>(x_GetDataTerminator
-                                                      (param)),
-                                 static_cast<INT>(x_GetDataTermSize(param)),
-                                 x_GetBCPDataType(param),
+                                                      (param.GetType())),
+                                 static_cast<INT>(x_GetDataTermSize
+                                                  (param.GetType())),
+                                 x_GetBCPDataType(param.GetType()),
                                  i + 1);
                 }
             }

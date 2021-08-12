@@ -219,30 +219,20 @@ int CODBC_RowResult::GetColumnNum(void) const
 }
 
 int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
-                              SQLINTEGER buffer_size, bool* more)
+                              SQLINTEGER buffer_size)
 {
     SQLLEN f;
-    bool fake_more;
-    if (more == NULL) {
-        more = &fake_more;
-    } else {
-        *more = false;
-    }
 
     switch(SQLGetData(GetHandle(), m_CurrItem+1, target_type, buffer, buffer_size, &f)) {
     case SQL_SUCCESS_WITH_INFO:
         switch(f) {
         case SQL_NO_TOTAL:
-            *more = true;
             return buffer_size;
         case SQL_NULL_DATA:
             return 0;
         default:
-            if (f < 0) {
+            if(f < 0)
                 ReportErrors();
-            } else {
-                *more = true;
-            }
             return (int)f;
         }
     case SQL_SUCCESS:
@@ -258,65 +248,6 @@ int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
             DATABASE_DRIVER_ERROR( err_message, 430027 );
         }
     }
-}
-
-int CODBC_RowResult::x_GetVarLenData(SQLSMALLINT target_type,
-                                     TItemBuffer& buffer,
-                                     SQLINTEGER buffer_size)
-{
-    list<string> extra_buffers;
-    char * current_buffer = buffer.get();
-    SQLINTEGER current_size = buffer_size;
-    int n, nul_size;
-    bool more;
-    switch (target_type) {
-    case SQL_C_CHAR:  nul_size = 1;               break;
-    case SQL_C_WCHAR: nul_size = sizeof(wchar_t); break;
-    default:          nul_size = 0;               break;
-    }
-    while ((n = xGetData(target_type, current_buffer, current_size, &more))
-           >= current_size  &&  more) {
-        if (n > current_size) {
-            // Add margin for (possibly wide) NUL-related complications.
-            current_size = n + 2 * nul_size - current_size;
-        }
-        extra_buffers.emplace_back(string(current_size, '\0'));
-        current_buffer = const_cast<char*>(extra_buffers.back().data());
-    }
-    if (extra_buffers.empty()) {
-        return n;
-    }
-
-    const char * orig_buffer = buffer.get();
-    int elided = 0;
-    extra_buffers.back().resize(n);
-    n = buffer_size;
-    for (const auto & it : extra_buffers) {
-        n += it.size();
-    }
-    buffer.reset(new char[n + nul_size]);
-    memcpy(buffer.get(), orig_buffer, buffer_size);
-    int pos = buffer_size;
-    for (const auto & it : extra_buffers) {
-        if (nul_size > 0  &&  pos >= nul_size) {
-            bool elide = true;
-            for (int i = 1;  i <= nul_size;  ++i) {
-                if (buffer.get()[pos - i] != '\0') {
-                    elide = false;
-                    break;
-                }
-            }
-            if (elide) {
-                pos    -= nul_size;
-                elided += nul_size;
-            }
-        }
-        memcpy(buffer.get() + pos, it.data(), it.size());
-        pos += it.size();
-    }
-    memset(buffer.get() + pos, '\0', nul_size);
-    _ASSERT(pos + elided == n);
-    return pos;
 }
 
 static void xConvert2CDB_Numeric(CDB_Numeric* d, SQL_NUMERIC_STRUCT& s)
@@ -446,8 +377,7 @@ bool CODBC_RowResult::CheckSIENoD_Binary(CDB_Stream* val)
 
 CDB_Object* CODBC_RowResult::x_LoadItem(I_Result::EGetItem policy, CDB_Object* item_buf)
 {
-    char base_buf[8*1024];
-    TItemBuffer buffer(base_buf, eNoOwnership);
+    char buffer[8*1024];
     int outlen;
 
     switch(m_ColFmt[m_CurrItem].DataType) {
@@ -455,41 +385,35 @@ CDB_Object* CODBC_RowResult::x_LoadItem(I_Result::EGetItem policy, CDB_Object* i
     case SQL_WVARCHAR:
         switch (item_buf->GetType()) {
         case eDB_VarBinary:
-            outlen = x_GetVarLenData(SQL_C_BINARY, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else ((CDB_VarBinary*)item_buf)->SetValue(buffer.get(), outlen);
+            else ((CDB_VarBinary*)item_buf)->SetValue(buffer, outlen);
             break;
         case eDB_Binary:
-            outlen = x_GetVarLenData(SQL_C_BINARY, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else ((CDB_Binary*)item_buf)->SetValue(buffer.get(), outlen);
+            else ((CDB_Binary*)item_buf)->SetValue(buffer, outlen);
             break;
         case eDB_LongBinary:
-            outlen = x_GetVarLenData(SQL_C_BINARY, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else ((CDB_LongBinary*)item_buf)->SetValue(buffer.get(), outlen);
+            else ((CDB_LongBinary*)item_buf)->SetValue(buffer, outlen);
             break;
 #ifdef HAVE_WSTRING
         case eDB_VarChar:
-            outlen = x_GetVarLenData(SQL_C_WCHAR, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_WCHAR, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else *((CDB_VarChar*)item_buf)
-                     = CODBCString((wchar_t*)buffer.get())
-                     .ConvertTo(GetClientEncoding());
+            else *((CDB_VarChar*)item_buf) = CODBCString((wchar_t*)buffer).ConvertTo(GetClientEncoding());
             break;
         case eDB_Char:
-            outlen = x_GetVarLenData(SQL_C_WCHAR, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_WCHAR, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else *((CDB_Char*)item_buf)
-                     = CODBCString((wchar_t*)buffer.get())
-                     .ConvertTo(GetClientEncoding());
+            else *((CDB_Char*)item_buf) = CODBCString((wchar_t*)buffer).ConvertTo(GetClientEncoding());
             break;
         case eDB_LongChar:
-            outlen = x_GetVarLenData(SQL_C_WCHAR, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_WCHAR, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else *((CDB_LongChar*)item_buf)
-                     = CODBCString((wchar_t*)buffer.get())
-                     .ConvertTo(GetClientEncoding());
+            else *((CDB_LongChar*)item_buf) = CODBCString((wchar_t*)buffer).ConvertTo(GetClientEncoding());
             break;
 #endif
         default:
@@ -503,34 +427,34 @@ CDB_Object* CODBC_RowResult::x_LoadItem(I_Result::EGetItem policy, CDB_Object* i
     case SQL_CHAR: {
         switch (item_buf->GetType()) {
         case eDB_VarBinary:
-            outlen = x_GetVarLenData(SQL_C_BINARY, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else ((CDB_VarBinary*) item_buf)->SetValue(buffer.get(), outlen);
+            else ((CDB_VarBinary*) item_buf)->SetValue(buffer, outlen);
             break;
         case eDB_Binary:
-            outlen = x_GetVarLenData(SQL_C_BINARY, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else ((CDB_Binary*) item_buf)->SetValue(buffer.get(), outlen);
+            else ((CDB_Binary*) item_buf)->SetValue(buffer, outlen);
             break;
         case eDB_LongBinary:
-            outlen = x_GetVarLenData(SQL_C_BINARY, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else ((CDB_LongBinary*) item_buf)->SetValue(buffer.get(), outlen);
+            else ((CDB_LongBinary*) item_buf)->SetValue(buffer, outlen);
             break;
         case eDB_VarChar:
-            outlen = x_GetVarLenData(SQL_C_CHAR, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
             if ( outlen < 0) item_buf->AssignNULL();
-            else *((CDB_VarChar*)  item_buf) = buffer.get();
+            else *((CDB_VarChar*)  item_buf) = buffer;
             break;
         case eDB_Char:
-            outlen = x_GetVarLenData(SQL_C_CHAR, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
             if ( outlen < 0) item_buf->AssignNULL();
-            else *((CDB_Char*)     item_buf) = buffer.get();
+            else *((CDB_Char*)     item_buf) = buffer;
             break;
         case eDB_LongChar:
-            outlen = x_GetVarLenData(SQL_C_CHAR, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
             if ( outlen < 0) item_buf->AssignNULL();
-            else *((CDB_LongChar*)     item_buf) = buffer.get();
+            else *((CDB_LongChar*)     item_buf) = buffer;
             break;
         default:
             {
@@ -545,34 +469,34 @@ CDB_Object* CODBC_RowResult::x_LoadItem(I_Result::EGetItem policy, CDB_Object* i
     case SQL_VARBINARY: {
         switch ( item_buf->GetType() ) {
         case eDB_VarBinary:
-            outlen = x_GetVarLenData(SQL_C_BINARY, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else ((CDB_VarBinary*) item_buf)->SetValue(buffer.get(), outlen);
+            else ((CDB_VarBinary*) item_buf)->SetValue(buffer, outlen);
             break;
         case eDB_Binary:
-            outlen = x_GetVarLenData(SQL_C_BINARY, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else ((CDB_Binary*) item_buf)->SetValue(buffer.get(), outlen);
+            else ((CDB_Binary*) item_buf)->SetValue(buffer, outlen);
             break;
         case eDB_LongBinary:
-            outlen = x_GetVarLenData(SQL_C_BINARY, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else ((CDB_LongBinary*) item_buf)->SetValue(buffer.get(), outlen);
+            else ((CDB_LongBinary*) item_buf)->SetValue(buffer, outlen);
             break;
         case eDB_VarChar:
-            outlen = x_GetVarLenData(SQL_C_CHAR, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
             if (outlen < 0) item_buf->AssignNULL();
-            else *((CDB_VarChar*)  item_buf) = buffer.get();
+            else *((CDB_VarChar*)  item_buf) = buffer;
             break;
         case eDB_Char:
-            outlen = x_GetVarLenData(SQL_C_CHAR, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
             if (outlen < 0) item_buf->AssignNULL();
-            else *((CDB_Char*) item_buf) = buffer.get();
+            else *((CDB_Char*) item_buf) = buffer;
             break;
         case eDB_LongChar:
-            outlen = x_GetVarLenData(SQL_C_CHAR, buffer, sizeof(base_buf));
+            outlen = xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
             if (outlen < 0) item_buf->AssignNULL();
-            else *((CDB_LongChar*) item_buf) = buffer.get();
+            else *((CDB_LongChar*) item_buf) = buffer;
             break;
         default:
             {
@@ -868,8 +792,7 @@ CDB_Object* CODBC_RowResult::x_LoadItem(I_Result::EGetItem policy, CDB_Object* i
 
 CDB_Object* CODBC_RowResult::x_MakeItem()
 {
-    char base_buf[8*1024];
-    TItemBuffer buffer(base_buf, eNoOwnership);
+    char buffer[8*1024];
     int outlen;
 
     switch(m_ColFmt[m_CurrItem].DataType) {
@@ -877,8 +800,10 @@ CDB_Object* CODBC_RowResult::x_MakeItem()
     case SQL_WVARCHAR:
 #ifdef HAVE_WSTRING
     {
-        outlen = x_GetVarLenData(SQL_C_WCHAR, buffer, sizeof(base_buf));
-        CODBCString odbc_str(reinterpret_cast<wchar_t*>(buffer.get()), outlen);
+        wchar_t buffer[4*1024];
+
+        outlen = xGetData(SQL_C_WCHAR, buffer, sizeof(buffer));
+        CODBCString odbc_str(buffer, outlen);
 
         if(m_ColFmt[m_CurrItem].ColumnSize < 256) {
             CDB_VarChar* val = (outlen < 0)
@@ -899,11 +824,10 @@ CDB_Object* CODBC_RowResult::x_MakeItem()
 
     case SQL_VARCHAR:
     case SQL_CHAR: {
-        outlen = x_GetVarLenData(SQL_C_CHAR, buffer, sizeof(base_buf));
+        outlen = xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
         if(m_ColFmt[m_CurrItem].ColumnSize < 256) {
             CDB_VarChar* val = (outlen < 0)
-                ? new CDB_VarChar() : new CDB_VarChar(buffer.get(),
-                                                      (size_t) outlen);
+                ? new CDB_VarChar() : new CDB_VarChar(buffer, (size_t) outlen);
 
             return val;
         }
@@ -911,7 +835,7 @@ CDB_Object* CODBC_RowResult::x_MakeItem()
             CDB_LongChar* val = (outlen < 0)
                 ? new CDB_LongChar(m_ColFmt[m_CurrItem].ColumnSize) :
                 new CDB_LongChar(m_ColFmt[m_CurrItem].ColumnSize,
-                                 buffer.get());
+                        buffer);
 
             return val;
         }
@@ -919,11 +843,10 @@ CDB_Object* CODBC_RowResult::x_MakeItem()
 
     case SQL_BINARY:
     case SQL_VARBINARY: {
-        outlen = x_GetVarLenData(SQL_C_BINARY, buffer, sizeof(base_buf));
+        outlen = xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
         if(m_ColFmt[m_CurrItem].ColumnSize < 256) {
             CDB_VarBinary* val = (outlen <= 0)
-                ? new CDB_VarBinary() : new CDB_VarBinary(buffer.get(),
-                                                          (size_t)outlen);
+                ? new CDB_VarBinary() : new CDB_VarBinary(buffer, (size_t)outlen);
 
             return val;
         }
@@ -931,7 +854,7 @@ CDB_Object* CODBC_RowResult::x_MakeItem()
             CDB_LongBinary* val = (outlen < 0)
                 ? new CDB_LongBinary(m_ColFmt[m_CurrItem].ColumnSize) :
                 new CDB_LongBinary(m_ColFmt[m_CurrItem].ColumnSize,
-                                   buffer.get(), (size_t) outlen);
+                        buffer, (size_t) outlen);
 
             return val;
         }
