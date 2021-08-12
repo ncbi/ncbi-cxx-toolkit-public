@@ -94,29 +94,6 @@ bool CCgiApplication::IsFastCGI(void) const
     return !FCGX_IsCGI();
 }
 
-static CTime s_GetModTime(const string& filename)
-{
-    CTime mtime;
-    if ( !CDirEntry(filename).GetTime(&mtime) ) {
-        NCBI_THROW(CCgiErrnoException, eModTime,
-                   "Cannot get modification time of the CGI executable "
-                   + filename);
-    }
-    return mtime;
-}
-
-
-// Aux. class to provide timely reset of "m_Context" in RunFastCGI()
-class CAutoCgiContext
-{
-public:
-    CAutoCgiContext(void) : m_Ctx(NULL) {}
-    ~CAutoCgiContext(void) { if (m_Ctx) m_Ctx->reset(); }
-    void Reset(unique_ptr<CCgiContext>& ctx) { m_Ctx = &ctx; }
-private:
-    unique_ptr<CCgiContext>* m_Ctx;
-};
-
 
 // Aux. class to clean up state associated with a Fast-CGI request object.
 class CAutoFCGX_Request
@@ -170,63 +147,6 @@ void CAutoFCGX_Request::SetErrorStream(FCGX_Stream* pferr)
     }
 }
 
-// Aux. class for noticing changes to a file
-class CCgiWatchFile
-{
-public:
-    // ignores changes after the first LIMIT bytes
-    CCgiWatchFile(const string& filename, int limit = 1024);
-    bool HasChanged(void);
-
-private:
-    typedef AutoPtr<char, ArrayDeleter<char> > TBuf;
-
-    string m_Filename;
-    int    m_Limit;
-    int    m_Count;
-    TBuf   m_Buf;
-
-    // returns count of bytes read (up to m_Limit), or -1 if opening failed.
-    int x_Read(char* buf);
-};
-
-inline
-int CCgiWatchFile::x_Read(char* buf)
-{
-    CNcbiIfstream in(m_Filename.c_str());
-    if (in) {
-        in.read(buf, m_Limit);
-        return (int) in.gcount();
-    } else {
-        return -1;
-    }
-}
-
-CCgiWatchFile::CCgiWatchFile(const string& filename, int limit)
-        : m_Filename(filename), m_Limit(limit), m_Buf(new char[limit])
-{
-    m_Count = x_Read(m_Buf.get());
-    if (m_Count < 0) {
-        ERR_POST_X(2, "Failed to open CGI watch file " << filename);
-    }
-}
-
-inline
-bool CCgiWatchFile::HasChanged(void)
-{
-    TBuf buf(new char[m_Limit]);
-    if (x_Read(buf.get()) != m_Count) {
-        return true;
-    } else if (m_Count == -1) { // couldn't be opened
-        return false;
-    } else {
-        return memcmp(buf.get(), m_Buf.get(), m_Count) != 0;
-    }
-    // no need to update m_Count or m_Buf, since the CGI will restart
-    // if there are any discrepancies.
-}
-
-
 # ifdef USE_ALARM
 extern "C" {
     static volatile bool s_AcceptTimedOut = false;
@@ -236,69 +156,6 @@ extern "C" {
     }
 }
 # endif /* USE_ALARM */
-
-
-
-// Decide if this FastCGI process should be finished prematurely, right now
-// (the criterion being whether the executable or a special watched file
-// has changed since the last iteration)
-const int kSR_Executable = 111;
-const int kSR_WatchFile  = 112;
-
-static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher, int delay)
-{
-    static CSafeStatic<CTime> restart_time;
-    static int   restart_reason;
-
-    // Check if this CGI executable has been changed
-    CTime mtimeNew = s_GetModTime
-        (CCgiApplication::Instance()->GetArguments().GetProgramName());
-    if ( !restart_reason  &&  mtimeNew != mtime) {
-        _TRACE("CCgiApplication::x_RunFastCGI: "
-               "the program modification date has changed");
-        restart_reason = kSR_Executable;
-    } else if ( !restart_reason  &&  watcher  &&  watcher->HasChanged()) {
-        // Check if the file we're watching (if any) has changed
-        // (based on contents, not timestamp!)
-        ERR_POST_X(3, Warning <<
-            "Scheduling restart of Fast-CGI, as its watch file has changed");
-        restart_reason = kSR_WatchFile;
-    }
-
-    if (restart_reason) {
-        if (restart_time->IsEmpty()) {
-            restart_time->SetTimeZone(CTime::eGmt);
-            restart_time->SetCurrent();
-            restart_time->AddSecond(delay);
-            _TRACE("Will restart Fast-CGI in " << delay << " seconds, at "
-                   << restart_time->GetLocalTime().AsString("h:m:s"));
-        }
-        if (CurrentTime(CTime::eGmt) >= *restart_time) {
-            return restart_reason;
-        }
-    }
-
-    return 0;
-}
-
-
-// Return true if current memory usage is above the limit.
-bool s_CheckMemoryLimit(Uint8 total_memory_limit)
-{
-    if ( total_memory_limit ) {
-        CCurrentProcess::SMemoryUsage memory_usage;
-        if ( !CCurrentProcess::GetMemoryUsage(memory_usage) ) {
-            ERR_POST("Could not check self memory usage" );
-        }
-        else if (memory_usage.total > total_memory_limit) {
-            ERR_POST(Warning << "Memory usage (" << memory_usage.total <<
-                ") is above the configured limit (" <<
-                total_memory_limit << ")");
-            return true;
-        }
-    }
-    return false;
-}
 
 
 void s_ScheduleFastCGIExit(void)
@@ -332,15 +189,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
     // If to run as a standalone server on local port or named socket
     {{
-        string path;
-        {{
-            const char* p = getenv("FCGI_STANDALONE_SERVER");
-            if (p  &&  *p) {
-                path = p;
-            } else {
-                path = reg.Get("FastCGI", "StandaloneServer");
-            }
-        }}
+        string path = GetFastCGIStandaloneServer();
         if ( !path.empty() ) {
 #ifdef NCBI_COMPILER_MSVC
             _close(0);
@@ -368,81 +217,17 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     }
 
     // Statistics
-    bool is_stat_log = reg.GetBool("CGI", "StatLog", false, 0,
-                                   CNcbiRegistry::eReturn);
+    bool is_stat_log = GetFastCGIStatLog();
     unique_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
 
-    Uint8 total_memory_limit =
-        NStr::StringToUInt8_DataSize(
-        reg.GetString("FastCGI", "TotalMemoryLimit", "0", CNcbiRegistry::eReturn),
-        NStr::fConvErr_NoThrow);
-
     // Max. number of the Fast-CGI loop iterations
-    unsigned int max_iterations;
-    bool handle_sigterm = false;
-    {{
-        int x_iterations =
-            reg.GetInt("FastCGI", "Iterations", (int) def_iter, 0,
-                       CNcbiRegistry::eErrPost);
-
-        if (x_iterations > 0) {
-            max_iterations = (unsigned int) x_iterations;
-        } else {
-            ERR_POST_X(6, "CCgiApplication::x_RunFastCGI:  invalid "
-                          "[FastCGI].Iterations config.parameter value: "
-                          << x_iterations);
-            _ASSERT(def_iter);
-            max_iterations = def_iter;
-        }
-
-        int iterations_rnd_inc =
-            reg.GetInt("FastCGI", "Iterations_Random_Increase", 0, 0,
-                CNcbiRegistry::eErrPost);
-        if (iterations_rnd_inc > 0) {
-            max_iterations += rand() % iterations_rnd_inc;
-        }
-
-        _TRACE("CCgiApplication::Run: FastCGI limited to "
-               << max_iterations << " iterations");
-
-        handle_sigterm = reg.GetBool("FastCGI", "Complete_Request_On_Sigterm", false);
-    }}
+    unsigned int max_iterations = GetFastCGIIterations(def_iter);
+    bool handle_sigterm = GetFastCGIComplete_Request_On_Sigterm();
 
     // Watcher file -- to allow for stopping the Fast-CGI loop "prematurely"
-    unique_ptr<CCgiWatchFile> watcher;
-    {{
-        const string& orig_filename = reg.Get("FastCGI", "WatchFile.Name");
-        if ( !orig_filename.empty() ) {
-            string filename = CDirEntry::CreateAbsolutePath
-                (orig_filename, CDirEntry::eRelativeToExe);
-            if (filename != orig_filename) {
-                _TRACE("Adjusted relative CGI watch file name " << orig_filename
-                       << " to " << filename);
-            }
-            int limit = reg.GetInt("FastCGI", "WatchFile.Limit", -1, 0,
-                                   CNcbiRegistry::eErrPost);
-            if (limit <= 0) {
-                limit = 1024; // set a reasonable default
-            }
-            watcher.reset(new CCgiWatchFile(filename, limit));
-        }
-    }}
+    unique_ptr<CCgiWatchFile> watcher(CreateFastCGIWatchFile());
+    unsigned int watch_timeout = GetFastCGIWatchFileTimeout(watcher.get());
 
-    unsigned int watch_timeout = 0;
-    {{
-        int x_watch_timeout = reg.GetInt("FastCGI", "WatchFile.Timeout",
-                                         0, 0, CNcbiRegistry::eErrPost);
-        if (x_watch_timeout <= 0) {
-            if (watcher.get()) {
-                ERR_POST_X(7,
-                     "CCgiApplication::x_RunFastCGI:  non-positive "
-                     "[FastCGI].WatchFile.Timeout conf.param. value ignored: "
-                     << x_watch_timeout);
-            }
-        } else {
-            watch_timeout = (unsigned int) x_watch_timeout;
-        }
-    }}
 # ifndef USE_ALARM
     if (watcher.get()  ||  watch_timeout ) {
         ERR_POST_X(8, Warning <<
@@ -452,28 +237,21 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     }
 # endif
 
-    int restart_delay = reg.GetInt("FastCGI", "WatchFile.RestartDelay",
-                                   0, 0, CNcbiRegistry::eErrPost);
-    if (restart_delay > 0) {
-        // CRandom is higher-quality, but would introduce an extra
-        // dependency on libxutil; rand() should be good enough here.
-        srand(CCurrentProcess::GetPid());
-        double r = rand() / (RAND_MAX + 1.0);
-        restart_delay = 1 + (int)(restart_delay * r);
-    } else {
-        restart_delay = 0;
-    }
-
-    bool channel_errors = reg.GetBool("FastCGI", "ChannelErrors", false, 0,
-                                      CNcbiRegistry::eReturn);
+    int restart_delay = GetFastCGIWatchFileRestartDelay();
+    bool channel_errors = GetFastCGIChannelErrors();
 
     // Diag.prefix related preparations
     const string prefix_pid(NStr::NumericToString(CCurrentProcess::GetPid()) + "-");
 
     // Main Fast-CGI loop
-    CTime mtime = s_GetModTime(GetArguments().GetProgramName());
+    CTime mtime = GetFileModificationTime(GetArguments().GetProgramName());
 
-    for (m_Iteration = 1;  m_Iteration <= max_iterations;  ++m_Iteration) {
+    for (unsigned int iteration = m_Iteration.Add(1); iteration <= max_iterations;  iteration = m_Iteration.Add(1)) {
+        CCgiRequestProcessor& processor = x_CreateProcessor();
+        shared_ptr<CCgiContext> context;
+        // Safely clear processor data and reset "m_Processor" to null
+        CCgiProcessorGuard proc_guard(*m_Processor);
+
         // Run idler. By default this reopens log file(s).
         RunIdler();
 
@@ -482,14 +260,14 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
         if ( CDiagContext::IsSetOldPostFormat() ) {
             // Old format uses prefix for iteration
-            const string prefix(prefix_pid + NStr::IntToString(m_Iteration));
+            const string prefix(prefix_pid + NStr::NumericToString(iteration));
             PushDiagPostPrefix(prefix.c_str());
         }
         // Show PID and iteration # in all of the the diagnostics
-        SetDiagRequestId(m_Iteration);
+        SetDiagRequestId(iteration);
         GetDiagContext().SetAppState(eDiagAppState_RequestBegin);
 
-        _TRACE("CCgiApplication::FastCGI: " << m_Iteration
+        _TRACE("CCgiApplication::FastCGI: " << iteration
                << " iteration of " << max_iterations);
 
         // Accept the next request and obtain its data
@@ -530,17 +308,16 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             s_AcceptTimedOut = false;
             if (timed_out  &&  accept_errcode != 0) {
                 {{ // If to restart the application
-                    int restart_code = s_ShouldRestart(mtime, watcher.get(),
-                                                       restart_delay);
-                    if (restart_code != 0) {
-                        x_OnEvent(restart_code == kSR_Executable ?
+                    ERestartReason restart_code = ShouldRestart(mtime, watcher.get(), restart_delay);
+                    if (restart_code != eSR_None) {
+                        x_OnEvent(restart_code == eSR_Executable ?
                                 eExecutable : eWatchFile, restart_code);
-                        *result = (restart_code == kSR_WatchFile) ? 0
+                        *result = (restart_code == eSR_WatchFile) ? 0
                             : restart_code;
                         break;
                     }
                 }}
-                m_Iteration--;
+                m_Iteration.Add(-1);
                 x_OnEvent(eWaiting, 115);
 
                 // User code requested Fast-CGI loop to end ASAP
@@ -580,8 +357,6 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         CTime start_time(CTime::eCurrent);
         bool skip_stat_log = false;
 
-        // Safely clear contex data and reset "m_Context" to null
-        CAutoCgiContext auto_context;
         try {
             // Initialize CGI context with the new request data
             CNcbiEnvironment env(penv);
@@ -602,22 +377,20 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             CNcbiIstream      istr(&ibuf);
             CNcbiArguments    args(0, 0);  // no cmd.-line ars
 
-            m_Context.reset(CreateContext(&args, &env, &istr, &ostr));
-            _ASSERT(m_Context.get());
-            m_Context->CheckStatus();
+            context.reset(CreateContext(&args, &env, &istr, &ostr));
+            _ASSERT(context);
+            processor.SetContext(context);
+            context->CheckStatus();
 
             CNcbiOstream* orig_stream = NULL;
             //int orig_fd = -1;
             CNcbiStrstream result_copy;
             unique_ptr<CNcbiOstream> new_stream;
 
-            auto_context.Reset(m_Context);
-
             // Checking for exit request (if explicitly allowed)
-            if (reg.GetBool("FastCGI", "HonorExitRequest", false, 0,
-                            CNcbiRegistry::eErrPost)
-                && m_Context->GetRequest().GetEntries().find("exitfastcgi")
-                != m_Context->GetRequest().GetEntries().end()) {
+            if (GetFastCGIHonorExitRequest()
+                && context->GetRequest().GetEntries().find("exitfastcgi")
+                != context->GetRequest().GetEntries().end()) {
                 x_OnEvent(eExitRequest, 114);
                 ostr <<
                     "Content-Type: text/html" HTTP_EOL
@@ -629,62 +402,59 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             }
 
             // Debug message (if requested)
-            bool is_debug = reg.GetBool("FastCGI", "Debug", false, 0,
-                                        CNcbiRegistry::eErrPost);
-            if ( is_debug ) {
-                m_Context->PutMsg
-                    ("FastCGI: "      + NStr::NumericToString(m_Iteration) +
+            if ( GetFastCGIDebug() ) {
+                context->PutMsg
+                    ("FastCGI: "      + NStr::NumericToString(iteration) +
                      " iteration of " + NStr::NumericToString(max_iterations) +
                      ", pid "         + NStr::NumericToString(CCurrentProcess::GetPid()));
             }
 
-            ConfigureDiagnostics(*m_Context);
+            ConfigureDiagnostics(*context);
 
             x_AddLBCookie();
-
-            m_ArgContextSync = false;
 
             // Call ProcessRequest()
             x_OnEvent(eStartRequest, 0);
             _TRACE("CCgiApplication::Run: calling ProcessRequest()");
-            VerifyCgiContext(*m_Context);
+            VerifyCgiContext(*context);
             ProcessHttpReferer();
-            LogRequest();
+            LogRequest(*context);
 
             int x_result = 0;
             try {
+                unique_ptr<ICache> cache;
                 try {
-                    m_Cache.reset( GetCacheStorage() );
+                    cache.reset( GetCacheStorage() );
                 } NCBI_CATCH_ALL_X(1, "Couldn't create cache")
 
                 bool skip_process_request = false;
-                bool caching_needed = IsCachingNeeded(m_Context->GetRequest());
-                if (m_Cache.get() && caching_needed) {
-                    skip_process_request = GetResultFromCache(m_Context->GetRequest(),
-                        m_Context->GetResponse().out());
+                bool caching_needed = IsCachingNeeded(context->GetRequest());
+                if (cache.get() && caching_needed) {
+                    skip_process_request = GetResultFromCache(context->GetRequest(),
+                        context->GetResponse().out(), *cache);
                 }
                 if (!skip_process_request) {
-                    if( m_Cache.get() ) {
+                    if( cache.get() ) {
                         CCgiStreamWrapper* wrapper =
-                            dynamic_cast<CCgiStreamWrapper*>(m_Context->GetResponse().GetOutput());
+                            dynamic_cast<CCgiStreamWrapper*>(context->GetResponse().GetOutput());
                         if ( wrapper ) {
                             wrapper->SetCacheStream(result_copy);
                         }
                         else {
                             list<CNcbiOstream*> slist;
-                            orig_stream = m_Context->GetResponse().GetOutput();
+                            orig_stream = context->GetResponse().GetOutput();
                             slist.push_back(orig_stream);
                             slist.push_back(&result_copy);
                             new_stream.reset(new CWStream(new CMultiWriter(slist), 1, 0,
                                                           CRWStreambuf::fOwnWriter));
-                            m_Context->GetResponse().SetOutput(new_stream.get());
+                            context->GetResponse().SetOutput(new_stream.get());
                         }
                     }
                     GetDiagContext().SetAppState(eDiagAppState_Request);
-                    if (x_ProcessHelpRequest() ||
-                        x_ProcessVersionRequest() ||
-                        CCgiContext::ProcessCORSRequest(m_Context->GetRequest(), m_Context->GetResponse()) ||
-                        x_ProcessAdminRequest()) {
+                    if (x_ProcessHelpRequest(processor) ||
+                        x_ProcessVersionRequest(processor) ||
+                        CCgiContext::ProcessCORSRequest(context->GetRequest(), context->GetResponse()) ||
+                        x_ProcessAdminRequest(processor)) {
                         x_result = 0;
                     }
                     else {
@@ -692,23 +462,23 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                             NCBI_CGI_THROW_WITH_STATUS(CCgiRequestException, eData,
                                 "Invalid or missing CSRF token.", CCgiException::e403_Forbidden);
                         }
-                        x_result = ProcessRequest(*m_Context);
+                        x_result = ProcessRequest(*context);
                     }
                     GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
-                    m_Context->GetResponse().Finalize();
+                    context->GetResponse().Finalize();
                     if (x_result == 0) {
-                        if (m_Cache.get()) {
-                            m_Context->GetResponse().Flush();
-                            if (m_IsResultReady) {
+                        if ( cache ) {
+                            context->GetResponse().Flush();
+                            if (processor.GetResultReady()) {
                                 if(caching_needed)
-                                    SaveResultToCache(m_Context->GetRequest(), result_copy);
+                                    SaveResultToCache(context->GetRequest(), result_copy, *cache);
                                 else {
-                                    unique_ptr<CCgiRequest> saved_request(GetSavedRequest(m_RID));
+                                    unique_ptr<CCgiRequest> saved_request(GetSavedRequest(processor.GetRID(), *cache));
                                     if (saved_request.get())
-                                        SaveResultToCache(*saved_request, result_copy);
+                                        SaveResultToCache(*saved_request, result_copy, *cache);
                                 }
                             } else if (caching_needed) {
-                                SaveRequest(m_RID, m_Context->GetRequest());
+                                SaveRequest(processor.GetRID(), context->GetRequest(), *cache);
                             }
                         }
                     }
@@ -721,7 +491,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 }
                 // If for some reason exception with status 2xx was thrown,
                 // set the result to 0, update HTTP status and continue.
-                m_Context->GetResponse().SetStatus(e.GetStatusCode(),
+                context->GetResponse().SetStatus(e.GetStatusCode(),
                                                    e.GetStatusMessage());
                 x_result = 0;
             }
@@ -733,7 +503,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             }
             GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
             _TRACE("CCgiApplication::Run: flushing");
-            m_Context->GetResponse().Flush();
+            context->GetResponse().Flush();
             _TRACE("CCgiApplication::Run: done, status: " << x_result);
             if (x_result != 0)
                 (*result)++;
@@ -741,21 +511,21 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             CDiagContext::GetRequestContext().SetBytesRd(ibuf.GetCount());
             CDiagContext::GetRequestContext().SetBytesWr(obuf.GetCount());
             x_OnEvent(x_result == 0 ? eSuccess : eError, x_result);
-            m_Context->GetResponse().SetOutput(0);
-            m_Context->GetRequest().SetInputStream(0);
+            context->GetResponse().SetOutput(0);
+            context->GetRequest().SetInputStream(0);
         }
         catch (exception& e) {
             // Reset stream pointers since the streams have been destroyed.
             try {
-                CNcbiOstream* os = m_Context->GetResponse().GetOutput();
+                CNcbiOstream* os = context->GetResponse().GetOutput();
                 if (os && !os->good()) {
-                    m_OutputBroken = true;
+                    processor.SetOutputBroken(true);
                 }
             }
             catch (exception&) {
             }
-            m_Context->GetResponse().SetOutput(0);
-            m_Context->GetRequest().SetInputStream(0);
+            context->GetResponse().SetOutput(0);
+            context->GetRequest().SetInputStream(0);
 
             GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
             // Increment error counter
@@ -829,18 +599,17 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             break;
         }
 
-        if ( s_CheckMemoryLimit(total_memory_limit) ) {
+        if ( CheckMemoryLimit() ) {
             break;
         }
 
         // If to restart the application
         {{
-            int restart_code = s_ShouldRestart(mtime, watcher.get(),
-                                               restart_delay);
-            if (restart_code != 0) {
-                x_OnEvent(restart_code == kSR_Executable ?
+            ERestartReason restart_code = ShouldRestart(mtime, watcher.get(), restart_delay);
+            if (restart_code != eSR_None) {
+                x_OnEvent(restart_code == eSR_Executable ?
                         eExecutable : eWatchFile, restart_code);
-                *result = (restart_code == kSR_WatchFile) ? 0 : restart_code;
+                *result = (restart_code == eSR_WatchFile) ? 0 : restart_code;
                 break;
             }
         }}

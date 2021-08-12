@@ -6,7 +6,7 @@
 # Meta-makefile for the "Cgi" lib
 #################################
 
-LIB_PROJ = cgi fcgi
+LIB_PROJ = cgi fcgi fcgi_mt
 SUB_PROJ = test
 PROJ_TAG = web
 

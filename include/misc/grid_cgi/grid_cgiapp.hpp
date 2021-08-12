@@ -264,6 +264,9 @@ protected:
     void RenderRefresh(CHTMLPage& page, 
                        const string& url,
                        int delay);
+
+    virtual bool IsCachingNeeded(const CCgiRequest& request) const;
+
 private:
     int m_RefreshDelay;
     int m_FirstDelay;
@@ -274,8 +277,6 @@ private:
     CNetCacheAPI m_NetCacheAPI;
     unique_ptr<CGridClient> m_GridClient;
     CCgiResponse* m_Response;
-
-    virtual bool IsCachingNeeded(const CCgiRequest& request) const;
 
 };
 
