@@ -73,15 +73,21 @@ set(NCBI_ThirdParty_VDB        ${NCBI_ThirdParty_VDBROOT}/vdb-versions/cxx_toolk
 set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python38 CACHE PATH "PYTHON root")
 set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.36.4-ncbi1 CACHE PATH "PROTOBUF root")
 set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.36.4-ncbi1 CACHE PATH "GRPC root")
-set(NCBI_ThirdParty_XALAN       ${NCBI_ThirdPartyBasePath}/xalan/${NCBI_ThirdPartyCompiler}/1.10.0-20080814 CACHE PATH "XALAN root")
-set(NCBI_ThirdParty_XERCES      ${NCBI_ThirdPartyBasePath}/xerces/${NCBI_ThirdPartyCompiler}/2.8.0 CACHE PATH "XERCES root")
-set(NCBI_ThirdParty_FTGL        ${NCBI_ThirdPartyBasePath}/ftgl/${NCBI_ThirdPartyCompiler}/2.1.3-rc5 CACHE PATH "FTGL root")
-set(NCBI_ThirdParty_GLEW        ${NCBI_ThirdPartyBasePath}/glew/${NCBI_ThirdPartyCompiler}/1.5.8 CACHE PATH "GLEW root")
-set(NCBI_ThirdParty_FreeType    ${NCBI_ThirdPartyBasePath}/freetype/${NCBI_ThirdPartyCompiler}/2.4.10 CACHE PATH "FreeType root")
-set(NCBI_ThirdParty_wxWidgets   ${NCBI_ThirdPartyBasePath}/wxwidgets/${NCBI_ThirdPartyCompiler}/3.1.3-ncbi1 CACHE PATH "wxWidgets root")
-set(NCBI_ThirdParty_UV          ${NCBI_ThirdPartyBasePath}/uv/${NCBI_ThirdPartyCompiler}/1.35.0 CACHE PATH "UV root")
-set(NCBI_ThirdParty_NGHTTP2     ${NCBI_ThirdPartyBasePath}/nghttp2/${NCBI_ThirdPartyCompiler}/1.40.0 CACHE PATH "NGHTTP2 root")
-set(NCBI_ThirdParty_GL2PS       ${NCBI_ThirdPartyBasePath}/gl2ps/${NCBI_ThirdPartyCompiler}/1.4.0 CACHE PATH "GL2PS root")
+set(NCBI_ThirdParty_XALAN      ${NCBI_ThirdPartyBasePath}/xalan/${NCBI_ThirdPartyCompiler}/1.10.0-20080814 CACHE PATH "XALAN root")
+set(NCBI_ThirdParty_XERCES     ${NCBI_ThirdPartyBasePath}/xerces/${NCBI_ThirdPartyCompiler}/2.8.0 CACHE PATH "XERCES root")
+set(NCBI_ThirdParty_FTGL       ${NCBI_ThirdPartyBasePath}/ftgl/${NCBI_ThirdPartyCompiler}/2.1.3-rc5 CACHE PATH "FTGL root")
+set(NCBI_ThirdParty_GLEW       ${NCBI_ThirdPartyBasePath}/glew/${NCBI_ThirdPartyCompiler}/1.5.8 CACHE PATH "GLEW root")
+set(NCBI_ThirdParty_FreeType   ${NCBI_ThirdPartyBasePath}/freetype/${NCBI_ThirdPartyCompiler}/2.4.10 CACHE PATH "FreeType root")
+set(NCBI_ThirdParty_wxWidgets  ${NCBI_ThirdPartyBasePath}/wxwidgets/${NCBI_ThirdPartyCompiler}/3.1.3-ncbi1 CACHE PATH "wxWidgets root")
+
+if("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 16 2019")
+    set(NCBI_ThirdParty_UV     ${NCBI_ThirdPartyBasePath}/uv/${NCBI_ThirdPartyCompiler}/1.35.0.ncbi1 CACHE PATH "UV root")
+elseif("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 15 2017 Win64")
+    set(NCBI_ThirdParty_UV     ${NCBI_ThirdPartyBasePath}/uv/${NCBI_ThirdPartyCompiler}/1.35.0 CACHE PATH "UV root")
+endif()
+
+set(NCBI_ThirdParty_NGHTTP2    ${NCBI_ThirdPartyBasePath}/nghttp2/${NCBI_ThirdPartyCompiler}/1.40.0 CACHE PATH "NGHTTP2 root")
+set(NCBI_ThirdParty_GL2PS      ${NCBI_ThirdPartyBasePath}/gl2ps/${NCBI_ThirdPartyCompiler}/1.4.0 CACHE PATH "GL2PS root")
 
 #############################################################################
 #############################################################################
