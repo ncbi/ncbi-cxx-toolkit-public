@@ -106,6 +106,11 @@ elseif(WIN32)
 endif()
 
 #############################################################################
+# TLS
+set(NCBI_COMPONENT_TLS_FOUND YES)
+list(APPEND NCBI_ALL_REQUIRES TLS)
+
+#############################################################################
 # local_lbsm
 set(NCBI_COMPONENT_local_lbsm_FOUND NO)
 if(NCBI_COMPONENT_local_lbsm_DISABLED)

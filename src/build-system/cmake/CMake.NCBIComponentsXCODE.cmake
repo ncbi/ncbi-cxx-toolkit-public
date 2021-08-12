@@ -416,7 +416,6 @@ NCBI_define_Xcomponent(NAME NETTLE LIB hogweed nettle ADD_COMPONENT GMP)
 
 #############################################################################
 # GNUTLS
-set(NCBI_COMPONENT_TLS_FOUND YES)
 set(NCBI_COMPONENT_GNUTLS_FOUND NO)
 if(DEFINED NCBI_COMPONENT_GNUTLS_DISABLED AND NOT NCBI_COMPONENT_GNUTLS_DISABLED)
     NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls ADD_COMPONENT NETTLE)
