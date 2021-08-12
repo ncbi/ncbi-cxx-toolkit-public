@@ -2166,7 +2166,12 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& biose
     if (embl_block->GetExtra_acc().empty())
         embl_block->ResetExtra_acc();
 
-    CRef<objects::CGB_block> gbb = GetEmblGBBlock(pp, entry, gbdiv, bio_src);      /* GB-block */
+    CRef<objects::CGB_block> gbb;
+   
+    if  (pp->source == Parser::ESource::NCBI) {
+        gbb = GetEmblGBBlock(pp, entry, gbdiv, bio_src);      /* GB-block */
+    }
+
     if(gbdiv != NULL)
         MemFree(gbdiv);
 
