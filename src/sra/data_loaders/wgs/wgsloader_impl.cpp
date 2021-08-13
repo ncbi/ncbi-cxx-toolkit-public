@@ -1260,6 +1260,14 @@ bool CWGSFileInfo::SAccFileInfo::ValidateAcc(const CTextseq_id& text_id)
     }
     else if ( IsProtein() ) {
         if ( auto iter = GetProteinIterator() ) {
+            if ( !GetKeepReplacedParam() &&
+                 iter.GetGBState() == NCBI_gb_state_eWGSGenBankMigrated ) {
+                // replaced individual protein
+                if ( GetDebugLevel() >= 2 ) {
+                    ERR_POST_X(11, "CWGSDataLoader: WGS protein "<<text_id.GetAccession()<<" is replaced");
+                }
+                return false;
+            }
             return s_ValidateAcc(iter.GetAccSeq_id(), text_id);
         }
     }
@@ -1296,6 +1304,14 @@ bool CWGSFileInfo::SAccFileInfo::ValidateGi(TGi gi)
     }
     else if ( IsProtein() ) {
         if ( auto iter = GetProteinIterator() ) {
+            if ( !GetKeepReplacedParam() &&
+                 iter.GetGBState() == NCBI_gb_state_eWGSGenBankMigrated ) {
+                // replaced individual protein
+                if ( GetDebugLevel() >= 2 ) {
+                    ERR_POST_X(11, "CWGSDataLoader: WGS protein "<<gi<<" is replaced");
+                }
+                return false;
+            }
             return iter.GetGi() == gi;
         }
     }
@@ -1320,7 +1336,10 @@ bool CWGSFileInfo::FindGi(SAccFileInfo& info, TGi gi)
         info.row_id = it.GetRowId();
         info.seq_type = it.GetSeqType() == it.eProt? 'P': '\0';
         info.version = -1;
-        return info.ValidateGi(gi);
+        if ( !info.ValidateGi(gi) ) {
+            info.file = 0;
+        }
+        return info;
     }
     return false;
 }
@@ -1334,7 +1353,10 @@ bool CWGSFileInfo::FindProtAcc(SAccFileInfo& info, const CTextseq_id& text_id)
         info.row_id = row_id;
         info.seq_type = 'P';
         info.version = -1;
-        return info.ValidateAcc(text_id);
+        if ( !info.ValidateAcc(text_id) ) {
+            info.file = 0;
+        }
+        return info;
     }
     return false;
 }
@@ -1348,6 +1370,7 @@ static CBioseq_Handle::TBioseqStateFlags s_GBStateToOM(NCBI_gb_state gb_state)
         state |= CBioseq_Handle::fState_suppress_perm;
         break;
     case NCBI_gb_state_eWGSGenBankReplaced:
+    case NCBI_gb_state_eWGSGenBankMigrated:
         state |= CBioseq_Handle::fState_dead;
         break;
     case NCBI_gb_state_eWGSGenBankWithdrawn:

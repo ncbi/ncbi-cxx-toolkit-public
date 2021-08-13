@@ -2683,6 +2683,110 @@ BOOST_AUTO_TEST_CASE(TestReplaced)
 }
 
 
+BOOST_AUTO_TEST_CASE(TestReplacedProtein1)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+
+    scope.AddDefaults();
+
+    CBioseq_Handle bh;
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("CAP20437"));
+    BOOST_CHECK(!bh);
+
+    scope.AddDataLoader("GBLOADER");
+    
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("CAP20437"));
+    BOOST_CHECK(bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestReplacedProtein2)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+
+    scope.AddDefaults();
+
+    CBioseq_Handle bh;
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("CAP20511"));
+    BOOST_CHECK(!bh);
+
+    scope.AddDataLoader("GBLOADER");
+    
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("CAP20511"));
+    BOOST_CHECK(bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestReplacedProtein3)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+
+    scope.AddDefaults();
+
+    CBioseq_Handle bh;
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("CAP20512"));
+    BOOST_CHECK(bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestReplacedProtein4)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+
+    scope.AddDefaults();
+
+    CBioseq_Handle bh;
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("309367003"));
+    BOOST_CHECK(!bh);
+
+    scope.AddDataLoader("GBLOADER");
+    
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("309367003"));
+    BOOST_CHECK(bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestReplacedProtein5)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+
+    scope.AddDefaults();
+
+    CBioseq_Handle bh;
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("309366966"));
+    BOOST_CHECK(!bh);
+
+    scope.AddDataLoader("GBLOADER");
+    
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("309366966"));
+    BOOST_CHECK(bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestReplacedProtein6)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+
+    scope.AddDefaults();
+
+    CBioseq_Handle bh;
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("309366967"));
+    BOOST_CHECK(bh);
+}
+
+
 BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
 {
     LOG_POST("Checking WGS master sequence descriptors");
