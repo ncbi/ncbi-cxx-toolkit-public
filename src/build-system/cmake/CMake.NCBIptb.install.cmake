@@ -404,8 +404,10 @@ function(NCBI_internal_install_root _variable _access)
     endif()
 
 #install build info files
-    set(_files "${NCBI_TREE_ROOT}/build_info;${NCBI_TREE_ROOT}/checkout_info")
-    install(FILES ${_files} DESTINATION "." OPTIONAL)
+    if (NOT "$ENV{NCBIPTB_INSTALL_BARE}")
+        set(_files "${NCBI_TREE_ROOT}/build_info;${NCBI_TREE_ROOT}/checkout_info")
+        install(FILES ${_files} DESTINATION "." OPTIONAL)
+    endif()
 endfunction()
 
 #############################################################################
