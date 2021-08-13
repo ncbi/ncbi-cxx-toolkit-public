@@ -971,7 +971,7 @@ CNcbiIstream& operator>>(CNcbiIstream& in, CStrictId<TKey, TStorage>& id)
 #define NCBI_STRICT_ENTREZ_ID
 #else
 // Temporary fix: disable strict TEntrezId
-#  if NCBI_STRICT_ENTREZ_ID
+#  ifdef NCBI_STRICT_ENTREZ_ID
 #    undef NCBI_STRICT_ENTREZ_ID
 #  endif
 #endif
