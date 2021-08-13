@@ -60,7 +60,7 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqcode/Seq_code_type.hpp>
 #include <objects/seq/Pubdesc.hpp>
-
+#include <objects/seqfeat/SubSource.hpp>
 
 #include "index.h"
 #include "embl.h"
@@ -95,6 +95,7 @@
 
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 /* For new stile of ID line in EMBL data check the "data class"
  * field first to figure out division code
@@ -1617,6 +1618,15 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
     return embl;
 }
 
+
+static bool s_DuplicatesBiosource(const CBioSource& biosource, const char* gbdiv)
+{
+    return (biosource.IsSetOrg() &&
+            biosource.GetOrg().IsSetOrgname() &&
+            biosource.GetOrg().GetOrgname().IsSetDiv() &&                   
+            NStr::Equal(biosource.GetOrg().GetOrgname().GetDiv(),gbdiv));
+}
+
 /**********************************************************/
 static CRef<objects::CGB_block> GetEmblGBBlock(ParserPtr pp, DataBlkPtr entry,
                                                            char* gbdiv, objects::CBioSource* bio_src)
@@ -1640,26 +1650,25 @@ static CRef<objects::CGB_block> GetEmblGBBlock(ParserPtr pp, DataBlkPtr entry,
             GetSequenceOfKeywords(entry, ParFlat_KW, ParFlat_COL_DATA_EMBL, gbb->SetKeywords());
     }
 
-    if(gbdiv != NULL)
+    if(gbdiv)
     {
-        if(StringICmp(gbdiv, "ENV") == 0 &&
-           bio_src != NULL && bio_src->IsSetSubtype())
+        if(NStr::EqualNocase(gbdiv, "ENV") &&
+           bio_src && bio_src->IsSetSubtype())
         {
-            bool not_found = true;
-            ITERATE(objects::CBioSource::TSubtype, subtype, bio_src->GetSubtype())
-            {
-                if ((*subtype)->GetSubtype() == 27)
-                {
-                    not_found = false;
-                    break;
-                }
-            }
-
-            if (not_found)
+            const auto& subtype = bio_src->GetSubtype();
+            const auto it = 
+                find_if(begin(subtype), end(subtype), 
+                    [](auto pSubSource) { 
+                        return pSubSource->GetSubtype() == CSubSource::eSubtype_environmental_sample; 
+                        });
+            if ((it == subtype.end()) && !s_DuplicatesBiosource(*bio_src,gbdiv)) { // Not found
                 gbb->SetDiv(gbdiv);
+            }
         }
-        else
+        else if (!bio_src || 
+                 !s_DuplicatesBiosource(*bio_src, gbdiv)) {
             gbb->SetDiv(gbdiv);
+        }
     }
 
     if (!gbb->IsSetExtra_accessions() && !gbb->IsSetKeywords() && !gbb->IsSetDiv())
