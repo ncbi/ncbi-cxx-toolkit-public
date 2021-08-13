@@ -966,9 +966,14 @@ CNcbiIstream& operator>>(CNcbiIstream& in, CStrictId<TKey, TStorage>& id)
 #  define NCBI_INT8_GI
 #endif
 
+#if NCBI_TEST_STRICT_ENTREZ_ID
+// Allow strict TEntrezId test builds
+#define NCBI_STRICT_ENTREZ_ID
+#else
 // Temporary fix: disable strict TEntrezId
-#ifdef NCBI_STRICT_ENTREZ_ID
-#  undef NCBI_STRICT_ENTREZ_ID
+#  if NCBI_STRICT_ENTREZ_ID
+#    undef NCBI_STRICT_ENTREZ_ID
+#  endif
 #endif
 
 #ifndef NCBI_STRICT_GI
