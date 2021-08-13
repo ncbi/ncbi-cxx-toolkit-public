@@ -109,6 +109,10 @@ public:
 
     TSeqPos SequenceSize() const;
 
+    TSeqPos GetSequenceSize(
+        const string&) const;
+
+
 protected:
     void xProcessData(
         const TReaderData&,
