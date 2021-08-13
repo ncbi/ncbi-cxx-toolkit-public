@@ -391,6 +391,10 @@ int CTbl2AsnApp::Run()
     }
 
     m_context.m_use_huge_files = GetConfig().GetBool("table2asn", "UseHugeFiles", false);
+    if (m_context.m_use_huge_files)
+    {
+        std::cerr << "Will be using huge files scenario" << std::endl;
+    }
 
     m_context.m_split_log_files = args["split-logs"].AsBoolean();
     if (m_context.m_split_log_files && args["logfile"])
