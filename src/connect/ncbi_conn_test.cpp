@@ -490,7 +490,6 @@ EIO_Status CConnTest::HttpOkay(string* reason)
         if (status == eIO_NotSupported)
             temp += "Your application may also need to have SSL support on\n";
     }
-    net_info.reset();
 
     PostCheck(eHttp, 0/*main*/, status, temp);
 
@@ -548,7 +547,6 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
         if (net_info.get()  &&  status == eIO_NotSupported)
             temp += "NCBI network dispatcher must be accessed via HTTPS\n";
     }
-    net_info.reset();
 
     PostCheck(eDispatcher, 0/*main*/, status, temp);
 
@@ -644,7 +642,6 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
         if (str)
             free(str);
     }
-    net_info.reset();
 
     PostCheck(eStatelessService, 0/*main*/, status, temp);
 
@@ -854,13 +851,11 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
 
     PostCheck(eFirewallConnPoints, 1/*sub*/, status, temp);
 
-    net_info.reset();
-
     if (status == eIO_Success) {
         PreCheck(eFirewallConnPoints, 2/*sub*/,
                  "Verifying configuration for consistency");
 
-        temp.resize(2);
+        temp.resize(2);//"OK"
         bool firewall = true;
         // Only check primary ports here
         ITERATE(vector<CConnTest::CFWConnPoint>, cp, m_Fwd) {
@@ -1014,7 +1009,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             }
             if (status != eIO_Success)
                 break;
-            vector<CSocketAPI::SPoll>  poll;
+            vector<CSocketAPI::SPoll> poll;
             ITERATE(vector<CFWCheck>, ck, fwck) {
                 CConn_IOStream* fw = ck->first.get();
                 if (!fw  ||  ck->second->status != eIO_Success)
@@ -1186,7 +1181,6 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
 
     PostCheck(eFirewallConnections, 0/*main*/, status, temp);
 
-    net_info.reset();
     if (reason)
         reason->swap(temp);
     return status;
@@ -1340,7 +1334,6 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
             }
         }
     }
-    net_info.reset();
 
     PostCheck(eStatefulService, 0/*main*/, status, temp);
 
