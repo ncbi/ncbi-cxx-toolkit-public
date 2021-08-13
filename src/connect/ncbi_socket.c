@@ -1874,11 +1874,11 @@ static EIO_Status s_Select_(size_t                n,
                     }
                     FD_SET(fd, &wfds);
                 }
-                if (event == eIO_Write  &&
-                    (type == eSOCK_Datagram  ||  asis
-                     ||  (sock->r_on_w == eOff
-                          ||  (sock->r_on_w == eDefault
-                               &&  s_ReadOnWrite != eOn)))) {
+                if (event == eIO_Write
+                    &&  (type == eSOCK_Datagram  ||  asis
+                         ||  (sock->r_on_w == eOff
+                              ||  (sock->r_on_w == eDefault
+                                   &&  s_ReadOnWrite != eOn)))) {
                     break;
                 }
                 /*FALLTHRU*/
@@ -2182,11 +2182,11 @@ static EIO_Status s_Poll_(size_t                n,
                 assert(type & eSOCK_Socket);
                 if (type == eSOCK_Datagram  ||  sock->w_status != eIO_Closed)
                     bitset |= POLLOUT;
-                if (event == eIO_Write  &&
-                    (type == eSOCK_Datagram  ||  asis
-                     ||  (sock->r_on_w == eOff
-                          ||  (sock->r_on_w == eDefault
-                               &&  s_ReadOnWrite != eOn)))) {
+                if (event == eIO_Write
+                    &&  (type == eSOCK_Datagram  ||  asis
+                         ||  (sock->r_on_w == eOff
+                              ||  (sock->r_on_w == eDefault
+                                   &&  s_ReadOnWrite != eOn)))) {
                     break;
                 }
                 /*FALLTHRU*/
@@ -2470,11 +2470,11 @@ static EIO_Status s_Select(size_t                n,
                             bitset |= FD_CONNECT/*C*/;
                         bitset     |= FD_WRITE/*W*/;
                     }
-                    if (event == eIO_Write  &&
-                        (type == eSOCK_Datagram  ||  asis
-                         ||  (sock->r_on_w == eOff
-                              ||  (sock->r_on_w == eDefault
-                                   &&  s_ReadOnWrite != eOn)))) {
+                    if (event == eIO_Write
+                        &&  (type == eSOCK_Datagram  ||  asis
+                             ||  (sock->r_on_w == eOff
+                                  ||  (sock->r_on_w == eDefault
+                                       &&  s_ReadOnWrite != eOn)))) {
                         break;
                     }
                     /*FALLTHRU*/
@@ -4186,16 +4186,15 @@ static EIO_Status s_Close_(SOCK sock, int abort, TSOCK_Keep keep)
     }
 
     if ((abort  &&  abort < 2)  ||  !sock->keep) {
-        TSOCK_Handle fd = sock->sock;
         if (abort)
             abort = 1;
 #ifdef NCBI_MONKEY
         /* Not interception of close():  only to "forget" this socket */
         if (g_MONKEY_Close)
-            g_MONKEY_Close(fd);
+            g_MONKEY_Close(sock->sock);
 #endif /*NCBI_MONKEY*/
         for (;;) { /* close persistently - retry if interrupted by a signal */
-            if (SOCK_CLOSE(fd) == 0)
+            if (SOCK_CLOSE(sock->sock) == 0)
                 break;
             /* error */
             if (s_Initialized <= 0)
@@ -4216,7 +4215,6 @@ static EIO_Status s_Close_(SOCK sock, int abort, TSOCK_Keep keep)
             }
             if (abort  ||  error != SOCK_EINTR) {
                 const char* strerr = SOCK_STRERROR(error);
-                /* NB: s_ID() won't show fd here since it's INVALID by now */
                 CORE_LOGF_ERRNO_EXX(21, abort == 1 ? eLOG_Warning : eLOG_Error,
                                     error, strerr ? strerr : "",
                                     ("%s[SOCK::%s] "
