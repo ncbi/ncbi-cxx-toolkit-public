@@ -1780,6 +1780,7 @@ xerces-c needs3party $(ORIG_LIBS)
 xerces-c needs3party $(Z_LIBS)
 xfcgi includes xcgi
 xfcgi needs3party $(FASTCGI_LIBS)
+xfcgi_mt needs xcgi
 xflatfile needs $(OBJMGR_LIBS)
 xflatfile needs taxon1
 xflatfile needs xcleanup
