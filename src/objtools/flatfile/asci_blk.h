@@ -37,6 +37,7 @@
 #define _ASCIIBLOCK_
 
 #include "ftablock.h"
+#include <objects/seqfeat/Org_ref.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -97,6 +98,7 @@ void        fta_set_strandedness(TEntryList& seq_entries);
 
 bool GetEmblInstContig(DataBlkPtr entry, objects::CBioseq& bioseq, ParserPtr pp);
 
+bool        fta_orgref_has_taxid(const objects::COrg_ref::TDb& dbtags);
 void        fta_fix_orgref_div(const objects::CBioseq::TAnnot& annots, objects::COrg_ref& org_ref, objects::CGB_block& gbb);
 
 char*     GetEmblDiv(Uint1 num);

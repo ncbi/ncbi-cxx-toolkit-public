@@ -3706,7 +3706,7 @@ void fta_sort_seqfeat_cit(TEntryList& seq_entries)
 }
 
 /**********************************************************/
-static bool fta_orgref_has_taxid(const objects::COrg_ref::TDb& dbtags)
+bool fta_orgref_has_taxid(const objects::COrg_ref::TDb& dbtags)
 {
     ITERATE(objects::COrg_ref::TDb, tag, dbtags)
     {
