@@ -2174,12 +2174,14 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& biose
 
     if(gbdiv != NULL)
         MemFree(gbdiv);
-
+    
+    bool hasEmblBlock = false;
     if(pp->source != Parser::ESource::NCBI)
     {
         CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetEmbl(*embl_block);
         bioseq.SetDescr().Set().push_back(descr);
+        hasEmblBlock = true;
     }
 
     offset = SrchNodeType(entry, ParFlat_AH, &len);
@@ -2215,11 +2217,38 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& biose
 
     /* GB-block and div
      */
-    if (gbb.NotEmpty())
-    {
-        if(pp->taxserver == 1 && gbb->IsSetDiv())
-            fta_fix_orgref_div(bioseq.GetAnnot(), *org_ref, *gbb);
+    if (pp->taxserver == 1) {
+        if (hasEmblBlock && embl_block->IsSetDiv() && embl_block->GetDiv() < 15) {
+            if (org_ref->IsSetOrgname() && !org_ref->GetOrgname().IsSetDiv() &&
+                (!org_ref->IsSetDb() || !fta_orgref_has_taxid(org_ref->GetDb()))) {
+                org_ref->SetOrgname().SetDiv(ParFlat_GBDIV_array[embl_block->GetDiv()]); 
+            }
 
+            if (bioseq.IsSetAnnot()) {
+                for (auto pAnnot : bioseq.GetAnnot()) {
+                    if (pAnnot->IsFtable()) {
+                        for (auto pFeat : pAnnot->SetData().SetFtable()) {
+                            if (pFeat->IsSetData() && pFeat->SetData().IsBiosrc()) {
+                                auto& biosrc = pFeat->SetData().SetBiosrc();
+                                if (biosrc.IsSetOrg() &&
+                                    (!biosrc.GetOrg().IsSetDb() ||
+                                     !fta_orgref_has_taxid(biosrc.GetOrg().GetDb()))) {
+                                        biosrc.SetOrg().SetOrgname().SetDiv(ParFlat_GBDIV_array[embl_block->GetDiv()]); 
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else
+        if (gbb && gbb->IsSetDiv()) {
+            fta_fix_orgref_div(bioseq.GetAnnot(), *org_ref, *gbb);
+        }
+    }
+
+    if (gbb)
+    {
         CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
         descr->SetGenbank(*gbb);
         bioseq.SetDescr().Set().push_back(descr);
