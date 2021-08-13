@@ -1107,6 +1107,9 @@ void CGff3Reader::xProcessSequenceRegionPragma(
         }
     }
     mpLocations->SetSequenceSize(tokens[1], sequenceSize);
+    auto resolvedId = mSeqIdResolve(tokens[1], m_iFlags, true)->AsFastaString();
+    mpLocations->SetSequenceSize(resolvedId, sequenceSize);
+
 }
 
 //  ----------------------------------------------------------------------------
@@ -1114,6 +1117,14 @@ TSeqPos CGff3Reader::SequenceSize() const
 //  ----------------------------------------------------------------------------
 {
     return mpLocations->SequenceSize();
+}
+
+//  ----------------------------------------------------------------------------
+TSeqPos CGff3Reader::GetSequenceSize(
+    const string& seqId) const
+//  ----------------------------------------------------------------------------
+{
+    return mpLocations->GetSequenceSize(seqId);
 }
 
 END_objects_SCOPE

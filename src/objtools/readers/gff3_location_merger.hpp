@@ -81,7 +81,7 @@ class CGff3LocationMerger
 public:
     CGff3LocationMerger(
         unsigned int flags =0,
-        CGff3ReadRecord::SeqIdResolver =nullptr,
+        CGff3ReadRecord::SeqIdResolver = CReadUtil::AsSeqId,
         TSeqPos sequenceSize =0);
 
     void Reset() {
@@ -115,6 +115,9 @@ public:
         LOCATIONS&);
 
     TSeqPos SequenceSize() const {
+        if (mSequenceSizes.size() == 1) {
+            return mSequenceSizes.begin()->second;
+        } 
         return 0;
     }
 
