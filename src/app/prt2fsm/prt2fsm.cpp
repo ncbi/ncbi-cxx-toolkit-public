@@ -57,7 +57,7 @@ void CPrt2FsmApp::Init()
 {
     // Prepare command line descriptions
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "Suspect Product Rules to FSM");
+    arg_desc->SetUsageContext("", "Suspect Product Rules to FSM");
     arg_desc->AddOptionalKey("i", "InFile", "Input File", CArgDescriptions::eInputFile);
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 };

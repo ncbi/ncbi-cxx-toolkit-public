@@ -394,10 +394,7 @@ CAsn2FlatApp::~CAsn2FlatApp()
 void CAsn2FlatApp::Init()
 {
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-    arg_desc->SetUsageContext(
-        GetArguments().GetProgramBasename(),
-        "Convert an ASN.1 Seq-entry into a flat report",
-        false);
+    arg_desc->SetUsageContext("", "Convert an ASN.1 Seq-entry into a flat report");
 
     // input
     {{
