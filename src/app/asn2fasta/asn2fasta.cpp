@@ -185,10 +185,7 @@ void CAsn2FastaApp::Init()
 //  --------------------------------------------------------------------------
 {
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-    arg_desc->SetUsageContext(
-        GetArguments().GetProgramBasename(),
-        "Convert an ASN.1 Seq-entry into a FASTA report",
-        false);
+    arg_desc->SetUsageContext("", "Convert an ASN.1 Seq-entry into a FASTA report");
 
     // input
     {{

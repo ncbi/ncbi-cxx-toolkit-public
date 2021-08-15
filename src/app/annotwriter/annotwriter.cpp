@@ -227,10 +227,7 @@ void CAnnotWriterApp::Init()
 //  ----------------------------------------------------------------------------
 {
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-    arg_desc->SetUsageContext(
-        GetArguments().GetProgramBasename(),
-        "Convert ASN.1 to alternative file formats",
-        false);
+    arg_desc->SetUsageContext("", "Convert ASN.1 to alternative file formats");
     
     // input
     {{

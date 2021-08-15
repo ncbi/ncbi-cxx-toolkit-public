@@ -346,9 +346,7 @@ void CAsnvalApp::Init()
                                               CDataLoadersUtil::fGenbankOffByDefault);
 
     // Program description
-    string prog_description = "ASN Validator\n";
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-        prog_description, false);
+    arg_desc->SetUsageContext("", "ASN Validator");
 
     // Pass argument descriptions to the application
     SetupArgDescriptions(arg_desc.release());

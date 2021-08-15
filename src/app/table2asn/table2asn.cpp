@@ -364,9 +364,7 @@ may be implemented in the future; RW-1253
     arg_desc->AddFlag("fetchall", "Search data in all available databases");
 
     // Program description
-    string prog_description = "Converts files of various formats to ASN.1\n";
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-        prog_description, false);
+    arg_desc->SetUsageContext("", "Converts files of various formats to ASN.1");
 
     // Pass argument descriptions to the application
     SetupArgDescriptions(arg_desc.release());

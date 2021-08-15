@@ -120,7 +120,7 @@ void CDiscRepApp::Init()
 {
     // Prepare command line descriptions
     unique_ptr<CArgDescriptions> arg_desc(new CDiscRepArgDescriptions);
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "Discrepancy Report");
+    arg_desc->SetUsageContext("", "Discrepancy Report");
 
     arg_desc->AddOptionalKey("i", "InFile", "Single Input File", CArgDescriptions::eInputFile);
     arg_desc->AddOptionalKey("indir", "InputDirectory", "Path to ASN.1 Files", CArgDescriptions::eInputFile);

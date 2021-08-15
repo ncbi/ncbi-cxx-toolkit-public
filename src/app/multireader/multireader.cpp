@@ -301,9 +301,7 @@ void CMultiReaderApp::Init()
 {
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
-    arg_desc->SetUsageContext
-        (GetArguments().GetProgramBasename(),
-         "C++ multi format file reader");
+    arg_desc->SetUsageContext("", "C++ multi format file reader");
 
     //
     //  input / output:

@@ -168,10 +168,7 @@ CCleanupApp::CCleanupApp()
 void CCleanupApp::Init()
 {
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-    arg_desc->SetUsageContext(
-        GetArguments().GetProgramBasename(),
-        "Perform ExtendedCleanup on an ASN.1 Seq-entry into a flat report",
-        false);
+    arg_desc->SetUsageContext("", "Perform ExtendedCleanup on an ASN.1 Seq-entry into a flat report");
 
     // input
     {{
