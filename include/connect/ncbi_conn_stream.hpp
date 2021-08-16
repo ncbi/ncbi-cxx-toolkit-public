@@ -867,6 +867,10 @@ public:
     void    ToString(string*);      ///< fill in the data, NULL is not accepted
     void    ToVector(vector<char>*);///< fill in the data, NULL is not accepted
 
+    /// Get the underlying BUF handle (it still remains managed by the stream).
+    /// @note Causes the stream to flush()
+    BUF     GetBUF(void);
+
 protected:
     const void* m_Ptr;              ///< pointer to read memory area (if owned)
 };

@@ -1070,6 +1070,14 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
 }
 
 
+// HACK * HACK * HACK
+BUF CConn_MemoryStream::GetBUF(void)
+{
+    SMetaConnector* meta = !flush() ? 0 : (SMetaConnector*) GetCONN();
+    return meta ? *((BUF*) meta->list->handle) : 0;
+}
+
+
 static CConn_IOStream::TConnector
 s_PipeConnectorBuilder(const string&         cmd,
                        const vector<string>& args,
