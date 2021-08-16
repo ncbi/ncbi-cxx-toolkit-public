@@ -95,7 +95,7 @@ static CRef<CSeqdesc> s_CreateDescriptor(void)
 {
     auto pDesc = Ref(new CSeqdesc());
     auto pPub = Ref(new CPub());
-    pPub->SetPmid(CPubMedId(1234));
+    pPub->SetPmid(CPubMedId(ENTREZ_ID_CONST(1234)));
     pDesc->SetPub().SetPub().Set().push_back(pPub);
     return pDesc;
 }
