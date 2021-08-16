@@ -244,6 +244,10 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
                 l_full_db_list =  l_ig_opts->m_Db[0]->GetDatabaseName() + " " +
                     l_ig_opts->m_Db[1]->GetDatabaseName() + " " +
                     l_ig_opts->m_Db[2]->GetDatabaseName() ;
+                if (l_ig_opts->m_Db[4]) {
+                    l_full_db_list += " " + l_ig_opts->m_Db[4]->GetDatabaseName();
+                }
+                
             } else {
                  
                 if (thm_CmdLineArgs->ExecuteRemotely()) {
@@ -253,6 +257,9 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
                     l_ig_opts->m_Db[1]->GetDatabaseName() + " " +
                         l_ig_opts->m_Db[2]->GetDatabaseName() + " " +
                         l_db_args->GetDatabaseName();
+                    if (l_ig_opts->m_Db[4]) {
+                        l_full_db_list += " " + l_ig_opts->m_Db[4]->GetDatabaseName();
+                    }
                 }
             }
             
@@ -764,10 +771,16 @@ int CIgBlastnApp::Run(void)
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
         if (db_args->GetDatabaseName() == kEmptyStr && 
             db_args->GetSubjects().Empty()) {
-            CSearchDatabase sdb(m_ig_opts->m_Db[0]->GetDatabaseName() + " " +
-                                m_ig_opts->m_Db[1]->GetDatabaseName() + " " +
-                                m_ig_opts->m_Db[2]->GetDatabaseName(), 
-                                CSearchDatabase::eBlastDbIsNucleotide);
+            string db_name = m_ig_opts->m_Db[0]->GetDatabaseName() + " " +
+                m_ig_opts->m_Db[1]->GetDatabaseName() + " " +
+                m_ig_opts->m_Db[2]->GetDatabaseName();
+            if (m_ig_opts->m_Db[4]) {
+                 db_name = m_ig_opts->m_Db[4]->GetDatabaseName() + " " + db_name;
+            } 
+          
+            CSearchDatabase sdb(db_name, 
+                                    CSearchDatabase::eBlastDbIsNucleotide);
+           
             m_blastdb_full.Reset(new CLocalDbAdapter(sdb));
             m_blastdb.Reset(&(*(m_ig_opts->m_Db[0])));
             //logging
@@ -779,10 +792,14 @@ int CIgBlastnApp::Run(void)
             if (m_CmdLineArgs->ExecuteRemotely()) {
                 m_blastdb_full.Reset(&(*m_blastdb));
             } else {
-                CSearchDatabase sdb(m_ig_opts->m_Db[0]->GetDatabaseName() + " " +
-                                    m_ig_opts->m_Db[1]->GetDatabaseName() + " " +
-                                    m_ig_opts->m_Db[2]->GetDatabaseName() + " " +
-                                    m_blastdb->GetDatabaseName(), 
+                string db_name = m_ig_opts->m_Db[0]->GetDatabaseName() + " " +
+                    m_ig_opts->m_Db[1]->GetDatabaseName() + " " +
+                    m_ig_opts->m_Db[2]->GetDatabaseName();
+                if (m_ig_opts->m_Db[4]) {
+                    db_name = m_ig_opts->m_Db[4]->GetDatabaseName() + " " + db_name;
+                } 
+                db_name += " " + m_blastdb->GetDatabaseName();
+                CSearchDatabase sdb(db_name, 
                                     CSearchDatabase::eBlastDbIsNucleotide);
                 m_blastdb_full.Reset(new CLocalDbAdapter(sdb));
             }

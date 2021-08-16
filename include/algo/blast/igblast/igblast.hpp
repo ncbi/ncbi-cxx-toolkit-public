@@ -73,10 +73,11 @@ public:
     int m_J_penalty;                 //the mismatch penalty for J gene search
     string m_AuxFilename;            // auxulary file name
     string m_IgDataPath;             // internal data path
-    CRef<CLocalDbAdapter> m_Db[4];   // user specified germline database
+    CRef<CLocalDbAdapter> m_Db[5];   // user specified germline database
                                      // 0-2: - user specified V, D, J
                                      // 3:   - the default V gl db
-    int  m_NumAlign[3];              // number of VDJ alignments to show
+                                     // 4:C gene
+    int  m_NumAlign[4];              // number of VDJC alignments to show
     bool m_FocusV;                   // should alignment restrict to V
     bool m_Translate;                // should translation be displayed
     bool m_ExtendAlign5end;
@@ -106,6 +107,8 @@ public:
                                      // CDR1, FWR2, CDR2, FWR3, CDR3 domains on topV sequence
 
     int m_JDomain[5];                // CDr3 start, stop, FWR4 start, stop, extra number of bases past last J codon (i.e., m_Fwr4EndOffset in CIgAnnotationInfo
+    
+    int m_CDomain[2];                //start and end
 
     /// Constructor
     CIgAnnotation() 
@@ -117,6 +120,7 @@ public:
         for (int i=0; i<12; i++) m_DomainInfo[i] = -1;
         for (int i=0; i<10; i++) m_DomainInfo_S[i] = -1;
         for (int i=0; i<5; i++) m_JDomain[i] = -1;
+        for (int i=0; i<2; i++) m_CDomain[i] = -1;
     }
 
 };
@@ -190,6 +194,7 @@ public:
     int m_NumActualV;
     int m_NumActualD;
     int m_NumActualJ;
+    int m_NumActualC;
 
     const CRef<CIgAnnotation> & GetIgAnnotation() const {
         return m_Annotation;
@@ -215,7 +220,7 @@ public:
                     const TQueryMessages         &errs,
                     CRef<CBlastAncillaryData>     ancillary_data)
            : CSearchResults(query, align, errs, ancillary_data),
-             m_NumActualV(0), m_NumActualD(0), m_NumActualJ(0) { }
+             m_NumActualV(0), m_NumActualD(0), m_NumActualJ(0),  m_NumActualC(0) { }
 
 private:
     CRef<CIgAnnotation> m_Annotation;
@@ -311,6 +316,11 @@ private:
                          CRef<IQueryFactory>           &qf,
                          CRef<CBlastOptionsHandle>     &opts_hndl,
                          int db_type);
+
+    void x_SetupCRegionSearch(const vector<CRef <CIgAnnotation> > &annots,
+                         CRef<IQueryFactory>           &qf,
+                         CRef<CBlastOptionsHandle>     &opts_hndl);
+
     void x_SetupNoOverlapDSearch(const vector<CRef <CIgAnnotation> > &annots,
                                  CRef<CSearchResultSet>        &results,
                                  CRef<IQueryFactory>           &qf,
@@ -333,6 +343,10 @@ private:
     void x_AnnotateD(CRef<CSearchResultSet>        &results_D,
                      vector<CRef <CIgAnnotation> > &annot);   
     void x_AnnotateJ(CRef<CSearchResultSet>        &results_J,
+                     vector<CRef <CIgAnnotation> > &annot);
+
+    void x_AnnotateC(CRef<CSearchResultSet>        &results_c,
+                     CRef<CSearchResultSet>        &results_j,
                      vector<CRef <CIgAnnotation> > &annot);
 
     /// Annotate the query chaintype and domains based on blast results
@@ -393,6 +407,9 @@ private:
                               CRef<CSearchResultSet>& results_D,
                               CRef<CSearchResultSet>& results_J,
                               vector<CRef <CIgAnnotation> > &annots); 
+    
+    void x_ProcessCResult(CRef<CSearchResultSet>& results_C,
+                          vector<CRef <CIgAnnotation> > &annots); 
         
 };
 

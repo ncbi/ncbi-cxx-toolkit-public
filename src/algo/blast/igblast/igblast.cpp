@@ -374,6 +374,7 @@ CIgBlast::Run()
 
     opts_hndl.Reset(CBlastOptionsFactory
                      ::Create((m_IgOptions->m_IsProtein)? eBlastp: eBlastn));
+  
 
     /*** search DJ germline */
     int num_genes =  (m_IgOptions->m_IsProtein) ? 1 : 3;
@@ -424,6 +425,30 @@ CIgBlast::Run()
         s_AppendResults(results[gene], m_IgOptions->m_NumAlign[gene], gene, final_results);
     }
 
+
+    //C gene blast
+    if(m_IgOptions->m_Db[4] && (results[2] && !(results[2]->empty()))) {
+        x_SetupCRegionSearch(annots, qf, opts_hndl);
+        CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[4]);
+        try {
+            blast.SetNumberOfThreads(m_NumThreads);
+                result = blast.Run();
+
+        }catch(...) {
+                cerr << "blast failed" << endl;
+        }
+        if (result) {
+            x_ConvertResultType(result);
+            s_SortResultsByEvalue(result);
+            x_ProcessCResult(result,  annots);
+            x_AnnotateC(result, results[2], annots);
+            s_AppendResults(result, m_IgOptions->m_NumAlign[3], 3, final_results);
+           
+        }
+    }
+
+
+
     /*** search user specified db */
     bool skipped = false;
     if (m_IsLocal) {
@@ -437,6 +462,7 @@ CIgBlast::Run()
         }
     } else {
         x_SetupDbSearch(annots, qf);
+
         CRef<CRemoteBlast> blast;
         if (m_RemoteDb.NotEmpty()) {
             _ASSERT(m_Subject.Empty());
@@ -452,6 +478,7 @@ CIgBlast::Run()
         GetDiagContext().Extra().Print("RID", m_RID);
         result = blast->GetResultSet();
     }
+ 
     if (! skipped) {
         x_ConvertResultType(result);
         s_SortResultsByEvalue(result);
@@ -514,7 +541,53 @@ void CIgBlast::x_SetupVSearch(CRef<IQueryFactory>       &qf,
     qf.Reset(new CObjMgr_QueryFactory(*m_Query));
 
 };
+void CIgBlast::x_SetupCRegionSearch(const vector<CRef <CIgAnnotation> > &annots,
+                                    CRef<IQueryFactory>           &qf,
+                                    CRef<CBlastOptionsHandle>     &opts_hndl){
+    
+    CBlastOptions & opts = opts_hndl->SetOptions();
+    opts.SetMatchReward(1);
+    opts.SetWordSize(7);
+    opts.SetMismatchPenalty(-3);
+    opts.SetGapOpeningCost(5);
+    opts.SetGapExtensionCost(2);
+    opts_hndl->SetEvalueThreshold(1e-5);
+    opts_hndl->SetFilterString("F");
+    opts_hndl->SetHitlistSize(m_IgOptions->m_NumAlign[3]);
 
+    // Mask V through J
+    int iq = 0;
+    ITERATE(vector<CRef <CIgAnnotation> >, annot, annots) {
+        CRef<CBlastSearchQuery> query = m_Query->GetBlastSearchQuery(iq);
+        CSeq_id *q_id = const_cast<CSeq_id *>(&*query->GetQueryId());
+        int len = query->GetLength();
+        TMaskedQueryRegions mask_list;
+        if ((*annot)->m_GeneInfo[0] == -1) {
+            // This is not a ig sequence or there is no d gene per previous search.  Mask it out
+            CRef<CSeqLocInfo> mask(new CSeqLocInfo(new CSeq_interval(*q_id, 0, len-1), 0));
+            mask_list.push_back(mask);
+        } else {
+            // Excluding the V gene through J gene
+            bool ms = (*annot)->m_MinusStrand;
+            if (ms) {
+                //-2 due to typically extra 1 bp beyond J coding region
+                CRef<CSeqLocInfo> mask(new CSeqLocInfo(new CSeq_interval(*q_id, (*annot)->m_GeneInfo[4] + 2, len-1), 0));
+                mask_list.push_back(mask);
+            } else {
+                //-2 due to typically extra 1 bp beyond J coding region
+                CRef<CSeqLocInfo> mask(new CSeqLocInfo(new CSeq_interval(*q_id, 0, (*annot)->m_GeneInfo[5] - 2), 0));
+                mask_list.push_back(mask);
+            }
+            
+        }
+        m_Query->SetMaskedRegions(iq, mask_list);
+        ++iq;
+    }
+
+    // Generate query factory
+    qf.Reset(new CObjMgr_QueryFactory(*m_Query));
+
+}
 void CIgBlast::x_SetupDJSearch(const vector<CRef <CIgAnnotation> > &annots,
                                CRef<IQueryFactory>           &qf,
                                CRef<CBlastOptionsHandle>     &opts_hndl,
@@ -994,7 +1067,7 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                 /* strand test */
                 if ((*it)->GetSeqStrand(0) != q_st) keep = false;
                 /* subject start test */
-                if ((*it)->GetSeqStart(1) > max_allowed_j_deletion) keep = false;
+                if ((int)(*it)->GetSeqStart(1) > max_allowed_j_deletion) keep = false;
                 /* v end test */
                 int q_js = (*it)->GetSeqStart(0);
                 int q_je = (*it)->GetSeqStop(0);
@@ -1303,6 +1376,35 @@ void CIgBlast::x_ProcessDGeneResult(CRef<CSearchResultSet>& results_V,
     }
 }
 
+void CIgBlast::x_ProcessCResult(CRef<CSearchResultSet>& results_C,
+                                 vector<CRef <CIgAnnotation> > &annots) {
+    int iq = 0;
+    CRef<CSeq_align_set> align_C(0);
+    NON_CONST_ITERATE(vector<CRef <CIgAnnotation> >, annot, annots) { 
+        bool q_ms = (*annot)->m_MinusStrand;
+        ENa_strand q_st = (q_ms) ? eNa_strand_minus : eNa_strand_plus;
+        CSearchResults& res_C = (*results_C)[iq];
+        if (res_C.HasAlignments()) {
+            align_C.Reset(const_cast<CSeq_align_set *>(&*(res_C.GetSeqAlign())));
+            if (align_C && !align_C->Get().empty()) {
+                CSeq_align_set::Tdata & align_list = align_C->Set();
+                CSeq_align_set::Tdata::iterator it = align_list.begin();
+                while (it != align_list.end()) {
+                    bool keep = true;
+                    
+                    /* strand test */
+                    if ((*it)->GetSeqStrand(0) != q_st) keep = false;
+                    
+                    /* remove failed seq_align */
+                    if (!keep) it = align_list.erase(it);
+                    else ++it;
+                }
+                iq ++;
+            }
+        }
+    }
+}
+
 void CIgBlast::x_ProcessDJResult(CRef<CSearchResultSet>& results_V, 
                                  CRef<CSearchResultSet>& results_D,
                                  CRef<CSearchResultSet>& results_J,
@@ -1346,13 +1448,71 @@ void CIgBlast::x_AnnotateD(CRef<CSearchResultSet>        &results_D,
     }
 };
 
+void CIgBlast::x_AnnotateC(CRef<CSearchResultSet>        &results_c,
+                           CRef<CSearchResultSet>        &results_j,
+                           vector<CRef <CIgAnnotation> > &annots)
+{
+    int iq = 0;
+
+    NON_CONST_ITERATE(vector<CRef <CIgAnnotation> >, annot, annots) {
+
+        const CSearchResults& res_c = (*results_c)[iq];
+        CConstRef<CSeq_align_set> align_c = res_c.GetSeqAlign();
+        const CSearchResults& res_j = (*results_j)[iq];
+        CConstRef<CSeq_align_set> align_j = res_j.GetSeqAlign();
+       
+        if (align_c.NotEmpty() && !align_c->IsEmpty() && align_j.NotEmpty() && !align_j->IsEmpty()) {
+            const CSeq_align_set::Tdata & align_list = align_c->Get();
+            CRef<CSeq_align> align = align_list.front();
+
+            if ((*annot)->m_JDomain[3] > 0 && (*annot)->m_JDomain[1] > 0) {
+                int subject_start = align->GetSeqStart(1);
+                int subject_end = align->GetSeqStop(1);
+                int seq_end = m_Scope->GetBioseqHandle(align->GetSeq_id(1)).GetBioseqLength() - 1;
+                CAlnMap c_map(align->GetSegs().GetDenseg()); 
+            
+                (*annot)->m_CDomain[1] = c_map.GetSeqPosFromSeqPos(0, 1, min(subject_end, seq_end), IAlnExplorer::eRight);
+        
+                if (align->GetSeqStrand(0) == eNa_strand_minus)  {
+                    (*annot)->m_CDomain[1] = m_Scope->GetBioseqHandle(align->GetSeq_id(0)).GetBioseqLength() - 
+                        (*annot)->m_CDomain[1] - 1;
+                }
+                //c start
+                int query_start = c_map.GetSeqPosFromSeqPos(0, 1, subject_start, IAlnExplorer::eRight);
+                if (align->GetSeqStrand(0) == eNa_strand_minus)  {
+                    (*annot)->m_CDomain[0] = m_Scope->GetBioseqHandle(align->GetSeq_id(0)).GetBioseqLength() - 
+                        query_start - 1;
+                } else {
+                    (*annot)->m_CDomain[0] = query_start;
+                }
+              
+                //if there are one or more gaps between fwr4 end and c start, then extend fwr4 end
+                int diff = max(0, (*annot)->m_CDomain[0] - (*annot)->m_JDomain[3] - 1);
+                //j stop and j length
+                int j_end = m_Scope->GetBioseqHandle(align_j->Get().front()->GetSeq_id(1)).GetBioseqLength() - 1;
+                if ((*annot)->m_JDomain[4] > 0) {
+                    j_end -= (*annot)->m_JDomain[4];
+                }
+                int j_stop = align_j->Get().front()->GetSeqStop(1);
+                 int j_extend_max = max(0, j_end - j_stop);
+                 int extend_len = min(diff, j_extend_max);
+                 if (extend_len > 0) {
+                     (*annot)->m_JDomain[3] += extend_len;
+                 }
+            }
+        }
+        /* next set of results */
+        ++iq;
+    }
+}
+
+
 void CIgBlast::x_AnnotateJ(CRef<CSearchResultSet>        &results_J,
                            vector<CRef <CIgAnnotation> > &annots)
 {
     int iq = 0;
     NON_CONST_ITERATE(vector<CRef <CIgAnnotation> >, annot, annots) {
-      
-        string q_ct = (*annot)->m_ChainType[0];
+
         bool q_ms = (*annot)->m_MinusStrand;
 
         const CSearchResults& res_j = (*results_J)[iq];
@@ -1379,7 +1539,7 @@ void CIgBlast::x_AnnotateJ(CRef<CSearchResultSet>        &results_J,
         /* next set of results */
         ++iq;
     }
-};
+}
 
 void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                             CRef<CSearchResultSet>        &results_J,
@@ -1689,6 +1849,9 @@ void CIgBlast::x_SetChainType(CRef<CSearchResultSet> &results,
             for (int i=0; i<ig_result->m_NumActualJ; ++i, --num_aligns) {
                  annot->m_ChainType.push_back("J");
             }
+            for (int i=0; i<ig_result->m_NumActualC; ++i, --num_aligns) {
+                 annot->m_ChainType.push_back("C");
+            }
             for (int i=0; i<num_aligns; ++i) {
                  annot->m_ChainType.push_back("N/A");
             }
@@ -1824,6 +1987,7 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
         case 0: ig_result->m_NumActualV = actual_align; break;
         case 1: ig_result->m_NumActualD = actual_align; break;
         case 2: ig_result->m_NumActualJ = actual_align; break;
+        case 3: ig_result->m_NumActualC = actual_align; break;
         default: break;
         }
     }

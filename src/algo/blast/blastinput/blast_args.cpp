@@ -1589,6 +1589,15 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
 
     if (!m_IsProtein) {
+        arg_desc.AddDefaultKey(kArgCRegionNumAlign, "int_value",
+                               "Number of Germline sequences to show alignments for",
+                               CArgDescriptions::eInteger, "2");
+        
+        arg_desc.AddOptionalKey(kArgCRegionDatabase, "constant_region_database_name",
+                            "C region database name",
+                            CArgDescriptions::eString);
+        
+
         arg_desc.AddOptionalKey(kArgGLChainType, "filename",
                             "File containing the coding frame start positions for sequences in germline J database",
                             CArgDescriptions::eString);
@@ -1804,6 +1813,7 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         opts_hndl.Reset(CBlastOptionsFactory::Create(eBlastn));
     }
 
+
     const static char suffix[] = "VDJ";
     int num_genes = (m_IsProtein) ? 1: 3;
     for (int gene=0; gene< num_genes; ++gene) {
@@ -1854,6 +1864,15 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
             m_IgOptions->m_Db[gene].Reset(new CLocalDbAdapter(*db));
             m_Scope->AddDataLoader(s_RegisterOMDataLoader(db->GetSeqDb()));
         }
+    }
+
+    if (args.Exist(kArgCRegionDatabase) && args[kArgCRegionDatabase]) {
+        m_IgOptions->m_NumAlign[3] = args[kArgCRegionNumAlign].AsInteger();
+        db.Reset(new CSearchDatabase(args[kArgCRegionDatabase].AsString(), mol_type));
+        m_IgOptions->m_Db[4].Reset(new CLocalDbAdapter(*db));
+        m_Scope->AddDataLoader(s_RegisterOMDataLoader(db->GetSeqDb()));
+    } else {
+        m_IgOptions->m_Db[4].Reset(0);
     }
 }
 
