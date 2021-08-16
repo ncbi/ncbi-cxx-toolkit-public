@@ -183,7 +183,9 @@ const string kArgPHIPatternFile("phi_pattern");
 
 const string kArgGLSubject("germline_sequence_");
 const string kArgGLDatabase("germline_db_");
+const string kArgCRegionDatabase("c_region_db");
 const string kArgGLNumAlign("num_alignments_");
+const string kArgCRegionNumAlign("num_alignments_C");
 const string kArgGLChainType("auxiliary_data");
 const string kArgGLOrigin("organism");
 const string kArgGLDomainSystem("domain_system");
