@@ -78,7 +78,48 @@ BOOST_AUTO_TEST_CASE(TestIstreamInterface)
         const auto& args = CNcbiApplication::Instance()->GetArgs();
         if (args["keep-diffs"]) {
             CDirEntry outputFile(outputName);
-            outputFile.Copy(filestub + ".new");
+            outputFile.Copy(filestub + ".istr_interface");
+        }
+    }
+
+    BOOST_REQUIRE(success);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestFileInterface)
+{
+    string test_data_dir {"test_data"};
+
+    unique_ptr<Parser> pConfig(new Parser()); 
+    pConfig->mode = Parser::EMode::Relaxed;
+    pConfig->output_format = Parser::EOutput::Seqsubmit;
+    string format {"genbank"};
+    string source {"ncbi"};
+    fta_set_format_source(*pConfig, format, source);
+
+    string filestub = CDir::ConcatPath(test_data_dir, "TP53_MH011443");
+    string inputFile = filestub + ".gb";
+    BOOST_REQUIRE(CDirEntry(inputFile).Exists());
+
+    CFlatFileParser ffparser(nullptr);
+    auto pResult = ffparser.Parse(*pConfig, inputFile);
+    BOOST_REQUIRE(pResult.NotNull());
+
+    const string& outputName = CDirEntry::GetTmpName();
+    CNcbiOfstream ofstr(outputName);
+    ofstr << MSerial_AsnText << *pResult;
+    ofstr.close();
+
+    CFile goldenFile(filestub + ".asn");
+    BOOST_REQUIRE(goldenFile.Exists());
+
+    bool success = goldenFile.CompareTextContents(outputName, CFile::eIgnoreWs);
+
+    if (!success) {
+        const auto& args = CNcbiApplication::Instance()->GetArgs();
+        if (args["keep-diffs"]) {
+            CDirEntry outputFile(outputName);
+            outputFile.Copy(filestub + ".file_interface");
         }
     }
 
