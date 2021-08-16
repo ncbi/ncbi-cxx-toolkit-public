@@ -829,6 +829,15 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
     {
         gbb->ResetDiv();
     }
+    else 
+    if (gbb->IsSetDiv() && 
+        bio_src &&
+        bio_src->IsSetOrg() &&
+        bio_src->GetOrg().IsSetOrgname() &&
+        bio_src->GetOrg().GetOrgname().IsSetDiv() &&
+        bio_src->GetOrg().GetOrgname().GetDiv() == gbb->GetDiv()) {
+        gbb->ResetDiv();
+    }
 
     GetExtraAccession(ibp, pp->allow_uwsec, pp->source, gbb->SetExtra_accessions());
     ret.Reset(gbb.Release());

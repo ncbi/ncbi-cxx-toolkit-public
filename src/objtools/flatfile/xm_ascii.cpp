@@ -726,6 +726,15 @@ static CRef<objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, objects
 
     GetExtraAccession(ibp, pp->allow_uwsec, pp->source, gbb->SetExtra_accessions());
 
+    if (gbb->IsSetDiv() && 
+        bio_src &&
+        bio_src->IsSetOrg() &&
+        bio_src->GetOrg().IsSetOrgname() &&
+        bio_src->GetOrg().GetOrgname().IsSetDiv() &&
+        bio_src->GetOrg().GetOrgname().GetDiv() == gbb->GetDiv()) {
+        gbb->ResetDiv();
+    }
+
     return gbb;
 }
 
