@@ -46,7 +46,7 @@ struct NCBI_CLEANUP_EXPORT SFeatIdManager
 {
     using TId = objects::CFeat_id::TLocal::TId;
     TId offset;
-    unordered_map<TId,TId> id_map;    
+    unordered_map<TId,TId> id_map;
     unordered_set<TId> existing_ids;
     unordered_set<TId> unchanged_ids;
     unordered_set<TId> new_ids;
@@ -57,7 +57,7 @@ struct NCBI_CLEANUP_EXPORT SFeatIdManager
 {
     using TId = objects::CFeat_id::TLocal::TId;
     TId offset;
-    unordered_map<TId,TId> id_map;    
+    unordered_map<TId,TId> id_map;
     unordered_set<TId> existing_ids;
     unordered_set<TId> unchanged_ids;
     unordered_set<TId> new_ids;
