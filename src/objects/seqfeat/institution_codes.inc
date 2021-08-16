@@ -365,6 +365,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ASUMC\ts\tArizona State University, Mammal Collection\t\t\t",
 "ASUMZ\ts\tArkansas State University, Collection of Recent Mammals\t\t\t",
 "ASUT\ts\tFrank M. Hasbrouck Insect Collection\t\t\t",
+"ASUV\tc\tSymbiotic Algae Collection at the University of Valencia (Coleccion de algas simbioticas de la Universitat de Valencia)\t\t\t",
 "ASW\ts\tSouth Valley University, Botany Department\t\t\t",
 "ASW<AUT>\tc\tCulture Collection of Algae at the University of Vienna\t\t\t",
 "ATA\ts\tAtatuerk Ueniversitesi\t\t\t",

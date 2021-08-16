@@ -332,6 +332,7 @@ ASUF	s	Rocky Mountain Research Station, USDA Forest Service
 ASUMC	s	Arizona State University, Mammal Collection			
 ASUMZ	s	Arkansas State University, Collection of Recent Mammals			
 ASUT	s	Frank M. Hasbrouck Insect Collection			
+ASUV	c	Symbiotic Algae Collection at the University of Valencia (Coleccion de algas simbioticas de la Universitat de Valencia)			
 ASW	s	South Valley University, Botany Department			
 ASW<AUT>	c	Culture Collection of Algae at the University of Vienna			
 ATA	s	Atatuerk Ueniversitesi			
