@@ -147,7 +147,7 @@ typedef enum {
 
 /* Connection internal data.
  *
- * NOTE:  "meta" *must* come first!
+ * NOTE:  "meta" *must* come first!  (see ncbi_conn_streambuf.cpp)
  */
 typedef struct SConnectionTag {
     SMetaConnector  meta;        /* VTable of operations and list            */
