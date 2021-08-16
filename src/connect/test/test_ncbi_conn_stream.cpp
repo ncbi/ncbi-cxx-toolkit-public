@@ -176,6 +176,21 @@ static void s_FTPStat(iostream& ftp)
 }
 
 
+extern "C" {
+static size_t x_ScanBuf(void* x_n, const void* data, size_t size)
+{
+    string str((const char*) data, size);
+    unsigned int* n = (unsigned int*) x_n;
+    ++(*n);
+    assert(strspn(str.c_str(), "0123456789\n") == size);
+#if 0
+    LOG_POST(Info << "     Chunk " << n << ", size " << size);
+#endif
+    return size;
+}
+}
+
+
 int CNCBITestConnStreamApp::Run(void)
 {
     TFTP_Flags flag = 0;
@@ -207,8 +222,8 @@ int CNCBITestConnStreamApp::Run(void)
     size = 0;
     for (n = 0;  n < m;  ++n) {
         CConn_MemoryStream* ms = 0;
+        size_t sz = 0, wr = 0;
         string data, back;
-        size_t sz = 0;
 #if 0
         LOG_POST(Info << "  Micro-test " << (int) n << " of "
                  << (int) m << " start");
@@ -225,11 +240,12 @@ int CNCBITestConnStreamApp::Run(void)
             LOG_POST(Info << "    Data bit at " << (unsigned long) sz << ", "
                      << (unsigned long) l << " byte(s) long: " << bit);
 #endif
-            sz += l;
             data += bit;
-            if (ms)
+            sz   += l;
+            if (ms) {
                 assert(*ms << bit);
-            else if (i == 0) {
+                wr += l;
+            } else if (i == 0) {
                 switch (n % 4) {
                 case 0:
 #if 0
@@ -238,6 +254,7 @@ int CNCBITestConnStreamApp::Run(void)
                     ms = new CConn_MemoryStream;
                     ms->exceptions(NcbiBadbit);
                     assert(*ms << bit);
+                    wr += l;
                     break;
                 case 1:
                     {{
@@ -248,6 +265,7 @@ int CNCBITestConnStreamApp::Run(void)
 #endif
                         ms = new CConn_MemoryStream(buf, eTakeOwnership);
                         ms->exceptions(NcbiBadbit);
+                        wr += l;
                         break;
                      
                     }}
@@ -258,6 +276,7 @@ int CNCBITestConnStreamApp::Run(void)
         }
         switch (n % 4) {
         case 2:
+            assert(!ms  &&  !wr);
 #if 0
             LOG_POST(Info << "  CConn_MemoryStream("
                      << (unsigned long) data.size() << ')');
@@ -265,6 +284,7 @@ int CNCBITestConnStreamApp::Run(void)
             ms = new CConn_MemoryStream(data.data(),data.size(), eNoOwnership);
             break;
         case 3:
+            assert(!ms  &&  !wr);
             {{
                 BUF buf = 0;
                 assert(BUF_Append(&buf, data.data(), data.size()));
@@ -273,12 +293,29 @@ int CNCBITestConnStreamApp::Run(void)
                          << (unsigned long) data.size() << ')');
 #endif
                 ms = new CConn_MemoryStream(buf, eTakeOwnership);
+                wr = data.size();
                 break;
             }}
         default:
+            assert(ms);
             break;
         }
-        assert(ms);
+        if (rand() % 3 == 0) {
+            unsigned int n = 0;
+            BUF   buf = ms->GetBUF();
+            size_t rd = BUF_Size(buf);
+#if 0
+            LOG_POST(Info << "  -- " << wr << " byte(s) written to BUF");
+            LOG_POST(Info << "     " << rd << " byte(s) BUF size");
+#endif
+            assert(rd == wr);
+            rd = BUF_PeekAtCB(buf, 0/*pos*/, x_ScanBuf, &n, (size_t)(-1L));
+#if 0
+            LOG_POST(Info << "  == " << rd << " byte(s) in " << n
+                     << " BUF chunk(s)");
+#endif
+            assert(rd == wr);
+        }
         if (!(rand() & 1)) {
             assert(*ms << endl);
             *ms >> back;
