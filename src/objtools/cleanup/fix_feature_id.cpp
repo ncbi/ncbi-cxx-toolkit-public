@@ -52,9 +52,9 @@ CFixFeatureId::TId CFixFeatureId::s_FindHighestFeatureId(const CSeq_entry_Handle
     return feat_id;
 }
 
-static void FindNextOffset(const CFixFeatureId::TIdSet &existing_ids, 
-        const CFixFeatureId::TIdSet &new_existing_ids, 
-        const CFixFeatureId::TIdSet &current_ids, 
+static void FindNextOffset(const CFixFeatureId::TIdSet &existing_ids,
+        const CFixFeatureId::TIdSet &new_existing_ids,
+        const CFixFeatureId::TIdSet &current_ids,
         CFixFeatureId::TId &offset)
 {
     do
@@ -78,8 +78,8 @@ bool CFixFeatureId::UpdateFeatureIds(CSeq_feat& feat,
 
     bool feature_changed = false;
 
-    if (feat.IsSetId() && 
-        feat.GetId().IsLocal() && 
+    if (feat.IsSetId() &&
+        feat.GetId().IsLocal() &&
         feat.GetId().GetLocal().IsId()) {
         TId feat_id = feat.GetId().GetLocal().GetId();
         if (existing_ids.find(feat_id) != existing_ids.end() ||
@@ -87,12 +87,12 @@ bool CFixFeatureId::UpdateFeatureIds(CSeq_feat& feat,
 
             auto it = id_map.find(feat_id);
             if (it != id_map.end()) {
-                feat.SetId().SetLocal().SetId(it->second);  
+                feat.SetId().SetLocal().SetId(it->second);
             }
             else {
-                FindNextOffset(existing_ids, unchanged_ids, new_ids, offset); 
+                FindNextOffset(existing_ids, unchanged_ids, new_ids, offset);
                 id_map[feat_id] = offset;
-                feat.SetId().SetLocal().SetId(offset);  
+                feat.SetId().SetLocal().SetId(offset);
                 new_ids.insert(offset);
             }
             feature_changed = true;
@@ -108,7 +108,7 @@ bool CFixFeatureId::UpdateFeatureIds(CSeq_feat& feat,
             if (pXref->IsSetId() &&
                 pXref->GetId().IsLocal() &
                 pXref->GetId().GetLocal().IsId()) {
-                TId feat_id = pXref->GetId().GetLocal().GetId();    
+                TId feat_id = pXref->GetId().GetLocal().GetId();
                 auto it = id_map.find(feat_id);
                 if (it != id_map.end()) {
                     pXref->SetId().SetLocal().SetId(it->second);
@@ -132,8 +132,8 @@ bool CFixFeatureId::UpdateFeatureIds(CSeq_feat& feat,
 }
 
 
-bool CFixFeatureId::UpdateFeatureIds(CSeq_entry_Handle entry_handle, 
-        TIdSet& existing_ids, 
+bool CFixFeatureId::UpdateFeatureIds(CSeq_entry_Handle entry_handle,
+        TIdSet& existing_ids,
         TId& offset)
 {
     TIdSet new_ids;
@@ -144,15 +144,15 @@ bool CFixFeatureId::UpdateFeatureIds(CSeq_entry_Handle entry_handle,
     for (CFeat_CI feat_it(entry_handle);
         feat_it;
         ++feat_it) {
-       
+
         const auto& feat = feat_it->GetOriginalFeature();
         CRef<CSeq_feat> pUpdatedFeat(new CSeq_feat());
         pUpdatedFeat->Assign(feat);
 
         bool feature_changed = false;
 
-        if (feat.IsSetId() && 
-            feat.GetId().IsLocal() && 
+        if (feat.IsSetId() &&
+            feat.GetId().IsLocal() &&
             feat.GetId().GetLocal().IsId()) {
             TId feat_id = feat.GetId().GetLocal().GetId();
             if (existing_ids.find(feat_id) != existing_ids.end() ||
@@ -160,12 +160,12 @@ bool CFixFeatureId::UpdateFeatureIds(CSeq_entry_Handle entry_handle,
 
                 auto it = id_map.find(feat_id);
                 if (it != id_map.end()) {
-                    pUpdatedFeat->SetId().SetLocal().SetId(it->second);  
+                    pUpdatedFeat->SetId().SetLocal().SetId(it->second);
                 }
                 else {
                     FindNextOffset(existing_ids, unchanged_ids, new_ids, offset); // find id that does not exist among either of the 3 sets
                     id_map[feat_id] = offset;
-                    pUpdatedFeat->SetId().SetLocal().SetId(offset);  
+                    pUpdatedFeat->SetId().SetLocal().SetId(offset);
                     new_ids.insert(offset);
                 }
                 feature_changed = true;
@@ -182,7 +182,7 @@ bool CFixFeatureId::UpdateFeatureIds(CSeq_entry_Handle entry_handle,
                 if (pXref->IsSetId() &&
                     pXref->GetId().IsLocal() &
                     pXref->GetId().GetLocal().IsId()) {
-                    TId feat_id = pXref->GetId().GetLocal().GetId();    
+                    TId feat_id = pXref->GetId().GetLocal().GetId();
                     auto it = id_map.find(feat_id);
                     if (it != id_map.end()) {
                         pXref->SetId().SetLocal().SetId(it->second);
@@ -213,7 +213,7 @@ bool CFixFeatureId::UpdateFeatureIds(CSeq_entry_Handle entry_handle,
     return any_changes;
 }
 
-void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_feat_Handle, CRef<CSeq_feat> > &changed_feats, 
+void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_feat_Handle, CRef<CSeq_feat> > &changed_feats,
         TIdSet &existing_ids, TId &offset)
 {
     unordered_map<TId, TId> remapped_ids; // map between old id to new id within the current seq-entry only
@@ -227,12 +227,12 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
         CSeq_feat_Handle fh = feat_it->GetSeq_feat_Handle();
         const auto& feat = feat_it->GetOriginalFeature();
 
-        if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId())        
+        if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId())
         {
             TId id = feat.GetId().GetLocal().GetId();
             if (existing_ids.find(id) != existing_ids.end() ||
-                new_ids.find(id) != new_ids.end())  
-                // remap id if it's found in other seq-entries or among newly created ids in the current seq-entry, 
+                new_ids.find(id) != new_ids.end())
+                // remap id if it's found in other seq-entries or among newly created ids in the current seq-entry,
                 // do not remap existing duplicate ids within the same seq-entry
             {
                 auto it = remapped_ids.find(id);
@@ -247,7 +247,7 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
                 }
                 CRef<CSeq_feat> edited(new CSeq_feat());
                 edited->Assign(feat);
-                edited->SetId().SetLocal().SetId(offset);  
+                edited->SetId().SetLocal().SetId(offset);
                 new_ids.insert(offset);
                 changed_feats[fh] = edited;
             }
@@ -278,18 +278,18 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
         {
             bool modified = false;
             for (auto pXref : edited->SetXref()) {
-                if (pXref->IsSetId() && 
+                if (pXref->IsSetId() &&
                     pXref->GetId().IsLocal() &&
                     pXref->GetId().GetLocal().IsId()) {
                     TId id = pXref->GetId().GetLocal().GetId();
                     auto it = remapped_ids.find(id);
                     if (it != remapped_ids.end()){
                         pXref->SetId().SetLocal().SetId(it->second);
-                        modified = true;    
+                        modified = true;
                     }
                 }
                 if (modified) {
-                    changed_feats[fh] = edited;           
+                    changed_feats[fh] = edited;
                 }
             }
         }
@@ -313,11 +313,11 @@ void CFixFeatureId::s_ApplyToSeqInSet(CSeq_entry_Handle tse, map<CSeq_feat_Handl
 
 void CFixFeatureId::s_ApplyToSeqInSet(CSeq_entry_Handle tse)
 {
-    if (tse && tse.IsSet() && tse.GetSet().IsSetClass() && tse.GetSet().GetClass() == CBioseq_set::eClass_genbank) 
+    if (tse && tse.IsSet() && tse.GetSet().IsSetClass() && tse.GetSet().GetClass() == CBioseq_set::eClass_genbank)
     {
         TId offset = 0;
         TIdSet existing_ids;
-        for(CSeq_entry_CI direct_child_ci( tse.GetSet(), CSeq_entry_CI::eNonRecursive ); direct_child_ci; ++direct_child_ci ) 
+        for(CSeq_entry_CI direct_child_ci( tse.GetSet(), CSeq_entry_CI::eNonRecursive ); direct_child_ci; ++direct_child_ci )
         {
             TFeatMap changed_feats;
             const CSeq_entry_Handle& entry = *direct_child_ci;

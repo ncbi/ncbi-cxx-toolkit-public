@@ -8877,10 +8877,10 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords(CSeq_descr& descr)
 {
     if (!descr.IsSet()) {
         return;
-    }   
+    }
 
     vector<string> original_keywords;
-    vector<string> controlled_keywords = CComment_rule::GetKeywordList(); 
+    vector<string> controlled_keywords = CComment_rule::GetKeywordList();
 
     auto& dset = descr.Set();
     if (!dset.empty()) {
@@ -9567,7 +9567,7 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
     }
     //CBioseq_Handle b = m_Scope->GetBioseqHandle(seq);
     CConstRef<CBioSource> biosrc(nullptr);
-    auto src_it = find_if(data.begin(), data.end(), 
+    auto src_it = find_if(data.begin(), data.end(),
             [](CRef<CSeqdesc> pDesc) { return pDesc && pDesc->IsSource(); });
     //CSeqdesc_CI src(b, CSeqdesc::e_Source);
     if (src_it != data.end()) {
@@ -9575,7 +9575,7 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
     }
     CMolInfo::TTech tech = CMolInfo::eTech_unknown;
     auto molinfo_it = find_if(data.begin(), data.end(),
-            [](CRef<CSeqdesc> pDesc) { return pDesc && 
+            [](CRef<CSeqdesc> pDesc) { return pDesc &&
                                               pDesc->IsMolinfo() &&
                                               pDesc->GetMolinfo().IsSetTech(); });
     if (molinfo_it != data.end()) {
@@ -12219,7 +12219,7 @@ void CNewCleanup_imp::x_RemoveUnseenTitles(CSeq_descr& descr)
             }
             previous_title = it;
         }
-    }  
+    }
     if (removed) {
         ChangeMade(CCleanupChange::eRemoveDescriptor);
     }
