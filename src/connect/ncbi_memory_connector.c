@@ -42,7 +42,9 @@
  *  INTERNAL -- Auxiliary types and static functions
  ***********************************************************************/
 
-/* All internal data necessary to perform the (re)connect and i/o
+/* All internal data necessary to perform the (re)connect and I/O.
+ *
+ * Note:  "buf" *must* come first!  (see CConn_MemoryConnector::GetBUF()) 
  */
 typedef struct {
     BUF                  buf;
