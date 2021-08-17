@@ -1464,7 +1464,7 @@ CSB	s	St. John's University/College of Saint Benedict, Biology Department
 CSBD	s	Centre for Study of Biological Diversity			
 CSC	s	Colegio del Sagrado Corazon			
 CSC-CLCH	c	Centro Substrati Cellulari, Cell Lines Collection and Hybridomas			
-CSCA	s	California State Collection of Arthropods			
+CSCA	s	California State Collections			
 CSCC	c	CSIRO Starter Culture Collection			
 CSCCE	s	Chadron State College, Entomology Collection	CSCC		
 CSCCV	s	Chadron State College, Collection of Vertebrates			

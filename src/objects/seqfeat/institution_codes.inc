@@ -1497,7 +1497,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CSBD\ts\tCentre for Study of Biological Diversity\t\t\t",
 "CSC\ts\tColegio del Sagrado Corazon\t\t\t",
 "CSC-CLCH\tc\tCentro Substrati Cellulari, Cell Lines Collection and Hybridomas\t\t\t",
-"CSCA\ts\tCalifornia State Collection of Arthropods\t\t\t",
+"CSCA\ts\tCalifornia State Collections\t\t\t",
 "CSCC\tc\tCSIRO Starter Culture Collection\t\t\t",
 "CSCCE\ts\tChadron State College, Entomology Collection\tCSCC\t\t",
 "CSCCV\ts\tChadron State College, Collection of Vertebrates\t\t\t",
