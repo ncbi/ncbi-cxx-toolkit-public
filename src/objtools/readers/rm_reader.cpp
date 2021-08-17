@@ -551,7 +551,7 @@ CRef<CSeq_feat> CRepeatToFeat::operator()(const IRepeatRegion& repeat)
                 tag->SetDb("taxon");
                 tag->SetTag().SetId(specificity);
                 feat->SetDbxref().push_back(tag);
-                if (fRemoveRedundancy  &&  m_Library  &&
+                if ((m_Flags & fRemoveRedundancy) && m_Library &&
                     m_Library->TestSpecificityMatchesName(
                             specificity,
                             specificity_name)) {
