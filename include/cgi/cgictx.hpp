@@ -33,7 +33,7 @@
 *   Basic CGI Application class
 */
 
-#include <cgi/cgiapp.hpp>
+#include <cgi/ncbicgir.hpp>
 #include <cgi/cgi_session.hpp>
 #include <connect/ncbi_types.h>
 #include <cgi/cgi_exception.hpp>
@@ -47,6 +47,7 @@
 
 BEGIN_NCBI_SCOPE
 
+class CCgiApplication;
 class CUrl;
 
 /////////////////////////////////////////////////////////////////////////////
