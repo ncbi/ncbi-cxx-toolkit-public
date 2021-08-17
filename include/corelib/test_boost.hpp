@@ -42,7 +42,6 @@
 
 
 #include <corelib/expr.hpp>
-#include <corelib/ncbiapp.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbisys.hpp>
 #include <corelib/ncbimtx.hpp>
@@ -790,6 +789,9 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 
 
 BEGIN_NCBI_SCOPE
+
+class CArgDescriptions;
+class CNcbiApplication;
 
 
 /// Macro for introducing function initializing argument descriptions for

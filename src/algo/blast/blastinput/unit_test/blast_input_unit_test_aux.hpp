@@ -34,6 +34,7 @@
 #define ALGO_BLAST_BLASTINPUT_UNITTEST__BLAST_INPUT_UNIT_TEST_AUX__HPP
 
 #include <corelib/metareg.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <corelib/test_boost.hpp>
 #include <algo/blast/blastinput/blast_scope_src.hpp>
 
