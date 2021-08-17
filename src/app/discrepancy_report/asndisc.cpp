@@ -155,7 +155,7 @@ void CDiscRepApp::Init()
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, CDataLoadersUtil::fDefault | CDataLoadersUtil::fGenbankOffByDefault);
 
 /*
-    arg_desc->AddOptionalKey("M", "MessageLevel", 
+    arg_desc->AddOptionalKey("M", "MessageLevel",
         "Output message level: 'a': add FATAL tags and output all messages, 'f': add FATAL tags and output FATAL messages only",
                                 CArgDescriptions::eString);
 */
@@ -180,7 +180,7 @@ static unique_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bo
 {
     unique_ptr<CNcbiIstream> InputStream(new CNcbiIfstream(fname, ios::binary));
     CCompressStream::EMethod method;
-    
+
     CFormatGuess::EFormat format = CFormatGuess::Format(*InputStream);
     switch (format) {
         case CFormatGuess::eGZip:  method = CCompressStream::eGZipFile;  break;
@@ -248,7 +248,7 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
         if (recursive && entry->IsDir()) x_ParseDirectory(entry->GetPath(), true);
         if (NStr::EndsWith(name, ext) && !NStr::EndsWith(name, autofixext))
         {
-            if (entry->IsFile()) 
+            if (entry->IsFile())
                 m_Files.push_back(entry->GetPath());
         }
     }
@@ -561,7 +561,7 @@ int main(int argc, const char* argv[])
     #ifdef _DEBUG
     // this code converts single argument into multiple, just to simplify testing
     std::list<std::string> split_args;
-    std::vector<const char*> new_argv;    
+    std::vector<const char*> new_argv;
 
     if (argc==2 && argv && argv[1] && strchr(argv[1], ' '))
     {

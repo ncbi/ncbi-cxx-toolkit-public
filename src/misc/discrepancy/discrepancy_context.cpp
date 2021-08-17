@@ -396,7 +396,7 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos pos, TSeqPos len
             }
             return;
         default:
-            return;    
+            return;
     }
 }
 
@@ -486,10 +486,10 @@ bool CDiscrepancyContext::IsBadLocusTagFormat(const string& locus_tag) const
     // Optimization:  compile regexp only once by making it static.
     static CRegexp regexp("^[A-Za-z][0-9A-Za-z]{2,}_[0-9A-Za-z]+$");
 
-    // Locus tag format documentation:  
+    // Locus tag format documentation:
     // https://www.ncbi.nlm.nih.gov/genomes/locustag/Proposal.pdf
 
-    return !regexp.IsMatch(locus_tag); 
+    return !regexp.IsMatch(locus_tag);
 }
 
 

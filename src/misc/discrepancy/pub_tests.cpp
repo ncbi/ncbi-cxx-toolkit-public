@@ -421,12 +421,12 @@ bool IsCitSubMissingAffiliation(const CPubdesc& pubdesc)
     bool rval = false;
     for (const auto& it : pubdesc.GetPub().Get()) {
         if (it->IsSub()) {
-            if (!it->GetSub().IsSetAuthors() || 
+            if (!it->GetSub().IsSetAuthors() ||
                 !it->GetSub().GetAuthors().IsSetAffil() ||
                 HasNoAffiliation(it->GetSub().GetAuthors().GetAffil())) {
                 rval = true;
                 break;
-            } 
+            }
         }
     }
     return rval;

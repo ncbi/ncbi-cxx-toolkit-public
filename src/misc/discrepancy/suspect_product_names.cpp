@@ -462,13 +462,13 @@ static CConstRef<CSuspect_rule_set> s_GetrRNAProductsSuspectRuleSet()
 {
     DEFINE_STATIC_FAST_MUTEX(sx_RuleMutex);
     CFastMutexGuard guard(sx_RuleMutex);
-    
+
     static CAutoInitRef<CSuspect_rule_set> rrna_products_suspect_rule_set;
     if( rrna_products_suspect_rule_set.IsInitialized() ) {
         // already built
         return ConstRef(&*rrna_products_suspect_rule_set);
     }
-    
+
     CTempString rrna_products_suspect_rule_set_asn_text =
         "Suspect-rule-set ::= {\n"
         "        { find string-constraint { match-text \"domain\", whole-word FALSE } },\n"

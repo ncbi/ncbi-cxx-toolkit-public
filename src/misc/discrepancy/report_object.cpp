@@ -28,7 +28,7 @@
  * File Description:
  *   class for storing results for Discrepancy Report
  *
- * $Log:$ 
+ * $Log:$
  */
 
 #include <ncbi_pch.hpp>
@@ -104,7 +104,7 @@ string GetProductForCDS(const CSeq_feat& cds, CScope& scope)
     if (prot) {
         return GetProduct(*prot);
     }
-    
+
     // should be the longest protein feature on the bioseq pointed by the cds.GetProduct()
     if (cds.IsSetProduct()) {
         CConstRef <CSeq_feat> prot_seq_feat = sequence::GetBestOverlappingFeat(cds.GetProduct(),
@@ -171,7 +171,7 @@ CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq)
 }
 
 
-void UpgradeSeqLocId(CSeq_point& pnt, CScope& scope) 
+void UpgradeSeqLocId(CSeq_point& pnt, CScope& scope)
 {
     if (pnt.IsSetId()) {
         CBioseq_Handle bsh = scope.GetBioseqHandle(pnt.GetId());
@@ -437,7 +437,7 @@ string CDiscrepancyObject::GetTextObjectDescription(const CSeqdesc& sd)
         case CSeqdesc::e_Org:
           {
             const COrg_ref& org = sd.GetOrg();
-            label = (org.CanGetTaxname() ? org.GetTaxname() 
+            label = (org.CanGetTaxname() ? org.GetTaxname()
                        : (org.CanGetCommon()? org.GetCommon(): kEmptyStr));
           }
           break;
@@ -447,7 +447,7 @@ string CDiscrepancyObject::GetTextObjectDescription(const CSeqdesc& sd)
         case CSeqdesc::e_User:
           {
             const CUser_object& uop = sd.GetUser();
-            label = (uop.CanGetClass()? uop.GetClass() 
+            label = (uop.CanGetClass()? uop.GetClass()
                  : (uop.GetType().IsStr()? uop.GetType().GetStr(): kEmptyStr));
           }
           break;
@@ -467,13 +467,13 @@ string CDiscrepancyObject::GetTextObjectDescription(const CSeqdesc& sd)
         case CSeqdesc::e_Source:
           {
             const COrg_ref& org = sd.GetSource().GetOrg();
-            label = (org.CanGetTaxname() ? org.GetTaxname() 
+            label = (org.CanGetTaxname() ? org.GetTaxname()
                        : (org.CanGetCommon()? org.GetCommon(): kEmptyStr));
           }
           break;
         case CSeqdesc::e_Maploc:
             sd.GetMaploc().GetLabel(&label);
-            break; 
+            break;
         case CSeqdesc::e_Molinfo:
             sd.GetMolinfo().GetLabel(&label);
             break;
@@ -481,7 +481,7 @@ string CDiscrepancyObject::GetTextObjectDescription(const CSeqdesc& sd)
             sd.GetDbxref().GetLabel(&label);
             break;
         default:
-            break; 
+            break;
     }
     return label;
 }

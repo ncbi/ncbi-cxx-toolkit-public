@@ -191,7 +191,7 @@ DISCREPANCY_CASE(MRNA_ON_WRONG_SEQUENCE_TYPE, SEQUENCE, eDisc | eOncaller, "Euka
         return;
     }
     const CSeqdesc* biosrc = context.GetBiosource();
-    if (!biosrc || !biosrc->GetSource().IsSetGenome() || 
+    if (!biosrc || !biosrc->GetSource().IsSetGenome() ||
             biosrc->GetSource().GetGenome() == CBioSource::eGenome_macronuclear || biosrc->GetSource().GetGenome() == CBioSource::eGenome_unknown ||
             biosrc->GetSource().GetGenome() == CBioSource::eGenome_genomic || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chromosome ||
             !context.IsEukaryotic(&biosrc->GetSource())) {
@@ -711,7 +711,7 @@ void AddUserObjectFieldItems
         }
         return;
     }
-    
+
     bool already_seen = previously_seen[kPreviouslySeenObjects].Exist(object_name);
     for (auto& f : desc->GetUser().GetData()) {
         if (f->IsSetLabel() && f->GetLabel().IsStr() && f->IsSetData()) {
