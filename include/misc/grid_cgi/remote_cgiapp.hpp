@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbimisc.hpp>
+#include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 
 #include <connect/services/grid_worker.hpp>

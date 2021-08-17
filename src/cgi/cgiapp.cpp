@@ -30,6 +30,8 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <cgi/cgiapp.hpp>
+
 #include <corelib/ncbienv.hpp>
 #include <corelib/rwstream.hpp>
 #include <corelib/stream_utils.hpp>
