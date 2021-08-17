@@ -202,7 +202,7 @@ static const TRNALengthMap kTrnaLengthMap{
     { "small", { 1000, false } },
     { "large", { 1000, false } },
     { "5.8S", { 130, true } },
-    { "5S", { 90, true } } 
+    { "5S", { 90, true } }
     // possible problem: if it matches /25S/ it would also match /5S/
     // luckily, if it fails the /5S/ rule it would fail the /25S/ rule
 };

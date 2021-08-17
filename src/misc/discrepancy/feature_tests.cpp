@@ -1850,7 +1850,7 @@ bool StartAbutsGap(const CSeq_loc& loc, ENa_strand strand, CScope& scope)
 
 
 // location is ok if:
-// 1. endpoints match exactly, or 
+// 1. endpoints match exactly, or
 // 2. non-matching 5' endpoint can be extended by an RBS feature to match gene start, or
 // 3. if coding region non-matching endpoints are partial and abut a gap
 bool IsGeneLocationOk(const CSeq_loc& feat_loc, const CSeq_loc& gene_loc, ENa_strand feat_strand, ENa_strand gene_strand, bool is_coding_region, CScope& scope, const vector<const CSeq_feat*>& features)
@@ -1866,7 +1866,7 @@ bool IsGeneLocationOk(const CSeq_loc& feat_loc, const CSeq_loc& gene_loc, ENa_st
         } else {
             return false;
         }
-    } 
+    }
     TSeqPos gene_start = gene_loc.GetStart(eExtreme_Biological);
     TSeqPos feat_start = feat_loc.GetStart(eExtreme_Biological);
 

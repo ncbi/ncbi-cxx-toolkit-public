@@ -556,7 +556,7 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
             //if (m_Hook) {
             //    m_Hook(&arg);
             //}
-        
+
             if (qual == "host") {
                 SetOrgMod(bs, COrgMod::eSubtype_nat_host, val, added, changed);
                 dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->SetFixed();

@@ -267,7 +267,7 @@ static bool ProductNamesAreSimilar(const string& product1, const string& product
 
     size_t i;
     // if both product names contain one of the special case similarity words, the product names are similar.
-  
+
     for (i = 0; i < kNumSimilarProductWords; i++) {
         if (NPOS != NStr::FindNoCase(product1, kSimilarProductWords[i])) {
             str1_has_similarity_word = true;
@@ -280,7 +280,7 @@ static bool ProductNamesAreSimilar(const string& product1, const string& product
     if (str1_has_similarity_word && str2_has_similarity_word) {
         return true;
     }
-  
+
     // otherwise, if one of the product names contains one of special ignore similarity
     // words, the product names are not similar.
 
