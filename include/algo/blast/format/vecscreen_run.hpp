@@ -103,6 +103,9 @@ public:
          enum EOutputFormat {
              eShowAlignments = 0,       ///< Show the alignments
              eShowIntervalsOnly = 1,    ///< Only show the contaminated intervals
+             
+             eBlastTab = 2,             ///< switch to a blast-tab-like fmt
+             eAsnText = 3,              ///< just dump the seq-aligns in asn text
              eEndValue                  ///< Sentinel value, not an actual output format
          };
          typedef int TOutputFormat;
