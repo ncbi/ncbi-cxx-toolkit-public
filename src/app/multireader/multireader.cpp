@@ -1034,13 +1034,18 @@ void CMultiReaderApp::xProcessGff3(
     //reader.SetCanceler(&canceler);
     reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
     for (CRef<CSeq_annot> it : annots) {
-        const auto& features = it->GetData().GetFtable();
-        if (features.empty()) {
-            continue;
+        const auto& data = it->GetData();
+        TSeqPos sequenceSize = 0;
+        if (data.IsFtable()) {
+            const auto& features = data.GetFtable();
+            if (features.empty()) {
+                continue;
+            }
+            const auto& seqId = features.front()->GetLocation().GetId();
+            string seqIdStr = seqId->AsFastaString();
+            sequenceSize = reader.GetSequenceSize(seqIdStr); 
         }
-        const auto& seqId = features.front()->GetLocation().GetId();
-        string seqIdStr = seqId->AsFastaString();
-        xPostProcessAnnot(args, *it, reader.GetSequenceSize(seqIdStr));
+        xPostProcessAnnot(args, *it, sequenceSize);
         xWriteObject(args, *it, ostr);
     }
 }
