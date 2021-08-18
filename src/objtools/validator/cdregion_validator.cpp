@@ -1809,7 +1809,7 @@ void CCdregionValidator::x_ValidateParentPartialness(const CSeq_loc& parent_loc,
     if (m_Feat.GetLocation().IsPartialStart(eExtreme_Biological) && !parent_loc.IsPartialStart(eExtreme_Biological)) {
 
         if (check_gaps) {
-            CSeqVector seq_vec(m_LocationBioseq);
+            CSeqVector seq_vec(m_LocationBioseq, CBioseq_Handle::eCoding_Iupac);
             TSeqPos start = m_Feat.GetLocation().GetStart(eExtreme_Biological),
                     pos = is_minus_strand ? start + 1 : start - 1;
 
@@ -1834,7 +1834,7 @@ void CCdregionValidator::x_ValidateParentPartialness(const CSeq_loc& parent_loc,
 
         if (check_gaps) {
 
-            CSeqVector seq_vec(m_LocationBioseq);
+            CSeqVector seq_vec(m_LocationBioseq, CBioseq_Handle::eCoding_Iupac);
             TSeqPos stop = m_Feat.GetLocation().GetStop(eExtreme_Biological),
                     pos = is_minus_strand ? stop - 1 : stop + 1;
 
