@@ -176,8 +176,7 @@ private:
     void xSetMapper(const CArgs&);
     void xSetMessageListener(const CArgs&);
 
-    void xPostProcessAnnot(const CArgs&, CSeq_annot&, unsigned int =0);
-    void xPostProcessAnnot(const CArgs&, CSeq_annot&, const CGff3LocationMerger&);
+    void xPostProcessAnnot(const CArgs&, CSeq_annot&, const CGff3LocationMerger* =nullptr);
     void xWriteObject(const CArgs&, CSerialObject&, CNcbiOstream&);
     void xDumpErrors(CNcbiOstream& );
 
@@ -1044,10 +1043,10 @@ void CMultiReaderApp::xProcessGff3(
                 continue;
             }
             auto pLocationMerger = reader.GetLocationMerger();
-            xPostProcessAnnot(args, *it, *pLocationMerger.get());
+            xPostProcessAnnot(args, *it, pLocationMerger.get());
         }
         else {
-            xPostProcessAnnot(args, *it, 0);
+            xPostProcessAnnot(args, *it);
         }
         xWriteObject(args, *it, ostr);
     }
@@ -1489,7 +1488,7 @@ void CMultiReaderApp::xSetFlags(
 void CMultiReaderApp::xPostProcessAnnot(
     const CArgs& args,
     CSeq_annot& annot,
-    const CGff3LocationMerger& locationMerger)
+    const CGff3LocationMerger* pLocationMerger)
     //  ----------------------------------------------------------------------------
 {
     static unsigned int startingLocusTagNumber = 1;
@@ -1500,6 +1499,11 @@ void CMultiReaderApp::xPostProcessAnnot(
             CCleanup cleanup;
             CConstRef<CCleanupChange> changed = cleanup.BasicCleanup(annot);
         }
+        return;
+    }
+
+    // all other processing only applies to feature tables
+    if (!annot.GetData().IsFtable()) {
         return;
     }
 
@@ -1524,7 +1528,7 @@ void CMultiReaderApp::xPostProcessAnnot(
     edit::CFeatTableEdit fte(
         annot, 0, prefix, startingLocusTagNumber, startingFeatureId, m_pErrors.get());
     fte.InferPartials();
-    fte.GenerateMissingParentFeatures(args["euk"].AsBoolean(), &locationMerger);
+    fte.GenerateMissingParentFeatures(args["euk"].AsBoolean(), pLocationMerger);
     if (args["genbank"].AsBoolean() && !fte.AnnotHasAllLocusTags()) {
         if (!prefix.empty()) {
             fte.GenerateLocusTags();
@@ -1550,70 +1554,6 @@ void CMultiReaderApp::xPostProcessAnnot(
     CConstRef<CCleanupChange> changed = cleanup.BasicCleanup(annot);
 }
 
-//  ----------------------------------------------------------------------------
-void CMultiReaderApp::xPostProcessAnnot(
-    const CArgs & args,
-    CSeq_annot& annot,
-    unsigned int sequenceSize)
-//  ----------------------------------------------------------------------------
-{
-    static unsigned int startingLocusTagNumber = 1;
-    static unsigned int startingFeatureId = 1;
-
-    if (!args["genbank"].AsBoolean() && !args["genbank-no-locus-tags"].AsBoolean()) {
-        if (args["cleanup"]) {
-            CCleanup cleanup;
-            CConstRef<CCleanupChange> changed = cleanup.BasicCleanup(annot);
-        }
-        return;
-    }
-
-    string prefix, offset;
-    if (NStr::SplitInTwo(args["locus-tag"].AsString(), "_", prefix, offset)) {
-        int tail = NStr::StringToNonNegativeInt(offset);
-        if (tail != -1) {
-            startingLocusTagNumber = tail;
-        }
-        else {
-            if (!offset.empty()) {
-                //bads news
-                NCBI_THROW2(CObjReaderParseException, eFormat,
-                    "Invalid locus tag: Only one \"_\", and suffix must be numeric", 0);
-            }
-        }
-    }
-    else {
-        prefix = args["locus-tag"].AsString();
-    }
-
-    edit::CFeatTableEdit fte(
-        annot, sequenceSize, prefix, startingLocusTagNumber, startingFeatureId, m_pErrors.get());
-    fte.InferPartials();
-    fte.GenerateMissingParentFeatures(args["euk"].AsBoolean());
-    if (args["genbank"].AsBoolean() && !fte.AnnotHasAllLocusTags()) {
-        if (!prefix.empty()) {
-            fte.GenerateLocusTags();
-        }
-        else {
-            AutoPtr<ILineError> line_error_p =
-                sCreateSimpleMessage(
-                    eDiag_Fatal, "Need prefix to generate missing locus tags but none was provided");
-            this->WriteMessageImmediately(cerr, *line_error_p);
-            throw(0);
-        }
-    }
-    fte.GenerateProteinAndTranscriptIds();
-    //fte.InstantiateProducts();
-    fte.ProcessCodonRecognized();
-    fte.EliminateBadQualifiers();
-    fte.SubmitFixProducts();
-
-    startingLocusTagNumber = fte.PendingLocusTagNumber();
-    startingFeatureId = fte.PendingFeatureId();
-
-    CCleanup cleanup;
-    CConstRef<CCleanupChange> changed = cleanup.BasicCleanup(annot);
-}
 
 //  ----------------------------------------------------------------------------
 AutoPtr<ILineError> CMultiReaderApp::sCreateSimpleMessage(
