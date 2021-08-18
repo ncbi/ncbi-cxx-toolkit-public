@@ -73,7 +73,8 @@ extern "C" void SignalHandler(int)
 //
 
 CFastCgiApplicationMT::CFastCgiApplicationMT(const SBuildInfo& build_info)
-    : CCgiApplication(build_info)
+    : CCgiApplication(build_info),
+      m_ManagerStopped(false)
 {
     m_ErrorCounter.Set(0);
 }
@@ -90,11 +91,15 @@ CFastCgiApplicationMT* CFastCgiApplicationMT::Instance(void)
 }
 
 
+DEFINE_STATIC_FAST_MUTEX(s_ManagerMutex);
+
 void CFastCgiApplicationMT::FASTCGI_ScheduleExit(void)
 {
-    if ( !m_Manager ) return;
-    // Try to stop gracefully rather than just terminate the app.
-    m_Manager->stop();
+    CFastMutexGuard guard(s_ManagerMutex);
+    if (!m_ManagerStopped) {
+        m_ManagerStopped = true;
+        m_Manager->stop();
+    }
 }
 
 
@@ -409,8 +414,9 @@ void CFastCgiApplicationMT::x_ProcessThreadedRequest(CFastCgiThreadedRequest& re
     //
     x_OnEvent(processor, eEndRequest, 121);
 
-    if ( CheckMemoryLimit() ) {
+    if ( req_iter >= m_MaxIterations  ||  CheckMemoryLimit() ) {
         FASTCGI_ScheduleExit();
+        return;
     }
 
     // If to restart the application
@@ -419,6 +425,7 @@ void CFastCgiApplicationMT::x_ProcessThreadedRequest(CFastCgiThreadedRequest& re
         x_OnEvent(processor, restart_code == eSR_Executable ?
                 eExecutable : eWatchFile, restart_code);
         m_ErrorCounter.Set((restart_code == eSR_WatchFile) ? 0 : restart_code);
+        FASTCGI_ScheduleExit();
         return;
     }
 
@@ -455,7 +462,7 @@ bool CFastCgiThreadedRequest::response(void)
 
 void CFastCgiThreadedRequest::errorHandler(void)
 {
-    // Handle internal server errors in the toolkit way.
+    ERR_POST_X(5, "Internal fastcgi++ error");
     Fastcgipp::Request<char>::errorHandler();
 }
 

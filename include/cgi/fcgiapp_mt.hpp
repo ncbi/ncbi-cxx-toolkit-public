@@ -139,6 +139,7 @@ private:
     int                         m_RestartDelay;
     bool                        m_StopIfFailed;
     CTime                       m_ModTime;
+    bool                        m_ManagerStopped;
 };
 
 
