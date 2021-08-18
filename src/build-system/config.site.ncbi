@@ -179,7 +179,7 @@ esac
 
 : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0}
 
-: ${FASTCGIPP_PATH=$NCBI/fastcgi++-3.1~a1+20210601}
+: ${FASTCGIPP_PATH=$NCBI/fastcgi++-3.1~a1+20210601-ncbi1}
 
 case "$ncbi_platform" in
     *MAC       ) : ${FREETYPE_PATH=/opt/X11} ;;
@@ -372,7 +372,7 @@ esac
 
 case "$ncbi_platform" in
     Linux64 ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.1.3-ncbi1} ;;
-    *MAC    ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.1.4-ncbi2} ;;
+    *MAC    ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.1.5-ncbi1} ;;
     *       ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.1.0-ncbi2} ;;
 esac
 
