@@ -1327,7 +1327,7 @@ static const char* const kBuiltInGuide[] = {
     "2+6  OJ  ddbj_patent",
     "2+8  OJ  ddbj_other_nuc",
     "2+10 OJ  ddbj_other_nuc",
-    "2+6  OK  gb_other_nuc",
+    "2+6  OK  gb_dirsub",
     "2+8  OK  gb_other_nuc",
     "2+10 OK  gb_other_nuc",
     "2+6  OL  gb_other_nuc",
