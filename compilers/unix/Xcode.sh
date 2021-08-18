@@ -29,6 +29,8 @@ EOF
     exit $1
 }
 
+(cd "$script_dir/../.." \
+     &&  ./scripts/common/impl/generate_all_objects.sh --clients)
 
 platform=`uname`
 test ! "$platform" = "Darwin" && Usage 1 "Please run the script on Mac OS X (Darwin) computer only"
