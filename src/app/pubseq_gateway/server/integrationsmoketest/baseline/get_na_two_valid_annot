@@ -33,55 +33,18 @@
 },
 {
     "reply": "NamedAnnotInfo",
-    "name": "NA000122202.1",
-    "annotated_id": {
-        "id": "ref|NW_017890465.1|",
-        "type": 10
-    },
-    "range": {
-        "from": 31827,
-        "to": 39272
-    },
     "blob_id": {
         "id": "41.12",
         "last_modified": 1487707080566
     },
-    "zoom_levels": [
-        10
-    ],
-    "annot_info_list": [
-        {
-            "annot_type": 1,
-            "feat_type": 13,
-            "feat_subtype": 87
-        }
-    ]
+    "id2_annot_info": "MICggBoNTkEwMDAxMjIyMDIuMQAAo4AxgDCAoIACAQ0AAAAAAAAAAKSAo4AwgKCAAgREIFuKAAChgAICfFMAAKKAAgIdFgAAAAAAAAAAAAAwgKCAGhFOQTAwMDEyMjIwMi4xQEAxMAAAooAFAAAApICjgDCAoIACBEQgW4oAAKGAAgJ8TAAAooACAh0kAAAAAAAAAAAAAA=="
 },
 {
     "reply": "NamedAnnotInfo",
-    "name": "NA000122203.1",
-    "annotated_id": {
-        "id": "ref|NW_017890465.1|",
-        "type": 10
-    },
-    "range": {
-        "from": 1068,
-        "to": 38141
-    },
     "blob_id": {
         "id": "41.18279",
         "last_modified": 1487707249870
     },
-    "zoom_levels": [
-        10,
-        100
-    ],
-    "annot_info_list": [
-        {
-            "annot_type": 1,
-            "feat_type": 13,
-            "feat_subtype": 87
-        }
-    ]
+    "id2_annot_info": "MICggBoNTkEwMDAxMjIyMDMuMQAAo4AxgDCAoIACAQ0AAAAAAAAAAKSAo4AwgKCAAgREIFuKAAChgAICBCwAAKKAAgMAkNIAAAAAAAAAAAAAMICggBoRTkEwMDAxMjIyMDMuMUBAMTAAAKKABQAAAKSAo4AwgKCAAgREIFuKAAChgAICBCQAAKKAAgMAkOIAAAAAAAAAAAAAMICggBoSTkEwMDAxMjIyMDMuMUBAMTAwAACigAUAAACkgKOAMICggAIERCBbigAAoYACAgQkAACigAIDAJDsAAAAAAAAAAAAAA=="
 }
 ]
