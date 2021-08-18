@@ -763,7 +763,8 @@ void CFeatTableEdit::InstantiateProducts()
 
 //  ---------------------------------------------------------------------------
 void CFeatTableEdit::xGenerateMissingGeneForChoice(
-    CSeqFeatData::E_Choice choice)
+    CSeqFeatData::E_Choice choice,
+    const CGff3LocationMerger* pMerger)
     //  ---------------------------------------------------------------------------
 {
     SAnnotSelector sel;
@@ -771,7 +772,10 @@ void CFeatTableEdit::xGenerateMissingGeneForChoice(
     CFeat_CI it(mHandle, sel);
     for (; it; ++it) {
         CMappedFeat mf = *it;
-        if (xCreateMissingParentGene(mf)) {
+        auto seqId = mf.GetLocationId().AsString();
+        auto sequenceSize = 
+            (pMerger ? pMerger->GetSequenceSize(seqId) : mSequenceSize);
+        if (xCreateMissingParentGene(mf, sequenceSize)) {
             xAdjustExistingParentGene(mf);
         }
     }
@@ -780,7 +784,8 @@ void CFeatTableEdit::xGenerateMissingGeneForChoice(
 
 //  ---------------------------------------------------------------------------
 void CFeatTableEdit::xGenerateMissingGeneForSubtype(
-    CSeqFeatData::ESubtype subType)
+    CSeqFeatData::ESubtype subType,
+    const CGff3LocationMerger* pMerger)
     //  ---------------------------------------------------------------------------
 {
     SAnnotSelector sel;
@@ -788,7 +793,10 @@ void CFeatTableEdit::xGenerateMissingGeneForSubtype(
     CFeat_CI it(mHandle, sel);
     for (; it; ++it) {
         CMappedFeat mf = *it;
-        if (xCreateMissingParentGene(mf)) {
+        auto seqId = mf.GetLocationId().AsString();
+        auto sequenceSize =
+            (pMerger ? pMerger->GetSequenceSize(seqId) : mSequenceSize);
+        if (xCreateMissingParentGene(mf, sequenceSize)) {
             xAdjustExistingParentGene(mf);
         }
     }
@@ -823,10 +831,14 @@ CFeatTableEdit::xAdjustExistingParentGene(
 //  ----------------------------------------------------------------------------
 bool
 CFeatTableEdit::xCreateMissingParentGene(
-    CMappedFeat mf)
+    CMappedFeat mf,
+    TSeqPos sequenceSize)
     //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_feat> pGene = xMakeGeneForFeature(mf);
+    if (sequenceSize == 0) {
+        sequenceSize = mSequenceSize;
+    }
+    CRef<CSeq_feat> pGene = xMakeGeneForFeature(mf, sequenceSize);
     if (!pGene) {
         return false;
     }
@@ -1378,34 +1390,38 @@ void CFeatTableEdit::GenerateLocusTags()
 
 //  ----------------------------------------------------------------------------
 void CFeatTableEdit::GenerateMissingParentFeatures(
-    bool forEukaryote)
+    bool forEukaryote,
+    const CGff3LocationMerger* pMerger)
     //  ----------------------------------------------------------------------------
 {
     if (forEukaryote) {
-        GenerateMissingParentFeaturesForEukaryote();
+        GenerateMissingParentFeaturesForEukaryote(pMerger);
     }
     else {
-        GenerateMissingParentFeaturesForProkaryote();
+        GenerateMissingParentFeaturesForProkaryote(pMerger);
     }
     mTree = feature::CFeatTree(mHandle);
 }
 
 
 //  ----------------------------------------------------------------------------
-void CFeatTableEdit::GenerateMissingParentFeaturesForEukaryote()
-//  ----------------------------------------------------------------------------
+void CFeatTableEdit::GenerateMissingParentFeaturesForEukaryote(
+    const CGff3LocationMerger* pMerger)
+    //  ----------------------------------------------------------------------------
 {
     GenerateMissingMrnaForCds();
-    xGenerateMissingGeneForChoice(CSeqFeatData::e_Rna);
+    xGenerateMissingGeneForChoice(
+        CSeqFeatData::e_Rna, nullptr); //sequence not circular for eukaryote
 }
 
 
 //  ----------------------------------------------------------------------------
-void CFeatTableEdit::GenerateMissingParentFeaturesForProkaryote()
+void CFeatTableEdit::GenerateMissingParentFeaturesForProkaryote(
+    const CGff3LocationMerger* pMerger)
 //  ----------------------------------------------------------------------------
 {
-    xGenerateMissingGeneForChoice(CSeqFeatData::e_Cdregion);
-    xGenerateMissingGeneForChoice(CSeqFeatData::e_Rna);
+    xGenerateMissingGeneForChoice(CSeqFeatData::e_Cdregion, pMerger);
+    xGenerateMissingGeneForChoice(CSeqFeatData::e_Rna, pMerger);
 }
 
 
@@ -1576,7 +1592,8 @@ string CFeatTableEdit::xNextTranscriptId(
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_loc> CFeatTableEdit::xGetGeneLocation(
-    const CSeq_loc& baseLoc)
+    const CSeq_loc& baseLoc,
+    TSeqPos sequenceSize)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_loc> pEnvelope(new CSeq_loc);
@@ -1585,7 +1602,7 @@ CRef<CSeq_loc> CFeatTableEdit::xGetGeneLocation(
     auto baseStop = baseLoc.GetStop(eExtreme_Positional);
     auto& baseId = *baseLoc.GetId();
 
-    if (mSequenceSize == 0  ||  baseStart <= baseStop) {
+    if (sequenceSize == 0  ||  baseStart <= baseStop) {
         pEnvelope->SetInt();
         pEnvelope->SetId(baseId);
         pEnvelope->SetInt().SetFrom(baseStart);
@@ -1597,7 +1614,7 @@ CRef<CSeq_loc> CFeatTableEdit::xGetGeneLocation(
             CRef<CSeq_interval> pTop(new CSeq_interval);
             pTop->SetId().Assign(baseId);
             pTop->SetFrom(baseStart);
-            pTop->SetTo(mSequenceSize);
+            pTop->SetTo(sequenceSize);
             pTop->SetStrand(baseLoc.GetStrand());
             pEnvelope->SetPacked_int().AddInterval(*pTop);
             CRef<CSeq_interval> pBottom(new CSeq_interval);
@@ -1618,7 +1635,7 @@ CRef<CSeq_loc> CFeatTableEdit::xGetGeneLocation(
             CRef<CSeq_interval> pTop(new CSeq_interval);
             pTop->SetId().Assign(baseId);
             pTop->SetFrom(baseStart);
-            pTop->SetTo(mSequenceSize);
+            pTop->SetTo(sequenceSize);
             pTop->SetStrand(baseLoc.GetStrand());
             pEnvelope->SetPacked_int().AddInterval(*pTop);
             pEnvelope->ChangeToMix();
@@ -1629,7 +1646,8 @@ CRef<CSeq_loc> CFeatTableEdit::xGetGeneLocation(
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForFeature(
-    const CMappedFeat& rna)
+    const CMappedFeat& rna,
+    TSeqPos sequenceSize)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_feat> pGene;
@@ -1644,7 +1662,7 @@ CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForFeature(
         return pGene;
     }
     pGene.Reset(new CSeq_feat);
-    pGene->SetLocation(*xGetGeneLocation(rna.GetLocation()));
+    pGene->SetLocation(*xGetGeneLocation(rna.GetLocation(), sequenceSize));
     pGene->SetData().SetGene();
     return pGene;
 }
