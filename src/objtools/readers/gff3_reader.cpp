@@ -57,7 +57,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/gff3_reader.hpp>
-#include "gff3_location_merger.hpp"
+#include <objtools/readers/gff3_location_merger.hpp>
 
 #include "reader_message_handler.hpp"
 

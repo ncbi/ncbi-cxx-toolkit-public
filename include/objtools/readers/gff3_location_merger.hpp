@@ -72,7 +72,7 @@ public:
 };
 
 //  ============================================================================
-class CGff3LocationMerger
+class NCBI_XOBJREAD_EXPORT CGff3LocationMerger
 //  ============================================================================
 {
     using LOCATIONS = list<CGff3LocationRecord>;

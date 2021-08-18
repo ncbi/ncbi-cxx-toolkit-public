@@ -38,10 +38,12 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objtools/readers/gff3_location_merger.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 class IObjtoolsListener;
+//class objects::CGff3LocationMerger;
 BEGIN_SCOPE(edit)
 
 //  ----------------------------------------------------------------------------
@@ -82,9 +84,14 @@ public:
     void GenerateMissingGeneForMrna();
     void GenerateMissingGeneForCds();
     void GenerateMissingParentFeatures(
-        bool forEukaryote);
-    void GenerateMissingParentFeaturesForEukaryote();
-    void GenerateMissingParentFeaturesForProkaryote();
+        bool forEukaryote,
+        const objects::CGff3LocationMerger* =nullptr);
+
+    void GenerateMissingParentFeaturesForEukaryote(
+        const objects::CGff3LocationMerger* =nullptr);
+    void GenerateMissingParentFeaturesForProkaryote(
+        const objects::CGff3LocationMerger* =nullptr);
+
     void ProcessCodonRecognized();
 
     void MergeFeatures(
@@ -158,18 +165,23 @@ protected:
         const std::string&);
 
     CRef<CSeq_feat> xMakeGeneForFeature(
-        const CMappedFeat&);
+        const CMappedFeat&,
+        TSeqPos);
     void xGenerateMissingGeneForSubtype(
-        CSeqFeatData::ESubtype);
+        CSeqFeatData::ESubtype,
+        const CGff3LocationMerger* =nullptr);
     void xGenerateMissingGeneForChoice(
-        CSeqFeatData::E_Choice);
+        CSeqFeatData::E_Choice,
+        const CGff3LocationMerger* =nullptr);
     bool xCreateMissingParentGene(
-        CMappedFeat);
+        CMappedFeat,
+        TSeqPos);
     bool xAdjustExistingParentGene(
         CMappedFeat);
 
     CRef<CSeq_loc> xGetGeneLocation(
-        const CSeq_loc&);
+        const CSeq_loc&,
+        TSeqPos);
 
     static std::string xGetIdStr(
         CMappedFeat);

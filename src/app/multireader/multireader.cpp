@@ -89,6 +89,8 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+//class CGff3LocationMerger;
+
 string s_AlnErrorToString(const CAlnError & error)
 {
     return FORMAT(
@@ -175,6 +177,7 @@ private:
     void xSetMessageListener(const CArgs&);
 
     void xPostProcessAnnot(const CArgs&, CSeq_annot&, unsigned int =0);
+    void xPostProcessAnnot(const CArgs&, CSeq_annot&, const CGff3LocationMerger&);
     void xWriteObject(const CArgs&, CSerialObject&, CNcbiOstream&);
     void xDumpErrors(CNcbiOstream& );
 
@@ -1035,17 +1038,17 @@ void CMultiReaderApp::xProcessGff3(
     reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
     for (CRef<CSeq_annot> it : annots) {
         const auto& data = it->GetData();
-        TSeqPos sequenceSize = 0;
         if (data.IsFtable()) {
-            const auto& features = data.GetFtable();
+            const auto& features = it->GetData().GetFtable();
             if (features.empty()) {
                 continue;
             }
-            const auto& seqId = features.front()->GetLocation().GetId();
-            string seqIdStr = seqId->AsFastaString();
-            sequenceSize = reader.GetSequenceSize(seqIdStr); 
+            auto pLocationMerger = reader.GetLocationMerger();
+            xPostProcessAnnot(args, *it, *pLocationMerger.get());
         }
-        xPostProcessAnnot(args, *it, sequenceSize);
+        else {
+            xPostProcessAnnot(args, *it, 0);
+        }
         xWriteObject(args, *it, ostr);
     }
 }
@@ -1480,6 +1483,71 @@ void CMultiReaderApp::xSetFlags(
             args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
         break;
     }
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xPostProcessAnnot(
+    const CArgs& args,
+    CSeq_annot& annot,
+    const CGff3LocationMerger& locationMerger)
+    //  ----------------------------------------------------------------------------
+{
+    static unsigned int startingLocusTagNumber = 1;
+    static unsigned int startingFeatureId = 1;
+
+    if (!args["genbank"].AsBoolean() && !args["genbank-no-locus-tags"].AsBoolean()) {
+        if (args["cleanup"]) {
+            CCleanup cleanup;
+            CConstRef<CCleanupChange> changed = cleanup.BasicCleanup(annot);
+        }
+        return;
+    }
+
+    string prefix, offset;
+    if (NStr::SplitInTwo(args["locus-tag"].AsString(), "_", prefix, offset)) {
+        int tail = NStr::StringToNonNegativeInt(offset);
+        if (tail != -1) {
+            startingLocusTagNumber = tail;
+        }
+        else {
+            if (!offset.empty()) {
+                //bads news
+                NCBI_THROW2(CObjReaderParseException, eFormat,
+                    "Invalid locus tag: Only one \"_\", and suffix must be numeric", 0);
+            }
+        }
+    }
+    else {
+        prefix = args["locus-tag"].AsString();
+    }
+
+    edit::CFeatTableEdit fte(
+        annot, 0, prefix, startingLocusTagNumber, startingFeatureId, m_pErrors.get());
+    fte.InferPartials();
+    fte.GenerateMissingParentFeatures(args["euk"].AsBoolean(), &locationMerger);
+    if (args["genbank"].AsBoolean() && !fte.AnnotHasAllLocusTags()) {
+        if (!prefix.empty()) {
+            fte.GenerateLocusTags();
+        }
+        else {
+            AutoPtr<ILineError> line_error_p =
+                sCreateSimpleMessage(
+                    eDiag_Fatal, "Need prefix to generate missing locus tags but none was provided");
+            this->WriteMessageImmediately(cerr, *line_error_p);
+            throw(0);
+        }
+    }
+    fte.GenerateProteinAndTranscriptIds();
+    //fte.InstantiateProducts();
+    fte.ProcessCodonRecognized();
+    fte.EliminateBadQualifiers();
+    fte.SubmitFixProducts();
+
+    startingLocusTagNumber = fte.PendingLocusTagNumber();
+    startingFeatureId = fte.PendingFeatureId();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changed = cleanup.BasicCleanup(annot);
 }
 
 //  ----------------------------------------------------------------------------

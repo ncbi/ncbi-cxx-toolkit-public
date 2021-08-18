@@ -112,6 +112,9 @@ public:
     TSeqPos GetSequenceSize(
         const string&) const;
 
+    shared_ptr<CGff3LocationMerger> GetLocationMerger() {
+        return mpLocations;
+    };
 
 protected:
     void xProcessData(
@@ -236,7 +239,7 @@ protected:
     using PENDING_EXONS = map<string, list<CGff2Record> >;
     PENDING_EXONS mPendingExons;
 
-    unique_ptr<CGff3LocationMerger> mpLocations;
+    shared_ptr<CGff3LocationMerger> mpLocations;
     static unsigned int msGenericIdCounter;
 };
 
