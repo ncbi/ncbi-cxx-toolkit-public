@@ -1819,7 +1819,15 @@ void CCdregionValidator::x_ValidateParentPartialness(const CSeq_loc& parent_loc,
         }
 
         if (!has_abutting_gap) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemMismatch5Prime, parent_name + " should not be 5' complete if coding region is 5' partial");
+            EDiagSev sev = eDiag_Warning;
+            CConstRef <CSeq_feat> gene = m_Gene;
+            if (gene && gene->GetData().GetGene().IsSetLocus()) {
+                string locus = gene->GetData().GetGene().GetLocus();
+                if ( NStr::EqualNocase (locus, "orf1ab") ) {
+                    sev = eDiag_Info;
+                }
+            }
+            PostErr(sev, eErr_SEQ_FEAT_PartialProblemMismatch5Prime, parent_name + " should not be 5' complete if coding region is 5' partial");
         }
     }
     if (m_Feat.GetLocation().IsPartialStop(eExtreme_Biological) && !parent_loc.IsPartialStop(eExtreme_Biological)) {
@@ -1836,7 +1844,15 @@ void CCdregionValidator::x_ValidateParentPartialness(const CSeq_loc& parent_loc,
         }
 
         if (!has_abutting_gap) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemMismatch3Prime, parent_name + " should not be 3' complete if coding region is 3' partial");
+            EDiagSev sev = eDiag_Warning;
+            CConstRef <CSeq_feat> gene = m_Gene;
+            if (gene && gene->GetData().GetGene().IsSetLocus()) {
+                string locus = gene->GetData().GetGene().GetLocus();
+                if ( NStr::EqualNocase (locus, "orf1ab") ) {
+                    sev = eDiag_Info;
+                }
+            }
+            PostErr(sev, eErr_SEQ_FEAT_PartialProblemMismatch3Prime, parent_name + " should not be 3' complete if coding region is 3' partial");
         }
     }
 }
