@@ -89,7 +89,9 @@ void CVecScreenApp::Init()
     arg_desc->AddDefaultKey(kArgOutputFormat, "format",
             "VecScreen results options:\n"
             "  0 = Show alignments pairwise,\n"
-            "  1 = Do not show alignments, just contaminated range offsets\n",
+            "  1 = Do not show alignments, just contaminated range offsets,\n"
+            "  2 = Contaminated ranges, as a blast-tabular-like report,\n"
+            "  3 = Seq-align-set ASN Text\n",
             CArgDescriptions::eInteger, 
             NStr::IntToString(kDfltArgOutputFormat));
     arg_desc->SetConstraint(kArgOutputFormat, 
@@ -134,7 +136,6 @@ int CVecScreenApp::Run(void)
         
         /*** Process the input ***/
         while ( !input.End() ) {
-
             CRef<CBlastQueryVector> query_batch(input.GetNextSeqBatch(*scope));
             _ASSERT(query_batch->Size() == 1);
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*query_batch));
