@@ -872,6 +872,8 @@ void CTaxValidationAndCleanup::ReportIncrementalTaxLookupErrors
     bool is_insd_patent,
     size_t offset) const
 {
+    // cout << MSerial_AsnText << reply << endl;
+
     CTaxon3_reply::TReply::const_iterator reply_it = reply.GetReply().begin();
 
     // process descriptor responses
