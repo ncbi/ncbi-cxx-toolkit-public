@@ -37,6 +37,7 @@
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
 #include "ipsgs_processor.hpp"
+#include <thread>
 
 BEGIN_NCBI_NAMESPACE;
 
@@ -130,6 +131,7 @@ protected:
         return m_ConnectionPool.GetNCObject();
     }
 
+    void StopAsyncThread();
     void ProcessSync();
     void ProcessAsync();
     void DoProcess();
@@ -147,12 +149,15 @@ protected:
     // reset processing state in case of ID2 communication failure before next attempt
     virtual void ResetReplies();
 
+    static void s_ProcessReplies(void* proc);
+
 private:
     CRef<CRequestContext> m_Context;
     CRef<COSGConnectionPool> m_ConnectionPool;
     TEnabledFlags m_EnabledFlags;
     CRef<COSGConnection> m_Connection;
     TFetches m_Fetches;
+    unique_ptr<thread> m_Thread;
     EPSGS_Status m_Status;
     volatile bool m_Canceled;
 };

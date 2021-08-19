@@ -60,6 +60,7 @@ CPSGS_OSGAnnot::CPSGS_OSGAnnot(TEnabledFlags enabled_flags,
 
 CPSGS_OSGAnnot::~CPSGS_OSGAnnot()
 {
+    StopAsyncThread();
 }
 
 
@@ -231,6 +232,10 @@ void CPSGS_OSGAnnot::ProcessReplies()
                 break;
             }
         }
+    }
+    if ( IsCanceled() ) {
+        FinalizeResult(ePSGS_Cancelled);
+        return;
     }
     SendReplies();
     FinalizeResult(ePSGS_Found);

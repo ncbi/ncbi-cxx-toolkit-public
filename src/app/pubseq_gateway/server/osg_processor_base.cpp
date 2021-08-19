@@ -43,12 +43,23 @@
 #include <objects/id2/ID2_Params.hpp>
 #include <objects/id2/ID2_Param.hpp>
 #include <objects/id2/ID2_Reply.hpp>
+#include "pubseq_gateway.hpp"
 #include <thread>
 
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
+
+
+static const bool kProcessAsync = 1;
+static const bool kPostProcessAsync = 0;
+
+#if 0
+# define tLOG_POST(m) LOG_POST(m)
+#else
+# define tLOG_POST(m) ((void)0)
+#endif
 
 
 CPSGS_OSGProcessorBase::CPSGS_OSGProcessorBase(TEnabledFlags enabled_flags,
@@ -62,7 +73,7 @@ CPSGS_OSGProcessorBase::CPSGS_OSGProcessorBase(TEnabledFlags enabled_flags,
       m_Status(IPSGS_Processor::ePSGS_InProgress),
       m_Canceled(false)
 {
-    //LOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CPSGS_OSGProcessorBase()");
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CPSGS_OSGProcessorBase()");
     m_Request = request;
     m_Reply = reply;
     m_Priority = priority;
@@ -110,29 +121,48 @@ IPSGS_Processor* CPSGS_OSGProcessorBase::CreateProcessor(shared_ptr<CPSGS_Reques
 
 CPSGS_OSGProcessorBase::~CPSGS_OSGProcessorBase()
 {
-    //LOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() status: "<<m_Status);
+    StopAsyncThread();
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() status: "<<m_Status);
     _ASSERT(m_Status != IPSGS_Processor::ePSGS_InProgress);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() return: "<<m_Status);
+}
+
+
+void CPSGS_OSGProcessorBase::StopAsyncThread()
+{
+    /*
+    if ( m_Thread ) {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() joining status: "<<m_Status);
+        m_Thread->join();
+        m_Thread.reset();
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() joined status: "<<m_Status);
+    }
+    */
 }
 
 
 void CPSGS_OSGProcessorBase::Process()
 {
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process(): "<<m_Status);
     if ( m_Canceled ) {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process() canceled: "<<m_Status);
+        FinalizeResult(ePSGS_Cancelled);
+        _ASSERT(m_Status != ePSGS_InProgress);
         return;
     }
-    if ( 1 ) {
-        ProcessSync();
-    }
-    else {
+    if ( kProcessAsync ) {
         ProcessAsync();
     }
+    else {
+        ProcessSync();
+    }
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process() return: "<<m_Status);
 }
 
 
 void CPSGS_OSGProcessorBase::ProcessSync()
 {
-    //LOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SyncProcess()");
-    _ASSERT(m_Status == IPSGS_Processor::ePSGS_InProgress);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessSync(): "<<m_Status);
     try {
         DoProcess();
     }
@@ -140,18 +170,32 @@ void CPSGS_OSGProcessorBase::ProcessSync()
         ERR_POST("OSG: DoProcess() failed: "<<exc.what());
         FinalizeResult(ePSGS_Error);
     }
-    //LOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SyncProcess() finished: "<<m_Status);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessSync() finished: "<<m_Status);
+    _ASSERT(m_Status != ePSGS_InProgress);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessSync() return: "<<m_Status);
 }
 
 
 void CPSGS_OSGProcessorBase::ProcessAsync()
 {
-    thread(bind(&CPSGS_OSGProcessorBase::ProcessSync, this)).detach();
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessAsync(): "<<m_Status);
+    m_Thread = make_unique<thread>(bind(&CPSGS_OSGProcessorBase::ProcessSync, this));
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessAsync() started: "<<m_Status);
+}
+
+
+void CPSGS_OSGProcessorBase::s_ProcessReplies(void* proc)
+{
+    auto processor = static_cast<CPSGS_OSGProcessorBase*>(proc);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<proc<<")::ProcessReplies() start: "<<processor->m_Status);
+    processor->ProcessReplies();
+    tLOG_POST("CPSGS_OSGProcessorBase("<<proc<<")::ProcessReplies() done: "<<processor->m_Status);
 }
 
 
 void CPSGS_OSGProcessorBase::DoProcess()
 {
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::DoProcess() start: "<<m_Status);
     if ( m_Fetches.empty() ) {
         CreateRequests();
     }
@@ -159,6 +203,7 @@ void CPSGS_OSGProcessorBase::DoProcess()
 
     for ( double retry_count = m_ConnectionPool->GetRetryCount(); retry_count > 0; ) {
         if ( m_Canceled ) {
+            FinalizeResult(ePSGS_Cancelled);
             return;
         }
         
@@ -194,6 +239,7 @@ void CPSGS_OSGProcessorBase::DoProcess()
         }
         
         if ( m_Canceled ) {
+            FinalizeResult(ePSGS_Cancelled);
             return;
         }
         
@@ -226,14 +272,27 @@ void CPSGS_OSGProcessorBase::DoProcess()
     }
 
     if ( m_Canceled ) {
+        FinalizeResult(ePSGS_Cancelled);
         return;
     }
-    ProcessReplies();
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::DoProcess() got replies: "<<m_Status);
+    if ( kPostProcessAsync ) {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessRepliesAsync(): "<<m_Status);
+        CPubseqGatewayApp::GetInstance()->GetUvLoopBinder().PostponeInvoke(
+            s_ProcessReplies, this);
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessRepliesAsync() started: "<<m_Status);
+    }
+    else {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessRepliesSync(): "<<m_Status);
+        ProcessReplies();
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessRepliesSync() done: "<<m_Status);
+    }
 }
 
 
 void CPSGS_OSGProcessorBase::Cancel()
 {
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Cancel()");
     m_Canceled = true;
 }
 
@@ -275,12 +334,14 @@ void CPSGS_OSGProcessorBase::AddRequest(const CRef<CID2_Request>& req0)
 
 IPSGS_Processor::EPSGS_Status CPSGS_OSGProcessorBase::GetStatus()
 {
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::GetStatus(): "<<m_Status);
     return m_Status;
 }
 
 
 void CPSGS_OSGProcessorBase::SetFinalStatus(EPSGS_Status status)
 {
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SetFinalStatus(): "<<m_Status<<" -> "<<status);
     _ASSERT(m_Status == ePSGS_InProgress || status == m_Status);
     m_Status = status;
 }
@@ -288,8 +349,14 @@ void CPSGS_OSGProcessorBase::SetFinalStatus(EPSGS_Status status)
 
 void CPSGS_OSGProcessorBase::FinalizeResult()
 {
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::FinalizeResult(): "<<m_Status);
     _ASSERT(m_Status != ePSGS_InProgress);
-    SignalFinishProcessing();
+    if ( m_Thread ) {
+        m_Thread->detach();
+    }
+    //if ( m_Status != ePSGS_Cancelled ) {
+        SignalFinishProcessing();
+    //}
 }
 
 
