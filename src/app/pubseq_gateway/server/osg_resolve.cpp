@@ -62,6 +62,7 @@ CPSGS_OSGResolve::CPSGS_OSGResolve(TEnabledFlags enabled_flags,
 
 CPSGS_OSGResolve::~CPSGS_OSGResolve()
 {
+    StopAsyncThread();
 }
 
 
@@ -164,7 +165,10 @@ void CPSGS_OSGResolve::ProcessReplies()
                 ProcessResolveReply(*r);
                 if ( m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_BlobId ) {
                     // resolved to OSG sequence
-                    SignalStartProcessing();
+                    if ( SignalStartProcessing() == ePSGS_Cancel ) {
+                        FinalizeResult(ePSGS_Cancelled);
+                        return;
+                    }
                 }
                 break;
             default:
@@ -173,6 +177,10 @@ void CPSGS_OSGResolve::ProcessReplies()
                 break;
             }
         }
+    }
+    if ( IsCanceled() ) {
+        FinalizeResult(ePSGS_Cancelled);
+        return;
     }
     if ( m_BioseqInfoFlags == 0 ) {
         FinalizeResult(ePSGS_NotFound);
@@ -205,6 +213,7 @@ CPSGS_OSGGetBlobBySeqId::CPSGS_OSGGetBlobBySeqId(TEnabledFlags enabled_flags,
 
 CPSGS_OSGGetBlobBySeqId::~CPSGS_OSGGetBlobBySeqId()
 {
+    StopAsyncThread();
 }
 
 
@@ -268,7 +277,9 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
                 ProcessResolveReply(*r);
                 if ( m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_BlobId ) {
                     // resolved to OSG sequence
-                    SignalStartProcessing();
+                    if ( SignalStartProcessing() == ePSGS_Cancel ) {
+                        FinalizeResult(ePSGS_Cancelled);
+                    }
                 }
                 break;
             case CID2_Reply::TReply::e_Get_blob:
@@ -283,6 +294,10 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
                 break;
             }
         }
+    }
+    if ( IsCanceled() ) {
+        FinalizeResult(ePSGS_Cancelled);
+        return;
     }
     if ( !(m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_BlobId) ) {
         FinalizeResult(ePSGS_NotFound);

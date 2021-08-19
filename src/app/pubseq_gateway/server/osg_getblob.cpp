@@ -56,6 +56,7 @@ CPSGS_OSGGetBlob::CPSGS_OSGGetBlob(TEnabledFlags enabled_flags,
 
 CPSGS_OSGGetBlob::~CPSGS_OSGGetBlob()
 {
+    StopAsyncThread();
 }
 
 
@@ -164,6 +165,10 @@ void CPSGS_OSGGetBlob::ProcessReplies()
             }
         }
     }
+    if ( IsCanceled() ) {
+        FinalizeResult(ePSGS_Cancelled);
+        return;
+    }
     SendBlob();
     FinalizeResult();
 }
@@ -181,6 +186,7 @@ CPSGS_OSGGetChunks::CPSGS_OSGGetChunks(TEnabledFlags enabled_flags,
 
 CPSGS_OSGGetChunks::~CPSGS_OSGGetChunks()
 {
+    StopAsyncThread();
 }
 
 
@@ -230,6 +236,10 @@ void CPSGS_OSGGetChunks::ProcessReplies()
                 break;
             }
         }
+    }
+    if ( IsCanceled() ) {
+        FinalizeResult(ePSGS_Cancelled);
+        return;
     }
     SendBlob();
     FinalizeResult();
