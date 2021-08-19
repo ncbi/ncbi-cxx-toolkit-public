@@ -430,6 +430,11 @@ bool CWorkerNodeControlServer::ShutdownRequested(void)
 void CWorkerNodeControlServer::ProcessTimeout(void)
 {
     CGridGlobals::GetInstance().GetJobWatcher().CheckForInfiniteLoop();
+
+    // If shutting down, request closing control server/port as well
+    if (CGridGlobals::GetInstance().IsShuttingDown()) {
+        RequestShutdown();
+    }
 }
 
 
