@@ -253,7 +253,7 @@ public:
     EIO_Status Read(void* buf, size_t count, size_t* n_read,
                     const CPipe::EChildIOHandle from_handle,
                     const STimeout* timeout) const;
-    EIO_Status Write(const void* buf, size_t count, size_t* written,
+    EIO_Status Write(const void* data, size_t count, size_t* written,
                      const STimeout* timeout) const;
     CPipe::TChildPollMask Poll(CPipe::TChildPollMask mask,
                                const STimeout* timeout) const;
@@ -702,7 +702,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
 }
 
 
-EIO_Status CPipeHandle::Write(const void* buf, size_t count,
+EIO_Status CPipeHandle::Write(const void* data, size_t count,
                               size_t* n_written, const STimeout* timeout) const
 
 {
@@ -733,7 +733,7 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
 
         unsigned long x_sleep = 1;
         for (;;) {
-            BOOL ok = ::WriteFile(m_ChildStdIn, (char*) buf, to_write,
+            BOOL ok = ::WriteFile(m_ChildStdIn, (char*) data, to_write,
                                   &bytes_written, NULL);
             if (bytes_written) {
                 break;
@@ -935,7 +935,7 @@ public:
     EIO_Status Read(void* buf, size_t count, size_t* read,
                     const CPipe::EChildIOHandle from_handle,
                     const STimeout* timeout) const;
-    EIO_Status Write(const void* buf, size_t count, size_t* written,
+    EIO_Status Write(const void* data, size_t count, size_t* written,
                      const STimeout* timeout) const;
     CPipe::TChildPollMask Poll(CPipe::TChildPollMask mask,
                                const STimeout* timeout) const;
@@ -1550,7 +1550,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
 }
 
 
-EIO_Status CPipeHandle::Write(const void* buf, size_t count,
+EIO_Status CPipeHandle::Write(const void* data, size_t count,
                               size_t* n_written, const STimeout* timeout) const
 
 {
@@ -1576,7 +1576,7 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
         // Retry if either blocked or interrupted
         for (;;) {
             // Try to write
-            ssize_t bytes_written = ::write(m_ChildStdIn, buf, count);
+            ssize_t bytes_written = ::write(m_ChildStdIn, data, count);
             if (bytes_written >= 0) {
                 if (n_written) {
                     *n_written = (size_t) bytes_written;
@@ -1895,13 +1895,11 @@ EIO_Status CPipe::Open(const string&         cmd,
         m_PipeSize = pipe_size;
     }
 
+    m_ReadHandle = eStdOut;
     EIO_Status status = m_PipeHandle->Open(cmd, args, create_flags,
                                            current_dir, env, m_PipeSize);
-    if (status == eIO_Success) {
-        m_ReadHandle  = eStdOut;
-        m_ReadStatus  = eIO_Success;
-        m_WriteStatus = eIO_Success;
-    }
+    m_ReadStatus  = status;
+    m_WriteStatus = status;
     return status;
 }
 
@@ -1909,13 +1907,15 @@ EIO_Status CPipe::Open(const string&         cmd,
 void CPipe::OpenSelf(void)
 {
     _ASSERT(m_PipeHandle);
+    m_ReadHandle = eStdOut;
     try {
         m_PipeHandle->OpenSelf();
     }
     catch (string& err) {
+        m_ReadStatus  = eIO_Unknown;
+        m_WriteStatus = eIO_Unknown;
         NCBI_THROW(CPipeException, eOpen, err);
     }
-    m_ReadHandle  = eStdOut;
     m_ReadStatus  = eIO_Success;
     m_WriteStatus = eIO_Success;
 }
@@ -1924,16 +1924,26 @@ void CPipe::OpenSelf(void)
 EIO_Status CPipe::Close(int* exitcode)
 {
     _ASSERT(m_PipeHandle);
-    m_ReadStatus  = eIO_Closed;
-    m_WriteStatus = eIO_Closed;
-    return m_PipeHandle->Close(exitcode, m_CloseTimeout);
+    EIO_Status status = m_PipeHandle->Close(exitcode, m_CloseTimeout);
+    m_ReadStatus  = status == eIO_Timeout ? eIO_Timeout : eIO_Closed;
+    m_WriteStatus = status == eIO_Timeout ? eIO_Timeout : eIO_Closed;
+    return status;
 }
 
 
 EIO_Status CPipe::CloseHandle(EChildIOHandle handle)
 {
     _ASSERT(m_PipeHandle);
-    return m_PipeHandle->CloseHandle(handle);
+    if (handle == eDefault) {
+        handle  = m_ReadHandle;
+    }
+    EIO_Status status = m_PipeHandle->CloseHandle(handle);
+    if (handle != eStdIn) {
+        m_ReadStatus  = status;
+    } else {
+        m_WriteStatus = status;
+    }
+    return status;
 }
 
 
@@ -1971,16 +1981,16 @@ EIO_Status CPipe::Read(void* buf, size_t count, size_t* n_read,
 }
 
 
-EIO_Status CPipe::Write(const void* buf, size_t count, size_t* n_written)
+EIO_Status CPipe::Write(const void* data, size_t count, size_t* n_written)
 {
     _ASSERT(m_PipeHandle);
     if (n_written) {
         *n_written = 0;
     }
-    if (count  &&  !buf) {
+    if (count  &&  !data) {
         return eIO_InvalidArg;
     }
-    m_WriteStatus = m_PipeHandle->Write(buf, count, n_written,
+    m_WriteStatus = m_PipeHandle->Write(data, count, n_written,
                                         m_WriteTimeout);
     return m_WriteStatus;
 }
