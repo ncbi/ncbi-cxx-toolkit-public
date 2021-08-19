@@ -476,7 +476,7 @@ int CTest::Run(void)
         status = pipe.Close();
         ERR_POST(Info << "Pipe closed: " << IO_StatusStr(status));
     } else
-        ERR_POST(Warning << "Pipe closed okay because of an extended wait");
+        ERR_POST(Warning << "Pipe closed okay because of an extended delay");
 
     ERR_POST(Info << "Checking kill-on-close");
     status = pipe.Open(app.c_str(), args,
@@ -536,7 +536,7 @@ int CTest::Run(void)
         status = pipe.Close();
         ERR_POST(Info << "Pipe closed: " << IO_StatusStr(status));
     } else
-        ERR_POST(Warning << "Pipe closed okay because of an extended wait");
+        ERR_POST(Warning << "Pipe closed okay because of an extended delay");
 
     // Done
     ERR_POST(Info << "TEST completed successfully");
