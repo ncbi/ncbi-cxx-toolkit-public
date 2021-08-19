@@ -17,6 +17,8 @@ class ILineErrorListener;
 class CIdMapper;
 class CBioseq;
 class CSeq_annot;
+class CGff3Reader;
+class CGff3LocationMerger;
 }
 
 class CTable2AsnContext;
@@ -26,6 +28,7 @@ union CFileContentInfo;
 struct CFileContentInfoGenbank;
 
 USING_SCOPE(objects);
+class CGff3LocationMerger;
 
 //  ============================================================================
 class CMultiReader
@@ -66,13 +69,12 @@ private:
     TAnnots xReadGFF3(CNcbiIstream& instream, bool post_process=true);
     TAnnots xReadGTF(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadFlatfile(CFormatGuess::EFormat format, const string& filename);
-    void x_PostProcessAnnots(TAnnots& annots, unsigned int sequenceSize=0);
+    void x_PostProcessAnnots(TAnnots& annots);
     bool xGetAnnotLoader(CAnnotationLoader& loader, const string& filename);
     bool xFixupAnnot(objects::CScope&, CRef<objects::CSeq_annot>&);
 
     unique_ptr<CObjectIStream> xCreateASNStream(const string& filename);
     unique_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, unique_ptr<istream>& instream);
-
     //CFormatGuess::EFormat xGetFormat(CNcbiIstream&) const;
     CFormatGuess::EFormat xInputGetFormat(CNcbiIstream&, CFileContentInfo* = nullptr) const;
     CFormatGuess::EFormat xAnnotGetFormat(CNcbiIstream&) const;
@@ -82,6 +84,7 @@ private:
     string m_AnnotTitle;
     CTable2AsnContext& m_context;
     unique_ptr<CObjectIStream> m_obj_stream;
+    shared_ptr<objects::CGff3LocationMerger> m_gff3_merger;
     bool mAtSequenceData;
 };
 
