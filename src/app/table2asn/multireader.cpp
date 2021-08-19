@@ -789,7 +789,7 @@ void CMultiReader::LoadGFF3Fasta(istream& in, TAnnots& annots)
     LOG_POST("Recognized input file as format: " << CFormatGuess::GetFormatName(CFormatGuess::eGff3));
 
     bool post_process = false;
-    annots = xReadGFF3(in, post_process);
+    annots = xReadGFF3(in, post_process); // initializes m_gff3_reader!
     if (!AtSeqenceData()) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "Specified GFF3 file does not include any sequence data", 0);
@@ -917,29 +917,38 @@ CMultiReader::TAnnots CMultiReader::xReadGFF3(CNcbiIstream& instream, bool post_
     flags |= CGff3Reader::fRetainLocusIds;
     flags |= CGff3Reader::fGeneXrefs;
     flags |= CGff3Reader::fAllIdsAsLocal;
-
     CGff3Reader reader(flags, m_AnnotName, m_AnnotTitle);
+    
     CStreamLineReader lr(instream);
     TAnnots annots;
+
     reader.ReadSeqAnnots(annots, lr, m_context.m_logger);
+    m_gff3_merger = reader.GetLocationMerger();
     mAtSequenceData = reader.AtSequenceData();
+
     if (post_process) {
-        x_PostProcessAnnots(annots, reader.SequenceSize());
+        x_PostProcessAnnots(annots);
     }
     return annots;
 }
 
 
-void CMultiReader::x_PostProcessAnnots(TAnnots& annots, unsigned int sequenceSize)
+void CMultiReader::x_PostProcessAnnots(TAnnots& annots)
 {
     unsigned int startingLocusTagNumber = 1;
     unsigned int startingFeatureId = 1;
     for (auto it = annots.begin(); it != annots.end(); ++it) {
 
+        auto& annot = **it;
+        const auto& data = annot.GetData();
+        if (!data.IsFtable()  ||  data.GetFtable().empty()) {
+            continue; // all that follows applies to feature tables only
+        }
+        
         edit::CFeatTableEdit fte(
-            **it, sequenceSize, m_context.m_locus_tag_prefix, startingLocusTagNumber, startingFeatureId, m_context.m_logger);
+            annot, 0, m_context.m_locus_tag_prefix, startingLocusTagNumber, startingFeatureId, m_context.m_logger);
         //fte.InferPartials();
-        fte.GenerateMissingParentFeatures(m_context.m_eukaryote);
+        fte.GenerateMissingParentFeatures(m_context.m_eukaryote, m_gff3_merger.get());
         if (m_context.m_locus_tags_needed) {
             if (m_context.m_locus_tag_prefix.empty() && !fte.AnnotHasAllLocusTags()) {
                 NCBI_THROW(CArgException, eNoArg,
