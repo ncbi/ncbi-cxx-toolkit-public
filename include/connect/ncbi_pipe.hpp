@@ -80,33 +80,33 @@ public:
     ///         order of their appearance in the definition below.
     ///
     /// Default is 0:
-    ///    fStdIn_Open | fStdOut_Open | fStdErr_Close | fCloseOnClose.
+    ///    fStdIn_Open | fStdOut_Open | fStdErr_Close | fCloseOnClose
     enum ECreateFlag {
-        fStdIn_Open      =     0, ///< Do     open child's stdin (default).
-        fStdIn_Close     = 0x001, ///< Do not open child's stdin.
-        fStdOut_Open     =     0, ///< Do     open child's stdout (default).
-        fStdOut_Close    = 0x002, ///< Do not open child's stdout.
-        fStdErr_Open     = 0x004, ///< Do     open child's stderr.
-        fStdErr_Close    =     0, ///< Do not open child's stderr (default).
-        fStdErr_Share    = 0x008, ///< Keep stderr (share it with child).
-        fStdErr_StdOut   = 0x080, ///< Redirect stderr to whatever stdout goes.
+        fStdIn_Open      =     0, ///< Do     open child's stdin (default)
+        fStdIn_Close     = 0x001, ///< Do not open child's stdin
+        fStdOut_Open     =     0, ///< Do     open child's stdout (default)
+        fStdOut_Close    = 0x002, ///< Do not open child's stdout
+        fStdErr_Open     = 0x004, ///< Do     open child's stderr
+        fStdErr_Close    =     0, ///< Do not open child's stderr (default)
+        fStdErr_Share    = 0x008, ///< Keep stderr (share it with child)
+        fStdErr_StdOut   = 0x080, ///< Redirect stderr to whatever stdout goes
         fKeepOnClose     = 0x010, ///< Close(): just return eIO_Timeout
                                   ///< if Close() cannot complete within
                                   ///< the allotted time;  don't close any
-                                  ///< pipe handles nor signal the child.
+                                  ///< pipe handles nor signal the child
         fCloseOnClose    =     0, ///< Close(): always close all pipe handles
                                   ///< but do not send any signal to running
-                                  ///< process if Close()'s timeout expired.
+                                  ///< process if Close()'s timeout expired
         fKillOnClose     = 0x020, ///< Close(): kill child process if it hasn't
                                   ///< terminated within the allotted time.
                                   ///< NOTE:  If both fKeepOnClose and
                                   ///< fKillOnClose are set, the safer
                                   ///< fKeepOnClose takes the effect.
         fSigPipe_Restore = 0x040, ///< Restore SIGPIPE processing for child
-                                  ///< process to system default.
+                                  ///< process to system default
         fNewGroup        = 0x100  ///< UNIX: new process group will be created,
                                   ///< and the child process will become the
-                                  ///< leader of the new process group.
+                                  ///< leader of the new process group
     };
     typedef unsigned int TCreateFlags;  ///< bitwise OR of "ECreateFlag"
 
@@ -115,11 +115,11 @@ public:
         fStdIn     = (1 << 0),
         fStdOut    = (1 << 1),
         fStdErr    = (1 << 2),
-        fDefault   = (1 << 3),
+        fDefault   = (1 << 3),    ///< see Wait()
         eStdIn     = fStdIn,
         eStdOut    = fStdOut,
         eStdErr    = fStdErr,
-        eDefault   = fDefault   ///< see SetReadHandle()
+        eDefault   = fDefault     ///< see SetReadHandle()
     };
     typedef unsigned int TChildPollMask;  ///< bitwise OR of "EChildIOHandle"
 
@@ -132,13 +132,13 @@ public:
     /// Throw CPipeException on failure to create the pipe.
     ///
     /// @param cmd
-    ///   Command name to execute.
+    ///   Command name to execute
     /// @param args
-    ///   Vector of string arguments for the command (argv[0] excluded).
+    ///   Vector of string arguments for the command (argv[0] excluded)
     /// @param create_flags
-    ///   Specifies the options to be applied when creating the pipe.
+    ///   Specifies the options to be applied when creating the pipe
     /// @param current_dir
-    ///   Current working directory for the new process if specified.
+    ///   Current working directory for the new process if specified
     /// @param env
     ///   An optional pointer to a vector with environment variables to use
     ///   in the child process.  If not speficied, a copy of the parent's
@@ -166,7 +166,8 @@ public:
     ///
     /// Execute a command with the vector of arguments "args".  The other end
     /// of the pipe is associated with the spawned command's standard
-    /// input/output/error according to "create_flags".
+    /// input/output/error according to "create_flags".  Default child's read
+    /// handle is always reset to be eStdOut, regardless of the return status.
     ///
     /// @param cmd
     ///   Command name to execute.
@@ -177,11 +178,11 @@ public:
     ///   "current_dir".  So, using the absolute path for "cmd" is always
     ///   recommended in such cases.
     /// @param args
-    ///   Vector of string arguments for the command (argv[0] excluded).
+    ///   Vector of string arguments for the command (argv[0] excluded)
     /// @param create_flags
-    ///   Specifies options to be applied when creating the pipe.
+    ///   Specifies options to be applied when creating the pipe
     /// @param current_dir
-    ///   Current working directory for the new process.
+    ///   Current working directory for the new process
     ///   The string must be an absolute path.  On MS Windows it should
     ///   also contain a drive letter. If this parameter is empty, the new
     ///   process will have the same current directory as the calling process.
@@ -192,9 +193,9 @@ public:
     ///   replaces the default environment otherwise inherited from the parent
     ///   process, and so it does not just add / modify some values.
     /// @return 
-    ///   Completion status.
+    ///   Completion status
     /// @sa
-    ///   Read, Write, Close
+    ///   Read, Write, Close, SetReadHandle, GetReadHandle
     EIO_Status Open(const string&         cmd,
                     const vector<string>& args,
                     TCreateFlags          create_flags = 0,
@@ -221,7 +222,7 @@ public:
     ///
     /// @note
     ///   A CPipe opened with OpenSelf() always closes with eIO_Success, and
-    ///   *exitcode returns as 0 (yet the current process continues to run).
+    ///   "*exitcode" returns as 0 (yet the current process continues to run).
     ///
     /// @param exitcode
     ///   Pointer to store the exit code at, if the child process terminated
@@ -248,12 +249,13 @@ public:
     ///   Open, OpenSelf, fKeepOnClose, fCloseOnClose, fKillOnClose, fNewGroup
     EIO_Status Close(int* exitcode = 0);
 
-    /// Close specified pipe handle (even for CPipe opened with OpenSelf()).
+    /// Close the specified child's pipe handle
+    /// (even for CPipe opened with OpenSelf()).
     ///
     /// @param handle
-    ///   Pipe handle to close
+    ///   Child's pipe handle to close
     /// @return
-    ///   Completion status.
+    ///   Completion status
     /// @sa
     ///   Close, OpenSelf
     EIO_Status CloseHandle(EChildIOHandle handle);
@@ -261,12 +263,13 @@ public:
     /// Set standard output handle to read data from.
     ///
     /// @param from_handle
-    ///   Handle which used to read data (eStdOut/eStdErr).
+    ///   Child's handle which is to use to read data from (eStdOut/eStdErr),
+    ///   or eDefault to restore the handle to eStdOut
     /// @return
-    ///   Return eIO_Success if new handler is eStdOut or eStdErr.
-    ///   Return eIO_InvalidArg otherwise.
+    ///   Return eIO_Success if new handle is now eStdOut or eStdErr;  and an
+    // /  error, otherwise
     /// @sa
-    ///   Read
+    ///   GetReadHandle, Read
     EIO_Status SetReadHandle(EChildIOHandle from_handle);
 
     /// Get standard output handle to read data from.
@@ -274,44 +277,44 @@ public:
     /// @return
     ///   Return either eStdOut(default) or eStdErr
     /// @sa
-    ///   SetReadHandle
+    ///   SetReadHandle, Read
     EChildIOHandle GetReadHandle(void) const { return m_ReadHandle; }
 
-    /// Read data from pipe. 
+    /// Read data from the pipe's default read handle.
     ///
     /// @param buf
-    ///   Buffer into which data is read.
+    ///   Buffer into which data is read
     /// @param count
-    ///   Number of bytes to read.
+    ///   Number of bytes to read
     /// @param read
-    ///   Number of bytes actually read, which may be less than "count". 
+    ///   Number of bytes actually read, which may be less than "count"
     /// @param from_handle
-    ///   Handle to read data from.
+    ///   Handle to read data from
     /// @return
     ///   Always return eIO_Success if some data were read (regardless of pipe
     ///   conditions that may include EOF/error).
     ///   Return other (error) status only if no data at all could be obtained.
     /// @sa
-    ///   Write, SetTimeout
+    ///   SetReadHandle, GetReadHandle, Write, SetTimeout
     EIO_Status Read(void*          buf, 
                     size_t         count, 
                     size_t*        read = 0,
                     EChildIOHandle from_handle = eDefault);
 
-    /// Write data to pipe. 
+    /// Write data to pipe (data always goes to the child's eStdIn handle).
     ///
-    /// @param buf
-    ///   Buffer from which data is written.
+    /// @param data
+    ///   Data to be written
     /// @param count
-    ///   Number of bytes to write.
+    ///   Number of bytes to write
     /// @param written
-    ///   Number of bytes actually written, which may be less than "count".
+    ///   Number of bytes actually written, which may be less than "count"
     /// @return
     ///   Return eIO_Success if some data were written.
     ///   Return other (error) code only if no data at all could be written.
     /// @sa
     ///   Read, SetTimeout
-    EIO_Status Write(const void* buf,
+    EIO_Status Write(const void* data,
                      size_t      count,
                      size_t*     written = 0);
                      
@@ -326,21 +329,23 @@ public:
     /// that it will be copied to resulting mask also.
     ///
     /// @param mask
-    ///   Mask of I/O handles to poll.
+    ///   Mask of I/O handles to poll
     /// @param timeout
-    ///   Timeout value to set.
-    ///   If "timeout" is NULL then set the timeout to be infinite.
+    ///   Timeout value to set.  If "timeout" is kInfiniteTimeout(0) then set
+    ///   the timeout to be infinite.
     /// @return
     ///   Mask of I/O handles that ready for I/O.
     ///   Return zero on timeout or if all I/O handles are closed.
     ///   If fDefault is polled and the corresponding Err/Out is ready
     ///   then return fDefault, and not the "real" fStdOut/fStdErr.
+    /// @sa
+    ///   Read, Write, SetReadHandle
     TChildPollMask Poll(TChildPollMask mask, const STimeout* timeout = 0);
 
     /// Return a status of the last I/O operation.
     /// 
     /// @param direction
-    ///   Direction to get status for.
+    ///   Direction to get status for
     /// @return
     ///   I/O status for the specified direction.
     ///   eIO_Closed     - if the pipe is closed;
@@ -349,20 +354,20 @@ public:
     ///   eIO_Timeout    - if the timeout was on last I/O;
     ///   eIO_Success    - otherwise.
     /// @sa
-    ///   Read, Write
+    ///   Read, Write, Close
     EIO_Status Status(EIO_Event direction) const;
 
     /// Specify timeout for the pipe I/O.
     ///
     /// @param event
-    ///   I/O event for which the timeout is set.
+    ///   I/O event for which the timeout is set
     /// @param timeout
-    ///   Timeout value to set.
-    ///   If "timeout" is NULL then set the timeout to be infinite.
+    ///   Timeout value to set.  If "timeout" is kInfiniteTimeout(0) then set
+    ///   the timeout to be infinite.
     ///   - By default, initially all timeouts are infinite;
     ///   - kDefaultTimeout has no effect.
     /// @return
-    ///   Completion status.
+    ///   Completion status
     /// @sa
     ///   Read, Write, Close, GetTimeout
     EIO_Status SetTimeout(EIO_Event event, const STimeout* timeout);
@@ -370,9 +375,10 @@ public:
     /// Get pipe I/O timeout.
     ///
     /// @param event
-    ///   I/O event for which timeout is obtained.
+    ///   I/O event for which timeout is obtained
     /// @return
-    //    Timeout for specified event (or NULL, if the timeout is infinite).
+    //    Timeout for specified event (kInfiniteTimeout(0) is returned for the
+    ///   infinite timeout).
     ///   The returned timeout is guaranteed to be pointing to a valid
     ///   (and correct) structure in memory at least until the pipe is
     ///   closed or SetTimeout() is called for this pipe.
@@ -412,7 +418,7 @@ public:
         ///   Process Id to monitor
         /// @return
         ///   eContinue to continue with the process; other code to kill the
-        ///   process and to return from ExecWait() with eCanceled.
+        ///   process and to return from ExecWait() with eCanceled
         virtual EAction OnStart(TProcessHandle /*pid*/) { return eContinue; }
 
         /// This method is getting called periodically during
@@ -444,7 +450,7 @@ public:
     ///   parent process or already be changed to 'current_dir'.  So using of
     ///   an absolute path is always recommended in such cases.
     /// @param args
-    ///   Vector of string arguments for the command (argv[0] excluded).
+    ///   Vector of string arguments for the command (argv[0] excluded)
     /// @param in
     ///   Stream this data which will be sent to the child process's stdin
     /// @param out
@@ -474,7 +480,7 @@ public:
     ///   persist as a zombie process even after this call completes.
     /// @return 
     ///   eDone if process has finished normally, or eCanceled if a watcher 
-    ///   decided to stop it.
+    ///   decided to stop it
     ///
     /// @sa IProcessWatcher, Open
     static EFinish ExecWait(const string&         cmd,
