@@ -1059,7 +1059,8 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
     if (::GetExitCodeProcess(hProcess, &x_status)) {
         if (x_status == STILL_ACTIVE) {
             if (allow_wait  &&  timeout) {
-                DWORD tv = (timeout == kInfiniteTimeoutMs ? INFINITE : (DWORD)timeout);
+                DWORD tv = (timeout == kInfiniteTimeoutMs
+                            ? INFINITE : (DWORD) timeout);
                 DWORD ws = ::WaitForSingleObject(hProcess, tv);
                 switch(ws) {
                 case WAIT_TIMEOUT:
