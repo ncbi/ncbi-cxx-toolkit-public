@@ -453,6 +453,7 @@ int CTest::Run(void)
     args.back() = NStr::IntToString(eFlagsOnClose);
 
     ERR_POST(Info << "TEST:  Checking timeout");
+    CStopWatch sw(CStopWatch::eStart);
     status = pipe.Open(app.c_str(), args,
                        CPipe::fStdIn_Close | CPipe::fStdOut_Close
                        | CPipe::fKeepOnClose);
@@ -460,12 +461,11 @@ int CTest::Run(void)
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
 
-    CStopWatch sw(CStopWatch::eStart);
     status = pipe.Close(&exitcode);
     double elapsed = sw.Elapsed();
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
              << " and exitcode " << exitcode);
-    if (status != eIO_Success  ||  elapsed <= DEFAULT_TIMEOUT) {
+    if (status != eIO_Success  ||  elapsed <= DEFAULT_TIMEOUT * 1.5) {
         assert(status == eIO_Timeout  &&  exitcode == -1);
         {{
             CProcess process(handle, CProcess::eHandle);
@@ -496,6 +496,7 @@ int CTest::Run(void)
     }}
 
     ERR_POST(Info << "TEST:  Checking extended timeout/kill");
+    sw.Restart();
     status = pipe.Open(app.c_str(), args,
                        CPipe::fStdIn_Close | CPipe::fStdOut_Close
                        | CPipe::fKeepOnClose);
@@ -503,12 +504,11 @@ int CTest::Run(void)
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
 
-    sw.Restart();
     status = pipe.Close(&exitcode);
     elapsed = sw.Elapsed();
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
              << " and exitcode " << exitcode);
-    if (status != eIO_Success  ||  elapsed <= DEFAULT_TIMEOUT) {
+    if (status != eIO_Success  ||  elapsed <= DEFAULT_TIMEOUT * 1.5) {
         assert(status == eIO_Timeout  &&  exitcode == -1);
         {{
             CProcess process(handle, CProcess::eHandle);
