@@ -460,18 +460,23 @@ int CTest::Run(void)
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
 
-    status = pipe.Close(&exitcode); 
+    CStopWatch sw(CStopWatch::eStart);
+    status = pipe.Close(&exitcode);
+    double elapsed = sw.Elapsed();
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
              << " and exitcode " << exitcode);
-    assert(status == eIO_Timeout  &&  exitcode == -1);
-    {{
-        CProcess process(handle, CProcess::eHandle);
-        assert(process.IsAlive());
-        assert(process.Kill((DEFAULT_TIMEOUT / 2) * 1000));
-        assert(!process.IsAlive());
-    }}
-    status = pipe.Close();
-    ERR_POST(Info << "Pipe closed: " << IO_StatusStr(status));
+    if (status != eIO_Success  ||  elapsed <= DEFAULT_TIMEOUT) {
+        assert(status == eIO_Timeout  &&  exitcode == -1);
+        {{
+            CProcess process(handle, CProcess::eHandle);
+            assert(process.IsAlive());
+            assert(process.Kill((DEFAULT_TIMEOUT / 2) * 1000));
+            assert(!process.IsAlive());
+        }}
+        status = pipe.Close();
+        ERR_POST(Info << "Pipe closed: " << IO_StatusStr(status));
+    } else
+        ERR_POST(Warning << "Pipe closed okay because of an extended wait");
 
     ERR_POST(Info << "Checking kill-on-close");
     status = pipe.Open(app.c_str(), args,
@@ -498,42 +503,46 @@ int CTest::Run(void)
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
 
-    status = pipe.Close(&exitcode); 
+    sw.Restart();
+    status = pipe.Close(&exitcode);
+    elapsed = sw.Elapsed();
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
              << " and exitcode " << exitcode);
-    assert(status == eIO_Timeout  &&  exitcode == -1);
-    {{
-        CProcess process(handle, CProcess::eHandle);
-        assert(process.IsAlive());
-        CProcess::CExitInfo exitinfo;
-        exitcode = process.Wait(DEFAULT_TIMEOUT * 1000, &exitinfo);
-        string infostr;
-        if (exitinfo.IsPresent()) {
-            if (exitinfo.IsExited()) {
-                assert(exitinfo.GetExitCode() == exitcode);
-                infostr = "code=" + NStr::IntToString(exitcode);
-            } else if (exitinfo.IsSignaled())
-                infostr = "signal=" + NStr::IntToString(exitinfo.GetSignal());
-        }
-        ERR_POST(Info << "Command completed with exit code " << exitcode
+    if (status != eIO_Success  ||  elapsed <= DEFAULT_TIMEOUT) {
+        assert(status == eIO_Timeout  &&  exitcode == -1);
+        {{
+            CProcess process(handle, CProcess::eHandle);
+            assert(process.IsAlive());
+            CProcess::CExitInfo exitinfo;
+            exitcode = process.Wait(DEFAULT_TIMEOUT * 1000, &exitinfo);
+            string infostr;
+            if (exitinfo.IsPresent()) {
+                if (exitinfo.IsExited()) {
+                    assert(exitinfo.GetExitCode() == exitcode);
+                    infostr = "code=" + NStr::IntToString(exitcode);
+                } else if (exitinfo.IsSignaled())
+                    infostr = "signal=" + NStr::IntToString(exitinfo.GetSignal());
+            }
+            ERR_POST(Info << "Command completed with exit code " << exitcode
                  << " and state "
-                 << (!exitinfo.IsPresent() ? "Inexistent" :
-                     exitinfo.IsExited()   ? "Terminated" :
-                     exitinfo.IsAlive()    ? "Alive"      :
-                     exitinfo.IsSignaled() ? "Signaled"   : "Unknown")
-                 << (infostr.empty() ? "" : ", ") << infostr);
-        assert(exitcode == kTestResult);
-        assert(!process.IsAlive());
-    }}
-    status = pipe.Close();
-    ERR_POST(Info << "Pipe closed: " << IO_StatusStr(status));
+                     << (!exitinfo.IsPresent() ? "Inexistent" :
+                         exitinfo.IsExited()   ? "Terminated" :
+                         exitinfo.IsAlive()    ? "Alive"      :
+                         exitinfo.IsSignaled() ? "Signaled"   : "Unknown")
+                     << (infostr.empty() ? "" : ", ") << infostr);
+            assert(exitcode == kTestResult);
+            assert(!process.IsAlive());
+        }}
+        status = pipe.Close();
+        ERR_POST(Info << "Pipe closed: " << IO_StatusStr(status));
+    } else
+        ERR_POST(Warning << "Pipe closed okay because of an extended wait");
 
     // Done
     ERR_POST(Info << "TEST completed successfully");
 
     return 0;
 }
-
 
 
 ///////////////////////////////////
