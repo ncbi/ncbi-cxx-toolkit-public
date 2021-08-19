@@ -1547,8 +1547,9 @@ void CPSG_Blob_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
     case CPSG_ReplyItem::eSkippedBlob:
     {
         // Only main blob can be skipped.
-        _ASSERT(!m_Skipped);
-        m_Skipped = static_pointer_cast<CPSG_SkippedBlob>(item);
+        if ( !m_Skipped ) {
+            m_Skipped = static_pointer_cast<CPSG_SkippedBlob>(item);
+        }
         break;
     }
     default:
