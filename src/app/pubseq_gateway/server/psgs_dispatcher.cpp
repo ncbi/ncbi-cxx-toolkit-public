@@ -228,7 +228,8 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
 
     for (auto &  proc: procs->second) {
         if (proc.m_Processor == processor) {
-            if (proc.m_DispatchStatus == ePSGS_Up) {
+            if (proc.m_DispatchStatus == ePSGS_Up ||
+                proc.m_DispatchStatus == ePSGS_Canceled) {
                 // That's the first time there is an information about how the
                 // processor finished
                 proc.m_DispatchStatus = ePSGS_Finished;
@@ -278,6 +279,10 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
             case ePSGS_Canceled:
                 // Finished but the canceled processor do not participate in
                 // the overall reply status
+                // Also the canceled processors still have to call
+                // SignalFinishProcessing() on their own so their dispatch
+                // status is updated to ePSGS_Finished
+                all_procs_finished = false;
                 break;
         }
     }
