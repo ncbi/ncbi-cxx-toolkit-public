@@ -1886,6 +1886,7 @@ xngalign needs xalgoalignnw
 xngalign needs xalgoalignutil
 xngalign needs xmergetree
 xobjedit needs $(EUTILS_LIBS)
+xobjedit needs $(OBJREAD_LIBS)
 xobjedit needs mlacli
 xobjedit needs taxon3
 xobjedit needs valid
