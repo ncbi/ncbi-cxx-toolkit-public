@@ -5455,7 +5455,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NTOU\tsc\tInstitute of Marine Biology, National Taiwan Ocean University\t\t\t",
 "NTS\ts\tNevada Operations Office, U.S. Department of Energy\t\t\t",
 "NTSC\ts\tUniversity of North Texas, Biological Sciences Department\t\t\t",
-"NTUCC\tc\tPlant Pathology and Microbiology, National Taiwan University Culture Collection\t\t\t",
+"NTUCC\tc\tPlant Pathology and Microbiology, National Taiwan University Culture Collection\tNTUPPMCC\t\t",
 "NTUF\ts\tNational Taiwan University, Forestry Department\t\t\t",
 "NTUH\ts\tHerbarium of the Department of Plant Pathology and Microbiology, National Taiwan University\t\t\t",
 "NTUM\ts\tNational Taiwan University Museum\t\t\t",
