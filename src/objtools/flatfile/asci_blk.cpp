@@ -1829,9 +1829,10 @@ bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq,
         seqptr = str;
         if (seqptr != NULL)
             len = StringLen(seqptr);
-        for (seqptr = str; *seqptr != '\0'; seqptr++)
-            if (*seqptr >= 'A' && *seqptr <= 'Z')
-                *seqptr |= 040;
+        if(pp->source != Parser::ESource::USPTO || ibp->is_prot == false)
+            for(; *seqptr != '\0'; seqptr++)
+                if(*seqptr >= 'A' && *seqptr <= 'Z')
+                    *seqptr |= 040;
         seqptr = str;
     }
     else

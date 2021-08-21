@@ -692,6 +692,13 @@ static void XMLInitialEntry(IndexblkPtr ibp, char* entry, bool accver,
             else if(StringCmp(ibp->division, "HTC") == 0)
                 ibp->HTC = true;
         }
+        else if(xip->tag == INSDSEQ_MOLTYPE && ibp->is_prot == false)
+        {
+            buf = XMLGetTagValue(entry, xip);
+            if(StringICmp(buf, "AA") == 0)
+                ibp->is_prot = true;
+            MemFree(buf);
+        }
         if(ibp->bases > 0 && ibp->date != NULL && ibp->division[0] != '?')
             break;
     }
