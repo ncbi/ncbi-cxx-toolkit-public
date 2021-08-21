@@ -258,7 +258,9 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv,
     if(strandstr != NULL)
         MemFree(strandstr);
 
-    if (!GetSeqData(pp, dbp, bioseq, 0, dnaconv, objects::eSeq_code_type_iupacna))
+    if(!GetSeqData(pp, dbp, bioseq, 0, dnaconv,
+                   ibp->is_prot ?  objects::eSeq_code_type_iupacaa :
+                                   objects::eSeq_code_type_iupacna))
         return false;
 
     if(ibp->is_contig && !XMLGetInstContig(ibp->xip, dbp, bioseq, pp))
@@ -1361,7 +1363,6 @@ bool XMLAscii(ParserPtr pp)
     char*     entry;
     EntryBlkPtr ebp;
 
-
     TEntryList seq_entries;
 
     objects::CSeq_loc locs;
@@ -1371,7 +1372,10 @@ bool XMLAscii(ParserPtr pp)
     IndexblkPtr tibp;
     DataBlkPtr  dbp;
 
-    auto dnaconv = GetDNAConv();             /* set up sequence alphabets */
+    /* set up sequence alphabets
+     */
+    auto dnaconv = GetDNAConv();
+    auto protconv = GetProteinConv();
 
     segindx = -1;
 
@@ -1433,7 +1437,8 @@ bool XMLAscii(ParserPtr pp)
         dbp->offset = entry;
         dbp->len = StringLen(entry);
 
-        if(!XMLGetInst(pp, dbp, dnaconv.get(), *bioseq))
+        if(!XMLGetInst(pp, dbp, ibp->is_prot ? protconv.get() : dnaconv.get(),
+                       *bioseq))
         {
             ibp->drop = 1;
             ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData,
