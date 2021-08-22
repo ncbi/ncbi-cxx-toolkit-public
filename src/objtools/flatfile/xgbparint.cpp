@@ -1191,10 +1191,10 @@ static CRef<objects::CSeq_loc> xgbint_ver(bool& keep_rawPt, ValNodePtr& currentP
             goto FATAL;
         }
     }
-    else
+    else if(!seq_ids.empty())
     {
-        if (!seq_ids.empty())
-            new_id = *seq_ids.begin();
+        new_id.Reset(new ncbi::objects::CSeq_id);
+        new_id->Assign(*(*seq_ids.begin()));
     }
 
     if (currentPt->choice == GBPARSE_INT_LT)
