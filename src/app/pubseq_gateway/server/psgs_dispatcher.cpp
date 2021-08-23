@@ -327,16 +327,16 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
 }
 
 
-void CPSGS_Dispatcher::SignalConnectionCanceled(IPSGS_Processor *  processor)
+void CPSGS_Dispatcher::SignalConnectionCanceled(size_t      request_id)
 {
     // When a connection is canceled there will be no possibility to
     // send anything over the connection. So basically what is needed to do is
-    // to print request stop and delete the processors group.
-    auto        request = processor->GetRequest();
-    size_t      request_id = request->GetRequestId();
+    // to cancel processors which have not been canceled yet.
+
+    list<IPSGS_Processor *>     to_be_canceled;     // To avoid calling Cancel()
+                                                    // under the lock
 
     m_GroupsLock.lock();
-
     auto    procs = m_ProcessorGroups.find(request_id);
     if (procs == m_ProcessorGroups.end()) {
         // The processors group does not exist any more
@@ -344,15 +344,17 @@ void CPSGS_Dispatcher::SignalConnectionCanceled(IPSGS_Processor *  processor)
         return;
     }
 
-    if (request->GetRequestContext().NotNull()) {
-        request->SetRequestContext();
-        PSG_MESSAGE("HTTP connection has been canceled");
-        CDiagContext::SetRequestContext(NULL);
+    for (auto &  proc: procs->second) {
+        if (proc.m_DispatchStatus == ePSGS_Up) {
+            proc.m_DispatchStatus = ePSGS_Canceled;
+            to_be_canceled.push_back(proc.m_Processor);
+        }
     }
-
-    x_PrintRequestStop(processor->GetRequest(), CRequestStatus::e200_Ok);
-    m_ProcessorGroups.erase(procs);
     m_GroupsLock.unlock();
+
+    for (auto & proc: to_be_canceled) {
+        proc->Cancel();
+    }
 }
 
 

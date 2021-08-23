@@ -112,9 +112,6 @@ void CPendingOperation::Start(void)
 void CPendingOperation::Peek(bool  need_wait)
 {
     if (m_ConnectionCanceled) {
-        CPubseqGatewayApp::GetInstance()->SignalConnectionCanceled(
-                                                            m_Processor.get());
-
         if (m_Reply->IsOutputReady() && !m_Reply->IsFinished()) {
             m_Reply->GetHttpReply()->Send(nullptr, 0, true, true);
         }
@@ -156,5 +153,13 @@ void CPendingOperation::Peek(bool  need_wait)
         CPubseqGatewayApp::GetInstance()->SignalFinishProcessing(
                         m_Processor.get(), CPSGS_Dispatcher::ePSGS_Fromework);
     }
+}
+
+
+void CPendingOperation::ConnectionCancel(void)
+{
+    m_ConnectionCanceled = true;
+    CPubseqGatewayApp::GetInstance()->SignalConnectionCanceled(
+        m_UserRequest->GetRequestId());
 }
 
