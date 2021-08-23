@@ -2107,37 +2107,37 @@ esac
 
 AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [@%:@include <iosfwd>])
 
-AC_CACHE_CHECK([how to enable C++ '14 features in $CXX],
-   ncbi_cv_prog_cxx_14,
+AC_CACHE_CHECK([how to enable modern C++ features in $CXX],
+   ncbi_cv_prog_modern_cxx,
    [orig_CXX=$CXX
-    ncbi_cv_prog_cxx_14=no
+    ncbi_cv_prog_modern_cxx=no
     for x in -std=gnu++14 ''; do
        CXX="$orig_CXX $x"
        AC_LINK_IFELSE([AC_LANG_PROGRAM([@%:@include <list>],
           [std::list<int> l; auto it = std::cbegin(l);])],
-          [ncbi_cv_prog_cxx_14=$x])
-          test "x$ncbi_cv_prog_cxx_14" = "xno"  ||  break
+          [ncbi_cv_prog_modern_cxx=$x])
+          test "x$ncbi_cv_prog_modern_cxx" = "xno"  ||  break
        done
        CXX=$orig_CXX])
-if test "$ncbi_cv_prog_cxx_14" = no; then
+if test "$ncbi_cv_prog_modern_cxx" = no; then
    AC_MSG_ERROR([Please upgrade to a compiler supporting C++ '14, such as GCC 5 or newer.])
 else
-   CXX="$CXX $ncbi_cv_prog_cxx_14"
+   CXX="$CXX $ncbi_cv_prog_modern_cxx"
 fi
 
 AC_LANG_PUSH(C)
-AC_CACHE_CHECK([how to enable C '11 or at least '99 features in $CC],
-   ncbi_cv_prog_c_99,
+AC_CACHE_CHECK([how to enable modern C features in $CC],
+   ncbi_cv_prog_modern_c,
    [orig_CC=$CC
-    ncbi_cv_prog_c_99=no
-    for x in -xc99=all "-std=gnu11 -fgnu89-inline" \
-             "-std=gnu1x -fgnu89-inline" \
-             "-std=gnu99 -fgnu89-inline" \
-             "-std=gnu9x -fgnu89-inline"; do
+    ncbi_cv_prog_modern_c=no
+    for x in -xc99=all -std=gnu11 -std=gnu1x -std=gnu99 -std=gnu9x; do
+       case "$x" in "
+          -std=gnu* ) $x="$x -fgnu89-inline" ;;
+       esac
        CC="$orig_CC $x"
        AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
-          [ncbi_cv_prog_c_99=$x])
-          test "x$ncbi_cv_prog_c_99" = "xno"  ||  break
+          [ncbi_cv_prog_modern_c=$x])
+          test "x$ncbi_cv_prog_modern_c" = "xno"  ||  break
        done
        CC=$orig_CC])
 
@@ -2167,7 +2167,7 @@ if test "${with_sse42-$with_optimization}" = yes; then
    fi
 fi
 AC_LANG_POP(C)
-test "$ncbi_cv_prog_c_99" = no  ||  CC="$CC $ncbi_cv_prog_c_99"
+test "$ncbi_cv_prog_modern_c" = no  ||  CC="$CC $ncbi_cv_prog_modern_c"
 
 if test "${with_sse42-$with_optimization}" = yes; then
    orig_CXX=$CXX
@@ -2196,7 +2196,7 @@ case "$host_os:$compiler" in
    # in C++ mode.  Set it for C code as well to ensure consistent
    # header behavior, taking care to match the C standard version
    # (as enforced by <sys/feature_tests.h>).
-   case "$ncbi_cv_prog_c_99" in
+   case "$ncbi_cv_prog_modern_c" in
       no) CC="$CC -D_XOPEN_SOURCE=500" ;;
       *)  CC="$CC -D_XOPEN_SOURCE=600" ;;
    esac
