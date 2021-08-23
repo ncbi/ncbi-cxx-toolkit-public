@@ -84,7 +84,7 @@ public:
 
     /// An http connection can be canceled so this method will be invoked for
     /// such a case
-    void SignalConnectionCanceled(IPSGS_Processor *  processor);
+    void SignalConnectionCanceled(size_t  request_id);
 
 private:
     void x_PrintRequestStop(shared_ptr<CPSGS_Request> request,

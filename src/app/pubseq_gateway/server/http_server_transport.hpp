@@ -499,7 +499,7 @@ private:
     void x_SendCanceled(void)
     {
         if (m_Canceled && m_OutputIsReady && !m_OutputFinished) {
-            x_SendPsg503("Request has been cancelled", ePSGS_RequestCancelled);
+            x_SendPsg503("Request has been canceled", ePSGS_RequestCancelled);
         }
     }
 

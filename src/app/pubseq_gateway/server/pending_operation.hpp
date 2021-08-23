@@ -64,11 +64,7 @@ public:
     void Clear(void);
     void Start(void);
     void Peek(bool  need_wait);
-
-    void ConnectionCancel(void)
-    {
-        m_ConnectionCanceled = true;
-    }
+    void ConnectionCancel(void);
 
 public:
     CPendingOperation(const CPendingOperation&) = delete;

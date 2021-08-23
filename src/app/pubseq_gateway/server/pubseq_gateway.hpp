@@ -230,9 +230,9 @@ public:
         m_RequestDispatcher.SignalFinishProcessing(processor, signal_source);
     }
 
-    void SignalConnectionCanceled(IPSGS_Processor *  processor)
+    void SignalConnectionCanceled(size_t  request_id)
     {
-        m_RequestDispatcher.SignalConnectionCanceled(processor);
+        m_RequestDispatcher.SignalConnectionCanceled(request_id);
     }
 
     bool GetSSLEnable(void) const
