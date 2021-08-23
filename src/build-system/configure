@@ -10333,13 +10333,13 @@ if test "x$ac_cv_have_decl__LIBCPP_VERSION" = x""yes; then :
 fi
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking how to enable C++ '14 features in $CXX" >&5
-$as_echo_n "checking how to enable C++ '14 features in $CXX... " >&6; }
-if ${ncbi_cv_prog_cxx_14+:} false; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking how to enable modern C++ features in $CXX" >&5
+$as_echo_n "checking how to enable modern C++ features in $CXX... " >&6; }
+if ${ncbi_cv_prog_modern_cxx+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   orig_CXX=$CXX
-    ncbi_cv_prog_cxx_14=no
+    ncbi_cv_prog_modern_cxx=no
     for x in -std=gnu++14 ''; do
        CXX="$orig_CXX $x"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -10354,20 +10354,20 @@ std::list<int> l; auto it = std::cbegin(l);
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  ncbi_cv_prog_cxx_14=$x
+  ncbi_cv_prog_modern_cxx=$x
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-          test "x$ncbi_cv_prog_cxx_14" = "xno"  ||  break
+          test "x$ncbi_cv_prog_modern_cxx" = "xno"  ||  break
        done
        CXX=$orig_CXX
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_prog_cxx_14" >&5
-$as_echo "$ncbi_cv_prog_cxx_14" >&6; }
-if test "$ncbi_cv_prog_cxx_14" = no; then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_prog_modern_cxx" >&5
+$as_echo "$ncbi_cv_prog_modern_cxx" >&6; }
+if test "$ncbi_cv_prog_modern_cxx" = no; then
    as_fn_error $? "Please upgrade to a compiler supporting C++ '14, such as GCC 5 or newer." "$LINENO" 5
 else
-   CXX="$CXX $ncbi_cv_prog_cxx_14"
+   CXX="$CXX $ncbi_cv_prog_modern_cxx"
 fi
 
 ac_ext=c
@@ -10376,17 +10376,17 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking how to enable C '11 or at least '99 features in $CC" >&5
-$as_echo_n "checking how to enable C '11 or at least '99 features in $CC... " >&6; }
-if ${ncbi_cv_prog_c_99+:} false; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking how to enable modern C features in $CC" >&5
+$as_echo_n "checking how to enable modern C features in $CC... " >&6; }
+if ${ncbi_cv_prog_modern_c+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   orig_CC=$CC
-    ncbi_cv_prog_c_99=no
-    for x in -xc99=all "-std=gnu11 -fgnu89-inline" \
-             "-std=gnu1x -fgnu89-inline" \
-             "-std=gnu99 -fgnu89-inline" \
-             "-std=gnu9x -fgnu89-inline"; do
+    ncbi_cv_prog_modern_c=no
+    for x in -xc99=all -std=gnu11 -std=gnu1x -std=gnu99 -std=gnu9x; do
+       case "$x" in "
+          -std=gnu* ) $x="$x -fgnu89-inline" ;;
+       esac
        CC="$orig_CC $x"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -10400,16 +10400,16 @@ main ()
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ncbi_cv_prog_c_99=$x
+  ncbi_cv_prog_modern_c=$x
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-          test "x$ncbi_cv_prog_c_99" = "xno"  ||  break
+          test "x$ncbi_cv_prog_modern_c" = "xno"  ||  break
        done
        CC=$orig_CC
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_prog_c_99" >&5
-$as_echo "$ncbi_cv_prog_c_99" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_prog_modern_c" >&5
+$as_echo "$ncbi_cv_prog_modern_c" >&6; }
 
 if test "$host_cpu" != x86_64; then
    : ${with_sse42=no}
@@ -10460,7 +10460,7 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-test "$ncbi_cv_prog_c_99" = no  ||  CC="$CC $ncbi_cv_prog_c_99"
+test "$ncbi_cv_prog_modern_c" = no  ||  CC="$CC $ncbi_cv_prog_modern_c"
 
 if test "${with_sse42-$with_optimization}" = yes; then
    orig_CXX=$CXX
@@ -10507,7 +10507,7 @@ case "$host_os:$compiler" in
    # in C++ mode.  Set it for C code as well to ensure consistent
    # header behavior, taking care to match the C standard version
    # (as enforced by <sys/feature_tests.h>).
-   case "$ncbi_cv_prog_c_99" in
+   case "$ncbi_cv_prog_modern_c" in
       no) CC="$CC -D_XOPEN_SOURCE=500" ;;
       *)  CC="$CC -D_XOPEN_SOURCE=600" ;;
    esac
