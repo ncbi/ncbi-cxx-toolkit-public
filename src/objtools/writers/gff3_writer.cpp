@@ -2559,10 +2559,13 @@ bool CGff3Writer::xWriteFeatureCds(
     if (tf  && !xWriteNucleotideFeature(fc, tf)) {
         return false;
     }
-
     CRef<CGff3FeatureRecord> pCds(new CGff3FeatureRecord());
     if (!xAssignFeature(*pCds, fc, mf)) {
         return false;
+    }
+    if (tf) {
+        auto parentOverride = m_MrnaMapNew[tf];
+        pCds->SetParent(parentOverride->Id());
     }
 
     const CSeq_feat& feature = mf.GetMappedFeature();
