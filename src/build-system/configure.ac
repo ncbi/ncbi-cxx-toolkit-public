@@ -2131,7 +2131,7 @@ AC_CACHE_CHECK([how to enable modern C features in $CC],
    [orig_CC=$CC
     ncbi_cv_prog_modern_c=no
     for x in -xc99=all -std=gnu11 -std=gnu1x -std=gnu99 -std=gnu9x; do
-       case "$x" in "
+       case "$x" in
           -std=gnu* ) x="$x -fgnu89-inline" ;;
        esac
        CC="$orig_CC $x"
