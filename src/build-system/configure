@@ -10385,7 +10385,7 @@ else
     ncbi_cv_prog_modern_c=no
     for x in -xc99=all -std=gnu11 -std=gnu1x -std=gnu99 -std=gnu9x; do
        case "$x" in "
-          -std=gnu* ) $x="$x -fgnu89-inline" ;;
+          -std=gnu* ) x="$x -fgnu89-inline" ;;
        esac
        CC="$orig_CC $x"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
