@@ -2198,7 +2198,7 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, CAlignModel a)
     return os;
 }
 
-struct Precedence : public binary_function<TSignedSeqRange, TSignedSeqRange, bool>
+struct Precedence
 {
     bool operator()(const TSignedSeqRange& __x, const TSignedSeqRange& __y) const
     { return Precede( __x, __y ); }
