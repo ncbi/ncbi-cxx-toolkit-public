@@ -2059,7 +2059,7 @@ static const char* const s_DefaultLatLonCountryText[] = {
     "	15	-101	-89",
     "	14	-98	-90",
     "	13	-93	-91",
-    "Micronesia",
+    "Micronesia, Federated States of",
     "	10	137	139",
     "	9	137	139	148	151	153	155",
     "	8	137	139	148	155",

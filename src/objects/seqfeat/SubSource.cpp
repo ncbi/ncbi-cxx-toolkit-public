@@ -3006,7 +3006,7 @@ static const char* const s_Countries[] = {
     "Mayotte",
     "Mediterranean Sea",
     "Mexico",
-    "Micronesia",
+    "Micronesia, Federated States of",
     "Midway Islands",
     "Moldova",
     "Monaco",
@@ -3138,6 +3138,7 @@ static const char* const s_Former_Countries[] = {
     "East Timor",
     "Korea",
     "Macedonia",
+    "Micronesia",
     "Netherlands Antilles",
     "Serbia and Montenegro",
     "Siam",
@@ -3345,7 +3346,7 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"FLK", "Falkland Islands (Islas Malvinas)"},
 {"FRA", "France"},
 {"FRO", "Faroe Islands"},
-{"FSM", "Micronesia"},
+{"FSM", "Micronesia, Federated States of"},
 {"Falkland Islands", "Falkland Islands (Islas Malvinas)"},
 {"French Southern & Antarctic Lands", "French Southern and Antarctic Lands"},
 {"GAB", "Gabon"},
@@ -4349,7 +4350,7 @@ CCountries::EStateCleanup s_DoUSAStateCleanup ( string& country ) {
     // string* last = 0;
 
     // has multiple components
-    int max = components.size() - 1;
+    // int max = components.size() - 1;
     for ( int j = 0; j < components.size(); j++ ) {
         bool modified = false;
         if ( s_IsState  ( components[j], modified )) {
