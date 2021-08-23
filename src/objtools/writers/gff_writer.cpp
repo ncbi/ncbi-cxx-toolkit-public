@@ -1277,7 +1277,6 @@ CMappedFeat CGff2Writer::xGenerateMissingTranscript(
     if (HasAccaptableTranscriptParent(context, mf)) {
         return CMappedFeat();
     }
-
     CRef<CSeq_feat> pMissingTranscript(new CSeq_feat);
     pMissingTranscript.Reset(new CSeq_feat);
     pMissingTranscript->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
@@ -1292,7 +1291,6 @@ CMappedFeat CGff2Writer::xGenerateMissingTranscript(
     saeh.AddFeat(*pMissingTranscript);
     CMappedFeat tf = scope.GetObjectHandle(*pMissingTranscript);
     context.FeatTree().AddFeature(tf);
-
     return tf;
 }
 
