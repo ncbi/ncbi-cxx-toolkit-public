@@ -215,7 +215,7 @@ void CAlnBuildApp::LoadInputAlns(void)
     
     CAlnAsnReader reader(&GetScope());
     reader.Read(in.get(),
-                bind1st(mem_fun(&CAlnBuildApp::InsertAln), this),
+                bind(mem_fn(&CAlnBuildApp::InsertAln), this, placeholders::_1),
                 asn_type);
 }
 
