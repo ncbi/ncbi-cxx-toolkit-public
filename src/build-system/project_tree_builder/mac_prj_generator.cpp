@@ -264,6 +264,12 @@ void CMacProjectGenerator::Generate(const string& solution)
         if (!proj_link.empty()) {
             AddString( *build_phases, proj_link);
         }
+        // project post-build script phase
+        string proj_postbuild_script(
+            CreateProjectPostBuildScript(prj, prj_files, *dict_objects));
+        if (!proj_postbuild_script.empty()) {
+            AddString( *build_phases, proj_postbuild_script);
+        }
         // project copybin script phase
         string proj_copybin_script(
             CreateProjectCopyBinScript(prj, prj_files, *dict_objects));
@@ -776,6 +782,36 @@ string CMacProjectGenerator::CreateProjectCustomScriptPhase(
         AddString( *dict_script, "shellScript",
             CDirEntry::IsAbsolutePath(info.m_Script) ? info.m_Script :
             GetRelativePath(CDirEntry::ConcatPath(script_loc,info.m_Script)));
+        AddString( *dict_script, "showEnvVarsInLog", "0");
+        return proj_script;
+    }
+    return kEmptyStr;
+}
+
+string CMacProjectGenerator::CreateProjectPostBuildScript(
+    const CProjItem& prj, const CProjectFileCollector& prj_files,
+    CDict& dict_objects)
+{
+    string root = CDirEntry::DeleteTrailingPathSeparator( GetRelativePath(
+        CDirEntry::AddTrailingPathSeparator( CDirEntry::ConcatPath(
+            GetApp().GetProjectTreeInfo().m_Compilers,
+            GetApp().GetRegSettings().m_CompilersSubdir))));
+    string script;
+    script += "export BUILD_TREE_ROOT=" + root + "\n";
+    if (CFile(root + "/postbuild.sh").Exists())
+    {
+        script +=  "\"$BUILD_TREE_ROOT/postbuild.sh\"";
+        string proj_script(   GetUUID());
+        CRef<CArray> inputs(  new CArray);
+        AddString( *inputs, "$(TARGET_BUILD_DIR)/$(FULL_PRODUCT_NAME)");
+        CRef<CArray> outputs( new CArray);
+        CRef<CDict> dict_script( AddDict( dict_objects, proj_script));
+        AddArray(  *dict_script, "files");
+        AddArray(  *dict_script, "inputPaths",  inputs);
+        AddArray(  *dict_script, "outputPaths", outputs);
+        AddString( *dict_script, "isa", "PBXShellScriptBuildPhase");
+        AddString( *dict_script, "shellPath", "/bin/sh");
+        AddString( *dict_script, "shellScript", script);
         AddString( *dict_script, "showEnvVarsInLog", "0");
         return proj_script;
     }
