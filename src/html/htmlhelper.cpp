@@ -212,10 +212,10 @@ string CHTMLHelper::StripSpecialChars(const string& str)
             int (*check)(int c);
             SIZE_TYPE start = pos + 1;
             if ( s[start] == '#') {
-                check = &isdigit;
+                check = &::isdigit;
                 start++;
             } else {
-                check = &isalpha;
+                check = &::isalpha;
             }
             bool need_delete = true;
             for (SIZE_TYPE i = start; i < pos_end; i++ ) {
