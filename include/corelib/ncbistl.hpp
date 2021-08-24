@@ -240,6 +240,15 @@ END_STD_SCOPE
 #  endif
 #endif
 
+#if defined(_LIBCPP_VERSION)  &&  defined(__cpp_lib_hardware_interference_size)
+#  if _LIBCPP_VERSION < 12000
+// Not actually implemented; see https://bugs.llvm.org/show_bug.cgi?id=41423
+// (Still unimplemented as of August 2021, version 14[000], but at least
+// honest about it!)
+#    undef __cpp_lib_hardware_interference_size
+#  endif
+#endif
+
 #include <string>
 BEGIN_NCBI_SCOPE
 typedef std::string CStringUTF8;
