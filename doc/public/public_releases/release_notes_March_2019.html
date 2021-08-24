@@ -1,0 +1,462 @@
+<html xml:lang="en" lang="en">
+    
+<head>
+	<!-- google site verification -->
+	<meta name="google-site-verification" content="1E2mGo_sqU60SInLwmk-gaLIovV5oVkjJntFEf4gxcg">
+	
+        <title>Release Notes (Version 21, April 2018) - NCBI C++ Toolkit Book</title>
+
+        <!-- external_resources begin -->
+        <script type="text/javascript" src="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/jig.js"></script><meta name="description" content="nop"><meta name="description" content="nop 6"><meta name="description" content="nop 5">
+        <link rel="stylesheet" type="text/css" href="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/jig.css">
+        <script type="text/javascript" src="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/jquery.js"></script>
+        <link type="text/css" rel="stylesheet" href="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/jquery.css">
+
+        <!-- external_resources end -->
+
+        <!-- Page headcontent begin -->
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="description" content="A comprehensive manual on the NCBI C++ toolkit, including its design and development framework, a C++ library reference, software examples and demos, FAQs and release notes.">
+	<meta name="ncbipopper" content="triggerPosition:'bottom left',destPosition:'top left',openEvent:'click',closeEvent:'click'">
+
+        <link type="text/css" rel="stylesheet" href="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/3579733.css">
+        <link type="text/css" rel="stylesheet" href="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/3529739.css" media="print">
+
+        <!-- PageFixtures resources end -->
+    
+<link type="text/css" rel="stylesheet" href="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/4005757.css">
+<link type="text/css" rel="stylesheet" href="Release%20Notes%20(Version%2021,%20April%202018)%20-%20NCBI%20C++%20Toolkit%20Book_files/3529739_002.css" media="print">
+
+</head>
+
+    <body class=" CppTkbPage">
+        <div class="grid">
+            <div class="col twelve_col nomargin shadow">
+                <!-- System messages like service outage or JS required; this is handled by the TemplateResources portlet -->
+                <div class="sysmessages">
+                    <noscript>
+	<p class="nojs">
+	<strong>Warning:</strong>
+	This site requires JavaScript to function. 
+	</p>
+	</noscript>
+                </div>
+                <!--/.sysmessage-->
+                <div class="wrap">
+                    <div class="page">
+
+                        <div class="container">
+                            <div id="maincontent" class="content">
+                                <div class="col1">
+                                    <div class="content"><div class="col nine_col">
+<!-- Content start -->
+
+<h1 id="release-notes-version-22-march-2019">Release Notes (Version 22, March 2019)</h1>
+
+<p>The previous Release Notes can be seen <a href="https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/public_releases/RN_index.html">here</a>.</p>
+
+
+<blockquote>
+  <p>These notes give a somewhat superficial and incomplete (albeit still useful) description of the latest NCBI C++ Toolkit changes, fixes and additions. Some important topics (especially numerous bug fixes and feature improvements, but possibly a bigger fish) are just out of scope of these notes. Feel free to write to the mailing group <a href="https://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp">https://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp</a> with any questions or reports.</p>
+</blockquote>
+
+<ul>
+  <li>
+    <p><a href="#release_notes.Download">Download</a></p>
+  </li>
+  <li>
+    <p><a href="#release_notes.Third_Party_Packages">Third Party Packages</a></p>
+  </li>
+  <li>
+    <p><a href="#release_notes.Build">Build</a></p>
+  </li>
+  <li>
+    <p><a href="#release_notes.New_Developments">New Developments</a></p>
+
+    <ul>
+      <li><a href="#release_notes.release_notes_HIGHLIGHTS">HIGHLIGHTS</a></li>
+    </ul>
+  </li>
+  <li>
+    <p><a href="#release_notes.Documentation">Documentation</a></p>
+
+    <ul>
+      <li>
+        <p><a href="#release_notes.Location">Location</a></p>
+      </li>
+      <li>
+        <p><a href="#release_notes.Content">Content</a></p>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p><a href="#release_notes.Platforms_OSs__compi">Supported Platforms (OS’s and Compilers)</a></p>
+
+    <ul>
+      <li>
+        <p><a href="#release_notes.Unix">Unix</a></p>
+      </li>
+      <li>
+        <p><a href="#release_notes.MS_Windows">MS Windows</a></p>
+      </li>
+      <li>
+        <p><a href="#release_notes.Mac_OS_X">Mac OS X</a></p>
+      </li>
+      <li>
+        <p><a href="#release_notes.Added_Platforms">Added Platforms</a></p>
+      </li>
+      <li>
+        <p><a href="#release_notes.Discontinued">Discontinued Platforms</a></p>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<p><a name="release_notes.Download"></a></p>
+
+<h2 id="download">Download</h2>
+
+<p>Download the source code archives at: <a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/ARCHIVE/2019/Mar_28_2019/">ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/ARCHIVE/2019/Mar_28_2019/</a></p>
+
+<ul>
+  <li>
+    <p><a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/ARCHIVE/2019/Mar_28_2019/ncbi_cxx--22_0_0.tar.gz">ncbi_cxx–22_0_0.tar.gz</a> – for Unix’es (see the list of Unix flavors below) and MacOSX</p>
+  </li>
+  <li>
+    <p><a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/ARCHIVE/2019/Mar_28_2019/ncbi_cxx--22_0_0.zip">ncbi_cxx–22_0_0.zip</a> – for MS-Windows / MS Visual Studio C++ 2015 and 2017</p>
+  </li>
+</ul>
+
+<p>The sources correspond to the NCBI production tree <a href="https://ncbi.github.io/cxx-toolkit/pages/ch_getcode_svn#ch_getcode_svn.chkout_production_tree">sources</a>, which are originally based on the development tree source snapshot from August, 2018; and also include many hundreds of important and safe code updates made since then and through March, 2019.</p>
+
+<p><a name="release_notes.Third_Party_Packages"></a></p>
+
+<h2 id="third-party-packages">Third Party Packages</h2>
+
+<p>Some parts of the C++ Toolkit just cannot be built without 3<sup>rd</sup> party libraries, and other parts of the Toolkit will work more efficiently or provide more functionality if some 3rd-party packages (such as BerkeleyDB which is used for local data cache and for local data storage) are available.</p>
+
+<p>Table 1. Currently Supported/Tested Versions of Third Party Packages</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Package</th>
+      <th>Versions expected to work (obtained by build-environment inspection in some cases)</th>
+      <th>Versions known to work (used in-house on any platform)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="https://www.oracle.com/database/berkeley-db/db.html">BerkeleyDB</a></td>
+      <td>4.3.0 or newer</td>
+      <td>4.5.20, 4.6.21.NC, 4.6.21.1, 4.7.25</td>
+    </tr>
+    <tr>
+      <td><a href="https://www.boost.org">Boost Test</a></td>
+      <td>1.35.0 or newer</td>
+      <td>1.53.0, 1.54.0, 1.62.0, 1.66.0</td>
+    </tr>
+    <tr>
+      <td>FastCGI</td>
+      <td>All versions</td>
+      <td>2.1, 2.4.0, 2.4.1</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.bzip.org">libbzip2</a></td>
+      <td>All versions</td>
+      <td>1.0.5, 1.0.6</td>
+    </tr>
+    <tr>
+      <td><a href="http://freshmeat.net/projects/libjpeg">libjpeg</a></td>
+      <td>All versions</td>
+      <td>6b, 8c, 8d, 9c</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.libpng.org/pub/png/libpng.html">libpng</a></td>
+      <td>All versions</td>
+      <td>1.2.7, 1.2.49, 1.2.50, 1.5.13, 1.6.20, 1.6.34</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.libtiff.org">libtiff</a></td>
+      <td>All versions</td>
+      <td>3.6.1, 3.9.4, 4.0.3, 4.0.6</td>
+    </tr>
+    <tr>
+      <td><a href="https://sourceforge.net/projects/giflib">libungif</a></td>
+      <td>All versions</td>
+      <td>4.1.3 (libungif),<br /> 4.1.6, 5.1.2 (giflib)</td>
+    </tr>
+    <tr>
+      <td><a href="http://xmlsoft.org/">libxml2</a></td>
+      <td>All versions</td>
+      <td>2.7.6, 2.7.8, 2.9.0, 2.9.1, 2.9.4</td>
+    </tr>
+    <tr>
+      <td><a href="http://xmlsoft.org/xslt/">libxslt</a></td>
+      <td>1.1.14 or newer</td>
+      <td>1.1.26, 1.1.28</td>
+    </tr>
+    <tr>
+      <td><a href="https://www.oberhumer.com/opensource/lzo"><span class="small-caps">LZO</span></a></td>
+      <td>2.x</td>
+      <td>2.05, 2.09</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.pcre.org">PCRE</a></td>
+      <td>All versions</td>
+      <td>7.8, 7.9, 8.31, 8.32, 8.38</td>
+    </tr>
+    <tr>
+      <td><a href="https://www.sqlite.org">SQLite3</a></td>
+      <td>3.6.6 or newer</td>
+      <td>3.6.14.2, 3.6.20, 3.7.13, 3.7.17, 3.8.2, 3.8.10.1, 3.22.0</td>
+    </tr>
+    <tr>
+      <td>Sybase</td>
+      <td>All versions</td>
+      <td>15.5, 15.7, 16.0</td>
+    </tr>
+    <tr>
+      <td><a href="http://www.zlib.org">zlib</a></td>
+      <td>All versions</td>
+      <td>1.2.3, 1.2.5, 1.2.7, 1.2.8, 1.2.11</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The user is expected to download and build the 3<sup>rd</sup> party packages themselves. The release’s package list includes links to download sites. However, the user still needs a list of the 3<sup>rd</sup> party packages and which versions of them are compatible with the release.</p>
+
+<p><a name="release_notes.Build"></a></p>
+
+<h2 id="build">Build</h2>
+
+<p>For guidelines to configure, build and install the Toolkit see <a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config">here</a>.</p>
+
+<p><a name="release_notes.New_Developments"></a></p>
+
+<h2 id="new-developments">New Developments</h2>
+
+<p><a name="release_notes.release_notes_HIGHLIGHTS"></a></p>
+
+<h3 id="highlights">HIGHLIGHTS</h3>
+
+<p>There have been significant additions and improvements in all parts of the Toolkit since the last public release of the NCBI C++ Toolkit. Here, only very few are listed, mostly related to major formal changes.</p>
+
+<p>We started using C++11 specific features, so you will now need a C++11 compliant compiler to build the Toolkit.</p>
+
+<p>We are about to drop 32-bit support, so while the Toolkit will still likely build (and even work) in <em>some</em> 32-bit configurations… the 32-bit support is nominal, and will go away for good real soon now.</p>
+
+<p><a name="release_notes.Documentation"></a></p>
+
+<h2 id="documentation">Documentation</h2>
+
+<p><a name="release_notes.Location"></a></p>
+
+<h3 id="location">Location</h3>
+
+<p>The documentation is available online as a searchable book “The NCBI C++ Toolkit”: <a href="https://ncbi.github.io/cxx-toolkit/">https://ncbi.github.io/cxx-toolkit/</a>.</p>
+
+<p><a name="release_notes.Content"></a></p>
+
+<h3 id="content">Content</h3>
+
+<p>A C/C++ Symbol Search query appears on each page of the online Toolkit documentation. You can use this to perform a symbol search on the up-to-date public or in-house versions using source browsers <a href="https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CTime&amp;d=">LXR</a>, <a href="https://www.ncbi.nlm.nih.gov/toolkit/?term=ctime">Doxygen</a> and <a href="https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lib_search/libsearch.cgi?symbol=CTime">Library</a> - or do an <a href="https://www.ncbi.nlm.nih.gov/toolkitall?term=CTime">overall</a> search.</p>
+
+<p>Public access to our SVN trunk:</p>
+
+<ul>
+  <li>
+    <p>For browsing: <a href="https://www.ncbi.nlm.nih.gov/viewvc/v1/trunk/c++">https://www.ncbi.nlm.nih.gov/viewvc/v1/trunk/c++</a></p>
+  </li>
+  <li>
+    <p>For retrieval: <a href="https://anonsvn.ncbi.nlm.nih.gov/repos/v1/trunk/c++">https://anonsvn.ncbi.nlm.nih.gov/repos/v1/trunk/c++</a> (<span class="nctnt highlight">NOTE:</span> Some WebDAV clients may require dav:// instead of http://)</p>
+  </li>
+</ul>
+
+<p><a name="release_notes.Platforms_OSs__compi"></a></p>
+
+<h2 id="supported-platforms-oss-and-compilers">Supported Platforms (OS’s and Compilers)</h2>
+
+<ul>
+  <li>
+    <p><a href="release_notes.html#release_notes.Unix">Unix</a></p>
+  </li>
+  <li>
+    <p><a href="release_notes.html#release_notes.MS_Windows">MS Windows</a></p>
+  </li>
+  <li>
+    <p><a href="release_notes.html#release_notes.Mac_OS_X">Mac OS X</a></p>
+  </li>
+  <li>
+    <p><a href="release_notes.html#release_notes.Added_Platforms">Added</a></p>
+  </li>
+  <li>
+    <p><a href="release_notes.html#release_notes.Discontinued">Discontinued</a></p>
+  </li>
+</ul>
+
+<p>This release was successfully tested on at least the following platforms (but may also work on other platforms). Since the previous release, some platforms were dropped from this list and some were added. Also, it can happen that some projects would not work (or even compile) in the absence of 3rd-party packages, or with older or newer versions of such packages. In these cases, just skipping such projects (e.g. using flag “<span class="nctnt ncbi-monospace">-k</span>” for <span class="nctnt ncbi-app"> make</span> on Unix), can get you through.</p>
+
+<p>In cases where multiple compilers or versions are supported, the mainstream one is shown in <strong>bold</strong>.  Other versions might also work, but <strong>must</strong> support C++11; minimum versions are GCC 4.8.x, Clang 3.4.x, ICC 15.x, and MS VS 2015.</p>
+
+<p><a name="release_notes.Unix"></a></p>
+
+<h3 id="unix"><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.UNIX">Unix</a></h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operating System</th>
+      <th>Architecture</th>
+      <th>Compilers</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>CentOS 6.x (LIBC 2.12)</td>
+      <td>x86-64</td>
+      <td><strong>GCC 4.9.3</strong>, 5.3; ICC 2015,2017</td>
+    </tr>
+    <tr>
+      <td>CentOS 7.x (LIBC 2.17)</td>
+      <td>x86-64</td>
+      <td><strong>GCC 7.3.0</strong>; ICC 2015, 2017</td>
+    </tr>
+    <tr>
+      <td>Ubuntu 14.04 (LIBC 2.19)</td>
+      <td>x86-32</td>
+      <td>GCC 4.8.4</td>
+    </tr>
+    <tr>
+      <td>Ubuntu 16.04 (LIBC 2.23)</td>
+      <td>x86-64</td>
+      <td>GCC 5.4.0</td>
+    </tr>
+    <tr>
+      <td>FreeBSD 11.2</td>
+      <td>x86-64</td>
+      <td>Clang 6.0.0</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><a name="release_notes.MS_Windows"></a></p>
+
+<h3 id="ms-windows"><a href="ch_config#ch_config.MS_Windows">MS Windows</a></h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operating System</th>
+      <th>Architecture</th>
+      <th>Compilers</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>MS Windows</td>
+      <td>x86-64</td>
+      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.MS_Visual_C">MS Visual C++</a> 2015 (MSVC 14)<br /></td>
+    </tr>
+    <tr>
+      <td>MS Windows</td>
+      <td>x86-64</td>
+      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.MS_Visual_C">MS Visual C++</a> 2017 (MSVC 14.1) experimental<br /></td>
+    </tr>
+    <tr>
+      <td>Cygwin 2.9.0</td>
+      <td>x86-64</td>
+      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.Cygwin_GCC">GCC 6.4.0</a>- nominal support only.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><a name="release_notes.Mac_OS_X"></a></p>
+
+<h3 id="macos"><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.Mac_OS_X">macOS</a></h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operating System</th>
+      <th>Architecture</th>
+      <th>Compilers</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>macOS 10.11.x (Darwin 15.x)</td>
+      <td>x86-64</td>
+      <td><strong>Apple Clang 8.0.0</strong>, Xcode 8.2.1</td>
+    </tr>
+    <tr>
+      <td>macOS 10.12.x (Darwin 16.x)</td>
+      <td>x86-64</td>
+      <td><strong>Apple Clang 9.0.0</strong>, Xcode 9.2</td>
+    </tr>
+    <tr>
+      <td>macOS 10.13.x (Darwin 17.x)</td>
+      <td>x86-64</td>
+      <td><strong>Apple Clang 10.0.0</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+<p><a name="release_notes.Added_Platforms"></a></p>
+
+<h3 id="added-platforms">Added Platforms</h3>
+
+<p>Official support for macOS 10.13.x; for GCC 7.3 and ICC 17 on CentOS; for FreeBSD 11.2 is new in this release.</p>
+
+<p><a name="release_notes.Discontinued"></a></p>
+
+<h3 id="discontinued-platforms">Discontinued Platforms</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operating System</th>
+      <th>Architecture</th>
+      <th>Compilers</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>MS Windows</td>
+      <td>x86-32</td>
+      <td>all (only 64-bit arch is supported from now on)</td>
+    </tr>
+    <tr>
+      <td>MS Windows</td>
+      <td>x86-32, 64</td>
+      <td><a href="https://ncbi.github.io/cxx-toolkit/pages/ch_config#ch_config.MS_Visual_C">MS Visual C++</a> 2013 (MSVC 12)</td>
+    </tr>
+    <tr>
+      <td>Ubuntu 14.04 (“jaunty”)</td>
+      <td>x86-32</td>
+      <td>All</td>
+    </tr>
+    <tr>
+      <td>FreeBSD 10.3</td>
+      <td>x86-32</td>
+      <td>All</td>
+    </tr>
+    <tr>
+      <td>CentOS 6.x</td>
+      <td>x86-32, 64</td>
+      <td>Nominal support, will be dropped soon</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><a name=""></a></p>
+
+<h2 id="last-updated">Last Updated</h2>
+
+<p>This document was last updated on March 28, 2019.</p>
+
+<!-- Content end -->
+</div>
+   </body>
+
+</html>
