@@ -452,8 +452,8 @@ int CTest::Run(void)
     // f*OnClose flags tests
     args.back() = NStr::IntToString(eFlagsOnClose);
 
-    ERR_POST(Info << "TEST:  Checking timeout");
     CStopWatch sw(CStopWatch::eStart);
+    ERR_POST(Info << "TEST:  Checking timeout");
     status = pipe.Open(app.c_str(), args,
                        CPipe::fStdIn_Close | CPipe::fStdOut_Close
                        | CPipe::fKeepOnClose);
@@ -495,8 +495,8 @@ int CTest::Run(void)
         assert(!process.IsAlive());
     }}
 
-    ERR_POST(Info << "TEST:  Checking extended timeout/kill");
     sw.Restart();
+    ERR_POST(Info << "TEST:  Checking extended timeout/kill");
     status = pipe.Open(app.c_str(), args,
                        CPipe::fStdIn_Close | CPipe::fStdOut_Close
                        | CPipe::fKeepOnClose);
