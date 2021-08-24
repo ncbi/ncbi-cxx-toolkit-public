@@ -48,8 +48,8 @@
 BEGIN_NCBI_SCOPE
 
 
-void CJaegerTracer::s_InitTracer(const string& service_name,
-                                 const jaegertracing::Config& config)
+static void s_InitTracer(const string& service_name,
+                         const jaegertracing::Config& config)
 {
     static CFastMutex s_InitMutex;
     if (jaegertracing::Tracer::IsGlobalTracerRegistered()) return;
@@ -64,18 +64,36 @@ void CJaegerTracer::s_InitTracer(const string& service_name,
 }
 
 
+static jaegertracing::Config s_GetDefaultConfig(void)
+{
+    jaegertracing::Config config(
+        false,
+        false,
+        jaegertracing::samplers::Config(jaegertracing::kSamplerTypeConst, 1),
+        jaegertracing::reporters::Config(
+            jaegertracing::reporters::Config::kDefaultQueueSize,
+            jaegertracing::reporters::Config::defaultBufferFlushInterval(),
+            true));
+    config.fromEnv();
+    return config;
+}
+
+
 CJaegerTracer::CJaegerTracer(void)
 {
-    jaegertracing::Config config;
-    config.fromEnv();
-    s_InitTracer(kEmptyStr, config);
+    jaegertracing::Config config = s_GetDefaultConfig();
+    string service_name = "no-service-name";
+    {
+        auto guard = CNcbiApplication::InstanceGuard();
+        if ( guard ) service_name = guard->GetProgramDisplayName();
+    }
+    s_InitTracer(service_name, config);
 }
 
 
 CJaegerTracer::CJaegerTracer(const string& service_name)
 {
-    jaegertracing::Config config;
-    config.fromEnv();
+    jaegertracing::Config config = s_GetDefaultConfig();
     s_InitTracer(service_name, config);
 }
 

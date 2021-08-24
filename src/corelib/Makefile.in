@@ -8,7 +8,7 @@
 
 USR_PROJ = precompile
 LIB_PROJ = corelib test_mt test_boost
-SUB_PROJ = test
+SUB_PROJ = test jaeger
 PROJ_TAG = core
 
 EXTRA_CONFIGURABLES = Makefile.precompile ncbicfg.c
