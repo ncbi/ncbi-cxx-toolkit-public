@@ -127,8 +127,8 @@ int CFastaRoundTripTestApp::Run(void)
     {{
         const void *p = mf->Map();
         CTempString ts(static_cast<const char*>(p), mf->GetSize());
-        CNcbiIstrstream its(ts.data(), ts.size());
-        CNcbiIstrstream istr(str.data(), str.size());
+        CNcbiIstrstream its(ts);
+        CNcbiIstrstream istr(str);
         if(!NcbiStreamCompareText(its, istr, eCompareText_IgnoreEol)) {
             ERR_POST("FASTA discrepancy: expected\n"
                      << ts << "but got\n" << str);
