@@ -9345,10 +9345,12 @@ case "$host_os:$compiler:$compiler_version" in
 
  linux*:ICC:??? | linux*:ICC:1??? )
    # -we70: "incomplete type is not allowed" should be an error, not a warning!
+   # -we10159: So should "invalid argument for option '-std'", to allow for
+   #           effective configure-time probing.
    # -wd2651: Suppress spurious "attribute does not apply to any entity"
    #          when deprecating enum values (via NCBI_STD_DEPRECATED).
-   CFLAGS="-we70 $CFLAGS"
-   CXXFLAGS="-we70 -wd2651 $CXXFLAGS"
+   CFLAGS="-we70 -we10159 $CFLAGS"
+   CXXFLAGS="-we70 -we10159 -wd2651 $CXXFLAGS"
    MATH_LIBS=-Wl,-lm # avoid static libimf in shared libs
    ;;
 
@@ -10333,6 +10335,22 @@ if test "x$ac_cv_have_decl__LIBCPP_VERSION" = x""yes; then :
 fi
 
 
+modern_cxx_stds="-std=gnu++14"
+modern_c_stds="-std=gnu11 -std=gnu1x -std=gnu99 -std=gnu9x"
+
+if dpkg-vendor --is Ubuntu >/dev/null 2>&1; then
+   is_ubuntu=yes
+else
+   is_ubuntu=no
+fi
+
+case "$host_os:$compiler:$is_ubuntu" in
+   *:LLVMClang:* | linux*:ICC:* | linux*:*:yes | cygwin* )
+      modern_cxx_stds="-std=gnu++17 -std=gnu++1z"
+      modern_c_stds="-std=gnu18 -std=gnu17 $modern_c_stds"
+      ;;
+esac
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to enable modern C++ features in $CXX" >&5
 $as_echo_n "checking how to enable modern C++ features in $CXX... " >&6; }
 if ${ncbi_cv_prog_modern_cxx+:} false; then :
@@ -10340,7 +10358,7 @@ if ${ncbi_cv_prog_modern_cxx+:} false; then :
 else
   orig_CXX=$CXX
     ncbi_cv_prog_modern_cxx=no
-    for x in -std=gnu++14 ''; do
+    for x in $modern_cxx_stds ''; do
        CXX="$orig_CXX $x"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -10370,6 +10388,11 @@ else
    CXX="$CXX $ncbi_cv_prog_modern_cxx"
 fi
 
+case "$CXX:::$ac_cv_prog_CXXCPP" in
+   *++17*:::*++14* ) { ac_cv_prog_CXXCPP=; unset ac_cv_prog_CXXCPP;} ;;
+esac
+
+
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -10383,7 +10406,7 @@ if ${ncbi_cv_prog_modern_c+:} false; then :
 else
   orig_CC=$CC
     ncbi_cv_prog_modern_c=no
-    for x in -xc99=all -std=gnu11 -std=gnu1x -std=gnu99 -std=gnu9x; do
+    for x in -xc99=all $modern_c_stds; do
        case "$x" in
           -std=gnu* ) x="$x -fgnu89-inline" ;;
        esac

@@ -1614,10 +1614,12 @@ case "$host_os:$compiler:$compiler_version" in
 
  linux*:ICC:??? | linux*:ICC:1??? )
    # -we70: "incomplete type is not allowed" should be an error, not a warning!
+   # -we10159: So should "invalid argument for option '-std'", to allow for
+   #           effective configure-time probing.
    # -wd2651: Suppress spurious "attribute does not apply to any entity"
    #          when deprecating enum values (via NCBI_STD_DEPRECATED).
-   CFLAGS="-we70 $CFLAGS"
-   CXXFLAGS="-we70 -wd2651 $CXXFLAGS"
+   CFLAGS="-we70 -we10159 $CFLAGS"
+   CXXFLAGS="-we70 -we10159 -wd2651 $CXXFLAGS"
    MATH_LIBS=-Wl,-lm # avoid static libimf in shared libs
    ;;
 
@@ -2107,11 +2109,27 @@ esac
 
 AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [@%:@include <iosfwd>])
 
+modern_cxx_stds="-std=gnu++14"
+modern_c_stds="-std=gnu11 -std=gnu1x -std=gnu99 -std=gnu9x"
+
+if dpkg-vendor --is Ubuntu >/dev/null 2>&1; then
+   is_ubuntu=yes
+else
+   is_ubuntu=no
+fi
+
+case "$host_os:$compiler:$is_ubuntu" in
+   *:LLVMClang:* | linux*:ICC:* | linux*:*:yes | cygwin* )
+      modern_cxx_stds="-std=gnu++17 -std=gnu++1z"
+      modern_c_stds="-std=gnu18 -std=gnu17 $modern_c_stds"
+      ;;
+esac
+
 AC_CACHE_CHECK([how to enable modern C++ features in $CXX],
    ncbi_cv_prog_modern_cxx,
    [orig_CXX=$CXX
     ncbi_cv_prog_modern_cxx=no
-    for x in -std=gnu++14 ''; do
+    for x in $modern_cxx_stds ''; do
        CXX="$orig_CXX $x"
        AC_LINK_IFELSE([AC_LANG_PROGRAM([@%:@include <list>],
           [std::list<int> l; auto it = std::cbegin(l);])],
@@ -2125,12 +2143,17 @@ else
    CXX="$CXX $ncbi_cv_prog_modern_cxx"
 fi
 
+case "$CXX:::$ac_cv_prog_CXXCPP" in
+   *++17*:::*++14* ) AS_UNSET(ac_cv_prog_CXXCPP) ;;
+esac
+
+
 AC_LANG_PUSH(C)
 AC_CACHE_CHECK([how to enable modern C features in $CC],
    ncbi_cv_prog_modern_c,
    [orig_CC=$CC
     ncbi_cv_prog_modern_c=no
-    for x in -xc99=all -std=gnu11 -std=gnu1x -std=gnu99 -std=gnu9x; do
+    for x in -xc99=all $modern_c_stds; do
        case "$x" in
           -std=gnu* ) x="$x -fgnu89-inline" ;;
        esac
