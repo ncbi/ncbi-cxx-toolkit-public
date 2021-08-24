@@ -80,6 +80,9 @@ private:
     string CreateProjectCustomScriptPhase(
         const CProjItem& prj, const CProjectFileCollector& prj_files,
         CDict& dict_objects, const string& section);
+    string CreateProjectPostBuildScript(
+        const CProjItem& prj, const CProjectFileCollector& prj_files,
+        CDict& dict_objects);
     string CreateProjectCopyBinScript(
         const CProjItem& prj, const CProjectFileCollector& prj_files,
         CDict& dict_objects);
