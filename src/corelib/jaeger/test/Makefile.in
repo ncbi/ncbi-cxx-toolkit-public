@@ -1,10 +1,9 @@
 # $Id$
 
-# Meta-makefile ("XMLWrapp" project)
+# Meta-makefile
 #################################
 
-LIB_PROJ = jaeger_tracer
-SUB_PROJ = test
+APP_PROJ = test_jaeger
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

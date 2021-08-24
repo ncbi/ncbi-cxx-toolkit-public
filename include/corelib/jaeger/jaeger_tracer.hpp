@@ -65,9 +65,12 @@ private:
 class NCBI_JAEGER_TRACER_EXPORT CJaegerTracer : public IRequestTracer
 {
 public:
-    /// Create tracer using values form the environment variables
-    /// JAEGER_SERVICE_NAME, JAEGER_SAMPLER_TYPE etc. - see Jaeger client
-    /// documentation:
+    /// Create tracer using default settings:
+    ///   - service name = application display name or JAEGER_SERVICE_NAME
+    ///     environment variable
+    ///   - sampler = const/1 or JAEGER_SAMPLER_TYPE/JAEGER_SAMPLER_PARAM
+    ///     environment variables
+    /// See also Jaeger client documentation:
     /// https://github.com/jaegertracing/jaeger-client-cpp
     CJaegerTracer(void);
 
@@ -83,9 +86,6 @@ public:
 
     void OnRequestStart(CRequestContext& context) override;
     void OnRequestStop(CRequestContext& context) override;
-private:
-    static void s_InitTracer(const string& service_name,
-                             const jaegertracing::Config& config);
 };
 
 
