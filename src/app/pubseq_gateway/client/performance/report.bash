@@ -1,12 +1,12 @@
 #!/bin/bash
 
 if [ $# -lt 8 ] || [ $# -gt 9 ]; then
-    echo "Usage: $0 COMMAND SERVICE REQUESTS ITERATIONS INPUT_FILE IO_THREADS REQUESTS_PER_IO BINARIES [RATE]";
+    echo "Usage: $0 COMMAND \"SERVICE...\" REQUESTS ITERATIONS INPUT_FILE \"IO_THREADS...\" \"REQUESTS_PER_IO...\" \"BINARY...\" [RATE]";
     exit 1;
 fi
 
 COMMAND="$1"
-SERVICE="$2"
+SERVICES=($2)
 REQUESTS="$3"
 ITERATIONS="$4"
 INPUT_FILE="$5"
@@ -58,7 +58,7 @@ function create_path
 {
     local IFS="-"
     local FILE=$(basename $INPUT_FILE)
-    OUTPUT_PATH="$*/$SERVICE/$COMMAND/$FILE/$REQUESTS-$ITERATIONS"
+    OUTPUT_PATH="$*/$COMMAND/$FILE/$REQUESTS-$ITERATIONS"
     if [ "$RATE" != "" ]; then
         OUTPUT_PATH="$OUTPUT_PATH-$RATE"
     fi
@@ -76,17 +76,17 @@ function requests
 
 function run
 {
-    OUTPUT_FILE="$OUTPUT_DIR/raw.$1.$2.$3.txt"
+    OUTPUT_FILE="$OUTPUT_DIR/raw.$1.$2.$3.$5.txt"
     echo -e "[PSG]\nuse_cache=yes\nnum_io=$1\nrequests_per_io=$2" > psg_client.ini
 
     if [ $CMD -eq 1 ]; then
-        requests |/usr/bin/time -ao $OUTPUT_FILE -f "%e" $3/psg_client resolve -service $SERVICE -id-file - >/dev/null;
+        requests |/usr/bin/time -ao $OUTPUT_FILE -f "%e" $3/psg_client resolve -service $5 -worker-threads "$1" -id-file - >/dev/null;
         echo -n "."
     elif [ $CMD -eq 2 ]; then
-        requests |/usr/bin/time -ao $OUTPUT_FILE -f "%e" $3/psg_client interactive -service $SERVICE -worker-threads "$1:$1:$1" >/dev/null;
+        requests |/usr/bin/time -ao $OUTPUT_FILE -f "%e" $3/psg_client interactive -service $5 -worker-threads "$1" >/dev/null;
         echo -n "."
     else
-        requests |$3/psg_client performance -service $SERVICE -user-threads $1 -local-queue -raw-metrics >/dev/null;
+        requests |$3/psg_client performance -service $5 -user-threads $1 -local-queue -raw-metrics >/dev/null;
 
         # Old binaries print named events, so need to replace names
         sed -i '{ s/Start/0/; s/Submit/1/; s/Reply/2/; s/Send/1000/; s/Receive/1001/; s/Close/1002/; s/Retry/1003/; s/Fail/1004/; s/Done/3/; }' psg_client.raw.txt
@@ -101,11 +101,11 @@ function run
 
 function report
 {
-    local INPUT_FILE="$OUTPUT_DIR/raw.$1.$2.$3.txt"
-    local OUTPUT_FILE="$OUTPUT_DIR/pro.$1.$2.$3.txt"
+    local INPUT_FILE="$OUTPUT_DIR/raw.$2.$3.$4.$5.txt"
+    local OUTPUT_FILE="$OUTPUT_DIR/pro.$2.$3.$4.$5.txt"
 
     if [ $CMD -eq 3 ]; then
-        $4/psg_client report -input-file "$INPUT_FILE" -output-file "$OUTPUT_FILE";
+        $1/psg_client report -input-file "$INPUT_FILE" -output-file "$OUTPUT_FILE";
     else
         sort -n "$INPUT_FILE" >> "$OUTPUT_FILE";
     fi
@@ -113,10 +113,10 @@ function report
 
 function aggregate
 {
-    local INPUT_FILE="$OUTPUT_DIR/pro.$1.$2.$3.txt"
+    local INPUT_FILE="$OUTPUT_DIR/pro.$2.$3.$4.$5.txt"
 
     (
-        echo -n "$3 $1 $2 ";
+        echo -n "$4 $2 $3 $5 ";
 
         if [ $CMD -eq 3 ]; then
             local MEDIAN=$(($REQUESTS * $ITERATIONS + 5))
@@ -126,7 +126,7 @@ function aggregate
             local MEDIAN=$(($ITERATIONS / 2))
             awk "NR==$MEDIAN { m = \$1 } { t += \$1 } END { print m, t / NR }" "$INPUT_FILE"
         fi
-    ) |sed 's/ /;/g'>> "$4"
+    ) |sed 's/ /;/g'>> "$1"
 
     echo -n "."
 }
@@ -143,16 +143,19 @@ for ((i = 1; 1000; ++i)); do
 done
 
 fb=${BINARIES[0]}
+fs=${SERVICES[0]}
 
 # A warm-up
-run 8 1 $fb 1 ">/dev/null"
+run 6 1 $fb 1 $fs ">/dev/null"
 rm "$OUTPUT_FILE"
 
 for ((i = 1; $i <= $ITERATIONS; ++i)); do
     for t in ${IO_THREADS[@]}; do
         for r in ${REQUESTS_PER_IO[@]}; do
             for b in ${BINARIES[@]}; do
-                run $t $r $b $i
+                for s in ${SERVICES[@]}; do
+                    run $t $r $b $i $s
+                done
             done
         done
     done
@@ -164,7 +167,9 @@ rm psg_client.ini
 for t in ${IO_THREADS[@]}; do
     for r in ${REQUESTS_PER_IO[@]}; do
         for b in ${BINARIES[@]}; do
-            report $t $r $b $fb
+            for s in ${SERVICES[@]}; do
+                report $fb $t $r $b $s
+            done
         done
     done
 done
@@ -176,17 +181,20 @@ Legend:
 app;Version of psg_client application
 io;Number of I/O threads
 req;Number of requests consecutively given to the same I/O thread
+svc;Service name
 med;Median ($REQUESTS requests/run, $ITERATIONS runs)
 avg;Average ($REQUESTS requests/run, $ITERATIONS runs)
-*Measurements performed on $(uname -n) using $SERVICE service
+*Measurements performed on $(uname -n)
 
-app;io;req;med;avg
+app;io;req;svc;med;avg
 EOF
 
 for t in ${IO_THREADS[@]}; do
     for r in ${REQUESTS_PER_IO[@]}; do
         for b in ${BINARIES[@]}; do
-            aggregate $t $r $b $OUTPUT_FILE
+            for s in ${SERVICES[@]}; do
+                aggregate $OUTPUT_FILE $t $r $b $s
+            done
         done
     done
 done
