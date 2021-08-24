@@ -213,7 +213,7 @@ void CAlnVwrApp::LoadDenseg(void)
     
     CAlnAsnReader reader(m_Scope);
     reader.Read(in.get(),
-                bind1st(mem_fun(&CAlnVwrApp::AddAlnToMix), this),
+                bind(mem_fn(&CAlnVwrApp::AddAlnToMix), this, placeholders::_1),
                 asn_type);
 
 
