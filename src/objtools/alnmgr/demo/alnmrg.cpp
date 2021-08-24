@@ -519,7 +519,7 @@ void CAlnMrgApp::LoadInputAlns(void)
     
     CAlnAsnReader reader(&GetScope());
     reader.Read(in.get(),
-                bind1st(mem_fun(&CAlnMrgApp::AddAlnToMix), this),
+                bind(mem_fn(&CAlnMrgApp::AddAlnToMix), this, placeholders::_1),
                 asn_type);
 }
 
