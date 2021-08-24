@@ -718,4 +718,4 @@ NCBI_define_Xcomponent(NAME OPENTRACING LIB opentracing)
 
 #############################################################################
 # JAEGER
-NCBI_define_Xcomponent(NAME JAEGER LIB jaegertracing ADD_COMPONENT NLohmann_JSON)
+NCBI_define_Xcomponent(NAME JAEGER LIB jaegertracing ADD_COMPONENT NLohmann_JSON OPENTRACING YAML_CPP THRIFT)
