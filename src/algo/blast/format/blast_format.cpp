@@ -837,7 +837,8 @@ static void s_SetCloneInfo(const CIgBlastTabularInfo& tabinfo,
         wid->GetLabel(&seqid, CSeq_id::eContent);
         clone_info.seqid = seqid.substr(0, 45);
     }
-    tabinfo.GetIgInfo (clone_info.v_gene, clone_info.d_gene, clone_info.j_gene,
+    tabinfo.GetIgInfo (clone_info.v_gene, clone_info.d_gene, clone_info.j_gene, 
+                       clone_info.c_gene,
                        clone_info.chain_type, clone_info.na, clone_info.aa, clone_info.productive);
     clone_info.identity = 0;
     const vector<CIgBlastTabularInfo::SIgDomain*>& domains = tabinfo.GetIgDomains();

@@ -97,7 +97,7 @@ public:
     string m_ChainTypeToShow;        // chain type to show to user.  Normally this is 
                                      //the same as m_ChainType[0] but could be different
                                      // in case o TCRA/D chains which can use both JA and JD
-    int m_GeneInfo[6];               // The (start) and (end offset + 1) for VDJ
+    int m_GeneInfo[8];               // The (start) and (end offset + 1) for VDJC
     int m_FrameInfo[3];              // Coding frame start offset for V start, V end,
                                      // and V start.
     int m_DomainInfo[12];            // The (start) and (end offset) for FWR1, 
@@ -114,8 +114,8 @@ public:
     CIgAnnotation() 
         : m_MinusStrand (false) 
     {
-        for (int i=0; i<3; i++) m_TopGeneIds.push_back("N/A");
-        for (int i=0; i<6; i++) m_GeneInfo[i] = -1;
+        for (int i=0; i<4; i++) m_TopGeneIds.push_back("N/A");
+        for (int i=0; i<8; i++) m_GeneInfo[i] = -1;
         for (int i=0; i<3; i++) m_FrameInfo[i] = -1;
         for (int i=0; i<12; i++) m_DomainInfo[i] = -1;
         for (int i=0; i<10; i++) m_DomainInfo_S[i] = -1;

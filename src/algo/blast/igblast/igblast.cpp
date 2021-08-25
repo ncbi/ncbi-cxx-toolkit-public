@@ -1464,7 +1464,9 @@ void CIgBlast::x_AnnotateC(CRef<CSearchResultSet>        &results_c,
         if (align_c.NotEmpty() && !align_c->IsEmpty() && align_j.NotEmpty() && !align_j->IsEmpty()) {
             const CSeq_align_set::Tdata & align_list = align_c->Get();
             CRef<CSeq_align> align = align_list.front();
-
+            (*annot)->m_TopGeneIds[3] = s_MakeTopHitsId(align_list, m_IgOptions->m_NumAlign[3]);
+            (*annot)->m_GeneInfo[6] = align->GetSeqStart(0);
+            (*annot)->m_GeneInfo[7] = align->GetSeqStop(0)+1;
             if ((*annot)->m_JDomain[3] > 0 && (*annot)->m_JDomain[1] > 0) {
                 int subject_start = align->GetSeqStart(1);
                 int subject_end = align->GetSeqStop(1);
