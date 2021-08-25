@@ -30,9 +30,7 @@
 #ifndef _OBJTOOLS_WRITERS_WRITEDB__MULTISOURCE_UTIL_HPP_
 #define _OBJTOOLS_WRITERS_WRITEDB__MULTISOURCE_UTIL_HPP_
 
-#ifdef __GNUC__
-#  warning "Header <objtools/writers/writedb/multisource_util.hpp> is obsolete; please use <objtools/blast/seqdb_writer/multisource_util.hpp> instead!"
-#endif // __GNUC__ 
+#error "Header <objtools/writers/writedb/multisource_util.hpp> is obsolete; please use <objtools/blast/seqdb_writer/multisource_util.hpp> instead!"
 
 #include <objtools/blast/seqdb_writer/multisource_util.hpp>
 

@@ -30,9 +30,7 @@
 #ifndef _OBJTOOLS_WRITERS_WRITEDB__TAXID_SET_HPP_
 #define _OBJTOOLS_WRITERS_WRITEDB__TAXID_SET_HPP_
 
-#ifdef __GNUC__
-#  warning "Header <objtools/writers/writedb/taxid_set.hpp> is obsolete; please use <objtools/blast/seqdb_writer/taxid_set.hpp> instead!"
-#endif // __GNUC__ 
+#error "Header <objtools/writers/writedb/taxid_set.hpp> is obsolete; please use <objtools/blast/seqdb_writer/taxid_set.hpp> instead!"
 
 #include <objtools/blast/seqdb_writer/taxid_set.hpp>
 

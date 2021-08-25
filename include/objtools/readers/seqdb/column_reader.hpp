@@ -30,9 +30,7 @@
  *
  */
 
-#ifdef __GNUC__
-#  warning "Header <objtools/readers/seqdb/column_reader.hpp> is obsolete; please use <objtools/blast/seqdb_reader/column_reader.hpp> instead!"
-#endif // __GNUC__ 
+#error "Header <objtools/readers/seqdb/column_reader.hpp> is obsolete; please use <objtools/blast/seqdb_reader/column_reader.hpp> instead!"
 
 #include <objtools/blast/seqdb_reader/column_reader.hpp>
 
