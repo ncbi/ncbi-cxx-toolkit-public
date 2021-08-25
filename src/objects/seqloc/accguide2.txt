@@ -2056,6 +2056,7 @@ special  CAJUTQ000000000-CAJUTQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJUTS000000000-CAJUTS999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJUTV000000000-CAJUTW999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJUTY000000000-CAJUUA999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJYCH000000000-CAJYCH999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
 special  HBHG00000000-HBHG99999999  embl_tpa_tsa_nuc # 4+8
