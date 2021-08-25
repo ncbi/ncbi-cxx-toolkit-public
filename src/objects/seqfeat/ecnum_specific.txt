@@ -20,8 +20,8 @@
 1.1.1.21	Aldose reductase
 1.1.1.22	UDP-glucose 6-dehydrogenase
 1.1.1.23	Histidinol dehydrogenase
-1.1.1.24	Quinate dehydrogenase
-1.1.1.25	Shikimate dehydrogenase
+1.1.1.24	Quinate/shikimate dehydrogenase (NAD(+))
+1.1.1.25	Shikimate dehydrogenase (NADP(+))
 1.1.1.26	Glyoxylate reductase
 1.1.1.27	L-lactate dehydrogenase
 1.1.1.28	D-lactate dehydrogenase
@@ -259,7 +259,7 @@
 1.1.1.279	(R)-3-hydroxyacid-ester dehydrogenase
 1.1.1.280	(S)-3-hydroxyacid-ester dehydrogenase
 1.1.1.281	GDP-4-dehydro-6-deoxy-D-mannose reductase
-1.1.1.282	Quinate/shikimate dehydrogenase
+1.1.1.282	Quinate/shikimate dehydrogenase (NAD(P)(+))
 1.1.1.283	Methylglyoxal reductase (NADPH)
 1.1.1.284	S-(hydroxymethyl)glutathione dehydrogenase
 1.1.1.285	3''-deamino-3''-oxonicotianamine reductase
@@ -455,7 +455,7 @@
 1.1.5.4	Malate dehydrogenase (quinone)
 1.1.5.5	Alcohol dehydrogenase (quinone)
 1.1.5.7	Cyclic alcohol dehydrogenase (quinone)
-1.1.5.8	Quinate dehydrogenase (quinone)
+1.1.5.8	Quinate/shikimate dehydrogenase (quinone)
 1.1.5.9	Glucose 1-dehydrogenase (FAD, quinone)
 1.1.5.10	D-2-hydroxyacid dehydrogenase (quinone)
 1.1.5.11	1-butanol dehydrogenase (quinone)
@@ -721,7 +721,7 @@
 1.3.1.106	Cobalt-precorrin-6A reductase
 1.3.1.107	Sanguinarine reductase
 1.3.1.108	Caffeoyl-CoA reductase
-1.3.1.109	Butanoyl-CoA dehydrogenase complex (NAD(+),ferredoxin)
+1.3.1.109	Butanoyl-CoA dehydrogenase complex (NAD(+), ferredoxin)
 1.3.1.110	Lactate dehydrogenase (NAD(+),ferredoxin)
 1.3.1.111	Geranylgeranyl-bacteriochlorophyllide a reductase
 1.3.1.112	Anthocyanidin reductase ((2S)-flavan-3-ol-forming)
@@ -1989,7 +1989,7 @@
 2.1.1.53	Putrescine N-methyltransferase
 2.1.1.54	Deoxycytidylate C-methyltransferase
 2.1.1.55	tRNA (adenine-N(6)-)-methyltransferase
-2.1.1.56	mRNA (guanine-N(7)-)-methyltransferase
+2.1.1.56	mRNA (guanine-N(7))-methyltransferase
 2.1.1.57	Methyltransferase cap1
 2.1.1.59	[Cytochrome c]-lysine N-methyltransferase
 2.1.1.60	Calmodulin-lysine N-methyltransferase
@@ -2738,7 +2738,7 @@
 2.4.1.54	Undecaprenyl-phosphate mannosyltransferase
 2.4.1.56	Lipopolysaccharide N-acetylglucosaminyltransferase
 2.4.1.58	Lipopolysaccharide glucosyltransferase I
-2.4.1.60	Abequosyltransferase
+2.4.1.60	CDP-abequose:alpha-D-Man-(1->4)-alpha-L-Rha-(1->3)-alpha-D-Gal-PP-Und alpha-1,3-abequosyltransferase
 2.4.1.62	Ganglioside galactosyltransferase
 2.4.1.63	Linamarin synthase
 2.4.1.64	Alpha,alpha-trehalose phosphorylase
