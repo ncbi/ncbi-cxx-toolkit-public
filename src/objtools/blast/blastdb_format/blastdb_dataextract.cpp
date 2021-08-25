@@ -574,7 +574,7 @@ string CBlastDBExtractor::ExtractSeqData() {
         x_ExtractMaskingData(masked_ranges, m_FiltAlgoId);
         ITERATE(CSeqDB::TSequenceRanges, mask, masked_ranges) {
             transform(&seq[mask->first], &seq[mask->second],
-                      &seq[mask->first], (int (*)(int))std::tolower);
+                      &seq[mask->first], (int (*)(int))::tolower);
         }
         if (m_Strand == eNa_strand_minus) {
             CSeqManip::ReverseComplement(seq, CSeqUtil::e_Iupacna,
@@ -1050,7 +1050,7 @@ void CBlastSeqUtil::ApplySeqMask(string & seq, const CSeqDB::TSequenceRanges & m
 	if(r.Empty()) {
 		ITERATE(CSeqDB::TSequenceRanges, itr, masks) {
 			transform(&seq[itr->first], &seq[itr->second],
-			                      &seq[itr->first], (int (*)(int))std::tolower);
+			                      &seq[itr->first], (int (*)(int))::tolower);
 		}
 	}
 	else {
@@ -1063,7 +1063,7 @@ void CBlastSeqUtil::ApplySeqMask(string & seq, const CSeqDB::TSequenceRanges & m
 			TSeqRange  tmp = r.IntersectionWith(mask);
 			if(!tmp.Empty()) {
 				transform(&seq[tmp.GetFrom() -r_from], &seq[tmp.GetToOpen() - r_from],
-		                  &seq[tmp.GetFrom() -r_from], (int (*)(int))std::tolower);
+		                  &seq[tmp.GetFrom() -r_from], (int (*)(int))::tolower);
 			}
 		}
 	}
