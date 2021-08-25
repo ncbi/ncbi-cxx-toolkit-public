@@ -123,16 +123,16 @@ void CDiscRepApp::Init()
     arg_desc->SetUsageContext("", "Discrepancy Report");
 
     arg_desc->AddOptionalKey("i", "InFile", "Single Input File", CArgDescriptions::eInputFile);
+    arg_desc->AddDefaultKey("x", "Suffix", "File Selection Substring", CArgDescriptions::eString, ".sqn");
     arg_desc->AddOptionalKey("indir", "InputDirectory", "Path to ASN.1 Files", CArgDescriptions::eInputFile);
     arg_desc->AddFlag("u", "Recurse");
-    arg_desc->AddOptionalKey("o", "OutFile", "Single Output File", CArgDescriptions::eOutputFile);
 
+    arg_desc->AddOptionalKey("o", "OutFile", "Single Output File", CArgDescriptions::eOutputFile);
     arg_desc->AddDefaultKey("s", "OutputFileSuffix", "Output File Suffix", CArgDescriptions::eString, ".dr");
-    arg_desc->AddDefaultKey("x", "Suffix", "File Selection Substring", CArgDescriptions::eString, ".sqn");
     arg_desc->AddOptionalKey("outdir", "OutputDirectory", "Output Directory", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("e", "EnableTests", "List of enabled tests, separated by ','", CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("d", "DisableTests",  "List of disabled tests, separated by ','", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("d", "DisableTests", "List of disabled tests, separated by ','", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("a", "Asn1Type", "Asn.1 Type: a: Any, e: Seq-entry, b: Bioseq, s: Bioseq-set, m: Seq-submit, t: Batch Bioseq-set, u: Batch Seq-submit, c: Catenated seq-entry", CArgDescriptions::eString);
     // use CArgAllow_Strings
