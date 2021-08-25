@@ -210,6 +210,49 @@ public:
         }
     }
 
+    void SendAccumulated(h2o_iovec_t *  vec, size_t  count)
+    {
+        if (!m_HttpConn)
+            NCBI_THROW(CPubseqGatewayException, eConnectionNotAssigned,
+                       "Connection is not assigned");
+
+        if (m_HttpConn->IsClosed())
+            return;
+
+        if (!m_OutputIsReady)
+            NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
+                       "Output is not in ready state");
+
+        switch (m_State) {
+            case eReplyInitialized:
+                if (!m_Canceled) {
+                    x_SetContentType();
+                    x_SetCdUid();
+                    m_State = eReplyStarted;
+                    m_Req->res.status = 200;
+                    m_Req->res.reason = k_ReasonOK;
+                    AssignGenerator();
+                    m_OutputIsReady = false;
+                    h2o_start_response(m_Req, &m_RespGenerator);
+                }
+                break;
+            case eReplyStarted:
+                break;
+            case eReplyFinished:
+                NCBI_THROW(CPubseqGatewayException, eRequestAlreadyFinished,
+                           "Request has already been finished");
+                break;
+        }
+
+        if (m_Canceled) {
+            if (!m_OutputFinished && m_OutputIsReady)
+                x_SendCanceled();
+        } else {
+            m_OutputIsReady = false;
+            h2o_send(m_Req, vec, count, H2O_SEND_STATE_IN_PROGRESS);
+        }
+    }
+
     void SendOk(const char *  payload, size_t  payload_len, bool  is_persist)
     { Send(payload, payload_len, is_persist, true); }
 

@@ -32,6 +32,8 @@
 
 #include "psgs_dispatcher.hpp"
 #include "pubseq_gateway_logging.hpp"
+#include "http_server_transport.hpp"
+
 
 USING_NCBI_SCOPE;
 
@@ -192,10 +194,13 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     // If so then the best finish status is used, sent to the client and the
     // group is deleted
 
-    bool                            all_procs_finished = true;
     size_t                          request_id = processor->GetRequest()->GetRequestId();
     IPSGS_Processor::EPSGS_Status   best_status = processor->GetStatus();
     bool                            need_trace = processor->GetRequest()->NeedTrace();
+
+    size_t                          canceled_count = 0;
+    size_t                          finished_count = 0;
+    size_t                          total_count = 0;
 
     m_GroupsLock.lock();
 
@@ -227,13 +232,15 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     }
 
     for (auto &  proc: procs->second) {
+
+        ++total_count;
+
         if (proc.m_Processor == processor) {
-            if (proc.m_DispatchStatus == ePSGS_Up ||
-                proc.m_DispatchStatus == ePSGS_Canceled) {
-                // That's the first time there is an information about how the
-                // processor finished
+            if (proc.m_DispatchStatus == ePSGS_Up) {
                 proc.m_DispatchStatus = ePSGS_Finished;
                 proc.m_FinishStatus = processor->GetStatus();
+
+                ++finished_count;
 
                 if (need_trace) {
                     processor->GetReply()->SendTrace(
@@ -249,7 +256,28 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                 continue;
             }
 
-            // The status is already canceled or finished which may mean that
+            if (proc.m_DispatchStatus == ePSGS_Canceled) {
+                proc.m_DispatchStatus = ePSGS_Finished;
+                proc.m_FinishStatus = processor->GetStatus();
+
+                ++finished_count;
+
+                if (need_trace) {
+                    processor->GetReply()->SendTrace(
+                        "Dispatcher received signal (from " +
+                        CPSGS_Dispatcher::SignalSourceToString(source) +
+                        ") that the previously canceled processor " +
+                        processor->GetName() +
+                        " (priority: " + to_string(processor->GetPriority()) +
+                        ") finished with status status " +
+                        IPSGS_Processor::StatusToString(processor->GetStatus()),
+                        processor->GetRequest()->GetStartTimestamp());
+                }
+
+                continue;
+            }
+
+            // The status is already finished which may mean that
             // it is not the first time call. However it is possible that
             // during the first time the output was not ready so the final PSG
             // chunk has not been sent. Thus we should continue as usual.
@@ -272,53 +300,56 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
         switch (proc.m_DispatchStatus) {
             case ePSGS_Finished:
                 best_status = min(best_status, proc.m_FinishStatus);
+                ++finished_count;
                 break;
             case ePSGS_Up:
-                all_procs_finished = false;
                 break;
             case ePSGS_Canceled:
-                // Finished but the canceled processor do not participate in
-                // the overall reply status
-                // Also the canceled processors still have to call
+                // The canceled processors still have to call
                 // SignalFinishProcessing() on their own so their dispatch
                 // status is updated to ePSGS_Finished
-                all_procs_finished = false;
+                ++canceled_count;
                 break;
         }
     }
 
-    if (all_procs_finished) {
-        // - Send the best status to the client
-        // - Clear the group
-        CRequestStatus::ECode   request_status;
-        switch (best_status) {
-            case IPSGS_Processor::ePSGS_Found:
-                request_status = CRequestStatus::e200_Ok;
-                break;
-            case IPSGS_Processor::ePSGS_NotFound:
-            case IPSGS_Processor::ePSGS_Cancelled:  // not found because it was not let to finish
-                request_status = CRequestStatus::e404_NotFound;
-                break;
-            default:
-                request_status = CRequestStatus::e500_InternalServerError;
-        }
+    auto    reply = processor->GetReply();
 
-        auto    reply = processor->GetReply();
-        if (!reply->IsFinished() && reply->IsOutputReady()) {
-            if (need_trace) {
-                reply->SendTrace(
+    // Here: there are still going, finished and canceled processors.
+    //       The reply flush must be done if all finished or canceled.
+    //       The processors group removal if all finished.
+
+    if (finished_count + canceled_count == total_count) {
+        // The reply needs to be flushed if it has not been done yet
+
+
+        if (!reply->IsFinallyFlushed()) {
+            if (!reply->IsFinished() && reply->IsOutputReady()) {
+                // Memorize that for this request everything was sent
+                reply->SetFinallyFlushed();
+
+                // Map the processor finish to the request status
+                CRequestStatus::ECode   request_status = x_MapProcessorFinishToStatus(best_status);
+
+                if (need_trace) {
+                    reply->SendTrace(
                     "Dispatcher: request processing finished; final status: " +
                     to_string(request_status) +
                     ". The processors group will be deleted.",
                     processor->GetRequest()->GetStartTimestamp());
+                }
+
+                reply->PrepareReplyCompletion();
+                reply->SendAccumulated();
+                x_PrintRequestStop(processor->GetRequest(), request_status);
             }
+        }
+    }
 
-            reply->PrepareReplyCompletion();
-            reply->Flush(true);
-            x_PrintRequestStop(processor->GetRequest(),
-                               request_status);
-
-            // Clear the group after the final chunk is sent
+    if (finished_count == total_count && reply->IsFinallyFlushed()) {
+        // Clear the group after the final chunk is sent
+        if (!reply->IsFinished() && reply->IsOutputReady()) {
+            reply->Flush();
             m_ProcessorGroups.erase(procs);
         }
     }
@@ -368,5 +399,22 @@ void CPSGS_Dispatcher::x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
         CDiagContext::GetRequestContext().Reset();
         CDiagContext::SetRequestContext(NULL);
     }
+}
+
+
+CRequestStatus::ECode
+CPSGS_Dispatcher::x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  status) const
+{
+    switch (status) {
+        case IPSGS_Processor::ePSGS_Found:
+            return CRequestStatus::e200_Ok;
+        case IPSGS_Processor::ePSGS_NotFound:
+        case IPSGS_Processor::ePSGS_Cancelled:  // not found because it was not let to finish
+            return CRequestStatus::e404_NotFound;
+        default:
+            break;
+    }
+    // Should not happened
+    return CRequestStatus::e500_InternalServerError;
 }
 

@@ -54,7 +54,8 @@ public:
         m_NextItemIdLock(false),
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
-        m_ChunksLock(false)
+        m_ChunksLock(false),
+        m_FinallyFlushed(false)
     {
         SetContentType(ePSGS_PSGMime);
     }
@@ -67,7 +68,8 @@ public:
         m_NextItemIdLock(false),
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
-        m_ChunksLock(false)
+        m_ChunksLock(false),
+        m_FinallyFlushed(false)
     {
         SetContentType(ePSGS_PSGMime);
     }
@@ -77,11 +79,22 @@ public:
 public:
     void Flush(void);
     void Flush(bool  is_last);
+    void SendAccumulated(void);
     void Clear(void);
     shared_ptr<idblob::CCassDataCallbackReceiver> GetDataReadyCB(void);
     bool IsFinished(void) const;
     bool IsOutputReady(void) const;
     void SetContentType(EPSGS_ReplyMimeType  mime_type);
+
+    bool IsFinallyFlushed(void) const
+    {
+        return m_FinallyFlushed;
+    }
+
+    void SetFinallyFlushed(void)
+    {
+        m_FinallyFlushed = true;
+    }
 
     CHttpReply<CPendingOperation> *  GetHttpReply(void)
     {
@@ -279,6 +292,7 @@ private:
     int32_t                             m_TotalSentReplyChunks;
     atomic<bool>                        m_ChunksLock;
     vector<h2o_iovec_t>                 m_Chunks;
+    bool                                m_FinallyFlushed;
 };
 
 

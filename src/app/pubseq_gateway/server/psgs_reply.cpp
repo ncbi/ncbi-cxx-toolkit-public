@@ -55,6 +55,15 @@ void CPSGS_Reply::Flush(void)
     m_ChunksLock = false;
 }
 
+void CPSGS_Reply::SendAccumulated(void)
+{
+    while (m_ChunksLock.exchange(true)) {}
+    if (!m_Chunks.empty()) {
+        m_Reply->SendAccumulated(&m_Chunks.front(), m_Chunks.size());
+        m_Chunks.clear();
+    }
+    m_ChunksLock = false;
+}
 
 void CPSGS_Reply::Flush(bool  is_last)
 {
@@ -63,8 +72,9 @@ void CPSGS_Reply::Flush(bool  is_last)
     m_Chunks.clear();
     m_ChunksLock = false;
 
-    if (is_last)
+    if (is_last) {
         m_Reply->CancelPending(true);
+    }
 }
 
 
