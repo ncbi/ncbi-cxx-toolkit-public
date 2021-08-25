@@ -30,9 +30,7 @@
 #ifndef OBJTOOLS_READERS_GENE_INFO___GENE_INFO_READER__HPP
 #define OBJTOOLS_READERS_GENE_INFO___GENE_INFO_READER__HPP
 
-#ifdef __GNUC__
-#  warning "Header <objtools/readers/gene_info/gene_info_reader.hpp> is obsolete; please use <objtools/blast/gene_info_reader/gene_info_reader.hpp> instead!"
-#endif // __GNUC__ 
+#error "Header <objtools/readers/gene_info/gene_info_reader.hpp> is obsolete; please use <objtools/blast/gene_info_reader/gene_info_reader.hpp> instead!"
 
 #include <objtools/blast/gene_info_reader/gene_info_reader.hpp>
 

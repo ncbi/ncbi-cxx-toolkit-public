@@ -30,9 +30,7 @@
  *
  */
 
-#ifdef __GNUC__
-#  warning "Header <objtools/writers/writedb/writedb.hpp> is obsolete; please use <objtools/blast/seqdb_writer/writedb.hpp> instead!"
-#endif // __GNUC__ 
+#error "Header <objtools/writers/writedb/writedb.hpp> is obsolete; please use <objtools/blast/seqdb_writer/writedb.hpp> instead!"
 
 #include <objtools/blast/seqdb_writer/writedb.hpp>
 
