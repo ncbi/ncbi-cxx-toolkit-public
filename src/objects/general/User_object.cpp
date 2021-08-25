@@ -1051,7 +1051,7 @@ CRef<CUser_field> CUser_object::CRefGeneTrackingAccession::MakeAccessionField() 
     if (m_GI > ZERO_GI) {
         CRef<CUser_field> uf(new CUser_field());
         uf->SetLabel().SetStr(kRGTAGI);
-        uf->SetData().SetInt(GI_TO(int, m_GI));
+        uf->SetGi(m_GI);
         top->SetData().SetFields().push_back(uf);
     }
     if (m_From != kInvalidSeqPos) {
@@ -1115,11 +1115,7 @@ CUser_object::CRefGeneTrackingAccession::MakeAccessionFromUserField(const CUser_
                     NCBI_THROW(CRefGeneTrackingException, eBadUserFieldData, kEmptyStr);
                 }
             } else if (NStr::EqualNocase(label, kRGTAGI)) {
-                if (it->GetData().IsInt()) {
-                    gi = GI_FROM(int, it->GetData().GetInt());
-                } else {
-                    NCBI_THROW(CRefGeneTrackingException, eBadUserFieldData, kEmptyStr);
-                }
+                gi = it->GetGi();
             } else if (NStr::EqualNocase(label, kRGTAFrom)) {
                 if (it->GetData().IsInt()) {
                     from = it->GetData().GetInt();
