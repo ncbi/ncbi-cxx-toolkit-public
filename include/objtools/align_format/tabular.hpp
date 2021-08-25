@@ -661,6 +661,11 @@ public:
         m_JGene.Set(id, s,e);
     }
 
+    /// Set gene info
+    void SetCGene(const string &id, int s, int e) {
+        m_CGene.Set(id, s,e);
+    }
+
     /// One method to set all annotation information
     void SetIgAnnotation(const CRef<blast::CIgAnnotation> &annot, 
                          const CConstRef<blast::CIgBlastOptions> &ig_opts,
@@ -671,6 +676,7 @@ public:
     void GetIgInfo (string& v, 
                     string& d, 
                     string& j,
+                    string& c,
                     string& master_chain_to_show,
                     string& cdr3_nuc,
                     string& cdr3_aa,
@@ -678,6 +684,7 @@ public:
         v = m_VGene.sid;
         d = m_DGene.sid;  
         j = m_JGene.sid;
+        c = m_CGene.sid;
         master_chain_to_show = m_MasterChainTypeToShow;
         cdr3_nuc = m_Cdr3Seq;
         cdr3_aa = m_Cdr3SeqTrans;
@@ -711,6 +718,7 @@ private:
     SIgGene m_VGene;
     SIgGene m_DGene;
     SIgGene m_JGene;
+    SIgGene m_CGene;
     vector<SIgDomain *> m_IgDomains; 
 
     //index 0-2, not currently being used

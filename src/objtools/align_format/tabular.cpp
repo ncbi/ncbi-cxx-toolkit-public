@@ -2263,6 +2263,7 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
     SetVGene(annot->m_TopGeneIds[0], annot->m_GeneInfo[0], annot->m_GeneInfo[1]);
     SetDGene(annot->m_TopGeneIds[1], annot->m_GeneInfo[2], annot->m_GeneInfo[3]);
     SetJGene(annot->m_TopGeneIds[2], annot->m_GeneInfo[4], annot->m_GeneInfo[5]);
+    SetCGene(annot->m_TopGeneIds[3], annot->m_GeneInfo[6], annot->m_GeneInfo[7]);
 
     // Compute Frame info
     if (annot->m_FrameInfo[1] >= 0 && annot->m_FrameInfo[2] >= 0) {
@@ -2483,13 +2484,14 @@ void CIgBlastTabularInfo::PrintMasterAlign(const string &header) const
         m_Ostream << "(Top V gene match, ";
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
             m_ChainType == "VB") m_Ostream << "Top D gene match, ";
-        m_Ostream << "Top J gene match, Chain type, stop codon, ";
+        m_Ostream << "Top J gene match, Top C gene match, Chain type, stop codon, ";
         m_Ostream << "V-J frame, Productive, Strand, V Frame shift).  "; 
         m_Ostream <<"Multiple equivalent top matches, if present, are separated by a comma." << endl;
         m_Ostream << m_VGene.sid << m_FieldDelimiter;
         if (m_ChainType == "VH"|| m_ChainType == "VD" || 
             m_ChainType == "VB") m_Ostream << m_DGene.sid << m_FieldDelimiter;
         m_Ostream << m_JGene.sid << m_FieldDelimiter;
+        m_Ostream << m_CGene.sid << m_FieldDelimiter;
         m_Ostream << m_MasterChainTypeToShow << m_FieldDelimiter;
         m_Ostream << m_OtherInfo[3] << m_FieldDelimiter;
         if (m_FrameInfo == "IF") m_Ostream << "In-frame";
@@ -2552,6 +2554,7 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
             m_Ostream << "<td>Top D gene match</td>";
         }
         m_Ostream << "<td>Top J gene match</td>"
+                  << "<td>Top C gene match</td>"
                   << "<td>Chain type</td>"
                   << "<td>stop codon</td>"
                   << "<td>V-J frame</td>"
@@ -2565,6 +2568,7 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
             m_Ostream << "</td><td>" << m_DGene.sid;
         }
         m_Ostream << "</td><td>" << m_JGene.sid
+                  << "</td><td>" << m_CGene.sid
                   << "</td><td>" << m_MasterChainTypeToShow 
                   << "</td><td>";
         m_Ostream << (m_OtherInfo[3]!="N/A" ? m_OtherInfo[3] : "") << "</td><td>";
@@ -2629,6 +2633,7 @@ void CIgBlastTabularInfo::x_ResetIgFields()
     m_VGene.Reset();
     m_DGene.Reset();
     m_JGene.Reset();
+    m_CGene.Reset();
     for (int i = 0; i < num_otherinfo; i ++) {
         m_OtherInfo[i] = "N/A";
     }

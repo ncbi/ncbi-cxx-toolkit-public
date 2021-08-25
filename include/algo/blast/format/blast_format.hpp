@@ -75,6 +75,7 @@ public:
         string v_gene;
         string d_gene;
         string j_gene;
+        string c_gene;
         string seqid;
         double identity;
         string productive;
