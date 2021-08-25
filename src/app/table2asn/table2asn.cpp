@@ -288,7 +288,7 @@ may be implemented in the future; RW-1253
       e Extended cleanup\n\
       f Fix product names\n\
       s Add exception to short introns\n\
-      w WGS cleanup\n\
+      w WGS cleanup (only needed when using a GFF3 file)\n\
       d Correct Collection Dates (assume month first)\n\
       D Correct Collection Dates(assume day first)\n\
       x Extend ends of features by one or two nucleotides to abut gaps or sequence ends\n\
@@ -319,18 +319,18 @@ may be implemented in the future; RW-1253
     arg_desc->AddOptionalKey("linkage-evidence-file", "InFile", "File listing linkage evidence for gaps of different lengths",  CArgDescriptions::eInputFile);
 
     arg_desc->AddOptionalKey("gap-type", "String", "Set gap type for runs of Ns. Must be one of the following:\n\
-      unknown\n\
-      fragment\n\
-      clone\n\
+      scaffold\n\
       short-arm\n\
       heterochromatin\n\
       centromere\n\
       telomere\n\
       repeat\n\
-      contig\n\
-      scaffold\n\
       contamination\n\
-      other", CArgDescriptions::eString);  //done
+      contig\n\
+      unknown (obsolete)\n\
+      fragment\n\
+      clone\n\
+      other (for future use)", CArgDescriptions::eString);  //done
 
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
