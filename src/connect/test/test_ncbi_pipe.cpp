@@ -464,7 +464,7 @@ int CTest::Run(void)
     status = pipe.Close(&exitcode);
     double elapsed = sw.Elapsed();
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
-             << " and exitcode " << exitcode);
+             << " and exitcode " << exitcode << " in " << elapsed << "s");
     if (status != eIO_Success  ||  elapsed <= DEFAULT_TIMEOUT * 1.5) {
         assert(status == eIO_Timeout  &&  exitcode == -1);
         {{
@@ -478,7 +478,8 @@ int CTest::Run(void)
     } else
         ERR_POST(Warning << "Pipe closed okay because of an extended delay");
 
-    ERR_POST(Info << "Checking kill-on-close");
+    sw.Restart();
+    ERR_POST(Info << "TEST:  Checking kill-on-close");
     status = pipe.Open(app.c_str(), args,
                        CPipe::fStdIn_Close | CPipe::fStdOut_Close
                        | CPipe::fKillOnClose | CPipe::fNewGroup);
@@ -487,13 +488,17 @@ int CTest::Run(void)
     assert(handle > 0);
 
     status = pipe.Close(&exitcode); 
+    elapsed = sw.Elapsed();
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
-             << " and exitcode " << exitcode);
-    assert(status == eIO_Success  &&  exitcode == -1);
-    {{
-        CProcess process(handle, CProcess::eHandle);
-        assert(!process.IsAlive());
-    }}
+             << " and exitcode " << exitcode << " in " << elapsed << "s");
+    if (status != eIO_Success  ||  elapsed <= DEFAULT_TIMEOUT * 1.5) {
+        assert(status == eIO_Success  &&  exitcode == -1);
+        {{
+                CProcess process(handle, CProcess::eHandle);
+                assert(!process.IsAlive());
+        }}
+    } else
+        ERR_POST(Warning << "Pipe closed okay because of an extended delay");
 
     sw.Restart();
     ERR_POST(Info << "TEST:  Checking extended timeout/kill");
@@ -507,7 +512,7 @@ int CTest::Run(void)
     status = pipe.Close(&exitcode);
     elapsed = sw.Elapsed();
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
-             << " and exitcode " << exitcode);
+             << " and exitcode " << exitcode << " in " << elapsed << "s");
     if (status != eIO_Success  ||  elapsed <= DEFAULT_TIMEOUT * 1.5) {
         assert(status == eIO_Timeout  &&  exitcode == -1);
         {{
