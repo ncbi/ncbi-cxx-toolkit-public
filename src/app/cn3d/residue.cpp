@@ -436,7 +436,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
         }
 
         // draw label
-        if (oss.pcount() > 0) {
+        if (oss.str().size() > 0) {
             string labelText = (string) CNcbiOstrstreamToString(oss);
 
             // apply highlight color if necessary
