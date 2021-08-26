@@ -4868,6 +4868,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MUNZ\ts\tMassey University\t\t\t",
 "MUO\ts\tStovall Museum of Science and History\t\t\t",
 "MUP\ts\tUniversidade do Porto, Museu do Historia Natural\t\t\t",
+"MUP<IDN>\tc\tMicrobiology laboratory Universitas Padjadjaran\t\t\t",
 "MUR\ts\tMurray State University, Department of Biological Sciences\t\t\t",
 "MURD\ts\tMurdoch University\t\t\t",
 "MURU\ts\tMurdoch University\t\t\t",

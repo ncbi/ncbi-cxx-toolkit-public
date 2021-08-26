@@ -4835,6 +4835,7 @@ MUNC	s	St. John's, Memorial University of Newfoundland
 MUNZ	s	Massey University			
 MUO	s	Stovall Museum of Science and History			
 MUP	s	Universidade do Porto, Museu do Historia Natural			
+MUP<IDN>	c	Microbiology laboratory Universitas Padjadjaran			
 MUR	s	Murray State University, Department of Biological Sciences			
 MURD	s	Murdoch University			
 MURU	s	Murdoch University			
