@@ -133,7 +133,10 @@ public:
 class COrdinalFeatIdGenerator : public IThreadSafeIdGenerator< CRef<CFeat_id> >
 {
 public:
-    COrdinalFeatIdGenerator() { }
+    COrdinalFeatIdGenerator() 
+    { 
+        this->m_Id.Set(1);
+    }
 
     TId GenerateId()
     {
