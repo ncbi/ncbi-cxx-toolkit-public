@@ -523,7 +523,7 @@ endif()
 
 
 find_program(CCACHE_EXECUTABLE ccache
-             PATHS /usr/local/ccache/3.2.5/bin/)
+             PATHS /usr/local/ccache/4.4/bin /usr/local/ccache/3.2.5/bin/)
 find_program(DISTCC_EXECUTABLE
              NAMES distcc.sh distcc
              HINTS $ENV{NCBI}/bin )
