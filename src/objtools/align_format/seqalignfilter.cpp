@@ -708,9 +708,16 @@ static CRef<CSeq_align> s_ModifySeqAlnWithFilteredSeqIDs(CRef<CBlast_def_line_se
         CRef<CSeq_id> seqID;
         string textSeqID;
         if(has_match) {
-            const CBioseq::TId& cur_id = (*iter)->GetSeqid();
-            seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);
-            CAlignFormatUtil::GetTextSeqID(seqID, &textSeqID);
+            const CBioseq::TId& cur_id = (*iter)->GetSeqid();            
+            seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);            
+
+            TGi cur_gi =  FindGi(cur_id);                                   
+            if(cur_gi != ZERO_GI) {            
+                textSeqID = NStr::NumericToString(cur_gi);                
+            }   
+            else {
+                CAlignFormatUtil::GetTextSeqID(seqID, &textSeqID);                
+            }
 
             list<string> use_this_seq;
             CAlignFormatUtil::GetUseThisSequence(*in_align,use_this_seq);  
