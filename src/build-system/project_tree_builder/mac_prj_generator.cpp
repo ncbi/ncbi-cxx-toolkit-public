@@ -798,6 +798,7 @@ string CMacProjectGenerator::CreateProjectPostBuildScript(
             GetApp().GetRegSettings().m_CompilersSubdir))));
     string script;
     script += "export BUILD_TREE_ROOT=" + root + "\n";
+    script += "export NCBI-VDB_LIBPATH=" + GetApp().GetSite().GetConfigureEntry("XCode_ThirdPartyVDBBasePath") + "\n";
     if (CFile(root + "/postbuild.sh").Exists())
     {
         script +=  "\"$BUILD_TREE_ROOT/postbuild.sh\"";
