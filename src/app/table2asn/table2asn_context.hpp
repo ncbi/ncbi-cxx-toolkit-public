@@ -212,8 +212,9 @@ public:
     static CRef<objects::COrg_ref> GetOrgRef(objects::CSeq_descr& descr);
     static void UpdateTaxonFromTable(objects::CBioseq& bioseq);
 
+    void MergeSeqDescr(objects::CSeq_entry& dest, const objects::CSeq_descr& src, bool only_set) const;
+
 private:
-    void x_MergeSeqDescr(objects::CSeq_entry& dest, const objects::CSeq_descr& src, bool only_set) const;
     static void x_ApplyAccession(CTable2AsnContext& context, objects::CBioseq& bioseq);
     map<string, pair<string, unique_ptr<CNcbiOstream>>> m_outputs;
 };

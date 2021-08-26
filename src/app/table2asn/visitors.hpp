@@ -11,7 +11,7 @@ BEGIN_NCBI_SCOPE
 namespace objects
 {
     template<typename _M>
-    void VisitAllBioseqs(objects::CSeq_entry& entry, _M m)
+    void VisitAllBioseqs(objects::CSeq_entry& entry, _M&& m)
     {
         if (entry.IsSeq())
         {
@@ -22,13 +22,13 @@ namespace objects
             {
                 for (auto se : entry.SetSet().SetSeq_set())
                 {
-                    VisitAllBioseqs(*se, m);
+                    VisitAllBioseqs(*se, std::forward<_M>(m));
                 }
             }
     }
 
     template<typename _M>
-    void VisitAllBioseqs(const objects::CSeq_entry& entry, _M m)
+    void VisitAllBioseqs(const objects::CSeq_entry& entry, _M&& m)
     {
         if (entry.IsSeq())
         {
@@ -39,7 +39,7 @@ namespace objects
         {
             for (auto se : entry.GetSet().GetSeq_set())
             {
-                VisitAllBioseqs(*se, m);
+                VisitAllBioseqs(*se, std::forward<_M>(m));
             }
         }
     }
