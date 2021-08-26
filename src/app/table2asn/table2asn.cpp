@@ -1076,8 +1076,18 @@ void CTbl2AsnApp::ProcessOneEntry(
 
 void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSeq_submit> submit, CRef<CSeq_entry>& entry)
 {
+    /*
+        for FASTA inputs 'entry' argument is:
+            - always a single seq object
+        for ASN1. inputs:
+            - either single seq object or seq-set if it's a nuc-prot-set
+        'submit' is already processed clean and may contain single entry that points to 'entry' argument,
+        'submit' object is not neccessary the one going to the output
+    */
+
     if (inputFormat == CFormatGuess::eFasta)
-        m_context.MergeWithTemplate(*entry);
+    if (!m_context.m_entry_template.IsNull() && m_context.m_entry_template->IsSetDescr())
+        m_context.MergeSeqDescr(*entry, m_context.m_entry_template->GetDescr(), false); //CTable2AsnContext::Merge::only_seq);
 
     CRef<CSerialObject> obj;
     if (submit)
@@ -1149,7 +1159,6 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
 
     m_secret_files->m_feature_table_reader->MakeGapsFromFeatures(*entry);
 
-
     if (m_context.m_delay_genprodset)
     {
         VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RenameProteinIdsQuals(feature); });
@@ -1159,13 +1168,17 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
         VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
     }
 
+    m_context.m_scope->ResetDataAndHistory();
+
     CSeq_entry_Handle seh = m_context.m_scope->AddTopLevelSeqEntry(*entry);
+
     CCleanup::ConvertPubFeatsToPubDescs(seh);
 
     if (m_context.m_RemotePubLookup)
     {
         m_context.m_remote_updater->UpdatePubReferences(*obj);
     }
+
     if (m_context.m_postprocess_pubs)
     {
         m_context.m_remote_updater->PostProcessPubs(*entry);

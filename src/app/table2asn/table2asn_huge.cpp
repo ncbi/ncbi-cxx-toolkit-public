@@ -46,10 +46,11 @@
 
 #include <objects/submit/Seq_submit.hpp>
 #include <objtools/cleanup/cleanup.hpp>
+#include <objtools/edit/remote_updater.hpp>
 
 #if defined(NCBI_OS_UNIX) && defined(_DEBUG)
 #   include <cxxabi.h>
-#   define TABLE2ASN_DEBUG_EXCEPTIOONS
+#   define TABLE2ASN_DEBUG_EXCEPTIONS
 #endif
 
 BEGIN_NCBI_SCOPE
@@ -153,10 +154,19 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
             topobject = m_context.CreateSubmitFromTemplate(context.topentry, context.submit);
         }
 
+        if (context.file.m_format == CFormatGuess::eFasta)
+        if (m_context.m_entry_template.NotEmpty() && m_context.m_entry_template->IsSetDescr())
+            m_context.MergeSeqDescr(*context.topentry, m_context.m_entry_template->GetDescr(), true); //CTable2AsnContext::Merge::only_set);
+
         if (context.source->IsMultiSequence())
         {
             if (context.submit)
             {
+                if (m_context.m_RemotePubLookup)
+                {
+                    m_context.m_remote_updater->UpdatePubReferences(*context.submit);
+                }
+
                 CCleanup cleanup(nullptr, CCleanup::eScope_UseInPlace); // RW-1070 - CCleanup::eScope_UseInPlace is essential
                 cleanup.ExtendedCleanup(*context.submit, CCleanup::eClean_NoNcbiUserObjects);
             }
@@ -181,13 +191,14 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
                     {
                         if (context.submit)
                         {
-                            context.topentry->SetSet().SetSeq_set().clear();
-                            context.topentry->SetSet().SetSeq_set().push_back(entry);
-                            context.topentry->Parentize();
-                        } else {
-                            context.topentry = entry;
+                            context.submit->SetData().SetEntrys().clear();
+                            context.submit->SetData().SetEntrys().push_back(entry);
                         }
-                        ProcessSingleEntry(context.file.m_format, context.submit, context.topentry);
+                        ProcessSingleEntry(context.file.m_format, context.submit, entry);
+                        if (context.submit)
+                        {
+                            entry = context.submit->SetData().SetEntrys().front();
+                        }
                         if (entry) {
                             out_container << *entry;
                             context.entries++;
@@ -210,7 +221,7 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
         catch(const CException& ex)
         { // ASN writer populates exception with a call stack which is not neccessary
           // we need the original exception
-#           ifdef TABLE2ASN_DEBUG_EXCEPTIOONS
+#           ifdef TABLE2ASN_DEBUG_EXCEPTIONS
             int status;
             char * demangled = abi::__cxa_demangle(typeid(ex).name(), 0, 0, &status);
 #           endif
@@ -218,12 +229,12 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
             const CException* original = &ex;
             while (original->GetPredecessor())
             {
-#               ifdef TABLE2ASN_DEBUG_EXCEPTIOONS
+#               ifdef TABLE2ASN_DEBUG_EXCEPTIONS
                 cerr << demangled << ":" << ex.GetMsg() << std::endl;
 #               endif
                 original = original->GetPredecessor();
             }
-#           ifdef TABLE2ASN_DEBUG_EXCEPTIOONS
+#           ifdef TABLE2ASN_DEBUG_EXCEPTIONS
             free(demangled);
 #           endif
 
