@@ -108,10 +108,7 @@ class NCBI_XUTIL_EXPORT CInitMutex_Base
 public:
     DECLARE_OPERATOR_BOOL_REF(m_Object);
 
-#if !defined(NCBI_HAVE_CXX17) || !defined(NCBI_COMPILER_ICC) \
-    || defined(__clang__)
 protected:
-#endif
     CInitMutex_Base(void)
         {
         }
@@ -126,7 +123,6 @@ protected:
             _ASSERT(!m_Mutex || m_Mutex->ReferencedOnlyOnce());
         }
 
-protected:
     friend class CInitMutexPool;
 
     typedef CInitMutexPool::TMutex TMutex;
@@ -144,6 +140,8 @@ class CInitMutex : public CInitMutex_Base
 {
 public:
     typedef C TObjectType;
+
+    using CInitMutex_Base::CInitMutex_Base;
 
     void Reset(void)
         {
