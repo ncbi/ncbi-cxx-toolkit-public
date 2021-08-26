@@ -262,7 +262,7 @@ esac
 
 : ${MBEDTLS_PATH=$NCBI/mbedtls-2.16.10}
 
-: ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi2}
+: ${MIMETIC_PATH=$NCBI/mimetic-0.9.8-ncbi1}
 
 : ${MONGODB_PATH=$NCBI/mongodb-1.1.2}
 
