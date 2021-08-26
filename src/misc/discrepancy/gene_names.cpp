@@ -229,7 +229,7 @@ const string kDuplicateLocusTagsStart = "[n] gene[s] [has] locus tag ";
 const string kDuplicateAdjacent = "[n] gene[s] [is] adjacent to another gene with the same locus tag.";
 
 
-DISCREPANCY_CASE(DUPLICATE_LOCUS_TAGS, SEQUENCE, eDisc | eOncaller | eSubmitter | eSmart, "Duplicate Locus Tags")
+DISCREPANCY_CASE(DUPLICATE_LOCUS_TAGS, SEQUENCE, eDisc | eOncaller | eSubmitter | eSmart | eFatal, "Duplicate Locus Tags")
 {
     const auto& genes = context.FeatGenes();
     string last_locus_tag;
