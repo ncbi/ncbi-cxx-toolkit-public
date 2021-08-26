@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
-#include <objtools/readers/gff3_location_merger.hpp>"
+#include <objtools/readers/gff3_location_merger.hpp>
 #include "reader_message_handler.hpp"
 
 BEGIN_NCBI_SCOPE
