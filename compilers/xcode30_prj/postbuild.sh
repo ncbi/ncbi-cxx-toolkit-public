@@ -39,7 +39,7 @@ for v in "$BUILD_TREE_ROOT"; do
   fi
 done
 product=$TARGET_BUILD_DIR/$FULL_PRODUCT_NAME
-vdbdlib="/net/snowman/vol/projects/trace_software/vdb/mac/release/x86_64/lib/libncbi-vdb.2.dylib"
+vdbdlib="${NCBI-VDB_LIBPATH}/vdb/mac/release/x86_64/lib/libncbi-vdb.2.dylib"
 
 if test "$ACTION" = "build"; then
   if test "$MACH_O_TYPE" = "mh_execute" -o "$MACH_O_TYPE" = "mh_dylib"; then
