@@ -73,7 +73,7 @@ public:
     /// Get the output stream
     virtual CNcbiOstream& GetOutputStream();
 
-    CNcbiOstrstream & GetOutputStrStream() { return m_OutputStream; }
+    CNcbiStrstream & GetOutputStrStream() { return m_OutputStream; }
 
     virtual ~CBlastnNodeArgs();
 
@@ -83,7 +83,7 @@ protected:
     x_CreateOptionsHandle(CBlastOptions::EAPILocality locality, const CArgs& args);
 
 private :
-    CNcbiOstrstream m_OutputStream;
+    CNcbiStrstream m_OutputStream;
     CNcbiIstrstream * m_InputStream;
 };
 
