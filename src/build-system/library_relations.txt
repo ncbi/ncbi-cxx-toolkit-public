@@ -1585,7 +1585,7 @@ vibrantOGL needs3party ncbiobj
 w_aln_crossaln needs w_hit_matrix
 w_aln_multi needs w_seq_graphic
 w_aln_score needs w_wx
-w_aln_table needs w_wx
+w_aln_table needs w_aln_multi
 w_data needs w_feedback
 w_edit needs align_format
 w_edit needs hydra_client
@@ -1608,6 +1608,7 @@ w_loaders needs hgvs
 w_loaders needs ncbi_xloader_blastdb
 w_loaders needs w_wx
 w_loaders needs xalgophytree
+w_loaders needs xflatfile
 w_macro_edit needs w_data
 w_object_list needs w_text_widget
 w_phylo_tree needs gui_graph
