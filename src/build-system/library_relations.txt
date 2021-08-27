@@ -663,7 +663,6 @@ gpipe_jira needs gpipe_curl
 gpipe_jira needs3party $(GSOAP_LIBS)
 gpipe_kmer needs gpipe_objutil
 gpipe_kmer needs sampling
-gpipe_kmer_metadata_cache needs $(ZSTD_LIB)
 gpipe_kmer_metadata_cache needs gpipe_kmer
 gpipe_kmer_metadata_cache needs3party $(MONGODB3_LIBS)
 gpipe_kmer_metadata_cache needs3party $(OPENSSL_LIBS)
@@ -1000,7 +999,6 @@ mmdb needs $(SEQ_LIBS)
 mmdb needs pub
 moleblastasn_g needs $(SEQ_LIBS)
 moleblastasn_g needs pub
-mongoc-1.0 needs $(ZSTD_LIB)
 mongoc-1.0 needs $(Z_LIB)
 mongoc-1.0 needs3party $(KRB5_LIBS)
 mongoc-1.0 needs3party $(NETWORK_LIBS)
@@ -1010,13 +1008,11 @@ mongoc-1.0 needs3party $(SASL2_LIBS)
 mongoc-1.0 needs3party $(ZSTD_LIBS)
 mongoc-1.0 needs3party $(Z_LIBS)
 mongoc-1.0 needs3party bson-1.0
-mongocache needs $(ZSTD_LIB)
 mongocache needs eclib
 mongocache needs3party $(KRB5_LIBS)
 mongocache needs3party $(MONGODB3_LIBS)
 mongocache needs3party $(OPENSSL_LIBS)
 mongocache needs3party $(ZSTD_LIBS)
-mongocxx needs $(ZSTD_LIB)
 mongocxx needs $(Z_LIB)
 mongocxx needs3party $(KRB5_LIBS)
 mongocxx needs3party $(NETWORK_LIBS)
@@ -1644,7 +1640,6 @@ w_wx needs3party $(WXWIDGETS_LIBS)
 we_cpp needs xser
 wgmlst_core needs wgmlst_store
 wgmlst_distances needs wgmlst_core
-wgmlst_store needs $(ZSTD_LIB)
 wgmlst_store needs gpipe_attr
 wgmlst_store needs3party $(MONGODB3_LIBS)
 wgmlst_store needs3party $(OPENSSL_LIBS)
