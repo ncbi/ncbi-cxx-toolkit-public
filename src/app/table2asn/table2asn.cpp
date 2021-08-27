@@ -187,6 +187,7 @@ void CTbl2AsnApp::x_SetAlnArgs(CArgDescriptions& arg_desc)
 void CTbl2AsnApp::Init()
 {
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    HideStdArgs(fHideDryRun );
 
     // Prepare command line descriptions, inherit them from tbl2asn legacy application
 
@@ -1085,10 +1086,6 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
         'submit' object is not neccessary the one going to the output
     */
 
-    if (inputFormat == CFormatGuess::eFasta)
-    if (!m_context.m_entry_template.IsNull() && m_context.m_entry_template->IsSetDescr())
-        m_context.MergeSeqDescr(*entry, m_context.m_entry_template->GetDescr(), false); //CTable2AsnContext::Merge::only_seq);
-
     CRef<CSerialObject> obj;
     if (submit)
         obj = submit;
@@ -1142,7 +1139,7 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
         (inputFormat == CFormatGuess::eBinaryASN))
     {
         // if create-date exists apply update date
-        m_context.ApplyCreateUpdateDates(*entry);
+        m_context.ApplyCreateUpdateDatesSingle(*entry);
     }
 
     m_context.ApplyComments(*entry);
@@ -1194,36 +1191,33 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
 
     m_secret_files->m_feature_table_reader->ChangeDeltaProteinToRawProtein(*entry);
 
-    if (!IsDryRun())
+    m_validator->UpdateECNumbers(*entry);
+
+    if (!m_context.m_validate.empty())
     {
-        m_validator->UpdateECNumbers(*entry);
+        m_validator->Validate(submit, entry, m_context.m_validate);
+    }
 
-        if (!m_context.m_validate.empty())
-        {
-            m_validator->Validate(submit, entry, m_context.m_validate);
-        }
+    if (m_context.m_run_discrepancy)
+    {
+        if(m_context.m_split_discrepancy)
+            m_validator->ReportDiscrepancy(*obj, m_context.m_eukaryote, m_context.m_disc_lineage);
+        else
+            m_validator->CollectDiscrepancies(*obj, m_context.m_eukaryote, m_context.m_disc_lineage);
+    }
 
-        if (m_context.m_run_discrepancy)
-        {
-            if(m_context.m_split_discrepancy)
-                m_validator->ReportDiscrepancy(*obj, m_context.m_eukaryote, m_context.m_disc_lineage);
-            else
-                m_validator->CollectDiscrepancies(*obj, m_context.m_eukaryote, m_context.m_disc_lineage);
-        }
+    if (m_context.m_make_flatfile)
+    {
+        CFlatFileGenerator ffgenerator(
+                CFlatFileConfig::eFormat_GenBank,
+                CFlatFileConfig::eMode_Entrez);
 
-        if (m_context.m_make_flatfile)
-        {
-            CFlatFileGenerator ffgenerator(
-                    CFlatFileConfig::eFormat_GenBank,
-                    CFlatFileConfig::eMode_Entrez);
+        auto& ostream = m_context.GetOstream(".gbf");
 
-            auto& ostream = m_context.GetOstream(".gbf");
-
-            if (submit.Empty())
-                ffgenerator.Generate(seh, ostream);
-            else
-                ffgenerator.Generate(*submit, *m_context.m_scope, ostream);
-        }
+        if (submit.Empty())
+            ffgenerator.Generate(seh, ostream);
+        else
+            ffgenerator.Generate(*submit, *m_context.m_scope, ostream);
     }
 
 }
