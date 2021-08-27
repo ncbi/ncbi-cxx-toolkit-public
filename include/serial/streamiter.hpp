@@ -677,8 +677,7 @@ CObjectIStreamIterator<TRoot>::CObjectIStreamIterator(
 {
     if (m_Data->m_FilterType != CData::eNone && !m_Data->m_EndOfData) {
         m_Data->m_HasReader = true;
-        m_Data->m_Reader = thread(
-            mem_fn(&CObjectIStreamIterator<TRoot>::x_ReaderThread), this);
+        m_Data->m_Reader = thread([this](){x_ReaderThread();});
     }
     ++(*this);
 }
@@ -1104,9 +1103,7 @@ CObjectIStreamIterator<TRoot, TChild>::CObjectIStreamIterator(
 {
     if (!this->m_Data->m_EndOfData) {
         this->m_Data->m_HasReader = true;
-        this->m_Data->m_Reader = thread(
-            mem_fn(&CObjectIStreamIterator<TRoot,TChild>::x_ReaderThread),
-            this);
+        this->m_Data->m_Reader = thread([this](){x_ReaderThread();});
     }
     ++(*this);
 }
@@ -1434,9 +1431,7 @@ CObjectIStreamAsyncIterator<TRoot>::CData::CData(
     , m_Params(params)
 {
     if (m_MaxRawSize != 0 && !m_EndOfData) {
-        m_Reader = thread(
-            mem_fn(&CObjectIStreamAsyncIterator<TRoot>::CData::x_ReaderThread),
-            this);
+        m_Reader = thread([this](){x_ReaderThread();});
     }
 }
 
