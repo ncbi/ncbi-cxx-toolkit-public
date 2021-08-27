@@ -660,6 +660,27 @@ void CTable2AsnContext::RemoveProteinIdsQuals(CSeq_feat& feature)
         feature.ResetQual();
 }
 
+void CTable2AsnContext::ApplyCreateUpdateDatesSingle(objects::CSeq_entry& entry) const
+{
+    switch(entry.Which())
+    {
+    case CSeq_entry::e_Seq:
+        x_ApplyCreateDate(entry);
+        break;
+    case CSeq_entry::e_Set:
+        {
+            if (entry.GetSet().IsSetClass() &&
+                entry.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot)
+            {
+                ApplyUpdateDate(entry);
+            }
+        }
+        break;
+    default:
+        break;
+    }
+}
+
 bool CTable2AsnContext::ApplyCreateUpdateDates(CSeq_entry& entry) const
 {
     bool need_update = false;

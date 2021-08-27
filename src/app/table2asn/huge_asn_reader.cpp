@@ -338,6 +338,7 @@ void CHugeAsnReader::FlattenGenbankSet()
         auto parent = rec.m_parent_set;
         auto _class = parent->m_class;
         if (_class == CBioseq_set::eClass_not_set ||
+            _class == CBioseq_set::eClass_eco_set ||
             _class == CBioseq_set::eClass_genbank)
         { // create fake bioseq_set
             m_flattened.push_back({rec.m_pos, GetBiosets().end(), objects::CBioseq_set::eClass_not_set });

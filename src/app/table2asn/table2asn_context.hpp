@@ -174,6 +174,7 @@ public:
     objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const CTempString& type);
     static
     objects::CSeq_descr& SetBioseqOrParentDescr(objects::CBioseq& bioseq);
+    void ApplyCreateUpdateDatesSingle(objects::CSeq_entry& entry) const;
     bool ApplyCreateUpdateDates(objects::CSeq_entry& entry) const;
     void ApplyUpdateDate(objects::CSeq_entry& entry) const;
     void ApplyAccession(objects::CSeq_entry& entry);

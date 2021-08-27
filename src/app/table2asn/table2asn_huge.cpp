@@ -68,6 +68,7 @@ namespace
 
         CRef<CSeq_entry> topentry;
         CRef<CSeq_submit> submit;
+        std::function<CRef<CSeq_entry>()> next_entry;
     };
 
 
@@ -91,19 +92,49 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
 
     context.file.Open(m_context.m_current_file);
 
+    CConstRef<objects::CSeq_descr> descrs;
+
+    if (m_context.m_entry_template.NotEmpty() && m_context.m_entry_template->IsSetDescr())
+        descrs.Reset(&m_context.m_entry_template->GetDescr());
+
+    auto fasta_get_next = [this, &fasta_reader, descrs]() -> CRef<CSeq_entry>
+    {
+        auto entry = fasta_reader.GetNextSeqEntry();
+        if (entry && descrs)
+            m_context.MergeSeqDescr(*entry, *descrs, false);
+        return entry;
+    };
+
     if (context.file.m_format == CFormatGuess::eGff3) {
         list<CRef<CSeq_annot>> annots;
         m_reader->LoadGFF3Fasta(*context.file.m_stream, annots);
         m_secret_files->m_Annots.splice(m_secret_files->m_Annots.end(), annots);
         fasta_reader.Open(&context.file, m_context.m_logger);
         context.source = &fasta_reader;
+        context.next_entry = fasta_get_next;
     } else
     if (context.file.m_format == CFormatGuess::eFasta) {
         fasta_reader.Open(&context.file, m_context.m_logger);
         context.source = &fasta_reader;
+        context.next_entry = fasta_get_next;
     } else {
         asn_reader.Open(&context.file, m_context.m_logger);
         context.source = &asn_reader;
+        context.next_entry = [this, &asn_reader]() -> CRef<CSeq_entry>
+        {
+            auto entry = asn_reader.GetNextSeqEntry();
+            if (entry && m_context.m_gapNmin > 0)
+            {
+                CGapsEditor gap_edit(
+                    (CSeq_gap::EType)m_context.m_gap_type,
+                    m_context.m_DefaultEvidence,
+                    m_context.m_GapsizeToEvidence,
+                    m_context.m_gapNmin,
+                    m_context.m_gap_Unknown_length);
+                gap_edit.ConvertNs2Gaps(*entry);
+            }
+            return entry;
+        };
 
         if (m_context.m_t) {
             string msg(
@@ -125,14 +156,28 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
         auto seq_set_member = CObjectTypeInfo(CBioseq_set::GetTypeInfo()).FindMember("seq-set");
 
         CConstRef<CSerialObject> topobject;
-        if (context.source->IsMultiSequence())
+        bool is_multi_sequence = context.source->IsMultiSequence();
+        is_multi_sequence |= (context.file.m_format == CFormatGuess::eFasta) && m_context.m_HandleAsSet;
+
+        CRef<CSeq_entry> top_set;
+        if (is_multi_sequence)
         {
             context.topentry = Ref(new CSeq_entry);
             context.topentry->SetSet().SetClass(m_context.m_ClassValue);
-            context.topentry->SetSet().SetSeq_set();
+            auto& seqset = context.topentry->SetSet().SetSeq_set();
+            if (context.source->IsMultiSequence())
+            {
+                top_set = context.topentry;
+            } else {
+                seqset.push_back(context.next_entry());
+                top_set = seqset.front();
+            }
         } else {
-            context.topentry = context.source->GetNextSeqEntry();
+            top_set = context.topentry = context.next_entry();
         }
+
+        if (descrs)
+            m_context.MergeSeqDescr(*top_set, *descrs, true);
 
         if (m_context.m_save_bioseq_set)
         {
@@ -154,9 +199,10 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
             topobject = m_context.CreateSubmitFromTemplate(context.topentry, context.submit);
         }
 
-        if (context.file.m_format == CFormatGuess::eFasta)
-        if (m_context.m_entry_template.NotEmpty() && m_context.m_entry_template->IsSetDescr())
-            m_context.MergeSeqDescr(*context.topentry, m_context.m_entry_template->GetDescr(), true); //CTable2AsnContext::Merge::only_set);
+        if (context.file.m_format != CFormatGuess::eFasta && top_set->IsSet())
+            m_context.ApplyUpdateDate(*top_set);
+
+        top_set.Reset();
 
         if (context.source->IsMultiSequence())
         {
@@ -187,7 +233,7 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
                 {
                     COStreamContainer out_container(out, object.GetTypeInfo());
                     CRef<objects::CSeq_entry> entry;
-                    while ((entry = context.source->GetNextSeqEntry()))
+                    while ((entry = context.next_entry()))
                     {
                         if (context.submit)
                         {
@@ -195,10 +241,6 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
                             context.submit->SetData().SetEntrys().push_back(entry);
                         }
                         ProcessSingleEntry(context.file.m_format, context.submit, entry);
-                        if (context.submit)
-                        {
-                            entry = context.submit->SetData().SetEntrys().front();
-                        }
                         if (entry) {
                             out_container << *entry;
                             context.entries++;
@@ -211,6 +253,9 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
             });
         } else {
             ProcessSingleEntry(context.file.m_format, context.submit, context.topentry);
+            if (context.file.m_format != CFormatGuess::eFasta && context.topentry->IsSet())
+                m_context.ApplyUpdateDate(*context.topentry);
+
             context.entries++;
         }
 
