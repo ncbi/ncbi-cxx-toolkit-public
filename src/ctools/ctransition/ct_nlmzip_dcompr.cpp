@@ -537,7 +537,7 @@ Nlmzip_UncompressedSize ( /*FCN*/
   VoidPtr pBuffer,                  /* Input data (I) */
   Int4    iSize                     /* Input data size (I) */
 ) {
-    register char* lpTemp = (char*)pBuffer;
+    char* lpTemp = (char*)pBuffer;
     Int4 lSize;
 
     lpTemp = lpTemp + iSize - sizeof(Int4);

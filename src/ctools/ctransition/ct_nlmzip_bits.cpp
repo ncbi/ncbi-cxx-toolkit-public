@@ -153,7 +153,7 @@ Nlmzip_bi_reverse ( /*FCN*/
   Uint4 code,                   /* the value to invert (I) */
   int len                          /* its bit length (I) */
 ){
-    register Uint4 res = 0;
+    Uint4 res = 0;
 
     do {
         res |= code & 1;

@@ -305,16 +305,16 @@ huft_build ( /*FCN*/
   Uint4 f;                   /* i repeats in table every f entries */
   int g;                        /* maximum code length */
   int h;                        /* table Nlmzip_level */
-  register Uint4 i;          /* counter, current code */
-  register Uint4 j;          /* counter */
-  register int k;               /* number of bits in current code */
+  Uint4 i;          /* counter, current code */
+  Uint4 j;          /* counter */
+  int k;               /* number of bits in current code */
   int l;                        /* bits per table (returned in m) */
-  register Uint4 *p;         /* pointer into c[], b[], or v[] */
-  register struct huft *q;      /* points to current table */
+  Uint4 *p;         /* pointer into c[], b[], or v[] */
+  struct huft *q;      /* points to current table */
   struct huft r;                /* table entry for structure assignment */
   struct huft *u[BMAX];         /* table stack */
   Uint4 v[N_MAX];            /* values in order of bit length */
-  register int w;               /* bits before this table == (l * h) */
+  int w;               /* bits before this table == (l * h) */
   Uint4 x[BMAX+1];           /* bit offsets, then code stack */
   Uint4 *xp;                 /* pointer into x */
   int y;                        /* number of dummy codes added */
@@ -494,8 +494,8 @@ static int
 huft_free ( /*FCN*/
   struct huft* t                /* table to free */
 ){
-  register struct huft* p;
-  register struct huft* q;
+  struct huft* p;
+  struct huft* q;
 
   /* Go through linked list, freeing from the malloced (t[-1]) address. */
   p = t;
@@ -521,13 +521,13 @@ inflate_codes ( /*FCN*/
   int          bl,        /* number of bits decoded by tl[] and td[] */
   int          bd
 ){
-    register Uint4 e;  /* table entry flag/number of extra bits */
+    Uint4 e;  /* table entry flag/number of extra bits */
     Uint4 n, d;        /* length and index for copy */
     Uint4 w;           /* current Nlmzip_window position */
     struct huft *t;       /* pointer to table entry */
     Uint4 ml, md;      /* masks for bl and bd bits */
-    register ulg b;       /* bit buffer */
-    register Uint4 k;  /* number of bits in bit buffer */
+    ulg b;       /* bit buffer */
+    Uint4 k;  /* number of bits in bit buffer */
 
 
     /* make local copies of globals */
@@ -633,8 +633,8 @@ inflate_stored (void) /*FCN*/
 {
     Uint4 n;               /* number of bytes in block */
     Uint4 w;               /* current Nlmzip_window position */
-    register ulg b; /* bit buffer */
-    register Uint4 k;      /* number of bits in bit buffer */
+    ulg b; /* bit buffer */
+    Uint4 k;      /* number of bits in bit buffer */
 
 
     /* make local copies of globals */
@@ -689,7 +689,7 @@ inflate_stored (void) /*FCN*/
 static int
 inflate_fixed (void) /*FCN*/
 {
-   register int i;       /* temporary variable */
+   int i;       /* temporary variable */
    struct huft *tl;      /* literal/length code table */
    struct huft *td;      /* distance code table */
    int bl;               /* lookup bits for tl */
@@ -760,8 +760,8 @@ inflate_dynamic (void) /*FCN*/
     Uint4 nl;          /* number of literal/length codes */
     Uint4 nd;          /* number of distance codes */
     Uint4 ll[286+30];  /* literal/length and distance code lengths */
-    register ulg b;       /* bit buffer */
-    register Uint4 k;  /* number of bits in bit buffer */
+    ulg b;       /* bit buffer */
+    Uint4 k;  /* number of bits in bit buffer */
 
     /* make local bit buffer */
     b = bb;
@@ -902,8 +902,8 @@ inflate_block ( /*FCN*/
   int *e                /* last block flag */
 ){
     Uint4 t;           /* block type */
-    register ulg b;       /* bit buffer */
-    register Uint4 k;  /* number of bits in bit buffer */
+    ulg b;       /* bit buffer */
+    Uint4 k;  /* number of bits in bit buffer */
 
     b = bb;               /* make local bit buffer */
     k = bk;

@@ -162,7 +162,7 @@ Nlmzip_updcrc( /*FCN*/
   unsigned char *s,         /* pointer to bytes to pump through (I) */
   Uint4 n                /* number of bytes in s[] (I) */
 ){
-    register ulg c; /* temporary variable */
+    ulg c; /* temporary variable */
 
     if ( isGenerateCrcEnable == FALSE ) {
         return 0;
