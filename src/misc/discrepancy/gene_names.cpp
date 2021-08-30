@@ -238,10 +238,10 @@ DISCREPANCY_CASE(DUPLICATE_LOCUS_TAGS, SEQUENCE, eDisc | eOncaller | eSubmitter 
         if (gene->GetData().GetGene().IsSetLocus_tag()) {
             CRef<CDiscrepancyObject> this_disc_obj(context.SeqFeatObjRef(*gene));
             const string& this_locus_tag = gene->GetData().GetGene().GetLocus_tag();
-            m_Objs[kEmptyStr][this_locus_tag].Add(*this_disc_obj);
+            m_Objs[kEmptyStr][this_locus_tag].Add(*this_disc_obj).Fatal();
             if (last_disc_obj && last_locus_tag == this_locus_tag) {
-                m_Objs[kDuplicateLocusTagsTop][kDuplicateAdjacent].Add(*last_disc_obj);
-                m_Objs[kDuplicateLocusTagsTop][kDuplicateAdjacent].Add(*this_disc_obj);
+                m_Objs[kDuplicateLocusTagsTop][kDuplicateAdjacent].Add(*last_disc_obj).Fatal();
+                m_Objs[kDuplicateLocusTagsTop][kDuplicateAdjacent].Add(*this_disc_obj).Fatal();
             }
             last_locus_tag = this_locus_tag;
             last_disc_obj = this_disc_obj;
