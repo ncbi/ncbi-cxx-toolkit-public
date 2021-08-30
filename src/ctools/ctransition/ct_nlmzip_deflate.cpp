@@ -250,13 +250,13 @@ longest_match ( /*FCN*/
   IPos cur_match               /* current match (I) */
 ){
     Uint4 chain_length = max_chain_length;   /* max hash chain length */
-    register uch *scan = Nlmzip_window + Nlmzip_strstart;     /* current string */
-    register uch *match;                        /* matched string */
-    register int len;                           /* length of current match */
+    uch *scan = Nlmzip_window + Nlmzip_strstart;     /* current string */
+    uch *match;                        /* matched string */
+    int len;                           /* length of current match */
     int best_len = prev_length;                 /* best match length so far */
-    register uch *strend   = Nlmzip_window + Nlmzip_strstart + MAX_MATCH;
-    register uch scan_end1 = scan[best_len-1];
-    register uch scan_end  = scan[best_len];
+    uch *strend   = Nlmzip_window + Nlmzip_strstart + MAX_MATCH;
+    uch scan_end1 = scan[best_len-1];
+    uch scan_end  = scan[best_len];
     IPos limit;
 
     /* Stop when cur_match becomes <= limit. To simplify the code,
@@ -334,8 +334,8 @@ longest_match ( /*FCN*/
 static void
 fill_window (void) /*FCN*/
 {
-    register Uint4 n;
-    register Uint4 m;
+    Uint4 n;
+    Uint4 m;
     Uint4 more;
 
     /* Amount of free space at the end of the Nlmzip_window.
@@ -495,7 +495,7 @@ Nlmzip_lm_init ( /*FCN*/
     int pack_level, /* 0: store, 1: best speed, 9: best compression (I) */
     ush *flags      /* general purpose bit flag (O) */
 ){
-    register Uint4 j;
+    Uint4 j;
 
     if ( pack_level < 1 || pack_level > 9 ) {
         URCOMPRERR ("Invalid compression Nlmzip_level");
@@ -564,7 +564,7 @@ Nlmzip_deflate(void) /*FCN*/
     IPos prev_match;         /* previous match */
     int flush;               /* set if current block must be flushed */
     int match_available = 0; /* set if previous match exists */
-    register Uint4 match_length = MIN_MATCH-1; /* length of best match */
+    Uint4 match_length = MIN_MATCH-1; /* length of best match */
 
     if ( compr_level <= 3 ) {        /* optimized for speed */
         return deflate_fast();

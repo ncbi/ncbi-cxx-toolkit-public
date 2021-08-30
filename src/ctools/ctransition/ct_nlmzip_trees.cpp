@@ -363,7 +363,7 @@ static int *file_method;   /* pointer to DEFLATE or STORE */
 static void
 init_block (void) /*FCN*/
 {
-    register int n;                   /* iterates over tree elements */
+    int n;                   /* iterates over tree elements */
 
     /* Initialize the trees. */
     for ( n = 0; n < L_CODES;  n++ ) {
