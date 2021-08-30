@@ -234,22 +234,23 @@ void SWorkerNodeJobContextImpl::PutProgressMessage(const string& msg,
     }
 
     try {
-        if (m_Job.progress_msg.empty()) {
+        if (!overwrite) {
+            // Cached progress_msg (blob ID) might be outdated, refreshing it
             m_NetScheduleExecutor.GetProgressMsg(m_Job);
 
-            if (m_Job.progress_msg.empty()) {
-                m_Job.progress_msg =
-                        m_NetCacheAPI.PutData(msg.data(), msg.length());
-
-                m_NetScheduleExecutor.PutProgressMsg(m_Job);
-
+            if (!m_Job.progress_msg.empty()) {
                 return;
             }
         }
 
-        if (overwrite) {
+        if (CNetCacheKey::IsValidKey(m_Job.progress_msg, m_NetCacheAPI.GetCompoundIDPool())) {
             m_NetCacheAPI.PutData(m_Job.progress_msg, msg.data(), msg.length());
+        } else {
+            m_Job.progress_msg = m_NetCacheAPI.PutData(msg.data(), msg.length());
         }
+
+        // Cached progress_msg (blob ID) might differ from the actual, syncing them
+        m_NetScheduleExecutor.PutProgressMsg(m_Job);
     }
     catch (exception& ex) {
         ERR_POST_X(6, "Couldn't send a progress message: " << ex.what());
