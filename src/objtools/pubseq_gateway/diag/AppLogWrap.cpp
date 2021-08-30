@@ -2814,7 +2814,7 @@ int LogAppIsStarted() {
 
 void LogAppEscapeVal(char *str) {
 	if (str) {
-		register char r;
+		char r;
 		while ((r = *str) != '\0') {
 			if (r == '&')
 				*str |= 0x80;
