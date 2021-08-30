@@ -9,7 +9,7 @@ set(NCBI_DEFAULT_PCH "ncbi_pch.hpp")
 set(NCBI_DEFAULT_HEADERS "*.h*;*impl/*.h*;*.inl;*impl/*.inl")
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
-    if(DEFINED MSVC_VERSION AND "${MSVC_VERSION}" LESS 1901)
+    if(DEFINED MSVC_VERSION AND "${MSVC_VERSION}" LESS 1917)
         set(CMAKE_CXX_STANDARD 14)
     else()
         set(CMAKE_CXX_STANDARD 17)
