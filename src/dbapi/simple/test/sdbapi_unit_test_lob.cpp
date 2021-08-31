@@ -31,7 +31,7 @@
  */
 
 #include "sdbapi_unit_test_pch.hpp"
-
+#include <strstream>
 
 BEGIN_NCBI_SCOPE
 
