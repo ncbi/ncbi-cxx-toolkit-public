@@ -1025,16 +1025,17 @@ void CheckMTByQueries_DBSize(CRef<CLocalDbAdapter> & db_adapter, const CBlastOpt
 
 void CheckMTByQueries_QuerySize(EProgram prog, int batch_size)
 {
-	string warning = "This set of queries is too small to fully benefit from the -mt_mode=1 option. "\
+	string warning = "This set of queries is too small to fully benefit from the -mt_mode=1 option. " \
 			         "The total number of letters should be at least ";
 	warning += NStr::IntToString(batch_size);
 	EBlastProgramType p = EProgramToEBlastProgramType(prog);
 	if (Blast_QueryIsProtein(p)) {
-		warning += " residues per thread.";
+		warning += " residues";
 	}
 	else {
-		warning += " bases per thread.";
+		warning += " bases";
 	}
+	warning += " per thread, and there should be at least one query of this length per thread.";
     ERR_POST(Warning << warning);
 }
 
