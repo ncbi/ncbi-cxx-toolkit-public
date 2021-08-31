@@ -673,11 +673,11 @@ class CTypeIterator : public CTypeIteratorBase<CTreeIterator>
 {
     typedef CTypeIteratorBase<CTreeIterator> CParent;
 public:
-    typedef forward_iterator_tag iterator_category;
-    typedef typename C           value_type;
-    typedef ptrdiff_t            difference_type;
-    typedef typename C*          pointer;
-    typedef typename C&          reference;
+    using  iterator_category = forward_iterator_tag;
+    using  value_type        = C;
+    using  difference_type   = ptrdiff_t;
+    using  pointer           = C*;
+    using  reference         = C&;
     typedef typename CParent::TBeginInfo TBeginInfo;
 
     CTypeIterator(void)
@@ -767,11 +767,11 @@ class CTypeConstIterator : public CTypeIteratorBase<CTreeConstIterator>
 {
     typedef CTypeIteratorBase<CTreeConstIterator> CParent;
 public:
-    typedef forward_iterator_tag iterator_category;
-    typedef typename C           value_type;
-    typedef ptrdiff_t            difference_type;
-    typedef typename C*          pointer;
-    typedef typename C&          reference;
+    using  iterator_category = forward_iterator_tag;
+    using  value_type        = C;
+    using  difference_type   = ptrdiff_t;
+    using  pointer           = C*;
+    using  reference         = C&;
     typedef typename CParent::TBeginInfo TBeginInfo;
 
     CTypeConstIterator(void)
