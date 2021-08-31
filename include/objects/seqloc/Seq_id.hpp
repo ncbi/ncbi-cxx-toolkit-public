@@ -825,10 +825,15 @@ struct NCBI_SEQLOC_EXPORT SSeqIdRange
     explicit SSeqIdRange(const CTempString& s, TFlags flags = 0);
 
 #ifndef NCBI_SWIG
-    class NCBI_SEQLOC_EXPORT const_iterator : public iterator<
-                             random_access_iterator_tag, string, int, const string*, string>
+    class NCBI_SEQLOC_EXPORT const_iterator
     {
     public:
+        typedef random_access_iterator_tag iterator_category;
+        typedef string                     value_type;
+        typedef ptrdiff_t                  difference_type;
+        typedef const string*              pointer;
+        typedef string&                    reference;
+
         const_iterator(const SSeqIdRange& range)
             : m_Range(&range), m_Number(range.start)
             { }
@@ -995,4 +1000,4 @@ bool CSeq_id::Match (const CSeq_id& sid2) const
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
-#endif // OBJECTS_SEQLOC_SEQ_ID_HPP
+#endif // OBJECTS_SEQ
