@@ -70,6 +70,7 @@
 #include <corelib/rwstream.hpp>
 
 #include <dbapi/driver/driver_mgr.hpp>
+#include <strstream>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
