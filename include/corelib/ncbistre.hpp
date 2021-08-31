@@ -81,7 +81,6 @@
 #if 0
 #    include <strstream>
 #else
-#    include <strstream>
 #define NCBI_SHUN_OSTRSTREAM 1
 #endif
 #    include <sstream>
