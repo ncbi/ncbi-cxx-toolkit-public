@@ -77,10 +77,10 @@ public:
         return true;
     };
 
-    virtual bool WriteAlign(
+    bool WriteAlign(
         const CSeq_align& align,
         const string& name="",
-        const string& descr="");
+        const string& descr="") override;
 
 
     //void SetLineWidth(unsigned int width);

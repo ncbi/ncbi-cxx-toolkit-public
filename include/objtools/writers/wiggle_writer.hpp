@@ -53,14 +53,14 @@ public:
     CWiggleWriter(
         CNcbiOstream&,
         size_t = 0 );
-    ~CWiggleWriter();
+    ~CWiggleWriter() override;
 
     bool WriteAnnot(
         const CSeq_annot&,
         const string& = "",
-        const string& = "" );
+        const string& = "" ) override;
 
-    bool WriteFooter();
+    bool WriteFooter() override;
 
 protected:
     bool xWriteAnnotTable( const CSeq_annot& );

@@ -95,14 +95,14 @@ public:
 
     /// Write a file header identifying the file content as GFF version 2.
     ///
-    virtual bool WriteHeader();
+    bool WriteHeader() override;
 
-    virtual bool WriteHeader(
-        const CSeq_annot& ) { return WriteHeader(); };
+    bool WriteHeader(
+        const CSeq_annot& ) override { return WriteHeader(); };
 
     /// Write a trailer marking the end of a parsing context.
     ///
-    virtual bool WriteFooter();
+    bool WriteFooter() override;
 
     virtual bool WriteFooter(
         const CSeq_annot& ) { return WriteFooter(); };
@@ -116,10 +116,10 @@ public:
     /// @param asmblyAccession
     ///   optional assembly accession to use for the file header
     ///
-    virtual bool WriteAnnot(
+    bool WriteAnnot(
         const CSeq_annot& annot,
         const string& asmblyName="",
-        const string& asmblyAccession="" );
+        const string& asmblyAccession="" ) override;
 
     /// Write a Seq-align object.
     /// Calling this function on a general GFF2 writer (as opposed to GFF3 or
@@ -133,10 +133,10 @@ public:
     /// @param asmblyAccession
     ///   optional assembly accession to use for the file header
     ///
-    virtual bool WriteAlign(
+    bool WriteAlign(
         const CSeq_align&,
         const string& asmblyName="",
-        const string& asmblyAccession="" );
+        const string& asmblyAccession="" ) override;
 
     /// Write Seq-entry contained in a given handle.
     /// Essentially, will iterate through all contained Bioseq objects and process
@@ -148,10 +148,10 @@ public:
     /// @param asmblyAccession
     ///   optional assembly accession to use for the file header
     ///
-    virtual bool WriteSeqEntryHandle(
+    bool WriteSeqEntryHandle(
         CSeq_entry_Handle seh,
         const string& asmblyName="",
-        const string& asmblyAccession="" );
+        const string& asmblyAccession="" ) override;
 
     /// Write Bioseq contained in given handle
     /// Essentially, will write all features that live on the given Bioseq.
@@ -162,10 +162,10 @@ public:
     /// @param asmblyAccession
     ///   optional assembly accession to use for the file header
     ///
-    virtual bool WriteBioseqHandle(
+    bool WriteBioseqHandle(
         CBioseq_Handle bsh,
         const string& asmblyName="",
-        const string& asmblyAccession="" );
+        const string& asmblyAccession="" ) override;
 
     /// Write Seq-annot contained in given handle
     /// Essentially, write out embedded feature table. Other annotation
@@ -178,10 +178,10 @@ public:
     /// @param asmblyAccession
     ///   optional assembly accession to use for the file header
     ///
-    virtual bool WriteSeqAnnotHandle(
+    bool WriteSeqAnnotHandle(
         CSeq_annot_Handle sah,
         const string& asmblyName="",
-        const string& asmblyAccession="" );
+        const string& asmblyAccession="" ) override;
 
 protected:
     virtual bool xAssignFeature(
@@ -364,8 +364,8 @@ protected:
     virtual bool xWriteFeature(
         CGffFeatureContext&,
         const CMappedFeat& );
-    virtual bool xWriteFeature(
-        CFeat_CI feat_it);
+    bool xWriteFeature(
+        CFeat_CI feat_it) override;
 
     virtual bool xWriteAllChildren(
         CGffFeatureContext&,
