@@ -62,15 +62,15 @@ public:
 
     virtual ~CPslWriter() = default;
 
-    virtual bool WriteAnnot(
+    bool WriteAnnot(
         const CSeq_annot& annot,
         const string& name="",
-        const string& descr="");
+        const string& descr="") override;
 
-    virtual bool WriteAlign(
+    bool WriteAlign(
         const CSeq_align& align,
         const string& name="",
-        const string& descr="");
+        const string& descr="") override;
 
 protected:
     CRef<CScope> m_pScope;

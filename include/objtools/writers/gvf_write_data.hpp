@@ -63,7 +63,7 @@ public:
         unsigned int =0 );
 
 protected:
-    virtual string StrAttributes() const;
+    string StrAttributes() const override;
 
     virtual bool x_AssignAttributeID(
         const CMappedFeat& );
