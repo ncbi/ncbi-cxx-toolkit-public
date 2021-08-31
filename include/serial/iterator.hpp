@@ -669,11 +669,15 @@ private:
 
 /// Template class for iteration on objects of class C
 template<class C, class TypeGetter = C>
-class CTypeIterator : public CTypeIteratorBase<CTreeIterator>,
-                      public iterator< forward_iterator_tag, C, ptrdiff_t, C*, C& >
+class CTypeIterator : public CTypeIteratorBase<CTreeIterator>
 {
     typedef CTypeIteratorBase<CTreeIterator> CParent;
 public:
+    typedef forward_iterator_tag iterator_category;
+    typedef typename C           value_type;
+    typedef ptrdiff_t            difference_type;
+    typedef typename C*          pointer;
+    typedef typename C&          reference;
     typedef typename CParent::TBeginInfo TBeginInfo;
 
     CTypeIterator(void)
@@ -759,11 +763,15 @@ public:
 
 /// Template class for iteration on objects of class C (non-medifiable version)
 template<class C, class TypeGetter = C>
-class CTypeConstIterator : public CTypeIteratorBase<CTreeConstIterator>,
-                           public iterator< forward_iterator_tag, C, ptrdiff_t, C*, C& >
+class CTypeConstIterator : public CTypeIteratorBase<CTreeConstIterator>
 {
     typedef CTypeIteratorBase<CTreeConstIterator> CParent;
 public:
+    typedef forward_iterator_tag iterator_category;
+    typedef typename C           value_type;
+    typedef ptrdiff_t            difference_type;
+    typedef typename C*          pointer;
+    typedef typename C&          reference;
     typedef typename CParent::TBeginInfo TBeginInfo;
 
     CTypeConstIterator(void)
