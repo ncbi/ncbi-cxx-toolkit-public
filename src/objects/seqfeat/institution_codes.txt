@@ -962,7 +962,7 @@ CCCC	s	Carthage College
 CCCIEB	c	Culture Collections of Microorgansisms of Center of Genetic Engineering and Biotechnology			
 CCCM	c	Canadian Center for the Culture of Microorganisms			
 CCCR	s	Federal University of Tocantins			
-CCCryo<DEU>	c	Culture Collection of Cryophilic Algae			
+CCCryo<DEU>	sc	Culture Collection of Cryophilic Algae			
 CCCS	c	Culture Collection of Ciliates and their Symbionts			
 CCCT	c	 Coleccion Chilena de Cultivos Tipo-CCCT/UFRO			
 CCCZ	s	University of Malawi			
@@ -6267,6 +6267,7 @@ SARA	s	Zemaljski Muzej Bosne I. Herzegovine
 SARAT	s	Department of Morphology and Systematic Botany			
 SARBG	s	Saratov State University Botanical Garden			
 SARC	s	Roanoke College, Biology Department			
+SARDI	s	South Australian Research and Development Institute			
 SARGU	s	University of Sargodha			
 SARI	s	Sakarya Agricultural Research Institute			
 SAS	s	Sammlung Arnhardt des Museums Schloss Wilhelmsburg Schmalkalden			
