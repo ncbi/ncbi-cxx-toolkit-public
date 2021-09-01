@@ -179,7 +179,7 @@ esac
 
 : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0}
 
-: ${FASTCGIPP_PATH=$NCBI/fastcgi++-3.1~a1+20210601-ncbi1}
+: ${FASTCGIPP_PATH=$NCBI/fastcgi++-3.1~a1+20210601-ncbi2}
 
 case "$ncbi_platform" in
     *MAC       ) : ${FREETYPE_PATH=/opt/X11} ;;
