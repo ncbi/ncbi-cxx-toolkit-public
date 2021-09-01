@@ -1142,6 +1142,7 @@ void CMsvcProjectGenerator::GeneratePropertySheets()
                     CRef<msbuild::CItemDefinitionGroup::C_E> p(new msbuild::CItemDefinitionGroup::C_E);
                     t->SetItemDefinitionGroup().SetItemDefinitionGroup().push_back(p);
                     p->SetClCompile();
+                    __SET_CLCOMPILE_BASE(p, LanguageStandard);
                     __SET_CLCOMPILE_BASE(p, AdditionalOptions);
                     __SET_CLCOMPILE_BASE(p, BasicRuntimeChecks);
                     __SET_CLCOMPILE_BASE(p, BrowseInformation);
@@ -1165,6 +1166,15 @@ void CMsvcProjectGenerator::GeneratePropertySheets()
                     __SET_CLCOMPILE_BASE(p, StructMemberAlignment);
                     __SET_CLCOMPILE_BASE(p, UndefinePreprocessorDefinitions);
                     __SET_CLCOMPILE_BASE(p, WarningLevel);
+
+                    string extra = meta_mk.GetCompilerOpt("PtbExtensions", cfg_info);
+                    if (!extra.empty()) {
+                        list<string> ex_list;
+                        NStr::Split(extra, LIST_SEPARATOR, ex_list, NStr::fSplit_Tokenize);
+                        for (const string& entry : ex_list) {
+                            __SET_CLCOMPILE_ELEMENT(p, entry,  meta_mk.GetCompilerOpt(entry, cfg_info));
+                        }
+                    }
                 }
                 // linker
                 {
@@ -1185,6 +1195,15 @@ void CMsvcProjectGenerator::GeneratePropertySheets()
                     __SET_LINK_BASE(p, SubSystem);
                     __SET_LINK_BASE(p, TargetMachine);
                     __SET_LINK_BASE(p, ImageHasSafeExceptionHandlers);
+
+                    string extra = meta_mk.GetLinkerOpt("PtbExtensions", cfg_info);
+                    if (!extra.empty()) {
+                        list<string> ex_list;
+                        NStr::Split(extra, LIST_SEPARATOR, ex_list, NStr::fSplit_Tokenize);
+                        for (const string& entry : ex_list) {
+                            __SET_LINK_ELEMENT(p, entry,  meta_mk.GetLinkerOpt(entry, cfg_info));
+                        }
+                    }
                 }
                 // librarian
                 {
@@ -1197,6 +1216,15 @@ void CMsvcProjectGenerator::GeneratePropertySheets()
                     __SET_LIB_BASE(p, IgnoreSpecificDefaultLibraries);
                     __SET_LIB_BASE(p, OutputFile);
                     __SET_LIB_BASE(p, TargetMachine);
+
+                    string extra = meta_mk.GetLibrarianOpt("PtbExtensions", cfg_info);
+                    if (!extra.empty()) {
+                        list<string> ex_list;
+                        NStr::Split(extra, LIST_SEPARATOR, ex_list, NStr::fSplit_Tokenize);
+                        for (const string& entry : ex_list) {
+                            __SET_LIB_ELEMENT(p, entry,  meta_mk.GetLibrarianOpt(entry, cfg_info));
+                        }
+                    }
                 }
                 // resource compiler
                 {
