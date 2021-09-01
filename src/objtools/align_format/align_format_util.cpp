@@ -124,7 +124,8 @@ s_GetBlastScore(const container&  scoreList,
                 evalue = (*iter)->GetValue().GetReal();
                 hasScore = true;
             } else if (id.GetStr()=="use_this_gi"){
-                use_this_gi.push_back(GI_FROM(int, (*iter)->GetValue().GetInt()));
+            	Uint4 gi_v = (Uint4)((*iter)->GetValue().GetInt());
+                use_this_gi.push_back(GI_FROM(Uint4, gi_v));
             } else if (id.GetStr()=="sum_n"){
                 sum_n = (*iter)->GetValue().GetInt();          
             } else if (id.GetStr()=="num_ident"){
@@ -4241,7 +4242,8 @@ s_GetBlastScore(const container&  scoreList,
             } else if (id.GetStr()=="score"){
                 rawScore = (*iter)->GetValue().GetInt();
             } else if (id.GetStr()=="use_this_gi"){
-                use_this_gi.push_back(GI_FROM(int, (*iter)->GetValue().GetInt()));
+            	Uint4 gi_v = (Uint4) ((*iter)->GetValue().GetInt());
+                use_this_gi.push_back(GI_FROM(Uint4, gi_v));
             } else if (id.GetStr()=="sum_n"){
                 sum_n = (*iter)->GetValue().GetInt();          
             }
