@@ -2606,7 +2606,7 @@ void CFeatureItem::x_GetAssociatedProtInfoIdx(
     if ( protId ) {
         if ( !cfg.AlwaysTranslateCDS() ) {
             CScope::EGetBioseqFlag get_flag = CScope::eGetBioseq_Loaded;
-            if ( cfg.ShowFarTranslations() || ctx.IsGED() || ctx.IsRefSeq() || cfg.IsPolicyFtp() ) {
+            if ( cfg.ShowFarTranslations() || ctx.IsGED() || ctx.IsRefSeq() || ( cfg.IsPolicyFtp() && ctx.IsRefSeq() ) ) {
                 get_flag = CScope::eGetBioseq_All;
             }
             protHandle =  scope.GetBioseqHandle(*protId, get_flag);
@@ -2655,7 +2655,7 @@ void CFeatureItem::x_GetAssociatedProtInfo(
     if ( protId ) {
         if ( !cfg.AlwaysTranslateCDS() ) {
             CScope::EGetBioseqFlag get_flag = CScope::eGetBioseq_Loaded;
-            if ( cfg.ShowFarTranslations() || ctx.IsGED() || ctx.IsRefSeq() || cfg.IsPolicyFtp() ) {
+            if ( cfg.ShowFarTranslations() || ctx.IsGED() || ctx.IsRefSeq() || ( cfg.IsPolicyFtp() && ctx.IsRefSeq() ) ) {
                 get_flag = CScope::eGetBioseq_All;
             }
             protHandle =  scope.GetBioseqHandle(*protId, get_flag);

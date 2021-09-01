@@ -2011,7 +2011,7 @@ void CFlatGatherer::x_CollectBioSourcesOnBioseq
     // if protein, get sources applicable to DNA location of CDS
     if ( ctx.IsProt() ) {
         // collect biosources features on bioseq
-        if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() || cfg.IsPolicyFtp() ) {
+        if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() || ( cfg.IsPolicyFtp() && ctx.IsRefSeq() ) ) {
             CConstRef<CSeq_feat> src_feat = x_GetSourceFeatFromCDS (bh);
             if (src_feat.NotEmpty()) {
                 // CMappedFeat mapped_feat(bh.GetScope().GetSeq_featHandle(*src_feat));
@@ -2033,7 +2033,7 @@ void CFlatGatherer::x_CollectBioSourcesOnBioseq
 
     if ( ! ctx.IsProt() ) {
         // collect biosources features on bioseq
-        if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() || cfg.IsPolicyFtp() ) {
+        if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() || ( cfg.IsPolicyFtp() && ctx.IsRefSeq() ) ) {
             x_CollectSourceFeatures(bh, range, ctx, srcs);
         }
     }
@@ -2529,7 +2529,7 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
             sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
         }
 
-        if (cfg.ShowContigFeatures()) {
+        if (cfg.ShowContigFeatures() || ( cfg.IsPolicyFtp() && ctx.IsRefSeq() ) ) {
             sel.SetResolveAll()
                 .SetAdaptiveDepth(true);
         } else {

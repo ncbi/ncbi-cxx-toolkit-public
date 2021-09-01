@@ -523,7 +523,7 @@ void CGenbankFormatter::FormatVersion
         version_line << version.GetAccession();
         if ( version.GetGi() > ZERO_GI ) {
             const CFlatFileConfig& cfg = GetContext().GetConfig();
-            if (! (cfg.HideGI() || cfg.IsPolicyFtp())) {
+            if (! (cfg.HideGI() || ( cfg.IsPolicyFtp() /* && ctx.IsRefSeq() */ ) )) {
                 version_line << "  GI:" << version.GetGi();
             }
         }
@@ -1194,6 +1194,8 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
         }
     }}
 
+    const CFlatFileConfig& cfg = ctx.Config();
+
     // see if we do have a contig
     bool has_contig = false;
     {{
@@ -1204,7 +1206,7 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
         const bool do_contig_style = ctx.DoContigStyle();
         const bool show_contig = ( (ctx.IsSegmented()  &&  ctx.HasParts())  ||
                                    (ctx.IsDelta()  &&  ! ctx.IsDeltaLitOnly()) );
-        if( ! is_wgs_master && ! is_tsa_master && (do_contig_style || ( ctx.Config().ShowContigAndSeq() && show_contig )) ) {
+        if( ! is_wgs_master && ! is_tsa_master && (do_contig_style || ( ( cfg.ShowContigAndSeq() || ( cfg.IsPolicyFtp() && ctx.IsRefSeq() && ctx.IsProt() ) ) && show_contig )) ) {
             has_contig = true;
         }
     }}
@@ -1212,7 +1214,7 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
     // see if we do have a sequence
     bool has_sequence = false;
     {{
-        if( ! ctx.DoContigStyle() || ctx.Config().ShowContigAndSeq() ) {
+        if( ! ctx.DoContigStyle() || cfg.ShowContigAndSeq() || ( cfg.IsPolicyFtp() && ctx.IsRefSeq() && ctx.IsProt() ) ) {
             has_sequence = true;
         }
     }}
