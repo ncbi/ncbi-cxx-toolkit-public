@@ -386,3 +386,7 @@ Disabled checking test requirements, leave it to scripts.
 August 26, 2021
 version 4.10.0, CXX-12088
 Added POST-BUILD step on XCode.
+
+September 01, 2021
+version 4.11.0, CXX-12098
+Added support of LanguageStandard setting
