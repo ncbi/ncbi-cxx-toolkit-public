@@ -66,6 +66,10 @@ class Dt_ostream_iterator
 {
 public:
     using iterator_category = output_iterator_tag;
+    typedef void                value_type;
+    typedef void                difference_type;
+    typedef void                pointer;
+    typedef void                reference;
 	typedef TElem char_type;
 	typedef TTraits traits_type;
 	typedef basic_ostream<TElem, TTraits> ostream_type;
