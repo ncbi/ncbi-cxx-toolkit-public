@@ -63,9 +63,9 @@ class CDataMember;
 
 template<typename TValue, typename TElem = char, typename TTraits = char_traits<TElem> >
 class Dt_ostream_iterator
-    : public iterator<output_iterator_tag, void, void, void, void>
 {
 public:
+    using iterator_category = output_iterator_tag;
 	typedef TElem char_type;
 	typedef TTraits traits_type;
 	typedef basic_ostream<TElem, TTraits> ostream_type;
