@@ -283,46 +283,47 @@ void CFlatFileGenerator::Generate
             try {
                 CSeqEntryIndex::EPolicy policy = CSeqEntryIndex::eAdaptive;
                 CSeqEntryIndex::TFlags flags = CSeqEntryIndex::fDefault;
-                if ( m_Ctx->GetConfig().OnlyNearFeatures() ) {
+                const CFlatFileConfig& cfg = m_Ctx->GetConfig();
+                if ( cfg.OnlyNearFeatures() && ! cfg.IsPolicyFtp() ) {
                     policy = CSeqEntryIndex::eInternal;
                 }
-                if ( m_Ctx->GetConfig().HideSNPFeatures() ) {
+                if ( cfg.HideSNPFeatures() ) {
                     flags |= CSeqEntryIndex::fHideSNPFeats;
                 }
-                if ( m_Ctx->GetConfig().HideCDDFeatures() ) {
+                if ( cfg.HideCDDFeatures() ) {
                     flags |= CSeqEntryIndex::fHideCDDFeats;
                 }
-                if ( m_Ctx->GetConfig().ShowSNPFeatures() ) {
+                if ( cfg.ShowSNPFeatures() ) {
                     flags |= CSeqEntryIndex::fShowSNPFeats;
                 }
-                if ( m_Ctx->GetConfig().ShowCDDFeatures() ) {
+                if ( cfg.ShowCDDFeatures() ) {
                     flags |= CSeqEntryIndex::fShowCDDFeats;
                 }
-                if ( m_Ctx->GetConfig().HideExonFeatures() ) {
+                if ( cfg.HideExonFeatures() ) {
                     flags |= CSeqEntryIndex::fHideExonFeats;
                 }
-                if ( m_Ctx->GetConfig().HideIntronFeatures() ) {
+                if ( cfg.HideIntronFeatures() ) {
                     flags |= CSeqEntryIndex::fHideIntronFeats;
                 }
-                if ( m_Ctx->GetConfig().HideMiscFeatures() ) {
+                if ( cfg.HideMiscFeatures() ) {
                     flags |= CSeqEntryIndex::fHideMiscFeats;
                 }
-                if ( m_Ctx->GetConfig().GeneRNACDSFeatures() ) {
+                if ( cfg.GeneRNACDSFeatures() ) {
                     flags |= CSeqEntryIndex::fGeneRNACDSOnly;
                 }
-                if ( m_Ctx->GetConfig().IsPolicyInternal() ) {
+                if ( cfg.IsPolicyInternal() ) {
                     policy = CSeqEntryIndex::eInternal;
                 }
-                if ( m_Ctx->GetConfig().IsPolicyExternal() ) {
+                if ( cfg.IsPolicyExternal() ) {
                     policy = CSeqEntryIndex::eExternal;
                 }
-                if ( m_Ctx->GetConfig().IsPolicyExhaustive() ) {
+                if ( cfg.IsPolicyExhaustive() ) {
                     policy = CSeqEntryIndex::eExhaustive;
                 }
-                if ( m_Ctx->GetConfig().IsPolicyFtp() ) {
+                if ( cfg.IsPolicyFtp() ) {
                     policy = CSeqEntryIndex::eFtp;
                 }
-                if ( m_Ctx->GetConfig().IsPolicyWeb() ) {
+                if ( cfg.IsPolicyWeb() ) {
                     policy = CSeqEntryIndex::eWeb;
                 }
                 CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
@@ -721,7 +722,7 @@ void CFlatFileGenerator::Generate
             try {
                 CSeqEntryIndex::EPolicy policy = CSeqEntryIndex::eAdaptive;
                 CSeqEntryIndex::TFlags flags = CSeqEntryIndex::fDefault;
-                if ( cfg.OnlyNearFeatures() ) {
+                if ( cfg.OnlyNearFeatures() && ! cfg.IsPolicyFtp() ) {
                     policy = CSeqEntryIndex::eInternal;
                 }
                 if ( cfg.HideSNPFeatures() ) {

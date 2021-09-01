@@ -214,7 +214,7 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     {
         GATHER_VIA_FUNC(Tsa, x_GatherTLS);
     } else if ( ctx.DoContigStyle() ) {
-        if ( cfg.ShowContigFeatures() || cfg.IsPolicyFtp() ) {
+        if ( cfg.ShowContigFeatures() || ( cfg.IsPolicyFtp() && ctx.IsRefSeq() ) ) {
             GATHER_VIA_FUNC(FeatAndGap, x_GatherFeatures);
         }
         else if ( cfg.IsModeEntrez() && m_Current->GetLocation().IsWhole()) {
@@ -225,7 +225,7 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         }
         GATHER_ANCHOR(Contig, "contig");
         GATHER_BLOCK(Contig, CContigItem);
-        if ( cfg.ShowContigAndSeq() ) {
+        if ( cfg.ShowContigAndSeq() || ( cfg.IsPolicyFtp() && ctx.IsRefSeq() && ctx.IsProt() ) ) {
             if ( ctx.IsNuc() && ! bIsMap && s_ShowBaseCount(cfg) )
             {
                 GATHER_BLOCK(Basecount, CBaseCountItem);
@@ -237,7 +237,7 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         }
     } else {
         GATHER_VIA_FUNC(FeatAndGap, x_GatherFeatures);
-        if ( cfg.ShowContigAndSeq()  &&  s_ShowContig(ctx) ) {
+        if ( ( cfg.ShowContigAndSeq() || ( cfg.IsPolicyFtp() && ctx.IsRefSeq() && ctx.IsProt() ) )  &&  s_ShowContig(ctx) ) {
             GATHER_ANCHOR(Contig, "contig");
             GATHER_BLOCK(Contig, CContigItem);
         }
