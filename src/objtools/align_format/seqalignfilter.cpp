@@ -448,7 +448,8 @@ void CSeqAlignFilter::x_ReadExtraGis(CConstRef<CSeq_align> sa, vector<TGi>& vec_
                 string str_id = score_entry->GetId().GetStr();
                 if (str_id == "use_this_gi")
                 {
-                    TGi gi = GI_FROM(CScore::C_Value::TInt, score_entry->GetValue().GetInt());
+                	Uint4 gi_v = (Uint4) (score_entry->GetValue().GetInt());
+                    TGi gi = GI_FROM(Uint4, gi_v);
                     vec_extra_gis.push_back(gi);
                 }
             }
