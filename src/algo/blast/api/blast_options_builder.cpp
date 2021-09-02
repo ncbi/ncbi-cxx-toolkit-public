@@ -260,7 +260,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         	const list<int>& int_list = v.GetInteger_list();
         	list<TGi> gi_list;
         	ITERATE ( list<int>, it, int_list ) {
-        		gi_list.push_back(GI_FROM(int, *it));
+       			Uint4 gi_v = (Uint4) *it;
+        		gi_list.push_back(GI_FROM(Uint4, gi_v));
         	}
         	m_GiList = gi_list;
             #elif defined(NCBI_INT8_GI)
@@ -271,7 +272,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
 			const list<int>& int_list = v.GetInteger_list();
         		list<TGi> gi_list;
         		ITERATE ( list<int>, it, int_list ) {
-        			gi_list.push_back(GI_FROM(int, *it));
+        			Uint4 gi_v = (Uint4) *it;
+        			gi_list.push_back(GI_FROM(Uint4, gi_v));
         		}
         		m_GiList = gi_list;
 		}
@@ -376,7 +378,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         	const list<int>& int_list = v.GetInteger_list();
         	list<TGi> gi_list;
         	ITERATE ( list<int>, it, int_list ) {
-        		gi_list.push_back(GI_FROM(int, *it));
+        		Uint4 gi_v = (Uint4) *it;
+        		gi_list.push_back(GI_FROM(Uint4, gi_v));
         	}
         	m_NegativeGiList = gi_list;
             #elif defined(NCBI_INT8_GI)
@@ -387,7 +390,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
 			const list<int>& int_list = v.GetInteger_list();
         		list<TGi> gi_list;
         		ITERATE ( list<int>, it, int_list ) {
-        			gi_list.push_back(GI_FROM(int, *it));
+        			Uint4 gi_v = (Uint4) *it;
+        			gi_list.push_back(GI_FROM(Uint4, gi_v));
         		}
         		m_NegativeGiList = gi_list;
 		}
