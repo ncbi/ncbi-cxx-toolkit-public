@@ -81,12 +81,14 @@ public:
 
 protected:
     void SendReplies();
-    void AddBlobId(const CID2_Reply_Get_Blob_Id& blob_id);
+    static string GetAnnotName(const CID2_Reply_Get_Blob_Id& blob_id);
+    const string* AddBlobId(const CID2_Reply_Get_Blob_Id& blob_id);
     bool IsCDDReply(const CID2_Reply& reply) const;
         
 protected:
     set<string> m_NamesToProcess;
-    vector<CConstRef<CID2_Reply_Get_Blob_Id>> m_BlobIds;
+    typedef vector<CConstRef<CID2_Reply_Get_Blob_Id>> TBlobIdList;
+    map<string, TBlobIdList> m_BlobIds;
     bool m_ApplyCDDFix;
     bool m_CDDReceived;
     CStopWatch m_RequestTime;

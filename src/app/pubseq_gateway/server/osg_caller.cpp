@@ -134,11 +134,13 @@ CRef<CID2_Request_Packet> COSGCaller::MakePacket(const TFetches& fetches)
 {
     CRef<CID2_Request_Packet> packet(new CID2_Request_Packet);
     m_Fetches.clear();
-    if ( kAlwaysSendInit || !m_Connection->InitRequestWasSent() ) {
-        AddFetch(*packet, Ref(new COSGFetch(MakeInitRequest(), m_Context)));
-    }
-    for ( auto& f : fetches ) {
-        AddFetch(*packet, f);
+    if ( !fetches.empty() ) {
+        if ( kAlwaysSendInit || !m_Connection->InitRequestWasSent() ) {
+            AddFetch(*packet, Ref(new COSGFetch(MakeInitRequest(), m_Context)));
+        }
+        for ( auto& f : fetches ) {
+            AddFetch(*packet, f);
+        }
     }
     return packet;
 }
@@ -174,18 +176,20 @@ void COSGCaller::AllocateConnection(const CRef<COSGConnectionPool>& connection_p
 }
 
 
-void COSGCaller::SendRequest(CPSGS_OSGProcessorBase& processor)
+void COSGCaller::SendRequest(COSGProcessorRef& processor)
 {
     _ASSERT(m_Connection);
     _ASSERT(!m_RequestPacket);
     processor.NotifyOSGCallStart();
     m_RequestPacket = MakePacket(processor.GetFetches());
     _ASSERT(m_RequestPacket->Get().size() < 999999); // overflow guard
-    m_Connection->SendRequestPacket(*m_RequestPacket);
+    if ( !m_RequestPacket->Get().empty() ) {
+        m_Connection->SendRequestPacket(*m_RequestPacket);
+    }
 }
 
 
-void COSGCaller::WaitForReplies(CPSGS_OSGProcessorBase& processor)
+void COSGCaller::WaitForReplies(COSGProcessorRef& processor)
 {
     _ASSERT(m_Connection);
     _ASSERT(m_RequestPacket);
@@ -206,7 +210,7 @@ void COSGCaller::WaitForReplies(CPSGS_OSGProcessorBase& processor)
         if ( m_Fetches[index]->EndOfReplies() ) {
             --waiting_count;
         }
-        if ( !failed && !processor.IsCanceled() ) {
+        if ( !failed ) {
             processor.NotifyOSGCallReply(*reply);
         }
     }
@@ -216,9 +220,7 @@ void COSGCaller::WaitForReplies(CPSGS_OSGProcessorBase& processor)
         NCBI_THROW_FMT(CPubseqGatewayException, eOutputNotInReadyState,
                        "OSG error reply: "<<MSerial_AsnText<<*failed);
     }
-    if ( !processor.IsCanceled() ) {
-        processor.NotifyOSGCallEnd();
-    }
+    processor.NotifyOSGCallEnd();
 }
 
 

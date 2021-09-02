@@ -141,6 +141,10 @@ public:
     CRef<COSGConnection> AllocateConnection();
     void ReleaseConnection(CRef<COSGConnection>& conn);
 
+    bool GetAsyncProcessing() const {
+        return m_AsyncProcessing;
+    }
+
 protected:
     friend class COSGConnection;
 
@@ -157,6 +161,7 @@ private:
     double m_CDDRetryTimeout;
     int m_RetryCount;
     TEnabledFlags m_DefaultEnabledFlags;
+    bool m_AsyncProcessing;
     CMutex m_Mutex;
     CSemaphore m_WaitConnectionSlot;
     size_t m_NextConnectionID;

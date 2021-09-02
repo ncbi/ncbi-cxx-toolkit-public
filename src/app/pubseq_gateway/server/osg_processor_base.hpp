@@ -56,6 +56,8 @@ BEGIN_NAMESPACE(osg);
 class COSGFetch;
 class COSGConnectionPool;
 class COSGConnection;
+class COSGProcessorRef;
+class CPSGS_OSGProcessorBase;
 
 
 enum EDebugLevel {
@@ -76,6 +78,39 @@ Severity GetDiagSeverity();
 void SetDiagSeverity(EDiagSev severity);
 
 USING_SCOPE(objects);
+
+
+class COSGProcessorRef {
+public:
+    explicit COSGProcessorRef(CPSGS_OSGProcessorBase* ptr);
+    ~COSGProcessorRef();
+
+    typedef vector<CRef<COSGFetch>> TFetches;
+    TFetches GetFetches();
+    void NotifyOSGCallStart();
+    void NotifyOSGCallReply(const CID2_Reply& reply);
+    void NotifyOSGCallEnd();
+    void ProcessReplies();
+    void Process();
+    static void s_Process(shared_ptr<COSGProcessorRef> processor);
+    void Cancel();
+    
+    void FinalizeResult(IPSGS_Processor::EPSGS_Status status);
+    IPSGS_Processor::EPSGS_Status GetStatus() const;
+    bool IsCanceled() const
+        {
+            return GetStatus() == IPSGS_Processor::ePSGS_Cancelled;
+        }
+
+    void Detach();
+    
+private:
+    mutable CFastMutex m_ProcessorPtrMutex;
+    CPSGS_OSGProcessorBase* volatile m_ProcessorPtr;
+    IPSGS_Processor::EPSGS_Status m_FinalStatus;
+    CRef<CRequestContext> m_Context;
+    CRef<COSGConnectionPool> m_ConnectionPool;
+};
 
 
 // actual OSG processor base class for communication with OSG
@@ -107,7 +142,7 @@ public:
 
     bool IsCanceled() const
         {
-            return m_Canceled;
+            return m_Status == ePSGS_Cancelled;
         }
 
     TEnabledFlags GetEnabledFlags() const
@@ -127,6 +162,8 @@ public:
         }
     
 protected:
+    friend class COSGProcessorRef;
+    
     COSGConnectionPool& GetConnectionPool() const {
         return m_ConnectionPool.GetNCObject();
     }
@@ -157,9 +194,8 @@ private:
     TEnabledFlags m_EnabledFlags;
     CRef<COSGConnection> m_Connection;
     TFetches m_Fetches;
-    unique_ptr<thread> m_Thread;
+    shared_ptr<COSGProcessorRef> m_ProcessorRef;
     EPSGS_Status m_Status;
-    volatile bool m_Canceled;
 };
 
 
