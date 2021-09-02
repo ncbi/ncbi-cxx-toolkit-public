@@ -154,9 +154,19 @@ void CPSGS_OSGGetBlob::ProcessReplies()
                 break;
             case CID2_Reply::TReply::e_Get_blob:
                 ProcessBlobReply(*r);
+                if ( m_Blob ) {
+                    if ( SignalStartProcessing() == ePSGS_Cancel ) {
+                        return;
+                    }
+                }
                 break;
             case CID2_Reply::TReply::e_Get_split_info:
                 ProcessBlobReply(*r);
+                if ( m_SplitInfo ) {
+                    if ( SignalStartProcessing() == ePSGS_Cancel ) {
+                        return;
+                    }
+                }
                 break;
             default:
                 ERR_POST(GetName()<<": "
@@ -166,7 +176,9 @@ void CPSGS_OSGGetBlob::ProcessReplies()
         }
     }
     if ( IsCanceled() ) {
-        FinalizeResult(ePSGS_Cancelled);
+        return;
+    }
+    if ( SignalStartProcessing() == ePSGS_Cancel ) {
         return;
     }
     SendBlob();
@@ -229,6 +241,11 @@ void CPSGS_OSGGetChunks::ProcessReplies()
                 break;
             case CID2_Reply::TReply::e_Get_chunk:
                 ProcessBlobReply(*r);
+                if ( m_Chunk ) {
+                    if ( SignalStartProcessing() == ePSGS_Cancel ) {
+                        return;
+                    }
+                }
                 break;
             default:
                 ERR_POST(GetName()<<": "
@@ -238,7 +255,9 @@ void CPSGS_OSGGetChunks::ProcessReplies()
         }
     }
     if ( IsCanceled() ) {
-        FinalizeResult(ePSGS_Cancelled);
+        return;
+    }
+    if ( SignalStartProcessing() == ePSGS_Cancel ) {
         return;
     }
     SendBlob();

@@ -166,7 +166,6 @@ void CPSGS_OSGResolve::ProcessReplies()
                 if ( m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_BlobId ) {
                     // resolved to OSG sequence
                     if ( SignalStartProcessing() == ePSGS_Cancel ) {
-                        FinalizeResult(ePSGS_Cancelled);
                         return;
                     }
                 }
@@ -179,7 +178,6 @@ void CPSGS_OSGResolve::ProcessReplies()
         }
     }
     if ( IsCanceled() ) {
-        FinalizeResult(ePSGS_Cancelled);
         return;
     }
     if ( m_BioseqInfoFlags == 0 ) {
@@ -194,6 +192,9 @@ void CPSGS_OSGResolve::ProcessReplies()
         if ( !psg_req.m_IncludeDataFlags ) {
             // only resolution is requested
             m_BioseqInfoFlags = 0;
+        }
+        if ( SignalStartProcessing() == ePSGS_Cancel ) {
+            return;
         }
         SendBioseqInfo(GetRequest()->GetRequest<SPSGS_ResolveRequest>().m_OutputFormat);
         FinalizeResult(ePSGS_Found);
@@ -278,7 +279,7 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
                 if ( m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_BlobId ) {
                     // resolved to OSG sequence
                     if ( SignalStartProcessing() == ePSGS_Cancel ) {
-                        FinalizeResult(ePSGS_Cancelled);
+                        return;
                     }
                 }
                 break;
@@ -296,22 +297,30 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
         }
     }
     if ( IsCanceled() ) {
-        FinalizeResult(ePSGS_Cancelled);
         return;
     }
     if ( !(m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_BlobId) ) {
         FinalizeResult(ePSGS_NotFound);
     }
     else if ( HasBlob() ) {
+        if ( SignalStartProcessing() == ePSGS_Cancel ) {
+            return;
+        }
         SendBioseqInfo(SPSGS_ResolveRequest::ePSGS_UnknownFormat);
         SendBlob();
         FinalizeResult(ePSGS_Found);
     }
     else if ( GetRequest()->GetRequest<SPSGS_BlobBySeqIdRequest>().m_TSEOption == SPSGS_BlobBySeqIdRequest::ePSGS_NoneTSE ) {
+        if ( SignalStartProcessing() == ePSGS_Cancel ) {
+            return;
+        }
         SendBioseqInfo(SPSGS_ResolveRequest::ePSGS_UnknownFormat);
         FinalizeResult(ePSGS_Found);
     }
     else if ( BlobIsExcluded(m_BlobId) ) {
+        if ( SignalStartProcessing() == ePSGS_Cancel ) {
+            return;
+        }
         SendBioseqInfo(SPSGS_ResolveRequest::ePSGS_UnknownFormat);
         SendExcludedBlob(m_BlobId);
         FinalizeResult(ePSGS_Found);

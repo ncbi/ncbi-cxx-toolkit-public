@@ -224,7 +224,11 @@ void CPSGS_OSGAnnot::ProcessReplies()
                 // do nothing
                 break;
             case CID2_Reply::TReply::e_Get_blob_id:
-                AddBlobId(r->GetReply().GetGet_blob_id());
+                if ( AddBlobId(r->GetReply().GetGet_blob_id()) ) {
+                    if ( SignalStartProcessing() == ePSGS_Cancel ) {
+                        return;
+                    }
+                }
                 break;
             default:
                 ERR_POST(GetName()<<": "
@@ -234,7 +238,6 @@ void CPSGS_OSGAnnot::ProcessReplies()
         }
     }
     if ( IsCanceled() ) {
-        FinalizeResult(ePSGS_Cancelled);
         return;
     }
     SendReplies();
@@ -242,18 +245,44 @@ void CPSGS_OSGAnnot::ProcessReplies()
 }
 
 
-void CPSGS_OSGAnnot::AddBlobId(const CID2_Reply_Get_Blob_Id& blob_id)
+string CPSGS_OSGAnnot::GetAnnotName(const CID2_Reply_Get_Blob_Id& blob_id)
 {
-    if ( !blob_id.IsSetBlob_id() ) {
-        return;
+    string name;
+    for ( auto& ai : blob_id.GetAnnot_info() ) {
+        // find annot name
+        string ai_name = ai->GetName();
+        SIZE_TYPE zoom_pos = ai_name.find("@@");
+        if ( zoom_pos != NPOS ) {
+            ai_name.resize(zoom_pos);
+        }
+        if ( name.empty() ) {
+            name = ai_name;
+        }
+        else if ( name != ai_name ) {
+            return 0;
+        }
     }
-    if ( !blob_id.IsSetAnnot_info() ) {
-        return;
-    }
-    m_BlobIds.push_back(Ref(&blob_id));
+    return name;
 }
 
 
+const string* CPSGS_OSGAnnot::AddBlobId(const CID2_Reply_Get_Blob_Id& blob_id)
+{
+    if ( !blob_id.IsSetBlob_id() ||
+         !CPSGS_OSGGetBlobBase::IsEnabledAnnotBlob(GetEnabledFlags(), blob_id.GetBlob_id()) ||
+         !blob_id.IsSetAnnot_info() ) {
+        return 0;
+    }
+    string name = GetAnnotName(blob_id);
+    if ( !m_NamesToProcess.count(name) ) {
+        return 0;
+    }
+    auto iter = m_BlobIds.insert(make_pair(name, TBlobIdList())).first;
+    iter->second.push_back(Ref(&blob_id));
+    return &iter->first;
+}
+
+#if 0
 namespace {
     struct SAnnotInfo {
         // NA accession
@@ -446,7 +475,7 @@ namespace {
             }
     };
 }
-
+#endif
 
 void CPSGS_OSGAnnot::SendReplies()
 {
@@ -455,68 +484,35 @@ void CPSGS_OSGAnnot::SendReplies()
             LOG_POST(GetDiagSeverity() << "OSG: "
                      "Asked for annot "<<name);
         }
-        for ( auto& r : m_BlobIds ) {
-            LOG_POST(GetDiagSeverity() << "OSG: "
-                     "Received annot reply "<<MSerial_AsnText<<*r);
+        for ( auto& r_name : m_BlobIds ) {
+            for ( auto& r : r_name.second ) {
+                LOG_POST(GetDiagSeverity() << "OSG: "
+                         "Received annot reply "<<MSerial_AsnText<<*r);
+            }
         }
     }
     auto& psg_req = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
-    for ( auto& r : m_BlobIds ) {
-        if ( !CPSGS_OSGGetBlobBase::IsEnabledAnnotBlob(GetEnabledFlags(), r->GetBlob_id()) ) {
-            continue;
-        }
-        string psg_blob_id = CPSGS_OSGGetBlobBase::GetPSGBlobId(r->GetBlob_id());
-        CJsonNode       json(CJsonNode::NewObjectNode());
-        json.SetString("blob_id", psg_blob_id);
-        if ( r->GetBlob_id().IsSetVersion() ) {
-            json.SetInteger("last_modified", r->GetBlob_id().GetVersion()*60000);
-        }
-        string annot_name;
-        try {
-            SAnnotInfo info(r->GetAnnot_info());
-            annot_name = info.annot_name;
-            json.SetString("accession", info.accession);
-            json.SetInteger("version", info.version);
-            json.SetInteger("seq_id_type", info.seq_id_type);
-            if ( info.range != CRange<TSeqPos>::GetWhole() ) {
-                json.SetInteger("start", info.range.GetFrom());
-                json.SetInteger("stop", info.range.GetTo());
+    for ( auto& r_name : m_BlobIds ) {
+        auto& annot_name = r_name.first;
+        for ( auto& r : r_name.second ) {
+            string psg_blob_id = CPSGS_OSGGetBlobBase::GetPSGBlobId(r->GetBlob_id());
+            CJsonNode       json(CJsonNode::NewObjectNode());
+            json.SetString("blob_id", psg_blob_id);
+            if ( r->GetBlob_id().IsSetVersion() ) {
+                json.SetInteger("last_modified", r->GetBlob_id().GetVersion()*60000);
             }
-            else {
-                // whole sequence
-                json.SetInteger("start", 0);
-                json.SetInteger("stop", 0);
-            }
-            json.SetString("annot_info", info.json.Repr(CJsonNode::fStandardJson));
-        }
-        catch ( exception& ) {
-            ERR_POST(GetName()<<": "
-                     "Bad annot-info: "<<MSerial_AsnText<<*r);
-            // find default annot_name
-            for ( auto& ai : r->GetAnnot_info() ) {
-                if ( m_NamesToProcess.count(ai->GetName()) ) {
-                    annot_name = ai->GetName();
-                    break;
+            if ( r->IsSetAnnot_info() ) {
+                // set ASN.1 annot info
+                ostringstream str;
+                for ( auto& info : r->GetAnnot_info() ) {
+                    str << MSerial_AsnBinary << *info;
                 }
+                json.SetString("seq_annot_info", NStr::Base64Encode(str.str(), 0));
             }
-        }
-        if ( r->IsSetAnnot_info() ) {
-            // set ASN.1 annot info
-            ostringstream str;
-            for ( auto& info : r->GetAnnot_info() ) {
-                str << MSerial_AsnBinary << *info;
-            }
-            json.SetString("seq_annot_info", NStr::Base64Encode(str.str(), 0));
-        }
-        if ( m_NamesToProcess.count(annot_name) ) {
             GetReply()->PrepareNamedAnnotationData(annot_name, GetName(),
                                                    json.Repr(CJsonNode::fStandardJson));
         }
-        //GetReply()->PrepareReplyCompletion();
-    }
-    // register processed names
-    for ( auto& name : m_NamesToProcess ) {
-        psg_req.RegisterProcessedName(GetPriority(), name);
+        psg_req.RegisterProcessedName(GetPriority(), annot_name);
     }
 }
 
@@ -528,20 +524,12 @@ bool CPSGS_OSGAnnot::IsCDDReply(const CID2_Reply& reply) const
     }
     
     const CID2_Reply_Get_Blob_Id& blob_id = reply.GetReply().GetGet_blob_id();
-    if ( !blob_id.IsSetBlob_id() || !CPSGS_OSGGetBlobBase::IsEnabledCDDBlob(GetEnabledFlags(), blob_id.GetBlob_id()) ) {
+    if ( !blob_id.IsSetBlob_id() ||
+         !CPSGS_OSGGetBlobBase::IsEnabledCDDBlob(GetEnabledFlags(), blob_id.GetBlob_id()) ||
+         !blob_id.IsSetAnnot_info() ) {
         return false;
     }
-
-    if ( !blob_id.IsSetAnnot_info() ) {
-        return false;
-    }
-    try {
-        SAnnotInfo info(blob_id.GetAnnot_info());
-        return IsCDDName(info.annot_name);
-    }
-    catch ( exception& /*ignored*/ ) {
-        return false;
-    }
+    return IsCDDName(GetAnnotName(blob_id));
 }
 
 

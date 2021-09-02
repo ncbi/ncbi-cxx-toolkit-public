@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <vector>
 
 BEGIN_NCBI_NAMESPACE;
@@ -53,7 +54,7 @@ BEGIN_NAMESPACE(osg);
 class COSGConnectionPool;
 class COSGConnection;
 class COSGFetch;
-class CPSGS_OSGProcessorBase;
+class COSGProcessorRef;
 
 USING_SCOPE(objects);
 
@@ -71,8 +72,8 @@ public:
 
     void AllocateConnection(const CRef<COSGConnectionPool>& connection_pool,
                             const CRef<CRequestContext>& context);
-    void SendRequest(CPSGS_OSGProcessorBase& processor);
-    void WaitForReplies(CPSGS_OSGProcessorBase& processor);
+    void SendRequest(COSGProcessorRef& processor);
+    void WaitForReplies(COSGProcessorRef& processor);
 
     const CID2_Request_Packet& GetRequestPacket() const
         {
