@@ -2377,11 +2377,11 @@ BOOST_AUTO_TEST_CASE(IntersectionGiList)
     // Add to start of a3
     a3.push_back(special);
 
-    for(int i = 0; (i*3) < 500; i++) {
-        a3.push_back(GI_FROM(int, i*3));
+    for(Uint4 i = 0; (i*3) < 500; i++) {
+        a3.push_back(GI_FROM(Uint4, i*3));
 
         if (i*5 < 500) {
-            a5.push_back(GI_FROM(int, i*5));
+            a5.push_back(GI_FROM(Uint4, i*5));
         }
     }
 
@@ -2393,8 +2393,8 @@ BOOST_AUTO_TEST_CASE(IntersectionGiList)
     // Intersection == multiples of 15.
     CIntersectionGiList both(gi3, a5);
 
-    for(int i = 0; i < 500; i++) {
-        TGi gi = GI_FROM(int, i);
+    for(Uint4 i = 0; i < 500; i++) {
+        TGi gi = GI_FROM(Uint4, i);
         if (((i % 15) == 0) || (gi == special)) {
             BOOST_REQUIRE(true == both.FindGi(gi));
         } else {
@@ -2418,11 +2418,11 @@ BOOST_AUTO_TEST_CASE(IntersectionNegGiList)
     // Add to start of a3
     a3.push_back(special);
 
-    for(int i = 0; (i*3) < 500; i++) {
-        a3.push_back(GI_FROM(int, i*3));
+    for(Uint4 i = 0; (i*3) < 500; i++) {
+        a3.push_back(GI_FROM(Uint4, i*3));
 
         if (i*5 < 500) {
-            a5.push_back(GI_FROM(int, i*5));
+            a5.push_back(GI_FROM(Uint4, i*5));
         }
     }
 
@@ -2740,7 +2740,8 @@ public:
     {
         for(const char ** p = str; *p; p++) {
             if ((*p)[0] == '#') {
-                m_GisOids.push_back(GI_FROM(int, atoi((*p) + 1)));
+            	Uint4 g = (Uint4) atoi((*p) + 1);
+                m_GisOids.push_back(GI_FROM(Uint4, g));
             } else {
                 string acc(*p);
                 m_SisOids.push_back(acc);
