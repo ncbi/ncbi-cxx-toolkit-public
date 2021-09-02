@@ -82,7 +82,7 @@ elseif("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 15 2017 Win64")
 endif()
 
 if("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 16 2019")
-    set(NCBI_ThirdParty_XALAN  ${NCBI_ThirdPartyBasePath}/xalan/${NCBI_ThirdPartyCompiler}/1.2 CACHE PATH "XALAN root")
+    set(NCBI_ThirdParty_XALAN  ${NCBI_ThirdPartyBasePath}/xalan/${NCBI_ThirdPartyCompiler}/1.12 CACHE PATH "XALAN root")
     set(NCBI_ThirdParty_XERCES ${NCBI_ThirdPartyBasePath}/xerces/${NCBI_ThirdPartyCompiler}/3.2.3 CACHE PATH "XERCES root")
     set(NCBI_ThirdParty_UV     ${NCBI_ThirdPartyBasePath}/uv/${NCBI_ThirdPartyCompiler}/1.35.0.ncbi1 CACHE PATH "UV root")
 elseif("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 15 2017 Win64")
