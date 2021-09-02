@@ -7532,6 +7532,7 @@ if test "$with_vdb" != "no" ; then
          done
          vdb_inc_subdirs=cc/gcc
          case "$host_cpu:$bit64_sfx" in
+            aarch64:* ) vdb_inc_subdirs="cc/gcc/arm64 $vdb_inc_subdirs" ;;
             *86*:64 ) vdb_inc_subdirs="cc/gcc/x86_64 $vdb_inc_subdirs" ;;
             *86*:*  ) vdb_inc_subdirs="cc/gcc/fat86 $vdb_inc_subdirs" ;;
          esac
