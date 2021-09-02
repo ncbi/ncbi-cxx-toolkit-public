@@ -407,6 +407,10 @@ public:
     EStatus Execute(void) override;
     virtual void Finish(void) = 0;
 
+    bool GotNotFound() const {
+        return m_GotNotFound;
+    }
+
 protected:
     void OnStatusChange(EStatus old) override;
 
@@ -432,7 +436,7 @@ protected:
 
     TReply m_Reply;
     EStatus m_Status;
-    bool m_GotNoFound;
+    bool m_GotNotFound;
 private:
     CPSG_TaskGroup& m_Group;
 };
@@ -530,7 +534,7 @@ private:
 CPSG_Task::CPSG_Task(TReply reply, CPSG_TaskGroup& group)
     : m_Reply(reply),
       m_Status(eIdle),
-      m_GotNoFound(false),
+      m_GotNotFound(false),
       m_Group(group)
 {
 }
@@ -588,7 +592,7 @@ void CPSG_Task::ReadReply(void)
         if (status != EPSG_Status::eSuccess && status != EPSG_Status::eInProgress) {
             ReportStatus(reply_item, status);
             if ( status == EPSG_Status::eNotFound ) {
-                m_GotNoFound = true;
+                m_GotNotFound = true;
                 continue;
             }
             m_Status = eFailed;
@@ -621,6 +625,8 @@ void CPSG_Task::ReadReply(void)
 #define NCBI_PSGLOADER_NAME "psg_loader"
 #define NCBI_PSGLOADER_SERVICE_NAME "service_name"
 #define NCBI_PSGLOADER_NOSPLIT "no_split"
+#define NCBI_PSGLOADER_WHOLE_TSE "whole_tse"
+#define NCBI_PSGLOADER_WHOLE_TSE_BULK "whole_tse_bulk"
 #define NCBI_PSGLOADER_ADD_WGS_MASTER "add_wgs_master"
 
 NCBI_PARAM_DECL(string, PSG_LOADER, SERVICE_NAME);
@@ -632,6 +638,16 @@ NCBI_PARAM_DECL(bool, PSG_LOADER, NO_SPLIT);
 NCBI_PARAM_DEF_EX(bool, PSG_LOADER, NO_SPLIT, false,
     eParam_NoThread, PSG_LOADER_NO_SPLIT);
 typedef NCBI_PARAM_TYPE(PSG_LOADER, NO_SPLIT) TPSG_NoSplit;
+
+NCBI_PARAM_DECL(unsigned int, PSG_LOADER, WHOLE_TSE);
+NCBI_PARAM_DEF_EX(unsigned int, PSG_LOADER, WHOLE_TSE, false,
+    eParam_NoThread, PSG_LOADER_WHOLE_TSE);
+typedef NCBI_PARAM_TYPE(PSG_LOADER, WHOLE_TSE) TPSG_WholeTSE;
+
+NCBI_PARAM_DECL(unsigned int, PSG_LOADER, WHOLE_TSE_BULK);
+NCBI_PARAM_DEF_EX(unsigned int, PSG_LOADER, WHOLE_TSE_BULK, true,
+    eParam_NoThread, PSG_LOADER_WHOLE_TSE_BULK);
+typedef NCBI_PARAM_TYPE(PSG_LOADER, WHOLE_TSE_BULK) TPSG_WholeTSEBulk;
 
 NCBI_PARAM_DECL(unsigned int, PSG_LOADER, MAX_POOL_THREADS);
 NCBI_PARAM_DEF_EX(unsigned int, PSG_LOADER, MAX_POOL_THREADS, 10,
@@ -667,17 +683,61 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
         service_name = TPSG_ServiceName::GetDefault();
     }
 
-    m_NoSplit = params.GetPSGNoSplit();
+    bool no_split = params.GetPSGNoSplit();
     if (psg_params) {
         try {
             string value = CPSGDataLoader::GetParam(psg_params, NCBI_PSGLOADER_NOSPLIT);
             if (!value.empty()) {
-                m_NoSplit = NStr::StringToBool(value);
+                no_split = NStr::StringToBool(value);
             }
         }
         catch (CException&) {
         }
     }
+    if ( no_split ) {
+        m_TSERequestModeBulk = m_TSERequestMode = CPSG_Request_Biodata::eOrigTSE;
+    }
+    else {
+        {{
+            bool whole_tse = TPSG_WholeTSE::GetDefault();
+            if ( psg_params ) {
+                try {
+                    string value = CPSGDataLoader::GetParam(psg_params, NCBI_PSGLOADER_WHOLE_TSE);
+                    if (!value.empty()) {
+                        whole_tse = NStr::StringToBool(value);
+                    }
+                }
+                catch (CException&) {
+                }
+            }
+            if ( whole_tse ) {
+                m_TSERequestMode = CPSG_Request_Biodata::eWholeTSE;
+            }
+            else {
+                m_TSERequestMode = CPSG_Request_Biodata::eSmartTSE;
+            }
+        }}
+        {{
+            bool whole_tse = TPSG_WholeTSEBulk::GetDefault();
+            if ( psg_params ) {
+                try {
+                    string value = CPSGDataLoader::GetParam(psg_params, NCBI_PSGLOADER_WHOLE_TSE_BULK);
+                    if (!value.empty()) {
+                        whole_tse = NStr::StringToBool(value);
+                    }
+                }
+                catch (CException&) {
+                }
+            }
+            if ( whole_tse ) {
+                m_TSERequestModeBulk = CPSG_Request_Biodata::eWholeTSE;
+            }
+            else {
+                m_TSERequestModeBulk = CPSG_Request_Biodata::eSmartTSE;
+            }
+        }}
+    }
+    
     m_AddWGSMasterDescr = true;
     if ( psg_params ) {
         string param = CPSGDataLoader::GetParam(psg_params, NCBI_PSGLOADER_ADD_WGS_MASTER);
@@ -734,6 +794,17 @@ CPSGDataLoader_Impl::CallWithRetry(Call&& call,
     for ( int t = 1; t < retry_count; ++ t ) {
         try {
             return call();
+        }
+        catch ( CLoaderException& exc ) {
+            if ( exc.GetErrCode() == exc.eConnectionFailed ||
+                 exc.GetErrCode() == exc.eLoaderFailed ) {
+                // can retry
+                LOG_POST(Warning<<"CPSGDataLoader::"<<name<<"() try "<<t<<" exception: "<<exc);
+            }
+            else {
+                // no retry
+                throw;
+            }
         }
         catch ( CException& exc ) {
             LOG_POST(Warning<<"CPSGDataLoader::"<<name<<"() try "<<t<<" exception: "<<exc);
@@ -984,7 +1055,7 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
     
     CPSG_Request_Biodata::EIncludeData inc_data = CPSG_Request_Biodata::eNoTSE;
     if (data_source) {
-        inc_data = m_NoSplit ? CPSG_Request_Biodata::eOrigTSE : CPSG_Request_Biodata::eSmartTSE;
+        inc_data = m_TSERequestMode;
         CDataSource::TLoadedBlob_ids loaded_blob_ids;
         data_source->GetLoadedBlob_ids(idh, CDataSource::fLoaded_bioseqs, loaded_blob_ids);
         ITERATE(CDataSource::TLoadedBlob_ids, loaded_blob_id, loaded_blob_ids) {
@@ -1119,7 +1190,7 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const C
         CPSG_BlobId bid(blob_id.ToPsgId());
         auto context = make_shared<CPsgClientContext>();
         auto request = make_shared<CPSG_Request_Blob>(bid, context);
-        request->IncludeData(m_NoSplit ? CPSG_Request_Biodata::eOrigTSE : CPSG_Request_Biodata::eSmartTSE);
+        request->IncludeData(m_TSERequestMode);
         auto reply = x_ProcessRequest(request);
         ret = x_ProcessBlobReply(reply, data_source, CSeq_id_Handle(), true, false, &load_lock).lock;
     }
@@ -1620,7 +1691,7 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TTSE_LockSets& 
         const CSeq_id_Handle& id = tse_set->first;
         CPSG_BioId bio_id = x_GetBioId(id);
         auto request = make_shared<CPSG_Request_Biodata>(move(bio_id), context);
-        request->IncludeData(m_NoSplit ? CPSG_Request_Biodata::eOrigTSE : CPSG_Request_Biodata::eWholeTSE);
+        request->IncludeData(m_TSERequestModeBulk);
         auto reply = x_ProcessRequest(request);
         CRef<CPSG_Blob_Task> task(
             new CPSG_Blob_Task(reply, group, id, data_source, *this, true));
@@ -1926,7 +1997,7 @@ CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
         CPSG_Request_NamedAnnotInfo::TAnnotNames names = { kCDDAnnotName };
         _ASSERT(bio_id.GetId().find('|') == NPOS);
         auto request = make_shared<CPSG_Request_NamedAnnotInfo>(bio_id, names, context);
-        request->IncludeData(CPSG_Request_Biodata::eSmartTSE);
+        request->IncludeData(m_TSERequestMode);
         auto reply = x_ProcessRequest(request);
         shared_ptr<CPSG_BioseqInfo> bioseq_info;
         shared_ptr<CPSG_BlobInfo> blob_info;
@@ -2030,7 +2101,7 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
             else {
                 request = make_shared<CPSG_Request_Blob>(blob_id.ToPsgId(), context);
             }
-            request->IncludeData(CPSG_Request_Biodata::eSmartTSE);
+            request->IncludeData(m_TSERequestMode);
             chunk_map[request.get()] = *it;
             x_SendRequest(request);
         }
@@ -2448,7 +2519,7 @@ CPSGDataLoader_Impl::x_RetryBlobRequest(const string& blob_id, CDataSource* data
     CPSG_BlobId req_blob_id(blob_id);
     auto context = make_shared<CPsgClientContext>();
     auto blob_request = make_shared<CPSG_Request_Blob>(req_blob_id, context);
-    blob_request->IncludeData(m_NoSplit ? CPSG_Request_Biodata::eOrigTSE : CPSG_Request_Biodata::eSmartTSE);
+    blob_request->IncludeData(m_TSERequestMode);
     auto blob_reply = x_ProcessRequest(blob_request);
     return x_ProcessBlobReply(blob_reply, data_source, req_idh, false, false, &load_lock);
 }
@@ -2489,7 +2560,10 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
         }
     }
     else if ( !GetGetBlobByIdShouldFail() &&
-              (lock_asap || load_lock) && !task->m_ReplyResult.blob_id.empty() ) {
+              (lock_asap || load_lock) &&
+              !task->m_ReplyResult.blob_id.empty() &&
+              retry &&
+              !task->GotNotFound() ) {
         // blob is required, but not received, yet blob_id is known, so we retry
         ret = x_RetryBlobRequest(task->m_ReplyResult.blob_id, data_source, req_idh);
         if ( !ret.lock ) {
@@ -2497,6 +2571,10 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "CPSGDataLoader::GetRecords("+req_idh.AsString()+") failed");
         }
+    }
+    else if ( task->GotNotFound() ) {
+        NCBI_THROW_FMT(CLoaderException, eNoData,
+                       "CPSGDataLoader: No blob for seq_id="<<req_idh<<" blob_id="<<task->m_ReplyResult.blob_id);
     }
     else {
         _TRACE("Failed to load blob for " << req_idh.AsString()<<" @ "<<CStackTrace());

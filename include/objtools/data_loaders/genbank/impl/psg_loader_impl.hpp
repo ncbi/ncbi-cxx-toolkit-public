@@ -230,7 +230,8 @@ private:
     // Map seq-id to bioseq info.
     typedef map<CSeq_id_Handle, shared_ptr<SPsgBioseqInfo> > TBioseqCache;
 
-    bool m_NoSplit = false;
+    CPSG_Request_Biodata::EIncludeData m_TSERequestMode = CPSG_Request_Biodata::eSmartTSE;
+    CPSG_Request_Biodata::EIncludeData m_TSERequestModeBulk = CPSG_Request_Biodata::eWholeTSE;
     bool m_AddWGSMasterDescr = true;
     shared_ptr<CPSG_Queue> m_Queue;
     unique_ptr<CPSGBlobMap> m_BlobMap;
