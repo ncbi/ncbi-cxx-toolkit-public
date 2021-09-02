@@ -194,11 +194,11 @@ struct CDeltaBlastTestFixture {
             }
             else {
                 BOOST_REQUIRE(seqid.GetGeneral().IsSetTag());
-                int new_tag = seqid.GetGeneral().GetTag().GetId();
+                Uint4 new_tag =(Uint4) (seqid.GetGeneral().GetTag().GetId());
 
-                if (new_tag != GI_TO(int, last_id)) {
+                if (new_tag != GI_TO(Uint4, last_id)) {
                     num_ids++;
-                    last_id = GI_FROM(int, new_tag);
+                    last_id = GI_FROM(Uint4, new_tag);
                 }
                 last_acc.clear();
                 last_ver = -1;
