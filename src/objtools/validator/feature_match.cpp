@@ -270,7 +270,7 @@ void CMatchCDS::AssignSinglemRNA(void)
         m_OverlappingmRNAs.begin();
     for (; mrna_it != m_OverlappingmRNAs.end(); ++mrna_it) {
         if (!(*mrna_it)->IsAccountedFor()) {
-            if (match == NULL) {
+            if (!match) {
                 match.Reset(*mrna_it);
             }
             else {
@@ -281,7 +281,7 @@ void CMatchCDS::AssignSinglemRNA(void)
         }
 
     }
-    if (match != NULL) {
+    if (match) {
         m_AssignedMrna = match;
         match->SetCDS(*m_feat);
     }

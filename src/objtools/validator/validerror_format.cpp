@@ -695,8 +695,8 @@ static string s_GetCdregionContentLabel (const CSeq_feat& feat, CRef<CScope> sco
         return content;
     }
 
-    const CGene_ref* gref = 0;
-    const CProt_ref* pref = 0;
+    const CGene_ref* gref = nullptr;
+    const CProt_ref* pref = nullptr;
 
     // Look for CProt_ref object to create a label from
     if (feat.IsSetXref()) {
@@ -1055,7 +1055,7 @@ string CValidErrorFormat::GetBioseqSetLabel(const CBioseq_set& st, CRef<CScope> 
     // GetLabel for CBioseq_set does not follow C Toolkit conventions
     // AND is a horrible performance hit for sets with lots of sequences
 
-    const CBioseq* best = 0;
+    const CBioseq* best = nullptr;
     CTypeConstIterator<CBioseq> si(ConstBegin(st));
     if (si) {
         best = &(*si);
@@ -1084,7 +1084,7 @@ string CValidErrorFormat::GetBioseqSetLabel(const CBioseq_set& st, CRef<CScope> 
         if (scope) {
             string content;
             int version = 0;
-            const string& accn = GetAccessionFromObjects(&st, NULL, *scope, &version);
+            const string& accn = GetAccessionFromObjects(&st, nullptr, *scope, &version);
             content += accn;
             // best->GetLabel(&content, CBioseq::eContent, supress_context);
             // fix problems with label

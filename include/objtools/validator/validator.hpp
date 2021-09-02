@@ -104,7 +104,7 @@ public:
     // Constructor / Destructor
     // If no taxon service is provided, a CTAxon3 client will
     // be created.
-    CValidator(CObjectManager& objmgr, AutoPtr<ITaxon3> taxon = NULL);
+    CValidator(CObjectManager& objmgr, AutoPtr<ITaxon3> taxon = nullptr);
     ~CValidator(void);
 
     // If many validations are being done without changing the underlying
@@ -135,13 +135,13 @@ public:
     // Validate Seq-entry.
     // If provding a scope the Seq-entry must be a
     // top-level Seq-entry in that scope.
-    CConstRef<CValidError> Validate(const CSeq_entry& se, CScope* scope = 0,
+    CConstRef<CValidError> Validate(const CSeq_entry& se, CScope* scope = nullptr,
         Uint4 options = 0);
     CConstRef<CValidError> Validate(const CSeq_entry_Handle& se,
         Uint4 options = 0);
     // Validate Seq-submit.
     // Validates each of the Seq-entry contained in the submission.
-    CConstRef<CValidError> Validate(const CSeq_submit& ss, CScope* scope = 0,
+    CConstRef<CValidError> Validate(const CSeq_submit& ss, CScope* scope = nullptr,
         Uint4 options = 0);
     // Validate Seq-annot
     // Validates stand alone Seq-annot objects. This will supress any
@@ -151,7 +151,7 @@ public:
 
     // Validate Seq-feat
     CConstRef<CValidError> Validate(const CSeq_feat& feat,
-        CScope *scope = 0,
+        CScope *scope = nullptr,
         Uint4 options = 0);
     // old call
     NCBI_DEPRECATED
@@ -160,7 +160,7 @@ public:
 
     // Validate BioSource
     CConstRef<CValidError> Validate(const CBioSource& src,
-        CScope *scope = 0,
+        CScope *scope = nullptr,
         Uint4 options = 0);
     // old call
     NCBI_DEPRECATED
@@ -169,7 +169,7 @@ public:
 
     // Validate Pubdesc
     CConstRef<CValidError> Validate(const CPubdesc& pubdesc,
-        CScope *scope = 0,
+        CScope *scope = nullptr,
         Uint4 options = 0);
     // old call
     NCBI_DEPRECATED
@@ -221,7 +221,7 @@ public:
         CProgressInfo(void): m_State(eState_not_set),
             m_Total(0), m_TotalDone(0),
             m_Current(0), m_CurrentDone(0),
-            m_UserData(0)
+            m_UserData(nullptr)
         {}
         EState GetState(void)       const { return m_State;       }
         size_t GetTotal(void)       const { return m_Total;       }
@@ -242,7 +242,7 @@ public:
     };
 
     typedef bool (*TProgressCallback)(CProgressInfo*);
-    void SetProgressCallback(TProgressCallback callback, void* user_data = 0);
+    void SetProgressCallback(TProgressCallback callback, void* user_data = nullptr);
 
     static EErrType ConvertCode(CSubSource::ELatLonCountryErr errcode);
 

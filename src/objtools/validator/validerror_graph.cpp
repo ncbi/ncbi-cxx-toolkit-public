@@ -136,7 +136,7 @@ bool CValidError_graph::x_ValidateGraphLocation (const CSeq_graph& graph)
                 m_Scope, loc, m_Imp.GetTSE_Handle());
         if (!bsh) {
             string label;
-            if (loc.GetId() != 0) {
+            if (loc.GetId()) {
                loc.GetId()->GetLabel(&label, CSeq_id::eContent);
             }
             if (NStr::IsBlank(label)) {
@@ -209,7 +209,7 @@ void CValidError_graph::ValidateGraphsOnBioseq(const CBioseq& seq)
 
     int     last_loc = -1;
     bool    overlaps = false;
-    const CSeq_graph* overlap_graph = 0;
+    const CSeq_graph* overlap_graph = nullptr;
     SIZE_TYPE num_graphs = 0;
     SIZE_TYPE graphs_len = 0;
 

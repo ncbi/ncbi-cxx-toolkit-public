@@ -63,7 +63,7 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr, const CSeq_ent
     size_t  num_sources = 0,
             num_titles = 0;
     CConstRef<CSeqdesc> last_source;
-    const CSeqdesc* first_title = NULL;
+    const CSeqdesc* first_title = nullptr;
     const char* lastname = kEmptyCStr;
     bool same_taxnames = false;
 

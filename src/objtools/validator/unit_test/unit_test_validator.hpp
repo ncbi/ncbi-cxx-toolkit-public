@@ -128,12 +128,12 @@ public:
 };
 
 #define CLEAR_ERRORS \
-                    while (expected_errors.size() > 0) { \
-        if (expected_errors[expected_errors.size() - 1] != NULL) { \
-            delete expected_errors[expected_errors.size() - 1]; \
-                                        } \
+    while (!expected_errors.empty()) { \
+        if (expected_errors.back()) { \
+            delete expected_errors.back(); \
+        } \
         expected_errors.pop_back(); \
-                                                            }
+    }
 #define STANDARD_SETUP \
     CNcbiEnvironment env; \
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \

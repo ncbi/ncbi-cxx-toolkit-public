@@ -151,7 +151,7 @@ CSingleFeatValidator::x_GetBioseqByLocation(const CSeq_loc& loc)
         return m_Scope.GetBioseqHandle(loc);
     }
     CBioseq_Handle rval;
-    CConstRef<CSeq_id> prev(NULL);
+    CConstRef<CSeq_id> prev;
     for (CSeq_loc_CI citer(loc); citer; ++citer) {
         const CSeq_id& this_id = citer.GetSeq_id();
         if (!prev || !prev->Equals(this_id)) {
@@ -182,7 +182,7 @@ void CSingleFeatValidator::x_ValidateSeqFeatProduct()
     case CSeq_id::e_Tpd:
     {
         const CTextseq_id* tsid = sid.GetTextseq_Id();
-        if (tsid != NULL) {
+        if (tsid) {
             if (!tsid->CanGetAccession() && tsid->CanGetName()) {
                 if (ValidateAccessionString(tsid->GetName(), false) == eAccessionFormat_valid) {
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadProductSeqId,
@@ -224,7 +224,7 @@ void CSingleFeatValidator::x_ValidateSeqFeatProduct()
             case CSeq_id::e_Tpd:
             {
                 const CTextseq_id* tsid = id->GetTextseq_Id();
-                if (tsid != NULL) {
+                if (tsid) {
                     if (!tsid->IsSetAccession() && tsid->IsSetName()) {
                         if (ValidateAccessionString(tsid->GetName(), false) == eAccessionFormat_valid) {
                             PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadProductSeqId,
@@ -238,7 +238,7 @@ void CSingleFeatValidator::x_ValidateSeqFeatProduct()
                     }
                 }
             }
-            break;
+                break;
             default:
                 break;
             }
@@ -357,7 +357,7 @@ void CSingleFeatValidator::x_ValidateGeneId()
         return;
     }
 
-    CRef<feature::CFeatTree> feat_tree(NULL);
+    CRef<feature::CFeatTree> feat_tree;
     CMappedFeat mf = m_Scope.GetSeq_featHandle(m_Feat);
     ITERATE(CSeq_feat::TDbxref, it, m_Feat.GetDbxref()) {
         if ((*it)->IsSetDb() && NStr::EqualNocase((*it)->GetDb(), "GeneID") &&
@@ -1126,7 +1126,7 @@ CBioseq_Handle CSingleFeatValidator::x_GetFeatureProduct(bool look_far, bool& is
     if (!m_Feat.IsSetProduct()) {
         return prot_handle;
     }
-    const CSeq_id* protid = NULL;
+    const CSeq_id* protid = nullptr;
     try {
         protid = &sequence::GetId(m_Feat.GetProduct(), &m_Scope);
     } catch (CException&) {}
@@ -1243,7 +1243,7 @@ void CSingleFeatValidator::x_ValidateExceptText(const string& text)
         if (!found) {
             // lower to warning for genomic refseq
             const CSeq_id *id = m_Feat.GetLocation().GetId();
-            if ((id != NULL && IsNTNCNWACAccession(*id)) ||
+            if ((id && IsNTNCNWACAccession(*id)) ||
                 (m_LocationBioseq && IsNTNCNWACAccession(*(m_LocationBioseq.GetCompleteBioseq())))) {
                 sev = eDiag_Warning;
             }
@@ -1692,7 +1692,7 @@ void CSingleFeatValidator::x_ValidateReplaceQual(const string& key, const string
         // if no point in location with fuzz, info if text matches sequence
         bool has_fuzz = false;
         for( objects::CSeq_loc_CI it(m_Feat.GetLocation()); it && !has_fuzz; ++it) {
-            if (it.IsPoint() && (it.GetFuzzFrom() != NULL || it.GetFuzzTo() != NULL)) {
+            if (it.IsPoint() && (it.GetFuzzFrom() || it.GetFuzzTo())) {
                 has_fuzz = true;
             }
         }
@@ -2061,7 +2061,7 @@ void CSingleFeatValidator::x_ValidateGeneXRef()
         }
     }
 
-    if ( gene_xref == 0) {
+    if (!gene_xref) {
         // if there is no gene xref, then there should be 0 or 1 overlapping genes
         // so that mapping by overlap is unambiguous
         if (num_genes > 1 &&
@@ -2137,11 +2137,11 @@ void CSingleFeatValidator::x_ValidateGeneXRef()
                 CConstRef<CSeq_feat> gene = m_Imp.GetGeneCache().GetGeneFromCache(&m_Feat, m_Scope);
                 if (!gene && m_LocationBioseq && m_LocationBioseq.IsAa()) {
                     const CSeq_feat* cds = GetCDSForProduct(m_LocationBioseq);
-                    if (cds != 0) {
+                    if (cds) {
                         if (cds->IsSetLocation()) {
                             const CSeq_loc& loc = cds->GetLocation();
                             const CSeq_id* id = loc.GetId();
-                            if (id != NULL) {
+                            if (id) {
                                 CBioseq_Handle nbsh = m_LocationBioseq.GetScope().GetBioseqHandle(*id);
                                 if (nbsh) {
                                     gene = m_Imp.GetGeneCache().GetGeneFromCache(cds, m_Scope);
@@ -2152,7 +2152,7 @@ void CSingleFeatValidator::x_ValidateGeneXRef()
                 }
                 string label;
                 if (gene && !CSingleFeatValidator::s_GeneRefsAreEquivalent(*gene_xref, gene->GetData().GetGene(), label)) {
-                    gene.Reset(NULL);
+                    gene.Reset();
                 }
                 if (gene_xref->IsSetLocus_tag() &&
                     !NStr::IsBlank(gene_xref->GetLocus_tag()) &&
@@ -2266,7 +2266,7 @@ void CSingleFeatValidator::x_ValidateOldLocusTag(const string& old_locus_tag)
     if (grp && s_IsPseudo(*grp)) {
         pseudo = true;
     }
-    if (grp == 0 || ! grp->IsSetLocus_tag() || NStr::IsBlank (grp->GetLocus_tag())) {
+    if (!grp || !grp->IsSetLocus_tag() || NStr::IsBlank (grp->GetLocus_tag())) {
         if (! pseudo) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_OldLocusTagWithoutLocusTag,
                     "old_locus_tag without inherited locus_tag");
@@ -3666,7 +3666,7 @@ void CRNAValidator::x_ValidateTrnaOverlap()
     for (auto it : scores) {
         CRef<CSeq_loc> intersection = it.second->GetLocation().Intersect(m_Feat.GetLocation(),
             0 /* flags*/,
-            NULL /* synonym mapper */);
+            nullptr /* synonym mapper */);
         if (intersection) {
             TSeqPos length = sequence::GetLength(*intersection, &m_Scope);
             if (length >= 5) {
@@ -3909,7 +3909,7 @@ void CMRNAValidator::x_ValidateMrnaGene()
     if (!m_ProductBioseq) {
         return;
     }
-    const CGene_ref* genomicgrp = NULL;
+    const CGene_ref* genomicgrp = nullptr;
     if (m_Gene) {
         genomicgrp = &(m_Gene->GetData().GetGene());
     } else {

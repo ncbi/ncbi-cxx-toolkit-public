@@ -563,7 +563,7 @@ void CValidError_imp::x_ValidatePages
 bool CValidError_imp::HasTitle(const CTitle& title)
 {
     ITERATE (CTitle::Tdata, item, title.Get() ) {
-        const string *str = 0;
+        const string *str = nullptr;
         switch ( (*item)->Which() ) {
         case CTitle::C_E::e_Name:
             str = &(*item)->GetName();
@@ -608,7 +608,7 @@ bool CValidError_imp::HasTitle(const CTitle& title)
         default:
             break;
         };
-        if ( str != NULL && !NStr::IsBlank(*str) ) {
+        if ( str && !NStr::IsBlank(*str) ) {
             return true;
         }
     }
@@ -844,7 +844,7 @@ void CValidError_imp::ValidateAuthorsInPubequiv
 
     FOR_EACH_PUB_ON_PUBEQUIV (pub_iter, pe) {
         const CPub& pub = **pub_iter;
-        const CAuth_list* authors = 0;
+        const CAuth_list* authors = nullptr;
         switch ( pub.Which() ) {
         case CPub::e_Gen:
             if ( pub.GetGen().IsSetAuthors() ) {
@@ -894,7 +894,7 @@ static bool s_IsRefSeqInSep(const CSeq_entry& se, CScope& scope)
         FOR_EACH_SEQID_ON_BIOSEQ (id, *(it->GetCompleteBioseq())) {
             if ((*id)->IsOther()) {
                 const CTextseq_id* tsip = (*id)->GetTextseq_Id();
-                if (tsip != NULL  &&  tsip->IsSetAccession()) {
+                if (tsip && tsip->IsSetAccession()) {
                     return true;
                 }
             }
@@ -1221,7 +1221,7 @@ static bool s_IsWgs_Contig (const CBioseq& seq)
 {
     CSeq_inst::ERepr rp = seq.GetInst().GetRepr();
     if (rp == CSeq_inst::eRepr_virtual) return false;
-    IF_EXISTS_CLOSEST_MOLINFO (mi_ref, seq, NULL) {
+    IF_EXISTS_CLOSEST_MOLINFO (mi_ref, seq, nullptr) {
         const CMolInfo& molinf = (*mi_ref).GetMolinfo();
         if (molinf.GetTech() == NCBI_TECH(wgs)) return true;
         if (molinf.GetTech() == NCBI_TECH(tsa)) return true;
@@ -1235,7 +1235,7 @@ static bool s_IsTSA_Contig (const CBioseq& seq)
     CSeq_inst::ERepr rp = seq.GetInst().GetRepr();
     if (rp == CSeq_inst::eRepr_virtual) return false;
     */
-    IF_EXISTS_CLOSEST_MOLINFO (mi_ref, seq, NULL) {
+    IF_EXISTS_CLOSEST_MOLINFO (mi_ref, seq, nullptr) {
         const CMolInfo& molinf = (*mi_ref).GetMolinfo();
         if (molinf.GetTech() == NCBI_TECH(wgs)) return true;
         if (molinf.GetTech() == NCBI_TECH(tsa)) return true;

@@ -92,7 +92,7 @@ CRef<feature::CFeatTree> CGeneCache::GetFeatTreeFromCache(const CSeq_loc& loc, C
     if (bsh) {
         return GetFeatTreeFromCache(bsh);
     } else {
-        return (CRef<feature::CFeatTree>(NULL));
+        return (CRef<feature::CFeatTree>());
     }
 }
 
@@ -106,7 +106,7 @@ CRef<feature::CFeatTree> CGeneCache::GetFeatTreeFromCache(const CSeq_feat& feat,
 CConstRef<CSeq_feat> CGeneCache::GetGeneFromCache(const CSeq_feat* feat, CScope& scope)
 {
     if (!feat) {
-        return CConstRef<CSeq_feat>(NULL);
+        return CConstRef<CSeq_feat>();
     }
     CConstRef<CSeq_feat> gene;
     TFeatGeneMap::iterator it = m_FeatGeneMap.find(feat);
@@ -115,7 +115,7 @@ CConstRef<CSeq_feat> CGeneCache::GetGeneFromCache(const CSeq_feat* feat, CScope&
             CSeq_feat_Handle fh = scope.GetSeq_featHandle(*feat);
             CRef<feature::CFeatTree> tr = GetFeatTreeFromCache(*feat, scope);
             if (!tr) {
-                return CConstRef<CSeq_feat>(NULL);
+                return CConstRef<CSeq_feat>();
             }
             CMappedFeat mf = tr->GetBestGene(fh);
             if (mf) {

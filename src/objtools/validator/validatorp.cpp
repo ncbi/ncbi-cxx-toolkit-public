@@ -172,7 +172,7 @@ CValidError*     errs,
 Uint4            options) :
 m_ObjMgr(&objmgr),
 m_ErrRepository(errs),
-m_taxon(NULL)
+m_taxon(nullptr)
 {
     x_Init(options);
 }
@@ -197,7 +197,7 @@ void CValidError_imp::x_Init(Uint4 options)
     SetOptions(options);
     Reset();
 
-    if (m_SourceQualTags.get() == 0) {
+    if (!m_SourceQualTags) {
         InitializeSourceQualTags();
     }
 }
@@ -251,10 +251,10 @@ void CValidError_imp::SetErrorRepository(CValidError* errors)
 
 void CValidError_imp::Reset(void)
 {
-    m_Scope = 0;
-    m_TSE = 0;
+    m_Scope = nullptr;
+    m_TSE = nullptr;
     m_IsStandaloneAnnot = false;
-    m_SeqAnnot.Reset(NULL);
+    m_SeqAnnot.Reset();
     m_NoPubs = false;
     m_NoCitSubPubs = false;
     m_NoBioSource = false;
@@ -291,7 +291,7 @@ void CValidError_imp::Reset(void)
     m_ProteinHasGeneralID = false;
     m_IsINSDInSep = false;
     m_IsGeneious = false;
-    m_PrgCallback = 0;
+    m_PrgCallback = nullptr;
     m_NumAlign = 0;
     m_NumAnnot = 0;
     m_NumBioseq = 0;
@@ -642,7 +642,7 @@ void CValidError_imp::PostErr
     int version = 0;
     string accession;
     if (m_Scope) {
-        accession = GetAccessionFromObjects(&ft, NULL, *m_Scope, &version);
+        accession = GetAccessionFromObjects(&ft, nullptr, *m_Scope, &version);
     }
     item->SetAccession(accession);
     if (version > 0) {
@@ -695,7 +695,7 @@ void CValidError_imp::PostErr
     string desc;
     AppendBioseqLabel(desc, sq, m_SuppressContext);
     int version = 0;
-    const string& accession = GetAccessionFromObjects(&sq, NULL, *m_Scope, &version);
+    const string& accession = GetAccessionFromObjects(&sq, nullptr, *m_Scope, &version);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, sq, accession, version);
 }
 
@@ -718,7 +718,7 @@ void CValidError_imp::PostErr
 
     // Append Bioseq_set label
     int version = 0;
-    const string& accession = GetAccessionFromObjects(&st, NULL, *m_Scope, &version);
+    const string& accession = GetAccessionFromObjects(&st, nullptr, *m_Scope, &version);
     string desc = CValidErrorFormat::GetBioseqSetLabel(st, m_Scope, m_SuppressContext);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st, accession, version);
 }
@@ -804,7 +804,7 @@ void CValidError_imp::PostErr
     // !!! need to decide on the message
 
     int version = 0;
-    const string& accession = GetAccessionFromObjects(&an, NULL, *m_Scope, &version);
+    const string& accession = GetAccessionFromObjects(&an, nullptr, *m_Scope, &version);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, an, accession, version);
 }
 
@@ -836,7 +836,7 @@ void CValidError_imp::PostErr
     graph.GetLoc().GetLabel(&desc);
 
     int version = 0;
-    const string& accession = GetAccessionFromObjects(&graph, NULL, *m_Scope, &version);
+    const string& accession = GetAccessionFromObjects(&graph, nullptr, *m_Scope, &version);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, accession, version);
 }
 
@@ -869,7 +869,7 @@ void CValidError_imp::PostErr
     graph.GetLoc().GetLabel(&desc);
     AppendBioseqLabel(desc, sq, m_SuppressContext);
     int version = 0;
-    const string& accession = GetAccessionFromObjects(&graph, NULL, *m_Scope, &version);
+    const string& accession = GetAccessionFromObjects(&graph, nullptr, *m_Scope, &version);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, accession, version);
 }
 
@@ -917,7 +917,7 @@ void CValidError_imp::PostErr
     }
 
     int version = 0;
-    const string& accession = GetAccessionFromObjects(&align, NULL, *m_Scope, &version);
+    const string& accession = GetAccessionFromObjects(&align, nullptr, *m_Scope, &version);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, align, accession, version);
 }
 
@@ -947,7 +947,7 @@ void CValidError_imp::PostErr
         entry.GetLabel(&desc, CSeq_entry::eContent);
 
         int version = 0;
-        const string& accession = GetAccessionFromObjects(&entry, NULL, *m_Scope, &version);
+        const string& accession = GetAccessionFromObjects(&entry, nullptr, *m_Scope, &version);
         m_ErrRepository->AddValidErrItem(sv, et, msg, desc, entry, accession, version);
     }
 }
@@ -1044,7 +1044,7 @@ void CValidError_imp::PostObjErr
  const CSerialObject& obj,
  const CSeq_entry *ctx)
 {
-    if (ctx == 0) {
+    if (!ctx) {
         PostErr (sv, et, msg, obj);
     } else if (obj.GetThisTypeInfo() == CSeqdesc::GetTypeInfo()) {
         PostErr(sv, et, msg, *ctx, *(dynamic_cast <const CSeqdesc*> (&obj)));
@@ -1579,7 +1579,7 @@ void CValidError_imp::Validate(const CSeq_feat& feat, CScope* scope)
     // the function
     CScopeRestorer scopeRestorer( m_Scope );
 
-    if( scope != NULL ) {
+    if( scope ) {
         m_Scope.Reset(scope);
     }
     if (!m_Scope) {
@@ -1610,7 +1610,7 @@ void CValidError_imp::Validate(const CBioSource& src, CScope* scope)
     // the function
     CScopeRestorer scopeRestorer( m_Scope );
 
-    if( scope != NULL ) {
+    if( scope ) {
         m_Scope.Reset(scope);
     }
     if (!m_Scope) {
@@ -1634,7 +1634,7 @@ void CValidError_imp::Validate(const CPubdesc& pubdesc, CScope* scope)
     // the function
     CScopeRestorer scopeRestorer( m_Scope );
 
-    if( scope != NULL ) {
+    if( scope ) {
         m_Scope.Reset(scope);
     }
     if (!m_Scope) {
@@ -1964,10 +1964,10 @@ void CValidError_imp::x_InitLocCheck(SLocCheck& lc, const string& prefix)
     lc.mixed_strand = false;
     lc.has_other = false;
     lc.has_not_other = false;
-    lc.id_cur = 0;
-    lc.id_prv = 0;
-    lc.int_cur = 0;
-    lc.int_prv = 0;
+    lc.id_cur = nullptr;
+    lc.id_prv = nullptr;
+    lc.int_cur = nullptr;
+    lc.int_prv = nullptr;
     lc.strand_cur = eNa_strand_unknown;
     lc.strand_prv = eNa_strand_unknown;
     lc.prefix = prefix;
@@ -2023,14 +2023,14 @@ void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, 
                     loc.GetPnt().GetStrand() : eNa_strand_unknown;
                 lc.id_cur = &loc.GetPnt().GetId();
                 lc.chk = IsValid(loc.GetPnt(), m_Scope);
-                lc.int_prv = 0;
+                lc.int_prv = nullptr;
                 break;
             case CSeq_loc::e_Packed_pnt:
                 lc.strand_cur = loc.GetPacked_pnt().IsSetStrand() ?
                     loc.GetPacked_pnt().GetStrand() : eNa_strand_unknown;
                 lc.id_cur = &loc.GetPacked_pnt().GetId();
                 lc.chk = IsValid(loc.GetPacked_pnt(), m_Scope);
-                lc.int_prv = 0;
+                lc.int_prv = nullptr;
                 break;
             case CSeq_loc::e_Packed_int:
                 x_CheckPackedInt(loc.GetPacked_int(), lc, obj);
@@ -2045,8 +2045,8 @@ void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, 
                 break;
             default:
                 lc.strand_cur = eNa_strand_other;
-                lc.id_cur = 0;
-                lc.int_prv = 0;
+                lc.id_cur = nullptr;
+                lc.int_prv = nullptr;
                 break;
         }
         if (!lc.chk) {
@@ -2072,10 +2072,9 @@ void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, 
             label + ". Exception: " + e.what(), obj);
 
         lc.strand_cur = eNa_strand_other;
-        lc.id_cur = 0;
-        lc.int_prv = 0;
+        lc.id_cur = nullptr;
+        lc.int_prv = nullptr;
     }
-
 }
 
 void CValidError_imp::ValidateSeqLoc
@@ -2120,12 +2119,11 @@ void CValidError_imp::ValidateSeqLoc
 
     bool trans_splice = false;
     bool exception = false;
-    const CSeq_feat* sfp = NULL;
+    const CSeq_feat* sfp = nullptr;
     if (obj.GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
         sfp = dynamic_cast<const CSeq_feat*>(&obj);
     }
-    if (sfp != 0) {
-
+    if (sfp) {
         // primer_bind intervals MAY be in on opposite strands
         if ( sfp->GetData().GetSubtype() == CSeqFeatData::eSubtype_primer_bind ) {
             lc.mixed_strand = false;
@@ -2389,9 +2387,7 @@ CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
 CConstRef<CSeq_feat> CValidError_imp::GetmRNAGivenProduct(const CBioseq& seq)
 {
     CConstRef<CSeq_feat> feat;
-
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-
 
     if ( bsh ) {
         // In case of a NT bioseq limit the search to features packaged on the
@@ -2430,9 +2426,9 @@ const CSeq_entry* CValidError_imp::GetAncestor
 (const CBioseq& seq,
  CBioseq_set::EClass clss)
 {
-    const CSeq_entry* parent = 0;
+    const CSeq_entry* parent = nullptr;
     for ( parent = seq.GetParentEntry();
-          parent != 0;
+          parent;
           parent = parent->GetParentEntry() ) {
         if ( parent->IsSet() ) {
             const CBioseq_set& set = parent->GetSet();
@@ -2473,7 +2469,7 @@ bool CValidError_imp::IsSerialNumberInComment(const string& comment)
 bool CValidError_imp::RequireLocalProduct(const CSeq_id* sid) const
 {
         // okay to have far RefSeq product, but only if genomic product set
-    if ( sid != 0  &&  sid->IsOther() ) {
+    if ( sid && sid->IsOther() ) {
         if ( IsGPS() ) {
             return false;
         }
@@ -3199,7 +3195,7 @@ bool CValidError_imp::GetTSAConflictingBiomolTechErrors (const CBioseq& seq)
 
 ITaxon3* CValidError_imp::x_GetTaxonService()
 {
-    if (m_taxon == NULL) {
+    if (!m_taxon) {
         //Impossible to reach code, as c'tor requires non-null taxon service
         throw runtime_error("Taxon service not defined by CValidator");
     }

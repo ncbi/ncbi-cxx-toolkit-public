@@ -477,7 +477,7 @@ const CSeq_entry *ctx)
     TCount count;
     bool chrom_conflict = false;
     CPCRSetList pcr_set_list;
-    const CSubSource *chromosome = 0;
+    const CSubSource* chromosome = nullptr;
     string countryname;
     string lat_lon;
     double lat_value = 0.0, lon_value = 0.0;
@@ -530,7 +530,7 @@ const CSeq_entry *ctx)
             break;
 
         case CSubSource::eSubtype_chromosome:
-            if (chromosome != 0) {
+            if (chromosome) {
                 if (NStr::CompareNocase((**ssit).GetName(), chromosome->GetName()) != 0) {
                     chrom_conflict = true;
                 }
@@ -676,11 +676,11 @@ const CSeq_entry *ctx)
         }
     }
 
-    if (IsIndexerVersion() && ctx != NULL && CValidError_bioseq::IsWGS(*ctx) &&
-        chromosome != NULL && (!bsrc.IsSetGenome() || bsrc.GetGenome() != CBioSource::eGenome_chromosome)) {
+    if (IsIndexerVersion() && ctx && CValidError_bioseq::IsWGS(*ctx) &&
+        chromosome && (!bsrc.IsSetGenome() || bsrc.GetGenome() != CBioSource::eGenome_chromosome)) {
         // exception for /map="unlocalized"
         bool suppress = false;
-        for (auto it : bsrc.GetSubtype()) {
+        for (auto& it : bsrc.GetSubtype()) {
             if (it->IsSetSubtype() && it->GetSubtype() == CSubSource::eSubtype_map &&
                 it->IsSetName() && NStr::Equal(it->GetName(), "unlocalized")) {
                 suppress = true;
@@ -1576,7 +1576,7 @@ static bool s_MatchOrgname(const string& taxname, const COrgName& orgname, strin
     if (!orgname.IsSetName()) {
         return false;
     }
-    orgname.GetFlatName(mismatch, NULL);
+    orgname.GetFlatName(mismatch);
     if (NStr::Equal(taxname, mismatch)) {
         return true;
     }

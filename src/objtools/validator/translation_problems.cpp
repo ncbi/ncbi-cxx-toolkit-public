@@ -184,7 +184,7 @@ CScope* scope)
         // get protein sequence
 
         if (!prot_handle) {
-            const CSeq_id* protid = 0;
+            const CSeq_id* protid = nullptr;
             try {
                 protid = &GetId(feat.GetProduct(), scope);
             } catch (CException&) {}
@@ -798,7 +798,7 @@ CCDSTranslationProblems::x_GetTranslExceptProblems
                         if (cdregion.CanGetCode())
                             gcode = &cdregion.GetCode();
                         else
-                            gcode = NULL;
+                            gcode = nullptr;
 
                         CSeqTranslator::Translate(q, p,
                             CSeqTranslator::fIs5PrimePartial,
