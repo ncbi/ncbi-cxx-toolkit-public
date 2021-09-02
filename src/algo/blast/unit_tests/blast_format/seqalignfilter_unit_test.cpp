@@ -105,8 +105,8 @@ static void s_GetUseThisGiEntries(CRef<CSeq_align> sa, list<TGi>& list_gis)
             {
                 bool bIsLegalGiEntry = score_entry->CanGetValue() && score_entry->GetValue().IsInt();
                 BOOST_REQUIRE(bIsLegalGiEntry);
-
-                list_gis.push_back(GI_FROM(int, score_entry->GetValue().GetInt()));
+                Uint4 gi_v = (Uint4) (score_entry->GetValue().GetInt());
+                list_gis.push_back(GI_FROM(Uint4, gi_v));
             }
         }
     }
