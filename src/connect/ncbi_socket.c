@@ -1123,7 +1123,7 @@ static int/*bool*/ x_IsAPIPA(unsigned int addr)
 }
 
 
-static const char* x_ChooseIP(char** addrs)
+static const char* x_ChooseSelfIP(char** addrs)
 {
     int n;
     for (n = 0;  addrs[n];  ++n) {
@@ -1148,13 +1148,6 @@ static unsigned int s_gethostbyname_(const char* hostname,
     if (!hostname) {
         if (s_gethostname(buf, sizeof(buf), log) != 0)
             return 0;
-#if 0/*def NCBI_OS_DARWIN*/
-        {{
-            char* p;
-            if ((p = strchr(buf, '.')) != 0)
-                *p = '\0';
-        }}
-#endif /*NCBI_OS_DARWIN*/
         not_ip = 1/*true*/;
         hostname = buf;
         assert(*buf);
@@ -1192,7 +1185,7 @@ static unsigned int s_gethostbyname_(const char* hostname,
                         break;
                 }
                 addrs[n] = 0;
-                memcpy(&host, x_ChooseIP(addrs), sizeof(host));
+                memcpy(&host, x_ChooseSelfIP(addrs), sizeof(host));
             } else {
                 struct sockaddr_in* sin = (struct sockaddr_in*) out->ai_addr;
                 assert(sin->sin_family == AF_INET);
@@ -1262,7 +1255,7 @@ static unsigned int s_gethostbyname_(const char* hostname,
             host = 0;
         } else {
             memcpy(&host,
-                   self ? x_ChooseIP(he->h_addr_list) : he->h_addr,
+                   self ? x_ChooseSelfIP(he->h_addr_list) : he->h_addr,
                    sizeof(host));
         }
 
