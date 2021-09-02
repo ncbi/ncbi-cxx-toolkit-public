@@ -1092,7 +1092,8 @@ static int s_gethostname(char* name, size_t namesize, ESwitch log)
         if (log) {
             CORE_LOGF_X(104, eLOG_Error,
                         ("[SOCK_gethostname] "
-                         " Buffer too small (%lu)", (unsigned long) namesize));
+                         " Buffer too small (%lu) for \"%.*s\"",
+                         (unsigned long) namesize, (int) namesize, name));
         }
         failed = 1/*true*/;
     } else if (NCBI_HasSpaces(name, namesize = strlen(name))) {
