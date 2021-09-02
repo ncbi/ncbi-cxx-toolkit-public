@@ -111,7 +111,7 @@ class CMatchCDS : public CMatchFeat
 public:
     CMatchCDS(const CMappedFeat &cds) :
         CMatchFeat(cds),
-        m_AssignedMrna(NULL),
+        m_AssignedMrna(nullptr),
         m_XrefMatch(false),
         m_NeedsmRNA(true)
     {};
@@ -121,7 +121,7 @@ public:
     void AddmRNA(CMatchmRNA& mrna) { m_OverlappingmRNAs.push_back(Ref(&mrna)); }
     void SetXrefMatch(CMatchmRNA& mrna) { m_XrefMatch = true; m_AssignedMrna = &mrna; }
     bool IsXrefMatch(void) { return m_XrefMatch; }
-    bool HasmRNA(void) const { return m_AssignedMrna != NULL; };
+    bool HasmRNA(void) const { return m_AssignedMrna != nullptr; };
 
     bool NeedsmRNA(void) { return m_NeedsmRNA; }
     void SetNeedsmRNA(bool val) { m_NeedsmRNA = val; }

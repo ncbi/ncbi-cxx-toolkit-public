@@ -146,17 +146,17 @@ public:
     void Reset(void);
 
     // Validation methods
-    bool Validate(const CSeq_entry& se, const CCit_sub* cs = 0,
-                  CScope* scope = 0);
+    bool Validate(const CSeq_entry& se, const CCit_sub* cs = nullptr,
+                  CScope* scope = nullptr);
     bool Validate(
-        const CSeq_entry_Handle& seh, const CCit_sub* cs = 0);
+        const CSeq_entry_Handle& seh, const CCit_sub* cs = nullptr);
     void Validate(
-        const CSeq_submit& ss, CScope* scope = 0);
+        const CSeq_submit& ss, CScope* scope = nullptr);
     void Validate(const CSeq_annot_Handle& sa);
 
-    void Validate(const CSeq_feat& feat, CScope* scope = 0);
-    void Validate(const CBioSource& src, CScope* scope = 0);
-    void Validate(const CPubdesc& pubdesc, CScope* scope = 0);
+    void Validate(const CSeq_feat& feat, CScope* scope = nullptr);
+    void Validate(const CBioSource& src, CScope* scope = nullptr);
+    void Validate(const CPubdesc& pubdesc, CScope* scope = nullptr);
     void Validate(const CSeqdesc& desc, const CSeq_entry& ctx);
     void ValidateSubAffil(const CAffil::TStd& std, const CSerialObject& obj, const CSeq_entry *ctx);
     void ValidateAffil(const CAffil::TStd& std, const CSerialObject& obj, const CSeq_entry *ctx);
@@ -209,8 +209,8 @@ public:
     void PostErr(EDiagSev sv, EErrType et, const string& msg, const COrg_ref& org);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, const CPubdesc& src);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, const CSeq_submit& ss);
-    void PostObjErr (EDiagSev sv, EErrType et, const string& msg, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-    void PostBadDateError (EDiagSev sv, const string& msg, int flags, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    void PostObjErr (EDiagSev sv, EErrType et, const string& msg, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
+    void PostBadDateError (EDiagSev sv, const string& msg, int flags, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
 
     void HandleTaxonomyError(const CT3Error& error, const string& host, const COrg_ref& orf);
     void HandleTaxonomyError(const CT3Error& error, const EErrType type, const CSeq_feat& feat);
@@ -219,10 +219,10 @@ public:
     bool RaiseGenomeSeverity(EErrType et);
 
     // General use validation methods
-    void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-    void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-    void ValidatePCRReactionSet(const CPCRReactionSet& pcrset, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-    void ValidateSubSource(const CSubSource& subsrc, const CSerialObject& obj, const CSeq_entry *ctx = 0, const bool isViral = false);
+    void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
+    void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
+    void ValidatePCRReactionSet(const CPCRReactionSet& pcrset, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
+    void ValidateSubSource(const CSubSource& subsrc, const CSerialObject& obj, const CSeq_entry *ctx = nullptr, const bool isViral = false);
     void ValidateOrgRef(const COrg_ref& orgref, const CSerialObject& obj, const CSeq_entry *ctx);
     void ValidateTaxNameOrgname(const string& taxname, const COrgName& orgname, const CSerialObject& obj, const CSeq_entry *ctx);
     void ValidateOrgName(const COrgName& orgname, const bool has_taxon, const CSerialObject& obj, const CSeq_entry *ctx);
@@ -242,10 +242,10 @@ public:
     static bool BadMultipleSequenceLocation(const CSeq_loc& loc, CScope& scope);
     void CheckMultipleIds(const CSeq_loc& loc, const CSerialObject& obj);
     void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj,
-    bool biosource = false, const CSeq_entry *ctx = 0);
+    bool biosource = false, const CSeq_entry *ctx = nullptr);
     void ValidateDbxref(TDbtags& xref_list, const CSerialObject& obj,
-    bool biosource = false, const CSeq_entry *ctx = 0);
-    void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    bool biosource = false, const CSeq_entry *ctx = nullptr);
+    void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
     void ValidateTaxonomy(const CSeq_entry& se);
     void ValidateOrgRefs(CTaxValidationAndCleanup& tval);
     void ValidateSpecificHost(CTaxValidationAndCleanup& tval);
@@ -430,17 +430,17 @@ private:
     void ValidateSubmitBlock(const CSubmit_block& block, const CSeq_submit& ss);
 
     void InitializeSourceQualTags();
-    void ValidateSourceQualTags(const string& str, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    void ValidateSourceQualTags(const string& str, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
 
     bool IsMixedStrands(const CSeq_loc& loc);
 
-    void ValidatePubGen(const CCit_gen& gen, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-    void ValidatePubArticle(const CCit_art& art, TEntrezId uid, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-    void ValidatePubArticleNoPMID(const CCit_art& art, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-    void x_ValidatePages(const string& pages, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-    void ValidateAuthorList(const CAuth_list::C_Names& names, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-    void ValidateAuthorsInPubequiv (const CPub_equiv& pe, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-    void ValidatePubHasAuthor(const CPubdesc& pubdesc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    void ValidatePubGen(const CCit_gen& gen, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
+    void ValidatePubArticle(const CCit_art& art, TEntrezId uid, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
+    void ValidatePubArticleNoPMID(const CCit_art& art, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
+    void x_ValidatePages(const string& pages, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
+    void ValidateAuthorList(const CAuth_list::C_Names& names, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
+    void ValidateAuthorsInPubequiv (const CPub_equiv& pe, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
+    void ValidatePubHasAuthor(const CPubdesc& pubdesc, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
 
     bool HasName(const CAuth_list& authors);
     bool HasTitle(const CTitle& title);
@@ -464,8 +464,8 @@ private:
         bool has_not_other;
         CConstRef<CSeq_id> id_cur;
         CConstRef<CSeq_id> id_prv;
-        const CSeq_interval *int_cur = 0;
-        const CSeq_interval *int_prv = 0;
+        const CSeq_interval *int_cur = nullptr;
+        const CSeq_interval *int_prv = nullptr;
         ENa_strand strand_cur;
         ENa_strand strand_prv;
         string prefix;

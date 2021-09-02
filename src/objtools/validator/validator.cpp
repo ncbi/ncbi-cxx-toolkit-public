@@ -60,10 +60,10 @@ USING_SCOPE(sequence);
 CValidator::CValidator(CObjectManager& objmgr,
     AutoPtr<ITaxon3> taxon) :
     m_ObjMgr(&objmgr),
-    m_PrgCallback(0),
-    m_UserData(0)
+    m_PrgCallback(nullptr),
+    m_UserData(nullptr)
 {
-    if (taxon.get() == NULL) {
+    if (!taxon) {
         AutoPtr<ITaxon3> taxon3(new CTaxon3);
         taxon3->Init();
         m_Taxon = taxon3;
@@ -88,7 +88,7 @@ CConstRef<CValidError> CValidator::Validate
     CValidErrorFormat::SetSuppressionRules(se, *errors);
     CValidError_imp imp(*m_ObjMgr, &(*errors), m_Taxon.get(), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
-    if ( !imp.Validate(se, 0, scope) ) {
+    if ( !imp.Validate(se, nullptr, scope) ) {
         errors.Reset();
     }
     return errors;
@@ -113,7 +113,7 @@ CConstRef<CValidError> CValidator::Validate
     CValidErrorFormat::SetSuppressionRules(seh, *errors);
     CValidError_imp imp(*m_ObjMgr, &(*errors), m_Taxon.get(), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
-    if ( !imp.Validate(seh, 0) ) {
+    if ( !imp.Validate(seh) ) {
         errors.Reset();
     }
     return errors;
@@ -214,7 +214,7 @@ CConstRef<CValidError> CValidator::Validate
         && ss.GetSub().GetContact().GetContact().IsSetAffil()
         && ss.GetSub().GetContact().GetContact().GetAffil().IsStd()) {
         imp.ValidateAffil(ss.GetSub().GetContact().GetContact().GetAffil().GetStd(),
-                             ss, 0);
+                             ss, nullptr);
     }
 
     return errors;
@@ -251,7 +251,7 @@ CConstRef<CValidError> CValidator::Validate
 (const CSeq_feat& feat,
  Uint4 options)
 {
-    return Validate(feat, NULL, options);
+    return Validate(feat, nullptr, options);
 }
 //LCOV_EXCL_STOP
 CConstRef<CValidError> CValidator::Validate
@@ -271,7 +271,7 @@ CConstRef<CValidError> CValidator::Validate
 (const CBioSource& src,
  Uint4 options)
 {
-    return Validate(src, NULL, options);
+    return Validate(src, nullptr, options);
 }
 //LCOV_EXCL_STOP
 
@@ -292,7 +292,7 @@ CConstRef<CValidError> CValidator::Validate
 (const CPubdesc& pubdesc,
  Uint4 options)
 {
-    return Validate(pubdesc, NULL, options);
+    return Validate(pubdesc, nullptr, options);
 }
 //LCOV_EXCL_STOP
 
@@ -445,7 +445,7 @@ CompareConsecutiveIntervalProc compar)
 bool CheckConsecutiveIntervals(const CSeq_loc& loc, CScope& scope, CompareConsecutiveIntervalProc compar)
 {
     bool ok = true;
-    const CSeq_interval *int_cur = 0, *int_prv = 0;
+    const CSeq_interval *int_cur = nullptr, *int_prv = nullptr;
 
     CTypeConstIterator<CSeq_loc> lit = ConstBegin(loc);
     for (; lit && ok; ++lit) {
@@ -461,10 +461,10 @@ bool CheckConsecutiveIntervals(const CSeq_loc& loc, CScope& scope, CompareConsec
             }}
             break;
         case CSeq_loc::e_Pnt:
-            int_prv = 0;
+            int_prv = nullptr;
             break;
         case CSeq_loc::e_Packed_pnt:
-            int_prv = 0;
+            int_prv = nullptr;
             break;
         case CSeq_loc::e_Packed_int:
         {{
@@ -472,12 +472,12 @@ bool CheckConsecutiveIntervals(const CSeq_loc& loc, CScope& scope, CompareConsec
             CConstRef<CSeq_interval> this_int_prv(int_prv);
             ok = x_CompareConsecutiveIntervals
                 (lit->GetPacked_int(), this_int_cur, this_int_prv, &scope, compar);
-            }}
+        }}
             break;
         case CSeq_loc::e_Null:
             break;
         default:
-            int_prv = 0;
+            int_prv = nullptr;
             break;
         }
 

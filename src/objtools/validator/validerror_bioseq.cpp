@@ -202,7 +202,7 @@ private:
 // =============================================================================
 
 CValidError_bioseq::CValidError_bioseq(CValidError_imp& imp) :
-    CValidError_base(imp), m_AnnotValidator(imp), m_DescrValidator(imp), m_FeatValidator(imp), m_GeneIt(NULL), m_AllFeatIt(NULL)
+    CValidError_base(imp), m_AnnotValidator(imp), m_DescrValidator(imp), m_FeatValidator(imp), m_GeneIt(nullptr), m_AllFeatIt(nullptr)
 {
 }
 
@@ -337,8 +337,8 @@ void CValidError_bioseq::ValidateBioseq (
             m_AllFeatIt = &GetCache().GetFeatFromCache(all_feat_key);
         } catch ( const exception& ) {
             // sequence might be too broken to validate features
-            m_GeneIt = NULL;
-            m_AllFeatIt = NULL;
+            m_GeneIt = nullptr;
+            m_AllFeatIt = nullptr;
         }
         ValidateSeqIds(seq);
         ValidateInst(seq);
@@ -371,10 +371,10 @@ void CValidError_bioseq::ValidateBioseq (
     }
     m_CurrentHandle.Reset();
     if (m_GeneIt) {
-        m_GeneIt = NULL;
+        m_GeneIt = nullptr;
     }
     if (m_AllFeatIt) {
-        m_AllFeatIt = NULL;
+        m_AllFeatIt = nullptr;
     }
 }
 
@@ -710,7 +710,7 @@ static bool x_IsWgsSecondary (const CBioseq& seq)
 
 {
     FOR_EACH_DESCRIPTOR_ON_BIOSEQ (sd, seq) {
-        const list< string > *extra_acc = 0;
+        const list< string > *extra_acc = nullptr;
         const CSeqdesc& desc = **sd;
         switch (desc.Which()) {
             case CSeqdesc::e_Genbank:
@@ -1038,7 +1038,7 @@ void CValidError_bioseq::ValidateSecondaryAccConflict
 {
     CSeqdesc_CI sd(m_Scope->GetBioseqHandle(seq), static_cast<CSeqdesc::E_Choice>(choice));
     for (; sd; ++sd) {
-        const list< string > *extra_acc = 0;
+        const list< string > *extra_acc = nullptr;
         if ( choice == CSeqdesc::e_Genbank  &&
             sd->GetGenbank().IsSetExtra_accessions() ) {
             extra_acc = &(sd->GetGenbank().GetExtra_accessions());
@@ -1332,7 +1332,7 @@ void CValidError_bioseq::ValidateBioseqContext(
             CBioseq_Handle nbsh = GetNucBioseq (bssh);
             if (nbsh) {
                 CSeqdesc_CI desc( nbsh, CSeqdesc::e_Molinfo );
-                const CMolInfo* mi = desc ? &(desc->GetMolinfo()) : 0;
+                const CMolInfo* mi = desc ? &(desc->GetMolinfo()) : nullptr;
                 if (mi) {
                     CMolInfo::TTech tech = mi->IsSetTech() ?
                         mi->GetTech() : CMolInfo::eTech_unknown;
@@ -2356,9 +2356,9 @@ bool CValidError_bioseq::CdError(const CBioseq_Handle& bsh)
             bsh.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
         if ( nps ) {
             const CSeq_feat* cds = GetCDSForProduct(bsh);
-            if ( cds == 0 ) {
+            if ( !cds ) {
                 const CSeq_feat* mat = GetPROTForProduct(bsh);
-                if ( mat == 0 ) {
+                if ( !mat ) {
                     return true;
                 }
             }
@@ -2547,7 +2547,7 @@ bool CValidError_bioseq::IsWGS(const CSeq_entry& entry)
 bool CValidError_bioseq::IsWGSAccession(const CSeq_id& id)
 {
     const CTextseq_id* txt = id.GetTextseq_Id();
-    if (txt == NULL || !txt->IsSetAccession()) {
+    if (!txt || !txt->IsSetAccession()) {
         return false;
     }
     CSeq_id::EAccessionInfo info = CSeq_id::IdentifyAccession(txt->GetAccession());
@@ -2576,7 +2576,7 @@ bool CValidError_bioseq::IsWGSAccession(const CBioseq& seq)
 bool CValidError_bioseq::IsTSAAccession(const CSeq_id& id)
 {
     const CTextseq_id* txt = id.GetTextseq_Id();
-    if (txt == NULL || !txt->IsSetAccession()) {
+    if (!txt || !txt->IsSetAccession()) {
         return false;
     }
     CSeq_id::EAccessionInfo info = CSeq_id::IdentifyAccession(txt->GetAccession());
@@ -3488,13 +3488,12 @@ void CValidError_bioseq::ValidateRawConst(
     }
 
     if (inst.GetRepr() == CSeq_inst::eRepr_raw) {
-        const CMolInfo* mi = 0;
+        const CMolInfo* mi = nullptr;
         CSeqdesc_CI mi_desc(m_Scope->GetBioseqHandle(seq), CSeqdesc::e_Molinfo);
         if ( mi_desc ) {
             mi = &(mi_desc->GetMolinfo());
         }
-        CMolInfo::TTech tech =
-            mi != 0 ? mi->GetTech() : CMolInfo::eTech_unknown;
+        CMolInfo::TTech tech = mi ? mi->GetTech() : CMolInfo::eTech_unknown;
         if (tech == CMolInfo::eTech_htgs_2  &&
             !GraphsOnBioseq(seq)  &&
             !x_IsActiveFin(seq)) {
@@ -4289,14 +4288,12 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     const CSeq_inst& inst = seq.GetInst();
 
     // Get CMolInfo and tech used for validating technique and gap positioning
-    const CMolInfo* mi = 0;
+    const CMolInfo* mi = nullptr;
     CSeqdesc_CI mi_desc(m_Scope->GetBioseqHandle(seq), CSeqdesc::e_Molinfo);
     if ( mi_desc ) {
         mi = &(mi_desc->GetMolinfo());
     }
-    CMolInfo::TTech tech =
-        mi != 0 ? mi->GetTech() : CMolInfo::eTech_unknown;
-
+    CMolInfo::TTech tech = mi ? mi->GetTech() : CMolInfo::eTech_unknown;
 
     if (!inst.IsSetExt()  ||  !inst.GetExt().IsDelta()  ||
         inst.GetExt().GetDelta().Get().empty()) {
@@ -4395,7 +4392,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 const CSeq_data& data = lit.GetSeq_data();
                 vector<TSeqPos> badIdx;
                 CSeqportUtil::Validate(data, &badIdx);
-                const string* ss = 0;
+                const string* ss = nullptr;
                 switch (data.Which()) {
                 case CSeq_data::e_Iupacaa:
                     ss = &data.GetIupacaa().Get();
@@ -5262,7 +5259,7 @@ static void s_GetGeneTextLabel(const CSeq_feat& feat, string& label)
 void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
 {
     const CGene_ref* grp = feat.GetGeneXref();
-    if ( grp != 0 && grp->IsSuppressed()) {
+    if ( grp && grp->IsSuppressed()) {
         return;
     }
 
@@ -5285,7 +5282,7 @@ void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
     }
     /*
     const CGene_ref* grp = feat.GetGeneXref();
-    if ( grp != 0 && grp->IsSuppressed()) {
+    if ( grp && grp->IsSuppressed()) {
         return;
     }
     */
@@ -6058,7 +6055,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                             num_pseudocds++;
                     } else {
                         CConstRef<CSeq_feat> gene = m_Imp.GetCachedGene(&feat);
-                        if (gene != 0 && gene->IsSetPseudo() && gene->GetPseudo()) {
+                        if (gene && gene->IsSetPseudo() && gene->GetPseudo()) {
                             num_pseudocds++;
                         } else if (feat.IsSetExcept_text()
                                    && NStr::Find (feat.GetExcept_text(), "rearrangement required for product") != string::npos) {
@@ -6093,7 +6090,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     } else if (feat.IsSetPseudo() && feat.GetPseudo()) {
                             num_pseudomrna++;
                     } else {
-                        if (gene != 0 && gene->IsSetPseudo() && gene->GetPseudo()) {
+                        if (gene && gene->IsSetPseudo() && gene->GetPseudo()) {
                             num_pseudomrna++;
                         }
                     }
@@ -6131,7 +6128,6 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                         {
                             if (IsOneBioseq(feat.GetLocation(), m_Scope)) {
                                 CSeq_loc::TRange range = feat.GetLocation().GetTotalRange();
-
                                 if ( (range.IsWhole()  ||
                                       (range.GetFrom() == 0  &&  range.GetTo() == len - 1)) &&
                                      (!feat.GetData().GetProt().IsSetProcessed() ||
@@ -7389,7 +7385,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
 
 void CValidError_bioseq::x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq)
 {
-    if (m_GeneIt != NULL && m_AllFeatIt != NULL) {
+    if (m_GeneIt && m_AllFeatIt) {
         if (! m_GeneIt->empty()) {
             // nothing to validate if there aren't any genes
             // count mRNAs and CDSs for each gene.
@@ -8047,10 +8043,10 @@ void CValidError_bioseq::x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CS
 
             try {
                 const CSeq_feat* cds = m_Imp.GetCDSGivenProduct(bioseq);
-                if (cds != NULL) {
+                if (cds) {
                     string cds_loc;
                     const CSeq_id* id = cds->GetLocation().GetId();
-                    if (id != NULL) {
+                    if (id) {
                         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*id);
                         if (bsh && bsh.GetCompleteBioseq()) {
                             AppendBioseqLabel (cds_loc, *(bsh.GetCompleteBioseq()), true);
@@ -8702,7 +8698,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                               }
                           }
                           if (report_fasta_brackets) {
-                              IF_EXISTS_CLOSEST_BIOSOURCE (bs_ref, seq, NULL) {
+                              IF_EXISTS_CLOSEST_BIOSOURCE (bs_ref, seq, nullptr) {
                                   const CBioSource& bsrc = (*bs_ref).GetSource();
                                   if (bsrc.IsSetOrg()) {
                                       const COrg_ref& orgref = bsrc.GetOrg();
@@ -8781,7 +8777,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     string current_str;
                     GetDateString(current_str, current);
                     const CSeq_entry *use_ctx = ctx.GetParentEntry();
-                    if (use_ctx == NULL || !use_ctx->IsSet()
+                    if (!use_ctx || !use_ctx->IsSet()
                         || !use_ctx->GetSet().IsSetClass()
                         || use_ctx->GetSet().GetClass() != CBioseq_set::eClass_nuc_prot) {
                         use_ctx = &ctx;
@@ -10090,8 +10086,8 @@ void CValidError_bioseq::x_CompareStrings
     bool first = true;
     bool reported_first = false;
     bool lastIsSplit = false;
-    const string* strp = 0;
-    const CSeq_feat* feat = 0;
+    const string* strp = nullptr;
+    const CSeq_feat* feat = nullptr;
     ITERATE (TStrFeatMap, it, str_feat_map) {
         if ( first ) {
             first = false;
@@ -10330,12 +10326,12 @@ void CValidError_bioseq::ValidateCompleteGenome(const CBioseq& seq)
 
 void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
 {
-    const CSeq_id*  gb_id = 0;
-    CRef<CSeq_id> db_gb_id;
+    const CSeq_id*  gb_id = nullptr;
+    CRef<CSeq_id>   db_gb_id;
     TGi             gi = ZERO_GI,
                     db_gi = ZERO_GI;
-    CRef<CSeq_id>   db_general_id(NULL);
-    const CDbtag*   general_id = 0;
+    CRef<CSeq_id>   db_general_id;
+    const CDbtag*   general_id = nullptr;
 
     FOR_EACH_SEQID_ON_BIOSEQ (id, seq) {
         switch ( (*id)->Which() ) {
@@ -10356,7 +10352,7 @@ void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
         }
     }
 
-    if ( gi == ZERO_GI  &&  gb_id != 0 ) {
+    if ( gi == ZERO_GI && gb_id ) {
         gi = GetGIForSeqId(*gb_id);
     }
 
@@ -10392,25 +10388,25 @@ void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
               " does not match one in NCBI sequence repository (" + NStr::NumericToString(db_gi) + ")",
               seq);
         }
-        if ( (gb_id != 0)  &&  (db_gb_id != 0) ) {
+        if ( gb_id && db_gb_id ) {
           if ( !gb_id->Match(*db_gb_id) ) {
               PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
                   "New accession (" + gb_id->AsFastaString() +
                   ") does not match one in NCBI sequence repository (" + db_gb_id->AsFastaString() +
                   ") on gi (" + gi_str + ")", seq);
           }
-        } else if ( gb_id != NULL) {
+        } else if ( gb_id ) {
             PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
                 "Gain of accession (" + gb_id->AsFastaString() + ") on gi (" +
                 gi_str + ") compared to the NCBI sequence repository", seq);
-        } else if ( db_gb_id != 0 ) {
+        } else if ( db_gb_id ) {
             PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
                 "Loss of accession (" + db_gb_id->AsFastaString() +
                 ") on gi (" + gi_str + ") compared to the NCBI sequence repository", seq);
         }
 
         string new_gen_label, old_gen_label;
-        if ( general_id  != 0  &&  db_general_id != 0 ) {
+        if ( general_id && db_general_id ) {
             if ( !general_id->Match(db_general_id->GetGeneral()) ) {
                 db_general_id->GetGeneral().GetLabel(&old_gen_label);
                 general_id->GetLabel(&new_gen_label);
@@ -10419,12 +10415,12 @@ void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
                     ") does not match one in NCBI sequence repository (" + old_gen_label +
                     ") on gi (" + gi_str + ")", seq);
             }
-        } else if ( general_id != 0 ) {
+        } else if ( general_id ) {
             general_id->GetLabel(&new_gen_label);
             PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
                 "Gain of general ID (" + new_gen_label + ") on gi (" +
                 gi_str + ") compared to the NCBI sequence repository", seq);
-        } else if ( db_general_id != 0 ) {
+        } else if ( db_general_id ) {
             db_general_id->GetGeneral().GetLabel(&old_gen_label);
             PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
                 "Loss of general ID (" + old_gen_label + ") on gi (" +
@@ -10578,12 +10574,12 @@ void CValidError_bioseq::ValidateCDSUTR(const CBioseq& seq)
     if (!m_AllFeatIt) {
         return;
     }
-    CConstRef<CSeq_feat> cds_minus(NULL);
-    CConstRef<CSeq_feat> utr3_minus(NULL);
-    CConstRef<CSeq_feat> utr5_minus(NULL);
-    CConstRef<CSeq_feat> cds_plus(NULL);
-    CConstRef<CSeq_feat> utr3_plus(NULL);
-    CConstRef<CSeq_feat> utr5_plus(NULL);
+    CConstRef<CSeq_feat> cds_minus;
+    CConstRef<CSeq_feat> utr3_minus;
+    CConstRef<CSeq_feat> utr5_minus;
+    CConstRef<CSeq_feat> cds_plus;
+    CConstRef<CSeq_feat> utr3_plus;
+    CConstRef<CSeq_feat> utr5_plus;
 
     ITERATE(CCacheImpl::TFeatValue, f, *m_AllFeatIt) {
         ENa_strand strand = f->GetLocation().GetStrand();
@@ -10602,9 +10598,9 @@ void CValidError_bioseq::ValidateCDSUTR(const CBioseq& seq)
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_NoCDSbetweenUTRs,
                             "CDS not between 5'UTR and 3'UTR on plus strand", *utr3_plus);
                 }
-                utr5_plus.Reset(NULL);
-                cds_plus.Reset(NULL);
-                utr3_plus.Reset(NULL);
+                utr5_plus.Reset();
+                cds_plus.Reset();
+                utr3_plus.Reset();
             }
         } else if (f->GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR) {
             if (strand == eNa_strand_minus) {
@@ -10613,9 +10609,9 @@ void CValidError_bioseq::ValidateCDSUTR(const CBioseq& seq)
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_NoCDSbetweenUTRs,
                         "CDS not between 5'UTR and 3'UTR on minus strand", *utr5_minus);
                 }
-                utr5_minus.Reset(NULL);
-                cds_minus.Reset(NULL);
-                utr3_minus.Reset(NULL);
+                utr5_minus.Reset();
+                cds_minus.Reset();
+                utr3_minus.Reset();
             } else {
                 utr5_plus = f->GetSeq_feat();
             }
@@ -10724,8 +10720,6 @@ unsigned int s_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna
     }
     return 0;
 }
-
-
 
 
 END_SCOPE(validator)

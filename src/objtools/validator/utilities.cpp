@@ -283,7 +283,7 @@ static string s_GetBioseqAcc(const CBioseq& seq, CScope& scope, int* version)
 
 static const CBioseq* s_GetSeqFromSet(const CBioseq_set& bsst, CScope& scope)
 {
-    const CBioseq* retval = NULL;
+    const CBioseq* retval = nullptr;
 
     switch (bsst.GetClass()) {
         case CBioseq_set::eClass_gen_prod_set:
@@ -369,7 +369,7 @@ static string s_GetAccessionForSeqdesc (const CSeq_entry_Handle& seh, const CSeq
             return s_GetBioseqAcc(*(seh.GetSeq().GetCompleteBioseq()), scope, version);
         } else if (seh.IsSet()) {
             const CBioseq* seq = s_GetSeqFromSet(*(seh.GetSet().GetCompleteBioseq_set()), scope);
-            if (seq != NULL) {
+            if (seq) {
                 return s_GetBioseqAcc(*seq, scope, version);
             }
         }
@@ -399,7 +399,7 @@ CConstRef<CSeq_id> GetReportableSeqIdForAlignment(const CSeq_align& align, CScop
 {
     // temporary - to match C Toolkit
     if (align.IsSetSegs() && align.GetSegs().IsStd()) {
-        return CConstRef<CSeq_id>(NULL);
+        return CConstRef<CSeq_id>();
     }
     try {
         if (align.IsSetDim()) {
@@ -419,7 +419,7 @@ CConstRef<CSeq_id> GetReportableSeqIdForAlignment(const CSeq_align& align, CScop
         return CConstRef<CSeq_id>(&id);
     } catch (CException& ) {
     }
-    return CConstRef<CSeq_id>(NULL);
+    return CConstRef<CSeq_id>();
 }
 
 
@@ -441,7 +441,7 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
             return s_GetBioseqAcc(ctx->GetSeq(), scope, version);
         } else if (ctx->IsSet()) {
             const CBioseq* seq = s_GetSeqFromSet(ctx->GetSet(), scope);
-            if (seq != NULL) {
+            if (seq) {
                 return s_GetBioseqAcc(*seq, scope, version);
             }
         }
@@ -455,7 +455,7 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
         } else if (obj->GetThisTypeInfo() == CBioseq_set::GetTypeInfo()) {
             const CBioseq_set& bsst = dynamic_cast<const CBioseq_set&>(*obj);
             const CBioseq* seq = s_GetSeqFromSet(bsst, scope);
-            if (seq != NULL) {
+            if (seq) {
                 return s_GetBioseqAcc(*seq, scope, version);
             }
         } else if (obj->GetThisTypeInfo() == CSeq_entry::GetTypeInfo()) {
@@ -464,7 +464,7 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
                 return s_GetBioseqAcc(entry.GetSeq(), scope, version);
             } else if (entry.IsSet()) {
                 const CBioseq* seq = s_GetSeqFromSet(entry.GetSet(), scope);
-                if (seq != NULL) {
+                if (seq) {
                     return s_GetBioseqAcc(*seq, scope, version);
                 }
             }
@@ -479,7 +479,7 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
                         CBioseq_set_Handle bsh = seh.GetSet();
                         const CBioseq_set& bsst = *(bsh.GetCompleteBioseq_set());
                         const CBioseq* seq = s_GetSeqFromSet(bsst, scope);
-                        if (seq != NULL) {
+                        if (seq) {
                             return s_GetBioseqAcc(*seq, scope, version);
                         }
                     }
@@ -900,7 +900,7 @@ bool IsNCBIFILESeqId (const CSeq_id& id)
 
 bool IsAccession(const CSeq_id& id)
 {
-    if (id.GetTextseq_Id() != NULL) {
+    if (id.GetTextseq_Id()) {
         return true;
     } else {
         return false;
@@ -915,7 +915,7 @@ static void UpdateToBestId(CSeq_loc& loc, CScope& scope)
     for (; it; ++it) {
         const CSeq_id& id = it.GetSeq_id();
         if (!IsAccession(id)) {
-            CConstRef<CSeq_id> best_id(NULL);
+            CConstRef<CSeq_id> best_id;
             CBioseq_Handle bsh = scope.GetBioseqHandle(id);
             if (bsh) {
                 const auto& ids = bsh.GetCompleteBioseq()->GetId();
@@ -1191,7 +1191,9 @@ bool s_PartialAtGapOrNs (
         return false;
     }
     const CSeq_id* id = slp->GetId();
-    if (id == NULL) return false;
+    if (!id) {
+        return false;
+    }
     CBioseq_Handle bsh = scope->GetBioseqHandle(*id);
     if (!bsh) {
         return false;
@@ -2270,7 +2272,7 @@ string TranslateCodingRegionForValidation(const CSeq_feat& feat, CScope &scope, 
                 start = 2;
             }
         }
-        const CGenetic_code* genetic_code = NULL;
+        const CGenetic_code* genetic_code = nullptr;
         if (cdregion.IsSetCode()) {
             genetic_code = &(cdregion.GetCode());
         }
@@ -2563,11 +2565,11 @@ CBioseq_Handle GetCDSProductSequence(const CSeq_feat& feat, CScope* scope, const
     if (!feat.IsSetProduct()) {
         return prot_handle;
     }
-    const CSeq_id* protid = NULL;
+    const CSeq_id* protid = nullptr;
     try {
         protid = &sequence::GetId(feat.GetProduct(), scope);
     } catch (CException&) {}
-    if (protid != NULL) {
+    if (protid) {
         prot_handle = scope->GetBioseqHandleFromTSE(*protid, tse);
         if (!prot_handle  &&  far_fetch) {
             prot_handle = scope->GetBioseqHandle(*protid);

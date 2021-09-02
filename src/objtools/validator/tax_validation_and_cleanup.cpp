@@ -663,7 +663,7 @@ CConstRef<CSeq_entry> CTaxValidationAndCleanup::GetTopReportObject() const
     if (!m_DescCtxs.empty()) {
         return m_DescCtxs.front();
     } else {
-        return CConstRef<CSeq_entry>(NULL);
+        return CConstRef<CSeq_entry>();
     }
 }
 
@@ -945,7 +945,7 @@ bool CTaxValidationAndCleanup::AdjustOrgRefsWithTaxLookupReply
     CTaxon3_reply::TReply::const_iterator reply_it = reply.GetReply().begin();
     vector<CRef<COrg_ref> >::iterator org_it = org_refs.begin();
     while (reply_it != reply.GetReply().end() && org_it != org_refs.end()) {
-        CRef<COrg_ref> cpy(NULL);
+        CRef<COrg_ref> cpy;
         if ((*reply_it)->IsData() &&
             (*reply_it)->GetData().IsSetOrg()) {
             cpy.Reset(new COrg_ref());

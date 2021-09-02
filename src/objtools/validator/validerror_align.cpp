@@ -825,7 +825,7 @@ bool CValidError_align::x_ValidateDim
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*id);
             if (bsh) {
                 int version = 0;
-                const string& label = GetAccessionFromObjects(bsh.GetCompleteBioseq(), NULL, *m_Scope, &version);
+                const string& label = GetAccessionFromObjects(bsh.GetCompleteBioseq(), nullptr, *m_Scope, &version);
                 msg += "  context " + label;
             }
         }

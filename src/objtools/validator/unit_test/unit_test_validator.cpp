@@ -1389,9 +1389,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
     // now repeat test, but with mRNA - this time Us should not be reported
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     delete expected_errors[8];
-    expected_errors[8] = NULL;
+    expected_errors[8] = nullptr;
     delete expected_errors[19];
-    expected_errors[19] = NULL;
+    expected_errors[19] = nullptr;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -1427,9 +1427,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
     seh = scope.AddTopLevelSeqEntry(*entry);
 
     for (int j = 0; j < 22; j++) {
-        if (expected_errors[j] != NULL) {
+        if (expected_errors[j]) {
             delete expected_errors[j];
-            expected_errors[j] = NULL;
+            expected_errors[j] = nullptr;
         }
     }
     eval = validator.Validate(seh, options);
@@ -1604,7 +1604,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     WriteOutTemp(entry);
 
     delete expected_errors[1];
-    expected_errors[1] = NULL;
+    expected_errors[1] = nullptr;
     expected_errors[2]->SetErrMsg("3 internal stops. Genetic code [0]");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -2485,7 +2485,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
             unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_genomic);
             entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
             delete expected_errors[0];
-            expected_errors[0] = NULL;
+            expected_errors[0] = nullptr;
             expected_errors.back()->SetErrCode("HTGS_STS_GSS_WGSshouldNotBeRNA");
             expected_errors.back()->SetErrMsg("HTGS/STS/GSS/WGS sequence should not be RNA");
             eval = validator.Validate(seh, options);
@@ -9496,7 +9496,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingKeyword)
     // if no keyword, no badkeyword error
     entry->SetSeq().SetDescr().Set().pop_back();
     delete expected_errors[0];
-    expected_errors[0] = NULL;
+    expected_errors[0] = nullptr;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -9963,7 +9963,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubRequirement)
         CheckErrors (*eval, expected_errors);
 
         delete expected_errors[1];
-        expected_errors[1] = NULL;
+        expected_errors[1] = nullptr;
 
         pub->SetGen().SetCit("submitted starts with expected text");
         pub->SetGen().SetDate().SetStr("?");
@@ -10017,7 +10017,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubRequirement)
         journal_title->SetName("journal_title");
         pub->SetArticle().SetFrom().SetJournal().SetTitle().Set().push_back(journal_title);
         delete expected_errors[0];
-        expected_errors[0] = NULL;
+        expected_errors[0] = nullptr;
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         CLEAR_ERRORS
@@ -10202,8 +10202,8 @@ BOOST_AUTO_TEST_CASE(Test_Generic_BadDate)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
 
     // find sub pub and other pub
-    CRef<CPub> subpub(NULL);
-    CRef<CPub> otherpub(NULL);
+    CRef<CPub> subpub;
+    CRef<CPub> otherpub;
     NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
         if ((*it)->IsPub()) {
             if ((*it)->GetPub().GetPub().Get().front()->IsSub()) {
@@ -10362,7 +10362,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_EmbeddedScript)
 
     author->SetName().SetName().SetLast("Last");
     delete expected_errors[0];
-    expected_errors[0] = NULL;
+    expected_errors[0] = nullptr;
 
     feat->SetComment("<object");
     eval = validator.Validate(seh, options);
@@ -10547,7 +10547,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
 
     unit_test_util::SetSebaea_microphylla(entry);
     delete expected_errors[1];
-    expected_errors[1] = NULL;
+    expected_errors[1] = nullptr;
 
     size_t tag_num = 0;
 
@@ -10822,7 +10822,7 @@ BOOST_AUTO_TEST_CASE(Test_PKG_NucProtProblem)
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().push_back(cds);
     seh = scope.AddTopLevelSeqEntry(*entry);
     delete expected_errors[0];
-    expected_errors[0] = NULL;
+    expected_errors[0] = nullptr;
     expected_errors[1]->SetErrMsg("No proteins in nuc-prot set");
     expected_errors[1]->SetAccession("lcl|nuc");
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "MissingCDSproduct",
@@ -19180,7 +19180,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PartialProblem)
     // set partial on CDS, third error should go away
     cds_feat->SetPartial (true);
     delete expected_errors[2];
-    expected_errors[2] = NULL;
+    expected_errors[2] = nullptr;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -19931,7 +19931,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphMax)
     CheckErrors (*eval, expected_errors);
 
     delete expected_errors[1];
-    expected_errors[1] = NULL;
+    expected_errors[1] = nullptr;
 
     graph->SetGraph().SetByte().SetMax(101);
     expected_errors[0]->SetErrMsg("Graph max (101) out of range");
@@ -21548,14 +21548,14 @@ BOOST_AUTO_TEST_CASE(Test_GP_9919)
     CValidErrorFormat::AddSuppression(suppress->SetUser(), eErr_SEQ_FEAT_InternalStop);
     entry->SetSet().SetDescr().Set().push_back(suppress);
     delete(expected_errors[2]);
-    expected_errors[2] = NULL;
+    expected_errors[2] = nullptr;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     // suppress two errors
     CValidErrorFormat::AddSuppression(suppress->SetUser(), eErr_SEQ_FEAT_ExceptionProblem);
     delete(expected_errors[1]);
-    expected_errors[1] = NULL;
+    expected_errors[1] = nullptr;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -23313,7 +23313,7 @@ BOOST_AUTO_TEST_CASE(VR_778)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
 
     // find sub pub and other pub
-    CRef<CPub> subpub(NULL);
+    CRef<CPub> subpub;
     NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
         if ((*it)->IsPub()) {
             if ((*it)->GetPub().GetPub().Get().front()->IsSub()) {

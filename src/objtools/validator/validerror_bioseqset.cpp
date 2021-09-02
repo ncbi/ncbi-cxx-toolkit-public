@@ -441,13 +441,13 @@ void CValidError_bioseqset::CheckForInconsistentBiomols (const CBioseq_set& seqs
     }
 
     CTypeConstIterator<CMolInfo> miit(ConstBegin(seqset));
-    const CMolInfo* mol_info = 0;
+    const CMolInfo* mol_info = nullptr;
 
     for (; miit; ++miit) {
         if (!miit->IsSetBiomol() || miit->GetBiomol() == CMolInfo::eBiomol_peptide) {
             continue;
         }
-        if (mol_info == 0) {
+        if (!mol_info) {
             mol_info = &(*miit);
         } else if (mol_info->GetBiomol() != miit->GetBiomol() ) {
             if (seqset.GetClass() == CBioseq_set::eClass_pop_set

@@ -683,7 +683,7 @@ void CCdregionValidator::x_ValidateCodebreak()
 {
     const CCdregion& cds = m_Feat.GetData().GetCdregion();
     const CSeq_loc& feat_loc = m_Feat.GetLocation();
-    const CCode_break* prev_cbr = 0;
+    const CCode_break* prev_cbr = nullptr;
 
     FOR_EACH_CODEBREAK_ON_CDREGION (it, cds) {
         const CCode_break& cbr = **it;
@@ -715,7 +715,7 @@ void CCdregionValidator::x_ValidateCodebreak()
             PostErr(eDiag_Error, eErr_SEQ_FEAT_TranslExceptIsPartial,
                    "Translation exception locations should not be partial");
         }
-        if ( prev_cbr != 0 ) {
+        if ( prev_cbr ) {
             if ( Compare(cbr_loc, prev_cbr->GetLoc(), &m_Scope, fCompareOverlapping) == eSame ) {
                 string msg = "Multiple code-breaks at same location ";
                 string str = GetValidatorLocationLabel (cbr_loc, m_Scope);
@@ -802,7 +802,6 @@ void CCdregionValidator::Validate()
 
 void CCdregionValidator::x_ValidateQuals()
 {
-
     FOR_EACH_GBQUAL_ON_FEATURE(it, m_Feat) {
         const CGb_qual& qual = **it;
         if (qual.CanGetQual()) {
@@ -1245,7 +1244,7 @@ void CCdregionValidator::x_ValidateCDSPeptides()
         return;
     }
 
-    const CGene_ref* cds_ref = 0;
+    const CGene_ref* cds_ref = nullptr;
 
     // map from cds product to nucleotide
     const string prev = GetDiagFilter(eDiagFilter_Post);
@@ -1289,7 +1288,7 @@ void CCdregionValidator::x_ValidateCDSPeptides()
             continue;
         }
 
-        const CGene_ref* pep_ref = 0;
+        const CGene_ref* pep_ref = nullptr;
         CConstRef<CSeq_feat> pgene = sequence::GetBestOverlappingFeat (*nloc, CSeqFeatData::eSubtype_gene, sequence::eOverlap_SubsetRev, m_Scope);
         if (pgene && pgene->CanGetData() && pgene->GetData().IsGene()) {
             const CGene_ref& pgref = pgene->GetData().GetGene();
@@ -1728,8 +1727,8 @@ void CCdregionValidator::x_ValidateCommonProduct()
         return;
     }
 
-    if ( !m_ProductBioseq  || m_ProductIsFar) {
-        const CSeq_id* sid = 0;
+    if ( !m_ProductBioseq || m_ProductIsFar ) {
+        const CSeq_id* sid = nullptr;
         try {
             sid = &(GetId(m_Feat.GetProduct(), &m_Scope));
         } catch (const CObjmgrUtilException&) {}
@@ -1741,7 +1740,7 @@ void CCdregionValidator::x_ValidateCommonProduct()
     }
 
     const CSeq_feat* sfp = GetCDSForProduct(m_ProductBioseq);
-    if ( sfp == 0 ) {
+    if ( !sfp ) {
         return;
     }
 

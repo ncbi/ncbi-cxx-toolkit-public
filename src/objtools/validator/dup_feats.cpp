@@ -115,7 +115,7 @@ bool AllowOrphanedProtein(const CBioseq& seq, bool force_refseq)
         {
             is_refseq = true;
             const CTextseq_id* tsid = sid.GetTextseq_Id();
-            if (tsid != NULL && tsid->IsSetAccession()) {
+            if (tsid && tsid->IsSetAccession()) {
                 const string& acc = tsid->GetAccession();
                 if (NStr::StartsWith(acc, "WP_")) {
                     is_wp = true;
