@@ -59,7 +59,7 @@ class CValidError_graph : private CValidError_base
 {
 public:
     CValidError_graph(CValidError_imp& imp);
-    virtual ~CValidError_graph(void);
+    ~CValidError_graph() override;
 
     void ValidateSeqGraph(const CSeq_graph& graph);
 

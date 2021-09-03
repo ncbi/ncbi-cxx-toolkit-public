@@ -60,14 +60,14 @@ class NCBI_VALIDATOR_EXPORT CValidError_desc : private CValidError_base
 {
 public:
     CValidError_desc(CValidError_imp& imp);
-    virtual ~CValidError_desc(void);
+    ~CValidError_desc() override;
 
     void ValidateSeqDesc(const CSeqdesc& desc, const CSeq_entry& ctx);
 
     bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, bool report = true);
     bool ValidateDblink(const CUser_object& usr, const CSeqdesc& desc, bool report = true);
 
-    void ResetModifCounters(void);
+    void ResetModifCounters();
 private:
 
     void ValidateComment(const string& comment, const CSeqdesc& desc);

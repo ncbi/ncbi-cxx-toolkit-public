@@ -101,7 +101,7 @@ class CSingleFeatValidator
 {
 public:
     CSingleFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp);
-    virtual ~CSingleFeatValidator() {};
+    virtual ~CSingleFeatValidator() {}
 
     virtual void Validate();
 
@@ -172,7 +172,7 @@ protected:
 
     void ValidateCharactersInField (string value, string field_name);
     void ValidateSplice(bool gene_pseudo, bool check_all);
-    EDiagSev x_SeverityForConsensusSplice(void);
+    EDiagSev x_SeverityForConsensusSplice();
     void x_ReportSpliceProblems(const CSpliceProblems& problems, const string& label);
     void x_ReportDonorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label);
     void x_ReportAcceptorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label);
@@ -200,18 +200,18 @@ class CCdregionValidator : public CSingleFeatValidator
 public:
     CCdregionValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp);
 
-    virtual void Validate() override;
+    void Validate() override;
 
 protected:
-    virtual void x_ValidateFeatComment() override;
-    virtual void x_ValidateExceptText(const string& text) override;
+    void x_ValidateFeatComment() override;
+    void x_ValidateExceptText(const string& text) override;
     void x_ValidateQuals();
-    virtual bool x_ReportOrigProteinId() override;
+    bool x_ReportOrigProteinId() override;
     static bool IsPlastid(int genome);
     void x_ValidateGeneticCode();
     void x_ValidateBadMRNAOverlap();
     bool x_HasGoodParent();
-    virtual void x_ValidateSeqFeatLoc() override;
+    void x_ValidateSeqFeatLoc() override;
     void x_ValidateFarProducts();
     void x_ValidateCDSPeptides();
     void x_ValidateCDSPartial();
@@ -253,10 +253,10 @@ class CGeneValidator : public CSingleFeatValidator
 public:
     using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate() override;
+    void Validate() override;
 
 protected:
-    virtual void x_ValidateExceptText(const string& text) override;
+    void x_ValidateExceptText(const string& text) override;
     void x_ValidateOperon();
     void x_ValidateMultiIntervalGene();
     bool x_AllIntervalGapsAreMobileElements();
@@ -268,7 +268,7 @@ class CProtValidator : public CSingleFeatValidator
 public:
     using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate() override;
+    void Validate() override;
 
 protected:
     void x_CheckForEmpty();
@@ -286,7 +286,7 @@ public:
         : CSingleFeatValidator(feat, scope, imp) {}
     using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate() override;
+    void Validate() override;
 
 protected:
     void x_ValidateRnaProduct(bool feat_pseudo, bool pseudo);
@@ -309,7 +309,7 @@ class CMRNAValidator : public CRNAValidator
 public:
     CMRNAValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp);
 
-    virtual void Validate() override;
+    void Validate() override;
 
 protected:
     // for mRNAs
@@ -328,7 +328,7 @@ class CPubFeatValidator : public CSingleFeatValidator
 public:
     using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate() override;
+    void Validate() override;
 
 protected:
 };
@@ -339,7 +339,7 @@ class CSrcFeatValidator : public CSingleFeatValidator
 public:
     using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate() override;
+    void Validate() override;
 
 protected:
 };
@@ -350,7 +350,7 @@ class CPolyASiteValidator : public CSingleFeatValidator
 public:
     using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void x_ValidateSeqFeatLoc() override;
+    void x_ValidateSeqFeatLoc() override;
 
 protected:
 };
@@ -361,7 +361,7 @@ class CPolyASignalValidator : public CSingleFeatValidator
 public:
     using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void x_ValidateSeqFeatLoc() override;
+    void x_ValidateSeqFeatLoc() override;
 
 protected:
 };
@@ -372,7 +372,7 @@ class CPeptideValidator : public CSingleFeatValidator
 public:
     CPeptideValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp);
 
-    virtual void Validate() override;
+    void Validate() override;
 
 protected:
     void x_ValidatePeptideOnCodonBoundary();
@@ -387,7 +387,7 @@ class CExonValidator : public CSingleFeatValidator
 public:
     using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate() override;
+    void Validate() override;
 
 protected:
 };
@@ -398,7 +398,7 @@ class CIntronValidator : public CSingleFeatValidator
 public:
     using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate() override;
+    void Validate() override;
 
 protected:
     bool x_IsIntronShort(bool pseudo);
@@ -410,7 +410,7 @@ class CMiscFeatValidator : public CSingleFeatValidator
 public:
     using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate() override;
+    void Validate() override;
 
 protected:
 };
@@ -421,7 +421,7 @@ class CAssemblyGapValidator : public CSingleFeatValidator
 public:
     using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate() override;
+    void Validate() override;
 
 protected:
 };
@@ -432,7 +432,7 @@ class CGapFeatValidator : public CSingleFeatValidator
 public:
     using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate() override;
+    void Validate() override;
 
 protected:
 };
@@ -442,7 +442,7 @@ class CImpFeatValidator : public CSingleFeatValidator
 {
 public:
     using CSingleFeatValidator::CSingleFeatValidator;
-    virtual void Validate() override;
+    void Validate() override;
 protected:
 };
 

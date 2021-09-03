@@ -76,7 +76,7 @@ class CValidError_bioseqset : private CValidError_base
 {
 public:
     CValidError_bioseqset(CValidError_imp& imp);
-    virtual ~CValidError_bioseqset(void);
+    ~CValidError_bioseqset() override;
 
     void ValidateBioseqSet(const CBioseq_set& seqset);
 

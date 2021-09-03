@@ -109,7 +109,7 @@ class NCBI_VALIDATOR_EXPORT CValidError_feat : private validator::CValidError_ba
 {
 public:
     CValidError_feat(CValidError_imp& imp);
-    virtual ~CValidError_feat(void);
+    ~CValidError_feat() override;
 
     void SetScope(CScope& scope) { m_Scope = &scope; }
     void SetTSE(CSeq_entry_Handle seh);

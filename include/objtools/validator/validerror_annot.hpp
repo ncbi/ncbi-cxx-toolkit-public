@@ -64,7 +64,7 @@ class CValidError_annot : private CValidError_base
 {
 public:
     CValidError_annot(CValidError_imp& imp);
-    virtual ~CValidError_annot(void);
+    ~CValidError_annot() override;
 
     void ValidateSeqAnnot(const CSeq_annot_Handle& annot);
 
