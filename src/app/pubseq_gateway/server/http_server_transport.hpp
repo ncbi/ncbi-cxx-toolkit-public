@@ -253,6 +253,11 @@ public:
         }
     }
 
+    void NotifyClientConnectionDrop(void)
+    {
+        m_State = eReplyFinished;
+    }
+
     void SendOk(const char *  payload, size_t  payload_len, bool  is_persist)
     { Send(payload, payload_len, is_persist, true); }
 

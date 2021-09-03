@@ -47,8 +47,18 @@ CPSGS_Reply::~CPSGS_Reply()
 }
 
 
+void CPSGS_Reply::ConnectionCancel(void)
+{
+    m_ConnectionCanceled = true;
+    m_Reply->NotifyClientConnectionDrop();
+}
+
+
 void CPSGS_Reply::Flush(void)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     while (m_ChunksLock.exchange(true)) {}
     m_Reply->Send(m_Chunks, true);
     m_Chunks.clear();
@@ -57,6 +67,9 @@ void CPSGS_Reply::Flush(void)
 
 void CPSGS_Reply::SendAccumulated(void)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     while (m_ChunksLock.exchange(true)) {}
     if (!m_Chunks.empty()) {
         m_Reply->SendAccumulated(&m_Chunks.front(), m_Chunks.size());
@@ -67,6 +80,9 @@ void CPSGS_Reply::SendAccumulated(void)
 
 void CPSGS_Reply::Flush(bool  is_last)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     while (m_ChunksLock.exchange(true)) {}
     m_Reply->Send(m_Chunks, is_last);
     m_Chunks.clear();
@@ -80,6 +96,9 @@ void CPSGS_Reply::Flush(bool  is_last)
 
 void CPSGS_Reply::Clear(void)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     while (m_ChunksLock.exchange(true)) {}
     m_Chunks.clear();
     m_Reply = nullptr;
@@ -90,6 +109,9 @@ void CPSGS_Reply::Clear(void)
 
 void CPSGS_Reply::SetContentType(EPSGS_ReplyMimeType  mime_type)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     m_Reply->SetContentType(mime_type);
 }
 
@@ -119,6 +141,9 @@ void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
                                        int  err_code,
                                        EDiagSev  severity)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string  header = GetBioseqMessageHeader(item_id, processor_id,
                                             msg.size(), status,
                                             err_code, severity);
@@ -139,6 +164,9 @@ void CPSGS_Reply::PrepareBioseqData(
                     const string &  content,
                     SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string      header = GetBioseqInfoHeader(item_id, processor_id,
                                              content.size(), output_format);
     while (m_ChunksLock.exchange(true)) {}
@@ -155,6 +183,9 @@ void CPSGS_Reply::PrepareBioseqCompletion(size_t  item_id,
                                           const string &  processor_id,
                                           size_t  chunk_count)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string      bioseq_meta = GetBioseqCompletionHeader(item_id,
                                                         processor_id,
                                                         chunk_count);
@@ -174,6 +205,9 @@ void CPSGS_Reply::PrepareBlobPropMessage(size_t                 item_id,
                                          int                    err_code,
                                          EDiagSev               severity)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string      header = GetBlobPropMessageHeader(item_id, processor_id,
                                                   msg.size(), status, err_code,
                                                   severity);
@@ -196,6 +230,9 @@ void CPSGS_Reply::x_PrepareTSEBlobPropMessage(size_t                 item_id,
                                               int                    err_code,
                                               EDiagSev               severity)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string      header = GetTSEBlobPropMessageHeader(
                                 item_id, processor_id, id2_chunk, id2_info,
                                 msg.size(), status, err_code, severity);
@@ -216,6 +253,9 @@ void CPSGS_Reply::PrepareBlobPropMessage(CCassBlobFetch *       fetch_details,
                                          int                    err_code,
                                          EDiagSev               severity)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     PrepareBlobPropMessage(fetch_details->GetBlobPropItemId(this),
                            processor_id, msg, status, err_code, severity);
     fetch_details->IncrementTotalSentBlobChunks();
@@ -231,6 +271,9 @@ void CPSGS_Reply::PrepareTSEBlobPropMessage(CCassBlobFetch *       fetch_details
                                             int                    err_code,
                                             EDiagSev               severity)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     x_PrepareTSEBlobPropMessage(fetch_details->GetBlobPropItemId(this),
                                 processor_id, id2_chunk, id2_info, msg,
                                 status, err_code, severity);
@@ -244,6 +287,9 @@ void CPSGS_Reply::PrepareBlobPropData(size_t                   item_id,
                                       const string &           content,
                                       CBlobRecord::TTimestamp  last_modified)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string  header = GetBlobPropHeader(item_id,
                                        processor_id,
                                        blob_id,
@@ -265,6 +311,9 @@ void CPSGS_Reply::PrepareBlobPropData(CCassBlobFetch *         fetch_details,
                                       const string &           content,
                                       CBlobRecord::TTimestamp  last_modified)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     PrepareBlobPropData(fetch_details->GetBlobPropItemId(this),
                         processor_id,
                         fetch_details->GetBlobId().ToString(),
@@ -280,6 +329,9 @@ void CPSGS_Reply::PrepareTSEBlobPropData(CCassBlobFetch *  fetch_details,
                                          const string &    id2_info,
                                          const string &    content)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     PrepareTSEBlobPropData(fetch_details->GetBlobPropItemId(this),
                            processor_id, id2_chunk, id2_info, content);
     fetch_details->IncrementTotalSentBlobChunks();
@@ -292,6 +344,9 @@ void CPSGS_Reply::PrepareTSEBlobPropData(size_t  item_id,
                                          const string &    id2_info,
                                          const string &    content)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string  header = GetTSEBlobPropHeader(item_id,
                                           processor_id,
                                           id2_chunk, id2_info,
@@ -315,6 +370,9 @@ void CPSGS_Reply::PrepareBlobData(size_t                   item_id,
                                   int                      chunk_no,
                                   CBlobRecord::TTimestamp  last_modified)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     ++m_TotalSentReplyChunks;
 
     string  header = GetBlobChunkHeader(
@@ -341,6 +399,9 @@ void CPSGS_Reply::PrepareBlobData(CCassBlobFetch *         fetch_details,
                                   int                      chunk_no,
                                   CBlobRecord::TTimestamp  last_modified)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     fetch_details->IncrementTotalSentBlobChunks();
     PrepareBlobData(fetch_details->GetBlobChunkItemId(this),
                     processor_id,
@@ -358,6 +419,9 @@ void CPSGS_Reply::PrepareTSEBlobData(size_t                 item_id,
                                      int64_t                id2_chunk,
                                      const string &         id2_info)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     ++m_TotalSentReplyChunks;
 
     string  header = GetTSEBlobChunkHeader(
@@ -384,6 +448,9 @@ void CPSGS_Reply::PrepareTSEBlobData(CCassBlobFetch *  fetch_details,
                                      int64_t  id2_chunk,
                                      const string &  id2_info)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     fetch_details->IncrementTotalSentBlobChunks();
     PrepareTSEBlobData(fetch_details->GetBlobChunkItemId(this),
                        processor_id,
@@ -396,6 +463,9 @@ void CPSGS_Reply::PrepareBlobPropCompletion(size_t  item_id,
                                             const string &  processor_id,
                                             size_t  chunk_count)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string      blob_prop_meta = GetBlobPropCompletionHeader(item_id,
                                                              processor_id,
                                                              chunk_count);
@@ -412,6 +482,9 @@ void CPSGS_Reply::x_PrepareTSEBlobPropCompletion(size_t          item_id,
                                                  const string &  processor_id,
                                                  size_t          chunk_count)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string      blob_prop_meta = GetTSEBlobPropCompletionHeader(item_id,
                                                                 processor_id,
                                                                 chunk_count);
@@ -427,6 +500,9 @@ void CPSGS_Reply::x_PrepareTSEBlobPropCompletion(size_t          item_id,
 void CPSGS_Reply::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details,
                                             const string &  processor_id)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     // +1 is for the completion itself
     PrepareBlobPropCompletion(fetch_details->GetBlobPropItemId(this),
                               processor_id,
@@ -441,6 +517,9 @@ void CPSGS_Reply::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details,
 void CPSGS_Reply::PrepareTSEBlobPropCompletion(CCassBlobFetch *  fetch_details,
                                                const string &  processor_id)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     // +1 is for the completion itself
     x_PrepareTSEBlobPropCompletion(fetch_details->GetBlobPropItemId(this),
                                    processor_id,
@@ -461,6 +540,9 @@ void CPSGS_Reply::PrepareBlobMessage(size_t                   item_id,
                                      EDiagSev                 severity,
                                      CBlobRecord::TTimestamp  last_modified)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string      header = GetBlobMessageHeader(item_id, processor_id,
                                               blob_id, msg.size(),
                                               status, err_code, severity,
@@ -483,6 +565,9 @@ void CPSGS_Reply::PrepareBlobMessage(CCassBlobFetch *         fetch_details,
                                      EDiagSev                 severity,
                                      CBlobRecord::TTimestamp  last_modified)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     PrepareBlobMessage(fetch_details->GetBlobChunkItemId(this),
                        processor_id,
                        fetch_details->GetBlobId().ToString(),
@@ -500,6 +585,9 @@ void CPSGS_Reply::x_PrepareTSEBlobMessage(size_t  item_id,
                                           int  err_code,
                                           EDiagSev  severity)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string      header = GetTSEBlobMessageHeader(item_id, processor_id,
                                                  id2_chunk, id2_info, msg.size(),
                                                  status, err_code, severity);
@@ -521,6 +609,9 @@ void CPSGS_Reply::PrepareTSEBlobMessage(CCassBlobFetch *  fetch_details,
                                         CRequestStatus::ECode  status, int  err_code,
                                         EDiagSev  severity)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     x_PrepareTSEBlobMessage(fetch_details->GetBlobChunkItemId(this),
                             processor_id, id2_chunk, id2_info,
                             msg, status, err_code, severity);
@@ -532,6 +623,9 @@ void CPSGS_Reply::PrepareBlobCompletion(size_t                   item_id,
                                         const string &           processor_id,
                                         size_t                   chunk_count)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string completion = GetBlobCompletionHeader(item_id, processor_id,
                                                 chunk_count);
     while (m_ChunksLock.exchange(true)) {}
@@ -546,6 +640,9 @@ void CPSGS_Reply::PrepareBlobCompletion(size_t                   item_id,
 void CPSGS_Reply::PrepareTSEBlobCompletion(CCassBlobFetch *  fetch_details,
                                            const string &  processor_id)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     // +1 is for the completion itself
     PrepareTSEBlobCompletion(fetch_details->GetBlobChunkItemId(this),
                              processor_id,
@@ -558,6 +655,9 @@ void CPSGS_Reply::PrepareTSEBlobCompletion(size_t  item_id,
                                            const string &  processor_id,
                                            size_t  chunk_count)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string completion = GetTSEBlobCompletionHeader(item_id, processor_id,
                                                    chunk_count);
     while (m_ChunksLock.exchange(true)) {}
@@ -574,6 +674,9 @@ void CPSGS_Reply::PrepareBlobExcluded(const string &           blob_id,
                                       EPSGS_BlobSkipReason     skip_reason,
                                       CBlobRecord::TTimestamp  last_modified)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string  exclude = GetBlobExcludeHeader(GetItemId(), processor_id,
                                            blob_id, skip_reason, last_modified);
     while (m_ChunksLock.exchange(true)) {}
@@ -590,6 +693,9 @@ void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
                                       const string &        blob_id,
                                       EPSGS_BlobSkipReason  skip_reason)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string  exclude = GetBlobExcludeHeader(item_id, processor_id,
                                            blob_id, skip_reason);
     while (m_ChunksLock.exchange(true)) {}
@@ -604,6 +710,9 @@ void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
 void CPSGS_Reply::PrepareBlobCompletion(CCassBlobFetch *  fetch_details,
                                         const string &    processor_id)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     // +1 is for the completion itself
     PrepareBlobCompletion(fetch_details->GetBlobChunkItemId(this),
                           processor_id,
@@ -617,6 +726,9 @@ void CPSGS_Reply::PrepareReplyMessage(const string &         msg,
                                       int                    err_code,
                                       EDiagSev               severity)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string      header = GetReplyMessageHeader(msg.size(),
                                                status, err_code, severity);
     while (m_ChunksLock.exchange(true)) {}
@@ -636,6 +748,9 @@ void CPSGS_Reply::PrepareProcessorMessage(size_t                 item_id,
                                           int                    err_code,
                                           EDiagSev               severity)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     string      header = GetProcessorMessageHeader(item_id, processor_id,
                                                    msg.size(),
                                                    status, err_code, severity);
@@ -661,6 +776,9 @@ void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
                                        const string &  blob_id,
                                        CBlobRecord::TTimestamp  last_modified)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     auto        item_id = GetItemId();
     string      header = GetPublicCommentHeader(item_id, processor_id, blob_id,
                                                 last_modified, public_comment.size());
@@ -686,6 +804,9 @@ void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
                                        int64_t  id2_chunk,
                                        const string &  id2_info)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     auto        item_id = GetItemId();
     string      header = GetPublicCommentHeader(item_id, processor_id, id2_chunk,
                                                 id2_info, public_comment.size());
@@ -710,6 +831,9 @@ void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
                                              const string &  processor_id,
                                              const string &  content)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     size_t      item_id = GetItemId();
     string      header = GetNamedAnnotationHeader(item_id, processor_id,
                                                   annot_name, content.size());
@@ -735,6 +859,9 @@ void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
 void CPSGS_Reply::PrepareAccVerHistoryData(const string &  processor_id,
                                            const string &  content)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     size_t      item_id = GetItemId();
     string      header = GetAccVerHistoryHeader(item_id, processor_id,
                                                 content.size());
@@ -760,6 +887,9 @@ void CPSGS_Reply::PrepareAccVerHistoryData(const string &  processor_id,
 
 void CPSGS_Reply::PrepareReplyCompletion(void)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     while (m_ChunksLock.exchange(true)) {}
     ++m_TotalSentReplyChunks;
 
@@ -774,6 +904,9 @@ void CPSGS_Reply::PrepareReplyCompletion(void)
 void CPSGS_Reply::SendTrace(const string &  msg,
                             const TPSGS_HighResolutionTimePoint &  create_timestamp)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     auto            now = chrono::high_resolution_clock::now();
     uint64_t        mks = chrono::duration_cast<chrono::microseconds>
                                             (now - create_timestamp).count();
@@ -787,6 +920,9 @@ void CPSGS_Reply::SendTrace(const string &  msg,
 void CPSGS_Reply::SendData(const string &  data_to_send,
                            EPSGS_ReplyMimeType  mime_type)
 {
+    if (m_ConnectionCanceled)
+        return;
+
     m_Reply->SetContentType(mime_type);
     m_Reply->SetContentLength(data_to_send.length());
     m_Reply->SendOk(data_to_send.data(), data_to_send.length(), false);

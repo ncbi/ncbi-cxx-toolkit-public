@@ -55,6 +55,7 @@ public:
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
         m_ChunksLock(false),
+        m_ConnectionCanceled(false),
         m_FinallyFlushed(false)
     {
         SetContentType(ePSGS_PSGMime);
@@ -69,6 +70,7 @@ public:
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
         m_ChunksLock(false),
+        m_ConnectionCanceled(false),
         m_FinallyFlushed(false)
     {
         SetContentType(ePSGS_PSGMime);
@@ -85,6 +87,7 @@ public:
     bool IsFinished(void) const;
     bool IsOutputReady(void) const;
     void SetContentType(EPSGS_ReplyMimeType  mime_type);
+    void ConnectionCancel(void);
 
     bool IsFinallyFlushed(void) const
     {
@@ -292,6 +295,7 @@ private:
     int32_t                             m_TotalSentReplyChunks;
     atomic<bool>                        m_ChunksLock;
     vector<h2o_iovec_t>                 m_Chunks;
+    bool                                m_ConnectionCanceled;
     bool                                m_FinallyFlushed;
 };
 
