@@ -567,7 +567,7 @@ void CTaxFormat::x_LoadTaxTree(void)
                     }
                     STaxInfo &taxInfo = GetAlignTaxInfo(tax_id);
                     taxInfo.taxid = newTaxid;
-                    for(size_t j = 0; i < taxInfo.seqInfoList.size(); j++) {
+                    for(size_t j = 0; j < taxInfo.seqInfoList.size(); j++) {
                         SSeqInfo* seqInfo = taxInfo.seqInfoList[j];                        
                         seqInfo->taxid = newTaxid;
                     }        
