@@ -159,6 +159,9 @@ void CPendingOperation::Peek(bool  need_wait)
 void CPendingOperation::ConnectionCancel(void)
 {
     m_ConnectionCanceled = true;
+
+    m_Reply->ConnectionCancel();
+
     CPubseqGatewayApp::GetInstance()->SignalConnectionCanceled(
         m_UserRequest->GetRequestId());
 }
