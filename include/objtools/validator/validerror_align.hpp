@@ -63,7 +63,7 @@ class CValidError_align : private CValidError_base
 {
 public:
     CValidError_align(CValidError_imp& imp);
-    virtual ~CValidError_align(void);
+    ~CValidError_align() override;
 
     void ValidateSeqAlign(const CSeq_align& align, int order = -1);
 

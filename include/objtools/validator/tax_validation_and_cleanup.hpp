@@ -103,7 +103,7 @@ class NCBI_VALIDATOR_EXPORT CQualifierRequest : public CObject
 {
 public:
     CQualifierRequest();
-    virtual ~CQualifierRequest() {};
+//  ~CQualifierRequest() override {}
 
     void AddParent(CConstRef<CSeqdesc> desc, CConstRef<CSeq_entry> ctx);
     void AddParent(CConstRef<CSeq_feat> feat);
@@ -133,7 +133,7 @@ class NCBI_VALIDATOR_EXPORT CSpecificHostRequest : public CQualifierRequest
 {
 public:
     CSpecificHostRequest(const string& orig_val, const COrg_ref& org, bool for_fix = false);
-    ~CSpecificHostRequest() {};
+//  ~CSpecificHostRequest() override {}
 
     enum EHostResponseFlags{
         eNormal = 0,
@@ -143,8 +143,8 @@ public:
     };
     typedef int TResponseFlags;
 
-    virtual void AddReply(const CT3Reply& reply);
-    virtual void ListErrors(vector<TTaxError>& errs) const;
+    void AddReply(const CT3Reply& reply) override;
+    void ListErrors(vector<TTaxError>& errs) const override;
 
     const string& SuggestFix() const;
 
@@ -162,10 +162,10 @@ class NCBI_VALIDATOR_EXPORT CStrainRequest : public CQualifierRequest
 {
 public:
     CStrainRequest(const string& strain, const COrg_ref& org);
-    ~CStrainRequest() {};
+//  ~CStrainRequest() override {}
 
-    virtual void AddReply(const CT3Reply& reply);
-    virtual void ListErrors(vector<TTaxError>& errs) const;
+    void AddReply(const CT3Reply& reply) override;
+    void ListErrors(vector<TTaxError>& errs) const override;
 
     static string MakeKey(const string& strain, const string& taxname);
     static bool RequireTaxname(const string& taxname);
@@ -187,10 +187,10 @@ private:
 class NCBI_VALIDATOR_EXPORT CQualLookupMap
 {
 public:
-    CQualLookupMap(COrgMod::ESubtype subtype) : m_Subtype(subtype), m_Populated(false) {};
-    virtual ~CQualLookupMap() {};
+    CQualLookupMap(COrgMod::ESubtype subtype) : m_Subtype(subtype), m_Populated(false) {}
+    virtual ~CQualLookupMap() {}
 
-    bool IsPopulated() const { return m_Populated; };
+    bool IsPopulated() const { return m_Populated; }
 
     void Clear();
 
@@ -256,44 +256,43 @@ protected:
 class NCBI_VALIDATOR_EXPORT CSpecificHostMap : public CQualLookupMap
 {
 public:
-    CSpecificHostMap() : CQualLookupMap(COrgMod::eSubtype_nat_host) {};
-    ~CSpecificHostMap() {};
+    CSpecificHostMap() : CQualLookupMap(COrgMod::eSubtype_nat_host) {}
+//  ~CSpecificHostMap() override {}
 
-    virtual string GetKey(const string& orig_val, const COrg_ref& /*org*/) const { return orig_val; };
-    virtual bool ApplyToOrg(COrg_ref& /*org*/) const { return false; };
+    string GetKey(const string& orig_val, const COrg_ref& /*org*/) const override { return orig_val; }
+    bool ApplyToOrg(COrg_ref& /*org*/) const override { return false; }
 
 protected:
-    virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org);
+    CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org) override;
 };
 
 class NCBI_VALIDATOR_EXPORT CSpecificHostMapForFix : public CQualLookupMap
 {
 public:
-    CSpecificHostMapForFix() : CQualLookupMap(COrgMod::eSubtype_nat_host) {};
-    ~CSpecificHostMapForFix() {};
+    CSpecificHostMapForFix() : CQualLookupMap(COrgMod::eSubtype_nat_host) {}
+//  ~CSpecificHostMapForFix() override {}
 
-    virtual string GetKey(const string& orig_val, const COrg_ref& /*org*/) const { return x_DefaultSpecificHostAdjustments(orig_val); };
-    virtual bool ApplyToOrg(COrg_ref& org) const;
+    string GetKey(const string& orig_val, const COrg_ref& /*org*/) const override { return x_DefaultSpecificHostAdjustments(orig_val); }
+    bool ApplyToOrg(COrg_ref& org) const override;
 
 protected:
     static string x_DefaultSpecificHostAdjustments(const string& host_val);
-    virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org);
+    CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org) override;
 };
 
 
 class NCBI_VALIDATOR_EXPORT CStrainMap : public CQualLookupMap
 {
 public:
-    CStrainMap() : CQualLookupMap(COrgMod::eSubtype_strain) {};
-    ~CStrainMap() {};
+    CStrainMap() : CQualLookupMap(COrgMod::eSubtype_strain) {}
+//  ~CStrainMap() override {}
 
-    virtual string GetKey(const string& orig_val, const COrg_ref& org) const { return CStrainRequest::MakeKey(orig_val, org.IsSetTaxname() ? org.GetTaxname() : kEmptyStr); };
-    virtual bool Check(const COrg_ref& org) const { return CStrainRequest::Check(org); };
-    virtual bool ApplyToOrg(COrg_ref& /*org*/) const { return false; };
+    string GetKey(const string& orig_val, const COrg_ref& org) const override { return CStrainRequest::MakeKey(orig_val, org.IsSetTaxname() ? org.GetTaxname() : kEmptyStr); }
+    bool Check(const COrg_ref& org) const override { return CStrainRequest::Check(org); }
+    bool ApplyToOrg(COrg_ref& /*org*/) const override { return false; }
 
 protected:
-    virtual CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org);
-
+    CRef<CQualifierRequest> x_MakeNewRequest(const string& orig_val, const COrg_ref& org) override;
 };
 
 typedef map<string, CSpecificHostRequest> TSpecificHostRequests;
@@ -307,7 +306,7 @@ class NCBI_VALIDATOR_EXPORT CTaxValidationAndCleanup
 {
 public:
     CTaxValidationAndCleanup();
-    ~CTaxValidationAndCleanup() {};
+    ~CTaxValidationAndCleanup() {}
 
     void Init(const CSeq_entry& se);
 
@@ -347,8 +346,8 @@ public:
     size_t NumDescs() const { return m_SrcDescs.size(); }
     size_t NumFeats() const { return m_SrcFeats.size(); }
 
-    CConstRef<CSeqdesc> GetDesc(size_t num) const { return m_SrcDescs[num]; };
-    CConstRef<CSeq_feat> GetFeat(size_t num) const { return m_SrcFeats[num]; };
+    CConstRef<CSeqdesc> GetDesc(size_t num) const { return m_SrcDescs[num]; }
+    CConstRef<CSeq_feat> GetFeat(size_t num) const { return m_SrcFeats[num]; }
     CConstRef<CSeq_entry> GetSeqContext(size_t num) const;
 
     bool DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with_host);
@@ -386,7 +385,6 @@ protected:
     CSpecificHostMapForFix m_HostMapForFix;
     CStrainMap m_StrainMap;
 };
-
 
 
 END_SCOPE(validator)
