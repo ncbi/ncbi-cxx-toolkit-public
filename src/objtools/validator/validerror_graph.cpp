@@ -51,7 +51,7 @@ CValidError_graph::CValidError_graph(CValidError_imp& imp) :
 }
 
 
-CValidError_graph::~CValidError_graph(void)
+CValidError_graph::~CValidError_graph()
 {
 }
 

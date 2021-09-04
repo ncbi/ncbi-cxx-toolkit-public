@@ -928,7 +928,7 @@ static bool s_IsHtgInSep(const CSeq_entry& se)
 }
 
 
-bool CValidError_imp::IsHtg(void) const
+bool CValidError_imp::IsHtg() const
 {
     if (m_TSE) {
         return s_IsHtgInSep(*m_TSE);

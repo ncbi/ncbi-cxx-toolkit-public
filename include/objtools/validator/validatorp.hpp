@@ -55,13 +55,13 @@ class CPCRSet
 {
 public:
     CPCRSet(size_t pos);
-    virtual ~CPCRSet(void);
+    virtual ~CPCRSet();
 
-    string GetFwdName(void)            const { return m_FwdName; }
-    string GetFwdSeq(void)             const { return m_FwdSeq; }
-    string GetRevName(void)            const { return m_RevName; }
-    string GetRevSeq(void)             const { return m_RevSeq; }
-    size_t GetOrigPos(void)            const { return m_OrigPos; }
+    string GetFwdName()            const { return m_FwdName; }
+    string GetFwdSeq()             const { return m_FwdSeq; }
+    string GetRevName()            const { return m_RevName; }
+    string GetRevSeq()             const { return m_RevSeq; }
+    size_t GetOrigPos()            const { return m_OrigPos; }
 
     void SetFwdName(string fwd_name) { m_FwdName = fwd_name; }
     void SetFwdSeq(string fwd_seq)   { m_FwdSeq = fwd_seq; }
@@ -79,15 +79,15 @@ private:
 class CPCRSetList
 {
 public:
-    CPCRSetList(void);
-    ~CPCRSetList(void);
+    CPCRSetList();
+    ~CPCRSetList();
 
-    void AddFwdName (string name);
-    void AddRevName (string name);
-    void AddFwdSeq (string name);
-    void AddRevSeq (string name);
+    void AddFwdName(string name);
+    void AddRevName(string name);
+    void AddFwdSeq(string name);
+    void AddRevSeq(string name);
 
-    bool AreSetsUnique(void);
+    bool AreSetsUnique();
     static bool AreSetsUnique(const CPCRReactionSet& primers);
 
 private:

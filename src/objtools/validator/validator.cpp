@@ -74,7 +74,7 @@ CValidator::CValidator(CObjectManager& objmgr,
 }
 
 
-CValidator::~CValidator(void)
+CValidator::~CValidator()
 {
 }
 
@@ -674,18 +674,18 @@ CValidator::TDbxrefValidFlags CValidator::IsValidDbxref(const CDbtag& xref, bool
 
 //LCOV_EXCL_START
 //code is not used
-CCache::CCache(void)
+CCache::CCache()
 {
     m_impl = new CCacheImpl;
 }
 
-CCache::~CCache(void)
+CCache::~CCache()
 {
     delete m_impl;
 }
 
 CRef<CCache>
-CValidator::MakeEmptyCache(void)
+CValidator::MakeEmptyCache()
 {
     return Ref(new CCache);
 }

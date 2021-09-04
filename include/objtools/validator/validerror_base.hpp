@@ -66,7 +66,7 @@ protected:
     void PostErr(EDiagSev sv, EErrType et, const string& msg, const CSeq_align& align);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, const CSeq_entry& entry);
 
-    CCacheImpl & GetCache(void);
+    CCacheImpl& GetCache();
 
     static CSeq_entry_Handle GetAppropriateXrefParent(CSeq_entry_Handle seh);
 

@@ -29,7 +29,6 @@ public:
 private:
     vector < CRef<CMatchCDS> > m_CdsList;
     vector < CRef<CMatchmRNA> > m_mRNAList;
-
 };
 
 class CMatchCDS;
@@ -38,7 +37,7 @@ class CMatchFeat : public CObject
 {
 public:
     CMatchFeat(const CMappedFeat &feat);
-    ~CMatchFeat(void) {};
+//  ~CMatchFeat() {}
 
     const CSeq_feat& GetFeat() const
     {
@@ -83,8 +82,8 @@ private:
 class CMatchmRNA : public CMatchFeat
 {
 public:
-    CMatchmRNA(const CMappedFeat &mrna) : CMatchFeat(mrna), m_AccountedFor(false) {};
-    ~CMatchmRNA(void) {};
+    CMatchmRNA(const CMappedFeat &mrna) : CMatchFeat(mrna), m_AccountedFor(false) {}
+//  ~CMatchmRNA() {}
 
     void SetCDS(const CSeq_feat& cds)
     {
@@ -93,11 +92,11 @@ public:
     }
 
     void AddCDS(CMatchCDS& cds) { m_UnderlyingCDSs.push_back(Ref(&cds)); }
-    bool IsAccountedFor(void) const { return m_AccountedFor; }
+    bool IsAccountedFor() const { return m_AccountedFor; }
     void SetAccountedFor(bool val) { m_AccountedFor = val; }
     bool MatchesUnderlyingCDS(unsigned int partial_type) const;
     bool MatchAnyUnderlyingCDS(unsigned int partial_type) const;
-    bool HasCDSMatch(void);
+    bool HasCDSMatch();
 
 private:
     CConstRef<CSeq_feat> m_Cds;
@@ -114,21 +113,21 @@ public:
         m_AssignedMrna(nullptr),
         m_XrefMatch(false),
         m_NeedsmRNA(true)
-    {};
+    {}
 
-    ~CMatchCDS(void) {};
+//  ~CMatchCDS() {}
 
     void AddmRNA(CMatchmRNA& mrna) { m_OverlappingmRNAs.push_back(Ref(&mrna)); }
     void SetXrefMatch(CMatchmRNA& mrna) { m_XrefMatch = true; m_AssignedMrna = &mrna; }
-    bool IsXrefMatch(void) { return m_XrefMatch; }
-    bool HasmRNA(void) const { return m_AssignedMrna != nullptr; };
+    bool IsXrefMatch() { return m_XrefMatch; }
+    bool HasmRNA() const { return m_AssignedMrna != nullptr; }
 
-    bool NeedsmRNA(void) { return m_NeedsmRNA; }
+    bool NeedsmRNA() { return m_NeedsmRNA; }
     void SetNeedsmRNA(bool val) { m_NeedsmRNA = val; }
-    void AssignSinglemRNA(void);
+    void AssignSinglemRNA();
     int GetNummRNA(bool &loc_unique);
 
-    const CRef<CMatchmRNA> & GetmRNA(void) { return m_AssignedMrna; }
+    const CRef<CMatchmRNA>& GetmRNA() { return m_AssignedMrna; }
 
 private:
     vector < CRef<CMatchmRNA> > m_OverlappingmRNAs;
@@ -136,10 +135,6 @@ private:
     bool m_XrefMatch;
     bool m_NeedsmRNA;
 };
-
-
-
-
 
 
 END_SCOPE(objects)

@@ -1752,7 +1752,7 @@ void CSingleFeatValidator::ValidateSplice(bool gene_pseudo, bool check_all)
 }
 
 
-EDiagSev CSingleFeatValidator::x_SeverityForConsensusSplice(void)
+EDiagSev CSingleFeatValidator::x_SeverityForConsensusSplice()
 {
     EDiagSev sev = eDiag_Warning;
     if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {

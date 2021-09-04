@@ -82,7 +82,7 @@ public:
 
     // Constructor / Destructor
     CValidErrorFormat(CObjectManager& objmgr);
-    ~CValidErrorFormat(void);
+    ~CValidErrorFormat();
 
     ESubmitterFormatErrorGroup GetSubmitterFormatErrorGroup(CValidErrItem::TErrIndex err_code) const;
     string GetSubmitterFormatErrorGroupTitle(CValidErrItem::TErrIndex err_code) const;

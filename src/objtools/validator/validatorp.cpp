@@ -249,7 +249,7 @@ void CValidError_imp::SetErrorRepository(CValidError* errors)
 //LCOV_EXCL_STOP
 
 
-void CValidError_imp::Reset(void)
+void CValidError_imp::Reset()
 {
     m_Scope = nullptr;
     m_TSE = nullptr;
@@ -3396,8 +3396,8 @@ void CValidError_base::PostErr
     m_Imp.PostErr(sv, et, msg, entry);
 }
 
-CCacheImpl &
-CValidError_base::GetCache(void)
+CCacheImpl&
+CValidError_base::GetCache()
 {
     return m_Imp.GetCache();
 }

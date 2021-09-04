@@ -2688,18 +2688,18 @@ CPCRSet::CPCRSet(size_t pos) : m_OrigPos(pos)
 }
 
 
-CPCRSet::~CPCRSet(void)
+CPCRSet::~CPCRSet()
 {
 }
 
 
-CPCRSetList::CPCRSetList(void)
+CPCRSetList::CPCRSetList()
 {
     m_SetList.clear();
 }
 
 
-CPCRSetList::~CPCRSetList(void)
+CPCRSetList::~CPCRSetList()
 {
     for (size_t i = 0; i < m_SetList.size(); i++) {
         delete m_SetList[i];
@@ -2878,7 +2878,7 @@ static bool s_PCRSetEqual(
 }
 
 
-bool CPCRSetList::AreSetsUnique(void)
+bool CPCRSetList::AreSetsUnique()
 {
     stable_sort(m_SetList.begin(),
         m_SetList.end(),

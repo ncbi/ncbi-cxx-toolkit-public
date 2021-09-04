@@ -110,7 +110,7 @@ CValidError_feat::CValidError_feat(CValidError_imp& imp) :
 }
 
 
-CValidError_feat::~CValidError_feat(void)
+CValidError_feat::~CValidError_feat()
 {
 }
 
