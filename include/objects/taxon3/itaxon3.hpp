@@ -66,45 +66,45 @@ public:
     // Taxon1 server init
     // Returns: TRUE - OK
     //          FALSE - Can't open connection to taxonomy service
-    virtual void Init(void) = 0;  
-                     
+    virtual void Init() = 0;
+
     virtual void Init(const STimeout* timeout, unsigned reconnect_attempts=5) = 0;
 
     enum ETaxon3_reply_part {
-	eT3reply_nothing    = 0,
-	eT3reply_org        = 0x0001, // data.org
-	eT3reply_blast_lin  = 0x0002, // data.blast_name_lineage
-	eT3reply_status     = 0x0004, // data.status
-	eT3reply_refresh    = 0x0008, // data.refresh
+        eT3reply_nothing    = 0,
+        eT3reply_org        = 0x0001, // data.org
+        eT3reply_blast_lin  = 0x0002, // data.blast_name_lineage
+        eT3reply_status     = 0x0004, // data.status
+        eT3reply_refresh    = 0x0008, // data.refresh
 
-	eT3reply_all        = (eT3reply_org | eT3reply_blast_lin | eT3reply_status | eT3reply_refresh),
-	eT3reply_default    = eT3reply_all
+        eT3reply_all        = (eT3reply_org | eT3reply_blast_lin | eT3reply_status | eT3reply_refresh),
+        eT3reply_default    = eT3reply_all
     };
     typedef unsigned int fT3reply_parts;
 
     // submit a list of org_refs
     virtual CRef< CTaxon3_reply > SendOrgRefList(const vector< CRef< COrg_ref > >& list,
-						 COrg_ref::fOrgref_parts result_parts = COrg_ref::eOrgref_default,
-						 fT3reply_parts t3result_parts = eT3reply_default ) = 0;
+                                                 COrg_ref::fOrgref_parts result_parts = COrg_ref::eOrgref_default,
+                                                 fT3reply_parts t3result_parts = eT3reply_default) = 0;
 
     // Name list lookup all the names (including common names) regardless of their lookup flag
     // By default returns scientific name and taxid in T3Data.org and old_name_class property with matched class name
     virtual CRef< CTaxon3_reply > SendNameList(const vector<std::string>& list,
-					       COrg_ref::fOrgref_parts parts = (COrg_ref::eOrgref_taxname |
-										COrg_ref::eOrgref_db_taxid),
-					       fT3reply_parts t3parts = (eT3reply_org|eT3reply_status) ) = 0;
+                                               COrg_ref::fOrgref_parts parts = (COrg_ref::eOrgref_taxname |
+                                                                                COrg_ref::eOrgref_db_taxid),
+                                               fT3reply_parts t3parts = (eT3reply_org|eT3reply_status)) = 0;
     // By default returns only scientific name and taxid in T3Data.org
     virtual CRef< CTaxon3_reply > SendTaxidList(const vector<TTaxId>& list,
-						COrg_ref::fOrgref_parts parts = (COrg_ref::eOrgref_taxname |
-										 COrg_ref::eOrgref_db_taxid),
-						fT3reply_parts t3parts = eT3reply_org) = 0;
+                                                COrg_ref::fOrgref_parts parts = (COrg_ref::eOrgref_taxname |
+                                                                                 COrg_ref::eOrgref_db_taxid),
+                                                fT3reply_parts t3parts = eT3reply_org) = 0;
 
     virtual CRef< CTaxon3_reply > SendRequest(const CTaxon3_request& request) = 0;
     //--------------------------------------------------
     // Get error message after latest erroneous operation
     // Returns: error message, or empty string if no error occurred
     ///
-    virtual const string& GetLastError() const = 0;
+    virtual const string&         GetLastError() const = 0;
 
 };
 
