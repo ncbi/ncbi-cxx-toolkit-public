@@ -149,12 +149,12 @@ class CCdsMatchInfo;
 class CMrnaMatchInfo : public CObject {
 public:
     CMrnaMatchInfo(const CSeq_feat& mrna, CScope* scope);
-    const CSeq_feat& GetSeqfeat(void) const;
+    const CSeq_feat& GetSeqfeat() const;
     bool Overlaps(const CSeq_feat& cds) const;
     void SetMatch();
-    bool HasMatch(void) const;
+    bool HasMatch() const;
     void SetPseudo(bool val = true) { m_IsPseudo = val; }
-    bool OkWithoutCds(void) const;
+    bool OkWithoutCds() const;
 
 private:
     CConstRef<CSeq_feat> m_Mrna;
@@ -168,7 +168,7 @@ private:
 class CCdsMatchInfo : public CObject {
 public:
     CCdsMatchInfo(const CSeq_feat& cds, CScope* scope);
-    const CSeq_feat& GetSeqfeat(void) const;
+    const CSeq_feat& GetSeqfeat() const;
     bool Overlaps(const CSeq_feat& mrna) const;
     bool AssignXrefMatch(TmRNAList& unmatched_mrnas, const CTSE_Handle& tse);
     bool AssignOverlapMatch(TmRNAList& unmatched_mrnas, CScope& scope);
@@ -177,12 +177,12 @@ public:
     bool AreMrnaProductsUnique() { return m_ProductsUnique; }
     void SetMatch(CRef<CMrnaMatchInfo> match);
     bool AssignMatch(TmRNAList& mrna_map, CFeatTree& feat_tree, CScope& scope);
-    bool HasMatch(void) const;
+    bool HasMatch() const;
     void NeedsMatch(bool needs_match);
-    bool NeedsMatch(void) const;
-    const CMrnaMatchInfo& GetMatch(void) const;
-    bool IsPseudo(void) const;
-    void SetPseudo(void);
+    bool NeedsMatch() const;
+    const CMrnaMatchInfo& GetMatch() const;
+    bool IsPseudo() const;
+    void SetPseudo();
 
 private:
     CConstRef<CSeq_feat> m_Cds;
@@ -6547,7 +6547,7 @@ CMrnaMatchInfo::CMrnaMatchInfo(const CSeq_feat& mrna,
 {
 }
 
-const CSeq_feat& CMrnaMatchInfo::GetSeqfeat(void) const
+const CSeq_feat& CMrnaMatchInfo::GetSeqfeat() const
 {
     return *m_Mrna;
 }
@@ -6569,12 +6569,12 @@ void CMrnaMatchInfo::SetMatch() {
 }
 
 
-bool CMrnaMatchInfo::HasMatch(void) const {
+bool CMrnaMatchInfo::HasMatch() const {
     return m_HasMatch;
 }
 
 
-bool CMrnaMatchInfo::OkWithoutCds(void) const
+bool CMrnaMatchInfo::OkWithoutCds() const
 {
     if (m_IsPseudo) return true;
     const CSeq_loc& loc = m_Mrna->GetLocation();
@@ -6636,7 +6636,7 @@ CCdsMatchInfo::CCdsMatchInfo(const CSeq_feat& cds,
 }
 
 
-const CSeq_feat& CCdsMatchInfo::GetSeqfeat(void) const {
+const CSeq_feat& CCdsMatchInfo::GetSeqfeat() const {
     return *m_Cds;
 }
 
@@ -6655,26 +6655,26 @@ void CCdsMatchInfo::NeedsMatch(const bool needs_match) {
 }
 
 
-bool CCdsMatchInfo::NeedsMatch(void) const {
+bool CCdsMatchInfo::NeedsMatch() const {
     return m_NeedsMatch;
 }
 
 
-bool CCdsMatchInfo::HasMatch(void) const {
+bool CCdsMatchInfo::HasMatch() const {
     return  (m_BestMatch != nullptr);
 }
 
-const CMrnaMatchInfo& CCdsMatchInfo::GetMatch(void) const {
+const CMrnaMatchInfo& CCdsMatchInfo::GetMatch() const {
     return *m_BestMatch;
 }
 
 
-bool CCdsMatchInfo::IsPseudo(void) const {
+bool CCdsMatchInfo::IsPseudo() const {
     return m_IsPseudo;
 }
 
 
-void CCdsMatchInfo::SetPseudo(void) {
+void CCdsMatchInfo::SetPseudo() {
     m_IsPseudo = true;
 }
 

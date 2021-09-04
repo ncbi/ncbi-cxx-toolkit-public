@@ -151,7 +151,7 @@ CMatchFeat::CMatchFeat(const CMappedFeat &feat) : m_feat(feat.GetSeq_feat())
 }
 
 
-bool CMatchmRNA::HasCDSMatch(void)
+bool CMatchmRNA::HasCDSMatch()
 {
     bool rval = false;
 
@@ -262,7 +262,7 @@ bool CMatchmRNA::MatchAnyUnderlyingCDS(unsigned int partial_type) const
 
 
 // only assign if the coding region has only one overlapping unaccounted for mRNA
-void CMatchCDS::AssignSinglemRNA(void)
+void CMatchCDS::AssignSinglemRNA()
 {
     CRef<CMatchmRNA> match;
 
@@ -335,7 +335,7 @@ CmRNAAndCDSIndex::CmRNAAndCDSIndex()
 }
 
 
-CmRNAAndCDSIndex::~CmRNAAndCDSIndex(void)
+CmRNAAndCDSIndex::~CmRNAAndCDSIndex()
 {
     // nothing needed yet
 }

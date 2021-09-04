@@ -73,7 +73,7 @@ CValidError_align::CValidError_align(CValidError_imp& imp) :
 }
 
 
-CValidError_align::~CValidError_align(void)
+CValidError_align::~CValidError_align()
 {
 }
 

@@ -71,7 +71,7 @@ CValidErrorFormat::CValidErrorFormat(CObjectManager& objmgr) :
 }
 
 
-CValidErrorFormat::~CValidErrorFormat(void)
+CValidErrorFormat::~CValidErrorFormat()
 {
 }
 

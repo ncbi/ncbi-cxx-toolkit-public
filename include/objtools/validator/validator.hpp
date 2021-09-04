@@ -105,7 +105,7 @@ public:
     // If no taxon service is provided, a CTAxon3 client will
     // be created.
     CValidator(CObjectManager& objmgr, AutoPtr<ITaxon3> taxon = nullptr);
-    ~CValidator(void);
+    ~CValidator();
 
     // If many validations are being done without changing the underlying
     // objects, a cache can be given to speed up the process.
@@ -118,13 +118,13 @@ public:
     class CCacheImpl;
     class NCBI_VALIDATOR_EXPORT CCache : public CObject {
     public:
-        CCache(void);
-        ~CCache(void);
+        CCache();
+        ~CCache();
 
         // the containing CCache object owns the m_impl
         CCacheImpl* m_impl;
     };
-    static CRef<CCache> MakeEmptyCache(void);
+    static CRef<CCache> MakeEmptyCache();
 
     // Validation methods:
     // It is possible to validate objects of types CSeq_entry, CSeq_submit
@@ -218,17 +218,17 @@ public:
             eState_Graph
         };
 
-        CProgressInfo(void): m_State(eState_not_set),
+        CProgressInfo() : m_State(eState_not_set),
             m_Total(0), m_TotalDone(0),
             m_Current(0), m_CurrentDone(0),
             m_UserData(nullptr)
         {}
-        EState GetState(void)       const { return m_State;       }
-        size_t GetTotal(void)       const { return m_Total;       }
-        size_t GetTotalDone(void)   const { return m_TotalDone;   }
-        size_t GetCurrent(void)     const { return m_Current;     }
-        size_t GetCurrentDone(void) const { return m_CurrentDone; }
-        void*  GetUserData(void)    const { return m_UserData;    }
+        EState GetState()       const { return m_State;       }
+        size_t GetTotal()       const { return m_Total;       }
+        size_t GetTotalDone()   const { return m_TotalDone;   }
+        size_t GetCurrent()     const { return m_Current;     }
+        size_t GetCurrentDone() const { return m_CurrentDone; }
+        void*  GetUserData()    const { return m_UserData;    }
 
     private:
         friend class CValidError_imp;

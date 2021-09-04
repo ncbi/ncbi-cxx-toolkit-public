@@ -63,7 +63,7 @@ CValidError_bioseqset::CValidError_bioseqset(CValidError_imp& imp) :
 }
 
 
-CValidError_bioseqset::~CValidError_bioseqset(void)
+CValidError_bioseqset::~CValidError_bioseqset()
 {
 }
 

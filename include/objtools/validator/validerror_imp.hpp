@@ -139,11 +139,11 @@ public:
         ITaxon3* taxon, Uint4 options = 0);
 
     // Destructor
-    virtual ~CValidError_imp(void);
+    virtual ~CValidError_imp();
 
     void SetOptions (Uint4 options);
     void SetErrorRepository (CValidError* errors);
-    void Reset(void);
+    void Reset();
 
     // Validation methods
     bool Validate(const CSeq_entry& se, const CCit_sub* cs = nullptr,
@@ -258,130 +258,130 @@ public:
     bool x_IsFarFetchFailure (const CSeq_loc& loc);
 
     // getters
-    inline CScope* GetScope(void) { return m_Scope; }
-    inline CCacheImpl & GetCache(void) { return m_cache; }
+    inline CScope* GetScope() { return m_Scope; }
+    inline CCacheImpl& GetCache() { return m_cache; }
 
     inline CConstRef<CSeq_feat> GetCachedGene(const CSeq_feat* f) { return m_GeneCache.GetGeneFromCache(f, *m_Scope); }
     inline CGeneCache& GetGeneCache() { return m_GeneCache; }
 
     // flags derived from options parameter
-    bool IsNonASCII(void)             const { return m_NonASCII; }
-    bool IsSuppressContext(void)      const { return m_SuppressContext; }
-    bool IsValidateAlignments(void)   const { return m_ValidateAlignments; }
-    bool IsValidateExons(void)        const { return m_ValidateExons; }
-    bool IsOvlPepErr(void)            const { return m_OvlPepErr; }
-    bool IsRequireTaxonID(void)       const { return !m_SeqSubmitParent; }
-    bool IsSeqSubmitParent(void)      const { return m_SeqSubmitParent; }
-    bool IsRequireISOJTA(void)        const { return m_RequireISOJTA; }
-    bool IsValidateIdSet(void)        const { return m_ValidateIdSet; }
-    bool IsRemoteFetch(void)          const { return m_RemoteFetch; }
-    bool IsFarFetchMRNAproducts(void) const { return m_FarFetchMRNAproducts; }
-    bool IsFarFetchCDSproducts(void)  const { return m_FarFetchCDSproducts; }
-    bool IsLocusTagGeneralMatch(void) const { return m_LocusTagGeneralMatch; }
-    bool DoRubiscoTest(void)          const { return m_DoRubiscoText; }
-    bool IsIndexerVersion(void)       const { return m_IndexerVersion; }
-    bool IsGenomeSubmission(void)     const { return m_genomeSubmission; }
-    bool UseEntrez(void)              const { return m_UseEntrez; }
-    bool DoTaxLookup(void)            const { return m_DoTaxLookup; }
-    bool ValidateInferenceAccessions(void) const { return m_ValidateInferenceAccessions; }
-    bool IgnoreExceptions(void) const { return m_IgnoreExceptions; }
-    bool ReportSpliceAsError(void) const { return m_ReportSpliceAsError; }
-    bool IsLatLonCheckState(void)     const { return m_LatLonCheckState; }
-    bool IsLatLonIgnoreWater(void)    const { return m_LatLonIgnoreWater; }
-    bool IsRefSeqConventions(void)    const { return m_RefSeqConventions; }
-    bool GenerateGoldenFile(void)    const { return m_GenerateGoldenFile; }
-    bool DoCompareVDJCtoCDS(void)    const { return m_CompareVDJCtoCDS; }
+    bool IsNonASCII()             const { return m_NonASCII; }
+    bool IsSuppressContext()      const { return m_SuppressContext; }
+    bool IsValidateAlignments()   const { return m_ValidateAlignments; }
+    bool IsValidateExons()        const { return m_ValidateExons; }
+    bool IsOvlPepErr()            const { return m_OvlPepErr; }
+    bool IsRequireTaxonID()       const { return !m_SeqSubmitParent; }
+    bool IsSeqSubmitParent()      const { return m_SeqSubmitParent; }
+    bool IsRequireISOJTA()        const { return m_RequireISOJTA; }
+    bool IsValidateIdSet()        const { return m_ValidateIdSet; }
+    bool IsRemoteFetch()          const { return m_RemoteFetch; }
+    bool IsFarFetchMRNAproducts() const { return m_FarFetchMRNAproducts; }
+    bool IsFarFetchCDSproducts()  const { return m_FarFetchCDSproducts; }
+    bool IsLocusTagGeneralMatch() const { return m_LocusTagGeneralMatch; }
+    bool DoRubiscoTest()          const { return m_DoRubiscoText; }
+    bool IsIndexerVersion()       const { return m_IndexerVersion; }
+    bool IsGenomeSubmission()     const { return m_genomeSubmission; }
+    bool UseEntrez()              const { return m_UseEntrez; }
+    bool DoTaxLookup()            const { return m_DoTaxLookup; }
+    bool ValidateInferenceAccessions() const { return m_ValidateInferenceAccessions; }
+    bool IgnoreExceptions()       const { return m_IgnoreExceptions; }
+    bool ReportSpliceAsError()    const { return m_ReportSpliceAsError; }
+    bool IsLatLonCheckState()     const { return m_LatLonCheckState; }
+    bool IsLatLonIgnoreWater()    const { return m_LatLonIgnoreWater; }
+    bool IsRefSeqConventions()    const { return m_RefSeqConventions; }
+    bool GenerateGoldenFile()     const { return m_GenerateGoldenFile; }
+    bool DoCompareVDJCtoCDS()     const { return m_CompareVDJCtoCDS; }
 
 
     // flags calculated by examining data in record
-    inline bool IsStandaloneAnnot(void) const { return m_IsStandaloneAnnot; }
-    inline bool IsNoPubs(void) const { return m_NoPubs; }
-    inline bool IsNoCitSubPubs(void) const { return m_NoCitSubPubs; }
-    inline bool IsNoBioSource(void) const { return m_NoBioSource; }
-    inline bool IsGPS(void) const { return m_IsGPS; }
-    inline bool IsGED(void) const { return m_IsGED; }
-    inline bool IsPDB(void) const { return m_IsPDB; }
-    inline bool IsPatent(void) const { return m_IsPatent; }
-    inline bool IsRefSeq(void) const { return m_IsRefSeq || m_RefSeqConventions; }
-    inline bool IsEmbl(void) const { return m_IsEmbl; }
-    inline bool IsDdbj(void) const { return m_IsDdbj; }
-    inline bool IsTPE(void) const { return m_IsTPE; }
-    inline bool IsNC(void) const { return m_IsNC; }
-    inline bool IsNG(void) const { return m_IsNG; }
-    inline bool IsNM(void) const { return m_IsNM; }
-    inline bool IsNP(void) const { return m_IsNP; }
-    inline bool IsNR(void) const { return m_IsNR; }
-    inline bool IsNZ(void) const { return m_IsNZ; }
-    inline bool IsNS(void) const { return m_IsNS; }
-    inline bool IsNT(void) const { return m_IsNT; }
-    inline bool IsNW(void) const { return m_IsNW; }
-    inline bool IsWP(void) const { return m_IsWP; }
-    inline bool IsXR(void) const { return m_IsXR; }
-    inline bool IsGI(void) const { return m_IsGI; }
-    inline bool IsGpipe(void) const { return m_IsGpipe; }
-    bool IsHtg(void) const;
-    inline bool IsLocalGeneralOnly(void) const { return m_IsLocalGeneralOnly; }
-    inline bool HasGiOrAccnVer(void) const { return m_HasGiOrAccnVer; }
-    inline bool IsGenomic(void) const { return m_IsGenomic; }
-    inline bool IsSeqSubmit(void) const { return m_IsSeqSubmit; }
-    inline bool IsSmallGenomeSet(void) const { return m_IsSmallGenomeSet; }
+    inline bool IsStandaloneAnnot() const { return m_IsStandaloneAnnot; }
+    inline bool IsNoPubs() const { return m_NoPubs; }
+    inline bool IsNoCitSubPubs() const { return m_NoCitSubPubs; }
+    inline bool IsNoBioSource() const { return m_NoBioSource; }
+    inline bool IsGPS() const { return m_IsGPS; }
+    inline bool IsGED() const { return m_IsGED; }
+    inline bool IsPDB() const { return m_IsPDB; }
+    inline bool IsPatent() const { return m_IsPatent; }
+    inline bool IsRefSeq() const { return m_IsRefSeq || m_RefSeqConventions; }
+    inline bool IsEmbl() const { return m_IsEmbl; }
+    inline bool IsDdbj() const { return m_IsDdbj; }
+    inline bool IsTPE() const { return m_IsTPE; }
+    inline bool IsNC() const { return m_IsNC; }
+    inline bool IsNG() const { return m_IsNG; }
+    inline bool IsNM() const { return m_IsNM; }
+    inline bool IsNP() const { return m_IsNP; }
+    inline bool IsNR() const { return m_IsNR; }
+    inline bool IsNZ() const { return m_IsNZ; }
+    inline bool IsNS() const { return m_IsNS; }
+    inline bool IsNT() const { return m_IsNT; }
+    inline bool IsNW() const { return m_IsNW; }
+    inline bool IsWP() const { return m_IsWP; }
+    inline bool IsXR() const { return m_IsXR; }
+    inline bool IsGI() const { return m_IsGI; }
+    inline bool IsGpipe() const { return m_IsGpipe; }
+    bool IsHtg() const;
+    inline bool IsLocalGeneralOnly() const { return m_IsLocalGeneralOnly; }
+    inline bool HasGiOrAccnVer() const { return m_HasGiOrAccnVer; }
+    inline bool IsGenomic() const { return m_IsGenomic; }
+    inline bool IsSeqSubmit() const { return m_IsSeqSubmit; }
+    inline bool IsSmallGenomeSet() const { return m_IsSmallGenomeSet; }
     bool IsNoncuratedRefSeq(const CBioseq& seq, EDiagSev& sev);
-    inline bool IsGenbank(void) const { return m_IsGB; }
-    inline bool DoesAnyFeatLocHaveGI(void) const { return m_FeatLocHasGI; }
-    inline bool DoesAnyProductLocHaveGI(void) const { return m_ProductLocHasGI; }
-    inline bool DoesAnyGeneHaveLocusTag(void) const { return m_GeneHasLocusTag; }
-    inline bool DoesAnyProteinHaveGeneralID(void) const { return m_ProteinHasGeneralID; }
-    inline bool IsINSDInSep(void) const { return m_IsINSDInSep; }
-    inline bool IsGeneious(void) const { return m_IsGeneious; }
+    inline bool IsGenbank() const { return m_IsGB; }
+    inline bool DoesAnyFeatLocHaveGI() const { return m_FeatLocHasGI; }
+    inline bool DoesAnyProductLocHaveGI() const { return m_ProductLocHasGI; }
+    inline bool DoesAnyGeneHaveLocusTag() const { return m_GeneHasLocusTag; }
+    inline bool DoesAnyProteinHaveGeneralID() const { return m_ProteinHasGeneralID; }
+    inline bool IsINSDInSep() const { return m_IsINSDInSep; }
+    inline bool IsGeneious() const { return m_IsGeneious; }
     inline const CBioSourceKind& BioSourceKind() const { return m_biosource_kind; }
 
     // counting number of misplaced features
-    inline void ResetMisplacedFeatureCount (void) { m_NumMisplacedFeatures = 0; }
-    inline void IncrementMisplacedFeatureCount (void) { m_NumMisplacedFeatures++; }
-    inline void AddToMisplacedFeatureCount (SIZE_TYPE num) { m_NumMisplacedFeatures += num; }
+    inline void ResetMisplacedFeatureCount() { m_NumMisplacedFeatures = 0; }
+    inline void IncrementMisplacedFeatureCount() { m_NumMisplacedFeatures++; }
+    inline void AddToMisplacedFeatureCount(SIZE_TYPE num) { m_NumMisplacedFeatures += num; }
 
     // counting number of small genome set misplaced features
-    inline void ResetSmallGenomeSetMisplacedCount (void) { m_NumSmallGenomeSetMisplaced = 0; }
-    inline void IncrementSmallGenomeSetMisplacedCount (void) { m_NumSmallGenomeSetMisplaced++; }
-    inline void AddToSmallGenomeSetMisplacedCount (SIZE_TYPE num) { m_NumSmallGenomeSetMisplaced += num; }
+    inline void ResetSmallGenomeSetMisplacedCount() { m_NumSmallGenomeSetMisplaced = 0; }
+    inline void IncrementSmallGenomeSetMisplacedCount() { m_NumSmallGenomeSetMisplaced++; }
+    inline void AddToSmallGenomeSetMisplacedCount(SIZE_TYPE num) { m_NumSmallGenomeSetMisplaced += num; }
 
     // counting number of misplaced graphs
-    inline void ResetMisplacedGraphCount (void) { m_NumMisplacedGraphs = 0; }
-    inline void IncrementMisplacedGraphCount (void) { m_NumMisplacedGraphs++; }
-    inline void AddToMisplacedGraphCount (SIZE_TYPE num) { m_NumMisplacedGraphs += num; }
+    inline void ResetMisplacedGraphCount() { m_NumMisplacedGraphs = 0; }
+    inline void IncrementMisplacedGraphCount() { m_NumMisplacedGraphs++; }
+    inline void AddToMisplacedGraphCount(SIZE_TYPE num) { m_NumMisplacedGraphs += num; }
 
     // counting number of genes and gene xrefs
-    inline void ResetGeneCount (void) { m_NumGenes = 0; }
-    inline void IncrementGeneCount (void) { m_NumGenes++; }
-    inline void AddToGeneCount (SIZE_TYPE num) { m_NumGenes += num; }
-    inline void ResetGeneXrefCount (void) { m_NumGeneXrefs = 0; }
-    inline void IncrementGeneXrefCount (void) { m_NumGeneXrefs++; }
-    inline void AddToGeneXrefCount (SIZE_TYPE num) { m_NumGeneXrefs += num; }
+    inline void ResetGeneCount() { m_NumGenes = 0; }
+    inline void IncrementGeneCount() { m_NumGenes++; }
+    inline void AddToGeneCount(SIZE_TYPE num) { m_NumGenes += num; }
+    inline void ResetGeneXrefCount() { m_NumGeneXrefs = 0; }
+    inline void IncrementGeneXrefCount() { m_NumGeneXrefs++; }
+    inline void AddToGeneXrefCount(SIZE_TYPE num) { m_NumGeneXrefs += num; }
 
     // counting sequences with and without TPA history
-    inline void ResetTpaWithHistoryCount (void) { m_NumTpaWithHistory = 0; }
-    inline void IncrementTpaWithHistoryCount (void) { m_NumTpaWithHistory++; }
-    inline void AddToTpaWithHistoryCount (SIZE_TYPE num) { m_NumTpaWithHistory += num; }
-    inline void ResetTpaWithoutHistoryCount (void) { m_NumTpaWithoutHistory = 0; }
-    inline void IncrementTpaWithoutHistoryCount (void) { m_NumTpaWithoutHistory++; }
-    inline void AddToTpaWithoutHistoryCount (SIZE_TYPE num) { m_NumTpaWithoutHistory += num; }
+    inline void ResetTpaWithHistoryCount() { m_NumTpaWithHistory = 0; }
+    inline void IncrementTpaWithHistoryCount() { m_NumTpaWithHistory++; }
+    inline void AddToTpaWithHistoryCount(SIZE_TYPE num) { m_NumTpaWithHistory += num; }
+    inline void ResetTpaWithoutHistoryCount() { m_NumTpaWithoutHistory = 0; }
+    inline void IncrementTpaWithoutHistoryCount() { m_NumTpaWithoutHistory++; }
+    inline void AddToTpaWithoutHistoryCount(SIZE_TYPE num) { m_NumTpaWithoutHistory += num; }
 
     // counting number of Pseudos and Pseudogenes
-    inline void ResetPseudoCount (void) { m_NumPseudo = 0; }
-    inline void IncrementPseudoCount (void) { m_NumPseudo++; }
-    inline void AddToPseudoCount (SIZE_TYPE num) { m_NumPseudo += num; }
-    inline void ResetPseudogeneCount (void) { m_NumPseudogene = 0; }
-    inline void IncrementPseudogeneCount (void) { m_NumPseudogene++; }
-    inline void AddToPseudogeneCount (SIZE_TYPE num) { m_NumPseudogene += num; }
+    inline void ResetPseudoCount() { m_NumPseudo = 0; }
+    inline void IncrementPseudoCount() { m_NumPseudo++; }
+    inline void AddToPseudoCount(SIZE_TYPE num) { m_NumPseudo += num; }
+    inline void ResetPseudogeneCount() { m_NumPseudogene = 0; }
+    inline void IncrementPseudogeneCount() { m_NumPseudogene++; }
+    inline void AddToPseudogeneCount(SIZE_TYPE num) { m_NumPseudogene += num; }
 
     // set flag for farfetchfailure
-    inline void SetFarFetchFailure (void) { m_FarFetchFailure = true; }
+    inline void SetFarFetchFailure() { m_FarFetchFailure = true; }
 
-    const CSeq_entry& GetTSE(void) const { return *m_TSE; };
-    const CSeq_entry_Handle & GetTSEH(void) { return m_TSEH; }
-    const CTSE_Handle & GetTSE_Handle(void) { return
+    const CSeq_entry& GetTSE() const { return *m_TSE; };
+    const CSeq_entry_Handle& GetTSEH() { return m_TSEH; }
+    const CTSE_Handle& GetTSE_Handle() { return
             (m_TSEH ? m_TSEH.GetTSE_Handle() : CCacheImpl::kEmptyTSEHandle); }
-    const CConstRef<CSeq_annot>& GetSeqAnnot(void) { return m_SeqAnnot; }
+    const CConstRef<CSeq_annot>& GetSeqAnnot() { return m_SeqAnnot; }
 
     void AddBioseqWithNoPub(const CBioseq& seq);
     void AddBioseqWithNoBiosource(const CBioseq& seq);
@@ -412,9 +412,9 @@ private:
         CScopeRestorer( CRef<CScope> &scope ) :
           m_scopeToRestore(scope), m_scopeOriginalValue(scope) { }
 
-        ~CScopeRestorer(void) { m_scopeToRestore = m_scopeOriginalValue; }
+        ~CScopeRestorer() { m_scopeToRestore = m_scopeOriginalValue; }
     private:
-        CRef<CScope> &m_scopeToRestore;
+        CRef<CScope>& m_scopeToRestore;
         CRef<CScope> m_scopeOriginalValue;
     };
 

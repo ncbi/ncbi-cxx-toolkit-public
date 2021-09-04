@@ -53,7 +53,7 @@ CValidError_descr::CValidError_descr(CValidError_imp& imp) :
 }
 
 
-CValidError_descr::~CValidError_descr(void)
+CValidError_descr::~CValidError_descr()
 {
 }
 

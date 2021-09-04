@@ -60,7 +60,7 @@ CValidError_annot::CValidError_annot(CValidError_imp& imp) :
 }
 
 
-CValidError_annot::~CValidError_annot(void)
+CValidError_annot::~CValidError_annot()
 {
 }
 
