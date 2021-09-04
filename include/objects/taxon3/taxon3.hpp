@@ -66,25 +66,25 @@ public:
     // Returns: TRUE - OK
     //          FALSE - Can't open connection to taxonomy service
     ///
-    virtual void                  Init(void);  // default:  20 sec timeout, 5 reconnect attempts,
-                     
+    virtual void                  Init();  // default:  20 sec timeout, 5 reconnect attempts,
+
     virtual void                  Init(const STimeout* timeout, unsigned reconnect_attempts=5);
 
     // submit a list of org_refs
     virtual CRef< CTaxon3_reply > SendOrgRefList(const vector< CRef< COrg_ref > >& list,
-						 COrg_ref::fOrgref_parts result_parts = COrg_ref::eOrgref_default,
-						 fT3reply_parts t3result_parts = eT3reply_default);
+                                                 COrg_ref::fOrgref_parts result_parts = COrg_ref::eOrgref_default,
+                                                 fT3reply_parts t3result_parts = eT3reply_default);
 
     // Name list lookup all the names (including common names) regardless of their lookup flag
     virtual CRef< CTaxon3_reply > SendNameList(const vector<std::string>& list,
-					       COrg_ref::fOrgref_parts parts = (COrg_ref::eOrgref_taxname |
-										COrg_ref::eOrgref_db_taxid),
-					       fT3reply_parts t3parts = (eT3reply_org|eT3reply_status));
+                                               COrg_ref::fOrgref_parts parts = (COrg_ref::eOrgref_taxname |
+                                                                                COrg_ref::eOrgref_db_taxid),
+                                               fT3reply_parts t3parts = (eT3reply_org|eT3reply_status));
 
     virtual CRef< CTaxon3_reply > SendTaxidList(const vector<TTaxId>& list,
-						COrg_ref::fOrgref_parts parts = (COrg_ref::eOrgref_taxname |
-										 COrg_ref::eOrgref_db_taxid),
-						fT3reply_parts t3parts = eT3reply_org);
+                                                COrg_ref::fOrgref_parts parts = (COrg_ref::eOrgref_taxname |
+                                                                                 COrg_ref::eOrgref_db_taxid),
+                                                fT3reply_parts t3parts = eT3reply_org);
 
     virtual CRef< CTaxon3_reply > SendRequest(const CTaxon3_request& request);
 
