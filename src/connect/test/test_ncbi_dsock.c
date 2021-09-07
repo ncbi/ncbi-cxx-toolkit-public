@@ -106,6 +106,7 @@ static int s_Server(const char* sport)
                                port, IO_StatusStr(status)));
         return 1;
     }
+    errno = 0;
     myport = port ? port : SOCK_GetLocalPort(server, eNH_HostByteOrder);
     if (!port  &&  sport[i]) {
         FILE* fp;
@@ -116,8 +117,9 @@ static int s_Server(const char* sport)
         } else
             status = eIO_Unknown;
     }
-
-    CORE_LOGF(eLOG_Note, ("[Server]  DSOCK on port %hu", myport));
+    
+    CORE_LOGF_ERRNO(eLOG_Note, errno, ("[Server]  DSOCK on port %hu: %s",
+                                       myport, IO_StatusStr(status)));
     assert(status == eIO_Success);
 
     for (;;) {
