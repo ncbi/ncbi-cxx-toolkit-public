@@ -98,9 +98,9 @@ void CQualifierRequest::AddParent(CConstRef<CSeq_feat> feat)
 
 void CQualifierRequest::AddRequests(vector<CRef<COrg_ref> >& request_list) const
 {
-    for (auto it = m_ValuesToTry.begin(); it != m_ValuesToTry.end(); it++) {
+    for (const string& it : m_ValuesToTry) {
         CRef<COrg_ref> rq(new COrg_ref);
-        rq->SetTaxname(*it);
+        rq->SetTaxname(it);
         request_list.push_back(rq);
     }
 }
@@ -108,8 +108,8 @@ void CQualifierRequest::AddRequests(vector<CRef<COrg_ref> >& request_list) const
 
 bool CQualifierRequest::MatchTryValue(const string& val) const
 {
-    for (auto it = m_ValuesToTry.begin(); it != m_ValuesToTry.end(); it++) {
-        if (NStr::EqualNocase(val, *it)) {
+    for (const string& it : m_ValuesToTry) {
+        if (NStr::EqualNocase(val, it)) {
             return true;
         }
     }
@@ -121,12 +121,12 @@ void CQualifierRequest::PostErrors(CValidError_imp& imp)
 {
     vector<TTaxError> errs;
     ListErrors(errs);
-    for (auto e : errs) {
-        for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
-            imp.PostObjErr(e.severity, e.err_type, e.err_msg, *(it->first), it->second);
+    for (const auto& e : errs) {
+        for (const auto& it : m_Descs) {
+            imp.PostObjErr(e.severity, e.err_type, e.err_msg, *(it.first), it.second);
         }
-        for (auto it = m_Feats.begin(); it != m_Feats.end(); it++) {
-            imp.PostObjErr(e.severity, e.err_type, e.err_msg, **it);
+        for (const auto& it : m_Feats) {
+            imp.PostObjErr(e.severity, e.err_type, e.err_msg, *it);
         }
     }
 }
@@ -136,8 +136,8 @@ CSpecificHostRequest::CSpecificHostRequest(const string& host, const COrg_ref& o
     CQualifierRequest(),
     m_Host(host),
     m_Response(eUnrecognized),
-    m_HostLineage(kEmptyStr),
-    m_OrgLineage(kEmptyStr)
+    m_HostLineage(),
+    m_OrgLineage()
 {
     string host_check = SpecificHostValueToCheck(host);
     if (NStr::IsBlank(host_check)) {
@@ -243,8 +243,7 @@ bool CStrainRequest::x_IgnoreStrain(const string& str)
     // per VR-762, ignore strain if combination of letters and numbers
     bool has_number = false;
     bool has_letter = false;
-    for (size_t i = 0; i < str.length(); i++) {
-        char ch = str.c_str()[i];
+    for (char ch : str) {
         if (isdigit(ch)) {
             has_number = true;
         } else if (isalpha(ch)) {
@@ -276,11 +275,15 @@ CStrainRequest::CStrainRequest(const string& strain, const COrg_ref& org) : CQua
 
     m_ValuesToTry.push_back(strain);
     size_t pos = 0;
-    while (strain[pos] != 0 && isalpha(strain[pos])) {
-        ++pos;
-    }
-    if (pos < strain.length() && pos >= 5) {
-        m_ValuesToTry.push_back(strain.substr(0, pos));
+    for (char ch : strain) {
+        if (isalpha(ch)) {
+            ++pos;
+        } else {
+            if (pos >= 5) {
+                m_ValuesToTry.push_back(strain.substr(0, pos));
+            }
+            break;
+        }
     }
 
     if (RequireTaxname(m_Taxname)) {
@@ -333,7 +336,7 @@ bool CStrainRequest::Check(const COrg_ref& org)
     if (!org.IsSetOrgMod()) {
         return false;
     }
-    for (auto it : org.GetOrgname().GetMod()) {
+    for (const auto& it : org.GetOrgname().GetMod()) {
         if (it->IsSetSubtype() && it->IsSetSubname() &&
             it->GetSubtype() == COrgMod::eSubtype_strain) {
             return true;
@@ -390,11 +393,11 @@ void CQualLookupMap::AddDesc(CConstRef<CSeqdesc> desc, CConstRef<CSeq_entry> ctx
     if (!Check(org)) {
         return;
     }
-    for (auto mod_it = org.GetOrgname().GetMod().begin(); mod_it != org.GetOrgname().GetMod().end(); mod_it++) {
-        if ((*mod_it)->IsSetSubtype()
-            && (*mod_it)->GetSubtype() == m_Subtype
-            && (*mod_it)->IsSetSubname()) {
-            string qual = (*mod_it)->GetSubname();
+    for (const auto& mod_it : org.GetOrgname().GetMod()) {
+        if (mod_it->IsSetSubtype()
+            && mod_it->GetSubtype() == m_Subtype
+            && mod_it->IsSetSubname()) {
+            string qual = mod_it->GetSubname();
             string key = GetKey(qual, org);
             TQualifierRequests::iterator find = m_Map.find(key);
             if (find == m_Map.end()) {
@@ -422,11 +425,11 @@ void CQualLookupMap::AddFeat(CConstRef<CSeq_feat> feat)
     if (!Check(org)) {
         return;
     }
-    for (auto mod_it = org.GetOrgname().GetMod().begin(); mod_it != org.GetOrgname().GetMod().end(); mod_it++) {
-        if ((*mod_it)->IsSetSubtype()
-            && (*mod_it)->GetSubtype() == m_Subtype
-            && (*mod_it)->IsSetSubname()) {
-            string qual = (*mod_it)->GetSubname();
+    for (const auto& mod_it : org.GetOrgname().GetMod()) {
+        if (mod_it->IsSetSubtype()
+            && mod_it->GetSubtype() == m_Subtype
+            && mod_it->IsSetSubname()) {
+            string qual = mod_it->GetSubname();
             string key = GetKey(qual, feat->GetData().GetBiosrc().GetOrg());
             TQualifierRequests::iterator find = m_Map.find(key);
             if (find == m_Map.end()) {
@@ -449,11 +452,11 @@ void CQualLookupMap::AddOrg(const COrg_ref& org)
     if (!Check(org)) {
         return;
     }
-    for (auto mod_it = org.GetOrgname().GetMod().begin(); mod_it != org.GetOrgname().GetMod().end(); mod_it++) {
-        if ((*mod_it)->IsSetSubtype()
-            && (*mod_it)->GetSubtype() == m_Subtype
-            && (*mod_it)->IsSetSubname()) {
-            string qual = (*mod_it)->GetSubname();
+    for (const auto& mod_it : org.GetOrgname().GetMod()) {
+        if (mod_it->IsSetSubtype()
+            && mod_it->GetSubtype() == m_Subtype
+            && mod_it->IsSetSubname()) {
+            string qual = mod_it->GetSubname();
             string key = GetKey(qual, org);
             TQualifierRequests::iterator find = m_Map.find(key);
             if (find == m_Map.end()) {
@@ -482,8 +485,8 @@ vector<CRef<COrg_ref> > CQualLookupMap::GetRequestList()
 {
     vector<CRef<COrg_ref> > org_rq_list;
     org_rq_list.reserve(m_Map.size());
-    for (auto it = m_Map.begin(); it != m_Map.end(); it++) {
-        it->second->AddRequests(org_rq_list);
+    for (auto& it : m_Map) {
+        it.second->AddRequests(org_rq_list);
     }
     return org_rq_list;
 }
@@ -534,13 +537,10 @@ string CQualLookupMap::IncrementalUpdate(const vector<CRef<COrg_ref> >& input, c
 //only used for cleanup
 bool CQualLookupMap::IsUpdateComplete() const
 {
-    TQualifierRequests::const_iterator rq_it = m_Map.cbegin();
-    while (rq_it != m_Map.cend()) {
-        if (rq_it->second->NumRemainingReplies() > 0) {
+    for (const auto& rq_it : m_Map) {
+        if (rq_it.second->NumRemainingReplies() > 0) {
             return false;
-            break;
         }
-        ++rq_it;
     }
     return true;
 }
@@ -549,10 +549,8 @@ bool CQualLookupMap::IsUpdateComplete() const
 
 void CQualLookupMap::PostErrors(CValidError_imp& imp)
 {
-    TQualifierRequests::iterator rq_it = m_Map.begin();
-    while (rq_it != m_Map.end()) {
-        rq_it->second->PostErrors(imp);
-        ++rq_it;
+    for (auto& rq_it : m_Map) {
+        rq_it.second->PostErrors(imp);
     }
 }
 
@@ -561,7 +559,7 @@ void CQualLookupMap::PostErrors(CValidError_imp& imp)
 //only used by biosample
 void CQualLookupMap::ListErrors(vector<TTaxError>& errs) const
 {
-    for (auto rq_it : m_Map) {
+    for (const auto& rq_it : m_Map) {
         rq_it.second->ListErrors(errs);
     }
 }
@@ -604,17 +602,17 @@ bool CSpecificHostMapForFix::ApplyToOrg(COrg_ref& org_ref) const
 
     bool changed = false;
 
-    for (auto m = org_ref.SetOrgname().SetMod().begin(); m != org_ref.SetOrgname().SetMod().end(); m++) {
-        if ((*m)->IsSetSubtype() &&
-            (*m)->GetSubtype() == COrgMod::eSubtype_nat_host &&
-            (*m)->IsSetSubname()) {
-            string host_val = x_DefaultSpecificHostAdjustments((*m)->GetSubname());
+    for (auto& m : org_ref.SetOrgname().SetMod()) {
+        if (m->IsSetSubtype() &&
+            m->GetSubtype() == COrgMod::eSubtype_nat_host &&
+            m->IsSetSubname()) {
+            string host_val = x_DefaultSpecificHostAdjustments(m->GetSubname());
             TQualifierRequests::const_iterator it = m_Map.find(host_val);
             if (it != m_Map.end()) {
-                const CSpecificHostRequest* rq = dynamic_cast<const CSpecificHostRequest *>(it->second.GetPointer());
+                const CSpecificHostRequest* rq = dynamic_cast<const CSpecificHostRequest*>(it->second.GetPointer());
                 string new_val = x_DefaultSpecificHostAdjustments(rq->SuggestFix());
-                if (!NStr::IsBlank(new_val) && !NStr::Equal(new_val, (*m)->GetSubname())) {
-                    (*m)->SetSubname(new_val);
+                if (!NStr::IsBlank(new_val) && !NStr::Equal(new_val, m->GetSubname())) {
+                    m->SetSubname(new_val);
                     changed = true;
                 }
             }
@@ -840,8 +838,8 @@ void CTaxValidationAndCleanup::ReportTaxLookupErrors
         ListTaxLookupErrors(**reply_it, orp_req,
             (*desc_it)->GetSource().IsSetGenome() ? (*desc_it)->GetSource().GetGenome() : CBioSource::eGenome_unknown,
             is_insd_patent, imp.IsWP(), errs);
-        for (auto it : errs) {
-            imp.PostObjErr(it.severity, it.err_type, it.err_msg, **desc_it, *ctx_it);
+        for (const TTaxError& e : errs) {
+            imp.PostObjErr(e.severity, e.err_type, e.err_msg, **desc_it, *ctx_it);
         }
         ++reply_it;
         ++desc_it;
@@ -856,8 +854,8 @@ void CTaxValidationAndCleanup::ReportTaxLookupErrors
         ListTaxLookupErrors(**reply_it, orp_req,
             (*feat_it)->GetData().GetBiosrc().IsSetGenome() ? (*feat_it)->GetData().GetBiosrc().GetGenome() : CBioSource::eGenome_unknown,
             is_insd_patent, imp.IsWP(), errs);
-        for (auto it : errs) {
-            imp.PostErr(it.severity, it.err_type, it.err_msg,* *feat_it);
+        for (const TTaxError& e : errs) {
+            imp.PostErr(e.severity, e.err_type, e.err_msg,* *feat_it);
         }
         ++reply_it;
         ++feat_it;
@@ -897,8 +895,8 @@ void CTaxValidationAndCleanup::ReportIncrementalTaxLookupErrors
         ListTaxLookupErrors(**reply_it, orp_req,
             (*desc_it)->GetSource().IsSetGenome() ? (*desc_it)->GetSource().GetGenome() : CBioSource::eGenome_unknown,
             is_insd_patent, imp.IsWP(), errs);
-        for (auto it : errs) {
-            imp.PostObjErr(it.severity, it.err_type, it.err_msg, **desc_it, *ctx_it);
+        for (const TTaxError& e : errs) {
+            imp.PostObjErr(e.severity, e.err_type, e.err_msg, **desc_it, *ctx_it);
         }
         ++reply_it;
         ++desc_it;
@@ -921,8 +919,8 @@ void CTaxValidationAndCleanup::ReportIncrementalTaxLookupErrors
         ListTaxLookupErrors(**reply_it, orp_req,
             (*feat_it)->GetData().GetBiosrc().IsSetGenome() ? (*feat_it)->GetData().GetBiosrc().GetGenome() : CBioSource::eGenome_unknown,
             is_insd_patent, imp.IsWP(), errs);
-        for (auto it : errs) {
-            imp.PostErr(it.severity, it.err_type, it.err_msg, **feat_it);
+        for (const TTaxError& e : errs) {
+            imp.PostErr(e.severity, e.err_type, e.err_msg, **feat_it);
         }
         ++reply_it;
         ++feat_it;
@@ -1159,16 +1157,16 @@ bool CTaxValidationAndCleanup::x_ApplySpecificHostMap(COrg_ref& org_ref) const
 
     bool changed = false;
 
-    for (auto m = org_ref.SetOrgname().SetMod().begin(); m != org_ref.SetOrgname().SetMod().end(); m++) {
-        if ((*m)->IsSetSubtype() &&
-            (*m)->GetSubtype() == COrgMod::eSubtype_nat_host &&
-            (*m)->IsSetSubname()) {
-            string host_val = x_DefaultSpecificHostAdjustments((*m)->GetSubname());
+    for (auto& m : org_ref.SetOrgname().SetMod()) {
+        if (m->IsSetSubtype() &&
+            m->GetSubtype() == COrgMod::eSubtype_nat_host &&
+            m->IsSetSubname()) {
+            string host_val = x_DefaultSpecificHostAdjustments(m->GetSubname());
             TSpecificHostRequests::const_iterator it = m_SpecificHostRequests.find(host_val);
             if (it != m_SpecificHostRequests.end()) {
                 const string& new_val = it->second.SuggestFix();
-                if (!NStr::IsBlank(new_val) && !NStr::Equal(new_val, (*m)->GetSubname())) {
-                    (*m)->SetSubname(new_val);
+                if (!NStr::IsBlank(new_val) && !NStr::Equal(new_val, m->GetSubname())) {
+                    m->SetSubname(new_val);
                     changed = true;
                 }
             }
@@ -1234,10 +1232,10 @@ bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with
         size_t len = min(chunk_size, original_orgs.size() - i);
         vector< CRef<COrg_ref> >  tmp_original_orgs(original_orgs.begin() + i, original_orgs.begin() + i + len);
         vector< CRef<COrg_ref> >  tmp_edited_orgs;
-        ITERATE(vector<CRef<COrg_ref> >, it, tmp_original_orgs)
+        for (CRef<COrg_ref>& it : tmp_original_orgs)
         {
             CRef<COrg_ref> cpy(new COrg_ref());
-            cpy->Assign(**it);
+            cpy->Assign(*it);
             tmp_edited_orgs.push_back(cpy);
         }
         CRef<CTaxon3_reply> tmp_lookup_reply = taxon3.SendOrgRefList(tmp_original_orgs);
@@ -1455,8 +1453,8 @@ void CTaxValidationAndCleanup::CheckOneOrg(const COrg_ref& org, int genome, CVal
         }
     }
 
-    for (auto it : errs) {
-        imp.PostObjErr(it.severity, it.err_type, it.err_msg, org);
+    for (const TTaxError& e : errs) {
+        imp.PostObjErr(e.severity, e.err_type, e.err_msg, org);
     }
 }
 
