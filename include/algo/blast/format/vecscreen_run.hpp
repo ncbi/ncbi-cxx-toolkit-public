@@ -103,9 +103,9 @@ public:
          enum EOutputFormat {
              eShowAlignments = 0,       ///< Show the alignments
              eShowIntervalsOnly = 1,    ///< Only show the contaminated intervals
-             
              eBlastTab = 2,             ///< switch to a blast-tab-like fmt
-             eAsnText = 3,              ///< just dump the seq-aligns in asn text
+             eJson = 3,                 ///< blast-tab values, but json formatted
+             eAsnText = 4,              ///< entire seq-aligns in asn text
              eEndValue                  ///< Sentinel value, not an actual output format
          };
          typedef int TOutputFormat;
@@ -133,6 +133,10 @@ public:
          CFormatter(const CFormatter&);
          /// Prohibit assignment operator
          CFormatter & operator=(const CFormatter&);
+     
+        void x_GetIdsAndTitlesForSeqAlign(const objects::CSeq_align& align, 
+                                        string& qid, string& qtitle, 
+                                        string& sid, string& stitle);
      };
 
 private:
