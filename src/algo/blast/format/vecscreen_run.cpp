@@ -49,6 +49,7 @@ Author: Tom Madden
 #include <objtools/readers/fasta.hpp>
 
 #include <algo/blast/format/vecscreen_run.hpp>
+#include <misc/jsonwrapp/jsonwrapp.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -270,12 +271,48 @@ private:
     string m_MatchType;
 };
 
+
+void CVecscreenRun::CFormatter::x_GetIdsAndTitlesForSeqAlign(const CSeq_align& align, 
+                                                            string& qid, string& qtitle, 
+                                                            string& sid, string& stitle)
+{
+
+    const CBioseq_Handle& query_bh =
+        m_Scope.GetBioseqHandle(align.GetSeq_id(0));
+    const CBioseq_Handle& subjt_bh =
+        m_Scope.GetBioseqHandle(align.GetSeq_id(1));
+  
+//cerr <<__LINE__<<" : Q BH  " << MSerial_AsnText << *query_bh.GetCompleteBioseq() << endl;
+
+    // these alignments have weird ids. 
+    // Query_01 for the inputs and BL_ORD_01 for the subjects. 
+    // just from the positions in the fasta reader and blast database. 
+    // But we want nice ids, or at least the original ids, for the tabular report
+    // Digging through the blast metadata to find the original ids is inside s_SetIdList.
+    list<CRef<CSeq_id> > qidl, sidl;
+    qidl = s_SetIdList(query_bh, qtitle);   
+    sidl = s_SetIdList(subjt_bh, stitle);    
+
+//int count=0;
+//ITERATE(list<CRef<CSeq_id> >, iditer, qidl) {
+//cerr <<__LINE__<<" : Q ID " << ++count << " : "<< MSerial_AsnText<<**iditer<<endl;
+//}
+
+    CConstRef<CSeq_id> qaccid = FindBestChoice(qidl, CSeq_id::Score);
+    qaccid->GetLabel(&qid, CSeq_id::eContent, CSeq_id::fLabel_Version);
+    CConstRef<CSeq_id> saccid = FindBestChoice(sidl, CSeq_id::Score);
+    saccid->GetLabel(&sid, CSeq_id::eContent, CSeq_id::fLabel_Version);
+//cerr<<__LINE__<<" : Q ID CHOSEN  " << qid << " : "<<MSerial_AsnText << *qaccid << endl;
+}
+
+
 void
 CVecscreenRun::CFormatter::FormatResults(CNcbiOstream& out,
                                          CRef<CBlastOptionsHandle> vs_opts)
 {
     const bool kPrintAlignments = static_cast<bool>(m_Outfmt == eShowAlignments);
     const bool kPrintBlastTab = static_cast<bool>(m_Outfmt == eBlastTab);
+    const bool kPrintJson = static_cast<bool>(m_Outfmt == eJson);
     const bool kPrintAsnText = static_cast<bool>(m_Outfmt == eAsnText);
     const CFormattingArgs::EOutputFormat fmt = (kPrintBlastTab ? CFormattingArgs::eTabular : (kPrintAsnText?CFormattingArgs::eAsnText : CFormattingArgs::ePairwise));
     const string custom_output = ( kPrintBlastTab ? "qaccver qstart qend saccver salltitles "  : "" );
@@ -294,13 +331,13 @@ CVecscreenRun::CFormatter::FormatResults(CNcbiOstream& out,
                                  kShowGi, m_HtmlOutput,  
                                  BLAST_GENETIC_CODE,  BLAST_GENETIC_CODE,  false, false, -1,
                                  custom_output);
-    if(!kPrintBlastTab && !kPrintAsnText ) {
+    if(!kPrintBlastTab && !kPrintJson && !kPrintAsnText ) {
         blast_formatter.PrintProlog();
     }
     
     list<SVecscreenSummary> match_list = m_Screener.GetList();
 
-    if(kPrintBlastTab || kPrintAsnText) {
+    if(kPrintBlastTab || kPrintJson || kPrintAsnText) {
         CRef<CSearchResultSet> result_set = m_Screener.GetSearchResultSet();
         _ASSERT(result_set->size() == 1);
 
@@ -321,7 +358,7 @@ CVecscreenRun::CFormatter::FormatResults(CNcbiOstream& out,
             blast_formatter.PrintOneResultSet((*result_set)[0],
                                               m_Screener.m_Queries);
         }
-        else {
+        else if(kPrintBlastTab) {
             out << "#qid\tqstart\tqend\tmatch_strength\tsid\tstitle" << endl;
             ITERATE(list<CRef<CSeq_align> >, align_iter, alignments.Set()) {
                 const CSeq_align& align = **align_iter;
@@ -330,28 +367,7 @@ CVecscreenRun::CFormatter::FormatResults(CNcbiOstream& out,
                 
                 string qtitle, stitle;
                 string qid, sid;
-
-                {{ 
-                    const CBioseq_Handle& query_bh =
-                        m_Scope.GetBioseqHandle(align.GetSeq_id(0));
-				    const CBioseq_Handle& subjt_bh =
-                        m_Scope.GetBioseqHandle(align.GetSeq_id(1));
-                   
-
-                    // these alignments have weird ids. 
-                    // Query_01 for the inputs and BL_ORD_01 for the subjects. 
-                    // just from the positions in the fasta reader and blast database. 
-                    // But we want nice ids, or at least the original ids, for the tabular report
-                    // Digging through the blast metadata to find the original ids is inside s_SetIdList.
-                    list<CRef<CSeq_id> > qidl, sidl;
-                    qidl = s_SetIdList(query_bh, qtitle);   
-	            	sidl = s_SetIdList(subjt_bh, stitle);    
-                
-                    CConstRef<CSeq_id> qaccid = FindBestChoice(qidl, CSeq_id::Score);
-                    qaccid->GetLabel(&qid, CSeq_id::eContent, CSeq_id::fLabel_Version);
-                    CConstRef<CSeq_id> saccid = FindBestChoice(sidl, CSeq_id::Score);
-                    saccid->GetLabel(&sid, CSeq_id::eContent, CSeq_id::fLabel_Version);
-                }}
+                x_GetIdsAndTitlesForSeqAlign(align, qid, qtitle, sid, stitle);
 
                 out << qid << "\t"
                     << align.GetSeqStart(0) + 1 << "\t"
@@ -360,6 +376,36 @@ CVecscreenRun::CFormatter::FormatResults(CNcbiOstream& out,
                     << sid << "\t"
                     << stitle 
                     << endl;
+            }
+        } else if(kPrintJson) {
+            CJson_Document doc;
+            CJson_Object top_obj = doc.SetObject();
+            CJson_Array hits_array = top_obj.insert_array("hits");
+            
+            string last_qid = "";
+            ITERATE(list<CRef<CSeq_align> >, align_iter, alignments.Set()) {
+                const CSeq_align& align = **align_iter;
+                int match_score=0;
+                align.GetNamedScore("match_type", match_score);
+                
+                string qtitle, stitle;
+                string qid, sid;
+                x_GetIdsAndTitlesForSeqAlign(align, qid, qtitle, sid, stitle);
+
+                CJson_Object jobj = hits_array.push_back_object();
+
+                jobj.insert("query_id", qid);
+                jobj.insert("query_start", align.GetSeqStart(0)+1);
+                jobj.insert("query_end", align.GetSeqStop(0)+1);
+                jobj.insert("match_strength", match_type_strs[match_score]);
+                jobj.insert("subject_id", sid);
+                jobj.insert("subject_title", stitle);
+                
+                last_qid = qid;
+            }
+            if(!alignments.Set().empty()) {
+                top_obj.insert("query_id", last_qid);
+                doc.Write(out);
             }
         }
 

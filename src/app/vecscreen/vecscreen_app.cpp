@@ -91,7 +91,8 @@ void CVecScreenApp::Init()
             "  0 = Show alignments pairwise,\n"
             "  1 = Do not show alignments, just contaminated range offsets,\n"
             "  2 = Contaminated ranges, as a blast-tabular-like report,\n"
-            "  3 = Seq-align-set ASN Text\n",
+            "  3 = Contaminated ranges, as a series of json objects,\n"
+            "  4 = Seq-align-set ASN Text\n",
             CArgDescriptions::eInteger, 
             NStr::IntToString(kDfltArgOutputFormat));
     arg_desc->SetConstraint(kArgOutputFormat, 
@@ -119,7 +120,7 @@ int CVecScreenApp::Run(void)
         CRef<CBlastOptionsHandle> opts_hndl(CBlastOptionsFactory::Create(eVecScreen));
 
         /*** Initialize the scope ***/
-        SDataLoaderConfig dlconfig(kDbName, kIsProtein);
+        SDataLoaderConfig dlconfig(kDbName, kIsProtein,  SDataLoaderConfig::eUseBlastDbDataLoader);
         dlconfig.OptimizeForWholeLargeSequenceRetrieval();
         CBlastInputSourceConfig iconfig(dlconfig);
         iconfig.SetQueryLocalIdMode();
