@@ -879,6 +879,7 @@ static EIO_Status x_FTPEpsv(SFTPConnector*  xxx,
 
 
 /* all implementations MUST support PASV */
+/* NB: RFC1639 extends PASV for various protocol families with LPSV */
 static EIO_Status x_FTPPasv(SFTPConnector*  xxx,
                             unsigned int*   host,
                             unsigned short* port)
@@ -1016,6 +1017,7 @@ static EIO_Status x_FTPEprt(SFTPConnector* xxx,
 
 
 /* all implementations MUST support PORT */
+/* NB: RFC1639 extends PORT for various protocol families with LPRT */
 static EIO_Status x_FTPPort(SFTPConnector* xxx,
                             unsigned int   host,
                             unsigned short port)
@@ -1050,7 +1052,7 @@ static EIO_Status x_FTPActive(SFTPConnector*  xxx,
     unsigned int   host;
     unsigned short port;
 
-    /* NB: Apache FTP proxy re-uses SOCK_LocalPort(xxx->cntl);
+    /* NB: Apache FTP proxy re-uses SOCK_GetLocalPort(xxx->cntl);
      * which is the default port for user-end data port per RFC959 3.2,
      * other implementations don't do that leaving for OS to decide,
      * since the PORT command will be issued, anyways... */
