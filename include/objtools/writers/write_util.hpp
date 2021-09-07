@@ -144,15 +144,18 @@ public:
 
     static bool GetStringForGoMarkup(
         const vector<CRef<CUser_field > >& fields,
-        string& goMarkup);
+        string& goMarkup,
+        bool relaxed = false);
 
     static bool GetStringsForGoMarkup(
         const vector<CRef<CUser_field > >& fields,
-        vector<string>& goMarkup);
+        vector<string>& goMarkup,
+        bool relaxed = false);
 
     static bool GetListOfGoIds(
         const vector<CRef<CUser_field > >& fields,
-        list<std::string>& goIds);
+        list<std::string>& goIds,
+        bool relaxed = false);
 
     static bool IsThreeFeatFormat(
         const CSeq_annot&);

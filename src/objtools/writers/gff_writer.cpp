@@ -1139,50 +1139,106 @@ bool CGff2Writer::xAssignFeatureAttributesGoMarkup(
     }
 
     const auto& ext = mf.GetExt();
-    if (!ext.IsSetType()  ||  !ext.GetType().IsStr()  ||
-            ext.GetType().GetStr() != "GeneOntology") {
+    if (!ext.IsSetType()  ||  !ext.GetType().IsStr()) {
         return true;
     }
-    list<string> goIds;
-    const auto& goFields = ext.GetData();
-    for (const auto& goField: goFields) {
-        if (!goField->IsSetLabel()  ||  !goField->GetLabel().IsStr()) {
-            continue;
-        }
-        const auto& goLabel = goField->GetLabel().GetStr();
-        if (goLabel == "Component"  &&  goField->IsSetData()
-                &&  goField->GetData().IsFields()) {
-            const auto& fields = goField->GetData().GetFields();
-            vector<string> goStrings;
-            if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
-                record.SetAttributes("go_component", goStrings);
+    if (ext.GetType().GetStr() == "GeneOntology") {
+        list<string> goIds;
+        const auto& goFields = ext.GetData();
+        for (const auto& goField: goFields) {
+            if (!goField->IsSetLabel()  ||  !goField->GetLabel().IsStr()) {
+                continue;
             }
-            CWriteUtil::GetListOfGoIds(fields, goIds);
-            continue;
-        }
-        if (goLabel == "Process"  &&  goField->IsSetData()
-                &&  goField->GetData().IsFields()) {
-            const auto& fields = goField->GetData().GetFields();
-            vector<string> goStrings;
-            if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
-                record.SetAttributes("go_process", goStrings);
+            const auto& goLabel = goField->GetLabel().GetStr();
+            if (goLabel == "Component"  &&  goField->IsSetData()
+                    &&  goField->GetData().IsFields()) {
+                const auto& fields = goField->GetData().GetFields();
+                vector<string> goStrings;
+                if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
+                    record.SetAttributes("go_component", goStrings);
+                }
+                CWriteUtil::GetListOfGoIds(fields, goIds);
+                continue;
             }
-            CWriteUtil::GetListOfGoIds(fields, goIds);
-            continue;
-        }
-        if (goLabel == "Function"  &&  goField->IsSetData()
-                &&  goField->GetData().IsFields()) {
-            const auto& fields = goField->GetData().GetFields();
-            vector<string> goStrings;
-            if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
-                record.SetAttributes("go_function", goStrings);
+            if (goLabel == "Process"  &&  goField->IsSetData()
+                    &&  goField->GetData().IsFields()) {
+                const auto& fields = goField->GetData().GetFields();
+                vector<string> goStrings;
+                if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
+                    record.SetAttributes("go_process", goStrings);
+                }
+                CWriteUtil::GetListOfGoIds(fields, goIds);
+                continue;
             }
-            CWriteUtil::GetListOfGoIds(fields, goIds);
-            continue;
+            if (goLabel == "Function"  &&  goField->IsSetData()
+                    &&  goField->GetData().IsFields()) {
+                const auto& fields = goField->GetData().GetFields();
+                vector<string> goStrings;
+                if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
+                    record.SetAttributes("go_function", goStrings);
+                }
+                CWriteUtil::GetListOfGoIds(fields, goIds);
+                continue;
+            }
         }
-    }
-    if (!goIds.empty()) {
-        record.SetAttributes("Ontology_term", vector<string>(goIds.begin(), goIds.end()));
+        if (!goIds.empty()) {
+            record.SetAttributes("Ontology_term", vector<string>(goIds.begin(), goIds.end()));
+        }
+    } else if (ext.GetType().GetStr() == "CombinedFeatureUserObjects") {
+        const CUser_object::TData & ext_data = ext.GetData();
+        ITERATE (CSeq_feat::TExt::TData, it, ext_data) {
+            const CUser_field & field = **it;
+            if( ! field.IsSetLabel() || ! field.IsSetData()  ) {
+                continue;
+            }
+            const CUser_field::TLabel & field_label = field.GetLabel();
+            const CUser_field::TData & field_data = field.GetData();
+            if (field_label.IsStr() && field_label.GetStr() == "GeneOntology") {
+                if (field_data.IsFields()) {
+                    list<string> goIds;
+                    const auto& goFields = field.GetData().GetFields();
+                    for (const auto& goField: goFields) {
+                        if (!goField->IsSetLabel()  ||  !goField->GetLabel().IsStr()) {
+                            continue;
+                        }
+                        const auto& goLabel = goField->GetLabel().GetStr();
+                        if (goLabel == "Component"  &&  goField->IsSetData()
+                                &&  goField->GetData().IsFields()) {
+                            const auto& fields = goField->GetData().GetFields();
+                            vector<string> goStrings;
+                            if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings, true)) {
+                                record.SetAttributes("go_component", goStrings);
+                            }
+                            CWriteUtil::GetListOfGoIds(fields, goIds, true);
+                            continue;
+                        }
+                        if (goLabel == "Process"  &&  goField->IsSetData()
+                                &&  goField->GetData().IsFields()) {
+                            const auto& fields = goField->GetData().GetFields();
+                            vector<string> goStrings;
+                            if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings, true)) {
+                                record.SetAttributes("go_process", goStrings);
+                            }
+                            CWriteUtil::GetListOfGoIds(fields, goIds, true);
+                            continue;
+                        }
+                        if (goLabel == "Function"  &&  goField->IsSetData()
+                                &&  goField->GetData().IsFields()) {
+                            const auto& fields = goField->GetData().GetFields();
+                            vector<string> goStrings;
+                            if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings, true)) {
+                                record.SetAttributes("go_function", goStrings);
+                            }
+                            CWriteUtil::GetListOfGoIds(fields, goIds, true);
+                            continue;
+                        }
+                    }
+                    if (!goIds.empty()) {
+                        record.SetAttributes("Ontology_term", vector<string>(goIds.begin(), goIds.end()));
+                    }
+                }
+            }
+        }
     }
 
     return true;

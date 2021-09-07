@@ -1033,11 +1033,12 @@ bool CWriteUtil::IsThreeFeatFormat(
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::GetStringForGoMarkup(
     const vector<CRef<CUser_field > >& fields,
-    string& goMarkup)
+    string& goMarkup,
+    bool relaxed)
 //  ----------------------------------------------------------------------------
 {
     vector<string> strings;
-    if (! CWriteUtil::GetStringsForGoMarkup(fields, strings)) {
+    if (! CWriteUtil::GetStringsForGoMarkup(fields, strings, relaxed)) {
         return false;
     }
     goMarkup = NStr::Join(strings, ",");
@@ -1047,13 +1048,14 @@ bool CWriteUtil::GetStringForGoMarkup(
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::GetStringsForGoMarkup(
     const vector<CRef<CUser_field > >& fields,
-    vector<string>& goMarkup)
+    vector<string>& goMarkup,
+    bool relaxed)
 //  ----------------------------------------------------------------------------
 {
     goMarkup.clear();
     for (const auto& field: fields) {
         if (!field->IsSetLabel()  ||  !field->GetLabel().IsId()
-                ||  field->GetLabel().GetId() != 0) {
+                ||  ( field->GetLabel().GetId() != 0 && ! relaxed)) {
             continue;
         }
         if (!field->IsSetData()  ||  !field->GetData().IsFields()) {
@@ -1091,12 +1093,13 @@ bool CWriteUtil::GetStringsForGoMarkup(
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::GetListOfGoIds(
     const vector<CRef<CUser_field > >& fields,
-    list<std::string>& goIds)
+    list<std::string>& goIds,
+    bool relaxed)
 //  ----------------------------------------------------------------------------
 {
     for (const auto& field: fields) {
         if (!field->IsSetLabel()  ||  !field->GetLabel().IsId()
-                ||  field->GetLabel().GetId() != 0) {
+                ||  ( field->GetLabel().GetId() != 0 && ! relaxed)) {
             continue;
         }
         if (!field->IsSetData()  ||  !field->GetData().IsFields()) {
