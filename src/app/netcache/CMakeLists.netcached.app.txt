@@ -38,6 +38,7 @@ NCBI_begin_app(netcached)
   NCBI_set_pch_header(nc_pch.hpp)
   NCBI_requires(Boost.Test.Included SQLITE3)
   NCBI_uses_toolkit_libraries(task_server -test_boost -sqlitewrapp)
+  NCBI_uses_external_libraries(${ORIG_LIBS})
   NCBI_add_definitions($ENV{NETCACHE_MEMORY_MAN_MODEL})
 NCBI_end_app()
 
