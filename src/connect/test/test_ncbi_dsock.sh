@@ -24,10 +24,9 @@ client_log=test_ncbi_dsock_client.log
 
 rm -f $port $server_log $client_log
 
-arch="`uname -m`"
-test "$arch" = "amd64"  &&  arch="x86_64"
-if [ -x /sbin/ifconfig -a "$arch" = "x86_64" ]; then
-  mtu="`/sbin/ifconfig lo0 2>&1 | grep -iw mtu | sed 's/	/ /g;s/  */ /g;s/^.*[Mm][Tt][Uu][: ]*\([1-9][0-9]*\).*$/\1/'`"
+# x86_64 Linux kernels only:  see test source code for the explanation
+if [ -x /sbin/ifconfig -a "`uname`" = "Linux" -a "`uname -m`" = "x86_64" ]; then
+  mtu="`/sbin/ifconfig lo 2>&1 | grep -iw mtu | sed 's/	/ /g;s/  */ /g;s/^.*[Mm][Tt][Uu][: ]*\([1-9][0-9]*\).*$/\1/'`"
 fi
 
 : ${CONN_DEBUG_PRINTOUT:=SOME};  export CONN_DEBUG_PRINTOUT
