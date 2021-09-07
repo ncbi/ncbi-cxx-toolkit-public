@@ -216,9 +216,9 @@ void CSpecificHostRequest::ListErrors(vector<TTaxError>& errs) const
     }
 
     if (!NStr::IsBlank(m_HostLineage) && !NStr::IsBlank(m_OrgLineage) &&
-        (NStr::Find(m_OrgLineage, "Streptophyta") != NPOS || NStr::Find(m_OrgLineage, "Metazoa") != NPOS) &&
-        (NStr::Find(m_HostLineage, "Fungi;") != NPOS || NStr::Find(m_HostLineage, "Bacteria") != NPOS ||
-        NStr::Find(m_HostLineage, "Archaea") != NPOS || NStr::Find(m_HostLineage, "Viruses") != NPOS)) {
+        (NStr::Find(m_OrgLineage, "Streptophyta;") != NPOS || NStr::Find(m_OrgLineage, "Metazoa;") != NPOS) &&
+        (NStr::Find(m_HostLineage, "Fungi;") != NPOS || NStr::Find(m_HostLineage, "Bacteria;") != NPOS ||
+        NStr::Find(m_HostLineage, "Archaea;") != NPOS || NStr::Find(m_HostLineage, "Viruses;") != NPOS)) {
         errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
             "Suspect Host Value - a prokaryote, fungus or virus is suspect as a host for a plant or animal" });
     }
