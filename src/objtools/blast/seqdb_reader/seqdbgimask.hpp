@@ -290,7 +290,7 @@ private:
     Int4 m_NumGi;
 
     /// Mapped Gi index
-    const Int4 *m_GiIndex;
+    const Uint4 *m_GiIndex;
 
     /// Start offset (in the index file) of the offset array.
     Int4 m_IndexStart;

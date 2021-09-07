@@ -74,7 +74,7 @@ CSeqDBGiMask::GetMaskData(int                     algo_id,
 
     int page, vol, off;
 
-    if (s_BinarySearch(m_GiIndex, m_NumIndex, GI_TO(int, gi), page)) {
+    if (s_BinarySearch(m_GiIndex, m_NumIndex, GI_TO(Uint4, gi), page)) {
         vol = m_GiIndex[m_NumIndex + page * 2];
         off = m_GiIndex[m_NumIndex + page * 2 + 1];
     } else {
@@ -87,10 +87,10 @@ CSeqDBGiMask::GetMaskData(int                     algo_id,
 
         TIndx begin = page * m_PageSize * (m_GiSize + m_OffsetSize);
         TIndx end = begin + pagesize * (m_GiSize + m_OffsetSize);
-        const Int4 * offset = (const Int4 *)
+        const Uint4 * offset = (const Uint4 *)
               m_OffsetFile.GetFileDataPtr(m_OffsetLease, begin, end);
 
-        if (!s_BinarySearch(offset, pagesize, GI_TO(int, gi), page))  return;
+        if (!s_BinarySearch(offset, pagesize, GI_TO(Uint4, gi), page))  return;
 
         vol = offset[pagesize + page * 2];
         off = offset[pagesize + page * 2 + 1];
@@ -246,7 +246,7 @@ void CSeqDBGiMask::x_ReadFields(void)//
     // Map the index file
     TIndx begin = m_IndexStart;
     TIndx end = begin + m_NumIndex * (m_GiSize + m_OffsetSize);
-    m_GiIndex = (const Int4 *)
+    m_GiIndex = (const Uint4 *)
               m_IndexFile.GetFileDataPtr(m_IndexLease, begin, end);
 }
 
