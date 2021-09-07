@@ -3,5 +3,5 @@
 NCBI_begin_app(fasthello.fcgi)
   NCBI_sources(helloapp hellores hellocmd)
   NCBI_uses_toolkit_libraries(xfcgi xhtml)
-  NCBI_requires(FASTCGI)
+  NCBI_requires(FASTCGI unix)
 NCBI_end_app()
