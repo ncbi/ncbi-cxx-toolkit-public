@@ -468,7 +468,7 @@ public:
 
     void AddTask(CPSG_Task* task) {
         {
-            CFastMutexGuard guard(m_Mutex);
+            CMutexGuard guard(m_Mutex);
             m_Tasks.insert(Ref(task));
             m_Pool.AddTask(task);
         }
@@ -478,7 +478,7 @@ public:
     {
         {
             CRef<CPSG_Task> ref(&task);
-            CFastMutexGuard guard(m_Mutex);
+            CMutexGuard guard(m_Mutex);
             TTasks::iterator it = m_Tasks.find(ref);
             if (it == m_Tasks.end()) return;
             m_Done.insert(ref);
@@ -489,7 +489,7 @@ public:
 
     bool HasTasks(void) const
     {
-        CFastMutexGuard guard(m_Mutex);
+        CMutexGuard guard(m_Mutex);
         return !m_Tasks.empty() || ! m_Done.empty();
     }
 
@@ -501,7 +501,7 @@ public:
     CRef<T> GetTask(void) {
         m_Semaphore.Wait();
         CRef<T> ret;
-        CFastMutexGuard guard(m_Mutex);
+        CMutexGuard guard(m_Mutex);
         _ASSERT(!m_Done.empty());
         TTasks::iterator it = m_Done.begin();
         ret.Reset(dynamic_cast<T*>(it->GetNCPointerOrNull()));
@@ -512,7 +512,7 @@ public:
     void CancelAll(void)
     {
         {
-            CFastMutexGuard guard(m_Mutex);
+            CMutexGuard guard(m_Mutex);
             for (CRef<CPSG_Task> task : m_Tasks) {
                 task->RequestToCancel();
             }
@@ -527,7 +527,7 @@ private:
     CSemaphore m_Semaphore;
     TTasks m_Tasks;
     TTasks m_Done;
-    mutable CFastMutex m_Mutex;
+    mutable CMutex m_Mutex;
 };
 
 
@@ -561,7 +561,7 @@ CPSG_Task::EStatus CPSG_Task::Execute(void)
 void CPSG_Task::OnStatusChange(EStatus old)
 {
     EStatus status = GetStatus();
-    if (status == eCompleted || status == eFailed) {
+    if (status == eCompleted || status == eFailed || status == eCanceled) {
         m_Group.PostFinished(*this);
     }
 }
