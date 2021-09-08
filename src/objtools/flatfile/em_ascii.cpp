@@ -2177,7 +2177,7 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& biose
 
     CRef<objects::CGB_block> gbb;
    
-    if  (pp->source == Parser::ESource::NCBI) {
+    if  (pp->source == Parser::ESource::NCBI || (!embl_block->IsSetDiv() && gbdiv) ) {
         gbb = GetEmblGBBlock(pp, entry, gbdiv, bio_src);      /* GB-block */
     }
 
