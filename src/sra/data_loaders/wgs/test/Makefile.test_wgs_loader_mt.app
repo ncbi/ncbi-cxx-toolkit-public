@@ -19,6 +19,5 @@ POST_LINK = $(VDB_POST_LINK)
 CHECK_COPY     = test_wgs_loader_mt.ini
 CHECK_CMD      = test_wgs_loader_mt
 CHECK_TIMEOUT  = 300
-CHECK_REQUIRES = 
 
 WATCHERS = vasilche ucko
