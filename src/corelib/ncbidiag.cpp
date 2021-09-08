@@ -1055,7 +1055,7 @@ void CDiagContextThreadData::RemoveCollectGuard(CDiagCollectGuard* guard)
         // the last guard.
     }
     // If this is the last guard, perform its action
-    CDiagLock lock(CDiagLock::eWrite);
+    CDiagLock lock(CDiagLock::eRead);
     if (guard->GetAction() == CDiagCollectGuard::ePrint) {
         CDiagHandler* handler = GetDiagHandler();
         if ( handler ) {
