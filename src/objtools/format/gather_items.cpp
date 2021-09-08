@@ -4314,9 +4314,11 @@ void CFlatGatherer::x_GetFeatsOnCdsProductIdx(
 
     CBioseq_Handle  prot;
 
-    // prot = scope.GetBioseqHandleFromTSE(*prot_id, ctx.GetHandle());
-    prot = scope.GetBioseqHandle(*prot_id);
-    // !!! need a flag for fetching far proteins
+    if (cfg.IsPolicyInternal() || cfg.IsPolicyFtp()) {
+        prot = scope.GetBioseqHandleFromTSE(*prot_id, ctx.GetHandle());
+    } else {
+        prot = scope.GetBioseqHandle(*prot_id);
+    }
     if (!prot) {
         return;
     }
