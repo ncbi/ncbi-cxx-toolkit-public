@@ -14,6 +14,6 @@ POST_LINK = $(VDB_POST_LINK)
 
 CHECK_COPY = mapfile
 CHECK_CMD = test_csra_loader
-CHECK_REQUIRES = in-house-resources -Solaris
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = vasilche ucko

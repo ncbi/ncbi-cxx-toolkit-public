@@ -18,6 +18,6 @@ LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(VDB_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(O
 
 POST_LINK = $(VDB_POST_LINK)
 
-CHECK_REQUIRES = in-house-resources -Solaris
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = vasilche

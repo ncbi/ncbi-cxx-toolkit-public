@@ -14,6 +14,6 @@ LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LI
 POST_LINK = $(VDB_POST_LINK)
 
 CHECK_CMD = bam_unit_test
-CHECK_REQUIRES = in-house-resources -Solaris
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = vasilche
