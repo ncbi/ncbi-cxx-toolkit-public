@@ -20,6 +20,6 @@ CHECK_COPY     = test_wgs_loader.ini
 CHECK_CMD      = test_wgs_loader
 CHECK_CMD      = test_wgs_loader --run_test="*StateTest"
 CHECK_TIMEOUT  = 300
-CHECK_REQUIRES = in-house-resources -Solaris
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = vasilche ucko

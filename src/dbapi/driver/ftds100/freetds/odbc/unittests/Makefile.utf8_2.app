@@ -16,6 +16,6 @@ CHECK_COPY = odbc.ini
 # Solaris's native iconv has no problem on this test, but fails on
 # tds100_utf8_2, so doesn't count, and ptb.ini's claim of iconv on
 # Windows is a fiction to help ensure Xcode builds pick libiconv up.
-CHECK_REQUIRES = in-house-resources Iconv -Solaris -MSWin
+CHECK_REQUIRES = in-house-resources Iconv -MSWin
 
 WATCHERS = ucko satskyse

@@ -17,6 +17,6 @@ POST_LINK = $(VDB_POST_LINK)
 CHECK_COPY = mapfile
 CHECK_CMD = test_bam_loader
 CHECK_TIMEOUT  = 500
-CHECK_REQUIRES = in-house-resources -Solaris
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = vasilche ucko

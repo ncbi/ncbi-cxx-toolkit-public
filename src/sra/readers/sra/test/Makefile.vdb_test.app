@@ -17,7 +17,7 @@ REQUIRES = objects
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE)
 
-CHECK_REQUIRES = in-house-resources -MSWin -Solaris
+CHECK_REQUIRES = in-house-resources -MSWin
 # default - old fixed SRA
 #CHECK_CMD = vdb_test
 #CHECK_CMD = vdb_test -refseq_table -q GL000207.1:0-10000 -ref_seq -stat_graph -quality_graph -seq_entry -scan_reads /CHECK_NAME=vdb_test_SRA_fixed

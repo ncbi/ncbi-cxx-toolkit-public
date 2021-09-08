@@ -28,6 +28,6 @@ CHECK_CMD = bam_test -file header-only.bam /CHECK_NAME=bam_test_none
 CHECK_CMD = bam_test -file 1k.unaligned.bam -refseq GL000207.1 -refwindow 1 /CHECK_NAME=bam_test_q_none
 CHECK_CMD = bam_test -file header-only.bam -refseq GL000207.1 -refwindow 1 /CHECK_NAME=bam_test_q_none
 
-CHECK_REQUIRES = in-house-resources -MSWin -Solaris
+CHECK_REQUIRES = in-house-resources
 
 WATCHERS = vasilche ucko
