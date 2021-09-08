@@ -1085,8 +1085,8 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         CassValueType type = cass_value_type(clm);
 
         switch (type) {
-            case CASS_COLLECTION_TYPE_LIST:
-            case CASS_COLLECTION_TYPE_SET:
+            case CASS_VALUE_TYPE_LIST:
+            case CASS_VALUE_TYPE_SET:
             {
                 if (!cass_value_is_null(clm)) {
                     unique_ptr<CassIterator, function<void(CassIterator*)> > items_iterator_ptr(
