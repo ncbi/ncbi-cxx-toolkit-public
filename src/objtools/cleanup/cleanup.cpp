@@ -2017,8 +2017,7 @@ bool CCleanup::TaxonomyLookup(CSeq_entry_Handle seh)
     }
 
     if (rq_list.size() > 0) {
-        CTaxon3 taxon3;
-        taxon3.Init();
+        CTaxon3 taxon3(CTaxon3::initialize::yes);
         CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(rq_list);
         if (reply) {
             CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();

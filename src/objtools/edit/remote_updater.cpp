@@ -145,8 +145,7 @@ public:
     {
         if (!m_taxon)
         {
-            m_taxon.reset(new CTaxon3);
-            m_taxon->Init();
+            m_taxon.reset(new CTaxon3(CTaxon3::initialize::yes));
             m_cache.reset(new CCachedReplyMap);
         }
     }

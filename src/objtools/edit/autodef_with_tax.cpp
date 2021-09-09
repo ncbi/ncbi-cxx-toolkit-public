@@ -126,8 +126,7 @@ string CAutoDefWithTaxonomy::GetDocsumOrgDescription(CSeq_entry_Handle se)
     if (rq->IsJoin() && rq->GetJoin().Get().size() > 0) {
         CTaxon3_request request;
         request.SetRequest().push_back(rq);
-        CTaxon3 taxon3;
-        taxon3.Init();
+        CTaxon3 taxon3(CTaxon3::initialize::yes);
         CRef<CTaxon3_reply> reply = taxon3.SendRequest(request);
         if (reply) {
             CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();

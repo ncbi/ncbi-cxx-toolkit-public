@@ -117,8 +117,7 @@ void MakeMailReportPostReport(CSeq_table& table, CScope& scope)
     CRef<CSeqTable_column> pub_stat(new CSeqTable_column());
     pub_stat->SetHeader().SetTitle("is_unpublished");
     table.SetColumns().push_back(pub_stat);
-    CTaxon3 taxon3;
-    taxon3.Init();
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
     CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_ref_list);
     if (reply) {
         ITERATE(CTaxon3_reply::TReply, reply_it, reply->GetReply()) {

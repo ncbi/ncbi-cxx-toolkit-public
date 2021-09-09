@@ -22292,8 +22292,7 @@ void TestBulkSpecificHostFixList(const THostStringsVector& test_values)
     tval.Init(*entry);
     vector<CRef<COrg_ref> > org_rq_list = tval.GetSpecificHostLookupRequest(true);
 
-    objects::CTaxon3 taxon3;
-    taxon3.Init();
+    objects::CTaxon3 taxon3(CTaxon3::initialize::yes);
     CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
     BOOST_CHECK_EQUAL(reply->GetReply().size(), org_rq_list.size());
 
@@ -22385,8 +22384,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
     // Homo sapiens is ignored because "HUMAN" already corrects to it
     BOOST_CHECK_EQUAL(org_rq_list.size(), test_values.size() - 6);
 
-    objects::CTaxon3 taxon3;
-    taxon3.Init();
+    objects::CTaxon3 taxon3(CTaxon3::initialize::yes);
     CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
 
     BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust, error_message), true);
@@ -22502,8 +22500,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_787)
 
     CTaxValidationAndCleanup tval;
 
-    objects::CTaxon3 taxon3;
-    taxon3.Init();
+    objects::CTaxon3 taxon3(CTaxon3::initialize::yes);
 
     CRef<CTaxon3_reply> org_reply = taxon3.SendOrgRefList(org_rq);
     string error_message;
@@ -22572,8 +22569,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFixIncremental)
     // Homo sapiens is ignored because "HUMAN" already corrects to it
     BOOST_CHECK_EQUAL(spec_host_rq.size(), test_values.size() - 6);
 
-    objects::CTaxon3 taxon3;
-    taxon3.Init();
+    objects::CTaxon3 taxon3(CTaxon3::initialize::yes);
 
     size_t chunk_size = 3;
     size_t i = 0;
@@ -22658,8 +22654,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
     vector<CRef<COrg_ref> > strain_rq = tval.GetStrainLookupRequest();
     BOOST_CHECK_EQUAL(strain_rq.size(), (size_t)9);
 
-    objects::CTaxon3 taxon3;
-    taxon3.Init();
+    objects::CTaxon3 taxon3(CTaxon3::initialize::yes);
 
     size_t chunk_size = 3;
     size_t i = 0;
