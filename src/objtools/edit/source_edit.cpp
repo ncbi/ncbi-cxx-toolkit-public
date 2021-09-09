@@ -167,8 +167,7 @@ CRef<CBioSource> MakeCommonBioSource(const objects::CBioSource& src1, const obje
         return common;
     }
 
-    CTaxon3 taxon3;
-    taxon3.Init();
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
 
     // do lookup before attempting to merge
     vector<CRef<COrg_ref> > rq_list;
