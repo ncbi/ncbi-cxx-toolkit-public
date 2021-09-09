@@ -1476,8 +1476,7 @@ static bool OrgDiffers(const COrg_ref& first, const COrg_ref& second)
 
 static CRef<CTaxon3_reply> GetOrgRefs(vector<CRef<COrg_ref>>& orgs)
 {
-    CTaxon3 taxon3;
-    taxon3.Init();
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
     CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(orgs);
     return reply;
 }

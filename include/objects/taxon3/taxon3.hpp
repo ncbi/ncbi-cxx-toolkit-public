@@ -57,7 +57,8 @@ BEGIN_objects_SCOPE
 class NCBI_TAXON3_EXPORT CTaxon3 : public ITaxon3 {
 public:
 
-    CTaxon3();
+    enum class initialize { yes, no };
+    CTaxon3(initialize = initialize::no);
     CTaxon3(const STimeout& timeout, unsigned reconnect_attempts=5, bool exponential=false);
     virtual ~CTaxon3();
 

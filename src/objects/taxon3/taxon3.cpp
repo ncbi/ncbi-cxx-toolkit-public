@@ -52,8 +52,11 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
-CTaxon3::CTaxon3()
+CTaxon3::CTaxon3(initialize init)
 {
+    if (init == initialize::yes) {
+        CTaxon3::Init();
+    }
 }
 
 CTaxon3::CTaxon3(const STimeout& timeout, unsigned reconnect_attempts, bool exponential)
