@@ -1224,8 +1224,7 @@ bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with
     const size_t chunk_size = 1000;
     vector< CRef<COrg_ref> > edited_orgs;
 
-    CTaxon3 taxon3;
-    taxon3.Init();
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
     size_t i = 0;
     while (i < original_orgs.size())
     {
@@ -1324,8 +1323,7 @@ void CTaxValidationAndCleanup::FixOneSpecificHost(string& val)
     edited.push_back(CRef<COrg_ref>(new COrg_ref()));
     edited.front()->SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_nat_host, val)));
 
-    CTaxon3 taxon3;
-    taxon3.Init();
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
     CRef<CTaxon3_reply> tmp_spec_host_reply = taxon3.SendOrgRefList(spec_host_rq);
 
     if (!tmp_spec_host_reply->IsSetReply() || !tmp_spec_host_reply->GetReply().front()->IsData()) {
@@ -1365,8 +1363,7 @@ bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val, string&
         return true;
     }
 
-    CTaxon3 taxon3;
-    taxon3.Init();
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
     CRef<CTaxon3_reply> tmp_spec_host_reply = taxon3.SendOrgRefList(spec_host_rq);
 
     string err_msg;
@@ -1401,8 +1398,7 @@ void CTaxValidationAndCleanup::CheckOneOrg(const COrg_ref& org, int genome, CVal
     x_ClearMaps();
 
     vector<TTaxError> errs;
-    CTaxon3 taxon3;
-    taxon3.Init();
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
 
     // lookup of whole org
     vector< CRef<COrg_ref> > org_rq_list;
