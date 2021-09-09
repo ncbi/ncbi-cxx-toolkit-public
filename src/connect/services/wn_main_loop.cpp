@@ -643,12 +643,9 @@ void* CMainLoopThread::Main()
 
 CNetScheduleGetJob::EState CMainLoopThread::CImpl::CheckState()
 {
-    if (CGridGlobals::GetInstance().IsShuttingDown())
-        return eStopped;
-
     EState ret = eWorking;
 
-    for (;;) {
+    while (!CGridGlobals::GetInstance().IsShuttingDown()) {
         void* event;
 
         while ((event = SwapPointers(&m_WorkerNode->m_SuspendResumeEvent,
@@ -674,6 +671,8 @@ CNetScheduleGetJob::EState CMainLoopThread::CImpl::CheckState()
         m_WorkerNode->m_NSExecutor->
             m_NotificationHandler.WaitForNotification(m_Timeout);
     }
+
+    return eStopped;
 }
 
 CNetServer CMainLoopThread::CImpl::ReadNotifications()
