@@ -47,7 +47,8 @@
 #include <algorithm>
 
 #ifdef HAVE_ODBCSS_H
-#include <odbcss.h>
+// #include <odbcss.h>
+#include <msodbcsql.h>
 #endif
 
 #include "odbc_utils.hpp"
