@@ -5317,23 +5317,64 @@ private:
 
 string CExtraEncoder::Encode(const CTempString src, EStringType stype) const
 {
-    string dst;
-    dst.reserve(src.length() * 2);
-    ITERATE(CTempString, c, src) {
-        const char* enc = s_ExtraEncodeChars[(unsigned char)(*c)];
-        if (stype == eName  &&  !m_AllowBadNames &&
-            (enc[1] != 0  ||  enc[0] != *c)) {
-            // Replace bad chars in names with [INVALID_APPLOG_SYMBOL:%xx].
-            dst += "[INVALID_APPLOG_SYMBOL:";
-            // Special case - encode 'bad' space as '%20', not '+'
-            dst += (*c == ' ') ? "%20" : enc;
-            dst += "]";
+    static const char* s_BadSymbolPrefix = "[INVALID_APPLOG_SYMBOL:";
+    static const char* s_BadSymbolSuffix = "]";
+    static const size_t s_BadSymbolPrefixLen = strlen(s_BadSymbolPrefix);
+    static const CTempString s_EncodedSpace = "%20";
+
+    vector<CTempString> parts;
+    parts.resize(src.length() + 2); // adjust for possible invalid symbol message
+    size_t part_idx = 0;
+    const char* src_data = src.data();
+    const bool warn_bad_name = (stype == eName && !m_AllowBadNames);
+    size_t good_start = 0;
+    size_t total_len = 0;
+    for (size_t pos = 0; pos < src.size(); ++pos) {
+        char c = src[pos];
+        const char* enc = s_ExtraEncodeChars[c];
+        if (enc[0] == c && enc[1] == 0) continue;
+
+        // Save good chars, if any.
+        if (good_start < pos) {
+            CTempString& good_part = parts[part_idx++];
+            good_part.assign(src_data + good_start, pos - good_start);
+            total_len += good_part.size();
         }
-        else {
-            dst += s_ExtraEncodeChars[(unsigned char)(*c)];
+
+        if (warn_bad_name) {
+            CTempString& warn_part = parts[part_idx++];
+            warn_part.assign(s_BadSymbolPrefix, s_BadSymbolPrefixLen);
+            total_len += s_BadSymbolPrefixLen;
         }
+        CTempString& enc_part = parts[part_idx++];
+        enc_part.assign((c == ' ' && warn_bad_name) ? s_EncodedSpace : enc);
+        total_len += enc_part.size();
+        if (warn_bad_name) {
+            CTempString& warn2_part = parts[part_idx++];
+            warn2_part.assign(s_BadSymbolSuffix, 1);
+            total_len++;
+        }
+        good_start = pos + 1;
+
+        if (part_idx + 3 >= parts.size()) parts.resize(parts.size() * 2);
     }
-    return dst;
+
+    if (good_start < src.size()) {
+        CTempString& good_part = parts[part_idx++];
+        good_part.assign(src_data + good_start, src.size() - good_start);
+        total_len += good_part.size();
+    }
+
+    char* buf = new char[total_len];
+    char* pos = buf;
+    for (size_t i = 0; i < part_idx; ++i) {
+        const CTempString& part = parts[i];
+        strncpy(pos, part.data(), part.size());
+        pos += part.size();
+    }
+    string ret(buf, total_len);
+    delete[] buf;
+    return ret;
 }
 
 
