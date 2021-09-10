@@ -45,6 +45,7 @@
 #include <serial/objectio.hpp>
 
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/edit/remote_updater.hpp>
 
@@ -58,21 +59,197 @@ BEGIN_NCBI_SCOPE
 namespace
 {
 
-    struct THugeFileWriteContext
+    class CFlattenedAsn: public CHugeAsnReader
     {
-        size_t bioseq_level = 0;
-        size_t entries = 0;
-        CHugeFile file;
+    public:
+        bool IsMultiSequence() override { return m_flattened.size()>1; }
+        const TBioseqSetInfo& GetTopObject()
+        {
+            auto top = GetBiosets().begin();
+            if (GetBiosets().size()>1)
+            {
+                top++;
+            }
+            return *top;
+        }
+        CRef<objects::CSeq_entry> GetNextSeqEntry() override
+        {
+            if (m_current == m_flattened.end())
+            {
+                m_flattened.clear();
+                m_current = m_flattened.end();
+                return {};
+            }
+            else
+            {
+#ifdef _DEBUG
+                if (m_current->m_parent_set != m_bioseq_set_index.end())
+                {
+                    if (m_current->m_parent_set->m_descr.NotEmpty())
+                        std::cerr << "Has top parent: " << m_current->m_pos << m_current->m_parent_set->m_class << std::endl;
+                }
+#endif
+                return LoadSeqEntry(*m_current++);
+            }
+        }
 
-        IHugeAsnSource* source = nullptr;
+        bool GetNextBlob() override
+        {
+            bool ret = CHugeAsnReader::GetNextBlob();
+            if (ret)
+                FlattenGenbankSet();
+            return ret;
+        }
 
-        CRef<CSeq_entry> topentry;
-        CRef<CSeq_submit> submit;
-        std::function<CRef<CSeq_entry>()> next_entry;
+        bool CheckDescriptors(CSeqdesc::E_Choice which)
+        {
+            for (auto rec: GetBioseqs())
+            {
+                if (rec.m_descr.NotEmpty())
+                {
+                    for (auto descr: rec.m_descr->Get())
+                    {
+                        if (descr->Which() == which)
+                            return true;
+                    }
+                }
+            }
+            /*
+            for (auto rec: GetBiosets())
+            {
+                if (rec.m_descr.NotEmpty())
+                {
+                    for (auto descr: rec.m_descr->Get())
+                    {
+                        if (descr->Which() == which)
+                            return true;
+                    }
+                }
+            }
+            */
+            return false;
+        }
+
+    protected:
+        void FlattenGenbankSet();
+
+        TBioseqSetIndex m_flattened;
+        TBioseqSetIndex::iterator m_current;
     };
 
+void CFlattenedAsn::FlattenGenbankSet()
+{
+    m_flattened.clear();
 
+    for (auto& rec: GetBioseqs())
+    {
+        auto parent = rec.m_parent_set;
+        auto _class = parent->m_class;
+        if ((_class == CBioseq_set::eClass_not_set) ||
+            (_class == CBioseq_set::eClass_genbank))
+        { // create fake bioseq_set
+            m_flattened.push_back({rec.m_pos, GetBiosets().end(), objects::CBioseq_set::eClass_not_set, {} });
+        } else {
+            if (m_flattened.empty() || (m_flattened.back().m_pos != parent->m_pos))
+                m_flattened.push_back(*parent);
+        }
+    }
+
+    if ((m_flattened.size() == 1) && (GetBiosets().size()>1))
+    {// exposing the whole top entry
+        auto top = GetBiosets().begin();
+        top++;
+        if (GetSubmit().NotEmpty()
+            || (top->m_class != CBioseq_set::eClass_genbank)
+            || top->m_descr.NotEmpty())
+        {
+            m_flattened.clear();
+            m_flattened.push_back(*top);
+        }
+    }
+
+    m_current = m_flattened.begin();
 }
+
+struct THugeFileWriteContext
+{
+    size_t bioseq_level = 0;
+    size_t entries      = 0;
+    CBioseq_set::TClass m_ClassValue = CBioseq_set::eClass_not_set;
+    bool   is_fasta     = false;
+    CHugeFile file;
+
+    IHugeAsnSource* source = nullptr;
+
+    CFlattenedAsn asn_reader;
+
+    CRef<CSeq_entry> topentry;
+    CRef<CSeq_submit> submit;
+    std::function<CRef<CSeq_entry>()> next_entry;
+
+    void PopulateTopEntry(CRef<CSeq_entry>& top_set, bool handle_as_set, CBioseq_set::TClass classValue)
+    {
+        m_ClassValue = CBioseq_set::eClass_not_set;
+
+        if (source->IsMultiSequence() || (is_fasta && handle_as_set))
+        {
+            topentry = Ref(new CSeq_entry);
+            auto& seqset = topentry->SetSet().SetSeq_set();
+            m_ClassValue = topentry->SetSet().SetClass() = classValue;
+            if (!is_fasta)
+            {
+                auto top = asn_reader.GetTopObject();
+                if (top.m_class != CBioseq_set::eClass_not_set)
+                    m_ClassValue = topentry->SetSet().SetClass() = top.m_class;
+                if (top.m_descr.NotEmpty() && top.m_descr->IsSet() && !top.m_descr->Get().empty())
+                {
+                    topentry->SetSet().SetDescr().Assign(*top.m_descr);
+                }
+            }
+            if (source->IsMultiSequence())
+            {
+                top_set = topentry;
+            } else {
+                seqset.push_back(next_entry());
+                top_set = seqset.front();
+            }
+        } else {
+            top_set = topentry = next_entry();
+        }
+
+        topentry->Parentize();
+    }
+
+    void PopulateTempTopObject(CRef<CSeq_submit>& temp_submit, CRef<CSeq_entry>&temp_top, CRef<CSeq_entry> entry)
+    {
+        temp_top = entry;
+        if (submit)
+        {
+            temp_submit.Reset(new CSeq_submit);
+            temp_submit->Assign(*submit);
+            if (temp_submit->IsSetData() && temp_submit->GetData().IsEntrys() &&
+                !temp_submit->GetData().GetEntrys().empty())
+            {
+                temp_top = temp_submit->SetData().SetEntrys().front();
+                temp_top->SetSet().SetSeq_set().push_back(entry);
+            } else
+            {
+                temp_submit->SetData().SetEntrys().clear();
+                temp_submit->SetData().SetEntrys().push_back(entry);
+            }
+        } else
+        if (topentry->IsSet())
+        {
+            topentry->SetSet().SetSeq_set().clear();
+            topentry->SetSet().SetSeq_set().push_back(entry);
+            temp_top = topentry;
+        }
+        temp_top->Parentize();
+    }
+
+};
+
+} // namespace
 
 void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
 {
@@ -84,7 +261,6 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
         CSeq_submit::GetTypeInfo(),
     };
 
-    CHugeAsnReader asn_reader;
     CHugeFastaReader fasta_reader(m_context);
     THugeFileWriteContext context;
 
@@ -92,49 +268,21 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
 
     context.file.Open(m_context.m_current_file);
 
-    CConstRef<objects::CSeq_descr> descrs;
-
-    if (m_context.m_entry_template.NotEmpty() && m_context.m_entry_template->IsSetDescr())
-        descrs.Reset(&m_context.m_entry_template->GetDescr());
-
-    auto fasta_get_next = [this, &fasta_reader, descrs]() -> CRef<CSeq_entry>
-    {
-        auto entry = fasta_reader.GetNextSeqEntry();
-        if (entry && descrs)
-            m_context.MergeSeqDescr(*entry, *descrs, false);
-        return entry;
-    };
-
     if (context.file.m_format == CFormatGuess::eGff3) {
         list<CRef<CSeq_annot>> annots;
         m_reader->LoadGFF3Fasta(*context.file.m_stream, annots);
         m_secret_files->m_Annots.splice(m_secret_files->m_Annots.end(), annots);
         fasta_reader.Open(&context.file, m_context.m_logger);
         context.source = &fasta_reader;
-        context.next_entry = fasta_get_next;
+        context.is_fasta = true;
     } else
     if (context.file.m_format == CFormatGuess::eFasta) {
         fasta_reader.Open(&context.file, m_context.m_logger);
         context.source = &fasta_reader;
-        context.next_entry = fasta_get_next;
+        context.is_fasta = true;
     } else {
-        asn_reader.Open(&context.file, m_context.m_logger);
-        context.source = &asn_reader;
-        context.next_entry = [this, &asn_reader]() -> CRef<CSeq_entry>
-        {
-            auto entry = asn_reader.GetNextSeqEntry();
-            if (entry && m_context.m_gapNmin > 0)
-            {
-                CGapsEditor gap_edit(
-                    (CSeq_gap::EType)m_context.m_gap_type,
-                    m_context.m_DefaultEvidence,
-                    m_context.m_GapsizeToEvidence,
-                    m_context.m_gapNmin,
-                    m_context.m_gap_Unknown_length);
-                gap_edit.ConvertNs2Gaps(*entry);
-            }
-            return entry;
-        };
+        context.asn_reader.Open(&context.file, m_context.m_logger);
+        context.source = &context.asn_reader;
 
         if (m_context.m_t) {
             string msg(
@@ -146,9 +294,38 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
         }
     }
 
+    CConstRef<objects::CSeq_descr> descrs;
+
+    if (m_context.m_entry_template.NotEmpty() && m_context.m_entry_template->IsSetDescr())
+        descrs.Reset(&m_context.m_entry_template->GetDescr());
+
+    context.next_entry = [this, &context, &descrs ]() -> CRef<CSeq_entry>
+    {
+        auto entry = context.source->GetNextSeqEntry();
+        if (entry)
+        {
+            if (context.is_fasta)
+            {
+                if (descrs)
+                    CTable2AsnContext::MergeSeqDescr(*entry, *descrs, false);
+            } else
+            if (m_context.m_gapNmin > 0)
+            {
+                CGapsEditor gap_edit(
+                    (CSeq_gap::EType)m_context.m_gap_type,
+                    m_context.m_DefaultEvidence,
+                    m_context.m_GapsizeToEvidence,
+                    m_context.m_gapNmin,
+                    m_context.m_gap_Unknown_length);
+                gap_edit.ConvertNs2Gaps(*entry);
+            }
+        }
+        return entry;
+    };
+
     while (context.source->GetNextBlob())
     {
-        m_secret_files->m_feature_table_reader->m_local_id_counter = asn_reader.GetMaxLocalId() + 1;
+        m_secret_files->m_feature_table_reader->m_local_id_counter = context.asn_reader.GetMaxLocalId() + 1;
 
         unique_ptr<CObjectOStream> ostr{
             CObjectOStream::Open(m_context.m_binary_asn1_output?eSerial_AsnBinary:eSerial_AsnText, *output)};
@@ -156,28 +333,11 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
         auto seq_set_member = CObjectTypeInfo(CBioseq_set::GetTypeInfo()).FindMember("seq-set");
 
         CConstRef<CSerialObject> topobject;
-        bool is_multi_sequence = context.source->IsMultiSequence();
-        is_multi_sequence |= (context.file.m_format == CFormatGuess::eFasta) && m_context.m_HandleAsSet;
+
+        m_context.m_huge_files_mode = context.source->IsMultiSequence();
 
         CRef<CSeq_entry> top_set;
-        if (is_multi_sequence)
-        {
-            context.topentry = Ref(new CSeq_entry);
-            context.topentry->SetSet().SetClass(m_context.m_ClassValue);
-            auto& seqset = context.topentry->SetSet().SetSeq_set();
-            if (context.source->IsMultiSequence())
-            {
-                top_set = context.topentry;
-            } else {
-                seqset.push_back(context.next_entry());
-                top_set = seqset.front();
-            }
-        } else {
-            top_set = context.topentry = context.next_entry();
-        }
-
-        if (descrs)
-            m_context.MergeSeqDescr(*top_set, *descrs, true);
+        context.PopulateTopEntry(top_set, m_context.m_HandleAsSet, m_context.m_ClassValue);
 
         if (m_context.m_save_bioseq_set)
         {
@@ -186,7 +346,6 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
             else
                 topobject.Reset(&context.topentry->SetSeq());
         } else {
-
             if (context.source->GetSubmit())
             {
                 context.submit.Reset(new CSeq_submit);
@@ -195,35 +354,17 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
                 context.submit->SetData().SetEntrys().clear();
                 context.submit->SetData().SetEntrys().push_back(context.topentry);
             }
-
             topobject = m_context.CreateSubmitFromTemplate(context.topentry, context.submit);
         }
 
-        if (context.file.m_format != CFormatGuess::eFasta && top_set->IsSet())
-            m_context.ApplyUpdateDate(*top_set);
+        if (context.is_fasta && descrs)
+            m_context.MergeSeqDescr(*top_set, *descrs, true);
 
-        top_set.Reset();
-
-        if (context.source->IsMultiSequence())
+        if (m_context.m_huge_files_mode)
         {
-            if (context.submit)
-            {
-                if (m_context.m_RemotePubLookup)
-                {
-                    m_context.m_remote_updater->UpdatePubReferences(*context.submit);
-                }
+            bool need_update_date = !context.is_fasta && context.asn_reader.CheckDescriptors(CSeqdesc::e_Create_date);
 
-                CCleanup cleanup(nullptr, CCleanup::eScope_UseInPlace); // RW-1070 - CCleanup::eScope_UseInPlace is essential
-                cleanup.ExtendedCleanup(*context.submit, CCleanup::eClean_NoNcbiUserObjects);
-            }
-
-            bool need_report = (context.file.m_format == CFormatGuess::eFasta) && !m_context.m_HandleAsSet;
-            if (need_report)
-            {
-                m_context.m_logger->PutError(*unique_ptr<CLineError>(
-                    CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
-                    "File " + m_context.m_current_file + " contains multiple sequences")));
-            }
+            ProcessTopEntry(context.file.m_format, need_update_date, context.submit, context.topentry);
 
             SetLocalWriteHook(seq_set_member.GetMemberType(), *ostr,
             [this, &context](CObjectOStream& out, const CConstObjectInfo& object)
@@ -235,12 +376,10 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
                     CRef<objects::CSeq_entry> entry;
                     while ((entry = context.next_entry()))
                     {
-                        if (context.submit)
-                        {
-                            context.submit->SetData().SetEntrys().clear();
-                            context.submit->SetData().SetEntrys().push_back(entry);
-                        }
-                        ProcessSingleEntry(context.file.m_format, context.submit, entry);
+                        CRef<CSeq_submit> temp_submit;
+                        CRef<CSeq_entry> temp_top;
+                        context.PopulateTempTopObject(temp_submit, temp_top, entry);
+                        ProcessSingleEntry(context.file.m_format, temp_submit, temp_top);
                         if (entry) {
                             out_container << *entry;
                             context.entries++;
@@ -253,8 +392,8 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
             });
         } else {
             ProcessSingleEntry(context.file.m_format, context.submit, context.topentry);
-            if (context.file.m_format != CFormatGuess::eFasta && context.topentry->IsSet())
-                m_context.ApplyUpdateDate(*context.topentry);
+            if (context.submit.Empty())
+                topobject = context.topentry;
 
             context.entries++;
         }
@@ -266,22 +405,12 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
         catch(const CException& ex)
         { // ASN writer populates exception with a call stack which is not neccessary
           // we need the original exception
-#           ifdef TABLE2ASN_DEBUG_EXCEPTIONS
-            int status;
-            char * demangled = abi::__cxa_demangle(typeid(ex).name(), 0, 0, &status);
-#           endif
             // ASN.1 writer populates exception with a call stack, we need to dig out the original exception
             const CException* original = &ex;
             while (original->GetPredecessor())
             {
-#               ifdef TABLE2ASN_DEBUG_EXCEPTIONS
-                cerr << demangled << ":" << ex.GetMsg() << std::endl;
-#               endif
                 original = original->GetPredecessor();
             }
-#           ifdef TABLE2ASN_DEBUG_EXCEPTIONS
-            free(demangled);
-#           endif
 
             throw *original;
         }

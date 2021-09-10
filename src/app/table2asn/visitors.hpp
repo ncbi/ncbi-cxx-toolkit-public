@@ -104,11 +104,11 @@ namespace objects
             mseq(entry.SetSeq());
         }
         else
-            if (entry.IsSet() && !entry.GetSet().GetSeq_set().empty())
+            if (entry.IsSet())
             {
                 bool go_deep = mset(entry.SetSet());
 
-                if (go_deep)
+                if (go_deep && !entry.GetSet().GetSeq_set().empty())
                 for (auto se : entry.SetSet().SetSeq_set())
                 {
                     VisitAllSetandSeq(*se, mset, mseq);

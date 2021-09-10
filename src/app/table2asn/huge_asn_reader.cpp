@@ -84,8 +84,6 @@ void CHugeAsnReader::x_ResetIndex()
     m_bioseq_list.clear();
     m_bioseq_index.clear();
     m_bioseq_set_index.clear();
-    m_flattened.clear();
-    m_current = m_flattened.end();
 }
 
 void CHugeAsnReader::Open(CHugeFile* file, objects::ILineErrorListener * pMessageListener)
@@ -175,10 +173,7 @@ unique_ptr<CObjectIStream> CHugeAsnReader::x_MakeObjStream(TFileSize pos) const
 
 CRef<CSeq_entry> CHugeAsnReader::GetNextSeqEntry()
 {
-    if (m_current == m_flattened.end())
-        return {};
-    else
-        return LoadSeqEntry(*m_current++);
+    return {};
 }
 
 bool CHugeAsnReader::GetNextBlob()
@@ -207,12 +202,14 @@ void CHugeAsnReader::x_IndexNextAsn1()
     auto seqsubmit_data_mi = seqsubmit_info.FindMember("data");
     auto bioseqset_descr_mi = bioseq_set_info.FindMember("descr");
     auto seqinst_len_mi = seqinst_info.FindMember("length");
+    auto bioseq_descr_mi = bioseq_info.FindMember("descr");
 
     // temporal structure for indexing
     struct TBioseqInfoRec
     {
         CBioseq::TId m_ids;
         TSeqPos      m_length  = 0;
+        CRef<CSeq_descr> m_descr;
     };
 
     struct TContext
@@ -245,6 +242,14 @@ void CHugeAsnReader::x_IndexNextAsn1()
         context.bioseq_set_stack.back()->m_descr = descr;
     });
 
+    SetLocalSkipHook(bioseq_descr_mi, *obj_stream,
+        [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
+    {
+        auto descr = Ref(new CSeq_descr);
+        in.ReadObject(&descr, (*member).GetTypeInfo());
+        context.bioseq_stack.back().m_descr = descr;
+    });
+
     SetLocalSkipHook(seqinst_len_mi, *obj_stream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
     {
@@ -275,7 +280,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
         type.GetTypeInfo()->DefaultSkipData(in);
 
         auto& bioseqinfo = context.bioseq_stack.back();
-        m_bioseq_list.push_back({pos, parent, bioseqinfo.m_length});
+        m_bioseq_list.push_back({pos, parent, bioseqinfo.m_length, bioseqinfo.m_descr});
         auto last = --m_bioseq_list.end();
 
         for (auto& id: bioseqinfo.m_ids)
@@ -320,35 +325,13 @@ void CHugeAsnReader::x_IndexNextAsn1()
     });
 
     // Ensure there is at least on bioseq_set_info object exists
-    m_bioseq_set_index.push_back({ m_streampos, m_bioseq_set_index.end() });
+    obj_stream->SkipFileHeader(object_type);
+    m_bioseq_set_index.push_back({ 0, m_bioseq_set_index.end() });
     context.bioseq_set_stack.push_back(m_bioseq_set_index.begin());
-    obj_stream->Skip(object_type);
+    obj_stream->Skip(object_type, CObjectIStream::eNoFileHeader);
     obj_stream->EndOfData(); // force to SkipWhiteSpace
     m_streampos += obj_stream->GetStreamPos();
-
-    FlattenGenbankSet();
 }
 
-void CHugeAsnReader::FlattenGenbankSet()
-{
-    m_flattened.clear();
-
-    for (auto& rec: GetBioseqs())
-    {
-        auto parent = rec.m_parent_set;
-        auto _class = parent->m_class;
-        if (_class == CBioseq_set::eClass_not_set ||
-            _class == CBioseq_set::eClass_eco_set ||
-            _class == CBioseq_set::eClass_genbank)
-        { // create fake bioseq_set
-            m_flattened.push_back({rec.m_pos, GetBiosets().end(), objects::CBioseq_set::eClass_not_set });
-        } else {
-            if (m_flattened.empty() || (m_flattened.back().m_pos != parent->m_pos))
-                m_flattened.push_back(*parent);
-        }
-    }
-
-    m_current = m_flattened.begin();
-}
 
 END_NCBI_SCOPE

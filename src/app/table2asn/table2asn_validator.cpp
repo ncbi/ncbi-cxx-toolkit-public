@@ -14,6 +14,7 @@
 #include <objtools/edit/loc_edit.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objtools/validator/tax_validation_and_cleanup.hpp>
+#include <objtools/edit/remote_updater.hpp>
 
 #include "table2asn_validator.hpp"
 #include "table2asn_context.hpp"
@@ -71,12 +72,16 @@ void CTable2AsnValidator::Cleanup(CRef<CSeq_submit> submit, CSeq_entry_Handle& h
             ++bi;
         }
     }
+    auto cleanupflags = CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects;
+    if (m_context->m_huge_files_mode)
+        cleanupflags |= ( CCleanup::eClean_KeepTopSet | CCleanup::eClean_KeepSingleSeqSet);
+
     if (submit) {
         CCleanup cleanup(&(h_entry.GetScope()), CCleanup::eScope_UseInPlace); // RW-1070 - CCleanup::eScope_UseInPlace is essential
-        cleanup.ExtendedCleanup(*submit, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+        cleanup.ExtendedCleanup(*submit, cleanupflags);
     }
     else {
-        CCleanup::ExtendedCleanup(h_entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+        CCleanup::ExtendedCleanup(h_entry, cleanupflags);
     }
 
     if (flags.find('f') != string::npos)
@@ -97,9 +102,16 @@ void CTable2AsnValidator::Cleanup(CRef<CSeq_submit> submit, CSeq_entry_Handle& h
         CCleanup::AddLowQualityException(h_entry);
     }
 
-    if (flags.find('T') != string::npos && !m_context->m_use_huge_files) {
+    if (flags.find('T') != string::npos) // && !m_context->m_use_huge_files)
+    {
         validator::CTaxValidationAndCleanup tval;
         tval.DoTaxonomyUpdate(h_entry, true);
+#if 0
+            ,[this](const vector< CRef<COrg_ref> >& query) -> CRef<CTaxon3_reply>
+            {
+                return m_context->m_remote_updater->SendOrgRefList(query);
+            }
+#endif
     }
 }
 
