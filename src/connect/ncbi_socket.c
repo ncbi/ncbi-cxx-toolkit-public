@@ -6272,7 +6272,7 @@ extern EIO_Status TRIGGER_Close(TRIGGER trigger)
 
 #  if   defined(NCBI_OS_UNIX)
 
-    /* Prevent SIGPIPE by closing in this order:  writing end first */
+    /* Avoid SIGPIPE by closing in this order:  writing end first */
     close(trigger->out);
     close(trigger->fd);
 
