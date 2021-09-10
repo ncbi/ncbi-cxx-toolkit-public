@@ -126,7 +126,7 @@ int CFastaRoundTripTestApp::Run(void)
     }
     {{
         const void *p = mf->Map();
-        CTempString ts(static_cast<const char*>(p), mf->GetSize());
+        string ts(static_cast<const char*>(p), mf->GetSize());
         CNcbiIstrstream its(ts);
         CNcbiIstrstream istr(str);
         if(!NcbiStreamCompareText(its, istr, eCompareText_IgnoreEol)) {
