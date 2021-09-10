@@ -7515,6 +7515,7 @@ UMMP	s	University of Michigan
 UMMZ	s	University of Michigan, Museum of Zoology			
 UMMZ:Birds	s	University of Michigan, Museum of Zoology, Birds Collection		
 UMMZ:Herpetology	s	University of Michigan, Museum of Zoology, Herpetology Collection	http://portal.vertnet.org/o/ummz/herps?id=
+UMMZ:Ichthyology	s	University of Michigan, Museum of Zoology, Ichthyology collection	
 UMMZ:Mammal	s	University of Michigan, Museum of Zoology, Mammal collection		
 UMMZ:MC	s	University of Michigan, Museum of Zoology, Mollusk Collection		
 UMN-ANTHRO	s	University of Minnesota - Department of Anthropology			

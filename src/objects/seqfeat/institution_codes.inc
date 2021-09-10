@@ -7548,6 +7548,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UMMZ\ts\tUniversity of Michigan, Museum of Zoology\t\t\t",
 "UMMZ:Birds\ts\tUniversity of Michigan, Museum of Zoology, Birds Collection\t\t",
 "UMMZ:Herpetology\ts\tUniversity of Michigan, Museum of Zoology, Herpetology Collection\thttp://portal.vertnet.org/o/ummz/herps?id=",
+"UMMZ:Ichthyology\ts\tUniversity of Michigan, Museum of Zoology, Ichthyology collection\t",
 "UMMZ:Mammal\ts\tUniversity of Michigan, Museum of Zoology, Mammal collection\t\t",
 "UMMZ:MC\ts\tUniversity of Michigan, Museum of Zoology, Mollusk Collection\t\t",
 "UMN-ANTHRO\ts\tUniversity of Minnesota - Department of Anthropology\t\t\t",
