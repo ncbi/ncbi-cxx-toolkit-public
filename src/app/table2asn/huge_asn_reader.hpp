@@ -77,6 +77,7 @@ public:
         TFileSize m_pos;
         TBioseqSetIndex::iterator m_parent_set;
         TSeqPos   m_length  = -1;
+        CRef<objects::CSeq_descr> m_descr;
     };
 
     struct TBioseqSetInfo
@@ -84,7 +85,7 @@ public:
         TFileSize m_pos;
         TBioseqSetIndex::iterator m_parent_set;
         objects::CBioseq_set::TClass m_class = objects::CBioseq_set::eClass_not_set;
-        CRef<objects::CSeq_descr> m_descr;
+        CConstRef<objects::CSeq_descr> m_descr;
     };
 
     using TBioseqIndex = std::map<CConstRef<objects::CSeq_id>, TBioseqList::iterator, CRefLess>;
@@ -103,14 +104,13 @@ public:
     CRef<objects::CSeq_entry> LoadSeqEntry(CConstRef<objects::CSeq_id> seqid) const;
     CRef<objects::CBioseq> LoadBioseq(CConstRef<objects::CSeq_id> seqid) const;
 
-    virtual void FlattenGenbankSet();
-
     void PrintAllSeqIds() const;
-    bool IsMultiSequence() override { return m_flattened.size()>1; }
+    bool IsMultiSequence() override { return m_bioseq_index.size()>1; }
 protected:
 private:
     void x_ResetIndex();
     void x_IndexNextAsn1();
+    unique_ptr<CObjectIStream> x_MakeObjStream(TFileSize pos) const;
 
     objects::ILineErrorListener * mp_MessageListener = nullptr;
     CHugeFile*  m_file = nullptr;
@@ -121,12 +121,9 @@ private:
 
     TBioseqList m_bioseq_list;
     TBioseqIndex m_bioseq_index;
-    TBioseqSetIndex m_bioseq_set_index;
     CConstRef<objects::CSeq_submit> m_submit;
-
-    unique_ptr<CObjectIStream> x_MakeObjStream(TFileSize pos) const;
-    TBioseqSetIndex m_flattened;
-    TBioseqSetIndex::iterator m_current;
+protected:
+    TBioseqSetIndex m_bioseq_set_index;
 };
 
 END_NCBI_SCOPE

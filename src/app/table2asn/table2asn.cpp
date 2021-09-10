@@ -389,8 +389,8 @@ int CTbl2AsnApp::Run()
         }
     }
 
-    m_context.m_use_huge_files = GetConfig().GetBool("table2asn", "UseHugeFiles", false);
-    if (m_context.m_use_huge_files)
+    m_context.m_can_use_huge_files = GetConfig().GetBool("table2asn", "UseHugeFiles", false);
+    if (m_context.m_can_use_huge_files)
     {
         std::cerr << "Will be using huge files scenario" << std::endl;
     }
@@ -1075,6 +1075,41 @@ void CTbl2AsnApp::ProcessOneEntry(
     }
 }
 
+void CTbl2AsnApp::ProcessTopEntry(CFormatGuess::EFormat inputFormat, bool need_update_date, CRef<CSeq_submit>& submit, CRef<CSeq_entry>& entry)
+{
+    m_context.ApplyComments(*entry);
+
+    if (m_global_files.m_descriptors)
+        m_reader->ApplyDescriptors(*entry, *m_global_files.m_descriptors);
+
+    if (m_secret_files->m_descriptors)
+        m_reader->ApplyDescriptors(*entry, *m_secret_files->m_descriptors);
+
+    if (need_update_date)
+    {
+        m_context.ApplyUpdateDate(*entry);
+    }
+
+    if (submit)
+    {
+        if (m_context.m_RemotePubLookup)
+        {
+            m_context.m_remote_updater->UpdatePubReferences(*submit);
+        }
+
+        CCleanup cleanup(nullptr, CCleanup::eScope_UseInPlace); // RW-1070 - CCleanup::eScope_UseInPlace is essential
+        cleanup.ExtendedCleanup(*submit, CCleanup::eClean_NoNcbiUserObjects);
+    }
+
+    bool need_report = (inputFormat == CFormatGuess::eFasta) && !m_context.m_HandleAsSet;
+    if (need_report)
+    {
+        m_context.m_logger->PutError(*unique_ptr<CLineError>(
+            CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
+            "File " + m_context.m_current_file + " contains multiple sequences")));
+    }
+}
+
 void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSeq_submit> submit, CRef<CSeq_entry>& entry)
 {
     /*
@@ -1091,8 +1126,6 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
         obj = submit;
     else
         obj = entry;
-
-    //entry->Parentize();
 
     if (m_context.m_SetIDFromFile)
     {
@@ -1132,27 +1165,19 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
 
     if (m_context.m_HandleAsSet)
     {
-        //fr.ConvertNucSetToSet(entry);
+        //m_secret_files->m_feature_table_reader->ConvertNucSetToSet(entry);
     }
 
     if ((inputFormat == CFormatGuess::eTextASN) ||
         (inputFormat == CFormatGuess::eBinaryASN))
     {
         // if create-date exists apply update date
-        m_context.ApplyCreateUpdateDatesSingle(*entry);
+        m_context.ApplyCreateUpdateDates(*entry);
     }
 
     m_context.ApplyComments(*entry);
-    ProcessSecretFiles2Phase(*entry);
 
-#if 0
-    // this methods do not remove entry nor change it. But create 'result' object which either
-    // equal to 'entry' or contain reference to 'entry'.
-    if (avoid_submit_block)
-        result = m_context.CreateSeqEntryFromTemplate(entry);
-    else
-        result = m_context.CreateSubmitFromTemplate(entry, submit);
-#endif
+    ProcessSecretFiles2Phase(*entry);
 
     m_secret_files->m_feature_table_reader->MakeGapsFromFeatures(*entry);
 
@@ -1166,16 +1191,13 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
     }
 
     m_context.m_scope->ResetDataAndHistory();
-
     CSeq_entry_Handle seh = m_context.m_scope->AddTopLevelSeqEntry(*entry);
-
     CCleanup::ConvertPubFeatsToPubDescs(seh);
 
     if (m_context.m_RemotePubLookup)
     {
         m_context.m_remote_updater->UpdatePubReferences(*obj);
     }
-
     if (m_context.m_postprocess_pubs)
     {
         m_context.m_remote_updater->PostProcessPubs(*entry);
@@ -1244,8 +1266,7 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 
     try
     {
-        if (!output)
-            output = m_context.m_output;
+        output = m_context.m_output;
 
         if (!output) {
             local_file = m_context.GenerateOutputFilename(m_context.m_asn1_suffix);
@@ -1260,6 +1281,8 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
             m_context.m_suspect_rules.SetupOutput(f);
         }
 
+        m_context.m_huge_files_mode = false;
+
         LoadAdditionalFiles();
 
         if (isAlignment) {
@@ -1267,7 +1290,7 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
         }
         else {
 
-            if (m_context.m_use_huge_files)
+            if (m_context.m_can_use_huge_files)
                 ProcessHugeFile(output);
             else
                 ProcessOneFile(output);
@@ -1288,7 +1311,13 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
             m_logger->SetProgressOstream(&NcbiCout);
         }
 
-        if (!m_context.m_output)
+        if (m_context.m_output)
+        {
+            m_context.m_output = nullptr;
+            GetArgs()["o"].CloseFile();
+            if (!m_context.m_output_filename.empty())
+                CFile(m_context.m_output_filename).Remove(CDirEntry::fIgnoreMissing);
+        } else
         {
             holder.reset();
             local_file.Remove();
@@ -1451,11 +1480,14 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
         m_logger,
         result);
 
-    if (m_global_files.m_descriptors)
-        m_reader->ApplyDescriptors(result, *m_global_files.m_descriptors);
+    if (!m_context.m_huge_files_mode)
+    {
+        if (m_global_files.m_descriptors)
+            m_reader->ApplyDescriptors(result, *m_global_files.m_descriptors);
 
-    if (m_secret_files->m_descriptors)
-        m_reader->ApplyDescriptors(result, *m_secret_files->m_descriptors);
+        if (m_secret_files->m_descriptors)
+            m_reader->ApplyDescriptors(result, *m_secret_files->m_descriptors);
+    }
 
     CScope scope(*m_context.m_ObjMgr);
     scope.AddTopLevelSeqEntry(result);
@@ -1623,11 +1655,18 @@ int main(int argc, const char* argv[])
         while (it != split_args.end())
         {
             auto next = it; ++next;
-            if (next != split_args.end() && it->front() == '"' && it->back() != '"')
+            if (next != split_args.end() &&
+                ((it->front() == '"' && it->back() != '"') ||
+                 (it->front() == '\'' && it->back() != '\'')))
             {
                 it->append(" "); it->append(*next);
                 next = split_args.erase(next);
             } else it = next;
+        }
+        for (auto& rec: split_args)
+        {
+            if (rec.front()=='\'' && rec.back()=='\'')
+                rec=rec.substr(1, rec.length()-2);
         }
         argc = 1 + split_args.size();
         new_argv.reserve(argc);
@@ -1635,7 +1674,10 @@ int main(int argc, const char* argv[])
         for (const string& s : split_args)
         {
             new_argv.push_back(s.c_str());
+            std::cerr << s.c_str() << " ";
         }
+        std::cerr << "\n";
+
 
         argv = new_argv.data();
     }

@@ -381,7 +381,7 @@ bool CTable2AsnContext::IsDBLink(const CSeqdesc& desc)
         return false;
 }
 
-void CTable2AsnContext::MergeSeqDescr(CSeq_entry& entry, const CSeq_descr& src, bool only_set) const
+void CTable2AsnContext::MergeSeqDescr(CSeq_entry& entry, const CSeq_descr& src, bool only_set)
 {
     auto& dest = entry.SetDescr();
 

@@ -145,7 +145,8 @@ public:
     bool   m_split_discrepancy{ false };
     bool   m_accumulate_mods{ false };
     bool   m_binary_asn1_output { false };
-    bool   m_use_huge_files { false };
+    bool   m_can_use_huge_files { false };
+    bool   m_huge_files_mode { false };
 
 
     NDiscrepancy::EGroup m_discrepancy_group{ NDiscrepancy::eOncaller };
@@ -213,7 +214,7 @@ public:
     static CRef<objects::COrg_ref> GetOrgRef(objects::CSeq_descr& descr);
     static void UpdateTaxonFromTable(objects::CBioseq& bioseq);
 
-    void MergeSeqDescr(objects::CSeq_entry& dest, const objects::CSeq_descr& src, bool only_set) const;
+    static void MergeSeqDescr(objects::CSeq_entry& dest, const objects::CSeq_descr& src, bool only_set);
 
 private:
     static void x_ApplyAccession(CTable2AsnContext& context, objects::CBioseq& bioseq);
