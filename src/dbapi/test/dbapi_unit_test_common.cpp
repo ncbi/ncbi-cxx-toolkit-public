@@ -406,6 +406,7 @@ NCBITEST_INIT_VARIABLES(parser)
 
     parser->AddSymbol("DRIVER_IsBcpAvailable", GetArgs().IsBCPAvailable());
     parser->AddSymbol("DRIVER_IsOdbcBased", GetArgs().GetDriverName() == odbc_driver);
+    parser->AddSymbol("ProtocolVersion", GetArgs().GetConnParams().GetProtocolVersion());
 }
 
 

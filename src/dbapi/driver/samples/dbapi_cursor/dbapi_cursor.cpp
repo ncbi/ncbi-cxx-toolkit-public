@@ -225,8 +225,8 @@ CDbapiCursorApp::RunSample(void)
         status |= RunOneSample("image");
     }
     if (GetServerType() == eMsSql) {
-        status |= RunOneSample("varchar(max)");
         if (GetDriverName() != "odbc") {
+            status |= RunOneSample("varchar(max)");
             status |= RunOneSample("varbinary(max)");
             status |= RunOneSample("nvarchar(max)");
         }
