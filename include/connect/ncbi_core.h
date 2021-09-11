@@ -528,14 +528,16 @@ typedef enum {
 
 
 /** Registry getter callback.
- * Copy registry value stored in "section" under name "name" to buffer "value".
- * Look for the matching entry first in the transient storage, and then in
- * the persistent storage.  Do not modify the "value" (leave it "as is",
- * i.e. default) if the requested entry is not found in the registry.
+ * Copy registry value stored in "section" under "name" to the "value" buffer.
+ * Look for a matching entry first in the transient storage, and then in the
+ * persistent storage.
  * @note
- *  Always terminate value with '\0'.
+ *  Do not modify "value" (leave it "as is", i.e. empty) if the requested entry
+ *  was not found in the registry;  then, return -1.
  * @note
- *  Do not put more than "value_size" bytes to "value".
+ *  Always terminate the "value" with '\0'.
+ * @note
+ *  Do not put more than "value_size" bytes into "value" (incl. trailing '\0').
  * @param data
  *  Unspecified data as passed to REG_Create or REG_Reset
  * @param section
@@ -543,14 +545,14 @@ typedef enum {
  * @param name
  *  Key name to search within the section
  * @param value
- *  Default value passed in (cut to "value_size") symbols, found value out
+ *  Empty value passed in, found (if any) value out
  * @param value_size
  *  Size of "value" storage, must be greater than 0
  * @return
  *  1 if successfully found and stored;  -1 if not found (the default is to be
  *  used);  0 if an error (including truncation) occurred
  * @sa
- *  REG_Create, REG_Reset
+ *  REG_Create, REG_Reset, REG_Get, FREG_Set
  */
 typedef int (*FREG_Get)
 (void*       data,
@@ -562,8 +564,8 @@ typedef int (*FREG_Get)
 
 
 /** Registry setter callback.
- * Store the "value" to  the registry section "section" under name "name",
- * and according to "storage".
+ * Store the "value" in the registry "section" under the "name" key, and
+ * according to "storage".
  * @param data
  *  Unspecified data as passed to REG_Create or REG_Reset
  * @param section
@@ -577,7 +579,7 @@ typedef int (*FREG_Get)
  * @return
  *  Non-zero if successful (including replacing a value with itself)
  * @sa
- *  REG_Create, REG_Reset, EREG_Storage
+ *  REG_Create, REG_Reset, EREG_Storage, REG_Set, FREG_Get
  */
 typedef int/*bool*/ (*FREG_Set)
 (void*        data,
