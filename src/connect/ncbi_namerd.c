@@ -36,6 +36,7 @@
 #include "ncbi_lb.h"
 #include "ncbi_linkerd.h"
 #include "ncbi_namerd.h"
+#include "ncbi_once.h"
 #include "ncbi_priv.h"
 #include "parson.h"
 
@@ -98,8 +99,15 @@ enum ENAMERD_Subcodes {
 #define REG_NAMERD_API_PATH          REG_CONN_PATH
 #define DEF_NAMERD_API_PATH          "/api/1/resolve"
 
-#define REG_NAMERD_API_ENV           "ENV"
-#define DEF_NAMERD_API_ENV           "default"
+/* See:
+ * https://confluence.ncbi.nlm.nih.gov/display/CT/Dispatching+with+NAMERD+and+LINKERD#DispatchingwithnamerdandLinkerd-Libraryconfiguration
+ */
+#define REG_NAMERD_API_ENV           "ENV" /*deprecated*/
+#define REG_NAMERD_API_NAMESPACE     "NAMESPACE"
+#define DEF_NAMERD_API_NAMESPACE     "default"
+#define REG_NAMERD_API_LOCATION      "LOCATION"
+#define REG_NAMERD_API_ROLE          "ROLE"
+#define REG_NAMERD_API_PROTOCOL      "PROTOCOL"
 
 #define REG_NAMERD_API_ARGS          REG_CONN_ARGS
 #define DEF_NAMERD_API_ARGS          "path=/service/"
@@ -1098,8 +1106,22 @@ static char* x_GetDtabFromHeader(const char* header
 }
 
 
-/* memcpy */
-typedef void* (*FSvcCpy)(void* dst, const void* src, size_t n);
+static const char* x_ReadLine(const char* path, char* line, size_t size)
+{
+    size_t len = 0;
+    FILE* fp = fopen(path, "r");
+    if (fp) {
+        if (fgets(line, size, fp)  &&  (len = strlen(line)) > 0) {
+            if (line[len - 1] == '\n') {
+                if (--len  &&  line[len - 1] == '\r')
+                    --len;
+            }
+        }
+        fclose(fp);
+    }
+    line[len] = '\0';
+    return line;
+}
 
 
 static void* x_memlwrcpy(void* dst, const void* src, size_t n)
@@ -1110,6 +1132,119 @@ static void* x_memlwrcpy(void* dst, const void* src, size_t n)
         *d++ = tolower(*s++);
     return dst;
 }
+
+
+static char* x_Namespace(char* nspc, size_t size, const char* name)
+{
+    char buf[80], x_buf[80];
+    size_t len;
+
+    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                       REG_NAMERD_API_NAMESPACE,
+                                       nspc, size, 0)) {
+        CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                    ("[%s]  Unable to get NAMERD namespace", name));
+        return 0/*failed*/;
+    }
+    if (*nspc)
+        return nspc;
+
+    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                       REG_NAMERD_API_ENV,
+                                       nspc, size, 0)) {
+        CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                    ("[%s]  Unable to get NAMERD env", name));
+        return 0/*failed*/;
+    }
+    if (*nspc) {
+        static void* s_Once = 0;
+        if (CORE_Once(&s_Once)) {
+            CORE_LOGF_X(eNSub_Message, eLOG_Warning,
+                        ("[%s]  NAMERD ENV setting is deprecated,"
+                         " please consider using NAMESPACE instead", name));
+        }
+        return nspc;
+    }
+
+    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                       REG_NAMERD_API_LOCATION,
+                                       buf, sizeof(buf),
+                                       x_ReadLine("/etc/ncbi/location",
+                                                  x_buf, sizeof(x_buf)))) {
+        CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                    ("[%s]  Unable to get NAMERD location", name));
+        return 0/*failed*/;
+    }
+    if (!(len = strlen(buf))) {
+        *nspc = '\0';
+        return nspc;
+    }
+
+    /* Google cloud */
+    if (len > 3  &&  strncasecmp(buf, "gc-", 3) == 0) {
+        size_t x_len;
+        if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                           REG_NAMERD_API_ROLE,
+                                           buf, sizeof(buf),
+                                           x_ReadLine("/etc/ncbi/role",
+                                                      x_buf, sizeof(x_buf)))) {
+            CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                        ("[%s]  Unable to get NAMERD role", name));
+            return 0/*failed*/;
+        }
+        if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                           REG_NAMERD_API_PROTOCOL,
+                                           x_buf, sizeof(x_buf), 0)) {
+            CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                        ("[%s]  Unable to get NAMERD protocol", name));
+            return 0/*failed*/;
+        }
+        if (strncasecmp(buf, "prod", 4) == 0) {
+            buf[4] = '\0';
+            len = 4;
+        } else {
+            memcpy(buf, "dev", 4);
+            len = 3;
+        }
+        x_len = *x_buf ? 1 + strlen(x_buf) : 0;
+        if (len + x_len < size) {
+            x_memlwrcpy(nspc, buf, len);
+            if (x_len) {
+                nspc[len++] = '-';
+                x_memlwrcpy(nspc + len, x_buf, x_len);
+            } else
+                nspc[len] = '\0';
+            return nspc;
+        }
+        CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                    ("[%s]  Unable to form NAMERD namespace in GC \"%s%s%s\"",
+                     name, buf, &"-"[!x_len], x_buf));
+        return 0/*failed*/;
+    }
+
+    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                       REG_NAMERD_API_PROTOCOL,
+                                       nspc, size, 0)) {
+        CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                    ("[%s]  Unable to get NAMERD protocol", name));
+        return 0/*failed*/;
+    }
+    if (*nspc)
+        return strlwr(nspc);
+
+    if (size < sizeof(DEF_NAMERD_API_NAMESPACE)) {
+        CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                    ("[%s]  Unable to form NAMERD namespace \"%s\"",
+                     name, DEF_NAMERD_API_NAMESPACE));
+        return 0/*failed*/;
+    }
+    memcpy(nspc, DEF_NAMERD_API_NAMESPACE, sizeof(DEF_NAMERD_API_NAMESPACE));
+    return nspc;
+}
+
+
+/* memcpy */
+typedef void* (*FSvcCpy)(void* dst, const void* src, size_t n);
 
 
 /* Long but very linear */
@@ -1228,21 +1363,15 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
         return 0/*failed*/;
     }
 
-    /* Env */
-    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
-                                       REG_NAMERD_API_ENV,
-                                       buf + 1, sizeof(buf) - 1,
-                                       DEF_NAMERD_API_ENV)) {
-        CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
-                    ("[%s]  Unable to get NAMERD env", iter->name));
+    /* Namespace [and Env as a (deprecated) fallback] */
+    if (!x_Namespace(buf + 1, sizeof(buf) - 1, iter->name))
         return 0/*failed*/;
-    }
     if (buf[1]) {
         *buf = '/';
         if (!ConnNetInfo_AddPath(net_info, buf)) {
             CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
-                        ("[%s]  Failed to set NAMERD env \"%s\"", iter->name,
-                         buf));
+                        ("[%s]  Failed to set NAMERD namespace \"%s\"",
+                         iter->name, buf));
             return 0/*failed*/;
         }
     }
