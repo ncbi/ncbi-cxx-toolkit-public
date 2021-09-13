@@ -42,13 +42,9 @@ template<typename _Stream, size_t _bufsize=8192*2>
 class CBufferedStream
 {
 public:
-    CBufferedStream()
-    {
-    }
-    operator bool() const
-    {
-        return m_buffer.get() != nullptr;
-    }
+    CBufferedStream() {}
+    ~CBufferedStream() {}
+
     operator _Stream&()
     {
         return get();
@@ -62,16 +58,13 @@ public:
         }
         return m_stream;
     }
-    ~CBufferedStream()
-    {
-    }
 private:
     static constexpr size_t bufsize = _bufsize;
     unique_ptr<char> m_buffer;
     _Stream m_stream;
 };
 
-using CBufferedOutput = CBufferedStream<CNcbiOfstream>;
+//using CBufferedOutput = CBufferedStream<CNcbiOfstream>;
 using CBufferedInput  = CBufferedStream<CNcbiIfstream>;
 
 // command line parameters are mapped into the context
@@ -173,9 +166,6 @@ public:
 
     static
     objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const CTempString& type);
-    static
-    objects::CSeq_descr& SetBioseqOrParentDescr(objects::CBioseq& bioseq);
-    void ApplyCreateUpdateDatesSingle(objects::CSeq_entry& entry) const;
     bool ApplyCreateUpdateDates(objects::CSeq_entry& entry) const;
     void ApplyUpdateDate(objects::CSeq_entry& entry) const;
     void ApplyAccession(objects::CSeq_entry& entry);

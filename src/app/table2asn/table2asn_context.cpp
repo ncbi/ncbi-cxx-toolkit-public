@@ -196,19 +196,6 @@ void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const s
     SetUserObject(SD, type).SetData().push_back(uf);
 }
 
-CSeq_descr& CTable2AsnContext::SetBioseqOrParentDescr(CBioseq& bioseq)
-{
-    if (bioseq.GetParentEntry() && bioseq.GetParentEntry()->GetParentEntry())
-    {
-        auto entry = bioseq.GetParentEntry()->GetParentEntry();
-        if (entry->IsSet() && entry->GetSet().IsSetClass() &&
-            entry->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot)
-            return entry->SetSet().SetDescr();
-    }
-
-    return bioseq.SetDescr();
-}
-
 CNcbiOstream& CTable2AsnContext::GetOstream(CTempString suffix, CTempString basename)
 {
     auto& rec = m_outputs[suffix];
@@ -658,27 +645,6 @@ void CTable2AsnContext::RemoveProteinIdsQuals(CSeq_feat& feature)
     }
     if (quals.empty())
         feature.ResetQual();
-}
-
-void CTable2AsnContext::ApplyCreateUpdateDatesSingle(objects::CSeq_entry& entry) const
-{
-    switch(entry.Which())
-    {
-    case CSeq_entry::e_Seq:
-        x_ApplyCreateDate(entry);
-        break;
-    case CSeq_entry::e_Set:
-        {
-            if (entry.GetSet().IsSetClass() &&
-                entry.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot)
-            {
-                ApplyUpdateDate(entry);
-            }
-        }
-        break;
-    default:
-        break;
-    }
 }
 
 bool CTable2AsnContext::ApplyCreateUpdateDates(CSeq_entry& entry) const
