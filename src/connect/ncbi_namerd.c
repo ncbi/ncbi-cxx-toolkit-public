@@ -1137,7 +1137,6 @@ static void* x_memlwrcpy(void* dst, const void* src, size_t n)
 static char* x_Namespace(char* nspc, size_t size, const char* name)
 {
     char buf[80], x_buf[80];
-    size_t len;
 
     if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
                                        REG_NAMERD_API_NAMESPACE,
@@ -1175,14 +1174,10 @@ static char* x_Namespace(char* nspc, size_t size, const char* name)
                     ("[%s]  Unable to get NAMERD location", name));
         return 0/*failed*/;
     }
-    if (!(len = strlen(buf))) {
-        *nspc = '\0';
-        return nspc;
-    }
 
-    /* Google cloud */
-    if (len > 3  &&  strncasecmp(buf, "gc-", 3) == 0) {
-        size_t x_len;
+    /* Google cloud: special rules */
+    if (strnlen(buf, 4) > 3  &&  strncasecmp(buf, "gc-", 3) == 0) {
+        size_t len, x_len;
         if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
                                            REG_NAMERD_API_ROLE,
                                            buf, sizeof(buf),
@@ -1222,6 +1217,7 @@ static char* x_Namespace(char* nspc, size_t size, const char* name)
         return 0/*failed*/;
     }
 
+    /* Everything else */
     if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
                                        REG_NAMERD_API_PROTOCOL,
                                        nspc, size, 0)) {
