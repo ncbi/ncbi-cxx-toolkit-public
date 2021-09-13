@@ -274,6 +274,9 @@ fi
 if [ -n "$prebuilt_dir" ]; then
   if [ -f $prebuilt_dir/$prebuilt_name/cmake/buildinfo ]; then
     source $prebuilt_dir/$prebuilt_name/cmake/buildinfo
+    test -n "$CMAKE_C_COMPILER" && CC=$CMAKE_C_COMPILER
+    test -n "$CMAKE_CXX_COMPILER" && CXX=$CMAKE_CXX_COMPILER
+    test -n "$CMAKE_BUILD_TYPE" && BUILD_TYPE=$CMAKE_BUILD_TYPE
   else
     Error "Buildinfo not found in $prebuilt_dir/$prebuilt_name"
   fi
