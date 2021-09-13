@@ -923,12 +923,6 @@ int CTbl2AsnApp::Run()
     }
 }
 
-
-CRef<CScope> CTbl2AsnApp::GetScope()
-{
-    return m_context.m_scope;
-}
-
 void CTbl2AsnApp::ProcessOneEntry(
         CFormatGuess::EFormat inputFormat,
         CRef<CSerialObject> obj,
