@@ -127,11 +127,15 @@ public:
 /// Iterator to walk the files in the manifest.  Ignores comment (start with #)
 /// and blank lines.  Filters out the first column in two column manifests.
 template <class TString>
-class CBasicManifest_CI : public iterator<input_iterator_tag, TString, 
-                                          ptrdiff_t, const TString *, 
-                                          const TString &>
+class CBasicManifest_CI
 {
 public:
+    typedef input_iterator_tag iterator_category;
+    typedef TString            value_type;
+    typedef ptrdiff_t          difference_type;
+    typedef const TString *    pointer;
+    typedef const TString &    reference;
+    
     typedef typename TString::value_type        TChar;
     typedef typename TString::traits_type       TTraits;
     typedef basic_istream<TChar, TTraits>  TIStream;
