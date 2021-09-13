@@ -273,6 +273,9 @@ if exist "%tree_root%\CMakeLists.txt" (
 ) else (
   "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
 )
+if errorlevel 1 (
+  goto :FAIL
+)
 
 :DONE
 cd /d %initial_dir%
