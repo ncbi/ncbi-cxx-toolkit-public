@@ -71,6 +71,10 @@
 #include <iterator>
 
 #define RAPIDJSON_NOMEMBERITERATORCLASS
+#if defined(_MSC_VER) && !defined(_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
+#define _SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
+#define UNDEFINE_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
+#endif
 #include "rapidjson11/rapidjson.h"
 #include "rapidjson11/document.h"
 #include "rapidjson11/prettywriter.h"
@@ -80,7 +84,10 @@
 #include "rapidjson11/ostreamwrapper.h"
 #include "rapidjson11/error/en.h"
 #include "rapidjson11/schema.h"
-
+#if defined(UNDEFINE_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
+#undef _SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
+#undef UNDEFINE_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
+#endif
 
 BEGIN_NCBI_SCOPE
 
