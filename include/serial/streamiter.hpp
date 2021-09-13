@@ -474,9 +474,13 @@ public:
 
 template<typename TRoot>
 class CObjectIStreamIterator<TRoot>
-    : public iterator< input_iterator_tag, TRoot, ptrdiff_t, TRoot*, TRoot& >
 {
 public:
+    using iterator_category = input_iterator_tag;
+    using value_type        = TRoot;
+    using difference_type   = ptrdiff_t;
+    using pointer           = TRoot*;
+    using reference         = TRoot&;
     using CParams = CObjectIStreamIterator<>::CParams<TRoot>;
 
     CObjectIStreamIterator( CObjectIStream& istr,
@@ -1150,9 +1154,13 @@ CObjectIStreamIterator<TRoot, TChild>::end(void) {
 
 template<typename TRoot>
 class CObjectIStreamAsyncIterator<TRoot>
-    : public iterator< input_iterator_tag, TRoot, ptrdiff_t, TRoot*, TRoot& >
 {
 public:
+    using iterator_category = input_iterator_tag;
+    using value_type        = TRoot;
+    using difference_type   = ptrdiff_t;
+    using pointer           = TRoot*;
+    using reference         = TRoot&;
     using CParams = CObjectIStreamAsyncIterator<>::CParams<TRoot>;
 
     CObjectIStreamAsyncIterator( CObjectIStream& istr,
