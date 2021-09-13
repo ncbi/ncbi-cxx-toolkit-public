@@ -249,4 +249,7 @@ if [ -f "${tree_root}/CMakeLists.txt" ]; then
 else
   eval "${CMAKE_CMD}" ${CMAKE_ARGS}  "${tree_root}/src"
 fi
+if test $? -ne 0; then
+    exit 1
+fi
 cd ${initial_dir}
