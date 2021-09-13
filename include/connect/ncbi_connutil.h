@@ -344,19 +344,20 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
  * If the found match's value has enveloping quotes (either single '' or
  * double ""), then they are stripped from the result, which can then become
  * empty.
- * The first "value_size" bytes (including the terminating '\0') of the result
- * get copied to the "value" buffer (which may cause truncation!), and the
- * passed "value" address gets returned.
- * When no match is found, the "value" gets filled with "def_value" (or an
- * empty string), which then gets returned.  Return 0 on out of memory or
- * value truncation.
+ * Up to "value_size" bytes (including the terminating '\0') of the result get
+ * copied into the "value" buffer (which may cause truncation!).  When no match
+ * is found, the "value" gets filled up to "value_size" bytes with "def_value"
+ * (or an empty string).  Return 0 on out of memory (including "value_size"
+ * given as 0) or value truncation;  otherwise, return "value".
+ * @note
+ *  "value" is always '\0'-terminated if "value_size" is greater than 0.
  */
 extern NCBI_XCONNECT_EXPORT const char* ConnNetInfo_GetValue
 (const char* service,
  const char* param,
  char*       value,
  size_t      value_size,
- const char* def_value
+ const char* def_value    /* NB: both NULL and "" have the same effect */
  );
 
 
@@ -395,15 +396,15 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  *  firewall          FIREWALL
  *  stateless         STATELESS
  *  lb_disable        LB_DISABLE        obsolete, disables the "LBSMD" mapper
- *  debug_printout    DEBUG_PRINTOUT   "SOME"/"DATA"/"ALL"(same as "DATA")
+ *  debug_printout    DEBUG_PRINTOUT   "SOME"(eqv "TRUE") / "DATA"(eqv "ALL")
  *  http_user_header  HTTP_USER_HEADER  "\r\n" (if missing) is auto-appended
  *  http_referer      HTTP_REFERER      may be assigned automatically
  *  svc               SERVICE_NAME      no search/no value without service
  *
- * A value of the field NAME is first looked up in the environment variable
- * of the form <service>_CONN_<NAME>; then in the current corelib registry, in
- * the section 'service' by using the CONN_<NAME> key; then in the environment
- * variable again, but using the name CONN_<NAME>; and finally in the default
+ * A value of the field NAME is first looked up in the environment variable of
+ * the form <service>_CONN_<NAME>;  then in the current corelib registry, in
+ * the section 'service' by using the CONN_<NAME> key;  then in the environment
+ * variable again, but using the name CONN_<NAME>;  and finally, in the default
  * registry section (DEF_CONN_REG_SECTION), using just <NAME>.  If the service
  * is NULL or empty then the first two steps in the above lookup are skipped.
  *
@@ -433,14 +434,14 @@ extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Clone
  * structure, which is being modified.
  *
  * All argument modification routines below assume that "arg" is either a
- * single arg name or an "arg=val" pair (a fragment part, separated by '#',
- * if any, is ignored).
+ * single arg name or an "arg=val" pair (a fragment part, separated by '#', if
+ * any, is ignored).
  * In the former case, an additional "val" may be supplied separately (and will
  * be prepended with '=').  In the latter case, also having a non-zero string
  * in the "val" argument may result in an incorrect behavior.  The ampersand
  * ('&') gets automatically managed to keep the arg list consistent.
  *
- * Return value (if non-void):  non-zero(true) on success; 0(false) on error.
+ * Return values (if non-void):  non-zero(true) on success; 0(false) on error.
  */
 
 /* Set the path part in the path element.
@@ -460,7 +461,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetPath
  * '?'), and the fragment part (separated by '#'), in this order.  The new path
  * will extend the existing one up to and including the last specified part,
  * preserving the remainder.  If the new path begins with a slash ('/'), the
- * exnetsion begins at the end of the existing path, making sure the slash is
+ * extension starts at the end of the existing path, making sure the slash is
  * not doubled;  if the new path does not begin with a slash, the extension
  * starts after the last slash found in the existing path, or at the very
  * beginning, if there was no slash in the old path.  Note that NULL or ""
@@ -480,7 +481,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetPath
  * similarly with path, but drop all existing args, and replace the existing
  * fragment.
  *
- * Note that incoming "path" is assumed to be minimally syntatcially correct,
+ * Note that incoming "path" is assumed to be minimally syntactically correct,
  * so passing "/path1/path2?#frag" is allowed but will create the path element
  * with a lone '?' character, just as given.
  */
