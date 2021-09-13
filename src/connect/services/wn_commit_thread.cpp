@@ -76,8 +76,6 @@ CWorkerNodeJobContext CJobCommitterThread::AllocJobContext()
     m_JobContextPool.pop_front();
 
     job_context->m_Job.Reset();
-    job_context->m_JobGeneration = m_WorkerNode->m_CurrentJobGeneration;
-
     return job_context;
 }
 
