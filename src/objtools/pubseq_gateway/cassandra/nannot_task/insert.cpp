@@ -119,15 +119,15 @@ void CCassNAnnotTaskInsert::Wait1()
                 m_QueryArr[0] = { m_Conn->NewQuery(), 0};
                 auto qry = m_QueryArr[0].query;
                 string sql = "INSERT INTO " + GetKeySpace() + ".bioseq_na "
-                      "(accession, version, seq_id_type, annot_name, sat_key, last_modified, start, stop, annot_info, seq_annot_info, annot_info_modified)"
-                      "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                      "(accession, version, seq_id_type, annot_name, sat_key, last_modified, start, stop, seq_annot_info, annot_info_modified)"
+                      "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 if (m_UseWritetime && m_Annot->GetWritetime() > 0) {
                     sql += " USING TIMESTAMP " + to_string(m_Annot->GetWritetime());
                 }
 
                 qry->NewBatch();
 
-                qry->SetSQL(sql, 11);
+                qry->SetSQL(sql, 10);
                 qry->BindStr(0, m_Annot->GetAccession());
                 qry->BindInt16(1, m_Annot->GetVersion());
                 qry->BindInt16(2, m_Annot->GetSeqIdType());
@@ -136,11 +136,10 @@ void CCassNAnnotTaskInsert::Wait1()
                 qry->BindInt64(5, m_Annot->GetModified());
                 qry->BindInt32(6, m_Annot->GetStart());
                 qry->BindInt32(7, m_Annot->GetStop());
-                qry->BindStr(8, m_Annot->GetAnnotInfo());
                 auto annot_info_data = m_Annot->GetSeqAnnotInfo().c_str();
                 auto annot_info_size = m_Annot->GetSeqAnnotInfo().size();
-                qry->BindBytes(9, reinterpret_cast<const unsigned char *>(annot_info_data), annot_info_size);
-                qry->BindInt64(10, m_Annot->GetAnnotInfoModified());
+                qry->BindBytes(8, reinterpret_cast<const unsigned char *>(annot_info_data), annot_info_size);
+                qry->BindInt64(9, m_Annot->GetAnnotInfoModified());
 
                 UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);

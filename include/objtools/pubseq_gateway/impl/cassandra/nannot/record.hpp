@@ -124,18 +124,6 @@ class CNAnnotRecord {
         return *this;
     }
 
-    CNAnnotRecord& SetAnnotInfo(TAnnotInfo const& value)
-    {
-        m_AnnotInfo = value;
-        return *this;
-    }
-
-    CNAnnotRecord& SetAnnotInfo(TAnnotInfo&& value)
-    {
-        m_AnnotInfo = move(value);
-        return *this;
-    }
-
     CNAnnotRecord& SetSeqAnnotInfo(TAnnotInfo const& value)
     {
         m_SeqAnnotInfo = value;
@@ -200,11 +188,6 @@ class CNAnnotRecord {
         return m_AnnotName;
     }
 
-    TAnnotInfo const & GetAnnotInfo() const
-    {
-        return m_AnnotInfo;
-    }
-
     TAnnotInfo const & GetSeqAnnotInfo() const
     {
         return m_SeqAnnotInfo;
@@ -220,7 +203,6 @@ class CNAnnotRecord {
  private:
     string m_Accession;
     string m_AnnotName;
-    TAnnotInfo m_AnnotInfo;
     TAnnotInfo m_SeqAnnotInfo;
     TTimestamp m_Modified;
     TTimestamp m_AnnotInfoModified;

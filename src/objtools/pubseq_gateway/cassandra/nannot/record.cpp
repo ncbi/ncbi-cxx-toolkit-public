@@ -43,12 +43,11 @@ USING_NCBI_SCOPE;
 string CNAnnotRecord::ToString() const
 {
     stringstream s;
-    s << "SeqId: " << m_Accession << "." << m_Version << "|" << m_SeqIdType << endl
-      << "\tm_SatKey: " << m_SatKey << endl
-      << "\tm_AnnotName: " << m_AnnotName << endl
-      << "\tm_Start: " << m_Start << endl
-      << "\tm_Stop: " << m_Stop << endl
-      << "\tm_AnnotInfo: " << m_AnnotInfo << endl;
+    s << "SeqId: " << m_Accession << "." << m_Version << "|" << m_SeqIdType
+      << "\n\tm_SatKey: " << m_SatKey
+      << "\n\tm_AnnotName: " << m_AnnotName
+      << "\n\tm_Start: " << m_Start
+      << "\n\tm_Stop: " << m_Stop << "\n";
     return s.str();
 }
 
