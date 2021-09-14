@@ -111,7 +111,7 @@ public:
     /// @attention
     ///  Right after constructor or after UngetLine() calling this
     ///  method is illegal. Call operator++() first
-    virtual unsigned int GetLineNumber(void) const = 0;
+    virtual Uint8 GetLineNumber(void) const = 0;
 };
 
 
@@ -158,7 +158,7 @@ public:
     void               UngetLine(void);
     CTempString        operator*(void) const;
     CT_POS_TYPE        GetPosition(void) const;
-    unsigned int       GetLineNumber(void) const;
+    Uint8              GetLineNumber(void) const;
 
 private:
     EEOLStyle x_AdvanceEOLUnknown(void);
@@ -167,7 +167,7 @@ private:
 
     AutoPtr<CNcbiIstream> m_Stream;
     string                m_Line;
-    unsigned int          m_LineNumber;
+    Uint8                 m_LineNumber;
     SIZE_TYPE             m_LastReadSize;
     bool                  m_UngetLine;
     bool                  m_AutoEOL;
@@ -210,7 +210,7 @@ public:
     void               UngetLine(void);
     CTempString        operator*(void) const;
     CT_POS_TYPE        GetPosition(void) const;
-    unsigned int       GetLineNumber(void) const;
+    Uint8              GetLineNumber(void) const;
 
 private:
     const char*           m_Start;
@@ -218,7 +218,7 @@ private:
     const char*           m_Pos;
     CTempString           m_Line;
     AutoPtr<CMemoryFile>  m_MemFile;
-    unsigned int          m_LineNumber;
+    Uint8                 m_LineNumber;
 };
 
 /// Implementation of ILineReader for IReader
@@ -254,7 +254,7 @@ public:
     void                UngetLine(void);
     CTempString         operator*(void) const;
     CT_POS_TYPE         GetPosition(void) const;
-    unsigned int        GetLineNumber(void) const;
+    Uint8               GetLineNumber(void) const;
 
 private:
     CBufferedLineReader(const CBufferedLineReader&);
@@ -274,7 +274,7 @@ private:
     CTempString   m_Line;
     string        m_String;
     CT_POS_TYPE   m_InputPos;
-    unsigned int  m_LineNumber;
+    Uint8         m_LineNumber;
 };
 
 

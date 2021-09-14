@@ -69,7 +69,7 @@ public:
     void                UngetLine(void);
     CTempStringEx       operator*(void) const;
     CT_POS_TYPE         GetPosition(void) const;
-    unsigned int        GetLineNumber(void) const;
+    Uint8               GetLineNumber(void) const;
 
 protected:
 
@@ -87,7 +87,7 @@ private:
     CTempStringEx m_Line;
     string        m_String;
     CT_POS_TYPE   m_InputPos;
-    unsigned int  m_LineNumber;
+    Uint8         m_LineNumber;
 };
 
 
@@ -273,7 +273,7 @@ CT_POS_TYPE CWigBufferedLineReader::GetPosition(void) const
 }
 
 
-unsigned int CWigBufferedLineReader::GetLineNumber(void) const
+Uint8 CWigBufferedLineReader::GetLineNumber(void) const
 {
     return m_LineNumber;
 }
