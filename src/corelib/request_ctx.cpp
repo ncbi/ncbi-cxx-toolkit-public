@@ -882,7 +882,7 @@ const char* CRequestContextException::GetErrCodeString(void) const
 CRequestContextGuard_Base::CRequestContextGuard_Base(CRequestContext* context, TFlags flags)
     : m_Flags(flags)
 {
-    m_OriginatesFromThrow = uncaught_exception();
+    m_OriginatesFromThrow = uncaught_exceptions();
     CDiagContext& ctx = GetDiagContext();
     if ( context ) {
         m_SavedContext.Reset(&ctx.GetRequestContext());
@@ -905,7 +905,7 @@ CRequestContextGuard_Base::~CRequestContextGuard_Base(void)
     // If released, do not perform any actions.
     if ( !m_RequestContext ) return;
 
-    if ( uncaught_exception()  &&  !m_OriginatesFromThrow ) {
+    if ( uncaught_exceptions()  &&  !m_OriginatesFromThrow ) {
         SetStatus(m_ErrorStatus);
     }
     else if ( !m_RequestContext->IsSetRequestStatus() ) {
