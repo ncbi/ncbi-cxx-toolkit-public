@@ -34,9 +34,75 @@
 
 #include <objtools/writers/writer.hpp>
 #include <objtools/writers/bed_track_record.hpp>
+#include <objtools/writers/bed_feature_record.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
+
+//  ----------------------------------------------------------------------------
+class CThreeFeatRecord
+    //  ----------------------------------------------------------------------------
+{
+    friend class CThreeFeatManager;
+
+public:
+    CThreeFeatRecord() {};
+    ~CThreeFeatRecord() {};
+
+    bool AddFeature(
+        const CSeq_feat&);
+
+    bool IsRecordComplete() const;
+
+    bool GetBedFeature(
+        CBedFeatureRecord&) const;
+
+private:
+    bool xAddFound(
+        int);
+    bool xAddAll(
+        int);
+
+    CRef<CSeq_feat> mpChrom;
+    CRef<CSeq_feat> mpThick;
+    CRef<CSeq_feat> mpBlocks;
+    vector<int> mFeatsAll;
+    vector<int> mFeatsFound;
+};
+
+//  ----------------------------------------------------------------------------
+class CThreeFeatManager
+    //  ----------------------------------------------------------------------------
+{
+public:
+    using RECORDS = vector<CThreeFeatRecord>;
+    using RECORD_IT = RECORDS::iterator;
+
+    CThreeFeatManager() {};
+    ~CThreeFeatManager() {};
+
+    bool AddFeature(
+        const CSeq_feat&);
+
+    bool IsRecordComplete(
+        const CSeq_feat&);
+
+    bool ProcessRecord(
+        const CSeq_feat&,
+        CBedFeatureRecord&);
+
+    bool GetAnyRecord(
+        CBedFeatureRecord&);
+
+private:
+    RECORD_IT xFindExistingRecord(
+        const CSeq_feat&);
+
+    RECORD_IT xAddRecord(
+        const CSeq_feat&);
+
+    RECORDS mRecords;
+};
 
 //  ============================================================================
 /// CWriterBase implementation that will render given Genbank objects in the
@@ -98,15 +164,7 @@ public:
         const string& asmblyAccession="" ) override;
 
 protected:
-    bool xWriteAnnotFeatureTable(
-        const CBedTrackRecord&,
-        const CSeq_annot&);
-
-    bool xWriteAnnotThreeFeatData(
-        const CBedTrackRecord&,
-        const CSeq_annot&);
-
-    bool xWriteAnnotFeatureTable(
+    bool xWriteTrackedAnnot(
         const CBedTrackRecord&,
         const CSeq_annot_Handle&);
 
@@ -114,8 +172,24 @@ protected:
         const CBedTrackRecord&,
         const CSeq_annot_Handle&);
 
-    bool xWriteTrackedFeature(
+    bool xWriteFeaturesThreeFeatData(
+        CThreeFeatManager&,
+        feature::CFeatTree&,
+        const CMappedFeat&);
+
+    bool xWriteChildrenThreeFeatData(
+        CThreeFeatManager&,
+        feature::CFeatTree&,
+        const CMappedFeat&);
+
+    bool xWriteFeaturesTracked(
         const CBedTrackRecord&,
+        feature::CFeatTree&,
+        const CMappedFeat&);
+
+    bool xWriteChildrenTracked(
+        const CBedTrackRecord&,
+        feature::CFeatTree&,
         const CMappedFeat&);
 
     CScope& m_Scope;
