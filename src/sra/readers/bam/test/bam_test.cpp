@@ -56,6 +56,9 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/objistrasnb.hpp>
 
+#include <corelib/ncbisys.hpp> // for NcbiSys_write
+#include <stdio.h> // for perror
+
 #include "bam_test_common.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -287,7 +290,16 @@ void CheckRc(rc_t rc, const char* code, const char* file, int line)
         char buffer2[8192];
         unsigned len = sprintf(buffer2, "%s:%d: %s failed: %#x: %s\n",
                              file, line, code, rc, buffer1);
-        write(2, buffer2, len);
+        const char* ptr = buffer2;
+        while ( len ) {
+            int written = NcbiSys_write(2, ptr, len);
+            if ( written == -1 ) {
+                perror("stderr write failed");
+                exit(1);
+            }
+            len -= written;
+            ptr += written;
+        }
         exit(1);
     }
 }
