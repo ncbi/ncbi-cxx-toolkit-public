@@ -692,7 +692,7 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
     if (line[0] != '>') {
         NCBI_THROW(CInputException, eInvalidInput,
                    (string)"Missing defline before line: " +
-                   NStr::IntToString(m_LineReader->GetLineNumber()));
+                   NStr::NumericToString(m_LineReader->GetLineNumber()));
     }
 
     id = x_ParseDefline(line);
@@ -723,7 +723,7 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
         NCBI_THROW(CInputException, eInvalidInput,
                    (string)"FASTC parse error: Sequence separator '><'"
                    " was not found in line: " +
-                   NStr::IntToString(m_LineReader->GetLineNumber()));
+                   NStr::NumericToString(m_LineReader->GetLineNumber()));
     }
 
     // set up reads, there are two sequences in the same line separated
@@ -879,7 +879,7 @@ CShortReadFastaInputSource::x_ReadFastqOneSeq(CRef<ILineReader> line_reader)
     if (line[0] != '@') {
         NCBI_THROW(CInputException, eInvalidInput, (string)"FASTQ parse error:"
                    " defline expected at line: " +
-                   NStr::IntToString(line_reader->GetLineNumber()));
+                   NStr::NumericToString(line_reader->GetLineNumber()));
     }
 
     defline_id = x_ParseDefline(line);
@@ -942,7 +942,7 @@ CShortReadFastaInputSource::x_ReadFastqOneSeq(CRef<ILineReader> line_reader)
     if (line[0] != '+') {
         NCBI_THROW(CInputException, eInvalidInput, (string)"FASTQ parse error:"
                    " defline expected at line: " +
-                   NStr::IntToString(line_reader->GetLineNumber()));
+                   NStr::NumericToString(line_reader->GetLineNumber()));
     }
 
     if (!empty_sequence) {
