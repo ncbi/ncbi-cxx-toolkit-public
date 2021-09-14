@@ -226,6 +226,7 @@ void CPSGS_OSGAnnot::ProcessReplies()
             case CID2_Reply::TReply::e_Get_blob_id:
                 if ( AddBlobId(r->GetReply().GetGet_blob_id()) ) {
                     if ( SignalStartProcessing() == ePSGS_Cancel ) {
+                        FinalizeResult(ePSGS_Cancelled);
                         return;
                     }
                 }
@@ -238,6 +239,10 @@ void CPSGS_OSGAnnot::ProcessReplies()
         }
     }
     if ( IsCanceled() ) {
+        return;
+    }
+    if ( SignalStartProcessing() == ePSGS_Cancel ) {
+        FinalizeResult(ePSGS_Cancelled);
         return;
     }
     SendReplies();

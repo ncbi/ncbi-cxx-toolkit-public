@@ -194,6 +194,7 @@ void CPSGS_OSGResolve::ProcessReplies()
             m_BioseqInfoFlags = 0;
         }
         if ( SignalStartProcessing() == ePSGS_Cancel ) {
+            FinalizeResult(ePSGS_Cancelled);
             return;
         }
         SendBioseqInfo(GetRequest()->GetRequest<SPSGS_ResolveRequest>().m_OutputFormat);
@@ -279,6 +280,7 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
                 if ( m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_BlobId ) {
                     // resolved to OSG sequence
                     if ( SignalStartProcessing() == ePSGS_Cancel ) {
+                        FinalizeResult(ePSGS_Cancelled);
                         return;
                     }
                 }
@@ -304,6 +306,7 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
     }
     else if ( HasBlob() ) {
         if ( SignalStartProcessing() == ePSGS_Cancel ) {
+            FinalizeResult(ePSGS_Cancelled);
             return;
         }
         SendBioseqInfo(SPSGS_ResolveRequest::ePSGS_UnknownFormat);
@@ -312,6 +315,7 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
     }
     else if ( GetRequest()->GetRequest<SPSGS_BlobBySeqIdRequest>().m_TSEOption == SPSGS_BlobBySeqIdRequest::ePSGS_NoneTSE ) {
         if ( SignalStartProcessing() == ePSGS_Cancel ) {
+            FinalizeResult(ePSGS_Cancelled);
             return;
         }
         SendBioseqInfo(SPSGS_ResolveRequest::ePSGS_UnknownFormat);
@@ -319,6 +323,7 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
     }
     else if ( BlobIsExcluded(m_BlobId) ) {
         if ( SignalStartProcessing() == ePSGS_Cancel ) {
+            FinalizeResult(ePSGS_Cancelled);
             return;
         }
         SendBioseqInfo(SPSGS_ResolveRequest::ePSGS_UnknownFormat);
