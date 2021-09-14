@@ -205,7 +205,7 @@ CT_POS_TYPE CStreamLineReader::GetPosition(void) const
 }
 
 
-unsigned int CStreamLineReader::GetLineNumber(void) const
+Uint8 CStreamLineReader::GetLineNumber(void) const
 {
     /* Right after constructor (m_LineNumber is 0 and UngetLine() was not run) 
        - 0 */
@@ -403,7 +403,7 @@ CT_POS_TYPE CMemoryLineReader::GetPosition(void) const
 }
 
 
-unsigned int CMemoryLineReader::GetLineNumber(void) const
+Uint8 CMemoryLineReader::GetLineNumber(void) const
 {
     /* Right after constructor (m_LineNumber is 0 and UngetLine() was not run)
     - 0 */
@@ -679,7 +679,7 @@ CT_POS_TYPE CBufferedLineReader::GetPosition(void) const
 }
 
 
-unsigned int CBufferedLineReader::GetLineNumber(void) const
+Uint8 CBufferedLineReader::GetLineNumber(void) const
 {
     /* Right after constructor (m_LineNumber is 0 and UngetLine() was not run)
        - 0 */
