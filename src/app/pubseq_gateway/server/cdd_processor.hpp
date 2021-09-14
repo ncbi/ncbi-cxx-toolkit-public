@@ -51,6 +51,32 @@ END_NAMESPACE(objects);
 BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(cdd);
 
+class CPSGS_CDDProcessor;
+
+class CCDDProcessorRef
+{
+public:
+    explicit CCDDProcessorRef(CPSGS_CDDProcessor* ptr);
+    ~CCDDProcessorRef();
+
+private:
+    friend class CPSGS_CDDProcessor;
+    
+    void Detach();
+
+    static void GetBlobBySeqId(shared_ptr<CCDDProcessorRef> ref);
+    static void GetBlobId(shared_ptr<CCDDProcessorRef> ref);
+    static void GetBlobByBlobId(shared_ptr<CCDDProcessorRef> ref);
+        
+    static void OnGotBlobBySeqId(void* data);
+    static void OnGotBlobId(void *data);
+    static void OnGotBlobByBlobId(void *data);
+    
+    CFastMutex m_ProcessorPtrMutex;
+    CPSGS_CDDProcessor* volatile m_ProcessorPtr;
+};
+
+
 class CPSGS_CDDProcessor : public IPSGS_Processor
 {
 public:
@@ -70,6 +96,8 @@ public:
     void OnGotBlobId(void);
 
 private:
+    friend class CCDDProcessorRef;
+    
     CPSGS_CDDProcessor(shared_ptr<objects::CCDDClientPool> client_pool,
                        shared_ptr<CPSGS_Request> request,
                        shared_ptr<CPSGS_Reply> reply,
@@ -87,13 +115,17 @@ private:
     void x_GetBlobByBlobIdAsync(void);
     void x_SendAnnotInfo(const objects::CCDD_Reply_Get_Blob_Id& blob_info);
     void x_SendAnnot(const objects::CID2_Blob_Id& id2_blob_id, CRef<objects::CSeq_annot>& annot);
+    bool x_IsCanceled();
+    bool x_SignalStartProcessing();
 
     shared_ptr<objects::CCDDClientPool> m_ClientPool;
     EPSGS_Status m_Status;
-    unique_ptr<thread> m_Thread;
+    bool m_Canceled;
+    //unique_ptr<thread> m_Thread;
     objects::CSeq_id_Handle m_SeqId;
     CRef<objects::CCDDClientPool::TBlobId> m_BlobId;
     objects::CCDDClientPool::SCDDBlob m_CDDBlob;
+    shared_ptr<CCDDProcessorRef> m_ProcessorRef;
 };
 
 
