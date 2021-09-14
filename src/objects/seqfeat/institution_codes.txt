@@ -3188,7 +3188,7 @@ INA<PRT>	s	Instituto Nun'Alvres, Departamento de Biologia
 INA<RUS>	c	Culture Collection of the Institute of New Antibiotics			
 InaCC	c	Indonesian Culture Collection, Research Center for Biology, Indonesian Institute of Sciences			
 INALI	s	Instituto Limnologia			
-iNAT	s	iNaturalist		https://www.inaturalist.org/observations/	
+iNAT	b	iNaturalist		https://www.inaturalist.org/observations/	
 INB	s	Instituto Nacional de Biodiversidad, Departamento de Botanica			
 INBC	s	Instituto Nacional de Biodiversidad (INBio)			
 INBIO	s	National Biodiversity Institute, Costa Rica			

@@ -3221,7 +3221,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "INA<RUS>\tc\tCulture Collection of the Institute of New Antibiotics\t\t\t",
 "InaCC\tc\tIndonesian Culture Collection, Research Center for Biology, Indonesian Institute of Sciences\t\t\t",
 "INALI\ts\tInstituto Limnologia\t\t\t",
-"iNAT\ts\tiNaturalist\t\thttps://www.inaturalist.org/observations/\t",
+"iNAT\tb\tiNaturalist\t\thttps://www.inaturalist.org/observations/\t",
 "INB\ts\tInstituto Nacional de Biodiversidad, Departamento de Botanica\t\t\t",
 "INBC\ts\tInstituto Nacional de Biodiversidad (INBio)\t\t\t",
 "INBIO\ts\tNational Biodiversity Institute, Costa Rica\t\t\t",
