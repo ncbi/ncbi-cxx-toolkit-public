@@ -869,7 +869,7 @@ CSeq_id_Textseq_Info::ParseAcc(const string& acc,
     if ( prefix_len > key.kMaxPrefixLen ) {
         return key;
     }
-    key.m_PrefixLen = prefix_len;
+    key.m_PrefixLen = Uint1(prefix_len);
     memcpy(key.m_PrefixBuf, acc.data(), prefix_len);
     unsigned hash = 0;
     for ( size_t i = 0; i < 3 && i < prefix_len; ++i ) {
