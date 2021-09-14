@@ -208,7 +208,7 @@ CIntervalTree::IntervalsOverlapping(const interval_type& interval)
 
 CIntervalTree::TTreeNode* CIntervalTree::AllocNode(void)
 {
-    return m_NodeAllocator.allocate(1, (TTreeNode*) 0);
+    return m_NodeAllocator.allocate(1);
 }
 
 void CIntervalTree::DeallocNode(TTreeNode* node)
@@ -218,7 +218,7 @@ void CIntervalTree::DeallocNode(TTreeNode* node)
 
 CIntervalTree::TTreeNodeInts* CIntervalTree::AllocNodeIntervals(void)
 {
-    return m_NodeIntervalsAllocator.allocate(1, (TTreeNodeInts*) 0);
+    return m_NodeIntervalsAllocator.allocate(1);
 }
 
 void CIntervalTree::DeallocNodeIntervals(TTreeNodeInts* ptr)
