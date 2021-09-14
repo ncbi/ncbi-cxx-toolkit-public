@@ -8,9 +8,11 @@ initial_dir=`pwd`
 script_name=`basename $0`
 script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`
+script_root=`(cd "${script_dir}/../../.." ; pwd)`
 script_args="$@"
 tree_root=`pwd`
 extension="cmake_configure_ext.sh"
+prebuilds=""
 
 host_os=`uname`
 if test -z "${CMAKE_CMD}" -a $host_os = "Darwin"; then
@@ -92,6 +94,13 @@ OPTIONS:
   --with-generator="X"       -- use generator X
   --with-conan-components    -- use conan to fetch dependencies
 EOF
+  if [ -n "$prebuilds" ]; then
+    echo "  --with-prebuilt=CFG        -- use build settings of an existing build"
+    echo "             CFG is one of:"
+    for d in $prebuilds; do
+        echo "                                $d"
+	done
+  fi
 
   Check_function_exists configure_ext_Usage && configure_ext_Usage
 
@@ -214,8 +223,6 @@ do
       ;; 
     --with-prebuilt=*)
       prebuilt_path=${arg#*=}
-      prebuilt_dir=`dirname $prebuilt_path`
-      prebuilt_name=`basename $prebuilt_path`
       ;; 
     --with-conan-components)
       CONANCOMPONENTS="ON"
@@ -234,6 +241,24 @@ do
       ;; 
   esac 
 done 
+
+tmp=`ls ${script_root}`
+if [ -n "$tmp" ]; then
+    for d in $tmp; do
+        if [ -f ${script_root}/$d/cmake/buildinfo ]; then
+            prebuilds="${prebuilds} $d"
+        fi
+	done
+fi
+
+if [ -n "$prebuilt_path" ]; then
+    d=${script_root}/${prebuilt_path}
+    if [ -d $d ]; then
+        prebuilt_path=$d
+    fi
+    prebuilt_dir=`dirname $prebuilt_path`
+    prebuilt_name=`basename $prebuilt_path`
+fi
 
 if [ -f $tree_root/$extension ]; then
   source $tree_root/$extension
@@ -274,8 +299,8 @@ fi
 if [ -n "$prebuilt_dir" ]; then
   if [ -f $prebuilt_dir/$prebuilt_name/cmake/buildinfo ]; then
     source $prebuilt_dir/$prebuilt_name/cmake/buildinfo
-    test -n "$CMAKE_C_COMPILER" && CC=$CMAKE_C_COMPILER
-    test -n "$CMAKE_CXX_COMPILER" && CXX=$CMAKE_CXX_COMPILER
+    test -n "$CMAKE_C_COMPILER" && CC="$CMAKE_C_COMPILER"
+    test -n "$CMAKE_CXX_COMPILER" && CXX="$CMAKE_CXX_COMPILER"
     test -n "$CMAKE_BUILD_TYPE" && BUILD_TYPE=$CMAKE_BUILD_TYPE
   else
     Error "Buildinfo not found in $prebuilt_dir/$prebuilt_name"
