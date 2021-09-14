@@ -719,15 +719,14 @@ public:
     NCBI_DEPRECATED typedef vector<TAlignRange> TAlignRangeVector;
     
     typedef typename TAlignRangeList::iterator TRawIterator;
-    class const_iterator : public std::iterator<bidirectional_iterator_tag,
-                                                TAlignRange,
-                                                ptrdiff_t,
-                                                const TAlignRange,
-                                                const TAlignRange&>
+    class const_iterator
     {
     public:
-        typedef const TAlignRange& reference_type;
-        typedef const TAlignRange* pointer_type;
+        typedef TAlignRange value_type;
+        typedef ptrdiff_t difference_type;
+        typedef const TAlignRange* pointer;
+        typedef const TAlignRange& reference;
+        typedef bidirectional_iterator_tag iterator_category;
         
         const_iterator()
             {
@@ -786,11 +785,11 @@ public:
                 return !(*this == iter);
             }
 
-        reference_type operator*() const
+        reference operator*() const
             {
                 return *m_Iter;
             }
-        pointer_type operator->() const
+        pointer operator->() const
             {
                 return &*m_Iter;
             }
@@ -803,8 +802,8 @@ public:
     class iterator : public const_iterator
     {
     public:
-        typedef TAlignRange& reference_type;
-        typedef TAlignRange* pointer_type;
+        typedef TAlignRange* pointer;
+        typedef TAlignRange& reference;
         
         iterator()
             {
@@ -832,11 +831,11 @@ public:
                 return iterator(*this) -= delta;
             }
 
-        reference_type& operator*() const
+        reference operator*() const
             {
                 return *this->m_Iter;
             }
-        pointer_type* operator->() const
+        pointer operator->() const
             {
                 return &*this->m_Iter;
             }
