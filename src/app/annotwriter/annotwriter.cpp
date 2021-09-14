@@ -82,8 +82,6 @@
 #include <objtools/writers/gff3_writer.hpp>
 #include <objtools/writers/gff3flybase_writer.hpp>
 #include <objtools/writers/wiggle_writer.hpp>
-#include <objtools/writers/bed_track_record.hpp>
-#include <objtools/writers/bed_feature_record.hpp>
 #include <objtools/writers/bed_writer.hpp>
 #include <objtools/writers/bedgraph_writer.hpp>
 #include <objtools/writers/vcf_writer.hpp>

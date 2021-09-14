@@ -56,38 +56,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
-class CThreeFeatRecord
-//  ----------------------------------------------------------------------------
-{
-    friend class CThreeFeatManager;
-
-public:
-    CThreeFeatRecord() {};
-    ~CThreeFeatRecord() {};
-
-    bool AddFeature(
-        const CSeq_feat&);
-
-    bool IsRecordComplete() const;
-
-    bool
-    GetBedFeature(
-        CBedFeatureRecord&) const;
-
-private:
-    bool xAddFound(
-        int);
-    bool xAddAll(
-        int);
-
-    CRef<CSeq_feat> mpChrom;
-    CRef<CSeq_feat> mpThick;
-    CRef<CSeq_feat> mpBlocks;
-    vector<int> mFeatsAll;
-    vector<int> mFeatsFound;
-};
-
-//  ----------------------------------------------------------------------------
 bool CThreeFeatRecord::AddFeature(
     const CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
@@ -220,46 +188,6 @@ CThreeFeatRecord::xAddAll(
     }
     return true;
 }
-
-//  ----------------------------------------------------------------------------
-class CThreeFeatManager
-//  ----------------------------------------------------------------------------
-{
-public:
-    using RECORDS = vector<CThreeFeatRecord>;
-    using RECORD_IT = RECORDS::iterator;
-
-    CThreeFeatManager() {};
-    ~CThreeFeatManager() {};
-
-    bool
-    AddFeature(
-        const CSeq_feat&);
-
-    bool
-    IsRecordComplete(
-        const CSeq_feat&);
-
-    bool
-    ProcessRecord(
-        const CSeq_feat&,
-        CBedFeatureRecord&);
-
-    bool
-    GetAnyRecord(
-        CBedFeatureRecord&);
-
-private:
-    RECORD_IT
-    xFindExistingRecord(
-        const CSeq_feat&);
-
-    RECORD_IT
-    xAddRecord(
-        const CSeq_feat&);
-
-    RECORDS mRecords;
-};
 
 //  ----------------------------------------------------------------------------
 bool CThreeFeatManager::AddFeature(
@@ -411,12 +339,10 @@ bool CBedWriter::WriteAnnot(
     }
     track.Write(m_Os);
 
-    if (CWriteUtil::IsThreeFeatFormat(annot)) {
-        return xWriteAnnotThreeFeatData(track, annot);
-    }
-    else {
-        return xWriteAnnotFeatureTable(track, annot);
-    }
+    CSeq_annot_Handle sah = m_Scope.AddSeq_annot(annot);
+    bool result = xWriteTrackedAnnot(track, sah);
+    m_Scope.RemoveSeq_annot(sah);
+    return result;
 }
 
 //  ----------------------------------------------------------------------------
@@ -435,118 +361,109 @@ bool CBedWriter::WriteSeqEntryHandle(
             track.Write(m_Os);
         }
 
-        if (!xWriteAnnotFeatureTable(track, sah)) {
+        if (!xWriteTrackedAnnot(track, sah)) {
             return false;
         }
     }
     return true;
 }
 
-
 //  ----------------------------------------------------------------------------
-bool CBedWriter::xWriteAnnotFeatureTable(
-    const CBedTrackRecord& track,
-    const CSeq_annot& annot)
-//  ----------------------------------------------------------------------------
-{
-    SAnnotSelector sel = SetAnnotSelector();
-    CSeq_annot_Handle sah = m_Scope.AddSeq_annot(annot);
-    auto result = xWriteAnnotFeatureTable(track, sah);
-    m_Scope.RemoveSeq_annot(sah);
-    return result;
-}
-
-
-//  ----------------------------------------------------------------------------
-bool CBedWriter::xWriteAnnotFeatureTable(
-    const CBedTrackRecord& track,
-    const CSeq_annot_Handle& sah)
-//  ----------------------------------------------------------------------------
-{
-    for (CFeat_CI pMf(sah, SAnnotSelector()); pMf; ++pMf ) {
-        if (IsCanceled()) {
-            NCBI_THROW(
-                CObjWriterException,
-                eInterrupted,
-                "Processing terminated by user");
-        }
-        if (!xWriteTrackedFeature(track, *pMf)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-//  ----------------------------------------------------------------------------
-bool CBedWriter::xWriteAnnotThreeFeatData(
-    const CBedTrackRecord& track,
-    const CSeq_annot& annot)
-//  ----------------------------------------------------------------------------
-{
-    CThreeFeatManager threeFeatManager;
-    CBedFeatureRecord bedRecord;
-
-    CSeq_annot_Handle sah = m_Scope.AddSeq_annot(annot);
-    auto result = xWriteAnnotThreeFeatData(track, sah);
-    m_Scope.RemoveSeq_annot(sah);
-    return result;
-}
-
-//  ----------------------------------------------------------------------------
-bool CBedWriter::xWriteAnnotThreeFeatData(
+bool CBedWriter::xWriteTrackedAnnot(
     const CBedTrackRecord& track,
     const CSeq_annot_Handle& sah)
 //  ----------------------------------------------------------------------------
 {
     CThreeFeatManager threeFeatManager;
-    CBedFeatureRecord bedRecord;
-
+    bool isThreeFeatData = CWriteUtil::IsThreeFeatFormat(*sah.GetSeq_annotCore());
     SAnnotSelector sel = SetAnnotSelector();
     CFeat_CI pMf(sah, sel);
-    for ( ; pMf; ++pMf ) {
-        if (IsCanceled()) {
-            NCBI_THROW(
-                CObjWriterException,
-                eInterrupted,
-                "Processing terminated by user");
+    feature::CFeatTree featTree(pMf);
+    vector<CMappedFeat> vRoots = featTree.GetRootFeatures();
+    std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareLocations);
+    for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
+        CMappedFeat mRoot = *pit;
+        if (isThreeFeatData) {
+            if (!xWriteFeaturesThreeFeatData(threeFeatManager, featTree, *pit)) {
+                return false;
+            }
         }
-        const CSeq_feat& feature = pMf->GetOriginalFeature();
-        if (!threeFeatManager.AddFeature(feature)) {
-            break;
-        }
-        if (!threeFeatManager.IsRecordComplete(feature)) {
-            continue;
-        }
-        if (!threeFeatManager.ProcessRecord(feature, bedRecord)) {
-            break;
-        }
-        if (!bedRecord.Write(m_Os, m_colCount)) {
-            break;
+        else {
+            if (!xWriteFeaturesTracked(track, featTree, *pit)) {
+                return false;
+            }
         }
     }
-    if (!pMf) {
-        while (threeFeatManager.GetAnyRecord(bedRecord)) {
-            continue;
-        }
-    }
-    return (!pMf);
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool CBedWriter::xWriteTrackedFeature(
-    const CBedTrackRecord& track,
+bool CBedWriter::xWriteFeaturesThreeFeatData(
+    CThreeFeatManager& threeFeatManager,
+    feature::CFeatTree& featTree,
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
+{
+    CBedFeatureRecord bedRecord;
+
+    if (IsCanceled()) {
+        NCBI_THROW(
+            CObjWriterException,
+            eInterrupted,
+            "Processing terminated by user");
+    }
+    const CSeq_feat& feature = mf.GetOriginalFeature();
+    if (!threeFeatManager.AddFeature(feature)) {
+        return false;
+    }
+    if (!threeFeatManager.IsRecordComplete(feature)) {
+        return true;
+    }
+    if (!threeFeatManager.ProcessRecord(feature, bedRecord)) {
+        return true;
+    }
+    if (!bedRecord.Write(m_Os, m_colCount)) {
+        return false;
+    }
+    return xWriteChildrenThreeFeatData(threeFeatManager, featTree, mf);
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedWriter::xWriteChildrenThreeFeatData(
+    CThreeFeatManager& threeFeatManager,
+    feature::CFeatTree& featTree,
+    const CMappedFeat& mf)
+    //  ----------------------------------------------------------------------------
+{
+    vector<CMappedFeat> vChildren;
+    featTree.GetChildrenTo(mf, vChildren);
+    for (auto cit = vChildren.begin(); cit != vChildren.end(); ++cit) {
+        CMappedFeat mChild = *cit;
+        if (!xWriteFeaturesThreeFeatData(threeFeatManager, featTree, mChild)) {
+            return false;
+        }
+        if (!xWriteChildrenThreeFeatData(threeFeatManager, featTree, mChild)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedWriter::xWriteFeaturesTracked(
+    const CBedTrackRecord& track,
+    feature::CFeatTree& featTree,
+    const CMappedFeat& mf)
+    //  ----------------------------------------------------------------------------
 {
     CBedFeatureRecord record;
     if (!record.AssignName(mf)) {
         return false;
     }
-    if (!record.AssignDisplayData( mf, track.UseScore())) {
-//          feature did not contain display data ---
-//          Is there any alternative way to populate some of the bed columns?
-//          For now, keep going, emit at least the locations ...
+    if (!record.AssignDisplayData(mf, track.UseScore())) {
+        // feature did not contain display data ---
+        //  Is there any alternative way to populate some of the bed columns?
+        //  For now, keep going, emit at least the locations ...
     }
 
     CRef<CSeq_loc> pPackedInt(new CSeq_loc(CSeq_loc::e_Mix));
@@ -555,12 +472,34 @@ bool CBedWriter::xWriteTrackedFeature(
 
     if (!pPackedInt->IsPacked_int() || !pPackedInt->GetPacked_int().CanGet()) {
         // nothing to do
-        return true;    }
+        return true;
+    }
 
     const list<CRef<CSeq_interval> >& sublocs = pPackedInt->GetPacked_int().Get();
     list<CRef<CSeq_interval> >::const_iterator it;
-    for (it = sublocs.begin(); it != sublocs.end(); ++it ) {
-        if (!record.AssignLocation(m_Scope, **it)  ||  !record.Write(m_Os, m_colCount)) {
+    for (it = sublocs.begin(); it != sublocs.end(); ++it) {
+        if (!record.AssignLocation(m_Scope, **it) || !record.Write(m_Os, m_colCount)) {
+            return false;
+        }
+    }
+    return xWriteChildrenTracked(track, featTree, mf);
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedWriter::xWriteChildrenTracked(
+    const CBedTrackRecord& track,
+    feature::CFeatTree& featTree,
+    const CMappedFeat& mf)
+    //  ----------------------------------------------------------------------------
+{
+    vector<CMappedFeat> vChildren;
+    featTree.GetChildrenTo(mf, vChildren);
+    for (auto cit = vChildren.begin(); cit != vChildren.end(); ++cit) {
+        CMappedFeat mChild = *cit;
+        if (!xWriteFeaturesTracked(track, featTree, mChild)) {
+            return false;
+        }
+        if (!xWriteChildrenTracked(track, featTree, mChild)) {
             return false;
         }
     }

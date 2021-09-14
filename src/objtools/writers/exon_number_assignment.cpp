@@ -83,9 +83,6 @@ unsigned int CExonNumberAssigner::xGetIndexInLocation(
     unsigned int exonNumber = 1;
     auto recordFrom = gtfRecord.SeqStart();
     auto recordTo = gtfRecord.SeqStop();
-    if (recordFrom == 14408) {
-        cerr << "";
-    }
     for (const auto& pExonLocation: location.GetPacked_int().Get()) {
         auto exonFrom = pExonLocation->GetFrom();
         auto exonTo = pExonLocation->GetTo();
