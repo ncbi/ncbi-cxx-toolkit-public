@@ -169,6 +169,31 @@ void COSGProcessorRef::ProcessReplies()
 }
 
 
+void COSGProcessorRef::s_ProcessReplies(void *data)
+{
+    shared_ptr<COSGProcessorRef>& ref = *static_cast<shared_ptr<COSGProcessorRef>*>(data);
+    {{
+        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
+        if ( ref->m_ProcessorPtr ) {
+            ref->m_ProcessorPtr->ProcessReplies();
+        }
+    }}
+    delete &ref;
+}
+
+
+void COSGProcessorRef::ProcessRepliesInUvLoop()
+{
+    CFastMutexGuard guard(m_ProcessorPtrMutex);
+    if ( m_ProcessorPtr ) {
+        _ASSERT(m_ProcessorPtr->m_ProcessorRef);
+        CPubseqGatewayApp::GetInstance()->GetUvLoopBinder().PostponeInvoke(
+            s_ProcessReplies,
+            new shared_ptr<COSGProcessorRef>(m_ProcessorPtr->m_ProcessorRef));
+    }
+}
+
+
 void COSGProcessorRef::s_Process(shared_ptr<COSGProcessorRef> processor)
 {
     processor->Process();
@@ -251,16 +276,22 @@ void COSGProcessorRef::Process()
             return;
         }
         tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() got replies: "<<GetStatus());
-        ProcessReplies();
+        if ( 1 ) {
+            ProcessRepliesInUvLoop();
+            tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() return with async post: "<<GetStatus());
+        }
+        else {
+            ProcessReplies();
+            tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() finished: "<<GetStatus());
+            _ASSERT(GetStatus() != IPSGS_Processor::ePSGS_InProgress);
+            tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() return: "<<GetStatus());
+        }
         tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() done: "<<GetStatus());
     }
     catch ( exception& exc ) {
         ERR_POST("OSG: DoProcess() failed: "<<exc.what());
         FinalizeResult(IPSGS_Processor::ePSGS_Error);
     }
-    tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() finished: "<<GetStatus());
-    _ASSERT(GetStatus() != IPSGS_Processor::ePSGS_InProgress);
-    tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() return: "<<GetStatus());
 }
 
 
@@ -339,6 +370,9 @@ CPSGS_OSGProcessorBase::~CPSGS_OSGProcessorBase()
 
 void CPSGS_OSGProcessorBase::StopAsyncThread()
 {
+    if ( m_ProcessorRef ) {
+        m_ProcessorRef->Detach();
+    }
     /*
     if ( m_Thread ) {
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() joining status: "<<m_Status);

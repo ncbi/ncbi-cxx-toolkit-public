@@ -91,6 +91,8 @@ public:
     void NotifyOSGCallReply(const CID2_Reply& reply);
     void NotifyOSGCallEnd();
     void ProcessReplies();
+    void ProcessRepliesInUvLoop();
+    static void s_ProcessReplies(void* data);
     void Process();
     static void s_Process(shared_ptr<COSGProcessorRef> processor);
     void Cancel();
