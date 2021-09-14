@@ -154,14 +154,14 @@ CSnpPtisClient_Impl::CSnpPtisClient_Impl()
     //LOG_POST(Trace<<"CSnpPtisClient: connecting to "<<address);
     channel = grpc::CreateCustomChannel(address, grpc::InsecureChannelCredentials(), args);
     max_retries = g_GetConfigInt(kSection, kParam_Retry, nullptr, kDefault_Retry);
-    timeout     = g_GetConfigDouble(kSection, kParam_Timeout   , nullptr, kDefault_Timeout   );
-    timeout_mul = g_GetConfigDouble(kSection, kParam_TimeoutMul, nullptr, kDefault_TimeoutMul);
-    timeout_inc = g_GetConfigDouble(kSection, kParam_TimeoutInc, nullptr, kDefault_TimeoutInc);
-    timeout_max = g_GetConfigDouble(kSection, kParam_TimeoutMax, nullptr, kDefault_TimeoutMax);
-    wait_time     = g_GetConfigDouble(kSection, kParam_WaitTime   , nullptr, kDefault_WaitTime   );
-    wait_time_mul = g_GetConfigDouble(kSection, kParam_WaitTimeMul, nullptr, kDefault_WaitTimeMul);
-    wait_time_inc = g_GetConfigDouble(kSection, kParam_WaitTimeInc, nullptr, kDefault_WaitTimeInc);
-    wait_time_max = g_GetConfigDouble(kSection, kParam_WaitTimeMax, nullptr, kDefault_WaitTimeMax);
+    timeout     = (float)g_GetConfigDouble(kSection, kParam_Timeout   , nullptr, kDefault_Timeout   );
+    timeout_mul = (float)g_GetConfigDouble(kSection, kParam_TimeoutMul, nullptr, kDefault_TimeoutMul);
+    timeout_inc = (float)g_GetConfigDouble(kSection, kParam_TimeoutInc, nullptr, kDefault_TimeoutInc);
+    timeout_max = (float)g_GetConfigDouble(kSection, kParam_TimeoutMax, nullptr, kDefault_TimeoutMax);
+    wait_time     = (float)g_GetConfigDouble(kSection, kParam_WaitTime   , nullptr, kDefault_WaitTime   );
+    wait_time_mul = (float)g_GetConfigDouble(kSection, kParam_WaitTimeMul, nullptr, kDefault_WaitTimeMul);
+    wait_time_inc = (float)g_GetConfigDouble(kSection, kParam_WaitTimeInc, nullptr, kDefault_WaitTimeInc);
+    wait_time_max = (float)g_GetConfigDouble(kSection, kParam_WaitTimeMax, nullptr, kDefault_WaitTimeMax);
     
     stub = ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::NewStub(channel);
 }
@@ -230,7 +230,7 @@ string CSnpPtisClient_Impl::x_GetPrimarySnpTrack(const TRequest& request)
         ERR_POST(Trace<<
                  "CSnpPtisClient: failed : "<<status.error_message()<<". "
                  "Waiting "<<cur_wait_time<<" seconds before retry...");
-        SleepMicroSec(Int8(cur_wait_time*1e6));
+        SleepMicroSec((unsigned long)(cur_wait_time*1e6));
         cur_timeout = min(cur_timeout*timeout_mul + timeout_inc, timeout_max);
         cur_wait_time = min(cur_wait_time*wait_time_mul + wait_time_inc, wait_time_max);
     }
