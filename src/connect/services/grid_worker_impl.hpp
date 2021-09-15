@@ -153,6 +153,35 @@ private:
     bool m_RunRegistered;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+//
+
+#define NO_EVENT ((void*) 0)
+#define SUSPEND_EVENT ((void*) 1)
+#define RESUME_EVENT ((void*) 2)
+
+struct SSuspendResume
+{
+    void Suspend(bool pullback, unsigned timeout);
+    void Resume();
+    void SetJobPullbackTimer(unsigned seconds);
+    bool CheckForPullback(unsigned job_generation);
+    bool GotSuspendEvent();
+    bool IsSuspended() const { return m_TimelineIsSuspended; }
+    unsigned GetCurrentJobGeneration() const { return m_CurrentJobGeneration; }
+    unsigned GetDefaultPullbackTimeout() const { return m_DefaultPullbackTimeout; }
+    void SetDefaultPullbackTimeout(unsigned seconds) { m_DefaultPullbackTimeout = seconds; }
+
+private:
+    void* volatile m_SuspendResumeEvent = NO_EVENT;
+    bool m_TimelineIsSuspended = false;
+    // Support for the job "pullback" mechanism.
+    CFastMutex m_JobPullbackMutex;
+    unsigned m_CurrentJobGeneration = 0;
+    unsigned m_DefaultPullbackTimeout = 0;
+    CDeadline m_JobPullbackTime = 0;
+};
+
 ///@internal
 struct SGridWorkerNodeImpl : public CObject, IWorkerNodeInitContext
 {
@@ -195,9 +224,6 @@ struct SGridWorkerNodeImpl : public CObject, IWorkerNodeInitContext
     void LeaveExclusiveMode();
     bool IsExclusiveMode() const {return m_IsProcessingExclusiveJob;}
     bool WaitForExclusiveJobToFinish();
-
-    void SetJobPullbackTimer(unsigned seconds);
-    bool CheckForPullback(unsigned job_generation);
 
     int OfflineRun();
 
@@ -246,13 +272,7 @@ struct SGridWorkerNodeImpl : public CObject, IWorkerNodeInitContext
     set<SSocketAddress> m_Masters;
     set<unsigned int> m_AdminHosts;
 
-    void* volatile m_SuspendResumeEvent;
-    bool m_TimelineIsSuspended;
-    // Support for the job "pullback" mechanism.
-    CFastMutex m_JobPullbackMutex;
-    unsigned m_CurrentJobGeneration;
-    unsigned m_DefaultPullbackTimeout;
-    CDeadline m_JobPullbackTime;
+    SSuspendResume m_SuspendResume;
 
     bool x_AreMastersBusy() const;
 
@@ -328,13 +348,6 @@ private:
     CWorkerNodeJobContext m_JobContext;
 };
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-
-#define NO_EVENT ((void*) 0)
-#define SUSPEND_EVENT ((void*) 1)
-#define RESUME_EVENT ((void*) 2)
 
 /////////////////////////////////////////////////////////////////////////////
 //

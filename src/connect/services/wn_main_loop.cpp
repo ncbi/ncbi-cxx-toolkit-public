@@ -294,11 +294,11 @@ CNetScheduleAdmin::EShutdownLevel SWorkerNodeJobContextImpl::GetShutdownLevel()
             switch (job_status) {
             case CNetScheduleAPI::eRunning:
                 if (pause_mode == eNSQ_WithPullback) {
-                    m_WorkerNode->SetJobPullbackTimer(
-                            m_WorkerNode->m_DefaultPullbackTimeout);
+                    auto default_timeout = m_WorkerNode->m_SuspendResume.GetDefaultPullbackTimeout();
+                    m_WorkerNode->m_SuspendResume.SetJobPullbackTimer(default_timeout);
                     LOG_POST("Pullback request from the server, "
                             "(default) pullback timeout=" <<
-                            m_WorkerNode->m_DefaultPullbackTimeout);
+                            default_timeout);
                 }
                 /* FALL THROUGH */
 
@@ -325,7 +325,7 @@ CNetScheduleAdmin::EShutdownLevel SWorkerNodeJobContextImpl::GetShutdownLevel()
                     ": " << ex.what());
         }
 
-    if (m_WorkerNode->CheckForPullback(m_JobGeneration)) {
+    if (m_WorkerNode->m_SuspendResume.CheckForPullback(m_JobGeneration)) {
         LOG_POST("Pullback timeout for " << m_Job.job_id);
         return CNetScheduleAdmin::eShutdownImmediate;
     }
@@ -352,7 +352,7 @@ void SWorkerNodeJobContextImpl::ResetJobContext()
             (m_Job.mask & CNetScheduleAPI::eExclusiveJob) != 0;
 
     m_RequestContext->Reset();
-    m_JobGeneration = m_WorkerNode->m_CurrentJobGeneration;
+    m_JobGeneration = m_WorkerNode->m_SuspendResume.GetCurrentJobGeneration();
 }
 
 void CWorkerNodeJobContext::RequestExclusiveMode()
@@ -647,25 +647,11 @@ CNetScheduleGetJob::EState CMainLoopThread::CImpl::CheckState()
     EState ret = eWorking;
 
     while (!CGridGlobals::GetInstance().IsShuttingDown()) {
-        void* event;
-
-        while ((event = SwapPointers(&m_WorkerNode->m_SuspendResumeEvent,
-                NO_EVENT)) != NO_EVENT) {
-            if (event == SUSPEND_EVENT) {
-                if (!m_WorkerNode->m_TimelineIsSuspended) {
-                    // Stop the timeline.
-                    m_WorkerNode->m_TimelineIsSuspended = true;
-                    ret = eRestarted;
-                }
-            } else { /* event == RESUME_EVENT */
-                if (m_WorkerNode->m_TimelineIsSuspended) {
-                    // Resume the timeline.
-                    m_WorkerNode->m_TimelineIsSuspended = false;
-                }
-            }
+        if (m_WorkerNode->m_SuspendResume.GotSuspendEvent()) {
+            ret = eRestarted;
         }
 
-        if (!m_WorkerNode->m_TimelineIsSuspended) {
+        if (!m_WorkerNode->m_SuspendResume.IsSuspended()) {
             return ret;
         }
 
