@@ -647,10 +647,14 @@ CNetScheduleGetJob::EState CMainLoopThread::CImpl::CheckState()
     EState ret = eWorking;
 
     while (!CGridGlobals::GetInstance().IsShuttingDown()) {
-        if (m_WorkerNode->m_SuspendResume.GotSuspendEvent()) {
-            ret = eRestarted;
-        } else if (!m_WorkerNode->m_SuspendResume.IsSuspended()) {
-            return ret;
+        switch (m_WorkerNode->m_SuspendResume.CheckState()) {
+            case SSuspendResume::eRunning:
+                return ret;
+            case SSuspendResume::eSuspending:
+                ret = eRestarted;
+                break;
+            case SSuspendResume::eSuspended:
+                break;
         }
 
         m_WorkerNode->m_NSExecutor->
