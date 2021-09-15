@@ -168,13 +168,13 @@ void CId1ReaderBase::SetExtAnnotBlob_id(CBlob_id& blob_id, TIntId gi, int bit)
 {
     blob_id.SetSat(GetAnnotSat(bit));
     blob_id.SetSatKey(Int4(gi));
-    blob_id.SetSubSat(Int4((gi>>32)<<16)|(bit&0xffff));
+    blob_id.SetSubSat(Int4((gi>>16)&0xffff0000)|(bit&0xffff));
 }
 
 
 TIntId CId1ReaderBase::GetExtAnnotGi(const CBlob_id& blob_id)
 {
-    return (TIntId(blob_id.GetSubSat()>>16)<<32)|Uint4(blob_id.GetSatKey());
+    return (TIntId(Int4(blob_id.GetSubSat()&0xffff0000))<<16)|Uint4(blob_id.GetSatKey());
 }
 
 
