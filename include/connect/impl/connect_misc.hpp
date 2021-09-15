@@ -131,8 +131,10 @@ struct SThreadSafe
 
     // Direct access to the protected object (e.g. to access atomic members).
     // All thread-safe members must be explicitly marked volatile to be available.
-          volatile TType& GetMTSafe()       { return m_Object; }
-    const volatile TType& GetMTSafe() const { return m_Object; }
+          volatile TType* operator->()       { return &m_Object; }
+    const volatile TType* operator->() const { return &m_Object; }
+    NCBI_DEPRECATED       volatile TType& GetMTSafe()       { return m_Object; }
+    NCBI_DEPRECATED const volatile TType& GetMTSafe() const { return m_Object; }
 
 protected:
     mutex m_Mutex;

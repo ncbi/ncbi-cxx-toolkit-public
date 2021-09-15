@@ -184,9 +184,9 @@ void SPSG_Reply::SetComplete()
 
     if (auto items_locked = items.GetLock()) {
         for (auto& item : *items_locked) {
-            if (item.GetMTSafe().state.InProgress()) {
+            if (item->state.InProgress()) {
                 item.GetLock()->state.AddError(message);
-                item.GetMTSafe().state.SetState(SState::eError);
+                item->state.SetState(SState::eError);
                 missing = true;
             }
         }
@@ -207,9 +207,9 @@ void SPSG_Reply::SetFailed(string message, bool is_error)
 {
     if (auto items_locked = items.GetLock()) {
         for (auto& item : *items_locked) {
-            if (item.GetMTSafe().state.InProgress()) {
+            if (item->state.InProgress()) {
                 item.GetLock()->state.AddError(message);
-                item.GetMTSafe().state.SetState(SState::eError);
+                item->state.SetState(SState::eError);
             }
         }
     }
@@ -1099,7 +1099,7 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
         }
     }
 
-    if (m_Servers.GetMTSafe().fail_requests) {
+    if (m_Servers->fail_requests) {
         const SUvNgHttp2_Error error("No servers to process request");
         shared_ptr<SPSG_Request> req;
 
@@ -1126,7 +1126,7 @@ void SPSG_IoImpl::AfterExecute()
 SPSG_DiscoveryImpl::SNoServers::SNoServers(SPSG_Servers::TTS& servers) :
     m_RetryDelay(s_SecondsToMs(TPSG_NoServersRetryDelay::GetDefault())),
     m_Timeout(s_SecondsToMs(TPSG_RequestTimeout::GetDefault() * (1 + TPSG_RequestRetries::GetDefault()))),
-    m_FailRequests(const_cast<atomic_bool&>(servers.GetMTSafe().fail_requests))
+    m_FailRequests(const_cast<atomic_bool&>(servers->fail_requests))
 {
 }
 

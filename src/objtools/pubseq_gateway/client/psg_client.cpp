@@ -150,7 +150,7 @@ ERW_Result SPSG_BlobReader::PendingCount(size_t* count)
 
 void SPSG_BlobReader::CheckForNewChunks()
 {
-    if (m_Src.GetMTSafe().state.Empty()) return;
+    if (m_Src->state.Empty()) return;
 
     auto src_locked = m_Src.GetLock();
     auto& src = *src_locked;
@@ -614,7 +614,7 @@ bool CPSG_Queue::SImpl::WaitForEvents(CDeadline deadline)
 
 EPSG_Status s_GetStatus(SPSG_Reply::SItem::TTS& ts, const CDeadline& deadline)
 {
-    auto& state = ts.GetMTSafe().state;
+    auto& state = ts->state;
 
     do {
         switch (state.GetState()) {
@@ -946,7 +946,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
     assert(m_Impl->reply);
 
     auto& reply_item = m_Impl->reply->reply_item;
-    auto& reply_state = reply_item.GetMTSafe().state;
+    auto& reply_state = reply_item->state;
 
     do {
         bool was_in_progress = reply_state.InProgress();
@@ -955,7 +955,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
             auto& items = *items_locked;
 
             for (auto& item_ts : items) {
-                const auto& item_state = item_ts.GetMTSafe().state;
+                const auto& item_state = item_ts->state;
 
                 if (item_state.Returned()) continue;
 

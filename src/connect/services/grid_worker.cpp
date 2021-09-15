@@ -427,7 +427,7 @@ void SSuspendResume::Suspend(bool pullback, unsigned timeout)
 
 void CGridWorkerNode::Resume()
 {
-    m_Impl->m_SuspendResume.GetMTSafe().Resume();
+    m_Impl->m_SuspendResume->Resume();
 }
 
 void SSuspendResume::Resume() volatile
@@ -1149,7 +1149,7 @@ IWorkerNodeCleanupEventSource* CGridWorkerNode::GetCleanupEventSource()
 
 bool CGridWorkerNode::IsSuspended() const
 {
-    return m_Impl->m_SuspendResume.GetMTSafe().IsSuspended();
+    return m_Impl->m_SuspendResume->IsSuspended();
 }
 
 const string& CGridWorkerNode::GetQueueName() const
