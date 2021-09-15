@@ -92,7 +92,6 @@ private:
     void xProcessHugeEntries();
 
     void x_SetAlnArgs(CArgDescriptions& arg_desc);
-    CRef<CScope> GetScope();
 
     struct TAdditionalFiles
     {

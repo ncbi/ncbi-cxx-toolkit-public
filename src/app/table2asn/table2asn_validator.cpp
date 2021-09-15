@@ -102,16 +102,18 @@ void CTable2AsnValidator::Cleanup(CRef<CSeq_submit> submit, CSeq_entry_Handle& h
         CCleanup::AddLowQualityException(h_entry);
     }
 
-    if (flags.find('T') != string::npos) // && !m_context->m_use_huge_files)
+    if (flags.find('T') != string::npos)
     {
-        validator::CTaxValidationAndCleanup tval;
-        tval.DoTaxonomyUpdate(h_entry, true);
-#if 0
-            ,[this](const vector< CRef<COrg_ref> >& query) -> CRef<CTaxon3_reply>
-            {
-                return m_context->m_remote_updater->SendOrgRefList(query);
+        validator::CTaxValidationAndCleanup tval(
+            [&remote = m_context->m_remote_updater](const vector< CRef<COrg_ref> >& query) -> CRef<CTaxon3_reply>
+            { // we need to make a copy of record to prevent changes put back to cache
+                CConstRef<CTaxon3_reply> res = remote->SendOrgRefList(query);
+                CRef<CTaxon3_reply> copied (new CTaxon3_reply);
+                copied->Assign(*res);
+                return copied;
             }
-#endif
+        );
+        //tval.DoTaxonomyUpdate(h_entry, true);
     }
 }
 

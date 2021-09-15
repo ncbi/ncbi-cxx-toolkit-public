@@ -101,7 +101,7 @@ public:
     void UpdatePubReferences(CSerialObject& obj);
     void UpdatePubReferences(CSeq_entry_EditHandle& obj);
     void SetMaxMlaAttempts(int max);
-    CRef<CTaxon3_reply> SendOrgRefList(const vector<CRef<COrg_ref>>& list);
+    CConstRef<CTaxon3_reply> SendOrgRefList(const vector<CRef<COrg_ref>>& list);
 
     // These methods are deprecated, please use CRemoteUpdater constructor to specify logger
     NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger f_logger, CSeq_entry& entry);

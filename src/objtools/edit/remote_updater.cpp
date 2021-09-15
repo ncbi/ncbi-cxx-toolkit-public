@@ -210,7 +210,8 @@ public:
             {
                 reply->SetData().SetOrg().ResetSyn();
                 // next will reset 'attrib = specified'
-                reply->SetData().SetOrg().SetOrgname().SetFormalNameFlag(false);
+                // RW-1380 why do we need to reset attrib 'specified' ?
+                //reply->SetData().SetOrg().SetOrgname().SetFormalNameFlag(false);
             }
         }
         else
@@ -776,7 +777,7 @@ void CRemoteUpdater::SetMLAClient(CMLAClient& mlaClient) {
     m_mlaClient.Reset(&mlaClient);
 }
 
-CRef<CTaxon3_reply> CRemoteUpdater::SendOrgRefList(const vector<CRef<COrg_ref>>& list)
+CConstRef<CTaxon3_reply> CRemoteUpdater::SendOrgRefList(const vector<CRef<COrg_ref>>& list)
 {
     std::lock_guard<std::mutex> guard(m_Mutex);
 
