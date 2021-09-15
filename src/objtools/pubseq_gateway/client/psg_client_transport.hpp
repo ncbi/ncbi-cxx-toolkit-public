@@ -326,7 +326,7 @@ struct SPSG_Request
 
     unsigned GetRetries()
     {
-        return reply->reply_item.GetMTSafe().state.InProgress() && (m_Retries > 0) ? m_Retries-- : 0;
+        return reply->reply_item->state.InProgress() && (m_Retries > 0) ? m_Retries-- : 0;
     }
 
 private:
@@ -450,7 +450,7 @@ private:
     };
     enum EThrottling { eOff, eOnTimer, eUntilDiscovery };
 
-    uint64_t Configured() const { return m_Stats.GetMTSafe().params.period; }
+    uint64_t Configured() const { return m_Stats->params.period; }
     bool AddResult(bool result) { return Configured() && (Active() || Adjust(result)); }
     bool Adjust(bool result);
 
@@ -624,7 +624,7 @@ protected:
 private:
     void CheckForNewServers(uv_async_t* handle)
     {
-        const auto servers_size = m_Servers.GetMTSafe().size();
+        const auto servers_size = m_Servers->size();
         const auto sessions_size = m_Sessions.size();
 
         if (servers_size > sessions_size) {
@@ -691,7 +691,7 @@ struct SPSG_IoCoordinator
     bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
     string GetNewRequestId() { return to_string(m_RequestId++); }
     const string& GetUrlArgs() const { return m_UrlArgs; }
-    bool RejectsRequests() const { return m_Servers.GetMTSafe().fail_requests; }
+    bool RejectsRequests() const { return m_Servers->fail_requests; }
 
 private:
     SUv_Barrier m_Barrier;

@@ -325,7 +325,7 @@ CNetScheduleAdmin::EShutdownLevel SWorkerNodeJobContextImpl::GetShutdownLevel()
                     ": " << ex.what());
         }
 
-    if ((m_JobGeneration != m_WorkerNode->m_SuspendResume.GetMTSafe().GetCurrentJobGeneration()) &&
+    if ((m_JobGeneration != m_WorkerNode->m_SuspendResume->GetCurrentJobGeneration()) &&
                 m_WorkerNode->m_SuspendResume.GetLock()->IsJobPullbackTimerExpired()) {
         LOG_POST("Pullback timeout for " << m_Job.job_id);
         return CNetScheduleAdmin::eShutdownImmediate;
@@ -353,7 +353,7 @@ void SWorkerNodeJobContextImpl::ResetJobContext()
             (m_Job.mask & CNetScheduleAPI::eExclusiveJob) != 0;
 
     m_RequestContext->Reset();
-    m_JobGeneration = m_WorkerNode->m_SuspendResume.GetMTSafe().GetCurrentJobGeneration();
+    m_JobGeneration = m_WorkerNode->m_SuspendResume->GetCurrentJobGeneration();
 }
 
 void CWorkerNodeJobContext::RequestExclusiveMode()
@@ -648,7 +648,7 @@ CNetScheduleGetJob::EState CMainLoopThread::CImpl::CheckState()
     EState ret = eWorking;
 
     while (!CGridGlobals::GetInstance().IsShuttingDown()) {
-        switch (m_WorkerNode->m_SuspendResume.GetMTSafe().CheckState()) {
+        switch (m_WorkerNode->m_SuspendResume->CheckState()) {
             case SSuspendResume::eRunning:
                 return ret;
             case SSuspendResume::eSuspending:
