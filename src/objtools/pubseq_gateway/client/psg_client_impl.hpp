@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 struct SPSG_BlobReader : IReader
 {
-    SPSG_BlobReader(SPSG_Reply::SItem::TTS* src);
+    SPSG_BlobReader(SPSG_Reply::SItem::TTS& src);
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
     ERW_Result PendingCount(size_t* count);
@@ -56,7 +56,7 @@ private:
     void CheckForNewChunks();
     ERW_Result x_Read(void* buf, size_t count, size_t* bytes_read);
 
-    SPSG_Reply::SItem::TTS* m_Src;
+    SPSG_Reply::SItem::TTS& m_Src;
     vector<SPSG_Chunk> m_Data;
     size_t m_Chunk = 0;
     size_t m_Index = 0;
@@ -64,7 +64,7 @@ private:
 
 struct SPSG_RStream : private SPSG_BlobReader, private array<char, 64 * 1024>, public CRStream
 {
-    SPSG_RStream(SPSG_Reply::SItem::TTS* src) :
+    SPSG_RStream(SPSG_Reply::SItem::TTS& src) :
         SPSG_BlobReader(src),
         CRStream(this, size(), data())
     {}
@@ -72,7 +72,8 @@ struct SPSG_RStream : private SPSG_BlobReader, private array<char, 64 * 1024>, p
 
 struct CPSG_ReplyItem::SImpl
 {
-    SPSG_Reply::SItem::TTS* item = nullptr;
+    SPSG_Reply::SItem::TTS& item;
+    SImpl(SPSG_Reply::SItem::TTS& i) : item(i) {}
 };
 
 struct CPSG_Reply::SImpl
@@ -80,7 +81,7 @@ struct CPSG_Reply::SImpl
     shared_ptr<SPSG_Reply> reply;
     weak_ptr<CPSG_Reply> user_reply;
 
-    shared_ptr<CPSG_ReplyItem> Create(SPSG_Reply::SItem::TTS* item_ts);
+    shared_ptr<CPSG_ReplyItem> Create(SPSG_Reply::SItem::TTS& item_ts);
 
 private:
     template <class TReplyItem>

@@ -68,10 +68,9 @@ const char* CPSG_Exception::GetErrCodeString(void) const
 }
 
 
-SPSG_BlobReader::SPSG_BlobReader(SPSG_Reply::SItem::TTS* src)
+SPSG_BlobReader::SPSG_BlobReader(SPSG_Reply::SItem::TTS& src)
     : m_Src(src)
 {
-    assert(src);
 }
 
 ERW_Result SPSG_BlobReader::x_Read(void* buf, size_t count, size_t* bytes_read)
@@ -102,7 +101,7 @@ ERW_Result SPSG_BlobReader::x_Read(void* buf, size_t count, size_t* bytes_read)
         m_Index = 0;
     }
 
-    auto src_locked = m_Src->GetLock();
+    auto src_locked = m_Src.GetLock();
     return src_locked->expected.Cmp<equal_to>(src_locked->received) ? eRW_Eof : eRW_Success;
 }
 
@@ -120,7 +119,7 @@ ERW_Result SPSG_BlobReader::Read(void* buf, size_t count, size_t* bytes_read)
             return rv;
         }
     }
-    while (m_Src->WaitUntil(deadline));
+    while (m_Src.WaitUntil(deadline));
 
     NCBI_THROW_FMT(CPSG_Exception, eTimeout, "Timeout on reading (after " << kSeconds << " seconds)");
     return eRW_Error;
@@ -151,9 +150,9 @@ ERW_Result SPSG_BlobReader::PendingCount(size_t* count)
 
 void SPSG_BlobReader::CheckForNewChunks()
 {
-    if (m_Src->GetMTSafe().state.Empty()) return;
+    if (m_Src.GetMTSafe().state.Empty()) return;
 
-    auto src_locked = m_Src->GetLock();
+    auto src_locked = m_Src.GetLock();
     auto& src = *src_locked;
     auto& chunks = src.chunks;
 
@@ -334,19 +333,17 @@ SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
     }
 }
 
-shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* item_ts)
+shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS& item_ts)
 {
     auto user_reply_locked = user_reply.lock();
 
     assert(user_reply_locked);
-    assert(item_ts);
 
-    auto item_locked = item_ts->GetLock();
+    auto item_locked = item_ts.GetLock();
 
     item_locked->state.SetReturned();
 
-    unique_ptr<CPSG_ReplyItem::SImpl> impl(new CPSG_ReplyItem::SImpl);
-    impl->item = item_ts;
+    auto impl = make_unique<CPSG_ReplyItem::SImpl>(item_ts);
 
     shared_ptr<CPSG_ReplyItem> rv;
 
@@ -615,11 +612,9 @@ bool CPSG_Queue::SImpl::WaitForEvents(CDeadline deadline)
     return false;
 }
 
-EPSG_Status s_GetStatus(SPSG_Reply::SItem::TTS* ts, const CDeadline& deadline)
+EPSG_Status s_GetStatus(SPSG_Reply::SItem::TTS& ts, const CDeadline& deadline)
 {
-    assert(ts);
-
-    auto& state = ts->GetMTSafe().state;
+    auto& state = ts.GetMTSafe().state;
 
     do {
         switch (state.GetState()) {
@@ -644,9 +639,8 @@ EPSG_Status CPSG_ReplyItem::GetStatus(CDeadline deadline) const
 string CPSG_ReplyItem::GetNextMessage() const
 {
     assert(m_Impl);
-    assert(m_Impl->item);
 
-    return m_Impl->item->GetLock()->state.GetError();
+    return m_Impl->item.GetLock()->state.GetError();
 }
 
 CPSG_ReplyItem::~CPSG_ReplyItem()
@@ -935,7 +929,7 @@ EPSG_Status CPSG_Reply::GetStatus(CDeadline deadline) const
 {
     assert(m_Impl);
 
-    return s_GetStatus(&m_Impl->reply->reply_item, deadline);
+    return s_GetStatus(m_Impl->reply->reply_item, deadline);
 }
 
 string CPSG_Reply::GetNextMessage() const
@@ -974,7 +968,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
                 }
 
                 // Do not hold lock on item_ts around this call!
-                if (auto rv = m_Impl->Create(&item_ts)) {
+                if (auto rv = m_Impl->Create(item_ts)) {
                     return rv;
                 }
 
