@@ -70,8 +70,7 @@ public:
                         const TFetches& fetches);
     virtual ~COSGCaller();
 
-    void AllocateConnection(const CRef<COSGConnectionPool>& connection_pool,
-                            const CRef<CRequestContext>& context);
+    void AllocateConnection(const CRef<COSGConnectionPool>& connection_pool);
     void SendRequest(COSGProcessorRef& processor);
     void WaitForReplies(COSGProcessorRef& processor);
 
@@ -87,7 +86,6 @@ protected:
         }
     
     CRef<CID2_Request> MakeInitRequest();
-    void SetContext(CID2_Request& req, const CRef<COSGFetch>& fetch);
     void AddFetch(CID2_Request_Packet& packet, const CRef<COSGFetch>& fetch);
     CRef<CID2_Request_Packet> MakePacket(const TFetches& fetches);
     size_t GetRequestIndex(const CID2_Reply& reply) const;
@@ -98,7 +96,6 @@ protected:
 private:
     CRef<COSGConnectionPool> m_ConnectionPool;
     CRef<COSGConnection> m_Connection;
-    CRef<CRequestContext> m_Context;
     CRef<CID2_Request_Packet> m_RequestPacket;
     vector<CRef<COSGFetch>> m_Fetches;
 };

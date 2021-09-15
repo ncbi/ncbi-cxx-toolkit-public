@@ -36,6 +36,8 @@
 #include <corelib/request_ctx.hpp>
 #include <objects/id2/ID2_Request.hpp>
 #include <objects/id2/ID2_Reply.hpp>
+#include <objects/id2/ID2_Param.hpp>
+#include <objects/id2/ID2_Params.hpp>
 
 
 BEGIN_NCBI_NAMESPACE;
@@ -43,10 +45,8 @@ BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
 
-COSGFetch::COSGFetch(CRef<CID2_Request> request,
-                     const CRef<CRequestContext>& context)
+COSGFetch::COSGFetch(CRef<CID2_Request> request)
     : m_Request(request),
-      m_Context(context),
       m_Status(eIdle)
 {
     _ASSERT(request);
@@ -55,6 +55,29 @@ COSGFetch::COSGFetch(CRef<CID2_Request> request,
 
 COSGFetch::~COSGFetch()
 {
+}
+
+
+void COSGFetch::SetContext(CRequestContext& rctx)
+{
+    if ( rctx.IsSetSessionID() ) {
+        CRef<CID2_Param> param(new CID2_Param);
+        param->SetName("session_id");
+        param->SetValue().push_back(rctx.GetSessionID());
+        m_Request->SetParams().Set().push_back(param);
+    }
+    if ( rctx.IsSetHitID() ) {
+        CRef<CID2_Param> param(new CID2_Param);
+        param->SetName("log:ncbi_phid");
+        param->SetValue().push_back(rctx.GetCurrentSubHitID());
+        m_Request->SetParams().Set().push_back(param);
+    }
+    if ( rctx.IsSetClientIP() ) {
+        CRef<CID2_Param> param(new CID2_Param);
+        param->SetName("log:client_ip");
+        param->SetValue().push_back(rctx.GetClientIP());
+        m_Request->SetParams().Set().push_back(param);
+    }
 }
 
 

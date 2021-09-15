@@ -62,8 +62,7 @@ public:
         eFailed
     };
 
-    explicit COSGFetch(CRef<CID2_Request> request,
-                       const CRef<CRequestContext>& context);
+    explicit COSGFetch(CRef<CID2_Request> request);
     virtual ~COSGFetch();
 
     const CRef<CID2_Request>& GetRequest() const
@@ -71,10 +70,7 @@ public:
             return m_Request;
         }
 
-    const CRef<CRequestContext>& GetContext() const
-        {
-            return m_Context;
-        }
+    void SetContext(CRequestContext& rctx);
 
     typedef vector<CRef<CID2_Reply>> TReplies;
     const TReplies& GetReplies() const
@@ -116,8 +112,7 @@ public:
 
 private:
     CRef<CID2_Request> m_Request;
-    CRef<CRequestContext> m_Context;
-    TReplies   m_Replies;
+    TReplies m_Replies;
     EStatus m_Status;
 };
 

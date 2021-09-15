@@ -91,35 +91,9 @@ CRef<CID2_Request> COSGCaller::MakeInitRequest()
 }
 
 
-void COSGCaller::SetContext(CID2_Request& req, const CRef<COSGFetch>& fetch)
-{
-    if ( auto rctx = fetch->GetContext() ) {
-        if ( rctx->IsSetSessionID() ) {
-            CRef<CID2_Param> param(new CID2_Param);
-            param->SetName("session_id");
-            param->SetValue().push_back(rctx->GetSessionID());
-            req.SetParams().Set().push_back(param);
-        }
-        if ( rctx->IsSetHitID() ) {
-            CRef<CID2_Param> param(new CID2_Param);
-            param->SetName("log:ncbi_phid");
-            param->SetValue().push_back(rctx->GetCurrentSubHitID());
-            req.SetParams().Set().push_back(param);
-        }
-        if ( rctx->IsSetClientIP() ) {
-            CRef<CID2_Param> param(new CID2_Param);
-            param->SetName("log:client_ip");
-            param->SetValue().push_back(rctx->GetClientIP());
-            req.SetParams().Set().push_back(param);
-        }
-    }
-}
-
-
 void COSGCaller::AddFetch(CID2_Request_Packet& packet, const CRef<COSGFetch>& fetch)
 {
     CID2_Request& req = fetch->GetRequest().GetNCObject();
-    SetContext(req, fetch);
     req.SetSerial_number(m_Connection->AllocateRequestSerialNumber());
     packet.Set().push_back(fetch->GetRequest());
     fetch.GetNCObject().ResetReplies();
@@ -136,7 +110,7 @@ CRef<CID2_Request_Packet> COSGCaller::MakePacket(const TFetches& fetches)
     m_Fetches.clear();
     if ( !fetches.empty() ) {
         if ( kAlwaysSendInit || !m_Connection->InitRequestWasSent() ) {
-            AddFetch(*packet, Ref(new COSGFetch(MakeInitRequest(), m_Context)));
+            AddFetch(*packet, Ref(new COSGFetch(MakeInitRequest())));
         }
         for ( auto& f : fetches ) {
             AddFetch(*packet, f);
@@ -165,12 +139,10 @@ size_t COSGCaller::GetRequestIndex(const CID2_Reply& reply) const
 }
 
 
-void COSGCaller::AllocateConnection(const CRef<COSGConnectionPool>& connection_pool,
-                                    const CRef<CRequestContext>& context)
+void COSGCaller::AllocateConnection(const CRef<COSGConnectionPool>& connection_pool)
 {
     _ASSERT(!m_ConnectionPool);
     m_ConnectionPool = connection_pool;
-    m_Context = context;
     _ASSERT(m_ConnectionPool);
     m_Connection = m_ConnectionPool->AllocateConnection();
 }

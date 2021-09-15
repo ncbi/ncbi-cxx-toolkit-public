@@ -66,15 +66,9 @@ BEGIN_NAMESPACE(osg);
 COSGProcessorRef::COSGProcessorRef(CPSGS_OSGProcessorBase* ptr)
     : m_ProcessorPtr(ptr),
       m_FinalStatus(IPSGS_Processor::ePSGS_InProgress),
-      m_Context(ptr->m_Context),
       m_ConnectionPool(ptr->m_ConnectionPool)
 {
-    _ASSERT(m_Context);
     _ASSERT(m_ConnectionPool);
-    if ( ptr->GetFetches().empty() ) {
-        ptr->CreateRequests();
-    }
-    _ASSERT(!ptr->GetFetches().empty());
 }
 
 
@@ -169,9 +163,20 @@ void COSGProcessorRef::ProcessReplies()
 }
 
 
+void COSGProcessorRef::SetRequestContext()
+{
+    CFastMutexGuard guard(m_ProcessorPtrMutex);
+    if ( m_ProcessorPtr ) {
+        m_ProcessorPtr->GetRequest()->SetRequestContext();
+    }
+}
+
+
 void COSGProcessorRef::s_ProcessReplies(void *data)
 {
+    CRequestContextResetter     context_resetter;
     shared_ptr<COSGProcessorRef>& ref = *static_cast<shared_ptr<COSGProcessorRef>*>(data);
+    ref->SetRequestContext();
     {{
         CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
         if ( ref->m_ProcessorPtr ) {
@@ -202,6 +207,9 @@ void COSGProcessorRef::s_Process(shared_ptr<COSGProcessorRef> processor)
 
 void COSGProcessorRef::Process()
 {
+    CRequestContextResetter     context_resetter;
+    SetRequestContext();
+
     try {
         tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() start: "<<GetStatus());
         for ( double retry_count = m_ConnectionPool->GetRetryCount(); retry_count > 0; ) {
@@ -225,7 +233,7 @@ void COSGProcessorRef::Process()
             bool last_attempt = retry_count <= 1;
             COSGCaller caller;
             try {
-                caller.AllocateConnection(m_ConnectionPool, m_Context);
+                caller.AllocateConnection(m_ConnectionPool);
             }
             catch ( exception& exc ) {
                 if ( last_attempt ) {
@@ -386,11 +394,23 @@ void CPSGS_OSGProcessorBase::StopAsyncThread()
 
 void CPSGS_OSGProcessorBase::Process()
 {
+    CRequestContextResetter     context_resetter;
+    GetRequest()->SetRequestContext();
+
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process(): "<<m_Status);
     if ( IsCanceled() ) {
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process() canceled: "<<m_Status);
         return;
     }
+    if ( GetFetches().empty() ) {
+        CreateRequests();
+        if ( m_Context ) {
+            for ( auto& f : m_Fetches ) {
+                f->SetContext(*m_Context);
+            }
+        }
+    }
+    _ASSERT(!GetFetches().empty());
     m_ProcessorRef = make_shared<COSGProcessorRef>(this);
     if ( m_ConnectionPool->GetAsyncProcessing() ) {
         ProcessAsync();
@@ -467,7 +487,7 @@ void CPSGS_OSGProcessorBase::AddRequest(const CRef<CID2_Request>& req0)
         param->SetValue().push_back(to_string(hops));
         req->SetParams().Set().push_back(param);
     }
-    m_Fetches.push_back(Ref(new COSGFetch(req, m_Context)));
+    m_Fetches.push_back(Ref(new COSGFetch(req)));
 }
 
 

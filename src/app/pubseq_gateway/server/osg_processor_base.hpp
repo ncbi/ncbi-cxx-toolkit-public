@@ -85,6 +85,8 @@ public:
     explicit COSGProcessorRef(CPSGS_OSGProcessorBase* ptr);
     ~COSGProcessorRef();
 
+    void SetRequestContext();
+
     typedef vector<CRef<COSGFetch>> TFetches;
     TFetches GetFetches();
     void NotifyOSGCallStart();
