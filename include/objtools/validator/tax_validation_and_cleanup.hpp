@@ -305,7 +305,10 @@ typedef map<string, CSpecificHostRequest> TSpecificHostRequests;
 class NCBI_VALIDATOR_EXPORT CTaxValidationAndCleanup
 {
 public:
+    using taxupdate_func_t = function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>& list)>;
+
     CTaxValidationAndCleanup();
+    CTaxValidationAndCleanup(taxupdate_func_t);
     ~CTaxValidationAndCleanup() {}
 
     void Init(const CSeq_entry& se);
@@ -386,6 +389,7 @@ protected:
     CStrainMap m_StrainMap;
 
     unique_ptr<ITaxon3> m_taxon3;
+    taxupdate_func_t m_tax_func = nullptr;
 };
 
 
