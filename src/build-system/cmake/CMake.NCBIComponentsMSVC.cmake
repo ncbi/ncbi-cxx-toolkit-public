@@ -155,6 +155,9 @@ else()
 endif()
 
 NCBI_define_Wcomponent(SQLServer "x64/msodbcsql17.lib")
+if(NCBI_COMPONENT_SQLServer_FOUND)
+    set(NCBI_COMPONENT_SQLServer_VERSION 170)
+endif()
 
 ##############################################################################
 # OpenGL
@@ -392,6 +395,7 @@ endif(NOT NCBI_COMPONENT_VDB_DISABLED)
 NCBI_define_Wcomponent(PYTHON python38.lib python3.lib)
 if(NCBI_COMPONENT_PYTHON_FOUND)
     set(NCBI_COMPONENT_PYTHON_BINPATH ${NCBI_ThirdParty_PYTHON})
+    set(NCBI_COMPONENT_PYTHON_VERSION 38)
 endif()
 
 ##############################################################################
