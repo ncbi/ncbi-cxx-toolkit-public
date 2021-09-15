@@ -4349,11 +4349,13 @@ void CFlatGatherer::x_GetFeatsOnCdsProductIdx(
             continue;
         }
 
-        if ( ( cfg.HideCDDFeatures() || ! cfg.ShowCDDFeatures() )  &&
-             (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
-             s_IsCDD(curr) ) {
-            // passing this test prevents mapping of COG CDD region features
-            continue;
+        if ( cfg.HideCDDFeatures() || ( ! cfg.ShowCDDFeatures() && ! cfg.IsPolicyFtp() ) )  {
+            if (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site) {
+                if ( s_IsCDD(curr) ) {
+                    // passing this test prevents mapping of COG CDD region features
+                    continue;
+                }
+            }
         }
 
         // suppress duplicate features (on protein)
