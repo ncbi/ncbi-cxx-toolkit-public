@@ -307,6 +307,31 @@ private:
 };
 
 
+bool SSuspendResume::GotSuspendEvent()
+{
+    auto got_suspend_event = false;
+    void* event;
+
+    while ((event = SwapPointers(&m_SuspendResumeEvent,
+            NO_EVENT)) != NO_EVENT) {
+        if (event == SUSPEND_EVENT) {
+            if (!m_TimelineIsSuspended) {
+                // Stop the timeline.
+                m_TimelineIsSuspended = true;
+                got_suspend_event = true;
+            }
+        } else { /* event == RESUME_EVENT */
+            if (m_TimelineIsSuspended) {
+                // Resume the timeline.
+                m_TimelineIsSuspended = false;
+            }
+        }
+    }
+
+    return got_suspend_event;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 const IRegistry& SGridWorkerNodeImpl::GetConfig() const
@@ -364,11 +389,6 @@ SGridWorkerNodeImpl::SGridWorkerNodeImpl(CNcbiApplicationAPI& app,
     m_TotalTimeLimit(0),
     m_StartupTime(0),
     m_CleanupEventSource(new CWorkerNodeCleanup()),
-    m_SuspendResumeEvent(NO_EVENT),
-    m_TimelineIsSuspended(false),
-    m_CurrentJobGeneration(0),
-    m_DefaultPullbackTimeout(0),
-    m_JobPullbackTime(0),
     m_Listener(new CGridWorkerNodeApp_Listener()),
     m_App(app),
     m_SingleThreadForced(false)
@@ -403,26 +423,36 @@ void CGridWorkerNode::Init()
 
 void CGridWorkerNode::Suspend(bool pullback, unsigned timeout)
 {
+    m_Impl->m_SuspendResume.Suspend(pullback, timeout);
+}
+
+void SSuspendResume::Suspend(bool pullback, unsigned timeout)
+{
     if (pullback)
-        m_Impl->SetJobPullbackTimer(timeout);
-    if (SwapPointers(&m_Impl->m_SuspendResumeEvent, SUSPEND_EVENT) == NO_EVENT)
+        SetJobPullbackTimer(timeout);
+    if (SwapPointers(&m_SuspendResumeEvent, SUSPEND_EVENT) == NO_EVENT)
         CGridGlobals::GetInstance().InterruptUDPPortListening();
 }
 
 void CGridWorkerNode::Resume()
 {
-    if (SwapPointers(&m_Impl->m_SuspendResumeEvent, RESUME_EVENT) == NO_EVENT)
+    m_Impl->m_SuspendResume.Resume();
+}
+
+void SSuspendResume::Resume()
+{
+    if (SwapPointers(&m_SuspendResumeEvent, RESUME_EVENT) == NO_EVENT)
         CGridGlobals::GetInstance().InterruptUDPPortListening();
 }
 
-void SGridWorkerNodeImpl::SetJobPullbackTimer(unsigned seconds)
+void SSuspendResume::SetJobPullbackTimer(unsigned seconds)
 {
     CFastMutexGuard mutex_guard(m_JobPullbackMutex);
     m_JobPullbackTime = CDeadline(seconds);
     ++m_CurrentJobGeneration;
 }
 
-bool SGridWorkerNodeImpl::CheckForPullback(unsigned job_generation)
+bool SSuspendResume::CheckForPullback(unsigned job_generation)
 {
     CFastMutexGuard mutex_guard(m_JobPullbackMutex);
     return job_generation != m_CurrentJobGeneration &&
@@ -603,7 +633,8 @@ int SGridWorkerNodeImpl::Run(
     if (m_CheckStatusPeriod == 0)
         m_CheckStatusPeriod = 1;
 
-    m_DefaultPullbackTimeout = m_SynRegistry->Get("server", "default_pullback_timeout", 0);
+    auto default_timeout = m_SynRegistry->Get("server", "default_pullback_timeout", 0);
+    m_SuspendResume.SetDefaultPullbackTimeout(default_timeout);
 
     if (m_SynRegistry->Has("server", "wait_server_timeout")) {
         ERR_POST_X(52, "[server"
@@ -1130,7 +1161,7 @@ IWorkerNodeCleanupEventSource* CGridWorkerNode::GetCleanupEventSource()
 
 bool CGridWorkerNode::IsSuspended() const
 {
-    return m_Impl->m_TimelineIsSuspended;
+    return m_Impl->m_SuspendResume.IsSuspended();
 }
 
 const string& CGridWorkerNode::GetQueueName() const
