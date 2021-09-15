@@ -156,17 +156,17 @@ private:
 
 struct SSuspendResume
 {
-    SSuspendResume() : m_Event(eNoEvent), m_IsSuspended(false) {}
+    SSuspendResume() : m_Event(eNoEvent), m_IsSuspended(false), m_CurrentJobGeneration(0) {}
 
     void Suspend(bool pullback, unsigned timeout);
     void Resume();
     void SetJobPullbackTimer(unsigned seconds);
-    bool CheckForPullback(unsigned job_generation);
+    bool IsJobPullbackTimerExpired();
 
     enum EState { eRunning, eSuspending, eSuspended };
     EState CheckState();
     bool IsSuspended() const { return m_IsSuspended.load(); }
-    unsigned GetCurrentJobGeneration() const { return m_CurrentJobGeneration; }
+    unsigned GetCurrentJobGeneration() const { return m_CurrentJobGeneration.load(); }
     unsigned GetDefaultPullbackTimeout() const { return m_DefaultPullbackTimeout; }
     void SetDefaultPullbackTimeout(unsigned seconds) { m_DefaultPullbackTimeout = seconds; }
 
@@ -176,7 +176,7 @@ private:
     atomic<bool> m_IsSuspended;
     // Support for the job "pullback" mechanism.
     CFastMutex m_JobPullbackMutex;
-    unsigned m_CurrentJobGeneration = 0;
+    atomic<unsigned> m_CurrentJobGeneration;
     unsigned m_DefaultPullbackTimeout = 0;
     CDeadline m_JobPullbackTime = 0;
 };

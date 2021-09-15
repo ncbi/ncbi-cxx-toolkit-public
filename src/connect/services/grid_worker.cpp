@@ -443,11 +443,10 @@ void SSuspendResume::SetJobPullbackTimer(unsigned seconds)
     ++m_CurrentJobGeneration;
 }
 
-bool SSuspendResume::CheckForPullback(unsigned job_generation)
+bool SSuspendResume::IsJobPullbackTimerExpired()
 {
     CFastMutexGuard mutex_guard(m_JobPullbackMutex);
-    return job_generation != m_CurrentJobGeneration &&
-            m_JobPullbackTime.IsExpired();
+    return m_JobPullbackTime.IsExpired();
 }
 
 void SGridWorkerNodeImpl::x_WNCoreInit()
