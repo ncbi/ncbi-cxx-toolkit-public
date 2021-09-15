@@ -325,7 +325,8 @@ CNetScheduleAdmin::EShutdownLevel SWorkerNodeJobContextImpl::GetShutdownLevel()
                     ": " << ex.what());
         }
 
-    if (m_WorkerNode->m_SuspendResume.CheckForPullback(m_JobGeneration)) {
+    if ((m_JobGeneration != m_WorkerNode->m_SuspendResume.GetCurrentJobGeneration()) &&
+                m_WorkerNode->m_SuspendResume.IsJobPullbackTimerExpired()) {
         LOG_POST("Pullback timeout for " << m_Job.job_id);
         return CNetScheduleAdmin::eShutdownImmediate;
     }
