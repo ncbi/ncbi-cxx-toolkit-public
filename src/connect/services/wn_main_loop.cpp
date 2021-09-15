@@ -294,8 +294,8 @@ CNetScheduleAdmin::EShutdownLevel SWorkerNodeJobContextImpl::GetShutdownLevel()
             switch (job_status) {
             case CNetScheduleAPI::eRunning:
                 if (pause_mode == eNSQ_WithPullback) {
-                    auto default_timeout = m_WorkerNode->m_SuspendResume.GetDefaultPullbackTimeout();
-                    m_WorkerNode->m_SuspendResume.SetJobPullbackTimer(default_timeout);
+                    auto default_timeout = m_WorkerNode->m_SuspendResume.GetLock()->GetDefaultPullbackTimeout();
+                    m_WorkerNode->m_SuspendResume.GetLock()->SetJobPullbackTimer(default_timeout);
                     LOG_POST("Pullback request from the server, "
                             "(default) pullback timeout=" <<
                             default_timeout);
@@ -325,8 +325,8 @@ CNetScheduleAdmin::EShutdownLevel SWorkerNodeJobContextImpl::GetShutdownLevel()
                     ": " << ex.what());
         }
 
-    if ((m_JobGeneration != m_WorkerNode->m_SuspendResume.GetCurrentJobGeneration()) &&
-                m_WorkerNode->m_SuspendResume.IsJobPullbackTimerExpired()) {
+    if ((m_JobGeneration != m_WorkerNode->m_SuspendResume.GetMTSafe().GetCurrentJobGeneration()) &&
+                m_WorkerNode->m_SuspendResume.GetLock()->IsJobPullbackTimerExpired()) {
         LOG_POST("Pullback timeout for " << m_Job.job_id);
         return CNetScheduleAdmin::eShutdownImmediate;
     }
@@ -353,7 +353,7 @@ void SWorkerNodeJobContextImpl::ResetJobContext()
             (m_Job.mask & CNetScheduleAPI::eExclusiveJob) != 0;
 
     m_RequestContext->Reset();
-    m_JobGeneration = m_WorkerNode->m_SuspendResume.GetCurrentJobGeneration();
+    m_JobGeneration = m_WorkerNode->m_SuspendResume.GetMTSafe().GetCurrentJobGeneration();
 }
 
 void CWorkerNodeJobContext::RequestExclusiveMode()
@@ -648,7 +648,7 @@ CNetScheduleGetJob::EState CMainLoopThread::CImpl::CheckState()
     EState ret = eWorking;
 
     while (!CGridGlobals::GetInstance().IsShuttingDown()) {
-        switch (m_WorkerNode->m_SuspendResume.CheckState()) {
+        switch (m_WorkerNode->m_SuspendResume.GetMTSafe().CheckState()) {
             case SSuspendResume::eRunning:
                 return ret;
             case SSuspendResume::eSuspending:

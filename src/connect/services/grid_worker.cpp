@@ -307,7 +307,7 @@ private:
 };
 
 
-SSuspendResume::EState SSuspendResume::CheckState()
+SSuspendResume::EState SSuspendResume::CheckState() volatile
 {
     switch (m_Event.exchange(eNoEvent)) {
         case eNoEvent:
@@ -414,7 +414,7 @@ void CGridWorkerNode::Init()
 
 void CGridWorkerNode::Suspend(bool pullback, unsigned timeout)
 {
-    m_Impl->m_SuspendResume.Suspend(pullback, timeout);
+    m_Impl->m_SuspendResume.GetLock()->Suspend(pullback, timeout);
 }
 
 void SSuspendResume::Suspend(bool pullback, unsigned timeout)
@@ -427,10 +427,10 @@ void SSuspendResume::Suspend(bool pullback, unsigned timeout)
 
 void CGridWorkerNode::Resume()
 {
-    m_Impl->m_SuspendResume.Resume();
+    m_Impl->m_SuspendResume.GetMTSafe().Resume();
 }
 
-void SSuspendResume::Resume()
+void SSuspendResume::Resume() volatile
 {
     if (m_Event.exchange(eResume) == eNoEvent)
         CGridGlobals::GetInstance().InterruptUDPPortListening();
@@ -438,14 +438,12 @@ void SSuspendResume::Resume()
 
 void SSuspendResume::SetJobPullbackTimer(unsigned seconds)
 {
-    CFastMutexGuard mutex_guard(m_JobPullbackMutex);
     m_JobPullbackTime = CDeadline(seconds);
     ++m_CurrentJobGeneration;
 }
 
 bool SSuspendResume::IsJobPullbackTimerExpired()
 {
-    CFastMutexGuard mutex_guard(m_JobPullbackMutex);
     return m_JobPullbackTime.IsExpired();
 }
 
@@ -624,7 +622,7 @@ int SGridWorkerNodeImpl::Run(
         m_CheckStatusPeriod = 1;
 
     auto default_timeout = m_SynRegistry->Get("server", "default_pullback_timeout", 0);
-    m_SuspendResume.SetDefaultPullbackTimeout(default_timeout);
+    m_SuspendResume.GetLock()->SetDefaultPullbackTimeout(default_timeout);
 
     if (m_SynRegistry->Has("server", "wait_server_timeout")) {
         ERR_POST_X(52, "[server"
@@ -1151,7 +1149,7 @@ IWorkerNodeCleanupEventSource* CGridWorkerNode::GetCleanupEventSource()
 
 bool CGridWorkerNode::IsSuspended() const
 {
-    return m_Impl->m_SuspendResume.IsSuspended();
+    return m_Impl->m_SuspendResume.GetMTSafe().IsSuspended();
 }
 
 const string& CGridWorkerNode::GetQueueName() const

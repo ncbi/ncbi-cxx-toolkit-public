@@ -159,14 +159,14 @@ struct SSuspendResume
     SSuspendResume() : m_Event(eNoEvent), m_IsSuspended(false), m_CurrentJobGeneration(0) {}
 
     void Suspend(bool pullback, unsigned timeout);
-    void Resume();
+    void Resume() volatile;
     void SetJobPullbackTimer(unsigned seconds);
     bool IsJobPullbackTimerExpired();
 
     enum EState { eRunning, eSuspending, eSuspended };
-    EState CheckState();
-    bool IsSuspended() const { return m_IsSuspended.load(); }
-    unsigned GetCurrentJobGeneration() const { return m_CurrentJobGeneration.load(); }
+    EState CheckState() volatile;
+    bool IsSuspended() const volatile { return m_IsSuspended.load(); }
+    unsigned GetCurrentJobGeneration() const volatile { return m_CurrentJobGeneration.load(); }
     unsigned GetDefaultPullbackTimeout() const { return m_DefaultPullbackTimeout; }
     void SetDefaultPullbackTimeout(unsigned seconds) { m_DefaultPullbackTimeout = seconds; }
 
@@ -174,8 +174,6 @@ private:
     enum EEvent { eNoEvent, eSuspend, eResume };
     atomic<EEvent> m_Event;
     atomic<bool> m_IsSuspended;
-    // Support for the job "pullback" mechanism.
-    CFastMutex m_JobPullbackMutex;
     atomic<unsigned> m_CurrentJobGeneration;
     unsigned m_DefaultPullbackTimeout = 0;
     CDeadline m_JobPullbackTime = 0;
@@ -271,7 +269,7 @@ struct SGridWorkerNodeImpl : public CObject, IWorkerNodeInitContext
     set<SSocketAddress> m_Masters;
     set<unsigned int> m_AdminHosts;
 
-    SSuspendResume m_SuspendResume;
+    SThreadSafe<SSuspendResume> m_SuspendResume;
 
     bool x_AreMastersBusy() const;
 
