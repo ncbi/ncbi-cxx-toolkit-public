@@ -776,6 +776,14 @@ void CRemoteUpdater::SetMLAClient(CMLAClient& mlaClient) {
     m_mlaClient.Reset(&mlaClient);
 }
 
+CRef<CTaxon3_reply> CRemoteUpdater::SendOrgRefList(const vector<CRef<COrg_ref>>& list)
+{
+    std::lock_guard<std::mutex> guard(m_Mutex);
+
+    CRef<CTaxon3_reply> reply = m_taxClient->SendOrgRefList(list, m_logger);
+    return reply;
+}
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
