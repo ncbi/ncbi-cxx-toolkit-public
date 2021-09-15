@@ -649,9 +649,7 @@ CNetScheduleGetJob::EState CMainLoopThread::CImpl::CheckState()
     while (!CGridGlobals::GetInstance().IsShuttingDown()) {
         if (m_WorkerNode->m_SuspendResume.GotSuspendEvent()) {
             ret = eRestarted;
-        }
-
-        if (!m_WorkerNode->m_SuspendResume.IsSuspended()) {
+        } else if (!m_WorkerNode->m_SuspendResume.IsSuspended()) {
             return ret;
         }
 
