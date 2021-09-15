@@ -39,6 +39,7 @@
 
 #include <connect/services/grid_rw_impl.hpp>
 
+#include <atomic>
 #include <unordered_map>
 
 BEGIN_NCBI_SCOPE
@@ -153,15 +154,10 @@ private:
     bool m_RunRegistered;
 };
 
-/////////////////////////////////////////////////////////////////////////////
-//
-
-#define NO_EVENT ((void*) 0)
-#define SUSPEND_EVENT ((void*) 1)
-#define RESUME_EVENT ((void*) 2)
-
 struct SSuspendResume
 {
+    SSuspendResume() : m_Event(eNoEvent) {}
+
     void Suspend(bool pullback, unsigned timeout);
     void Resume();
     void SetJobPullbackTimer(unsigned seconds);
@@ -173,7 +169,8 @@ struct SSuspendResume
     void SetDefaultPullbackTimeout(unsigned seconds) { m_DefaultPullbackTimeout = seconds; }
 
 private:
-    void* volatile m_SuspendResumeEvent = NO_EVENT;
+    enum EEvent { eNoEvent, eSuspend, eResume };
+    atomic<EEvent> m_Event;
     bool m_TimelineIsSuspended = false;
     // Support for the job "pullback" mechanism.
     CFastMutex m_JobPullbackMutex;

@@ -309,26 +309,25 @@ private:
 
 bool SSuspendResume::GotSuspendEvent()
 {
-    auto got_suspend_event = false;
-    void* event;
-
-    while ((event = SwapPointers(&m_SuspendResumeEvent,
-            NO_EVENT)) != NO_EVENT) {
-        if (event == SUSPEND_EVENT) {
+    switch (m_Event.exchange(eNoEvent)) {
+        case eNoEvent:
+            break;
+        case eSuspend:
             if (!m_TimelineIsSuspended) {
                 // Stop the timeline.
                 m_TimelineIsSuspended = true;
-                got_suspend_event = true;
+                return true;
             }
-        } else { /* event == RESUME_EVENT */
+            break;
+        case eResume:
             if (m_TimelineIsSuspended) {
                 // Resume the timeline.
                 m_TimelineIsSuspended = false;
             }
-        }
+            break;
     }
 
-    return got_suspend_event;
+    return false;
 }
 
 
@@ -430,7 +429,7 @@ void SSuspendResume::Suspend(bool pullback, unsigned timeout)
 {
     if (pullback)
         SetJobPullbackTimer(timeout);
-    if (SwapPointers(&m_SuspendResumeEvent, SUSPEND_EVENT) == NO_EVENT)
+    if (m_Event.exchange(eSuspend) == eNoEvent)
         CGridGlobals::GetInstance().InterruptUDPPortListening();
 }
 
@@ -441,7 +440,7 @@ void CGridWorkerNode::Resume()
 
 void SSuspendResume::Resume()
 {
-    if (SwapPointers(&m_SuspendResumeEvent, RESUME_EVENT) == NO_EVENT)
+    if (m_Event.exchange(eResume) == eNoEvent)
         CGridGlobals::GetInstance().InterruptUDPPortListening();
 }
 
