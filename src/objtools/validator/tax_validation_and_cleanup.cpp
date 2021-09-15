@@ -633,8 +633,15 @@ CRef<CQualifierRequest> CStrainMap::x_MakeNewRequest(const string& orig_val, con
 CTaxValidationAndCleanup::CTaxValidationAndCleanup()
 {
     m_taxon3.reset(new CTaxon3(CTaxon3::initialize::yes));
+    m_tax_func = [this](const vector<CRef<COrg_ref>>& list) -> CRef<CTaxon3_reply> {
+        return m_taxon3->SendOrgRefList(list);
+    };
 }
 
+CTaxValidationAndCleanup::CTaxValidationAndCleanup(taxupdate_func_t tax_func)
+  : m_tax_func(tax_func)
+{
+}
 
 void CTaxValidationAndCleanup::Init(const CSeq_entry& se)
 {
@@ -1229,7 +1236,7 @@ bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with
             cpy->Assign(*it);
             tmp_edited_orgs.push_back(cpy);
         }
-        CRef<CTaxon3_reply> tmp_lookup_reply = m_taxon3->SendOrgRefList(tmp_original_orgs);
+        CRef<CTaxon3_reply> tmp_lookup_reply = m_tax_func(tmp_original_orgs);
         string error_message;
         AdjustOrgRefsWithTaxLookupReply(*tmp_lookup_reply, tmp_edited_orgs, error_message);
         if (!NStr::IsBlank(error_message))
@@ -1249,7 +1256,7 @@ bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with
         {
             size_t len = min(chunk_size, spec_host_rq.size() - i);
             vector< CRef<COrg_ref> > tmp_spec_host_rq(spec_host_rq.begin() + i, spec_host_rq.begin() + i + len);
-            CRef<CTaxon3_reply> tmp_spec_host_reply = m_taxon3->SendOrgRefList(tmp_spec_host_rq);
+            CRef<CTaxon3_reply> tmp_spec_host_reply = m_tax_func(tmp_spec_host_rq);
             string error_message = IncrementalSpecificHostMapUpdate(tmp_spec_host_rq, *tmp_spec_host_reply);
             if (!NStr::IsBlank(error_message))
             {
@@ -1315,7 +1322,7 @@ void CTaxValidationAndCleanup::FixOneSpecificHost(string& val)
     edited.push_back(CRef<COrg_ref>(new COrg_ref()));
     edited.front()->SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_nat_host, val)));
 
-    CRef<CTaxon3_reply> tmp_spec_host_reply = m_taxon3->SendOrgRefList(spec_host_rq);
+    CRef<CTaxon3_reply> tmp_spec_host_reply = m_tax_func(spec_host_rq);
 
     if (!tmp_spec_host_reply->IsSetReply() || !tmp_spec_host_reply->GetReply().front()->IsData()) {
         val = kEmptyStr;
@@ -1354,7 +1361,7 @@ bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val, string&
         return true;
     }
 
-    CRef<CTaxon3_reply> tmp_spec_host_reply = m_taxon3->SendOrgRefList(spec_host_rq);
+    CRef<CTaxon3_reply> tmp_spec_host_reply = m_tax_func(spec_host_rq);
 
     string err_msg;
     if (tmp_spec_host_reply) {
@@ -1395,7 +1402,7 @@ void CTaxValidationAndCleanup::CheckOneOrg(const COrg_ref& org, int genome, CVal
     rq->Assign(org);
     org_rq_list.push_back(rq);
 
-    CRef<CTaxon3_reply> reply = m_taxon3->SendOrgRefList(org_rq_list);
+    CRef<CTaxon3_reply> reply = m_tax_func(org_rq_list);
 
     if (!reply || !reply->IsSetReply()) {
         imp.PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyServiceProblem,
@@ -1410,7 +1417,7 @@ void CTaxValidationAndCleanup::CheckOneOrg(const COrg_ref& org, int genome, CVal
     org_rq_list = GetSpecificHostLookupRequest(false);
 
     if (!org_rq_list.empty()) {
-        reply = m_taxon3->SendOrgRefList(org_rq_list);
+        reply = m_tax_func(org_rq_list);
         string err_msg;
         if (reply) {
             err_msg = IncrementalSpecificHostMapUpdate(org_rq_list, *reply);
@@ -1429,7 +1436,7 @@ void CTaxValidationAndCleanup::CheckOneOrg(const COrg_ref& org, int genome, CVal
     m_StrainMap.AddOrg(org);
     org_rq_list = GetStrainLookupRequest();
     if (!org_rq_list.empty()) {
-        reply = m_taxon3->SendOrgRefList(org_rq_list);
+        reply = m_tax_func(org_rq_list);
         string err_msg = IncrementalStrainMapUpdate(org_rq_list, *reply);
         if (!NStr::IsBlank(err_msg)) {
             imp.PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem, err_msg, org);
