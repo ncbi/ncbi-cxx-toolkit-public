@@ -307,27 +307,19 @@ private:
 };
 
 
-bool SSuspendResume::GotSuspendEvent()
+SSuspendResume::EState SSuspendResume::CheckState()
 {
     switch (m_Event.exchange(eNoEvent)) {
         case eNoEvent:
             break;
         case eSuspend:
-            if (!m_TimelineIsSuspended) {
-                // Stop the timeline.
-                m_TimelineIsSuspended = true;
-                return true;
-            }
-            break;
+            return m_IsSuspended.exchange(true) ? eSuspended : eSuspending;
         case eResume:
-            if (m_TimelineIsSuspended) {
-                // Resume the timeline.
-                m_TimelineIsSuspended = false;
-            }
-            break;
+            m_IsSuspended.store(false);
+            return eRunning;
     }
 
-    return false;
+    return m_IsSuspended.load() ? eSuspended : eRunning;
 }
 
 
