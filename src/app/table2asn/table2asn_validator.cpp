@@ -113,7 +113,7 @@ void CTable2AsnValidator::Cleanup(CRef<CSeq_submit> submit, CSeq_entry_Handle& h
                 return copied;
             }
         );
-        //tval.DoTaxonomyUpdate(h_entry, true);
+        tval.DoTaxonomyUpdate(h_entry, true);
     }
 }
 
