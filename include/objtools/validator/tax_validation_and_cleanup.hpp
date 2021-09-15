@@ -38,7 +38,7 @@
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/taxon3/T3Reply.hpp>
-#include <objects/taxon3/Taxon3_reply.hpp>
+#include <objects/taxon3/itaxon3.hpp>
 #include <objects/valerr/ValidErrItem.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -371,19 +371,21 @@ protected:
 
     void x_ClearMaps() { m_HostMap.Clear(); m_HostMapForFix.Clear(); m_StrainMap.Clear(); }
 
-    vector<CConstRef<CSeqdesc> > m_SrcDescs;
-    vector<CConstRef<CSeq_entry> > m_DescCtxs;
-    vector<CConstRef<CSeq_feat> > m_SrcFeats;
+    vector<CConstRef<CSeqdesc>> m_SrcDescs;
+    vector<CConstRef<CSeq_entry>> m_DescCtxs;
+    vector<CConstRef<CSeq_feat>> m_SrcFeats;
 
     TSpecificHostRequests m_SpecificHostRequests;
-    bool m_SpecificHostRequestsBuilt;
-    bool m_SpecificHostRequestsUpdated;
+    bool m_SpecificHostRequestsBuilt{ false };
+    bool m_SpecificHostRequestsUpdated{ false };
 
-    bool m_StrainRequestsBuilt;
+    bool m_StrainRequestsBuilt{ false };
 
     CSpecificHostMap m_HostMap;
     CSpecificHostMapForFix m_HostMapForFix;
     CStrainMap m_StrainMap;
+
+    unique_ptr<ITaxon3> m_taxon3;
 };
 
 
