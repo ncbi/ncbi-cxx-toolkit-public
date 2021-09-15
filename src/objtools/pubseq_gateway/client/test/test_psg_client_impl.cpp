@@ -264,7 +264,7 @@ void SFixture::MtReading()
 
     // Reading
 
-    auto reader_impl = [&](const vector<char>& src, SPSG_Reply::SItem::TTS* dst) {
+    auto reader_impl = [&](const vector<char>& src, SPSG_Reply::SItem::TTS& dst) {
         TReadImpl read_impl(dst);
         vector<char> received(kSizeMax);
         auto expected = src.data();
@@ -327,7 +327,7 @@ void SFixture::MtReading()
                             if (src_blob == src_blobs.end()) {
                                 BOOST_ERROR("Unknown blob received");
                             } else {
-                                t = thread(reader_impl, src_blob->second, &item_ts);
+                                t = thread(reader_impl, src_blob->second, ref(item_ts));
                             }
 
                             readers.emplace(&item_ts, move(t));
@@ -469,7 +469,7 @@ BOOST_AUTO_TEST_CASE(Request)
 
 struct SBlobReader
 {
-    SBlobReader(SPSG_Reply::SItem::TTS* dst) : reader(dst) {}
+    SBlobReader(SPSG_Reply::SItem::TTS& dst) : reader(dst) {}
 
     int operator()(SRandom& r, char* buf, size_t buf_size, size_t expected, size_t* read)
     {
@@ -527,7 +527,7 @@ BOOST_AUTO_TEST_CASE(BlobReader)
 
 struct SStreamReadsome
 {
-    SStreamReadsome(SPSG_Reply::SItem::TTS* dst) : is(dst) {}
+    SStreamReadsome(SPSG_Reply::SItem::TTS& dst) : is(dst) {}
 
     int operator()(SRandom& r, char* buf, size_t buf_size, size_t, size_t* read)
     {
@@ -554,7 +554,7 @@ BOOST_AUTO_TEST_CASE(StreamReadsome)
 
 struct SStreamRead
 {
-    SStreamRead(SPSG_Reply::SItem::TTS* dst) : is(dst) {}
+    SStreamRead(SPSG_Reply::SItem::TTS& dst) : is(dst) {}
 
     int operator()(SRandom& r, char* buf, size_t buf_size, size_t, size_t* read)
     {
