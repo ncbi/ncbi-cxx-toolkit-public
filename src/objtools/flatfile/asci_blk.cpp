@@ -859,7 +859,7 @@ void GetLenSubNode(DataBlkPtr dbp)
         return;
 
     offset = dbp->offset;
-    for (s = offset; *s != '\0' && IS_DIGIT(*s) == 0;)
+    for (s = offset; *s != '\0' && isdigit(*s) == 0;)
         s++;
     n = atoi(s);
     ldbp = NULL;
@@ -1770,7 +1770,7 @@ Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp,
             *bu++ = residue;
             count++;
         }
-        else if (residue == 1 && (warn || IS_ALPHA(*ptr) != 0))
+        else if (residue == 1 && (warn || isalpha(*ptr) != 0))
         {
             /* it can be punctuation or alpha character
             */
@@ -1863,7 +1863,7 @@ bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq,
     {
         while (*seqptr != '\n')
             seqptr++;
-        while (IS_ALPHA(*seqptr) == 0)   /* skip leading blanks and digits */
+        while (isalpha(*seqptr) == 0)   /* skip leading blanks and digits */
             seqptr++;
     }
 
@@ -1884,7 +1884,7 @@ bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq,
         }
 
         seqlen += len;
-        while (IS_ALPHA(*seqptr) == 0 && seqptr < endptr)
+        while (isalpha(*seqptr) == 0 && seqptr < endptr)
             seqptr++;
     }
 
@@ -1966,7 +1966,7 @@ unique_ptr<unsigned char[]> GetDNAConv(void)
         const string& code = objects::CSeqportUtil::GetCode(objects::eSeq_code_type_iupacna, i);
 
         dnaconv[static_cast<int>(code[0])] = code[0];
-        dnaconv[(int)TO_LOWER(code[0])] = code[0];   
+        dnaconv[(int)tolower(code[0])] = code[0];   
     }
 
     return dnaconv;

@@ -196,7 +196,7 @@ static void FindCitInFeats(std::vector<CPubInfo>& pubs, const objects::CBioseq::
 static int GetCitSerialFromQual(const objects::CGb_qual& qual)
 {
     const Char* p = qual.GetVal().c_str();
-    while (*p && !IS_DIGIT(*p))
+    while (*p && !isdigit(*p))
         ++p;
 
     if (*p)

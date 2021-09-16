@@ -263,14 +263,14 @@ static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Parser::EFormat for
 
     while (*eptr == ' ' && eptr > offset)
         eptr--;
-    while (IS_DIGIT(*eptr) != 0 && eptr > offset)
+    while (isdigit(*eptr) != 0 && eptr > offset)
         eptr--;
     ibp->bases = atoi(eptr + 1);
     while (*eptr == ' ' && eptr > offset)
         eptr--;
     if (*eptr == ';')
         eptr--;
-    while (IS_ALPHA(*eptr) != 0 && eptr > offset)
+    while (isalpha(*eptr) != 0 && eptr > offset)
         eptr--;
 
     StringNCpy(ibp->division, eptr + 1, 3);

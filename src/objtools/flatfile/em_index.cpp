@@ -85,7 +85,7 @@ static void EmblSegment(ParserPtr pp)
 
     locus = StringSave(pp->entrylist[0]->locusname);
 
-    for(i = StringLen(locus); IS_DIGIT(locus[i-1]) != 0 && i > 0; i--)
+    for(i = StringLen(locus); isdigit(locus[i-1]) != 0 && i > 0; i--)
         locus[i-1] = '\0';
 
     for(j = 0; j < pp->indx; j++)
@@ -315,7 +315,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                                   "Line type \"AH\" is allowed for TPA or TSA records only. Continue anyway.");
                     }
                 }
-                if(after_SQ && IS_ALPHA(finfo->str[0]) != 0)
+                if(after_SQ && isalpha(finfo->str[0]) != 0)
                 {
                     ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd,
                                "Missing end of the entry, entry dropped");

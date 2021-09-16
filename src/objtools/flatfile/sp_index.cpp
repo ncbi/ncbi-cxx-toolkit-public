@@ -165,7 +165,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
                               "RM line type has been replaced by RX, skipped %s",
                               finfo->str);
                 }
-                if(after_SQ && IS_ALPHA(finfo->str[0]) != 0)
+                if(after_SQ && isalpha(finfo->str[0]) != 0)
                 {
                     ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd,
                                "Missing end of the entry, entry dropped");

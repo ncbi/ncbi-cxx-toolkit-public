@@ -241,7 +241,7 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
                   StringNCmp(finfo->str, pirkwl[ParFlatPIR_END].str,
                              pirkwl[ParFlatPIR_END].len) != 0)
             {
-                if(after_SEQUENCE && IS_ALPHA(finfo->str[0]) != 0)
+                if(after_SEQUENCE && isalpha(finfo->str[0]) != 0)
                 {
                     ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd,
                                "Missing end of the entry, entry dropped");

@@ -726,7 +726,7 @@ static int CkQualPosaa(objects::CGb_qual& cur, bool error_msgs)
         /*---I expect that we maight need to allow blanks here,
                     but not now... -Karl 1/28/94 */
         if ((eptr = StringChr(str, ',')) != NULL) {
-            while (str != eptr && (IS_DIGIT(*str) || *str == '.'))
+            while (str != eptr && (isdigit(*str) || *str == '.'))
                 str++;
 
             if (str == eptr) {
@@ -1112,7 +1112,7 @@ static int CkQualEcnum(objects::CGb_qual& cur, bool error_msgs, bool perform_cor
           str++;
    
       for (; *str != '\0' && *str != '\"'; str++)
-          if (!IS_DIGIT(*str) && *str != '.' && *str != '-' && *str != 'n') {
+          if (!isdigit(*str) && *str != '.' && *str != '-' && *str != 'n') {
             if (error_msgs){ 
                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_BadECnum,
                  "At <%c>(%d) /%s=%s",
@@ -1270,7 +1270,7 @@ static int CkQualTokenType(objects::CGb_qual& cur, bool error_msgs, Uint1 type)
                 str = CkBracketType(token.c_str());
                 break;
             case ParFlat_Integer_type:
-                for (str = token.c_str(); *str != '\0' && IS_DIGIT(*str); str++)
+                for (str = token.c_str(); *str != '\0' && isdigit(*str); str++)
                     continue;
                 if (*str == '\0') {
                     str = NULL;
@@ -1338,10 +1338,10 @@ static const Char* CkBracketType(const Char* str)
 		return "NULL value";
 	if (*str == '[') {
 		str++;
-		if (!IS_DIGIT(*str)) {
+		if (!isdigit(*str)) {
 			return str;
 		} else {
-			while (IS_DIGIT(*str)) {
+			while (isdigit(*str)) {
 				str++;
 			}
 			if (*str != ']') {
@@ -1367,7 +1367,7 @@ static const Char* CkBracketType(const Char* str)
 ******************************************************************************/
 static const Char* CkNumberType(const Char* str)
 {
-		for (;  *str != '\0' && !IS_ALPHANUM(*str); str++)
+		for (;  *str != '\0' && !isalnum(*str); str++)
 			continue;
 		if (*str != '\0') {
 			return NULL;  
@@ -1386,15 +1386,15 @@ static const Char* CkLabelType(const Char* str)
 	bool range = true, label = true;
 	const Char*		bptr;
 	
-	if (IS_DIGIT(*str)) {
-		for (; IS_DIGIT(*str); str++)
+	if (isdigit(*str)) {
+		for (; isdigit(*str); str++)
 			continue;
 		if (*str == '.' && *(str+1) == '.') {
 			str += 2;
-			if (!IS_DIGIT(*str)) {
+			if (!isdigit(*str)) {
 				range = false;
 			} else {
-				while (IS_DIGIT(*str)) {
+				while (isdigit(*str)) {
 					str++;
 				}
 			}
@@ -1408,12 +1408,12 @@ static const Char* CkLabelType(const Char* str)
 	} 
 	if (!range) {
 		bptr = str;
-		for (;  *str != '\0' && !IS_ALPHA(*str); str++)
+		for (;  *str != '\0' && !isalpha(*str); str++)
 			continue;
 		if (*str == '\0') {
 			label = false;    /* must be at least one letter */
 		}
-		for (str = bptr; (*str != '\0' && IS_ALPHA(*str)) || IS_DIGIT(*str) 
+		for (str = bptr; (*str != '\0' && isalpha(*str)) || isdigit(*str)
 			|| *str == '-' || *str == '_' || *str == '\'' || *str == '*';
 			str++)
 			continue;

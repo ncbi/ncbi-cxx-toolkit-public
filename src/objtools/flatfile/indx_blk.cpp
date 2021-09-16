@@ -498,9 +498,9 @@ static bool CheckLocusSP(char* locus)
 static bool CkDateFormat(char* date)
 {
     if(date[2] == '-' && date[6] == '-' &&
-       IS_DIGIT(date[0]) != 0 && IS_DIGIT(date[1]) != 0 &&
-       IS_DIGIT(date[7]) != 0 && IS_DIGIT(date[8]) != 0 &&
-       IS_DIGIT(date[9]) != 0 && IS_DIGIT(date[10]) != 0 &&
+       isdigit(date[0]) != 0 && isdigit(date[1]) != 0 &&
+        isdigit(date[7]) != 0 && isdigit(date[8]) != 0 &&
+        isdigit(date[9]) != 0 && isdigit(date[10]) != 0 &&
        MatchArraySubString(month_name, date) != -1)
         return true;
 

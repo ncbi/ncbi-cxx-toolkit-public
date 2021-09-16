@@ -224,7 +224,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
 
     /* skip leading whitespace
      */
-    for(q = qs_defline; IS_WHITESP(*q);)
+    for(q = qs_defline; isspace(*q);)
         q++;
 
     if(*q == '\0')
@@ -240,12 +240,12 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
 
     /* first token to be read is the accession number
      */
-    while(IS_ALPHANUM(*q))
+    while(isalnum(*q))
         q++;
 
     if(*q == '\0')
         return(-4);
-    if(*q != '.' && !IS_WHITESP(*q))
+    if(*q != '.' && !isspace(*q))
         return(-5);
     *q++ = '\0';
     StringCpy(def_acc, p);
@@ -256,14 +256,14 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
 
     /* accession may be optionally followed by a version number
      */
-    if(IS_DIGIT(*q))
+    if(isdigit(*q))
     {
-        while(IS_DIGIT(*q))
+        while(isdigit(*q))
             q++;
 
         if(*q == '\0')
             return(-7);
-        if(!IS_WHITESP(*q))
+        if(!isspace(*q))
             return(-8);
         *q++ = '\0';
         StringCpy(def_ver, p);
@@ -275,7 +275,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
 
     /* Ignore additional whitespace chars that might follow acc/ver
      */
-    while(IS_WHITESP(*q))
+    while(isspace(*q))
     {
         p++;
         q++;
@@ -286,7 +286,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
     /* alphanumeric and whitespace characters that follow are the
      * "title" of the collection of quality score data
      */
-    while(IS_ALPHANUM(*q) || IS_WHITESP(*q))
+    while(isalnum(*q) || isspace(*q))
         q++;
 
     if(*q == '\0')
@@ -298,7 +298,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
      */
     r = q;
     r--;
-    while(IS_WHITESP(*r))
+    while(isspace(*r))
         r--;
     *++r = '\0';
 
@@ -334,7 +334,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
 
     /* Ignore additional whitespace chars that might follow 'Length:' token
      */
-    while(IS_WHITESP(*q))
+    while(isspace(*q))
     {
         p++;
         q++;
@@ -344,7 +344,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
 
     /* get the length value
      */
-    while(IS_DIGIT(*q))
+    while(isdigit(*q))
         q++;
 
     if(*q == '\0')
@@ -359,7 +359,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
 
     /* Ignore additional whitespace chars that might follow length
      */
-    while(IS_WHITESP(*q))
+    while(isspace(*q))
     {
         p++;
         q++;
@@ -380,7 +380,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
 
     /* Ignore additional whitespace chars that might follow 'Min:' token
      */
-    while(IS_WHITESP(*q))
+    while(isspace(*q))
     {
         p++;
         q++;
@@ -390,7 +390,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
 
     /* get the minumum score value
      */
-    while(IS_DIGIT(*q))
+    while(isdigit(*q))
         q++;
 
     if(*q == '\0')
@@ -411,7 +411,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
 
     /* Ignore additional whitespace chars that might follow minimum score
      */
-    while(IS_WHITESP(*q))
+    while(isspace(*q))
     {
         p++;
         q++;
@@ -432,7 +432,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
 
     /* Ignore additional whitespace chars that might follow 'Max:' token
      */
-    while(IS_WHITESP(*q))
+    while(isspace(*q))
     {
         p++;
         q++;
@@ -442,7 +442,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
 
     /* get the maximum score value
      */
-    while(IS_DIGIT(*q))
+    while(isdigit(*q))
         q++;
 
     if(*q == '\0')
@@ -529,7 +529,7 @@ static Int4 QSbuf_ParseScores(char* score_buf, unsigned char* scores,
   ch = *p;
 
   while (ch != '\0') {
-    while (IS_WHITESP (ch)) {
+    while (isspace(ch)) {
       p++;
       ch = *p;
     }
@@ -550,7 +550,7 @@ static Int4 QSbuf_ParseScores(char* score_buf, unsigned char* scores,
        in the buffer other then digits and whitespace; data error */
 
     if (ch != '\0') {
-      if (! IS_WHITESP(ch)) {
+      if (!isspace(ch)) {
 	fprintf(stderr,"error: score_buf contains an illegal character : >%c<\n", ch);
 	return -2;
       }

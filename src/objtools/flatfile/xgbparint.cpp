@@ -360,14 +360,14 @@ static size_t xgbparse_accprefix(char* acc)
     if (acc == NULL || *acc == '\0')
         return(0);
 
-    for (p = acc; IS_ALPHA(*p) != 0;)
+    for (p = acc; isalpha(*p) != 0;)
         p++;
     size_t ret = p - acc;
     if (*p == '_')
     {
         if (ret == 2)
         {
-            for (p++; IS_ALPHA(*p) != 0;)
+            for (p++; isalpha(*p) != 0;)
                 p++;
             ret = p - acc;
             if (ret != 3 && ret != 7)
@@ -574,7 +574,7 @@ static int xgbparselex_ver(char* linein, ValNodePtr* lexed, bool accver)
                 if (StringNCmp(current_col, "gi|", 3) == 0) {
                     current_token->choice = GBPARSE_INT_ACCESION;
                     current_col += 3;
-                    for (; IS_DIGIT(*current_col); current_col++);
+                    for (; isdigit(*current_col); current_col++);
                     break;
                 }
                 current_token->choice = GBPARSE_INT_GROUP;

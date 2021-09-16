@@ -535,7 +535,7 @@ static bool get_seq_data(DataBlkPtr* ind, DataBlkPtr** sub_ind,
     while(*seqptr != '\n')
         seqptr++;
 
-    while(IS_ALPHA(*seqptr) == 0)       /* skip leading blanks and digits */
+    while(isalpha(*seqptr) == 0)       /* skip leading blanks and digits */
         seqptr++;
 
     std::vector<char> buf;
@@ -546,7 +546,7 @@ static bool get_seq_data(DataBlkPtr* ind, DataBlkPtr** sub_ind,
             break;
         seqlen += i;
 
-        while(IS_ALPHA(*seqptr) == 0 && seqptr != endptr)
+        while(isalpha(*seqptr) == 0 && seqptr != endptr)
             seqptr++;
     }
 
@@ -679,7 +679,7 @@ static char* GetPirSeqRaw(char* bptr, char* eptr)
         return(NULL);
 
     while(bptr < eptr &&
-          (IS_DIGIT(*bptr) != 0 || *bptr == ' ' || *bptr == '\n'))
+          (isdigit(*bptr) != 0 || *bptr == ' ' || *bptr == '\n'))
         bptr++;
     
     size_t size = eptr - bptr;
@@ -693,7 +693,7 @@ static char* GetPirSeqRaw(char* bptr, char* eptr)
         bptr++;
 
         while(bptr < eptr &&
-              (IS_DIGIT(*bptr) != 0 || *bptr == ' ' || *bptr == '\n'))
+              (isdigit(*bptr) != 0 || *bptr == ' ' || *bptr == '\n'))
             bptr++;
     }
 
@@ -769,7 +769,7 @@ static CRef<objects::CPIR_block> get_pirblock(DataBlkPtr* ind,
     str = GetPirSeqRaw(ptr, ptr + ind[ParFlatPIR_SEQUENCE]->len);
 
     for(ptr = str; *ptr != '\0'; ptr++)
-        if(IS_ALPHA(*ptr) == 0)
+        if(isalpha(*ptr) == 0)
             break;
 
     if(*ptr != '\0')
@@ -815,7 +815,7 @@ static CRef<objects::CDate_std> GetStdDate(char* ptr, bool* flag)
         *flag = false;
 
     ptr += 4;
-    if(IS_DIGIT(ptr[2]) != 0)
+    if(isdigit(ptr[2]) != 0)
     {
         StringNCpy(buf, ptr, 4);
         buf[4] = '\0';
@@ -1312,9 +1312,9 @@ static CRef<objects::CCit_art> get_pir_book(char* bptr, CRef<objects::CAuth_list
                   "Wrong format: missing 'pp.' for pages, %s", bptr);
         for(pages = ed; *pages != ',' && *pages != '\0';)
             pages++;
-        while(IS_ALPHANUM(*pages) == 0)
+        while(isalnum(*pages) == 0)
             pages++;
-        if(IS_DIGIT(*pages) != 0)
+        if(isdigit(*pages) != 0)
         {
             for(s = pages; *s != ',' && *s != '\0';)
                 s++;
@@ -1329,7 +1329,7 @@ static CRef<objects::CCit_art> get_pir_book(char* bptr, CRef<objects::CAuth_list
     }
     else
     {
-        for(s += 2; IS_WHITESP(*s) != 0;)
+        for(s += 2; isspace(*s) != 0;)
             s++;
         for(pages = s; *s != ',' && *s != '\0';)
             s++;
@@ -1996,7 +1996,7 @@ static CRef<objects::CSeq_loc> GetPirSeqLocInt(const Char* str, objects::CSeq_id
     if(str == NULL)
         return loc;
 
-    for(ptr = str; *ptr != '\0' && IS_DIGIT(*ptr) != 0;)
+    for(ptr = str; *ptr != '\0' && isdigit(*ptr) != 0;)
         ptr++;
 
     if(ptr == str)
@@ -2004,7 +2004,7 @@ static CRef<objects::CSeq_loc> GetPirSeqLocInt(const Char* str, objects::CSeq_id
 
     from = NStr::StringToInt(str, NStr::fAllowTrailingSymbols);
 
-    while(*ptr != '\0' && IS_DIGIT(*ptr) == 0)
+    while(*ptr != '\0' && isdigit(*ptr) == 0)
         ptr++;
 
     to = NStr::StringToInt(ptr, NStr::fAllowTrailingSymbols);
@@ -2066,12 +2066,12 @@ static CRef<objects::CSeq_loc> GetPirSeqLocBond(const Char* str, objects::CSeq_i
 
     if(StringChr(str, '-') != NULL)
     {
-        for(ptr = str; *ptr != '\0' && IS_DIGIT(*ptr) != 0;)
+        for(ptr = str; *ptr != '\0' && isdigit(*ptr) != 0;)
             ptr++;
 
         bond.SetA(*GetPirSeqLocPntPtr(str, seqid));
 
-        while(*ptr != '\0' && IS_DIGIT(*ptr) == 0)
+        while(*ptr != '\0' && isdigit(*ptr) == 0)
             ptr++;
         if(*ptr != '\0')
             bond.SetB(*GetPirSeqLocPntPtr(ptr, seqid));
@@ -2628,7 +2628,7 @@ static void subdbp_func(DataBlkPtr dbp)
                     str++;
                 continue;
             }
-            for(s0 = s - 1; s0 > str && IS_WHITESP(s0[-1]) != 0;)
+            for(s0 = s - 1; s0 > str && isspace(s0[-1]) != 0;)
                 s0--;
             *s0 = '\0';
             subdbp->len = s0 - subdbp->offset;
