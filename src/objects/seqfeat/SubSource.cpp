@@ -1748,6 +1748,57 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
 }
 
 
+string s_ShortenLatLon( string &subname ) {
+    string lat;
+    string north_or_south;
+    string lon;
+    string east_or_west;
+
+    if (subname.length() < 1) {
+       return subname;
+    }
+    char ch = subname[0];
+    if (ch < '0' || ch > '9') {
+        return subname;
+    }
+
+    // extract the pieces
+    CNcbiIstrstream lat_lon_stream( subname );
+    lat_lon_stream >> lat;
+    lat_lon_stream >> north_or_south;
+    lat_lon_stream >> lon;
+    lat_lon_stream >> east_or_west;
+    if( lat_lon_stream.bad() ) {
+        return subname;
+    }
+
+    if( north_or_south != "N" && north_or_south != "S" ) {
+        return subname;
+    }
+
+    if( east_or_west != "E" && east_or_west != "W" ) {
+        return subname;
+    }
+
+    size_t pos = NStr::Find(lat, ".");
+    if (pos > 0) {
+        size_t len = lat.length();
+        if (pos + 9 < len) {
+            lat.erase(pos + 9);
+        }
+    }
+
+    pos = NStr::Find(lon, ".");
+    if (pos > 0) {
+        size_t len = lon.length();
+        if (pos + 9 < len) {
+            lon.erase(pos + 9);
+        }
+    }
+
+    return lat + " " + north_or_south + " " + lon + " " + east_or_west;
+}
+
 string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 {
     //cout << "Before: " << orig_lat_lon << endl;
@@ -1771,6 +1822,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
         res = MakeLatLon(numbers[0], numbers[1], precision[0], precision[1]);
     }
     //cout << "After: " << res << endl;
+    res = s_ShortenLatLon(res);
     return res;
 }
 
