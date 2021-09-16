@@ -407,7 +407,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(4,11,0) );
+    SetVersion( CVersionInfo(4,12,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -1630,52 +1630,75 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
             "features_and_packages.txt");
         string disabled = CDirEntry::ConcatPath(file_path, 
             "features_and_packages_disabled.txt");
-        file_path = CDirEntry::ConcatPath(file_path, 
-                                          "features_and_packages.txt");
-        CNcbiOfstream ofs(enabled.c_str(), IOS_BASE::out | IOS_BASE::trunc );
-        if ( !ofs )
-            NCBI_THROW(CProjBulderAppException, eFileCreation, enabled);
-        GetApp().RegisterGeneratedFile( enabled );
 
-        CNcbiOfstream ofsd(disabled.c_str(), IOS_BASE::out | IOS_BASE::trunc );
-        if ( !ofsd )
-            NCBI_THROW(CProjBulderAppException, eFileCreation, disabled);
-        GetApp().RegisterGeneratedFile( disabled );
-
+        list<string> cfg_enabled, cfg_disabled;
         if (c->m_rtType == SConfigInfo::rtMultiThreaded) {
-            ofs << "MT" << endl;
+            cfg_enabled.push_back("MT");
         } else if (c->m_rtType == SConfigInfo::rtMultiThreadedDebug) {
-            ofs << "MT" << endl << "Debug" << endl;
+            cfg_enabled.push_back("MT");
+            cfg_enabled.push_back("Debug");
         } else if (c->m_rtType == SConfigInfo::rtMultiThreadedDLL) {
-            ofs << "MT" << endl;
+            cfg_enabled.push_back("MT");
         } else if (c->m_rtType == SConfigInfo::rtMultiThreadedDebugDLL) {
-            ofs << "MT" << endl << "Debug" << endl;
+            cfg_enabled.push_back("MT");
+            cfg_enabled.push_back("Debug");
         } else if (c->m_rtType == SConfigInfo::rtSingleThreaded) {
         } else if (c->m_rtType == SConfigInfo::rtSingleThreadedDebug) {
-            ofs << "Debug" << endl;
+            cfg_enabled.push_back("Debug");
         }
         if (GetBuildType().GetType() == CBuildType::eDll) {
-            ofs << "DLL" << endl;
+            cfg_enabled.push_back("DLL");
         }
         const set<string>& epackages =
             CMsvcPrjProjectContext::GetEnabledPackages(c->GetConfigFullName());
         ITERATE(set<string>, e, epackages) {
-            ofs << *e << endl;
+            cfg_enabled.push_back(*e);
             list_enabled.push_back(*e);
         }
 
         list<string> std_features;
         GetSite().GetStandardFeatures(std_features);
         ITERATE(list<string>, s, std_features) {
-            ofs << *s << endl;
+            cfg_enabled.push_back(*s);
             list_enabled.push_back(*s);
+        }
+
+        list<string> features;
+        GetSite().GetConfigurableRequests(features);
+        ITERATE(list<string>, s, features) {
+            if (GetSite().IsProvided(*s)) {
+                cfg_enabled.push_back(*s);
+                list_enabled.push_back(*s);
+            } else {
+                cfg_disabled.push_back(*s);
+                list_disabled.push_back(*s);
+            }
         }
 
         const set<string>& dpackages =
             CMsvcPrjProjectContext::GetDisabledPackages(c->GetConfigFullName());
         ITERATE(set<string>, d, dpackages) {
-            ofsd << *d << endl;
+            cfg_disabled.push_back(*d);
             list_disabled.push_back(*d);
+        }
+        cfg_enabled.sort();
+        cfg_enabled.unique();
+        cfg_disabled.sort();
+        cfg_disabled.unique();
+        CNcbiOfstream ofs(enabled.c_str(), IOS_BASE::out | IOS_BASE::trunc );
+        if ( !ofs )
+            NCBI_THROW(CProjBulderAppException, eFileCreation, enabled);
+        GetApp().RegisterGeneratedFile( enabled );
+        for (const string& e : cfg_enabled) {
+            ofs << e << endl;
+        }
+
+        CNcbiOfstream ofsd(disabled.c_str(), IOS_BASE::out | IOS_BASE::trunc );
+        if ( !ofsd )
+            NCBI_THROW(CProjBulderAppException, eFileCreation, disabled);
+        GetApp().RegisterGeneratedFile( disabled );
+        for (const string& e : cfg_disabled) {
+            ofsd << e << endl;
         }
     }
     list_enabled.sort();
@@ -1700,12 +1723,15 @@ void CProjBulderApp::GenerateSummary(const list<SConfigInfo> configs,
         }
     }
 
-    string str_config;
     // summary
     SetDiagPostAllFlags(eDPF_Log);
     PTB_INFO("===========================================================");
     PTB_INFO("SOLUTION: " << m_Solution);
     PTB_INFO("PROJECTS: " << CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, m_Subtree));
+    string str_config;
+    for (const auto& cfg : configs) {
+        str_config += " " + cfg.GetConfigFullName();
+    }
     PTB_INFO("CONFIGURATIONS: " << str_config);
     PTB_INFO("FEATURES AND PACKAGES: ");
     string str_pkg = "     enabled: ";
