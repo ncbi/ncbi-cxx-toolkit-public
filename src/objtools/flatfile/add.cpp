@@ -301,7 +301,7 @@ bool check_cds(DataBlkPtr entry, Parser::EFormat format)
 /**********************************************************/
 void err_install(IndexblkPtr ibp, bool accver)
 {
-    Char temp[200];
+    Char temp[210];
 
     FtaInstallPrefix(PREFIX_LOCUS, ibp->locusname, NULL);
     if(accver && ibp->vernum > 0)
