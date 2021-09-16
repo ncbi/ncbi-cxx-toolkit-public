@@ -1186,7 +1186,7 @@ CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Parser::ESour
     if (s == NULL || *s == '\0')
         return date;
 
-    if (IS_DIGIT(*s) != 0)
+    if (isdigit(*s) != 0)
     {
         day = atoi(s);
         s += 3;

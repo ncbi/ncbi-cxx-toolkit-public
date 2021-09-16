@@ -628,7 +628,7 @@ static CRef<objects::CDate> MakeDatePtr(char* str, Parser::ESource source)
     if (str == NULL)
         return res;
 
-    if (StringChr(str, '-') != NULL && (IS_DIGIT(*str) != 0 || *str == ' '))
+    if (StringChr(str, '-') != NULL && (isdigit(*str) != 0 || *str == ' '))
     {
         CRef<objects::CDate_std> std_date = get_full_date(str, true, source);
         res->SetStd(*std_date);
@@ -836,14 +836,14 @@ static void SpAddToIndexBlk(DataBlkPtr entry, IndexblkPtr pIndex)
 
     while(*eptr == ' ' && eptr > offset)
         eptr--;
-    while(IS_DIGIT(*eptr) != 0 && eptr > offset)
+    while(isdigit(*eptr) != 0 && eptr > offset)
         eptr--;
     pIndex->bases = atoi(eptr + 1);
     while(*eptr == ' ' && eptr > offset)
         eptr--;
     if(*eptr == ';')
         eptr--;
-    while(IS_ALPHA(*eptr) != 0 && eptr > offset)
+    while(isalpha(*eptr) != 0 && eptr > offset)
         eptr--;
 
     StringNCpy(pIndex->division, eptr + 1, 3);
@@ -955,7 +955,7 @@ static char* GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
             continue;
         }
 
-        while(*p == '.' || *p == '-' || *p == 'n' || IS_DIGIT(*p) != 0)
+        while(*p == '.' || *p == '-' || *p == 'n' || isdigit(*p) != 0)
             p++;
         if(symb == ')')
             while(*p == ' ' || *p == ')')
@@ -3654,7 +3654,7 @@ static CRef<objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip,
     {
         fuzzfrom = true;
 
-        while(*ptr != '\0' && IS_DIGIT(*ptr) == 0)
+        while(*ptr != '\0' && isdigit(*ptr) == 0)
             ptr++;
         from = (Int4) atoi(ptr);
     }
@@ -3675,7 +3675,7 @@ static CRef<objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip,
     if(StringChr(ptr, '>') != NULL)
     {
         fuzzto = true;
-        while(*ptr != '\0' && IS_DIGIT(*ptr) == 0)
+        while(*ptr != '\0' && isdigit(*ptr) == 0)
             ptr++;
         to = (Int4) atoi(ptr);
     }
@@ -4053,7 +4053,7 @@ static void CkGeneNameSP(char* gname)
 
     DelParenthesis(gname);
     for(p = gname; *p != '\0'; p++)
-        if(!(IS_ALPHANUM(*p) || *p == '_' || *p == '-' || *p == '.' ||
+        if(!(isalnum(*p) || *p == '_' || *p == '-' || *p == '.' ||
            *p == '\'' || *p == '`' || *p == '/' || *p == '(' || *p == ')'))
             break;
     if(*p != '\0')

@@ -1298,7 +1298,7 @@ static void SeqFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
                 if(subdbp->type != ParFlat_RP)
                     continue;
 
-                for(p = subdbp->offset; *p != '\0' && IS_DIGIT(*p) == 0;)
+                for(p = subdbp->offset; *p != '\0' && isdigit(*p) == 0;)
                     p++;
                 if(StringChr(p, ',') != NULL)
                 {

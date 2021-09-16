@@ -122,7 +122,7 @@ static bool AllUpperCase(char* p)
         return false;
     while (*p != '\0')
     {
-        if (!IS_UPPER(*p))
+        if (!isupper(*p))
             return false;
         p++;
     }
@@ -205,7 +205,7 @@ static void SplitMlAuthorName(const Char* name, char* last, char* initials,
     for (p = initials, p2 = ibuf; *p2 != '\0'; p2++, p++)
     {
         *p = *p2;
-        if (!IS_LOWER(*(p2 + 1)))        /* watch out for foreign names */
+        if (!islower(*(p2 + 1)))        /* watch out for foreign names */
         {
             p++;
             *p = '.';
@@ -419,7 +419,7 @@ void get_auth(char* pt, Uint1 format, char* jour, CRef<objects::CAuth_list>& aut
         return;
 
     size_t len = StringLen(pt);
-    for(eptr = pt + len - 1; IS_ALPHANUM(*eptr) == 0; eptr--)
+    for(eptr = pt + len - 1; isalnum(*eptr) == 0; eptr--)
         len--;
 
     if(len > 4 && StringNCmp(eptr - 4, "et al", 5) == 0)

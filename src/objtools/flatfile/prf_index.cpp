@@ -145,7 +145,7 @@ bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
                        StringNCmp(finfo->str, prfkwl[ParFlatPRF_END].str,
                                   prfkwl[ParFlatPRF_END].len) != 0; i++)
             {
-                if(got_SEQUENCE > -1 && IS_ALPHA(finfo->str[0]) != 0)
+                if(got_SEQUENCE > -1 && isalpha(finfo->str[0]) != 0)
                 {
                     ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd,
                                "Missing end of the entry. Entry dropped.");

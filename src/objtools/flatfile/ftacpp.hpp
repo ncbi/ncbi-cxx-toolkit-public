@@ -76,16 +76,6 @@ inline char* SkipSpaces(char* s) { while (*s && std::isspace(*s)) s++; return s;
 
 END_NCBI_SCOPE
 
-#define IS_DIGIT(c)	('0'<=(c) && (c)<='9')
-#define IS_UPPER(c)	('A'<=(c) && (c)<='Z')
-#define IS_LOWER(c)	('a'<=(c) && (c)<='z')
-#define IS_ALPHA(c)	(IS_UPPER(c) || IS_LOWER(c))
-#define TO_LOWER(c)	((IS_UPPER(c) ? (c)+' ' : (c)))
-#define TO_UPPER(c)	((IS_LOWER(c) ? (c)-' ' : (c)))
-#define IS_WHITESP(c) (((c) == ' ') || ((c) == '\n') || ((c) == '\r') || ((c) == '\t'))
-#define IS_ALPHANUM(c) (IS_ALPHA(c) || IS_DIGIT(c))
-#define IS_PRINT(c)	(' '<=(c) && (c)<='~')
-
 #define UINT4_MAX 4294967295U
 #define INT4_MAX  2147483647
 #define INT2_MAX  32767

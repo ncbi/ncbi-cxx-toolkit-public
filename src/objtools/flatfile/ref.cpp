@@ -895,7 +895,7 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
         if(ss > s)
             ss = s + 1;
         end_volume = s;
-        for(pages = s + 1; IS_WHITESP(*pages) != 0;)
+        for(pages = s + 1; isspace(*pages) != 0;)
             pages++;
         end_tit = ss - 1;
         if(end_volume > ss)
@@ -1074,7 +1074,7 @@ static CRef<objects::CCit_gen> get_unpub(char* bptr, char* eptr, CRef<objects::C
     {
         for(s = bptr; *s != '\0' && *s != '(';)
             s++;
-        for(str = s - 1; str > bptr && IS_WHITESP(*str) != 0;)
+        for(str = s - 1; str > bptr && isspace(*str) != 0;)
             str--;
         if(*s == '(')
             s += 6;
@@ -1364,7 +1364,7 @@ static CRef<objects::CCit_book> get_whole_book(char* bptr, CRef<objects::CAuth_l
 
     char*    s;
 
-    for(bptr += 5; IS_WHITESP(*bptr) != 0;)
+    for(bptr += 5; isspace(*bptr) != 0;)
         bptr++;
 
 
@@ -1397,7 +1397,7 @@ static CRef<objects::CCit_book> get_whole_book(char* bptr, CRef<objects::CAuth_l
 
     if(*s == '.')
     {
-        for(s++; IS_WHITESP(*s) != 0;)
+        for(s++; isspace(*s) != 0;)
             s++;
 
         cit_book->SetImp().SetPub().SetStr(NStr::Sanitize(s));
@@ -1702,7 +1702,7 @@ CRef<objects::CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<objects::
             pre = 1;
             *nearend = '\0';
         }
-        if(pre == 0 && *end == '(' && IS_DIGIT(*(end + 1)) != 0)
+        if(pre == 0 && *end == '(' && isdigit(*(end + 1)) != 0)
         {
             for(nearend = end - 1; nearend > bptr && *nearend != ' ';)
                 nearend--;

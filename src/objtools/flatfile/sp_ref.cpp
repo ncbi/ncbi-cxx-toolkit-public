@@ -153,7 +153,7 @@ static bool NotName(char* name)
     if(StringLen(s) > 8)
         return true;
 
-    while(IS_ALPHA(*s) != 0 || *s == '.')
+    while(isalpha(*s) != 0 || *s == '.')
         s++;
     if(*s != '\0')
         return true;
@@ -180,9 +180,9 @@ static Int4 GetDataFromRN(DataBlkPtr dbp, Int4 col_data)
 
     bptr = dbp->offset + col_data;
     eptr = bptr + dbp->len;
-    while(IS_DIGIT(*bptr) == 0 && bptr < eptr)
+    while(isdigit(*bptr) == 0 && bptr < eptr)
         bptr++;
-    for(str = bptr; IS_DIGIT(*str) != 0 && str < eptr;)
+    for(str = bptr; isdigit(*str) != 0 && str < eptr;)
         str++;
 
     num = NStr::StringToInt(std::string(bptr, str), NStr::fAllowTrailingSymbols);
@@ -233,14 +233,14 @@ static char* ParseYear(char* str)
     Int2    i;
     char* year;
 
-    while(*str != '\0' && IS_DIGIT(*str) == 0)
+    while(*str != '\0' && isdigit(*str) == 0)
         str++;
 
     if(*str == '\0')
         return(NULL);
 
     year = (char*) MemNew(5);
-    for(i = 0; i < 4 && *str != '\0' && IS_DIGIT(*str) != 0; str++, i++)
+    for(i = 0; i < 4 && *str != '\0' && isdigit(*str) != 0; str++, i++)
         year[i] = *str;
 
     return(year);
@@ -777,7 +777,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, objects::CCit_art& article)
         temp2++;
     if(*temp2 == ',')
         temp2++;
-    while(IS_WHITESP(*temp2) != 0)
+    while(isspace(*temp2) != 0)
         temp2++;
 
     std::vector<Char> buf(temp1.begin(), temp1.end());
@@ -846,11 +846,11 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, objects::CCit_art& article)
     if(*eptr == ')')
         eptr--;
 
-    if(IS_DIGIT(*eptr) == 0)
+    if(isdigit(*eptr) == 0)
         return false;
 
     const Char* year = eptr;
-    for (; IS_DIGIT(*year) != 0;)
+    for (; isdigit(*year) != 0;)
         year--;
 
     CRef<objects::CDate> date = get_date(year + 1);
@@ -865,7 +865,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, objects::CCit_art& article)
     {
         if(*temp2 == ',')
             temp2++;
-        while(IS_WHITESP(*temp2) != 0)
+        while(isspace(*temp2) != 0)
             temp2++;
 
         const char *p;
@@ -881,7 +881,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, objects::CCit_art& article)
     if (vol_pos != NPOS)
     {
         vol = bptr.c_str() + 4;
-        for(s = vol; *s != '\0' && IS_DIGIT(*s) != 0;)
+        for(s = vol; *s != '\0' && isdigit(*s) != 0;)
             s++;
 
         book.SetImp().SetVolume(std::string(vol, s));
@@ -1146,7 +1146,7 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, objects::CCi
                   "Incorrectly formatted patent reference: %s", prbp->journal.c_str());
     }
 
-    while(*q != '\0' && IS_DIGIT(*q) == 0)
+    while(*q != '\0' && isdigit(*q) == 0)
         q++;
     if(*q == '\0')
     {

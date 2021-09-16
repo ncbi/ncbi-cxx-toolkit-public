@@ -439,7 +439,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
 
         if(eptr != bptr)
         {
-            while(IS_WHITESP(*bptr) != 0)
+            while(isspace(*bptr) != 0)
                 bptr++;
             len = eptr - bptr;
             if(len > 0)
