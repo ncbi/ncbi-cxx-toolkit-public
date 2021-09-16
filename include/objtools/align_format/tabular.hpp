@@ -567,7 +567,8 @@ public:
         x_ResetIgFields();
     };
 
-    void PrintHeader(const string& program, 
+    void PrintHeader(const CConstRef<blast::CIgBlastOptions>& ig_opts,
+                     const string& program, 
                      const objects::CBioseq& bioseq, 
                      const string& dbname, 
                      const string& domain_sys,
@@ -596,7 +597,7 @@ public:
     virtual void Print(void);
 
     /// Print domain information
-    void PrintMasterAlign(const string& header = "# ") const;
+    void PrintMasterAlign(const CConstRef<blast::CIgBlastOptions>& ig_opts, const string& header = "# ") const;
     
     void SetAirrFormatData(CScope& scope,
                            const CRef<blast::CIgAnnotation> &annot,
@@ -619,7 +620,7 @@ public:
                                 const CConstRef<blast::CIgBlastOptions>& ig_opts);
 
     /// Print Html style summary
-    void PrintHtmlSummary() const;
+    void PrintHtmlSummary(const CConstRef<blast::CIgBlastOptions>& ig_opts) const;
 
     /// Set out-of-frame information                                        
     void SetFrame(const string &frame = "N/A") { 
@@ -757,6 +758,7 @@ private:
     int m_VAlignStart;
     int m_QueryVAlignEnd;
     CRef<CSeq_align> m_TopAlign_J; 
+    CRef<CSeq_align> m_TopAlign_C;
     map<string, string> m_AirrData;
     int m_QueryAlignSeqEnd;
 };

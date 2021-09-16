@@ -932,7 +932,7 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results,
         if (fill_clone_info) {
             s_SetCloneInfo(tabinfo, bhandle, clone_info);
         }
-        tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
+        tabinfo.PrintHeader(m_IgOptions, strProgVersion, *(bhandle.GetBioseqCore()),
                             m_DbName, 
                             m_IgOptions->m_DomainSystem,
                             results.GetRID(), 
@@ -948,7 +948,7 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results,
             tabinfo.Print();
         }
     } else {
-        tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
+        tabinfo.PrintHeader(m_IgOptions, strProgVersion, *(bhandle.GetBioseqCore()),
                                 m_DbName, 
                                 m_IgOptions->m_DomainSystem,
                                 results.GetRID(), 
@@ -1717,9 +1717,9 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
         }
         m_Outfile << "Domain classification requested: " << m_IgOptions->m_DomainSystem << endl << endl;
         if (m_IsHTML) {
-            tabinfo.PrintHtmlSummary();
+            tabinfo.PrintHtmlSummary(m_IgOptions);
         } else {
-            tabinfo.PrintMasterAlign("");
+            tabinfo.PrintMasterAlign(m_IgOptions, "");
         }
     }
 

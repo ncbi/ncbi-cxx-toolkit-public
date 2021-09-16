@@ -427,7 +427,7 @@ CIgBlast::Run()
 
 
     //C gene blast
-    if(m_IgOptions->m_Db[4] && (results[2] && !(results[2]->empty()))) {
+    if(m_IgOptions->m_NumAlign[3] > 0 && m_IgOptions->m_Db[4] && (results[2] && !(results[2]->empty()))) {
         x_SetupCRegionSearch(annots, qf, opts_hndl);
         CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[4]);
         try {
@@ -553,7 +553,7 @@ void CIgBlast::x_SetupCRegionSearch(const vector<CRef <CIgAnnotation> > &annots,
     opts.SetGapExtensionCost(2);
     opts_hndl->SetEvalueThreshold(1e-5);
     opts_hndl->SetFilterString("F");
-    opts_hndl->SetHitlistSize(m_IgOptions->m_NumAlign[3]);
+    opts_hndl->SetHitlistSize(5+m_IgOptions->m_NumAlign[3]);
 
     // Mask V through J
     int iq = 0;
