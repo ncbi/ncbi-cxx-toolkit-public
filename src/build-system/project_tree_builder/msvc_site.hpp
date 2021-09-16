@@ -211,6 +211,7 @@ public:
     string GetThirdPartyLibBin(const string& lib) const;
 
     void   GetStandardFeatures           (list<string>& features) const;
+    void   GetConfigurableRequests       (list<string>& features) const;
     
     void ProcessMacros (const list<SConfigInfo>& configs);
     const CSymResolver& GetMacros(void) const

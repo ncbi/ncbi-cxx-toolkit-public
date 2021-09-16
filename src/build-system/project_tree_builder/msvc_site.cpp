@@ -706,6 +706,13 @@ void CMsvcSite::GetStandardFeatures(list<string>& features) const
                 LIST_SEPARATOR, features, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
+void CMsvcSite::GetConfigurableRequests(list<string>& features) const
+{
+    features.clear();
+    NStr::Split(x_GetConfigureEntry("ConfigurableRequests"),
+                LIST_SEPARATOR, features, NStr::fSplit_Tokenize);
+}
+
 //-----------------------------------------------------------------------------
 bool CMsvcSite::x_DirExists(const string& dir_name)
 {
