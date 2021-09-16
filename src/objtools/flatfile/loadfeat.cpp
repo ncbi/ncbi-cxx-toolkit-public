@@ -632,8 +632,8 @@ static Int4 flat2asn_range_func(void* pp_ptr, const objects::CSeq_id& id)
     if(bsp != NULL)
         return(bsp->length);
 
-    /* could try ID0 server
-    */
+    // could try ID0 server
+    //
     return(-1);
 
 #else
@@ -645,7 +645,7 @@ static Int4 flat2asn_range_func(void* pp_ptr, const objects::CSeq_id& id)
 
     if (text_id != nullptr)
     {
-        Int2 text_id_ver = text_id->IsSetVersion() ? text_id->GetVersion() : INT2_MIN;
+        Int2 text_id_ver = text_id->IsSetVersion() ? text_id->GetVersion() : numeric_limits<short>::min();
         const std::string& text_id_acc = text_id->GetAccession();
         for (use_indx = 0; use_indx < pp->indx; use_indx++)
         {
@@ -658,9 +658,9 @@ static Int4 flat2asn_range_func(void* pp_ptr, const objects::CSeq_id& id)
 
         if (use_indx >= pp->indx)
         {
-            /* entry is not present in this file use remote fetch function
-            * use_indx = pp->curindx;
-            */
+            // entry is not present in this file use remote fetch function
+            //use_indx = pp->curindx;
+            //
             size_t len = (!pp->ffdb) ? -1 : CheckOutsideEntry(pp, text_id_acc.c_str(), text_id_ver);
             if (len != static_cast<size_t>(-1))
                 return static_cast<Int4>(len);
@@ -707,7 +707,6 @@ static Int4 flat2asn_range_func(void* pp_ptr, const objects::CSeq_id& id)
     return static_cast<Int4>(pp->entrylist[use_indx]->bases);
 
 #endif
-
 }
 
 /**********************************************************/
@@ -1062,7 +1061,7 @@ static char* CheckLocStr(const Char* str)
 *****************************************************************************/
 static bool SeqIntCheckCpp(const objects::CSeq_loc& loc)
 {
-    Uint4 len = UINT4_MAX;
+    Uint4 len = numeric_limits<unsigned int>::max();
 
     objects::CBioseq_Handle bio_h = GetScope().GetBioseqHandle(*loc.GetId());
     if (bio_h.CanGetInst() && bio_h.CanGetInst_Length())
@@ -1079,7 +1078,7 @@ static bool SeqIntCheckCpp(const objects::CSeq_loc& loc)
 *****************************************************************************/
 static bool SeqPntCheckCpp(const objects::CSeq_loc& loc)
 {
-    Uint4 len = UINT4_MAX;
+    Uint4 len = numeric_limits<unsigned int>::max();
 
     objects::CBioseq_Handle bio_h = GetScope().GetBioseqHandle(*loc.GetId());
     if (bio_h.CanGetInst() && bio_h.CanGetInst_Length())
@@ -1095,7 +1094,7 @@ static bool SeqPntCheckCpp(const objects::CSeq_loc& loc)
 *****************************************************************************/
 static bool PackSeqPntCheckCpp(const objects::CSeq_loc& loc)
 {
-    Uint4 len = UINT4_MAX;
+    Uint4 len = numeric_limits<unsigned int>::max();
 
     objects::CBioseq_Handle bio_h = GetScope().GetBioseqHandle(*loc.GetId());
     if (bio_h.CanGetInst() && bio_h.CanGetInst_Length())
