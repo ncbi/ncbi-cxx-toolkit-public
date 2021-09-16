@@ -626,7 +626,7 @@ int VisitXmlNodes(Nlm_XmlObjPtr xop, void* userdata, VisitXmlNodeFunc callback, 
     if (xop == NULL) return index;
 
     if (maxDepth == 0) {
-        maxDepth = INT2_MAX;
+        maxDepth = numeric_limits<short>::max();
     }
 
     index += VisitXmlNodeProc(xop, NULL, 1, userdata, callback, nodeFilter,

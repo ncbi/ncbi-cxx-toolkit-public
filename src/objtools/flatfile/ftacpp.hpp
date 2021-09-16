@@ -76,10 +76,4 @@ inline char* SkipSpaces(char* s) { while (*s && std::isspace(*s)) s++; return s;
 
 END_NCBI_SCOPE
 
-#define UINT4_MAX 4294967295U
-#define INT4_MAX  2147483647
-#define INT2_MAX  32767
-#define INT2_MIN  (-32768)
-
-
 #endif // FTACPP_HPP

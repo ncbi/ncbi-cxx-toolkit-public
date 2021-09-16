@@ -1629,7 +1629,7 @@ static Int2 EndAdded(objects::CSeq_feat& feat, GeneRefFeats& gene_refs)
         bool ret_condition = false;
         ITERATE(objects::CCdregion::TCode_break, code_break, cdregion.GetCode_break())
         {
-            pos1 = INT4_MAX;
+            pos1 = numeric_limits<int>::max();
             pos2 = -10;
 
             for (objects::CSeq_loc_CI loc((*code_break)->GetLoc()); loc; ++loc) {
