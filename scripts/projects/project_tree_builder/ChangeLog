@@ -390,3 +390,7 @@ Added POST-BUILD step on XCode.
 September 01, 2021
 version 4.11.0, CXX-12098
 Added support of LanguageStandard setting
+
+September 16, 2021
+version 4.12.0, CXX-12128
+Added support of ConfigurableRequests.
