@@ -322,6 +322,9 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("v_call");
         l_ig_opts->m_AirrField.push_back("d_call");
         l_ig_opts->m_AirrField.push_back("j_call");
+        if(l_ig_opts->m_Db[4]) {
+            l_ig_opts->m_AirrField.push_back("c_call");
+        }
         l_ig_opts->m_AirrField.push_back("sequence_alignment");
         l_ig_opts->m_AirrField.push_back("germline_alignment");
         l_ig_opts->m_AirrField.push_back("sequence_alignment_aa");
@@ -332,6 +335,10 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("d_alignment_end");
         l_ig_opts->m_AirrField.push_back("j_alignment_start");
         l_ig_opts->m_AirrField.push_back("j_alignment_end");
+        if(l_ig_opts->m_Db[4]) {
+            l_ig_opts->m_AirrField.push_back("c_alignment_start");
+            l_ig_opts->m_AirrField.push_back("c_alignment_end");
+        }
         l_ig_opts->m_AirrField.push_back("v_sequence_alignment");
         l_ig_opts->m_AirrField.push_back("v_sequence_alignment_aa");
         l_ig_opts->m_AirrField.push_back("v_germline_alignment");
@@ -344,6 +351,12 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("j_sequence_alignment_aa");
         l_ig_opts->m_AirrField.push_back("j_germline_alignment");
         l_ig_opts->m_AirrField.push_back("j_germline_alignment_aa");
+        if(l_ig_opts->m_Db[4]) {
+            l_ig_opts->m_AirrField.push_back("c_sequence_alignment");
+            l_ig_opts->m_AirrField.push_back("c_sequence_alignment_aa");
+            l_ig_opts->m_AirrField.push_back("c_germline_alignment");
+            l_ig_opts->m_AirrField.push_back("c_germline_alignment_aa");
+        }
         l_ig_opts->m_AirrField.push_back("fwr1");
         l_ig_opts->m_AirrField.push_back("fwr1_aa");
         l_ig_opts->m_AirrField.push_back("cdr1");
@@ -366,15 +379,27 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("v_score");
         l_ig_opts->m_AirrField.push_back("d_score");
         l_ig_opts->m_AirrField.push_back("j_score");
+        if(l_ig_opts->m_Db[4]) {
+            l_ig_opts->m_AirrField.push_back("c_score");
+        }
         l_ig_opts->m_AirrField.push_back("v_cigar");
         l_ig_opts->m_AirrField.push_back("d_cigar");
         l_ig_opts->m_AirrField.push_back("j_cigar");
+        if(l_ig_opts->m_Db[4]) {
+            l_ig_opts->m_AirrField.push_back("c_cigar");
+        }
         l_ig_opts->m_AirrField.push_back("v_support");
         l_ig_opts->m_AirrField.push_back("d_support");
         l_ig_opts->m_AirrField.push_back("j_support");
+        if(l_ig_opts->m_Db[4]) {
+            l_ig_opts->m_AirrField.push_back("c_support");
+        }
         l_ig_opts->m_AirrField.push_back("v_identity");
         l_ig_opts->m_AirrField.push_back("d_identity");
         l_ig_opts->m_AirrField.push_back("j_identity");
+        if(l_ig_opts->m_Db[4]) {
+            l_ig_opts->m_AirrField.push_back("c_identity");
+        }
         l_ig_opts->m_AirrField.push_back("v_sequence_start");
         l_ig_opts->m_AirrField.push_back("v_sequence_end");
         l_ig_opts->m_AirrField.push_back("v_germline_start");
@@ -387,6 +412,12 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("j_sequence_end");
         l_ig_opts->m_AirrField.push_back("j_germline_start");
         l_ig_opts->m_AirrField.push_back("j_germline_end");
+        if(l_ig_opts->m_Db[4]) {
+            l_ig_opts->m_AirrField.push_back("c_sequence_start");
+            l_ig_opts->m_AirrField.push_back("c_sequence_end");
+            l_ig_opts->m_AirrField.push_back("c_germline_start");
+            l_ig_opts->m_AirrField.push_back("c_germline_end");
+        }
         l_ig_opts->m_AirrField.push_back("fwr1_start");
         l_ig_opts->m_AirrField.push_back("fwr1_end");
         l_ig_opts->m_AirrField.push_back("cdr1_start");
@@ -405,10 +436,8 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("np1_length");
         l_ig_opts->m_AirrField.push_back("np2");
         l_ig_opts->m_AirrField.push_back("np2_length");
-      
 
-
-
+    
         int align_index = 0;
         
     while( true ){

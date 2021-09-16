@@ -1477,20 +1477,21 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
 
 /// @todo FIXME add means to specify masked database (SB-343)
 void 
-CIgBlastTabularInfo::PrintHeader(const string& program_version, 
-       const CBioseq& bioseq, 
-       const string& dbname, 
-       const string& domain_sys,
-       const string& rid /* = kEmptyStr */,
-       unsigned int iteration /* = numeric_limits<unsigned int>::max() */,
-       const CSeq_align_set* align_set /* = 0 */,
-       CConstRef<CBioseq> subj_bioseq /* = CConstRef<CBioseq>() */)
+CIgBlastTabularInfo::PrintHeader(const CConstRef<blast::CIgBlastOptions>& ig_opts,
+                                 const string& program_version, 
+                                 const CBioseq& bioseq, 
+                                 const string& dbname, 
+                                 const string& domain_sys,
+                                 const string& rid /* = kEmptyStr */,
+                                 unsigned int iteration /* = numeric_limits<unsigned int>::max() */,
+                                 const CSeq_align_set* align_set /* = 0 */,
+                                 CConstRef<CBioseq> subj_bioseq /* = CConstRef<CBioseq>() */)
 {
     x_PrintQueryAndDbNames(program_version, bioseq, dbname, rid, iteration, subj_bioseq);
     m_Ostream << "# Domain classification requested: " << domain_sys << endl;
     // Print number of alignments found, but only if it has been set.
     if (align_set) {
-       PrintMasterAlign();
+        PrintMasterAlign(ig_opts);
        m_Ostream <<  "# Hit table (the first field indicates the chain type of the hit)" << endl;
        int num_hits = align_set->Get().size();
        if (num_hits != 0) {
@@ -1648,6 +1649,7 @@ static void s_GetGermlineTranslation(const CRef<blast::CIgAnnotation> &annot, CA
 static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
                                    const CRef<CSeq_align>& align_d,
                                    const CRef<CSeq_align>& align_j,
+                                   const CRef<CSeq_align>& align_c,
                                    const CRef<blast::CIgAnnotation> &annot,
                                    CScope& scope,
                                    map<string, string>& airr_data){
@@ -1655,13 +1657,15 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
     string v_query_alignment = NcbiEmptyString;
     string d_query_alignment = NcbiEmptyString;
     string j_query_alignment = NcbiEmptyString;
+    string c_query_alignment = NcbiEmptyString;
     string v_germline_alignment = NcbiEmptyString;
     string d_germline_alignment = NcbiEmptyString;
     string j_germline_alignment = NcbiEmptyString;
+    string c_germline_alignment = NcbiEmptyString;
     string v_identity_str = NcbiEmptyString;
     string d_identity_str = NcbiEmptyString;
     string j_identity_str = NcbiEmptyString;
-    
+    string c_identity_str = NcbiEmptyString;
  
     
     CAlnMix mix(scope);
@@ -1726,7 +1730,7 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
 
     }
 
-    if (align_j) {
+    if (align_j){
         mix.Add(align_j->GetSegs().GetDenseg(), CAlnMix::fPreserveRows);
         double identity = 0;
         string query = NcbiEmptyString;
@@ -1755,18 +1759,20 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
                                  airr_data["j_sequence_alignment_aa"], airr_data["j_germline_alignment_aa"]);
     }   
         
+
     
     airr_data["v_identity"] = v_identity_str;
     airr_data["d_identity"] = d_identity_str;
     airr_data["j_identity"] = j_identity_str;
-
+   
+ 
     airr_data["v_sequence_alignment"] = v_query_alignment;
     airr_data["d_sequence_alignment"] = d_query_alignment;
     airr_data["j_sequence_alignment"] = j_query_alignment;
     airr_data["v_germline_alignment"] = v_germline_alignment;
     airr_data["d_germline_alignment"] = d_germline_alignment;
     airr_data["j_germline_alignment"] = j_germline_alignment;
-
+   
   
     //get whole alignment string
     //account for overlapping junction
@@ -1774,7 +1780,6 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
     string whole_v_germline_alignment = NcbiEmptyString;
     string whole_d_germline_alignment = NcbiEmptyString;
     string whole_j_germline_alignment = NcbiEmptyString;
-    
 
     mix.Merge(CAlnMix::fMinGap | CAlnMix::fQuerySeqMergeOnly | 
               CAlnMix::fRemoveLeadTrailGaps | CAlnMix::fFillUnalignedRegions); 
@@ -1820,7 +1825,7 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
             }
             airr_data["j_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(3) + 1);
             airr_data["j_alignment_end"] = NStr::IntToString(alnvec.GetSeqAlnStop(3) + 1);
-            
+
         }
     } else {
         if (align_j) {//light chain
@@ -1838,11 +1843,64 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
             }
             airr_data["j_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(2) + 1);
             airr_data["j_alignment_end"] = NStr::IntToString(alnvec.GetSeqAlnStop(2) + 1);
-            
+
         }
     }
 
-    
+    if (align_c) {
+      
+        double identity = 0;
+        string query = NcbiEmptyString;
+        string subject = NcbiEmptyString;
+        const CDense_seg& ds = (align_c->GetSegs().GetDenseg());
+        CAlnVec alnvec(ds, scope);
+        alnvec.SetGapChar('-');
+        alnvec.GetWholeAlnSeqString(0, query);
+        alnvec.GetWholeAlnSeqString(1, subject);
+        
+        int num_ident = 0;
+        int length = min(query.size(), subject.size());
+        
+        for (int i = 0; i < length; ++i) {
+            if (query[i] == subject[i]) {
+                ++num_ident;
+            }
+        }
+        if (length > 0) {
+            identity = ((double)num_ident)/length;
+        }
+        NStr::DoubleToString(c_identity_str, identity*100, 3);
+        c_query_alignment = query;
+        c_germline_alignment = subject;
+        s_GetGermlineTranslation(annot, alnvec, c_query_alignment, c_germline_alignment,
+                                 airr_data["c_sequence_alignment_aa"], airr_data["c_germline_alignment_aa"]);
+        airr_data["c_identity"] = c_identity_str;
+        airr_data["c_sequence_alignment"] = c_query_alignment;
+        airr_data["c_germline_alignment"] = c_germline_alignment;
+
+        CAlnMix mix2(scope);
+        mix2.Add(align_v->GetSegs().GetDenseg(), CAlnMix::fPreserveRows);
+        if (align_d && align_j) {
+            mix2.Add(align_d->GetSegs().GetDenseg(), CAlnMix::fPreserveRows);
+            mix2.Add(align_j->GetSegs().GetDenseg(), CAlnMix::fPreserveRows);
+            mix2.Add(align_c->GetSegs().GetDenseg(), CAlnMix::fPreserveRows);
+        } else if (align_j) {
+            mix2.Add(align_j->GetSegs().GetDenseg(), CAlnMix::fPreserveRows);
+            mix2.Add(align_c->GetSegs().GetDenseg(), CAlnMix::fPreserveRows);
+        }
+        mix2.Merge(CAlnMix::fMinGap | CAlnMix::fQuerySeqMergeOnly | 
+                   CAlnMix::fRemoveLeadTrailGaps | CAlnMix::fFillUnalignedRegions); 
+        CAlnVec alnvec2(mix2.GetDenseg(), scope); 
+        alnvec2.SetGapChar('-');
+        if (align_d && align_j) {
+            airr_data["c_alignment_start"] = NStr::IntToString(alnvec2.GetSeqAlnStart(4) + 1);
+            airr_data["c_alignment_end"] = NStr::IntToString(alnvec2.GetSeqAlnStop(4) + 1);
+        } else if (align_j) {
+            airr_data["c_alignment_start"] = NStr::IntToString(alnvec2.GetSeqAlnStart(3) + 1);
+            airr_data["c_alignment_end"] = NStr::IntToString(alnvec2.GetSeqAlnStop(3) + 1);
+        }
+    }   
+
     //query vdj part translation 
     {
        
@@ -1862,9 +1920,11 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
     bool found_v = false;
     bool found_d = false;
     bool found_j = false;
+    bool found_c = false;
     m_TopAlign_V = 0;
     m_TopAlign_D = 0;
-    m_TopAlign_J = 0;  
+    m_TopAlign_J = 0; 
+    m_TopAlign_C = 0;
 
     if (align_result && !align_result.Empty() && align_result->IsSet() && align_result->CanGet()) {
         ITERATE (CSeq_align_set::Tdata, iter, align_result->Get()) {
@@ -1888,6 +1948,11 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
                 m_TopAlign_J = (*iter);
                 found_j = true;
             }
+            if (annot->m_ChainType[index] == "C" && !found_c) {
+                m_TopAlign_C = (*iter);
+                found_c = true;
+            }
+            
             index ++;
             
         }
@@ -1945,7 +2010,9 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         if (m_JGene.sid != "N/A") {
             m_AirrData["j_call"] = m_JGene.sid;
         }
-        
+        if (m_CGene.sid != "N/A") {
+            m_AirrData["c_call"] = m_CGene.sid;
+        }
 
         if (m_AirrCdr3Seq != NcbiEmptyString) {
             m_AirrData["junction"] =  m_AirrCdr3Seq; //10th element  
@@ -1974,15 +2041,19 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         double v_score = 0;
         double d_score = 0;
         double j_score = 0;
+        double c_score = 0;
         double v_evalue = 0;
         double d_evalue = 0;
         double j_evalue = 0;
+        double c_evalue = 0;
         string v_score_str = NcbiEmptyString;
         string d_score_str = NcbiEmptyString;
         string j_score_str = NcbiEmptyString;
+        string c_score_str = NcbiEmptyString;
         string v_evalue_str = NcbiEmptyString;
         string d_evalue_str = NcbiEmptyString;
         string j_evalue_str = NcbiEmptyString;
+        string c_evalue_str = NcbiEmptyString;
 
         m_AirrData["complete_vdj"] = "F";
         if (m_TopAlign_V) {
@@ -2004,13 +2075,23 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
             NStr::DoubleToString(j_score_str, j_score, 3);
             NStr::DoubleToString(j_evalue_str, j_evalue, 3, NStr::fDoubleScientific);
         }
+        if (m_TopAlign_C) {
+            m_TopAlign_C->GetNamedScore(CSeq_align::eScore_BitScore, c_score);
+            m_TopAlign_C->GetNamedScore(CSeq_align::eScore_EValue, c_evalue);
+            NStr::DoubleToString(c_score_str, c_score, 3);
+            NStr::DoubleToString(c_evalue_str, c_evalue, 3, NStr::fDoubleScientific);
+            m_AirrData["c_score"] = c_score_str;
+            m_AirrData["c_support"] = c_evalue_str;
+        }
+
         m_AirrData["v_score"] = v_score_str;
         m_AirrData["d_score"] = d_score_str;
         m_AirrData["j_score"] = j_score_str;
+       
         m_AirrData["v_support"] = v_evalue_str;
         m_AirrData["d_support"] = d_evalue_str;
         m_AirrData["j_support"] = j_evalue_str;
-      
+        
        
         string cigar = NcbiEmptyString;
         if (m_TopAlign_V) {
@@ -2081,11 +2162,21 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
                 m_AirrData["np1_length"] = NStr::IntToString(np_len);
                 m_AirrData["np1"] = np_seq;
             }
+
+            if (m_TopAlign_C) {
+                s_GetCigarString(*m_TopAlign_C, cigar, query_handle.GetBioseqLength(), scope);
+                m_AirrData["c_cigar"] = cigar;
+                m_AirrData["c_sequence_start"] = NStr::IntToString(m_TopAlign_C->GetSeqStart(0) + 1);
+                m_AirrData["c_sequence_end"] = NStr::IntToString(m_TopAlign_C->GetSeqStop(0) + 1);
+                
+                m_AirrData["c_germline_start"] = NStr::IntToString(m_TopAlign_C->GetSeqStart(1) + 1);
+                m_AirrData["c_germline_end"] = NStr::IntToString(m_TopAlign_C->GetSeqStop(1) + 1);
+            }
         }
-
-        s_SetAirrAlignmentInfo(m_TopAlign_V, m_TopAlign_D, m_TopAlign_J, annot, scope, m_AirrData);
-                                    
-
+            
+        s_SetAirrAlignmentInfo(m_TopAlign_V, m_TopAlign_D, m_TopAlign_J, m_TopAlign_C, annot, scope, m_AirrData);
+        
+        
         for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
             if (m_IgDomains[i]->name.find("FR1") !=  string::npos) {
                 m_AirrData["fwr1_start"] =  NStr::IntToString(m_IgDomains[i]->start + 1);
@@ -2471,7 +2562,7 @@ void CIgBlastTabularInfo::Print(void)
     CBlastTabularInfo::Print();
 };
 
-void CIgBlastTabularInfo::PrintMasterAlign(const string &header) const
+void CIgBlastTabularInfo::PrintMasterAlign(const CConstRef<blast::CIgBlastOptions>& ig_opts, const string &header) const
 {
     m_Ostream << endl;
     if (m_IsNucl) {
@@ -2484,14 +2575,20 @@ void CIgBlastTabularInfo::PrintMasterAlign(const string &header) const
         m_Ostream << "(Top V gene match, ";
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
             m_ChainType == "VB") m_Ostream << "Top D gene match, ";
-        m_Ostream << "Top J gene match, Top C gene match, Chain type, stop codon, ";
+        m_Ostream << "Top J gene match, ";
+        if (ig_opts->m_Db[4]) { 
+            m_Ostream << "Top C gene match, ";
+        }
+        m_Ostream << "Chain type, stop codon, ";
         m_Ostream << "V-J frame, Productive, Strand, V Frame shift).  "; 
         m_Ostream <<"Multiple equivalent top matches, if present, are separated by a comma." << endl;
         m_Ostream << m_VGene.sid << m_FieldDelimiter;
         if (m_ChainType == "VH"|| m_ChainType == "VD" || 
             m_ChainType == "VB") m_Ostream << m_DGene.sid << m_FieldDelimiter;
         m_Ostream << m_JGene.sid << m_FieldDelimiter;
-        m_Ostream << m_CGene.sid << m_FieldDelimiter;
+        if (ig_opts->m_Db[4]) {
+            m_Ostream << m_CGene.sid << m_FieldDelimiter;
+        }
         m_Ostream << m_MasterChainTypeToShow << m_FieldDelimiter;
         m_Ostream << m_OtherInfo[3] << m_FieldDelimiter;
         if (m_FrameInfo == "IF") m_Ostream << "In-frame";
@@ -2538,7 +2635,7 @@ void CIgBlastTabularInfo::PrintMasterAlign(const string &header) const
               << endl << endl;
 };
 
-void CIgBlastTabularInfo::PrintHtmlSummary() const
+void CIgBlastTabularInfo::PrintHtmlSummary(const CConstRef<blast::CIgBlastOptions>& ig_opts) const
 {
     if (m_IsNucl) {
         if (m_IsMinusStrand) {
@@ -2553,23 +2650,27 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
             m_ChainType == "VB") {  
             m_Ostream << "<td>Top D gene match</td>";
         }
-        m_Ostream << "<td>Top J gene match</td>"
-                  << "<td>Top C gene match</td>"
-                  << "<td>Chain type</td>"
-                  << "<td>stop codon</td>"
-                  << "<td>V-J frame</td>"
-                  << "<td>Productive</td>"
-                  << "<td>Strand</td>"
-                  << "<td>V frame shift</td></tr>\n";
+        m_Ostream << "<td>Top J gene match</td>";
+        if (ig_opts->m_Db[4]) {
+            m_Ostream << "<td>Top C gene match</td>";
+        }
+        m_Ostream  << "<td>Chain type</td>"
+                   << "<td>stop codon</td>"
+                   << "<td>V-J frame</td>"
+                   << "<td>Productive</td>"
+                   << "<td>Strand</td>"
+                   << "<td>V frame shift</td></tr>\n";
 
         m_Ostream << "<tr><td>"  << m_VGene.sid;
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
             m_ChainType == "VB") { 
             m_Ostream << "</td><td>" << m_DGene.sid;
         }
-        m_Ostream << "</td><td>" << m_JGene.sid
-                  << "</td><td>" << m_CGene.sid
-                  << "</td><td>" << m_MasterChainTypeToShow 
+        m_Ostream << "</td><td>" << m_JGene.sid;
+        if (ig_opts->m_Db[4]) {
+           m_Ostream << "</td><td>" << m_CGene.sid;
+        }
+        m_Ostream << "</td><td>" << m_MasterChainTypeToShow 
                   << "</td><td>";
         m_Ostream << (m_OtherInfo[3]!="N/A" ? m_OtherInfo[3] : "") << "</td><td>";
         if (m_FrameInfo == "IF") {
