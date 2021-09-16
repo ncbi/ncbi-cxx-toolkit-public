@@ -921,8 +921,8 @@ private:
     typename enable_if<is_arithmetic<T>::value, TThis>::type& operator=(T id) { m_Id = id; return *this; }
     template<typename T>
     typename enable_if<is_arithmetic<T>::value, bool>::type operator==(T id) const { return m_Id == id; }
-    template<typename T>
-    operator typename enable_if<is_arithmetic<T>::value, T>::type(void) const { return static_cast<T>(m_Id); }
+    template<typename T, typename enable_if<is_arithmetic<T>::value, T>::type* = nullptr>
+    operator T(void) const { return static_cast<T>(m_Id); }
 #endif
 
 private:
@@ -1250,7 +1250,7 @@ public:
         {
         }
     CSafeFlags(enum_type flags)
-        : m_Flags(flags)
+        : m_Flags(static_cast<storage_type>(flags))
         {
         }
 
