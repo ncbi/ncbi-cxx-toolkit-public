@@ -308,7 +308,7 @@ void CVDBUserAgentMonitor::Initialize()
                        " KDbgHandlerSet() failed: "<<rc);
     }
     s_HaveDebugVDBHook = KDbgWriterGet() != nullptr;
-    if ( s_HaveDebugVDBHook && KDbgWriterGet() != my_writer ) {
+    if ( s_HaveDebugVDBHook && KWrtWriter(KDbgWriterGet()) != my_writer ) {
         NCBI_THROW_FMT(CException, eUnknown,
                        "CVDBUserAgentMonitor:"
                        " KDbgHandler was set to something else");
