@@ -828,7 +828,7 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
         bool got_exception = false; \
         try {
 #define CHECK_END2(MSG, have_errors) \
-        } catch (exception) { \
+        } catch (exception&) { \
             got_exception = true; \
             if ( !have_errors ) { \
                 ERR_POST("Can not " MSG); throw; \
