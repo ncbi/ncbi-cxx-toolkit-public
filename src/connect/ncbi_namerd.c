@@ -1161,7 +1161,7 @@ static char* x_Namespace(char* nspc, size_t size, const char* name)
             CORE_LOGF_X(eNSub_Message, eLOG_Warning,
                         ("[%s]  NAMERD " DEF_CONN_REG_SECTION
                          "_" REG_NAMERD_API_ENV " setting is deprecated,"
-                         " please using " DEF_CONN_REG_SECTION
+                         " please consider using " DEF_CONN_REG_SECTION
                          "_" REG_NAMERD_API_NAMESPACE " instead", name));
         }
         return nspc;
