@@ -5,8 +5,8 @@
 NCBI_begin_app(dbapi_svc_test)
   NCBI_sources(dbapi_svc_test)
   NCBI_uses_toolkit_libraries(xconnect sdbapi ncbi_xdbapi_ctlib)
-  NCBI_project_watchers(ucko mcelhany)
-  NCBI_requires(-MSWin)
+  NCBI_project_watchers(ucko lavr)
+  NCBI_requires(-MSWin Sybase)
 
   NCBI_set_test_requires(in-house-resources connext)
   NCBI_set_test_timeout(600)
