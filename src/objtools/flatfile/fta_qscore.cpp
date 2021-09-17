@@ -307,9 +307,9 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc,
     *q++ = '\0';
     StringCpy(def_title, p);
 
-    if(StringICmp(def_title, "Phrap Quality") != 0 &&
-       StringICmp(def_title, "Gap4") != 0 &&
-       StringICmp(def_title, "Phred Quality") != 0)
+    if(NStr::CompareNocase(def_title, "Phrap Quality") != 0 &&
+        NStr::CompareNocase(def_title, "Gap4") != 0 &&
+        NStr::CompareNocase(def_title, "Phred Quality") != 0)
     {
         ErrPostEx(SEV_ERROR, ERR_QSCORE_BadTitle,
                   "Unrecognized title for quality score data : >%s< : should be 'Phrap Quality', 'Gap4', or 'Phred Quality'.",

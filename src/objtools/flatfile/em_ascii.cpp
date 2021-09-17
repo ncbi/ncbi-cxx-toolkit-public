@@ -819,7 +819,7 @@ static CRef<objects::COrg_ref> GetEmblOrgRef(DataBlkPtr dbp)
 /**********************************************************/
 static void CheckEmblContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 {
-    bool condiv = (StringICmp(ibp->division, "CON") == 0);
+    bool condiv = (NStr::CompareNocase(ibp->division, "CON") == 0);
 
     if(condiv && ibp->segnum != 0)
     {

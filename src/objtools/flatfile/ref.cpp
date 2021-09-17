@@ -1900,15 +1900,15 @@ static char* FindBackSemicolon(char* pchStart, char* pchCurrent)
 /**********************************************************/
 static char* FindSemicolon(char* str)
 {
-    if(str == NULL || *str == '\0')
-        return(NULL);
+    if(str == nullptr || *str == '\0')
+        return nullptr;
 
-    str = SkipSpaces(str);
+    while (*str && std::isspace(*str)) str++;
 
     if(*str == ';')
         return(str);
 
-    return(NULL);
+    return nullptr;
 }
 
 /**********************************************************/

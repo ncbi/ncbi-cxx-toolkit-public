@@ -514,9 +514,9 @@ static CRef<objects::CMolInfo> PrfGetMolInfo(DataBlkPtr entry, char* comm)
     p = PrfGetSubStringValue(entry, ParFlatPRF_NAME, ParFlatPRF_determine);
     if(p != NULL)
     {
-        if(StringICmp(p, "protein") == 0)
+        if(NStr::CompareNocase(p, "protein") == 0)
             mol_info->SetTech(objects::CMolInfo::eTech_seq_pept);
-        else if(StringICmp(p, "gene") == 0 || StringICmp(p, "mRNA") == 0)
+        else if(NStr::CompareNocase(p, "gene") == 0 || NStr::CompareNocase(p, "mRNA") == 0)
             mol_info->SetTech(objects::CMolInfo::eTech_concept_trans);
         else
             ErrPostEx(SEV_ERROR, ERR_FORMAT_UnknownDetermineField,
@@ -535,9 +535,9 @@ static CRef<objects::CMolInfo> PrfGetMolInfo(DataBlkPtr entry, char* comm)
         p = StringChr(q, ';');
         if(p != NULL)
            *p = '\0';
-        if(StringICmp(q, "N=incomplete") == 0)
+        if(NStr::CompareNocase(q, "N=incomplete") == 0)
             left = true;
-        else if(StringICmp(q, "C=incomplete") == 0)
+        else if(NStr::CompareNocase(q, "C=incomplete") == 0)
             right = true;
         else
         {

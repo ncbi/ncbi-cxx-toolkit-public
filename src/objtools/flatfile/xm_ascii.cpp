@@ -94,7 +94,7 @@ static void XMLCheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
     if(ibp == NULL)
         return;
 
-    bool condiv = (StringICmp(ibp->division, "CON") == 0);
+    bool condiv = (NStr::CompareNocase(ibp->division, "CON") == 0);
 
     if(condiv && ibp->segnum != 0)
     {
