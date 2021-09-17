@@ -12,7 +12,9 @@ cd "$initial_dir"
 tree_root=`pwd`
 
 build_root=$NCBI
-build_dir=c++.cmake.stable
+build_pfx="c++.cmake."
+build_def="stable"
+build_dir="${build_pfx}${build_def}"
 
 repository="https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++"
 rep_inc="include"
@@ -34,6 +36,7 @@ ARGUMENTS:
   <type>       -- project type
   builddir     -- root directory of the pre-built NCBI C++ toolkit
                   default: $build_dir
+  --noconfig   -- skip configuring build
 EOF
 if test -z "$1"; then
   echo
@@ -90,6 +93,27 @@ Error()
   exit 1
 }
 
+Get_build_dir()
+{
+  all=`ls $NCBI | grep ${build_pfx} | sed "s/${build_pfx}//g"`
+  while true; do
+    cat <<EOF
+
+Please pick a stability level
+Available:
+
+$all
+
+EOF
+    read -p "Desired stability (default = ${build_def}): " stability
+    test -n "$stability"  ||  stability=${build_def}
+    builddir=${build_root}/${build_pfx}${stability}
+    if [ -d ${builddir} ]; then
+      break
+    fi
+  done
+}
+
 #----------------------------------------------------------------------------
 if [ $# -eq 0 ]; then
   do_help="yes"
@@ -101,6 +125,9 @@ while [ $# -ne 0 ]; do
     --help|-help|help|-h)
       do_help="yes"
     ;; 
+    --noconfig)
+      noconfig="yes"
+    ;;
     *) 
       if [ $pos -eq 0 ]; then
         prj_name=$1
@@ -132,14 +159,14 @@ if [ -z "$prj_type" ]; then
   Error "Mandatory argument 'branch' is missing"
 fi
 if [ -z "$toolkit" ]; then
-  builddir=${build_root}/${build_dir}
+  Get_build_dir
 else
   if [ -d "$toolkit" ]; then
     builddir="$toolkit"
   elif [ -d "${build_root}/$toolkit" ]; then
     builddir="${build_root}/$toolkit"
-  elif [ -d "${build_root}/c++.cmake.$toolkit" ]; then
-    builddir="${build_root}/c++.cmake.$toolkit"
+  elif [ -d "${build_root}/${build_pfx}$toolkit" ]; then
+    builddir="${build_root}/${build_pfx}$toolkit"
   fi
 fi
 if [ ! -d "$builddir" ]; then
@@ -150,7 +177,7 @@ if [ ! -d "$builddir" ]; then
     echo "ERROR:  Directory not found: $toolkit" 1>&2
   fi
   echo "Try one of these:"
-  ls $NCBI | grep c++.cmake
+  ls $NCBI | grep ${build_pfx} | sed "s/${build_pfx}//g"
   exit 1
 fi
 
@@ -201,4 +228,8 @@ chmod a+x $cfg_cfg
 echo "Created project $prj_name"
 echo "To configure:  cd $prj_name; ./$cfg_cfg <arguments>"
 echo "For help:      cd $prj_name; ./$cfg_cfg --help"
+if [ ! "$noconfig" = "yes" ]; then
+    echo ----------------------------------------------------------------------
+    ./$cfg_cfg --with-prebuilt=?
+fi
 cd "$initial_dir"
