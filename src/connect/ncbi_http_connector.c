@@ -908,8 +908,10 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 ||  (uuu->net_info->scheme != eURL_Https
                      &&  uuu->net_info->http_proxy_host[0]
                      &&  uuu->net_info->http_proxy_port)) {
-                if (uuu->net_info->http_push_auth
-                    &&  x_Authenticate(uuu, eRetry_ProxyAuthenticate, 0) > 0) {
+                if (uuu->net_info->http_push_auth  &&
+                    (x_Authenticate(uuu, eRetry_ProxyAuthenticate, 0) > 0
+                     ||  (req_method != eReqMethod_Connect  &&
+                          x_Authenticate(uuu, eRetry_Authenticate, 0) > 0))) {
                     status = eIO_Unknown;
                     break;
                 }
@@ -950,10 +952,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 }
             } else {
                 /* Direct HTTP[S] or tunneled HTTPS */
-                if (uuu->net_info->http_push_auth
-                    &&  (uuu->net_info->scheme == eURL_Https
-                         ||  x_UnsafeRedirectOK(uuu))
-                    &&  x_Authenticate(uuu, eRetry_Authenticate, 0) > 0) {
+                if (uuu->net_info->http_push_auth  &&
+                    x_Authenticate(uuu, eRetry_Authenticate, 0) > 0) {
                     status = eIO_Unknown;
                     break;
                 }
