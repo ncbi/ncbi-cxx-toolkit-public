@@ -935,8 +935,6 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
     Uint1        scores[QSBUF_MAXSCORES];       /* array of Uint1 to hold the
                                                    scores read from one line
                                                    of qs_buf data */
-    Uint4        qs_scores = 0;         /* number of scores parsed from one
-                                           line of qs_buf score data */
     Uint4        total_scores = 0;
     Uint1        max_score = QS_MIN_VALID_SCORE;        /* maximum quality
                                                            score encountered in
@@ -1097,7 +1095,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
 
             /* otherwise, this must be a line of quality score data
              */
-            qs_scores = QSbuf_ParseScores(my_buf, &scores[0], QSBUF_MAXSCORES,
+            int qs_scores = QSbuf_ParseScores(my_buf, &scores[0], QSBUF_MAXSCORES,
                                           &max_score, &min_score, allow_na);
             if(qs_scores < 0)
             {
