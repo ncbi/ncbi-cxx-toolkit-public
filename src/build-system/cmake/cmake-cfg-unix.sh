@@ -132,6 +132,31 @@ Quote() {
     echo "$1" | sed -e "s|'|'\\\\''|g; 1s/^/'/; \$s/\$/'/"
 }
 
+Get_prebuild_path()
+{
+  for d in $prebuilds; do
+    build_def=$d
+    break
+  done
+  all=`echo $prebuilds | tr ' ' '\n'`
+  while true; do
+    cat <<EOF
+
+Please pick a build configuration
+Available:
+
+$all
+
+EOF
+    read -p "Desired configuration (default = ${build_def}): " build_config
+    test -n "$build_config"  ||  build_config=${build_def}
+    prebuilt_path=${script_root}/${build_config}
+    if [ -d ${prebuilt_path} ]; then
+      break
+    fi
+  done
+}
+
 ############################################################################# 
 # parse arguments
 
@@ -255,6 +280,8 @@ if [ -n "$prebuilt_path" ]; then
     d=${script_root}/${prebuilt_path}
     if [ -d $d ]; then
         prebuilt_path=$d
+    else
+        Get_prebuild_path
     fi
     prebuilt_dir=`dirname $prebuilt_path`
     prebuilt_name=`basename $prebuilt_path`
