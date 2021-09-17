@@ -3,6 +3,6 @@
 NCBI_begin_app(test_psg_cache)
   NCBI_sources(test_psg_cache)
   NCBI_uses_toolkit_libraries(psg_protobuf psg_cache seq)
-  NCBI_requires(Linux PROTOBUF)
+  NCBI_requires(Linux PROTOBUF CASSANDRA)
   NCBI_project_watchers(satskyse saprykin)
 NCBI_end_app()
