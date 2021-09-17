@@ -9,6 +9,7 @@
 
 #include "flatfile_message_reporter.hpp"
 #include "ftaerr.hpp"
+#include "ftacpp.hpp"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
@@ -94,16 +95,16 @@ struct FtaMsgPost {
             fclose(lfd);
         }
         if (logfile) {
-            free(logfile);
+            MemFree(logfile);
         }
         if (prefix_locus) {
-            free(prefix_locus);
+            MemFree(prefix_locus);
         }
         if (prefix_accession) {
-            free(prefix_accession);
+            MemFree(prefix_accession);
         }
         if (prefix_feature) {
-            free(prefix_feature);    
+            MemFree(prefix_feature);    
         }
     };
 };
@@ -201,30 +202,30 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
 
     string curdir = CDir::GetCwd();
 
-    buf = (char *) malloc(curdir.size() + strlen(module) + 6);
+    buf = (char *)MemNew(curdir.size() + strlen(module) + 6);
     sprintf(buf, "%s/%s.msg", curdir.c_str(), module);
 
     fd = fopen(buf, "r");
     if(!fd)
     {
-        free(buf);
-        buf = (char *)malloc(strlen(MESSAGE_DIR) + strlen(module) + 6);
+        MemFree(buf);
+        buf = (char *)MemNew(strlen(MESSAGE_DIR) + strlen(module) + 6);
         sprintf(buf, "%s/%s.msg", MESSAGE_DIR, module);
 
         fd = fopen(buf, "r");
         if (!fd)
         {
-            free(buf);
+            MemFree(buf);
             return;
         }
     }
 
     bmmfp = (FtaMsgModFiles *) calloc(1, sizeof(FtaMsgModFiles));
-    bmmfp->modname = (char *) malloc(strlen(module) + 1);
+    bmmfp->modname = (char *)MemNew(strlen(module) + 1);
     strcpy(bmmfp->modname, module);
-    bmmfp->filename = (char *) malloc(strlen(buf) + 1);
+    bmmfp->filename = (char *)MemNew(strlen(buf) + 1);
     strcpy(bmmfp->filename, buf);
-    free(buf);
+    MemFree(buf);
 
     if(bmp->bmmf)
         bmmfp->next = bmp->bmmf;
@@ -249,7 +250,7 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
             continue;
 
         *p = '\0';
-        val1 = (char *) malloc(strlen(q) + 1);
+        val1 = (char *)MemNew(strlen(q) + 1);
         strcpy(val1, q);
 
         for(*p++ = ','; *p == ' ' || *p == '\t'; p++);
@@ -257,7 +258,7 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
 
         if(q == p)
         {
-            free(val1);
+            MemFree(val1);
             continue;
         }
 
@@ -268,7 +269,7 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
 
         if(val2 < 1)
         {
-            free(val1);
+            MemFree(val1);
             continue;
         }
 
@@ -285,7 +286,7 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
                    !strcmp(q, "SEV_ERROR") || !strcmp(q, "SEV_REJECT") ||
                    !strcmp(q, "SEV_FATAL"))
                 {
-                    val3 = (char *) malloc(strlen(q) + 1);
+                    val3 = (char *)MemNew(strlen(q) + 1);
                     strcpy(val3, q);
                 }
                 *p = ch;
@@ -307,7 +308,7 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
 
             if(val3)
             {
-                free(val3);
+                MemFree(val3);
                 val3 = NULL;
             }
 
@@ -317,9 +318,9 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
         if(!bmmfp->bmmt || !bmmtp)
         {
             if(val1)
-                free(val1);
+                MemFree(val1);
             if(val3)
-                free(val3);
+                MemFree(val3);
             val2 = 0;
             continue;
         }
@@ -336,7 +337,7 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
 
         if(val3)
         {
-            free(val3);
+            MemFree(val3);
             val3 = NULL;
         }
 
@@ -467,22 +468,22 @@ void FtaInstallPrefix(int prefix, const char *name, const char *location)
     if((prefix & PREFIX_ACCESSION) == PREFIX_ACCESSION)
     {
         if(bmp->prefix_accession != NULL)
-           free(bmp->prefix_accession);
-        bmp->prefix_accession = (char *) malloc(strlen(name) + 1);
+           MemFree(bmp->prefix_accession);
+        bmp->prefix_accession = (char *)MemNew(strlen(name) + 1);
         strcpy(bmp->prefix_accession, name);
     }
     if((prefix & PREFIX_LOCUS) == PREFIX_LOCUS)
     {
         if(bmp->prefix_locus != NULL)
-           free(bmp->prefix_locus);
-        bmp->prefix_locus = (char *) malloc(strlen(name) + 1);
+           MemFree(bmp->prefix_locus);
+        bmp->prefix_locus = (char *)MemNew(strlen(name) + 1);
         strcpy(bmp->prefix_locus, name);
     }
     if((prefix & PREFIX_FEATURE) == PREFIX_FEATURE)
     {
         if(bmp->prefix_feature != NULL)
-           free(bmp->prefix_feature);
-        bmp->prefix_feature = (char *) malloc(160);
+           MemFree(bmp->prefix_feature);
+        bmp->prefix_feature = (char *)MemNew(160);
         strcpy(bmp->prefix_feature, "FEAT=");
         strncat(bmp->prefix_feature, name, 20);
         bmp->prefix_feature[24] = '\0';
@@ -499,19 +500,19 @@ void FtaDeletePrefix(int prefix)
     if((prefix & PREFIX_ACCESSION) == PREFIX_ACCESSION)
     {
         if(bmp->prefix_accession != NULL)
-           free(bmp->prefix_accession);
+           MemFree(bmp->prefix_accession);
         bmp->prefix_accession = NULL;
     }
     if((prefix & PREFIX_LOCUS) == PREFIX_LOCUS)
     {
         if(bmp->prefix_locus != NULL)
-           free(bmp->prefix_locus);
+           MemFree(bmp->prefix_locus);
         bmp->prefix_locus = NULL;
     }
     if((prefix & PREFIX_FEATURE) == PREFIX_FEATURE)
     {
         if(bmp->prefix_feature != NULL)
-           free(bmp->prefix_feature);
+           MemFree(bmp->prefix_feature);
         bmp->prefix_feature = NULL;
     }
 }
@@ -531,7 +532,7 @@ bool ErrSetLog(const char *logfile)
 
     if(!bmp->logfile)
     {
-        bmp->logfile = (char *) malloc(strlen(logfile) + 1);
+        bmp->logfile = (char *)MemNew(strlen(logfile) + 1);
         strcpy(bmp->logfile, logfile);
     }
 
