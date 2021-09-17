@@ -1159,8 +1159,10 @@ static char* x_Namespace(char* nspc, size_t size, const char* name)
         static void* s_Once = 0;
         if (CORE_Once(&s_Once)) {
             CORE_LOGF_X(eNSub_Message, eLOG_Warning,
-                        ("[%s]  NAMERD ENV setting is deprecated,"
-                         " please consider using NAMESPACE instead", name));
+                        ("[%s]  NAMERD " DEF_CONN_REG_SECTION
+                         "_" REG_NAMERD_API_ENV " setting is deprecated,"
+                         " please using " DEF_CONN_REG_SECTION
+                         "_" REG_NAMERD_API_NAMESPACE " instead", name));
         }
         return nspc;
     }
