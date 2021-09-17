@@ -42,13 +42,13 @@
 
 BEGIN_NCBI_SCOPE
 
-inline void* MemNew(size_t sz) { void* p = std::malloc(sz); std::memset(p, 0, sz); return p; }
+inline void* MemNew(size_t sz) { void* p = new char[sz]; std::memset(p, 0, sz); return p; }
 inline void* MemSet(void* p, int n, size_t sz) { return std::memset(p, n, sz); }
 inline void* MemCpy(void* p, void* q, size_t sz) { return std::memcpy(p, q, sz); }
-inline void* MemFree(void* p) { std::free(p); return 0; }
+inline void* MemFree(void* p) { delete[](p); return 0; }
 
 inline size_t StringLen(const char* s) { return s ? std::strlen(s) : 0; }
-inline char* StringSave(const char* s) { if (!s) return 0; const size_t n = std::strlen(s) + 1; char* p = (char*)std::malloc(n); std::memcpy(p, s, n); return p; }
+inline char* StringSave(const char* s) { if (!s) return 0; const size_t n = std::strlen(s) + 1; char* p = new char[n]; std::memcpy(p, s, n); return p; }
 inline char* StringStr(const char* s1, const char* s2) { return const_cast<char*>(std::strstr(s1, s2)); }
 inline char* StringCat(char* d, const char* s) { return std::strcat(d, s); }
 inline char* StringCpy(char* d, const char* s) { return std::strcpy(d, s); }
