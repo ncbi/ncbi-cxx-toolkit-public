@@ -1,3 +1,3 @@
 # $Id$
 
-NCBI_add_app(pubseq_gateway)
+# NCBI_add_app(pubseq_gateway)
