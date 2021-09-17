@@ -3780,6 +3780,7 @@ BOOST_AUTO_TEST_CASE(s_ReferenceCounting)
 
             LOG_POST("Calling " << type << " on source");
             auto dummy = s1.c_str();
+            dummy++; // to avoid warnings
             if ( s1.data() != s2.data() ) {
                 LOG_POST("BAD: " << type << " on source turns reference counting OFF");
             }
