@@ -363,7 +363,8 @@ TMgr-TypeTrackType ::= INTEGER {
     vcfTabix(32),
     wig(33),
     wigMaf(34),
-    multiWig(35)
+    multiWig(35),
+    vcf(36)
 }
 
 TMgr-Hub ::= SEQUENCE {
