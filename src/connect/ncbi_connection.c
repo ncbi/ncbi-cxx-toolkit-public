@@ -126,7 +126,7 @@
 #endif /*_DEBUG*/
 
 
-/* Private flags, must not cross with ECONN_Flags defined in the header
+/* Private flags, MUST NOT cross with ECONN_Flags defined in the header
  */
 enum ECONN_InternalFlag {
     fCONN_Flush = 1024           /* auto-flush was successful                */
@@ -235,6 +235,7 @@ static EIO_Status x_Callback(CONN conn, ECONN_Callback type, unsigned int flag)
 static EIO_Status x_Flush(CONN conn, const STimeout* timeout,
                           int/*bool*/ isflush)
 {
+    assert(isflush  ||  !(conn->flags & fCONN_Flush));
     for (;;) {
         EIO_Status status;
         if ((status = x_Callback(conn, eCONN_OnFlush, 0)) != eIO_Success)
@@ -395,7 +396,7 @@ static EIO_Status s_Open(CONN conn)
     } else
         status  = eIO_NotSupported;
     if (status == eIO_Success) {
-        conn->flags   &= (TCONN_Flags)(~fCONN_Flush);
+        conn->flags   |= fCONN_Flush;
         conn->r_status = eIO_Success;
         conn->w_status = eIO_Success;
         conn->state    = eCONN_Open;
