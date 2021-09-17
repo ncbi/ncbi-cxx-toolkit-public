@@ -2,7 +2,11 @@
 
 NCBI_begin_app(bsdiff)
   NCBI_sources(bsdiff)
-  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank ncbi_xloader_wgs xbiosample_util)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xbiosample_util)
+  NCBI_optional_components(VDB)
+  if(NCBI_COMPONENT_VDB_FOUND)
+    NCBI_uses_toolkit_libraries(ncbi_xloader_wgs)
+  endif()
+
   NCBI_project_watchers(ludwigf)
 NCBI_end_app()
-
