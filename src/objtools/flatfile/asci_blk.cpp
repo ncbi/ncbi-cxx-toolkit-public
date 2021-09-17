@@ -1590,7 +1590,7 @@ static void fta_fix_tpa_keywords(TKeywordList& keywords)
         if (key->empty())
             continue;
 
-        if (StringICmp(key->c_str(), "TPA") == 0)
+        if (NStr::CompareNocase(key->c_str(), "TPA") == 0)
             *key = "TPA";
         else if (StringNICmp(key->c_str(), "TPA:", 4) == 0)
         {
@@ -3141,7 +3141,7 @@ static void CheckDivCode(TEntryList& seq_entries, ParserPtr pp)
                 IndexblkPtr ibp = pp->entrylist[pp->curindx];
 
                 if(tech == objects::CMolInfo::eTech_tsa &&
-                   !StringICmp(ibp->division, "TSA"))
+                   !NStr::CompareNocase(ibp->division, "TSA"))
                     continue;
 
                 if (!gb_block->IsSetDiv())
@@ -3462,7 +3462,7 @@ static void CheckGBBlock(TSeqdescList& descrs, bool& got)
         }
 
         objects::CGB_block& gb_block = (*descr)->SetGenbank();
-        if (div != NULL && gb_block.IsSetDiv() && StringICmp(div, gb_block.GetDiv().c_str()) == 0)
+        if (div != NULL && gb_block.IsSetDiv() && NStr::CompareNocase(div, gb_block.GetDiv().c_str()) == 0)
             gb_block.ResetDiv();
 
         if (gb_block.IsSetSource())

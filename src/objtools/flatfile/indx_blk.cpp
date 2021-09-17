@@ -275,7 +275,7 @@ static char* GetResidue(TokenStatBlkPtr stoken)
     for(i = 1; i < stoken->num; i++, ptr = ptr->next, sptr = sptr->next)
     {
         for(b = ParFlat_RESIDUE_STR; *b != NULL; b++)
-            if(StringICmp(*b, sptr->str) == 0)
+            if(NStr::CompareNocase(*b, sptr->str) == 0)
                 return(ptr->str);
     }
 

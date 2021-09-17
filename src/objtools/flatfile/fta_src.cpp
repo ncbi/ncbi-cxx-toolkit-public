@@ -620,7 +620,7 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
                 if(q == NULL || q[1] == '\0')
                     continue;
                 *q = '\0';
-                if (StringICmp(val_ptr, "taxon") == 0)
+                if (NStr::CompareNocase(val_ptr, "taxon") == 0)
                     if(ibp->taxid < 1)
                         ibp->taxid = atoi(q + 1);
                 *q = ':';
@@ -964,7 +964,7 @@ static char* CheckSourceFeatLocAccs(SourceFeatBlkPtr sfbp, char* acc)
                 *r = '\0';
             else
                 *p = '\0';
-            i = StringICmp(q, acc);
+            i = NStr::CompareNocase(q, acc);
             if(r != NULL)
                 *r = '.';
             else
@@ -1001,7 +1001,7 @@ bool fta_if_special_org(const Char* name)
         return false;
 
     for(b = special_orgs; *b != NULL; b++)
-        if(StringICmp(*b, name) == 0)
+        if(NStr::CompareNocase(*b, name) == 0)
             break;
     if(*b != NULL || StringIStr(name, "vector") != NULL)
         return true;
@@ -1330,7 +1330,7 @@ static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
             count++;
         if(name == NULL)
             name = tsfbp->name;
-        else if(StringICmp(name, tsfbp->name) != 0)
+        else if(NStr::CompareNocase(name, tsfbp->name) != 0)
             same = false;
     }
     if(same && count > 0)
@@ -1343,7 +1343,7 @@ static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
             continue;
         if(name == NULL)
             name = tsfbp->name;
-        else if(StringICmp(name, tsfbp->name) != 0)
+        else if(NStr::CompareNocase(name, tsfbp->name) != 0)
             break;
     }
     if(tsfbp != NULL)
@@ -1362,7 +1362,7 @@ static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
 
         for (b = special_orgs; *b != NULL; b++)
         {
-            if (StringICmp(*b, tsfbp->name) == 0 &&
+            if (NStr::CompareNocase(*b, tsfbp->name) == 0 &&
                 StringCmp(tsfbp->location, pat) == 0)
                 break;
         }
@@ -1372,8 +1372,8 @@ static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
         if(name == NULL)
 /**            name = tsfbp->namstr;*/
             name = tsfbp->name;
-/**        else if(StringICmp(name, tsfbp->namstr) != 0)*/
-        else if(StringICmp(name, tsfbp->name) != 0)
+/**        else if(NStr::CompareNocase(name, tsfbp->namstr) != 0)*/
+        else if(NStr::CompareNocase(name, tsfbp->name) != 0)
             break;
     }
 
@@ -1413,7 +1413,7 @@ static char* CheckSourceOverlap(MinMaxPtr mmp, size_t len)
         {
             if(IfSpecialFeat(tmmp, len))
                 continue;
-            if(StringICmp(mmp->orgname, tmmp->orgname) == 0)
+            if(NStr::CompareNocase(mmp->orgname, tmmp->orgname) == 0)
                 continue;
             if(tmmp->min <= mmp->max && tmmp->max >= mmp->min)
                 break;
@@ -1440,7 +1440,7 @@ static char* CheckForUnusualFullLengthOrgs(SourceFeatBlkPtr sfbp)
         return(NULL);
 
     for(tsfbp = sfbp->next; tsfbp != NULL; tsfbp = tsfbp->next)
-        if(StringICmp(sfbp->name, tsfbp->name) != 0)
+        if(NStr::CompareNocase(sfbp->name, tsfbp->name) != 0)
             break;
 
     if(tsfbp == NULL)
@@ -1459,7 +1459,7 @@ static char* CheckForUnusualFullLengthOrgs(SourceFeatBlkPtr sfbp)
             continue;
 
         for(b = special_orgs; *b != NULL; b++)
-            if(StringICmp(*b, sfbp->name) == 0)
+            if(NStr::CompareNocase(*b, sfbp->name) == 0)
                 break;
 
         if(*b != NULL)
@@ -1577,7 +1577,7 @@ static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp,
 
         for(tsfbp = sfbp->next; tsfbp != NULL; tsfbp = tsfbp->next)
         {
-            if(tsfbp->bio_src.NotEmpty() || StringICmp(namstr, tsfbp->namstr) != 0)
+            if(tsfbp->bio_src.NotEmpty() || NStr::CompareNocase(namstr, tsfbp->namstr) != 0)
                 continue;
             
             tsfbp->lookup = sfbp->lookup;
@@ -1790,7 +1790,7 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
     bool same = true;
     for(tsfbp = sfbp; tsfbp != NULL; tsfbp = tsfbp->next)
     {
-        if(StringICmp(tsfbp->name, sfbp->name) != 0)
+        if(NStr::CompareNocase(tsfbp->name, sfbp->name) != 0)
         {
             same = false;
             break;
@@ -1846,7 +1846,7 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
         count_noskip = 0;
         for(tsfbp = sfbp; tsfbp != NULL; tsfbp = tsfbp->next)
         {
-            if(StringICmp(res->name, tsfbp->name) != 0)
+            if(NStr::CompareNocase(res->name, tsfbp->name) != 0)
                 continue;
             tsfbp->useit = true;
             if(tsfbp->skip)
@@ -1858,7 +1858,7 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
         {
             for(tsfbp = sfbp; tsfbp != NULL; tsfbp = tsfbp->next)
             {
-                if(StringICmp(res->name, tsfbp->name) != 0)
+                if(NStr::CompareNocase(res->name, tsfbp->name) != 0)
                     continue;
                 if(res != tsfbp && tsfbp->skip)
                     tsfbp->useit = false;
@@ -2031,7 +2031,7 @@ static CRef<objects::CDbtag> GetSourceDbtag(CRef<objects::CGb_qual>& qual, Parse
         return tag;
 
     *p = '\0';
-    if (StringICmp(&val_buf[0], "taxon") == 0)
+    if (NStr::CompareNocase(&val_buf[0], "taxon") == 0)
     {
         *p = ':';
         return tag;
@@ -2067,7 +2067,7 @@ static CRef<objects::CDbtag> GetSourceDbtag(CRef<objects::CGb_qual>& qual, Parse
 
     for (b = ObsoleteSourceDbxrefTag; *b != NULL; b++)
     {
-        if (StringICmp(*b, &val_buf[0]) == 0)
+        if (NStr::CompareNocase(*b, &val_buf[0]) == 0)
             break;
     }
 
@@ -2075,7 +2075,7 @@ static CRef<objects::CDbtag> GetSourceDbtag(CRef<objects::CGb_qual>& qual, Parse
     {
         ErrPostEx(SEV_WARNING, ERR_SOURCE_ObsoleteDbXref,
                   "/db_xref type \"%s\" is obsolete.", &val_buf[0]);
-        if (StringICmp(&val_buf[0], "IFO") == 0)
+        if (NStr::CompareNocase(&val_buf[0], "IFO") == 0)
         {
             line = (char*) MemNew(25 + StringLen(p + 1));
             StringCpy(line, "NBRC:");
@@ -2093,20 +2093,20 @@ static CRef<objects::CDbtag> GetSourceDbtag(CRef<objects::CGb_qual>& qual, Parse
 
     for (b = DENLRSourceDbxrefTag; *b != NULL; b++)
     {
-        if (StringICmp(*b, &val_buf[0]) == 0)
+        if (NStr::CompareNocase(*b, &val_buf[0]) == 0)
             break;
     }
 
     if(*b == NULL && (source == Parser::ESource::DDBJ || source == Parser::ESource::EMBL))
     {
         for(b = DESourceDbxrefTag; *b != NULL; b++)
-            if (StringICmp(*b, &val_buf[0]) == 0)
+            if (NStr::CompareNocase(*b, &val_buf[0]) == 0)
                 break;
     }
     if(*b == NULL && source == Parser::ESource::EMBL)
     {
         for(b = ESourceDbxrefTag; *b != NULL; b++)
-            if (StringICmp(*b, &val_buf[0]) == 0)
+            if (NStr::CompareNocase(*b, &val_buf[0]) == 0)
                 break;
     }
     if(*b == NULL && (source == Parser::ESource::NCBI || source == Parser::ESource::LANL ||
@@ -2114,7 +2114,7 @@ static CRef<objects::CDbtag> GetSourceDbtag(CRef<objects::CGb_qual>& qual, Parse
     {
         for (b = NLRSourceDbxrefTag; *b != NULL; b++)
         {
-            if (StringICmp(*b, &val_buf[0]) == 0)
+            if (NStr::CompareNocase(*b, &val_buf[0]) == 0)
                 break;
         }
     }
@@ -2385,10 +2385,10 @@ static void CompareDescrFeatSources(SourceFeatBlkPtr sfbp, const objects::CBiose
             std::string orgfeat;
             std::remove_copy_if(tsfbp->name, tsfbp->name + name_len, std::back_inserter(orgfeat), is_a_space_char);
 
-            if(StringICmp(orgdescr.c_str(), "unknown") == 0)
+            if(NStr::CompareNocase(orgdescr.c_str(), "unknown") == 0)
             {
-                if(StringICmp(orgdescr.c_str(), orgfeat.c_str()) == 0 ||
-                   (!commdescr.empty() && StringICmp(commdescr.c_str(), orgfeat.c_str()) == 0))
+                if(NStr::CompareNocase(orgdescr.c_str(), orgfeat.c_str()) == 0 ||
+                   (!commdescr.empty() && NStr::CompareNocase(commdescr.c_str(), orgfeat.c_str()) == 0))
                 {
                     break;
                 }
@@ -2493,7 +2493,7 @@ static void PropogateSuppliedLineage(objects::CBioseq& bioseq,
             lineage = bio_src.GetOrg().GetOrgname().GetLineage();
             const std::string& cur_taxname = bio_src.GetOrg().GetTaxname();
 
-            if (StringICmp(cur_taxname.c_str(), taxname.c_str()) == 0)
+            if (NStr::CompareNocase(cur_taxname.c_str(), taxname.c_str()) == 0)
             {
                 found = true;
                 break;
@@ -2529,7 +2529,7 @@ static void PropogateSuppliedLineage(objects::CBioseq& bioseq,
                 !tsfbp->bio_src->IsSetOrg() || !tsfbp->bio_src->GetOrg().IsSetTaxname() ||
                 tsfbp->name == NULL || *tsfbp->name == '\0' ||
                 tsfbp->bio_src->GetOrg().GetTaxname().empty() ||
-                StringICmp(sfbp->name, tsfbp->name) != 0)
+                NStr::CompareNocase(sfbp->name, tsfbp->name) != 0)
                 
                 continue;
 
@@ -2629,7 +2629,7 @@ static bool CheckForENV(SourceFeatBlkPtr sfbp, IndexblkPtr ibp, Parser::ESource 
 
         for (b = special_orgs; *b != NULL; b++)
         {
-            if (StringICmp(*b, sfbp->name) == 0)
+            if (NStr::CompareNocase(*b, sfbp->name) == 0)
                 break;
         }
         if(*b != NULL)
@@ -2656,7 +2656,7 @@ static bool CheckForENV(SourceFeatBlkPtr sfbp, IndexblkPtr ibp, Parser::ESource 
             return false;
         }
     }
-    else if(StringICmp(ibp->division, "ENV") == 0)
+    else if(NStr::CompareNocase(ibp->division, "ENV") == 0)
     {
         if(source == Parser::ESource::EMBL)
             ErrPostEx(SEV_ERROR, ERR_SOURCE_MissingEnvSampQual,
@@ -3421,7 +3421,7 @@ static bool CheckNeedSYNFocus(SourceFeatBlkPtr sfbp)
             continue;
 
         for(b = special_orgs; *b != NULL; b++)
-            if(StringICmp(*b, sfbp->name) == 0)
+            if(NStr::CompareNocase(*b, sfbp->name) == 0)
                 break;
 
         if(*b != NULL)
@@ -3851,9 +3851,9 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids,
             p = GetTheQualValue(tsfbp->quals, "evidence");
             if(p != NULL)
             {
-                if(StringICmp(p, "experimental") == 0)
+                if(NStr::CompareNocase(p, "experimental") == 0)
                     feat->SetExp_ev(objects::CSeq_feat::eExp_ev_experimental);
-                else if(StringICmp(p, "not_experimental") == 0)
+                else if(NStr::CompareNocase(p, "not_experimental") == 0)
                     feat->SetExp_ev(objects::CSeq_feat::eExp_ev_not_experimental);
                 MemFree(p);
             }

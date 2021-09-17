@@ -1223,7 +1223,7 @@ static void fix_taxname_dot(objects::COrg_ref& org_ref)
     if((p[0] == ' ' || p[0] == '\t') && (p[1] == 's' || p[1] == 'S') &&
        (p[2] == 'p' || p[2] == 'P') && p[3] == '\0')
     {
-        if(StringICmp(taxname.c_str(), "BACTERIOPHAGE SP") == 0)
+        if(NStr::CompareNocase(taxname.c_str(), "BACTERIOPHAGE SP") == 0)
             return;
 
         taxname += ".";
@@ -1286,7 +1286,7 @@ static CRef<objects::COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
         }
 
         if((StringNICmp("PV.", p, 3) == 0 && (p[3] == ' ' || p[3] == '\t' || p[3] == '\0')) ||
-           StringICmp(p, "AD11A") == 0 || StringICmp(p, "AD11P") == 0)
+           NStr::CompareNocase(p, "AD11A") == 0 || NStr::CompareNocase(p, "AD11P") == 0)
         {
             if (!org_ref->IsSetTaxname())
                 org_ref->SetTaxname(p);
@@ -1312,7 +1312,7 @@ static CRef<objects::COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
         for(q = p + 1; *q == ' ' || *q == '\t';)
             q++;
 
-        if(StringICmp(synsp->synname, "COMMON") == 0)
+        if(NStr::CompareNocase(synsp->synname, "COMMON") == 0)
         {
             if (!org_ref->IsSetCommon())
                 org_ref->SetCommon(q);
@@ -1322,7 +1322,7 @@ static CRef<objects::COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
         }
 
         for(b = org_mods, num = 2; *b != NULL; b++, num++)
-            if(StringICmp(synsp->synname, *b) == 0)
+            if(NStr::CompareNocase(synsp->synname, *b) == 0)
                 break;
         *p = ' ';
 
@@ -1330,8 +1330,8 @@ static CRef<objects::COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
         {
             for(b = org_mods, num = 2; *b != NULL; b++, num++)
             {
-                if(StringICmp(*b, "ISOLATE") != 0 &&
-                   StringICmp(*b, "STRAIN") != 0)
+                if(NStr::CompareNocase(*b, "ISOLATE") != 0 &&
+                   NStr::CompareNocase(*b, "STRAIN") != 0)
                     continue;
                 p = StringIStr(synsp->synname, *b);
                 if(p == NULL)
@@ -2078,16 +2078,16 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
             continue;
         }
 
-        if(StringICmp(token1, "MD5") == 0)
+        if(NStr::CompareNocase(token1, "MD5") == 0)
             continue;
 
         for(b = valid_dbs; *b != NULL; b++)
-            if(StringICmp(*b, token1) == 0)
+            if(NStr::CompareNocase(*b, token1) == 0)
                 break;
         if(*b == NULL)
         {
             for(b = obsolete_dbs; *b != NULL; b++)
-                if(StringICmp(*b, token1) == 0)
+                if(NStr::CompareNocase(*b, token1) == 0)
                     break;
             if(*b == NULL)
                 ErrPostEx(SEV_WARNING, ERR_DRXREF_UnknownDBname,
@@ -2099,7 +2099,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
                           token1);
         }
 
-        if(StringICmp(token1, "PDB") == 0)
+        if(NStr::CompareNocase(token1, "PDB") == 0)
         {
             if(token4 == NULL)
                 pdbold = true;
@@ -2110,13 +2110,13 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
                          (token5 == NULL) ? token4 : token5,
                          drop, source);
         }
-        else if(StringICmp(token1, "PIR") == 0)
+        else if(NStr::CompareNocase(token1, "PIR") == 0)
         {
             CRef<objects::CSeq_id> id(MakeLocusSeqId(token3, objects::CSeq_id::e_Pir));
             if (id.NotEmpty())
                 spb.SetSeqref().push_back(id);
         }
-        else if(StringICmp(token1, "EMBL") == 0)
+        else if(NStr::CompareNocase(token1, "EMBL") == 0)
         {
             ntype = GetNucAccOwner(token2, false);
             if(ntype == 0)
@@ -2187,13 +2187,13 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
             if (id.NotEmpty())
                 spb.SetSeqref().push_back(id);
         }
-        else if(StringICmp(token1, "ENSEMBL") == 0 ||
-                StringICmp(token1, "ENSEMBLBACTERIA") == 0 ||
-                StringICmp(token1, "ENSEMBLFUNGI") == 0 ||
-                StringICmp(token1, "ENSEMBLMETAZOA") == 0 ||
-                StringICmp(token1, "ENSEMBLPLANTS") == 0 ||
-                StringICmp(token1, "ENSEMBLPROTISTS") == 0 ||
-                StringICmp(token1, "WORMBASE") == 0)
+        else if(NStr::CompareNocase(token1, "ENSEMBL") == 0 ||
+                NStr::CompareNocase(token1, "ENSEMBLBACTERIA") == 0 ||
+                NStr::CompareNocase(token1, "ENSEMBLFUNGI") == 0 ||
+                NStr::CompareNocase(token1, "ENSEMBLMETAZOA") == 0 ||
+                NStr::CompareNocase(token1, "ENSEMBLPLANTS") == 0 ||
+                NStr::CompareNocase(token1, "ENSEMBLPROTISTS") == 0 ||
+                NStr::CompareNocase(token1, "WORMBASE") == 0)
         {
             if(AddToList(&ens_tran_list, token2))
             {
@@ -2222,7 +2222,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
                     spb.SetDbref().push_back(tag);
             }
         }
-        else if(StringICmp(token1, "REFSEQ") == 0)
+        else if(NStr::CompareNocase(token1, "REFSEQ") == 0)
         {
             ptype = 0;
             if(token2[0] >= 'A' && token2[0] <= 'Z' &&
@@ -2263,13 +2263,13 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
         }
         else
         {
-            if(StringICmp(token1, "GK") == 0)
+            if(NStr::CompareNocase(token1, "GK") == 0)
                 token1 = (char*) "Reactome";
-            else if(StringICmp(token1, "GENEW") == 0)
+            else if(NStr::CompareNocase(token1, "GENEW") == 0)
                 token1 = (char*) "HGNC";
-            else if(StringICmp(token1, "GeneDB_Spombe") == 0)
+            else if(NStr::CompareNocase(token1, "GeneDB_Spombe") == 0)
                 token1 = (char*) "PomBase";
-            else if(StringICmp(token1, "PomBase") == 0 &&
+            else if(NStr::CompareNocase(token1, "PomBase") == 0 &&
                     StringNICmp(token2, "PomBase:", 8) == 0)
                 token2 += 8;
 
@@ -3004,7 +3004,7 @@ static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr ent
             else if (org_ref->IsSetTaxname())
             {
                 if (!bio_src->IsSetOrg() || !bio_src->GetOrg().IsSetTaxname() ||
-                    StringICmp(org_ref->GetTaxname().c_str(), bio_src->GetOrg().GetTaxname().c_str()) != 0)
+                    NStr::CompareNocase(org_ref->GetTaxname().c_str(), bio_src->GetOrg().GetTaxname().c_str()) != 0)
                     ErrPostEx(SEV_ERROR, ERR_SOURCE_OrgNameVsTaxIDMissMatch,
                               "Organism name \"%s\" from OS line does not match the organism name \"%s\" obtained by lookup of NCBI TaxID.",
                               org_ref->GetTaxname().c_str(), bio_src->GetOrg().GetTaxname().c_str());
@@ -3855,7 +3855,7 @@ static Int2 SpFeatKeyNameValid(const Char* keystr)
     Int2 i;
 
     for(i = 0; ParFlat_SPFeat[i].inkey != NULL; i++)
-        if(StringICmp(ParFlat_SPFeat[i].inkey, keystr) == 0)
+        if(NStr::CompareNocase(ParFlat_SPFeat[i].inkey, keystr) == 0)
             break;
 
     if(ParFlat_SPFeat[i].inkey == NULL)
@@ -4623,7 +4623,7 @@ static void SPParseDefinition(char* str, const objects::CBioseq::TId& ids, Index
             continue;
 
         if ((*id)->GetSwissprot().IsSetRelease() &&
-            StringICmp((*id)->GetSwissprot().GetRelease().c_str(), "unreviewed") == 0)
+            NStr::CompareNocase((*id)->GetSwissprot().GetRelease().c_str(), "unreviewed") == 0)
             is_trembl = true;
     }
 

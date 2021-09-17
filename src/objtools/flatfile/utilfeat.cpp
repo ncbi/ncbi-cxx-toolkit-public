@@ -454,11 +454,11 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
         const std::string& first_name = names[0];
         const std::string& second_name = names[1];
 
-        if (StringICmp(p, first_name.c_str()) == 0 || (pper != NULL && StringICmp(pper, first_name.c_str()) == 0))
+        if (NStr::CompareNocase(p, first_name.c_str()) == 0 || (pper != NULL && NStr::CompareNocase(pper, first_name.c_str()) == 0))
         {
             gb_block.ResetSource();
         }
-        else if (StringICmp(p, second_name.c_str()) == 0 || (pper != NULL && StringICmp(pper, second_name.c_str()) == 0))
+        else if (NStr::CompareNocase(p, second_name.c_str()) == 0 || (pper != NULL && NStr::CompareNocase(pper, second_name.c_str()) == 0))
         {
             gb_block.ResetSource();
         }

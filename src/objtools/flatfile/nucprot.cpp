@@ -1738,14 +1738,14 @@ static Int2 EndAdded(objects::CSeq_feat& feat, GeneRefFeats& gene_refs)
             continue;
 
         const objects::CGene_ref& cur_gene_ref = (*gene)->GetData().GetGene();
-        if (StringICmp(cur_gene_ref.GetLocus().c_str(), name) != 0) {
+        if (NStr::CompareNocase(cur_gene_ref.GetLocus().c_str(), name) != 0) {
             if (!cur_gene_ref.IsSetSyn())
                 continue;
 
             bool found = false;
             ITERATE(objects::CGene_ref::TSyn, syn, cur_gene_ref.GetSyn())
             {
-                if (StringICmp(name, syn->c_str()) == 0) {
+                if (NStr::CompareNocase(name, syn->c_str()) == 0) {
                     found = true;
                     break;
                 }
@@ -2189,7 +2189,7 @@ static bool fta_check_exception(objects::CSeq_feat& feat, Parser::ESource source
 
         const Char* cur_val = (*qual)->GetVal().c_str();
         for (; *b != NULL; b++) {
-            if (StringICmp(*b, cur_val) == 0)
+            if (NStr::CompareNocase(*b, cur_val) == 0)
                 break;
         }
 

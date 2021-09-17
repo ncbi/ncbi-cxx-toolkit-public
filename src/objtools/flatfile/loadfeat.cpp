@@ -738,7 +738,7 @@ static CRef<objects::CDbtag> DbxrefQualToDbtag(const objects::CGb_qual& qual, Pa
     }
 
     const std::string& val = qual.GetVal();
-    if (StringICmp(val.c_str(), "taxon") == 0)
+    if (NStr::CompareNocase(val.c_str(), "taxon") == 0)
         return tag;
 
     std::string line = val;
@@ -764,15 +764,15 @@ static CRef<objects::CDbtag> DbxrefQualToDbtag(const objects::CGb_qual& qual, Pa
                   "/db_xref type \"%s\" is obsolete.", line.c_str());
 
         std::string buf;
-        if(StringICmp(line.c_str(), "BHB") == 0)
+        if(NStr::CompareNocase(line.c_str(), "BHB") == 0)
             buf = "IRD";
-        else if (StringICmp(line.c_str(), "BioHealthBase") == 0)
+        else if (NStr::CompareNocase(line.c_str(), "BioHealthBase") == 0)
             buf = "IRD";
-        else if (StringICmp(line.c_str(), "GENEW") == 0)
+        else if (NStr::CompareNocase(line.c_str(), "GENEW") == 0)
             buf = "HGNC";
-        else if (StringICmp(line.c_str(), "IFO") == 0)
+        else if (NStr::CompareNocase(line.c_str(), "IFO") == 0)
             buf = "NBRC";
-        else if (StringICmp(line.c_str(), "SWISS-PROT") == 0)
+        else if (NStr::CompareNocase(line.c_str(), "SWISS-PROT") == 0)
             buf = "UniProt/Swiss-Prot";
         else
             buf = "UniProt/TrEMBL";
@@ -780,8 +780,8 @@ static CRef<objects::CDbtag> DbxrefQualToDbtag(const objects::CGb_qual& qual, Pa
         line = buf;
     }
 
-    if(StringICmp(line.c_str(), "UNIPROT/SWISS-PROT") == 0 ||
-       StringICmp(line.c_str(), "UNIPROT/TREMBL") == 0)
+    if(NStr::CompareNocase(line.c_str(), "UNIPROT/SWISS-PROT") == 0 ||
+        NStr::CompareNocase(line.c_str(), "UNIPROT/TREMBL") == 0)
     {
         std::string buf("UniProtKB");
         buf += line.substr(7);
@@ -846,12 +846,12 @@ static CRef<objects::CDbtag> DbxrefQualToDbtag(const objects::CGb_qual& qual, Pa
         }
         if(*r != '\0' || q != p)
             strid = p;
-        else if(StringICmp(line.c_str(), "IntrepidBio") == 0 && fta_number_is_huge(q))
+        else if(NStr::CompareNocase(line.c_str(), "IntrepidBio") == 0 && fta_number_is_huge(q))
             strid = q;
         else
             intid = atoi(q);
     }
-    else if(StringICmp(line.c_str(), "PID") == 0)
+    else if(NStr::CompareNocase(line.c_str(), "PID") == 0)
     {
         if(*p != 'e' && *p != 'g' && *p != 'd')
         {
@@ -1737,13 +1737,13 @@ static Uint1 fta_get_aa_from_string(char* str)
     TrnaAaPtr   tap;
 
     for(tap = taa; tap->name != NULL; tap++)
-        if(StringICmp(str, tap->name) == 0)
+        if(NStr::CompareNocase(str, tap->name) == 0)
             break;
     if(tap->name != NULL)
         return(tap->aa);
 
     for(acp = aacodons; acp->straa != NULL; acp++)
-        if(StringICmp(acp->straa, str) == 0)
+        if(NStr::CompareNocase(acp->straa, str) == 0)
             break;
     if(acp->straa != NULL)
         return(acp->intaa);
@@ -2581,9 +2581,9 @@ static bool fta_check_evidence(objects::CSeq_feat& feat, FeatBlkPtr fbp)
             continue;
         }
 
-        if (StringICmp(val_str.c_str(), "not_experimental") == 0)
+        if (NStr::CompareNocase(val_str.c_str(), "not_experimental") == 0)
             evi_not++;
-        else if (StringICmp(val_str.c_str(), "experimental") == 0)
+        else if (NStr::CompareNocase(val_str.c_str(), "experimental") == 0)
             evi_exp++;
         else
         {
@@ -2835,7 +2835,7 @@ static void fta_sort_quals(FeatBlkPtr fbp, bool qamode)
                 if (q_qual == "gene")
                     continue;
 
-                Int4 i = StringICmp(q_qual.c_str(), tq_qual.c_str());
+                Int4 i = NStr::CompareNocase(q_qual.c_str(), tq_qual.c_str());
                 if(i < 0)
                     continue;
                 if(i == 0)
@@ -3176,7 +3176,7 @@ static void fta_check_old_locus_tags(DataBlkPtr dbp, unsigned char* drop)
                 if (isOldLocusTag(*gbqp2) || gbqp2_val.empty())
                     continue;
 
-                if (StringICmp(gbqp1_val.c_str(), gbqp2_val.c_str()) == 0)
+                if (NStr::CompareNocase(gbqp1_val.c_str(), gbqp2_val.c_str()) == 0)
                 {
                     ErrPostEx(SEV_ERROR, ERR_FEATURE_RedundantOldLocusTag,
                               "Feature \"%s\" at \"%s\" has redundant /old_locus_tag qualifiers. Dropping all but the first.",
@@ -6392,11 +6392,11 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if(pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "DNA") != 0 &&
-                   StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "DNA") != 0 &&
+                    NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "DNA") != 0)
+            else if(NStr::CompareNocase(q, "DNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "genomic RNA") == 0)
@@ -6406,10 +6406,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if (pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "RNA") != 0)
+            else if(NStr::CompareNocase(q, "RNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "mRNA") == 0)
@@ -6419,10 +6419,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if(pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "mRNA") != 0)
+            else if(NStr::CompareNocase(q, "mRNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "tRNA") == 0)
@@ -6432,10 +6432,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if(pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "tRNA") != 0)
+            else if(NStr::CompareNocase(q, "tRNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "rRNA") == 0)
@@ -6445,10 +6445,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if(pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "rRNA") != 0)
+            else if(NStr::CompareNocase(q, "rRNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "snoRNA") == 0)
@@ -6458,10 +6458,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if(pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "snoRNA") != 0)
+            else if(NStr::CompareNocase(q, "snoRNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "snRNA") == 0)
@@ -6471,10 +6471,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if(pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "snRNA") != 0)
+            else if(NStr::CompareNocase(q, "snRNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "scRNA") == 0)
@@ -6484,10 +6484,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if(pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "scRNA") != 0)
+            else if(NStr::CompareNocase(q, "scRNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "pre-RNA") == 0)
@@ -6497,10 +6497,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if(pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "RNA") != 0)
+            else if(NStr::CompareNocase(q, "RNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "pre-mRNA") == 0)
@@ -6510,10 +6510,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if(pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "RNA") != 0)
+            else if(NStr::CompareNocase(q, "RNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "other RNA") == 0)
@@ -6526,10 +6526,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if (pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "RNA") != 0)
+            else if(NStr::CompareNocase(q, "RNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "other DNA") == 0)
@@ -6542,10 +6542,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if (pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "DNA") != 0 && StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "DNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "DNA") != 0)
+            else if(NStr::CompareNocase(q, "DNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "unassigned RNA") == 0)
@@ -6558,10 +6558,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if (pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "RNA") != 0)
+            else if(NStr::CompareNocase(q, "RNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "unassigned DNA") == 0)
@@ -6574,10 +6574,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if (pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "DNA") != 0 && StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "DNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "DNA") != 0)
+            else if(NStr::CompareNocase(q, "DNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "viral cRNA") == 0)
@@ -6587,12 +6587,12 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if (pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "RNA") != 0 &&
-                   StringICmp(q, "cRNA") != 0 &&
-                   StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "RNA") != 0 &&
+                   NStr::CompareNocase(q, "cRNA") != 0 &&
+                   NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "cRNA") != 0)
+            else if(NStr::CompareNocase(q, "cRNA") != 0)
                 same = false;
         }
         else if(StringCmp(ibp->moltype, "transcribed RNA") == 0)
@@ -6602,14 +6602,14 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
             if (pp->source == Parser::ESource::EMBL)
             {
-                if(StringICmp(q, "RNA") != 0 && StringICmp(ibp->moltype, q) != 0)
+                if(NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
                     same = false;
             }
-            else if(StringICmp(q, "RNA") != 0)
+            else if(NStr::CompareNocase(q, "RNA") != 0)
                 same = false;
         }
         else if(pp->source == Parser::ESource::USPTO &&
-                StringICmp(ibp->moltype, "protein") == 0)
+                NStr::CompareNocase(ibp->moltype, "protein") == 0)
         {
             biomol = 8;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_aa);

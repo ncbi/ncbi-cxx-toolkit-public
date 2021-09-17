@@ -95,7 +95,7 @@ static CRef<objects::CDate_std> GetDatePtr(char* line)
     line[6] = '\0';
 
     for (month = 1, b = mon; *b != NULL; b++, month++)
-        if (StringICmp(*b, &p[3]) == 0)
+        if (NStr::CompareNocase(*b, &p[3]) == 0)
             break;
 
     line[6] = '-';
