@@ -55,7 +55,7 @@ public:
     CCgiApplicationCached(void);
     ~CCgiApplicationCached(void);
 
-    virtual void Init(void);
+    void Init(void) override;
 
 protected:
     ICache* GetCacheStorage() const override;
