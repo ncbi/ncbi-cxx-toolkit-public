@@ -1042,9 +1042,6 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     SNetServiceImpl::EServerErrorHandling error_handling)
 {
     int retry_count = m_ConnectionMaxRetries;
-
-    const unsigned long retry_delay = m_ConnectionRetryDelay;
-
     const CTimeout& max_total_time = m_ServerPool->m_MaxTotalTime;
     CDeadline deadline(max_total_time);
 
@@ -1148,7 +1145,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
         }
 
         if (!blob_not_found && !deadline.IsInfinite() &&
-                deadline.GetRemainingTime().GetAsMilliSeconds() <= (server ? 0 : retry_delay)) {
+                deadline.GetRemainingTime().GetAsMilliSeconds() <= (server ? 0 : m_ConnectionRetryDelay)) {
             NCBI_THROW_FMT(CNetSrvConnException, eReadTimeout, "Exceeded max_connection_time=" <<
                     max_total_time.GetAsMilliSeconds() << "; cmd=[" << cmd << "]");
         }
@@ -1181,7 +1178,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             ERR_POST(Warning << "Unable to send [" << cmd << "] to any "
                     "of the discovered servers; will retry after delay.");
 
-            SleepMilliSec(retry_delay);
+            SleepMilliSec(m_ConnectionRetryDelay);
 
             number_of_servers = 0;
             ns_with_submits_disabled = 0;
