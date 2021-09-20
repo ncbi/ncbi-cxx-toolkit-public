@@ -109,6 +109,8 @@ private:
     mutable CRef<CVDBBlastUtil> m_sraBlastUtil;
 };
 
+static const char kDigits[] = "0123456789";
+
 // ==========================================================================//
 // CVDBSeqInfoSrc implementation
 
@@ -386,8 +388,8 @@ CVDBBlastUtil::IsSRA(const string & db_name)
 			tmp = db_name.substr(last_pos +1);
 		}
 
-		if(tmp.find_first_of("0123456789") == 3) {
-            if(tmp.find_first_not_of("0123456789", 4) == std::string::npos)
+		if(tmp.find_first_of(kDigits) == 3) {
+            if(tmp.find_first_not_of(kDigits, 4) == std::string::npos)
 				return true;
 		}
 	}
@@ -816,6 +818,73 @@ Uint4 CVDBBlastUtil::GetMaxNumCSRAThread(void)
 	Uint4 num_thread =  (mem_size * 0.5/VDB_2NA_CHUNK_BUF_SIZE);
 
 	return (num_thread == 0? 1: num_thread);
+}
+
+void CVDBBlastUtil::GetOidsFromSeqIds_WGS(const vector<string> & ids , vector<int> & oids)
+{
+	int num_ids = ids.size();
+	int i = 0;
+    BlastSeqSrc* seqsrc = GetSRASeqSrc();
+    TVDBData* vdbData =
+    (TVDBData*)(_BlastSeqSrcImpl_GetDataStructure(seqsrc));
+    if (!vdbData) {
+        NCBI_THROW(CException, eUnknown, "Invalid SRA BlastSeqSrc");
+    }
+
+    Uint8 num_seqs = vdbData->numSeqs;
+    for(Uint8 j=0; j < num_seqs; j++) {
+	    CRef<CSeq_id> id = GetVDBSeqIdFromOID(j);
+	    if(id.Empty()){
+	    	continue;
+	    }
+	    if(ids[i] == id->GetSeqIdString(true)) {
+	    	oids[i] = j;
+	    	i++;
+	    	if(i >= num_ids) {
+	    		break;
+	    	}
+	    }
+    }
+
+	if (i != num_ids) {
+        NCBI_THROW(CException, eInvalid, "Not all oids have been found");
+	}
+}
+
+bool CVDBBlastUtil::IsWGS()
+{
+	if (m_isCSRAUtil) {
+		return false;
+	}
+
+	BlastSeqSrc* seqsrc = GetSRASeqSrc();
+	TVDBData* vdbData = (TVDBData*)(_BlastSeqSrcImpl_GetDataStructure(seqsrc));
+	if (!vdbData) {
+	    NCBI_THROW(CException, eUnknown, "Invalid SRA BlastSeqSrc");
+	}
+	unsigned int num_wgs = 0;
+	vector <string>  dbs;
+	NStr::Split(vdbData->names, " ", dbs, NStr::fSplit_Tokenize);
+
+	for (unsigned int i=0; i < dbs.size(); i++) {
+		size_t last_pos = dbs[i].find_last_of(CDirEntry::GetPathSeparator());
+		string tmp = dbs[i];
+		if(last_pos != string::npos) {
+			tmp = dbs[i].substr(last_pos +1);
+		}
+
+		size_t first_digit_pos = tmp.find_first_of(kDigits);
+		if((first_digit_pos > 3) && (first_digit_pos < 6)) {
+            if(tmp.find_first_not_of(kDigits, first_digit_pos) == std::string::npos) {
+            	num_wgs ++;
+            }
+		}
+	}
+
+	if (num_wgs == dbs.size()) {
+		return true;
+	}
+	return false;
 }
 
 // ==========================================================================//

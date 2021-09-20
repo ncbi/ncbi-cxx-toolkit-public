@@ -190,6 +190,10 @@ public:
 
 	static Uint4 GetMaxNumCSRAThread(void);
 
+	// This function expect ids in sorted accending order
+	void GetOidsFromSeqIds_WGS(const vector<string> & ids , vector<int> & oids);
+
+	bool IsWGS();
 private:
 	/// Temporary hack to get around oid limit (used by GetVDBStats)
 	/// Shoudl be remove when
