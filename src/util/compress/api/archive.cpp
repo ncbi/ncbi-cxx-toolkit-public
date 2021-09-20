@@ -1263,7 +1263,7 @@ CArchiveCompressionFileStream::CArchiveCompressionFileStream(EFormat format, int
 {  
     m_Location = IArchive::eFileStream;
     m_fd = fd;
-    m_FileStream = fdopen(NcbiSys_dup(fd), "ab");  // binary, appending from a current position
+    m_FileStream = NcbiSys_fdopen(NcbiSys_dup(fd), _T_XCSTRING("ab"));  // binary, appending from a current position
     if (!m_FileStream) {
         ARCHIVE_THROW(eOpen, "Cannot create file stream from the file descriptor");
     }
