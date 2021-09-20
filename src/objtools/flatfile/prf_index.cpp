@@ -56,10 +56,9 @@
 
 BEGIN_NCBI_SCOPE
 
-KwordBlk prfkwl[] = {
-    {">ref;", 5},   {"NAME", 4},    {"SOURCE", 6},   {"JOURNAL", 7},
-    {"KEYWORD", 7}, {"COMMENT", 7}, {"CROSSREF", 8}, {"SEQUENCE", 8},
-    {"END", 3},     {NULL, 0}
+vector<string> prfKeywords = {
+    ">ref;", "NAME", "SOURCE", "JOURNAL", "KEYWORD", "COMMENT", "CROSSREF", "SEQUENCE",
+    "END",
 };
 
 /**********************************************************/
@@ -106,7 +105,8 @@ bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
 
     finfo = (FinfoBlkPtr) MemNew(sizeof(FinfoBlk));
 
-    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, prfkwl[ParFlatPRF_ref].str, prfkwl[ParFlatPRF_ref].len);
+    auto keyword = prfKeywords[ParFlatPRF_ref];
+    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, keyword.c_str(), keyword.size());
 
     if(end_of_file)
     {
@@ -141,9 +141,10 @@ bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
             got_SEQUENCE = -1;
 
             p = NULL;
+            auto keywordEnd = prfKeywords[ParFlatPRF_END];
             for(i = 0; !end_of_file &&
-                       StringNCmp(finfo->str, prfkwl[ParFlatPRF_END].str,
-                                  prfkwl[ParFlatPRF_END].len) != 0; i++)
+                       StringNCmp(finfo->str, keywordEnd.c_str(),
+                           keywordEnd.size()) != 0; i++)
             {
                 if(got_SEQUENCE > -1 && isalpha(finfo->str[0]) != 0)
                 {
@@ -152,65 +153,73 @@ bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
                     entry->drop = 1;
                     break;
                 }
-                if(StringNCmp(finfo->str, prfkwl[ParFlatPRF_NAME].str,
-                              prfkwl[ParFlatPRF_NAME].len) == 0)
+                auto keywordName = prfKeywords[ParFlatPRF_NAME];
+                auto keywordSource = prfKeywords[ParFlatPRF_SOURCE];
+                auto keywordJournal = prfKeywords[ParFlatPRF_JOURNAL];
+                auto keywordKeyword = prfKeywords[ParFlatPRF_KEYWORD];
+                auto keywordComment = prfKeywords[ParFlatPRF_COMMENT];
+                auto keywordCrossRef = prfKeywords[ParFlatPRF_CROSSREF];
+                auto keywordSequence = prfKeywords[ParFlatPRF_SEQUENCE];
+
+                if(StringNCmp(finfo->str, keywordName.c_str(),
+                    keywordName.size()) == 0)
                 {
                     if(got_NAME > -1)
                     {
-                        p = prfkwl[ParFlatPRF_NAME].str;
+                        p = keywordName.c_str();
                         break;
                     }
                     got_NAME = i;
                 }
-                else if(StringNCmp(finfo->str, prfkwl[ParFlatPRF_SOURCE].str,
-                                   prfkwl[ParFlatPRF_SOURCE].len) == 0)
+                else if(StringNCmp(finfo->str, keywordSource.c_str(),
+                    keywordSource.size()) == 0)
                 {
                     if(got_SOURCE > -1)
                     {
-                        p = prfkwl[ParFlatPRF_SOURCE].str;
+                        p = keywordSource.c_str();
                         break;
                     }
                     got_SOURCE = i;
                 }
-                else if(StringNCmp(finfo->str, prfkwl[ParFlatPRF_JOURNAL].str,
-                                   prfkwl[ParFlatPRF_JOURNAL].len) == 0)
+                else if(StringNCmp(finfo->str, keywordJournal.c_str(),
+                    keywordJournal.size()) == 0)
                     got_JOURNAL = i;
-                else if(StringNCmp(finfo->str, prfkwl[ParFlatPRF_KEYWORD].str,
-                                   prfkwl[ParFlatPRF_KEYWORD].len) == 0)
+                else if(StringNCmp(finfo->str, keywordKeyword.c_str(),
+                    keywordKeyword.size()) == 0)
                 {
                     if(got_KEYWORD > -1)
                     {
-                        p = prfkwl[ParFlatPRF_KEYWORD].str;
+                        p = keywordKeyword.c_str();
                         break;
                     }
                     got_KEYWORD = i;
                 }
-                else if(StringNCmp(finfo->str, prfkwl[ParFlatPRF_COMMENT].str,
-                                   prfkwl[ParFlatPRF_COMMENT].len) == 0)
+                else if(StringNCmp(finfo->str, keywordComment.c_str(),
+                    keywordComment.size()) == 0)
                 {
                     if(got_COMMENT > -1)
                     {
-                        p = prfkwl[ParFlatPRF_COMMENT].str;
+                        p = keywordComment.c_str();
                         break;
                     }
                     got_COMMENT = i;
                 }
-                else if(StringNCmp(finfo->str, prfkwl[ParFlatPRF_CROSSREF].str,
-                                   prfkwl[ParFlatPRF_CROSSREF].len) == 0)
+                else if(StringNCmp(finfo->str, keywordCrossRef.c_str(),
+                    keywordCrossRef.size()) == 0)
                 {
                     if(got_CROSSREF > -1)
                     {
-                        p = prfkwl[ParFlatPRF_CROSSREF].str;
+                        p = keywordCrossRef.c_str();
                         break;
                     }
                     got_CROSSREF = i;
                 }
-                else if(StringNCmp(finfo->str, prfkwl[ParFlatPRF_SEQUENCE].str,
-                                   prfkwl[ParFlatPRF_SEQUENCE].len) == 0)
+                else if(StringNCmp(finfo->str, keywordSequence.c_str(),
+                                   keywordSequence.size()) == 0)
                 {
                     if(got_SEQUENCE > -1)
                     {
-                        p = prfkwl[ParFlatPRF_SEQUENCE].str;
+                        p = keywordSequence.c_str();
                         break;
                     }
                     got_SEQUENCE = i;
@@ -265,12 +274,12 @@ bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
         else
         {
             end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                           prfkwl[ParFlatPRF_END].str,
-                                           prfkwl[ParFlatPRF_END].len);
+                                           prfKeywords[ParFlatPRF_END].c_str(),
+                                            prfKeywords[ParFlatPRF_END].size());
         }
         end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                       prfkwl[ParFlatPRF_ref].str,
-                                       prfkwl[ParFlatPRF_ref].len);
+            prfKeywords[ParFlatPRF_ref].c_str(),
+            prfKeywords[ParFlatPRF_ref].size());
 
     } /* while, end_of_file */
 
