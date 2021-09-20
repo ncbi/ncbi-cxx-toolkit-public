@@ -100,11 +100,14 @@ struct HasValue
 };
 
 template <typename T>
-struct Not : T
+struct SNot : T
 {
-    Not(T o) : T(move(o)) {}
+    SNot(T o) : T(move(o)) {}
     bool operator() (const string& val) const { return !T::operator()(val); }
 };
+
+template <typename T>
+SNot<T> Not(T o) { return o; }
 
 class CCgiEnvHolder
 {
