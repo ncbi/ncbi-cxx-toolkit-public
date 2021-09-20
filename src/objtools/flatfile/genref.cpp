@@ -2207,11 +2207,8 @@ static list<AccMinMax> fta_get_acc_minmax_strand(const CSeq_loc* location,
                                               GeneLocsPtr gelop)
 {
     list<AccMinMax> ammps;
-    const char   *acc;
-
     Int4         from;
     Int4         to;
-    Int2         ver;
 
     gelop->strand = -2;
 

@@ -213,8 +213,8 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
                         char* eptr)
 {
     char* offset;
-    Int2    curkw;
-    Int2    nextkw;
+    int curkw;
+    int nextkw;
     Int4    len;
 
     len = 0;

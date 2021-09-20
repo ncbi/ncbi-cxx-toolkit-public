@@ -373,7 +373,7 @@ bool GenBankIndex(ParserPtr pp)
     bool          after_MGA;
 
     IndexblkPtr   entry;
-    Int2          currentKeyword;
+    int          currentKeyword;
     Int4          indx = 0;
     DataBlkPtr    data = NULL;
     IndBlkNextPtr ibnp;

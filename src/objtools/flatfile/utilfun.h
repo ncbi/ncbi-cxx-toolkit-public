@@ -125,8 +125,7 @@ char*         SrchTheStr(char* bptr, char* eptr, const char *str);
 
 void            CpSeqId(InfoBioseq* ibp, const objects::CSeq_id& id);
 
-void            InfoBioseqFree(InfoBioseq* ibp);
-Int2            SrchKeyword(char* ptr, KwordBlk kwl[]);
+int SrchKeyword(char* ptr, KwordBlk kwl[]);
 bool            CheckLineType(char* ptr, Int4 line, KwordBlk kwl[], bool after_origin);
 char*         SrchNodeType(DataBlk* entry, Int4 type, size_t* len);
 DataBlk*      TrackNodeType(DataBlk* entry, Int2 type);
