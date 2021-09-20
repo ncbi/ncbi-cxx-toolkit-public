@@ -57,41 +57,6 @@ typedef struct _qs_struct {
     struct _qs_struct* next;
 } QSStruct, *QSStructPtr;
 
-/**********************************************************
- *
- *   void FreeDatablk(dbp):
- *
- *      Free out list from the beginning of the dbp.
- *
- *                                              3-21-93
- *
- **********************************************************/
-void FreeDatablk(DataBlkPtr dbp)
-{
-    DataBlkPtr temp;
-
-    while(dbp != NULL)
-    {
-        if(dbp->data != NULL)
-        {
-            temp = (DataBlkPtr) dbp->data;
-            dbp->data = NULL;
-            FreeDatablk(temp);
-        }
-
-        temp = dbp;
-        dbp = dbp->next;
-        temp->next = NULL;
-
-        if(temp->type == ParFlat_ENTRYNODE && temp->offset != NULL)
-            MemFree(temp->offset);
-
-        if(temp->qscore != NULL)
-            MemFree(temp->qscore);
-        MemFree(temp);
-    }
-}
-
 /**********************************************************/
 void GapFeatsFree(GapFeatsPtr gfp)
 {
@@ -120,10 +85,10 @@ void GapFeatsFree(GapFeatsPtr gfp)
  **********************************************************/
 void FreeEntry(DataBlkPtr entry)
 {
-    FreeEntryBlk(reinterpret_cast<EntryBlkPtr>(entry->data));
+    FreeEntryBlk(reinterpret_cast<EntryBlkPtr>(entry->mpData));
 
-    entry->data = NULL;
-    FreeDatablk(entry);
+    entry->mpData = NULL;
+    delete entry;
 }
 
 /**********************************************************/
@@ -132,7 +97,7 @@ void FreeEntryBlk(EntryBlkPtr ebp)
     if (ebp == NULL)
         return;
 
-    FreeDatablk(ebp->chain);
+    delete ebp->chain;
     ebp->chain = NULL;
 
     delete ebp;

@@ -488,7 +488,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
             if(fun != NULL)
             {
                 data = LoadEntry(pp, entry->offset, entry->len);
-                (*fun)(entry, data->offset, static_cast<Int4>(data->len));
+                (*fun)(entry, data->mOffset, static_cast<Int4>(data->len));
                 FreeEntry(data);
             }
         } /* if, entry */

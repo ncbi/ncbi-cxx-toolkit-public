@@ -143,9 +143,9 @@ void ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, Parser::EFormat ban
         ind[j] = NULL;
 
     n_rest = 0;
-    for(subdbp = (DataBlkPtr) dbp->data; subdbp != NULL; subdbp = subdbp->next)
+    for(subdbp = (DataBlkPtr) dbp->mpData; subdbp != NULL; subdbp = subdbp->mpNext)
     {
-        if(ind[subdbp->type] != NULL)
+        if(ind[subdbp->mType] != NULL)
         {
             if(n_rest >= 21)
             {
@@ -155,16 +155,16 @@ void ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, Parser::EFormat ban
             n_rest++;
         }
         else
-            ind[subdbp->type] = subdbp;
+            ind[subdbp->mType] = subdbp;
 
-        i = StringLen(ref_tag[subdbp->type]);
-        subdbp->offset[subdbp->len-1] = '\0';
-        for(s = subdbp->offset + i; isspace((int) *s) != 0; s++)
+        i = StringLen(ref_tag[subdbp->mType]);
+        subdbp->mOffset[subdbp->len-1] = '\0';
+        for(s = subdbp->mOffset + i; isspace((int) *s) != 0; s++)
             i++;
-        subdbp->offset += i;
+        subdbp->mOffset += i;
         subdbp->len -= (i + 1);
         sx = NULL;
-        for(s = subdbp->offset; *s != '\0'; s++)
+        for(s = subdbp->mOffset; *s != '\0'; s++)
         {
             if(*s != '\n')
                 continue;
@@ -188,7 +188,7 @@ void ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, Parser::EFormat ban
         if(sx != NULL)
         {
             *sx = '\0';
-            subdbp->len = sx - subdbp->offset;
+            subdbp->len = sx - subdbp->mOffset;
         }
     }
 }

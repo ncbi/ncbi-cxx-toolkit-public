@@ -416,7 +416,7 @@ static Uint1 GetPirGenome(DataBlkPtr** sub_ind)
     if(dbp == NULL)
         return(0);
 
-    gmod = find_organelle(dbp->offset);
+    gmod = find_organelle(dbp->mOffset);
     if(gmod == 0)
         return(5);                      /* mitochondrion */
     if(gmod == 1)
@@ -436,17 +436,17 @@ static bool check_pir_entry(DataBlkPtr* ind)
 {
     if(ind[ParFlatPIR_ENTRY] == NULL)
         ErrPostEx(SEV_ERROR, ERR_ENTRY_NumKeywordBlk, "No ENTRY block found");
-    else if(ind[ParFlatPIR_ENTRY]->next != NULL)
+    else if(ind[ParFlatPIR_ENTRY]->mpNext != NULL)
         ErrPostEx(SEV_ERROR, ERR_ENTRY_NumKeywordBlk,
                   "More than one ENTRY block found");
     else if(ind[ParFlatPIR_TITLE] == NULL)
         ErrPostEx(SEV_ERROR, ERR_TITLE_NumKeywordBlk, "No TITLE block found");
-    else if(ind[ParFlatPIR_TITLE]->next != NULL)
+    else if(ind[ParFlatPIR_TITLE]->mpNext != NULL)
         ErrPostEx(SEV_ERROR, ERR_TITLE_NumKeywordBlk,
                   "More than one TITLE block found");
     else if(ind[ParFlatPIR_DATE] == NULL)
         ErrPostEx(SEV_ERROR, ERR_DATE_NumKeywordBlk, "No DATE block found");
-    else if(ind[ParFlatPIR_DATE]->next != NULL)
+    else if(ind[ParFlatPIR_DATE]->mpNext != NULL)
         ErrPostEx(SEV_ERROR, ERR_DATE_NumKeywordBlk,
                   "More than one DATE block found");
     else if(ind[ParFlatPIR_REFERENCE] == NULL)
@@ -455,13 +455,13 @@ static bool check_pir_entry(DataBlkPtr* ind)
     else if(ind[ParFlatPIR_SUMMARY] == NULL)
         ErrPostEx(SEV_ERROR, ERR_SUMMARY_NumKeywordBlk,
                   "No SUMMARY block found");
-    else if(ind[ParFlatPIR_SUMMARY]->next != NULL)
+    else if(ind[ParFlatPIR_SUMMARY]->mpNext != NULL)
         ErrPostEx(SEV_ERROR, ERR_SUMMARY_NumKeywordBlk,
                   "More than one SUMMARY block found");
     else if(ind[ParFlatPIR_SEQUENCE] == NULL)
         ErrPostEx(SEV_ERROR, ERR_SEQUENCE_NumKeywordBlk,
                   "No SEQUENCE block found");
-    else if(ind[ParFlatPIR_SEQUENCE]->next != NULL)
+    else if(ind[ParFlatPIR_SEQUENCE]->mpNext != NULL)
         ErrPostEx(SEV_ERROR, ERR_SEQUENCE_NumKeywordBlk,
                   "More than one SEQUENCE block found");
     else if(ind[ParFlatPIR_END] == NULL)
@@ -482,7 +482,7 @@ static CRef<objects::CSeq_entry> create_entry(DataBlkPtr* ind)
     bioseq->SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
     bioseq->SetInst().SetMol(objects::CSeq_inst::eMol_aa);
 
-    CRef<objects::CSeq_id> id(MakeLocusSeqId(ind[ParFlatPIR_ENTRY]->offset, objects::CSeq_id::e_Pir));
+    CRef<objects::CSeq_id> id(MakeLocusSeqId(ind[ParFlatPIR_ENTRY]->mOffset, objects::CSeq_id::e_Pir));
     if (id.NotEmpty())
         bioseq->SetId().push_back(id);
 
@@ -518,7 +518,7 @@ static bool get_seq_data(DataBlkPtr* ind, DataBlkPtr** sub_ind,
 
     dbp = sub_ind[ParFlatPIR_SUMMARY][1];
     if(dbp != NULL)
-        bptr = dbp->offset;
+        bptr = dbp->mOffset;
 
     if(bptr == NULL)
         return false;
@@ -526,7 +526,7 @@ static bool get_seq_data(DataBlkPtr* ind, DataBlkPtr** sub_ind,
     bioseq.SetInst().SetLength(atol(bptr));
 
     seqlen = 0;
-    seqptr = ind[ParFlatPIR_SEQUENCE]->offset;
+    seqptr = ind[ParFlatPIR_SEQUENCE]->mOffset;
     size_t len = ind[ParFlatPIR_SEQUENCE]->len;
     endptr = seqptr + len;
 
@@ -578,20 +578,20 @@ static char* join_subind(DataBlkPtr ind, DataBlkPtr* sub_ind)
     char* tag;
     char* offset;
     Int2    l;
-    Int2    type;
+    int    type;
 
-    type = ind->type;
-    size_t len = strlen(sub_ind[0]->offset) + 1;
+    type = ind->mType;
+    size_t len = strlen(sub_ind[0]->mOffset) + 1;
     for(l = 1; sub_tag[type][l] != NULL; l++)
     {
         if(sub_ind[l] == NULL)
             continue;
 
         len += strlen(sub_tag[type][l]) + 1;
-        len += strlen(sub_ind[l]->offset) + 1;
+        len += strlen(sub_ind[l]->mOffset) + 1;
     }
     str = (char*) MemNew(len);
-    add = tata_save(sub_ind[0]->offset);
+    add = tata_save(sub_ind[0]->mOffset);
     StringCpy(str, add);
     MemFree(add);
     for(l = 1; sub_tag[type][l] != NULL; l++)
@@ -603,7 +603,7 @@ static char* join_subind(DataBlkPtr ind, DataBlkPtr* sub_ind)
         StringCat(str, " ");
         StringCat(str, tag);
         MemFree(tag);
-        offset = sub_ind[l]->offset;
+        offset = sub_ind[l]->mOffset;
         add = tata_save(offset);
         StringCat(str, " ");
         StringCat(str, add);
@@ -719,7 +719,7 @@ static CRef<objects::CPIR_block> get_pirblock(DataBlkPtr* ind,
     dbp = sub_ind[ParFlatPIR_ORGANISM][ORGANISM_note];
     if(dbp != NULL)
     {
-        ptr = dbp->offset;
+        ptr = dbp->mOffset;
         if(StringNCmp(ptr, "host", 4) == 0)
             ptr += 4;
 
@@ -735,7 +735,7 @@ static CRef<objects::CPIR_block> get_pirblock(DataBlkPtr* ind,
 
     if (ind[ParFlatPIR_CONTAINS] != NULL)
     {
-        char* p = tata_save(ind[ParFlatPIR_CONTAINS]->offset);
+        char* p = tata_save(ind[ParFlatPIR_CONTAINS]->mOffset);
         pir->SetIncludes(p);
         MemFree(p);
     }
@@ -745,7 +745,7 @@ static CRef<objects::CPIR_block> get_pirblock(DataBlkPtr* ind,
         dbp = sub_ind[ParFlatPIR_CLASSIFICATION][CLASS_superfamily];
         if (dbp != NULL)
         {
-            char* p = tata_save(dbp->offset);
+            char* p = tata_save(dbp->mOffset);
             pir->SetSuperfamily(p);
             MemFree(p);
         }
@@ -755,7 +755,7 @@ static CRef<objects::CPIR_block> get_pirblock(DataBlkPtr* ind,
 
     if(ind[ParFlatPIR_KEYWORDS] != NULL)
     {
-        ptr = tata_save(ind[ParFlatPIR_KEYWORDS]->offset);
+        ptr = tata_save(ind[ParFlatPIR_KEYWORDS]->mOffset);
 
         TKeywordList kwds;
         split_str(kwds, ptr);
@@ -765,7 +765,7 @@ static CRef<objects::CPIR_block> get_pirblock(DataBlkPtr* ind,
             pir->SetKeywords().swap(kwds);
     }
 
-    ptr = ind[ParFlatPIR_SEQUENCE]->offset;
+    ptr = ind[ParFlatPIR_SEQUENCE]->mOffset;
     str = GetPirSeqRaw(ptr, ptr + ind[ParFlatPIR_SEQUENCE]->len);
 
     for(ptr = str; *ptr != '\0'; ptr++)
@@ -896,7 +896,7 @@ static void parse_pir_date(DataBlkPtr** sub_ind,
     dbp = sub_ind[ParFlatPIR_DATE][DATE_sequence_revision];
     if(dbp != NULL)
     {
-        seqdate = dbp->offset;
+        seqdate = dbp->mOffset;
         sdate = GetStdDate(seqdate, &flag);
         flag &= CkStdMonth(*sdate);
         if(!flag)
@@ -912,7 +912,7 @@ static void parse_pir_date(DataBlkPtr** sub_ind,
     dbp = sub_ind[ParFlatPIR_DATE][DATE_text_change];
     if(dbp != NULL)
     {
-        textdate = dbp->offset;
+        textdate = dbp->mOffset;
         tdate = GetStdDate(textdate, &flag);
         flag &= CkStdMonth(*tdate);
 
@@ -928,14 +928,14 @@ static void parse_pir_date(DataBlkPtr** sub_ind,
     }
 
     dbp = sub_ind[ParFlatPIR_DATE][DATE_];
-    if(dbp != NULL && *(dbp->offset) != '\0')
+    if(dbp != NULL && *(dbp->mOffset) != '\0')
     {
-        cdate = GetStdDate(dbp->offset, &flag);
+        cdate = GetStdDate(dbp->mOffset, &flag);
         flag &= CkStdMonth(*cdate);
 
         if(!flag)
         {
-            StringNCpy(buf, dbp->offset, 11);
+            StringNCpy(buf, dbp->mOffset, 11);
             buf[11] = '\0';
             ErrPostEx(SEV_WARNING, ERR_DATE_IllegalDate,
                       "Illegal date: %s", buf);
@@ -1068,7 +1068,7 @@ static CRef<objects::COrg_ref> parse_pir_org_ref(DataBlkPtr** sub_ind,
     dbp = sub_ind[ParFlatPIR_ORGANISM][ORGANISM_formal_name];
     if(dbp != NULL)
     {
-        p = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
+        p = ReplaceNewlineToBlank(dbp->mOffset, dbp->mOffset + dbp->len);
         ptr1 = p;
         DelQuotBtwData(ptr1);
         ptr2 = StringChr(ptr1, ',');
@@ -1108,7 +1108,7 @@ static CRef<objects::COrg_ref> parse_pir_org_ref(DataBlkPtr** sub_ind,
     dbp = sub_ind[ParFlatPIR_ORGANISM][ORGANISM_common_name];
     if(dbp != NULL)
     {
-        p = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
+        p = ReplaceNewlineToBlank(dbp->mOffset, dbp->mOffset + dbp->len);
         ptr1 = p;
 
         ptr2 = StringChr(ptr1, ',');
@@ -1575,7 +1575,7 @@ static CRef<objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     dbp = sub_ind[REFERENCE_authors];
     if(dbp != NULL)
     {
-        bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
+        bptr = ReplaceNewlineToBlank(dbp->mOffset, dbp->mOffset + dbp->len);
 
         if (StringNICmp(bptr, "anonymous, ", 11) == 0)
             get_auth_consortium(bptr + 11, auth_list);
@@ -1590,7 +1590,7 @@ static CRef<objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     dbp = sub_ind[REFERENCE_title];
     if(dbp != NULL)
     {
-        bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
+        bptr = ReplaceNewlineToBlank(dbp->mOffset, dbp->mOffset + dbp->len);
         if (bptr != NULL)
         {
             if (bptr[0])
@@ -1608,7 +1608,7 @@ static CRef<objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     dbp = sub_ind[REFERENCE_journal];
     if(dbp != NULL)
     {
-        bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
+        bptr = ReplaceNewlineToBlank(dbp->mOffset, dbp->mOffset + dbp->len);
 
         CRef<objects::CCit_art> cit_art = pir_journal(bptr, auth_list, title_art);
 
@@ -1625,7 +1625,7 @@ static CRef<objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     }
     else if((dbp = sub_ind[REFERENCE_citation]) != NULL)
     {
-        bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
+        bptr = ReplaceNewlineToBlank(dbp->mOffset, dbp->mOffset + dbp->len);
         CRef<objects::CCit_gen> cit_gen = get_pir_cit(bptr, auth_list, title_art, muid);
 
         if (cit_gen.NotEmpty())
@@ -1636,7 +1636,7 @@ static CRef<objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     }
     else if((dbp = sub_ind[REFERENCE_book]) != NULL)
     {
-        bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
+        bptr = ReplaceNewlineToBlank(dbp->mOffset, dbp->mOffset + dbp->len);
 
         CRef<objects::CCit_art> cit_art = get_pir_book(bptr, auth_list, title_art);
 
@@ -1653,7 +1653,7 @@ static CRef<objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     }
     else if((dbp = sub_ind[REFERENCE_submission]) != NULL)
     {
-        bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
+        bptr = ReplaceNewlineToBlank(dbp->mOffset, dbp->mOffset + dbp->len);
 
         CRef<objects::CCit_sub> cit_sub = get_pir_sub(bptr, auth_list);
 
@@ -1669,7 +1669,7 @@ static CRef<objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     dbp = sub_ind[REFERENCE_description];
     if(dbp != NULL)
     {
-        bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
+        bptr = ReplaceNewlineToBlank(dbp->mOffset, dbp->mOffset + dbp->len);
         if(bptr != NULL)
             MemFree(bptr);
     }
@@ -1677,7 +1677,7 @@ static CRef<objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     dbp = sub_ind[REFERENCE_contents];
     if(dbp != NULL)
     {
-        bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
+        bptr = ReplaceNewlineToBlank(dbp->mOffset, dbp->mOffset + dbp->len);
 
         desc->SetComment(NStr::Sanitize(bptr));
 
@@ -1688,7 +1688,7 @@ static CRef<objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     dbp = sub_ind[REFERENCE_note];
     if(dbp != NULL)
     {
-        bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
+        bptr = ReplaceNewlineToBlank(dbp->mOffset, dbp->mOffset + dbp->len);
 
         if (desc->IsSetComment())
             desc->SetComment() += ";~";
@@ -1701,7 +1701,7 @@ static CRef<objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
     dbp = sub_ind[REFERENCE_cross_references];
     if(dbp != NULL)
     {
-        bptr = ReplaceNewlineToBlank(dbp->offset, dbp->offset + dbp->len);
+        bptr = ReplaceNewlineToBlank(dbp->mOffset, dbp->mOffset + dbp->len);
         p = StringStr(bptr, "MUID:");
         if(p != NULL)
             muid = atoi(p + 5);
@@ -1768,16 +1768,16 @@ static void get_pir_descr(DataBlkPtr* ind,
 
     if(ind[ParFlatPIR_TITLE] != NULL)
     {
-        str = ind[ParFlatPIR_TITLE]->offset;
+        str = ind[ParFlatPIR_TITLE]->mOffset;
         char* p = tata_save(str);
         descr->SetTitle(p);
         MemFree(p);
     }
     descrs.push_back(descr);
 
-    for(dbp = ind[ParFlatPIR_COMMENT]; dbp != NULL; dbp = dbp->next)
+    for(dbp = ind[ParFlatPIR_COMMENT]; dbp != NULL; dbp = dbp->mpNext)
     {
-        offset = dbp->offset;
+        offset = dbp->mOffset;
         char* p = tata_save(offset);
 
         if (p && p[0])
@@ -1789,9 +1789,9 @@ static void get_pir_descr(DataBlkPtr* ind,
         MemFree(p);
     }
 
-    for(dbp = ind[ParFlatPIR_COMPLEX]; dbp != NULL; dbp = dbp->next)
+    for(dbp = ind[ParFlatPIR_COMPLEX]; dbp != NULL; dbp = dbp->mpNext)
     {
-        offset = dbp->offset;
+        offset = dbp->mOffset;
         char* p = tata_save(offset);
 
         if (p && p[0])
@@ -1814,13 +1814,13 @@ static void get_pir_descr(DataBlkPtr* ind,
 
     if(ind[ParFlatPIR_DATE] != NULL)
     {
-        offset = ind[ParFlatPIR_DATE]->offset;
+        offset = ind[ParFlatPIR_DATE]->mOffset;
         parse_pir_date(sub_ind, descrs, offset);
     }
 
     if(ind[ParFlatPIR_ORGANISM] != NULL)
     {
-        offset = ind[ParFlatPIR_ORGANISM]->offset;
+        offset = ind[ParFlatPIR_ORGANISM]->mOffset;
         CRef<objects::COrg_ref> org_ref = parse_pir_org_ref(sub_ind, pp);
         if (org_ref.NotEmpty())
         {
@@ -1858,9 +1858,9 @@ static void get_pir_descr(DataBlkPtr* ind,
 
     if(ind[ParFlatPIR_REFERENCE] != NULL)
     {
-        for(dbp = ind[ParFlatPIR_REFERENCE]; dbp != NULL; dbp = dbp->next)
+        for(dbp = ind[ParFlatPIR_REFERENCE]; dbp != NULL; dbp = dbp->mpNext)
         {
-            CRef<objects::CPubdesc> pubdesc = get_pir_ref((DataBlkPtr*) dbp->data);
+            CRef<objects::CPubdesc> pubdesc = get_pir_ref((DataBlkPtr*) dbp->mpData);
             if (pubdesc.NotEmpty())
             {
                 CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
@@ -1891,7 +1891,7 @@ static CRef<objects::CSeq_feat> pir_prot_ref(DataBlkPtr* ind, size_t length)
     if (ind[ParFlatPIR_TITLE] == NULL)
         return feat;
 
-    offset = ind[ParFlatPIR_TITLE]->offset;
+    offset = ind[ParFlatPIR_TITLE]->mOffset;
 
     CRef<objects::CProt_ref> prot_ref(new objects::CProt_ref);
 
@@ -1923,7 +1923,7 @@ static CRef<objects::CSeq_feat> pir_prot_ref(DataBlkPtr* ind, size_t length)
 
     if(ind[ParFlatPIR_ALTERNATE_NAMES] != NULL)
     {
-        offset = ind[ParFlatPIR_ALTERNATE_NAMES]->offset;
+        offset = ind[ParFlatPIR_ALTERNATE_NAMES]->mOffset;
         str = ReplaceNewlineToBlank(offset, offset +
                                     ind[ParFlatPIR_ALTERNATE_NAMES]->len);
 
@@ -1935,7 +1935,7 @@ static CRef<objects::CSeq_feat> pir_prot_ref(DataBlkPtr* ind, size_t length)
     }
 
     if(ind[ParFlatPIR_ENTRY] != NULL)
-        bptr = ind[ParFlatPIR_ENTRY]->offset;
+        bptr = ind[ParFlatPIR_ENTRY]->mOffset;
 
     feat.Reset(new objects::CSeq_feat);
     feat->SetData().SetProt(*prot_ref);
@@ -2200,12 +2200,12 @@ static void pir_feat(DataBlkPtr* ind, objects::CSeq_annot::C_Data::TFtable& feat
     CRef<objects::CSeq_id> seqid;
     if (ind[ParFlatPIR_ENTRY] != NULL)
     {
-        seqid = MakeLocusSeqId(ind[ParFlatPIR_ENTRY]->offset, objects::CSeq_id::e_Pir);
+        seqid = MakeLocusSeqId(ind[ParFlatPIR_ENTRY]->mOffset, objects::CSeq_id::e_Pir);
     }
 
-    for(subdbp = (DataBlkPtr) dbp->data; subdbp != NULL; subdbp = subdbp->next)
+    for(subdbp = (DataBlkPtr) dbp->mpData; subdbp != NULL; subdbp = subdbp->mpNext)
     {
-        str = StringSave(std::string(subdbp->offset, subdbp->offset + subdbp->len).c_str());
+        str = StringSave(std::string(subdbp->mOffset, subdbp->mOffset + subdbp->len).c_str());
         indx = MatchArraySubString(PirFeatInput, str);
         if(indx == -1)
         {
@@ -2468,8 +2468,8 @@ static DataBlkPtr PirDataBlkNew()
         fprintf(stderr, "Too many dbp's: %d\n", i_dbp);
         exit(1);
     }
-    db[i_dbp].next = NULL;
-    db[i_dbp].data = NULL;
+    db[i_dbp].mpNext = NULL;
+    db[i_dbp].mpData = NULL;
     return(db + (i_dbp++));
 }
 
@@ -2481,10 +2481,10 @@ static DataBlkPtr tie_dbp(DataBlkPtr host, DataBlkPtr next)
     if(host == NULL)
         return(next);
 
-    for(v = host; v->next != NULL;)
-        v = v->next;                    /* empty on purpose */
+    for(v = host; v->mpNext != NULL;)
+        v = v->mpNext;                    /* empty on purpose */
 
-    v->next = next;
+    v->mpNext = next;
     return(host);
 }
 
@@ -2516,18 +2516,18 @@ static void GetPirLenSubNode(DataBlkPtr dbp)
     DataBlkPtr curdbp;
     DataBlkPtr predbp;
 
-    if(dbp->data == NULL)               /* no sublocks in this block */
+    if(dbp->mpData == NULL)               /* no sublocks in this block */
         return;
 
     predbp = dbp;
-    curdbp = (DataBlkPtr) dbp->data;
-    for(; curdbp->next != NULL; curdbp = curdbp->next)
+    curdbp = (DataBlkPtr) dbp->mpData;
+    for(; curdbp->mpNext != NULL; curdbp = curdbp->mpNext)
     {
-        predbp->len = curdbp->offset - predbp->offset;
+        predbp->len = curdbp->mOffset - predbp->mOffset;
         predbp = curdbp;
     }
 
-    predbp->len = curdbp->offset - predbp->offset;
+    predbp->len = curdbp->mOffset - predbp->mOffset;
 }
 
 /**********************************************************/
@@ -2545,7 +2545,7 @@ static void featdbp(DataBlkPtr dbp)
     if(dbp == NULL)
         return;
 
-    bptr = dbp->offset;
+    bptr = dbp->mOffset;
     eptr = bptr + dbp->len;
 
     ptr = SrchTheChar(bptr, eptr, '\n');
@@ -2554,10 +2554,10 @@ static void featdbp(DataBlkPtr dbp)
     while(bptr < eptr)
     {
         subdbp = PirDataBlkNew();
-        subdbp->offset = bptr;
+        subdbp->mOffset = bptr;
         subdbp->len = eptr - bptr;
-        subdbp->type = FEATUREBLK;
-        dbp->data = (DataBlkPtr) tie_dbp((DataBlkPtr) dbp->data, subdbp);
+        subdbp->mType = FEATUREBLK;
+        dbp->mpData = (DataBlkPtr) tie_dbp((DataBlkPtr) dbp->mpData, subdbp);
 
         do
         {
@@ -2604,21 +2604,21 @@ static void subdbp_func(DataBlkPtr dbp)
         return;
 
     type = 0;
-    for(tmp = dbp; tmp != NULL; tmp = tmp->next)
+    for(tmp = dbp; tmp != NULL; tmp = tmp->mpNext)
     {
-        type = tmp->type;
+        type = tmp->mType;
         tags = (const char **) sub_tag[type];
         for(i = 0; tags[i] != NULL; i++)
             sub_ind[type][i] = NULL;
 
-        str = tmp->offset;
+        str = tmp->mOffset;
         subdbp = PirDataBlkNew();
-        subdbp->type = 0;
+        subdbp->mType = 0;
         i_tag = 0;
         if(*str == '#' && str[1] != '#')
             str--;
 
-        subdbp->offset = str;
+        subdbp->mOffset = str;
         sub_ind[type][i_tag] = tie_dbp(sub_ind[type][i_tag], subdbp);
         while((s = StringChr(str, '#')) != NULL)
         {
@@ -2631,7 +2631,7 @@ static void subdbp_func(DataBlkPtr dbp)
             for(s0 = s - 1; s0 > str && isspace(s0[-1]) != 0;)
                 s0--;
             *s0 = '\0';
-            subdbp->len = s0 - subdbp->offset;
+            subdbp->len = s0 - subdbp->mOffset;
             i_tag = fta_StringMatch(tags, s);
             if(i_tag == -1)
             {
@@ -2648,15 +2648,15 @@ static void subdbp_func(DataBlkPtr dbp)
             while(isspace((int) *str) != 0)
                 str++;
             subdbp = PirDataBlkNew();
-            subdbp->type = i_tag;
-            subdbp->offset = str;
+            subdbp->mType = i_tag;
+            subdbp->mOffset = str;
             sub_ind[type][i_tag] = tie_dbp(sub_ind[type][i_tag], subdbp);
         }
-        subdbp->len = tmp->offset + tmp->len - subdbp->offset;
+        subdbp->len = tmp->mOffset + tmp->len - subdbp->mOffset;
     }
     si = SubdbpNew(MAXTAG);
     memcpy(si, sub_ind[type], MAXTAG * sizeof(si[0]));
-    dbp->data = si;
+    dbp->mpData = si;
 }
 
 /**********************************************************/
@@ -2732,11 +2732,11 @@ bool PirAscii(ParserPtr pp)
         do
         {
             dbp = PirDataBlkNew();
-            dbp->type = i_tag;
+            dbp->mType = i_tag;
             size_t ioff = StringLen(dbp_tag[i_tag]);
             while(flat_str[ioff] == ' ')
                 ioff++;
-            dbp->offset = offset + ioff;
+            dbp->mOffset = offset + ioff;
             ind[i_tag] = tie_dbp(ind[i_tag], dbp);
             do
             {
@@ -2751,10 +2751,10 @@ bool PirAscii(ParserPtr pp)
 
                 i_tag = fta_StringMatch(dbp_tag, flat_str);
             } while(end_of_file == 0 && i_tag == -1);
-            dbp->len = offset - dbp->offset;
-            if(dbp->type == ParFlatPIR_ACCESSIONS)
+            dbp->len = offset - dbp->mOffset;
+            if(dbp->mType == ParFlatPIR_ACCESSIONS)
             {
-                acc_str = tata_save(dbp->offset);
+                acc_str = tata_save(dbp->mOffset);
                 ends = acc_str + 12;
                 s = acc_str;
                 while(s < ends && *s != '\0' && *s != ' ' && *s != ';')
@@ -2767,7 +2767,7 @@ bool PirAscii(ParserPtr pp)
                 if(acc_str != NULL)
                     MemFree(acc_str);
             }
-            if(dbp->type == ParFlatPIR_FEATURE)
+            if(dbp->mType == ParFlatPIR_FEATURE)
             {
                 featdbp(dbp);
             }
@@ -2775,9 +2775,9 @@ bool PirAscii(ParserPtr pp)
             {
                 subdbp_func(dbp);
             }
-            if(dbp->type == ParFlatPIR_ENTRY)
+            if(dbp->mType == ParFlatPIR_ENTRY)
             {
-                entry_str = tata_save(dbp->offset);
+                entry_str = tata_save(dbp->mOffset);
                 ends = entry_str + 12;
                 s = entry_str;
                 while(s < ends && *s != '\0' && *s != ' ' && *s != ';')

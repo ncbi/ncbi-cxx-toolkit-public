@@ -280,17 +280,50 @@ typedef struct _fta_operon {
 
 } FTAOperon, *FTAOperonPtr;
 
-typedef struct data_block {
-    Int2                   type;        /* which keyword block or node type */
-    void*                data;        /* any pointer type points to
-                                           information block */
-    char*                offset;      /* points to beginning of the entry
-                                           in the memory */
-    size_t                 len;         /* lenght of data in bytes */
-    char*                qscore;      /* points to quality score buffer */
-    Uint1                  drop;        /* 1 if drop this data block */
-    struct data_block *next;
-} DataBlk, *DataBlkPtr;
+//  ============================================================================
+struct DataBlk
+//  ============================================================================
+{
+    DataBlk(
+        DataBlk* parent = nullptr,
+        int type_ = 0,
+        char* offset = nullptr,
+        size_t len_ = 0) :
+        mType(type_),
+        mpData(nullptr),
+        mOffset(offset),
+        len(len_),
+        mpQscore(nullptr),
+        mDrop(0),
+        mpNext(nullptr)
+    {
+        if (parent) {
+            while (parent->mpNext) {
+                parent = parent->mpNext;
+            }
+            parent->mpNext = this;
+        }
+    };
+
+    ~DataBlk()
+    {
+        delete[] mpQscore;
+        delete mpData;
+        if (mType == ParFlat_ENTRYNODE) {
+            delete mOffset;
+        }
+        delete mpNext;
+    }
+
+    int mType;  // which keyword block or node type
+    void* mpData;  // any pointer type points to information block
+    char* mOffset;  // points to beginning of the entry in the memory
+    size_t len;  // lenght of data in bytes 
+    char* mpQscore;  // points to quality score buffer
+    bool mDrop;
+    DataBlk* mpNext;  // next in line
+};
+using DataBlkPtr = DataBlk*;
 
 typedef struct entry_block {
     DataBlkPtr              chain;      /* a header points to key-word
@@ -313,7 +346,6 @@ typedef struct keyword_block {
 
 /**************************************************************************/
 
-void FreeDatablk(DataBlkPtr dbp);
 void FreeEntry(DataBlkPtr entry);
 void FreeIndexblk(IndexblkPtr ibp);
 void GapFeatsFree(GapFeatsPtr gfp);

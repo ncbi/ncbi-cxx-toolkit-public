@@ -725,7 +725,7 @@ static void GetReleaseInfo(DataBlkPtr entry, bool accver)
     if(accver)
         return;
 
-    ebp = (EntryBlkPtr) entry->data;
+    ebp = (EntryBlkPtr) entry->mpData;
     objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
     objects::CTextseq_id& id = SetTextIdRef(*(*(bioseq.SetId().begin())));
 
@@ -762,7 +762,7 @@ static CRef<objects::COrg_ref> GetEmblOrgRef(DataBlkPtr dbp)
     char*   str;
     char*   taxname;
 
-    bptr = dbp->offset;
+    bptr = dbp->mOffset;
     eptr = bptr + dbp->len;
 
     taxname = str = (char*) MemNew(dbp->len + 1);
@@ -884,7 +884,7 @@ bool GetEmblInstContig(DataBlkPtr entry, objects::CBioseq& bioseq, ParserPtr pp)
     int        numerr;
 
     dbp = TrackNodeType(entry, ParFlat_CO);
-    if(dbp == NULL || dbp->offset == NULL)
+    if(dbp == NULL || dbp->mOffset == NULL)
         return true;
 
     Int4 i = static_cast<Int4>(dbp->len) - ParFlat_COL_DATA_EMBL;
@@ -892,7 +892,7 @@ bool GetEmblInstContig(DataBlkPtr entry, objects::CBioseq& bioseq, ParserPtr pp)
         return false;
 
     p = (char*) MemNew(i + 1);
-    StringNCpy(p, &dbp->offset[ParFlat_COL_DATA_EMBL], i);
+    StringNCpy(p, &dbp->mOffset[ParFlat_COL_DATA_EMBL], i);
     p[i-1] = '\0';
     for(q = p; *q != '\0'; q++)
     {
@@ -974,7 +974,7 @@ static bool GetEmblInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnaconv)
     Int4        i;
     Int2        strand;
 
-    ebp = (EntryBlkPtr) entry->data;
+    ebp = (EntryBlkPtr) entry->mpData;
 
     objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
 
@@ -985,7 +985,7 @@ static bool GetEmblInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnaconv)
 
     /* p points to 2nd token
      */
-    p = PointToNextToken(entry->offset + ParFlat_COL_DATA_EMBL);
+    p = PointToNextToken(entry->mOffset + ParFlat_COL_DATA_EMBL);
     p = PointToNextToken(p);            /* p points to 3rd token */
 
     if (ibp->embl_new_ID)
@@ -1110,7 +1110,7 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
 
     /* bptr points to 2nd token
      */
-    bptr = PointToNextToken(entry->offset + ParFlat_COL_DATA_EMBL);
+    bptr = PointToNextToken(entry->mOffset + ParFlat_COL_DATA_EMBL);
 
     if(ibp->embl_new_ID == false)
     {
@@ -1478,7 +1478,7 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
 
     if(*gbdiv != NULL && StringCmp(*gbdiv, "HTC") == 0)
     {
-        p = entry->offset + ParFlat_COL_DATA_EMBL;      /* p points to 1st
+        p = entry->mOffset + ParFlat_COL_DATA_EMBL;      /* p points to 1st
                                                            token */
         p = PointToNextToken(p);        /* p points to 2nd token */
         p = PointToNextToken(p);        /* p points to 3rd token */
@@ -1697,7 +1697,7 @@ static CRef<objects::CMolInfo> GetEmblMolInfo(ParserPtr pp, DataBlkPtr entry,
     Int4        i;
 
     ibp = pp->entrylist[pp->curindx];
-    bptr = entry->offset + ParFlat_COL_DATA_EMBL;       /* bptr points to 1st
+    bptr = entry->mOffset + ParFlat_COL_DATA_EMBL;       /* bptr points to 1st
                                                            token */
     bptr = PointToNextToken(bptr);      /* bptr points to 2nd token */
     bptr = PointToNextToken(bptr);      /* bptr points to 3rd token */
@@ -2070,9 +2070,9 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& biose
     /* RN data ==> pub  should be before GBblock because we need patent ref
      */
     dbp = TrackNodeType(entry, ParFlat_REF_END);
-    for(; dbp != NULL; dbp = dbp->next)
+    for(; dbp != NULL; dbp = dbp->mpNext)
     {
-        if(dbp->type != ParFlat_REF_END)
+        if(dbp->mType != ParFlat_REF_END)
             continue;
 
         CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA_EMBL);
@@ -2085,9 +2085,9 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& biose
     }
 
     dbp = TrackNodeType(entry, ParFlat_REF_NO_TARGET);
-    for(; dbp != NULL; dbp = dbp->next)
+    for(; dbp != NULL; dbp = dbp->mpNext)
     {
-        if(dbp->type != ParFlat_REF_NO_TARGET)
+        if(dbp->mType != ParFlat_REF_NO_TARGET)
             continue;
 
         CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA_EMBL);
@@ -2372,9 +2372,9 @@ static void FakeEmblBioSources(DataBlkPtr entry, objects::CBioseq& bioseq)
         return;
     }
 
-    for(; dbp != NULL; dbp = dbp->next)
+    for(; dbp != NULL; dbp = dbp->mpNext)
     {
-        if(dbp->type != ParFlat_OS)
+        if(dbp->mType != ParFlat_OS)
             continue;
 
         CRef<objects::COrg_ref> org_ref = GetEmblOrgRef(dbp);
@@ -2400,22 +2400,22 @@ static void FakeEmblBioSources(DataBlkPtr entry, objects::CBioseq& bioseq)
             taxname_str = taxname_str.substr(0, taxname_str.size() - 1);
         }
 
-        subdbp = (DataBlkPtr) dbp->data;
-        for(; subdbp != NULL; subdbp = subdbp->next)
+        subdbp = (DataBlkPtr) dbp->mpData;
+        for(; subdbp != NULL; subdbp = subdbp->mpNext)
         {
-            if(subdbp->type == ParFlat_OG)
+            if(subdbp->mType == ParFlat_OG)
             {
-                GetGenomeInfo(*bio_src, subdbp->offset + ParFlat_COL_DATA_EMBL);
+                GetGenomeInfo(*bio_src, subdbp->mOffset + ParFlat_COL_DATA_EMBL);
                 continue;
             }
-            if(subdbp->type != ParFlat_OC || subdbp->offset == NULL ||
+            if(subdbp->mType != ParFlat_OC || subdbp->mOffset == NULL ||
                subdbp->len < ParFlat_COL_DATA_EMBL)
                 continue;
 
-            ch = subdbp->offset[subdbp->len];
-            subdbp->offset[subdbp->len] = '\0';
-            q = StringSave(subdbp->offset + ParFlat_COL_DATA_EMBL);
-            subdbp->offset[subdbp->len] = ch;
+            ch = subdbp->mOffset[subdbp->len];
+            subdbp->mOffset[subdbp->len] = '\0';
+            q = StringSave(subdbp->mOffset + ParFlat_COL_DATA_EMBL);
+            subdbp->mOffset[subdbp->len] = ch;
             for(p = q; p != NULL;)
             {
                 p = StringStr(p, "\nOC   ");
@@ -2466,9 +2466,9 @@ static void EmblGetDivision(IndexblkPtr ibp, DataBlkPtr entry)
     char* p;
     char* q;
 
-    p = StringChr(entry->offset, ';');
+    p = StringChr(entry->mOffset, ';');
     if(p == NULL)
-        p = entry->offset;
+        p = entry->mOffset;
     else
     {
         q = StringChr(p + 1, ';');
@@ -2488,7 +2488,7 @@ static void EmblGetDivisionNewID(IndexblkPtr ibp, DataBlkPtr entry)
     char* p;
     Int4    i;
 
-    for(i = 0, p = entry->offset; *p != '\0' && i < 4; p++)
+    for(i = 0, p = entry->mOffset; *p != '\0' && i < 4; p++)
         if(*p == ';' && p[1] == ' ')
             i++;
 
@@ -2556,8 +2556,8 @@ bool EmblAscii(ParserPtr pp)
                 FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
                 return false;
             }
-            ebp = (EntryBlkPtr) entry->data;
-            ptr = entry->offset;        /* points to beginning of the
+            ebp = (EntryBlkPtr) entry->mpData;
+            ptr = entry->mOffset;        /* points to beginning of the
                                            memory line */
             eptr = ptr + entry->len;
             curkw = ParFlat_ID;
@@ -2685,17 +2685,17 @@ bool EmblAscii(ParserPtr pp)
                     AssemblyGapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
             }
 
-            if (entry->qscore == NULL && pp->accver)
+            if (entry->mpQscore == NULL && pp->accver)
             {
                 if (pp->ff_get_qscore != NULL)
-                    entry->qscore = (*pp->ff_get_qscore)(ibp->acnum, ibp->vernum);
+                    entry->mpQscore = (*pp->ff_get_qscore)(ibp->acnum, ibp->vernum);
                 else if (pp->ff_get_qscore_pp != NULL)
-                    entry->qscore = (*pp->ff_get_qscore_pp)(ibp->acnum, ibp->vernum, pp);
+                    entry->mpQscore = (*pp->ff_get_qscore_pp)(ibp->acnum, ibp->vernum, pp);
                 if(pp->qsfd != NULL && ibp->qslength > 0)
-                    entry->qscore = GetQSFromFile(pp->qsfd, ibp);
+                    entry->mpQscore = GetQSFromFile(pp->qsfd, ibp);
             }
 
-            if(QscoreToSeqAnnot(entry->qscore, *bioseq, ibp->acnum,
+            if(QscoreToSeqAnnot(entry->mpQscore, *bioseq, ibp->acnum,
                                 ibp->vernum, false, false) == false)
             {
                 if(pp->ign_bad_qs == false)
@@ -2716,10 +2716,10 @@ bool EmblAscii(ParserPtr pp)
                           "Error while parsing QScore.");
             }
 
-            if(entry->qscore != NULL)
+            if(entry->mpQscore != NULL)
             {
-                MemFree(entry->qscore);
-                entry->qscore = NULL;
+                MemFree(entry->mpQscore);
+                entry->mpQscore = NULL;
             }
 
             /* add PatentSeqId if patent is found in reference

@@ -97,7 +97,7 @@ USING_SCOPE(objects);
 /**********************************************************/
 static char* GBDivOffset(DataBlkPtr entry, Int4 div_shift)
 {
-    return(entry->offset + div_shift);
+    return(entry->mOffset + div_shift);
 }
 
 /**********************************************************/
@@ -171,7 +171,7 @@ bool GetGenBankInstContig(DataBlkPtr entry, objects::CBioseq& bsp, ParserPtr pp)
     int        numerr;
 
     dbp = TrackNodeType(entry, ParFlat_CONTIG);
-    if(dbp == NULL || dbp->offset == NULL)
+    if(dbp == NULL || dbp->mOffset == NULL)
         return true;
 
     i = static_cast<Int4>(dbp->len) - ParFlat_COL_DATA;
@@ -179,7 +179,7 @@ bool GetGenBankInstContig(DataBlkPtr entry, objects::CBioseq& bsp, ParserPtr pp)
         return false;
 
     p = (char*) MemNew(i + 1);
-    StringNCpy(p, &dbp->offset[ParFlat_COL_DATA], i);
+    StringNCpy(p, &dbp->mOffset[ParFlat_COL_DATA], i);
     p[i-1] = '\0';
     for(q = p, r = p; *q != '\0'; q++)
         if(*q != '\n' && *q != '\t' && *q != ' ')
@@ -254,13 +254,13 @@ static bool GetGenBankInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnacon
     LocusContPtr lcp;
     IndexblkPtr  ibp;
 
-    bptr = entry->offset;
+    bptr = entry->mOffset;
     ibp = pp->entrylist[pp->curindx];
     lcp = &ibp->lc;
 
     topstr = bptr + lcp->topology;
 
-    ebp = reinterpret_cast<EntryBlkPtr>(entry->data);
+    ebp = reinterpret_cast<EntryBlkPtr>(entry->mpData);
     objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
 
     objects::CSeq_inst& inst = bioseq.SetInst();
@@ -729,7 +729,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
 
     if (is_htc_div)
     {
-        bptr = entry->offset;
+        bptr = entry->mOffset;
         p = bptr + lcp->molecule;
         if(*p == 'm' || *p == 'r')
             p++;
@@ -862,7 +862,7 @@ static CRef<objects::CMolInfo> GetGenBankMolInfo(ParserPtr pp, DataBlkPtr entry,
 
     CRef<objects::CMolInfo> mol_info(new objects::CMolInfo);
 
-    bptr = entry->offset;
+    bptr = entry->mOffset;
     ibp = pp->entrylist[pp->curindx];
 
     molstr = bptr + ibp->lc.molecule;
@@ -1369,9 +1369,9 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
     /* pub should be before GBblock because we need patent ref
      */
     dbp = TrackNodeType(entry, ParFlat_REF_END);
-    for(; dbp != NULL; dbp = dbp->next)
+    for(; dbp != NULL; dbp = dbp->mpNext)
     {
-        if(dbp->type != ParFlat_REF_END)
+        if(dbp->mType != ParFlat_REF_END)
             continue;
 
         CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA);
@@ -1384,9 +1384,9 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
     }
 
     dbp = TrackNodeType(entry, ParFlat_REF_NO_TARGET);
-    for(; dbp != NULL; dbp = dbp->next)
+    for(; dbp != NULL; dbp = dbp->mpNext)
     {
-        if(dbp->type != ParFlat_REF_NO_TARGET)
+        if(dbp->mType != ParFlat_REF_NO_TARGET)
             continue;
 
         CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA);
@@ -1550,7 +1550,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
     }
     else if(ibp->lc.date > 0)
     {
-        CRef<objects::CDate_std> std_date = GetUpdateDate(entry->offset+ibp->lc.date, pp->source);
+        CRef<objects::CDate_std> std_date = GetUpdateDate(entry->mOffset+ibp->lc.date, pp->source);
         if (std_date.NotEmpty())
         {
             date.Reset(new objects::CDate);
@@ -1643,8 +1643,8 @@ bool GenBankAscii(ParserPtr pp)
             return false;
         }
 
-        ebp = (EntryBlkPtr) entry->data;
-        ptr = entry->offset;
+        ebp = (EntryBlkPtr) entry->mpData;
+        ptr = entry->mOffset;
         eptr = ptr + entry->len;
         curkw = ParFlat_LOCUS;
         while(curkw != ParFlat_END && ptr < eptr)
@@ -1694,7 +1694,7 @@ bool GenBankAscii(ParserPtr pp)
         CRef<objects::CBioseq> bioseq = CreateEntryBioseq(pp, true);
         AddNIDSeqId(*bioseq, entry, ParFlat_NCBI_GI, ParFlat_COL_DATA, pp->source);
 
-        if(StringNCmp(entry->offset + ibp->lc.bp, "aa", 2) == 0)
+        if(StringNCmp(entry->mOffset + ibp->lc.bp, "aa", 2) == 0)
         {
             ibp->is_prot = true;
             conv = protconv.get();
@@ -1787,17 +1787,17 @@ bool GenBankAscii(ParserPtr pp)
             }
         }
 
-        if (entry->qscore == NULL && pp->accver)
+        if (entry->mpQscore == NULL && pp->accver)
         {
             if (pp->ff_get_qscore != NULL)
-                entry->qscore = (*pp->ff_get_qscore)(ibp->acnum, ibp->vernum);
+                entry->mpQscore = (*pp->ff_get_qscore)(ibp->acnum, ibp->vernum);
             else if (pp->ff_get_qscore_pp != NULL)
-                entry->qscore = (*pp->ff_get_qscore_pp)(ibp->acnum, ibp->vernum, pp);
+                entry->mpQscore = (*pp->ff_get_qscore_pp)(ibp->acnum, ibp->vernum, pp);
             if (pp->qsfd != NULL && ibp->qslength > 0)
-                entry->qscore = GetQSFromFile(pp->qsfd, ibp);
+                entry->mpQscore = GetQSFromFile(pp->qsfd, ibp);
         }
 
-        if (!QscoreToSeqAnnot(entry->qscore, *bioseq, ibp->acnum, ibp->vernum, false, true))
+        if (!QscoreToSeqAnnot(entry->mpQscore, *bioseq, ibp->acnum, ibp->vernum, false, true))
         {
             if(pp->ign_bad_qs == false)
             {
@@ -1821,10 +1821,10 @@ bool GenBankAscii(ParserPtr pp)
             }
         }
 
-        if(entry->qscore != NULL)
+        if(entry->mpQscore != NULL)
         {
-            MemFree(entry->qscore);
-            entry->qscore = NULL;
+            MemFree(entry->mpQscore);
+            entry->mpQscore = NULL;
         }
 
         if (ibp->psip.NotEmpty())

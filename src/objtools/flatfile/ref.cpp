@@ -2047,12 +2047,12 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
 
     CRef<objects::CPubdesc> desc;
 
-    if(pp == NULL || dbp == NULL || dbp->offset == NULL || dbp->data == NULL)
+    if(pp == NULL || dbp == NULL || dbp->mOffset == NULL || dbp->mpData == NULL)
         return desc;
 
     desc.Reset(new objects::CPubdesc);
 
-    p = XMLFindTagValue(dbp->offset, (XmlIndexPtr) dbp->data,
+    p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
                         INSDREFERENCE_REFERENCE);
     if(p != NULL && isdigit((int) *p) != 0)
     {
@@ -2067,7 +2067,7 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
     if(p != NULL)
         MemFree(p);
 
-    p = XMLFindTagValue(dbp->offset, (XmlIndexPtr) dbp->data,
+    p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
                         INSDREFERENCE_MEDLINE);
     if(p != NULL)
     {
@@ -2078,7 +2078,7 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
     }
 
     pmid = 0;
-    p = XMLFindTagValue(dbp->offset, (XmlIndexPtr) dbp->data,
+    p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
                         INSDREFERENCE_PUBMED);
     if(p != NULL)
     {
@@ -2088,7 +2088,7 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
 
     CRef<objects::CAuth_list> auth_list;
 
-    p = XMLConcatSubTags(dbp->offset, (XmlIndexPtr) dbp->data,
+    p = XMLConcatSubTags(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
                          INSDREFERENCE_AUTHORS, ',');
     if(p != NULL)
     {
@@ -2109,7 +2109,7 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
             q++;
         if(*q != '\0')
         {
-            q = XMLFindTagValue(dbp->offset, (XmlIndexPtr) dbp->data,
+            q = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
                                 INSDREFERENCE_JOURNAL);
             get_auth(p, (pp->source == Parser::ESource::EMBL) ? EMBL_REF : GB_REF, q, auth_list);
             MemFree(q);
@@ -2117,7 +2117,7 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
         MemFree(p);
     }
 
-    p = XMLFindTagValue(dbp->offset, (XmlIndexPtr) dbp->data,
+    p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
                         INSDREFERENCE_CONSORTIUM);
     if(p != NULL)
     {
@@ -2133,7 +2133,7 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
     if (auth_list.Empty() || !auth_list->IsSetNames())
         no_auth = true;
 
-    p = XMLFindTagValue(dbp->offset, (XmlIndexPtr) dbp->data,
+    p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
                         INSDREFERENCE_TITLE);
 
     CRef<objects::CTitle::C_E> title_art(new objects::CTitle::C_E);
@@ -2153,7 +2153,7 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
     }
 
     is_online = false;
-    p = XMLFindTagValue(dbp->offset, (XmlIndexPtr) dbp->data,
+    p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
                         INSDREFERENCE_JOURNAL);
     if(p == NULL)
     {
@@ -2175,7 +2175,7 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
     if (NStr::EqualNocase(p, 0, 18, "Online Publication"))
         is_online = true;
 
-    r = XMLFindTagValue(dbp->offset, (XmlIndexPtr) dbp->data,
+    r = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
                         INSDREFERENCE_REMARK);
     if(r != NULL)
     {
@@ -2209,10 +2209,10 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
     MemFree(p);
 
     TQualVector xrefs;
-    for (xip = (XmlIndexPtr)dbp->data; xip != NULL; xip = xip->next)
+    for (xip = (XmlIndexPtr)dbp->mpData; xip != NULL; xip = xip->next)
     {
         if (xip->tag == INSDREFERENCE_XREF)
-            XMLGetXrefs(dbp->offset, xip->subtags, xrefs);
+            XMLGetXrefs(dbp->mOffset, xip->subtags, xrefs);
     }
 
     std::string doi;
@@ -2236,7 +2236,7 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
         return desc;
     }
 
-    if(dbp->type == ParFlat_REF_NO_TARGET)
+    if(dbp->mType == ParFlat_REF_NO_TARGET)
         desc->SetReftype(3);
 
     desc->SetPub().Set().push_back(pub_ref);
@@ -2261,7 +2261,7 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
 
     CRef<objects::CPubdesc> desc(new objects::CPubdesc);
 
-    p = dbp->offset + col_data;
+    p = dbp->mOffset + col_data;
     if(bParser)
     {
         /* This branch works when this function called in context of PARSER
@@ -2293,7 +2293,7 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
     has_muid = false;
     if(ind[ParFlat_MEDLINE] != NULL)
     {
-        p = ind[ParFlat_MEDLINE]->offset;
+        p = ind[ParFlat_MEDLINE]->mOffset;
         CRef<objects::CPub> pub = get_muid(p, Parser::EFormat::GenBank);
         if (pub.NotEmpty())
         {
@@ -2305,7 +2305,7 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
     pmid = 0;
     if(ind[ParFlat_PUBMED] != NULL)
     {
-        p = ind[ParFlat_PUBMED]->offset;
+        p = ind[ParFlat_PUBMED]->mOffset;
         if(p != NULL)
             pmid = NStr::StringToInt(p, NStr::fAllowTrailingSymbols);
     }
@@ -2313,14 +2313,14 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
     CRef<objects::CAuth_list> auth_list;
     if(ind[ParFlat_AUTHORS] != NULL)
     {
-        p = ind[ParFlat_AUTHORS]->offset;
+        p = ind[ParFlat_AUTHORS]->mOffset;
         for(q = p; *q == ' ' || *q == '.' || *q == ',';)
             q++;
 
         if(*q != '\0')
         {
             if(ind[ParFlat_JOURNAL] != NULL)
-                q = ind[ParFlat_JOURNAL]->offset;
+                q = ind[ParFlat_JOURNAL]->mOffset;
 
             get_auth(p, GB_REF, q, auth_list);
         }
@@ -2328,7 +2328,7 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
 
     if(ind[ParFlat_CONSRTM] != NULL)
     {
-        p = ind[ParFlat_CONSRTM]->offset;
+        p = ind[ParFlat_CONSRTM]->mOffset;
         for(q = p; *q == ' ' || *q == '.' || *q == ',';)
             q++;
 
@@ -2342,7 +2342,7 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
     CRef<objects::CTitle::C_E> title_art;
     if(ind[ParFlat_TITLE] != NULL)
     {
-        p = ind[ParFlat_TITLE]->offset;
+        p = ind[ParFlat_TITLE]->mOffset;
         if(StringNCmp(p, "Direct Submission", 17) != 0 &&
            *p != '\0' && *p != ';')
         {
@@ -2365,7 +2365,7 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
         return desc;
     }
 
-    p = ind[ParFlat_JOURNAL]->offset;
+    p = ind[ParFlat_JOURNAL]->mOffset;
     if(*p == '\0' || *p == ';')
     {
         ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
@@ -2379,7 +2379,7 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
 
     if(ind[ParFlat_REMARK] != NULL)
     {
-        r = ind[ParFlat_REMARK]->offset;
+        r = ind[ParFlat_REMARK]->mOffset;
         r = ExtractErratum(r);
         desc->SetComment(NStr::Sanitize(r));
 
@@ -2415,7 +2415,7 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
         return desc;
     }
 
-    if(dbp->type == ParFlat_REF_NO_TARGET)
+    if(dbp->mType == ParFlat_REF_NO_TARGET)
         desc->SetReftype(3);
 
     desc->SetPub().Set().push_back(pub_ref);
@@ -2448,7 +2448,7 @@ static CRef<objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_
 
     CRef<objects::CPubdesc> desc(new objects::CPubdesc);
 
-    p = dbp->offset + col_data;
+    p = dbp->mOffset + col_data;
     while((*p < '0' || *p > '9') && dbp->len > 0)
         p++;
     if(*p >= '0' && *p <= '9')
@@ -2466,13 +2466,13 @@ static CRef<objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_
     std::string agricola;
 
     if(ind[ParFlat_RC] != NULL)
-        desc->SetComment(NStr::Sanitize(ind[ParFlat_RC]->offset));
+        desc->SetComment(NStr::Sanitize(ind[ParFlat_RC]->mOffset));
 
     er = fta_remark_is_er(desc->IsSetComment() ? desc->GetComment().c_str() : NULL);
 
     if(ind[ParFlat_RX] != NULL)
     {
-        p = ind[ParFlat_RX]->offset;
+        p = ind[ParFlat_RX]->mOffset;
         CRef<objects::CPub> pub = get_muid(p, Parser::EFormat::EMBL);
 
         const Char* id = get_embl_str_pub_id(p, "DOI;");
@@ -2495,7 +2495,7 @@ static CRef<objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_
     CRef<objects::CAuth_list> auth_list;
     if(ind[ParFlat_RA] != NULL)
     {
-        p = ind[ParFlat_RA]->offset;
+        p = ind[ParFlat_RA]->mOffset;
         s = p + StringLen(p) - 1;
         if(*s == ';')
             *s = '\0';
@@ -2504,7 +2504,7 @@ static CRef<objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_
         if(*q != '\0')
         {
             if(ind[ParFlat_RL] != NULL)
-                q = ind[ParFlat_RL]->offset;
+                q = ind[ParFlat_RL]->mOffset;
 
             get_auth(p, EMBL_REF, q, auth_list);
         }
@@ -2512,7 +2512,7 @@ static CRef<objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_
 
     if(ind[ParFlat_RG] != NULL)
     {
-        p = ind[ParFlat_RG]->offset;
+        p = ind[ParFlat_RG]->mOffset;
         s = p + StringLen(p) - 1;
         if(*s == ';')
             *s = '\0';
@@ -2530,7 +2530,7 @@ static CRef<objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_
     CRef<objects::CTitle::C_E> title_art;
     if (ind[ParFlat_RT] != NULL)
     {
-        p = ind[ParFlat_RT]->offset;
+        p = ind[ParFlat_RT]->mOffset;
         if(*p != '\0' && *p != ';')
         {
             title = clean_up(p);
@@ -2552,7 +2552,7 @@ static CRef<objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_
         return desc;
     }
 
-    p = ind[ParFlat_RL]->offset;
+    p = ind[ParFlat_RL]->mOffset;
     if(*p == '\0' || *p == ';')
     {
         ErrPostStr(SEV_ERROR, ERR_REFERENCE_Illegalreference,
@@ -2589,7 +2589,7 @@ static CRef<objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_
 
     fta_add_article_ids(*pub_ref, doi, agricola);
 
-    if(dbp->type == ParFlat_REF_NO_TARGET)
+    if(dbp->mType == ParFlat_REF_NO_TARGET)
         desc->SetReftype(3);
 
     desc->SetPub().Set().push_back(pub_ref);

@@ -388,13 +388,13 @@ static SourceFeatBlkPtr CollectSourceFeats(DataBlkPtr dbp, Int2 type)
     sfbp = SourceFeatBlkNew();
     tsfbp = sfbp;
 
-    for(; dbp != NULL; dbp = dbp->next)
+    for(; dbp != NULL; dbp = dbp->mpNext)
     {
-        if(dbp->type != type)
+        if(dbp->mType != type)
             continue;
-        for(tdbp = (DataBlkPtr) dbp->data; tdbp != NULL; tdbp = tdbp->next)
+        for(tdbp = (DataBlkPtr) dbp->mpData; tdbp != NULL; tdbp = tdbp->mpNext)
         {
-            fbp = (FeatBlkPtr) tdbp->data;
+            fbp = (FeatBlkPtr) tdbp->mpData;
             if(fbp == NULL || fbp->key == NULL ||
                StringCmp(fbp->key, "source") != 0)
                 continue;
