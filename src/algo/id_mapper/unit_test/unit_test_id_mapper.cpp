@@ -897,6 +897,45 @@ BOOST_AUTO_TEST_CASE(TestCase_GINumberString)
     BOOST_CHECK_EQUAL(Result->GetInt().GetId().GetSeqIdString(true), "NC_018264.1"); 
 }
 
+// Fix-up GI Seq-ids that should be strings, Part 2
+BOOST_AUTO_TEST_CASE(TestCase_GINumberString_PartsTwo)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCA_000001215.4", "SequenceNames"));
+    BOOST_CHECK(GenColl.NotNull());
+    
+    // Make a Spec
+    CGencollIdMapper::SIdSpec MapSpec;
+    MapSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
+    MapSpec.Alias = CGC_SeqIdAlias::e_Public;
+    MapSpec.Role = eGC_SequenceRole_top_level;
+
+    // Do a Map
+    CGencollIdMapper Mapper(GenColl);
+    
+    // This PDB Seq-id is a mis-read of "local.str = 2LHet"
+    CSeq_loc OrigLoc;
+    OrigLoc.SetInt().SetId().Set("211000022278760");
+    //OrigLoc.SetInt().SetId().SetGi(GI_CONST(397912605));
+    OrigLoc.SetInt().SetFrom(1);
+    OrigLoc.SetInt().SetTo(41937);
+   
+   cerr << MSerial_AsnText << OrigLoc << endl;
+
+    CRef<CSeq_loc> Result = Mapper.Map(OrigLoc, MapSpec);
+    BOOST_CHECK(Result.NotNull());
+    BOOST_CHECK_EQUAL(Result->GetInt().GetId().GetSeqIdString(true), "NW_001846712.1"); 
+
+    OrigLoc.SetInt().SetId().SetLocal().SetStr("211000022278760");
+   cerr << MSerial_AsnText << OrigLoc << endl;
+    Result = Mapper.Map(OrigLoc, MapSpec);
+    BOOST_CHECK(Result.NotNull());
+    BOOST_CHECK_EQUAL(Result->GetInt().GetId().GetSeqIdString(true), "NW_001846712.1"); 
+}
+
+
 /*
 BOOST_AUTO_TEST_CASE(TestCaseUcscToRefSeqMapping_ForSlowCat)
 {
@@ -1034,5 +1073,9 @@ BOOST_AUTO_TEST_CASE(TestCase_CXX_11251)
     
 
 }
+
+
+
+
 
 BOOST_AUTO_TEST_SUITE_END();
