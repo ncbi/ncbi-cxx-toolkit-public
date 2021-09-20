@@ -269,7 +269,8 @@ static void ProtBlkFree(ProtBlkPtr pbp)
     pbp->feats.clear();
 
     pbp->entries.clear();
-    InfoBioseqFree(pbp->ibp);
+    delete pbp->ibp;
+    pbp->ibp = nullptr;
 }
 
 /**********************************************************/
@@ -284,8 +285,8 @@ static void ProtBlkInit(ProtBlkPtr pbp)
     InfoBioseqPtr ibp = pbp->ibp;
     if (ibp) {
         ibp->ids.clear();
-        ibp->locus = NULL;
-        ibp->acnum = NULL;
+        ibp->mLocus.clear();
+        ibp->mAccNum.clear();
     }
 }
 
@@ -521,8 +522,7 @@ static void GetProtRefSeqId(objects::CBioseq::TId& ids, InfoBioseqPtr ibp, int* 
     ids.push_back(seq_id);
 
     if ((pp->source != Parser::ESource::DDBJ && pp->source != Parser::ESource::EMBL) ||
-        pp->entrylist[pp->curindx]->is_wgs == false ||
-        StringLen(ibp->acnum) == 8) {
+            pp->entrylist[pp->curindx]->is_wgs == false  ||  ibp->mAccNum.size() == 8) {
         return;
     }
 
@@ -537,7 +537,7 @@ static void GetProtRefSeqId(objects::CBioseq::TId& ids, InfoBioseqPtr ibp, int* 
     else
         db = "WGS:";
 
-    db.append(ibp->acnum, ibp->acnum + 4);
+    db.append(ibp->mAccNum.substr(4));
     ids.push_back(seq_id);
 }
 
@@ -2623,7 +2623,6 @@ static void FindCd(TEntryList& seq_entries, CScope& scope, ParserPtr pp, GeneRef
             if (IsSegBioseq(first_id))
                 continue;
 
-            InfoBioseqFree(pbp->ibp);
             if(pp->source != Parser::ESource::USPTO)
                 CpSeqId(pbp->ibp, first_id);
 

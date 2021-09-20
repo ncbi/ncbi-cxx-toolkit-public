@@ -1115,12 +1115,12 @@ void CpSeqId(InfoBioseqPtr ibp, const objects::CSeq_id& id)
     if (text_id != nullptr)
     {
         if (text_id->IsSetName())
-            ibp->locus = StringSave(text_id->GetName().c_str());
+            ibp->mLocus = text_id->GetName();
 
         CRef<objects::CSeq_id> new_id(new objects::CSeq_id);
         if (text_id->IsSetAccession())
         {
-            ibp->acnum = StringSave(text_id->GetAccession().c_str());
+            ibp->mAccNum = text_id->GetAccession();
 
             CRef<objects::CTextseq_id> new_text_id(new objects::CTextseq_id);
             new_text_id->SetAccession(text_id->GetAccession());
@@ -1140,25 +1140,6 @@ void CpSeqId(InfoBioseqPtr ibp, const objects::CSeq_id& id)
         auto pId = Ref(new CSeq_id());
         pId->Assign(id);
         ibp->ids.push_back(move(pId));
-    }
-}
-
-/**********************************************************/
-void InfoBioseqFree(InfoBioseqPtr ibp)
-{
-    if (!ibp->ids.empty())
-        ibp->ids.clear();
-
-    if(ibp->locus != NULL)
-    {
-        MemFree(ibp->locus);
-        ibp->locus = NULL;
-    }
-
-    if(ibp->acnum != NULL)
-    {
-        MemFree(ibp->acnum);
-        ibp->acnum = NULL;
     }
 }
 
@@ -1257,26 +1238,24 @@ CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Parser::ESour
 
 /**********************************************************
  *
- *   Int2 SrchKeyword(ptr, kwl):
+ *   int SrchKeyword(ptr, kwl):
  *
  *      Compare first kwl.len byte in ptr to kwl.str.
  *      Return the position of keyword block array;
- *   return unknow keyword, UNKW, if not found.
+ *   return unknown keyword, UNKW, if not found.
  *
  *                                              3-25-93
  *
  **********************************************************/
-Int2 SrchKeyword(char* ptr, KwordBlk kwl[])
+int SrchKeyword(char* ptr, KwordBlk kwl[])
 {
-    Int2 i;
+    int i = 0;
 
-    for(i = 0; kwl[i].str != NULL; i++)
+    for( ; kwl[i].str != NULL; i++)
         if(StringNCmp(ptr, kwl[i].str, kwl[i].len) == 0)
-            break;
+            return(i);
 
-    if(kwl[i].str == NULL)
-        return(ParFlat_UNKW);
-    return(i);
+    return(ParFlat_UNKW);
 }
 
 /**********************************************************/

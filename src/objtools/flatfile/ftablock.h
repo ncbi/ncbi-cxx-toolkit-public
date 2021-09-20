@@ -66,23 +66,23 @@ typedef std::list<CRef<objects::CDelta_seq> > TDeltaList;
 
 #define ParFlat_ENTRYNODE    500
 
-/*
-#define FTA_RELEASE_MODE     0
-#define FTA_HTGS_MODE        1
-#define FTA_HTGSCON_MODE     2
-*/
+//  ============================================================================
+struct InfoBioseq
+//  ============================================================================
+{
+    InfoBioseq() {};
 
-typedef struct info_bioseq {
-    TSeqIdList ids;                       /* for this Bioseq */
-    char*  locus;
-    char*  acnum;
+    ~InfoBioseq()
+    {
+        ids.clear();
+    }
 
-    info_bioseq() :
-        locus(NULL),
-        acnum(NULL)
-    {}
+    TSeqIdList ids; // for this Bioseq
+    string mLocus;
+    string mAccNum;
 
-} InfoBioseq, *InfoBioseqPtr;
+};
+using InfoBioseqPtr = InfoBioseq*;
 
 typedef struct protein_block {
     objects::CSeq_entry* biosep; /* for the toppest level of the BioseqSet */
