@@ -5331,7 +5331,7 @@ string CExtraEncoder::Encode(const CTempString src, EStringType stype) const
     size_t total_len = 0;
     for (size_t pos = 0; pos < src.size(); ++pos) {
         char c = src[pos];
-        const char* enc = s_ExtraEncodeChars[c];
+        const char* enc = s_ExtraEncodeChars[(unsigned char)c];
         if (enc[0] == c && enc[1] == 0) continue;
 
         // Save good chars, if any.
