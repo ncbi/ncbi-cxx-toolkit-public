@@ -9,8 +9,10 @@ REM #########################################################################
 set initial_dir=%CD%
 set script_name=%~nx0
 set script_dir=%~dp0
+set script_root=%script_dir%..\..\..
 set tree_root=%initial_dir%
 set extension=cmake_configure_ext.bat
+set prebuilds=
 
 REM #########################################################################
 set VSWHERE="%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere"
@@ -68,6 +70,13 @@ echo   --with-vs=N              -- use Visual Studio N generator
 echo                  examples:    --with-vs=2019  (default)
 echo                               --with-vs=2017
 echo   --with-generator="X"     -- use generator X
+if not "%prebuilds%"=="" (
+    echo   --with-prebuilt=CFG      -- use build settings of an existing build
+    echo             CFG is one of:
+    for %%a in ( %prebuilds% ) do (
+      echo                               %%a
+    )
+)
 
 if defined have_configure_ext_Usage (
   call "%extension%" :configure_ext_Usage
@@ -85,6 +94,26 @@ call :USAGE
 if not "%~1"=="" (
   echo ----------------------------------------------------------------------
   echo ERROR:  %* 1>&2
+)
+goto :eof
+
+:GET_PREBUILD_PATH
+for %%a in ( %prebuilds% ) do (
+  set build_def=%%a
+:GET_PREBUILD_PATH_AGAIN
+  echo:
+  echo Please pick a build configuration
+  echo Available:
+  echo:
+  for %%b in ( %prebuilds% ) do (
+    echo %%b
+  )
+  echo:
+  set /p build_config=Desired configuration ^(default = !build_def!^): 
+  if "!build_config!"=="" set build_config=!build_def!
+  if not exist %prebuilt_dir%\!build_config! goto :GET_PREBUILD_PATH_AGAIN
+  set prebuilt_name=!build_config!
+  goto :eof
 )
 goto :eof
 
@@ -140,6 +169,18 @@ set unknown=%unknown% %1
 shift
 goto :PARSEARGS
 :ENDPARSEARGS
+
+for /f "tokens=1" %%a in ('dir /A:D /B  %script_root%') do (
+  if exist %script_root%\%%a\cmake\buildinfo (
+    set prebuilds=!prebuilds! %%a
+  )
+)
+if not "%prebuilt_dir%"=="" (
+  if not exist "%prebuilt_dir%%prebuilt_name%" (
+    set prebuilt_dir=%script_root%\
+    call :GET_PREBUILD_PATH
+  )
+)
 
 set have_configure_host=yes
 set extension=%tree_root%\%extension%
