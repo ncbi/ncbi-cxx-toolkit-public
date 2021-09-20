@@ -55,15 +55,10 @@
 
 BEGIN_NCBI_SCOPE
 
-
-KwordBlk pirkwl[] = {
-    {"ENTRY", 5},           {"TITLE", 5},           {"ALTERNATE_NAMES", 15},
-    {"CONTAINS", 8},        {"ORGANISM", 8},        {"DATE", 4},
-    {"ACCESSIONS", 10},     {"REFERENCE", 9},       {"COMMENT", 7},
-    {"COMPLEX", 7},         {"GENETICS", 8},        {"FUNCTION", 8},
-    {"CLASSIFICATION", 14}, {"KEYWORDS", 8},        {"FEATURE", 7},
-    {"SUMMARY", 7},         {"SEQUENCE", 8},        {"///", 3},
-    {NULL, 0}
+vector<string> pirKeywords = {
+    "ENTRY", "TITLE", "ALTERNATE_NAMES", "CONTAINS", "ORGANISM", "DATE", 
+    "ACCESSIONS", "REFERENCE", "COMMENT", "COMPLEX", "GENETICS", "FUNCTION",
+    "CLASSIFICATION", "KEYWORDS", "FEATURE", "SUMMARY", "SEQUENCE", "///"
 };
 
 /**********************************************************/
@@ -200,8 +195,8 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
     finfo = new FinfoBlk();
 
     end_of_file = SkipTitleBuf(pp->ffbuf, finfo,
-                               pirkwl[ParFlatPIR_ENTRY].str,
-                               pirkwl[ParFlatPIR_ENTRY].len);
+        pirKeywords[ParFlatPIR_ENTRY].c_str(),
+        pirKeywords[ParFlatPIR_ENTRY].size());
 
     if(end_of_file)
     {
@@ -238,8 +233,8 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
             after_SEQUENCE = false;
 
             while(!end_of_file &&
-                  StringNCmp(finfo->str, pirkwl[ParFlatPIR_END].str,
-                             pirkwl[ParFlatPIR_END].len) != 0)
+                  StringNCmp(finfo->str, pirKeywords[ParFlatPIR_END].c_str(),
+                      pirKeywords[ParFlatPIR_END].size()) != 0)
             {
                 if(after_SEQUENCE && isalpha(finfo->str[0]) != 0)
                 {
@@ -248,21 +243,21 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
                     entry->drop = 1;
                     break;
                 }
-                if(StringNCmp(finfo->str, pirkwl[ParFlatPIR_SEQUENCE].str,
-                              pirkwl[ParFlatPIR_SEQUENCE].len) == 0)
+                if(StringNCmp(finfo->str, pirKeywords[ParFlatPIR_SEQUENCE].c_str(),
+                    pirKeywords[ParFlatPIR_SEQUENCE].size()) == 0)
                     after_SEQUENCE = true;
 
-                else if(StringNCmp(finfo->str, pirkwl[ParFlatPIR_ORGANISM].str,
-                                   pirkwl[ParFlatPIR_ORGANISM].len) == 0)
+                else if(StringNCmp(finfo->str, pirKeywords[ParFlatPIR_ORGANISM].c_str(),
+                    pirKeywords[ParFlatPIR_ORGANISM].size()) == 0)
                     after_ORGANISM = true;
 
                 else if(StringNCmp(finfo->str,
-                                   pirkwl[ParFlatPIR_REFERENCE].str,
-                                   pirkwl[ParFlatPIR_REFERENCE].len) == 0)
+                    pirKeywords[ParFlatPIR_REFERENCE].c_str(),
+                    pirKeywords[ParFlatPIR_REFERENCE].size()) == 0)
                     after_REFERENCE = true;
 
-                else if(StringNCmp(finfo->str, pirkwl[ParFlatPIR_DATE].str,
-                                   pirkwl[ParFlatPIR_DATE].len) == 0)
+                else if(StringNCmp(finfo->str, pirKeywords[ParFlatPIR_DATE].c_str(),
+                    pirKeywords[ParFlatPIR_DATE].size()) == 0)
                 {
                     q = StringSave(finfo->str);
                     for(;;)
@@ -314,12 +309,12 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
         else
         {
             end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                           pirkwl[ParFlatPIR_END].str,
-                                           pirkwl[ParFlatPIR_END].len);
+                pirKeywords[ParFlatPIR_END].c_str(),
+                pirKeywords[ParFlatPIR_END].size());
         }
         end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                       pirkwl[ParFlatPIR_ENTRY].str,
-                                       pirkwl[ParFlatPIR_ENTRY].len);
+            pirKeywords[ParFlatPIR_ENTRY].c_str(),
+            pirKeywords[ParFlatPIR_ENTRY].size());
     }
 
     pp->indx = indx;

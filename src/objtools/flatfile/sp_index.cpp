@@ -52,10 +52,10 @@
 
 BEGIN_NCBI_SCOPE
 
-KwordBlk spkwl[] = {
-    {"ID", 2}, {"AC", 2}, {"DT", 2}, {"DE", 2}, {"GN", 2}, {"OS", 2},
-    {"RN", 2}, {"CC", 2}, {"PE", 2}, {"DR", 2}, {"KW", 2}, {"FT", 2},
-    {"SQ", 2}, {"//", 2}, {NULL, 0} };
+vector<string> swissProtKeywords = {
+    "ID", "AC", "DT", "DE", "GN", "OS", "RN", "CC", "PE", "DR", "KW", "FT",
+    "SQ", "//",
+};
 
 /**********************************************************/
 static Uint1 sp_err_field(const char *name)
@@ -121,8 +121,8 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
     finfo = (FinfoBlkPtr) MemNew(sizeof(FinfoBlk));
 
-    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, spkwl[ParFlatSP_ID].str,
-                               spkwl[ParFlatSP_ID].len);
+    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, swissProtKeywords[ParFlatSP_ID].c_str(),
+        swissProtKeywords[ParFlatSP_ID].size());
     if(end_of_file)
     {
         MsgSkipTitleFail("Swiss-Prot", finfo);
@@ -156,8 +156,8 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
             reviewed = (StringNICmp(p, "reviewed", 8) == 0);
 
             while(!end_of_file &&
-                  StringNCmp(finfo->str, spkwl[ParFlatSP_END].str,
-                             spkwl[ParFlatSP_END].len) != 0)
+                  StringNCmp(finfo->str, swissProtKeywords[ParFlatSP_END].c_str(),
+                      swissProtKeywords[ParFlatSP_END].size()) != 0)
             {
                 if(StringNCmp(finfo->str, "RM", 2) == 0)
                 {
@@ -172,23 +172,23 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
                     entry->drop = 1;
                     break;
                 }
-                if(StringNCmp(finfo->str, spkwl[ParFlatSP_SQ].str,
-                              spkwl[ParFlatSP_SQ].len) == 0)
+                if(StringNCmp(finfo->str, swissProtKeywords[ParFlatSP_SQ].c_str(),
+                    swissProtKeywords[ParFlatSP_SQ].size()) == 0)
                     after_SQ = true;
 
-                if(StringNCmp(finfo->str, spkwl[ParFlatSP_OS].str,
-                              spkwl[ParFlatSP_OS].len) == 0)
+                if(StringNCmp(finfo->str, swissProtKeywords[ParFlatSP_OS].c_str(),
+                    swissProtKeywords[ParFlatSP_OS].size()) == 0)
                     after_OS = true;
 
                 if(StringNCmp(finfo->str, "OC", 2) == 0)
                     after_OC = true;
 
-                if(StringNCmp(finfo->str, spkwl[ParFlatSP_RN].str,
-                              spkwl[ParFlatSP_RN].len) == 0)
+                if(StringNCmp(finfo->str, swissProtKeywords[ParFlatSP_RN].c_str(),
+                    swissProtKeywords[ParFlatSP_RN].size()) == 0)
                     after_RN = true;
 
-                if(StringNCmp(finfo->str, spkwl[ParFlatSP_AC].str,
-                              spkwl[ParFlatSP_AC].len) == 0)
+                if(StringNCmp(finfo->str, swissProtKeywords[ParFlatSP_AC].c_str(),
+                    swissProtKeywords[ParFlatSP_AC].size()) == 0)
                 {
                     if(after_AC == false)
                     {
@@ -199,8 +199,8 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
                     else if(entry->drop == 0 && !GetAccession(pp, finfo->str, entry, 1))
                         pp->num_drop++;
                 }
-                else if(StringNCmp(finfo->str, spkwl[ParFlatSP_DT].str,
-                                   spkwl[ParFlatSP_DT].len) == 0)
+                else if(StringNCmp(finfo->str, swissProtKeywords[ParFlatSP_DT].c_str(),
+                    swissProtKeywords[ParFlatSP_DT].size()) == 0)
                 {
                     if(reviewed && pp->sp_dt_seq_ver && entry->vernum < 1)
                         SPGetVerNum(finfo->str, entry);
@@ -251,12 +251,12 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
         else
         {
             end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                           spkwl[ParFlatSP_END].str,
-                                           spkwl[ParFlatSP_END].len);
+                swissProtKeywords[ParFlatSP_END].c_str(),
+                swissProtKeywords[ParFlatSP_END].size());
         }
         end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                       spkwl[ParFlatSP_ID].str,
-                                       spkwl[ParFlatSP_ID].len);
+            swissProtKeywords[ParFlatSP_ID].c_str(),
+            swissProtKeywords[ParFlatSP_ID].size());
 
     } /* while, end_of_file */
 

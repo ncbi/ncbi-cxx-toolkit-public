@@ -111,10 +111,10 @@ const char *magic_phrases[] = {
     NULL
 };
 
-extern KwordBlk genbankKeywordLength[];
-extern KwordBlk emblkwl[];
-extern KwordBlk spkwl[];
-extern KwordBlk prfkwl[];
+extern vector<string> genbankKeywords;
+extern vector<string> emblKeywords;
+extern vector<string> swissProtKeywords;
+extern vector<string> prfKeywords;
 
 /**********************************************************/
 void ShrinkSpaces(char* line)
@@ -233,7 +233,7 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
         ++ptr;                          /* newline character */
         ++len;
 
-        nextkw = SrchKeyword(ptr, genbankKeywordLength);
+        nextkw = SrchKeyword(ptr, genbankKeywords);
         if (nextkw == ParFlat_UNKW)      /* it can be "XX" line,
                                             treat as same line */
                                             nextkw = curkw;
@@ -242,7 +242,7 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
             break;
     } while (nextkw == curkw);
 
-    nextkw = SrchKeyword(ptr, genbankKeywordLength);
+    nextkw = SrchKeyword(ptr, genbankKeywords);
 
     InsertDatablkVal(chain, curkw, offset, len);
 
@@ -276,7 +276,7 @@ char* GetPrfBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
         ++ptr;                          /* newline character */
         ++len;
 
-        nextkw = SrchKeyword(ptr, prfkwl);
+        nextkw = SrchKeyword(ptr, prfKeywords);
         if (nextkw == ParFlat_UNKW)      /* it can be "XX" line,
                                             treat as same line */
                                             nextkw = curkw;
@@ -285,7 +285,7 @@ char* GetPrfBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
             break;
     } while (nextkw == curkw);
 
-    nextkw = SrchKeyword(ptr, prfkwl);
+    nextkw = SrchKeyword(ptr, prfKeywords);
 
     InsertDatablkVal(chain, curkw, offset, len);
 
@@ -525,8 +525,9 @@ char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw,
         ++ptr;                          /* newline character */
         ++len;
 
-        nextkw = SrchKeyword(ptr,
-                                (format == Parser::EFormat::SPROT) ? spkwl : emblkwl);
+        nextkw = SrchKeyword(
+            ptr, 
+            (format == Parser::EFormat::SPROT) ? swissProtKeywords : emblKeywords);
         if (nextkw == ParFlat_UNKW)      /* it can be "XX" line,
                                             treat as same line */
                                             nextkw = curkw;

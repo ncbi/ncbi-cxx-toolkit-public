@@ -1247,19 +1247,20 @@ CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Parser::ESour
  *                                              3-25-93
  *
  **********************************************************/
-int SrchKeyword(char* ptr, KwordBlk kwl[])
+int SrchKeyword(char* ptr, const vector<string>& keywordList)
 {
-    int i = 0;
+    int keywordCount = keywordList.size();
 
-    for( ; kwl[i].str != NULL; i++)
-        if(StringNCmp(ptr, kwl[i].str, kwl[i].len) == 0)
-            return(i);
-
-    return(ParFlat_UNKW);
+    for (int i=0; i < keywordCount; ++i) {
+        if (NStr::StartsWith(ptr, keywordList[i])) {
+            return i;
+        }
+    }
+    return ParFlat_UNKW;
 }
 
 /**********************************************************/
-bool CheckLineType(char* ptr, Int4 line, KwordBlk kwl[], bool after_origin)
+bool CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool after_origin)
 {
     char* p;
     Char    msg[51];
@@ -1273,11 +1274,12 @@ bool CheckLineType(char* ptr, Int4 line, KwordBlk kwl[], bool after_origin)
             return true;
     }
 
-    for(i = 0; kwl[i].str != NULL; i++)
-        if(StringNCmp(ptr, kwl[i].str, kwl[i].len) == 0)
-            break;
-    if(kwl[i].str != NULL)
-        return true;
+    auto keywordCount = keywordList.size();
+    for(i = 0; i < keywordCount; i++) {
+        auto keyword = keywordList[i];
+        if(StringNCmp(ptr, keyword.c_str(), keyword.size()) == 0)
+            return true;
+    }
 
     StringNCpy(msg, StringSave(ptr), 50);
     msg[50] = '\0';

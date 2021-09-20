@@ -48,19 +48,19 @@
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
-#endif
+#endif  
 #define THIS_FILE "gb_index.cpp"
+
 
 BEGIN_NCBI_SCOPE
 
-KwordBlk genbankKeywordLength[] = {
-    {"LOCUS", 5},     {"DEFINITION", 10}, {"ACCESSION", 9}, {"NID", 3},
-    {"GSDB ID", 7},   {"KEYWORDS", 8},    {"SEGMENT", 7},   {"SOURCE", 6},
-    {"REFERENCE", 9}, {"COMMENT", 7},     {"FEATURES", 8},  {"BASE COUNT", 10},
-    {"ORIGIN", 6},    {"//", 2},          {"GSDBID", 6},    {"CONTIG", 6},
-    {"VERSION", 7},   {"USER", 4},        {"WGS", 3},       {"PRIMARY", 7},
-    {"MGA", 3},       {"PROJECT", 7},     {"DBLINK", 6},    {NULL, 0}
+vector<string> genbankKeywords = {
+    "LOCUS", "DEFINITION", "ACCESSION", "NID", "GSDB ID", "KEYWORDS", "SEGMENT",
+    "SOURCE", "REFERENCE", "COMMENT", "FEATURES", "BASE COUNT", "ORIGIN", "//",
+    "GSDBID", "CONTIG", "VERSION", "USER", "WGS", "PRIMARY", "MGA", "PROJECT",
+    "DBLINK",
 };
+
 
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
@@ -732,10 +732,10 @@ bool GenBankIndex(ParserPtr pp)
                     continue;
                 }
 
-                currentKeyword = SrchKeyword(finfo->str, genbankKeywordLength);
+                currentKeyword = SrchKeyword(finfo->str, genbankKeywords);
 
                 if(finfo->str[0] != ' ' && finfo->str[0] != '\t' &&
-                   CheckLineType(finfo->str, finfo->line, genbankKeywordLength, after_ORIGIN) == false)
+                   CheckLineType(finfo->str, finfo->line, genbankKeywords, after_ORIGIN) == false)
                      entry->drop = 1;
 
             } /* while, end of one entry */

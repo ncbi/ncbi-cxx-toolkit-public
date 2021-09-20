@@ -53,19 +53,19 @@
 
 BEGIN_NCBI_SCOPE
 
-KwordBlk emblkwl[] = {
-    {"ID", 2}, {"AC", 2}, {"NI", 2}, {"DT", 2}, {"DE", 2}, {"KW", 2},
-    {"OS", 2}, {"RN", 2}, {"DR", 2}, {"CC", 2}, {"FH", 2}, {"SQ", 2},
-    {"SV", 2}, {"CO", 2}, {"AH", 2}, {"PR", 2}, {"//", 2}, {NULL, 0}
+vector<string> emblKeywords = {
+    "ID", "AC", "NI", "DT", "DE", "KW", "OS", "RN", "DR", "CC", "FH", "SQ", "SV",
+    "CO", "AH", "PR", "//",
 };
 
-KwordBlk check_embl[] = {
-    {"ID", 2}, {"AC", 2}, {"NI", 2}, {"DT", 2}, {"DE", 2}, {"KW", 2},
-    {"OS", 2}, {"OC", 2}, {"OG", 2}, {"RN", 2}, {"RP", 2}, {"RX", 2},
-    {"RC", 2}, {"RG", 2}, {"RA", 2}, {"RT", 2}, {"RL", 2}, {"DR", 2},
-    {"FH", 2}, {"FT", 2}, {"SQ", 2}, {"CC", 2}, {"SV", 2}, {"CO", 2},
-    {"XX", 2}, {"AH", 2}, {"AS", 2}, {"PR", 2}, {"//", 2}, {NULL, 0}
+vector<string> checkedEmblKeywords = {
+    "ID", "AC", "NI", "DT", "DE", "KW", 
+    "OS", "OC", "OG", "RN", "RP", "RX", 
+    "RC", "RG", "RA", "RT", "RL", "DR", 
+    "FH", "FT", "SQ", "CC", "SV", "CO", 
+    "XX", "AH", "AS", "PR", "//"
 };
+
 
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
@@ -223,8 +223,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
     finfo = new FinfoBlk();
 
 
-    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, emblkwl[ParFlat_ID].str,
-                               emblkwl[ParFlat_ID].len);
+    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, emblKeywords[ParFlat_ID]);
     if(end_of_file)
     {
         MsgSkipTitleFail((char*) "Embl", finfo);
@@ -269,10 +268,18 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                 kwds = ValNodeFreeData(kwds);
             tkwds = NULL;
             size_t kwds_len = 0;
+            auto keywordEnd = emblKeywords[ParFlatEM_END];
+            auto keywordId = emblKeywords[ParFlat_ID];
+            auto keywordNi = emblKeywords[ParFlat_NI];
+            auto keywordAh = emblKeywords[ParFlat_AH];
+            auto keywordSq = emblKeywords[ParFlat_SQ];
+            auto keywordOs = emblKeywords[ParFlat_OS];
+            auto keywordSv = emblKeywords[ParFlat_SV];
+
             while (!end_of_file &&
-                  StringNCmp(finfo->str, emblkwl[ParFlatEM_END].str, emblkwl[ParFlatEM_END].len) != 0)
+                  StringNCmp(finfo->str, keywordEnd.c_str(), keywordEnd.size()) != 0)
             {
-                if(StringNCmp(finfo->str, emblkwl[ParFlat_KW].str, 2) == 0)
+                if(StringNCmp(finfo->str, keywordEnd.c_str(), 2) == 0)
                 {
                     if(pp->source == Parser::ESource::EMBL ||
                        pp->source == Parser::ESource::DDBJ)
@@ -291,8 +298,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                         kwds_len += StringLen(finfo->str) - 2;
                     }
                 }
-                else if(StringNCmp(finfo->str, emblkwl[ParFlat_ID].str,
-                                   emblkwl[ParFlat_ID].len) == 0)
+                else if(StringNCmp(finfo->str, keywordId.c_str(), keywordId.size()) == 0)
                 {
                     if(after_ID)
                     {
@@ -306,8 +312,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                         line_sv = EmblGetNewIDVersion(entry->locusname,
                                                       finfo->str);
                 }
-                else if(StringNCmp(finfo->str, emblkwl[ParFlat_AH].str,
-                                   emblkwl[ParFlat_AH].len) == 0)
+                else if(StringNCmp(finfo->str, keywordAh.c_str(), keywordAh.size()) == 0)
                 {
                     if(entry->is_tpa == false && entry->tsa_allowed == false)
                     {
@@ -322,7 +327,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     entry->drop = 1;
                     break;
                 }
-                if(StringNCmp(finfo->str, emblkwl[ParFlat_NI].str, 2) == 0)
+                if(StringNCmp(finfo->str, keywordNi.c_str(), 2) == 0)
                 {
                     if(after_NI)
                     {
@@ -333,14 +338,12 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     }
                     after_NI = true;
                 }
-                else if(StringNCmp(finfo->str, emblkwl[ParFlat_SQ].str,
-                                   emblkwl[ParFlat_SQ].len) == 0)
+                else if(StringNCmp(finfo->str, keywordSq.c_str(), keywordSq.size()) == 0)
                 {
                     after_SQ = true;
                     entry->origin = true;
                 }
-                else if(StringNCmp(finfo->str, emblkwl[ParFlat_OS].str,
-                                   emblkwl[ParFlat_OS].len) == 0)
+                else if(StringNCmp(finfo->str, keywordOs.c_str(), keywordOs.size()) == 0)
                 {
                     if(after_OS && pp->source != Parser::ESource::EMBL)
                     {
@@ -350,8 +353,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     after_OS = true;
                 }
                 if(pp->accver &&
-                   StringNCmp(finfo->str, emblkwl[ParFlat_SV].str,
-                              emblkwl[ParFlat_SV].len) == 0)
+                   StringNCmp(finfo->str, keywordSv.c_str(), keywordSv.size()) == 0)
                 {
                     if(entry->embl_new_ID)
                     {
@@ -384,16 +386,18 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                 if(StringNCmp(finfo->str, "OC", 2) == 0)
                     after_OC = true;
 
-                if(StringNCmp(finfo->str, emblkwl[ParFlat_RN].str,
-                              emblkwl[ParFlat_RN].len) == 0)
+                auto keywordRn = emblKeywords[ParFlat_RN];
+                if(StringNCmp(finfo->str, keywordRn.c_str(), keywordRn.size()) == 0)
                     after_RN = true;
 
-                if(StringNCmp(finfo->str, emblkwl[ParFlat_CO].str,
-                              emblkwl[ParFlat_CO].len) == 0)
+                auto keywordCo = emblKeywords[ParFlat_CO];
+                if(StringNCmp(finfo->str, keywordCo.c_str(),
+                    keywordCo.size()) == 0)
                     entry->is_contig = true;
 
-                if(StringNCmp(finfo->str, emblkwl[ParFlat_AC].str,
-                              emblkwl[ParFlat_AC].len) == 0)
+                auto keywordAc = emblKeywords[ParFlat_AC];
+                auto keywordDt = emblKeywords[ParFlat_DT];
+                if(StringNCmp(finfo->str, keywordAc.c_str(), keywordAc.size()) == 0)
                 {
                     if(after_AC == false)
                     {
@@ -405,8 +409,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                             GetAccession(pp, finfo->str, entry, 1) == false)
                         pp->num_drop++;
                 }
-                else if(StringNCmp(finfo->str, emblkwl[ParFlat_DT].str,
-                                   emblkwl[ParFlat_DT].len) == 0)
+                else if(StringNCmp(finfo->str, keywordDt.c_str(), keywordDt.size()) == 0)
                 {
                     stoken = TokenString(finfo->str, ' ');
                     if(stoken->num > 2)
@@ -424,7 +427,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                 if(finfo->str[0] != ' ' && finfo->str[0] != '\t')
                 {
                     if(CheckLineType(finfo->str, finfo->line,
-                                     check_embl, false) == false)
+                                     checkedEmblKeywords, false) == false)
                         entry->drop = 1;
                 }
             } /* while, end of one entry */
@@ -495,13 +498,13 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
         else
         {
             end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                           emblkwl[ParFlatEM_END].str,
-                                           emblkwl[ParFlatEM_END].len);
+                                           emblKeywords[ParFlatEM_END].c_str(),
+                                           emblKeywords[ParFlatEM_END].size());
         }
 
         end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                       emblkwl[ParFlat_ID].str,
-                                       emblkwl[ParFlat_ID].len);
+            emblKeywords[ParFlat_ID].c_str(),
+            emblKeywords[ParFlat_ID].size());
 
     } /* while, end_of_file */
 
