@@ -359,8 +359,8 @@ function(NCBI_internal_install_root _variable _access)
                         set(_path "/${_path}")
                     endif()
                     install( DIRECTORY ${NCBI_SRC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_SRC}${_path}
-                        FILES_MATCHING  PATTERN "*.c" PATTERN "*.c?" PATTERN "*.c??" 
-                                        PATTERN "*.h" PATTERN "*.h?" PATTERN "*.h??"
+                        FILES_MATCHING  PATTERN "*.c" PATTERN "*.c?" PATTERN "*.c??"  PATTERN "*.c.in" 
+                                        PATTERN "*.h" PATTERN "*.h?" PATTERN "*.h??"  PATTERN "*.h.in"
                                         PATTERN "*.inc" PATTERN "*.inl"
                         REGEX "/[.].*$" EXCLUDE REGEX "${NCBI_SRC_ROOT}/${_dir}/.*/[^/]" EXCLUDE)
                 endif()
