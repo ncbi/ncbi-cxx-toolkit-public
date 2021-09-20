@@ -60,10 +60,9 @@ CRef<objects::CDate_std> GetUpdateDate(char* ptr, Parser::ESource source);
 
 /**********************************************************/
 bool        XReadFileBuf(FileBuf& fileBuf, FinfoBlkPtr finfo);
-bool        SkipTitleBuf(FileBuf& fileBuf, FinfoBlkPtr finfo, const Char *str, Int2 len);
 bool        SkipTitleBuf(FileBuf& fileBuf, FinfoBlkPtr finfo, const CTempString& keyword);
-bool        FindNextEntryBuf(bool end_of_file, FileBuf& fileBuf,
-                             FinfoBlkPtr finfo, const char* str, Int2 len);
+//bool        FindNextEntryBuf(bool end_of_file, FileBuf& fileBuf,
+//                             FinfoBlkPtr finfo, const char* str, Int2 len);
 bool        FindNextEntryBuf(bool end_of_file, FileBuf& fileBuf, 
                              FinfoBlkPtr finfo, const CTempString& keyword);
 

@@ -194,10 +194,7 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
 
     finfo = new FinfoBlk();
 
-    end_of_file = SkipTitleBuf(pp->ffbuf, finfo,
-        pirKeywords[ParFlatPIR_ENTRY].c_str(),
-        pirKeywords[ParFlatPIR_ENTRY].size());
-
+    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, pirKeywords[ParFlatPIR_ENTRY]);
     if(end_of_file)
     {
         MsgSkipTitleFail("PIR", finfo);
@@ -308,13 +305,11 @@ bool PirIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
         }
         else
         {
-            end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                pirKeywords[ParFlatPIR_END].c_str(),
-                pirKeywords[ParFlatPIR_END].size());
+            end_of_file = FindNextEntryBuf(
+                end_of_file, pp->ffbuf, finfo, pirKeywords[ParFlatPIR_END].c_str());
         }
-        end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-            pirKeywords[ParFlatPIR_ENTRY].c_str(),
-            pirKeywords[ParFlatPIR_ENTRY].size());
+        end_of_file = FindNextEntryBuf(
+            end_of_file, pp->ffbuf, finfo, pirKeywords[ParFlatPIR_ENTRY].c_str());
     }
 
     pp->indx = indx;
