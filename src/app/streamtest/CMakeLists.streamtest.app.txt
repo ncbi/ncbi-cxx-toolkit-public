@@ -3,12 +3,8 @@
 NCBI_begin_app(streamtest)
   NCBI_sources(streamtest)
   NCBI_uses_toolkit_libraries(
-    ncbi_xloader_genbank prosplign xmlwrapp xobjwrite xvalidate
-  )
-  NCBI_optional_components(VDB)
-  if(NCBI_COMPONENT_VDB_FOUND)
-    NCBI_uses_toolkit_libraries(ncbi_xloader_wgs)
-  endif()
+    ncbi_xloader_genbank prosplign xmlwrapp xobjwrite xvalidate)
+  NCBI_optional_toolkit_libraries(VDB ncbi_xloader_wgs)
 
   NCBI_project_watchers(kans drozdov)
 NCBI_end_app()
