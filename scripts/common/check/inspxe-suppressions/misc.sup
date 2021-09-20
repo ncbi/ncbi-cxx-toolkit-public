@@ -49,3 +49,17 @@ suppression = {
 	}
 }
 
+suppression = {
+	name = "Invalid partial memory access in libxml - cannot do anything"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=xmlLoadExternalEntity;
+		}
+		allocation={
+			...;
+			func=xmlLoadExternalEntity;
+		}
+	}
+}
