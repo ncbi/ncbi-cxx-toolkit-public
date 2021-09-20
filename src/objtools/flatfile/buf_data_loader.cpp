@@ -188,7 +188,7 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
     cur_block->ppp = pp;
 
     if (pp->format == Parser::EFormat::GenBank) {
-        char* q = entry->offset;
+        char* q = entry->mOffset;
         if (q != NULL && entry->len != 0 && StringNCmp(q, "LOCUS ", 6) == 0) {
             char* p = StringChr(q, '\n');
             if (p != NULL)
@@ -231,7 +231,7 @@ static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Parser::EFormat for
     if (format != Parser::EFormat::GenBank && format != Parser::EFormat::EMBL)
         return;
 
-    offset = entry->offset;
+    offset = entry->mOffset;
     size_t len = entry->len;
 
     if (offset == NULL || len == 0)
@@ -285,8 +285,8 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
     char*     eptr;
 
     ibp = pp->entrylist[pp->curindx];
-    ebp = (EntryBlkPtr)entry->data;
-    ptr = entry->offset;
+    ebp = (EntryBlkPtr)entry->mpData;
+    ptr = entry->mOffset;
     eptr = ptr + entry->len;
 
     CRef<CBioseq> bioseq(new CBioseq);
@@ -369,11 +369,11 @@ static DataBlkPtr make_entry(char* entry_str)
     DataBlkPtr entry = (DataBlkPtr)MemNew(sizeof(DataBlk));
 
     if (entry != NULL) {
-        entry->type = ParFlat_ENTRYNODE;
-        entry->next = NULL;         /* assume no segment at this time */
-        entry->offset = entry_str;
-        entry->len = StringLen(entry->offset);
-        entry->data = (EntryBlkPtr)MemNew(sizeof(EntryBlk));
+        entry->mType = ParFlat_ENTRYNODE;
+        entry->mpNext = NULL;         /* assume no segment at this time */
+        entry->mOffset = entry_str;
+        entry->len = StringLen(entry->mOffset);
+        entry->mpData = (EntryBlkPtr)MemNew(sizeof(EntryBlk));
     }
 
     return entry;
@@ -462,8 +462,8 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
         old_indx = pp->curindx;
     pp->curindx = ix;
 
-    EntryBlkPtr ebp = (EntryBlkPtr)entry->data;
-    char* ptr = entry->offset;    /* points to beginning of the memory line */
+    EntryBlkPtr ebp = (EntryBlkPtr)entry->mpData;
+    char* ptr = entry->mOffset;    /* points to beginning of the memory line */
     char* eptr = ptr + entry->len;
     Int2 curkw = ParFlat_ID;
     while (curkw != ParFlatEM_END) {
@@ -475,7 +475,7 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
     if (ptr >= eptr) {
         pp->entrylist[pp->curindx]->drop = 1;
         ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped.");
-        MemFree(entry->offset);
+        MemFree(entry->mOffset);
         FreeEntry(entry);
         return(-1);
     }

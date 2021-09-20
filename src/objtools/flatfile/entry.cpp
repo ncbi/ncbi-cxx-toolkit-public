@@ -89,25 +89,25 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
     i = 0;
 
     entry = (DataBlkPtr)MemNew(sizeof(DataBlk));
-    entry->type = ParFlat_ENTRYNODE;
-    entry->next = NULL;                 /* assume no segment at this time */
-    entry->offset = (char*)MemNew(len + 1); /* plus 1 for null byte */
+    entry->mType = ParFlat_ENTRYNODE;
+    entry->mpNext = NULL;                 /* assume no segment at this time */
+    entry->mOffset = (char*)MemNew(len + 1); /* plus 1 for null byte */
 
-    entry->len = FileReadBuf(entry->offset, len, pp->ffbuf);
+    entry->len = FileReadBuf(entry->mOffset, len, pp->ffbuf);
 
     if ((size_t)entry->len != len)  /* hardware problem */
     {
         ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry,
                   "FileRead failed, in LoadEntry routine.");
-        MemFree(entry->offset);
+        MemFree(entry->mOffset);
         MemFree(entry);
         return(NULL);
     }
 
-    eptr = entry->offset + entry->len;
+    eptr = entry->mOffset + entry->len;
     bool was = false;
     char* wasx = NULL;
-    for (q = entry->offset; q < eptr; q++)
+    for (q = entry->mOffset; q < eptr; q++)
     {
         if (*q != '\n')
             continue;
@@ -125,7 +125,7 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
             wasx = NULL;
     }
 
-    for (q = entry->offset; q < eptr; q++)
+    for (q = entry->mOffset; q < eptr; q++)
     {
         if (*q == 13) {
             *q = 10;
@@ -145,7 +145,7 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
             was = false;
             continue;
         }
-        for (i = 0; q > entry->offset;)
+        for (i = 0; q > entry->mOffset;)
         {
             i++;
             q--;
@@ -153,7 +153,7 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
                 break;
         }
         if (i > 0 &&
-            (*q == '\n' || (q - 2 >= entry->offset && *(q - 2) == '\n')))
+            (*q == '\n' || (q - 2 >= entry->mOffset && *(q - 2) == '\n')))
         {
             q += i;
             i = 0;
@@ -193,7 +193,7 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
             was = true;
     }
 
-    entry->data = CreateEntryBlk();
+    entry->mpData = CreateEntryBlk();
 
     return(entry);
 }

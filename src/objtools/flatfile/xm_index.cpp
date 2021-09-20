@@ -1736,7 +1736,7 @@ bool XMLIndex(ParserPtr pp)
 }
 
 /**********************************************************/
-DataBlkPtr XMLBuildRefDataBlk(char* entry, XmlIndexPtr xip, Int2 type)
+DataBlkPtr XMLBuildRefDataBlk(char* entry, XmlIndexPtr xip, int type)
 {
     XmlIndexPtr txip;
     DataBlkPtr  dbp;
@@ -1761,13 +1761,13 @@ DataBlkPtr XMLBuildRefDataBlk(char* entry, XmlIndexPtr xip, Int2 type)
         }
         else
         {
-            tdbp->next = (DataBlkPtr) MemNew(sizeof(DataBlk));
-            tdbp = tdbp->next;
+            tdbp->mpNext = (DataBlkPtr) MemNew(sizeof(DataBlk));
+            tdbp = tdbp->mpNext;
         }
-        tdbp->type = txip->type;
-        tdbp->offset = entry;
-        tdbp->data = (void*) txip->subtags;
-        tdbp->next = NULL;
+        tdbp->mType = txip->type;
+        tdbp->mOffset = entry;
+        tdbp->mpData = (void*) txip->subtags;
+        tdbp->mpNext = NULL;
     }
     return(dbp);
 }

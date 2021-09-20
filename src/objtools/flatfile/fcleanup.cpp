@@ -34,8 +34,6 @@
  */
 #include <ncbi_pch.hpp>
 
-#include "ftacpp.hpp"
-
 #include <objmgr/scope.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objects/seq/Seq_descr.hpp>
@@ -65,54 +63,6 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-
-/**********************************************************/
-// TODO To be moved to cleanup
-/*static void CreatePubFromFeats(objects::CSeq_annot& annot)
-{
-    if (!annot.IsFtable())
-        return;
-
-    TSeqFeatList& feats = annot.SetData().SetFtable();
-    for (TSeqFeatList::iterator feat = feats.begin(); feat != feats.end();)
-    {
-        if (!(*feat)->IsSetCit() || !(*feat)->GetCit().IsPub() || !(*feat)->IsSetLocation())
-        {
-            ++feat;
-            continue;
-        }
-
-        objects::CBioseq_Handle bioseq_h = GetScope().GetBioseqHandle((*feat)->GetLocation());
-        objects::CBioseq_EditHandle bioseq = GetScope().GetBioseqEditHandle(*bioseq_h.GetCompleteBioseq());
-
-        bool feat_imp = (*feat)->IsSetData() && (*feat)->GetData().IsImp();
-
-        objects::CPub_set& pubs = (*feat)->SetCit();
-        NON_CONST_ITERATE(TPubList, pub, pubs.SetPub())
-        {
-            CRef<objects::CSeqdesc> new_descr(new objects::CSeqdesc);
-            objects::CPubdesc& pubdescr = new_descr->SetPub();
-
-            if ((*pub)->IsEquiv())
-                pubdescr.SetPub((*pub)->SetEquiv());
-            else
-                pubdescr.SetPub().Set().push_back(*pub);
-
-            pubdescr.SetReftype(2);
-
-            if (feat_imp)
-            {
-                const objects::CImp_feat& imp = (*feat)->GetData().GetImp();
-                if (imp.IsSetKey() && imp.GetKey() == "Site-ref")
-                    pubdescr.SetReftype(1);
-            }
-
-            bioseq.SetDescr().Set().push_back(new_descr);
-        }
-
-        feat = feats.erase(feat);
-    }
-}*/
 
 static void MoveSourceDescrToTop(objects::CSeq_entry& entry)
 {

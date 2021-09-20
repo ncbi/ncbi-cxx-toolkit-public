@@ -272,22 +272,22 @@ bool check_cds(DataBlkPtr entry, Parser::EFormat format)
     else
         return false;
 
-    for(temp = TrackNodeType(entry, type); temp != NULL; temp = temp->next)
+    for(temp = TrackNodeType(entry, type); temp != NULL; temp = temp->mpNext)
     {
-        if(temp->type != type)
+        if(temp->mType != type)
             continue;
 
         size_t len = 0;
-        for(dbp = (DataBlkPtr) temp->data; dbp != NULL; dbp = dbp->next)
+        for(dbp = (DataBlkPtr) temp->mpData; dbp != NULL; dbp = dbp->mpNext)
             len += dbp->len;
         if(len == 0)
             continue;
 
-        dbp = (DataBlkPtr) temp->data;
-        ch = dbp->offset[len];
-        dbp->offset[len] = '\0';
-        p = StringStr(dbp->offset, str);
-        dbp->offset[len] = ch;
+        dbp = (DataBlkPtr) temp->mpData;
+        ch = dbp->mOffset[len];
+        dbp->mOffset[len] = '\0';
+        p = StringStr(dbp->mOffset, str);
+        dbp->mOffset[len] = ch;
 
         if(p != NULL)
             break;

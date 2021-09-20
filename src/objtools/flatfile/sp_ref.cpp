@@ -178,7 +178,7 @@ static Int4 GetDataFromRN(DataBlkPtr dbp, Int4 col_data)
     char* str;
     Int4    num = 0;
 
-    bptr = dbp->offset + col_data;
+    bptr = dbp->mOffset + col_data;
     eptr = bptr + dbp->len;
     while(isdigit(*bptr) == 0 && bptr < eptr)
         bptr++;
@@ -507,11 +507,11 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
 
 #endif
 
-    for(subdbp = (DataBlkPtr) dbp->data; subdbp != NULL; subdbp = subdbp->next)
+    for(subdbp = (DataBlkPtr) dbp->mpData; subdbp != NULL; subdbp = subdbp->mpNext)
     {
         /* process REFERENCE subkeywords
          */
-        bptr = subdbp->offset;
+        bptr = subdbp->mOffset;
         eptr = bptr + subdbp->len;
         str = GetBlkDataReplaceNewLine(bptr, eptr, (Int2) col_data);
         size_t len = StringLen(str);
@@ -521,7 +521,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
             len--;
         }
 
-        switch(subdbp->type)
+        switch(subdbp->mType)
         {
             case ParFlatSP_RP:
                 prbp->comment = str;

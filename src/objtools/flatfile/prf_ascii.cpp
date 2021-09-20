@@ -120,9 +120,9 @@ static void GetPrfSubBlock(ParserPtr pp, DataBlkPtr entry)
     }
 
     dbp = TrackNodeType(entry, ParFlatPRF_JOURNAL);
-    for(; dbp != NULL; dbp = dbp->next)
+    for(; dbp != NULL; dbp = dbp->mpNext)
     {
-        if(dbp->type != ParFlatPRF_JOURNAL)
+        if(dbp->mType != ParFlatPRF_JOURNAL)
             continue;
         BuildSubBlock(dbp, ParFlatPRF_AUTHOR, "AUTHOR");
         BuildSubBlock(dbp, ParFlatPRF_TITLE, "TITLE");
@@ -164,12 +164,12 @@ static CRef<objects::CPRF_block> PrfGetPrfBlock(DataBlkPtr entry)
     TKeywordList kwds;
 
     dbp = TrackNodeType(entry, ParFlatPRF_KEYWORD);
-    if(dbp != NULL && dbp->offset != NULL && dbp->len > ParFlat_COL_DATA_PRF)
+    if(dbp != NULL && dbp->mOffset != NULL && dbp->len > ParFlat_COL_DATA_PRF)
     {
-        ch = dbp->offset[dbp->len];
-        dbp->offset[dbp->len] = '\0';
-        keywords = StringSave(dbp->offset + ParFlat_COL_DATA_PRF);
-        dbp->offset[dbp->len] = ch;
+        ch = dbp->mOffset[dbp->len];
+        dbp->mOffset[dbp->len] = '\0';
+        keywords = StringSave(dbp->mOffset + ParFlat_COL_DATA_PRF);
+        dbp->mOffset[dbp->len] = ch;
         for(p = keywords; *p != '\0'; p++)
             if(*p == '\n')
                 *p = ' ';
@@ -209,7 +209,7 @@ static CRef<objects::CPRF_block> PrfGetPrfBlock(DataBlkPtr entry)
     }
 
     dbp = TrackNodeType(entry, ParFlatPRF_SOURCE);
-    if(dbp == NULL || dbp->data == NULL)
+    if(dbp == NULL || dbp->mpData == NULL)
         return prf_block;
 
     if (prf_block.Empty())
@@ -217,24 +217,24 @@ static CRef<objects::CPRF_block> PrfGetPrfBlock(DataBlkPtr entry)
 
     objects::CPRF_ExtraSrc& extra_src = prf_block->SetExtra_src();
 
-    for(dbp = (DataBlkPtr) dbp->data; dbp != NULL; dbp = dbp->next)
+    for(dbp = (DataBlkPtr) dbp->mpData; dbp != NULL; dbp = dbp->mpNext)
     {
-        p = dbp->offset;
+        p = dbp->mOffset;
         i = dbp->len;
 
-        if(dbp->type == ParFlatPRF_strain)
+        if(dbp->mType == ParFlatPRF_strain)
             extra_src.SetStrain(GetBlkDataReplaceNewLine(p, p + i, ParFlat_COL_DATA_PRF));
 
-        else if(dbp->type == ParFlatPRF_org_part)
+        else if(dbp->mType == ParFlatPRF_org_part)
             extra_src.SetPart(GetBlkDataReplaceNewLine(p, p + i, ParFlat_COL_DATA_PRF));
 
-        else if(dbp->type == ParFlatPRF_org_state)
+        else if(dbp->mType == ParFlatPRF_org_state)
             extra_src.SetState(GetBlkDataReplaceNewLine(p, p + i, ParFlat_COL_DATA_PRF));
 
-        else if(dbp->type == ParFlatPRF_host)
+        else if(dbp->mType == ParFlatPRF_host)
             extra_src.SetHost(GetBlkDataReplaceNewLine(p, p + i, ParFlat_COL_DATA_PRF));
 
-        else if(dbp->type == ParFlatPRF_taxon)
+        else if(dbp->mType == ParFlatPRF_taxon)
             extra_src.SetTaxon(GetBlkDataReplaceNewLine(p, p + i, ParFlat_COL_DATA_PRF));
     }
 
@@ -255,10 +255,10 @@ static char* PrfGetStringValue(DataBlkPtr entry, Int2 type)
     DataBlkPtr dbp;
 
     dbp = TrackNodeType(entry, type);
-    if(dbp == NULL || dbp->offset == NULL || dbp->len <= ParFlat_COL_DATA_PRF)
+    if(dbp == NULL || dbp->mOffset == NULL || dbp->len <= ParFlat_COL_DATA_PRF)
         return(NULL);
 
-    return(GetBlkDataReplaceNewLine(dbp->offset, dbp->offset + dbp->len,
+    return(GetBlkDataReplaceNewLine(dbp->mOffset, dbp->mOffset + dbp->len,
                                     ParFlat_COL_DATA_PRF));
 }
 
@@ -269,15 +269,15 @@ static char* PrfGetSubStringValue(DataBlkPtr entry, Int2 type, Int2 subtype)
     char*    res;
 
     dbp = TrackNodeType(entry, type);
-    if(dbp == NULL || dbp->data == NULL)
+    if(dbp == NULL || dbp->mpData == NULL)
         return(NULL);
 
-    for(res = NULL, dbp = (DataBlkPtr) dbp->data; dbp != NULL; dbp = dbp->next)
+    for(res = NULL, dbp = (DataBlkPtr) dbp->mpData; dbp != NULL; dbp = dbp->mpNext)
     {
-        if(dbp->type != subtype)
+        if(dbp->mType != subtype)
             continue;
 
-        res = GetBlkDataReplaceNewLine(dbp->offset, dbp->offset + dbp->len,
+        res = GetBlkDataReplaceNewLine(dbp->mOffset, dbp->mOffset + dbp->len,
                                        ParFlat_COL_DATA_PRF);
         break;
     }
@@ -300,10 +300,10 @@ static CRef<objects::CBioSource> PrfGetBioSource(ParserPtr pp, DataBlkPtr entry)
     Int4         count;
 
     dbp = TrackNodeType(entry, ParFlatPRF_SOURCE);
-    if(dbp == NULL || dbp->offset == NULL || dbp->len <= ParFlat_COL_DATA_PRF)
+    if(dbp == NULL || dbp->mOffset == NULL || dbp->len <= ParFlat_COL_DATA_PRF)
         return bio_src;
 
-    taxname = GetBlkDataReplaceNewLine(dbp->offset, dbp->offset + dbp->len,
+    taxname = GetBlkDataReplaceNewLine(dbp->mOffset, dbp->mOffset + dbp->len,
                                        ParFlat_COL_DATA_PRF);
     if(taxname == NULL)
         return bio_src;
@@ -311,20 +311,20 @@ static CRef<objects::CBioSource> PrfGetBioSource(ParserPtr pp, DataBlkPtr entry)
     lineage = NULL;
     org_part = NULL;
     gen = 1;
-    if(dbp->data != NULL)
+    if(dbp->mpData != NULL)
     {
-        for(dbp = (DataBlkPtr) dbp->data; dbp != NULL; dbp = dbp->next)
+        for(dbp = (DataBlkPtr) dbp->mpData; dbp != NULL; dbp = dbp->mpNext)
         {
-            if(dbp->type == ParFlatPRF_taxon && lineage == NULL)
+            if(dbp->mType == ParFlatPRF_taxon && lineage == NULL)
             {
-                lineage = GetBlkDataReplaceNewLine(dbp->offset,
-                                                   dbp->offset + dbp->len,
+                lineage = GetBlkDataReplaceNewLine(dbp->mOffset,
+                                                   dbp->mOffset + dbp->len,
                                                    ParFlat_COL_DATA_PRF);
             }
-            else if(dbp->type == ParFlatPRF_org_part && org_part == NULL)
+            else if(dbp->mType == ParFlatPRF_org_part && org_part == NULL)
             {
-                org_part = GetBlkDataReplaceNewLine(dbp->offset,
-                                                    dbp->offset + dbp->len,
+                org_part = GetBlkDataReplaceNewLine(dbp->mOffset,
+                                                    dbp->mOffset + dbp->len,
                                                     ParFlat_COL_DATA_PRF);
                 if(org_part == NULL)
                     continue;
@@ -404,7 +404,7 @@ static CRef<objects::CPubdesc> PrfGetPub(ParserPtr pp, DataBlkPtr entry)
 
     CRef<objects::CPubdesc> ret;
 
-    if(entry == NULL || entry->offset == NULL ||
+    if(entry == NULL || entry->mOffset == NULL ||
        entry->len <= ParFlat_COL_DATA_PRF)
     {
         ErrPostEx(SEV_ERROR, ERR_REFERENCE_Illegalreference,
@@ -412,7 +412,7 @@ static CRef<objects::CPubdesc> PrfGetPub(ParserPtr pp, DataBlkPtr entry)
         return ret;
     }
 
-    jour = GetBlkDataReplaceNewLine(entry->offset, entry->offset + entry->len,
+    jour = GetBlkDataReplaceNewLine(entry->mOffset, entry->mOffset + entry->len,
                                     ParFlat_COL_DATA_PRF);
     if(jour == NULL || *jour == '\0')
     {
@@ -429,20 +429,20 @@ static CRef<objects::CPubdesc> PrfGetPub(ParserPtr pp, DataBlkPtr entry)
     CRef<objects::CTitle::C_E> title_art(new objects::CTitle::C_E);
     CRef<objects::CAuth_list> auth_list;
 
-    for(dbp = (DataBlkPtr) entry->data; dbp != NULL; dbp = dbp->next)
+    for(dbp = (DataBlkPtr) entry->mpData; dbp != NULL; dbp = dbp->mpNext)
     {
-        if(dbp->type == ParFlatPRF_TITLE)
+        if(dbp->mType == ParFlatPRF_TITLE)
         {
-            title = GetBlkDataReplaceNewLine(dbp->offset,
-                                             dbp->offset + dbp->len,
+            title = GetBlkDataReplaceNewLine(dbp->mOffset,
+                                             dbp->mOffset + dbp->len,
                                              ParFlat_COL_DATA_PRF);
             if (title != NULL && *title != '\0')
                 title_art->SetName(title);
         }
-        else if(dbp->type == ParFlatPRF_AUTHOR)
+        else if(dbp->mType == ParFlatPRF_AUTHOR)
         {
-            author = GetBlkDataReplaceNewLine(dbp->offset,
-                                              dbp->offset + dbp->len,
+            author = GetBlkDataReplaceNewLine(dbp->mOffset,
+                                              dbp->mOffset + dbp->len,
                                               ParFlat_COL_DATA_PRF);
             if(author != NULL)
             {
@@ -613,9 +613,9 @@ static void PrfGetDescr(ParserPtr pp, DataBlkPtr entry, TSeqdescList& descrs)
     }
 
     dbp = TrackNodeType(entry, ParFlatPRF_JOURNAL);
-    for(; dbp != NULL; dbp = dbp->next)
+    for(; dbp != NULL; dbp = dbp->mpNext)
     {
-        if(dbp->type != ParFlatPRF_JOURNAL)
+        if(dbp->mType != ParFlatPRF_JOURNAL)
             continue;
 
         CRef<objects::CPubdesc> pubdesc = PrfGetPub(pp, dbp);
@@ -940,8 +940,8 @@ static CRef<objects::CSeq_entry> PrfPrepareEntry(ParserPtr pp, DataBlkPtr entry,
     char*     eptr;
     EntryBlkPtr ebp;
 
-    ebp = (EntryBlkPtr) entry->data;
-    ptr = entry->offset;
+    ebp = (EntryBlkPtr) entry->mpData;
+    ptr = entry->mOffset;
     eptr = ptr + entry->len;
     curkw = ParFlatPRF_ref;
     while(curkw != ParFlatPRF_END)

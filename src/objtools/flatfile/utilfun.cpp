@@ -1329,7 +1329,7 @@ char* SrchNodeType(DataBlkPtr entry, Int4 type, size_t* len)
     if(temp != NULL)
     {
         *len = temp->len;
-        return(temp->offset);
+        return(temp->mOffset);
     }
 
     *len = 0;
@@ -1349,10 +1349,10 @@ DataBlkPtr TrackNodeType(DataBlkPtr entry, Int2 type)
     DataBlkPtr  temp;
     EntryBlkPtr ebp;
 
-    ebp = (EntryBlkPtr) entry->data;
+    ebp = (EntryBlkPtr) entry->mpData;
     temp = (DataBlkPtr) ebp->chain;
-    while(temp != NULL && temp->type != type)
-        temp = temp->next;
+    while(temp != NULL && temp->mType != type)
+        temp = temp->mpNext;
 
     return(temp);
 }
