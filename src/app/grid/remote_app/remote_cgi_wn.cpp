@@ -99,6 +99,13 @@ struct HasValue
     const Cont& m_Cont;
 };
 
+template <typename T>
+struct Not : T
+{
+    Not(T o) : T(move(o)) {}
+    bool operator() (const string& val) const { return !T::operator()(val); }
+};
+
 class CCgiEnvHolder
 {
 public:
@@ -126,7 +133,7 @@ CCgiEnvHolder::CCgiEnvHolder(const CRemoteAppLauncher& remote_app_launcher,
     list<string> names(cln_names.begin(), cln_names.end());
 
     names.erase(remove_if(names.begin(), names.end(),
-            not1(IsStandard())), names.end());
+            Not(IsStandard())), names.end());
 
     names.erase(remove_if(names.begin(), names.end(),
             HasValue<list<string> >(remote_app_launcher.GetExcludedEnv())),
@@ -135,7 +142,7 @@ CCgiEnvHolder::CCgiEnvHolder(const CRemoteAppLauncher& remote_app_launcher,
     list<string> inc_names(cln_names.begin(), cln_names.end());
 
     inc_names.erase(remove_if(inc_names.begin(),inc_names.end(),
-        not1(HasValue<list<string> >(remote_app_launcher.GetIncludedEnv()))),
+        Not(HasValue<list<string> >(remote_app_launcher.GetIncludedEnv()))),
             inc_names.end());
 
     names.insert(names.begin(),inc_names.begin(), inc_names.end());
