@@ -497,14 +497,12 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
         } /* if, entry */
         else
         {
-            end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                           emblKeywords[ParFlatEM_END].c_str(),
-                                           emblKeywords[ParFlatEM_END].size());
+            end_of_file = FindNextEntryBuf(
+                end_of_file, pp->ffbuf, finfo, emblKeywords[ParFlatEM_END]);
         }
 
-        end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-            emblKeywords[ParFlat_ID].c_str(),
-            emblKeywords[ParFlat_ID].size());
+        end_of_file = FindNextEntryBuf(
+            end_of_file, pp->ffbuf, finfo, emblKeywords[ParFlat_ID]);
 
     } /* while, end_of_file */
 

@@ -121,8 +121,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
     finfo = (FinfoBlkPtr) MemNew(sizeof(FinfoBlk));
 
-    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, swissProtKeywords[ParFlatSP_ID].c_str(),
-        swissProtKeywords[ParFlatSP_ID].size());
+    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, swissProtKeywords[ParFlatSP_ID]);
     if(end_of_file)
     {
         MsgSkipTitleFail("Swiss-Prot", finfo);
@@ -250,13 +249,11 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
         } /* if, entry */
         else
         {
-            end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                swissProtKeywords[ParFlatSP_END].c_str(),
-                swissProtKeywords[ParFlatSP_END].size());
+            end_of_file = FindNextEntryBuf(
+                end_of_file, pp->ffbuf, finfo, swissProtKeywords[ParFlatSP_END]);
         }
-        end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-            swissProtKeywords[ParFlatSP_ID].c_str(),
-            swissProtKeywords[ParFlatSP_ID].size());
+        end_of_file = FindNextEntryBuf(
+            end_of_file, pp->ffbuf, finfo, swissProtKeywords[ParFlatSP_ID]);
 
     } /* while, end_of_file */
 

@@ -390,20 +390,17 @@ bool SkipTitle(FILE* fp, FinfoBlkPtr finfo, const CTempString& keyword)
     return SkipTitle(fp, finfo, keyword.data(), keyword.size());
 }
 
-/**********************************************************/
-bool SkipTitleBuf(FileBuf& fbuf, FinfoBlkPtr finfo, const char *str, Int2 len)
+//  ----------------------------------------------------------------------------
+bool SkipTitleBuf(FileBuf& fbuf, FinfoBlkPtr finfo, const CTempString& keyword)
+//  ----------------------------------------------------------------------------
 {
+    const char* p = keyword.data();
+    size_t len = keyword.size();
     bool end_of_file = XReadFileBuf(fbuf, finfo);
-    while(!end_of_file && StringNCmp(finfo->str, str, len) != 0)
+    while (!end_of_file && StringNCmp(finfo->str, p, len) != 0)
         end_of_file = XReadFileBuf(fbuf, finfo);
 
     return(end_of_file);
-}
-
-
-bool SkipTitleBuf(FileBuf& fbuf, FinfoBlkPtr finfo, const CTempString& keyword)
-{
-    return SkipTitleBuf(fbuf, finfo, keyword.data(), keyword.size());
 }
 
 
@@ -2473,20 +2470,15 @@ void MsgSkipTitleFail(const char *flatfile, FinfoBlkPtr finfo)
 }
 
 
-/**********************************************************/
-bool FindNextEntryBuf(bool end_of_file, FileBuf& fbuf, FinfoBlkPtr finfo, const char *str, Int2 len)
+bool FindNextEntryBuf(bool end_of_file, FileBuf& fbuf, FinfoBlkPtr finfo, const CTempString& keyword)
 {
+    const char* p = keyword.data();
+    size_t len = keyword.size();
     bool done = end_of_file;
-    while (!done && StringNCmp(finfo->str, str, len) != 0)
+    while (!done && StringNCmp(finfo->str, p, len) != 0)
         done = XReadFileBuf(fbuf, finfo);
 
     return(done);
-}
-
-
-bool FindNextEntryBuf(bool end_of_file, FileBuf& fbuf, FinfoBlkPtr finfo, const CTempString& keyword)
-{
-    return FindNextEntryBuf(end_of_file, fbuf, finfo, keyword.data(), keyword.size());
 }
 
 

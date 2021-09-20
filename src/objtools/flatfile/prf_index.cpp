@@ -105,8 +105,7 @@ bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
 
     finfo = (FinfoBlkPtr) MemNew(sizeof(FinfoBlk));
 
-    auto keyword = prfKeywords[ParFlatPRF_ref];
-    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, keyword.c_str(), keyword.size());
+    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, prfKeywords[ParFlatPRF_ref]);
 
     if(end_of_file)
     {
@@ -273,13 +272,11 @@ bool PrfIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 le
         } /* if, entry */
         else
         {
-            end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-                                           prfKeywords[ParFlatPRF_END].c_str(),
-                                            prfKeywords[ParFlatPRF_END].size());
+            end_of_file = FindNextEntryBuf(
+                end_of_file, pp->ffbuf, finfo, prfKeywords[ParFlatPRF_END]);
         }
-        end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo,
-            prfKeywords[ParFlatPRF_ref].c_str(),
-            prfKeywords[ParFlatPRF_ref].size());
+        end_of_file = FindNextEntryBuf(
+            end_of_file, pp->ffbuf, finfo, prfKeywords[ParFlatPRF_ref]);
 
     } /* while, end_of_file */
 
