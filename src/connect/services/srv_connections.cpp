@@ -773,7 +773,6 @@ CNetServer::SExecResult SNetServerImpl::ConnectAndExec(const string& cmd,
     unsigned attempt = 0;
 
     const auto max_retries = retry_on_exception ? m_Service->GetConnectionMaxRetries() : 0;
-    const auto retry_delay = m_Service->GetConnectionRetryDelay();
 
     for (;;) {
         string warning;
@@ -817,7 +816,7 @@ CNetServer::SExecResult SNetServerImpl::ConnectAndExec(const string& cmd,
         CNetServer server(this);
         m_Service->m_Listener->OnWarning(warning, server);
 
-        SleepMilliSec(retry_delay);
+        SleepMilliSec(m_Service->GetConnectionRetryDelay());
     }
 }
 
