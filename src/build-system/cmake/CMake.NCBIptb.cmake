@@ -42,6 +42,7 @@
 ##      NCBI_set_pch_define( macro to define)
 ##
 ##      NCBI_uses_toolkit_libraries(  list of libraries)
+##      NCBI_optional_toolkit_libraries( COMP list of libraries) - if component COMP is found, use these libraries
 ##      NCBI_uses_external_libraries( list of libraries)
 ##      NCBI_add_definitions(         list of compiler definitions)
 ##      NCBI_add_include_directories( list of directories)
@@ -460,6 +461,32 @@ endmacro()
 #############################################################################
 macro(NCBI_uses_toolkit_libraries)
     set(NCBI_${NCBI_PROJECT}_NCBILIB ${NCBI_${NCBI_PROJECT}_NCBILIB} "${ARGV}")
+endmacro()
+
+#############################################################################
+macro(NCBI_optional_toolkit_libraries _comp)
+    set( _found FALSE)
+    if(NCBI_COMPONENT_${_comp}_FOUND OR NCBI_REQUIRE_${_comp}_FOUND)
+        set( _found TRUE)
+    endif()
+    if (_found)
+        set( _args ${ARGN})
+        set( _libs "")
+        foreach(_a IN LISTS _args)
+            if(DEFINED NCBI_COMPONENT_${_a}_FOUND OR DEFINED NCBI_REQUIRE_${_a}_FOUND)
+                if(NCBI_COMPONENT_${_a}_FOUND OR NCBI_REQUIRE_${_a}_FOUND)
+                    continue()
+                else()
+                    set( _found FALSE)
+                endif()
+            else()
+                set( _libs ${_libs} ${_a})
+            endif()
+        endforeach()
+    endif()
+    if (_found)
+        set(NCBI_${NCBI_PROJECT}_NCBILIB ${NCBI_${NCBI_PROJECT}_NCBILIB} ${_libs})
+    endif()
 endmacro()
 
 #############################################################################
