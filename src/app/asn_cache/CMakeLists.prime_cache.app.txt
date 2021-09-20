@@ -3,12 +3,8 @@
 NCBI_begin_app(prime_cache)
   NCBI_sources(prime_cache)
   NCBI_uses_toolkit_libraries(
-    asn_cache ncbi_xloader_genbank local_taxon taxon1 xobjread xobjutil
-  )
-  NCBI_optional_components(VDB)
-  if(NCBI_COMPONENT_VDB_FOUND)
-    NCBI_uses_toolkit_libraries(sraread)
-  endif()
+    asn_cache ncbi_xloader_genbank local_taxon taxon1 xobjread xobjutil)
+  NCBI_optional_toolkit_libraries(VDB sraread)
 
   NCBI_project_watchers(marksc2)
 NCBI_end_app()
