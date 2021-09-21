@@ -41,6 +41,7 @@
 #include <objtools/readers/idmapper.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objects/seqalign/seqalign__.hpp>
+#include <objects/seqres/seqres__.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/request_ctx.hpp>
 #include "vdb_user_agent.hpp"
@@ -756,6 +757,675 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
             }
         }
     }
+}
+
+
+struct SExpectedValue
+{
+    typedef Int8 TValue;
+    TSeqPos pos;
+    TValue value;
+};
+
+struct SValues
+{
+    typedef Int8 TValue;
+    typedef map<TSeqPos, TValue> TMap;
+    TMap values;
+
+    SValues()
+        {
+        }
+    template<size_t S>
+    explicit
+    SValues(const SExpectedValue (&exp)[S])
+        {
+            for ( size_t i = 0; i < S; ++i ) {
+                values[exp[i].pos] = exp[i].value;
+            }
+        }
+
+    TMap::const_iterator find(TSeqPos pos, bool allow_before = false) const
+        {
+            auto iter = values.upper_bound(pos);
+            _ASSERT(iter == values.end() || iter->first > pos);
+            if ( iter == values.begin() ) {
+                if ( allow_before )
+                    return iter;
+                return values.end();
+            }
+            --iter;
+            _ASSERT(iter->first <= pos);
+            return iter;
+        }
+    
+    TValue get(TSeqPos pos) const
+        {
+            auto iter = find(pos);
+            return iter == values.end()? 0: iter->second;
+        }
+    
+    void add_change(TSeqPos pos, TValue c)
+        {
+            if ( (values[pos] += c) == 0 ) {
+                values.erase(pos);
+            }
+        }
+
+    void convert_to_changes()
+        {
+            if ( !values.empty() ) {
+                auto iter = values.begin();
+                TValue v = iter++->second;
+                for ( ; iter != values.end(); ++iter ) {
+                    TValue nv = iter->second;
+                    iter->second = nv-v;
+                    v = nv;
+                }
+                _ASSERT(v == 0);
+            }
+        }
+    void convert_to_values()
+        {
+            TValue v = 0;
+            for ( auto& slot : values ) {
+                slot.second = (v += slot.second);
+            }
+            _ASSERT(v == 0);
+        }
+
+    void add_graph(const CSeq_graph& g)
+        {
+            BOOST_REQUIRE(!g.IsSetComp());
+            TSeqPos pos_from = g.GetLoc().GetInt().GetFrom();
+            TSeqPos pos_to = g.GetLoc().GetInt().GetTo();
+            BOOST_REQUIRE(pos_from <= pos_to);
+            convert_to_changes();
+            TValue prev_value = 0;
+            if ( g.GetGraph().IsByte() ) {
+                auto& vv = g.GetGraph().GetByte().GetValues();
+                for ( TSeqPos pos = pos_from; pos <= pos_to; ++pos ) {
+                    TValue v = vv[pos-pos_from];
+                    if ( v != prev_value ) {
+                        add_change(pos, v-prev_value);
+                        prev_value = v;
+                    }
+                }
+            }
+            else {
+                auto& vv = g.GetGraph().GetInt().GetValues();
+                for ( TSeqPos pos = pos_from; pos <= pos_to; ++pos ) {
+                    TValue v = vv[pos-pos_from];
+                    if ( v != prev_value ) {
+                        add_change(pos, v-prev_value);
+                        prev_value = v;
+                    }
+                }
+            }
+            if ( prev_value != 0 ) {
+                add_change(pos_to+1, -prev_value);
+            }
+            convert_to_values();
+        }
+
+    void print(const string& name, TSeqPos pos_from, TSeqPos pos_to) const
+        {
+            cout << name << "\n{\n";
+            for ( auto iter = find(pos_from, true);
+                  iter != values.end() && iter->first <= pos_to;
+                  ++iter ) {
+                cout << "    { "<<iter->first<<", "<<iter->second<<" },\n";
+            }
+            cout << "}" << endl;
+        }
+
+    void check(const SValues& expected_values, TSeqPos pos_from, TSeqPos pos_to) const
+        {
+            for ( auto iter1 = find(pos_from, true), iter2 = expected_values.find(pos_from, true);
+                  iter1 != values.end() && iter1->first <= pos_to;
+                  ++iter1, ++iter2 ) {
+                BOOST_REQUIRE(iter2 != expected_values.values.end());
+                BOOST_CHECK_EQUAL(iter1->first, iter2->first);
+                BOOST_CHECK_EQUAL(iter1->second, iter2->second);
+            }
+        }
+};
+
+static const SExpectedValue s_pileup_expected_values_a[] = {
+    { 185280, 0 },
+    { 187203, 1 },
+    { 187204, 0 },
+    { 187209, 9 },
+    { 187210, 0 },
+    { 187240, 7 },
+    { 187241, 1 },
+    { 187242, 0 },
+    { 187434, 1 },
+    { 187435, 0 },
+    { 187538, 1 },
+    { 187539, 0 },
+    { 187540, 1 },
+    { 187542, 0 },
+    { 187790, 1 },
+    { 187791, 0 }
+};
+static const SExpectedValue s_pileup_expected_values_c[] = {
+    { 186365, 0 },
+    { 187152, 7 },
+    { 187153, 0 },
+    { 187246, 1 },
+    { 187247, 0 },
+    { 187263, 5 },
+    { 187264, 0 },
+    { 187421, 10 },
+    { 187422, 0 },
+    { 187470, 12 },
+    { 187471, 0 },
+    { 187517, 10 },
+    { 187518, 0 },
+    { 187884, 1 },
+    { 187885, 0 }
+};
+static const SExpectedValue s_pileup_expected_values_g[] = {
+    { 186341, 0 },
+    { 187377, 13 },
+    { 187378, 0 },
+    { 187498, 14 },
+    { 187499, 0 },
+    { 187886, 6 },
+    { 187887, 0 }
+};
+static const SExpectedValue s_pileup_expected_values_t[] = {
+    { 185174, 0 },
+    { 187167, 1 },
+    { 187168, 0 },
+    { 187252, 4 },
+    { 187253, 0 },
+    { 187258, 4 },
+    { 187259, 0 },
+    { 187385, 4 },
+    { 187386, 0 },
+    { 187883, 1 },
+    { 187884, 0 },
+    { 188552, 6 },
+    { 188553, 0 }
+};
+static const SExpectedValue s_pileup_expected_values_i[] = {
+    { 186456, 0 },
+    { 187152, 1 },
+    { 187153, 0 },
+    { 187173, 1 },
+    { 187174, 0 },
+    { 187175, 1 },
+    { 187176, 0 },
+    { 187181, 5 },
+    { 187182, 0 },
+    { 187185, 1 },
+    { 187186, 0 },
+    { 187189, 2 },
+    { 187190, 0 },
+    { 187195, 1 },
+    { 187196, 0 },
+    { 187199, 3 },
+    { 187200, 0 },
+    { 187201, 1 },
+    { 187203, 0 },
+    { 187204, 1 },
+    { 187205, 2 },
+    { 187206, 0 },
+    { 187216, 1 },
+    { 187217, 0 },
+    { 187224, 1 },
+    { 187225, 0 },
+    { 187235, 4 },
+    { 187236, 1 },
+    { 187238, 0 },
+    { 187239, 2 },
+    { 187240, 1 },
+    { 187241, 0 },
+    { 187247, 4 },
+    { 187248, 0 },
+    { 187256, 2 },
+    { 187257, 0 },
+    { 187272, 4 },
+    { 187273, 0 },
+    { 187275, 1 },
+    { 187276, 0 },
+    { 187284, 1 },
+    { 187285, 0 },
+    { 187386, 1 },
+    { 187387, 0 },
+    { 187391, 1 },
+    { 187392, 0 },
+    { 187412, 2 },
+    { 187413, 0 },
+    { 187422, 1 },
+    { 187423, 0 },
+    { 187432, 1 },
+    { 187434, 4 },
+    { 187435, 0 },
+    { 187441, 1 },
+    { 187442, 8 },
+    { 187443, 0 },
+    { 187446, 1 },
+    { 187447, 0 },
+    { 187452, 2 },
+    { 187453, 0 },
+    { 187454, 4 },
+    { 187455, 0 },
+    { 187457, 2 },
+    { 187459, 0 },
+    { 187463, 1 },
+    { 187464, 0 },
+    { 187466, 1 },
+    { 187467, 0 },
+    { 187470, 1 },
+    { 187471, 0 },
+    { 187476, 1 },
+    { 187477, 0 },
+    { 187480, 1 },
+    { 187481, 0 },
+    { 187487, 1 },
+    { 187488, 0 },
+    { 187494, 1 },
+    { 187495, 0 },
+    { 187498, 3 },
+    { 187499, 0 },
+    { 187501, 1 },
+    { 187502, 0 },
+    { 187520, 1 },
+    { 187521, 0 },
+    { 187542, 1 },
+    { 187543, 0 },
+    { 187564, 1 },
+    { 187565, 0 },
+    { 187566, 1 },
+    { 187567, 0 },
+    { 187771, 1 },
+    { 187772, 0 },
+    { 187776, 2 },
+    { 187777, 0 },
+    { 187790, 3 },
+    { 187791, 0 },
+    { 187822, 5 },
+    { 187823, 0 },
+    { 187837, 1 },
+    { 187838, 0 },
+    { 187842, 1 },
+    { 187843, 0 },
+    { 187861, 2 },
+    { 187862, 0 },
+    { 187870, 1 },
+    { 187871, 0 },
+    { 187872, 1 },
+    { 187873, 0 },
+    { 187878, 1 },
+    { 187879, 0 }
+};
+static const SExpectedValue s_pileup_expected_values_m[] = {
+    { 186469, 0 },
+    { 187128, 18 },
+    { 187152, 10 },
+    { 187153, 18 },
+    { 187167, 17 },
+    { 187168, 18 },
+    { 187173, 17 },
+    { 187174, 18 },
+    { 187175, 17 },
+    { 187176, 18 },
+    { 187181, 13 },
+    { 187182, 18 },
+    { 187185, 17 },
+    { 187186, 18 },
+    { 187189, 16 },
+    { 187190, 18 },
+    { 187195, 17 },
+    { 187196, 18 },
+    { 187199, 15 },
+    { 187200, 18 },
+    { 187201, 17 },
+    { 187205, 16 },
+    { 187206, 18 },
+    { 187209, 9 },
+    { 187210, 18 },
+    { 187216, 17 },
+    { 187217, 18 },
+    { 187224, 17 },
+    { 187225, 18 },
+    { 187235, 14 },
+    { 187236, 17 },
+    { 187238, 18 },
+    { 187239, 16 },
+    { 187240, 10 },
+    { 187241, 17 },
+    { 187242, 18 },
+    { 187246, 17 },
+    { 187247, 14 },
+    { 187248, 18 },
+    { 187252, 14 },
+    { 187253, 18 },
+    { 187256, 16 },
+    { 187257, 18 },
+    { 187258, 14 },
+    { 187259, 18 },
+    { 187263, 13 },
+    { 187264, 18 },
+    { 187272, 14 },
+    { 187273, 18 },
+    { 187275, 17 },
+    { 187276, 19 },
+    { 187284, 18 },
+    { 187285, 19 },
+    { 187287, 1 },
+    { 187289, 0 },
+    { 187375, 12 },
+    { 187376, 13 },
+    { 187377, 0 },
+    { 187378, 13 },
+    { 187379, 19 },
+    { 187385, 15 },
+    { 187386, 18 },
+    { 187387, 19 },
+    { 187391, 18 },
+    { 187392, 19 },
+    { 187411, 20 },
+    { 187412, 18 },
+    { 187413, 20 },
+    { 187421, 10 },
+    { 187422, 19 },
+    { 187423, 20 },
+    { 187432, 19 },
+    { 187433, 20 },
+    { 187434, 16 },
+    { 187435, 21 },
+    { 187441, 20 },
+    { 187442, 13 },
+    { 187443, 21 },
+    { 187446, 20 },
+    { 187447, 21 },
+    { 187452, 19 },
+    { 187453, 21 },
+    { 187454, 17 },
+    { 187455, 21 },
+    { 187457, 19 },
+    { 187459, 21 },
+    { 187463, 20 },
+    { 187464, 21 },
+    { 187466, 20 },
+    { 187467, 21 },
+    { 187470, 8 },
+    { 187471, 21 },
+    { 187476, 20 },
+    { 187477, 21 },
+    { 187480, 20 },
+    { 187481, 21 },
+    { 187487, 20 },
+    { 187488, 21 },
+    { 187494, 20 },
+    { 187495, 21 },
+    { 187498, 4 },
+    { 187499, 21 },
+    { 187501, 20 },
+    { 187502, 21 },
+    { 187517, 11 },
+    { 187518, 21 },
+    { 187520, 20 },
+    { 187521, 21 },
+    { 187536, 20 },
+    { 187538, 19 },
+    { 187539, 20 },
+    { 187540, 19 },
+    { 187543, 20 },
+    { 187564, 19 },
+    { 187565, 20 },
+    { 187566, 19 },
+    { 187567, 20 },
+    { 187574, 18 },
+    { 187577, 1 },
+    { 187581, 0 },
+    { 187752, 2 },
+    { 187754, 15 },
+    { 187757, 16 },
+    { 187766, 15 },
+    { 187771, 14 },
+    { 187772, 15 },
+    { 187776, 13 },
+    { 187777, 15 },
+    { 187790, 11 },
+    { 187791, 15 },
+    { 187822, 10 },
+    { 187823, 15 },
+    { 187824, 14 },
+    { 187837, 13 },
+    { 187838, 14 },
+    { 187842, 13 },
+    { 187843, 14 },
+    { 187861, 12 },
+    { 187862, 13 },
+    { 187863, 12 },
+    { 187870, 11 },
+    { 187871, 12 },
+    { 187872, 11 },
+    { 187873, 12 },
+    { 187878, 11 },
+    { 187879, 12 },
+    { 187883, 11 },
+    { 187885, 12 },
+    { 187886, 6 },
+    { 187887, 12 },
+    { 187890, 2 },
+    { 187967, 1 }
+};
+
+BOOST_AUTO_TEST_CASE(CheckPileup)
+{
+    CBAMDataLoader::SetPileupGraphsParamDefault(true);
+
+    CRef<CObjectManager> om = sx_GetOM();
+
+    CBAMDataLoader::SLoaderParams params;
+    string bam_name, id, annot_name, pileup_name;
+    TSeqPos from, to;
+
+    CSeq_id_Handle main_idh;
+    {
+        string base_name = "hs108_sra.fil_sort.chr1";
+        annot_name = base_name;
+        pileup_name = base_name + " pileup graphs";
+        bam_name = sx_GetPath(base_name+".bam", "bam");
+        id = "NC_000001.11";
+        from = 187000;
+        to   = 188000;
+    }
+    params.m_BamFiles.push_back(CBAMDataLoader::SBamFileName(bam_name));
+
+    string loader_name =
+        CBAMDataLoader::RegisterInObjectManager(*om, params,
+                                                CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportBamLoaderName(loader_name);
+    string gbloader_name =
+        CGBDataLoader::RegisterInObjectManager(*om).GetLoader()->GetName();
+    CRef<CScope> scope_ref(new CScope(*om));
+    CScope& scope = *scope_ref;
+    scope.AddDefaults();
+    scope.AddDataLoader(loader_name);
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    if ( !main_idh ) {
+        main_idh = idh;
+    }
+
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetInt().SetId(*seqid);
+    loc->SetInt().SetFrom(from);
+    loc->SetInt().SetTo(to);
+    if ( annot_name.empty() ) {
+        annot_name = CDirEntry(bam_name).GetBase();
+    }
+    pileup_name = annot_name+PILEUP_NAME_SUFFIX;
+    sx_CheckNames(scope, *loc, pileup_name, true);
+    SAnnotSelector sel;
+    sel.SetSearchUnresolved();
+    sel.AddNamedAnnots(pileup_name);
+
+    SValues
+        values_a,
+        values_c,
+        values_g,
+        values_t,
+        values_i,
+        values_m;
+    SValues
+        expected_a(s_pileup_expected_values_a),
+        expected_c(s_pileup_expected_values_c),
+        expected_g(s_pileup_expected_values_g),
+        expected_t(s_pileup_expected_values_t),
+        expected_i(s_pileup_expected_values_i),
+        expected_m(s_pileup_expected_values_m);
+    for ( CGraph_CI git(scope, *loc, sel); git; ++git ) {
+        auto& g = git->GetOriginalGraph();
+        BOOST_REQUIRE(g.IsSetTitle());
+        if ( g.GetTitle() == "Number of A bases" ) {
+            values_a.add_graph(g);
+        }
+        if ( g.GetTitle() == "Number of C bases" ) {
+            values_c.add_graph(g);
+        }
+        if ( g.GetTitle() == "Number of G bases" ) {
+            values_g.add_graph(g);
+        }
+        if ( g.GetTitle() == "Number of T bases" ) {
+            values_t.add_graph(g);
+        }
+        if ( g.GetTitle() == "Number of inserts" ) {
+            values_i.add_graph(g);
+        }
+        if ( g.GetTitle() == "Number of matches" ) {
+            values_m.add_graph(g);
+        }
+    }
+    if ( 0 ) {
+        values_a.print("a:", from, to);
+        values_c.print("c:", from, to);
+        values_g.print("g:", from, to);
+        values_t.print("t:", from, to);
+        values_i.print("i:", from, to);
+        values_m.print("m:", from, to);
+    }
+    values_a.check(expected_a, from, to);
+    values_c.check(expected_c, from, to);
+    values_g.check(expected_g, from, to);
+    values_t.check(expected_t, from, to);
+    values_i.check(expected_i, from, to);
+    values_m.check(expected_m, from, to);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckPileupEq)
+{
+    CBAMDataLoader::SetPileupGraphsParamDefault(true);
+
+    CRef<CObjectManager> om = sx_GetOM();
+
+    CBAMDataLoader::SLoaderParams params;
+    string bam_name, id, annot_name, pileup_name;
+    TSeqPos from, to;
+
+    CSeq_id_Handle main_idh;
+    {
+        string base_name = "hs108_sra.fil_sort.chr1.1M.eq";
+        annot_name = base_name;
+        pileup_name = base_name + " pileup graphs";
+        bam_name = sx_GetPath(base_name+".bam", "bam");
+        id = "NC_000001.11";
+        from = 187000;
+        to   = 188000;
+    }
+    params.m_BamFiles.push_back(CBAMDataLoader::SBamFileName(bam_name));
+
+    string loader_name =
+        CBAMDataLoader::RegisterInObjectManager(*om, params,
+                                                CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportBamLoaderName(loader_name);
+    string gbloader_name =
+        CGBDataLoader::RegisterInObjectManager(*om).GetLoader()->GetName();
+    CRef<CScope> scope_ref(new CScope(*om));
+    CScope& scope = *scope_ref;
+    scope.AddDefaults();
+    scope.AddDataLoader(loader_name);
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    if ( !main_idh ) {
+        main_idh = idh;
+    }
+
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetInt().SetId(*seqid);
+    loc->SetInt().SetFrom(from);
+    loc->SetInt().SetTo(to);
+    if ( annot_name.empty() ) {
+        annot_name = CDirEntry(bam_name).GetBase();
+    }
+    pileup_name = annot_name+PILEUP_NAME_SUFFIX;
+    sx_CheckNames(scope, *loc, pileup_name, true);
+    SAnnotSelector sel;
+    sel.SetSearchUnresolved();
+    sel.AddNamedAnnots(pileup_name);
+
+    SValues
+        values_a,
+        values_c,
+        values_g,
+        values_t,
+        values_i,
+        values_m;
+    SValues
+        expected_a(s_pileup_expected_values_a),
+        expected_c(s_pileup_expected_values_c),
+        expected_g(s_pileup_expected_values_g),
+        expected_t(s_pileup_expected_values_t),
+        expected_i(s_pileup_expected_values_i),
+        expected_m(s_pileup_expected_values_m);
+    for ( CGraph_CI git(scope, *loc, sel); git; ++git ) {
+        auto& g = git->GetOriginalGraph();
+        BOOST_REQUIRE(g.IsSetTitle());
+        if ( g.GetTitle() == "Number of A bases" ) {
+            values_a.add_graph(g);
+        }
+        if ( g.GetTitle() == "Number of C bases" ) {
+            values_c.add_graph(g);
+        }
+        if ( g.GetTitle() == "Number of G bases" ) {
+            values_g.add_graph(g);
+        }
+        if ( g.GetTitle() == "Number of T bases" ) {
+            values_t.add_graph(g);
+        }
+        if ( g.GetTitle() == "Number of inserts" ) {
+            values_i.add_graph(g);
+        }
+        if ( g.GetTitle() == "Number of matches" ) {
+            values_m.add_graph(g);
+        }
+    }
+    if ( 0 ) {
+        values_a.print("a:", from, to);
+        values_c.print("c:", from, to);
+        values_g.print("g:", from, to);
+        values_t.print("t:", from, to);
+        values_i.print("i:", from, to);
+        values_m.print("m:", from, to);
+    }
+    values_a.check(expected_a, from, to);
+    values_c.check(expected_c, from, to);
+    values_g.check(expected_g, from, to);
+    values_t.check(expected_t, from, to);
+    values_i.check(expected_i, from, to);
+    values_m.check(expected_m, from, to);
 }
 
 
