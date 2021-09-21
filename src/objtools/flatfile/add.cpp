@@ -325,12 +325,13 @@ static void CreateSeqGap(objects::CSeq_literal& seq_lit, GapFeatsPtr gfp)
     if (!gfp->asn_linkage_evidence.empty())
         sgap.SetLinkage_evidence().swap(gfp->asn_linkage_evidence);
 
-    if (StringCmp(gfp->gap_type, "unknown") == 0 ||
-        StringCmp(gfp->gap_type, "within scaffold") == 0 ||
-        StringCmp(gfp->gap_type, "repeat within scaffold") == 0)
+    string gapType(gfp->gap_type);
+    if (gapType == "unknown"  ||  gapType == "within scaffold"  || gapType == "repeat within scaffold") {
         sgap.SetLinkage(1);
-    else
+    }
+    else {
         sgap.SetLinkage(0);
+    }
 }
 
 /**********************************************************/
@@ -664,7 +665,6 @@ static bool fta_ranges_to_hist(const objects::CGB_block::TExtra_accessions& extr
     char*     q;
     Char        ch1;
     Char        ch2;
-    Int4        i;
 
     if(extra_accs.empty())
         return false;
@@ -737,13 +737,11 @@ static bool fta_ranges_to_hist(const objects::CGB_block::TExtra_accessions& extr
     ch2 = *q;
     *q = '\0';
 
-    i = StringCmp(master, range);
+    bool ret = (master != range);
     *p = ch1;
     *q = ch2;
 
-    if(i == 0)
-        return false;
-    return true;
+    return ret;
 }
 
 

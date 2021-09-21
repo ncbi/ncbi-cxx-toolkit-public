@@ -1416,10 +1416,10 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
                                                    12 = KAAA00000000 */
         {
             if (ibp->is_contig &&
-                (ibp->wgssec[0] == '\0' || StringNCmp(ibp->wgssec, p, 4) == 0))
+                (ibp->wgssec.empty() || NStr::CommonSuffixSize(ibp->wgssec, p) >= 4))
                 unusual_wgs_msg = false;
-            if (ibp->wgssec[0] == '\0')
-                StringCpy(ibp->wgssec, p);
+            if (ibp->wgssec.empty())
+                ibp->wgssec = p;
         }
 
         sec_owner = GetNucAccOwner(p, ibp->is_tpa);

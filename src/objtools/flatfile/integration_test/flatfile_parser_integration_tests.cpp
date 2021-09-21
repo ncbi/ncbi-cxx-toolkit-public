@@ -43,19 +43,19 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-
-BOOST_AUTO_TEST_CASE(TestIstreamInterface)
+void StreamTestSingleCase( const string& testName)
 {
-    string test_data_dir {"test_data"};
+    cout << "-> StreamTest: Running " << testName << ".\n";
+    string test_data_dir{ "test_data" };
 
-    unique_ptr<Parser> pConfig(new Parser()); 
+    unique_ptr<Parser> pConfig(new Parser());
     pConfig->mode = Parser::EMode::Relaxed;
     pConfig->output_format = Parser::EOutput::Seqsubmit;
-    string format {"genbank"};
-    string source {"ncbi"};
+    string format{ "genbank" };
+    string source{ "lanl" };
     fta_set_format_source(*pConfig, format, source);
 
-    string filestub = CDir::ConcatPath(test_data_dir, "TP53_MH011443");
+    string filestub = CDir::ConcatPath(test_data_dir, testName);
     string inputFile = filestub + ".gb";
     BOOST_REQUIRE(CDirEntry(inputFile).Exists());
 
@@ -83,6 +83,17 @@ BOOST_AUTO_TEST_CASE(TestIstreamInterface)
     }
 
     BOOST_REQUIRE(success);
+}
+
+BOOST_AUTO_TEST_CASE(TestIstreamInterface)
+{
+    vector<string> testCases = {
+        "flat2asn-01", "flat2asn-02", "flat2asn-03",
+        "TP53_MH011443",
+    };
+    for (const auto& testCase: testCases) {
+        StreamTestSingleCase(testCase);
+    }
 }
 
 

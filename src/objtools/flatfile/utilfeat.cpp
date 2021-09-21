@@ -523,18 +523,13 @@ void MakeLocStrCompatible(std::string& str)
 }
 
 /**********************************************************/
-Char* location_to_string(const objects::CSeq_loc& loc)
+string location_to_string(const objects::CSeq_loc& loc)
 {
     std::string loc_str;
     loc.GetLabel(&loc_str);
 
     MakeLocStrCompatible(loc_str);
-
-    Char* ret = StringSave(loc_str.c_str());
-    if (ret != NULL && StringLen(ret) > 50)
-        ret[50] = '\0';
-
-    return ret;
+    return loc_str.substr(0, 50);
 }
 
 END_NCBI_SCOPE
