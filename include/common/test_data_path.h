@@ -38,6 +38,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <corelib/ncbisys.hpp> // for strdup
 #ifdef NCBI_OS_DARWIN
 #  include <sys/stat.h>
 #endif
@@ -57,11 +58,11 @@ static const char* NCBI_GetTestDataPath(void)
     }
     s_NcbiTestDataPath = getenv("NCBI_TEST_DATA");
     if (s_NcbiTestDataPath) {
-        return s_NcbiTestDataPath = strdup(s_NcbiTestDataPath);
+        return s_NcbiTestDataPath = NcbiSys_strdup(s_NcbiTestDataPath);
     }
     s_NcbiTestDataPath = getenv("NCBI_TEST_DATA_PATH");
     if (s_NcbiTestDataPath) {
-        return s_NcbiTestDataPath = strdup(s_NcbiTestDataPath);
+        return s_NcbiTestDataPath = NcbiSys_strdup(s_NcbiTestDataPath);
     }
 
     s_NcbiTestDataPath =
