@@ -194,6 +194,9 @@ for /f "tokens=1" %%a in ('dir /A:D /B  "%script_root%"') do (
 if not "%prebuilt_dir%"=="" (
   if not exist "%prebuilt_dir%%prebuilt_name%" (
     set prebuilt_dir=%script_root%\
+  )
+  if not exist "%prebuilt_dir%%prebuilt_name%" (
+    set prebuilt_dir=%script_root%\
     call :GET_PREBUILD_PATH
   )
 )
