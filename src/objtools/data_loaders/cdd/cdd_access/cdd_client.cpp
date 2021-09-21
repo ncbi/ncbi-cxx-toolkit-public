@@ -318,7 +318,7 @@ private:
 int CCDDClientPool::x_NextSerialNumber(void)
 {
     static CAtomicCounter_WithAutoInit s_Counter;
-    return s_Counter.Add(1);
+    return int(s_Counter.Add(1));
 }
 
 
