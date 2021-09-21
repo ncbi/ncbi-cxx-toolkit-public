@@ -1082,7 +1082,7 @@ void CBamDb::SPileupValues::add_bases_graph_range(TSeqPos pos, TSeqPos end,
         // use only low 5 bits of base character, it's sufficient to distinguish all letters
         // and allows to use 32-bit masks
         unsigned b = *src & 0x1f;
-        dst_match[0] += b == '=';
+        dst_match[0] += b == ('=' & 0x1f);
         add_bases_acgt(dst, b, bits, mask);
     }
 }
