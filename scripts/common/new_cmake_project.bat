@@ -11,9 +11,12 @@ set script_name=%~nx0
 set script_dir=%~dp0
 set tree_root=%initial_dir%
 
+set vsver=2019
 set build_root=%NCBI%\Lib\Ncbi\CXX_Toolkit
-set build_vs=vs2017.64
-set build_dir=cxx.cmake.stable
+set build_vs=vs%vsver%.64
+set build_pfx=cxx.cmake.
+set build_def=stable
+set build_dir=%build_pfx%%build_def%
 
 set repository=https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++
 set rep_inc=include
@@ -26,7 +29,7 @@ goto :RUN
 REM #########################################################################
 :USAGE
 echo USAGE:
-echo    %script_name% ^<name^> ^<type^> [builddir]
+echo    %script_name% ^<name^> ^<type^> [builddir] [OPTIONS]
 echo SYNOPSIS:
 echo   Create new CMake project which uses prebuilt NCBI C++ toolkit from a sample.
 echo ARGUMENTS:
@@ -34,7 +37,13 @@ echo   --help       -- print Usage
 echo   ^<name^>       -- project name (destination directory)
 echo   ^<type^>       -- project type
 echo   builddir     -- root directory of the pre-built NCBI C++ toolkit
-echo                   default: %build_dir%
+echo                   default: %build_def%
+echo OPTIONS:
+echo   --noconfig       -- skip configuring build
+echo   --with-vs=N      -- use Visual Studio N generator 
+echo          examples:    --with-vs=2019  (default)
+echo                       --with-vs=2017
+echo:
 if "%~1"=="" (
     echo:
     echo The following project types are available:
@@ -89,6 +98,52 @@ if not "%~1"=="" (
 )
 goto :eof
 
+
+:GET_BUILD_DIR
+set all=
+for /f "tokens=1" %%a in ('dir /A:D /B "%build_root%\%build_vs%\%build_pfx%*"') do (
+  set folder=%%a
+  set folder=!folder:%build_pfx%=!
+  set all=!all! !folder!
+)
+:GET_BUILD_DIR_AGAIN
+echo:
+echo Please pick a stability level
+echo Available:
+echo:
+for %%b in ( %all% ) do (
+echo %%b
+)
+echo:
+set /p stability=Desired stability ^(default = %build_def%^): 
+if "!stability!"=="" set stability=%build_def%
+if not exist "%build_root%\%build_vs%\%build_pfx%!stability!" (
+goto :GET_BUILD_DIR_AGAIN
+)
+set builddir=%build_root%\%build_vs%\%build_pfx%!stability!
+goto :eof
+
+
+:GET_PREBUILD_PATH
+for %%a in ( %prebuilds% ) do (
+  set build_def=%%a
+:GET_PREBUILD_PATH_AGAIN
+  echo:
+  echo Please pick a build configuration
+  echo Available:
+  echo:
+  for %%b in ( %prebuilds% ) do (
+    echo %%b
+  )
+  echo:
+  set /p build_config=Desired configuration ^(default = !build_def!^): 
+  if "!build_config!"=="" set build_config=!build_def!
+  if not exist %prebuilt_dir%\!build_config! goto :GET_PREBUILD_PATH_AGAIN
+  set prebuilt_name=!build_config!
+  goto :eof
+)
+goto :eof
+
 REM -------------------------------------------------------------------------
 :RUN
 
@@ -96,6 +151,10 @@ if "%1"=="" (
   set do_help=YES
 )
 set pos=0
+set unknown=
+set prj_name=
+set prj_type=
+set toolkit=
 set unknown=
 
 :PARSEARGS
@@ -105,7 +164,8 @@ if "%1"=="-help"               (set do_help=YES&  echo:&      goto :CONTINUEPARS
 if "%1"=="help"                (set do_help=YES&  echo:&      goto :CONTINUEPARSEARGS)
 if "%1"=="-h"                  (set do_help=YES&  echo:&      goto :CONTINUEPARSEARGS)
 if "%1"=="/?"                  (set do_help=YES&  echo:&      goto :CONTINUEPARSEARGS)
-if "%1"=="--with-vs"           (set build_vs=vs%~2.64& shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--noconfig"          (set noconfig=YES&      goto :CONTINUEPARSEARGS)
+if "%1"=="--with-vs"           (set vsver=%~2& set build_vs=vs%~2.64& shift& goto :CONTINUEPARSEARGS)
 if "%pos%"=="0" (
   set prj_name=%~1
 ) else if "%pos%"=="1" (
@@ -139,8 +199,12 @@ if "%prj_type%"=="" (
   call :ERROR Mandatory argument 'type' is missing
   goto :DONE
 )
+if exist %prj_name% (
+  call :ERROR File or directory %prj_name% already exists
+  goto :DONE
+)
 if "%toolkit%"=="" (
-  set builddir=%build_root%\%build_vs%\%build_dir%
+  call :GET_BUILD_DIR
 ) else (
   if exist "%toolkit%" (
     set builddir=%toolkit%
@@ -158,14 +222,25 @@ if not exist "%builddir%" (
     echo ERROR:  Directory not found: %toolkit% 1>&2
   )
   echo Try one of these:
-  dir /A:D /B "%build_root%\%build_vs%\cxx.cmake.*"
+  for /f "tokens=1" %%a in ('dir /A:D /B "%build_root%\%build_vs%\%build_pfx%*"') do (
+    set folder=%%a
+    set folder=!folder:%build_pfx%=!
+    echo !folder!
+  )
   goto :DONE
 )
 
-if exist %prj_name% (
-  call :ERROR File or directory %prj_name% already exists
-  goto :DONE
+set prebuilds=
+if "%noconfig%"=="" (
+  for /f "tokens=1" %%a in ('dir /A:D /B  %builddir%') do (
+    if exist "%builddir%\%%a\cmake\buildinfo" (
+      set prebuilds=!prebuilds! %%a
+    )
+  )
+  set prebuilt_dir=%builddir%
+  call :GET_PREBUILD_PATH
 )
+
 mkdir %prj_name%
 if not exist %prj_name% (
   call :ERROR Failed to create directory %prj_name%
@@ -204,6 +279,12 @@ REM #########################################################################
 echo Created project %prj_name%
 echo To configure:  cd %prj_name%^& %cfg_cfg% ^<arguments^>
 echo For help:      cd %prj_name%^& %cfg_cfg% --help
+
+if "%noconfig%"=="" (
+  echo ----------------------------------------------------------------------
+  call configure.bat --with-vs=%vsver% --with-prebuilt=%prebuilt_dir%\%prebuilt_name%
+)
+
 :DONE
 cd %initial_dir%
 endlocal
