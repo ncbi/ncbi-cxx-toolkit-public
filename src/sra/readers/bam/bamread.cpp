@@ -63,6 +63,10 @@
     throw NCBI_EXCEPTION2(exception_class, err_code, FORMAT(message), extra)
 #endif
 
+#if NCBI_SSE > 40
+# define USE_SSE
+#endif
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -1053,9 +1057,7 @@ void CBamDb::SPileupValues::decode_intron(TSeqPos len)
     _ASSERT(accumulate(&cc_intron[len], &cc_intron[m_RefToOpen-m_RefFrom+1], 0) == 0);
 }
 
-
-// all SSE instructions used here are from SSE 2 which is always available
-
+#ifdef USE_SSE
 static inline
 void add_bases_acgt(CBamDb::SPileupValues::SCountACGT* dst1, unsigned b, __m128i bits, __m128i mask)
 {
@@ -1065,25 +1067,48 @@ void add_bases_acgt(CBamDb::SPileupValues::SCountACGT* dst1, unsigned b, __m128i
     cnt = _mm_add_epi32(cnt, add);
     _mm_store_si128(dst, cnt);
 }
-
+#else
+static inline
+void add_bases_acgt(CBamDb::SPileupValues::SCountACGT* dst, unsigned b)
+{
+    dst->cc[CBamDb::SPileupValues::kStat_A] += b == ('A' & 0x1f);
+    dst->cc[CBamDb::SPileupValues::kStat_C] += b == ('C' & 0x1f);
+    dst->cc[CBamDb::SPileupValues::kStat_G] += b == ('G' & 0x1f);
+    dst->cc[CBamDb::SPileupValues::kStat_T] += b == ('T' & 0x1f);
+}
+static inline
+void add_bases_acgt_raw(CBamDb::SPileupValues::SCountACGT* dst, unsigned b)
+{
+    dst->cc[CBamDb::SPileupValues::kStat_A] += (b     ) & 1;
+    dst->cc[CBamDb::SPileupValues::kStat_C] += (b >> 1) & 1;
+    dst->cc[CBamDb::SPileupValues::kStat_G] += (b >> 2) & 1;
+    dst->cc[CBamDb::SPileupValues::kStat_T] += (b >> 3) & 1;
+}
+#endif
 
 void CBamDb::SPileupValues::add_bases_graph_range(TSeqPos pos, TSeqPos end,
                                                   CTempString read, TSeqPos read_pos)
 {
     _ASSERT(pos < end);
-    /* bits = Tth, Gth, Cth, and Ath bits */
-    __m128i bits = _mm_set_epi32(1<<('T'&0x1f), 1<<('G'&0x1f), 1<<('C'&0x1f), 1<<('A'&0x1f));
-    __m128i mask = _mm_set1_epi32(1);
     const char* src = read.data()+read_pos;
     SPileupValues::SCountACGT* dst = cc_acgt.data()+pos;
     SPileupValues::SCountACGT* dst_end = cc_acgt.data()+end;
     TCount* dst_match = cc_match.data()+pos;
+#ifdef USE_SSE
+    /* bits = Tth, Gth, Cth, and Ath bits */
+    __m128i bits = _mm_set_epi32(1<<('T'&0x1f), 1<<('G'&0x1f), 1<<('C'&0x1f), 1<<('A'&0x1f));
+    __m128i mask = _mm_set1_epi32(1);
+#endif
     for ( ; dst < dst_end; ++src, ++dst, ++dst_match ) {
         // use only low 5 bits of base character, it's sufficient to distinguish all letters
         // and allows to use 32-bit masks
         unsigned b = *src & 0x1f;
         dst_match[0] += b == ('=' & 0x1f);
+#ifdef USE_SSE
         add_bases_acgt(dst, b, bits, mask);
+#else
+        add_bases_acgt(dst, b);
+#endif
     }
 }
 
@@ -1111,13 +1136,14 @@ static inline TSeqPos align_to_16_up(TSeqPos size)
     return (size + 0xf) & ~0xf;
 }
 
-
 void CBamDb::SPileupValues::add_bases_graph_range_raw(TSeqPos pos, TSeqPos end,
                                                       CTempString read, TSeqPos read_pos)
 {
     _ASSERT(pos < end);
+#ifdef USE_SSE
     __m128i bits = _mm_set_epi32(0x100, 0x10, 0x4, 0x2); /* 8th, 4th, 2nd, and 1st bits */
     __m128i mask = _mm_set1_epi32(1);
+#endif
     const char* src = read.data()+read_pos/2;
     SPileupValues::SCountACGT* dst = cc_acgt.data()+pos;
     SPileupValues::SCountACGT* dst_end = cc_acgt.data()+end-1;
@@ -1126,7 +1152,11 @@ void CBamDb::SPileupValues::add_bases_graph_range_raw(TSeqPos pos, TSeqPos end,
         unsigned bb = Uint1(*src);
         unsigned b = get_raw_base1(bb);
         dst_match[0] += b == 0;
+#ifdef USE_SSE
         add_bases_acgt(dst, b, bits, mask);
+#else
+        add_bases_acgt_raw(dst, b);
+#endif
         
         ++src;
         ++dst;
@@ -1138,15 +1168,23 @@ void CBamDb::SPileupValues::add_bases_graph_range_raw(TSeqPos pos, TSeqPos end,
         unsigned b1 = get_raw_base1(bb);
         dst_match[0] += b0 == 0;
         dst_match[1] += b1 == 0;
+#ifdef USE_SSE
         add_bases_acgt(dst+0, b0, bits, mask);
         add_bases_acgt(dst+1, b1, bits, mask);
-        
+#else
+        add_bases_acgt_raw(dst+0, b0);
+        add_bases_acgt_raw(dst+1, b1);
+#endif
     }
     if ( dst <= dst_end ) {
         unsigned bb = Uint1(*src);
         unsigned b = get_raw_base0(bb);
         dst_match[0] += b == 0;
+#ifdef USE_SSE
         add_bases_acgt(dst, b, bits, mask);
+#else
+        add_bases_acgt_raw(dst, b);
+#endif
     }
 }
 
