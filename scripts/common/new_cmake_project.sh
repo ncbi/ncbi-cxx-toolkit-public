@@ -27,7 +27,7 @@ Usage()
 {
     cat <<EOF
 USAGE:
-  $script_name <name> <type> [builddir] 
+  $script_name <name> <type> [builddir] [OPTIONS] 
 SYNOPSIS:
   Create new CMake project which uses prebuilt NCBI C++ toolkit from a sample.
 ARGUMENTS:
@@ -36,6 +36,7 @@ ARGUMENTS:
   <type>       -- project type
   builddir     -- root directory of the pre-built NCBI C++ toolkit
                   default: $build_dir
+OPTIONS:
   --noconfig   -- skip configuring build
 EOF
 if test -z "$1"; then
@@ -158,6 +159,9 @@ fi
 if [ -z "$prj_type" ]; then
   Error "Mandatory argument 'branch' is missing"
 fi
+if [ -e $prj_name ]; then
+  Error File or directory $prj_name already exists
+fi
 if [ -z "$toolkit" ]; then
   Get_build_dir
 else
@@ -181,9 +185,40 @@ if [ ! -d "$builddir" ]; then
   exit 1
 fi
 
-if [ -e $prj_name ]; then
-  Error File or directory $prj_name already exists
+prebuilt_path="?"
+prebuilds=""
+if [ ! "$noconfig" = "yes" ]; then
+    tmp=`ls ${builddir}`
+    if [ -n "$tmp" ]; then
+        for d in $tmp; do
+            if [ -f ${builddir}/$d/cmake/buildinfo ]; then
+                prebuilds="${prebuilds} $d"
+            fi
+	    done
+        for d in $prebuilds; do
+            build_def=$d
+            break
+        done
+        all=`echo $prebuilds | tr ' ' '\n'`
+        while true; do
+            cat <<EOF
+
+Please pick a build configuration
+Available:
+
+$all
+
+EOF
+            read -p "Desired configuration (default = ${build_def}): " build_config
+            test -n "$build_config"  ||  build_config=${build_def}
+            prebuilt_path=${build_config}
+            if [ -d ${builddir}/${prebuilt_path} ]; then
+                break
+            fi
+        done
+    fi
 fi
+
 mkdir -p $prj_name
 if [ ! -d $prj_name ]; then
   Error Failed to create directory $prj_name
@@ -230,6 +265,6 @@ echo "To configure:  cd $prj_name; ./$cfg_cfg <arguments>"
 echo "For help:      cd $prj_name; ./$cfg_cfg --help"
 if [ ! "$noconfig" = "yes" ]; then
     echo ----------------------------------------------------------------------
-    ./$cfg_cfg --with-prebuilt=?
+    ./$cfg_cfg --with-prebuilt=${prebuilt_path}
 fi
 cd "$initial_dir"
