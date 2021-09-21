@@ -1147,7 +1147,19 @@ bool CWriteUtil::CompareLocations(
     //test3: loc-stop decending
     size_t lhs_stop = lhl.GetStop(ESeqLocExtremes::eExtreme_Positional);
     size_t rhs_stop = rhl.GetStop(ESeqLocExtremes::eExtreme_Positional);
-    return (lhs_stop > rhs_stop);
+    if (lhs_stop != rhs_stop) {
+        return (lhs_stop > rhs_stop);
+    }
+    // just break the tie somehow.
+    int lhs_strand = lhl.IsSetStrand() ? 10 : int(lhl.GetStrand());
+    int rhs_strand = rhl.IsSetStrand() ? 10 : int(rhl.GetStrand());
+    if (lhs_strand != rhs_strand) {
+        return lhs_strand > rhs_strand;
+    }
+    auto lhs_subtype = lhs.GetFeatSubtype();
+    auto rhs_subtype = rhs.GetFeatSubtype();
+    return (lhs_subtype > rhs_subtype);
+    //at this point - how are the features different?
 }
 
 
