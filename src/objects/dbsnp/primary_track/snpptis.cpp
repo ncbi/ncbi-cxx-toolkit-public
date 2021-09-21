@@ -64,7 +64,6 @@ const char* const kParam_WaitTime    = "WAIT_TIME";
 const char* const kParam_WaitTimeMul = "WAIT_TIME_MULTIPLIER";
 const char* const kParam_WaitTimeInc = "WAIT_TIME_INCREMENT";
 const char* const kParam_WaitTimeMax = "WAIT_TIME_MAX";
-const char* const kParam_Debug = "PTIS_DEBUG";
 const int kDefault_Retry = 5;
 const float kDefault_Timeout    = 1;
 const float kDefault_TimeoutMul = 1.5;
@@ -78,6 +77,15 @@ const int kDefault_Debug = 1; // errors only
 
 NCBI_PARAM_DECL(int, ID2SNP, PTIS_DEBUG);
 NCBI_PARAM_DEF(int, ID2SNP, PTIS_DEBUG, kDefault_Debug);
+
+static int GetDebugLevel()
+{
+#ifdef HAVE_LIBGRPC
+    return NCBI_PARAM_TYPE(ID2SNP, PTIS_DEBUG)::GetDefault();
+#else
+    return 0;
+#endif
+}
 #endif
 
 
@@ -99,16 +107,6 @@ bool CSnpPtisClient::IsEnabled()
     return !addr.empty();
 #else
     return false;
-#endif
-}
-
-
-static int GetDebugLevel()
-{
-#ifdef HAVE_LIBGRPC
-    return NCBI_PARAM_TYPE(ID2SNP, PTIS_DEBUG)::GetDefault();
-#else
-    return 0;
 #endif
 }
 
