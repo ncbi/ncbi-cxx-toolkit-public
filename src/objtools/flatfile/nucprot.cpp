@@ -269,8 +269,9 @@ static void ProtBlkFree(ProtBlkPtr pbp)
     pbp->feats.clear();
 
     pbp->entries.clear();
-    delete pbp->ibp;
-    pbp->ibp = nullptr;
+    //delete pbp->ibp;
+    //pbp->ibp = nullptr;
+    pbp->ibp->ids.clear();
 }
 
 /**********************************************************/
