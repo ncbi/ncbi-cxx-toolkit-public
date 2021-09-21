@@ -51,6 +51,7 @@
 #include <serial/objistrasnb.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
+#include <strstream>
 
 // generated classes
 
@@ -98,7 +99,7 @@ void CCache_blob::UnPack(CSeq_entry& entry) const
 {
     const TBlob& raw_data = GetBlob();
 
-    CNcbiIstrstream istr(&raw_data[0], raw_data.size() );
+    istrstream istr(&raw_data[0], raw_data.size() );
 
     CZipStreamDecompressor decomp;
     CCompressionIStream decomp_str(istr, &decomp);
@@ -111,7 +112,7 @@ void CCache_blob::UnPack(vector<unsigned char>& raw_bytes) const
 {
     const TBlob& raw_data = GetBlob();
 
-    CNcbiIstrstream istr(&raw_data[0], raw_data.size() );
+    istrstream istr(&raw_data[0], raw_data.size() );
 
     CZipStreamDecompressor decomp;
     CCompressionIStream decomp_str(istr, &decomp);
