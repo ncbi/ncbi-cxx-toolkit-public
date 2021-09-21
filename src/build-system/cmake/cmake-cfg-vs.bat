@@ -148,7 +148,6 @@ set PROJECT_LIST=
 set PROJECT_TAGS=
 set PROJECT_TARGETS=
 set PROJECT_DETAILS=
-set VISUAL_STUDIO=
 set INSTALL_PATH=
 set prebuilt_dir=
 set prebuilt_name=
@@ -255,6 +254,8 @@ if "%CMAKE_GENERATOR%"=="Visual Studio 15 2017 Win64" (
 if "%CMAKE_GENERATOR%"=="Visual Studio 14 2015 Win64" (
   set generator_name=VS2015
 )
+echo generator_name = %generator_name%
+exit /b 0
 
 set ttt=%tree_root%\%PROJECT_LIST%
 set ttt=%ttt:/=\%
