@@ -402,13 +402,13 @@ bool CAsnCacheStore::GetMultipleIndexEntries(const objects::CSeq_id_Handle & id,
 
 size_t CAsnCacheStore::GetGiCount() const
 {
-    std::set<long>    gi_set;
+    std::set<CAsnIndex::TGi>    gi_set;
 
     auto & index_ref = x_GetIndexRef();
     CBDB_FileCursor cursor( index_ref );
     cursor.SetCondition(CBDB_FileCursor::eFirst, CBDB_FileCursor::eLast);
     while (cursor.Fetch() == eBDB_Ok) {
-        long gi = index_ref.GetGi();
+        auto gi = index_ref.GetGi();
         gi_set.insert( gi );
     }
 
