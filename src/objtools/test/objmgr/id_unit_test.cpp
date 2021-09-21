@@ -1751,7 +1751,7 @@ BOOST_AUTO_TEST_CASE(TestGetBlobByIdSatMT)
 
     const int NQ = 20;
     vector<future<bool>> res;
-    for ( size_t i = 0; i < NQ; ++i ) {
+    for ( int i = 0; i < NQ; ++i ) {
         res.emplace_back(async(launch::async, [&](int add_sat_key)->bool {
             int sat_key = sat_key_0 + add_sat_key;
             CSeq_entry_Handle seh = scope->GetSeq_entryHandle(loader, s_MakeBlobId(sat, sat_key));
