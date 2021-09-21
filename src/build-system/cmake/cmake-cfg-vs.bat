@@ -89,6 +89,22 @@ for /f "tokens=* delims=" %%a in ('"%CMAKE_CMD%" --help') do (
 )
 goto :eof
 
+
+:PRINTGENERATOR
+if not "%~1"=="" (
+  if "%~1"=="Generators" (
+    set generatorfound=yes
+REM    echo ----------------------------------------------------------------------
+    goto :eof
+  )
+)
+if "%generatorfound%"=="" (
+  goto :eof
+)
+echo %~1
+goto :eof
+
+
 :ERROR
 call :USAGE
 if not "%~1"=="" (
@@ -96,6 +112,7 @@ if not "%~1"=="" (
   echo ERROR:  %* 1>&2
 )
 goto :eof
+
 
 :GET_PREBUILD_PATH
 for %%a in ( %prebuilds% ) do (
@@ -117,20 +134,6 @@ for %%a in ( %prebuilds% ) do (
 )
 goto :eof
 
-:PRINTGENERATOR
-if not "%~1"=="" (
-  if "%~1"=="Generators" (
-    set generatorfound=yes
-REM    echo ----------------------------------------------------------------------
-    goto :eof
-  )
-)
-if "%generatorfound%"=="" (
-  goto :eof
-)
-echo %~1
-goto :eof
-
 
 :RUN
 REM #########################################################################
@@ -138,6 +141,19 @@ REM parse arguments
 
 set do_help=
 set unknown=
+set PROJECT_COMPONENTS=
+set PROJECT_FEATURES=
+set BUILD_ROOT=
+set PROJECT_LIST=
+set PROJECT_TAGS=
+set PROJECT_TARGETS=
+set PROJECT_DETAILS=
+set VISUAL_STUDIO=
+set INSTALL_PATH=
+set prebuilt_dir=
+set prebuilt_name=
+set unknown=
+
 :PARSEARGS
 if "%~1"=="" goto :ENDPARSEARGS
 if "%~1"==%1             (set unknown=%unknown% ?%~1?& goto :CONTINUEPARSEARGS)
@@ -170,7 +186,8 @@ shift
 goto :PARSEARGS
 :ENDPARSEARGS
 
-for /f "tokens=1" %%a in ('dir /A:D /B  %script_root%') do (
+set prebuilds=
+for /f "tokens=1" %%a in ('dir /A:D /B  "%script_root%"') do (
   if exist %script_root%\%%a\cmake\buildinfo (
     set prebuilds=!prebuilds! %%a
   )
