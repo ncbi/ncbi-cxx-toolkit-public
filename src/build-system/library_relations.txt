@@ -1859,8 +1859,8 @@ xid_increment needs xid_utils
 xid_increment needs3party $(GENBANK_THIRD_PARTY_LIBS)
 xid_mapper needs $(SOBJMGR_LIBS)
 xid_pubseqos needs $(COMPRESS_LIBS)
-xid_pubseqos needs $(CONNEXT)
 xid_pubseqos needs dbapi_driver
+xid_pubseqos needs psloader
 xid_pubseqos needs xcgi
 xid_pubseqos needs xmlwrapp
 xid_pubseqos needs xobjutil
@@ -1869,8 +1869,8 @@ xid_stream_cass needs $(COMPRESS_LIBS)
 xid_stream_cass needs psg_cassandra
 xid_stream_cass needs xutil
 xid_utils needs $(COMPRESS_LIBS)
-xid_utils needs $(CONNEXT)
 xid_utils needs dbapi_driver
+xid_utils needs psloader
 xid_utils needs xcgi
 xid_utils needs xmlwrapp
 xid_utils needs xobjutil
