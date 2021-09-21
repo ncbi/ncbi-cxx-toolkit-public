@@ -66,23 +66,23 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-static CRef<CSeq_id> s_GetId(size_t i)
+static CRef<CSeq_id> s_GetId(int i)
 {
     CRef<CSeq_id> id(new CSeq_id());
-    id->SetGi(TIntId(i+1));
+    id->SetGi(i+1);
     return id;
 }
 
 
-static CRef<CSeq_id> s_GetId2(size_t i)
+static CRef<CSeq_id> s_GetId2(int i)
 {
     CRef<CSeq_id> id(new CSeq_id());
-    id->SetLocal().SetId(TIntId(i+1));
+    id->SetLocal().SetId(i+1);
     return id;
 }
 
 
-static CRef<CSeq_entry> s_GetEntry(size_t i, TSeqPos length = 2)
+static CRef<CSeq_entry> s_GetEntry(int i, TSeqPos length = 2)
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
     CBioseq& seq = entry->SetSeq();
@@ -97,7 +97,7 @@ static CRef<CSeq_entry> s_GetEntry(size_t i, TSeqPos length = 2)
 }
 
 
-static CRef<CSeq_entry> s_GetDeltaSeqEntry(size_t i, size_t seg_i)
+static CRef<CSeq_entry> s_GetDeltaSeqEntry(int i, int seg_i)
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
     CBioseq& seq = entry->SetSeq();
@@ -676,14 +676,14 @@ static vector<size_t> s_GetFeatParallel(size_t THREADS,
 
 BOOST_AUTO_TEST_CASE(TestReResolveMT1)
 {
-    const size_t COUNT = 1000;
+    const int COUNT = 1000;
     const size_t THREADS = 10;
     
     // check re-resolve after adding
     CScope scope(*CObjectManager::GetInstance());
     vector< CRef<CSeq_id> > ids, ids2;
     vector< CRef<CSeq_entry> > entries;
-    for ( size_t i = 0; i < COUNT; ++i ) {
+    for ( int i = 0; i < COUNT; ++i ) {
         ids.push_back(s_GetId(i));
         ids2.push_back(s_GetId2(i));
         entries.push_back(s_GetEntry(i));
@@ -691,7 +691,7 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT1)
     for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, 0u);
     }
-    for ( size_t i = 0; i < COUNT; ++i ) {
+    for ( int i = 0; i < COUNT; ++i ) {
         scope.AddTopLevelSeqEntry(*entries[i]);
     }
     for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
@@ -702,14 +702,14 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT1)
 
 BOOST_AUTO_TEST_CASE(TestReResolveMT2)
 {
-    const size_t COUNT = 1000;
+    const int COUNT = 1000;
     const size_t THREADS = 10;
     
     // check re-resolve after adding
     CScope scope(*CObjectManager::GetInstance());
     vector< CRef<CSeq_id> > ids, ids2;
     vector< CRef<CSeq_entry> > entries;
-    for ( size_t i = 0; i < COUNT; ++i ) {
+    for ( int i = 0; i < COUNT; ++i ) {
         ids.push_back(s_GetId(i));
         ids2.push_back(s_GetId2(i));
         entries.push_back(s_GetEntry(i));
@@ -718,21 +718,21 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT2)
         BOOST_REQUIRE_EQUAL(c, 0u);
     }
     vector<CSeq_entry_EditHandle> sehs;
-    for ( size_t i = 0; i < COUNT; ++i ) {
+    for ( int i = 0; i < COUNT; ++i ) {
         sehs.push_back(scope.AddTopLevelSeqEntry(*entries[i]).GetEditHandle());
     }
     for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, COUNT);
     }
     vector<CBioseq_EditHandle> bhs;
-    for ( size_t i = 0; i < COUNT; ++i ) {
+    for ( int i = 0; i < COUNT; ++i ) {
         bhs.push_back(sehs[i].SetSeq());
         sehs[i].SelectNone();
     }
     for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, 0u);
     }
-    for ( size_t i = 0; i < COUNT; ++i ) {
+    for ( int i = 0; i < COUNT; ++i ) {
         sehs[i].SelectSeq(bhs[i]);
     }
     for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
@@ -743,14 +743,14 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT2)
 
 BOOST_AUTO_TEST_CASE(TestReResolveMT3)
 {
-    const size_t COUNT = 1000;
+    const int COUNT = 1000;
     const size_t THREADS = 10;
     
     // check re-resolve after adding
     CScope scope(*CObjectManager::GetInstance());
     vector< CRef<CSeq_id> > ids, ids2;
     vector< CRef<CSeq_entry> > entries;
-    for ( size_t i = 0; i < COUNT; ++i ) {
+    for ( int i = 0; i < COUNT; ++i ) {
         ids.push_back(s_GetId(i));
         ids2.push_back(s_GetId2(i));
         entries.push_back(s_GetEntry(i));
@@ -759,18 +759,18 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT3)
         BOOST_REQUIRE_EQUAL(c, 0u);
     }
     vector<CSeq_entry_EditHandle> sehs;
-    for ( size_t i = 0; i < COUNT; ++i ) {
+    for ( int i = 0; i < COUNT; ++i ) {
         sehs.push_back(scope.AddTopLevelSeqEntry(*entries[i]).GetEditHandle());
     }
     vector<CBioseq_EditHandle> bhs;
-    for ( size_t i = 0; i < COUNT; ++i ) {
+    for ( int i = 0; i < COUNT; ++i ) {
         bhs.push_back(sehs[i].SetSeq());
         sehs[i].SelectNone();
     }
     for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
         BOOST_REQUIRE_EQUAL(c, 0u);
     }
-    for ( size_t i = 0; i < COUNT; ++i ) {
+    for ( int i = 0; i < COUNT; ++i ) {
         sehs[i].SelectSeq(bhs[i]);
     }
     for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
@@ -781,7 +781,7 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT3)
 
 BOOST_AUTO_TEST_CASE(TestReResolveMT4)
 {
-    const size_t COUNT = 10000;
+    const int COUNT = 10000;
     const size_t THREADS = 40;
     
     // check re-resolve after adding
@@ -790,11 +790,11 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT4)
     vector< CRef<CSeq_entry> > entries;
     vector< CRef<CSeq_annot> > annots;
     size_t total_feats = 0;
-    for ( size_t i = 0; i < COUNT; ++i ) {
+    for ( int i = 0; i < COUNT; ++i ) {
         ids.push_back(s_GetId(i));
         ids2.push_back(s_GetId2(i));
         entries.push_back(s_GetEntry(i));
-        size_t count = i%5+1;
+        int count = i%5+1;
         annots.push_back(s_GetAnnot(*ids.back(), count));
         total_feats += count;
     }
@@ -807,7 +807,7 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT4)
         BOOST_REQUIRE_EQUAL(c, 0u);
     }
     LOG_POST("Adding sequences and annots");
-    for ( size_t i = 0; i < COUNT; ++i ) {
+    for ( int i = 0; i < COUNT; ++i ) {
         scope.AddTopLevelSeqEntry((const CSeq_entry&)*entries[i]);
         scope.AddSeq_annot(*annots[i]);
     }
