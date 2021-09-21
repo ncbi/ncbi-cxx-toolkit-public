@@ -1090,7 +1090,7 @@ static CRef<objects::COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop
         else if(taxon.GetTaxIdByOrgRef(org_ref) < ZERO_TAX_ID)
         {
             if((pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) &&
-               ibp->is_pat && ibp->taxid > 0 && ibp->organism != NULL)
+               ibp->is_pat && ibp->taxid > 0 && !ibp->organism.empty())
             {
                 ret = fta_fix_orgref_byid(pp, ibp->taxid, &ibp->drop, true);
                 if (ret.NotEmpty() && ret->IsSetTaxname() &&

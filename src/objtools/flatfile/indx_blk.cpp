@@ -735,14 +735,12 @@ indexblk_struct::indexblk_struct() :
     is_tls(false),
     is_tpa_wgs_con(false),
     tsa_allowed(false),
-    moltype(NULL),
     gaps(NULL),
     secaccs(NULL),
     xip(NULL),
     embl_new_ID(false),
     env_sample_qual(false),
     is_prot(false),
-    organism(NULL),
     taxid(0),
     no_gc_warning(false),
     qsoffset(0),
@@ -754,7 +752,6 @@ indexblk_struct::indexblk_struct() :
     specialist_db(false),
     inferential(false),
     experimental(false),
-    submitter_seqid(NULL),
     ppp(NULL)
 {
     acnum[0] = 0;

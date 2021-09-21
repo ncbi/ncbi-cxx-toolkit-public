@@ -52,7 +52,7 @@ bool    GetGenomeInfo(objects::CBioSource& bsp, const char* bptr);
 void    MaybeCutGbblockSource(TEntryList& seq_entries);
 
 void MakeLocStrCompatible(std::string& str);
-char* location_to_string(const objects::CSeq_loc& loc);
+string location_to_string(const objects::CSeq_loc& loc);
 
 END_NCBI_SCOPE
 

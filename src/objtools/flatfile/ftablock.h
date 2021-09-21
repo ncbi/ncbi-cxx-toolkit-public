@@ -214,7 +214,7 @@ typedef struct indexblk_struct {
                                            "is_tpa" are TRUE */
     bool               tsa_allowed;
     LocusCont          lc;
-    char*            moltype;         /* the value of /mol_type qual */
+    string            moltype;         /* the value of /mol_type qual */
     GapFeatsPtr        gaps;
 
 //    list<string>       secondary_accessions;
@@ -225,7 +225,7 @@ typedef struct indexblk_struct {
                                            feature has /environmental_sample
                                            qualifier */
     bool               is_prot;
-    char*            organism;        /* The value of /organism qualifier */
+    string            organism;        /* The value of /organism qualifier */
     Int4               taxid;           /* The value gotten from source feature
                                            /db_xref qualifier if any */
     bool               no_gc_warning;   /* If TRUE then suppress
@@ -238,10 +238,10 @@ typedef struct indexblk_struct {
     bool               got_plastid;     /* Set to TRUE if there is at least
                                            one /organelle qual beginning
                                            with "plastid" */
-    Char               wgssec[100];     /* Reserved buffer for WGS master or
+    string               wgssec;     /* Reserved buffer for WGS master or
                                            project accession as secondary */
-    Int4               gc_genomic;      /* Genomic Genetic code from OrgRef */
-    Int4               gc_mito;         /* Mitochondrial Genetic code */
+    int               gc_genomic;      /* Genomic Genetic code from OrgRef */
+    int               gc_mito;         /* Mitochondrial Genetic code */
     TKeywordList       keywords;        /* All keywords from a flat record */
     bool               assembly;        /* TRUE for TPA:assembly in
                                            KEYWORDS line */
@@ -251,7 +251,7 @@ typedef struct indexblk_struct {
                                            KEYWORDS line */
     bool               experimental;    /* TRUE for TPA:experimental in
                                            KEYWORDS line */
-    char*            submitter_seqid;
+    string            submitter_seqid;
     Parser *ppp;
 
     indexblk_struct();
@@ -264,7 +264,7 @@ typedef struct _fta_operon {
 
     CConstRef<objects::CSeq_loc> location;   /* Do not free! Just a pointer. */
 
-    char*                 strloc;     /* String value of location. */
+    string                 strloc;     /* String value of location. */
     bool                    operon_feat;
     bool                    ret;
     struct _fta_operon *next;
@@ -272,7 +272,6 @@ typedef struct _fta_operon {
     _fta_operon() :
         featname(nullptr),
         operon(nullptr),
-        strloc(nullptr),
         operon_feat(false),
         ret(false),
         next(nullptr)

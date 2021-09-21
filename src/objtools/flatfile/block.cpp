@@ -129,9 +129,6 @@ void FreeIndexblk(IndexblkPtr ibp)
     if(ibp == NULL)
         return;
 
-    if (ibp->moltype != NULL)
-        MemFree(ibp->moltype);
-
     if (ibp->gaps != NULL)
         GapFeatsFree(ibp->gaps);
 
@@ -140,12 +137,6 @@ void FreeIndexblk(IndexblkPtr ibp)
 
     if (ibp->xip != NULL)
         XMLIndexFree(ibp->xip);
-
-    if (ibp->organism != NULL)
-        MemFree(ibp->organism);
-
-    if (ibp->submitter_seqid != NULL)
-        MemFree(ibp->submitter_seqid);
 
     delete ibp;
 }

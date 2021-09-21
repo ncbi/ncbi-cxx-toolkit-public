@@ -1433,13 +1433,13 @@ static void fta_fake_gbparse_err_handler(const Char*, const Char*)
 }
 
 /**********************************************************/
-static Char* location_to_string_or_unknown(const objects::CSeq_loc& loc)
+string location_to_string_or_unknown(const objects::CSeq_loc& loc)
 {
-    Char* ret = location_to_string(loc);
-    if (ret == NULL)
-        ret = StringSave("unknown location");
+    auto ret = location_to_string(loc);
+    if (!ret.empty())
+        return ret;
 
-    return ret;
+    return "unknown location";
 }
 
 /**********************************************************/
@@ -1496,14 +1496,12 @@ static CRef<objects::CSeq_loc> GetTrnaAnticodon(const objects::CSeq_feat& feat, 
 
     if (ret.Empty())
     {
-        p = location_to_string_or_unknown(feat.GetLocation());
+        string loc = location_to_string_or_unknown(feat.GetLocation());
 
         ErrPostEx(SEV_ERROR, ERR_FEATURE_InvalidAnticodonPos,
                   "Invalid position element for an /anticodon qualifier : \"%s\" : qualifier dropped : feature location \"%s\".",
-                  loc_str, (p == NULL) ? "unknown" : p);
+                  loc_str, (loc.empty()) ? "unknown" : loc);
 
-        if (p != NULL)
-            MemFree(p);
         MemFree(loc_str);
 
         return ret;
@@ -1512,19 +1510,16 @@ static CRef<objects::CSeq_loc> GetTrnaAnticodon(const objects::CSeq_feat& feat, 
     range = objects::sequence::GetLength(*ret, &GetScope());
     if (range != 3)
     {
-        p = location_to_string_or_unknown(feat.GetLocation());
+        string loc = location_to_string_or_unknown(feat.GetLocation());
 
         if (range == 4)
             ErrPostEx(SEV_WARNING, ERR_FEATURE_FourBaseAntiCodon,
                       "tRNA feature at \"%s\" has anticodon with location spanning four bases: \"%s\". Cannot generate corresponding codon value from the DNA sequence.",
-                      (p == NULL) ? "unknown" : p, loc_str);
+                      loc.empty() ? "unknown" : loc, loc_str);
         else
             ErrPostEx(SEV_ERROR, ERR_FEATURE_StrangeAntiCodonSize,
                       "tRNA feature at \"%s\" has anticodon of an unusual size: \"%s\". Cannot generate corresponding codon value from the DNA sequence.",
-                      (p == NULL) ? "unknown" : p, loc_str);
-
-        if (p != NULL)
-            MemFree(p);
+                loc.empty() ? "unknown" : loc, loc_str);
     }
 
     // Comparing two locations ignoring their IDs
@@ -1534,16 +1529,13 @@ static CRef<objects::CSeq_loc> GetTrnaAnticodon(const objects::CSeq_feat& feat, 
 
     if (xrange != anticodon_range)
     {
-        p = location_to_string_or_unknown(feat.GetLocation());
+        string loc = location_to_string_or_unknown(feat.GetLocation());
 
         ErrPostEx(SEV_ERROR, ERR_FEATURE_BadAnticodonLoc,
                   "Anticodon location \"%s\" does not fall within tRNA feature at \"%s\".",
-                  loc_str, (p == NULL) ? "unknown" : p);
+                  loc_str, loc.empty() ? "unknown" : loc);
 
-        if(p != NULL)
-            MemFree(p);
         MemFree(loc_str);
-
         ret.Reset();
         return ret;
     }
@@ -3522,7 +3514,7 @@ static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, Indexbl
 
             tfop->operon_feat = false;
             tfop->ret = true;
-            tfop->strloc = NULL;
+            tfop->strloc.clear();
             tfop->next = NULL;
             if(StringCmp(tfop->featname, "operon") == 0)
                 tfop->operon_feat = true;
@@ -3570,13 +3562,12 @@ static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, Indexbl
 
         if (count == 0 && imp_feat.IsSetKey() && imp_feat.GetKey() == "operon")
         {
-            p = location_to_string_or_unknown((*feat)->GetLocation());
+            string loc = location_to_string_or_unknown((*feat)->GetLocation());
 
             ErrPostEx(SEV_REJECT, ERR_FEATURE_MissingOperonQual,
-                      "The operon feature at \"%s\" lacks an /operon qualifier.",
-                      p);
+                "The operon feature at \"%s\" lacks an /operon qualifier.",
+                loc);
 
-            MemFree(p);
             pp->operon->ret = false;
         }
     }
@@ -5340,30 +5331,22 @@ static bool fta_check_ncrna(const objects::CSeq_feat& feat)
 
         if (!(*qual)->IsSetVal() || (*qual)->GetVal().empty())
         {
-            p = location_to_string_or_unknown(feat.GetLocation());
+            string loc = location_to_string_or_unknown(feat.GetLocation());
 
             ErrPostEx(SEV_REJECT, ERR_FEATURE_ncRNA_class,
                       "Feature \"ncRNA\" at location \"%s\" has an empty /ncRNA_class qualifier.",
-                      (p == NULL) ? "unknown" : p);
-
-            if(p != NULL)
-                MemFree(p);
-
+                      loc.empty() ? "unknown" : loc);
             stop = true;
             break;
         }
 
         if (MatchArrayString(ncRNA_class_values, (*qual)->GetVal().c_str()) < 0)
         {
-            p = location_to_string_or_unknown(feat.GetLocation());
+            string loc = location_to_string_or_unknown(feat.GetLocation());
 
             ErrPostEx(SEV_REJECT, ERR_FEATURE_ncRNA_class,
                       "Feature \"ncRNA\" at location \"%s\" has an invalid /ncRNA_class qualifier: \"%s\".",
-                      (p == NULL) ? "unknown" : p, (*qual)->GetVal().c_str());
-
-            if (p != NULL)
-                MemFree(p);
-
+                      loc.empty() ? "unknown" : loc, (*qual)->GetVal().c_str());
             stop = true;
             break;
         }
@@ -5375,15 +5358,12 @@ static bool fta_check_ncrna(const objects::CSeq_feat& feat)
     if (count == 1)
         return true;
 
-    p = location_to_string_or_unknown(feat.GetLocation());
+    string loc = location_to_string_or_unknown(feat.GetLocation());
 
     ErrPostEx(SEV_REJECT, ERR_FEATURE_ncRNA_class,
               "Feature \"ncRNA\" at location \"%s\" %s /ncRNA_class qualifier.",
-              (p == NULL) ? "unknown" : p,
+              loc.empty() ? "unknown" : loc,
               (count == 0) ? "lacks the mandatory" : "has more than one");
-
-    if(p != NULL)
-        MemFree(p);
 
     return false;
 }
@@ -5424,21 +5404,19 @@ static void fta_check_artificial_location(objects::CSeq_feat& feat, char* key)
         }
         else
         {
-            Char* cstr = location_to_string_or_unknown(feat.GetLocation());
-            std::string loc_str = cstr;
-            MemFree(cstr);
+            auto loc_str = location_to_string_or_unknown(feat.GetLocation());
 
             if (val.empty())
                 ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidArtificialLoc,
                           "Encountered empty /artificial_location qualifier : Feature \"%s\" : Location \"%s\". Qualifier dropped.",
                           (key == NULL || *key == '\0') ? "unknown" : key,
-                          loc_str.empty() ? "unknown" : loc_str.c_str());
+                          loc_str.empty() ? "unknown" : loc_str);
             else
                 ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidArtificialLoc,
                           "Value \"%s\" is not legal for the /artificial_location qualifier : Feature \"%s\" : Location \"%s\". Qualifier dropped.",
                           val.c_str(),
                           (key == NULL || *key == '\0') ? "unknown" : key,
-                          loc_str.empty() ? "unknown" : loc_str.c_str());
+                          loc_str.empty() ? "unknown" : loc_str);
         }
 
         feat.SetQual().erase(qual);
@@ -5470,13 +5448,10 @@ static bool fta_check_mobile_element(const objects::CSeq_feat& feat)
     if (found)
         return true;
 
-    Char* cstr = location_to_string_or_unknown(feat.GetLocation());
-    std::string loc_str = cstr;
-    MemFree(cstr);
-
+    auto loc_str = location_to_string_or_unknown(feat.GetLocation());
     ErrPostEx(SEV_REJECT, ERR_FEATURE_RequiredQualifierMissing,
               "Mandatory qualifier /mobile_element_type is absent or has no value : Feature \"mobile_element\" : Location \"%s\". Entry dropped.",
-              loc_str.empty() ? "unknown" : loc_str.c_str());
+              loc_str.empty() ? "unknown" : loc_str);
 
     return false;
 }
@@ -5761,7 +5736,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
 
 /**********************************************************/
 static void fta_create_wgs_dbtag(objects::CBioseq &bioseq,
-                                 char* submitter_seqid,
+                                 const string& submitter_seqid,
                                  char* prefix, Int4 seqtype)
 {
     char* dbname;
@@ -5792,7 +5767,7 @@ static void fta_create_wgs_seqid(objects::CBioseq &bioseq,
     Int4        seqtype;
     Int4        i;
 
-    if(!ibp || !ibp->submitter_seqid)
+    if(!ibp ||  ibp->submitter_seqid.empty())
         return;
 
     prefix = NULL;
@@ -6385,7 +6360,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             q = (char*) "???";
 
         same = true;
-        if(StringCmp(ibp->moltype, "genomic DNA") == 0)
+        if(ibp->moltype == "genomic DNA")
         {
             biomol = Seq_descr_GIBB_mol_genomic;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_dna);
@@ -6399,7 +6374,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "DNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "genomic RNA") == 0)
+        else if(ibp->moltype == "genomic RNA")
         {
             biomol = Seq_descr_GIBB_mol_genomic;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
@@ -6412,7 +6387,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "RNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "mRNA") == 0)
+        else if(ibp->moltype == "mRNA")
         {
             biomol = Seq_descr_GIBB_mol_mRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
@@ -6425,7 +6400,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "mRNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "tRNA") == 0)
+        else if(ibp->moltype == "tRNA")
         {
             biomol = Seq_descr_GIBB_mol_tRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
@@ -6438,7 +6413,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "tRNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "rRNA") == 0)
+        else if(ibp->moltype == "rRNA")
         {
             biomol = Seq_descr_GIBB_mol_rRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
@@ -6451,7 +6426,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "rRNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "snoRNA") == 0)
+        else if(ibp->moltype == "snoRNA")
         {
             biomol = Seq_descr_GIBB_mol_snoRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
@@ -6464,7 +6439,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "snoRNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "snRNA") == 0)
+        else if(ibp->moltype == "snRNA")
         {
             biomol = Seq_descr_GIBB_mol_snRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
@@ -6477,7 +6452,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "snRNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "scRNA") == 0)
+        else if(ibp->moltype == "scRNA")
         {
             biomol = Seq_descr_GIBB_mol_scRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
@@ -6490,7 +6465,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "scRNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "pre-RNA") == 0)
+        else if(ibp->moltype == "pre-RNA")
         {
             biomol = Seq_descr_GIBB_mol_preRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
@@ -6503,7 +6478,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "RNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "pre-mRNA") == 0)
+        else if(ibp->moltype == "pre-mRNA")
         {
             biomol = Seq_descr_GIBB_mol_preRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
@@ -6516,7 +6491,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "RNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "other RNA") == 0)
+        else if(ibp->moltype == "other RNA")
         {
             if(is_syn)
                 biomol = Seq_descr_GIBB_mol_other_genetic;
@@ -6532,7 +6507,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "RNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "other DNA") == 0)
+        else if(ibp->moltype == "other DNA")
         {
             if(is_syn)
                 biomol = Seq_descr_GIBB_mol_other_genetic;
@@ -6548,7 +6523,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "DNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "unassigned RNA") == 0)
+        else if(ibp->moltype == "unassigned RNA")
         {
             if(is_syn)
                 biomol = Seq_descr_GIBB_mol_other_genetic;
@@ -6564,7 +6539,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "RNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "unassigned DNA") == 0)
+        else if(ibp->moltype == "unassigned DNA")
         {
             if(is_syn)
                 biomol = Seq_descr_GIBB_mol_other_genetic;
@@ -6580,7 +6555,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "DNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "viral cRNA") == 0)
+        else if(ibp->moltype == "viral cRNA")
         {
             biomol = Seq_descr_GIBB_mol_cRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
@@ -6595,7 +6570,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             else if(NStr::CompareNocase(q, "cRNA") != 0)
                 same = false;
         }
-        else if(StringCmp(ibp->moltype, "transcribed RNA") == 0)
+        else if(ibp->moltype == "transcribed RNA")
         {
             biomol = Seq_descr_GIBB_mol_trRNA;
             bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
@@ -6646,10 +6621,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             tech == objects::CMolInfo::eTech_htgs_1 || tech == objects::CMolInfo::eTech_htgs_2 ||
             tech == objects::CMolInfo::eTech_htgs_3 || tech == objects::CMolInfo::eTech_wgs ||
             tech == objects::CMolInfo::eTech_survey) &&
-           StringCmp(ibp->moltype, "genomic DNA") != 0)
+           ibp->moltype != "genomic DNA")
             techok = false;
         else if ((tech == objects::CMolInfo::eTech_est || tech == objects::CMolInfo::eTech_fli_cdna ||
-            tech == objects::CMolInfo::eTech_htc) && StringCmp(ibp->moltype, "mRNA") != 0)
+            tech == objects::CMolInfo::eTech_htc) && ibp->moltype != "mRNA")
             techok = false;
         else
             techok = true;

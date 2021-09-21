@@ -720,8 +720,8 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
                 val_ptr == NULL || val_ptr[0] == '\0')
                 continue;
 
-            if(ibp->organism == NULL)
-                ibp->organism = StringSave(val_ptr);
+            if(ibp->organism.empty())
+                ibp->organism = val_ptr;
 
             p = StringChr(val_ptr, ' ');
 
@@ -2546,7 +2546,7 @@ static void PropogateSuppliedLineage(objects::CBioseq& bioseq,
 }
 
 /**********************************************************/
-static bool CheckMoltypeConsistency(SourceFeatBlkPtr sfbp, char** moltype)
+static bool CheckMoltypeConsistency(SourceFeatBlkPtr sfbp, string& moltype)
 {
     SourceFeatBlkPtr tsfbp;
     char*          name;
@@ -2587,7 +2587,7 @@ static bool CheckMoltypeConsistency(SourceFeatBlkPtr sfbp, char** moltype)
     }
 
     if(ret)
-        *moltype = StringSave(name);
+        moltype = name;
 
     return(ret);
 }
@@ -3585,15 +3585,14 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids,
         return;
     }
 
-    if(ibp->submitter_seqid && !CheckSubmitterSeqidQuals(sfbp, acc))
+    if(!ibp->submitter_seqid.empty() && !CheckSubmitterSeqidQuals(sfbp, acc))
     {
-        MemFree(ibp->submitter_seqid);
-        ibp->submitter_seqid = NULL;
+        ibp->submitter_seqid.clear();
         SourceFeatBlkSetFree(sfbp);
         return;
     }
 
-    if(!CheckMoltypeConsistency(sfbp, &ibp->moltype))
+    if(!CheckMoltypeConsistency(sfbp, ibp->moltype))
     {
         ErrPostEx(SEV_REJECT, ERR_SOURCE_InconsistentMolType,
                   "Inconsistent /mol_type qualifiers were encountered. Entry dropped.");
