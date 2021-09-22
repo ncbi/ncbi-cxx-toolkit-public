@@ -816,7 +816,7 @@ void CFastaReader::ParseDataLine(
     m_SeqData.resize(m_CurrentPos + s_len);
 
     // these will stay as -1 and empty unless there's an error
-    int bad_pos_line_num = -1;
+    Int8 bad_pos_line_num = -1;
     vector<TSeqPos> bad_pos_vec;
 
     const bool bHyphensIgnoreAndWarn = TestFlag(fHyphensIgnoreAndWarn);
@@ -2083,7 +2083,7 @@ CFastaReader::SGap::SGap(
     TSeqPos uPos,
     TSignedSeqPos uLen,
     EKnownSize eKnownSize,
-    TSeqPos uLineNumber,
+    Uint8 uLineNumber,
     TNullableGapType pGapType,
     const set<CLinkage_evidence::EType> & setOfLinkageEvidence ) :
         m_uPos(uPos),

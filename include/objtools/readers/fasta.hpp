@@ -286,7 +286,7 @@ protected:
         { if (m_MaskRangeStart != kInvalidSeqPos) { x_CloseMask(); } }
     Int8 StreamPosition(void) const
         { return NcbiStreamposToInt8(m_LineReader->GetPosition()); }
-    unsigned int LineNumber(void) const
+    Uint8 LineNumber(void) const
         { return m_LineReader->GetLineNumber(); }
 
     ILineReader&  GetLineReader(void)         { return *m_LineReader; }
@@ -337,7 +337,7 @@ protected:
             TSeqPos pos,
             TSignedSeqPos len, // signed so we can catch negative numbers and throw an exception
             EKnownSize eKnownSize,
-            TSeqPos uLineNumber,
+            Uint8 uLineNumber,
             TNullableGapType pGapType = TNullableGapType(),
             const set<CLinkage_evidence::EType>& setOfLinkageEvidence =
                 set<CLinkage_evidence::EType>());
@@ -349,7 +349,7 @@ protected:
         // positive: known gap size
         const TSeqPos m_uLen;
         const EKnownSize m_eKnownSize;
-        const TSeqPos m_uLineNumber;
+        const Uint8 m_uLineNumber;
         // NULL means "no gap type specified"
         const TNullableGapType m_pGapType;
         typedef set<CLinkage_evidence::EType> TLinkEvidSet;

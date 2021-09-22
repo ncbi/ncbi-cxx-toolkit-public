@@ -78,7 +78,7 @@ public:
         TFastaFlags fFastaFlags=0;
         TSeqPos maxIdLength=0; // If maxIdLength is zero, the code uses the
                                // default values specified in CSeq_id
-        TSeqPos lineNumber=0;
+        Uint8 lineNumber=0;
     };
 
     using TInfo = SDeflineParseInfo;
