@@ -1190,6 +1190,7 @@ CIMAR	s	Universidad Catolica de Valparaiso, Centro de Investigaciones del Mar
 CIMI	s	Centro Interdisciplinario de Investigacion para el Desarrollo Integral Regional (CIIDIR) IPN-Michoacan			
 CIMMYT	scb	International Maize and Wheat Improvement Center			
 CIMNH	s	Albertson College of Idaho, Orma J. Smith Museum of Natural History			
+CIMO	scb	Centro de Investigacao de Montanha (Mountain Research Center)			
 CIMSC	c	Collezione Instituto di Microbiologia			
 CINC	s	University of Cincinnati, Biological Sciences Department			
 CIP	c	Pasteur Institute Collection, Biological Resource Center of Pasteur Institute (CRBIP)	CIP<FRA>		
