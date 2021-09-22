@@ -35,7 +35,7 @@ ARGUMENTS:
   <name>       -- project name (destination directory)
   <type>       -- project type
   builddir     -- root directory of the pre-built NCBI C++ toolkit
-                  default: $build_dir
+                  default: $build_def
 OPTIONS:
   --noconfig   -- skip configuring build
 EOF
