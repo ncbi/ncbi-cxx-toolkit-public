@@ -10335,21 +10335,15 @@ if test "x$ac_cv_have_decl__LIBCPP_VERSION" = x""yes; then :
 fi
 
 
-modern_cxx_stds="-std=gnu++14"
-modern_c_stds="-std=gnu11 -std=gnu1x -std=gnu99 -std=gnu9x"
+modern_cxx_stds="-std=gnu++17 -std=gnu++1z"
+modern_c_stds="-std=gnu18 -std=gnu17 -std=gnu11 -std=gnu1x -std=gnu99"
+modern_c_stds="$modern_c_stds -std=gnu9x"
 
 if dpkg-vendor --is Ubuntu >/dev/null 2>&1; then
    is_ubuntu=yes
 else
    is_ubuntu=no
 fi
-
-case "$host_os:$compiler:$is_ubuntu" in
-   *:LLVMClang:* | linux*:ICC:* | linux*:*:yes | cygwin* )
-      modern_cxx_stds="-std=gnu++17 -std=gnu++1z"
-      modern_c_stds="-std=gnu18 -std=gnu17 $modern_c_stds"
-      ;;
-esac
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to enable modern C++ features in $CXX" >&5
 $as_echo_n "checking how to enable modern C++ features in $CXX... " >&6; }
@@ -10362,11 +10356,11 @@ else
        CXX="$orig_CXX $x"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <list>
+#include <numeric>
 int
 main ()
 {
-std::list<int> l; auto it = std::cbegin(l);
+return 3 - std::gcd(123, 456);
   ;
   return 0;
 }
