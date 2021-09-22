@@ -55,8 +55,8 @@
 #    define NcbiSys_chdir        _wchdir
 #    define NcbiSys_chmod        _wchmod
 #    define NcbiSys_creat        _wcreat
-#    define NcbiSys_fopen        _wfopen
 #    define NcbiSys_fdopen       _wfdopen
+#    define NcbiSys_fopen        _wfopen
 #    define NcbiSys_getcwd       _wgetcwd
 #    define NcbiSys_getenv       _wgetenv
 #    define NcbiSys_mkdir        _wmkdir
@@ -84,8 +84,8 @@
 #    define NcbiSys_chdir        _chdir
 #    define NcbiSys_chmod        _chmod
 #    define NcbiSys_creat        _creat
-#    define NcbiSys_fopen         fopen
 #    define NcbiSys_fdopen       _fdopen
+#    define NcbiSys_fopen         fopen
 #    define NcbiSys_getcwd       _getcwd
 #    define NcbiSys_getenv        getenv
 #    define NcbiSys_mkdir        _mkdir
@@ -110,7 +110,7 @@
 
 #  endif // _UNICODE
 
-#else // NCBI_OS_MSWIN
+#else // not NCBI_OS_MSWIN
 
 #  define NcbiSys_chdir         chdir
 #  define NcbiSys_chmod         chmod
@@ -120,8 +120,8 @@
 #  define NcbiSys_dup2          dup2
 #  define NcbiSys_fileno        fileno
 #  define NcbiSys_fstat         fstat
-#  define NcbiSys_fopen         fopen
 #  define NcbiSys_fdopen        fdopen
+#  define NcbiSys_fopen         fopen
 #  define NcbiSys_getcwd        getcwd
 #  define NcbiSys_getenv        getenv
 #  define NcbiSys_getpid        getpid
@@ -158,6 +158,7 @@
 
 #  define NcbiSysChar_chdir        _chdir
 #  define NcbiSysChar_creat        _creat
+#  define NcbiSysChar_fdopen       _fdopen
 #  define NcbiSysChar_fopen         fopen
 #  define NcbiSysChar_getcwd       _getcwd
 #  define NcbiSysChar_getenv        getenv
@@ -186,6 +187,7 @@
 #  define NcbiSysChar_chdir         chdir
 #  define NcbiSysChar_creat         creat
 #  define NcbiSysChar_fstat         fstat
+#  define NcbiSysChar_fdopen        fdopen
 #  define NcbiSysChar_fopen         fopen
 #  define NcbiSysChar_getcwd        getcwd
 #  define NcbiSysChar_getenv        getenv
