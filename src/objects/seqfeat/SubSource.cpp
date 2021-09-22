@@ -2805,25 +2805,56 @@ bool CSubSource::IsPlasmidNameValid(const string& value, const string& taxname)
     if (NStr::Equal(value, "F") || NStr::Equal(value, "F factor") || NStr::Equal(value, "F plasmid")) {
         return true;
     }
+/*
     if (NStr::Equal(value, "Plasmid R") || NStr::Equal(value, "plasmid R") ||
         NStr::Equal(value, "Plasmid F") || NStr::Equal(value, "plasmid F")) {
         return true;
     }
-    string val = value;
-    string tax = taxname;
-    if (NStr::StartsWith(value, "Plasmid ") || NStr::StartsWith(value, "plasmid ")) {
-        val = value.substr(8, value.length());
+*/
+    if (NStr::FindNoCase(value,"plasmid") != NPOS) {
+        static const set<string, PNocase_Conditional> s_PlasmidNameExceptions = 
+        {
+            "Plasmid F",
+            "Plasmid R",
+            "Plasmid pTB913",
+            "Plasmid PDS075",
+            "IncQ plasmid pIE1120",
+            "Plasmid NR79",
+            "Plasmid pUB110",
+            "Plasmid R387",
+            "Plasmid pFA6",
+            "Plasmid pWP113a",
+            "Plasmid pWW100",
+            "Plasmid pIP630",
+            "Plasmid pNG2",
+            "Plasmid pGT633",
+            "Plasmid pE5",
+            "Plasmid pIP1527",
+            "Plasmid pAM77",
+            "Plasmid pAZ1",
+            "Plasmid RP4",
+            "Plasmid R46",
+            "Plasmid pJHC-MW1" 
+        };
+
+        if (s_PlasmidNameExceptions.find(value) != end(s_PlasmidNameExceptions)) {
+            return true;
+        }
+        return false;
     }
+
+
+    string tax = taxname;
     if (NStr::StartsWith(taxname, "Plasmid ") || NStr::StartsWith(taxname, "plasmid ")) {
         tax = taxname.substr(8, taxname.length());
     }
-    if (NStr::StartsWith(tax, val)) {
-        if (NStr::Equal(tax, taxname) && NStr::Equal(val, value)) {
+    if (NStr::StartsWith(tax, value)) {
+        if (NStr::Equal(tax, taxname)) {
             return false;
         }
         return true;
     }
-    return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(val, tax);
+    return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(value, tax);
 }
 
 
