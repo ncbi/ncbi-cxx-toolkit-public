@@ -2109,8 +2109,9 @@ esac
 
 AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [@%:@include <iosfwd>])
 
-modern_cxx_stds="-std=gnu++14"
-modern_c_stds="-std=gnu11 -std=gnu1x -std=gnu99 -std=gnu9x"
+modern_cxx_stds="-std=gnu++17 -std=gnu++1z"
+modern_c_stds="-std=gnu18 -std=gnu17 -std=gnu11 -std=gnu1x -std=gnu99"
+modern_c_stds="$modern_c_stds -std=gnu9x"
 
 if dpkg-vendor --is Ubuntu >/dev/null 2>&1; then
    is_ubuntu=yes
@@ -2118,21 +2119,14 @@ else
    is_ubuntu=no
 fi
 
-case "$host_os:$compiler:$is_ubuntu" in
-   *:LLVMClang:* | linux*:ICC:* | linux*:*:yes | cygwin* )
-      modern_cxx_stds="-std=gnu++17 -std=gnu++1z"
-      modern_c_stds="-std=gnu18 -std=gnu17 $modern_c_stds"
-      ;;
-esac
-
 AC_CACHE_CHECK([how to enable modern C++ features in $CXX],
    ncbi_cv_prog_modern_cxx,
    [orig_CXX=$CXX
     ncbi_cv_prog_modern_cxx=no
     for x in $modern_cxx_stds ''; do
        CXX="$orig_CXX $x"
-       AC_LINK_IFELSE([AC_LANG_PROGRAM([@%:@include <list>],
-          [std::list<int> l; auto it = std::cbegin(l);])],
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([@%:@include <numeric>],
+          [return 3 - std::gcd(123, 456);])],
           [ncbi_cv_prog_modern_cxx=$x])
           test "x$ncbi_cv_prog_modern_cxx" = "xno"  ||  break
        done
