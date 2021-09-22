@@ -1500,7 +1500,7 @@ static CRef<objects::CSeq_loc> GetTrnaAnticodon(const objects::CSeq_feat& feat, 
 
         ErrPostEx(SEV_ERROR, ERR_FEATURE_InvalidAnticodonPos,
                   "Invalid position element for an /anticodon qualifier : \"%s\" : qualifier dropped : feature location \"%s\".",
-                  loc_str, (loc.empty()) ? "unknown" : loc);
+                  loc_str, (loc.empty()) ? "unknown" : loc.c_str());
 
         MemFree(loc_str);
 
@@ -1515,11 +1515,11 @@ static CRef<objects::CSeq_loc> GetTrnaAnticodon(const objects::CSeq_feat& feat, 
         if (range == 4)
             ErrPostEx(SEV_WARNING, ERR_FEATURE_FourBaseAntiCodon,
                       "tRNA feature at \"%s\" has anticodon with location spanning four bases: \"%s\". Cannot generate corresponding codon value from the DNA sequence.",
-                      loc.empty() ? "unknown" : loc, loc_str);
+                      loc.empty() ? "unknown" : loc.c_str(), loc_str);
         else
             ErrPostEx(SEV_ERROR, ERR_FEATURE_StrangeAntiCodonSize,
                       "tRNA feature at \"%s\" has anticodon of an unusual size: \"%s\". Cannot generate corresponding codon value from the DNA sequence.",
-                loc.empty() ? "unknown" : loc, loc_str);
+                loc.empty() ? "unknown" : loc.c_str(), loc_str);
     }
 
     // Comparing two locations ignoring their IDs
@@ -1533,7 +1533,7 @@ static CRef<objects::CSeq_loc> GetTrnaAnticodon(const objects::CSeq_feat& feat, 
 
         ErrPostEx(SEV_ERROR, ERR_FEATURE_BadAnticodonLoc,
                   "Anticodon location \"%s\" does not fall within tRNA feature at \"%s\".",
-                  loc_str, loc.empty() ? "unknown" : loc);
+                  loc_str, loc.empty() ? "unknown" : loc.c_str());
 
         MemFree(loc_str);
         ret.Reset();
@@ -3544,7 +3544,7 @@ static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, Indexbl
 
                 ErrPostEx(SEV_REJECT, ERR_FEATURE_OperonQualsNotUnique,
                           "The operon features at \"%s\" and \"%s\" utilize the same /operon qualifier : \"%s\".",
-                          tfop->strloc, fop->strloc, fop->operon);
+                          tfop->strloc.c_str(), fop->strloc.c_str(), fop->operon);
                 pp->operon->ret = false;
             }
         }
@@ -3556,7 +3556,7 @@ static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, Indexbl
 
             ErrPostEx(SEV_REJECT, ERR_FEATURE_MultipleOperonQuals,
                       "Feature \"%s\" at \"%s\" has more than one operon qualifier.",
-                      fop->featname, fop->strloc);
+                      fop->featname, fop->strloc.c_str());
             pp->operon->ret = false;
         }
 
@@ -3566,7 +3566,7 @@ static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, Indexbl
 
             ErrPostEx(SEV_REJECT, ERR_FEATURE_MissingOperonQual,
                 "The operon feature at \"%s\" lacks an /operon qualifier.",
-                loc);
+                loc.c_str());
 
             pp->operon->ret = false;
         }
@@ -3603,7 +3603,7 @@ static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, Indexbl
 
             ErrPostEx(SEV_REJECT, ERR_FEATURE_OperonLocationMisMatch,
                       "Feature \"%s\" at \"%s\" with /operon qualifier \"%s\" does not fall within the span of the operon feature at \"%s\".",
-                      fop->featname, fop->strloc, fop->operon, tfop->strloc);
+                      fop->featname, fop->strloc.c_str(), fop->operon, tfop->strloc.c_str());
             pp->operon->ret = false;
         }
 
@@ -3614,7 +3614,7 @@ static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, Indexbl
 
             ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidOperonQual,
                       "/operon qualifier \"%s\" on feature \"%s\" at \"%s\" has a value that does not match any of the /operon qualifiers on operon features.",
-                      fop->operon, fop->featname, fop->strloc);
+                      fop->operon, fop->featname, fop->strloc.c_str());
             pp->operon->ret = false;
         }
     }
@@ -5335,7 +5335,7 @@ static bool fta_check_ncrna(const objects::CSeq_feat& feat)
 
             ErrPostEx(SEV_REJECT, ERR_FEATURE_ncRNA_class,
                       "Feature \"ncRNA\" at location \"%s\" has an empty /ncRNA_class qualifier.",
-                      loc.empty() ? "unknown" : loc);
+                      loc.empty() ? "unknown" : loc.c_str());
             stop = true;
             break;
         }
@@ -5346,7 +5346,7 @@ static bool fta_check_ncrna(const objects::CSeq_feat& feat)
 
             ErrPostEx(SEV_REJECT, ERR_FEATURE_ncRNA_class,
                       "Feature \"ncRNA\" at location \"%s\" has an invalid /ncRNA_class qualifier: \"%s\".",
-                      loc.empty() ? "unknown" : loc, (*qual)->GetVal().c_str());
+                      loc.empty() ? "unknown" : loc.c_str(), (*qual)->GetVal().c_str());
             stop = true;
             break;
         }
@@ -5362,7 +5362,7 @@ static bool fta_check_ncrna(const objects::CSeq_feat& feat)
 
     ErrPostEx(SEV_REJECT, ERR_FEATURE_ncRNA_class,
               "Feature \"ncRNA\" at location \"%s\" %s /ncRNA_class qualifier.",
-              loc.empty() ? "unknown" : loc,
+              loc.empty() ? "unknown" : loc.c_str(),
               (count == 0) ? "lacks the mandatory" : "has more than one");
 
     return false;
@@ -5410,13 +5410,13 @@ static void fta_check_artificial_location(objects::CSeq_feat& feat, char* key)
                 ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidArtificialLoc,
                           "Encountered empty /artificial_location qualifier : Feature \"%s\" : Location \"%s\". Qualifier dropped.",
                           (key == NULL || *key == '\0') ? "unknown" : key,
-                          loc_str.empty() ? "unknown" : loc_str);
+                          loc_str.empty() ? "unknown" : loc_str.c_str());
             else
                 ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidArtificialLoc,
                           "Value \"%s\" is not legal for the /artificial_location qualifier : Feature \"%s\" : Location \"%s\". Qualifier dropped.",
                           val.c_str(),
                           (key == NULL || *key == '\0') ? "unknown" : key,
-                          loc_str.empty() ? "unknown" : loc_str);
+                          loc_str.empty() ? "unknown" : loc_str.c_str());
         }
 
         feat.SetQual().erase(qual);
@@ -5451,7 +5451,7 @@ static bool fta_check_mobile_element(const objects::CSeq_feat& feat)
     auto loc_str = location_to_string_or_unknown(feat.GetLocation());
     ErrPostEx(SEV_REJECT, ERR_FEATURE_RequiredQualifierMissing,
               "Mandatory qualifier /mobile_element_type is absent or has no value : Feature \"mobile_element\" : Location \"%s\". Entry dropped.",
-              loc_str.empty() ? "unknown" : loc_str);
+              loc_str.empty() ? "unknown" : loc_str.c_str());
 
     return false;
 }
@@ -5917,7 +5917,7 @@ static void fta_create_wgs_seqid(objects::CBioseq &bioseq,
     {
         ErrPostEx(SEV_ERROR, ERR_SOURCE_SubmitterSeqidIgnored,
                   "Submitter sequence identifiers for non-project-based TSA records are not supported. /submitter_seqid \"%s\" has been dropped.",
-                  ibp->submitter_seqid);
+                  ibp->submitter_seqid.c_str());
         return;
     }
 
@@ -6593,7 +6593,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         {
             ErrPostEx(SEV_REJECT, ERR_SOURCE_InvalidMolType,
                       "Invalid /mol_type value \"%s\" provided in source features. Entry dropped.",
-                      ibp->moltype);
+                      ibp->moltype.c_str());
             ibp->drop = 1;
             if(molstr != NULL)
                 *r = c;
@@ -6606,7 +6606,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             {
                 ErrPostEx(SEV_REJECT, ERR_SOURCE_MolTypesDisagree,
                           "Molecule type \"%s\" from the ID line disagrees with \"%s\" from the /mol_type qualifier.",
-                          q, ibp->moltype);
+                          q, ibp->moltype.c_str());
                 ibp->drop = 1;
                 if(molstr != NULL)
                     *r = c;
@@ -6614,7 +6614,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             }
             ErrPostEx(SEV_ERROR, ERR_SOURCE_MolTypesDisagree,
                       "Molecule type \"%s\" from the ID/LOCUS line disagrees with \"%s\" from the /mol_type qualifier.",
-                      q, ibp->moltype);
+                      q, ibp->moltype.c_str());
         }
 
         if ((tech == objects::CMolInfo::eTech_sts || tech == objects::CMolInfo::eTech_htgs_0 ||
@@ -6651,7 +6651,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
                 p = "HTG";
             ErrPostEx(SEV_ERROR, ERR_SOURCE_MolTypeSeqTypeConflict,
                       "Molecule type \"%s\" from the /mol_type qualifier disagrees with this record's sequence type: \"%s\".",
-                      ibp->moltype, p);
+                      ibp->moltype.c_str(), p);
         }
 
         if(molstr != NULL)
