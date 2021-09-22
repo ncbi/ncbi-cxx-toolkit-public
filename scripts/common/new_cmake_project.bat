@@ -126,7 +126,7 @@ goto :eof
 
 :GET_PREBUILD_PATH
 for %%a in ( %prebuilds% ) do (
-  set build_def=%%a
+  set cfg_def=%%a
 :GET_PREBUILD_PATH_AGAIN
   echo:
   echo Please pick a build configuration
@@ -136,8 +136,8 @@ for %%a in ( %prebuilds% ) do (
     echo %%b
   )
   echo:
-  set /p build_config=Desired configuration ^(default = !build_def!^): 
-  if "!build_config!"=="" set build_config=!build_def!
+  set /p build_config=Desired configuration ^(default = !cfg_def!^): 
+  if "!build_config!"=="" set build_config=!cfg_def!
   if not exist %prebuilt_dir%\!build_config! goto :GET_PREBUILD_PATH_AGAIN
   set prebuilt_name=!build_config!
   goto :eof
@@ -181,6 +181,13 @@ shift
 goto :PARSEARGS
 :ENDPARSEARGS
 
+if not exist "%build_root%\%build_vs%\%build_pfx%%build_def%" (
+    for /f "tokens=1" %%a in ('dir /A:D /B "%build_root%\%build_vs%\%build_pfx%*"') do (
+      set folder=%%a
+      set folder=!folder:%build_pfx%=!
+      set build_def=!folder!
+    )
+)
 REM -------------------------------------------------------------------------
 if not "%do_help%"=="" (
   call :USAGE
