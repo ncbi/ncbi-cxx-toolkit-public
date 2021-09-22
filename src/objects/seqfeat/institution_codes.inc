@@ -1223,6 +1223,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CIMI\ts\tCentro Interdisciplinario de Investigacion para el Desarrollo Integral Regional (CIIDIR) IPN-Michoacan\t\t\t",
 "CIMMYT\tscb\tInternational Maize and Wheat Improvement Center\t\t\t",
 "CIMNH\ts\tAlbertson College of Idaho, Orma J. Smith Museum of Natural History\t\t\t",
+"CIMO\tscb\tCentro de Investigacao de Montanha (Mountain Research Center)\t\t\t",
 "CIMSC\tc\tCollezione Instituto di Microbiologia\t\t\t",
 "CINC\ts\tUniversity of Cincinnati, Biological Sciences Department\t\t\t",
 "CIP\tc\tPasteur Institute Collection, Biological Resource Center of Pasteur Institute (CRBIP)\tCIP<FRA>\t\t",
