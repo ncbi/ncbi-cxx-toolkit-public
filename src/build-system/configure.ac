@@ -2132,7 +2132,7 @@ AC_CACHE_CHECK([how to enable modern C++ features in $CXX],
        done
        CXX=$orig_CXX])
 if test "$ncbi_cv_prog_modern_cxx" = no; then
-   AC_MSG_ERROR([Please upgrade to a compiler supporting C++ '17, such as GCC 5 or newer.])
+   AC_MSG_ERROR([Please upgrade to a compiler supporting C++ '17, such as GCC 7.1 or newer.])
 else
    CXX="$CXX $ncbi_cv_prog_modern_cxx"
 fi
