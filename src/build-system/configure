@@ -10377,7 +10377,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_prog_modern_cxx" >&5
 $as_echo "$ncbi_cv_prog_modern_cxx" >&6; }
 if test "$ncbi_cv_prog_modern_cxx" = no; then
-   as_fn_error $? "Please upgrade to a compiler supporting C++ '14, such as GCC 5 or newer." "$LINENO" 5
+   as_fn_error $? "Please upgrade to a compiler supporting C++ '17, such as GCC 5 or newer." "$LINENO" 5
 else
    CXX="$CXX $ncbi_cv_prog_modern_cxx"
 fi
