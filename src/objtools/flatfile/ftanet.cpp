@@ -337,17 +337,10 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
                     if(source != Parser::ESource::SPROT && source != Parser::ESource::PIR &&
                        !got_pmid)
                     {
-                        if(!namestd.IsSetFirst() && namestd.IsSetInitials())
-                        {
-                            char *str = (char *) namestd.GetInitials().c_str();
-                            if((strlen(str) == 1 || strlen(str) == 2) &&
-                               (str[1] == '.' || str[1] == '\0'))
-                            {
-                                char *p = (char*) MemNew(2);
-                                p[0] = str[0];
-                                p[1] = '\0';
-                                namestd.SetFirst(p);
-                                MemFree(p);
+                        if(!namestd.IsSetFirst() && namestd.IsSetInitials()) {
+                            auto initials = namestd.GetInitials();
+                            if (initials.size() == 1  ||  (initials.size() == 2  && initials[1] == '.')) {
+                                namestd.SetFirst(initials.substr(0, 1));
                             }
                         }
                         if((*pub)->IsArticle())
@@ -371,18 +364,12 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
                                            (*it1)->GetName().IsName())
                                         {
                                             objects::CName_std &namestd1 = (*it1)->SetName().SetName();
-                                            if(!namestd1.IsSetFirst() &&
-                                               namestd1.IsSetInitials())
-                                            {
-                                                char *str = (char *) namestd1.GetInitials().c_str();
-                                                if((strlen(str) == 1 || strlen(str) == 2) &&
-                                                   (str[1] == '.' || str[1] == '\0'))
-                                                {
-                                                    char *p = (char*) MemNew(2);
-                                                    p[0] = str[0];
-                                                    p[1] = '\0';
-                                                    namestd1.SetFirst(p);
-                                                    MemFree(p);
+                                            if(!namestd1.IsSetFirst()  &&  namestd1.IsSetInitials()) {
+                                                if (!namestd.IsSetFirst() && namestd.IsSetInitials()) {
+                                                    auto initials = namestd.GetInitials();
+                                                    if (initials.size() == 1 || (initials.size() == 2 && initials[1] == '.')) {
+                                                        namestd1.SetFirst(initials.substr(0, 1));
+                                                    }
                                                 }
                                             }
                                         }

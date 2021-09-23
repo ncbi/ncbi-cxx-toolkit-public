@@ -5473,30 +5473,22 @@ static bool SortFeaturesByOrder(const DataBlkPtr& sp1, const DataBlkPtr& sp2)
 /**********************************************************/
 static DataBlkPtr fta_sort_features(DataBlkPtr dbp, bool order)
 {
-    DataBlkPtr* temp;
-    DataBlkPtr      tdbp;
-    Int4            total;
-    Int4            i;
-
-    for(total = 0, tdbp = dbp; tdbp != NULL; tdbp = tdbp->mpNext)
+    size_t total = 0;
+    for(DataBlkPtr tdbp = dbp; tdbp != NULL; tdbp = tdbp->mpNext)
         total++;
 
-    temp = (DataBlkPtr*) MemNew(total * sizeof(DataBlkPtr));
+    vector<DataBlk*> temp;
+    temp.reserve(total);
+    for(DataBlkPtr tdbp = dbp; tdbp != NULL; tdbp = tdbp->mpNext)
+        temp.push_back(tdbp);
 
-    for(i = 0, tdbp = dbp; tdbp != NULL; tdbp = tdbp->mpNext)
-        temp[i++] = tdbp;
+    std::sort(temp.begin(), temp.end(), (order ? SortFeaturesByOrder : SortFeaturesByLoc));
 
-    std::sort(temp, temp + i, (order ? SortFeaturesByOrder : SortFeaturesByLoc));
-
-    dbp = tdbp = temp[0];
-    for(i = 0; i < total - 1; tdbp = tdbp->mpNext, i++)
+    DataBlkPtr tdbp = dbp = temp[0];
+    for(size_t i = 0; i < total - 1; tdbp = tdbp->mpNext, i++)
         tdbp->mpNext = temp[i+1];
 
-    tdbp = temp[total-1];
-    tdbp->mpNext = NULL;
-
-    MemFree(temp);
-
+    temp[total-1]->mpNext = nullptr;
     return(dbp);
 }
 
