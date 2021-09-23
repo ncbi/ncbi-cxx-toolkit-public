@@ -861,7 +861,7 @@ static void GetSprotSubBlock(ParserPtr pp, DataBlkPtr entry)
 {
     DataBlkPtr dbp;
 
-    dbp = TrackNodeType(entry, ParFlatSP_OS);
+    dbp = TrackNodeType(*entry, ParFlatSP_OS);
     if(dbp != NULL)
     {
         BuildSubBlock(dbp, ParFlatSP_OG, "OG");
@@ -871,7 +871,7 @@ static void GetSprotSubBlock(ParserPtr pp, DataBlkPtr entry)
         GetLenSubNode(dbp);
     }
 
-    dbp = TrackNodeType(entry, ParFlatSP_RN);
+    dbp = TrackNodeType(*entry, ParFlatSP_RN);
     for(; dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != ParFlatSP_RN)
@@ -1657,7 +1657,7 @@ static void get_plasmid(DataBlkPtr entry, objects::CSP_block::TPlasnm& plasms)
     char*    ptr;
     Int4       gmod = -1;
     
-    dbp = TrackNodeType(entry, ParFlatSP_OS);
+    dbp = TrackNodeType(*entry, ParFlatSP_OS);
     for(; dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != ParFlatSP_OS)
@@ -2959,12 +2959,12 @@ static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr ent
                   create_date_str.c_str());
     }
 
-    dbp = TrackNodeType(entry, ParFlatSP_OS);
+    dbp = TrackNodeType(*entry, ParFlatSP_OS);
     gmod = GetSPGenome(dbp);
 
     /* Org-ref from ID lines
      */
-    for(dbp = TrackNodeType(entry, ParFlatSP_ID); dbp != NULL; dbp = dbp->mpNext)
+    for(dbp = TrackNodeType(*entry, ParFlatSP_ID); dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != ParFlatSP_ID)
             continue;
@@ -3089,7 +3089,7 @@ static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr ent
 
     /* RN data ==> pub
      */
-    dbp = TrackNodeType(entry, ParFlat_REF_END);
+    dbp = TrackNodeType(*entry, ParFlat_REF_END);
     for(; dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != ParFlat_REF_END)
@@ -5375,7 +5375,7 @@ bool SprotAscii(ParserPtr pp)
 
                 cur_entry.Reset();
             }
-            FreeEntry(entry);
+            delete entry;
         }
         if(ibp->drop != 1)
         {

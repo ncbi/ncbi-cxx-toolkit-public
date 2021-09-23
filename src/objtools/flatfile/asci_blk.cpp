@@ -436,7 +436,7 @@ static void fta_check_mult_ids(DataBlkPtr dbp, const char *mtag,
 *                                              4-7-93
 *
 **********************************************************/
-void GetGenBankSubBlock(DataBlkPtr entry, size_t bases)
+void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
 {
     DataBlkPtr dbp;
 
@@ -720,7 +720,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, DataBlkPtr entry)
     DataBlkPtr  predbp;
     EntryBlkPtr ebp;
 
-    temp = TrackNodeType(entry, ParFlat_OS);
+    temp = TrackNodeType(*entry, ParFlat_OS);
     for (; temp != NULL; temp = temp->mpNext)
     {
         if (temp->mType != ParFlat_OS)
@@ -731,7 +731,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, DataBlkPtr entry)
         GetLenSubNode(temp);
     }
 
-    temp = TrackNodeType(entry, ParFlat_RN);
+    temp = TrackNodeType(*entry, ParFlat_RN);
     for (; temp != NULL; temp = temp->mpNext)
     {
         if (temp->mType != ParFlat_RN)
@@ -1043,7 +1043,7 @@ char* SrchNodeSubType(DataBlkPtr entry, Int2 type, Int2 subtype,
     DataBlkPtr sdbp;
 
     *len = 0;
-    mdbp = TrackNodeType(entry, type);
+    mdbp = TrackNodeType(*entry, type);
     if (mdbp == NULL)
         return(NULL);
 
@@ -3067,7 +3067,7 @@ void AddNIDSeqId(objects::CBioseq& bioseq, DataBlkPtr entry, Int2 type, Int2 col
     DataBlkPtr dbp;
     char*    offset;
 
-    dbp = TrackNodeType(entry, type);
+    dbp = TrackNodeType(*entry, type);
     if (dbp == NULL)
         return;
 
@@ -3178,7 +3178,7 @@ void DefVsHTGKeywords(Uint1 tech, DataBlkPtr entry, Int2 what, Int2 ori,
     Char       c;
     Int2       count;
 
-    dbp = TrackNodeType(entry, what);
+    dbp = TrackNodeType(*entry, what);
     if (dbp == NULL || dbp->mOffset == NULL || dbp->len < 1)
         p = NULL;
     else
@@ -3222,7 +3222,7 @@ void DefVsHTGKeywords(Uint1 tech, DataBlkPtr entry, Int2 what, Int2 ori,
     if (tech != objects::CMolInfo::eTech_htgs_3)
         return;
 
-    dbp = TrackNodeType(entry, ori);
+    dbp = TrackNodeType(*entry, ori);
     if (dbp == NULL || dbp->mOffset == NULL || dbp->len < 1)
         return;
     r = (char*)MemNew(dbp->len + 1);

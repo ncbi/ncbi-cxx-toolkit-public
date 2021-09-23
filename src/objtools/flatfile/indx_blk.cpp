@@ -2405,13 +2405,6 @@ void ResetParserStruct(ParserPtr pp)
         delete pp->pbp;
         pp->pbp = NULL;
     }
-
-
-    if(pp->operon != NULL)
-    {
-        fta_operon_free(pp->operon);
-        pp->operon = NULL;
-    }
 }
 
 /**********************************************************

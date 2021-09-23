@@ -128,10 +128,10 @@ void            CpSeqId(InfoBioseq* ibp, const objects::CSeq_id& id);
 int SrchKeyword(char* ptr, const vector<string>&  keywordList);
 bool            CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool after_origin);
 char*         SrchNodeType(DataBlk* entry, Int4 type, size_t* len);
-DataBlk*      TrackNodeType(DataBlk* entry, Int2 type);
-void            fta_operon_free(FTAOperon* fop);
+char* xSrchNodeType(const DataBlk& entry, Int4 type, size_t* len);
+DataBlk*      TrackNodeType(const DataBlk& entry, Int2 type);
 ValNode*      ConstructValNode(ValNode* head, Uint1 choice, void* data);
-ValNode*      ConstructValNodeInt(ValNode* head, Uint1 choice, Int4 data);
+ValNode*      ConstructValNodeInt(ValNode* head, Uint1 choice, Int4 data); 
 bool            fta_is_tpa_keyword(const char* str);
 bool            fta_tpa_keywords_check(const TKeywordList& kwds);
 bool            fta_is_tsa_keyword(char* str);
@@ -139,7 +139,7 @@ bool            fta_is_tls_keyword(char* str);
 bool            fta_tsa_keywords_check(const TKeywordList& kwds, Parser::ESource source);
 bool            fta_tls_keywords_check(const TKeywordList& kwds, Parser::ESource source);
 bool            fta_check_mga_keywords(objects::CMolInfo& mol_info, const TKeywordList& kwds);
-void            fta_StringCpy(char* dst, char* src);
+void            fta_StringCpy(char* dst, const char* src);
 
 void            fta_keywords_check(const char* str, bool* estk, bool* stsk, bool* gssk,
     bool* htck, bool* flik, bool* wgsk, bool* tpak,

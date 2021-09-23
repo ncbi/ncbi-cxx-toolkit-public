@@ -765,12 +765,7 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char *fmt, ...)
 
     if(bmp->appname.empty())
         bmp->appname = CNcbiApplication::GetAppName();
-/*
-    if(bmp->hook_only)
-        FtaErrHandler();
-    else
-        FtaPostMessage();
-*/
+
     stringstream textStream;
     if (fpi.strcode) {
         textStream << "[" << fpi.strcode; 

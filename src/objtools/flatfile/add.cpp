@@ -272,7 +272,7 @@ bool check_cds(DataBlkPtr entry, Parser::EFormat format)
     else
         return false;
 
-    for(temp = TrackNodeType(entry, type); temp != NULL; temp = temp->mpNext)
+    for(temp = TrackNodeType(*entry, type); temp != NULL; temp = temp->mpNext)
     {
         if(temp->mType != type)
             continue;

@@ -258,26 +258,39 @@ typedef struct indexblk_struct {
 
 } Indexblk, *IndexblkPtr;
 
-typedef struct _fta_operon {
-    const Char*             featname;   /* Do not free! Just a pointer. */
-    const Char*             operon;     /* Do not free! Just a pointer. */
-
-    CConstRef<objects::CSeq_loc> location;   /* Do not free! Just a pointer. */
-
-    string                 strloc;     /* String value of location. */
-    bool                    operon_feat;
-    bool                    ret;
-    struct _fta_operon *next;
-
-    _fta_operon() :
-        featname(nullptr),
-        operon(nullptr),
+//  ============================================================================
+struct FTAOperon
+//  ============================================================================
+{
+    FTAOperon(
+        const string& featName,
+        const string& operon) :
+        mFeatname(featName),
+        mOperon(operon),
         operon_feat(false),
-        ret(false),
+        ret(true),
         next(nullptr)
-    {}
+    {
+        operon_feat = (mFeatname == "operon");
+    };
 
-} FTAOperon, *FTAOperonPtr;
+    ~FTAOperon()
+    {
+        delete next;
+    };
+
+    const string& mFeatname;
+    const string& mOperon;
+
+    CConstRef<objects::CSeq_loc> location; // Do not free! Just a pointer
+
+    string strloc; // String value of location
+    bool operon_feat;
+    bool ret;
+    FTAOperon* next;
+};
+using FTAOperonPtr = FTAOperon*;
+//using FTAOperonLast = list<FTAOperon>;
 
 //  ============================================================================
 struct DataBlk
@@ -345,7 +358,7 @@ typedef struct keyword_block {
 
 /**************************************************************************/
 
-void FreeEntry(DataBlkPtr entry);
+void xFreeEntry(DataBlkPtr entry);
 void FreeIndexblk(IndexblkPtr ibp);
 void GapFeatsFree(GapFeatsPtr gfp);
 void XMLIndexFree(XmlIndexPtr xip);

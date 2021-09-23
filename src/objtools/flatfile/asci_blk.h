@@ -52,7 +52,7 @@ void PackEntries(TEntryList& seq_entries);
 
 Int4        ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, unsigned char* conv, Char replacechar, int* numns);
 char*     GetGenBankBlock(DataBlkPtr* chain, char* ptr, short* retkw, char* eptr);
-void        GetGenBankSubBlock(DataBlkPtr entry, size_t bases);
+void        GetGenBankSubBlock(const DataBlk& entry, size_t bases);
 char*     GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw, Parser::EFormat format, char* eptr);
 void        GetEmblSubBlock(size_t bases, Parser::ESource source, DataBlkPtr entry);
 // LCOV_EXCL_START
