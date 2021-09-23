@@ -1217,7 +1217,7 @@ static void fta_strip_aa(char* str)
  *                                              5-26-93
  *
  **********************************************************/
-static void SeqFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
+static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats,
                        TSeqIdList& seqids, Int4 col_data, IndexblkPtr ibp)
 {
     DataBlkPtr dbp;
@@ -1232,9 +1232,9 @@ static void SeqFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
     /* REFERENCE, to Seq-feat
      */
     if(pp->format == Parser::EFormat::XML)
-        dbp = XMLBuildRefDataBlk(entry->mOffset, ibp->xip, ParFlat_REF_BTW);
+        dbp = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_BTW);
     else
-        dbp = TrackNodeType(*entry, ParFlat_REF_BTW);
+        dbp = TrackNodeType(entry, ParFlat_REF_BTW);
     if(dbp == NULL)
         return;
 
@@ -1374,7 +1374,7 @@ static void SeqFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
  *                                              5-26-93
  *
  **********************************************************/
-static void ImpFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
+static void ImpFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats,
                        objects::CSeq_id& seq_id, Int4 col_data, IndexblkPtr ibp)
 {
     DataBlkPtr dbp;
@@ -1384,9 +1384,9 @@ static void ImpFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
     /* REFERENCE, Imp-feat
      */
     if(pp->format == Parser::EFormat::XML)
-        dbp = XMLBuildRefDataBlk(entry->mOffset, ibp->xip, ParFlat_REF_SITES);
+        dbp = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_SITES);
     else
-        dbp = TrackNodeType(*entry, ParFlat_REF_SITES);
+        dbp = TrackNodeType(entry, ParFlat_REF_SITES);
     if(dbp == NULL)
         return;
 
@@ -3641,7 +3641,7 @@ static void fta_remove_dup_quals(FeatBlkPtr fbp)
 }
 
 /**********************************************************/
-static void CollectGapFeats(DataBlkPtr entry, DataBlkPtr dbp,
+static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp,
                             ParserPtr pp, Int2 type)
 {
     IndexblkPtr        ibp;
@@ -3680,7 +3680,7 @@ static void CollectGapFeats(DataBlkPtr entry, DataBlkPtr dbp,
             GetSequenceOfKeywords(entry, ParFlat_KW, ParFlat_COL_DATA_EMBL,
                                   ibp->keywords);
         else if(pp->format == Parser::EFormat::XML)
-            XMLGetKeywords(entry->mOffset, ibp->xip, ibp->keywords);
+            XMLGetKeywords(entry.mOffset, ibp->xip, ibp->keywords);
     }
 
     is_htg = -1;
@@ -5900,7 +5900,7 @@ static void fta_create_wgs_seqid(objects::CBioseq &bioseq,
  *                                              5-4-93
  *
  **********************************************************/
-void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
+void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
 {
     DataBlkPtr  dab;
     DataBlkPtr  dabnext;
@@ -5963,9 +5963,9 @@ void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
      *                                          -Karl
      */
     if(pp->format == Parser::EFormat::XML)
-        dab = XMLLoadFeatBlk(entry->mOffset, ibp->xip);
+        dab = XMLLoadFeatBlk(entry.mOffset, ibp->xip);
     else
-        dab = TrackNodeType(*entry, type);
+        dab = TrackNodeType(entry, type);
     for(dbp = dab; dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != type)
@@ -6246,7 +6246,7 @@ static Uint1 GetBiomolFromToks(char* mRNA, char* tRNA, char* rRNA,
 
 /**********************************************************/
 void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
-                   DataBlkPtr entry, const objects::COrg_ref* org_ref)
+                   const DataBlk& entry, const objects::COrg_ref* org_ref)
 {
     Int4        genomic;
     char*     offset;
@@ -6273,7 +6273,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
     bool        same;
     bool        is_syn;
 
-    ebp = (EntryBlkPtr) entry->mpData;
+    ebp = (EntryBlkPtr) entry.mpData;
 
     objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
     ibp = pp->entrylist[pp->curindx];
@@ -6781,7 +6781,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
     count = 0;
     size_t len = 0;
-    offset = SrchNodeType(entry, ParFlat_DE, &len);
+    offset = xSrchNodeType(entry, ParFlat_DE, &len);
     if(offset != NULL)
     {
         c = offset[len];
@@ -6848,7 +6848,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
     else
          stage = false;
 
-    dbp = TrackNodeType(*entry, ParFlat_FH);
+    dbp = TrackNodeType(entry, ParFlat_FH);
     if(dbp == NULL)
         return;
     dbp = (DataBlkPtr) dbp->mpData;

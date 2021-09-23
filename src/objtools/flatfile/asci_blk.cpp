@@ -1036,14 +1036,14 @@ static CRef<objects::CSeq_id> MakeSegSetSeqId(char* accession, char* locus,
 *                                              4-7-93
 *
 **********************************************************/
-char* SrchNodeSubType(DataBlkPtr entry, Int2 type, Int2 subtype,
+char* SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype,
                         size_t* len)
 {
     DataBlkPtr mdbp;
     DataBlkPtr sdbp;
 
     *len = 0;
-    mdbp = TrackNodeType(*entry, type);
+    mdbp = TrackNodeType(entry, type);
     if (mdbp == NULL)
         return(NULL);
 
@@ -1630,7 +1630,7 @@ static char* FixEMBLKeywords(char* kwstr)
 *                                              6-3-93
 *
 **********************************************************/
-void GetSequenceOfKeywords(DataBlkPtr entry, Int2 type, Int2 col_data,
+void GetSequenceOfKeywords(const DataBlk& entry, Int2 type, Int2 col_data,
                            TKeywordList& keywords)
 {
     TokenStatBlkPtr tsbp;
@@ -1642,7 +1642,7 @@ void GetSequenceOfKeywords(DataBlkPtr entry, Int2 type, Int2 col_data,
 
     keywords.clear();
 
-    bptr = SrchNodeType(entry, type, &len);
+    bptr = xSrchNodeType(entry, type, &len);
     if(bptr == NULL)
         return;
 
@@ -1776,7 +1776,7 @@ Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp,
 *                                              04-19-94
 *
 **********************************************************/
-bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq,
+bool GetSeqData(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq,
                     Int4 nodetype, unsigned char* seqconv, Uint1 seq_data_type)
 {
     //ByteStorePtr bp;
@@ -1797,7 +1797,7 @@ bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq,
 
     if (pp->format == Parser::EFormat::XML)
     {
-        str = XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_SEQUENCE);
+        str = XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_SEQUENCE);
         seqptr = str;
         if (seqptr != NULL)
             len = StringLen(seqptr);
@@ -1810,7 +1810,7 @@ bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq,
     else
     {
         str = NULL;
-        seqptr = SrchNodeType(entry, nodetype, &len);
+        seqptr = xSrchNodeType(entry, nodetype, &len);
     }
 
     if (seqptr == NULL)
@@ -3061,13 +3061,13 @@ CRef<objects::CSeq_id> StrToSeqId(char* pch, bool pid)
 }
 
 /**********************************************************/
-void AddNIDSeqId(objects::CBioseq& bioseq, DataBlkPtr entry, Int2 type, Int2 coldata,
+void AddNIDSeqId(objects::CBioseq& bioseq, const DataBlk& entry, Int2 type, Int2 coldata,
                     Parser::ESource source)
 {
     DataBlkPtr dbp;
     char*    offset;
 
-    dbp = TrackNodeType(*entry, type);
+    dbp = TrackNodeType(entry, type);
     if (dbp == NULL)
         return;
 
@@ -3166,7 +3166,7 @@ void EntryCheckDivCode(TEntryList& seq_entries, ParserPtr pp)
 }
 
 /**********************************************************/
-void DefVsHTGKeywords(Uint1 tech, DataBlkPtr entry, Int2 what, Int2 ori,
+void DefVsHTGKeywords(Uint1 tech, const DataBlk& entry, Int2 what, Int2 ori,
                       bool cancelled)
 {
     DataBlkPtr dbp;
@@ -3178,7 +3178,7 @@ void DefVsHTGKeywords(Uint1 tech, DataBlkPtr entry, Int2 what, Int2 ori,
     Char       c;
     Int2       count;
 
-    dbp = TrackNodeType(*entry, what);
+    dbp = TrackNodeType(entry, what);
     if (dbp == NULL || dbp->mOffset == NULL || dbp->len < 1)
         p = NULL;
     else
@@ -3222,7 +3222,7 @@ void DefVsHTGKeywords(Uint1 tech, DataBlkPtr entry, Int2 what, Int2 ori,
     if (tech != objects::CMolInfo::eTech_htgs_3)
         return;
 
-    dbp = TrackNodeType(*entry, ori);
+    dbp = TrackNodeType(entry, ori);
     if (dbp == NULL || dbp->mOffset == NULL || dbp->len < 1)
         return;
     r = (char*)MemNew(dbp->len + 1);

@@ -47,7 +47,7 @@ char*       tata_save(char* str);
 bool          no_date(Parser::EFormat format, const TSeqdescList& descrs);
 bool          no_reference(const objects::CBioseq& bioseq);
 
-bool          check_cds(DataBlkPtr entry, Parser::EFormat format);
+bool          check_cds(const DataBlk& entry, Parser::EFormat format);
 void          err_install(IndexblkPtr ibp, bool accver);
 void          SeqToDelta(objects::CBioseq& bioseq, Int2 tech);
 void          GapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop);

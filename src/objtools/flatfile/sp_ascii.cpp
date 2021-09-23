@@ -2580,7 +2580,7 @@ static CRef<objects::CSP_block>
                    "Not a standard/reviewed or preliminary/unreviewed class in SWISS-PROT");
     }
 
-    GetSequenceOfKeywords(entry, ParFlatSP_KW, ParFlat_COL_DATA_SP, spb->SetKeywords());
+    GetSequenceOfKeywords(*entry, ParFlatSP_KW, ParFlat_COL_DATA_SP, spb->SetKeywords());
 
     ibp = pp->entrylist[pp->curindx];
     ibp->wgssec[0] = '\0';
@@ -3127,7 +3127,7 @@ static void GetSPInst(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
     bioseq.SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
     bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_aa);
 
-    GetSeqData(pp, entry, bioseq, ParFlatSP_SQ, protconv, objects::CSeq_data::e_Iupacaa);
+    GetSeqData(pp, *entry, bioseq, ParFlatSP_SQ, protconv, objects::CSeq_data::e_Iupacaa);
 }
 
 /**********************************************************/

@@ -258,7 +258,7 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv,
     if(strandstr != NULL)
         MemFree(strandstr);
 
-    if(!GetSeqData(pp, dbp, bioseq, 0, dnaconv,
+    if(!GetSeqData(pp, *dbp, bioseq, 0, dnaconv,
                    ibp->is_prot ?  objects::eSeq_code_type_iupacaa :
                                    objects::eSeq_code_type_iupacna))
         return false;
@@ -779,7 +779,7 @@ static CRef<objects::CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry,
         mol_info->SetTech(objects::CMolInfo::eTech_targeted);
 
     MemFree(div);
-    GetFlatBiomol(mol_info->SetBiomol(), mol_info->GetTech(), molstr, pp, entry, org_ref);
+    GetFlatBiomol(mol_info->SetBiomol(), mol_info->GetTech(), molstr, pp, *entry, org_ref);
     if (mol_info->GetBiomol() == 0) // not set
         mol_info->ResetBiomol();
 
@@ -1456,7 +1456,7 @@ bool XMLAscii(ParserPtr pp)
         }
 
         XMLFakeBioSources(ibp->xip, dbp->mOffset, *bioseq, pp->source);
-        LoadFeat(pp, dbp, *bioseq);
+        LoadFeat(pp, *dbp, *bioseq);
 
         if (!bioseq->IsSetAnnot() && ibp->drop != 0 && ibp->segnum == 0)
         {
