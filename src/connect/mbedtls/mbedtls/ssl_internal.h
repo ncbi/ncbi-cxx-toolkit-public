@@ -749,9 +749,12 @@ static inline mbedtls_pk_context *mbedtls_ssl_own_key( mbedtls_ssl_context *ssl 
 
     if( ssl->handshake != NULL && ssl->handshake->key_cert != NULL )
         key_cert = ssl->handshake->key_cert;
+#if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
+    /* FIXME:  This is an NCBI Toolkit HACK */
     else if ( ssl->conf->endpoint == MBEDTLS_SSL_IS_CLIENT
               &&  ssl->handshake  &&  ssl->handshake->sni_key_cert )
         key_cert = ssl->handshake->sni_key_cert;
+#endif
     else
         key_cert = ssl->conf->key_cert;
 
@@ -764,9 +767,12 @@ static inline mbedtls_x509_crt *mbedtls_ssl_own_cert( mbedtls_ssl_context *ssl )
 
     if( ssl->handshake != NULL && ssl->handshake->key_cert != NULL )
         key_cert = ssl->handshake->key_cert;
+#if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
+    /* FIXME:  This is an NCBI Toolkit HACK */
     else if ( ssl->conf->endpoint == MBEDTLS_SSL_IS_CLIENT
               &&  ssl->handshake  &&  ssl->handshake->sni_key_cert )
         key_cert = ssl->handshake->sni_key_cert;
+#endif
     else
         key_cert = ssl->conf->key_cert;
 
