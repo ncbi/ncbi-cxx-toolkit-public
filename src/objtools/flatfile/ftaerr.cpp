@@ -131,7 +131,7 @@ thread_local unique_ptr<FtaMsgPost>  bmp;
 FtaErrCode  fec;
 
 /**********************************************************/
-static int FtaStrSevToIntSev(char *strsevcode)
+static int FtaStrSevToIntSev(const char *strsevcode)
 {
     if(!strsevcode)
         return(-1);

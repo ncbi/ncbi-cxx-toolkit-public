@@ -1922,12 +1922,6 @@ unique_ptr<unsigned char[]> GetDNAConv(void)
 {
 
     unique_ptr<unsigned char[]> dnaconv(new unsigned char[255]());
-
-  //  unsigned char*        dnaconv;
-
-  //  dnaconv = (unsigned char*)MemNew((size_t)255);                  /* DNA */
-  //  MemSet((char*)dnaconv, (Uint1)1, (size_t)255);
-    
     MemSet((char*)dnaconv.get(), (Uint1)1, (size_t)255);
 
     dnaconv[32] = 0;                    /* blank */
@@ -1942,7 +1936,6 @@ unique_ptr<unsigned char[]> GetDNAConv(void)
     }
 
     return dnaconv;
-//    return(dnaconv);
 }
 
 /**********************************************************
@@ -2627,26 +2620,25 @@ static Int4 SrchSegLength(const TEntryList& entries)
 **********************************************************/
 static CRef<objects::CBioseq> GetBioseq(ParserPtr pp, const TEntryList& entries, const objects::CSeq_loc& slp)
 {
-    char*     locusname;
     IndexblkPtr ibp;
 
     ibp = pp->entrylist[pp->curindx];
-    locusname = (char*)MemNew(StringLen(ibp->blocusname) + 5);
+    char* locusname = new char[StringLen(ibp->blocusname) + 5];
     StringCpy(locusname, "SEG_");
     StringCat(locusname, ibp->blocusname);
 
     CRef<objects::CBioseq> bioseq(new objects::CBioseq);
     bioseq->SetId().push_back(MakeSegSetSeqId(ibp->acnum, locusname, pp->seqtype, ibp->is_tpa));
-    MemFree(locusname);
+    delete[] locusname;
 
     if (pp->seg_acc)
     {
-        locusname = (char*)MemNew(StringLen(ibp->acnum) + 5);
+        char* locusname = new char[StringLen(ibp->acnum) + 5];
         StringCpy(locusname, "SEG_");
         StringCat(locusname, ibp->acnum);
 
         bioseq->SetId().push_back(MakeSegSetSeqId(ibp->acnum, locusname, pp->seqtype, ibp->is_tpa));
-        MemFree(locusname);
+        delete[] locusname;
     }
 
     const objects::CSeq_entry& first_entry = *(*(entries.begin()));
@@ -3225,7 +3217,7 @@ void DefVsHTGKeywords(Uint1 tech, const DataBlk& entry, Int2 what, Int2 ori,
     dbp = TrackNodeType(entry, ori);
     if (dbp == NULL || dbp->mOffset == NULL || dbp->len < 1)
         return;
-    r = (char*)MemNew(dbp->len + 1);
+    r = new char[dbp->len + 1];
     if (r == NULL)
         return;
     StringNCpy(r, dbp->mOffset, dbp->len);
@@ -3246,7 +3238,7 @@ void DefVsHTGKeywords(Uint1 tech, const DataBlk& entry, Int2 what, Int2 ori,
             break;
         }
     }
-    MemFree(r);
+    delete[] r;
 }
 
 /**********************************************************/

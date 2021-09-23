@@ -2077,11 +2077,11 @@ static CRef<objects::CDbtag> GetSourceDbtag(CRef<objects::CGb_qual>& qual, Parse
                   "/db_xref type \"%s\" is obsolete.", &val_buf[0]);
         if (NStr::CompareNocase(&val_buf[0], "IFO") == 0)
         {
-            line = (char*) MemNew(25 + StringLen(p + 1));
+            char* line = new char[25 + StringLen(p + 1)];
             StringCpy(line, "NBRC:");
             StringCat(line, p + 1);
             qual->SetVal(line);
-            MemFree(line);
+            delete[] line;
 
             val_buf.assign(line, line + StringLen(line));
             val_buf.push_back(0);

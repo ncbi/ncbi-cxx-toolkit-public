@@ -774,7 +774,6 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
     char*      ss;
     char*      end_volume;
     char*      end_pages;
-    char*      buf;
     char*      tit = NULL;
     char*      volume = NULL;
     char*      pages = NULL;
@@ -811,21 +810,20 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
     end_volume = NULL;
 
     size_t len = StringLen(bptr);
-    buf = (char*) MemNew(len + 1);
+    unique_ptr<char> pBuf(new char[len+1]);
+    char* buf = pBuf.get();
     StringCpy(buf, bptr);
     eptr = buf + len - 1;
     while(eptr > buf && (*eptr == ' ' || *eptr == '\t' || *eptr == '.'))
         *eptr-- = '\0';
     if(*eptr != ')')
     {
-        MemFree(buf);
         return cit_art;
     }
     for(s = eptr - 1; s > buf && *s != '(';)
         s--;
     if(*s != '(')
     {
-        MemFree(buf);
         return cit_art;
     }
 
@@ -918,7 +916,6 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
         if(pages != NULL && StringNCmp(pages, "0-0", 3) == 0 &&
            pp->source == Parser::ESource::EMBL)
             *all_zeros = true;
-        MemFree(buf);
         return cit_art;
     }
 
@@ -927,7 +924,6 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
     {
         ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
                    "No journal title.");
-        MemFree(buf);
         return cit_art;
     }
 
@@ -948,7 +944,6 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
             end_tit = end_pages;
         else if(i == -1 && is_er > 0)
         {
-            MemFree(buf);
             cit_art.Reset();
             return cit_art;
         }
@@ -960,7 +955,6 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
     {
         if(!get_parts(volume, end_volume, imp))
         {
-            MemFree(buf);
             cit_art.Reset();
             return cit_art;
         }
@@ -969,7 +963,6 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
         {
             if(imp.IsSetPages())
             {
-                MemFree(buf);
                 cit_art.Reset();
                 return cit_art;
             }
@@ -978,7 +971,6 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
     }
     else if(is_er > 0 && pre != 2)
     {
-        MemFree(buf);
         cit_art.Reset();
         return cit_art;
     }
@@ -993,7 +985,6 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
             ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
                        "No date in journal reference");
 
-        MemFree(buf);
         cit_art.Reset();
         return cit_art;
     }
@@ -1049,7 +1040,6 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
     if (auth_list.NotEmpty())
         cit_art->SetAuthors(*auth_list);
 
-    MemFree(buf);
     return cit_art;
 }
 
