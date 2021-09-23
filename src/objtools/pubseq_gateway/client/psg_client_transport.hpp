@@ -249,6 +249,7 @@ struct SPSG_Reply
             eInProgress,
             eSuccess,
             eNotFound,
+            eForbidden,
             eError,
         };
 
@@ -277,6 +278,8 @@ struct SPSG_Reply
         void SetReturned() volatile { m_Returned.store(true); }
         void SetNotEmpty() volatile { m_Empty.store(false); }
 
+        static EState FromRequestStatus(int status);
+
     private:
         atomic<EState> m_State;
         atomic_bool m_Returned;
@@ -302,7 +305,7 @@ struct SPSG_Reply
 
     SPSG_Reply(string id, const SPSG_Params& params, shared_ptr<TPSG_Queue> q) : debug_printout(move(id), params), queue(move(q)) {}
     void SetComplete();
-    void SetFailed(string message, bool is_error = true);
+    void SetFailed(string message, SState::EState state = SState::eError);
 };
 
 struct SPSG_Request

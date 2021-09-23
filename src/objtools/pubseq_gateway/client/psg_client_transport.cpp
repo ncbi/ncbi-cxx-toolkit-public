@@ -176,6 +176,17 @@ string SPSG_Reply::SState::GetError()
     return rv;
 }
 
+SPSG_Reply::SState::EState SPSG_Reply::SState::FromRequestStatus(int status)
+{
+    switch (status) {
+        case CRequestStatus::e200_Ok:               return eSuccess;
+        case CRequestStatus::e202_Accepted:         return eSuccess;
+        case CRequestStatus::e403_Forbidden:        return eForbidden;
+        case CRequestStatus::e404_NotFound:         return eNotFound;
+        default:                                    return eError;
+    }
+}
+
 void SPSG_Reply::SetComplete()
 {
     // If it were 'more' (instead of 'less'), items would not be in progress then
@@ -203,7 +214,7 @@ void SPSG_Reply::SetComplete()
     queue->CV().NotifyOne();
 }
 
-void SPSG_Reply::SetFailed(string message, bool is_error)
+void SPSG_Reply::SetFailed(string message, SState::EState state)
 {
     if (auto items_locked = items.GetLock()) {
         for (auto& item : *items_locked) {
@@ -216,7 +227,7 @@ void SPSG_Reply::SetFailed(string message, bool is_error)
 
     if (auto reply_item_locked = reply_item.GetLock()) {
         reply_item_locked->state.AddError(message);
-        reply_item_locked->state.SetState(is_error ? SState::eError : SState::eNotFound);
+        reply_item_locked->state.SetState(state);
     }
 
     queue->CV().NotifyOne();
@@ -424,10 +435,16 @@ void SPSG_Request::Add()
                 ERR_POST(Trace << chunk);
             } else {
                 item.state.AddError(move(chunk));
+                const auto status = NStr::StringToInt(args->GetValue("status"));
+                const auto state = SPSG_Reply::SState::FromRequestStatus(status);
 
-                // Any message leads to eError when item completes, so need to set eNotFound early
-                if (args->GetValue("status") == "404") {
-                    item.state.SetState(SPSG_Reply::SState::eNotFound);
+                switch (state) {
+                    case SPSG_Reply::SState::eSuccess:
+                    case SPSG_Reply::SState::eError:
+                        break;
+                    default:
+                        // Any message leads to eError when item completes, so need to set other states early
+                        item.state.SetState(state);
                 }
             }
 
@@ -581,12 +598,12 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
         auto it = m_Requests.find(stream_id);
 
         if (it != m_Requests.end()) {
-            auto status = atoi(status_str);
+            const auto status = static_cast<CRequestStatus::ECode>(atoi(status_str));
+            const auto state = SPSG_Reply::SState::FromRequestStatus(status);
 
-            if (status != CRequestStatus::e200_Ok) {
-                auto error(to_string(status) + ' ' +
-                        CRequestStatus::GetStdStatusMessage((CRequestStatus::ECode)status));
-                it->second->reply->SetFailed(error, status != CRequestStatus::e404_NotFound);
+            if (state != SPSG_Reply::SState::eSuccess) {
+                const auto error = to_string(status) + ' ' + CRequestStatus::GetStdStatusMessage(status);
+                it->second->reply->SetFailed(error, state);
             }
         }
     }
