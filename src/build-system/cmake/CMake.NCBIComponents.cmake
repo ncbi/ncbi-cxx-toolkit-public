@@ -249,6 +249,13 @@ endif()
 set(FTDS100_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds100 ${NCBITK_INC_ROOT}/dbapi/driver/ftds100/freetds)
 
 #############################################################################
+# NCBILS2
+if (NCBI_COMPONENT_GCRYPT_FOUND AND EXISTS ${NCBITK_SRC_ROOT}/internal/ncbils2/CMakeLists.txt)
+    set(NCBI_REQUIRE_NCBILS2_FOUND YES)
+    list(APPEND NCBI_ALL_REQUIRES NCBILS2)
+endif()
+
+#############################################################################
 list(SORT NCBI_ALL_LEGACY)
 list(APPEND NCBI_ALL_COMPONENTS ${NCBI_ALL_LEGACY})
 list(SORT NCBI_ALL_COMPONENTS)
