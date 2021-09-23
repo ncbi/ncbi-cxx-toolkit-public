@@ -2805,15 +2805,10 @@ bool CSubSource::IsPlasmidNameValid(const string& value, const string& taxname)
     if (NStr::Equal(value, "F") || NStr::Equal(value, "F factor") || NStr::Equal(value, "F plasmid")) {
         return true;
     }
-/*
-    if (NStr::Equal(value, "Plasmid R") || NStr::Equal(value, "plasmid R") ||
-        NStr::Equal(value, "Plasmid F") || NStr::Equal(value, "plasmid F")) {
-        return true;
-    }
-*/
+
     if (NStr::FindNoCase(value,"plasmid") != NPOS) {
         static const set<string, PNocase_Conditional> s_PlasmidNameExceptions = 
-        {
+        { // This list comes from RW-1430/RW-1028
             "Plasmid F",
             "Plasmid R",
             "Plasmid pTB913",
