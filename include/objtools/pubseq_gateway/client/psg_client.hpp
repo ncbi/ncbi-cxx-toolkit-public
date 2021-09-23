@@ -465,6 +465,7 @@ enum class EPSG_Status {
     eInProgress,    ///< Retrieval is not finalized yet, more info may come
     eNotFound,      ///< Not found
     eCanceled,      ///< Request canceled
+    eForbidden,     ///< User is not authorized for the retrieval
 
     /// An error was encountered while trying to send request or to read
     /// and to process the reply.

@@ -104,6 +104,7 @@ const char* s_StrStatus(EPSG_Status status)
         case EPSG_Status::eInProgress: return "InProgress";
         case EPSG_Status::eNotFound:   return "NotFound";
         case EPSG_Status::eCanceled:   return "Canceled";
+        case EPSG_Status::eForbidden:  return "Forbidden";
         case EPSG_Status::eError:      break;
     }
 
@@ -727,6 +728,7 @@ CRequestStatus::ECode s_PsgStatusToRequestStatus(EPSG_Status psg_status)
         case EPSG_Status::eSuccess:  return CRequestStatus::e200_Ok;
         case EPSG_Status::eNotFound: return CRequestStatus::e404_NotFound;
         case EPSG_Status::eCanceled: return CRequestStatus::e499_BrokenConnection;
+        case EPSG_Status::eForbidden:return CRequestStatus::e403_Forbidden;
         case EPSG_Status::eError:    return CRequestStatus::e400_BadRequest;
         case EPSG_Status::eInProgress: _TROUBLE; break;
     }

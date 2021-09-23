@@ -354,7 +354,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS& ite
     const auto& state = item_locked->state.GetState();
     const auto itar = SItemTypeAndReason::Get(args);
 
-    if ((state == SPSG_Reply::SState::eNotFound) || (state == SPSG_Reply::SState::eError)) {
+    if ((state != SPSG_Reply::SState::eSuccess) && (state != SPSG_Reply::SState::eInProgress)) {
         rv.reset(new CPSG_ReplyItem(itar.first));
 
     } else if (itar.first == CPSG_ReplyItem::eBlobData) {
@@ -619,6 +619,7 @@ EPSG_Status s_GetStatus(SPSG_Reply::SItem::TTS& ts, const CDeadline& deadline)
     do {
         switch (state.GetState()) {
             case SPSG_Reply::SState::eNotFound:   return EPSG_Status::eNotFound;
+            case SPSG_Reply::SState::eForbidden:  return EPSG_Status::eForbidden;
             case SPSG_Reply::SState::eError:      return EPSG_Status::eError;
             case SPSG_Reply::SState::eSuccess:    return EPSG_Status::eSuccess;
             case SPSG_Reply::SState::eInProgress: break;
