@@ -796,10 +796,13 @@ string CMacProjectGenerator::CreateProjectPostBuildScript(
         CDirEntry::AddTrailingPathSeparator( CDirEntry::ConcatPath(
             GetApp().GetProjectTreeInfo().m_Compilers,
             GetApp().GetRegSettings().m_CompilersSubdir))));
+    string absroot = CDirEntry::ConcatPath(
+        GetApp().GetProjectTreeInfo().m_Compilers,
+        GetApp().GetRegSettings().m_CompilersSubdir);
     string script;
     script += "export BUILD_TREE_ROOT=" + root + "\n";
     script += "export NCBI_VDB_LIBPATH=" + GetApp().GetSite().GetConfigureEntry("XCode_ThirdPartyVDBBasePath") + "\n";
-    if (CFile(root + "/postbuild.sh").Exists())
+    if (CFile(absroot + "/postbuild.sh").Exists())
     {
         script +=  "\"$BUILD_TREE_ROOT/postbuild.sh\"";
         string proj_script(   GetUUID());
