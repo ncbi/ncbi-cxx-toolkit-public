@@ -47,12 +47,9 @@ struct FileBuf {
 };
 struct indexblk_struct;
 struct protein_block;
-struct _fta_operon;
-
 
 typedef struct indexblk_struct* IndexblkPtr;
 typedef struct protein_block* ProtBlkPtr;
-typedef struct _fta_operon* FTAOperonPtr;
 
 using TEntryList = list<CRef<objects::CSeq_entry>>;
 
@@ -187,7 +184,7 @@ struct Parser {
     Int4 errstat=0;               /* Just a temporary storage */
     bool allow_uwsec=false;       /* Allows unusual secondary WGS accessions with prefixes not
                                      matching the primary one */
-    FTAOperonPtr operon=nullptr;
+    //struct FTAOperon* operon=nullptr;
     bool xml_comp=false;          /* INSDSeq/GenBank/EMBL compatible */
     bool sp_dt_seq_ver=true;      /* For SwissProt "Reviewed" records
                                      only: puts the sequence version

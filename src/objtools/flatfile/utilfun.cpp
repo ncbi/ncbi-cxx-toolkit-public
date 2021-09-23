@@ -1212,8 +1212,23 @@ char* SrchNodeType(DataBlkPtr entry, Int4 type, size_t* len)
 {
     DataBlkPtr temp;
 
-    temp = TrackNodeType(entry, (Int2) type);
+    temp = TrackNodeType(*entry, (Int2) type);
     if(temp != NULL)
+    {
+        *len = temp->len;
+        return(temp->mOffset);
+    }
+
+    *len = 0;
+    return(NULL);
+}
+
+char* xSrchNodeType(const DataBlk& entry, Int4 type, size_t* len)
+{
+    DataBlkPtr temp;
+
+    temp = TrackNodeType(entry, (Int2)type);
+    if (temp != NULL)
     {
         *len = temp->len;
         return(temp->mOffset);
@@ -1231,12 +1246,12 @@ char* SrchNodeType(DataBlkPtr entry, Int4 type, size_t* len)
  *   the "type".
  *
  **********************************************************/
-DataBlkPtr TrackNodeType(DataBlkPtr entry, Int2 type)
+DataBlkPtr TrackNodeType(const DataBlk& entry, Int2 type)
 {
     DataBlkPtr  temp;
     EntryBlkPtr ebp;
 
-    ebp = (EntryBlkPtr) entry->mpData;
+    ebp = (EntryBlkPtr) entry.mpData;
     temp = (DataBlkPtr) ebp->chain;
     while(temp != NULL && temp->mType != type)
         temp = temp->mpNext;
@@ -1680,18 +1695,6 @@ void check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len, IndexblkPtr entry,
 }
 
 /**********************************************************/
-void fta_operon_free(FTAOperonPtr fop)
-{
-    FTAOperonPtr fopnext;
-
-    for(; fop != NULL; fop = fopnext)
-    {
-        fopnext = fop->next;
-        delete fop;
-    }
-}
-
-/**********************************************************/
 ValNodePtr ConstructValNode(ValNodePtr head, Uint1 choice, void* data)
 {
     ValNodePtr res;
@@ -1773,9 +1776,9 @@ bool fta_check_mga_keywords(objects::CMolInfo& mol_info, const TKeywordList& kwd
 }
 
 /**********************************************************/
-void fta_StringCpy(char* dst, char* src)
+void fta_StringCpy(char* dst, const char* src)
 {
-    char* p;
+    const char* p;
     char* q;
 
     for(q = dst, p = src; *p != '\0';)

@@ -24,9 +24,9 @@
  *
  * ===========================================================================
  *
- * File Name:  loadfeat.c
+ * File Name:  loadfeat.c 
  *
- * Author: Karl Sirotkin, Hsiu-Chuan Chen
+ * Author: Karl Sirotkin, Hsiu-Chuan Chen 
  *
  * File Description:
  * -----------------
@@ -1234,7 +1234,7 @@ static void SeqFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
     if(pp->format == Parser::EFormat::XML)
         dbp = XMLBuildRefDataBlk(entry->mOffset, ibp->xip, ParFlat_REF_BTW);
     else
-        dbp = TrackNodeType(entry, ParFlat_REF_BTW);
+        dbp = TrackNodeType(*entry, ParFlat_REF_BTW);
     if(dbp == NULL)
         return;
 
@@ -1386,7 +1386,7 @@ static void ImpFeatPub(ParserPtr pp, DataBlkPtr entry, TSeqFeatList& feats,
     if(pp->format == Parser::EFormat::XML)
         dbp = XMLBuildRefDataBlk(entry->mOffset, ibp->xip, ParFlat_REF_SITES);
     else
-        dbp = TrackNodeType(entry, ParFlat_REF_SITES);
+        dbp = TrackNodeType(*entry, ParFlat_REF_SITES);
     if(dbp == NULL)
         return;
 
@@ -3456,43 +3456,23 @@ static void fta_check_non_tpa_tsa_tls_locations(DataBlkPtr dbp,
 }
 
 /**********************************************************/
-static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, IndexblkPtr ibp)
+static bool fta_perform_operon_checks(TSeqFeatList& feats, IndexblkPtr ibp)
 {
-    FTAOperonPtr fophead;
+    FTAOperonPtr fophead(nullptr);
     FTAOperonPtr fop;
     FTAOperonPtr tfop;
 
-    char*      p;
-    bool         got;
-    Int4         count;
+    //using FTAOperonList = list<FTAOperonPtr>;
+    //FTAOperonList operonList;
 
-    if(pp == NULL)
-        return true;
+    bool got(false);
+    int count(0);
 
-    if (feats.empty())
-    {
-        if(ibp->segnum == ibp->segtotal && pp->operon != NULL)
-            return(pp->operon->ret);
+    if (feats.empty()) {
         return true;
     }
 
-    if(ibp->segnum < 2 && pp->operon != NULL)
-    {
-        fta_operon_free(pp->operon);
-        pp->operon = NULL;
-    }
-
-    if(pp->operon == NULL)
-    {
-        fop = new FTAOperon;
-        fop->ret = true;
-        pp->operon = fop;
-    }
-    else
-        for(fop = pp->operon; fop->next != NULL;)
-            fop = fop->next;
-
-    fophead = NULL;
+    fophead = nullptr;
     ITERATE(TSeqFeatList, feat, feats)
     {
         if (!(*feat)->GetData().IsImp())
@@ -3507,24 +3487,14 @@ static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, Indexbl
                 !(*qual)->IsSetVal() || (*qual)->GetVal().empty())
                 continue;
 
-            tfop = new FTAOperon;
+            tfop = new FTAOperon(
+                imp_feat.IsSetKey() ? imp_feat.GetKey().c_str() : "Unknown",
+                (*qual)->GetVal());
             tfop->location = &(*feat)->GetLocation();
-            tfop->operon = (*qual)->GetVal().c_str();
-            tfop->featname = imp_feat.IsSetKey() ? imp_feat.GetKey().c_str() : "Unknown";
+            //operonList.push_back(tfop);
 
-            tfop->operon_feat = false;
-            tfop->ret = true;
-            tfop->strloc.clear();
-            tfop->next = NULL;
-            if(StringCmp(tfop->featname, "operon") == 0)
-                tfop->operon_feat = true;
-        
-            if(fophead == NULL)
-                fophead = tfop;
-
-            fop->next = tfop;
-            fop = fop->next;
-
+            fophead ? fop->next = tfop : fophead = tfop;
+            fop = tfop;
             count++;
 
             if(fop->operon_feat == false || fop == fophead)
@@ -3532,8 +3502,7 @@ static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, Indexbl
 
             for(tfop = fophead; tfop->next != NULL; tfop = tfop->next)
             {
-                if(tfop->operon_feat == false ||
-                   StringCmp(tfop->operon, fop->operon) != 0)
+                if(tfop->operon_feat == false || tfop->mOperon != fop->mOperon)
                     continue;
 
                 if(tfop->strloc == NULL)
@@ -3543,9 +3512,9 @@ static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, Indexbl
                     fop->strloc = location_to_string_or_unknown(*fop->location);
 
                 ErrPostEx(SEV_REJECT, ERR_FEATURE_OperonQualsNotUnique,
-                          "The operon features at \"%s\" and \"%s\" utilize the same /operon qualifier : \"%s\".",
-                          tfop->strloc.c_str(), fop->strloc.c_str(), fop->operon);
-                pp->operon->ret = false;
+                        "The operon features at \"%s\" and \"%s\" utilize the same /operon qualifier : \"%s\".",
+                        tfop->strloc.c_str(), fop->strloc.c_str(), fop->mOperon.c_str());
+                fophead->ret = false;
             }
         }
 
@@ -3555,9 +3524,9 @@ static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, Indexbl
                 fop->strloc = location_to_string_or_unknown(*fop->location);
 
             ErrPostEx(SEV_REJECT, ERR_FEATURE_MultipleOperonQuals,
-                      "Feature \"%s\" at \"%s\" has more than one operon qualifier.",
-                      fop->featname, fop->strloc.c_str());
-            pp->operon->ret = false;
+                    "Feature \"%s\" at \"%s\" has more than one operon qualifier.",
+                    fop->mFeatname.c_str(), fop->strloc.c_str());
+            fophead->ret = false;
         }
 
         if (count == 0 && imp_feat.IsSetKey() && imp_feat.GetKey() == "operon")
@@ -3568,26 +3537,26 @@ static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, Indexbl
                 "The operon feature at \"%s\" lacks an /operon qualifier.",
                 loc.c_str());
 
-            pp->operon->ret = false;
+            fophead->ret = false;
         }
     }
 
-    if(ibp->segnum != 0 && ibp->segnum != ibp->segtotal)
+    if (!fophead  || (ibp->segnum != 0 && ibp->segnum != ibp->segtotal)) {
         return true;
+    }
 
-    if(pp->operon->next == NULL || pp->operon->next->next == NULL)
-        return(pp->operon->ret);
+    if(fophead->next == NULL || fophead->next->next == NULL)
+        return(fophead->ret);
 
-    for(fop = pp->operon->next; fop != NULL; fop = fop->next)
+    for(fop = fophead->next; fop != NULL; fop = fop->next)
     {
         if(fop->operon_feat)
             continue;
 
         got = false;
-        for(tfop = pp->operon->next; tfop != NULL; tfop = tfop->next)
+        for(tfop = fophead->next; tfop != NULL; tfop = tfop->next)
         {
-            if(tfop->operon_feat == false ||
-               StringCmp(fop->operon, tfop->operon) != 0)
+            if(tfop->operon_feat == false ||  fop->mOperon != tfop->mOperon)
                 continue;
 
             got = true;
@@ -3603,26 +3572,24 @@ static bool fta_perform_operon_checks(ParserPtr pp, TSeqFeatList& feats, Indexbl
 
             ErrPostEx(SEV_REJECT, ERR_FEATURE_OperonLocationMisMatch,
                       "Feature \"%s\" at \"%s\" with /operon qualifier \"%s\" does not fall within the span of the operon feature at \"%s\".",
-                      fop->featname, fop->strloc.c_str(), fop->operon, tfop->strloc.c_str());
-            pp->operon->ret = false;
+                      fop->mFeatname.c_str(), fop->strloc.c_str(), fop->mOperon.c_str(), tfop->strloc.c_str());
+            fophead->ret = false;
         }
 
-        if(!got)
-        {
+        if(!got) {
             if(fop->strloc == NULL)
                 fop->strloc = location_to_string_or_unknown(*fop->location);
 
             ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidOperonQual,
-                      "/operon qualifier \"%s\" on feature \"%s\" at \"%s\" has a value that does not match any of the /operon qualifiers on operon features.",
-                      fop->operon, fop->featname, fop->strloc.c_str());
-            pp->operon->ret = false;
+                    "/operon qualifier \"%s\" on feature \"%s\" at \"%s\" has a value that does not match any of the /operon qualifiers on operon features.",
+                    fop->mOperon.c_str(), fop->mFeatname.c_str(), fop->strloc.c_str());
+            fophead->ret = false;
         }
     }
 
-    got = pp->operon->ret;
-    fta_operon_free(pp->operon);
-    pp->operon = NULL;
-    return(got);
+    got = fophead->ret;
+    delete fophead;
+    return got;
 }
 
 /**********************************************************/
@@ -5317,8 +5284,7 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
 /**********************************************************/
 static bool fta_check_ncrna(const objects::CSeq_feat& feat)
 {
-    char*   p;
-    Int4      count = 0;
+    int count = 0;
 
     bool stop = false;
     ITERATE(objects::CSeq_feat::TQual, qual, feat.GetQual())
@@ -5999,7 +5965,7 @@ void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
     if(pp->format == Parser::EFormat::XML)
         dab = XMLLoadFeatBlk(entry->mOffset, ibp->xip);
     else
-        dab = TrackNodeType(entry, type);
+        dab = TrackNodeType(*entry, type);
     for(dbp = dab; dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != type)
@@ -6185,7 +6151,7 @@ void LoadFeat(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
             MemFree(dab);
     }
 
-    if (!fta_perform_operon_checks(pp, seq_feats, ibp))
+    if (!fta_perform_operon_checks(seq_feats, ibp))
     {
         ibp->drop = 1;
         seq_feats.clear();
@@ -6882,7 +6848,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
     else
          stage = false;
 
-    dbp = TrackNodeType(entry, ParFlat_FH);
+    dbp = TrackNodeType(*entry, ParFlat_FH);
     if(dbp == NULL)
         return;
     dbp = (DataBlkPtr) dbp->mpData;

@@ -83,7 +83,7 @@ void GapFeatsFree(GapFeatsPtr gfp)
  *                                              5-12-93
  *
  **********************************************************/
-void FreeEntry(DataBlkPtr entry)
+void xFreeEntry(DataBlkPtr entry)
 {
     FreeEntryBlk(reinterpret_cast<EntryBlkPtr>(entry->mpData));
 

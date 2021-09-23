@@ -883,7 +883,7 @@ bool GetEmblInstContig(DataBlkPtr entry, objects::CBioseq& bioseq, ParserPtr pp)
     bool    allow_crossdb_featloc;
     int        numerr;
 
-    dbp = TrackNodeType(entry, ParFlat_CO);
+    dbp = TrackNodeType(*entry, ParFlat_CO);
     if(dbp == NULL || dbp->mOffset == NULL)
         return true;
 
@@ -2069,7 +2069,7 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& biose
 
     /* RN data ==> pub  should be before GBblock because we need patent ref
      */
-    dbp = TrackNodeType(entry, ParFlat_REF_END);
+    dbp = TrackNodeType(*entry, ParFlat_REF_END);
     for(; dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != ParFlat_REF_END)
@@ -2084,7 +2084,7 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& biose
         }
     }
 
-    dbp = TrackNodeType(entry, ParFlat_REF_NO_TARGET);
+    dbp = TrackNodeType(*entry, ParFlat_REF_NO_TARGET);
     for(; dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != ParFlat_REF_NO_TARGET)
@@ -2364,7 +2364,7 @@ static void FakeEmblBioSources(DataBlkPtr entry, objects::CBioseq& bioseq)
     char*      q;
     Char         ch;
 
-    dbp = TrackNodeType(entry, ParFlat_OS);
+    dbp = TrackNodeType(*entry, ParFlat_OS);
     if(dbp == NULL)
     {
         ErrPostStr(SEV_WARNING, ERR_ORGANISM_NoOrganism,
@@ -2590,7 +2590,7 @@ bool EmblAscii(ParserPtr pp)
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                           "Entry skipped: \"%s|%s\".",
                           ibp->locusname, ibp->acnum);
-                FreeEntry(entry);
+                delete entry;
                 continue;
             }
 
@@ -2605,7 +2605,7 @@ bool EmblAscii(ParserPtr pp)
                               "Entry skipped: \"%s|%s\".",
                               ibp->locusname, ibp->acnum);
                 }
-                FreeEntry(entry);
+                delete entry;
                 continue;
             }
             GetEmblSubBlock(ibp->bases, pp->source, entry);
@@ -2630,7 +2630,7 @@ bool EmblAscii(ParserPtr pp)
                               "Entry skipped: \"%s|%s\".",
                               ibp->locusname, ibp->acnum);
                 }
-                FreeEntry(entry);
+                delete entry;
                 continue;
             }
 
@@ -2645,7 +2645,7 @@ bool EmblAscii(ParserPtr pp)
                               "Entry skipped: \"%s|%s\".",
                               ibp->locusname, ibp->acnum);
                 }
-                FreeEntry(entry);
+                delete entry;
                 continue;
             }
 
@@ -2659,7 +2659,7 @@ bool EmblAscii(ParserPtr pp)
                               "Entry skipped: \"%s|%s\".",
                               ibp->locusname, ibp->acnum);
                 }
-                FreeEntry(entry);
+                delete entry;
                 continue;
             }
 
@@ -2709,7 +2709,7 @@ bool EmblAscii(ParserPtr pp)
                                   "Entry skipped: \"%s|%s\".",
                                   ibp->locusname, ibp->acnum);
                     }
-                    FreeEntry(entry);
+                    delete entry;
                     continue;
                 }
                 ErrPostEx(SEV_ERROR, ERR_QSCORE_FailedToParse,
@@ -2743,7 +2743,7 @@ bool EmblAscii(ParserPtr pp)
                               "Entry skipped: \"%s|%s\".",
                               ibp->locusname, ibp->acnum);
                 }
-                FreeEntry(entry);
+                delete entry;
                 continue;
             }
 
@@ -2775,7 +2775,7 @@ bool EmblAscii(ParserPtr pp)
                 GetSeqExt(pp, locs);
             }
 
-            FreeEntry(entry);
+            delete entry;
             GetScope().ResetHistory();
         } /* if, not drop */
 

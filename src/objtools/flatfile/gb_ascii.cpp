@@ -95,9 +95,9 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 /**********************************************************/
-static char* GBDivOffset(DataBlkPtr entry, Int4 div_shift)
+static char* GBDivOffset(const DataBlk& entry, Int4 div_shift)
 {
-    return(entry->mOffset + div_shift);
+    return(entry.mOffset + div_shift);
 }
 
 /**********************************************************/
@@ -170,7 +170,7 @@ bool GetGenBankInstContig(DataBlkPtr entry, objects::CBioseq& bsp, ParserPtr pp)
     Int4       i;
     int        numerr;
 
-    dbp = TrackNodeType(entry, ParFlat_CONTIG);
+    dbp = TrackNodeType(*entry, ParFlat_CONTIG);
     if(dbp == NULL || dbp->mOffset == NULL)
         return true;
 
@@ -451,7 +451,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
 
     lcp = &ibp->lc;
 
-    bptr = GBDivOffset(entry, lcp->div);
+    bptr = GBDivOffset(*entry, lcp->div);
 
     if(*bptr != ' ')
     {
@@ -867,7 +867,7 @@ static CRef<objects::CMolInfo> GetGenBankMolInfo(ParserPtr pp, DataBlkPtr entry,
 
     molstr = bptr + ibp->lc.molecule;
 
-    bptr = GBDivOffset(entry, ibp->lc.div);
+    bptr = GBDivOffset(*entry, ibp->lc.div);
 
     if(StringNCmp(bptr, "EST", 3) == 0)
         mol_info->SetTech(objects::CMolInfo::eTech_est);
@@ -1131,7 +1131,7 @@ static void fta_get_str_user_field(char* line, const Char *tag, objects::CUser_o
 }
 
 /**********************************************************/
-static void fta_get_user_object(objects::CSeq_entry& seq_entry, DataBlkPtr entry)
+static void fta_get_user_object(objects::CSeq_entry& seq_entry, const DataBlk& entry)
 {
     char*       p;
     char*       q;
@@ -1139,7 +1139,7 @@ static void fta_get_user_object(objects::CSeq_entry& seq_entry, DataBlkPtr entry
     Char          ch;
     size_t        l;
 
-    p = SrchNodeType(entry, ParFlat_USER, &l);
+    p = xSrchNodeType(entry, ParFlat_USER, &l);
     if(l < ParFlat_COL_DATA)
         return;
 
@@ -1368,7 +1368,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
      */
     /* pub should be before GBblock because we need patent ref
      */
-    dbp = TrackNodeType(entry, ParFlat_REF_END);
+    dbp = TrackNodeType(*entry, ParFlat_REF_END);
     for(; dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != ParFlat_REF_END)
@@ -1383,7 +1383,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
         }
     }
 
-    dbp = TrackNodeType(entry, ParFlat_REF_NO_TARGET);
+    dbp = TrackNodeType(*entry, ParFlat_REF_NO_TARGET);
     for(; dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != ParFlat_REF_NO_TARGET)
@@ -1567,7 +1567,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
 }
 
 /**********************************************************/
-static void GenBankGetDivision(char* division, Int4 div, DataBlkPtr entry)
+static void GenBankGetDivision(char* division, Int4 div, const DataBlk& entry)
 {
     StringNCpy(division, GBDivOffset(entry, div), 3);
     division[3] = '\0';
@@ -1585,9 +1585,7 @@ static void GenBankGetDivision(char* division, Int4 div, DataBlkPtr entry)
 bool GenBankAscii(ParserPtr pp)
 {
     Int2        curkw;
-    Int4        i;
     Int4        imax;
-    Int4        j;
     Int4        segindx;
     Int4        total = 0;
     Int4        total_long = 0;
@@ -1595,7 +1593,7 @@ bool GenBankAscii(ParserPtr pp)
     char*     ptr;
     char*     eptr;
     char*     div;
-    DataBlkPtr  entry;
+    unique_ptr<DataBlk>  pEntry;
     EntryBlkPtr ebp;
 
 //    unsigned char*    dnaconv;
@@ -1616,7 +1614,8 @@ bool GenBankAscii(ParserPtr pp)
 
     segindx = -1;
 
-    for(imax = pp->indx, i = 0; i < imax; i++)
+    imax = pp->indx;
+    for(int i = 0; i < imax; i++)
     {
         pp->curindx = i;
         ibp = pp->entrylist[i];
@@ -1634,8 +1633,8 @@ bool GenBankAscii(ParserPtr pp)
             continue;
         }
 
-        entry = LoadEntry(pp, ibp->offset, ibp->len);
-        if(entry == NULL)
+        pEntry.reset(LoadEntry(pp, ibp->offset, ibp->len));
+        if(!pEntry)
         {
             FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
             //MemFree(dnaconv);
@@ -1643,9 +1642,9 @@ bool GenBankAscii(ParserPtr pp)
             return false;
         }
 
-        ebp = (EntryBlkPtr) entry->mpData;
-        ptr = entry->mOffset;
-        eptr = ptr + entry->len;
+        ebp = (EntryBlkPtr) pEntry->mpData;
+        ptr = pEntry->mOffset;
+        eptr = ptr + pEntry->len;
         curkw = ParFlat_LOCUS;
         while(curkw != ParFlat_END && ptr < eptr)
         {
@@ -1653,7 +1652,7 @@ bool GenBankAscii(ParserPtr pp)
         }
 
         if (pp->entrylist[pp->curindx]->lc.div > -1) {
-            GenBankGetDivision(pp->entrylist[pp->curindx]->division, pp->entrylist[pp->curindx]->lc.div, entry);
+            GenBankGetDivision(pp->entrylist[pp->curindx]->division, pp->entrylist[pp->curindx]->lc.div, *pEntry);
             if(StringCmp(ibp->division, "TSA") == 0)
             {
                 if(ibp->tsa_allowed == false)
@@ -1669,7 +1668,6 @@ bool GenBankAscii(ParserPtr pp)
         {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                       "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-            FreeEntry(entry);
             total_dropped++;
             continue;
         }
@@ -1684,17 +1682,16 @@ bool GenBankAscii(ParserPtr pp)
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                           "Entry skipped: \"%s|%s\".",
                           ibp->locusname, ibp->acnum);
-                FreeEntry(entry);
                 total_dropped++;
                 continue;
             }
         }
-        GetGenBankSubBlock(entry, ibp->bases);
+        GetGenBankSubBlock(*pEntry, ibp->bases);
 
         CRef<objects::CBioseq> bioseq = CreateEntryBioseq(pp, true);
-        AddNIDSeqId(*bioseq, entry, ParFlat_NCBI_GI, ParFlat_COL_DATA, pp->source);
+        AddNIDSeqId(*bioseq, pEntry.get(), ParFlat_NCBI_GI, ParFlat_COL_DATA, pp->source);
 
-        if(StringNCmp(entry->mOffset + ibp->lc.bp, "aa", 2) == 0)
+        if(StringNCmp(pEntry->mOffset + ibp->lc.bp, "aa", 2) == 0)
         {
             ibp->is_prot = true;
             conv = protconv.get();
@@ -1709,7 +1706,7 @@ bool GenBankAscii(ParserPtr pp)
         ebp->seq_entry->SetSeq(*bioseq);
         GetScope().AddBioseq(*bioseq);
 
-        if (!GetGenBankInst(pp, entry, conv))
+        if (!GetGenBankInst(pp, pEntry.get(), conv))
         {
             ibp->drop = 1;
             ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData,
@@ -1719,30 +1716,27 @@ bool GenBankAscii(ParserPtr pp)
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                           "Entry skipped: \"%s|%s\".",
                           ibp->locusname, ibp->acnum);
-                FreeEntry(entry);
                 total_dropped++;
                 continue;
             }
         }
 
-        FakeGenBankBioSources(entry, *bioseq);
-        LoadFeat(pp, entry, *bioseq);
+        FakeGenBankBioSources(pEntry.get(), *bioseq);
+        LoadFeat(pp, pEntry.get(), *bioseq);
 
         if (!bioseq->IsSetAnnot() && ibp->drop != 0 && ibp->segnum == 0)
         {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                       "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-            FreeEntry(entry);
             total_dropped++;
             continue;
         }
 
-        GetGenBankDescr(pp, entry, *bioseq);
+        GetGenBankDescr(pp, pEntry.get(), *bioseq);
         if(ibp->drop != 0 && ibp->segnum == 0)
         {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                       "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-            FreeEntry(entry);
             total_dropped++;
             continue;
         }
@@ -1781,23 +1775,22 @@ bool GenBankAscii(ParserPtr pp)
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                           "Entry skipped: \"%s|%s\".",
                           ibp->locusname, ibp->acnum);
-                FreeEntry(entry);
                 total_dropped++;
                 continue;
             }
         }
 
-        if (entry->mpQscore == NULL && pp->accver)
+        if (pEntry->mpQscore == NULL && pp->accver)
         {
             if (pp->ff_get_qscore != NULL)
-                entry->mpQscore = (*pp->ff_get_qscore)(ibp->acnum, ibp->vernum);
+                pEntry->mpQscore = (*pp->ff_get_qscore)(ibp->acnum, ibp->vernum);
             else if (pp->ff_get_qscore_pp != NULL)
-                entry->mpQscore = (*pp->ff_get_qscore_pp)(ibp->acnum, ibp->vernum, pp);
+                pEntry->mpQscore = (*pp->ff_get_qscore_pp)(ibp->acnum, ibp->vernum, pp);
             if (pp->qsfd != NULL && ibp->qslength > 0)
-                entry->mpQscore = GetQSFromFile(pp->qsfd, ibp);
+                pEntry->mpQscore = GetQSFromFile(pp->qsfd, ibp);
         }
 
-        if (!QscoreToSeqAnnot(entry->mpQscore, *bioseq, ibp->acnum, ibp->vernum, false, true))
+        if (!QscoreToSeqAnnot(pEntry->mpQscore, *bioseq, ibp->acnum, ibp->vernum, false, true))
         {
             if(pp->ign_bad_qs == false)
             {
@@ -1809,7 +1802,6 @@ bool GenBankAscii(ParserPtr pp)
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                               "Entry skipped: \"%s|%s\".",
                               ibp->locusname, ibp->acnum);
-                    FreeEntry(entry);
                     total_dropped++;
                     continue;
                 }
@@ -1821,10 +1813,10 @@ bool GenBankAscii(ParserPtr pp)
             }
         }
 
-        if(entry->mpQscore != NULL)
+        if(pEntry->mpQscore != NULL)
         {
-            MemFree(entry->mpQscore);
-            entry->mpQscore = NULL;
+            MemFree(pEntry->mpQscore);
+            pEntry->mpQscore = NULL;
         }
 
         if (ibp->psip.NotEmpty())
@@ -1868,7 +1860,6 @@ bool GenBankAscii(ParserPtr pp)
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                               "Entry skipped: \"%s|%s\".",
                               ibp->locusname, ibp->acnum);
-                    FreeEntry(entry);
                     total_dropped++;
                     continue;
                 }
@@ -1903,7 +1894,8 @@ bool GenBankAscii(ParserPtr pp)
             if(ibp->segnum != 0)
             {
                 div = pp->entrylist[segindx]->division;
-                for(j = segindx; j <= i; j++)
+                int j = segindx;
+                for(; j <= i; j++)
                 {
                     tibp = pp->entrylist[j];
                     err_install(tibp, pp->accver);
@@ -1933,8 +1925,6 @@ bool GenBankAscii(ParserPtr pp)
                     }
 
                     seq_entries.clear();
-
-                    FreeEntry(entry);
                     continue;
                 }
             }
@@ -1947,7 +1937,8 @@ bool GenBankAscii(ParserPtr pp)
                 {
                     ErrPostEx(SEV_WARNING, ERR_SEGMENT_Rejected,
                               "Reject the whole segmented set.");
-                    for(j = segindx; j <= i; j++)
+                    int j = segindx;
+                    for(; j <= i; j++)
                     {
                         tibp = pp->entrylist[j];
                         err_install(tibp, pp->accver);
@@ -1964,12 +1955,11 @@ bool GenBankAscii(ParserPtr pp)
                               ibp->locusname, ibp->acnum);
                     total_dropped++;
                 }
-                FreeEntry(entry);
                 continue;
             }
 
             if (pp->source == Parser::ESource::Flybase && !seq_entries.empty())
-                fta_get_user_object(*(*seq_entries.begin()), entry);
+                fta_get_user_object(*(*seq_entries.begin()), *pEntry);
 
             /* remove out all the features if their seqloc has
              * "join" or "order" among other segments, to the annot
@@ -1995,7 +1985,8 @@ bool GenBankAscii(ParserPtr pp)
             {
                 if(ibp->segnum != 0)
                 {
-                    for(j = segindx; j <= i; j++)
+                    int j = segindx;
+                    for(; j <= i; j++)
                     {
                         tibp = pp->entrylist[j];
                         err_install(tibp, pp->accver);
@@ -2080,10 +2071,11 @@ bool GenBankAscii(ParserPtr pp)
             PackEntries(seq_entries);
             CheckDupDates(seq_entries);
 
-            if(ibp->segnum != 0)
-                for(j = segindx; j <= i; j++)
+            if(ibp->segnum != 0) {
+                int j = segindx;
+                for(; j <= i; j++)
                     err_install(pp->entrylist[j], pp->accver);
-
+            }
             if (seq_long)
             {
                 seq_long = false;
@@ -2104,7 +2096,7 @@ bool GenBankAscii(ParserPtr pp)
 
             if(ibp->segnum != 0)
             {
-                for(j = segindx; j <= i; j++)
+                for(int j = segindx; j <= i; j++)
                 {
                     tibp = pp->entrylist[j];
                     err_install(tibp, pp->accver);
@@ -2129,8 +2121,6 @@ bool GenBankAscii(ParserPtr pp)
             seq_entries.push_back(ebp->seq_entry);
             ebp->seq_entry.Reset();
         }
-
-        FreeEntry(entry);
 
     } /* for, ascii block entries */
 

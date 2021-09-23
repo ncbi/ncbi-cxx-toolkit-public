@@ -95,7 +95,7 @@ static void GetPrfSubBlock(ParserPtr pp, DataBlkPtr entry)
 {
     DataBlkPtr dbp;
 
-    dbp = TrackNodeType(entry, ParFlatPRF_NAME);
+    dbp = TrackNodeType(*entry, ParFlatPRF_NAME);
     if(dbp != NULL)
     {
         BuildSubBlock(dbp, ParFlatPRF_subunit, " subunit");
@@ -107,7 +107,7 @@ static void GetPrfSubBlock(ParserPtr pp, DataBlkPtr entry)
         GetLenSubNode(dbp);
     }
 
-    dbp = TrackNodeType(entry, ParFlatPRF_SOURCE);
+    dbp = TrackNodeType(*entry, ParFlatPRF_SOURCE);
     if(dbp != NULL)
     {
         BuildSubBlock(dbp, ParFlatPRF_strain, " strain");
@@ -119,7 +119,7 @@ static void GetPrfSubBlock(ParserPtr pp, DataBlkPtr entry)
         GetLenSubNode(dbp);
     }
 
-    dbp = TrackNodeType(entry, ParFlatPRF_JOURNAL);
+    dbp = TrackNodeType(*entry, ParFlatPRF_JOURNAL);
     for(; dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != ParFlatPRF_JOURNAL)
@@ -163,7 +163,7 @@ static CRef<objects::CPRF_block> PrfGetPrfBlock(DataBlkPtr entry)
     CRef<objects::CPRF_block> prf_block;
     TKeywordList kwds;
 
-    dbp = TrackNodeType(entry, ParFlatPRF_KEYWORD);
+    dbp = TrackNodeType(*entry, ParFlatPRF_KEYWORD);
     if(dbp != NULL && dbp->mOffset != NULL && dbp->len > ParFlat_COL_DATA_PRF)
     {
         ch = dbp->mOffset[dbp->len];
@@ -208,7 +208,7 @@ static CRef<objects::CPRF_block> PrfGetPrfBlock(DataBlkPtr entry)
         }
     }
 
-    dbp = TrackNodeType(entry, ParFlatPRF_SOURCE);
+    dbp = TrackNodeType(*entry, ParFlatPRF_SOURCE);
     if(dbp == NULL || dbp->mpData == NULL)
         return prf_block;
 
@@ -254,7 +254,7 @@ static char* PrfGetStringValue(DataBlkPtr entry, Int2 type)
 {
     DataBlkPtr dbp;
 
-    dbp = TrackNodeType(entry, type);
+    dbp = TrackNodeType(*entry, type);
     if(dbp == NULL || dbp->mOffset == NULL || dbp->len <= ParFlat_COL_DATA_PRF)
         return(NULL);
 
@@ -268,7 +268,7 @@ static char* PrfGetSubStringValue(DataBlkPtr entry, Int2 type, Int2 subtype)
     DataBlkPtr dbp;
     char*    res;
 
-    dbp = TrackNodeType(entry, type);
+    dbp = TrackNodeType(*entry, type);
     if(dbp == NULL || dbp->mpData == NULL)
         return(NULL);
 
@@ -299,7 +299,7 @@ static CRef<objects::CBioSource> PrfGetBioSource(ParserPtr pp, DataBlkPtr entry)
     Int4         gen;
     Int4         count;
 
-    dbp = TrackNodeType(entry, ParFlatPRF_SOURCE);
+    dbp = TrackNodeType(*entry, ParFlatPRF_SOURCE);
     if(dbp == NULL || dbp->mOffset == NULL || dbp->len <= ParFlat_COL_DATA_PRF)
         return bio_src;
 
@@ -612,7 +612,7 @@ static void PrfGetDescr(ParserPtr pp, DataBlkPtr entry, TSeqdescList& descrs)
         descrs.push_back(descr);
     }
 
-    dbp = TrackNodeType(entry, ParFlatPRF_JOURNAL);
+    dbp = TrackNodeType(*entry, ParFlatPRF_JOURNAL);
     for(; dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != ParFlatPRF_JOURNAL)
@@ -1013,7 +1013,7 @@ bool PrfAscii(ParserPtr pp)
                 cur_entry.Reset();
             }
 
-            FreeEntry(entry);
+            delete entry;
         }
         if(ibp->drop != 1)
         {

@@ -1432,7 +1432,7 @@ bool XMLAscii(ParserPtr pp)
         ebp->seq_entry->SetSeq(*bioseq);
         GetScope().AddBioseq(*bioseq);
 
-        dbp = (DataBlkPtr) MemNew(sizeof(DataBlk));
+        dbp = new DataBlk;
         dbp->mpData = ebp;
         dbp->mOffset = entry;
         dbp->len = StringLen(entry);
@@ -1448,7 +1448,7 @@ bool XMLAscii(ParserPtr pp)
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                           "Entry skipped: \"%s|%s\".",
                           ibp->locusname, ibp->acnum);
-                FreeEntry(dbp);
+                delete dbp;
                 MemFree(entry);
                 total_dropped++;
                 continue;
@@ -1462,7 +1462,7 @@ bool XMLAscii(ParserPtr pp)
         {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                       "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-            FreeEntry(dbp);
+            delete dbp;
             MemFree(entry);
             total_dropped++;
             continue;
@@ -1474,7 +1474,7 @@ bool XMLAscii(ParserPtr pp)
         {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                       "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-            FreeEntry(dbp);
+            delete dbp;
             MemFree(entry);
             total_dropped++;
             continue;
@@ -1514,7 +1514,7 @@ bool XMLAscii(ParserPtr pp)
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                           "Entry skipped: \"%s|%s\".",
                           ibp->locusname, ibp->acnum);
-                FreeEntry(dbp);
+                delete dbp;
                 MemFree(entry);
                 total_dropped++;
                 continue;
@@ -1543,7 +1543,7 @@ bool XMLAscii(ParserPtr pp)
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                               "Entry skipped: \"%s|%s\".",
                               ibp->locusname, ibp->acnum);
-                    FreeEntry(dbp);
+                    delete dbp;
                     MemFree(entry);
                     total_dropped++;
                     continue;
@@ -1600,7 +1600,7 @@ bool XMLAscii(ParserPtr pp)
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                               "Entry skipped: \"%s|%s\".",
                               ibp->locusname, ibp->acnum);
-                    FreeEntry(dbp);
+                    delete dbp;
                     MemFree(entry);
                     total_dropped++;
                     continue;
@@ -1667,7 +1667,7 @@ bool XMLAscii(ParserPtr pp)
 
                     seq_entries.clear();
 
-                    FreeEntry(dbp);
+                    delete dbp;
                     MemFree(entry);
                     GetScope().ResetHistory();
                     continue;
@@ -1706,7 +1706,7 @@ bool XMLAscii(ParserPtr pp)
                               ibp->locusname, ibp->acnum);
                     total_dropped++;
                 }
-                FreeEntry(dbp);
+                delete dbp;
                 MemFree(entry);
                 GetScope().ResetHistory();
                 continue;
@@ -1866,7 +1866,7 @@ bool XMLAscii(ParserPtr pp)
             ebp->seq_entry.Reset();
         }
 
-        FreeEntry(dbp);
+        delete dbp;
         MemFree(entry);
         GetScope().ResetHistory();
 
