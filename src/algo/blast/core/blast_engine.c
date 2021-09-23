@@ -615,7 +615,7 @@ s_BlastSearchEngineCoreCleanUp(EBlastProgramType program_number,
         BlastQueryInfo* query_info,
         const BlastQueryInfo* query_info_in,
         Uint1* translation_buffer,
-        Int4* frame_offsets_a)
+        Uint4* frame_offsets_a)
 {
     /* Free the local query info structure when needed (in RPS BLAST). */
     if (query_info != query_info_in)
@@ -768,7 +768,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
             /* For RPS tblastn, subject is actually query, which has already
                been translated during the setup stage. */
             translation_buffer = backup.sequence - 1;
-            frame_offsets_a = frame_offsets = ContextOffsetsToOffsetArray(query_info_in);
+            frame_offsets_a = frame_offsets = (Uint4*)ContextOffsetsToOffsetArray(query_info_in);
         } else {
             BLAST_GetAllTranslations(backup.sequence, eBlastEncodingNcbi2na,
                                      backup.full_range.right,
