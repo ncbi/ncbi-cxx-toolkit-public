@@ -10,7 +10,7 @@ REQUIRES = MT Linux LMDB PROTOBUF GMOCK
 LOCAL_CPPFLAGS=-I$(import_root)/../include
 CPPFLAGS = $(LMDB_INCLUDE) $(GMOCK_INCLUDE) $(ORIG_CPPFLAGS) $(COVERAGE_FLAGS)
 LIB = $(SEQ_LIBS) pub medline biblio general psg_cache psg_cassandra psg_protobuf xser xconnect xutil $(LOCAL_LIB) xncbi
-LIBS = $(LMDB_LIBS) $(PROTOBUF_LIBS) $(GMOCK_LIBS) $(ORIG_LIBS)
+LIBS = $(LMDB_LIBS) $(PROTOBUF_LIBS) $(GMOCK_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 LOCAL_CPPFLAGS += -fno-delete-null-pointer-checks
 
 LOCAL_LDFLAGS = -L$(import_root)/../lib

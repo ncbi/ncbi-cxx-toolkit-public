@@ -6,7 +6,7 @@ SRC = test_psg_cache
 
 #COVERAGE_FLAGS=-fprofile-arcs -ftest-coverage
 CPPFLAGS = $(LMDB_INCLUDE) $(ORIG_CPPFLAGS) $(COVERAGE_FLAGS)
-LIBS = $(LMDB_LIBS) $(PROTOBUF_LIBS) $(ORIG_LIBS)
+LIBS = $(LMDB_LIBS) $(PROTOBUF_LIBS) $(NETWORk_LIBS) $(ORIG_LIBS)
 LIB = $(SEQ_LIBS) pub medline biblio general psg_cache psg_cassandra psg_protobuf xser xconnect xutil xncbi 
 
 LDFLAGS = $(ORIG_LDFLAGS) $(FAST_LDFLAGS) $(COVERAGE_FLAGS) $(LOCAL_LDFLAGS)
