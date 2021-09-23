@@ -453,7 +453,7 @@ void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
 
 CNetStorageObjectLoc::EFileTrackSite CNetStorageObjectLoc::ParseFileTrackSite(const string& ft_site_name)
 {
-    static map<CTempString, EFileTrackSite, PNocase> p =
+    static map<string, EFileTrackSite, PNocase> p =
     {
         { "production",  eFileTrack_ProdSite },
         { "prod",        eFileTrack_ProdSite },
