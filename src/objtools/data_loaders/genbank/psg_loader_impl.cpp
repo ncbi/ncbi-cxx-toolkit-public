@@ -381,6 +381,9 @@ template<class TReply> void ReportStatus(TReply reply, EPSG_Status status)
     case EPSG_Status::eNotFound:
         sstatus = "Not found";
         break;
+    case EPSG_Status::eForbidden:
+        sstatus = "Forbidden";
+        break;
     default:
         sstatus = to_string((int)status);
         break;
@@ -410,6 +413,9 @@ public:
     bool GotNotFound() const {
         return m_GotNotFound;
     }
+    bool GotForbidden() const {
+        return m_GotForbidden;
+    }
 
 protected:
     void OnStatusChange(EStatus old) override;
@@ -437,6 +443,7 @@ protected:
     TReply m_Reply;
     EStatus m_Status;
     bool m_GotNotFound;
+    bool m_GotForbidden;
 private:
     CPSG_TaskGroup& m_Group;
 };
@@ -535,6 +542,7 @@ CPSG_Task::CPSG_Task(TReply reply, CPSG_TaskGroup& group)
     : m_Reply(reply),
       m_Status(eIdle),
       m_GotNotFound(false),
+      m_GotForbidden(false),
       m_Group(group)
 {
 }
@@ -593,6 +601,10 @@ void CPSG_Task::ReadReply(void)
             ReportStatus(reply_item, status);
             if ( status == EPSG_Status::eNotFound ) {
                 m_GotNotFound = true;
+                continue;
+            }
+            if ( status == EPSG_Status::eForbidden ) {
+                m_GotForbidden = true;
                 continue;
             }
             m_Status = eFailed;
@@ -794,6 +806,10 @@ CPSGDataLoader_Impl::CallWithRetry(Call&& call,
     for ( int t = 1; t < retry_count; ++ t ) {
         try {
             return call();
+        }
+        catch ( CBlobStateException& ) {
+            // no retry
+            throw;
         }
         catch ( CLoaderException& exc ) {
             if ( exc.GetErrCode() == exc.eConnectionFailed ||
@@ -2563,7 +2579,8 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
               (lock_asap || load_lock) &&
               !task->m_ReplyResult.blob_id.empty() &&
               retry &&
-              !task->GotNotFound() ) {
+              !task->GotNotFound() &&
+              !task->GotForbidden() ) {
         // blob is required, but not received, yet blob_id is known, so we retry
         ret = x_RetryBlobRequest(task->m_ReplyResult.blob_id, data_source, req_idh);
         if ( !ret.lock ) {
@@ -2575,6 +2592,11 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
     else if ( task->GotNotFound() ) {
         NCBI_THROW_FMT(CLoaderException, eNoData,
                        "CPSGDataLoader: No blob for seq_id="<<req_idh<<" blob_id="<<task->m_ReplyResult.blob_id);
+    }
+    else if ( task->GotForbidden() ) {
+        NCBI_THROW2(CBlobStateException, eBlobStateError,
+                    "blob state error for "+req_idh.AsString(),
+                    CBioseq_Handle::fState_no_data|CBioseq_Handle::fState_withdrawn);
     }
     else {
         _TRACE("Failed to load blob for " << req_idh.AsString()<<" @ "<<CStackTrace());
