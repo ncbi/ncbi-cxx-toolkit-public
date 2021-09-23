@@ -61,12 +61,12 @@ char*     GetPrfBlock(DataBlkPtr* chain, char* ptr, short* retkw, char* eptr);
 // LCOV_EXCL_STOP
 void        BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char *subkw);
 void        GetLenSubNode(DataBlkPtr dbp);
-char*     SrchNodeSubType(DataBlkPtr entry, Int2 type, Int2 subtype, size_t* len);
+char*     SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype, size_t* len);
 char*     GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool is_pat);
 void        GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source, TAccessionList& accessions);
-void        GetSequenceOfKeywords(DataBlkPtr entry, Int2 type, Int2 col_data, TKeywordList& keywords);
+void        GetSequenceOfKeywords(const DataBlk& entry, Int2 type, Int2 col_data, TKeywordList& keywords);
 
-bool GetSeqData(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& cpp_bsp,
+bool GetSeqData(ParserPtr pp, const DataBlk& entry, objects::CBioseq& cpp_bsp,
                       Int4 nodetype, unsigned char* seqconv, Uint1 seq_data_type);
     
 unique_ptr<unsigned char[]>   GetDNAConv(void);
@@ -84,8 +84,8 @@ char*     check_div(bool pat_acc, bool pat_ref, bool est_kwd,
                             bool sts_kwd, bool gss_kwd, bool if_cds, char* div, unsigned char* tech, size_t bases,
                             Parser::ESource source, bool& drop);
 void        EntryCheckDivCode(TEntryList& seq_entries, ParserPtr pp);
-void        AddNIDSeqId(objects::CBioseq& bioseq, DataBlkPtr entry, Int2 type, Int2 coldata, Parser::ESource source);
-void        DefVsHTGKeywords(Uint1 tech, DataBlkPtr entry, Int2 what, Int2 ori, bool cancelled);
+void        AddNIDSeqId(objects::CBioseq& bioseq, const DataBlk& entry, Int2 type, Int2 coldata, Parser::ESource source);
+void        DefVsHTGKeywords(Uint1 tech, const DataBlk& entry, Int2 what, Int2 ori, bool cancelled);
 void        XMLDefVsHTGKeywords(Uint1 tech, char* entry, XmlIndexPtr xip, bool cancelled);
 void        CheckHTGDivision(char* div, Uint1 tech);
 void        fta_sort_biosource(objects::CBioSource& bio);

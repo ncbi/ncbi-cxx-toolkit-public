@@ -39,7 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
-bool GetGenBankInstContig(DataBlkPtr entry, objects::CBioseq& bsp, ParserPtr pp);
+bool GetGenBankInstContig(const DataBlk& entry, objects::CBioseq& bsp, ParserPtr pp);
 
 /* routines for checking the feature location has join or order
 * among other segment

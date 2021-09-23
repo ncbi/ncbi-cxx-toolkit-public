@@ -312,7 +312,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
 
             if (!ibp->is_contig) {
                 auto molconv = GetDNAConv();
-                res = GetSeqData(pp, entry, *bioseq, ParFlat_SQ, molconv.get(), eSeq_code_type_iupacna);
+                res = GetSeqData(pp, *entry, *bioseq, ParFlat_SQ, molconv.get(), eSeq_code_type_iupacna);
              //   MemFree(molconv);
             }
             else {
@@ -334,7 +334,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
             res = false;
             if (!ibp->is_contig) {
                 auto molconv = GetDNAConv();
-                res = GetSeqData(pp, entry, *bioseq, ParFlat_ORIGIN, molconv.get(), eSeq_code_type_iupacna);
+                res = GetSeqData(pp, *entry, *bioseq, ParFlat_ORIGIN, molconv.get(), eSeq_code_type_iupacna);
                // MemFree(molconv);
             }
             else {
@@ -353,7 +353,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
 
         if (ptr < eptr) {
             auto molconv = GetProteinConv();
-            res = GetSeqData(pp, entry, *bioseq, ParFlat_SQ, molconv.get(), eSeq_code_type_iupacna);
+            res = GetSeqData(pp, *entry, *bioseq, ParFlat_SQ, molconv.get(), eSeq_code_type_iupacna);
         //    MemFree(molconv);
         }
     }

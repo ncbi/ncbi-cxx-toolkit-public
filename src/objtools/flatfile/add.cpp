@@ -250,7 +250,7 @@ bool no_reference(const objects::CBioseq& bioseq)
  *      Returns TRUE if CDS is in the entry.
  *
  **********************************************************/
-bool check_cds(DataBlkPtr entry, Parser::EFormat format)
+bool check_cds(const DataBlk& entry, Parser::EFormat format)
 {
     DataBlkPtr temp;
     DataBlkPtr dbp;
@@ -272,7 +272,7 @@ bool check_cds(DataBlkPtr entry, Parser::EFormat format)
     else
         return false;
 
-    for(temp = TrackNodeType(*entry, type); temp != NULL; temp = temp->mpNext)
+    for(temp = TrackNodeType(entry, type); temp != NULL; temp = temp->mpNext)
     {
         if(temp->mType != type)
             continue;

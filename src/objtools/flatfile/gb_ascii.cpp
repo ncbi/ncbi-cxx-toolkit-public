@@ -155,7 +155,7 @@ static void CheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 }
 
 /**********************************************************/
-bool GetGenBankInstContig(DataBlkPtr entry, objects::CBioseq& bsp, ParserPtr pp)
+bool GetGenBankInstContig(const DataBlk& entry, objects::CBioseq& bsp, ParserPtr pp)
 {
     DataBlkPtr dbp;
 
@@ -170,7 +170,7 @@ bool GetGenBankInstContig(DataBlkPtr entry, objects::CBioseq& bsp, ParserPtr pp)
     Int4       i;
     int        numerr;
 
-    dbp = TrackNodeType(*entry, ParFlat_CONTIG);
+    dbp = TrackNodeType(entry, ParFlat_CONTIG);
     if(dbp == NULL || dbp->mOffset == NULL)
         return true;
 
@@ -243,7 +243,7 @@ bool GetGenBankInstContig(DataBlkPtr entry, objects::CBioseq& bsp, ParserPtr pp)
  *                                              3-30-93
  *
  **********************************************************/
-static bool GetGenBankInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnaconv)
+static bool GetGenBankInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaconv)
 {
     EntryBlkPtr  ebp;
     Int2         topology;
@@ -254,13 +254,13 @@ static bool GetGenBankInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnacon
     LocusContPtr lcp;
     IndexblkPtr  ibp;
 
-    bptr = entry->mOffset;
+    bptr = entry.mOffset;
     ibp = pp->entrylist[pp->curindx];
     lcp = &ibp->lc;
 
     topstr = bptr + lcp->topology;
 
-    ebp = reinterpret_cast<EntryBlkPtr>(entry->mpData);
+    ebp = reinterpret_cast<EntryBlkPtr>(entry.mpData);
     objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
 
     objects::CSeq_inst& inst = bioseq.SetInst();
@@ -332,7 +332,7 @@ static char* GetGenBankLineage(char* start, char* end)
  *                                              4-7-93
  *
  **********************************************************/
-static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objects::CMolInfo& mol_info,
+static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, objects::CMolInfo& mol_info,
                                                        objects::CBioSource* bio_src)
 {
     LocusContPtr lcp;
@@ -375,7 +375,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
     ibp = pp->entrylist[pp->curindx];
     ibp->wgssec[0] = '\0';
 
-    bptr = SrchNodeType(entry, ParFlat_SOURCE, &len);
+    bptr = xSrchNodeType(entry, ParFlat_SOURCE, &len);
     str = GetBlkDataReplaceNewLine(bptr, bptr + len, ParFlat_COL_DATA);
     if(str != NULL)
     {
@@ -429,7 +429,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
         return ret;
     }
 
-    bptr = SrchNodeType(entry, ParFlat_ORIGIN, &len);
+    bptr = xSrchNodeType(entry, ParFlat_ORIGIN, &len);
     eptr = bptr + len;
     ptr = SrchTheChar(bptr, eptr, '\n');
     if(ptr != NULL)
@@ -451,7 +451,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
 
     lcp = &ibp->lc;
 
-    bptr = GBDivOffset(*entry, lcp->div);
+    bptr = GBDivOffset(entry, lcp->div);
 
     if(*bptr != ' ')
     {
@@ -635,7 +635,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
                 RemoveHtgPhase(gbb->SetKeywords());
             }
 
-            bptr = SrchNodeType(entry, ParFlat_KEYWORDS, &len);
+            bptr = xSrchNodeType(entry, ParFlat_KEYWORDS, &len);
             if(bptr != NULL)
             {
                 kw = GetBlkDataReplaceNewLine(bptr, bptr + len,
@@ -729,7 +729,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
 
     if (is_htc_div)
     {
-        bptr = entry->mOffset;
+        bptr = entry.mOffset;
         p = bptr + lcp->molecule;
         if(*p == 'm' || *p == 'r')
             p++;
@@ -853,7 +853,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, DataBlkPtr entry, objec
  *   LOCUS ... column 37, or column 53 if "EST"
  *
  **********************************************************/
-static CRef<objects::CMolInfo> GetGenBankMolInfo(ParserPtr pp, DataBlkPtr entry,
+static CRef<objects::CMolInfo> GetGenBankMolInfo(ParserPtr pp, const DataBlk& entry,
                                                              const objects::COrg_ref* org_ref)
 {
     IndexblkPtr ibp;
@@ -862,12 +862,12 @@ static CRef<objects::CMolInfo> GetGenBankMolInfo(ParserPtr pp, DataBlkPtr entry,
 
     CRef<objects::CMolInfo> mol_info(new objects::CMolInfo);
 
-    bptr = entry->mOffset;
+    bptr = entry.mOffset;
     ibp = pp->entrylist[pp->curindx];
 
     molstr = bptr + ibp->lc.molecule;
 
-    bptr = GBDivOffset(*entry, ibp->lc.div);
+    bptr = GBDivOffset(entry, ibp->lc.div);
 
     if(StringNCmp(bptr, "EST", 3) == 0)
         mol_info->SetTech(objects::CMolInfo::eTech_est);
@@ -911,7 +911,7 @@ static CRef<objects::CMolInfo> GetGenBankMolInfo(ParserPtr pp, DataBlkPtr entry,
 }
 
 /**********************************************************/
-static void FakeGenBankBioSources(DataBlkPtr entry, objects::CBioseq& bioseq)
+static void FakeGenBankBioSources(const DataBlk& entry, objects::CBioseq& bioseq)
 {
     char*      bptr;
     char*      end;
@@ -1234,7 +1234,7 @@ static void fta_get_mga_user_object(TSeqdescList& descrs, char* offset,
 }
 
 /**********************************************************/
-static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
+static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
 {
     IndexblkPtr   ibp;
 
@@ -1274,7 +1274,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
      */
     str = NULL;
     size_t len = 0;
-    offset = SrchNodeType(entry, ParFlat_DEFINITION, &len);
+    offset = xSrchNodeType(entry, ParFlat_DEFINITION, &len);
 
     std::string title;
     if(offset != NULL)
@@ -1319,13 +1319,13 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
     }
 
     CRef<objects::CUser_object> dbuop;
-    offset = SrchNodeType(entry, ParFlat_DBLINK, &len);
+    offset = xSrchNodeType(entry, ParFlat_DBLINK, &len);
     if (offset != NULL)
         fta_get_dblink_user_object(bioseq.SetDescr().Set(), offset, len,
                                    pp->source, &ibp->drop, dbuop);
     else
     {
-        offset = SrchNodeType(entry, ParFlat_PROJECT, &len);
+        offset = xSrchNodeType(entry, ParFlat_PROJECT, &len);
         if(offset != NULL)
             fta_get_project_user_object(bioseq.SetDescr().Set(), offset, Parser::EFormat::GenBank,
                                         &ibp->drop, pp->source);
@@ -1333,7 +1333,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
 
     if(ibp->is_mga)
     {
-        offset = SrchNodeType(entry, ParFlat_MGA, &len);
+        offset = xSrchNodeType(entry, ParFlat_MGA, &len);
         fta_get_mga_user_object(bioseq.SetDescr().Set(), offset, ibp->bases);
     }
     if(ibp->is_tpa &&
@@ -1368,7 +1368,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
      */
     /* pub should be before GBblock because we need patent ref
      */
-    dbp = TrackNodeType(*entry, ParFlat_REF_END);
+    dbp = TrackNodeType(entry, ParFlat_REF_END);
     for(; dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != ParFlat_REF_END)
@@ -1383,7 +1383,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
         }
     }
 
-    dbp = TrackNodeType(*entry, ParFlat_REF_NO_TARGET);
+    dbp = TrackNodeType(entry, ParFlat_REF_NO_TARGET);
     for(; dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != ParFlat_REF_NO_TARGET)
@@ -1441,7 +1441,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
         bioseq.SetDescr().Set().push_back(descr);
     }
 
-    offset = SrchNodeType(entry, ParFlat_PRIMARY, &len);
+    offset = xSrchNodeType(entry, ParFlat_PRIMARY, &len);
     if(offset == NULL && ibp->is_tpa && ibp->is_wgs == false)
     {
         if(ibp->inferential || ibp->experimental)
@@ -1482,7 +1482,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
 
     /* COMMENT data
      */
-    offset = SrchNodeType(entry, ParFlat_COMMENT, &len);
+    offset = xSrchNodeType(entry, ParFlat_COMMENT, &len);
     if(offset != NULL && len > 0)
     {
         str = GetDescrComment(offset, len, ParFlat_COL_DATA,
@@ -1550,7 +1550,7 @@ static void GetGenBankDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bi
     }
     else if(ibp->lc.date > 0)
     {
-        CRef<objects::CDate_std> std_date = GetUpdateDate(entry->mOffset+ibp->lc.date, pp->source);
+        CRef<objects::CDate_std> std_date = GetUpdateDate(entry.mOffset+ibp->lc.date, pp->source);
         if (std_date.NotEmpty())
         {
             date.Reset(new objects::CDate);
@@ -1585,11 +1585,11 @@ static void GenBankGetDivision(char* division, Int4 div, const DataBlk& entry)
 bool GenBankAscii(ParserPtr pp)
 {
     Int2        curkw;
-    Int4        imax;
-    Int4        segindx;
-    Int4        total = 0;
-    Int4        total_long = 0;
-    Int4        total_dropped = 0;
+    int imax;
+    int segindx;
+    int total = 0;
+    int total_long = 0;
+    int total_dropped = 0;
     char*     ptr;
     char*     eptr;
     char*     div;
@@ -1689,7 +1689,7 @@ bool GenBankAscii(ParserPtr pp)
         GetGenBankSubBlock(*pEntry, ibp->bases);
 
         CRef<objects::CBioseq> bioseq = CreateEntryBioseq(pp, true);
-        AddNIDSeqId(*bioseq, pEntry.get(), ParFlat_NCBI_GI, ParFlat_COL_DATA, pp->source);
+        AddNIDSeqId(*bioseq, *pEntry, ParFlat_NCBI_GI, ParFlat_COL_DATA, pp->source);
 
         if(StringNCmp(pEntry->mOffset + ibp->lc.bp, "aa", 2) == 0)
         {
@@ -1706,7 +1706,7 @@ bool GenBankAscii(ParserPtr pp)
         ebp->seq_entry->SetSeq(*bioseq);
         GetScope().AddBioseq(*bioseq);
 
-        if (!GetGenBankInst(pp, pEntry.get(), conv))
+        if (!GetGenBankInst(pp, *pEntry, conv))
         {
             ibp->drop = 1;
             ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData,
@@ -1721,8 +1721,8 @@ bool GenBankAscii(ParserPtr pp)
             }
         }
 
-        FakeGenBankBioSources(pEntry.get(), *bioseq);
-        LoadFeat(pp, pEntry.get(), *bioseq);
+        FakeGenBankBioSources(*pEntry, *bioseq);
+        LoadFeat(pp, *pEntry, *bioseq);
 
         if (!bioseq->IsSetAnnot() && ibp->drop != 0 && ibp->segnum == 0)
         {
@@ -1732,7 +1732,7 @@ bool GenBankAscii(ParserPtr pp)
             continue;
         }
 
-        GetGenBankDescr(pp, pEntry.get(), *bioseq);
+        GetGenBankDescr(pp, *pEntry, *bioseq);
         if(ibp->drop != 0 && ibp->segnum == 0)
         {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,

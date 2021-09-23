@@ -1041,7 +1041,7 @@ static bool GetEmblInst(ParserPtr pp, DataBlkPtr entry, unsigned char* dnaconv)
     if(r != NULL)
         *r = ';';
 
-    if (!GetSeqData(pp, entry, bioseq, ParFlat_SQ, dnaconv, objects::eSeq_code_type_iupacna))
+    if (!GetSeqData(pp, *entry, bioseq, ParFlat_SQ, dnaconv, objects::eSeq_code_type_iupacna))
         return false;
 
     if(ibp->is_contig && !GetEmblInstContig(entry, bioseq, pp))
@@ -1170,7 +1170,7 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
         dataclass[0] = '\0';
     }
 
-    if_cds = check_cds(entry, pp->format);
+    if_cds = check_cds(*entry, pp->format);
 
     if (ibp->psip.NotEmpty())
         pat_ref = true;
@@ -1181,7 +1181,7 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
         ibp->keywords.clear();
     }
     else
-        GetSequenceOfKeywords(entry, ParFlat_KW, ParFlat_COL_DATA_EMBL, keywords);
+        GetSequenceOfKeywords(*entry, ParFlat_KW, ParFlat_COL_DATA_EMBL, keywords);
 
     embl->SetKeywords() = keywords;
     if(ibp->is_tpa && !fta_tpa_keywords_check(keywords))
@@ -1279,7 +1279,7 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
 
     fta_check_htg_kwds(embl->SetKeywords(), pp->entrylist[pp->curindx], mol_info);
 
-    DefVsHTGKeywords(mol_info.GetTech(), entry, ParFlat_DE, ParFlat_SQ, cancelled);
+    DefVsHTGKeywords(mol_info.GetTech(), *entry, ParFlat_DE, ParFlat_SQ, cancelled);
     if ((mol_info.GetTech() == objects::CMolInfo::eTech_htgs_0 || mol_info.GetTech() == objects::CMolInfo::eTech_htgs_1 ||
         mol_info.GetTech() == objects::CMolInfo::eTech_htgs_2) && *gbdiv != NULL)
     {
@@ -1647,7 +1647,7 @@ static CRef<objects::CGB_block> GetEmblGBBlock(ParserPtr pp, DataBlkPtr entry,
             ibp->keywords.clear();
         }
         else
-            GetSequenceOfKeywords(entry, ParFlat_KW, ParFlat_COL_DATA_EMBL, gbb->SetKeywords());
+            GetSequenceOfKeywords(*entry, ParFlat_KW, ParFlat_COL_DATA_EMBL, gbb->SetKeywords());
     }
 
     if(gbdiv)
@@ -1750,7 +1750,7 @@ static CRef<objects::CMolInfo> GetEmblMolInfo(ParserPtr pp, DataBlkPtr entry,
     if(i == 0 && CheckSTRAND(bptr) >= 0)
         bptr = bptr + 3;
 
-    GetFlatBiomol(mol_info->SetBiomol(), mol_info->GetTech(), bptr, pp, entry, org_ref);
+    GetFlatBiomol(mol_info->SetBiomol(), mol_info->GetTech(), bptr, pp, *entry, org_ref);
     if (mol_info->GetBiomol() == 0) // not set
         mol_info->ResetBiomol();
 
@@ -2611,7 +2611,7 @@ bool EmblAscii(ParserPtr pp)
             GetEmblSubBlock(ibp->bases, pp->source, entry);
 
             CRef<objects::CBioseq> bioseq = CreateEntryBioseq(pp, true);
-            AddNIDSeqId(*bioseq, entry, ParFlat_NI, ParFlat_COL_DATA_EMBL,
+            AddNIDSeqId(*bioseq, *entry, ParFlat_NI, ParFlat_COL_DATA_EMBL,
                         pp->source);
 
             ebp->seq_entry.Reset(new objects::CSeq_entry);
@@ -2635,7 +2635,7 @@ bool EmblAscii(ParserPtr pp)
             }
 
             FakeEmblBioSources(entry, *bioseq);
-            LoadFeat(pp, entry, *bioseq);
+            LoadFeat(pp, *entry, *bioseq);
 
             if (!bioseq->IsSetAnnot() && ibp->drop != 0)
             {

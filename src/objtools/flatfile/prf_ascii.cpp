@@ -956,7 +956,7 @@ static CRef<objects::CSeq_entry> PrfPrepareEntry(ParserPtr pp, DataBlkPtr entry,
     CRef<objects::CSeq_entry> seq_entry(new objects::CSeq_entry);
     seq_entry->SetSeq(*bioseq);
 
-    GetSeqData(pp, entry, *bioseq, ParFlatPRF_SEQUENCE, protconv, objects::CSeq_data::e_Iupacaa);
+    GetSeqData(pp, *entry, *bioseq, ParFlatPRF_SEQUENCE, protconv, objects::CSeq_data::e_Iupacaa);
 
     PrfGetDescr(pp, entry, bioseq->SetDescr().Set());
     PrfGetAnnot(pp, entry, *bioseq);
