@@ -54,7 +54,7 @@ Int4        ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, unsig
 char*     GetGenBankBlock(DataBlkPtr* chain, char* ptr, short* retkw, char* eptr);
 void        GetGenBankSubBlock(const DataBlk& entry, size_t bases);
 char*     GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw, Parser::EFormat format, char* eptr);
-void        GetEmblSubBlock(size_t bases, Parser::ESource source, DataBlkPtr entry);
+void        GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry);
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 char*     GetPrfBlock(DataBlkPtr* chain, char* ptr, short* retkw, char* eptr);
@@ -96,7 +96,7 @@ void        fta_sort_seqfeat_cit(TEntryList& seq_entries);
 bool        XMLCheckCDS(char* entry, XmlIndexPtr xip);
 void        fta_set_strandedness(TEntryList& seq_entries);
 
-bool GetEmblInstContig(DataBlkPtr entry, objects::CBioseq& bioseq, ParserPtr pp);
+bool GetEmblInstContig(const DataBlk& entry, objects::CBioseq& bioseq, ParserPtr pp);
 
 bool        fta_orgref_has_taxid(const objects::COrg_ref::TDb& dbtags);
 void        fta_fix_orgref_div(const objects::CBioseq::TAnnot& annots, objects::COrg_ref& org_ref, objects::CGB_block& gbb);

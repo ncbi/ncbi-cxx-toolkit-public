@@ -713,14 +713,14 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlkPtr dbp)
 *                                              5-27-93
 *
 **********************************************************/
-void GetEmblSubBlock(size_t bases, Parser::ESource source, DataBlkPtr entry)
+void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
 {
     DataBlkPtr  temp;
     DataBlkPtr  curdbp;
     DataBlkPtr  predbp;
     EntryBlkPtr ebp;
 
-    temp = TrackNodeType(*entry, ParFlat_OS);
+    temp = TrackNodeType(entry, ParFlat_OS);
     for (; temp != NULL; temp = temp->mpNext)
     {
         if (temp->mType != ParFlat_OS)
@@ -731,7 +731,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, DataBlkPtr entry)
         GetLenSubNode(temp);
     }
 
-    temp = TrackNodeType(*entry, ParFlat_RN);
+    temp = TrackNodeType(entry, ParFlat_RN);
     for (; temp != NULL; temp = temp->mpNext)
     {
         if (temp->mType != ParFlat_RN)
@@ -749,7 +749,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, DataBlkPtr entry)
         GetLenSubNode(temp);
     }
 
-    ebp = (EntryBlkPtr)entry->mpData;
+    ebp = (EntryBlkPtr)entry.mpData;
     temp = (DataBlkPtr)ebp->chain;
     predbp = temp;
     curdbp = temp->mpNext;
