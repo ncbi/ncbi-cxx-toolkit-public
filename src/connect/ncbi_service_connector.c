@@ -529,6 +529,7 @@ static int/*bool*/ x_SetHostPort(SConnNetInfo* net_info,
 
     if (vhost) {
         char* tag;
+        assert(info->vhost);
         if (!(tag = (char*) malloc(sizeof(kHttpHostTag) + info->vhost)))
             return 0/*failure*/;
         sprintf(tag, "%s%.*s", kHttpHostTag, (int) info->vhost, vhost);
@@ -537,8 +538,13 @@ static int/*bool*/ x_SetHostPort(SConnNetInfo* net_info,
             return 0/*failure*/;
         }
         free(tag);
+        if (!net_info->http_proxy_host[0]  ||  !net_info->http_proxy_port)
+            vhost = 0;
     }
-    if (info->host == SOCK_HostToNetLong((unsigned int)(-1L))) {
+    if (vhost) {
+        assert((size_t) info->vhost < sizeof(net_info->host));
+        strncpy0(net_info->host, vhost, (size_t) info->vhost);
+    } else if (info->host == SOCK_HostToNetLong((unsigned int)(-1L))) {
         int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr);
         char* end = NcbiAddrToString(net_info->host + ipv6,
                                      sizeof(net_info->host) - (size_t)(2*ipv6),
