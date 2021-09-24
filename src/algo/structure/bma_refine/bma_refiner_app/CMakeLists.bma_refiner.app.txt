@@ -1,6 +1,6 @@
 # $Id$
 
-NCBI_begin_app(bma_refiner_app)
+NCBI_begin_app(bma_refiner)
   NCBI_sources(bma_refiner)
   NCBI_uses_toolkit_libraries(xbma_refiner)
   NCBI_project_watchers(lanczyck)
