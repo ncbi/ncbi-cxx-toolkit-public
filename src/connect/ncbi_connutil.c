@@ -1247,8 +1247,6 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         }
     } else {
         /* Authority portion not present */
-        user    = pass    = 0;
-        userlen = passlen = 0;
         s = (const char*) strchr(url, ':');
         if (s  &&  s != url  &&
             (scheme = x_ParseScheme(url, (size_t)(s - url))) != eURL_Unspec) {
@@ -1263,14 +1261,23 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             &&  (errno = 0, (port = strtol(s, &p, 10)) != 0)  &&  !errno
             &&  p == s + hostlen  &&  !(port ^ (port & 0xFFFF))
             &&  !NCBI_HasSpaces(url, hostlen = (size_t)(--s - url))) {
+            user = pass = "";
             host = url;
+            assert(hostlen);
             path = p;
         } else {
-            port = -1L/*unassigned*/;
-            hostlen = 0;
+            user = pass = 0;
             host = 0;
+            hostlen = 0;
+            port = -1L/*unassigned*/;
             path = url;
         }
+        userlen = passlen = 0;
+    }
+    assert(!hostlen  ||  host);
+    if (hostlen  &&  hostlen == strlen(info->host)
+        &&  strncasecmp(host, info->host, hostlen) == 0) {
+        host = 0;
     }
 
     pathlen = (scheme == eURL_Https  ||  scheme == eURL_Http
@@ -1346,7 +1353,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         p[pathlen] = '\0';
     if (path)
         memcpy(p, path, pathlen);
-    if (user) {
+    if (user  &&  (*user  ||  host)) {
         assert(pass);
         memcpy(info->user, user, userlen);
         info->user[userlen] = '\0';
@@ -1356,7 +1363,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     if (port >= 0  ||  scheme == eURL_File)
         info->port = (unsigned short)(port < 0 ? 0 : port);
     if (host) {
-        assert(!NCBI_HasSpaces(host, hostlen));
+        assert(hostlen  &&  !NCBI_HasSpaces(host, hostlen));
         memcpy(info->host, host, hostlen);
         info->host[hostlen] = '\0';
     }
