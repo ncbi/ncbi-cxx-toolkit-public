@@ -1,5 +1,5 @@
-#!/bin/bash
-# $Header$
+#! /bin/bash
+# $Id$
 
 # Simulate a down database server for the 'dbapi_svc_test' Testsuite test per CXX-10698.
 # Meant to be called from crontab as a watcher script, but can be run standalone.
