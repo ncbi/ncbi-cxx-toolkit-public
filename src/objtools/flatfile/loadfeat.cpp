@@ -3458,138 +3458,110 @@ static void fta_check_non_tpa_tsa_tls_locations(DataBlkPtr dbp,
 /**********************************************************/
 static bool fta_perform_operon_checks(TSeqFeatList& feats, IndexblkPtr ibp)
 {
-    FTAOperonPtr fophead(nullptr);
-    FTAOperonPtr fop;
-    FTAOperonPtr tfop;
-
-    //using FTAOperonList = list<FTAOperonPtr>;
-    //FTAOperonList operonList;
-
-    bool got(false);
-    int count(0);
+    using FTAOperonList = list<FTAOperon*>;
+    FTAOperonList operonList;
+    FTAOperonList residentList;
+    bool success = true;
 
     if (feats.empty()) {
         return true;
     }
 
-    fophead = nullptr;
-    ITERATE(TSeqFeatList, feat, feats)
-    {
-        if (!(*feat)->GetData().IsImp())
+    for (const auto& pFeat: feats) {
+        if (!pFeat->GetData().IsImp())
             continue;
 
-        const objects::CImp_feat& imp_feat = (*feat)->GetData().GetImp();
+        const auto& featLocation = pFeat->GetLocation();
+        const CImp_feat& featImp = pFeat->GetData().GetImp();
+        FTAOperon* pLatest(nullptr);
+        int opQualCount(0);
 
-        count = 0;
-        ITERATE(objects::CSeq_feat::TQual, qual, (*feat)->GetQual())
-        {
-            if (!(*qual)->IsSetQual() || (*qual)->GetQual() != "operon" ||
-                !(*qual)->IsSetVal() || (*qual)->GetVal().empty())
+        for (const auto& pQual: pFeat->GetQual()) {
+            const auto& qual = *pQual;
+            if (!qual.IsSetQual()  ||  qual.GetQual() != "operon"  ||  
+                    !qual.IsSetVal()  ||  qual.GetVal().empty()) {
                 continue;
+            }
+            opQualCount++;
 
-            tfop = new FTAOperon(
-                imp_feat.IsSetKey() ? imp_feat.GetKey().c_str() : "Unknown",
-                (*qual)->GetVal());
-            tfop->location = &(*feat)->GetLocation();
-            //operonList.push_back(tfop);
-
-            fophead ? fop->next = tfop : fophead = tfop;
-            fop = tfop;
-            count++;
-
-            if(fop->operon_feat == false || fop == fophead)
+            pLatest = new FTAOperon(
+                featImp.IsSetKey() ? featImp.GetKey().c_str() : "Unknown",
+                qual.GetVal(),
+                featLocation);
+            if (pLatest->IsOperon()) {
+                operonList.push_back(pLatest);
+            }
+            else {
+                residentList.push_back(pLatest);
                 continue;
-
-            for(tfop = fophead; tfop->next != NULL; tfop = tfop->next)
-            {
-                if(tfop->operon_feat == false || tfop->mOperon != fop->mOperon)
+            }
+            for (const auto& operon: operonList) {
+                if (pLatest == operon) {
                     continue;
-
-                if(tfop->strloc == NULL)
-                    tfop->strloc = location_to_string_or_unknown(*tfop->location);
-
-                if(fop->strloc == NULL)
-                    fop->strloc = location_to_string_or_unknown(*fop->location);
-
+                }
+                if (pLatest->mOperon != operon->mOperon) {
+                    continue;
+                }
                 ErrPostEx(SEV_REJECT, ERR_FEATURE_OperonQualsNotUnique,
-                        "The operon features at \"%s\" and \"%s\" utilize the same /operon qualifier : \"%s\".",
-                        tfop->strloc.c_str(), fop->strloc.c_str(), fop->mOperon.c_str());
-                fophead->ret = false;
+                    "The operon features at \"%s\" and \"%s\" utilize the same /operon qualifier : \"%s\".",
+                    operon->LocationStr().c_str(), pLatest->LocationStr().c_str(), pLatest->mOperon.c_str());
+                success = false;
             }
         }
 
-        if(count > 1)
-        {
-            if(fop->strloc == NULL)
-                fop->strloc = location_to_string_or_unknown(*fop->location);
-
+        if(opQualCount > 1) {
             ErrPostEx(SEV_REJECT, ERR_FEATURE_MultipleOperonQuals,
-                    "Feature \"%s\" at \"%s\" has more than one operon qualifier.",
-                    fop->mFeatname.c_str(), fop->strloc.c_str());
-            fophead->ret = false;
+                "Feature \"%s\" at \"%s\" has more than one operon qualifier.",
+                pLatest->mFeatname.c_str(),
+                pLatest->LocationStr().c_str());
+            success = false;
         }
 
-        if (count == 0 && imp_feat.IsSetKey() && imp_feat.GetKey() == "operon")
+        if (opQualCount == 0  &&  featImp.IsSetKey() && featImp.GetKey() == "operon")
         {
-            string loc = location_to_string_or_unknown((*feat)->GetLocation());
-
             ErrPostEx(SEV_REJECT, ERR_FEATURE_MissingOperonQual,
                 "The operon feature at \"%s\" lacks an /operon qualifier.",
-                loc.c_str());
-
-            fophead->ret = false;
+                location_to_string_or_unknown(featLocation));
+            success = false;
         }
     }
 
-    if (!fophead  || (ibp->segnum != 0 && ibp->segnum != ibp->segtotal)) {
-        return true;
-    }
-
-    if(fophead->next == NULL || fophead->next->next == NULL)
-        return(fophead->ret);
-
-    for(fop = fophead->next; fop != NULL; fop = fop->next)
-    {
-        if(fop->operon_feat)
-            continue;
-
-        got = false;
-        for(tfop = fophead->next; tfop != NULL; tfop = tfop->next)
-        {
-            if(tfop->operon_feat == false ||  fop->mOperon != tfop->mOperon)
+    for (const auto& resident: residentList) {
+        bool matched = false;
+        for (const auto& operon: operonList) {
+            if (resident->mOperon != operon->mOperon) {
                 continue;
-
-            got = true;
-            objects::sequence::ECompare cmp_res = objects::sequence::Compare(*fop->location, *tfop->location, nullptr, objects::sequence::fCompareOverlapping);
-            if (cmp_res == objects::sequence::eContained || cmp_res == objects::sequence::eSame)
-                continue;
-
-            if(fop->strloc == NULL)
-                fop->strloc = location_to_string_or_unknown(*fop->location);
-
-            if(tfop->strloc == NULL)
-                tfop->strloc = location_to_string_or_unknown(*tfop->location);
-
-            ErrPostEx(SEV_REJECT, ERR_FEATURE_OperonLocationMisMatch,
-                      "Feature \"%s\" at \"%s\" with /operon qualifier \"%s\" does not fall within the span of the operon feature at \"%s\".",
-                      fop->mFeatname.c_str(), fop->strloc.c_str(), fop->mOperon.c_str(), tfop->strloc.c_str());
-            fophead->ret = false;
+            }
+            matched = true;
+            sequence::ECompare compare = sequence::Compare(
+                    *resident->mLocation, *operon->mLocation, nullptr, 
+                    objects::sequence::fCompareOverlapping);
+            if (compare != sequence::eContained && compare != sequence::eSame) {
+                ErrPostEx(SEV_REJECT, ERR_FEATURE_OperonLocationMisMatch,
+                    "Feature \"%s\" at \"%s\" with /operon qualifier \"%s\" does not fall within the span of the operon feature at \"%s\".",
+                    resident->mFeatname.c_str(), 
+                    resident->LocationStr().c_str(), 
+                    resident->mOperon.c_str(), 
+                    operon->LocationStr().c_str());
+                success = false;
+            }
         }
-
-        if(!got) {
-            if(fop->strloc == NULL)
-                fop->strloc = location_to_string_or_unknown(*fop->location);
-
+        if (!matched) {
             ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidOperonQual,
-                    "/operon qualifier \"%s\" on feature \"%s\" at \"%s\" has a value that does not match any of the /operon qualifiers on operon features.",
-                    fop->mOperon.c_str(), fop->mFeatname.c_str(), fop->strloc.c_str());
-            fophead->ret = false;
+                "/operon qualifier \"%s\" on feature \"%s\" at \"%s\" has a value that does not match any of the /operon qualifiers on operon features.",
+                resident->mOperon.c_str(), 
+                resident->mFeatname.c_str(), 
+                resident->LocationStr().c_str());
+            success = false;
         }
     }
-
-    got = fophead->ret;
-    delete fophead;
-    return got;
+    for (auto& resident: residentList) {
+        delete resident;
+    }
+    for (auto& operon: operonList) {
+        delete operon;
+    }
+    return success;
 }
 
 /**********************************************************/
