@@ -68,14 +68,6 @@ private:
     /// option)
     int x_PrintBlastDatabaseInformation();
 
-    /// Scan dbs in 2na format
-    /// @return 0 on success; 1 if some sequences were not retrieved
-    int x_ScanCompressedDatabase();
-
-    /// Scan dbs in 4na format
-    /// @return 0 on success; 1 if some sequences were not retrieved
-    int x_ScanUncompressedDatabase();
-
     /// Processes all requests except printing the BLAST database information
     /// @return 0 on success; 1 if some sequences were not retrieved
     int x_ProcessSearchRequest();
@@ -296,111 +288,6 @@ CBlastVdbCmdApp::x_ProcessSearchRequest()
     }
     return errors_found ? 1 : 0;
 }
-
-int
-CBlastVdbCmdApp::x_ScanCompressedDatabase()
-{
-    CStopWatch sw;
-    sw.Start();
-    CRef<CVDBBlastUtil>  util=x_GetVDBBlastUtil(m_isRef);
-    if(util.Empty()) {
-		NCBI_THROW(CInputException, eInvalidInput, "Cannot scan ref seq");
-    }
-
-    BlastSeqSrc* seqsrc = util->GetSRASeqSrc();
-    Uint8 bases_scanned = 0;
-    char base;
-
-    BlastSeqSrcGetSeqArg seq_arg = { '\0' };
-    	BlastSeqSrcIterator * itr =
-    			BlastSeqSrcIteratorNewEx(1);
-
-    	while ( (seq_arg.oid = BlastSeqSrcIteratorNext(seqsrc, itr)) !=
-            BLAST_SEQSRC_EOF)
-    	{
-    		if (seq_arg.oid == BLAST_SEQSRC_ERROR) {
-    			cerr << "Error while iterating over BLAST VDB database (2na)" << endl;
-    			return 1;
-    		}
-
-    		seq_arg.encoding = eBlastEncodingNcbi2na;
-    		seq_arg.reset_ranges = TRUE;
-    		if (BlastSeqSrcGetSequence(seqsrc, &seq_arg) < 0) {
-    			continue;
-                }
-    		for (int i = 0; i < seq_arg.seq->length/4; i++) {
-    			base = seq_arg.seq->sequence[i];
-    		}
-    		bases_scanned +=seq_arg.seq->length;
-    		BlastSeqSrcReleaseSequence(seqsrc, &seq_arg);
-    	}
-    sw.Stop();
-    cout << "PERF: "<< setiosflags(ios::fixed) << setprecision(2)
-            << bases_scanned / sw.Elapsed() << " bases/second" << endl;
-    cout << "PERF: "<< setiosflags(ios::fixed) << setprecision(2)
-    << "Scanned " << NStr::ULongToString(bases_scanned, kFlags) <<  " bases in "<<  x_FormatRuntime(sw) << endl;
-
-    // Silence set but not used warning
-    base= base?1:0;
-
-    return 0;
-}
-
-int
-CBlastVdbCmdApp::x_ScanUncompressedDatabase()
-{
-    CStopWatch sw;
-    sw.Start();
-    CRef<CVDBBlastUtil>  util=x_GetVDBBlastUtil(m_isRef);
-    if(util.Empty()) {
-    	NCBI_THROW(CInputException, eInvalidInput, "Cannot scan ref seq");
-    }
-    BlastSeqSrc* seqsrc = util->GetSRASeqSrc();
-    Uint8 bases_scanned = 0;
-    const Uint8 num_seqs = BlastSeqSrcGetNumSeqs(seqsrc);
-    BlastSeqSrcGetSeqArg seq_arg = { '\0' };
-    seq_arg.encoding = eBlastEncodingNucleotide;
-    seq_arg.reset_ranges = TRUE;
-    Uint8 err_counter = 0;
-    Uint8 counter = 0;
-    char base;
-
-    //Break after 1001 (arbitrary) consecutive errors to prevent infinite loop
-    //Note that some oids may correspond to nothing and occasional error is ok
-   	while ( (counter < num_seqs) && (err_counter <= 1000))
-   	{
-   		seq_arg.oid = counter;
-    	if (BlastSeqSrcGetSequence(seqsrc, &seq_arg) < 0) {
-    		err_counter ++;
-    		continue;
-    	}
-
-    	for (int i = 0; i < seq_arg.seq->length; i++) {
-    		base = seq_arg.seq->sequence[i];
-    	}
-    	bases_scanned +=seq_arg.seq->length;
-    	err_counter = 0;
-    	counter ++;
-    	BlastSeqSrcReleaseSequence(seqsrc, &seq_arg);
-    }
-
-   	if((counter != num_seqs) || (err_counter > 1000)){
-   		cerr << "Error while scanning uncompressed (4na) dbs" << endl;
-   		return 1;
-   	}
-
-    sw.Stop();
-    cout << "PERF: "<< setiosflags(ios::fixed) << setprecision(2)
-            << bases_scanned / sw.Elapsed() << " bases/second" << endl;
-    cout << "PERF: "<< setiosflags(ios::fixed) << setprecision(2)
-    << "Scanned " << NStr::ULongToString(bases_scanned, kFlags) <<  " bases in "<<  x_FormatRuntime(sw) << endl;
-
-    // Silence set but not used warning
-    base= base?1:0;
-
-    return 0;
-}
-
 
 string
 CBlastVdbCmdApp::x_FormatRuntime(const CStopWatch& sw) const
@@ -649,17 +536,8 @@ void CBlastVdbCmdApp::Init()
     }
 
     arg_desc->AddFlag("info", "Print VDB information", true);
-    arg_desc->AddFlag("scan_uncompressed",
-                      "Do a full database scan of clipped uncompressed sequence data", true);
-    arg_desc->AddFlag("scan_compressed",
-                      "Do a full database scan of clipped compressed sequence data", true);
     arg_desc->AddFlag("ref",
-                      "Scan or dump reference seqs", true);
-
-    arg_desc->SetDependency("scan_compressed", CArgDescriptions::eExcludes,
-                            "scan_uncompressed");
-    arg_desc->SetDependency("scan_compressed", CArgDescriptions::eExcludes, "info");
-    arg_desc->SetDependency("scan_uncompressed", CArgDescriptions::eExcludes, "info");
+                      "Dump reference seqs", true);
     arg_desc->SetDependency("ref", CArgDescriptions::eExcludes, "info");
     arg_desc->SetDependency("ref", CArgDescriptions::eExcludes, "entry_batch");
 
@@ -699,14 +577,8 @@ int CBlastVdbCmdApp::Run(void)
         if (args["info"]) {
             status = x_PrintBlastDatabaseInformation();
         }
-        else {
-        	if (args["entry"].HasValue() || args["entry_batch"].HasValue()) {
+        else if (args["entry"].HasValue() || args["entry_batch"].HasValue()) {
             	status = x_ProcessSearchRequest();
-        	} else if(args["scan_compressed"].HasValue()){
-            	status = x_ScanCompressedDatabase();
-        	} else if(args["scan_uncompressed"].HasValue()) {
-        		status = x_ScanUncompressedDatabase();
-        	}
         }
     } catch (const CException& e) {
         LOG_POST(Error << "VDB Blast error: " << e.GetMsg());          \
