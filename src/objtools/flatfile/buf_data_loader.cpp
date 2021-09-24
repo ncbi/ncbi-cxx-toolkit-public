@@ -317,7 +317,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
             }
             else {
                 pp->farseq = true;
-                res = GetEmblInstContig(entry, *bioseq, pp);
+                res = GetEmblInstContig(*entry, *bioseq, pp);
                 pp->farseq = false;
             }
         }
