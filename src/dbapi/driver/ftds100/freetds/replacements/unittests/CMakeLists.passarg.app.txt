@@ -1,14 +1,9 @@
 # $Id$
 
-add_executable(tds100_passarg-app
-    passarg
-)
-
-set_target_properties(tds100_passarg-app PROPERTIES OUTPUT_NAME tds100_passarg)
-
-include_directories(SYSTEM ${FTDS100_INCLUDE})
-
-target_link_libraries(tds100_passarg-app
-    tds_ftds100
-)
-
+NCBI_begin_app(tds100_passarg)
+  NCBI_sources(passarg)
+  NCBI_add_definitions(HAVE_CONFIG_H=1)
+  NCBI_add_include_directories(..)
+  NCBI_uses_toolkit_libraries(tds_ftds100)
+  NCBI_add_test()
+NCBI_end_app()
