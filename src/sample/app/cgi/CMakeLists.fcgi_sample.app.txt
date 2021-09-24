@@ -1,6 +1,6 @@
 # $Id$
 
-NCBI_begin_app(fcgi_sample.cgi)
+NCBI_begin_app(fcgi_sample.fcgi)
   NCBI_sources(cgi_sample)
   NCBI_uses_toolkit_libraries(xfcgi xhtml xconnect)
   NCBI_requires(FASTCGI unix)

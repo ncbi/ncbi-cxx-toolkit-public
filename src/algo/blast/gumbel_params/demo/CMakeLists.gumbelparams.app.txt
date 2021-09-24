@@ -1,6 +1,6 @@
 # $Id$
 
-NCBI_begin_app(gumbelparams_app)
+NCBI_begin_app(gumbelparams)
   NCBI_sources(gumbelparams_app)
   NCBI_uses_toolkit_libraries(gumbelparams)
   NCBI_project_watchers(boratyng madden camacho)
