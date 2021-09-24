@@ -12,5 +12,5 @@ port=1444
 bin=/bin
 $bin/ps -fu $USER | $bin/grep -F "$resp" | $bin/grep -qv "grep -F"
 [[ ${PIPESTATUS[@]} == "0 0 0" ]] || \
-    $bin/ncat --listen --send-only --keep-open --max-conns 4 --exec "$bin/echo $resp" $port \
+    $bin/ncat --listen --send-only --keep-open --exec "$bin/echo $resp" $port \
     2> >($bin/grep -F -v 'Ncat: getpeername failed: Transport endpoint is not connected QUITTING.' >&2) &
