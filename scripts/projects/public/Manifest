@@ -24,6 +24,9 @@ TAG_PRE_COMMIT: tagprecommit/gen_all.py
 Win64_17        : MSVC17-64-dll : dll    64 ReleaseDLL
 Win64_17        : MSVC17-64     : static 64 ReleaseMT
 
+Win64_19        : MSVC19-64-dll : dll    64 ReleaseDLL
+Win64_19        : MSVC19-64     : static 64 ReleaseMT
+
 Cygwin64        : GCC       : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
 
 Linux64-Centos  : GCC730    : GCC.sh 7.3.0    --without-debug --with-mt --with-flat-makefile --without-ncbi-c
