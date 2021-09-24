@@ -150,11 +150,11 @@
 typedef struct HEAP_PACKED {
     SHEAP_Block head;         /* Block head, a free block has the following: */
     TNCBI_Size  prevfree;     /* Heap index for prev (smaller) free block    */
-    TNCBI_Size  nextfree;     /* Heap index for next (bigger) free block     */
+    TNCBI_Size  nextfree;     /* Heap index for next (larger) free block     */
 } SHEAP_HeapBlock;
 
 
-struct SHEAP_tag {
+struct SHEAP_tag {            /* NB: OOB=Out-Of-Bounds, i.e. pointing outside*/
     SHEAP_HeapBlock* base;    /* Base of heap extent:         !base == !size */
     TNCBI_Size       size;    /* # blocks in the heap extent: !base == !size */
     TNCBI_Size       used;    /* # of blocks used (size - used = free blocks)*/
