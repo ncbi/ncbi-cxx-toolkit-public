@@ -349,6 +349,10 @@ endif()
 #############################################################################
 # ODBC
 set(NCBI_COMPONENT_ODBC_FOUND NO)
+if(EXISTS  ${NCBITK_INC_ROOT}/dbapi/driver/odbc/unix_odbc)
+    set(NCBI_COMPONENT_XODBC_FOUND YES)
+    set(NCBI_COMPONENT_XODBC_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/odbc/unix_odbc)
+endif()
 
 #############################################################################
 # MySQL
