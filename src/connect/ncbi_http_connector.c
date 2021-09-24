@@ -140,7 +140,7 @@ typedef struct {
     unsigned          retry:1;        /* if the request is being re-tried    */
     unsigned          reserved:14;
     unsigned char     unused[3];
-    unsigned char     minor_fault;    /* incr each minor failure since majo  */
+    unsigned char     minor_fault;    /* incr each minor failure since major */
     unsigned short    major_fault;    /* incr each major failure since open  */
     unsigned short    http_code;      /* last HTTP response code             */
 
@@ -174,8 +174,9 @@ static int/*bool*/ x_UnsafeRedirectOK(SHttpConnector* uuu)
     if (uuu->unsafe_redir == eDefault) {
         if (!(uuu->flags & fHTTP_UnsafeRedirects)) {
             char val[32];
-            ConnNetInfo_GetValue(0, "HTTP_UNSAFE_REDIRECTS",
-                                 val, sizeof(val), 0);
+            ConnNetInfo_GetValueInternal(uuu->net_info->svc,
+                                         "HTTP_UNSAFE_REDIRECTS",
+                                         val, sizeof(val), 0);
             uuu->unsafe_redir = ConnNetInfo_Boolean(val) ? eOn : eOff;
         } else
             uuu->unsafe_redir = eOn;
@@ -1478,7 +1479,8 @@ static int/*bool*/ x_ErrorHeaderOnly(SHttpConnector* uuu)
 {
     if (uuu->error_header == eDefault) {
         char val[32];
-        ConnNetInfo_GetValueInternal(0, "HTTP_ERROR_HEADER_ONLY",
+        ConnNetInfo_GetValueInternal(uuu->net_info->svc,
+                                     "HTTP_ERROR_HEADER_ONLY",
                                      val, sizeof(val), 0);
         uuu->error_header = ConnNetInfo_Boolean(val) ? eOn : eOff;
     }
