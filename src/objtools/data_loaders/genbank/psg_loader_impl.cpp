@@ -2594,9 +2594,13 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
                        "CPSGDataLoader: No blob for seq_id="<<req_idh<<" blob_id="<<task->m_ReplyResult.blob_id);
     }
     else if ( task->GotForbidden() ) {
+        CBioseq_Handle::TBioseqStateFlags state =
+            CBioseq_Handle::fState_no_data|CBioseq_Handle::fState_withdrawn;
+        if ( task->m_PsgBlobInfo ) {
+            state |= task->m_PsgBlobInfo->blob_state;
+        }
         NCBI_THROW2(CBlobStateException, eBlobStateError,
-                    "blob state error for "+req_idh.AsString(),
-                    CBioseq_Handle::fState_no_data|CBioseq_Handle::fState_withdrawn);
+                    "blob state error for "+req_idh.AsString(), state);
     }
     else {
         _TRACE("Failed to load blob for " << req_idh.AsString()<<" @ "<<CStackTrace());
