@@ -66,6 +66,8 @@ typedef std::list<CRef<objects::CDelta_seq> > TDeltaList;
 
 #define ParFlat_ENTRYNODE    500
 
+string location_to_string_or_unknown(const objects::CSeq_loc&);
+
 //  ============================================================================
 struct InfoBioseq
 //  ============================================================================
@@ -264,33 +266,32 @@ struct FTAOperon
 {
     FTAOperon(
         const string& featName,
-        const string& operon) :
+        const string& operon,
+        const objects::CSeq_loc& location) :
         mFeatname(featName),
         mOperon(operon),
-        operon_feat(false),
-        ret(true),
-        next(nullptr)
-    {
-        operon_feat = (mFeatname == "operon");
-    };
+        mLocation(&location)
+    {};
 
-    ~FTAOperon()
-    {
-        delete next;
-    };
+    ~FTAOperon() 
+    {};
 
-    const string& mFeatname;
-    const string& mOperon;
+    string LocationStr() const {
+        if (mLocStr.empty()) {
+            mLocStr = location_to_string_or_unknown(*mLocation);
+        }
+        return mLocStr;
+    }
 
-    CConstRef<objects::CSeq_loc> location; // Do not free! Just a pointer
+    bool IsOperon() const {
+        return (mFeatname == "operon");
+    }
 
-    string strloc; // String value of location
-    bool operon_feat;
-    bool ret;
-    FTAOperon* next;
+    const string mFeatname;
+    const string mOperon;
+    CConstRef<objects::CSeq_loc> mLocation;
+    mutable string mLocStr;
 };
-using FTAOperonPtr = FTAOperon*;
-//using FTAOperonLast = list<FTAOperon>;
 
 //  ============================================================================
 struct DataBlk
