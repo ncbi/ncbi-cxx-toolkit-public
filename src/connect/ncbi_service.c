@@ -51,17 +51,17 @@
 /*
  * FIXME FIXME FIXME FIXME FIXME ---->
  *
- * NOTE: For fSERV_ReverseDns lookups the following rules apply to "skip"
- *       contents:  a service would not be selected if there is a same-named
- *       entry with matching host[:port] is found in the "skip" list, or
- *       there is a nameless...
+ * NOTE:  For fSERV_ReverseDns lookups the following rules apply to "skip"
+ *        contents:  a service would not be selected if there is a same-named
+ *        entry with matching host[:port] is found in the "skip" list, or
+ *        there is a nameless...
  * NOTE:  Lookup by mask cancels fSERV_ReverseDns mode, if both are used.
  */
 
 
-#define SERV_SERVICE_NAME_RECURSION  10
-#define CONN_IMPLICIT_SERVER_TYPE    DEF_CONN_REG_SECTION               \
-                                     "_" REG_CONN_IMPLICIT_SERVER_TYPE
+#define SERV_SERVICE_NAME_RECURSION_MAX  10
+#define CONN_IMPLICIT_SERVER_TYPE        DEF_CONN_REG_SECTION               \
+                                         "_" REG_CONN_IMPLICIT_SERVER_TYPE
 
 static ESwitch s_Fast = eOff;
 
@@ -146,7 +146,7 @@ static char* x_ServiceName(unsigned int depth,
             CORE_TRACEF(("[%s]  CONN_ServiceName(\"%s\"): \"%s\"",
                          service, svc, s));
             if (strcasecmp(svc, s) != 0) {
-                if (depth++ < SERV_SERVICE_NAME_RECURSION)
+                if (depth++ < SERV_SERVICE_NAME_RECURSION_MAX)
                     return x_ServiceName(depth, service, s, ismask, isfast);
                 CORE_LOGF_X(8, eLOG_Error,
                             ("[%s]  Maximal service name recursion"
