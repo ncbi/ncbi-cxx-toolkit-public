@@ -255,6 +255,7 @@ SConnNetInfo* ConnNetInfo_CloneInternal(const SConnNetInfo* info);
 
 /* Private interface:  same as ConnNetInfo_GetValue() for NULL, empty, or
  * non-wildcard service name but without any service name substitution(s).
+ * Also, "param" is assumed to be in all-CAPS (plus underscores, if any).
  * @sa
  *   ConnNetInfo_GetValue, SERV_ServiceName, ConnNetInfo_CreateInternal
  */

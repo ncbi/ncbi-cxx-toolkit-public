@@ -56,7 +56,7 @@ typedef struct SHEAP_tag* HEAP;
 /* Header of a heap block
  */
 typedef struct {
-    unsigned int flag;  /* (flag & 1) == 0 if the block is vacant;
+    unsigned int flag;  /* (flag & 1) == 0 if the block is vacant;          *
                          * other bits reserved, do not assume their values! */
     TNCBI_Size   size;  /* size of the block (including this header), bytes */
 } SHEAP_Block;
@@ -174,8 +174,9 @@ extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Next
 /* Trim the heap, making garbage collection first.  Returned is the resultant
  * heap, which has its last block (if any) trimmed to the size of the heap
  * chunk size as specified at the time of the heap creation.  No change in size
- * is made if the last block is not free or large enough to allow the trimming.
- * NULL gets returned on NULL or read-only heaps, or on a resize error.
+ * is made if the last block is not free or not large enough to allow the
+ * trimming.  NULL gets returned on NULL or read-only heaps, or on a resize
+ * error.
  * Note that trimming may cause the entire heap extent (of an empty heap) to
  * deallocate (so that HEAP_Base() and HEAP_Size() will both return 0).
  */
