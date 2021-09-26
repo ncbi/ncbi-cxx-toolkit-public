@@ -3521,7 +3521,7 @@ static bool fta_perform_operon_checks(TSeqFeatList& feats, IndexblkPtr ibp)
         {
             ErrPostEx(SEV_REJECT, ERR_FEATURE_MissingOperonQual,
                 "The operon feature at \"%s\" lacks an /operon qualifier.",
-                location_to_string_or_unknown(featLocation));
+                location_to_string_or_unknown(featLocation).c_str());
             success = false;
         }
     }
