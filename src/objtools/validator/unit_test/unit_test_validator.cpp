@@ -7838,6 +7838,18 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadAltitude)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_IsLikelyTaxname)
+{
+    BOOST_CHECK_EQUAL(IsLikelyTaxname(""), false);
+    BOOST_CHECK_EQUAL(IsLikelyTaxname(" "), false);
+    BOOST_CHECK_EQUAL(IsLikelyTaxname("Carassius"), false); //?
+    BOOST_CHECK_EQUAL(IsLikelyTaxname("Carassius carassius"), true);
+    BOOST_CHECK_EQUAL(IsLikelyTaxname(" Carassius carassius"), false);
+    BOOST_CHECK_EQUAL(IsLikelyTaxname("1Carassius carassius"), false);
+    BOOST_CHECK_EQUAL(IsLikelyTaxname("Homunculus loxodontus"), false);
+}
+
+
 void TestSpecificHostNoError(const string& host)
 {
     // prepare entry

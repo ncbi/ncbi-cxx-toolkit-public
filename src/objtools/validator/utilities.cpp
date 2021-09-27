@@ -2138,7 +2138,7 @@ bool IsCommon(const COrg_ref& org, const string& val)
 
 bool IsLikelyTaxname(const string& val)
 {
-    if (!isalpha(val[0])) {
+    if (val.empty() || !isalpha(val.front())) {
         return false;
     }
     size_t pos = NStr::Find(val, " ");
