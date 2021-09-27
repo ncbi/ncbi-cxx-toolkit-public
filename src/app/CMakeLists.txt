@@ -62,7 +62,7 @@ NCBI_add_subdirectory(
   netcache
   pub_report
   rmblastn
-#  split_cache
+  split_cache
   sub_fuse
   tls
   wig2table
