@@ -2006,7 +2006,7 @@ BOOST_AUTO_TEST_CASE(TestRegulatoryFeat)
                 subtype_cases[subtype_case_idx];
 
             const CSeqFeatData::ESubtype subtype = subtype_case.subtype;
-            const string & subtype_name =
+            string subtype_name =
                 CSeqFeatData::SubtypeValueToName(subtype);
 
             cout << "Test case: use subtype: "
