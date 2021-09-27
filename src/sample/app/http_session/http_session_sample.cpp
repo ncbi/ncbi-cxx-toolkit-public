@@ -59,7 +59,6 @@ public:
     bool PrintResponse(const CHttp2Session* session, const CHttpResponse& response);
 
 private:
-    void SetupRequest(CHttpRequest& request);
     CHttpParam SetupParam(void);
     void LoadCredentials(CNcbiIstream& cert_str, CNcbiIstream& pkey_str);
 
@@ -80,24 +79,6 @@ CHttpSessionApp::CHttpSessionApp(void)
 }
 
 
-void CHttpSessionApp::SetupRequest(CHttpRequest& request)
-{
-    const CArgs& args = GetArgs();
-    if ( args["timeout"] ) {
-        request.SetTimeout(CTimeout(args["timeout"].AsDouble()));
-    }
-    if ( args["retries"] ) {
-        request.SetRetries((unsigned short)args["retries"].AsInteger());
-    }
-    if ( args["deadline"] ) {
-        request.SetDeadline(CTimeout(args["deadline"].AsDouble()));
-    }
-    if ( args["retry-processing"] ) {
-        request.SetRetryProcessing(args["retry-processing"].AsBoolean() ? eOn : eOff);
-    }
-}
-
-
 CHttpParam CHttpSessionApp::SetupParam(void)
 {
     const CArgs& args = GetArgs();
@@ -110,6 +91,28 @@ CHttpParam CHttpSessionApp::SetupParam(void)
     }
     if (m_Credentials) {
         ret.SetCredentials(m_Credentials);
+    }
+    if (args["proxy-host"]) {
+        string phost = args["proxy-host"].AsString();
+        _ASSERT(args["proxy-port"]);
+        unsigned short pport = (unsigned short)args["proxy-port"].AsInteger();
+        if (args["proxy-user"]) {
+            string puser = args["proxy-user"].AsString();
+            string ppass;
+            if (args["proxy-password"]) {
+                ppass = args["proxy-password"].AsString();
+            }
+            ret.SetProxy(CHttpProxy(phost, pport, puser, ppass));
+        }
+        else {
+            ret.SetProxy(CHttpProxy(phost, pport));
+        }
+    }
+    if ( args["deadline"] ) {
+        ret.SetDeadline(CTimeout(args["deadline"].AsDouble()));
+    }
+    if ( args["retry-processing"] ) {
+        ret.SetRetryProcessing(args["retry-processing"].AsBoolean() ? eOn : eOff);
     }
     return ret;
 }
@@ -197,6 +200,17 @@ void CHttpSessionApp::Init()
     arg_desc->AddOptionalKey("retry-processing", "bool", "Whether to wait for actual response",
         CArgDescriptions::eBoolean);
 
+    // Proxy parameters
+    arg_desc->AddOptionalKey("proxy-host", "phost", "Proxy host", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("proxy-port", "pport", "Proxy port", CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("proxy-user", "puser", "Proxy user", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("proxy-password", "ppass", "Proxy password", CArgDescriptions::eString);
+    arg_desc->SetDependency("proxy-host", CArgDescriptions::eRequires, "proxy-port");
+    arg_desc->SetDependency("proxy-port", CArgDescriptions::eRequires, "proxy-host");
+    arg_desc->SetDependency("proxy-user", CArgDescriptions::eRequires, "proxy-host");
+    arg_desc->SetDependency("proxy-password", CArgDescriptions::eRequires, "proxy-host");
+    arg_desc->SetDependency("proxy-password", CArgDescriptions::eRequires, "proxy-user");
+
     arg_desc->AddOptionalKey("cert-file", "file", "Certificate file", CArgDescriptions::eInputFile, CArgDescriptions::fBinary);
     arg_desc->AddOptionalKey("pkey-file", "file", "Private key file", CArgDescriptions::eInputFile, CArgDescriptions::fBinary);
     arg_desc->SetDependency("cert-file", CArgDescriptions::eRequires, "pkey-file");
@@ -223,6 +237,8 @@ int CHttpSessionApp::Run(void)
     m_PrintHeaders = args["print-headers"];
     m_PrintCookies = args["print-cookies"];
     m_PrintBody = args["print-body"];
+
+    CHttpParam param = SetupParam();
 
     CHttp2Session session;
 
@@ -263,8 +279,7 @@ int CHttpSessionApp::Run(void)
             return 1;
         }
         cout << args["method"].AsString() << " " << url.ComposeUrl(CUrlArgs::eAmp_Char) << endl;
-        CHttpRequest req = session.NewRequest(url, method);
-        SetupRequest(req);
+        CHttpRequest req = session.NewRequest(url, method, param);
         if (method == CHttpSession::ePost) {
             NcbiStreamCopy(req.ContentStream(), cin);
         }
@@ -276,8 +291,7 @@ int CHttpSessionApp::Run(void)
         const auto& urls = args["head"].GetStringList();
         for (const auto& url : urls) {
             cout << "HEAD " << url << endl;
-            CHttpRequest req = session.NewRequest(url, CHttpSession::eHead);
-            SetupRequest(req);
+            CHttpRequest req = session.NewRequest(url, CHttpSession::eHead, param);
             if (!PrintResponse(&session, req.Execute())) m_Errors++;
             cout << "-------------------------------------" << endl << endl;
         }
@@ -287,8 +301,7 @@ int CHttpSessionApp::Run(void)
         const auto& urls = args["get"].GetStringList();
         for (const auto& url : urls) {
             cout << "GET " << url << endl;
-            CHttpRequest req = session.NewRequest(url);
-            SetupRequest(req);
+            CHttpRequest req = session.NewRequest(url, CHttpSession::eGet, param);
             if (!PrintResponse(&session, req.Execute())) m_Errors++;
             cout << "-------------------------------------" << endl << endl;
         }
@@ -297,8 +310,7 @@ int CHttpSessionApp::Run(void)
         skip_defaults = true;
         string url = args["post"].AsString();
         cout << "POST " << url << endl;
-        CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
-        SetupRequest(req);
+        CHttpRequest req = session.NewRequest(url, CHttpSession::ePost, param);
         NcbiStreamCopy(req.ContentStream(), cin);
         if (!PrintResponse(&session, req.Execute())) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
@@ -316,8 +328,7 @@ int CHttpSessionApp::Run(void)
         // HEAD request
         cout << "HEAD " << sample_url << endl;
         // Requests can be initialized with either a string or a CUrl
-        CHttpRequest req = session.NewRequest(url, CHttpSession::eHead);
-        SetupRequest(req);
+        CHttpRequest req = session.NewRequest(url, CHttpSession::eHead, param);
         CHttpResponse resp = req.Execute();
         if (!PrintResponse(&session, resp)) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
@@ -326,8 +337,7 @@ int CHttpSessionApp::Run(void)
     {{
         // Simple GET request
         cout << "GET (no args) " << sample_url << endl;
-        CHttpRequest req = session.NewRequest(url);
-        SetupRequest(req);
+        CHttpRequest req = session.NewRequest(url, CHttpSession::eGet, param);
         if (!PrintResponse(&session, req.Execute())) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
@@ -335,7 +345,7 @@ int CHttpSessionApp::Run(void)
     {{
         // GET using shortcut
             cout << "GET (shortcut) " << sample_url << endl;
-            CHttpResponse response = g_HttpGet(url, SetupParam());
+            CHttpResponse response = g_HttpGet(url, param);
             if (!PrintResponse(0, response)) m_Errors++;
             cout << "-------------------------------------" << endl << endl;
     }}
@@ -345,8 +355,7 @@ int CHttpSessionApp::Run(void)
         // GET request with arguments
         cout << "GET (with args) " << sample_url << endl;
         url_with_args.GetArgs().SetValue("message", "GET data");
-        CHttpRequest req = session.NewRequest(url_with_args);
-        SetupRequest(req);
+        CHttpRequest req = session.NewRequest(url_with_args, CHttpSession::eGet, param);
         if (!PrintResponse(&session, req.Execute())) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
@@ -354,8 +363,7 @@ int CHttpSessionApp::Run(void)
     {{
         // POST request with form data
         cout << "POST (form data) " << sample_url << endl;
-        CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
-        SetupRequest(req);
+        CHttpRequest req = session.NewRequest(url, CHttpSession::ePost, param);
         CHttpFormData& data = req.FormData();
         data.AddEntry("message", "POST data");
         if (!PrintResponse(&session, req.Execute())) m_Errors++;
@@ -365,8 +373,7 @@ int CHttpSessionApp::Run(void)
     {{
         // POST using a provider
         cout << "POST (provider) " << sample_url << endl;
-        CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
-        SetupRequest(req);
+        CHttpRequest req = session.NewRequest(url, CHttpSession::ePost, param);
         CHttpFormData& data = req.FormData();
         data.AddProvider("message", new CTestDataProvider);
         if (!PrintResponse(&session, req.Execute())) m_Errors++;
@@ -376,8 +383,7 @@ int CHttpSessionApp::Run(void)
     {{
         // POST some data manually
         cout << "POST (manual) " << sample_url << endl;
-        CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
-        SetupRequest(req);
+        CHttpRequest req = session.NewRequest(url, CHttpSession::ePost, param);
         req.Headers().SetValue(CHttpHeaders::eContentType, "application/x-www-form-urlencoded");
         CNcbiOstream& out = req.ContentStream();
         out << "message=POST manual data";
@@ -388,7 +394,7 @@ int CHttpSessionApp::Run(void)
     {{
         // POST using shortcut
         cout << "POST (shortcut) " << sample_url << endl;
-        CHttpResponse response = g_HttpPost(url, "message=POST%20shortcut%20data", SetupParam());
+        CHttpResponse response = g_HttpPost(url, "message=POST%20shortcut%20data", param);
         if (!PrintResponse(0, response)) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
@@ -396,8 +402,7 @@ int CHttpSessionApp::Run(void)
     {{
         // PUT using a provider
         cout << "PUT (provider) " << sample_url << endl;
-        CHttpRequest req = session.NewRequest(url, CHttpSession::ePut);
-        SetupRequest(req);
+        CHttpRequest req = session.NewRequest(url, CHttpSession::ePut, param);
         CHttpFormData& data = req.FormData();
         data.AddProvider("message", new CTestDataProvider);
         if (!PrintResponse(&session, req.Execute())) m_Errors++;
@@ -407,8 +412,7 @@ int CHttpSessionApp::Run(void)
     {{
         // Bad GET request
         cout << "GET (404) " << bad_url << endl;
-        CHttpRequest req = session.NewRequest(bad_url);
-        SetupRequest(req);
+        CHttpRequest req = session.NewRequest(bad_url, CHttpSession::eGet, param);
         PrintResponse(&session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
     }}
@@ -416,7 +420,7 @@ int CHttpSessionApp::Run(void)
     {{
         // Service request
         cout << "GET service: test" << endl;
-        CHttpRequest req = session.NewRequest(CUrl("test"));
+        CHttpRequest req = session.NewRequest(CUrl("test"), CHttpSession::eGet, param);
         if (!PrintResponse(&session, req.Execute())) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
@@ -424,7 +428,7 @@ int CHttpSessionApp::Run(void)
     {{
         // Service request
         cout << "GET service (shortcut): test" << endl;
-        CHttpResponse response = g_HttpGet(CUrl("test"), SetupParam());
+        CHttpResponse response = g_HttpGet(CUrl("test"), param);
         if (!PrintResponse(0, response)) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
