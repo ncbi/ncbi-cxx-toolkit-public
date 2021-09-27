@@ -71,7 +71,6 @@ static const string     kUserName = "username";
 static const string     kNChunks = "n_chunks";
 static const string     kStart = "start";
 static const string     kStop = "stop";
-static const string     kAnnotInfo = "annot_info";
 static const string     kSeqAnnotInfo = "seq_annot_info";
 
 static const string     kRequest = "request";
@@ -252,7 +251,6 @@ CJsonNode ToJson(const CNAnnotRecord &  annot_record,
     json.SetInteger(kSeqIdType, annot_record.GetSeqIdType());
     json.SetInteger(kStart, annot_record.GetStart());
     json.SetInteger(kStop, annot_record.GetStop());
-    json.SetString(kAnnotInfo, annot_record.GetAnnotInfo());
     json.SetString(kSeqAnnotInfo, NStr::Base64Encode(annot_record.GetSeqAnnotInfo(), 0));
     return json;
 }
