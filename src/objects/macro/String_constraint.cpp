@@ -438,7 +438,7 @@ bool CString_constraint::x_AdvancedStringMatch(const string& str, const string& 
             }
             if (pos < len) {
                 size_t sub_match_len = 0;
-                if (x_AdvancedStringCompare (CTempString(str).substr(pos), match_text, 0, &sub_match_len)) {
+                if (x_AdvancedStringCompare (str.substr(pos), match_text, 0, &sub_match_len)) {
                     if (sub_match_len < len - pos && GetMatch_location() == eString_location_ends) {
                         pos++;
                     }

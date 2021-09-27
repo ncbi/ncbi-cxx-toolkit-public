@@ -91,7 +91,7 @@ void CFeat_qual_choice :: x_GetTwoFieldSubfield(string& str, int subfield) const
            str.substr(0, pos);
       }
       else {
-        str = CTempString(str).substr(pos+1);
+        str = str.substr(pos+1);
       }
     }
   }
