@@ -3817,8 +3817,7 @@ const string & CSeqFeatData::GetRegulatoryClass(ESubtype subtype)
             const TSubtypeSet & regulatory_subtypes_set =
                 GetSetOfRegulatorySubtypes();
             ITERATE(TSubtypeSet, subtype_iter, regulatory_subtypes_set) {
-                const string & class_name = SubtypeValueToName(*subtype_iter);
-                (*p_new_map)[*subtype_iter] = class_name;
+                (*p_new_map)[*subtype_iter] = SubtypeValueToName(*subtype_iter);
             }
 
             _ASSERT( regulatory_subtypes_set.size() == p_new_map->size() );
