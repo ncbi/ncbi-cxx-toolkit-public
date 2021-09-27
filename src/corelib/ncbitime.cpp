@@ -3293,7 +3293,7 @@ CTimeSpan& CTimeSpan::AssignFromSmartString(const string& str)
                 size_t n = sss - start;
                 if (n > 10) {
                     NCBI_THROW(CTimeException, eConvert,
-                        "Too long numeric value '" + (string)CTempString(start, n) + 
+                        "Too long numeric value '" + string(start, n) + 
                         "': string '" + str + "' (pos = " +
                         NStr::NumericToString(start - str.c_str()) + ")" );
                 }
@@ -3313,7 +3313,7 @@ CTimeSpan& CTimeSpan::AssignFromSmartString(const string& str)
                     frac_len = sss - start;
                     if (frac_len > 9) {
                         NCBI_THROW(CTimeException, eConvert,
-                            "Too long fractional part '" + (string)CTempString(start, frac_len) + 
+                            "Too long fractional part '" + string(start, frac_len) + 
                             "': string '" + str + "' (pos = " +
                             NStr::NumericToString(start - str.c_str()) + ")" );
                     }

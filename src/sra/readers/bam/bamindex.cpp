@@ -1299,19 +1299,19 @@ size_t CBamHeader::GetSBamRecords(TSBamRecords& records) const
         }
         else if ( iswspace(*p) ) {
             if (state == eTag) {
-                records.push_back( TSBamRecord(CTempString(p0, p-p0), TSBamTags()));
+                records.push_back( TSBamRecord(string(p0, p-p0), TSBamTags()));
                 state = eRecord;
                 state_changed = true;
             }
             else if (state == eValue) {
-                records.back().second[record] = CTempString(p0, p-p0);
+                records.back().second[record] = string(p0, p-p0);
                 state = eRecord;
                 state_changed = true;
             }
         }
     }
     if (state == eValue) {
-        records.back().second[record] = CTempString(p0, p-p0);
+        records.back().second[record] = string(p0, p-p0);
     }
     return records.size();
 }
