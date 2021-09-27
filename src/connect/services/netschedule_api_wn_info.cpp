@@ -369,7 +369,7 @@ CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node)
                 if ((pos = NStr::Find(line, TEMP_STRING_CTOR(" "))) != NPOS) {
                     CJsonNode running_job(CJsonNode::NewObjectNode());
 
-                    running_job.SetString("key", CTempString(line.data(), pos));
+                    running_job.SetString("key", line.substr(0, pos));
                     running_job.SetInteger("run_time", (Int8) run_time);
                     running_jobs.Append(running_job);
                 }

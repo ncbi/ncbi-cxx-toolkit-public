@@ -444,9 +444,9 @@ CTempString CObjectIStreamXml::ReadName(char c)
         m_Input.SkipChar();
         m_Input.SkipEndOfLine(c);
     }
-    m_LastTag = CTempString(ptr+iColon, i-iColon);
+    m_LastTag = string(ptr+iColon, i-iColon);
     if (iColon > 1) {
-        string ns_prefix( CTempString(ptr, iColon-1));
+        string ns_prefix(ptr, iColon-1);
         if (ns_prefix == "xmlns") {
             string value;
             ReadAttributeValue(value, true);
