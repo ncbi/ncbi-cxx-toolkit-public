@@ -19,7 +19,7 @@ DLL_LIB = xobjutil taxon3 valid mlacli xlogging eutils $(SOBJMGR_LIBS)
 
 ASN_DEP = seqset valid
 
-WATCHERS = bollin gotvyans foleyjp
+WATCHERS = stakhovv gotvyans foleyjp
 
 
 USES_LIBRARIES =  \

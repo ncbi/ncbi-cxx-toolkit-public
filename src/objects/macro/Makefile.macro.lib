@@ -5,7 +5,7 @@ SRC = macro__ macro___
 
 DLL_LIB = $(SEQ_LIBS)
 
-WATCHERS = bollin kans
+WATCHERS = stakhovv kans
 
 ASN_DEP = genome_collection seqset
 

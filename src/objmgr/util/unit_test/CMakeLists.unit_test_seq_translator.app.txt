@@ -5,6 +5,6 @@ NCBI_begin_app(unit_test_seq_translator)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(test_boost xobjutil)
   NCBI_add_test()
-  NCBI_project_watchers(vasilche dicuccio bollin)
+  NCBI_project_watchers(vasilche dicuccio stakhovv)
 NCBI_end_app()
 

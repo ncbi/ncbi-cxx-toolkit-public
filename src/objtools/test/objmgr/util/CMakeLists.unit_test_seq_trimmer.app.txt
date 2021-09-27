@@ -6,6 +6,6 @@ NCBI_begin_app(unit_test_seq_trimmer)
   NCBI_uses_toolkit_libraries(xobjread xobjutil)
   NCBI_set_test_assets(test_data)
   NCBI_add_test()
-  NCBI_project_watchers(vasilche dicuccio bollin foleyjp)
+  NCBI_project_watchers(vasilche dicuccio stakhovv foleyjp)
 NCBI_end_app()
 

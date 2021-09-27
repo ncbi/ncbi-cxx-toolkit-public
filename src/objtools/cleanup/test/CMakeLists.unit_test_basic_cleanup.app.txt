@@ -6,6 +6,6 @@ NCBI_begin_app(unit_test_basic_cleanup)
   NCBI_uses_toolkit_libraries(xcleanup xunittestutil)
   NCBI_set_test_assets(test_cases)
   NCBI_add_test()
-  NCBI_project_watchers(bollin kans)
+  NCBI_project_watchers(stakhovv kans)
 NCBI_end_app()
 

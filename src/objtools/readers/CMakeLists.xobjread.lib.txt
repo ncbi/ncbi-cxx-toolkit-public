@@ -26,6 +26,6 @@ NCBI_begin_lib(xobjread)
 	gff_reader
   )
   NCBI_uses_toolkit_libraries(submit xlogging)
-  NCBI_project_watchers(jcherry sapojnik bollin ludwigf ucko gotvyans foleyjp)
+  NCBI_project_watchers(jcherry sapojnik stakhovv ludwigf ucko gotvyans foleyjp)
 NCBI_end_lib()
 

@@ -8,6 +8,6 @@ NCBI_begin_lib(xcleanup)
     cleanup_message
   )
   NCBI_uses_toolkit_libraries(xobjedit)
-  NCBI_project_watchers(bollin kans)
+  NCBI_project_watchers(stakhovv kans)
 NCBI_end_lib()
 

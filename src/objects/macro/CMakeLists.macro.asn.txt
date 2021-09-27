@@ -3,6 +3,6 @@
 NCBI_begin_lib(macro)
   NCBI_dataspecs(macro.asn)
   NCBI_uses_toolkit_libraries(seq)
-  NCBI_project_watchers(bollin kans)
+  NCBI_project_watchers(stakhovv kans)
 NCBI_end_lib()
 

@@ -9,4 +9,4 @@ LIB = xcleanup $(OBJEDIT_LIBS) xobjutil valid xconnect xregexp $(PCRE_LIB) \
 
 LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-WATCHERS = bollin kans
+WATCHERS = stakhovv kans

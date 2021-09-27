@@ -3,6 +3,6 @@
 NCBI_begin_lib(xunittestutil)
   NCBI_sources(unit_test_util)
   NCBI_uses_toolkit_libraries(xobjutil)
-  NCBI_project_watchers(bollin)
+  NCBI_project_watchers(stakhovv)
 NCBI_end_lib()
 

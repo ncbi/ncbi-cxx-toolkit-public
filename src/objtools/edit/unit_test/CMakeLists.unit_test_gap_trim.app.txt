@@ -10,7 +10,7 @@ NCBI_begin_app(unit_test_gap_trim)
   NCBI_set_test_timeout(1200)
   NCBI_add_test()
 
-  NCBI_project_watchers(bollin kans)
+  NCBI_project_watchers(stakhovv kans)
 
 NCBI_end_app()
 

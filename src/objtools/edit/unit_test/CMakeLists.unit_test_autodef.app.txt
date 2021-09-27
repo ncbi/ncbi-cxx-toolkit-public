@@ -6,6 +6,6 @@ NCBI_begin_app(unit_test_autodef)
   NCBI_uses_toolkit_libraries(xobjedit xunittestutil)
   NCBI_set_test_timeout(3000)
   NCBI_add_test()
-  NCBI_project_watchers(bollin)
+  NCBI_project_watchers(stakhovv)
 NCBI_end_app()
 
