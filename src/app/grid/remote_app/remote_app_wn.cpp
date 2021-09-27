@@ -242,6 +242,8 @@ public:
 
 void CRemoteAppListener::OnInit(IWorkerNodeInitBaseContext* ctx)
 {
+    // In essence, this makes remote_app behave as if default value for "[log]merge_lines" was true
+    // (the parameter is read in SGridWorkerNodeImpl::Init).
     if (!ctx->GetConfig().HasEntry("log", "merge_lines")) {
         SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
