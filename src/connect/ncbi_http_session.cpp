@@ -575,18 +575,17 @@ unsigned short x_RetriesToMaxtry(unsigned short retries)
 
 CHttpRequest::CHttpRequest(CHttpSession_Base& session,
                            const CUrl&   url,
-                           EReqMethod    method)
+                           EReqMethod    method,
+                           const CHttpParam& param)
     : m_Session(&session),
       m_Url(url),
       m_IsService(url.IsService()),
       m_Method(method),
       m_Headers(new CHttpHeaders),
-      m_Timeout(CTimeout::eDefault),
-      m_Deadline(CTimeout::eDefault),
-      m_RetryProcessing(ESwitch::eDefault),
       m_AdjustUrl(0),
       m_Credentials(session.GetCredentials())
 {
+    SetParam(param);
 }
 
 
@@ -800,6 +799,31 @@ void CHttpRequest::x_UpdateResponse(CHttpHeaders::THeaders headers, int status_c
 }
 
 
+void CHttpRequest::x_SetProxy(SConnNetInfo& net_info)
+{
+    CHttpProxy proxy = GetProxy();
+    // Try per-session proxy, if any.
+    if ( proxy.IsEmpty() ) proxy = m_Session->GetProxy();
+    if ( proxy.IsEmpty() ) return;
+
+    if (proxy.GetHost().size() > CONN_HOST_LEN) {
+        NCBI_THROW(CHttpSessionException, eConnFailed, "Proxy host length exceeds " + NStr::NumericToString(CONN_HOST_LEN));
+    }
+    memcpy(net_info.http_proxy_host, proxy.GetHost().c_str(), proxy.GetHost().size() + 1);
+    net_info.http_proxy_port = proxy.GetPort();
+
+    if (proxy.GetUser().size() > CONN_USER_LEN) {
+        NCBI_THROW(CHttpSessionException, eConnFailed, "Proxy user length exceeds " + NStr::NumericToString(CONN_USER_LEN));
+    }
+    memcpy(net_info.http_proxy_user, proxy.GetUser().c_str(), proxy.GetUser().size() + 1);
+
+    if (proxy.GetPassword().size() > CONN_PASS_LEN) {
+        NCBI_THROW(CHttpSessionException, eConnFailed, "Proxy password length exceeds " + NStr::NumericToString(CONN_PASS_LEN));
+    }
+    memcpy(net_info.http_proxy_pass, proxy.GetPassword().c_str(), proxy.GetPassword().size() + 1);
+}
+
+
 void CHttpRequest::x_InitConnection(bool use_form_data)
 {
     unique_ptr<SConnNetInfo, void (*)(SConnNetInfo*)> net_info
@@ -840,6 +864,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     if ( m_Credentials ) {
         net_info->credentials = m_Credentials->GetNcbiCred();
     }
+    x_SetProxy(*net_info);
 
     m_Response.Reset(new CHttpResponse(*m_Session, m_Url));
     if ( !m_Url.IsService() ) {
@@ -993,6 +1018,7 @@ int/*bool*/ CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
         resp->m_Location.SetUrl(loc);
         free(loc);
     }
+    req->x_SetProxy(*net_info);
     // Discard old cookies, add those for the new location.
     req->x_AddCookieHeader(resp->m_Location, false);
     string headers = req->m_Headers->GetHttpHeader();
@@ -1030,6 +1056,21 @@ CHttpRequest& CHttpRequest::SetRetryProcessing(ESwitch on_off)
 }
 
 
+void CHttpRequest::SetParam(const CHttpParam& param)
+{
+    m_Timeout = param.GetTimeout();
+    m_Retries = param.GetRetries();
+    m_Proxy = param.GetProxy();
+    m_Deadline = param.GetDeadline();
+    m_RetryProcessing = param.GetRetryProcessing();
+    Headers().Merge(param.GetHeaders());
+    if (param.GetHeaders().HasValue(CHttpHeaders::eContentType)) {
+        Headers().SetValue(CHttpHeaders::eContentType,
+            param.GetHeaders().GetValue(CHttpHeaders::eContentType));
+    }
+}
+
+
 ///////////////////////////////////////////////////////
 //  CHttpSession_Base::
 //
@@ -1042,9 +1083,9 @@ CHttpSession_Base::CHttpSession_Base(EProtocol protocol)
 }
 
 
-CHttpRequest CHttpSession_Base::NewRequest(const CUrl& url, ERequestMethod method)
+CHttpRequest CHttpSession_Base::NewRequest(const CUrl& url, ERequestMethod method, const CHttpParam& param)
 {
-    return CHttpRequest(*this, url, EReqMethod(method));
+    return CHttpRequest(*this, url, EReqMethod(method), param);
 }
 
 
@@ -1139,7 +1180,10 @@ void CHttpSession_Base::SetCredentials(shared_ptr<CTlsCertCredentials> cred)
 
 
 CHttpParam::CHttpParam(void)
-    : m_Headers(new CHttpHeaders), m_Timeout(CTimeout::eDefault)
+    : m_Headers(new CHttpHeaders),
+      m_Timeout(CTimeout::eDefault),
+      m_Deadline(CTimeout::eDefault),
+      m_RetryProcessing(ESwitch::eDefault)
 {
 }
 
@@ -1190,10 +1234,7 @@ CHttpResponse g_HttpGet(const CUrl& url, const CHttpParam& param)
 {
     CRef<CHttpSession> session(new CHttpSession);
     session->SetCredentials(param.GetCredentials());
-    CHttpRequest req = session->NewRequest(url, CHttpSession::eGet);
-    req.SetTimeout(param.GetTimeout());
-    req.SetRetries(param.GetRetries());
-    req.Headers().Merge(param.GetHeaders());
+    CHttpRequest req = session->NewRequest(url, CHttpSession::eGet, param);
     return req.Execute();
 }
 
@@ -1227,16 +1268,9 @@ CHttpResponse g_HttpPost(const CUrl& url,
 {
     CRef<CHttpSession> session(new CHttpSession);
     session->SetCredentials(param.GetCredentials());
-    CHttpRequest req = session->NewRequest(url, CHttpSession::ePost);
-    req.SetTimeout(param.GetTimeout());
-    req.SetRetries(param.GetRetries());
-    req.Headers().Merge(param.GetHeaders());
+    CHttpRequest req = session->NewRequest(url, CHttpSession::ePost, param);
 
-    if (param.GetHeaders().HasValue(CHttpHeaders::eContentType)) {
-        req.Headers().SetValue(CHttpHeaders::eContentType,
-            param.GetHeaders().GetValue(CHttpHeaders::eContentType));
-    }
-    else {
+    if (!param.GetHeaders().HasValue(CHttpHeaders::eContentType)) {
         req.Headers().SetValue(CHttpHeaders::eContentType,
             kContentType_FormUrlEnc);
     }
@@ -1301,16 +1335,9 @@ CHttpResponse g_HttpPut(const CUrl&       url,
 {
     CRef<CHttpSession> session(new CHttpSession);
     session->SetCredentials(param.GetCredentials());
-    CHttpRequest req = session->NewRequest(url, CHttpSession::ePut);
-    req.SetTimeout(param.GetTimeout());
-    req.SetRetries(param.GetRetries());
-    req.Headers().Merge(param.GetHeaders());
+    CHttpRequest req = session->NewRequest(url, CHttpSession::ePut, param);
 
-    if (param.GetHeaders().HasValue(CHttpHeaders::eContentType)) {
-        req.Headers().SetValue(CHttpHeaders::eContentType,
-            param.GetHeaders().GetValue(CHttpHeaders::eContentType));
-    }
-    else {
+    if (!param.GetHeaders().HasValue(CHttpHeaders::eContentType)) {
         req.Headers().SetValue(CHttpHeaders::eContentType,
             kContentType_FormUrlEnc);
     }

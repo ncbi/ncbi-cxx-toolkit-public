@@ -184,6 +184,30 @@ public:
 };
 
 
+/// Per-request proxy settings.
+class NCBI_XCONNECT_EXPORT CHttpProxy
+{
+public:
+    CHttpProxy(void) : m_Port(0) {}
+    CHttpProxy(const string& host, unsigned short& port)
+        : m_Host(host), m_Port(port) {}
+    CHttpProxy(const string& host, unsigned short& port, const string& user, const string& password)
+        : m_Host(host), m_Port(port), m_User(user), m_Password(password) {}
+
+    bool IsEmpty(void) const { return m_Host.empty(); }
+    const string& GetHost(void) const { return m_Host; }
+    unsigned short GetPort(void) const { return m_Port; }
+    const string& GetUser(void) const { return m_User; }
+    const string& GetPassword(void) const { return m_Password; }
+
+private:
+    string         m_Host;
+    unsigned short m_Port;
+    string         m_User;
+    string         m_Password;
+};
+
+
 /// CHttpSession and CHttpRequest parameters.
 class NCBI_XCONNECT_EXPORT CHttpParam
 {
@@ -196,23 +220,34 @@ public:
     CHttpParam& SetHeader(CHttpHeaders::EHeaderName header, CTempString value);
     /// Add a single HTTP header, @sa CHttpHeaders::AddValue().
     CHttpParam& AddHeader(CHttpHeaders::EHeaderName header, CTempString value);
+    const CHttpHeaders& GetHeaders(void) const { return *m_Headers; }
 
     CHttpParam& SetTimeout(const CTimeout& timeout);
+    const CTimeout& GetTimeout(void) const { return m_Timeout; }
 
     CHttpParam& SetRetries(THttpRetries retries);
+    THttpRetries GetRetries(void) const { return m_Retries; }
 
     CHttpParam& SetCredentials(shared_ptr<CTlsCertCredentials> credentials);
-
-    const CHttpHeaders& GetHeaders(void) const { return *m_Headers; }
-    const CTimeout& GetTimeout(void) const { return m_Timeout; }
-    THttpRetries GetRetries(void) const { return m_Retries; }
     shared_ptr<CTlsCertCredentials> GetCredentials(void) const { return m_Credentials; }
+
+    CHttpParam& SetProxy(const CHttpProxy& proxy) { m_Proxy = proxy; return *this; }
+    const CHttpProxy& GetProxy(void) const { return m_Proxy; }
+
+    const CTimeout& GetDeadline() const { return m_Deadline; }
+    CHttpParam& SetDeadline(const CTimeout& deadline) { m_Deadline = deadline; return *this; }
+
+    ESwitch GetRetryProcessing() const { return m_RetryProcessing; }
+    CHttpParam& SetRetryProcessing(ESwitch on_off) { m_RetryProcessing = on_off; return *this; }
 
 private:
     CRef<CHttpHeaders>              m_Headers;
     CTimeout                        m_Timeout;
     THttpRetries                    m_Retries;
     shared_ptr<CTlsCertCredentials> m_Credentials;
+    CHttpProxy                      m_Proxy;
+    CTimeout                        m_Deadline;
+    ESwitch                         m_RetryProcessing;
 };
 
 
@@ -274,7 +309,7 @@ CHttpResponse g_HttpPost(const CUrl&         url,
 NCBI_XCONNECT_EXPORT
 CHttpResponse g_HttpPut(const CUrl&       url,
                         CTempString       data,
-                        const CHttpParam& param);
+                        const CHttpParam& param = CHttpParam());
 
 /// Shortcut for PUT request. Each request uses a separate session,
 /// no data like cookies is shared between multiple requests.
@@ -583,12 +618,20 @@ public:
         m_AdjustUrl.Reset(new CAdjustUrlCallback<TCallback>(callback));
     }
 
+    /// Set proxy.
+    void SetProxy(const CHttpProxy& proxy) { m_Proxy = proxy; }
+    const CHttpProxy& GetProxy(void) const { return m_Proxy; }
+
+    /// Set request parameters.
+    /// @sa CHttpParam
+    void SetParam(const CHttpParam& param);
+
 private:
     friend class CHttpSession_Base;
     friend class CHttpSessionImpl1x;
     friend class CHttpSessionImpl2;
 
-    CHttpRequest(CHttpSession_Base& session, const CUrl& url, EReqMethod method);
+    CHttpRequest(CHttpSession_Base& session, const CUrl& url, EReqMethod method, const CHttpParam& param = {});
 
     class CAdjustUrlCallback_Base : public CObject {
     public:
@@ -617,6 +660,7 @@ private:
 
     void x_AdjustHeaders(bool use_form_data);
     void x_UpdateResponse(CHttpHeaders::THeaders headers, int status_code, string status_text);
+    void x_SetProxy(SConnNetInfo& net_info);
 
     // CConn_HttpStream callback for parsing headers.
     // 'user_data' must point to a CHttpRequest object.
@@ -644,6 +688,7 @@ private:
     CRef<CAdjustUrlCallback_Base> m_AdjustUrl;
     // Store credentials so that they are not destroyed while request is being executed.
     shared_ptr<CTlsCertCredentials> m_Credentials;
+    CHttpProxy          m_Proxy;
 };
 
 
@@ -667,7 +712,7 @@ public:
     /// A user can set headers/form-data before opening the stream and
     /// sending the actual request.
     /// The default request method is GET.
-    CHttpRequest NewRequest(const CUrl& url, ERequestMethod method = eGet);
+    CHttpRequest NewRequest(const CUrl& url, ERequestMethod method = eGet, const CHttpParam& param = {});
 
     /// Shortcut for GET requests.
     /// @param url
@@ -741,6 +786,8 @@ public:
     CHttpSession_Base(EProtocol protocol);
     virtual ~CHttpSession_Base(void) {}
 
+    void SetProxy(const CHttpProxy& proxy) { m_Proxy = proxy; }
+    const CHttpProxy& GetProxy(void) const { return m_Proxy; }
 private:
     friend class CHttpRequest;
     friend class CHttpResponse;
@@ -758,6 +805,7 @@ private:
     THTTP_Flags  m_HttpFlags;
     CHttpCookies m_Cookies;
     shared_ptr<CTlsCertCredentials> m_Credentials;
+    CHttpProxy   m_Proxy;
 };
 
 
