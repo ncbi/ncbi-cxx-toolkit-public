@@ -765,7 +765,7 @@ CMakeBlastDBApp::x_VerifyInputFilesType(const vector<CTempString>& filenames,
 
     // Guess the input data type
     for (size_t i = 0; i < filenames.size(); i++) {
-        const string & seq_file = filenames[i];
+        string seq_file = filenames[i];
 
         CFile input_file(seq_file);
         if ( !input_file.Exists() ) {
@@ -978,7 +978,7 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
         else {
             x_VerifyInputFilesType(names, input_fmt);
             for (size_t i = 0; i < names.size(); i++) {
-                const string & seq_file = names[i];
+                string seq_file = names[i];
                 CNcbiIfstream f(seq_file.c_str(), ios::binary);
                 x_AddSequenceData(f, build_fmt);
             }
