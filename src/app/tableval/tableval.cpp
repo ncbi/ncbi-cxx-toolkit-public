@@ -371,7 +371,7 @@ void CTAbleValApp::ProcessOneFile(const string& current_file)
         {
             if (m_output == 0)
             {
-                string temp_file = CTempString(current_file, 0, current_file.rfind('.')); // npos will signal to use the whole string
+                string temp_file = current_file.substr(0, current_file.rfind('.')); // npos will signal to use the whole string
                 temp_file += ".val";
                 local_file.Reset(temp_file);
                 local_output.reset(new CNcbiOfstream(local_file.GetPath().c_str()));

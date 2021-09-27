@@ -143,8 +143,8 @@ static bool CaseNCompareEqual(string str1, string str2, unsigned len1, bool case
         return false;
     }
     string comp_str1, comp_str2;
-    comp_str1 = CTempString(str1).substr(0, len1);
-    comp_str2 = CTempString(str2).substr(0, len1);
+    comp_str1 = str1.substr(0, len1);
+    comp_str2 = str2.substr(0, len1);
     if (case_sensitive) {
         return (comp_str1 == comp_str2);
     }
@@ -181,8 +181,8 @@ static bool AdvancedStringCompare(const string& str, const string& str_match, co
 
     unsigned i;
     while (match && pos_match < len_m && pos_str < len_s && !recursive_match) {
-        cp_m = CTempString(str_match).substr(pos_match);
-        cp_s = CTempString(str).substr(pos_str);
+        cp_m = str_match.substr(pos_match);
+        cp_s = str.substr(pos_str);
 
         /* first, check to see if we're skipping synonyms */
         i=0;
@@ -199,7 +199,7 @@ static bool AdvancedStringCompare(const string& str, const string& str_match, co
                     // whole word mch
                     if (!whole_wd || (!isalpha(ch1) && word_start_m)) { 
                         if ( !(*it)->CanGetSynonyms() || (*it)->GetSynonyms().empty()) {
-                            if (AdvancedStringCompare(cp_s, CTempString(cp_m).substr(len1), str_cons, word_start_m, &target_match_len)) {
+                            if (AdvancedStringCompare(cp_s, cp_m.substr(len1), str_cons, word_start_m, &target_match_len)) {
                                 recursive_match = true;
                                 break;
                             }
@@ -214,7 +214,7 @@ static bool AdvancedStringCompare(const string& str, const string& str_match, co
                                     ch2 = (cp_s.size() <= len2) ? ' ' : cp_s[len2];
                                     // whole word match
                                     if (!whole_wd || (!isalpha(ch2) && word_start_s)) {
-                                        if (AdvancedStringCompare(CTempString(cp_s).substr(len2), CTempString(cp_m).substr(len1), str_cons, word_start_m & word_start_s, &target_match_len)) {
+                                        if (AdvancedStringCompare(cp_s.substr(len2), cp_m.substr(len1), str_cons, word_start_m & word_start_s, &target_match_len)) {
                                             recursive_match = true;
                                             break;
                                         }
@@ -305,7 +305,7 @@ static bool AdvancedStringMatch(const string& str, const CString_constraint* str
                 while (pos < len && isalpha (str[pos-1])) pos++;
             }
             if (pos < len) {
-                if (AdvancedStringCompare(CTempString(str).substr(pos), match_text, str_cons, true)) rval = true;
+                if (AdvancedStringCompare(str.substr(pos), match_text, str_cons, true)) rval = true;
                 else pos++;
             }
         }
@@ -388,7 +388,7 @@ static bool GetSpanFromHyphenInString(const string& str, const size_t& hyphen, s
     }
 
     unsigned len = hyphen - cp;
-    first = CTempString(str).substr(cp, len);
+    first = str.substr(cp, len);
     NStr::TruncateSpacesInPlace(first);
  
     /* find range end */
@@ -404,7 +404,7 @@ static bool GetSpanFromHyphenInString(const string& str, const size_t& hyphen, s
     if (!isspace (str[cp])) {
         len--;
     }
-    second = CTempString(str).substr(hyphen+1, len);
+    second = str.substr(hyphen+1, len);
     NStr::TruncateSpacesInPlace(second);
 
     bool rval = true;
@@ -462,10 +462,10 @@ static bool IsStringInSpan(const string& str, const string& first, const string&
     else if (StringIsPositiveAllDigits(second)) {
         prefix_len = first.find_first_of(digit_str) + 1;
 
-        new_str = CTempString(str).substr(prefix_len - 1);
-        new_first = CTempString(first).substr(prefix_len - 1);
-        comp_str1 = CTempString(str).substr(0, prefix_len);
-        comp_str2 = CTempString(first).substr(0, prefix_len);
+        new_str = str.substr(prefix_len - 1);
+        new_first = first.substr(prefix_len - 1);
+        comp_str1 = str.substr(0, prefix_len);
+        comp_str2 = first.substr(0, prefix_len);
         if (comp_str1 == comp_str2 && StringIsPositiveAllDigits (new_str) && StringIsPositiveAllDigits (new_first)) {
             first_num = NStr::StringToUInt(new_first);
             second_num = NStr::StringToUInt (second);
@@ -483,12 +483,12 @@ static bool IsStringInSpan(const string& str, const string& first, const string&
         }
         prefix_len ++;
 
-        comp_str1 = CTempString(str).substr(0, prefix_len);
-        comp_str2 = CTempString(first).substr(0, prefix_len);
+        comp_str1 = str.substr(0, prefix_len);
+        comp_str2 = first.substr(0, prefix_len);
         if (prefix_len <= first.size() && prefix_len <= second.size() && isdigit (first[prefix_len-1]) && isdigit (second[prefix_len-1]) && comp_str1 == comp_str2) {
-            new_first = CTempString(first).substr(prefix_len);
-            new_second = CTempString(second).substr(prefix_len);
-            new_str = CTempString(str).substr(prefix_len);
+            new_first = first.substr(prefix_len);
+            new_second = second.substr(prefix_len);
+            new_str = str.substr(prefix_len);
             if (StringIsPositiveAllDigits (new_first) && StringIsPositiveAllDigits (new_second) && StringIsPositiveAllDigits (new_str)) {
                 first_num = NStr::StringToUInt(new_first);
                 second_num = NStr::StringToUInt (new_second);
@@ -502,11 +502,11 @@ static bool IsStringInSpan(const string& str, const string& first, const string&
                 size_t idx1, idx2, idx_str;
                 string suf1, suf2, sub_str;
                 idx1 = first.find_first_not_of(digit_str);
-                suf1 = CTempString(first).substr(prefix_len + idx1);
+                suf1 = first.substr(prefix_len + idx1);
                 idx2 = second.find_first_not_of(digit_str);
-                suf2 = CTempString(second).substr(prefix_len + idx2);
+                suf2 = second.substr(prefix_len + idx2);
                 idx_str = str.find_first_not_of(digit_str);
-                sub_str = CTempString(str).substr(prefix_len + idx_str);
+                sub_str = str.substr(prefix_len + idx_str);
                 if (suf1 == suf2 && suf1 == sub_str) {
                     /* suffixes match */
                     first_num = NStr::StringToUInt(CTempString(first).substr(prefix_len, idx1));
@@ -534,7 +534,7 @@ static bool IsStringInSpanInList(const string& str, const string& list)
         return false;
     }
 
-    idx = CTempString(str).substr(idx).find_first_not_of(digit_str);
+    idx = str.substr(idx).find_first_not_of(digit_str);
 
     /* find ranges */
     size_t hyphen = list.find('-');
@@ -542,7 +542,7 @@ static bool IsStringInSpanInList(const string& str, const string& list)
     string range_start, range_end;
     while (hyphen != string::npos && !rval) {
         if (!hyphen) {
-            hyphen = CTempString(list).substr(1).find('-');
+            hyphen = list.substr(1).find('-');
         }
         else {
             if (GetSpanFromHyphenInString(list, hyphen, range_start, range_end)) {

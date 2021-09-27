@@ -66,7 +66,7 @@ bool CSearch_func::x_DoesStrContainPlural(const string& word, char last_letter, 
 {
     size_t len = word.size();
     if (last_letter == 's') {
-        if (len >= 5  && CTempString(word).substr(len-5) == "trans") {
+        if (len >= 5  && word.substr(len-5) == "trans") {
             return false; // not plural;
         }
         else if (len > 3) {
@@ -113,7 +113,7 @@ bool CSearch_func::x_StringMayContainPlural(const string& str) const
             pos = strtmp.find(*it);
             len = (*it).size();
             if (len == 1) {
-                strtmp = CTempString(strtmp).substr(pos+len);
+                strtmp = strtmp.substr(pos+len);
                 strtmp = NStr::TruncateSpaces(strtmp, NStr::eTrunc_Begin);
                 continue;
             }
@@ -126,7 +126,7 @@ bool CSearch_func::x_StringMayContainPlural(const string& str) const
             }
             jt = it;
             if (++jt != arr.end()) { // not jt++
-                strtmp = CTempString(strtmp).substr(strtmp.find(*jt));
+                strtmp = strtmp.substr(strtmp.find(*jt));
             }
         }
     }
@@ -164,16 +164,16 @@ bool CSearch_func::x_SkipBracketOrParen(size_t idx, string& start) const
     bool rval = false;
     size_t ep, ns;
 
-    if (idx > 2 && CTempString(start).substr(idx-3, 6) == "NAD(P)") {
+    if (idx > 2 && start.substr(idx-3, 6) == "NAD(P)") {
         rval = true;
-        start = CTempString(start).substr(idx + 3);
+        start = start.substr(idx + 3);
     } 
     else {
         size_t len;
         for (size_t i = 0; i < ArraySize(skip_bracket_paren); i++) {
         len = strlen(skip_bracket_paren[i]);
-            if (CTempString(start).substr(idx, len) == skip_bracket_paren[i]) {
-                start = CTempString(start).substr(idx + len);
+            if (start.substr(idx, len) == skip_bracket_paren[i]) {
+                start = start.substr(idx + len);
                 rval = true;
                 break;
             }
@@ -184,11 +184,11 @@ bool CSearch_func::x_SkipBracketOrParen(size_t idx, string& start) const
             if (ep != string::npos && (ns == string::npos || ns > ep)) {
                 if (ep - idx < 5) {
                     rval = true;
-                    start = CTempString(start).substr(ep+1);
+                    start = start.substr(ep+1);
                 } 
-                else if (ep - idx > 3 && CTempString(start).substr(ep - 3, 3) == "ing") {
+                else if (ep - idx > 3 && start.substr(ep - 3, 3) == "ing") {
                 rval = true;
-                    start = CTempString(start).substr(ep + 1);
+                    start = start.substr(ep + 1);
                 }
             }
         }
@@ -248,7 +248,7 @@ bool CSearch_func::x_PrecededByOkPrefix (const string& start_str) const
     size_t len_i;
     for (size_t i = 0; i < ArraySize(ok_num_prefix); i++) {
         len_i = string(ok_num_prefix[i]).size();
-        if (len_str >= len_i && (CTempString(start_str).substr(len_str-len_i) == ok_num_prefix[i])) {
+        if (len_str >= len_i && (start_str.substr(len_str-len_i) == ok_num_prefix[i])) {
             return true;
         }
     }
@@ -264,12 +264,12 @@ bool CSearch_func::x_InWordBeforeCytochromeOrCoenzyme(const string& start_str) c
     size_t pos = start_str.find_last_of(' ');
     string comp_str1, comp_str2, strtmp;
     if (pos != string::npos) {
-        strtmp = CTempString(start_str).substr(0, pos);
+        strtmp = start_str.substr(0, pos);
         pos = strtmp.find_last_not_of(' ');
         if (pos != string::npos) {
             size_t len = strtmp.size();
-            comp_str1 = CTempString(strtmp).substr(len-10);
-            comp_str2 = CTempString(strtmp).substr(len-8);
+            comp_str1 = strtmp.substr(len-10);
+            comp_str2 = strtmp.substr(len-8);
             if ( (len >= 10  && NStr::EqualNocase(comp_str1, "cytochrome")) || (len >= 8 && NStr::EqualNocase(comp_str2, "coenzyme")) ) {
                 return true;
             }
@@ -283,9 +283,9 @@ bool CSearch_func::x_FollowedByFamily(string& after_str) const
 {
     size_t pos = after_str.find_first_of(' ');
     if (pos != string::npos) {
-        after_str = CTempString(after_str).substr(pos+1);
+        after_str = after_str.substr(pos+1);
         if (NStr::EqualNocase(after_str, 0, 6, "family")) {
-            after_str = CTempString(after_str).substr(7);
+            after_str = after_str.substr(7);
             return true;
         }
     } 
@@ -305,11 +305,11 @@ bool CSearch_func::x_ContainsThreeOrMoreNumbersTogether(const string& str) const
         if (p == string::npos) {
             break;
         }
-        strtmp = CTempString(sch_str).substr(0, p);
+        strtmp = sch_str.substr(0, p);
         if (p && ( x_PrecededByOkPrefix(strtmp) || x_InWordBeforeCytochromeOrCoenzyme (strtmp))) {
             p2 = sch_str.find_first_not_of(digit_str, p+1);
             if (p2 != string::npos) {
-                sch_str = CTempString(sch_str).substr(p2);
+                sch_str = sch_str.substr(p2);
                 num_digits = 0;
             }
             else break;
@@ -317,14 +317,14 @@ bool CSearch_func::x_ContainsThreeOrMoreNumbersTogether(const string& str) const
         else {
             num_digits ++;
             if (num_digits == 3) {
-                sch_str = CTempString(sch_str).substr(p+1);
+                sch_str = sch_str.substr(p+1);
                 if (x_FollowedByFamily(sch_str)) {
                     num_digits = 0;
                 }
                 else return true;
             }
             if (p < sch_str.size() - 1) {
-                sch_str = CTempString(sch_str).substr(p+1);
+                sch_str = sch_str.substr(p+1);
                 if (!isdigit(sch_str[0])) {
                     num_digits = 0;
                 }
@@ -355,7 +355,7 @@ bool CSearch_func::x_StringContainsUnderscore(const string& str) const
             return true;
         }
         else {
-            strtmp = CTempString(arr[i]).substr(arr[i].size()-3);
+            strtmp = arr[i].substr(arr[i].size()-3);
             if ( (strtmp == "MFS" || strtmp == "TPR" || strtmp == "AAA") && (isdigit(arr[i+1][0]) && !isdigit(arr[i+1][1])) ) {
                 continue;
             }
