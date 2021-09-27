@@ -1363,7 +1363,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     if (port >= 0  ||  scheme == eURL_File)
         info->port = (unsigned short)(port < 0 ? 0 : port);
     if (host) {
-        assert(hostlen  &&  !NCBI_HasSpaces(host, hostlen));
+        assert(!hostlen  ||  !NCBI_HasSpaces(host, hostlen));
         memcpy(info->host, host, hostlen);
         info->host[hostlen] = '\0';
     }
