@@ -329,6 +329,9 @@ public:
     bool IsPostponed(void) const
     { return m_Postponed; }
 
+    bool IsClosed(void) const
+    { return m_HttpConn->IsClosed(); }
+
     void SetPostponed(void)
     { m_Postponed = true; }
 
@@ -726,7 +729,7 @@ public:
         m_IsClosed = false;
     }
 
-    void OnClosedConnection(void)
+    void OnClientClosedConnection(void)
     {
         m_IsClosed = true;
         x_CancelAll();
@@ -835,7 +838,7 @@ public:
 private:
     unsigned short                      m_HttpMaxBacklog;
     unsigned short                      m_HttpMaxPending;
-    bool                                m_IsClosed;
+    volatile bool                       m_IsClosed;
 
     list<shared_ptr<CPSGS_Reply>>       m_Backlog;
     list<shared_ptr<CPSGS_Reply>>       m_Pending;
@@ -1138,10 +1141,10 @@ public:
         sock->on_close.data = http_conn;
     }
 
-    void OnClosedConnection(uv_stream_t *  conn,
-                            CHttpConnection<P> *  http_conn)
+    void OnClientClosedConnection(uv_stream_t *  conn,
+                                  CHttpConnection<P> *  http_conn)
     {
-        http_conn->OnClosedConnection();
+        http_conn->OnClientClosedConnection();
     }
 
     void WakeWorker(void)

@@ -96,6 +96,10 @@ void CPendingOperation::Start(void)
         return;
     m_Started = true;
 
+    // Memorize the UV thread ID once so that it can be used later to bind to
+    // the proper uv loop
+    m_Processor->SetUVThreadId(uv_thread_self());
+
     if (m_UserRequest->NeedTrace()) {
         m_Reply->SendTrace(
             "Start pending request: " +

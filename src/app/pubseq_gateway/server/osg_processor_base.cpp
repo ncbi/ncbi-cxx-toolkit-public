@@ -192,7 +192,7 @@ void COSGProcessorRef::ProcessRepliesInUvLoop()
     CFastMutexGuard guard(m_ProcessorPtrMutex);
     if ( m_ProcessorPtr ) {
         _ASSERT(m_ProcessorPtr->m_ProcessorRef);
-        CPubseqGatewayApp::GetInstance()->GetUvLoopBinder().PostponeInvoke(
+        m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
             s_ProcessReplies,
             new shared_ptr<COSGProcessorRef>(m_ProcessorPtr->m_ProcessorRef));
     }

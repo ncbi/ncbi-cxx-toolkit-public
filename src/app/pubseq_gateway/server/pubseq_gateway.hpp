@@ -265,12 +265,22 @@ public:
         return m_Counters;
     }
 
-    uv_loop_t *  GetUVLoop(void)
-    { return m_TcpDaemon->GetUVLoop(); }
-
-    CPSGS_UvLoopBinder &  GetUvLoopBinder(void)
+    void RegisterUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop)
     {
-        return *(m_UvLoopBinder.get());
+        lock_guard<mutex>   guard(m_ThreadToBinderGuard);
+        m_ThreadToBinder[uv_thread] =
+                unique_ptr<CPSGS_UvLoopBinder>(new CPSGS_UvLoopBinder(uv_loop));
+    }
+
+    CPSGS_UvLoopBinder &  GetUvLoopBinder(uv_thread_t  uv_thread_id)
+    {
+        auto it = m_ThreadToBinder.find(uv_thread_id);
+        if (it == m_ThreadToBinder.end()) {
+            // Fallback: worker thread is not found; bind to the main loop
+            PSG_ERROR("Worker thread id is not found; binding to the main loop");
+            return *(m_MainUvLoopBinder.get());
+        }
+        return *(it->second.get());
     }
 
 private:
@@ -411,7 +421,6 @@ private:
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;
     unique_ptr<CHttpDaemon<CPendingOperation>>
                                         m_TcpDaemon;
-    unique_ptr<CPSGS_UvLoopBinder>      m_UvLoopBinder;
 
     unique_ptr<CExcludeBlobCache>       m_ExcludeBlobCache;
 
@@ -441,6 +450,13 @@ private:
     string                              m_SSLCertFile;
     string                              m_SSLKeyFile;
     string                              m_SSLCiphers;
+
+    // Mapping between the libuv thread id and the binder associated with the
+    // libuv worker thread loop
+    map<uv_thread_t,
+        unique_ptr<CPSGS_UvLoopBinder>> m_ThreadToBinder;
+    mutex                               m_ThreadToBinderGuard;
+    unique_ptr<CPSGS_UvLoopBinder>      m_MainUvLoopBinder;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

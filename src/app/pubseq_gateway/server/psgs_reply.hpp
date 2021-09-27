@@ -295,8 +295,8 @@ private:
     int32_t                             m_TotalSentReplyChunks;
     atomic<bool>                        m_ChunksLock;
     vector<h2o_iovec_t>                 m_Chunks;
-    bool                                m_ConnectionCanceled;
-    bool                                m_FinallyFlushed;
+    volatile bool                       m_ConnectionCanceled;
+    volatile bool                       m_FinallyFlushed;
 };
 
 
