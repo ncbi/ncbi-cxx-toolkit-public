@@ -2707,6 +2707,34 @@ bool CSubSource::IsEndogenousVirusNameValid(const string& value)
 //   16. Must not contain the series of letters "chrm" (ignoring case)
 //   17. Must not contain the series of letters "chrom" (ignoring case)
 //   18. Must not contain the phrase "linkage-group" (ignoring case)
+static bool s_FailsGenusOrSpeciesTest(const string& value, const string& taxname)
+{ // See RW-1436
+    if (NStr::IsBlank(taxname) || 
+        NStr::StartsWith(taxname, "Plasmid ", NStr::eNocase) ||
+        NStr::StartsWith(taxname, "IncQ plasmid", NStr::eNocase)) {
+        return false;
+    }
+
+    size_t pos = NStr::Find(taxname, " ");
+    if (pos != NPOS) {
+        string genus = taxname.substr(0, pos);
+        if (NStr::FindNoCase(value, genus) != NPOS) {
+                // B.14
+                return true;
+        }
+        string species = taxname.substr(pos + 1);
+
+        pos = NStr::FindNoCase(value, species);
+        if (pos != NPOS) {
+            if (pos != 1 || value[0] != 'p') {
+                // B.15
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 
 bool CSubSource::x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(const string& value, const string& taxname)
 {
@@ -2723,28 +2751,11 @@ bool CSubSource::x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(const strin
         // B.5
         return false;
     }
-    if (!NStr::IsBlank(taxname)) {
-        if (NStr::FindNoCase(value, taxname) != NPOS) {
-            // B.12
-            return false;
-        }
-        size_t pos = NStr::Find(taxname, " ");
-        if (pos != NPOS) {
-            string genus = taxname.substr(0, pos);
-            if (NStr::FindNoCase(value, genus) != NPOS) {
-                // B.14
-                return false;
-            }
-            string species = taxname.substr(pos + 1);
-            pos = NStr::FindNoCase(value, species);
-            if (pos != NPOS) {
-                if (pos != 1 || value[0] != 'p') {
-                    // B.15
-                    return false;
-                }
-            }
-        }
+
+    if (s_FailsGenusOrSpeciesTest(value, taxname)) {
+        return false;
     }
+
     static string s_ForbiddenPhrases[] = {
         "\t",  // B.6.
         "plasmid", // B.8
@@ -2808,28 +2819,17 @@ bool CSubSource::IsPlasmidNameValid(const string& value, const string& taxname)
 
     if (NStr::FindNoCase(value,"plasmid") != NPOS) {
         static const set<string, PNocase_Conditional> s_PlasmidNameExceptions = 
-        { // This list comes from RW-1430/RW-1028
+        { // This list comes from RW-1436/RW-1430
             "Plasmid F",
             "Plasmid R",
-            "Plasmid pTB913",
-            "Plasmid PDS075",
-            "IncQ plasmid pIE1120",
-            "Plasmid NR79",
-            "Plasmid pUB110",
-            "Plasmid R387",
-            "Plasmid pFA6",
-            "Plasmid pWP113a",
-            "Plasmid pWW100",
-            "Plasmid pIP630",
-            "Plasmid pNG2",
-            "Plasmid pGT633",
-            "Plasmid pE5",
-            "Plasmid pIP1527",
+            "Plasmid pIP630",   
+            "Plasmid pNG2",     
+            "Plasmid pGT633",   
+            "Plasmid pE5",      
+            "Plasmid pIP1527",  
             "Plasmid pAM77",
-            "Plasmid pAZ1",
-            "Plasmid RP4",
-            "Plasmid R46",
-            "Plasmid pJHC-MW1" 
+            "Plasmid pAZ1",     
+            "Plasmid RP4" 
         };
 
         if (s_PlasmidNameExceptions.find(value) != end(s_PlasmidNameExceptions)) {
@@ -2838,18 +2838,7 @@ bool CSubSource::IsPlasmidNameValid(const string& value, const string& taxname)
         return false;
     }
 
-
-    string tax = taxname;
-    if (NStr::StartsWith(taxname, "Plasmid ") || NStr::StartsWith(taxname, "plasmid ")) {
-        tax = taxname.substr(8, taxname.length());
-    }
-    if (NStr::StartsWith(tax, value)) {
-        if (NStr::Equal(tax, taxname)) {
-            return false;
-        }
-        return true;
-    }
-    return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(value, tax);
+    return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(value, taxname);
 }
 
 
