@@ -2029,7 +2029,7 @@ struct SCaseInsensitiveQuickLess
 {
 public:
     // faster than lexicographical order
-    bool operator()(const string& lhs, const string& rhs) const
+    bool operator()(const CTempString& lhs, const CTempString& rhs) const
     {
         if( lhs.length() != rhs.length() ) {
             return (lhs.length() < rhs.length());
@@ -2041,7 +2041,7 @@ public:
 struct SCaseInsensitiveLess
 {
 public:
-    bool operator()(const string& lhs, const string& rhs) const
+    bool operator()(const CTempString& lhs, const CTempString& rhs) const
     {
         return NStr::CompareNocase (lhs, rhs) < 0;
     }
