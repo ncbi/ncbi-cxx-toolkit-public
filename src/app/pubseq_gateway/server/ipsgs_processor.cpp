@@ -72,3 +72,9 @@ void IPSGS_Processor::SignalFinishProcessing(void)
     }
 }
 
+
+CPSGS_UvLoopBinder &  IPSGS_Processor::GetUvLoopBinder(void)
+{
+    return CPubseqGatewayApp::GetInstance()->GetUvLoopBinder(GetUVThreadId());
+}
+

@@ -37,6 +37,8 @@
 
 USING_NCBI_SCOPE;
 
+// Forward declaration
+class CPSGS_UvLoopBinder;
 
 /// Interface class (and self-factory) for request processor objects that can
 /// retrieve data from a given data source.
@@ -154,6 +156,29 @@ public:
         return m_Priority;
     }
 
+    /// Provides a libuv event loop binder to have a callback from the
+    /// processor assigned thread
+    /// @return
+    ///  The binder for the processor assigned libuv loop
+    CPSGS_UvLoopBinder &  GetUvLoopBinder(void);
+
+    /// Saves the libuv worker thread id which runs the processor.
+    /// To be used by the server framework only.
+    /// @param uv_thread_id
+    ///  The libuv worker thread id which runs the processor
+    void SetUVThreadId(uv_thread_t  uv_thread_id)
+    {
+        m_UVThreadId = uv_thread_id;
+    }
+
+    /// Provides the libuv thread id which runs the processor.
+    /// @return
+    ///  The libuv worker thread id which runs the processor
+    uv_thread_t GetUVThreadId(void) const
+    {
+        return m_UVThreadId;
+    }
+
 public:
     /// Tells wether to continue or not after a processor called
     /// SignalStartProcessing() method.
@@ -179,7 +204,8 @@ protected:
     TProcessorPriority         m_Priority;
 
 protected:
-    bool        m_FinishSignalled;
+    bool                        m_FinishSignalled;
+    uv_thread_t                 m_UVThreadId;
 };
 
 #endif  // IPSGS_PROCESSOR__HPP

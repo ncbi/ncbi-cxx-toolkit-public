@@ -53,6 +53,7 @@ extern SShutdownData       g_ShutdownData;
 
 
 void CollectGarbage(void);
+void RegisterUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop);
 
 namespace TSL {
 
@@ -324,6 +325,9 @@ struct CTcpWorker
             m_started = true;
             m_protocol.ThreadStart(m_internal->m_loop.Handle(), this);
 
+            // Worker thread to uv loop mapping
+            RegisterUVLoop(uv_thread_self(), m_internal->m_loop.Handle());
+
             err_code = uv_run(m_internal->m_loop.Handle(), UV_RUN_DEFAULT);
             PSG_INFO("uv_run (1) worker " << m_id <<
                      " returned " <<  err_code);
@@ -392,12 +396,12 @@ struct CTcpWorker
             for (auto  it = m_connected_list.begin();
                  it != m_connected_list.end(); ++it) {
                 uv_tcp_t *tcp = &std::get<0>(*it);
-                uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnCliClosed);
+                uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
             }
         }
     }
 
-    void OnCliClosed(uv_handle_t *  handle)
+    void OnClientClosed(uv_handle_t *  handle)
     {
         m_daemon->ClientDisconnected();
         --m_connection_count;
@@ -406,8 +410,8 @@ struct CTcpWorker
         for (auto it = m_connected_list.begin();
              it != m_connected_list.end(); ++it) {
             if (tcp == &std::get<0>(*it)) {
-                m_protocol.OnClosedConnection(reinterpret_cast<uv_stream_t*>(handle),
-                                              &std::get<1>(*it));
+                m_protocol.OnClientClosedConnection(reinterpret_cast<uv_stream_t*>(handle),
+                                                    &std::get<1>(*it));
                 m_free_list.splice(m_free_list.begin(), m_connected_list, it);
                 return;
             }
@@ -471,12 +475,12 @@ private:
         }
     }
 
-    static void s_OnCliClosed(uv_handle_t *  handle)
+    static void s_OnClientClosed(uv_handle_t *  handle)
     {
         CTcpWorker<P, U, D> *           worker =
             static_cast<CTcpWorker<P, U, D>*>(
                     uv_key_get(&CTcpWorkersList<P, U, D>::s_thread_worker_key));
-        worker->OnCliClosed(handle);
+        worker->OnClientClosed(handle);
     }
 
     static void s_LoopWalk(uv_handle_t *  handle, void *  arg)
@@ -511,12 +515,12 @@ private:
         bool b = m_daemon->ClientConnected();
 
         if (err_code != 0 || !b || m_shuttingdown) {
-            uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnCliClosed);
+            uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
             return;
         }
         std::get<1>(*it).Reset();
         m_protocol.OnNewConnection(reinterpret_cast<uv_stream_t*>(tcp),
-                                   &std::get<1>(*it), s_OnCliClosed);
+                                   &std::get<1>(*it), s_OnClientClosed);
     }
 };
 

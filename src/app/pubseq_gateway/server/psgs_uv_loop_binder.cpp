@@ -38,18 +38,31 @@
 
 USING_NCBI_SCOPE;
 
-void prepare_bind_cb(uv_prepare_t *     handle)
-{
-    CPSGS_UvLoopBinder *    loop_binder_cb = (CPSGS_UvLoopBinder*)(handle->data);
-    loop_binder_cb->x_UvOnPrepare();
-}
+#if USE_PREPARE_CB
+    void prepare_bind_cb(uv_prepare_t *     handle)
+    {
+        CPSGS_UvLoopBinder *    loop_binder_cb = (CPSGS_UvLoopBinder*)(handle->data);
+        loop_binder_cb->x_UvOnCallback();
+    }
+#else
+    void check_bind_cb(uv_check_t *  handle)
+    {
+        CPSGS_UvLoopBinder *    loop_binder_cb = (CPSGS_UvLoopBinder*)(handle->data);
+        loop_binder_cb->x_UvOnCallback();
+    }
+#endif
 
 
 CPSGS_UvLoopBinder::CPSGS_UvLoopBinder(uv_loop_t *  loop)
 {
     // This call always succeeds
-    uv_prepare_init(loop, &m_Prepare);
-    m_Prepare.data = this;
+    #if USE_PREPARE_CB
+        uv_prepare_init(loop, &m_Prepare);
+        m_Prepare.data = this;
+    #else
+        uv_check_init(loop, &m_Check);
+        m_Check.data = this;
+    #endif
 
     // NULL callback because it is used for pushing libuv loop
     int     ret = uv_async_init(loop, &m_Async, NULL);
@@ -58,14 +71,22 @@ CPSGS_UvLoopBinder::CPSGS_UvLoopBinder(uv_loop_t *  loop)
     }
 
     // This call always succeeds
-    uv_prepare_start(&m_Prepare, prepare_bind_cb);
+    #if USE_PREPARE_CB
+        uv_prepare_start(&m_Prepare, prepare_bind_cb);
+    #else
+        uv_check_start(&m_Check, check_bind_cb);
+    #endif
 }
 
 
 CPSGS_UvLoopBinder::~CPSGS_UvLoopBinder()
 {
     // This call always succeeds
-    uv_prepare_stop(&m_Prepare);
+    #if USE_PREPARE_CB
+        uv_prepare_stop(&m_Prepare);
+    #else
+        uv_check_stop(&m_Check);
+    #endif
 }
 
 
@@ -82,7 +103,7 @@ void CPSGS_UvLoopBinder::PostponeInvoke(TProcessorCB    cb,
 }
 
 
-void CPSGS_UvLoopBinder::x_UvOnPrepare(void)
+void CPSGS_UvLoopBinder::x_UvOnCallback(void)
 {
     list<SUserCallback>     callbacks;
 

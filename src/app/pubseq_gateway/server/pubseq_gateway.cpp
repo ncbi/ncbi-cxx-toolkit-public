@@ -85,7 +85,7 @@ const unsigned int      kMaxRetriesMax = UINT_MAX;
 const EDiagSev          kDefaultSeverity = eDiag_Critical;
 const bool              kDefaultLog = true;
 const bool              kDefaultTrace = false;
-const string            kDefaultRootKeyspace = "sat_info";
+const string            kDefaultRootKeyspace = "sat_info2";
 const unsigned int      kDefaultExcludeCacheMaxSize = 1000;
 const unsigned int      kDefaultExcludeCachePurgePercentage = 20;
 const unsigned int      kDefaultExcludeCacheInactivityPurge = 60;
@@ -604,7 +604,7 @@ int CPubseqGatewayApp::Run(void)
                                                m_TcpMaxConn));
 
     // The binder must be initialized after the UV main loop has been created
-    m_UvLoopBinder.reset(new CPSGS_UvLoopBinder(GetUVLoop()));
+    m_MainUvLoopBinder.reset(new CPSGS_UvLoopBinder(m_TcpDaemon->GetUVLoop()));
 
 
     // Run the monitoring thread
@@ -1612,4 +1612,10 @@ void CollectGarbage(void)
     app->GetExcludeBlobCache()->Purge();
 }
 
+
+void RegisterUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop)
+{
+    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+    app->RegisterUVLoop(uv_thread, uv_loop);
+}
 

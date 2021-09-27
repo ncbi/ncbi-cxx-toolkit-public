@@ -135,7 +135,7 @@ void CCDDProcessorRef::GetBlobBySeqId(shared_ptr<CCDDProcessorRef> ref)
         }
         processor->m_CDDBlob = blob;
         if ( 1 ) {
-            CPubseqGatewayApp::GetInstance()->GetUvLoopBinder().PostponeInvoke(
+            processor->GetUvLoopBinder().PostponeInvoke(
                 OnGotBlobBySeqId,
                 new shared_ptr<CCDDProcessorRef>(ref));
         }
@@ -166,7 +166,7 @@ void CCDDProcessorRef::GetBlobId(shared_ptr<CCDDProcessorRef> ref)
         }
         ref->m_ProcessorPtr->m_CDDBlob.info = info;
         if ( 1 ) {
-            CPubseqGatewayApp::GetInstance()->GetUvLoopBinder().PostponeInvoke(
+            ref->m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
                 OnGotBlobId,
                 new shared_ptr<CCDDProcessorRef>(ref));
         }
@@ -197,7 +197,7 @@ void CCDDProcessorRef::GetBlobByBlobId(shared_ptr<CCDDProcessorRef> ref)
         }
         ref->m_ProcessorPtr->m_CDDBlob.data = data;
         if ( 1 ) {
-            CPubseqGatewayApp::GetInstance()->GetUvLoopBinder().PostponeInvoke(
+            ref->m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
                 OnGotBlobByBlobId,
                 new shared_ptr<CCDDProcessorRef>(ref));
         }
@@ -362,8 +362,7 @@ void CPSGS_CDDProcessor::x_GetBlobBySeqIdAsync(void)
     if ( x_IsCanceled() ) {
         return;
     }
-    CPubseqGatewayApp::GetInstance()->GetUvLoopBinder().PostponeInvoke(
-        s_OnGotBlobBySeqIdCallback, this);
+    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobBySeqIdCallback, this);
 }
 
 
@@ -397,8 +396,7 @@ void CPSGS_CDDProcessor::x_GetBlobIdAsync(void)
     if ( x_IsCanceled() ) {
         return;
     }
-    CPubseqGatewayApp::GetInstance()->GetUvLoopBinder().PostponeInvoke(
-        s_OnGotBlobIdCallback, this);
+    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobIdCallback, this);
 }
 
 
@@ -431,8 +429,7 @@ void CPSGS_CDDProcessor::x_GetBlobByBlobIdAsync(void)
     if ( x_IsCanceled() ) {
         return;
     }
-    CPubseqGatewayApp::GetInstance()->GetUvLoopBinder().PostponeInvoke(
-        s_OnGotBlobByBlobIdCallback, this);
+    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobByBlobIdCallback, this);
 }
 
 

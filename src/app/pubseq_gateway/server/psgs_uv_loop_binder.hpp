@@ -41,6 +41,14 @@
 using namespace std;
 
 
+// libuv offers two places for the callbacks:
+// - prepare (before io)
+// - check (after io)
+// The define below switches between prepare and check callback
+// Note: it is possible to add a feature of the runtime switch between these
+// callbacks (an argument for the binding)
+#define USE_PREPARE_CB 0
+
 
 // The class provides ability to setup a callback which will be invoked from
 // the libuv event loop.
@@ -79,7 +87,7 @@ class CPSGS_UvLoopBinder
         // Internal usage only.
         // The libuv C-style callback calls this method upon the prepare
         // callback
-        void x_UvOnPrepare(void);
+        void x_UvOnCallback(void);
 
     private:
         struct SUserCallback
@@ -93,7 +101,12 @@ class CPSGS_UvLoopBinder
         };
 
     private:
+        #if USE_PREPARE_CB
         uv_prepare_t            m_Prepare;
+        #else
+        uv_check_t              m_Check;
+        #endif
+
         uv_async_t              m_Async;
 
         mutex                   m_QueueLock;

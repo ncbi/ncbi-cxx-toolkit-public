@@ -889,6 +889,8 @@ void CPSGS_Reply::PrepareReplyCompletion(void)
 {
     if (m_ConnectionCanceled)
         return;
+    if (m_Reply->IsClosed())
+        return;
 
     while (m_ChunksLock.exchange(true)) {}
     ++m_TotalSentReplyChunks;

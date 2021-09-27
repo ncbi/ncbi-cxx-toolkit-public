@@ -37,6 +37,8 @@
 #include "pubseq_gateway_logging.hpp"
 
 
+#if 0
+
 void timer_socket_io_cb(uv_timer_t *  handle)
 {
     CPSGS_SocketIOCallback *    socket_io_cb = (CPSGS_SocketIOCallback*)(handle->data);
@@ -48,6 +50,14 @@ void poll_socket_io_cb(uv_poll_t *  handle, int  status, int  events)
     CPSGS_SocketIOCallback *    socket_io_cb = (CPSGS_SocketIOCallback*)(handle->data);
     socket_io_cb->x_UvOnSocketEvent(status);
 }
+
+
+// The interface implementation has been commented out
+// - At the moment nobody uses it
+// - To make it working again the following is required:
+// -- make it possible to bind to a specified loop: main/processor
+// -- make facilities to get a reference to the main uv loop and to processor
+//    loops
 
 CPSGS_SocketIOCallback::CPSGS_SocketIOCallback(int  fd,
                                                EPSGS_Event  event,
@@ -187,4 +197,6 @@ void CPSGS_SocketIOCallback::x_UvOnSocketEvent(int  status)
         x_StartTimer();
     }
 }
+
+#endif
 
