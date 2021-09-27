@@ -1315,7 +1315,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchHeader(BUF buffer)
         s_ReadBufToString(buffer, msg);
 
         SParsedCmd      cmd      = m_BatchHeaderParser.ParseCommand(msg);
-        const string &  size_str = cmd.params["size"];
+        CTempString     size_str = cmd.params["size"];
 
         if (!size_str.empty())
             m_BatchSize = NStr::StringToInt(size_str);
