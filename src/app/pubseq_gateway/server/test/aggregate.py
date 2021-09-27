@@ -34,6 +34,8 @@ def convertToBytesPerSecond(s):
         return float(s[:-4]) * 1024.0
     if s.endswith('MB/s'):
         return float(s[:-4]) * 1024.0 * 1024.0
+    if s.endswith('B/s'):
+        return float(s[:-3])
     raise Exception(f'Unknown value to convert to bytes per seconds: {s}')
 
 def processFile(content, name, stat):
@@ -42,10 +44,10 @@ def processFile(content, name, stat):
         'requests': {'total': 0, 'started': 0, 'done': 0, 'succeeded': 0, 'failed': 0, 'errored': 0, 'timeout': 0},
         'status codes': {'2xx': '', '3xx': '', '4xx': '', '5xx': ''},
         'traffic': {'total': '', 'headers': '', 'data': ''},
-        'time for request': {'min': '', 'max': '', 'mean': '', 'sd': '', '+/- sd': ''},
-        'time for connect': {'min': '', 'max': '', 'mean': '', 'sd': '', '+/- sd': ''},
-        'time to 1st byte': {'min': '', 'max': '', 'mean': '', 'sd': '', '+/- sd': ''},
-        'req/s': {'min': '', 'max': '', 'mean': '', 'sd': '', '+/- sd': ''}
+        'time for request': {'min': float(maxsize), 'max': -1.0, 'mean': 0.0, 'sd': '', '+/- sd': ''},
+        'time for connect': {'min': float(maxsize), 'max': -1.0, 'mean': 0.0, 'sd': '', '+/- sd': ''},
+        'time to 1st byte': {'min': float(maxsize), 'max': -1.0, 'mean': 0.0, 'sd': '', '+/- sd': ''},
+        'req/s': {'min': float(maxsize), 'max': -1.0, 'mean': 0.0, 'sd': '', '+/- sd': ''}
     }
 
     for line in content.splitlines():
@@ -59,13 +61,13 @@ def processFile(content, name, stat):
         elif line.startswith('requests: '):
             line = line.split(':')[1].strip()
             p = line.split(', ')
-            stat[name]['requests']['total'] = float(p[0].split(' ')[0])
-            stat[name]['requests']['started'] = float(p[1].split(' ')[0])
-            stat[name]['requests']['done'] = float(p[2].split(' ')[0])
-            stat[name]['requests']['succeeded'] = float(p[3].split(' ')[0])
-            stat[name]['requests']['failed'] = float(p[4].split(' ')[0])
-            stat[name]['requests']['errored'] = float(p[5].split(' ')[0])
-            stat[name]['requests']['timeout'] = float(p[6].split(' ')[0])
+            stat[name]['requests']['total'] = int(p[0].split(' ')[0])
+            stat[name]['requests']['started'] = int(p[1].split(' ')[0])
+            stat[name]['requests']['done'] = int(p[2].split(' ')[0])
+            stat[name]['requests']['succeeded'] = int(p[3].split(' ')[0])
+            stat[name]['requests']['failed'] = int(p[4].split(' ')[0])
+            stat[name]['requests']['errored'] = int(p[5].split(' ')[0])
+            stat[name]['requests']['timeout'] = int(p[6].split(' ')[0])
         elif line.startswith('status codes:'):
             line = line.split(':')[1].strip()
             p = line.split(', ')
