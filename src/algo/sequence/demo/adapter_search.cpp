@@ -201,7 +201,7 @@ void CAdapterSearchApplication::x_MaskAdaptersSingle(const CArgs& args)
     {{
         string delim = "";
         for(CBufferedLineReader blr(args["targets"].AsInputFile()); !blr.AtEOF();) {
-            const string& seq = *(++blr);
+            string seq = *(++blr);
             if(seq.size() > 0 && seq[0] != '>') {
                 db_seq += delim + seq;
                 delim = "-";
@@ -249,7 +249,7 @@ void CAdapterSearchApplication::x_MaskAdaptersPaired(const CArgs& args)
     {{
         string delim = "";
         for(CBufferedLineReader blr(args["targets"].AsInputFile()); !blr.AtEOF();) {
-            const string& seq = *(++blr);
+            string seq = *(++blr);
             if(seq.size() > 0 && seq[0] != '>') {
                 string fwd_seq, rev_seq;
                 NStr::SplitInTwo(seq, "-", fwd_seq, rev_seq);
