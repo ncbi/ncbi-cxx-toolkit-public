@@ -101,7 +101,7 @@ static void SetSubSource (objects::CBioSource& src, objects::CSubSource::TSubtyp
 
 namespace {
     bool s_TestSubtype(CSeqFeatData::ESubtype eSubtype) {
-        const string & sNameOfSubtype =
+        string sNameOfSubtype =
             CSeqFeatData::SubtypeValueToName(eSubtype);
         if( sNameOfSubtype.empty() ) {
             return false;
