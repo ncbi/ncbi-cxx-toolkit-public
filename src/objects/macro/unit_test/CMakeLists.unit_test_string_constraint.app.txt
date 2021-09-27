@@ -4,6 +4,6 @@ NCBI_begin_app(unit_test_string_constraint)
   NCBI_sources(unit_test_string_constraint)
   NCBI_uses_toolkit_libraries(macro test_boost)
   NCBI_add_test()
-  NCBI_project_watchers(bollin)
+  NCBI_project_watchers(stakhovv)
 NCBI_end_app()
 

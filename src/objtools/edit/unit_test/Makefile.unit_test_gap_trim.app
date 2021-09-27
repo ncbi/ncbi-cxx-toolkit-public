@@ -15,4 +15,4 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD =
 CHECK_TIMEOUT = 1200
 
-WATCHERS = bollin kans 
+WATCHERS = stakhovv kans 

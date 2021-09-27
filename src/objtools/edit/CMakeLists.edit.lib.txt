@@ -12,6 +12,6 @@ NCBI_begin_lib(xobjedit)
     seq_edit pub_fix
   )
   NCBI_uses_toolkit_libraries(eutils esearch esummary mlacli taxon3 valid xobjread xobjutil xlogging)
-  NCBI_project_watchers(bollin gotvyans foleyjp)
+  NCBI_project_watchers(stakhovv gotvyans foleyjp)
 NCBI_end_lib()
 

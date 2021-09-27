@@ -20,4 +20,4 @@ REQUIRES = objects LIBXML LIBXSLT BerkeleyDB SQLITE3
 CXXFLAGS += $(ORIG_CXXFLAGS)
 LDFLAGS  += $(ORIG_LDFLAGS)
 
-WATCHERS = bollin gotvyans
+WATCHERS = stakhovv gotvyans

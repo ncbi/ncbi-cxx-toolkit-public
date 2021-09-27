@@ -6,6 +6,6 @@ NCBI_begin_lib(xbiosample_util)
     xmlwrapp xobjedit
     taxon3 seqset macro valid
   )
-  NCBI_project_watchers(bollin)
+  NCBI_project_watchers(stakhovv)
 NCBI_end_lib()
 

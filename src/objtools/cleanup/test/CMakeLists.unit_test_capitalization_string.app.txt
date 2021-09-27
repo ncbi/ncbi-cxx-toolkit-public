@@ -9,5 +9,5 @@ NCBI_begin_app(unit_test_capitalization_string)
   NCBI_set_test_timeout(1200)
   NCBI_add_test()
 
-  NCBI_project_watchers(bollin kans foleyjp)
+  NCBI_project_watchers(stakhovv kans foleyjp)
 NCBI_end_app()

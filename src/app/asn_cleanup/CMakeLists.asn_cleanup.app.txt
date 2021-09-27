@@ -6,6 +6,6 @@ NCBI_begin_app(asn_cleanup)
     data_loaders_util
     xcleanup xobjedit xvalidate taxon1
   )
-  NCBI_project_watchers(bollin)
+  NCBI_project_watchers(stakhovv)
 NCBI_end_app()
 

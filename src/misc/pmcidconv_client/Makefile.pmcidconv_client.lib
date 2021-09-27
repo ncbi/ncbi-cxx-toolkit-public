@@ -5,7 +5,7 @@ SRC = pmcidconv_client
 
 DLL_LIB = xmlwrapp
 
-WATCHERS = bollin
+WATCHERS = stakhovv
 
 USES_LIBRARIES = xconnect xmlwrapp
 

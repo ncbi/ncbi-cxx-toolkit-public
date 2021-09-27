@@ -5,5 +5,5 @@ NCBI_begin_app(biosample_chk)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xbiosample_util)
   NCBI_optional_toolkit_libraries(VDB ncbi_xloader_wgs)
 
-  NCBI_project_watchers(bollin)
+  NCBI_project_watchers(stakhovv)
 NCBI_end_app()

@@ -12,7 +12,7 @@ LIBS =
 
 ASN_DEP = general biblio pub seq seqset submit taxon3 macro valid
 
-WATCHERS = bollin
+WATCHERS = stakhovv
 
 USES_LIBRARIES =  \
     $(OBJMGR_LIBS) $(OBJREAD_LIBS) macro xvalidate

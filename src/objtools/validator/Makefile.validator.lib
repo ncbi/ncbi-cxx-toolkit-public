@@ -15,7 +15,7 @@ LIB = xvalidate
 
 ASN_DEP = general biblio pub seq seqset submit taxon3 valerr
 
-WATCHERS = bollin kans foleyjp asztalos gotvyans
+WATCHERS = stakhovv kans foleyjp asztalos gotvyans
 
 DLL_LIB = $(XFORMAT_LIBS) valerr xalnmgr xobjedit
 

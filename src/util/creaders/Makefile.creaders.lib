@@ -3,6 +3,6 @@
 LIB = creaders
 SRC = alnread
 
-WATCHERS = bollin
+WATCHERS = stakhovv
 USES_LIBRARIES =  \
     $(ORIG_LIBS)
