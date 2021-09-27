@@ -1572,6 +1572,7 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
 
                 if (BlastSeqSrcGetSequence(seqsrc, &seq_arg) < 0) {
                     batches->array_of_batches[i] = Blast_HSPStreamResultBatchReset(batch);
+                    seq_arg.ranges = BlastSeqSrcSetRangesArgFree(ranges);
                     continue;
                 }
 

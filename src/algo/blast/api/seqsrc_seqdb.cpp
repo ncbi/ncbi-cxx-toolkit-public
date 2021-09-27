@@ -435,8 +435,9 @@ s_SeqDbReleaseSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
         args->seq->sequence_allocated = FALSE;
         args->seq->sequence = NULL;
     }
+
     if (args->ranges) {
-    	args->ranges = NULL;
+    	args->ranges = BlastSeqSrcSetRangesArgFree(args->ranges);
     }
 }
 

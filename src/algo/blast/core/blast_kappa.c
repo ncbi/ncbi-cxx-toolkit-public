@@ -534,6 +534,8 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
     }
     target_t = BlastTargetTranslationFree(target_t);
     if (seq_src) {
+    	// ranges allocated outside of this fcuntion
+    	seq_arg.ranges = NULL;
         BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
         BlastSequenceBlkFree(seq_arg.seq);
     }
@@ -3720,7 +3722,6 @@ match_loop_cleanup:
                     localMatch->oid = hsp_list->oid;
                 }
                 hsp_list = Blast_HSPListFree(hsp_list);
-                ranges = BlastSeqSrcSetRangesArgFree(ranges);
 
                 if (*pStatusCode != 0) {
                     for (context_index = 0;
