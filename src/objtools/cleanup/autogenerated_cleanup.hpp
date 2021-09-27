@@ -284,7 +284,7 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_ec_ETC( 
   template< typename Tcontainer_std_string_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_name_ETC( Tcontainer_std_string_ & arg0 );
   void x_BasicCleanupProtRef( CProt_ref & arg0, bool cleanup_parent_feat);
-  void x_BasicCleanupPub( CPub & arg0 );
+  void x_BasicCleanupPub( CPub & arg0, bool isSeqFeatCitPub=false);
   void x_BasicCleanupPubEquiv( CPub_equiv & arg0 );
   template< typename Tcontainer_ncbi_cref_cpub_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_pub_pub1778_ETC( Tcontainer_ncbi_cref_cpub_ & arg0 );
