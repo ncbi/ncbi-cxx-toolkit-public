@@ -397,6 +397,7 @@ void SGridWorkerNodeImpl::Init()
 
     m_Listener->OnInit(this);
 
+    // This parameter is deprecated, "[Diag]Merge_Lines" should be used instead
     if (m_SynRegistry->Get("log", "merge_lines", false)) {
         SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
