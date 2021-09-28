@@ -144,6 +144,10 @@ public:
     void x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const;
     void x_LoadChunk(TChunkId chunk_id) const;
     void x_LoadChunks(const TChunkIds& chunk_ids) const;
+    void x_AddChunksForGetRecords(vector<CConstRef<CTSE_Chunk_Info>>& chunks,
+                                  const CSeq_id_Handle& id) const;
+    static void x_LoadChunks(CDataLoader* loader,
+                             const vector<CConstRef<CTSE_Chunk_Info>>& chunks);
 
     // loading results
     void x_LoadDescr(const TPlace& place, const CSeq_descr& descr);

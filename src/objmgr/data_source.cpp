@@ -100,6 +100,17 @@ unsigned CDataSource::GetDefaultBlobCacheSizeLimit(void)
 }
 
 
+NCBI_PARAM_DECL(bool, OBJMGR, BULK_CHUNKS);
+NCBI_PARAM_DEF_EX(bool, OBJMGR, BULK_CHUNKS, false,
+                  eParam_NoThread, OBJMGR_BULK_CHUNKS);
+
+static bool s_GetBulkChunks(void)
+{
+    static bool value = NCBI_PARAM_TYPE(OBJMGR, BULK_CHUNKS)::GetDefault();
+    return value;
+}
+
+
 CDataSource::CDataSource(void)
     : m_DefaultPriority(CObjectManager::kPriority_Entry),
       m_Blob_Cache_Size(0),
@@ -1572,6 +1583,20 @@ void CDataSource::GetBlobs(TSeqMatchMap& match_map)
                 match->first, CDataLoader::TTSE_LockSet()));
         }
         m_Loader->GetBlobs(tse_sets);
+        if ( s_GetBulkChunks() ) {
+            // bulk chunk loading
+            vector<CConstRef<CTSE_Chunk_Info>> chunks;
+            for ( auto& tse_set : tse_sets ) {
+                for ( auto& tse_lock : tse_set.second ) {
+                    if ( tse_lock->HasSplitInfo() ) {
+                        tse_lock->GetSplitInfo().x_AddChunksForGetRecords(chunks, tse_set.first);
+                    }
+                }
+            }
+            if ( !chunks.empty() ) {
+                CTSE_Split_Info::x_LoadChunks(m_Loader, chunks);
+            }
+        }
         ITERATE(CDataLoader::TTSE_LockSets, tse_set, tse_sets) {
             TTSE_LockSet locks;
             ITERATE(CDataLoader::TTSE_LockSet, it, tse_set->second) {
