@@ -9562,21 +9562,16 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
             is_patent = true;
         }
     }
-    //CBioseq_Handle b = m_Scope->GetBioseqHandle(seq);
+    CBioseq_Handle b = m_Scope->GetBioseqHandle(seq);
     CConstRef<CBioSource> biosrc(nullptr);
-    auto src_it = find_if(data.begin(), data.end(),
-            [](CRef<CSeqdesc> pDesc) { return pDesc && pDesc->IsSource(); });
-    //CSeqdesc_CI src(b, CSeqdesc::e_Source);
-    if (src_it != data.end()) {
-        biosrc.Reset(&((*src_it)->GetSource()));
+    CSeqdesc_CI src(b, CSeqdesc::e_Source);
+    if (src) {
+        biosrc.Reset(&(src->GetSource()));
     }
     CMolInfo::TTech tech = CMolInfo::eTech_unknown;
-    auto molinfo_it = find_if(data.begin(), data.end(),
-            [](CRef<CSeqdesc> pDesc) { return pDesc &&
-                                              pDesc->IsMolinfo() &&
-                                              pDesc->GetMolinfo().IsSetTech(); });
-    if (molinfo_it != data.end()) {
-        tech = (*molinfo_it)->GetMolinfo().GetTech();
+    CSeqdesc_CI molinfo(b, CSeqdesc::e_Molinfo);
+    if (molinfo && molinfo->GetMolinfo().IsSetTech()) {
+        tech = molinfo->GetMolinfo().GetTech();
     }
 
     EDIT_EACH_SEQDESC_ON_SEQDESCR(descr_iter, seq.SetDescr()) {
