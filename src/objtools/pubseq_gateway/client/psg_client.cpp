@@ -1095,21 +1095,14 @@ bool CPSG_EventLoop::RunOnce(CDeadline deadline)
     for (auto i = m_Replies.begin(); i != m_Replies.end();) {
         auto& reply = i->first;
         auto& items = i->second;
+        bool end_of_reply = false;
 
         while (auto item = reply->GetNextItem(CDeadline::eNoWait)) {
             if (item->GetType() == CPSG_ReplyItem::eEndOfReply) {
-                // Allow reply complete event only after all of its items are complete
-                if (items.empty()) {
-                    auto status = reply->GetStatus(CDeadline::eNoWait);
-
-                    if (status == EPSG_Status::eInProgress) {
-                        ++i;
-                    } else {
-                        m_ReplyComplete(status, reply);
-                        i = m_Replies.erase(i);
-                    }
-                }
-
+                // No need to store this end_of_reply in m_Replies,
+                // as it means this reply's status is not eInProgress already (see GetNextItem)
+                // and this reply will be completed (and removed from m_Replies) in this iteration
+                end_of_reply = true;
                 break;
             }
 
@@ -1131,6 +1124,19 @@ bool CPSG_EventLoop::RunOnce(CDeadline deadline)
                 j = items.erase(j);
             }
         }
+
+        // Allow reply complete event only after all of its items are complete
+        if (end_of_reply && items.empty()) {
+            auto status = reply->GetStatus(CDeadline::eNoWait);
+
+            if (status != EPSG_Status::eInProgress) {
+                m_ReplyComplete(status, reply);
+                i = m_Replies.erase(i);
+                continue;
+            }
+        }
+
+        ++i;
     }
 
     return true;
