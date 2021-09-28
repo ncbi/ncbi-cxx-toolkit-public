@@ -36,7 +36,6 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/test_mt.hpp>
-
 #include <connect/ncbi_http_session.hpp>
 
 #include "test_assert.h"  // This header must go last

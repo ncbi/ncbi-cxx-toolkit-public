@@ -42,6 +42,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "test_assert.h"  /* This header must go last */
+
 
 /* ---------------------------------------------------------------------------
     Stub out the whole program for Windows DLL configurations.

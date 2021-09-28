@@ -35,6 +35,8 @@
 #include <corelib/rwstream.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 
+#include "test_assert.h"  // This header must go last
+
 
 BEGIN_NCBI_SCOPE
 

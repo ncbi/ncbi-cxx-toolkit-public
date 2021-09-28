@@ -37,6 +37,8 @@
 #include <connect/ncbi_misc.hpp>
 #include <stdlib.h>
 
+#include "test_assert.h"  // This header must go last
+
 
 int main(int argc, char* argv[])
 {
