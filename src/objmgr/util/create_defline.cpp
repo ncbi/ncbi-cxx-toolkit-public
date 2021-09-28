@@ -3312,6 +3312,7 @@ bool CDeflineGenerator::x_IsComplete() const
 static const char* s_tpaPrefixList [] = {
   "MAG ",
   "MAG:",
+  "MULTISPECIES:",
   "TPA:",
   "TPA_exp:",
   "TPA_inf:",
