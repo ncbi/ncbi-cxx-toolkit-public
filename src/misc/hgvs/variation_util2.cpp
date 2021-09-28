@@ -4042,7 +4042,7 @@ namespace variation
 
         all_rna_loc = sequence::Seq_loc_Merge(*all_rna_loc, CSeq_loc::fSortAndMerge_All, NULL);
 
-        if(m_options && CVariationUtil::fOpt_cache_exon_sequence) {
+        if(m_options & CVariationUtil::fOpt_cache_exon_sequence) {
             x_CacheSeqData(*all_rna_loc, idh);
         }
     }
