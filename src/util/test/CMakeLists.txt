@@ -23,6 +23,7 @@ NCBI_add_app(
     test_line_reader
     test_porter_stemming
     test_range_coll
+    test_range_set
     test_rangemap
     test_regexp
     test_xregexp
