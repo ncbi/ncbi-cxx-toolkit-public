@@ -51,6 +51,7 @@
 #  include <signal.h>
 #endif // NCBI_OS
 
+#include "test_assert.h"  // This header must go last
 
 #define PAGE_WIDTH  72
 

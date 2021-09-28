@@ -36,6 +36,8 @@
 #include <connect/ncbi_util.h>
 #include <connect/threaded_server.hpp>
 
+#include "test_assert.h"  // This header must go last
+
 
 BEGIN_NCBI_SCOPE
 
