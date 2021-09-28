@@ -262,15 +262,12 @@ bool CSearch_func::x_InWordBeforeCytochromeOrCoenzyme(const string& start_str) c
         return false;
     }
     size_t pos = start_str.find_last_of(' ');
-    string comp_str1, comp_str2, strtmp;
     if (pos != string::npos) {
-        strtmp = start_str.substr(0, pos);
+        string strtmp = start_str.substr(0, pos);
         pos = strtmp.find_last_not_of(' ');
         if (pos != string::npos) {
-            size_t len = strtmp.size();
-            comp_str1 = strtmp.substr(len-10);
-            comp_str2 = strtmp.substr(len-8);
-            if ( (len >= 10  && NStr::EqualNocase(comp_str1, "cytochrome")) || (len >= 8 && NStr::EqualNocase(comp_str2, "coenzyme")) ) {
+            if (strtmp.size() >= 8 && (NStr::EndsWith(strtmp, "cytochrome", NStr::eNocase) ||
+                                       NStr::EndsWith(strtmp, "coenzyme", NStr::eNocase))) {
                 return true;
             }
         }
@@ -285,7 +282,11 @@ bool CSearch_func::x_FollowedByFamily(string& after_str) const
     if (pos != string::npos) {
         after_str = after_str.substr(pos+1);
         if (NStr::EqualNocase(after_str, 0, 6, "family")) {
-            after_str = after_str.substr(7);
+            if (after_str.size() >= 7) {
+                after_str = after_str.substr(7);
+            } else {
+                after_str.clear();
+            }
             return true;
         }
     } 
@@ -324,8 +325,10 @@ bool CSearch_func::x_ContainsThreeOrMoreNumbersTogether(const string& str) const
                 else return true;
             }
             if (p < sch_str.size() - 1) {
-                sch_str = sch_str.substr(p+1);
-                if (!isdigit(sch_str[0])) {
+                if (!sch_str.empty()) {
+                    sch_str = sch_str.substr(p+1);
+                }
+                if (sch_str.empty() || !isdigit(sch_str.front())) {
                     num_digits = 0;
                 }
             }
