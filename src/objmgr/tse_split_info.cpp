@@ -418,6 +418,27 @@ void CTSE_Split_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
 }
 
 
+// load requests
+void CTSE_Split_Info::x_AddChunksForGetRecords(vector<CConstRef<CTSE_Chunk_Info>>& chunks,
+                                               const CSeq_id_Handle& id) const
+{
+    if ( !m_ContainsBioseqs ) {
+        // shortcut - this TSE doesn't contain any Bioseqs
+        return;
+    }
+    {{
+        CMutexGuard guard(m_SeqIdToChunksMutex);
+        for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
+              iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
+            const CTSE_Chunk_Info& chunk = GetChunk(iter->second);
+            if ( !chunk.IsLoaded() && chunk.ContainsBioseq(id) ) {
+                chunks.push_back(ConstRef(&chunk));
+            }
+        }
+    }}
+}
+
+
 void CTSE_Split_Info::GetBioseqsIds(TSeqIds& ids) const
 {
     ITERATE ( TChunks, it, m_Chunks ) {
@@ -483,6 +504,51 @@ void CTSE_Split_Info::x_LoadChunks(const TChunkIds& chunk_ids) const
     }
     // Load chunks
     info_nc.GetDataLoader().GetChunks(chunks);
+}
+
+
+void CTSE_Split_Info::x_LoadChunks(CDataLoader* loader,
+                                   const vector<CConstRef<CTSE_Chunk_Info>>& src_chunks)
+{
+    vector<CRef<CTSE_Chunk_Info>> sorted_chunks;
+    sorted_chunks.reserve(src_chunks.size());
+    for ( auto& chunk : src_chunks ) {
+        _ASSERT(&chunk->GetSplitInfo().GetDataLoader() == loader);
+        sorted_chunks.push_back(Ref(const_cast<CTSE_Chunk_Info*>(chunk.GetPointer())));
+    }
+    sort(sorted_chunks.begin(), sorted_chunks.end(),
+         [](const CRef<CTSE_Chunk_Info>& a,
+            const CRef<CTSE_Chunk_Info>& b) -> bool
+             {
+                 auto blob_id_a = a->GetBlobId();
+                 auto blob_id_b = b->GetBlobId();
+                 return ((blob_id_a < blob_id_b) ||
+                         (!(blob_id_b < blob_id_a) && a->GetChunkId() < b->GetChunkId()));
+             });
+    sorted_chunks.erase(unique(sorted_chunks.begin(), sorted_chunks.end(),
+                               [](const CRef<CTSE_Chunk_Info>& a,
+                                  const CRef<CTSE_Chunk_Info>& b) -> bool
+                                   {
+                                       return ((&a->GetSplitInfo() == &b->GetSplitInfo()) &&
+                                               (a->GetChunkId() == b->GetChunkId()));
+                                   }),
+                        sorted_chunks.end());
+    CDataLoader::TChunkSet chunks;
+    chunks.reserve(sorted_chunks.size());
+    CInitMutexPool mutex_pool;
+    vector< AutoPtr<CInitGuard> > guards;
+    guards.reserve(sorted_chunks.size());
+    // Collect and lock all chunks to be loaded
+    for ( auto& chunk : sorted_chunks ) {
+        AutoPtr<CInitGuard> guard(new CInitGuard(chunk->m_LoadLock, mutex_pool));
+        if ( !(*guard.get()) ) {
+            continue;
+        }
+        chunks.push_back(chunk);
+        guards.push_back(guard);
+    }
+    // Load chunks
+    loader->GetChunks(chunks);
 }
 
 
