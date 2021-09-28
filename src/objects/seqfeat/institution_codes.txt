@@ -285,6 +285,7 @@ ARC<CAN>	s	Atlantic Reference Centre	ARCM
 ARC<USA-NC>	c	Algal Resources Collection			
 ARCH	s	Archbold Biological Station			
 ARCM	s	Atlantic Reference Centre	ARC		
+ARD	s	School of Pharmacy, Ardabil University of Medical Science			
 ARER	s	Associazione Romana di Entomologia			
 ARF	s	Antarctic Marine Geology Research Facility, Florida State University			
 ARG	s	Argotti Botanic Garden			
@@ -1044,6 +1045,7 @@ CDC<CHN>	s	Changdu Institute for Drug Control
 CDCM	s	Chengdu College of Traditional Chinese Medicine			
 CDFM	s	Cardiff Museum			
 CDFN	s	Canadian Forest Service - Atlantic			
+CDMU	s	Chengde Medical University			
 CDN	s	Whitgift School			
 CDRI	s	Central Drug Research Institute			
 CDRS	s	Invertebrate Collection			
@@ -2076,6 +2078,7 @@ FCO	s	Universidad de Oviedo, Departamento de Biologia de Organismos y Sistemas
 FCP	s	Fergusson College			
 FCQ	s	Universidad Nacional de Asuncion, Departamento de Botanica, Direccion de Investigacion			
 FCRM	s	Fisheries College Reference Museum			
+FCSENRS	s	Fleming College			
 FCT	c	FCT (Forestry Commission Tasmania)			
 FCTH	s	Forestry Commission of Tasmania			
 FCU	s	Fukien Christian University			
@@ -2337,6 +2340,7 @@ GHRI	s	Guy Harvey Research Institute
 GHS	s	George Heriot's School, Biology Department			
 GI	s	Justus-Liebig-Universitat Giessen			
 GI-SPS	s	Geological Institute, Section of Palaeontology and Stratigraphy			
+GIB	s	Gibraltar Botanic Gardens			
 GIFU<JPN>	s	Herbarium of Gifu Pharmaceutical University			
 GILAN	s	Agricultural and Natural Resources Research Center of Gilan			
 GINCO	s	Glomeromycota in vivo and in vitro collection (Agriculture and Agri-Food Canada)			
@@ -2445,6 +2449,7 @@ GSN	s	Natural History Gallery of Casalina (University of Perugia);
 GSO	s	Glasgow Society of Field Naturalists'			
 GSP	s	Geological Survey of Portugal			
 GSU	s	F. Scorina Gomel State University, Department of Botany and Plant Physiology			
+GSUH	s	Gombe State University			
 GSW	s	Georgia Southwestern State University, Biology Department			
 GTC	c	Gifu Type Culture Collection	GTC-GIFU		
 GTC-GIFU	c	Gifu Type Culture Collection (GTC), Gifu University Culture Collection (GIFU)	GTC		
@@ -2551,6 +2556,7 @@ HBG<JPN>	b	Hiroshima Botanical Garden
 HBH	s	Hacettepe University Biodiversity Advanced Research Center Herbarium			
 HBI	s	Institute of Hydrobiology, Chinese Academy of Sciences, Phycology Department			
 HBIL	s	Institut d'Estudis Ilerdencs			
+HBJU	s	University of Jammu			
 HBNU	s	Hebei Normal University, Biology Department			
 HBOM	s	Harbor Branch Oceanographic Museum	HBOI		
 HBR	s	Herbario Barbosa Rodrigues			
@@ -2840,6 +2846,7 @@ HUAA	s	Universidad Autonoma de Aquascalientes, Departamento de Biologia
 HUAL	s	Universidad de Almeria, Departamento de Biologia Vegetal y Ecologia			
 HUAM	s	Universidade Federal do Amazonas			
 HUAP	s	Herbario, Universidad Autonoma de Puebla	BUAP		
+HUAPLI	s	Universidad Autonoma de Puebla			
 HUAZ	s	Universidad de la Amazonia			
 HUB	s	Hacettepe University, Botany Department			
 HUBE	s	Golden West College, Biology/Life Sciences Department			
@@ -5472,6 +5479,7 @@ NYZS	s	New York Zoological Society
 NZAC	s	New Zealand Arthropod Collection	LCR:NZAC	http://scd.landcareresearch.co.nz/Specimen/NZAC_&spec;	
 NZCS	s	University, National Zoological Collection of Suriname			
 NZFRI	s	New Zealand Forest Research Institute Limited			
+NZFRIM	s	Scion			
 NZFS	c	Forest Research Culture Collection			
 NZG	s	National Zoological Gardens of South Africa			
 NZOI	s	New Zealand Oceanographic Institute			
@@ -6459,6 +6467,7 @@ SHMH	s	Universite l'Aurore, Musee Heude
 SHMI	s	Shanghai Institute of Materia Medica, Chinese Academy of Sciences, Phytochemistry Department			
 SHMU	s	Shanghai Medical University			
 SHOR	s	Shorter College, Biology Department			
+SHPR	s	Federal University of Technology, Parana (UTFPR)			
 SHSND	s	North Dakota Heritage Center			
 SHST	s	Sam Houston State University, Department of Biological Sciences			
 SHSU	s	Sam Houston State University, Vertebrate Natural History Collection			
@@ -6781,6 +6790,7 @@ SSCMU	c	Soil Science and Conservation Department Faculty of Agriculture
 SSCN	s	Musum of the Biological Laboratory			
 SSD	s	Sammlung Simon des Stattlichen Museum fur Mineralogie und Geologie Dresden			
 SSF	s	Sammlung des Senckenbrug-Museum			
+SSFH	s	High Altitude Research-Quality Control Laboratory			
 SSHZ	s	Sayano-Shushensky State Nature Biosphere Reserve			
 SSI<DNK>	c	Statens Serum Institute			
 SSIC	c	Collaborating Centre for Reference and Research on Escherichia and Klebsiella			
@@ -6806,6 +6816,7 @@ STAR	s	Arkansas State University, Biological Sciences Department
 STASH	s	St. Beuno's College			
 STB	s	St. Bartholomew's Hospital			
 STC	s	Sichuan Teacher's College			
+STC<IND>	s	St. Thomas' College (Autonomous) Thrissur			
 STCR	s	Universite de la Reunion			
 STD	s	Prittlewell Priory Museum			
 STDCM	s	Southend Central Museum			
@@ -7591,6 +7602,7 @@ UNIN	s	University of the North, Botany Department
 UNIP	s	Universidade Paulista, Laboratorio de Botanica			
 UNIPAR	s	Mycological Herbarium University of Parakou			
 UNIQEM	c	Institute of Microbiology, Russian Academy of Sciences			
+UNISZA	s	Universiti Sultan Zainal Abidin			
 UNITEC	s	Unitec Institute of Technology			
 UNL<MEX>	s	Universidad Autonoma de Nuevo Leon			
 UNL<PRT>	s	Centro de Estratigrafia e Paleobiologia da Universidade Nova de Lisboa			
