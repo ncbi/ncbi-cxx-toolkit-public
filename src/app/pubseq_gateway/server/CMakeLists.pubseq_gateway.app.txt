@@ -20,4 +20,7 @@ NCBI_begin_app(pubseq_gateway)
   NCBI_uses_toolkit_libraries(cdd_access xregexp id2 seq psg_cassandra psg_protobuf psg_cache xconnext connext xconnserv xconnect)
   NCBI_requires(OpenSSL CASSANDRA MT Linux H2O LMDB UV PROTOBUF connext -ICC)
   NCBI_project_watchers(satskyse)
+
+  NCBI_set_test_assets(test pubseq_gateway.ini)
+  NCBI_add_test(test/tccheck.sh)
 NCBI_end_app()
