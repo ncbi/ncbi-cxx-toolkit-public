@@ -538,6 +538,9 @@ void CCgiResponse::SetTrackingCookie(const string& name, const string& value,
                                      const CTime& exp_time)
 {
     m_TrackingCookie.reset(new CCgiCookie(name, value, domain, path));
+    m_TrackingCookie->SetSecure(true);
+    m_TrackingCookie->SetHttpOnly(true);
+
     if ( !exp_time.IsEmpty() ) {
         m_TrackingCookie->SetExpTime(exp_time);
     }
