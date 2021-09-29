@@ -245,7 +245,7 @@ void ExtractExtraIds(CBioseq_Handle         bsh,
            .ExcludeNamedAnnots("SNP")
            .ExcludeNamedAnnots("STS")
            .ExcludeNamedAnnots("CDD");
-        for (CFeat_CI feat_iter(bsh); feat_iter; ++feat_iter) {
+        for (CFeat_CI feat_iter(bsh, sel); feat_iter; ++feat_iter) {
             if (feat_iter->IsSetProduct()) {
                 CTypeConstIterator<CSeq_id> id_iter
                     (feat_iter->GetProduct());
