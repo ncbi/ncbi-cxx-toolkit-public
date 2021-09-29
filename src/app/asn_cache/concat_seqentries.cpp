@@ -180,5 +180,5 @@ void CConcatSeqEntriesApplication::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CConcatSeqEntriesApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CConcatSeqEntriesApplication().AppMain(argc, argv);
 }
