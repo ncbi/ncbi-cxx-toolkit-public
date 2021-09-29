@@ -1593,5 +1593,5 @@ IndexNewBlobsInSubCache(const TIndexMapById& index_map,
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CAsnSubCacheCreateApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CAsnSubCacheCreateApplication().AppMain(argc, argv);
 }
