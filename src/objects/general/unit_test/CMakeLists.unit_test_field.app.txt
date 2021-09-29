@@ -3,6 +3,7 @@
 NCBI_begin_app(unit_test_field)
   NCBI_sources(unit_test_field)
   NCBI_uses_toolkit_libraries(general test_boost)
+  NCBI_add_test()
   NCBI_project_watchers(vasilche)
 NCBI_end_app()
 
