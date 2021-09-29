@@ -372,7 +372,7 @@ SGridWorkerNodeImpl::SGridWorkerNodeImpl(CNcbiApplicationAPI& app,
     m_ThreadPool(NULL),
     m_MaxThreads(1),
     m_NSTimeout(DEFAULT_NS_TIMEOUT),
-    m_CommitJobInterval(COMMIT_JOB_INTERVAL_DEFAULT),
+    m_CommitJobInterval(2),
     m_CheckStatusPeriod(2),
     m_ExclusiveJobSemaphore(1, 1),
     m_IsProcessingExclusiveJob(false),
@@ -614,9 +614,8 @@ int SGridWorkerNodeImpl::Run(
         LOG_POST_X(42, Warning << "All hosts from admin_hosts were ignored");
     }
 
-    m_CommitJobInterval = m_SynRegistry->Get("server", "commit_job_interval", COMMIT_JOB_INTERVAL_DEFAULT);
-    if (m_CommitJobInterval == 0)
-        m_CommitJobInterval = 1;
+    auto commit_job_interval = m_SynRegistry->Get("server", "commit_job_interval", m_CommitJobInterval);
+    m_CommitJobInterval = static_cast<unsigned>(max(1, commit_job_interval));
 
     m_CheckStatusPeriod = m_SynRegistry->Get("server", "check_status_period", 2);
     if (m_CheckStatusPeriod == 0)
