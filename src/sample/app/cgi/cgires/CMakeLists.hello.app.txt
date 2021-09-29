@@ -3,4 +3,5 @@
 NCBI_begin_app(hello.cgi)
   NCBI_sources(helloapp hellores hellocmd)
   NCBI_uses_toolkit_libraries(xcgi xhtml)
+  NCBI_add_test()
 NCBI_end_app()
