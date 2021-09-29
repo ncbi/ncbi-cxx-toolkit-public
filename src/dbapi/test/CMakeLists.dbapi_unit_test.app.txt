@@ -29,5 +29,6 @@ NCBI_begin_app(dbapi_unit_test)
   NCBI_add_test(dbapi_unit_test -dr ftds100    -S Sybase)
   NCBI_add_test(dbapi_unit_test -dr ctlib      -S DBAPI_DEV16_16K)
   NCBI_add_test(dbapi_unit_test -dr ftds100    -S DBAPI_DEV16_16K)
+  NCBI_add_test(dbapi_unit_test -dr ftds100    -S DBAPI_SYB160_TEST -conffile namerd.ini)
 NCBI_end_app()
 
