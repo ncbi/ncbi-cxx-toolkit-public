@@ -197,11 +197,13 @@ const CCgiCookie * CCgiSession::GetSessionCookie() const
         return NULL;
 
     if (!m_SessionCookie.get()) {
-        const_cast<CCgiSession*>(this)->
-            m_SessionCookie.reset(new CCgiCookie(m_SessionIdName,
+        unique_ptr<CCgiCookie> cookie(new CCgiCookie(m_SessionIdName,
                                                  m_SessionId,
                                                  m_SessionCookieDomain,
                                                  m_SessionCookiePath));
+        cookie->SetSecure(true);
+        cookie->SetHttpOnly(true);
+        const_cast<CCgiSession*>(this)->m_SessionCookie.reset(cookie.release());
         if (m_Status == eDeleted) {
             CTime exp(CTime::eCurrent, CTime::eGmt);
             exp.AddYear(-10);
