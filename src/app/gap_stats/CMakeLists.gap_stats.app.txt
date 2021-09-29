@@ -4,5 +4,8 @@ NCBI_begin_app(gap_stats)
   NCBI_sources(gap_stats)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoseq xmlwrapp xobjread)
   NCBI_project_watchers(drozdov)
+  NCBI_set_test_requires(unix PYTHON -Valgrind)
+  NCBI_set_test_assets(test_gap_stats.py test_data)
+  NCBI_add_test(python3 test_gap_stats.py)
 NCBI_end_app()
 
