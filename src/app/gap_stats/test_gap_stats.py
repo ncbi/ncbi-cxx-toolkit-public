@@ -4,10 +4,14 @@ import unittest
 import re
 import os
 import subprocess
+import shutil
 
 GAP_STATS_EXE = "./gap_stats"
 if not os.path.exists(GAP_STATS_EXE):
-    raise Exception("Not found: " + GAP_STATS_EXE)
+    if shutil.which("gap_stats") is not None:
+        GAP_STATS_EXE = "gap_stats"
+    else:
+        raise Exception("Not found: " + GAP_STATS_EXE)
 
 TEST_DATA_DIR = "./test_data"
 if not os.path.exists(TEST_DATA_DIR):
@@ -30,7 +34,7 @@ class TestGapStats(unittest.TestCase):
         assert isinstance(gap_stats_args, list)
 
         proc = subprocess.Popen(
-            ['./gap_stats'] + gap_stats_args,
+            [GAP_STATS_EXE] + gap_stats_args,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             )
