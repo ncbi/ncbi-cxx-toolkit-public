@@ -47,8 +47,6 @@
 // Delay between two successive connection attempts in seconds.
 #define RETRY_DELAY_DEFAULT 1.0
 
-#define COMMIT_JOB_INTERVAL_DEFAULT 2
-
 BEGIN_NCBI_SCOPE
 
 NCBI_PARAM_DECL(unsigned int, netservice_api, connection_max_retries);
