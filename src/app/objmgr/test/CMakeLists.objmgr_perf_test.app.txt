@@ -88,6 +88,20 @@ NCBI_begin_app(objmgr_perf_test)
   NCBI_add_test(objmgr_perf_test -ids perf_ids3_gi -threads 20 -loader psg)
   NCBI_add_test(objmgr_perf_test -ids perf_ids3_gi -threads 20 -loader psg -no_split)
 
+  NCBI_add_test(objmgr_perf_test -ids perf_ids3_acc -loader gb -bulk data)
+  NCBI_add_test(objmgr_perf_test -ids perf_ids3_acc -loader gb -pubseqos -bulk data)
+  NCBI_add_test(objmgr_perf_test -ids perf_ids3_acc -loader gb -no_split -bulk data)
+  NCBI_add_test(objmgr_perf_test -ids perf_ids3_acc -loader gb -pubseqos -no_split -bulk data)
+  NCBI_add_test(objmgr_perf_test -ids perf_ids3_acc -loader psg -bulk data)
+  NCBI_add_test(objmgr_perf_test -ids perf_ids3_acc -loader psg -no_split -bulk data)
+
+  NCBI_add_test(objmgr_perf_test -ids perf_ids1_gi -loader gb -bulk bioseq)
+  NCBI_add_test(objmgr_perf_test -ids perf_ids1_gi -loader gb -pubseqos -bulk bioseq)
+  NCBI_add_test(objmgr_perf_test -ids perf_ids1_gi -loader gb -no_split -bulk bioseq)
+  NCBI_add_test(objmgr_perf_test -ids perf_ids1_gi -loader gb -pubseqos -no_split -bulk bioseq)
+  NCBI_add_test(objmgr_perf_test -ids perf_ids1_gi -loader psg -bulk bioseq)
+  NCBI_add_test(objmgr_perf_test -ids perf_ids1_gi -loader psg -no_split -bulk bioseq)
+
   NCBI_project_watchers(grichenk)
 
 NCBI_end_app()
