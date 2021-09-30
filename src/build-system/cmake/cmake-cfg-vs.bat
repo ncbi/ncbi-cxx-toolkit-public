@@ -179,6 +179,15 @@ if "%1"=="--with-prebuilt"     (set prebuilt_dir=%~dp2& set prebuilt_name=%~nx2&
 set first=%1
 set first=%first:~0,2%
 if "%first%"=="-D"             (set CMAKE_ARGS=%CMAKE_ARGS% %1=%2& shift& goto :CONTINUEPARSEARGS)
+set first=%1
+set first=%first:~0,8%
+if "%first%"=="--debug-"       (set CMAKE_ARGS=%CMAKE_ARGS% %1& goto :CONTINUEPARSEARGS)
+set first=%1
+set first=%first:~0,6%
+if "%first%"=="--log-"         (set CMAKE_ARGS=%CMAKE_ARGS% %1& goto :CONTINUEPARSEARGS)
+set first=%1
+set first=%first:~0,8%
+if "%first%"=="--trace"        (set CMAKE_ARGS=%CMAKE_ARGS% %1& goto :CONTINUEPARSEARGS)
 set unknown=%unknown% %1
 :CONTINUEPARSEARGS
 shift
