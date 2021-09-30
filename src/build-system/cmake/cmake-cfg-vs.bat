@@ -70,6 +70,9 @@ echo   --with-vs=N              -- use Visual Studio N generator
 echo                  examples:    --with-vs=2019  (default)
 echo                               --with-vs=2017
 echo   --with-generator="X"     -- use generator X
+echo OPTIONAL ENVIRONMENT VARIABLES:
+echo   CMAKE_CMD                -- full path to 'cmake'
+echo   CMAKE_ARGS               -- additional arguments to pass to 'cmake'
 if not "%prebuilds%"=="" (
     echo   --with-prebuilt=CFG      -- use build settings of an existing build
     echo             CFG is one of:

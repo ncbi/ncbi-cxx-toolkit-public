@@ -93,6 +93,11 @@ OPTIONS:
   --without-analysis         -- skip source tree analysis
   --with-generator="X"       -- use generator X
   --with-conan-components    -- use conan to fetch dependencies
+OPTIONAL ENVIRONMENT VARIABLES:
+  CMAKE_CMD                  -- full path to 'cmake'
+  CMAKE_ARGS                 -- additional arguments to pass to 'cmake'
+  CC or CMAKE_C_COMPILER     -- full path to C compiler
+  CXX or CMAKE_CXX_COMPILER  -- full path to C++ compiler
 EOF
   if [ -n "$prebuilds" ]; then
     echo "  --with-prebuilt=CFG        -- use build settings of an existing build"

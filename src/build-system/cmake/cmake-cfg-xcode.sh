@@ -69,6 +69,9 @@ OPTIONS:
                     examples:   --with-features="StrictGI"
   --with-build-root=name     -- specify a non-default build directory name
   --without-analysis         -- skip source tree analysis
+OPTIONAL ENVIRONMENT VARIABLES:
+  CMAKE_CMD                  -- full path to 'cmake'
+  CMAKE_ARGS                 -- additional arguments to pass to 'cmake'
 EOF
 
   Check_function_exists configure_ext_Usage && configure_ext_Usage
