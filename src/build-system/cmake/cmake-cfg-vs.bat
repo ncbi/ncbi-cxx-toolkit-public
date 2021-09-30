@@ -186,7 +186,7 @@ set first=%1
 set first=%first:~0,6%
 if "%first%"=="--log-"         (set CMAKE_ARGS=%CMAKE_ARGS% %1& goto :CONTINUEPARSEARGS)
 set first=%1
-set first=%first:~0,8%
+set first=%first:~0,7%
 if "%first%"=="--trace"        (set CMAKE_ARGS=%CMAKE_ARGS% %1& goto :CONTINUEPARSEARGS)
 set unknown=%unknown% %1
 :CONTINUEPARSEARGS
