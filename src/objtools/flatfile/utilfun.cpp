@@ -1153,7 +1153,7 @@ CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Parser::ESour
  *                                              3-25-93
  *
  **********************************************************/
-int SrchKeyword(char* ptr, const vector<string>& keywordList)
+int SrchKeyword(const string& ptr, const vector<string>& keywordList)
 {
     int keywordCount = keywordList.size();
 
@@ -1258,6 +1258,17 @@ DataBlkPtr TrackNodeType(const DataBlk& entry, Int2 type)
 
     return(temp);
 }
+
+
+const SectionPtr xTrackNodeType(const Entry& entry, int type) {
+    for (const auto& sectionPtr: entry.mSections) {
+        if (sectionPtr->mType == type) {
+            return sectionPtr;
+        }
+    }
+    return nullptr;
+}
+
 
 /**********************************************************/
 bool fta_tpa_keywords_check(const TKeywordList& kwds)

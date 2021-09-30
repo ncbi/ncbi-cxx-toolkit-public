@@ -51,6 +51,7 @@
 #include <objmgr/object_manager.hpp>
 
 #include "ftablock.h"
+#include "entry.h"
 
 BEGIN_NCBI_SCOPE
 
@@ -125,11 +126,12 @@ char*         SrchTheStr(char* bptr, char* eptr, const char *str);
 
 void            CpSeqId(InfoBioseq* ibp, const objects::CSeq_id& id);
 
-int SrchKeyword(char* ptr, const vector<string>&  keywordList);
+int SrchKeyword(const string& ptr, const vector<string>&  keywordList);
 bool            CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool after_origin);
 char*         SrchNodeType(DataBlk* entry, Int4 type, size_t* len);
 char* xSrchNodeType(const DataBlk& entry, Int4 type, size_t* len);
 DataBlk*      TrackNodeType(const DataBlk& entry, Int2 type);
+const SectionPtr xTrackNodeType(const Entry&, int type);
 ValNode*      ConstructValNode(ValNode* head, Uint1 choice, void* data);
 ValNode*      ConstructValNodeInt(ValNode* head, Uint1 choice, Int4 data); 
 bool            fta_is_tpa_keyword(const char* str);

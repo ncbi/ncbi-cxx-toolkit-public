@@ -592,7 +592,7 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already=
 
     if(pp->format == Parser::EFormat::GenBank)
     {
-        good = GenBankAscii(pp);
+        good = GenBankAsciiOrig(pp);
     }
     else if(pp->format == Parser::EFormat::EMBL)
     {

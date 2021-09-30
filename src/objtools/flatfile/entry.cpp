@@ -33,15 +33,17 @@
  *
  */
 #include <ncbi_pch.hpp>
+#include <objects/seqcode/Seq_code_type.hpp>
 
 #include "ftacpp.hpp"
-
 #include "index.h"
-
 #include "ftaerr.hpp"
 #include "indx_err.h"
 #include "utilfun.h"
+#include "ftablock.h"
 #include "entry.h"
+#include "indx_blk.h"
+#include "genbank.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
@@ -49,6 +51,145 @@
 #define THIS_FILE "entry.cpp"
 
 BEGIN_NCBI_SCOPE
+
+//  ----------------------------------------------------------------------------
+void Section::xBuildSubBlock(int subtype, const char* subKw)
+//  ----------------------------------------------------------------------------
+{
+    auto subBegin = mTextLines.end(), subEnd = mTextLines.end();
+
+    bool found(false);
+    for (auto lineIt = mTextLines.begin(); lineIt != mTextLines.end(); lineIt++) {
+        auto line = *lineIt;
+        auto firstCharPos = line.find_first_not_of(" ");
+        if (found) {
+            if (firstCharPos >= 12) {
+                subEnd++;
+                continue;
+            }
+            else break;
+        }
+        if (NStr::StartsWith(line, subKw)) {
+            subBegin = lineIt;
+            subEnd = subBegin + 1;
+            found = true;
+            continue;
+        }
+    }
+    if (subBegin != mTextLines.end()) {
+        mSubSections.push_back(new Section(subtype, vector<string>(subBegin, subEnd)));
+        mTextLines.erase(subBegin, subEnd);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void Section::xBuildFeatureBlocks()
+//  ----------------------------------------------------------------------------
+{
+    const int COL_FEATKEY = 5;
+
+    auto subBegin = mTextLines.end(), subEnd = mTextLines.end();
+    bool found(false);
+    auto lineIt = mTextLines.begin();
+    while (lineIt != mTextLines.end()) {
+        auto line = *lineIt;
+        auto firstCharPos = line.find_first_not_of(" ");
+        if (found) {
+            if (firstCharPos > COL_FEATKEY) {
+                subEnd++;
+                lineIt++;
+                continue;
+            }
+            else {
+                if (subBegin != mTextLines.end()) {
+                    mSubSections.push_back(
+                        new Section(ParFlat_FEATBLOCK, vector<string>(subBegin, subEnd)));
+                    mTextLines.erase(subBegin, subEnd);
+                }
+                subBegin = subEnd = mTextLines.end();
+                found = false;
+                lineIt = mTextLines.begin();
+                continue;
+            }
+        }
+        if (firstCharPos == COL_FEATKEY) {
+            subBegin = lineIt;
+            subEnd = subBegin + 1;
+            found = true;
+            lineIt++;
+            continue;
+        }
+        lineIt++;
+    }
+    if (subBegin != mTextLines.end()) {
+        mSubSections.push_back(
+            new Section(ParFlat_FEATBLOCK, vector<string>(subBegin, subEnd)));
+        mTextLines.erase(subBegin, subEnd);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+bool Entry::xInitNidSeqId(
+    objects::CBioseq& bioseq, int type, int dataOffset, Parser::ESource)
+//  -----------------------------------------------------------------------------
+{
+    SectionPtr secPtr = this->GetFirstSectionOfType(type);
+    if (!secPtr) {
+        return true;
+    }
+    throw std::runtime_error("xInitNidSeqId: Details not yet implemented");
+    return false;
+}
+
+
+//  -----------------------------------------------------------------------------
+bool Entry::IsAA() const
+//  -----------------------------------------------------------------------------
+{
+    IndexblkPtr ibp = mPp->entrylist[mPp->curindx];
+    auto mol = mBaseData.substr(ibp->lc.bp, 2);
+    return (mol == "aa");
+}
+
+
+//  -----------------------------------------------------------------------------
+bool Entry::xInitSeqInst(const unsigned char* pConvert)
+//  -----------------------------------------------------------------------------
+{
+    IndexblkPtr ibp = mPp->entrylist[mPp->curindx];
+    LocusContPtr lcp = &ibp->lc;
+
+    auto& bioseq = mSeqEntry->SetSeq();
+    auto& seqInst = bioseq.SetInst();
+    seqInst.SetRepr(ibp->is_mga ? 
+        objects::CSeq_inst::eRepr_virtual : 
+        objects::CSeq_inst::eRepr_raw);
+    //Int2         topology;
+    //Int2         strand;
+    //char*      strandstr;
+
+    string topologyStr = mBaseData.substr(lcp->topology, 16);
+    int topology = CheckTPG(topologyStr);
+    if (topology > 1)
+        seqInst.SetTopology(static_cast<objects::CSeq_inst::ETopology>(topology));
+
+    string strandStr = mBaseData.substr(lcp->strand, 16);
+    int strand = CheckSTRAND((lcp->strand >= 0) ? strandStr : "   ");
+    if (strand > 0)
+        seqInst.SetStrand(static_cast<objects::CSeq_inst::EStrand>(strand));
+
+    auto codeType = (ibp->is_prot ? 
+        objects::eSeq_code_type_iupacaa : 
+        objects::eSeq_code_type_iupacna);
+    //if (!GetSeqData(pp, entry, bioseq, ParFlat_ORIGIN, dnaconv, codeType))
+    //    return false;
+
+    //if (ibp->is_contig && !GetGenBankInstContig(entry, bioseq, pp))
+    //    return false;
+
+    return true;
+}
+
 
 /**********************************************************/
 static size_t FileReadBuf(char* to, size_t len, FileBuf& ffbuf)
@@ -78,6 +219,107 @@ static size_t FileReadBuf(char* to, size_t len, FileBuf& ffbuf)
  *                                              3-22-93
  *
  **********************************************************/
+EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
+{
+    DataBlkPtr entry;
+    char* eptr;
+    char* q;
+    size_t     i;
+
+    pp->ffbuf.current = pp->ffbuf.start + offset;
+    i = 0;
+
+    entry = new DataBlk;
+    entry->mType = ParFlat_ENTRYNODE;
+    entry->mpNext = NULL;                 /* assume no segment at this time */
+    entry->mOffset = (char*)MemNew(len + 1); /* plus 1 for null byte */
+    entry->len = FileReadBuf(entry->mOffset, len, pp->ffbuf);
+
+    if ((size_t)entry->len != len)  /* hardware problem */
+    {
+        ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry,
+            "FileRead failed, in LoadEntry routine.");
+        MemFree(entry->mOffset);
+        MemFree(entry);
+        return(NULL);
+    }
+
+    eptr = entry->mOffset + entry->len;
+    bool was = false;
+
+    for (q = entry->mOffset; q < eptr; q++)
+    {
+        if (*q == 13) {
+            *q = 10;
+        }
+        if (*q > 126 || (*q < 32 && *q != 10))
+        {
+            ErrPostEx(SEV_WARNING, ERR_FORMAT_NonAsciiChar,
+                "none-ASCII char, Decimal value %d, replaced by # ",
+                (int)*q);
+            *q = '#';
+        }
+
+        /* Modified to skip empty line: Tatiana - 01/21/94
+        */
+        if (*q != '\n')
+        {
+            was = false;
+            continue;
+        }
+        for (i = 0; q > entry->mOffset;)
+        {
+            i++;
+            q--;
+            if (*q != ' ')
+                break;
+        }
+        if (i > 0 &&
+            (*q == '\n' || (q - 2 >= entry->mOffset && *(q - 2) == '\n')))
+        {
+            q += i;
+            i = 0;
+        }
+        if (i > 0)
+        {
+            if (*q != ' ')
+            {
+                q++;
+                i--;
+            }
+            if (i > 0)
+            {
+                fta_StringCpy(q, q + i);
+                eptr -= i;
+                entry->len -= i;
+            }
+        }
+
+        if (q + 3 < eptr && q[3] == '.')
+        {
+            q[3] = ' ';
+            if (pp->source != Parser::ESource::NCBI || pp->format != Parser::EFormat::EMBL)
+            {
+                ErrPostEx(SEV_WARNING, ERR_FORMAT_DirSubMode,
+                    "The format allowed only in DirSubMode: period after the tag");
+            }
+        }
+        if (was)
+        {
+            fta_StringCpy(q, q + 1);    /* requires null byte */
+            q--;
+            eptr--;
+            entry->len--;
+        }
+        else
+            was = true;
+    }
+
+    entry->mpData = CreateEntryBlk();
+    Entry* pEntry = new Entry(pp, entry->mOffset);
+    return pEntry;
+}
+
 DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
 {
     DataBlkPtr entry;

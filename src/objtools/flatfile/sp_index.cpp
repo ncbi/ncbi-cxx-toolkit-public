@@ -100,7 +100,6 @@ static void SPGetVerNum(char* str, IndexblkPtr ibp)
 bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len))
 {
     TokenStatBlkPtr stoken;
-    FinfoBlkPtr     finfo;
 
     bool            after_AC;
     bool            after_OS;
@@ -119,12 +118,12 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
     bool            reviewed;
 
-    finfo = (FinfoBlkPtr) MemNew(sizeof(FinfoBlk));
+    FinfoBlk finfo;
 
-    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, swissProtKeywords[ParFlatSP_ID]);
+    end_of_file = SkipTitleBuf(pp->ffbuf, &finfo, swissProtKeywords[ParFlatSP_ID]);
     if(end_of_file)
     {
-        MsgSkipTitleFail("Swiss-Prot", finfo);
+        MsgSkipTitleFail("Swiss-Prot", &finfo);
         return false;
     }
 
@@ -134,7 +133,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
     while (!end_of_file)
     {
-        entry = InitialEntry(pp, finfo);
+        entry = InitialEntry(pp, &finfo);
         if(entry != NULL)
         {
             pp->curindx = indx;
@@ -151,59 +150,59 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
             after_RN = false;
             after_SQ = false;
 
-            p = PointToNextToken(finfo->str + ParFlat_COL_DATA_SP);
+            p = PointToNextToken(finfo.str + ParFlat_COL_DATA_SP);
             reviewed = (StringNICmp(p, "reviewed", 8) == 0);
 
             while(!end_of_file &&
-                  StringNCmp(finfo->str, swissProtKeywords[ParFlatSP_END].c_str(),
+                  StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_END].c_str(),
                       swissProtKeywords[ParFlatSP_END].size()) != 0)
             {
-                if(StringNCmp(finfo->str, "RM", 2) == 0)
+                if(StringNCmp(finfo.str, "RM", 2) == 0)
                 {
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType,
                               "RM line type has been replaced by RX, skipped %s",
-                              finfo->str);
+                              finfo.str);
                 }
-                if(after_SQ && isalpha(finfo->str[0]) != 0)
+                if(after_SQ && isalpha(finfo.str[0]) != 0)
                 {
                     ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd,
                                "Missing end of the entry, entry dropped");
                     entry->drop = 1;
                     break;
                 }
-                if(StringNCmp(finfo->str, swissProtKeywords[ParFlatSP_SQ].c_str(),
+                if(StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_SQ].c_str(),
                     swissProtKeywords[ParFlatSP_SQ].size()) == 0)
                     after_SQ = true;
 
-                if(StringNCmp(finfo->str, swissProtKeywords[ParFlatSP_OS].c_str(),
+                if(StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_OS].c_str(),
                     swissProtKeywords[ParFlatSP_OS].size()) == 0)
                     after_OS = true;
 
-                if(StringNCmp(finfo->str, "OC", 2) == 0)
+                if(StringNCmp(finfo.str, "OC", 2) == 0)
                     after_OC = true;
 
-                if(StringNCmp(finfo->str, swissProtKeywords[ParFlatSP_RN].c_str(),
+                if(StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_RN].c_str(),
                     swissProtKeywords[ParFlatSP_RN].size()) == 0)
                     after_RN = true;
 
-                if(StringNCmp(finfo->str, swissProtKeywords[ParFlatSP_AC].c_str(),
+                if(StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_AC].c_str(),
                     swissProtKeywords[ParFlatSP_AC].size()) == 0)
                 {
                     if(after_AC == false)
                     {
                         after_AC = true;
-                        if(!GetAccession(pp, finfo->str, entry, 2))
+                        if(!GetAccession(pp, finfo.str, entry, 2))
                             pp->num_drop++;
                     }
-                    else if(entry->drop == 0 && !GetAccession(pp, finfo->str, entry, 1))
+                    else if(entry->drop == 0 && !GetAccession(pp, finfo.str, entry, 1))
                         pp->num_drop++;
                 }
-                else if(StringNCmp(finfo->str, swissProtKeywords[ParFlatSP_DT].c_str(),
+                else if(StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_DT].c_str(),
                     swissProtKeywords[ParFlatSP_DT].size()) == 0)
                 {
                     if(reviewed && pp->sp_dt_seq_ver && entry->vernum < 1)
-                        SPGetVerNum(finfo->str, entry);
-                    stoken = TokenString(finfo->str, ' ');
+                        SPGetVerNum(finfo.str, entry);
+                    stoken = TokenString(finfo.str, ' ');
                     if(stoken->num > 2)
                     {
                         entry->date = GetUpdateDate(stoken->list->next->str,
@@ -212,7 +211,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
                     FreeTokenstatblk(stoken);
                 }
 
-                end_of_file = XReadFileBuf(pp->ffbuf, finfo);
+                end_of_file = XReadFileBuf(pp->ffbuf, &finfo);
 
             } /* while, end of one entry */
 
@@ -250,10 +249,10 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
         else
         {
             end_of_file = FindNextEntryBuf(
-                end_of_file, pp->ffbuf, finfo, swissProtKeywords[ParFlatSP_END]);
+                end_of_file, pp->ffbuf, &finfo, swissProtKeywords[ParFlatSP_END]);
         }
         end_of_file = FindNextEntryBuf(
-            end_of_file, pp->ffbuf, finfo, swissProtKeywords[ParFlatSP_ID]);
+            end_of_file, pp->ffbuf, &finfo, swissProtKeywords[ParFlatSP_ID]);
 
     } /* while, end_of_file */
 
@@ -268,7 +267,6 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
         ibnp = tibnp->next;
         MemFree(tibnp);
     }
-    MemFree(finfo);
 
     return end_of_file;
 }

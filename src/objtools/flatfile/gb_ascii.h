@@ -49,6 +49,7 @@ bool GetGenBankInstContig(const DataBlk& entry, objects::CBioseq& bsp, ParserPtr
 void CheckFeatSeqLoc(TEntryList& seq_entries);
 // LCOV_EXCL_STOP
 bool GenBankAscii(ParserPtr pp);
+bool GenBankAsciiOrig(ParserPtr pp);
 
 END_NCBI_SCOPE
 
