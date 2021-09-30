@@ -321,7 +321,7 @@ struct DataBlk
     ~DataBlk()
     {
         delete[] mpQscore;
-        delete mpData;
+        delete (char*) mpData;
         if (mType == ParFlat_ENTRYNODE) {
             delete mOffset;
         }
