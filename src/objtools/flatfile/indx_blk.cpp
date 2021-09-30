@@ -784,11 +784,16 @@ indexblk_struct::indexblk_struct() :
     wgssec[0] = 0;
 }
 
+static bool isSpace(char c)
+{
+    return isspace(c);
+}
+
 static CTempString::const_iterator 
 sFindNextSpace(const CTempString& tempString, 
         CTempString::const_iterator current_it)
 {
-    return find_if(current_it, tempString.end(), isspace);
+    return find_if(current_it, tempString.end(), isSpace);
 }
 
 
@@ -796,9 +801,9 @@ static CTempString::const_iterator
 sFindNextNonSpace(const CTempString& tempString, 
         CTempString::const_iterator current_it)
 {
-    return find_if_not(current_it, tempString.end(), isspace);
+    return find_if_not(current_it, tempString.end(), isSpace);
 }
-
+ 
 
 static void sSetLocusLineOffsets(const CTempString& locusLine, LocusCont& offsets) 
 {
