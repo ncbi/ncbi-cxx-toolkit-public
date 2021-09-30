@@ -5,6 +5,7 @@ WATCHERS = camacho fongah2
 CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir) -I$(includedir) $(SRA_INCLUDE)
 
 CXXFLAGS += $(OPENMP_FLAGS)
+LDFLAGS += $(OPENMP_FLAGS)
 
 SRC = \
       common_priv \
