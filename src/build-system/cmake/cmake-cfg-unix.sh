@@ -258,7 +258,7 @@ do
     [1-9]*)
       cxx_version=$arg
       ;; 
-    -D*)
+    -D* | --debug-* | --log-* | --trace* )
       CMAKE_ARGS="$CMAKE_ARGS $arg"
       ;; 
     *) 

@@ -166,7 +166,7 @@ while [ $# != 0 ]; do
       ;;
     [A-Z]*)
       ;; 
-    -D*)
+    -D* | --debug-* | --log-* | --trace* )
       CMAKE_ARGS="$CMAKE_ARGS $1"
       ;; 
     *) 
