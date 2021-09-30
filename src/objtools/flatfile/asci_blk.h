@@ -37,6 +37,7 @@
 #define _ASCIIBLOCK_
 
 #include "ftablock.h"
+#include "entry.h"
 #include <objects/seqfeat/Org_ref.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -52,7 +53,9 @@ void PackEntries(TEntryList& seq_entries);
 
 Int4        ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, unsigned char* conv, Char replacechar, int* numns);
 char*     GetGenBankBlock(DataBlkPtr* chain, char* ptr, short* retkw, char* eptr);
+void xGetGenBankBlocks(Entry& entry);
 void        GetGenBankSubBlock(const DataBlk& entry, size_t bases);
+void xGetGenBankSubBlocks(Entry& entry, size_t bases);
 char*     GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw, Parser::EFormat format, char* eptr);
 void        GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry);
 // LCOV_EXCL_START
@@ -60,6 +63,7 @@ void        GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk&
 char*     GetPrfBlock(DataBlkPtr* chain, char* ptr, short* retkw, char* eptr);
 // LCOV_EXCL_STOP
 void        BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char *subkw);
+SectionPtr xBuildSubBlock(Section&, int subtype, const char* subKw);
 void        GetLenSubNode(DataBlkPtr dbp);
 char*     SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype, size_t* len);
 char*     GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool is_pat);

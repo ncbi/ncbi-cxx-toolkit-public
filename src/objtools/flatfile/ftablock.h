@@ -338,19 +338,20 @@ struct DataBlk
 };
 using DataBlkPtr = DataBlk*;
 
-typedef struct entry_block {
+
+//  ============================================================================
+struct EntryBlk {
+//  ============================================================================
     DataBlkPtr              chain;      /* a header points to key-word
                                            block information */
     CRef<objects::CSeq_entry> seq_entry; /* points to sequence entry */
 
-    struct entry_block *next;
-
-    entry_block() :
-        chain(NULL),
-        next(NULL)
+    EntryBlk() :
+        chain(nullptr)
     {}
+};
+using EntryBlkPtr = EntryBlk*;
 
-} EntryBlk, *EntryBlkPtr;
 
 typedef struct keyword_block {
     const char *str;

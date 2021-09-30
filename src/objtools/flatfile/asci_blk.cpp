@@ -209,6 +209,34 @@ static void InsertDatablkVal(DataBlkPtr* dbp, Int2 type,
 *                                              3-21-93
 *
 **********************************************************/
+void xGetGenBankBlocks(Entry& entry)
+{
+    vector<string> lines;
+    NStr::Split(entry.mBaseData, "\n", lines);
+    
+    vector<string> sectionLines;
+    int currentKw = ParFlat_LOCUS;
+    int nextKw = currentKw;
+    string sectionText = "";
+    for (auto line: lines) {
+        nextKw = SrchKeyword(line, genbankKeywords);
+        if (nextKw == ParFlat_UNKW) {
+            nextKw = currentKw;
+        }
+        if (nextKw != currentKw  ||  NStr::StartsWith(line, "REFERENCE")) {
+            auto secPtr = new Section(currentKw, sectionLines);
+            //secPtr->DumpText(cerr);
+            entry.mSections.push_back(secPtr);
+            currentKw = nextKw;
+            sectionLines.clear();
+            sectionLines.push_back(line);
+            continue;
+        } 
+        sectionLines.push_back(line);
+    }
+    entry.mSections.push_back(new Section(currentKw, sectionLines));
+}
+
 char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
                         char* eptr)
 {
@@ -245,7 +273,6 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
     nextkw = SrchKeyword(ptr, genbankKeywords);
 
     InsertDatablkVal(chain, curkw, offset, len);
-
     *retkw = nextkw;
     return(ptr);
 }
@@ -474,6 +501,36 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
 
         BuildFeatureBlock(dbp);
         GetLenSubNode(dbp);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void xGetGenBankSubBlocks(Entry& entry, size_t bases)
+//  ----------------------------------------------------------------------------
+{
+    for (auto secPtr: entry.mSections) {
+        auto secType = secPtr->mType;
+        if (secType == ParFlat_SOURCE) {
+            secPtr->xBuildSubBlock(ParFlat_ORGANISM, "  ORGANISM");
+            //GetLenSubNode(dbp);
+        }
+        if (secType == ParFlat_REFERENCE) {
+            //fta_check_mult_ids(dbp, "  MEDLINE", "   PUBMED");
+            secPtr->xBuildSubBlock(ParFlat_AUTHORS, "  AUTHORS");
+            secPtr->xBuildSubBlock(ParFlat_CONSRTM, "  CONSRTM");
+            secPtr->xBuildSubBlock(ParFlat_TITLE, "  TITLE");
+            secPtr->xBuildSubBlock(ParFlat_JOURNAL, "  JOURNAL");
+            secPtr->xBuildSubBlock(ParFlat_MEDLINE, "  MEDLINE");
+            secPtr->xBuildSubBlock(ParFlat_PUBMED, "   PUBMED");
+            secPtr->xBuildSubBlock(ParFlat_STANDARD, "  STANDARD");
+            secPtr->xBuildSubBlock(ParFlat_REMARK, "  REMARK");
+            //GetLenSubNode(dbp);
+            //GetGenBankRefType(dbp, bases);
+        }
+        if (secType == ParFlat_FEATURES) {
+            secPtr->xBuildFeatureBlocks();
+            //GetLenSubNode(dbp);
+        }
     }
 }
 
@@ -804,6 +861,7 @@ void BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char *subkw)
     {
         InsertDatablkVal((DataBlkPtr*) &dbp->mpData, subtype, bptr,
                             eptr - bptr);
+        cerr << string(bptr, (eptr - bptr)) << endl;
     }
 }
 

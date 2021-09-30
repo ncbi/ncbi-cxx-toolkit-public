@@ -248,15 +248,11 @@ static bool GetGenBankInst(ParserPtr pp, const DataBlk& entry, unsigned char* dn
     EntryBlkPtr  ebp;
     Int2         topology;
     Int2         strand;
-    char*      bptr;
     char*      topstr;
-    //char*      strandstr;
-    LocusContPtr lcp;
-    IndexblkPtr  ibp;
 
-    bptr = entry.mOffset;
-    ibp = pp->entrylist[pp->curindx];
-    lcp = &ibp->lc;
+    char* bptr = entry.mOffset;
+    IndexblkPtr ibp = pp->entrylist[pp->curindx];
+    LocusContPtr lcp = &ibp->lc;
 
     topstr = bptr + lcp->topology;
 
@@ -1573,6 +1569,11 @@ static void GenBankGetDivision(char* division, Int4 div, const DataBlk& entry)
     division[3] = '\0';
 }
 
+static void xGenBankGetDivision(char* division, Int4 div, const string& locusText)
+{
+    StringCpy(division, locusText.substr(64, 3).c_str());
+}
+
 /**********************************************************
  *
  *   bool GenBankAscii(pp):
@@ -1582,6 +1583,560 @@ static void GenBankGetDivision(char* division, Int4 div, const DataBlk& entry)
  *                                              3-17-93
  *
  **********************************************************/
+bool GenBankAsciiOrig(ParserPtr pp)
+{
+    Int2        curkw;
+    int imax;
+    int segindx;
+    int total = 0;
+    int total_long = 0;
+    int total_dropped = 0;
+    char* ptr;
+    char* eptr;
+    char* div;
+    unique_ptr<DataBlk>  pEntry;
+    EntryBlkPtr ebp;
+
+    //    unsigned char*    dnaconv;
+    //    unsigned char*    protconv;
+    unsigned char* conv;
+
+    TEntryList seq_entries;
+
+    objects::CSeq_loc locs;
+
+    bool     seq_long = false;
+
+    IndexblkPtr ibp;
+    IndexblkPtr tibp;
+
+    auto dnaconv = GetDNAConv();             /* set up sequence alphabets */
+    auto protconv = GetProteinConv();        /* set up sequence alphabets */
+
+    segindx = -1;
+
+    imax = pp->indx;
+    for (int i = 0; i < imax; i++)
+    {
+        pp->curindx = i;
+        ibp = pp->entrylist[i];
+
+        err_install(ibp, pp->accver);
+
+        if (ibp->segnum == 1)
+            segindx = i;
+
+        if (ibp->drop == 1 && ibp->segnum == 0)
+        {
+            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
+                "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            total_dropped++;
+            continue;
+        }
+
+        pEntry.reset(LoadEntry(pp, ibp->offset, ibp->len));
+        if (!pEntry)
+        {
+            FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+            //MemFree(dnaconv);
+            //MemFree(protconv);
+            return false;
+        }
+
+        ebp = (EntryBlkPtr)pEntry->mpData;
+        ptr = pEntry->mOffset;
+        eptr = ptr + pEntry->len;
+        curkw = ParFlat_LOCUS;
+        while (curkw != ParFlat_END && ptr < eptr)
+        {
+            ptr = GetGenBankBlock(&ebp->chain, ptr, &curkw, eptr);
+        }
+
+        auto ppCurrentEntry = pp->entrylist[pp->curindx];
+        if (ppCurrentEntry->lc.div > -1) {
+            GenBankGetDivision(ppCurrentEntry->division, ppCurrentEntry->lc.div, *pEntry);
+            if (StringCmp(ibp->division, "TSA") == 0)
+            {
+                if (ibp->tsa_allowed == false)
+                    ErrPostEx(SEV_WARNING, ERR_TSA_UnexpectedPrimaryAccession,
+                        "The record with accession \"%s\" is not expected to have a TSA division code.",
+                        ibp->acnum);
+                ibp->is_tsa = true;
+            }
+        }
+
+        CheckContigEverywhere(ibp, pp->source);
+        if (ibp->drop == 1 && ibp->segnum == 0)
+        {
+            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
+                "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            total_dropped++;
+            continue;
+        }
+
+        if (ptr >= eptr)
+        {
+            ibp->drop = 1;
+            ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd,
+                "Missing end of the entry. Entry dropped.");
+            if (ibp->segnum == 0)
+            {
+                ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
+                    "Entry skipped: \"%s|%s\".",
+                    ibp->locusname, ibp->acnum);
+                total_dropped++;
+                continue;
+            }
+        }
+        GetGenBankSubBlock(*pEntry, ibp->bases);
+
+        CRef<objects::CBioseq> bioseq = CreateEntryBioseq(pp, true);
+        ebp->seq_entry.Reset(new objects::CSeq_entry);
+        ebp->seq_entry->SetSeq(*bioseq);
+        GetScope().AddBioseq(*bioseq);
+
+        AddNIDSeqId(*bioseq, *pEntry, ParFlat_NCBI_GI, ParFlat_COL_DATA, pp->source);
+
+        if (StringNCmp(pEntry->mOffset + ibp->lc.bp, "aa", 2) == 0)
+        {
+            ibp->is_prot = true;
+            conv = protconv.get();
+        }
+        else
+        {
+            ibp->is_prot = false;
+            conv = dnaconv.get();
+        }
+
+
+        if (!GetGenBankInst(pp, *pEntry, conv))
+        {
+            ibp->drop = 1;
+            ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData,
+                "Bad sequence data. Entry dropped.");
+            if (ibp->segnum == 0)
+            {
+                ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
+                    "Entry skipped: \"%s|%s\".",
+                    ibp->locusname, ibp->acnum);
+                total_dropped++;
+                continue;
+            }
+        }
+
+        FakeGenBankBioSources(*pEntry, *bioseq);
+        LoadFeat(pp, *pEntry, *bioseq);
+
+        if (!bioseq->IsSetAnnot() && ibp->drop != 0 && ibp->segnum == 0)
+        {
+            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
+                "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            total_dropped++;
+            continue;
+        }
+
+        GetGenBankDescr(pp, *pEntry, *bioseq);
+        if (ibp->drop != 0 && ibp->segnum == 0)
+        {
+            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
+                "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            total_dropped++;
+            continue;
+        }
+
+        fta_set_molinfo_completeness(*bioseq, ibp);
+
+        if (ibp->is_tsa)
+            fta_tsa_tls_comment_dblink_check(*bioseq, true);
+
+        if (ibp->is_tls)
+            fta_tsa_tls_comment_dblink_check(*bioseq, false);
+
+        if (bioseq->GetInst().IsNa())
+        {
+            if (bioseq->GetInst().GetRepr() == objects::CSeq_inst::eRepr_raw)
+            {
+                if (ibp->gaps != NULL)
+                    GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
+                else if (ibp->htg == 4 || ibp->htg == 1 || ibp->htg == 2 ||
+                    (ibp->is_pat && pp->source == Parser::ESource::DDBJ))
+                    SeqToDelta(*bioseq, ibp->htg);
+            }
+            else if (ibp->gaps != NULL)
+                AssemblyGapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
+        }
+
+        if (no_date(pp->format, bioseq->GetDescr().Get()) && pp->debug == false &&
+            pp->no_date == false &&
+            pp->mode != Parser::EMode::Relaxed)
+        {
+            ibp->drop = 1;
+            ErrPostStr(SEV_ERROR, ERR_DATE_IllegalDate,
+                "Illegal create date. Entry dropped.");
+            if (ibp->segnum == 0)
+            {
+                ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
+                    "Entry skipped: \"%s|%s\".",
+                    ibp->locusname, ibp->acnum);
+                total_dropped++;
+                continue;
+            }
+        }
+
+        if (pEntry->mpQscore == NULL && pp->accver)
+        {
+            if (pp->ff_get_qscore != NULL)
+                pEntry->mpQscore = (*pp->ff_get_qscore)(ibp->acnum, ibp->vernum);
+            else if (pp->ff_get_qscore_pp != NULL)
+                pEntry->mpQscore = (*pp->ff_get_qscore_pp)(ibp->acnum, ibp->vernum, pp);
+            if (pp->qsfd != NULL && ibp->qslength > 0)
+                pEntry->mpQscore = GetQSFromFile(pp->qsfd, ibp);
+        }
+
+        if (!QscoreToSeqAnnot(pEntry->mpQscore, *bioseq, ibp->acnum, ibp->vernum, false, true))
+        {
+            if (pp->ign_bad_qs == false)
+            {
+                ibp->drop = 1;
+                ErrPostEx(SEV_ERROR, ERR_QSCORE_FailedToParse,
+                    "Error while parsing QScore. Entry dropped.");
+                if (ibp->segnum == 0)
+                {
+                    ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
+                        "Entry skipped: \"%s|%s\".",
+                        ibp->locusname, ibp->acnum);
+                    total_dropped++;
+                    continue;
+                }
+            }
+            else
+            {
+                ErrPostEx(SEV_ERROR, ERR_QSCORE_FailedToParse,
+                    "Error while parsing QScore.");
+            }
+        }
+
+        if (pEntry->mpQscore != NULL)
+        {
+            MemFree(pEntry->mpQscore);
+            pEntry->mpQscore = NULL;
+        }
+
+        if (ibp->psip.NotEmpty())
+        {
+            CRef<objects::CSeq_id> id(new objects::CSeq_id);
+            id->SetPatent(*ibp->psip);
+            bioseq->SetId().push_back(id);
+            ibp->psip.Reset();
+        }
+
+        /* add PatentSeqId if patent is found in reference
+         */
+        if (pp->mode != Parser::EMode::Relaxed &&
+            pp->debug == false &&
+            ibp->wgs_and_gi != 3 &&
+            no_reference(*bioseq))
+        {
+            if (pp->source == Parser::ESource::Flybase)
+            {
+                ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references,
+                    "No references for entry from FlyBase. Continue anyway.");
+            }
+            else if (pp->source == Parser::ESource::Refseq &&
+                StringNCmp(ibp->acnum, "NW_", 3) == 0)
+            {
+                ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references,
+                    "No references for RefSeq's NW_ entry. Continue anyway.");
+            }
+            else if (ibp->is_wgs)
+            {
+                ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references,
+                    "No references for WGS entry. Continue anyway.");
+            }
+            else
+            {
+                ibp->drop = 1;
+                ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references,
+                    "No references. Entry dropped.");
+                if (ibp->segnum == 0)
+                {
+                    ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
+                        "Entry skipped: \"%s|%s\".",
+                        ibp->locusname, ibp->acnum);
+                    total_dropped++;
+                    continue;
+                }
+            }
+        }
+
+        if (ibp->segnum == ibp->segtotal)
+        {
+            seq_entries.push_back(ebp->seq_entry);
+            ebp->seq_entry.Reset();
+
+            if (ibp->segnum < 2)
+            {
+                if (ibp->segnum != 0)
+                {
+                    ErrPostEx(SEV_WARNING, ERR_SEGMENT_OnlyOneMember,
+                        "Segmented set contains only one member.");
+                }
+                segindx = i;
+            }
+            else
+            {
+                GetSeqExt(pp, locs);
+                // LCOV_EXCL_START
+                // Excluded per Mark's request on 12/14/2016
+                BuildBioSegHeader(pp, seq_entries, locs);
+                // LCOV_EXCL_STOP
+            }
+
+            /* reject the whole set if any one entry was rejected
+             */
+            if (ibp->segnum != 0)
+            {
+                div = pp->entrylist[segindx]->division;
+                int j = segindx;
+                for (; j <= i; j++)
+                {
+                    tibp = pp->entrylist[j];
+                    err_install(tibp, pp->accver);
+                    if (StringCmp(div, tibp->division) != 0)
+                    {
+                        ErrPostEx(SEV_WARNING, ERR_DIVISION_Mismatch,
+                            "Division different in segmented set: %s: %s",
+                            div, tibp->division);
+                    }
+                    if (tibp->drop != 0)
+                    {
+                        ErrPostEx(SEV_WARNING, ERR_SEGMENT_Rejected,
+                            "Reject the whole segmented set");
+                        break;
+                    }
+                }
+                if (j <= i)
+                {
+                    for (j = segindx; j <= i; j++)
+                    {
+                        tibp = pp->entrylist[j];
+                        err_install(tibp, pp->accver);
+                        ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
+                            "Entry skipped: \"%s|%s\".",
+                            tibp->locusname, tibp->acnum);
+                        total_dropped++;
+                    }
+
+                    seq_entries.clear();
+                    continue;
+                }
+            }
+
+            DealWithGenes(seq_entries, pp);
+
+            if (seq_entries.empty())
+            {
+                if (ibp->segnum != 0)
+                {
+                    ErrPostEx(SEV_WARNING, ERR_SEGMENT_Rejected,
+                        "Reject the whole segmented set.");
+                    int j = segindx;
+                    for (; j <= i; j++)
+                    {
+                        tibp = pp->entrylist[j];
+                        err_install(tibp, pp->accver);
+                        ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
+                            "Entry skipped: \"%s|%s\".",
+                            tibp->locusname, tibp->acnum);
+                        total_dropped++;
+                    }
+                }
+                else
+                {
+                    ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
+                        "Entry skipped: \"%s|%s\".",
+                        ibp->locusname, ibp->acnum);
+                    total_dropped++;
+                }
+                continue;
+            }
+
+            if (pp->source == Parser::ESource::Flybase && !seq_entries.empty())
+                fta_get_user_object(*(*seq_entries.begin()), *pEntry);
+
+            /* remove out all the features if their seqloc has
+             * "join" or "order" among other segments, to the annot
+             * which in class = parts
+             */
+            if (ibp->segnum != 0)
+// LCOV_EXCL_START
+// Excluded per Mark's request on 12/14/2016
+                CheckFeatSeqLoc(seq_entries);
+// LCOV_EXCL_STOP
+
+            fta_find_pub_explore(pp, seq_entries);
+
+            /* change qual "citation" on features to SeqFeat.cit
+            * find citation in the list by serial_number.
+            * If serial number not found remove /citation
+            */
+            ProcessCitations(seq_entries);
+
+            /* check for long sequences in each segment
+             */
+            if (pp->limit != 0)
+            {
+                if (ibp->segnum != 0)
+                {
+                    int j = segindx;
+                    for (; j <= i; j++)
+                    {
+                        tibp = pp->entrylist[j];
+                        err_install(tibp, pp->accver);
+                        if (tibp->bases <= (size_t)pp->limit)
+                            continue;
+
+                        if (tibp->htg == 1 || tibp->htg == 2 || tibp->htg == 4)
+                        {
+                            ErrPostEx(SEV_WARNING, ERR_ENTRY_LongHTGSSequence,
+                                "HTGS Phase 0/1/2 sequence %s|%s exceeds length limit %ld: entry has been processed regardless of this problem",
+                                tibp->locusname, tibp->acnum, pp->limit);
+                        }
+                        else
+                        {
+                            seq_long = true;
+                            ErrPostEx(SEV_REJECT, ERR_ENTRY_LongSequence,
+                                "Sequence %s|%s is longer than limit %ld",
+                                tibp->locusname, tibp->acnum, pp->limit);
+                        }
+                    }
+                }
+                else if (ibp->bases > (size_t)pp->limit)
+                {
+                    if (ibp->htg == 1 || ibp->htg == 2 || ibp->htg == 4)
+                    {
+                        ErrPostEx(SEV_WARNING, ERR_ENTRY_LongHTGSSequence,
+                            "HTGS Phase 0/1/2 sequence %s|%s exceeds length limit %ld: entry has been processed regardless of this problem",
+                            ibp->locusname, ibp->acnum, pp->limit);
+                    }
+                    else
+                    {
+                        seq_long = true;
+                        ErrPostEx(SEV_REJECT, ERR_ENTRY_LongSequence,
+                            "Sequence %s|%s is longer than limit %ld",
+                            ibp->locusname, ibp->acnum, pp->limit);
+                    }
+                }
+            }
+            if (pp->mode == Parser::EMode::Relaxed) {
+                for (auto pEntry : seq_entries) {
+                    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
+                    g_InstantiateMissingProteins(pScope->AddTopLevelSeqEntry(*pEntry));
+                }
+            }
+            if (pp->convert)
+            {
+                if (pp->cleanup <= 1)
+                {
+                    FinalCleanup(seq_entries);
+
+                    if (pp->qamode && !seq_entries.empty())
+                        fta_remove_cleanup_user_object(*seq_entries.front());
+                }
+
+                MaybeCutGbblockSource(seq_entries);
+            }
+
+            EntryCheckDivCode(seq_entries, pp);
+
+            if (pp->xml_comp)
+                fta_set_strandedness(seq_entries);
+
+            if (fta_EntryCheckGBBlock(seq_entries))
+            {
+                ErrPostStr(SEV_WARNING, ERR_ENTRY_GBBlock_not_Empty,
+                    "Attention: GBBlock is not empty");
+            }
+
+            /* check for identical features
+             */
+            if (pp->qamode)
+            {
+                fta_sort_descr(seq_entries);
+                fta_sort_seqfeat_cit(seq_entries);
+            }
+
+            if (pp->citat)
+            {
+                StripSerialNumbers(seq_entries);
+            }
+
+            PackEntries(seq_entries);
+            CheckDupDates(seq_entries);
+
+            if (ibp->segnum != 0) {
+                int j = segindx;
+                for (; j <= i; j++)
+                    err_install(pp->entrylist[j], pp->accver);
+            }
+            if (seq_long)
+            {
+                seq_long = false;
+                if (ibp->segnum != 0)
+                    total_long += (i - segindx + 1);
+                else
+                    total_long++;
+            }
+            else
+            {
+                pp->entries.splice(pp->entries.end(), seq_entries);
+
+                if (ibp->segnum != 0)
+                    total += (i - segindx + 1);
+                else
+                    total++;
+            }
+
+            if (ibp->segnum != 0)
+            {
+                for (int j = segindx; j <= i; j++)
+                {
+                    tibp = pp->entrylist[j];
+                    err_install(tibp, pp->accver);
+                    ErrPostEx(SEV_INFO, ERR_ENTRY_Parsed,
+                        "OK - entry parsed successfully: \"%s|%s\".",
+                        tibp->locusname, tibp->acnum);
+                }
+            }
+            else
+            {
+                ErrPostEx(SEV_INFO, ERR_ENTRY_Parsed,
+                    "OK - entry parsed successfully: \"%s|%s\".",
+                    ibp->locusname, ibp->acnum);
+            }
+
+            seq_entries.clear();
+        }
+        else
+        {
+            GetSeqExt(pp, locs);
+
+            seq_entries.push_back(ebp->seq_entry);
+            ebp->seq_entry.Reset();
+        }
+
+    } /* for, ascii block entries */
+
+    FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+
+    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingComplete,
+        "COMPLETED : SUCCEEDED = %d (including: LONG ones = %d); SKIPPED = %d.",
+        total, total_long, total_dropped);
+    // MemFree(dnaconv);
+    // MemFree(protconv);
+
+    return true;
+}
 bool GenBankAscii(ParserPtr pp)
 {
     Int2        curkw;
@@ -1590,10 +2145,10 @@ bool GenBankAscii(ParserPtr pp)
     int total = 0;
     int total_long = 0;
     int total_dropped = 0;
-    char*     ptr;
+    const char*     ptr;
     char*     eptr;
     char*     div;
-    unique_ptr<DataBlk>  pEntry;
+    unique_ptr<Entry>  pEntry;
     EntryBlkPtr ebp;
 
 //    unsigned char*    dnaconv;
@@ -1633,26 +2188,19 @@ bool GenBankAscii(ParserPtr pp)
             continue;
         }
 
-        pEntry.reset(LoadEntry(pp, ibp->offset, ibp->len));
+        pEntry.reset(LoadEntryGenbank(pp, ibp->offset, ibp->len));
         if(!pEntry)
         {
             FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
-            //MemFree(dnaconv);
-            //MemFree(protconv);
             return false;
         }
 
-        ebp = (EntryBlkPtr) pEntry->mpData;
-        ptr = pEntry->mOffset;
-        eptr = ptr + pEntry->len;
+        ptr = pEntry->mBaseData.c_str();
         curkw = ParFlat_LOCUS;
-        while(curkw != ParFlat_END && ptr < eptr)
-        {
-            ptr = GetGenBankBlock(&ebp->chain, ptr, &curkw, eptr);
-        }
+        xGetGenBankBlocks(*pEntry);
 
         if (pp->entrylist[pp->curindx]->lc.div > -1) {
-            GenBankGetDivision(pp->entrylist[pp->curindx]->division, pp->entrylist[pp->curindx]->lc.div, *pEntry);
+            xGenBankGetDivision(pp->entrylist[pp->curindx]->division, pp->entrylist[pp->curindx]->lc.div, pEntry->mBaseData);
             if(StringCmp(ibp->division, "TSA") == 0)
             {
                 if(ibp->tsa_allowed == false)
@@ -1672,41 +2220,38 @@ bool GenBankAscii(ParserPtr pp)
             continue;
         }
 
-        if(ptr >= eptr)
-        {
+        auto lastType = pEntry->mSections.back()->mType;
+        if (lastType != ParFlat_END) {
             ibp->drop = 1;
             ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd,
-                       "Missing end of the entry. Entry dropped.");
-            if(ibp->segnum == 0)
+                "Missing end of the entry. Entry dropped.");
+            if (ibp->segnum == 0)
             {
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
-                          "Entry skipped: \"%s|%s\".",
-                          ibp->locusname, ibp->acnum);
+                    "Entry skipped: \"%s|%s\".",
+                    ibp->locusname, ibp->acnum);
                 total_dropped++;
                 continue;
             }
         }
-        GetGenBankSubBlock(*pEntry, ibp->bases);
+        xGetGenBankSubBlocks(*pEntry, ibp->bases);
 
-        CRef<objects::CBioseq> bioseq = CreateEntryBioseq(pp, true);
-        AddNIDSeqId(*bioseq, *pEntry, ParFlat_NCBI_GI, ParFlat_COL_DATA, pp->source);
-
-        if(StringNCmp(pEntry->mOffset + ibp->lc.bp, "aa", 2) == 0)
-        {
+        CRef<objects::CBioseq> pBioseq = CreateEntryBioseq(pp, true);
+        pEntry->mSeqEntry.Reset(new objects::CSeq_entry);
+        pEntry->mSeqEntry->SetSeq(*pBioseq);
+        GetScope().AddBioseq(*pBioseq);
+        pEntry->xInitNidSeqId(*pBioseq, ParFlat_NCBI_GI, ParFlat_COL_DATA, pp->source);
+        
+        if (pEntry->IsAA()) {
             ibp->is_prot = true;
             conv = protconv.get();
         }
-        else
-        {
+        else {
             ibp->is_prot = false;
             conv = dnaconv.get();
         }
 
-        ebp->seq_entry.Reset(new objects::CSeq_entry);
-        ebp->seq_entry->SetSeq(*bioseq);
-        GetScope().AddBioseq(*bioseq);
-
-        if (!GetGenBankInst(pp, *pEntry, conv))
+        if (!pEntry->xInitSeqInst(conv))
         {
             ibp->drop = 1;
             ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData,
@@ -1720,8 +2265,9 @@ bool GenBankAscii(ParserPtr pp)
                 continue;
             }
         }
+        return false;
 
-        FakeGenBankBioSources(*pEntry, *bioseq);
+        /*FakeGenBankBioSources(*pEntry, *bioseq);
         LoadFeat(pp, *pEntry, *bioseq);
 
         if (!bioseq->IsSetAnnot() && ibp->drop != 0 && ibp->segnum == 0)
@@ -1827,8 +2373,8 @@ bool GenBankAscii(ParserPtr pp)
             ibp->psip.Reset();
         }
 
-        /* add PatentSeqId if patent is found in reference
-         */
+        // add PatentSeqId if patent is found in reference
+        //
         if(pp->mode != Parser::EMode::Relaxed &&
            pp->debug == false &&
            ibp->wgs_and_gi != 3 &&
@@ -1889,8 +2435,8 @@ bool GenBankAscii(ParserPtr pp)
 // LCOV_EXCL_STOP
             }
 
-            /* reject the whole set if any one entry was rejected
-             */
+            // reject the whole set if any one entry was rejected
+            //
             if(ibp->segnum != 0)
             {
                 div = pp->entrylist[segindx]->division;
@@ -1961,10 +2507,10 @@ bool GenBankAscii(ParserPtr pp)
             if (pp->source == Parser::ESource::Flybase && !seq_entries.empty())
                 fta_get_user_object(*(*seq_entries.begin()), *pEntry);
 
-            /* remove out all the features if their seqloc has
-             * "join" or "order" among other segments, to the annot
-             * which in class = parts
-             */
+            // remove out all the features if their seqloc has
+            // "join" or "order" among other segments, to the annot
+            // which in class = parts
+            //
             if(ibp->segnum != 0)
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
@@ -1973,14 +2519,14 @@ bool GenBankAscii(ParserPtr pp)
 
             fta_find_pub_explore(pp, seq_entries);
 
-            /* change qual "citation" on features to SeqFeat.cit
-            * find citation in the list by serial_number.
-            * If serial number not found remove /citation
-            */
+            // change qual "citation" on features to SeqFeat.cit
+            // find citation in the list by serial_number.
+            // If serial number not found remove /citation
+            //
             ProcessCitations(seq_entries);
 
-            /* check for long sequences in each segment
-             */
+            // check for long sequences in each segment
+            //
             if(pp->limit != 0)
             {
                 if(ibp->segnum != 0)
@@ -2055,8 +2601,8 @@ bool GenBankAscii(ParserPtr pp)
                            "Attention: GBBlock is not empty");
             }
 
-            /* check for identical features
-             */
+            // check for identical features
+            //
             if(pp->qamode)
             {
                 fta_sort_descr(seq_entries);
@@ -2122,7 +2668,7 @@ bool GenBankAscii(ParserPtr pp)
             ebp->seq_entry.Reset();
         }
 
-    } /* for, ascii block entries */
+    */} // for, ascii block entries 
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
@@ -2132,7 +2678,7 @@ bool GenBankAscii(ParserPtr pp)
    // MemFree(dnaconv);
    // MemFree(protconv);
 
-    return true;
+    return false;
 }
 
 // LCOV_EXCL_START

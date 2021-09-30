@@ -66,10 +66,6 @@ static const char *ParFlat_STRAND_array[] = {
     "   ", "ss-", "ds-", "ms-", NULL
 };
 
-static const char *ParFlat_TPG_array[] = {
-    "         ", "Linear   ", "Circular ", "Tandem   ", NULL
-};
-
 static const char *ParFlat_NA_array_DDBJ[] = {
     "cDNA", NULL
 };
@@ -505,9 +501,21 @@ static bool CkDateFormat(char* date)
 }
 
 /**********************************************************/
-Int2 CheckSTRAND(const char* str)
+int CheckSTRAND(const string& str)
 {
-    return(fta_StringMatch(ParFlat_STRAND_array, str));
+    static vector<string> strandSpecs = {
+        "   ", "ss-", "ds-", "ms-"
+    };
+    static auto strandSpecCount = strandSpecs.size();
+
+    string compare(str);
+    NStr::ToLower(compare);
+    for (int i = 0; i < strandSpecCount; ++i) {
+        if (NStr::StartsWith(compare, strandSpecs[i])) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 /**********************************************************/
@@ -528,9 +536,21 @@ Int2 XMLCheckTPG(char* str)
 }
 
 /**********************************************************/
-Int2 CheckTPG(char* str)
+int CheckTPG(const string& str)
 {
-    return(StringMatchIcase(ParFlat_TPG_array, str));
+    static vector<string> topologies = {
+        "         ", "linear   ", "circular ", "tandem   "
+    };
+    static auto topologyCount = topologies.size();
+
+    string compare(str);
+    NStr::ToLower(compare);
+    for (int i=0; i < topologyCount; ++i) {
+        if (NStr::StartsWith(compare, topologies[i])) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 /**********************************************************/
@@ -764,17 +784,11 @@ indexblk_struct::indexblk_struct() :
     wgssec[0] = 0;
 }
 
-static bool isSpace(char c) 
-{
-    return isspace(c);
-}
-
-
 static CTempString::const_iterator 
 sFindNextSpace(const CTempString& tempString, 
         CTempString::const_iterator current_it)
 {
-    return find_if(current_it, tempString.end(), isSpace);
+    return find_if(current_it, tempString.end(), isspace);
 }
 
 
@@ -782,7 +796,7 @@ static CTempString::const_iterator
 sFindNextNonSpace(const CTempString& tempString, 
         CTempString::const_iterator current_it)
 {
-    return find_if_not(current_it, tempString.end(), isSpace);
+    return find_if_not(current_it, tempString.end(), isspace);
 }
 
 

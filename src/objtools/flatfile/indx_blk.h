@@ -77,8 +77,8 @@ bool        QSIndex(ParserPtr pp, IndBlkNextPtr ibnp);
 
 void  DelNoneDigitTail(char* str);
 int  fta_if_wgs_acc(const CTempString& accession);
-Int2  CheckSTRAND(const char* str);
-Int2  CheckTPG(char* str);
+int  CheckSTRAND(const string& str);
+int  CheckTPG(const string& str);
 Int2  CheckDIV(char* str);
 Int4  IsNewAccessFormat(const char* acnum);
 bool  IsSPROTAccession(const char* acc);
