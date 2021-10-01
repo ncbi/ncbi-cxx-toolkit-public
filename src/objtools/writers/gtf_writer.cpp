@@ -131,7 +131,7 @@ bool CGtfWriter::x_WriteBioseqHandle(
     CGffFeatureContext fc(feat_iter, bsh);
 
     vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
-    std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareLocations);
+    std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareFeatures);
     for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
         CMappedFeat mRoot = *pit;
         fc.AssignShouldInheritPseudo(false);
