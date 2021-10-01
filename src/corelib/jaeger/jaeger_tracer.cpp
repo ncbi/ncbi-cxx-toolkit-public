@@ -110,16 +110,78 @@ CJaegerTracer::~CJaegerTracer(void)
 }
 
 
+void id_hash(const string &s, uint64_t &high, uint64_t &low)
+{
+    uint64_t h1 = 5381;
+    uint64_t h2 = 0;
+    for (char c : s) {
+        h1 = c + (h1 << 5) + h1; // c + h1*33
+        h2 = c + (h2 << 6) + (h2 << 16) - h2; // c + h2*65599
+    }
+    low = h1;
+    high = h2;
+}
+
+
+void id_hash(const string &s, uint64_t& h)
+{
+    h = 0;
+    for (char c : s) {
+        h = c + (h << 6) + (h << 16) - h; // c + h*65599
+    }
+}
+
+
 void CJaegerTracer::OnRequestStart(CRequestContext& context)
 {
     if (!context.IsSetHitID()) context.SetHitID();
-    auto span = make_shared<CJaegerTracerSpan>(jaegertracing::Tracer::Global()->StartSpan(context.GetHitID()));
-    // Post PHID to the trace.
-    span->GetSpan().SetBaggageItem(g_GetNcbiString(eNcbiStrings_PHID), context.GetHitID());
+
+    uint64_t trace_id_high;
+    uint64_t trace_id_low;
+    uint64_t span_id;
+    uint64_t parent_span_id = 0;
+
+    string phid = context.GetHitID();
+    size_t dot = phid.find_first_of('.');
+    string base_phid = phid.substr(0, dot);
+    // Trace ID is base PHID without sub-hit IDs.
+    id_hash(base_phid, trace_id_high, trace_id_low);
+    // Self span ID is the whole PHID
+    id_hash(phid, span_id);
+
+    // Parent span ID is the whole PHID without the last sub-hit ID or none.
+    dot = phid.find_last_of('.');
+    if (dot != string::npos && phid.size() > dot) {
+        id_hash(phid.substr(0, dot), parent_span_id);
+    }
+
+    jaegertracing::TraceID trace_id(trace_id_high, trace_id_low);
+    unique_ptr<jaegertracing::SpanContext> span_context(new jaegertracing::SpanContext(
+        trace_id,
+        span_id,
+        parent_span_id,
+        (unsigned char)jaegertracing::SpanContext::Flag::kSampled,
+        {}));
+    auto tracer = dynamic_pointer_cast<const jaegertracing::Tracer>(opentracing::Tracer::Global());
+    shared_ptr<jaegertracing::Span> span(new jaegertracing::Span(
+        tracer, *span_context, tracer->serviceName()));
+
+    span->SetTag("ncbi_phid", phid);
+    span->SetTag("session_id", context.GetSessionID());
+    span->SetTag("request_id", context.GetRequestID());
+    span->SetTag("client_ip", context.GetClientIP());
+    CDiagContext& diag_context = GetDiagContext();
+    char buf[17];
+    diag_context.GetStringUID(diag_context.GetUID(), buf);
+    span->SetTag("guid", buf);
+    span->SetTag("pid", diag_context.GetPID());
+    span->SetTag("tid", (Uint8)GetCurrentThreadSystemID());
+    span->SetTag("host", diag_context.GetHost());
+
     // Post trace and span IDs to the log.
     // For some reason jaegertracing does not overload SpanContext::ToSpanID()
     // and SpanContext::ToTraceID() so that both return empty strings.
-    auto jctx = dynamic_cast<const jaegertracing::SpanContext*>(&span->GetSpan().context());
+    auto jctx = dynamic_cast<const jaegertracing::SpanContext*>(&span->context());
     if (jctx != nullptr) {
         CNcbiOstrstream trace_str, span_str;
         jctx->traceID().print(trace_str);
@@ -128,7 +190,7 @@ void CJaegerTracer::OnRequestStart(CRequestContext& context)
             .Print("jaeger_trace_id", trace_str.str())
             .Print("jaeger_span_id", span_str.str());
     }
-    context.SetTracerSpan(span);
+    context.SetTracerSpan(make_shared<CJaegerTracerSpan>(span));
 }
 
 
