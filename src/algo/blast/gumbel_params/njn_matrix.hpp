@@ -600,7 +600,8 @@ BEGIN_SCOPE(Njn)
         for (size_t i = 0; i < this->getM (); i++) {
             delete [] d_matrix_p [i]; d_matrix_p [i] = 0;
         }
-        if (this->getM () > 0) delete [] d_matrix_p; d_matrix_p = 0;
+        if (this->getM () > 0) delete [] d_matrix_p;
+	d_matrix_p = 0;
 
         d_m = 0;
         d_n = 0;
