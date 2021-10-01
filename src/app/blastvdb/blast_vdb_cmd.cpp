@@ -138,13 +138,13 @@ public:
         	          BLAST_SEQSRC_EOF)
         {
    	    	 if (seq_arg.oid == BLAST_SEQSRC_ERROR) {
-          			cerr << "Iterator returns BLAST_SEQSRC_ERROR" << endl;
+          			ERR_POST("Iterator returns BLAST_SEQSRC_ERROR");
            			return;
              }
    	    	 CRef<CBioseq> bioseq = m_VdbBlastDB->CreateBioseqFromOid(seq_arg.oid);
              if (bioseq.Empty())
              {
-        	  		cerr << "Empty Bioseq"  << endl;
+        	  		ERR_POST("Empty Bioseq");
         	    	return;
              }
              fasta.Write(*bioseq);
@@ -275,10 +275,10 @@ CBlastVdbCmdApp::x_ProcessSearchRequest()
         	}
 
         } catch (const CException& e) {
-            ERR_POST(Error << e.GetMsg());
+            ERR_POST(e.GetMsg());
             errors_found = true;
         } catch (...) {
-            ERR_POST(Error << "Failed to retrieve requested item");
+            ERR_POST("Failed to retrieve requested item");
             errors_found = true;
         }
 
@@ -359,14 +359,14 @@ CBlastVdbCmdApp::x_GetVDBBlastUtil(bool isCSRA)
 		sw.Start();
 		util.Reset(new CVDBBlastUtil(csra_list, true, true));
 		sw.Stop();
-		cout << "PERF: blast_vdb library csra initialization: " << x_FormatRuntime(sw) << endl;
+		LOG_POST(Info << "PERF: blast_vdb library csra initialization: " << x_FormatRuntime(sw));
 	}
 	else {
 		CStopWatch sw;
     	sw.Start();
     	util.Reset(new CVDBBlastUtil(m_allDbs, true, false));
     	sw.Stop();
-    	cout << "PERF: blast_vdb library initialization: " << x_FormatRuntime(sw) << endl;
+    	LOG_POST(Info << "PERF: blast_vdb library initialization: " << x_FormatRuntime(sw));
 	}
     return util;
 }
@@ -437,7 +437,7 @@ CBlastVdbCmdApp::x_PrintBlastDatabaseInformation()
     	out << NStr::ULongToString(ref_length, kFlags)  << " total ref " << kLetters << endl;
     }
 
-    cout << "PERF: Get all BLASTDB metadata: " << x_FormatRuntime(sw) << endl;
+    LOG_POST(Info << "PERF: Get all BLASTDB metadata: " << x_FormatRuntime(sw));
     return 0;
 }
 
@@ -487,7 +487,7 @@ CBlastVdbCmdApp::x_PrintVDBPaths(bool recursive)
        			out << *itr << endl;
     	}
     }
-    cout << "PERF: Get Paths : " << x_FormatRuntime(sw) << endl;
+    LOG_POST(Info << "PERF: Get Paths : " << x_FormatRuntime(sw));
     return 0;
 }
 
@@ -586,7 +586,7 @@ int CBlastVdbCmdApp::Run(void)
     } catch (const exception& e) {
         status = 1;
     } catch (...) {
-        cerr << "Unknown exception!" << endl;
+        LOG_POST(Error << "Unknown exception!");
         status = 1;
     }
     x_AddCmdOptions();
