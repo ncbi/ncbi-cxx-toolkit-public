@@ -329,7 +329,8 @@ BEGIN_SCOPE(Njn)
    template <typename T> 
    void Vector <T>::free ()
    {
-      if (getM () > 0) delete [] d_vector_p; d_vector_p = 0;
+      if (getM () > 0) delete [] d_vector_p;
+      d_vector_p = 0;
 
       d_m = 0;
    }
