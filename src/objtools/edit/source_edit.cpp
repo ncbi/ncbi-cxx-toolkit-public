@@ -161,7 +161,7 @@ void AddMissingCommonOrgMods(const COrg_ref& o1, const COrg_ref& o2, COrg_ref& c
 
 CRef<CBioSource> MakeCommonBioSource(const objects::CBioSource& src1, const objects::CBioSource& src2)
 {
-    CRef<CBioSource> common(NULL);
+    CRef<CBioSource> common;
 
     if (!src1.IsSetOrg() || !src2.IsSetOrg()) {
         return common;
@@ -180,7 +180,7 @@ CRef<CBioSource> MakeCommonBioSource(const objects::CBioSource& src1, const obje
     CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(rq_list);
     if (!reply || reply->GetReply().size() != 2) {
         ERR_POST("Taxonomy service failure");
-        return CRef<CBioSource>(NULL);
+        return CRef<CBioSource>();
     }
     if (!s_ProcessReply(*(reply->GetReply().front()), o1) ||
         !s_ProcessReply(*(reply->GetReply().back()), o2)) {
@@ -213,7 +213,7 @@ CRef<CBioSource> MakeCommonBioSource(const objects::CBioSource& src1, const obje
         CRef<CTaxon3_reply> reply = taxon3.SendRequest(request);
         if (!reply || reply->GetReply().size() != 1) {
             ERR_POST("Taxonomy service failure" + err_nums);
-            return CRef<CBioSource>(NULL);
+            return CRef<CBioSource>();
         }
         const CT3Reply& join_reply = *(reply->GetReply().front());
         if (join_reply.IsData()) {

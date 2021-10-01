@@ -207,7 +207,7 @@ CConstRef <CDelta_seq> GetDeltaSeqForPosition(const unsigned pos, const CBioseq_
              || seq_hl.GetInst_Repr() != CSeq_inst :: eRepr_delta
              || !seq_hl.GetInst().CanGetExt()
              || !seq_hl.GetInst().GetExt().IsDelta()) {
-      return CConstRef <CDelta_seq>(NULL);
+      return CConstRef <CDelta_seq>();
    }
 
    size_t offset = 0;
@@ -226,7 +226,7 @@ CConstRef <CDelta_seq> GetDeltaSeqForPosition(const unsigned pos, const CBioseq_
             offset += len;
         }
    }
-   return (CConstRef <CDelta_seq>(NULL));
+   return CConstRef <CDelta_seq>();
 };
 
 bool IsDeltaSeqGap(CConstRef <CDelta_seq> delta)
@@ -599,7 +599,7 @@ CRef<CSeq_entry> SeqEntryFromSeqSubmit(const CSeq_submit& submit)
 {
     CRef<CSeq_entry> entry(new CSeq_entry());
     if (!submit.IsEntrys() || submit.GetData().GetEntrys().size() == 0) {
-        return CRef<CSeq_entry>(NULL);
+        return CRef<CSeq_entry>();
     }
 
     // Copy Seq-entry data from Seq-submit to new Seq-entry
@@ -1574,7 +1574,7 @@ string MakeOriginalLabelForId(const CSeq_id& id)
 
 CRef<CUser_field> MakeOriginalIdField(const CSeq_id& id)
 {
-    CRef<CUser_field> field(NULL);
+    CRef<CUser_field> field;
 
     string label = LabelFromType(id.Which());
     string val = MakeOriginalLabelForId(id);
@@ -1967,9 +1967,9 @@ void ConvertRawToDeltaByNs(CBioseq_Handle bsh,
             bool trimmed = false;
             while (it != changes.rend() && !cut) {
                 if (it->second < 0) {
-                    FeatureAdjustForTrim(*cpy, it->first, it->first - it->second + 1, NULL, cut, trimmed);
+                    FeatureAdjustForTrim(*cpy, it->first, it->first - it->second + 1, nullptr, cut, trimmed);
                 } else {
-                    FeatureAdjustForInsert(*cpy, it->first, it->first + it->second - 1, NULL);
+                    FeatureAdjustForInsert(*cpy, it->first, it->first + it->second - 1, nullptr);
                 }
                 it++;
             }
@@ -3404,14 +3404,14 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
 CRef<CSeqdesc> FindUnverified(const CBioseq& seq)
 {
     if (!seq.IsSetDescr()) {
-        return CRef<CSeqdesc>(NULL);
+        return CRef<CSeqdesc>();
     }
     ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
         if ((*it)->IsUser() && (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_Unverified) {
             return *it;
         }
     }
-    return CRef<CSeqdesc>(NULL);
+    return CRef<CSeqdesc>();
 }
 
 

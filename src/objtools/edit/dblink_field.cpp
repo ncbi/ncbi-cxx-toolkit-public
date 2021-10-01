@@ -270,7 +270,7 @@ void CDBLinkField::SetConstraint(const string& field_name, CConstRef<CStringCons
     // constraints only apply for authors, since there could be more than one
     m_ConstraintFieldType = GetTypeForLabel(field_name);
     if (m_ConstraintFieldType == eDBLinkFieldType_Unknown || !string_constraint) {
-        string_constraint.Reset(NULL);
+        string_constraint.Reset();
     } else {
         m_StringConstraint = new CStringConstraint(" ");
         m_StringConstraint->Assign(*string_constraint);
@@ -459,7 +459,7 @@ vector<CConstRef<CObject> > CDBLinkField::GetRelatedObjects(const CApplyObject& 
     const CSeq_feat * obj_feat = dynamic_cast<const CSeq_feat *>(&object);
 
    if (obj_feat) {
-        related = GetObjects(object.GetSEH(), "", CRef<CStringConstraint>(NULL));
+        related = GetObjects(object.GetSEH(), "", CRef<CStringConstraint>());
     } else if (obj_desc) {
         if (obj_desc->IsUser() && IsDBLink(obj_desc->GetUser())) {
             CConstRef<CObject> obj(obj_desc);

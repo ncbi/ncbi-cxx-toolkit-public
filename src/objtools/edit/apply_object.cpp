@@ -73,7 +73,7 @@ CApplyObject::CApplyObject(CBioseq_Handle bsh, CSeqdesc::E_Choice subtype): m_De
         }
     }
 
-    m_Original.Reset(NULL);
+    m_Original.Reset();
     CRef<CSeqdesc> new_desc(new CSeqdesc());
     new_desc->Select(subtype);
     m_Editable = new_desc.GetPointer();
@@ -88,7 +88,7 @@ CApplyObject::CApplyObject(CBioseq_Handle bsh, const string& user_label) : m_Del
         m_SEH = bssh.GetParentEntry();
     }
 
-    m_Original.Reset(NULL);
+    m_Original.Reset();
     CRef<CSeqdesc> new_desc(new CSeqdesc());
     new_desc->SetUser().SetType().SetStr(user_label);
     m_Editable = new_desc.GetPointer();

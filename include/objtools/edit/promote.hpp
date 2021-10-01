@@ -108,7 +108,7 @@ private:
     typedef objects::CSeq_data::E_Choice               TCoding;
 
     void x_PromoteFeatures(CSeq_annot& annot) const;
-    void x_PromoteCdregion(CSeq_feat& feat, TRnaMap* rna_map = 0) const;
+    void x_PromoteCdregion(CSeq_feat& feat, TRnaMap* rna_map = nullptr) const;
     void x_PromoteRna(CSeq_feat& feat) const;
     void x_PromotePub(CSeq_feat& feat) const;
 
@@ -129,7 +129,7 @@ private:
     void x_AddProtFeature(CBioseq_EditHandle pseq, CProt_ref& prp,
         bool partial_left, bool partial_right) const;
     void x_CopyCdregionToRNA(const CSeq_feat& cds, CBioseq_Handle& mrna,
-        TRnaMap* rna_map = 0) const;
+        TRnaMap* rna_map = nullptr) const;
     CScope& x_Scope(void) const;
 
     // data

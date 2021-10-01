@@ -496,7 +496,7 @@ CRef<CSeq_loc> SeqLocExtend5(const CSeq_loc& loc, TSeqPos pos, CScope* scope)
     TSeqPos loc_start = first_loc->GetStart(eExtreme_Biological);
     bool partial_start = first_loc->IsPartialStart(eExtreme_Biological);
     ENa_strand strand = first_loc->IsSetStrand() ? first_loc->GetStrand() : eNa_strand_plus;
-    CRef<CSeq_loc> new_loc(NULL);
+    CRef<CSeq_loc> new_loc;
 
     CRef<CSeq_id> id(new CSeq_id());
     id->Assign(first_l.GetSeq_id());
@@ -524,7 +524,7 @@ CRef<CSeq_loc> SeqLocExtend3(const CSeq_loc& loc, TSeqPos pos, CScope* scope)
     TSeqPos loc_stop = last_loc->GetStop(eExtreme_Biological);
     bool partial_stop = last_loc->IsPartialStop(eExtreme_Biological);
     ENa_strand strand = last_loc->IsSetStrand() ? last_loc->GetStrand() : eNa_strand_plus;
-    CRef<CSeq_loc> new_loc(NULL);
+    CRef<CSeq_loc> new_loc;
 
     CRef<CSeq_id> id(new CSeq_id());
     id->Assign(last_l.GetSeq_id());
@@ -550,7 +550,7 @@ CRef<CSeq_loc> SeqLocExtend(const CSeq_loc& loc, size_t pos, CScope* scope)
     bool partial_start = loc.IsPartialStart(eExtreme_Positional);
     bool partial_stop = loc.IsPartialStop(eExtreme_Positional);
     ENa_strand strand = loc.GetStrand();
-    CRef<CSeq_loc> new_loc(NULL);
+    CRef<CSeq_loc> new_loc;
 
     if (pos < loc_start) {
         CRef<CSeq_id> id(new CSeq_id());
@@ -1732,18 +1732,18 @@ CRef<CSeq_interval> SplitLocationForGap(CSeq_interval& before,
 {
     cut = false;
     if (!OkToAdjustLoc(before, seqid)) {
-        return CRef<CSeq_interval>(NULL);
+        return CRef<CSeq_interval>();
     }
     // These are required fields
     if (!(before.CanGetFrom() && before.CanGetTo()))
     {
-        return CRef<CSeq_interval>(NULL);
+        return CRef<CSeq_interval>();
     }
 
     // Feature location
     TSeqPos feat_from = before.GetFrom();
     TSeqPos feat_to = before.GetTo();
-    CRef<CSeq_interval> after(NULL);
+    CRef<CSeq_interval> after;
     if (feat_to < start) {
         // gap completely after location
         return after;

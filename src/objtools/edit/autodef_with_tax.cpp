@@ -46,7 +46,7 @@ BEGIN_SCOPE(objects)
 
 CConstRef<CUser_object> GetOptionsForSet(CBioseq_set_Handle set)
 {
-    CConstRef<CUser_object> options(NULL);
+    CConstRef<CUser_object> options;
     CBioseq_CI b(set, CSeq_inst::eMol_na);
     while (b && !options) {
         CSeqdesc_CI desc(*b, CSeqdesc::e_User);

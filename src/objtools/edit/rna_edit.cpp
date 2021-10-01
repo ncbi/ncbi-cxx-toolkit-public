@@ -56,7 +56,7 @@ CRef <CSeq_feat> CFindITSParser::ParseLine()
 // Dear Future self: https://xkcd.com/1421/
 CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_entry_Handle tse, CBioseq_Handle &bsh, bool &negative, string &msg)
 {
-    CRef <CSeq_feat> null_mrna(NULL);
+    CRef <CSeq_feat> null_mrna;
     vector<string> arr;
     NStr::Split(line,"\t",arr);
     if (arr.size() != 9)

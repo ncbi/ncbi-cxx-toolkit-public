@@ -41,7 +41,7 @@ BEGIN_SCOPE(edit)
 
 NCBI_XOBJEDIT_EXPORT CRef<CSeq_table> MakeMailReportPreReport(CSeq_entry_Handle seh);
 NCBI_XOBJEDIT_EXPORT void MakeMailReportPostReport(CSeq_table& table, CScope& scope);
-NCBI_XOBJEDIT_EXPORT string GetReportFromMailReportTable(const CSeq_table& table, CScope* scope = NULL);
+NCBI_XOBJEDIT_EXPORT string GetReportFromMailReportTable(const CSeq_table& table, CScope* scope = nullptr);
 
 
 END_SCOPE(edit)
