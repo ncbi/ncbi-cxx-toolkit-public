@@ -161,7 +161,7 @@ void PrintReportLineHeader(CNcbiOstrstream& lines)
 }
 
 
-void ReportMailReportLine(CNcbiOstrstream& lines, const CSeq_table& table, size_t i, CScope* scope = NULL)
+void ReportMailReportLine(CNcbiOstrstream& lines, const CSeq_table& table, size_t i, CScope* scope = nullptr)
 {
     string id;
     if (scope)

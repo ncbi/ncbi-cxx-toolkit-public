@@ -184,7 +184,7 @@ void CGBBlockField::SetConstraint(const string& field, CConstRef<CStringConstrai
         m_StringConstraint = new CStringConstraint(" ");
         m_StringConstraint->Assign(*string_constraint);
     } else {
-        m_StringConstraint.Reset(NULL);
+        m_StringConstraint.Reset();
     }
 }
 

@@ -56,9 +56,7 @@ class NCBI_XOBJEDIT_EXPORT CStructuredCommentField : public CFieldHandler
 public:
 
     CStructuredCommentField (const string& prefix, const string& field_name) : m_Prefix(prefix), m_FieldName(field_name)
-            { CComment_rule::NormalizePrefix(m_Prefix);
-              m_ConstraintFieldName = "";
-              m_StringConstraint = NULL; };
+            { CComment_rule::NormalizePrefix(m_Prefix); }
 
     virtual vector<CConstRef<CObject> > GetObjects(CBioseq_Handle bsh);
     virtual vector<CConstRef<CObject> > GetObjects(CSeq_entry_Handle seh, const string& constraint_field, CRef<CStringConstraint> string_constraint);

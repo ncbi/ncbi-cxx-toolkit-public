@@ -207,7 +207,7 @@ CRef<CSeq_id> CSeqIdGuesser::Guess(const string& id_str)
         NStr::ToLower(tmp);
         it = m_StringIdLCHash.find(tmp);
         if (it == m_StringIdLCHash.end()) {
-            CRef<CSeq_id> empty(NULL);
+            CRef<CSeq_id> empty;
             return empty;
         } else {
             return it->second;

@@ -333,7 +333,7 @@ void CFeatGapInfo::x_AdjustOrigLabel(CSeq_feat& feat, size_t& id_offset, string&
 CRef<CBioseq> CFeatGapInfo::AdjustProteinSeq(const CBioseq& seq, const CSeq_feat& feat, const CSeq_feat& orig_cds, CScope& scope)
 {
     if (!feat.IsSetProduct() || !feat.GetProduct().IsWhole() || !seq.IsAa()) {
-        return CRef<CBioseq>(NULL);
+        return CRef<CBioseq>();
     }
 
     TSeqPos orig_len = seq.GetInst().GetLength();
@@ -341,7 +341,7 @@ CRef<CBioseq> CFeatGapInfo::AdjustProteinSeq(const CBioseq& seq, const CSeq_feat
     string prot;
     CSeqTranslator::Translate(feat, scope, prot);
     if (prot.empty()) {
-        return CRef<CBioseq>(NULL);
+        return CRef<CBioseq>();
     }
 
     CRef<CBioseq> prot_seq(new CBioseq);
@@ -438,7 +438,7 @@ void CFeatGapInfo::x_AdjustCodebreaks(CSeq_feat& feat)
     while (cit != cdr.SetCode_break().end()) {
         bool do_remove = false;
         if ((*cit)->IsSetLoc()) {
-            CRef<CSeq_loc> new_loc = feat.GetLocation().Intersect((*cit)->GetLoc(), 0, NULL);
+            CRef<CSeq_loc> new_loc = feat.GetLocation().Intersect((*cit)->GetLoc(), 0, nullptr);
             if (new_loc && !new_loc->IsEmpty() && !new_loc->IsNull()) {
                 (*cit)->SetLoc().Assign(*new_loc);
             } else {
@@ -468,7 +468,7 @@ void CFeatGapInfo::x_AdjustAnticodons(CSeq_feat& feat)
     if (!trna.IsSetAnticodon()) {
         return;
     }
-    CRef<CSeq_loc> new_loc = feat.GetLocation().Intersect(trna.GetAnticodon(), 0, NULL);
+    CRef<CSeq_loc> new_loc = feat.GetLocation().Intersect(trna.GetAnticodon(), 0, nullptr);
     if (new_loc && !new_loc->IsEmpty() && !new_loc->IsNull()) {
         trna.SetAnticodon().Assign(*new_loc);
     } else {

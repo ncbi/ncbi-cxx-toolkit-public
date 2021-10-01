@@ -53,11 +53,11 @@ class NCBI_XOBJEDIT_EXPORT CFeaturePropagator
 public:
     NCBI_DEPRECATED CFeaturePropagator(CBioseq_Handle src, CBioseq_Handle target, const CSeq_align& align,
         bool stop_at_stop = true, bool cleanup_partials = true, bool merge_abutting = true,
-        CMessageListener_Basic* pMessageListener = 0,
+        CMessageListener_Basic* pMessageListener = nullptr,
         CObject_id::TId* feat_id = nullptr);
     CFeaturePropagator(CBioseq_Handle src, CBioseq_Handle target, const CSeq_align& align,
                        bool stop_at_stop = true, bool cleanup_partials = true, bool merge_abutting = true, bool expand_over_gaps = true,
-                       CMessageListener_Basic* pMessageListener = 0,
+                       CMessageListener_Basic* pMessageListener = nullptr,
                        CObject_id::TId* feat_id = nullptr);
     ~CFeaturePropagator() {}
 

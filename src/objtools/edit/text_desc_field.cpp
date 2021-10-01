@@ -123,7 +123,7 @@ vector<CConstRef<CObject> > CTextDescriptorField::GetRelatedObjects(const CObjec
             related.push_back(obj);
         } else {
             CSeq_entry_Handle seh = GetSeqEntryForSeqdesc(scope, *obj_desc);
-            related = GetObjects(seh, "", CRef<CStringConstraint>(NULL));
+            related = GetObjects(seh, "", CRef<CStringConstraint>());
         }
     }
 
@@ -141,16 +141,16 @@ vector<CConstRef<CObject> > CTextDescriptorField::GetRelatedObjects(const CApply
     const CBioseq * bioseq = dynamic_cast<const CBioseq *>(&(object.GetObject()));
 
     if (obj_feat) {
-        related = GetObjects(object.GetSEH(), "", CRef<CStringConstraint>(NULL));
+        related = GetObjects(object.GetSEH(), "", CRef<CStringConstraint>());
     } else if (obj_desc) {
         if (obj_desc->Which() == m_Subtype) {
             CConstRef<CObject> obj(obj_desc);
             related.push_back(obj);
         } else {
-            related = GetObjects(object.GetSEH(), "", CRef<CStringConstraint>(NULL));
+            related = GetObjects(object.GetSEH(), "", CRef<CStringConstraint>());
         }
     } else if (bioseq || inst) {
-        related = GetObjects(object.GetSEH(), "", CRef<CStringConstraint>(NULL));
+        related = GetObjects(object.GetSEH(), "", CRef<CStringConstraint>());
     }
 
     return related;

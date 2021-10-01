@@ -524,11 +524,11 @@ string s_GetmRNAName (const CSeq_feat& mrna)
 /// @return           CRef<CSeq_feat> for new mRNA (will be NULL if one was already present)
 CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
 {
-    CRef <CSeq_feat> new_mrna(NULL);
+    CRef<CSeq_feat> new_mrna;
     string prot_nm = s_GetProductName(cds, scope);
     const CSeq_loc& cd_loc = cds.GetLocation();
 
-    CConstRef <CSeq_feat> mrna(NULL);
+    CConstRef<CSeq_feat> mrna;
     CBioseq_Handle bsh = scope.GetBioseqHandle(*cd_loc.GetId());
     CSeq_feat_Handle fh = scope.GetSeq_featHandle(cds);
     CSeq_annot_Handle sah;
@@ -706,7 +706,7 @@ CConstRef<CSeq_feat> GetmRNAforCDS(const CSeq_feat& cds, CScope& scope)
 /// @return           CRef<CGenetic_code> for new CGenetic_code (will be NULL if default should be used)
 CRef<CGenetic_code> GetGeneticCodeForBioseq(CBioseq_Handle bh)
 {
-    CRef<CGenetic_code> code(NULL);
+    CRef<CGenetic_code> code;
     if (!bh) {
         return code;
     }
@@ -788,7 +788,7 @@ bool TruncateCDSAtStop(CSeq_feat& cds, CScope& scope)
     bool rval = false;
     CRef<CBioseq> bioseq = CSeqTranslator::TranslateToProtein (cds, scope);
     if (bioseq) {
-        CRef<CSeq_loc> new_loc(NULL);
+        CRef<CSeq_loc> new_loc;
         string prot_str;
         CSeqTranslator::Translate(cds, scope, prot_str);
         size_t pos = NStr::Find(prot_str, "*");
@@ -845,7 +845,7 @@ bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope)
         return false;
     }
 
-    const CGenetic_code* code = NULL;
+    const CGenetic_code* code = nullptr;
     if (cds.IsSetData() && cds.GetData().IsCdregion() && cds.GetData().GetCdregion().IsSetCode()) {
         code = &(cds.GetData().GetCdregion().GetCode());
     }
@@ -892,7 +892,7 @@ bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope)
     size_t state = 0;
     size_t length = usable_size / 3;
 
-    CRef<CSeq_loc> new_loc(NULL);
+    CRef<CSeq_loc> new_loc;
 
     for (i = 0;  i < length;  ++i) {
         // loop through one codon at a time
