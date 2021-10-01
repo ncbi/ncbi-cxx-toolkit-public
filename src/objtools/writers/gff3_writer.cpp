@@ -1354,7 +1354,7 @@ bool CGff3Writer::x_WriteFeatureContext(
 //  ----------------------------------------------------------------------------
 {
     vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
-    std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareLocations);
+    std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareFeatures);
     for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
         CMappedFeat mRoot = *pit;
         fc.AssignShouldInheritPseudo(false);

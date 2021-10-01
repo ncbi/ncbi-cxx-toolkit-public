@@ -1123,7 +1123,7 @@ bool CWriteUtil::GetListOfGoIds(
 }
 
 //  ----------------------------------------------------------------------------
-bool CWriteUtil::CompareLocations(
+bool CWriteUtil::CompareFeatures(
     const CMappedFeat& lhs,
     const CMappedFeat& rhs)
 //  ----------------------------------------------------------------------------
@@ -1150,16 +1150,32 @@ bool CWriteUtil::CompareLocations(
     if (lhs_stop != rhs_stop) {
         return (lhs_stop > rhs_stop);
     }
-    // just break the tie somehow.
+    //test4: (tie breaker) consider strandedness
     int lhs_strand = lhl.IsSetStrand() ? 10 : int(lhl.GetStrand());
     int rhs_strand = rhl.IsSetStrand() ? 10 : int(rhl.GetStrand());
     if (lhs_strand != rhs_strand) {
         return lhs_strand > rhs_strand;
     }
+    
+    //test5: (tie breaker) consider feature type
     auto lhs_subtype = lhs.GetFeatSubtype();
     auto rhs_subtype = rhs.GetFeatSubtype();
-    return (lhs_subtype > rhs_subtype);
-    //at this point - how are the features different?
+    if (lhs_subtype != rhs_subtype) {
+        return (lhs_subtype > rhs_subtype);
+    }
+
+    //teat6: (tie breaker) not overly uncommon case: 
+    //  input is not gene model but generic region features.
+    if (lhs_subtype == /* rhs_subtype == */ CSeqFeatData::eSubtype_region) {
+        auto lhs_region = lhs.GetData().GetRegion();
+        auto rhs_region = rhs.GetData().GetRegion();
+        if (lhs_region != rhs_region) {
+            return (lhs_region > rhs_region);
+        }
+    }
+
+    // any other bright ideas? please add them just above this comment.
+    return false;
 }
 
 

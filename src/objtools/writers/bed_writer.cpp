@@ -380,7 +380,7 @@ bool CBedWriter::xWriteTrackedAnnot(
     CFeat_CI pMf(sah, sel);
     feature::CFeatTree featTree(pMf);
     vector<CMappedFeat> vRoots = featTree.GetRootFeatures();
-    std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareLocations);
+    std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareFeatures);
     for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
         CMappedFeat mRoot = *pit;
         if (isThreeFeatData) {

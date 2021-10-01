@@ -172,7 +172,7 @@ public:
         const CSeq_feat&,
         string&);
 
-    static bool CompareLocations(
+    static bool CompareFeatures(
         const CMappedFeat& lhs,
         const CMappedFeat& rhs);
 
