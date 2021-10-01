@@ -54,10 +54,10 @@ BEGIN_NCBI_SCOPE
 class NCBI_JAEGER_TRACER_EXPORT CJaegerTracerSpan : public ITracerSpan
 {
 public:
-    CJaegerTracerSpan(unique_ptr<opentracing::Span> span) : m_Span(move(span)) {}
-    opentracing::Span& GetSpan(void) { return *m_Span; }
+    CJaegerTracerSpan(shared_ptr<jaegertracing::Span> span) : m_Span(move(span)) {}
+    jaegertracing::Span& GetSpan(void) { return *m_Span; }
 private:
-    unique_ptr<opentracing::Span> m_Span;
+    shared_ptr<jaegertracing::Span> m_Span;
 };
 
 

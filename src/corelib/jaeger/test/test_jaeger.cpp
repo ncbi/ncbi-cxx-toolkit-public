@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiexec.hpp>
 #include <corelib/jaeger/jaeger_tracer.hpp>
 
 USING_NCBI_SCOPE;
@@ -58,10 +59,17 @@ void CJaegerTestApp::Init()
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Jaeger test application");
 
-    arg_desc->AddOptionalKey("service",
-                            "service",
-                            "Jaeger service name",
-                            CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("service", "service", "Jaeger service name",
+        CArgDescriptions::eString);
+    arg_desc->AddDefaultKey("max_depth", "max_depth", "Max sub-process depth",
+        CArgDescriptions::eInteger, "2");
+    arg_desc->AddDefaultKey("spawn", "spawn", "Number of processes to spawn",
+        CArgDescriptions::eInteger, "2");
+
+    arg_desc->AddOptionalKey("phid", "phid", "Parent PHID",
+        CArgDescriptions::eString);
+    arg_desc->AddDefaultKey("depth", "depth", "Current sub-process depth",
+        CArgDescriptions::eInteger, "0");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -72,12 +80,41 @@ int CJaegerTestApp::Run(void)
     const CArgs& args = GetArgs();
 
     CDiagContext::SetOldPostFormat(false);
-    shared_ptr<CJaegerTracer> tracer = args["service"] ?
-        make_shared<CJaegerTracer>(args["service"].AsString()) :
+
+    int max_depth = args["max_depth"].AsInteger();
+    int depth = args["depth"].AsInteger();
+    int spawn = args["spawn"].AsInteger();
+
+    string service;
+    if ( args["service"] ) service = args["service"].AsString();
+    shared_ptr<CJaegerTracer> tracer = !service.empty() ?
+        make_shared<CJaegerTracer>(service) :
         make_shared<CJaegerTracer>();
+
+    string phid;
+    if (args["phid"]) {
+        phid = args["phid"].AsString();
+        GetDiagContext().SetDefaultHitID(phid);
+    }
+    else if ( depth == 0 ) {
+        phid = GetDiagContext().GetDefaultHitID();
+    }
 
     CDiagContext::GetRequestContext().SetRequestTracer(tracer);
     GetDiagContext().PrintRequestStart();
+    if (depth < max_depth) {
+        for (int i = 0; i < spawn; ++i) {
+            string cmd = GetProgramExecutablePath();
+            if ( !service.empty() ) cmd += " -service " + service;
+            cmd += " -max_depth " + NStr::NumericToString(max_depth);
+            cmd += " -depth " + NStr::NumericToString(depth + 1);
+            cmd += " -phid " + CDiagContext::GetRequestContext().GetHitID() + "." + NStr::NumericToString(i + 1);
+            try {
+                CExec::System(cmd.c_str());
+            }
+            catch (...) {}
+        }
+    }
     GetDiagContext().PrintRequestStop();
     return 0;
 }
