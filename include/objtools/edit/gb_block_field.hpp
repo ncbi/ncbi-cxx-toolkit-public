@@ -58,15 +58,16 @@ public:
     CGBBlockField(EGBBlockFieldType field_type = eGBBlockFieldType_Keyword)
         : m_FieldType(field_type),
           m_StringConstraint() { m_Subtype = CSeqdesc::e_Genbank; }
-    virtual string GetVal(const CObject& object);
-    virtual vector<string> GetVals(const CObject& object);
-    virtual bool IsEmpty(const CObject& object) const;
-    virtual void ClearVal(CObject& object);
-    virtual bool SetVal(CObject& object, const string& val, EExistingText existing_text);
-    virtual string IsValid(const string& val) { return ""; };
-    virtual vector<string> IsValid(const vector<string>& values) {vector<string> rval; return rval; };
-    virtual void SetConstraint(const string& field, CConstRef<CStringConstraint> string_constraint);
-    virtual bool AllowMultipleValues();
+    string GetVal(const CObject& object) override;
+    vector<string> GetVals(const CObject& object) override;
+    bool IsEmpty(const CObject& object) const override;
+    void ClearVal(CObject& object) override;
+    bool SetVal(CObject& object, const string& val, EExistingText existing_text) override;
+    string IsValid(const string& value) override { return string(); }
+    vector<string> IsValid(const vector<string>& values) override { return vector<string>(); }
+    void SetConstraint(const string& field, CConstRef<CStringConstraint> string_constraint) override;
+    bool AllowMultipleValues() override;
+
     static EGBBlockFieldType GetTypeForLabel(string label);
     static string GetLabelForType(EGBBlockFieldType field_type);
 

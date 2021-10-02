@@ -51,25 +51,27 @@ BEGIN_SCOPE(edit)
 class NCBI_XOBJEDIT_EXPORT CFieldHandler : public CObject
 {
 public:
-    virtual vector<CConstRef<CObject> > GetObjects(CBioseq_Handle bsh) = 0;
-    virtual vector<CConstRef<CObject> > GetObjects(CSeq_entry_Handle seh, const string& constraint_field, CRef<CStringConstraint> string_constraint) = 0;
-    virtual vector<CRef<CApplyObject> > GetApplyObjects(CBioseq_Handle bsh) = 0;
+    virtual vector<CConstRef<CObject>> GetObjects(CBioseq_Handle bsh) = 0;
+    virtual vector<CConstRef<CObject>> GetObjects(CSeq_entry_Handle seh,
+                                                  const string& constraint_field,
+                                                  CRef<CStringConstraint> string_constraint) = 0;
+    virtual vector<CRef<CApplyObject>> GetApplyObjects(CBioseq_Handle bsh) = 0;
     virtual string GetVal(const CObject& object) = 0;
     virtual vector<string> GetVals(const CObject& object) = 0;
     virtual bool IsEmpty(const CObject& object) const = 0;
     virtual void ClearVal(CObject& object) = 0;
     virtual bool SetVal(CObject& object, const string& val, EExistingText existing_text) = 0;
-    virtual string IsValid(const string& /*val*/) { return ""; };
-    virtual vector<string> IsValid(const vector<string>& /*values*/) { vector<string> x; return x; };
+    virtual string IsValid(const string& /*value*/) { return string(); }
+    virtual vector<string> IsValid(const vector<string>& /*values*/) { return vector<string>(); }
     virtual CSeqFeatData::ESubtype GetFeatureSubtype() = 0;
     virtual CSeqdesc::E_Choice GetDescriptorSubtype() = 0;
     virtual void SetConstraint(const string& field, CConstRef<CStringConstraint> string_constraint) = 0;
     virtual bool AllowMultipleValues() = 0;
-    virtual vector<CConstRef<CObject> > GetRelatedObjects(const CObject& object, CRef<CScope> scope) = 0;
-    virtual vector<CConstRef<CObject> > GetRelatedObjects(const CApplyObject& object) = 0;
-    virtual vector<CRef<CApplyObject> > GetRelatedApplyObjects(const CObject& object, CRef<CScope> scope);
-    static bool QualifierNamesAreEquivalent (string name1, string name2);
-    static vector<CRef<CApplyObject> > GetApplyObjectsFromRelatedObjects(vector<CConstRef<CObject> >, CRef<CScope> scope);
+    virtual vector<CConstRef<CObject>> GetRelatedObjects(const CObject& object, CRef<CScope> scope) = 0;
+    virtual vector<CConstRef<CObject>> GetRelatedObjects(const CApplyObject& object) = 0;
+    virtual vector<CRef<CApplyObject>> GetRelatedApplyObjects(const CObject& object, CRef<CScope> scope);
+    static bool QualifierNamesAreEquivalent(string name1, string name2);
+    static vector<CRef<CApplyObject>> GetApplyObjectsFromRelatedObjects(vector<CConstRef<CObject>>, CRef<CScope> scope);
 };
 
 

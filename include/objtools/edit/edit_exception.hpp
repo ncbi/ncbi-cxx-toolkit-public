@@ -48,7 +48,7 @@ public:
         eNotImplemented,
         eInvalid
     };
-    virtual const char* GetErrCodeString(void) const;
+    const char* GetErrCodeString() const override;
     NCBI_EXCEPTION_DEFAULT(CEditException, CException);
 };
 
