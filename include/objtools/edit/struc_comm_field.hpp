@@ -55,30 +55,36 @@ class NCBI_XOBJEDIT_EXPORT CStructuredCommentField : public CFieldHandler
 {
 public:
 
-    CStructuredCommentField (const string& prefix, const string& field_name) : m_Prefix(prefix), m_FieldName(field_name)
-            { CComment_rule::NormalizePrefix(m_Prefix); }
+    CStructuredCommentField(const string& prefix, const string& field_name)
+      : m_Prefix(prefix), m_FieldName(field_name)
+    {
+        CComment_rule::NormalizePrefix(m_Prefix);
+    }
 
-    virtual vector<CConstRef<CObject> > GetObjects(CBioseq_Handle bsh);
-    virtual vector<CConstRef<CObject> > GetObjects(CSeq_entry_Handle seh, const string& constraint_field, CRef<CStringConstraint> string_constraint);
-    virtual vector<CRef<CApplyObject> > GetApplyObjects(CBioseq_Handle bsh);
-    virtual vector<CConstRef<CObject> > GetRelatedObjects(const CObject& object, CRef<CScope> scope);
-    virtual vector<CConstRef<CObject> > GetRelatedObjects(const CApplyObject& object);
+    vector<CConstRef<CObject>> GetObjects(CBioseq_Handle bsh) override;
+    vector<CConstRef<CObject>> GetObjects(CSeq_entry_Handle seh,
+                                          const string& constraint_field,
+                                          CRef<CStringConstraint> string_constraint) override;
+    vector<CRef<CApplyObject>> GetApplyObjects(CBioseq_Handle bsh) override;
+    vector<CConstRef<CObject>> GetRelatedObjects(const CObject& object, CRef<CScope> scope) override;
+    vector<CConstRef<CObject>> GetRelatedObjects(const CApplyObject& object) override;
 
-    virtual bool IsEmpty(const CObject& object) const;
+    bool IsEmpty(const CObject& object) const override;
+    string GetVal(const CObject& object) override;
+    vector<string> GetVals(const CObject& object) override;
+    void ClearVal(CObject& object) override;
 
-    virtual string GetVal(const CObject& object);
-    virtual vector<string> GetVals(const CObject& object);
+    CSeqFeatData::ESubtype GetFeatureSubtype() override { return CSeqFeatData::eSubtype_bad; }
+    CSeqdesc::E_Choice GetDescriptorSubtype() override { return CSeqdesc::e_User; }
+    void SetConstraint(const string& field_name, CConstRef<CStringConstraint> string_constraint) override;
+    bool AllowMultipleValues() override { return false; }
+    bool SetVal(CObject& object,
+                const string& newValue,
+                EExistingText existing_text = eExistingText_replace_old) override;
+    bool SetVal(CUser_field& field, const string& newValue, EExistingText existing_text);
 
-    virtual void ClearVal(CObject& object);
-
-    virtual CSeqFeatData::ESubtype GetFeatureSubtype() { return CSeqFeatData::eSubtype_bad; };
-    virtual CSeqdesc::E_Choice GetDescriptorSubtype() { return CSeqdesc::e_User; };
-    virtual void SetConstraint(const string& field_name, CConstRef<CStringConstraint> string_constraint);
-    virtual bool AllowMultipleValues() { return false; }
-    virtual bool SetVal(CObject& object, const string & newValue, EExistingText existing_text = eExistingText_replace_old);
-    bool SetVal(CUser_field& field, const string & newValue, EExistingText existing_text);
-    virtual string GetLabel() const { return m_Prefix + " " + m_FieldName; };
-    bool IsStructuredCommentForThisField (const CUser_object& user) const;
+    virtual string GetLabel() const { return m_Prefix + " " + m_FieldName; }
+    bool IsStructuredCommentForThisField(const CUser_object& user) const;
     static CRef<CUser_object> MakeUserObject(const string& prefix);
     static bool IsValid(const CUser_object& obj, const string& desired_prefix);
     static void ReorderFields(CUser_object& obj);

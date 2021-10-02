@@ -56,31 +56,32 @@ public:
     CDBLinkField(EDBLinkFieldType field_type) : m_FieldType(field_type)
       , m_ConstraintFieldType(eDBLinkFieldType_Unknown), m_StringConstraint() {}
 
-    virtual vector<CConstRef<CObject> > GetObjects(CBioseq_Handle bsh) override;
-    virtual vector<CConstRef<CObject> > GetObjects(CSeq_entry_Handle seh, const string& constraint_field, CRef<CStringConstraint> string_constraint) override;
-    virtual vector<CRef<CApplyObject> > GetApplyObjects(CBioseq_Handle bsh) override;
-    virtual vector<CConstRef<CObject> > GetRelatedObjects(const CObject& object, CRef<CScope> scope) override;
-    virtual vector<CConstRef<CObject> > GetRelatedObjects(const CApplyObject& object) override;
+    vector<CConstRef<CObject>> GetObjects(CBioseq_Handle bsh) override;
+    vector<CConstRef<CObject>> GetObjects(CSeq_entry_Handle seh,
+                                          const string& constraint_field,
+                                          CRef<CStringConstraint> string_constraint) override;
+    vector<CRef<CApplyObject>> GetApplyObjects(CBioseq_Handle bsh) override;
+    vector<CConstRef<CObject>> GetRelatedObjects(const CObject& object, CRef<CScope> scope) override;
+    vector<CConstRef<CObject>> GetRelatedObjects(const CApplyObject& object) override;
 
-    virtual bool IsEmpty(const CObject& object) const override;
+    bool IsEmpty(const CObject& object) const override;
+    string GetVal(const CObject& object) override;
+    vector<string> GetVals(const CObject& object) override;
+    void ClearVal(CObject& object) override;
 
-    virtual string GetVal(const CObject& object) override;
-    virtual vector<string> GetVals(const CObject& object) override;
+    CSeqFeatData::ESubtype GetFeatureSubtype() override { return CSeqFeatData::eSubtype_bad; }
+    CSeqdesc::E_Choice GetDescriptorSubtype() override { return CSeqdesc::e_User; }
+    void SetConstraint(const string& field_name, CConstRef<CStringConstraint> string_constraint) override;
+    bool AllowMultipleValues() override { return true; }
 
-    virtual void ClearVal(CObject& object) override;
-
-    virtual CSeqFeatData::ESubtype GetFeatureSubtype() override { return CSeqFeatData::eSubtype_bad; };
-    virtual CSeqdesc::E_Choice GetDescriptorSubtype() override { return CSeqdesc::e_User; };
-    virtual void SetConstraint(const string& field_name, CConstRef<CStringConstraint> string_constraint) override;
-    virtual bool AllowMultipleValues() override { return true; };
-    virtual bool SetVal(CObject& object, const string & newValue, EExistingText existing_text = eExistingText_replace_old) override;
-    bool SetVal(CSeqdesc& object, const string & newValue, EExistingText existing_text);
-    bool SetVal(CUser_object& object, const string & newValue, EExistingText existing_text);
-    bool SetVal(CUser_field& field, const string & newValue, EExistingText existing_text);
+    bool SetVal(CObject& object, const string& newValue, EExistingText existing_text = eExistingText_replace_old) override;
+    bool SetVal(CSeqdesc& object, const string& newValue, EExistingText existing_text);
+    bool SetVal(CUser_object& object, const string& newValue, EExistingText existing_text);
+    bool SetVal(CUser_field& field, const string& newValue, EExistingText existing_text);
     virtual string GetLabel() const;
     static EDBLinkFieldType GetTypeForLabel(string label);
     static const string& GetLabelForType(EDBLinkFieldType field_type);
-    static bool IsDBLink (const CUser_object& user);
+    static bool IsDBLink(const CUser_object& user);
     static CTempString GetNormalizedDBLinkFieldName(const CTempString& orig_label);
     static vector<string> GetFieldNames();
     static CRef<CUser_object> MakeUserObject();

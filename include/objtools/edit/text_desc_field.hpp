@@ -50,20 +50,21 @@ BEGIN_SCOPE(edit)
 class NCBI_XOBJEDIT_EXPORT CTextDescriptorField : public CFieldHandler
 {
 public:
-    virtual vector<CConstRef<CObject> > GetObjects(CBioseq_Handle bsh);
-    virtual vector<CConstRef<CObject> > GetObjects(CSeq_entry_Handle seh, const string& constraint_field, CRef<CStringConstraint> string_constraint);
-    virtual vector<CRef<CApplyObject> > GetApplyObjects(CBioseq_Handle bsh);
-    virtual vector<CConstRef<CObject> > GetRelatedObjects(const CObject& object, CRef<CScope> scope);
-    virtual vector<CConstRef<CObject> > GetRelatedObjects(const CApplyObject& object);
+    vector<CConstRef<CObject>> GetObjects(CBioseq_Handle bsh) override;
+    vector<CConstRef<CObject>> GetObjects(CSeq_entry_Handle seh,
+                                          const string& constraint_field,
+                                          CRef<CStringConstraint> string_constraint) override;
+    vector<CRef<CApplyObject>> GetApplyObjects(CBioseq_Handle bsh) override;
+    vector<CConstRef<CObject>> GetRelatedObjects(const CObject& object, CRef<CScope> scope) override;
+    vector<CConstRef<CObject>> GetRelatedObjects(const CApplyObject& object) override;
 
-    virtual CSeqFeatData::ESubtype GetFeatureSubtype() { return CSeqFeatData::eSubtype_bad; } ;
-    virtual CSeqdesc::E_Choice GetDescriptorSubtype() { return m_Subtype; } ;
+    CSeqFeatData::ESubtype GetFeatureSubtype() override { return CSeqFeatData::eSubtype_bad; }
+    CSeqdesc::E_Choice GetDescriptorSubtype() override { return m_Subtype; }
+    void SetConstraint(const string& field_name, CConstRef<CStringConstraint> string_constraint) override {}
+    bool AllowMultipleValues() override { return false; }
 
-
-    virtual void SetConstraint(const string& field_name, CConstRef<CStringConstraint> string_constraint) {};
-    CSeqdesc::E_Choice GetSubtype() { return m_Subtype; };
-    void SetSubtype(CSeqdesc::E_Choice subtype) { m_Subtype = subtype; };
-    virtual bool AllowMultipleValues() { return false; };
+    CSeqdesc::E_Choice GetSubtype() { return m_Subtype; }
+    void SetSubtype(CSeqdesc::E_Choice subtype) { m_Subtype = subtype; }
 protected:
     CSeqdesc::E_Choice m_Subtype;
 };
@@ -72,25 +73,25 @@ protected:
 class NCBI_XOBJEDIT_EXPORT CCommentDescField : public CTextDescriptorField
 {
 public:
-    CCommentDescField () { m_Subtype = CSeqdesc::e_Comment; };
+    CCommentDescField() { m_Subtype = CSeqdesc::e_Comment; }
 
-    virtual string GetVal(const CObject& object);
-    virtual vector<string> GetVals(const CObject& object);
-    virtual bool IsEmpty(const CObject& object) const;
-    virtual void ClearVal(CObject& object);
-    virtual bool SetVal(CObject& object, const string& val, EExistingText existing_text);
+    string GetVal(const CObject& object) override;
+    vector<string> GetVals(const CObject& object) override;
+    bool IsEmpty(const CObject& object) const override;
+    void ClearVal(CObject& object) override;
+    bool SetVal(CObject& object, const string& val, EExistingText existing_text) override;
 };
 
 
 class NCBI_XOBJEDIT_EXPORT CDefinitionLineField : public CTextDescriptorField
 {
 public:
-    CDefinitionLineField () { m_Subtype = CSeqdesc::e_Title; };
-    virtual string GetVal(const CObject& object);
-    virtual vector<string> GetVals(const CObject& object);
-    virtual bool IsEmpty(const CObject& object) const;
-    virtual void ClearVal(CObject& object);
-    virtual bool SetVal(CObject& object, const string& val, EExistingText existing_text);
+    CDefinitionLineField() { m_Subtype = CSeqdesc::e_Title; }
+    string GetVal(const CObject& object) override;
+    vector<string> GetVals(const CObject& object) override;
+    bool IsEmpty(const CObject& object) const override;
+    void ClearVal(CObject& object) override;
+    bool SetVal(CObject& object, const string& val, EExistingText existing_text) override;
 };
 
 
