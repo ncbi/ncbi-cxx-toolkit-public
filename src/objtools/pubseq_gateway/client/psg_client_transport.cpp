@@ -503,7 +503,7 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t
         { ":method", "GET" },
         { ":scheme", TPSG_Https::GetDefault() ? "https" : "http" },
         { ":authority", m_Authority },
-        { ":path", NGHTTP2_NV_FLAG_NO_COPY_VALUE },
+        { ":path" },
         { "user-agent", SUvNgHttp2_UserAgent::Get() },
         { "http_ncbi_sid" },
         { "http_ncbi_phid" },
