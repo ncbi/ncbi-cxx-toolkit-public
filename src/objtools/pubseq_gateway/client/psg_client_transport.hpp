@@ -522,7 +522,7 @@ private:
 
     void OnReset(SUvNgHttp2_Error error) override;
 
-    array<SNgHttp2_Header<NGHTTP2_NV_FLAG_NO_COPY_NAME | NGHTTP2_NV_FLAG_NO_COPY_VALUE>, eSize> m_Headers;
+    array<SNgHttp2_Header<NGHTTP2_NV_FLAG_NO_COPY_NAME>, eSize> m_Headers;
     const TPSG_RequestTimeout m_RequestTimeout;
     SPSG_AsyncQueue& m_Queue;
     TRequests m_Requests;
