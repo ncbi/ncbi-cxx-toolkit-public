@@ -235,18 +235,19 @@ if not "%unknown%"=="" (
   goto :FAIL
 )
 
+set CMAKE_GENERATOR_ARGS=
 if not "%prebuilt_dir%"=="" (
   if exist "%prebuilt_dir%%prebuilt_name%\cmake\buildinfo" (
     copy /Y "%prebuilt_dir%%prebuilt_name%\cmake\buildinfo" "%TEMP%\%prebuilt_name%cmakebuildinfo.bat" >NUL
     call "%TEMP%\%prebuilt_name%cmakebuildinfo.bat"
     del "%TEMP%\%prebuilt_name%cmakebuildinfo.bat"
+    set CMAKE_GENERATOR_ARGS=-A x64
   ) else (
     call :ERROR Buildinfo not found in %prebuilt_dir%%prebuilt_name%
     goto :FAIL
   )
 )
 
-set CMAKE_GENERATOR_ARGS=
 if "%CMAKE_GENERATOR%"=="" (
   if "%VISUAL_STUDIO%"=="2019" (
     set CMAKE_GENERATOR=Visual Studio 16 2019
