@@ -840,7 +840,7 @@ public:
                        size_t      buf_size = kConn_DefaultBufSize);
 
     /// Build a stream on top of an existing data area of a specified size.
-    /// The contents of the area is what will be read first from the stream.
+    /// The contents of the area are what will be read first from the stream.
     /// Writing to the stream will _not_ modify the contents of the area.
     /// When read from the stream, the written data will appear following the
     /// initial data block.
