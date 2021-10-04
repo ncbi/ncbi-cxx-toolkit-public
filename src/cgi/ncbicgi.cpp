@@ -792,6 +792,21 @@ void CCgiCookies::Clear(void)
 }
 
 
+void CCgiCookies::SetAllCookiesSecure(bool value)
+{
+    NON_CONST_ITERATE (TSet, cookie, m_Cookies) {
+        (*cookie)->SetSecure(value);
+    }
+}
+
+
+void CCgiCookies::SetAllCookiesHttpOnly(bool value)
+{
+    NON_CONST_ITERATE (TSet, cookie, m_Cookies) {
+        (*cookie)->SetHttpOnly(value);
+    }
+}
+
 
 ////////////////////////////////////////////////////////
 //  CTrackingEnvHolder
