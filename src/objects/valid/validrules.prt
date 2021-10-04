@@ -1064,9 +1064,6 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
         field-name "STR locus name" ,
         required TRUE } ,
       {
-        field-name "STR locus alt. name" ,
-        required FALSE } ,
-      {
         field-name "Length-based allele" ,
         required TRUE } ,
       {
@@ -1104,6 +1101,9 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
         required FALSE } ,
       {
         field-name "Cytogenetic Location" ,
+        required FALSE } ,
+      {
+        field-name "STR locus alt. name" ,
         required FALSE }
     } ,
     require-order TRUE ,
