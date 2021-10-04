@@ -53,7 +53,8 @@ USING_NCBI_SCOPE;
 #endif
 
 
-CPSGS_UvLoopBinder::CPSGS_UvLoopBinder(uv_loop_t *  loop)
+CPSGS_UvLoopBinder::CPSGS_UvLoopBinder(uv_loop_t *  loop) :
+    m_Loop(loop)
 {
     // This call always succeeds
     #if USE_PREPARE_CB
@@ -114,5 +115,13 @@ void CPSGS_UvLoopBinder::x_UvOnCallback(void)
     for (auto & cb : callbacks) {
         cb.m_ProcCallback(cb.m_UserData);
     }
+}
+
+
+void CPSGS_UvLoopBinder::SendAsyncEvent(void)
+{
+    int     ret = uv_async_send(&m_Async);
+    if (ret < 0)
+        PSG_ERROR("Async send error: " + string(uv_strerror(ret)));
 }
 

@@ -563,9 +563,9 @@ int CPubseqGatewayApp::Run(void)
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {
                 // It's a browser, most probably admin request
-                reply->GetHttpReply()->SetContentType(ePSGS_ImageMime);
-                reply->GetHttpReply()->SetContentLength(sizeof(favicon));
-                reply->GetHttpReply()->SendOk((const char *)(favicon), sizeof(favicon), true);
+                reply->SetContentType(ePSGS_ImageMime);
+                reply->SetContentLength(sizeof(favicon));
+                reply->SendOk((const char *)(favicon), sizeof(favicon), true);
                 return 0;
             }, &get_parser, nullptr);
 
@@ -1501,7 +1501,8 @@ void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
     reply->SetContentType(ePSGS_PSGMime);
     reply->PrepareReplyMessage(message, status, code, severity);
     reply->PrepareReplyCompletion();
-    reply->Flush();
+    reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
+    reply->SetCompleted();
 }
 
 

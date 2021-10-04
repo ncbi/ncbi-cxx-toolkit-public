@@ -33,6 +33,7 @@
 #include "psgs_dispatcher.hpp"
 #include "pubseq_gateway_logging.hpp"
 #include "http_server_transport.hpp"
+#include "pubseq_gateway.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -102,7 +103,8 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         reply->PrepareReplyMessage(msg, CRequestStatus::e404_NotFound,
                                    ePSGS_NoProcessor, eDiag_Error);
         reply->PrepareReplyCompletion();
-        reply->Flush(true);
+        reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
+        reply->SetCompleted();
         x_PrintRequestStop(request, CRequestStatus::e404_NotFound);
     }
 
@@ -187,6 +189,12 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
 }
 
 
+void cb(void *  d)
+{
+    IPSGS_Processor *  processor = (IPSGS_Processor *)(d);
+    CPubseqGatewayApp::GetInstance()->SignalFinishProcessing(processor, CPSGS_Dispatcher::ePSGS_Fromework);
+}
+
 void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                                               EPSGS_SignalSource  source)
 {
@@ -201,6 +209,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     size_t                          canceled_count = 0;
     size_t                          finished_count = 0;
     size_t                          total_count = 0;
+    auto                            reply = processor->GetReply();
 
     m_GroupsLock.lock();
 
@@ -216,7 +225,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
         // Call by mistake? The processor reports status as in progress and
         // there is a call to report that it finished
         if (need_trace) {
-            processor->GetReply()->SendTrace(
+            reply->SendTrace(
                 "Dispatcher received signal (from " +
                 CPSGS_Dispatcher::SignalSourceToString(source) +
                 ") that the processor " + processor->GetName() +
@@ -243,7 +252,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                 ++finished_count;
 
                 if (need_trace) {
-                    processor->GetReply()->SendTrace(
+                    reply->SendTrace(
                         "Dispatcher received signal (from " +
                         CPSGS_Dispatcher::SignalSourceToString(source) +
                         ") that the processor " + processor->GetName() +
@@ -263,7 +272,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                 ++finished_count;
 
                 if (need_trace) {
-                    processor->GetReply()->SendTrace(
+                    reply->SendTrace(
                         "Dispatcher received signal (from " +
                         CPSGS_Dispatcher::SignalSourceToString(source) +
                         ") that the previously canceled processor " +
@@ -283,7 +292,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
             // chunk has not been sent. Thus we should continue as usual.
 
             if (need_trace && source == CPSGS_Dispatcher::ePSGS_Processor) {
-                processor->GetReply()->SendTrace(
+                reply->SendTrace(
                     "Dispatcher received signal (from " +
                     CPSGS_Dispatcher::SignalSourceToString(source) +
                     ") that the processor " + processor->GetName() +
@@ -313,43 +322,41 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
         }
     }
 
-    auto    reply = processor->GetReply();
 
     // Here: there are still going, finished and canceled processors.
     //       The reply flush must be done if all finished or canceled.
     //       The processors group removal if all finished.
 
-    if (finished_count + canceled_count == total_count) {
+    bool    pre_finished = (finished_count + canceled_count) == total_count;
+    bool    fully_finished = finished_count == total_count;
+
+    if (pre_finished) {
         // The reply needs to be flushed if it has not been done yet
 
+        if (!reply->IsFinished() && reply->IsOutputReady()) {
+            // Map the processor finish to the request status
+            CRequestStatus::ECode   request_status = x_MapProcessorFinishToStatus(best_status);
 
-        if (!reply->IsFinallyFlushed()) {
-            if (!reply->IsFinished() && reply->IsOutputReady()) {
-                // Memorize that for this request everything was sent
-                reply->SetFinallyFlushed();
-
-                // Map the processor finish to the request status
-                CRequestStatus::ECode   request_status = x_MapProcessorFinishToStatus(best_status);
-
-                if (need_trace) {
-                    reply->SendTrace(
-                    "Dispatcher: request processing finished; final status: " +
-                    to_string(request_status) +
-                    ". The processors group will be deleted.",
-                    processor->GetRequest()->GetStartTimestamp());
-                }
-
-                reply->PrepareReplyCompletion();
-                reply->SendAccumulated();
-                x_PrintRequestStop(processor->GetRequest(), request_status);
+            if (need_trace) {
+                reply->SendTrace(
+                "Dispatcher: request processing finished; final status: " +
+                to_string(request_status) +
+                ". The processors group will be deleted.",
+                processor->GetRequest()->GetStartTimestamp());
             }
+
+            reply->PrepareReplyCompletion();
+            // This will switch the stream to the finished state, i.e.
+            // IsFinished() will return true
+            reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
+            x_PrintRequestStop(processor->GetRequest(), request_status);
         }
     }
 
-    if (finished_count == total_count && reply->IsFinallyFlushed()) {
+    if (fully_finished) {
         // Clear the group after the final chunk is sent
-        if (!reply->IsFinished() && reply->IsOutputReady()) {
-            reply->Flush();
+        if (!reply->IsCompleted() && reply->IsFinished()) {
+            reply->SetCompleted();
             m_ProcessorGroups.erase(procs);
         }
     }

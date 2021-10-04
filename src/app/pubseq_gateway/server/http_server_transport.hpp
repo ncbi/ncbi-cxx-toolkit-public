@@ -118,6 +118,7 @@ public:
         m_OutputFinished(false),
         m_Postponed(false),
         m_Canceled(false),
+        m_Completed(false),
         m_State(eReplyInitialized),
         m_HttpProto(proto),
         m_HttpConn(http_conn),
@@ -125,6 +126,7 @@ public:
         m_ReplyContentType(ePSGS_NotSet),
         m_CdUid(cd_uid)
     {}
+
 
     CHttpReply(const CHttpReply&) = delete;
     CHttpReply(CHttpReply&&) = delete;
@@ -150,6 +152,7 @@ public:
         m_OutputFinished = false;
         m_Postponed = false;
         m_Canceled = false;
+        m_Completed = false;
         m_State = eReplyInitialized;
         m_HttpProto = nullptr;
         m_HttpConn = nullptr;
@@ -189,14 +192,22 @@ public:
     void Send(const char *  payload, size_t  payload_len,
               bool  is_persist, bool  is_last)
     {
-        h2o_iovec_t     body;
-        if (payload_len == 0 || (is_persist && !is_last)) {
-            body.base = (char*)payload;
-            body.len = payload_len;
+        if (payload_len == 0) {
+            if (is_last) {
+                // If it is not the last and there is nothing to send then the
+                // call will do nothing
+                x_DoSend(nullptr, 0, true);
+            }
         } else {
-            body = h2o_strdup(&m_Req->pool, payload, payload_len);
+            h2o_iovec_t     body;
+            if (is_persist) {
+                body.base = (char*)payload;
+                body.len = payload_len;
+            } else {
+                body = h2o_strdup(&m_Req->pool, payload, payload_len);
+            }
+            x_DoSend(&body, payload_len > 0 ? 1 : 0, is_last);
         }
-        x_DoSend(&body, payload_len > 0 ? 1 : 0, is_last);
     }
 
     void Send(std::vector<h2o_iovec_t> &  payload, bool  is_last)
@@ -207,49 +218,6 @@ public:
                 x_DoSend(&payload.front(), payload_size, is_last);
             else
                 x_DoSend(nullptr, payload_size, is_last);
-        }
-    }
-
-    void SendAccumulated(h2o_iovec_t *  vec, size_t  count)
-    {
-        if (!m_HttpConn)
-            NCBI_THROW(CPubseqGatewayException, eConnectionNotAssigned,
-                       "Connection is not assigned");
-
-        if (m_HttpConn->IsClosed())
-            return;
-
-        if (!m_OutputIsReady)
-            NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
-                       "Output is not in ready state");
-
-        switch (m_State) {
-            case eReplyInitialized:
-                if (!m_Canceled) {
-                    x_SetContentType();
-                    x_SetCdUid();
-                    m_State = eReplyStarted;
-                    m_Req->res.status = 200;
-                    m_Req->res.reason = k_ReasonOK;
-                    AssignGenerator();
-                    m_OutputIsReady = false;
-                    h2o_start_response(m_Req, &m_RespGenerator);
-                }
-                break;
-            case eReplyStarted:
-                break;
-            case eReplyFinished:
-                NCBI_THROW(CPubseqGatewayException, eRequestAlreadyFinished,
-                           "Request has already been finished");
-                break;
-        }
-
-        if (m_Canceled) {
-            if (!m_OutputFinished && m_OutputIsReady)
-                x_SendCanceled();
-        } else {
-            m_OutputIsReady = false;
-            h2o_send(m_Req, vec, count, H2O_SEND_STATE_IN_PROGRESS);
         }
     }
 
@@ -331,6 +299,12 @@ public:
 
     bool IsClosed(void) const
     { return m_HttpConn->IsClosed(); }
+
+    bool IsCompleted(void) const
+    { return m_Completed; }
+
+    void SetCompleted(void)
+    { m_Completed = true; }
 
     void SetPostponed(void)
     { m_Postponed = true; }
@@ -473,8 +447,9 @@ private:
         http_reply->ProceedCB();
     }
 
-    void x_DoSend(h2o_iovec_t *  vec, size_t  count, bool  is_last,
-                  int  status=200, const char *  reason=k_ReasonOK)
+    // true => OK
+    // false => No action possible
+    bool x_ConnectionPrecheck(size_t  count, bool  is_last)
     {
         if (!m_HttpConn)
             NCBI_THROW(CPubseqGatewayException, eConnectionNotAssigned,
@@ -483,23 +458,25 @@ private:
         if (m_HttpConn->IsClosed()) {
             m_OutputFinished = true;
             if (count > 0)
-                PSG_ERROR("attempt to send " << count << " chunks (is_last=" <<
+                PSG_ERROR("Attempt to send " << count << " chunks (is_last=" <<
                           is_last << ") to a closed connection");
             if (is_last) {
                 m_State = eReplyFinished;
             } else {
                 x_DoCancel();
             }
-            return;
+            return false;
         }
 
         if (!m_OutputIsReady)
             NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
                        "Output is not in ready state");
 
-        PSG_TRACE("x_DoSend: " << count << " chunks, "
-                  "is_last: " << is_last << ", state: " << m_State);
+        return true;
+    }
 
+    void x_HandleConnectionState(int  status, const char *  reason)
+    {
         switch (m_State) {
             case eReplyInitialized:
                 if (!m_Canceled) {
@@ -520,6 +497,18 @@ private:
                            "Request has already been finished");
                 break;
         }
+    }
+
+    void x_DoSend(h2o_iovec_t *  vec, size_t  count, bool  is_last,
+                  int  status=200, const char *  reason=k_ReasonOK)
+    {
+        if (!x_ConnectionPrecheck(count, is_last))
+            return;
+
+        PSG_TRACE("x_DoSend: " << count << " chunks, "
+                  "is_last: " << is_last << ", state: " << m_State);
+
+        x_HandleConnectionState(status, reason);
 
         if (m_Canceled) {
             if (!m_OutputFinished && m_OutputIsReady)
@@ -544,7 +533,8 @@ private:
             msg, CRequestStatus::e503_ServiceUnavailable,
             err_code, eDiag_Error);
         high_level_reply.PrepareReplyCompletion();
-        high_level_reply.Flush();
+        high_level_reply.Flush(CPSGS_Reply::ePSGS_SendAndFinish);
+        high_level_reply.SetCompleted();
     }
 
     void x_SendCanceled(void)
@@ -686,6 +676,7 @@ private:
     bool                            m_OutputFinished;
     bool                            m_Postponed;
     bool                            m_Canceled;
+    bool                            m_Completed;
     EReplyState                     m_State;
     CHttpProto<P> *                 m_HttpProto;
     CHttpConnection<P> *            m_HttpConn;
@@ -770,7 +761,7 @@ public:
                 reply->GetHttpReply()->AssignPendingReq(move(pending_req));
             }
             PostponedStart(reply);
-            if (reply->IsFinished()) {
+            if (reply->IsCompleted()) {
                 PSG_TRACE("Postpone self-drained");
                 x_UnregisterPending(req_it);
             }
@@ -785,7 +776,8 @@ public:
                                        CRequestStatus::e503_ServiceUnavailable,
                                        ePSGS_TooManyRequests, eDiag_Error);
             reply->PrepareReplyCompletion();
-            reply->Flush();
+            reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
+            reply->SetCompleted();
         }
     }
 
@@ -891,7 +883,7 @@ private:
     {
         auto    it = m_Pending.begin();
         while (it != m_Pending.end()) {
-            if ((*it)->IsFinished()) {
+            if ((*it)->IsCompleted()) {
                 auto    next = it;
                 ++next;
                 x_UnregisterPending(it);
@@ -1213,7 +1205,8 @@ public:
                                            CRequestStatus::e503_ServiceUnavailable,
                                            ePSGS_UnknownError, eDiag_Error);
                 reply->PrepareReplyCompletion();
-                reply->Flush();
+                reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
+                reply->SetCompleted();
                 return 0;
             }
             return -1;
@@ -1224,7 +1217,8 @@ public:
                                            CRequestStatus::e503_ServiceUnavailable,
                                            ePSGS_UnknownError, eDiag_Error);
                 reply->PrepareReplyCompletion();
-                reply->Flush();
+                reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
+                reply->SetCompleted();
                 return 0;
             }
             return -1;

@@ -781,7 +781,7 @@ void CPSGS_AnnotProcessor::x_Peek(bool  need_wait)
         // It is a stage of sending the blob. So the chunks need to be sent as
         // soon as they are available
         if (IPSGS_Processor::m_Reply->IsOutputReady())
-            IPSGS_Processor::m_Reply->Flush(false);
+            IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
 
         if (AreAllFinishedRead()) {
             for (auto &  details: m_FetchDetails) {
@@ -796,7 +796,7 @@ void CPSGS_AnnotProcessor::x_Peek(bool  need_wait)
         if (overall_final_state) {
             if (AreAllFinishedRead()) {
                 if (IPSGS_Processor::m_Reply->IsOutputReady()) {
-                    IPSGS_Processor::m_Reply->Flush(false);
+                    IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
                 }
             }
         }

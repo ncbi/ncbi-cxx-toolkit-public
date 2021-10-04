@@ -54,71 +54,43 @@ void CPSGS_Reply::ConnectionCancel(void)
 }
 
 
-void CPSGS_Reply::Flush(void)
+void CPSGS_Reply::Flush(EPSGS_ReplyFlush  how)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
+    // Grab the lock
     while (m_ChunksLock.exchange(true)) {}
-    m_Reply->Send(m_Chunks, true);
-    m_Chunks.clear();
-    m_ChunksLock = false;
-}
 
-void CPSGS_Reply::SendAccumulated(void)
-{
-    if (m_ConnectionCanceled)
-        return;
+    if (how == ePSGS_SendAccumulated) {
+        // Only chunks
+        if (m_Chunks.empty()) {
+            // There is nothing to send
+            m_ChunksLock = false;
+            return;
+        }
 
-    while (m_ChunksLock.exchange(true)) {}
-    if (!m_Chunks.empty()) {
-        m_Reply->SendAccumulated(&m_Chunks.front(), m_Chunks.size());
-        m_Chunks.clear();
+        // false => not last; do not finish the stream
+        m_Reply->Send(m_Chunks, false);
+    } else {
+        // Chunks (if any) + set end of stream
+        // true => the last; finish the stream
+        m_Reply->Send(m_Chunks, true);
     }
-    m_ChunksLock = false;
-}
 
-void CPSGS_Reply::Flush(bool  is_last)
-{
-    if (m_ConnectionCanceled)
-        return;
-
-    while (m_ChunksLock.exchange(true)) {}
-    m_Reply->Send(m_Chunks, is_last);
     m_Chunks.clear();
     m_ChunksLock = false;
+}
 
-    if (is_last) {
-        m_Reply->CancelPending(true);
-    }
+void CPSGS_Reply::SetCompleted(void)
+{
+    m_Reply->SetCompleted();
 }
 
 
-void CPSGS_Reply::Clear(void)
+bool CPSGS_Reply::IsCompleted(void) const
 {
-    if (m_ConnectionCanceled)
-        return;
-
-    while (m_ChunksLock.exchange(true)) {}
-    m_Chunks.clear();
-    m_Reply = nullptr;
-    m_TotalSentReplyChunks = 0;
-    m_ChunksLock = false;
-}
-
-
-void CPSGS_Reply::SetContentType(EPSGS_ReplyMimeType  mime_type)
-{
-    if (m_ConnectionCanceled)
-        return;
-
-    m_Reply->SetContentType(mime_type);
-}
-
-
-shared_ptr<CCassDataCallbackReceiver> CPSGS_Reply::GetDataReadyCB(void)
-{
-    return m_Reply->GetDataReadyCB();
+    return m_Reply->IsCompleted();
 }
 
 
@@ -134,6 +106,183 @@ bool CPSGS_Reply::IsOutputReady(void) const
 }
 
 
+void CPSGS_Reply::Clear(void)
+{
+    while (m_ChunksLock.exchange(true)) {}
+    m_Chunks.clear();
+    m_Reply = nullptr;
+    m_TotalSentReplyChunks = 0;
+    m_ChunksLock = false;
+}
+
+
+shared_ptr<idblob::CCassDataCallbackReceiver> CPSGS_Reply::GetDataReadyCB(void)
+{
+    return m_Reply->GetDataReadyCB();
+}
+
+
+void CPSGS_Reply::SetContentType(EPSGS_ReplyMimeType  mime_type)
+{
+    // This call does not access the lower level structures
+    // so it is safe to set the content type without checking that the
+    // connection is canceled or closed
+    m_Reply->SetContentType(mime_type);
+}
+
+
+void CPSGS_Reply::SetContentLength(uint64_t  content_length)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+    m_Reply->SetContentLength(content_length);
+}
+
+
+void CPSGS_Reply::SendOk(const char *  payload, size_t  payload_len, bool  is_persist)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    m_Reply->SendOk(payload, payload_len, is_persist);
+
+    // OK is always the last so the reply is not needed anymore.
+    // SetCompleted() will let the framework to know that the pending op can be
+    // discarded.
+    // Typically this method would be used without the pending op so
+    // SetCompleted() would not be needed but it does not harm in those cases.
+    m_Reply->SetCompleted();
+}
+
+
+void CPSGS_Reply::Send202(const char *  payload, size_t  payload_len)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    m_Reply->Send202(payload, payload_len);
+
+    // 202 is always the last so the reply is not needed anymore.
+    // SetCompleted() will let the framework to know that the pending op can be
+    // discarded.
+    // Typically this method would be used without the pending op so
+    // SetCompleted() would not be needed but it does not harm in those cases.
+    m_Reply->SetCompleted();
+}
+
+
+void CPSGS_Reply::Send400(const char *  payload)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    m_Reply->Send400(payload);
+
+    // 400 is always the last so the reply is not needed anymore.
+    // SetCompleted() will let the framework to know that the pending op can be
+    // discarded.
+    // Typically this method would be used without the pending op so
+    // SetCompleted() would not be needed but it does not harm in those cases.
+    m_Reply->SetCompleted();
+}
+
+
+void CPSGS_Reply::Send401(const char *  payload)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    m_Reply->Send401(payload);
+
+    // 401 is always the last so the reply is not needed anymore.
+    // SetCompleted() will let the framework to know that the pending op can be
+    // discarded.
+    // Typically this method would be used without the pending op so
+    // SetCompleted() would not be needed but it does not harm in those cases.
+    m_Reply->SetCompleted();
+}
+
+
+void CPSGS_Reply::Send404(const char *  payload)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    m_Reply->Send404(payload);
+
+    // 404 is always the last so the reply is not needed anymore.
+    // SetCompleted() will let the framework to know that the pending op can be
+    // discarded.
+    // Typically this method would be used without the pending op so
+    // SetCompleted() would not be needed but it does not harm in those cases.
+    m_Reply->SetCompleted();
+}
+
+
+void CPSGS_Reply::Send409(const char *  payload)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    m_Reply->Send409(payload);
+
+    // 409 is always the last so the reply is not needed anymore.
+    // SetCompleted() will let the framework to know that the pending op can be
+    // discarded.
+    // Typically this method would be used without the pending op so
+    // SetCompleted() would not be needed but it does not harm in those cases.
+    m_Reply->SetCompleted();
+}
+
+
+void CPSGS_Reply::Send500(const char *  payload)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    m_Reply->Send500(payload);
+
+    // 500 is always the last so the reply is not needed anymore.
+    // SetCompleted() will let the framework to know that the pending op can be
+    // discarded.
+    // Typically this method would be used without the pending op so
+    // SetCompleted() would not be needed but it does not harm in those cases.
+    m_Reply->SetCompleted();
+}
+
+
+void CPSGS_Reply::Send502(const char *  payload)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    m_Reply->Send502(payload);
+
+    // 502 is always the last so the reply is not needed anymore.
+    // SetCompleted() will let the framework to know that the pending op can be
+    // discarded.
+    // Typically this method would be used without the pending op so
+    // SetCompleted() would not be needed but it does not harm in those cases.
+    m_Reply->SetCompleted();
+}
+
+
+void CPSGS_Reply::Send503(const char *  payload)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    m_Reply->Send503(payload);
+
+    // 503 is always the last so the reply is not needed anymore.
+    // SetCompleted() will let the framework to know that the pending op can be
+    // discarded.
+    // Typically this method would be used without the pending op so
+    // SetCompleted() would not be needed but it does not harm in those cases.
+    m_Reply->SetCompleted();
+}
+
+
 void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
                                        const string &  processor_id,
                                        const string &  msg,
@@ -141,7 +290,7 @@ void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
                                        int  err_code,
                                        EDiagSev  severity)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string  header = GetBioseqMessageHeader(item_id, processor_id,
@@ -164,7 +313,7 @@ void CPSGS_Reply::PrepareBioseqData(
                     const string &  content,
                     SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      header = GetBioseqInfoHeader(item_id, processor_id,
@@ -183,7 +332,7 @@ void CPSGS_Reply::PrepareBioseqCompletion(size_t  item_id,
                                           const string &  processor_id,
                                           size_t  chunk_count)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      bioseq_meta = GetBioseqCompletionHeader(item_id,
@@ -205,7 +354,7 @@ void CPSGS_Reply::PrepareBlobPropMessage(size_t                 item_id,
                                          int                    err_code,
                                          EDiagSev               severity)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      header = GetBlobPropMessageHeader(item_id, processor_id,
@@ -230,7 +379,7 @@ void CPSGS_Reply::x_PrepareTSEBlobPropMessage(size_t                 item_id,
                                               int                    err_code,
                                               EDiagSev               severity)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      header = GetTSEBlobPropMessageHeader(
@@ -253,7 +402,7 @@ void CPSGS_Reply::PrepareBlobPropMessage(CCassBlobFetch *       fetch_details,
                                          int                    err_code,
                                          EDiagSev               severity)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     PrepareBlobPropMessage(fetch_details->GetBlobPropItemId(this),
@@ -271,7 +420,7 @@ void CPSGS_Reply::PrepareTSEBlobPropMessage(CCassBlobFetch *       fetch_details
                                             int                    err_code,
                                             EDiagSev               severity)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     x_PrepareTSEBlobPropMessage(fetch_details->GetBlobPropItemId(this),
@@ -287,7 +436,7 @@ void CPSGS_Reply::PrepareBlobPropData(size_t                   item_id,
                                       const string &           content,
                                       CBlobRecord::TTimestamp  last_modified)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string  header = GetBlobPropHeader(item_id,
@@ -311,7 +460,7 @@ void CPSGS_Reply::PrepareBlobPropData(CCassBlobFetch *         fetch_details,
                                       const string &           content,
                                       CBlobRecord::TTimestamp  last_modified)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     PrepareBlobPropData(fetch_details->GetBlobPropItemId(this),
@@ -329,7 +478,7 @@ void CPSGS_Reply::PrepareTSEBlobPropData(CCassBlobFetch *  fetch_details,
                                          const string &    id2_info,
                                          const string &    content)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     PrepareTSEBlobPropData(fetch_details->GetBlobPropItemId(this),
@@ -344,7 +493,7 @@ void CPSGS_Reply::PrepareTSEBlobPropData(size_t  item_id,
                                          const string &    id2_info,
                                          const string &    content)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string  header = GetTSEBlobPropHeader(item_id,
@@ -370,7 +519,7 @@ void CPSGS_Reply::PrepareBlobData(size_t                   item_id,
                                   int                      chunk_no,
                                   CBlobRecord::TTimestamp  last_modified)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     ++m_TotalSentReplyChunks;
@@ -399,7 +548,7 @@ void CPSGS_Reply::PrepareBlobData(CCassBlobFetch *         fetch_details,
                                   int                      chunk_no,
                                   CBlobRecord::TTimestamp  last_modified)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     fetch_details->IncrementTotalSentBlobChunks();
@@ -419,7 +568,7 @@ void CPSGS_Reply::PrepareTSEBlobData(size_t                 item_id,
                                      int64_t                id2_chunk,
                                      const string &         id2_info)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     ++m_TotalSentReplyChunks;
@@ -448,7 +597,7 @@ void CPSGS_Reply::PrepareTSEBlobData(CCassBlobFetch *  fetch_details,
                                      int64_t  id2_chunk,
                                      const string &  id2_info)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     fetch_details->IncrementTotalSentBlobChunks();
@@ -463,7 +612,7 @@ void CPSGS_Reply::PrepareBlobPropCompletion(size_t  item_id,
                                             const string &  processor_id,
                                             size_t  chunk_count)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      blob_prop_meta = GetBlobPropCompletionHeader(item_id,
@@ -482,7 +631,7 @@ void CPSGS_Reply::x_PrepareTSEBlobPropCompletion(size_t          item_id,
                                                  const string &  processor_id,
                                                  size_t          chunk_count)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      blob_prop_meta = GetTSEBlobPropCompletionHeader(item_id,
@@ -500,7 +649,7 @@ void CPSGS_Reply::x_PrepareTSEBlobPropCompletion(size_t          item_id,
 void CPSGS_Reply::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details,
                                             const string &  processor_id)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     // +1 is for the completion itself
@@ -517,7 +666,7 @@ void CPSGS_Reply::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details,
 void CPSGS_Reply::PrepareTSEBlobPropCompletion(CCassBlobFetch *  fetch_details,
                                                const string &  processor_id)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     // +1 is for the completion itself
@@ -540,7 +689,7 @@ void CPSGS_Reply::PrepareBlobMessage(size_t                   item_id,
                                      EDiagSev                 severity,
                                      CBlobRecord::TTimestamp  last_modified)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      header = GetBlobMessageHeader(item_id, processor_id,
@@ -565,7 +714,7 @@ void CPSGS_Reply::PrepareBlobMessage(CCassBlobFetch *         fetch_details,
                                      EDiagSev                 severity,
                                      CBlobRecord::TTimestamp  last_modified)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     PrepareBlobMessage(fetch_details->GetBlobChunkItemId(this),
@@ -585,7 +734,7 @@ void CPSGS_Reply::x_PrepareTSEBlobMessage(size_t  item_id,
                                           int  err_code,
                                           EDiagSev  severity)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      header = GetTSEBlobMessageHeader(item_id, processor_id,
@@ -609,7 +758,7 @@ void CPSGS_Reply::PrepareTSEBlobMessage(CCassBlobFetch *  fetch_details,
                                         CRequestStatus::ECode  status, int  err_code,
                                         EDiagSev  severity)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     x_PrepareTSEBlobMessage(fetch_details->GetBlobChunkItemId(this),
@@ -623,7 +772,7 @@ void CPSGS_Reply::PrepareBlobCompletion(size_t                   item_id,
                                         const string &           processor_id,
                                         size_t                   chunk_count)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string completion = GetBlobCompletionHeader(item_id, processor_id,
@@ -640,7 +789,7 @@ void CPSGS_Reply::PrepareBlobCompletion(size_t                   item_id,
 void CPSGS_Reply::PrepareTSEBlobCompletion(CCassBlobFetch *  fetch_details,
                                            const string &  processor_id)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     // +1 is for the completion itself
@@ -655,7 +804,7 @@ void CPSGS_Reply::PrepareTSEBlobCompletion(size_t  item_id,
                                            const string &  processor_id,
                                            size_t  chunk_count)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string completion = GetTSEBlobCompletionHeader(item_id, processor_id,
@@ -674,7 +823,7 @@ void CPSGS_Reply::PrepareBlobExcluded(const string &           blob_id,
                                       EPSGS_BlobSkipReason     skip_reason,
                                       CBlobRecord::TTimestamp  last_modified)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string  exclude = GetBlobExcludeHeader(GetItemId(), processor_id,
@@ -693,7 +842,7 @@ void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
                                       const string &        blob_id,
                                       EPSGS_BlobSkipReason  skip_reason)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string  exclude = GetBlobExcludeHeader(item_id, processor_id,
@@ -710,7 +859,7 @@ void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
 void CPSGS_Reply::PrepareBlobCompletion(CCassBlobFetch *  fetch_details,
                                         const string &    processor_id)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     // +1 is for the completion itself
@@ -726,7 +875,7 @@ void CPSGS_Reply::PrepareReplyMessage(const string &         msg,
                                       int                    err_code,
                                       EDiagSev               severity)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      header = GetReplyMessageHeader(msg.size(),
@@ -748,7 +897,7 @@ void CPSGS_Reply::PrepareProcessorMessage(size_t                 item_id,
                                           int                    err_code,
                                           EDiagSev               severity)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      header = GetProcessorMessageHeader(item_id, processor_id,
@@ -776,7 +925,7 @@ void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
                                        const string &  blob_id,
                                        CBlobRecord::TTimestamp  last_modified)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     auto        item_id = GetItemId();
@@ -804,7 +953,7 @@ void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
                                        int64_t  id2_chunk,
                                        const string &  id2_info)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     auto        item_id = GetItemId();
@@ -831,7 +980,7 @@ void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
                                              const string &  processor_id,
                                              const string &  content)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     size_t      item_id = GetItemId();
@@ -859,7 +1008,7 @@ void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
 void CPSGS_Reply::PrepareAccVerHistoryData(const string &  processor_id,
                                            const string &  content)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     size_t      item_id = GetItemId();
@@ -887,7 +1036,7 @@ void CPSGS_Reply::PrepareAccVerHistoryData(const string &  processor_id,
 
 void CPSGS_Reply::PrepareReplyCompletion(void)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
     if (m_Reply->IsClosed())
         return;
@@ -906,7 +1055,7 @@ void CPSGS_Reply::PrepareReplyCompletion(void)
 void CPSGS_Reply::SendTrace(const string &  msg,
                             const TPSGS_HighResolutionTimePoint &  create_timestamp)
 {
-    if (m_ConnectionCanceled)
+    if (m_ConnectionCanceled || IsFinished())
         return;
 
     auto            now = chrono::high_resolution_clock::now();
@@ -916,17 +1065,5 @@ void CPSGS_Reply::SendTrace(const string &  msg,
 
     PrepareReplyMessage(timestamp + msg,
                         CRequestStatus::e200_Ok, 0, eDiag_Trace);
-}
-
-
-void CPSGS_Reply::SendData(const string &  data_to_send,
-                           EPSGS_ReplyMimeType  mime_type)
-{
-    if (m_ConnectionCanceled)
-        return;
-
-    m_Reply->SetContentType(mime_type);
-    m_Reply->SetContentLength(data_to_send.length());
-    m_Reply->SendOk(data_to_send.data(), data_to_send.length(), false);
 }
 
