@@ -336,14 +336,13 @@ struct SNgHttp2_Header : nghttp2_nv
     {
         uint8_t* str;
         size_t len;
-        uint8_t flags;
 
         template <size_t SIZE>
         SConvert(const char (&s)[SIZE]) : SConvert(s, SIZE - 1) {}
-        SConvert(const char* s) : SConvert(s, strlen(s)) {} // For gcc 5.x.x
+        SConvert(const char* s) : SConvert(s, strlen(s)) {}
         SConvert(const string& s) : SConvert(s.c_str(), s.size()) {}
-        SConvert(uint8_t f) : SConvert(nullptr, 0, f) {}
-        SConvert(const char* s, size_t l, uint8_t f = DEFAULT) : str((uint8_t*)s), len(l), flags(f) {}
+        SConvert(nullptr_t) : SConvert(nullptr, 0) {}
+        SConvert(const char* s, size_t l) : str((uint8_t*)s), len(l) {}
         SConvert(const string&& v) = delete;
     };
 
@@ -352,7 +351,7 @@ struct SNgHttp2_Header : nghttp2_nv
     {}
 
     SNgHttp2_Header(const SConvert& n, const SConvert& v) :
-        nghttp2_nv{ n.str, v.str, n.len, v.len, uint8_t((n.flags & NGHTTP2_NV_FLAG_NO_COPY_NAME) | (v.flags & NGHTTP2_NV_FLAG_NO_COPY_VALUE)) }
+        nghttp2_nv{ n.str, v.str, n.len, v.len, DEFAULT }
     {}
 
     void operator=(SConvert v)
@@ -362,7 +361,7 @@ struct SNgHttp2_Header : nghttp2_nv
     }
 
 private:
-    static SConvert Get(initializer_list<SConvert> l, size_t i)  { return l.size() <= i ? NGHTTP2_NV_FLAG_NONE : *(l.begin() + i); }
+    static SConvert Get(initializer_list<SConvert> l, size_t i)  { return l.size() <= i ? nullptr : *(l.begin() + i); }
 };
 
 struct NCBI_XXCONNECT2_EXPORT SNgHttp2_Session
