@@ -110,13 +110,13 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
         return 0;
     }
 
-    auto    http_reply = reply->GetHttpReply();
     if (req.GetPath() == "/") {
         // Special case: no path at all so provide a help message
         try {
-            http_reply->SetContentType(ePSGS_JsonMime);
-            http_reply->SetContentLength(m_HelpMessage.length());
-            http_reply->SendOk(m_HelpMessage.c_str(), m_HelpMessage.length(), false);
+            reply->SetContentType(ePSGS_JsonMime);
+            reply->SetContentLength(m_HelpMessage.size());
+            // true => persistent
+            reply->SendOk(m_HelpMessage.data(), m_HelpMessage.size(), true);
             x_PrintRequestStop(context, CRequestStatus::e200_Ok);
         } catch (const exception &  exc) {
             string      msg = "Exception when handling no path URL event: " +
@@ -921,8 +921,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
                    active_alerts.Repr(CJsonNode::fStandardJson);
         }
 
-        reply->GetHttpReply()->SetContentType(ePSGS_PlainTextMime);
-        reply->GetHttpReply()->Send500(msg.c_str());
+        reply->SetContentType(ePSGS_PlainTextMime);
+        reply->Send500(msg.c_str());
         PSG_WARNING("Cassandra is not available or is in non-working state");
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
         return 0;
@@ -930,10 +930,9 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
 
     if (m_TestSeqId.empty()) {
         // seq_id for a health test is not configured so skip the test
-        auto    http_reply = reply->GetHttpReply();
-        http_reply->SetContentType(ePSGS_PlainTextMime);
-        http_reply->SetContentLength(0);
-        http_reply->SendOk(nullptr, 0, false);
+        reply->SetContentType(ePSGS_PlainTextMime);
+        reply->SetContentLength(0);
+        reply->SendOk(nullptr, 0, true);
         PSG_WARNING("Test seq_id resolution skipped (configured as an empty string)");
         x_PrintRequestStop(context, CRequestStatus::e200_Ok);
         return 0;
@@ -941,10 +940,9 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
 
     if (m_Si2csiDbFile.empty() || m_BioseqInfoDbFile.empty()) {
         // Cache is not configured so skip the test
-        auto    http_reply = reply->GetHttpReply();
-        http_reply->SetContentType(ePSGS_PlainTextMime);
-        http_reply->SetContentLength(0);
-        http_reply->SendOk(nullptr, 0, false);
+        reply->SetContentType(ePSGS_PlainTextMime);
+        reply->SetContentLength(0);
+        reply->SendOk(nullptr, 0, true);
         PSG_WARNING("Test seq_id resolution skipped (cache is not configured)");
         x_PrintRequestStop(context, CRequestStatus::e200_Ok);
         return 0;
@@ -981,8 +979,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
                 } else {
                     msg += "Cannot resolve '" + m_TestSeqId + "' seq_id";
                 }
-                reply->GetHttpReply()->SetContentType(ePSGS_PlainTextMime);
-                reply->GetHttpReply()->Send500(msg.c_str());
+                reply->SetContentType(ePSGS_PlainTextMime);
+                reply->Send500(msg.c_str());
                 PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
                 x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
                 return 0;
@@ -995,8 +993,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
             string  msg = separator + "\n" +
                           prefix + "RESOLUTION" "\n" +
                           exc.what();
-            reply->GetHttpReply()->SetContentType(ePSGS_PlainTextMime);
-            reply->GetHttpReply()->Send500(msg.c_str());
+            reply->SetContentType(ePSGS_PlainTextMime);
+            reply->Send500(msg.c_str());
             PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
             x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
             return 0;
@@ -1008,8 +1006,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
             string  msg = separator + "\n" +
                           prefix + "RESOLUTION" "\n"
                           "Unknown '" + m_TestSeqId + "' resolution error";
-            reply->GetHttpReply()->SetContentType(ePSGS_PlainTextMime);
-            reply->GetHttpReply()->Send500(msg.c_str());
+            reply->SetContentType(ePSGS_PlainTextMime);
+            reply->Send500(msg.c_str());
             PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
             x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
             return 0;
@@ -1019,10 +1017,9 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
     }
 
     // Here: all OK or errors are ignored
-    auto    http_reply = reply->GetHttpReply();
-    http_reply->SetContentType(ePSGS_PlainTextMime);
-    http_reply->SetContentLength(0);
-    http_reply->SendOk(nullptr, 0, false);
+    reply->SetContentType(ePSGS_PlainTextMime);
+    reply->SetContentLength(0);
+    reply->SendOk(nullptr, 0, true);
     x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     return 0;
 }
@@ -1039,7 +1036,6 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    auto    http_reply = reply->GetHttpReply();
     try {
         m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
 
@@ -1053,9 +1049,9 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  req,
         conf_info.SetString(kConfiguration, string(converter));
         string      content = conf_info.Repr(CJsonNode::fStandardJson);
 
-        http_reply->SetContentType(ePSGS_JsonMime);
-        http_reply->SetContentLength(content.length());
-        http_reply->SendOk(content.c_str(), content.length(), false);
+        reply->SetContentType(ePSGS_JsonMime);
+        reply->SetContentLength(content.size());
+        reply->SendOk(content.data(), content.size(), false);
 
         x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     } catch (const exception &  exc) {
@@ -1115,7 +1111,6 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  req,
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
     auto                    app = CPubseqGatewayApp::GetInstance();
-    auto                    http_reply = reply->GetHttpReply();
     try {
         m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
 
@@ -1254,9 +1249,9 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  req,
 
         string      content = info.Repr(CJsonNode::fStandardJson);
 
-        http_reply->SetContentType(ePSGS_JsonMime);
-        http_reply->SetContentLength(content.length());
-        http_reply->SendOk(content.c_str(), content.length(), false);
+        reply->SetContentType(ePSGS_JsonMime);
+        reply->SetContentLength(content.size());
+        reply->SendOk(content.data(), content.size(), false);
 
         x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     } catch (const exception &  exc) {
@@ -1287,7 +1282,6 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    auto        http_reply = reply->GetHttpReply();
     try {
         m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
 
@@ -1321,9 +1315,9 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  req,
 
         string      content = status.Repr(CJsonNode::fStandardJson);
 
-        http_reply->SetContentType(ePSGS_JsonMime);
-        http_reply->SetContentLength(content.length());
-        http_reply->SendOk(content.c_str(), content.length(), false);
+        reply->SetContentType(ePSGS_JsonMime);
+        reply->SetContentLength(content.size());
+        reply->SendOk(content.data(), content.size(), false);
 
         x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     } catch (const exception &  exc) {
@@ -1433,8 +1427,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
             }
         }
 
-        auto        http_reply = reply->GetHttpReply();
-        http_reply->SetContentType(ePSGS_PlainTextMime);
+        reply->SetContentType(ePSGS_PlainTextMime);
         if (timeout == 0) {
             // Immediate shutdown is requested
             msg = "Immediate shutdown request received from ";
@@ -1444,7 +1437,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
                 msg += "user " + username;
             PSG_MESSAGE(msg);
 
-            http_reply->Send202(s_ImmediateShutdown, s_ImmediateShutdownSize);
+            reply->Send202(s_ImmediateShutdown, s_ImmediateShutdownSize);
             x_PrintRequestStop(context, CRequestStatus::e202_Accepted);
             exit(0);
         }
@@ -1463,7 +1456,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
                 msg += ". The previous shutdown expiration is shorter "
                        "than this one. Ignored.";
                 PSG_MESSAGE(msg);
-                http_reply->Send409(msg.c_str());
+                reply->Send409(msg.c_str());
                 x_PrintRequestStop(context, CRequestStatus::e409_Conflict);
                 return 0;
             }
@@ -1472,7 +1465,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
         // New shutdown request or a shorter expiration request
         PSG_MESSAGE(msg);
 
-        http_reply->Send202(s_GracefulShutdown, s_GracefulShutdownSize);
+        reply->Send202(s_GracefulShutdown, s_GracefulShutdownSize);
         x_PrintRequestStop(context, CRequestStatus::e202_Accepted);
 
         g_ShutdownData.m_Expired = expiration;
@@ -1505,15 +1498,14 @@ int CPubseqGatewayApp::OnGetAlerts(CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    auto        http_reply = reply->GetHttpReply();
     try {
         m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
 
         string      content = m_Alerts.Serialize().Repr(CJsonNode::fStandardJson);
 
-        http_reply->SetContentType(ePSGS_JsonMime);
-        http_reply->SetContentLength(content.length());
-        http_reply->SendOk(content.c_str(), content.length(), false);
+        reply->SetContentType(ePSGS_JsonMime);
+        reply->SetContentLength(content.size());
+        reply->SendOk(content.data(), content.size(), false);
 
         x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     } catch (const exception &  exc) {
@@ -1574,7 +1566,6 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
 
         string  alert(alert_param.m_Value.data(), alert_param.m_Value.size());
         string  username(username_param.m_Value.data(), username_param.m_Value.size());
-        auto    http_reply = reply->GetHttpReply();
 
         switch (m_Alerts.Acknowledge(alert, username)) {
             case ePSGS_AlertNotFound:
@@ -1587,14 +1578,14 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
                 x_PrintRequestStop(context, CRequestStatus::e404_NotFound);
                 break;
             case ePSGS_AlertAlreadyAcknowledged:
-                http_reply->SetContentType(ePSGS_PlainTextMime);
+                reply->SetContentType(ePSGS_PlainTextMime);
                 msg = "Alert " + alert + " has already been acknowledged";
-                http_reply->SendOk(msg.c_str(), msg.size(), false);
+                reply->SendOk(msg.data(), msg.size(), false);
                 x_PrintRequestStop(context, CRequestStatus::e200_Ok);
                 break;
             case ePSGS_AlertAcknowledged:
-                http_reply->SetContentType(ePSGS_PlainTextMime);
-                http_reply->SendOk(nullptr, 0, true);
+                reply->SetContentType(ePSGS_PlainTextMime);
+                reply->SendOk(nullptr, 0, true);
                 x_PrintRequestStop(context, CRequestStatus::e200_Ok);
                 break;
         }
@@ -1624,7 +1615,6 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
 {
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
-    auto                    http_reply = reply->GetHttpReply();
 
     if (x_IsShuttingDown(reply)) {
         x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
@@ -1655,8 +1645,8 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
 
         if (reset) {
             m_Timing->Reset();
-            http_reply->SetContentType(ePSGS_PlainTextMime);
-            http_reply->SendOk(nullptr, 0, true);
+            reply->SetContentType(ePSGS_PlainTextMime);
+            reply->SendOk(nullptr, 0, true);
             x_PrintRequestStop(context, CRequestStatus::e200_Ok);
             return 0;
         }
@@ -1733,9 +1723,9 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
                                                m_TickSpan));
         string      content = timing.Repr(CJsonNode::fStandardJson);
 
-        http_reply->SetContentType(ePSGS_JsonMime);
-        http_reply->SetContentLength(content.length());
-        http_reply->SendOk(content.c_str(), content.length(), false);
+        reply->SetContentType(ePSGS_JsonMime);
+        reply->SetContentLength(content.size());
+        reply->SendOk(content.data(), content.size(), false);
 
         x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     } catch (const exception &  exc) {
@@ -1766,7 +1756,6 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
     bool                    need_log = false;   // default
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context;
-    auto                    http_reply = reply->GetHttpReply();
 
     if (x_IsShuttingDown(reply)) {
         x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
@@ -1824,11 +1813,11 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
 
         m_Counters.Increment(CPSGSCounters::ePSGS_TestIORequest);
 
-        http_reply->SetContentType(ePSGS_BinaryMime);
-        http_reply->SetContentLength(data_size);
+        reply->SetContentType(ePSGS_BinaryMime);
+        reply->SetContentLength(data_size);
 
         // true: persistent
-        http_reply->SendOk(m_IOTestBuffer.get(), data_size, true);
+        reply->SendOk(m_IOTestBuffer.get(), data_size, true);
 
         if (need_log)
             x_PrintRequestStop(context, CRequestStatus::e200_Ok);

@@ -89,6 +89,13 @@ class CPSGS_UvLoopBinder
         // callback
         void x_UvOnCallback(void);
 
+        uv_loop_t * GetUvLoop(void) const
+        {
+            return m_Loop;
+        }
+
+        void SendAsyncEvent(void);
+
     private:
         struct SUserCallback
         {
@@ -107,6 +114,7 @@ class CPSGS_UvLoopBinder
         uv_check_t              m_Check;
         #endif
 
+        uv_loop_t *             m_Loop;
         uv_async_t              m_Async;
 
         mutex                   m_QueueLock;

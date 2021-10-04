@@ -118,6 +118,7 @@ void CPendingOperation::Peek(bool  need_wait)
     if (m_ConnectionCanceled) {
         if (m_Reply->IsOutputReady() && !m_Reply->IsFinished()) {
             m_Reply->GetHttpReply()->Send(nullptr, 0, true, true);
+            m_Reply->SetCompleted();
         }
         return;
     }

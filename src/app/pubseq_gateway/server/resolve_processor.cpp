@@ -260,7 +260,7 @@ void CPSGS_ResolveProcessor::x_Peek(bool  need_wait)
     if (overall_final_state) {
         if (AreAllFinishedRead()) {
             if (IPSGS_Processor::m_Reply->IsOutputReady()) {
-                IPSGS_Processor::m_Reply->Flush(false);
+                IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
             }
         }
     }

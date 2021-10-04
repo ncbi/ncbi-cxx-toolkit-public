@@ -48,6 +48,14 @@ namespace idblob { class CCassDataCallbackReceiver; }
 class CPSGS_Reply
 {
 public:
+    enum EPSGS_ReplyFlush
+    {
+        ePSGS_SendAccumulated,    // Only flushes the accumulated chunks.
+        ePSGS_SendAndFinish       // Flushes the accumulated chunks and closes
+                                  // the stream.
+    };
+
+public:
     CPSGS_Reply(unique_ptr<CHttpReply<CPendingOperation>>  low_level_reply) :
         m_Reply(low_level_reply.release()),
         m_ReplyOwned(true),
@@ -55,8 +63,7 @@ public:
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
         m_ChunksLock(false),
-        m_ConnectionCanceled(false),
-        m_FinallyFlushed(false)
+        m_ConnectionCanceled(false)
     {
         SetContentType(ePSGS_PSGMime);
     }
@@ -70,8 +77,7 @@ public:
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
         m_ChunksLock(false),
-        m_ConnectionCanceled(false),
-        m_FinallyFlushed(false)
+        m_ConnectionCanceled(false)
     {
         SetContentType(ePSGS_PSGMime);
     }
@@ -79,25 +85,36 @@ public:
     ~CPSGS_Reply();
 
 public:
-    void Flush(void);
-    void Flush(bool  is_last);
-    void SendAccumulated(void);
-    void Clear(void);
-    shared_ptr<idblob::CCassDataCallbackReceiver> GetDataReadyCB(void);
+    // Flush can close the stream
+    void Flush(EPSGS_ReplyFlush  how);
+
+    // Tells the lower level that the pending op can be deleted
+    void SetCompleted(void);
+
+    // Tells if the stream is closed and the pending op can be deleted
+    bool IsCompleted(void) const;
+
+    // Tells if the stream is closed
     bool IsFinished(void) const;
+
+    // Tells if the output is ready
     bool IsOutputReady(void) const;
+
+    void Clear(void);
     void SetContentType(EPSGS_ReplyMimeType  mime_type);
+    void SetContentLength(uint64_t  content_length);
+    void SendOk(const char *  payload, size_t  payload_len, bool  is_persist);
+    void Send202(const char *  payload, size_t  payload_len);
+    void Send400(const char *  payload);
+    void Send401(const char *  payload);
+    void Send404(const char *  payload);
+    void Send409(const char *  payload);
+    void Send500(const char *  payload);
+    void Send502(const char *  payload);
+    void Send503(const char *  payload);
+
     void ConnectionCancel(void);
-
-    bool IsFinallyFlushed(void) const
-    {
-        return m_FinallyFlushed;
-    }
-
-    void SetFinallyFlushed(void)
-    {
-        m_FinallyFlushed = true;
-    }
+    shared_ptr<idblob::CCassDataCallbackReceiver> GetDataReadyCB(void);
 
     CHttpReply<CPendingOperation> *  GetHttpReply(void)
     {
@@ -262,10 +279,6 @@ public:
     void SendTrace(const string &  msg,
                    const TPSGS_HighResolutionTimePoint &  create_timestamp);
 
-public:
-    // HTTP facilities
-    void SendData(const string &  data_ptr, EPSGS_ReplyMimeType  mime_type);
-
 private:
     void x_PrepareTSEBlobPropCompletion(size_t          item_id,
                                         const string &  processor_id,
@@ -296,7 +309,6 @@ private:
     atomic<bool>                        m_ChunksLock;
     vector<h2o_iovec_t>                 m_Chunks;
     volatile bool                       m_ConnectionCanceled;
-    volatile bool                       m_FinallyFlushed;
 };
 
 

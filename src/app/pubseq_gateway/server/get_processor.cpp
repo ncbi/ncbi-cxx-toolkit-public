@@ -457,7 +457,7 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
 
     // Blob specific: ready packets need to be sent right away
     if (IPSGS_Processor::m_Reply->IsOutputReady())
-        IPSGS_Processor::m_Reply->Flush(false);
+        IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
 
     // Blob specific: deal with exclude blob cache
     if (AreAllFinishedRead()) {
