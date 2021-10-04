@@ -1073,6 +1073,9 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
         field-name "Bracketed repeat" ,
         required TRUE } ,
       {
+        field-name "Flanking region" ,
+        required FALSE } ,
+      {
         field-name "Sequencing technology" ,
         required FALSE } ,
       {
