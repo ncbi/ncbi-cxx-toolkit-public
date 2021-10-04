@@ -321,6 +321,12 @@ public:
     /// secure cookies can be sent only trough secure connections.
     void SetSecure(bool secure) { m_Secure = secure; }
 
+    /// Mark all cookies as secure.
+    void SetAllCookiesSecure(bool value);
+
+    /// Mark all cookies as HTTP_ONLY.
+    void SetAllCookiesHttpOnly(bool value);
+
 private:
     enum ECheckResult {
         eCheck_Valid,         // Cookie is valid
