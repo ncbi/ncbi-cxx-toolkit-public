@@ -59,6 +59,7 @@
 #if defined(HAVE_PSG_LOADER)
 
 #define LOCK4GET 1
+#define GLOBAL_CHUNKS 1
 
 BEGIN_NCBI_SCOPE
 
@@ -1307,7 +1308,8 @@ public:
 protected:
     void DoExecute(void) override;
     void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) override;
-
+    void CreateLoadedChunks(CTSE_LoadLock& load_lock);
+    
 private:
     CDataSource* m_DataSource;
     CPSGDataLoader_Impl& m_Loader;
@@ -1544,38 +1546,7 @@ void CPSG_Blob_Task::DoExecute(void)
                                 *split_blob_slot->second,
                                 load_lock,
                                 CPSGDataLoader_Impl::eIsSplitInfo);
-        CTSE_Split_Info& tse_split_info = load_lock->GetSplitInfo();
-        for ( auto& chunk_slot : m_ChunkBlobMap[id2_info] ) {
-            TChunkId chunk_id = chunk_slot.first;
-            if ( chunk_id == kSplitInfoChunkId ) {
-                continue;
-            }
-            if ( !chunk_slot.second.first || !chunk_slot.second.second ) {
-                continue;
-            }
-            CTSE_Chunk_Info* chunk = 0;
-            try {
-                chunk = &tse_split_info.GetChunk(chunk_id);
-            }
-            catch ( CException& /*ignored*/ ) {
-            }
-            if ( !chunk || chunk->IsLoaded() ) {
-                continue;
-            }
-
-            unique_ptr<CObjectIStream> in
-                (CPSGDataLoader_Impl::GetBlobDataStream(*chunk_slot.second.first,
-                                                        *chunk_slot.second.second));
-            CRef<CID2S_Chunk> id2_chunk(new CID2S_Chunk);
-            *in >> *id2_chunk;
-            if ( s_GetDebugLevel() >= 8 ) {
-                LOG_POST(Info<<"PSG loader: TSE "<<chunk->GetBlobId().ToString()<<" "<<
-                         " chunk "<<chunk->GetChunkId()<<" "<<MSerial_AsnText<<*id2_chunk);
-            }
-            
-            CSplitParser::Load(*chunk, *id2_chunk);
-            chunk->SetLoaded();
-        }
+        load_lock->GetSplitInfo();
     }
     else if ( main_blob_slot && main_blob_slot->first && main_blob_slot->second ) {
         m_Loader.x_ReadBlobData(*m_PsgBlobInfo,
@@ -1589,12 +1560,68 @@ void CPSG_Blob_Task::DoExecute(void)
         load_lock.Reset();
     }
     if ( load_lock ) {
+#ifdef GLOBAL_CHUNKS
         m_Loader.x_SetLoaded(load_lock, main_chunk_type);
+        CreateLoadedChunks(load_lock);
+#else
+        CreateLoadedChunks(load_lock);
+        m_Loader.x_SetLoaded(load_lock, main_chunk_type);
+#endif
         m_ReplyResult.lock = load_lock;
         m_Status = eCompleted;
     }
     else {
         m_Status = eFailed;
+    }
+}
+
+
+void CPSG_Blob_Task::CreateLoadedChunks(CTSE_LoadLock& load_lock)
+{
+    if ( !load_lock || !load_lock->HasSplitInfo() ) {
+        return;
+    }
+    auto blob_id = dynamic_cast<const CPsgBlobId*>(&*load_lock->GetBlobId());
+    if ( !blob_id ) {
+        return;
+    }
+    CTSE_Split_Info& tse_split_info = load_lock->GetSplitInfo();
+    for ( auto& chunk_slot : m_ChunkBlobMap[blob_id->GetId2Info()] ) {
+        TChunkId chunk_id = chunk_slot.first;
+        if ( chunk_id == kSplitInfoChunkId ) {
+            continue;
+        }
+        if ( !chunk_slot.second.first || !chunk_slot.second.second ) {
+            continue;
+        }
+        CTSE_Chunk_Info* chunk = 0;
+        try {
+            chunk = &tse_split_info.GetChunk(chunk_id);
+        }
+        catch ( CException& /*ignored*/ ) {
+        }
+        if ( !chunk || chunk->IsLoaded() ) {
+            continue;
+        }
+        AutoPtr<CInitGuard> guard;
+        if ( load_lock.IsLoaded() ) {
+            guard = chunk->GetLoadInitGuard();
+            if ( !guard.get() || !*guard.get() ) {
+                continue;
+            }
+        }
+        unique_ptr<CObjectIStream> in
+            (CPSGDataLoader_Impl::GetBlobDataStream(*chunk_slot.second.first,
+                                                    *chunk_slot.second.second));
+        CRef<CID2S_Chunk> id2_chunk(new CID2S_Chunk);
+        *in >> *id2_chunk;
+        if ( s_GetDebugLevel() >= 8 ) {
+            LOG_POST(Info<<"PSG loader: TSE "<<chunk->GetBlobId().ToString()<<" "<<
+                     " chunk "<<chunk->GetChunkId()<<" "<<MSerial_AsnText<<*id2_chunk);
+        }
+        
+        CSplitParser::Load(*chunk, *id2_chunk);
+        chunk->SetLoaded();
     }
 }
 
@@ -1684,6 +1711,9 @@ CPSGDataLoader_Impl::SReplyResult CPSG_Blob_Task::WaitForSkipped(void)
     }
     if (load_lock && load_lock.IsLoaded()) {
         m_Skipped.reset();
+#ifdef GLOBAL_CHUNKS
+        CreateLoadedChunks(load_lock);
+#endif
         ret.lock = load_lock;
     }
     return ret;
@@ -2592,6 +2622,18 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
     else if ( task->GotNotFound() ) {
         NCBI_THROW_FMT(CLoaderException, eNoData,
                        "CPSGDataLoader: No blob for seq_id="<<req_idh<<" blob_id="<<task->m_ReplyResult.blob_id);
+        /*
+        // not sure about reaction on timed out replies after eNotFound reply was received
+        // most probably it still should be treated as error
+        // here's eNoData reply code in case it will be decided to be acceptable
+        CBioseq_Handle::TBioseqStateFlags state =
+            CBioseq_Handle::fState_no_data;
+        if ( task->m_PsgBlobInfo ) {
+            state |= task->m_PsgBlobInfo->blob_state;
+        }
+        NCBI_THROW2(CBlobStateException, eBlobStateError,
+                    "blob state error for "+req_idh.AsString(), state);
+        */
     }
     else if ( task->GotForbidden() ) {
         CBioseq_Handle::TBioseqStateFlags state =
