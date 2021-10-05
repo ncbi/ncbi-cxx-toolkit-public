@@ -35,6 +35,7 @@ NCBI_add_subdirectory(
   objprt
   omssa
   pcassay
+  pcassay2
   pcsubstance
   proj
   pub
