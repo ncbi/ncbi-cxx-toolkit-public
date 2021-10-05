@@ -36,6 +36,8 @@ set(NCBI_ThirdParty_LZO        ${NCBI_TOOLS_ROOT}/lzo-2.05 CACHE PATH "LZO root"
 set(NCBI_ThirdParty_SQLITE3    ${NCBI_TOOLS_ROOT}/sqlite-3.26.0-ncbi1 CACHE PATH "SQLITE2 root")
 set(NCBI_ThirdParty_Boost      ${NCBI_TOOLS_ROOT}/boost-1.76.0-ncbi1 CACHE PATH "Boost root")
 set(NCBI_ThirdParty_BerkeleyDB ${NCBI_TOOLS_ROOT}/BerkeleyDB CACHE PATH "BerkeleyDB root")
+set(NCBI_ThirdParty_FASTCGI    ${NCBI_TOOLS_ROOT}/fcgi-2.4.0 CACHE PATH "FASTCGI root")
+set(NCBI_ThirdParty_FASTCGI_SHLIB ${NCBI_ThirdParty_FASTCGI})
 #set(NCBI_ThirdParty_VDB        "/Volumes/trace_software/vdb/vdb-versions/2.11.0")
 set(NCBI_ThirdParty_VDB        "/net/snowman/vol/projects/trace_software/vdb/vdb-versions/2.11.0" CACHE PATH "VDB root")
 set(NCBI_ThirdParty_VDB_ARCH x86_64)
@@ -81,7 +83,58 @@ endif()
 
 #############################################################################
 # NCBI_C
-set(NCBI_COMPONENT_NCBI_C_FOUND NO)
+if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
+    set(NCBI_C_ROOT "${NCBI_TOOLS_ROOT}/ncbi")
+
+    get_directory_property(_foo_defs COMPILE_DEFINITIONS)
+    if("${_foo_defs}" MATCHES NCBI_INT4_GI)
+        set(NCBI_CTOOLKIT_PATH "${NCBI_C_ROOT}")
+    else()
+        if (EXISTS "${NCBI_C_ROOT}/ncbi.gi64")
+            set(NCBI_CTOOLKIT_PATH "${NCBI_C_ROOT}/ncbi.gi64")
+        elseif (EXISTS "${NCBI_C_ROOT}.gi64")
+            set(NCBI_CTOOLKIT_PATH "${NCBI_C_ROOT}.gi64")
+        else ()
+            set(NCBI_CTOOLKIT_PATH "${NCBI_C_ROOT}")
+        endif ()
+    endif()
+
+    if(EXISTS "${NCBI_CTOOLKIT_PATH}/include64" AND EXISTS "${NCBI_CTOOLKIT_PATH}/lib64")
+        set(NCBI_C_INCLUDE  "${NCBI_CTOOLKIT_PATH}/include64")
+        if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+            set(NCBI_C_LIBPATH  "${NCBI_CTOOLKIT_PATH}/altlib64")
+        else()
+            set(NCBI_C_LIBPATH  "${NCBI_CTOOLKIT_PATH}/lib64")
+        endif()
+
+        set(NCBI_C_ncbi     "ncbi")
+        if (APPLE)
+            set(NCBI_C_ncbi ${NCBI_C_ncbi} -Wl,-framework,AppKit)
+        endif ()
+        set(HAVE_NCBI_C YES)
+    else()
+        set(HAVE_NCBI_C NO)
+    endif()
+
+    if(HAVE_NCBI_C)
+        message("NCBI_C found at ${NCBI_C_INCLUDE}")
+        set(NCBI_COMPONENT_NCBI_C_FOUND YES)
+        set(NCBI_COMPONENT_NCBI_C_INCLUDE ${NCBI_C_INCLUDE})
+        set(_c_libs  ncbiobj ncbimmdb ${NCBI_C_ncbi})
+        set(NCBI_COMPONENT_NCBI_C_LIBS -L${NCBI_C_LIBPATH} ${_c_libs})
+        set(NCBI_COMPONENT_NCBI_C_DEFINES HAVE_NCBI_C=1)
+        list(APPEND NCBI_ALL_COMPONENTS NCBI_C)
+        list(APPEND NCBI_ALL_LEGACY C-Toolkit)
+        set(NCBI_COMPONENT_C-Toolkit_FOUND NCBI_C)
+    else()
+        set(NCBI_COMPONENT_NCBI_C_FOUND NO)
+        message("NOT FOUND NCBI_C")
+    endif()
+else()
+    set(NCBI_COMPONENT_NCBI_C_FOUND NO)
+    message("DISABLED NCBI_C")
+endif()
+
 
 #############################################################################
 # BACKWARD, UNWIND
@@ -202,7 +255,7 @@ NCBI_define_Xcomponent(NAME TIFF MODULE libtiff-4 PACKAGE TIFF LIB tiff)
 
 #############################################################################
 # FASTCGI
-set(NCBI_COMPONENT_FASTCGI_FOUND NO)
+NCBI_define_Xcomponent(NAME FASTCGI LIB fcgi)
 
 #############################################################################
 # SQLITE3
@@ -224,9 +277,11 @@ endif()
 #############################################################################
 # ODBC
 set(NCBI_COMPONENT_ODBC_FOUND NO)
-set(ODBC_INCLUDE  ${NCBI_INC_ROOT}/dbapi/driver/odbc/unix_odbc 
-                  ${NCBI_INC_ROOT}/dbapi/driver/odbc/unix_odbc)
-set(NCBI_COMPONENT_ODBC_INCLUDE ${ODBC_INCLUDE})
+if(EXISTS  ${NCBITK_INC_ROOT}/dbapi/driver/odbc/unix_odbc)
+    set(NCBI_COMPONENT_XODBC_FOUND YES)
+    set(NCBI_COMPONENT_XODBC_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/odbc/unix_odbc)
+    set(ODBC_INCLUDE  ${NCBI_COMPONENT_XODBC_INCLUDE})
+endif()
 set(HAVE_ODBC 0)
 set(HAVE_ODBCSS_H 0)
 
