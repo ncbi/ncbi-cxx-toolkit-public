@@ -1,5 +1,8 @@
 #!/bin/env bash
 
+# To avoid stopping after h2load had some errors
+set +e
+
 usage() {
     echo "USAGE:"
     echo "$0  [-h|--help]  [--https] --server1 host:port --server2 host:port [--h2load-count count]"
