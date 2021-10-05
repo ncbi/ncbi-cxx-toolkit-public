@@ -1437,6 +1437,21 @@ size_t CTL_CursorResultExpl::ReadItem(void* buffer, size_t buffer_size,
     case eDB_BigDateTime: {
         CDB_BigDateTime* dt_field = static_cast<CDB_BigDateTime*>(field);
         CS_CONTEXT* ctx = m_Connect->GetCTLibContext().CTLIB_GetContext();
+        const CTime& t = dt_field->GetCTime();
+        daterec.dateyear    = t.Year();
+        daterec.datemonth   = t.Month() - 1;
+        daterec.datedmonth  = t.Day();
+        daterec.datedyear   = t.YearDayNumber();
+        daterec.datedweek   = t.DayOfWeek();
+        daterec.datehour    = t.Hour();
+        daterec.dateminute  = t.Minute();
+        daterec.datesecond  = t.Second();
+        daterec.datemsecond = t.MilliSecond();
+        // datetzone?
+        // Could perhaps use nanoseconds, but microseconds are
+        // standard practice.
+        daterec.datesecfrac = t.MicroSecond();
+        daterec.datesecprec = kMicroSecondsPerSecond;
         CHECK_DRIVER_ERROR(cs_dt_crack(ctx, CS_BIGDATETIME_TYPE, buffer,
                                        &daterec) != CS_SUCCEED,
                            "Failed to unpack big date/time", 230023);
