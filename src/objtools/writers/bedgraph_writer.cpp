@@ -91,7 +91,7 @@ bool CBedGraphWriter::WriteAnnot(
 {
     m_colCount = 4;
 
-    CBedTrackRecord track;
+    CBedTrackRecord track("bedGraph");
     if (!track.Assign(annot)) {
         return false;
     }
@@ -345,7 +345,7 @@ bool CBedGraphWriter::xWriteSingleFeature(
     bedRecord.SetChromId(recordId);
 
     bedRecord.SetChromStart(interval.GetFrom());
-    bedRecord.SetChromEnd(interval.GetTo()+1);
+    bedRecord.SetChromEnd(interval.GetTo());
     bedRecord.SetChromValue(score);
     bedRecord.Write(m_Os);
     return true;
@@ -419,7 +419,7 @@ bool CBedGraphWriter::xWriteSingleGraphByte(
         size_t recordStart = valIndex * chromStep;
         bedRecord.SetChromStart(recordStart);
 
-        size_t recordEnd = recordStart + chromStep - 1;
+        size_t recordEnd = recordStart + chromStep;
         bedRecord.SetChromEnd(recordEnd);
 
         double value = offset + scale*values[valIndex];

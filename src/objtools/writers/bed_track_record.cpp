@@ -139,7 +139,7 @@ bool CBedTrackRecord::Write(
     CNcbiOstream& ostr )
 //  ----------------------------------------------------------------------------
 {
-    if (mName.empty()  &&  mTitle.empty()  && mKeyValuePairs.empty()) {
+    if (mType.empty()  &&  mName.empty()  &&  mTitle.empty()  && mKeyValuePairs.empty()) {
         //nothing there to write
         return true;
     }
@@ -152,6 +152,9 @@ bool CBedTrackRecord::Write(
         description = mTitle;
     }
     ostr << "track";
+    if (!mType.empty()) {
+        ostr << " type=\"" << mType << "\"";
+    }
     if (!name.empty()) {
         ostr << " name=\"" << name << "\"";
     }
@@ -162,10 +165,9 @@ bool CBedTrackRecord::Write(
         auto key = pair.first;
         auto value = pair.second;
 
-        if (key == "name") {
-            continue;
-        }
-        if (key == "description") {
+        const vector<string> ignoredKeys = {"description", "name", "type"};
+        const auto keyIt = std::find(ignoredKeys.begin(), ignoredKeys.end(), key);
+        if (keyIt != ignoredKeys.end()) {
             continue;
         }
         string quotesym = "\"";

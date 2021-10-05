@@ -46,7 +46,8 @@ class CBedTrackRecord
 //  ============================================================================
 {
 public:
-    CBedTrackRecord() {};
+    CBedTrackRecord(
+        const string& type = ""): mType(type) {};
     ~CBedTrackRecord() {};
 
     bool Assign(const CSeq_annot&);
@@ -60,6 +61,7 @@ protected:
     std::string xGetKeyValue(
         const std::string&) const;
 
+    string mType;
     string mName;
     string mTitle;
     std::map<std::string, std::string> mKeyValuePairs;
