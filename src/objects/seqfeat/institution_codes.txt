@@ -7998,7 +7998,8 @@ WACA<USA-AZ>	s	Walnut Canyon National Monument
 WACA<USA-OR>	s	Work Amber Collection			
 WACC	c	Western Australian Culture Collection			
 WADA	s	Western Australia Department of Agriculture			
-WAG	s	Wageningen University		 http://data.biodiversitydata.nl/naturalis/specimen/WAG	
+WAG	s	Naturalis		 http://data.biodiversitydata.nl/naturalis/specimen/WAG	
+WAGPD	s	National Plant Protection Organization			
 WAHO	s	Institute of Horticultural Plant Breeding, Department of Biosystematics			
 WAI	s	Waimea Valley			
 WAIK	s	University of Waikato, Biological Sciences Department			
