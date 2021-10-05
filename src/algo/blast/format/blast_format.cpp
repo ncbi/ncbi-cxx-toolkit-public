@@ -2270,11 +2270,7 @@ void CBlastFormat::ResetScopeHistory()
 {
     // Do not reset the scope for BLAST2Sequences or else we'll loose the
     // sequence data! (see x_CreateSubjectBioseq)
-    if ((m_IsBl2Seq)
-    	|| (m_FormatType == CFormattingArgs::eXml2)
-    	|| (m_FormatType == CFormattingArgs::eJson)
-    	|| (m_FormatType == CFormattingArgs::eXml2_S)
-    	|| (m_FormatType == CFormattingArgs::eJson_S)){
+    if (m_IsBl2Seq){
         return;
     }
 
