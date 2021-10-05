@@ -717,7 +717,8 @@ public:
         
         // --- additional flags -------------------------------------
         
-        fIgnoreMissing   = (1 << 4),
+        fIgnoreMissing = (1 << 4),  ///< Ignore missed entries
+        fProcessAll    = (1 << 5),  ///< Process all entries
 
         // --- directory processing modes ---------------------------
         // "Enums", retained for backward compatibility.
@@ -735,12 +736,19 @@ public:
         eNonRecursive = fDir_All,
         
         /// Process all files and subdirectories recursively.
+        /// Stop processing on a first error.
         eRecursive    = fDir_All | fDir_Recursive,
+        eRecursiveStopOnErrors = eRecursive,
         
         /// Same as eRecursive, but do not report an error for
         /// disappeared entries (e.g. if the same directory is being
         /// removed in a parallel thread for example).
-        eRecursiveIgnoreMissing = eRecursive | fIgnoreMissing
+        eRecursiveIgnoreMissing = eRecursive | fIgnoreMissing,
+
+        /// Same as eRecursiveIgnoreMissing, but process all possible
+        /// entries. Do not break processing if it cannot ptocess some entries
+        /// due permission or other errors.
+        eRecursiveNotStopOnErrors = eRecursive | fIgnoreMissing | fProcessAll
     };
     typedef unsigned int TProcessingFlags;  ///< Binary OR of "EProcessingFlags"
     
@@ -1975,6 +1983,11 @@ public:
     ///   - eRecursiveIgnoreMissing
     ///        same as eRecursive, but do not report an error
     ///        for missed entries.
+    ///   - eRecursiveNotStopOnErrors
+    ///        same as eRecursiveIgnoreMissing, but do not stop on a first
+    ///        error and process all entries, so Remove() will try to remove
+    ///        all what it can. Still returns FALSE if it was unable to 
+    ///        remove any entry.
     /// @return
     ///   TRUE if operation successful; FALSE otherwise.
     /// @sa
@@ -2012,7 +2025,12 @@ public:
     ///         change modes for all files and subdirectories recursively;
     ///   - eRecursiveIgnoreMissing
     ///        same as eRecursive, but do not report an error
-    ///        for missed entries.
+    ///        for missed entries;
+    ///   - eRecursiveNotStopOnErrors
+    ///        same as eRecursiveIgnoreMissing, but do not stop on a first
+    ///        error and process all entries, so SetMode() will work like
+    ///        Unix chmod utility. Still returns FALSE if it was unable to
+    ///        change mode for any entry.
     /// @return
     ///   TRUE if permissions successfully set for all entries;  FALSE, otherwise.
     /// @sa

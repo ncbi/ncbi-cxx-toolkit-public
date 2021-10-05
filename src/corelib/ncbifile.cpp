@@ -1074,7 +1074,9 @@ bool CDirEntry::SetModeEntry(TMode user_mode, TMode group_mode,
         if ( (flags & fIgnoreMissing)  &&  (errno == ENOENT) ) {
             return true;
         }
-        LOG_ERROR_ERRNO(7, "CDirEntry::SetModeEntry(): chmod() failed for: " + GetPath());
+        LOG_ERROR_ERRNO(7, "CDirEntry::SetModeEntry(): chmod() failed: set mode " +
+                            CDirEntry::ModeToString(user, group, other, special) +
+                            " for: " + GetPath());     
         return false;
     }
     return true;
@@ -4362,6 +4364,7 @@ bool CDir::Remove(TRemoveFlags flags) const
         return false;
     }
  
+    bool success = true;
     try {
         // Remove each entry
         ITERATE(TEntries, entry, *contents.get()) {
@@ -4379,12 +4382,20 @@ bool CDir::Remove(TRemoveFlags flags) const
                 int f = (flags & fDir_Subdirs) ? (flags | fDir_Self) : flags;
                 if (item.IsDir(eIgnoreLinks)) {
                     if (!CDir(item.GetPath()).Remove(f)) {
-                        throw "Removing subdirectory failed";
+                        if (flags & fProcessAll) {
+                            success = false;
+                        } else {
+                            throw "Removing subdirectory failed";
+                        }
                     }
                 }
                 else if (flags & fDir_Files) {
                     if (!item.Remove(f)) {
-                        throw "Removing directory entry failed";
+                        if (flags & fProcessAll) {
+                            success = false;
+                        } else {
+                            throw "Removing directory entry failed";
+                        }
                     }
                 }
             }
@@ -4394,7 +4405,11 @@ bool CDir::Remove(TRemoveFlags flags) const
                     // Clear all flags to go inside directory,
                     // and try to remove it as "empty".
                     if (!item.Remove((flags & ~fDir_All) | fDir_Self)) {
-                        throw "Removing directory entry (non-recursive) failed";
+                        if (flags & fProcessAll) {
+                            success = false;
+                        } else {
+                            throw "Removing directory entry (non-recursive) failed";
+                        }
                     }
                 }
                 continue;
@@ -4402,7 +4417,11 @@ bool CDir::Remove(TRemoveFlags flags) const
             else {
                 if (flags & fDir_Files) {
                     if (!item.Remove(flags)) {
-                        throw "";
+                        if (flags & fProcessAll) {
+                            success = false;
+                        } else {
+                            throw "";
+                        }
                     }
                 }
             }
@@ -4412,7 +4431,11 @@ bool CDir::Remove(TRemoveFlags flags) const
             if ((flags & fIgnoreMissing) && (errno == ENOENT)) {
                 return true;
             }
-            throw "Cannot remove directory itself";
+            if (flags & fProcessAll) {
+                success = false;
+            } else {
+                throw "Cannot remove directory entry";
+            }
         }
     }
     catch (const char* what) {
@@ -4421,7 +4444,7 @@ bool CDir::Remove(TRemoveFlags flags) const
         LOG_ERROR(73, "CDir::Remove(): Cannot remove directory: " + GetPath() + ": " + what);
         return false;
     }
-    return true;
+    return success;
 }
 
 
@@ -4445,6 +4468,7 @@ bool CDir::SetMode(TMode user_mode,  TMode group_mode,
         return false;
     }
 
+    bool success = true;
     try {
         // Process each entry
         ITERATE(TEntries, entry, *contents.get()) {
@@ -4461,12 +4485,20 @@ bool CDir::SetMode(TMode user_mode,  TMode group_mode,
                 int f = (flags & fDir_Subdirs) ? (flags | fDir_Self) : flags;
                 if (item.IsDir(eIgnoreLinks)) {
                     if (!CDir(item.GetPath()).SetMode(user_mode, group_mode, other_mode, special_mode, f)) {
-                        throw "Changing mode for subdirectory failed";
+                        if (flags & fProcessAll) {
+                            success = false;
+                        } else {
+                            throw "Changing mode for subdirectory failed";
+                        }
                     }
                 }
                 else if (flags & fDir_Files) {
                     if (!item.SetModeEntry(user_mode, group_mode, other_mode, special_mode, f)) {
-                        throw "Changing mode for subdirectory entry failed";
+                        if (flags & fProcessAll) {
+                            success = false;
+                        } else {
+                            throw "Changing mode for subdirectory entry failed";
+                        }
                     }
                 }
             }
@@ -4477,7 +4509,11 @@ bool CDir::SetMode(TMode user_mode,  TMode group_mode,
                     // and try to change modes for entry only.
                     if (!CDir(item.GetPath()).SetMode(user_mode, group_mode, other_mode, special_mode,
                         (flags & ~fDir_All) | fDir_Self)) {
-                        throw "Changing mode for subdirectory (non-recursive) failed";
+                        if (flags & fProcessAll) {
+                            success = false;
+                        } else {
+                            throw "Changing mode for subdirectory (non-recursive) failed";
+                        }
                     }
                 }
                 continue;
@@ -4486,7 +4522,11 @@ bool CDir::SetMode(TMode user_mode,  TMode group_mode,
                 if (flags & fDir_Files) {
                     if (!item.SetModeEntry(user_mode, group_mode, other_mode, special_mode, flags)) {
                         // Changing mode for a regular file entry failed
-                        throw "Changing mode for subdirectory entry failed";
+                        if (flags & fProcessAll) {
+                            success = false;
+                        } else {
+                            throw "Changing mode for subdirectory entry failed";
+                        }
                     }
                 }
             }
@@ -4502,9 +4542,12 @@ bool CDir::SetMode(TMode user_mode,  TMode group_mode,
     // Process directory entry
     if (flags & fDir_Self) {
         // Change mode for entry/directory itself.
-        return SetModeEntry(user_mode, group_mode, other_mode, special_mode, fEntry);
+        // Clear all flags to disable to go inside directory, but allow to pass all additional flags.
+        if (!SetModeEntry(user_mode, group_mode, other_mode, special_mode, (flags & ~fDir_All) | fEntry)) {
+            success = false;
+        };
     }
-    return true;
+    return success;
 }
 
 
