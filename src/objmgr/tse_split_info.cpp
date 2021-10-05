@@ -535,13 +535,12 @@ void CTSE_Split_Info::x_LoadChunks(CDataLoader* loader,
                         sorted_chunks.end());
     CDataLoader::TChunkSet chunks;
     chunks.reserve(sorted_chunks.size());
-    CInitMutexPool mutex_pool;
     vector< AutoPtr<CInitGuard> > guards;
     guards.reserve(sorted_chunks.size());
     // Collect and lock all chunks to be loaded
     for ( auto& chunk : sorted_chunks ) {
-        AutoPtr<CInitGuard> guard(new CInitGuard(chunk->m_LoadLock, mutex_pool));
-        if ( !(*guard.get()) ) {
+        AutoPtr<CInitGuard> guard = chunk->GetLoadInitGuard();
+        if ( !guard.get() || !*guard.get() ) {
             continue;
         }
         chunks.push_back(chunk);
