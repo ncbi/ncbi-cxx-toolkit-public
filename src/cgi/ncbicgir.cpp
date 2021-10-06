@@ -337,8 +337,11 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
         }
     }
     if (!m_DisableTrackingCookie  &&  m_TrackingCookie.get()) {
+        CCgiCookie temp = *m_TrackingCookie;
+        if (m_Cookies.GetAllCookiesSecure()) temp.SetSecure(true);
+        if (m_Cookies.GetAllCookiesHttpOnly()) temp.SetHttpOnly(true);
         CCgiResponse* self = const_cast<CCgiResponse*>(this);
-        self->m_Cookies.Add(*m_TrackingCookie);
+        self->m_Cookies.Add(temp);
         self->SetHeaderValue(TCGI_TrackingTagName::GetDefault(),
             m_TrackingCookie->GetValue());
         CRequestContext& rctx = GetDiagContext().GetRequestContext();
