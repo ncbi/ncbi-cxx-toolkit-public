@@ -38,6 +38,9 @@ set(NCBI_ThirdParty_Boost      ${NCBI_TOOLS_ROOT}/boost-1.76.0-ncbi1 CACHE PATH 
 set(NCBI_ThirdParty_BerkeleyDB ${NCBI_TOOLS_ROOT}/BerkeleyDB CACHE PATH "BerkeleyDB root")
 set(NCBI_ThirdParty_FASTCGI    ${NCBI_TOOLS_ROOT}/fcgi-2.4.0 CACHE PATH "FASTCGI root")
 set(NCBI_ThirdParty_FASTCGI_SHLIB ${NCBI_ThirdParty_FASTCGI})
+set(NCBI_ThirdParty_PYTHON_version  2.7)
+set(NCBI_ThirdParty_PYTHON     "/System/Library/Frameworks/Python.framework/Versions/${NCBI_ThirdParty_PYTHON_version}" CACHE PATH "PYTHON root")
+#set(NCBI_ThirdParty_PYTHON     "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.8" CACHE PATH "PYTHON root")
 #set(NCBI_ThirdParty_VDB        "/Volumes/trace_software/vdb/vdb-versions/2.11.0")
 set(NCBI_ThirdParty_VDB        "/net/snowman/vol/projects/trace_software/vdb/vdb-versions/2.11.0" CACHE PATH "VDB root")
 set(NCBI_ThirdParty_VDB_ARCH x86_64)
@@ -296,7 +299,7 @@ set(NCBI_COMPONENT_Sybase_FOUND NO)
 
 #############################################################################
 # PYTHON
-set(NCBI_COMPONENT_PYTHON_FOUND NO)
+NCBI_define_Xcomponent(NAME PYTHON LIB python${NCBI_ThirdParty_PYTHON_version} INCLUDE python${NCBI_ThirdParty_PYTHON_version})
 
 #############################################################################
 # VDB
