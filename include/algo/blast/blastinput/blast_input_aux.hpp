@@ -72,6 +72,29 @@ private:
     CAutoOutputFileReset& operator=(const CAutoOutputFileReset& rhs);
 };
 
+/// Class to constrain the length of the string passed to a given CArgDescriptions key
+class NCBI_BLASTINPUT_EXPORT CArgAllowMaximumStringLength: public CArgAllow
+{
+public:
+    static constexpr Uint4 kDfltMaxLength = 256;
+
+    CArgAllowMaximumStringLength(Uint4 max = kDfltMaxLength) : m_MaxLength(max) {}
+
+protected:
+    /// Overloaded method from CArgAllow
+    virtual bool Verify(const string& value) const {
+        return value.size() < m_MaxLength;
+    }
+
+    /// Overloaded method from CArgAllow
+    virtual string GetUsage(void) const {
+        return "string length < " + NStr::IntToString(m_MaxLength);
+    }
+    
+private:
+    Uint4 m_MaxLength;  /**< Maximum string length value for this object */
+};
+
 /// Class to constrain the values of an argument to those greater than or equal
 /// to the value specified in the constructor
 class NCBI_BLASTINPUT_EXPORT CArgAllowValuesGreaterThanOrEqual : public CArgAllow
