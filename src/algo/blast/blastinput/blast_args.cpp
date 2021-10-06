@@ -3329,7 +3329,7 @@ CStdCmdLineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey(kArgOutput, "output_file",
                    "Output file name",
                    CArgDescriptions::eOutputFile, "-");
-    arg_desc.SetConstraint(kArgOutput, new CArgAllowMaximumStringLength());
+    arg_desc.SetConstraint(kArgOutput, new CArgAllowMaximumFileNameLength());
 
     if (m_GzipEnabled) {
         arg_desc.AddFlag(kArgOutputGzip, "Output will be compressed");

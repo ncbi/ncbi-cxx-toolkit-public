@@ -72,23 +72,24 @@ private:
     CAutoOutputFileReset& operator=(const CAutoOutputFileReset& rhs);
 };
 
-/// Class to constrain the length of the string passed to a given CArgDescriptions key
-class NCBI_BLASTINPUT_EXPORT CArgAllowMaximumStringLength: public CArgAllow
+/// Class to constrain the length of the file name passed to a given CArgDescriptions key
+class NCBI_BLASTINPUT_EXPORT CArgAllowMaximumFileNameLength: public CArgAllow
 {
 public:
     static constexpr Uint4 kDfltMaxLength = 256;
 
-    CArgAllowMaximumStringLength(Uint4 max = kDfltMaxLength) : m_MaxLength(max) {}
+    CArgAllowMaximumFileNameLength(Uint4 max = kDfltMaxLength) : m_MaxLength(max) {}
 
 protected:
     /// Overloaded method from CArgAllow
     virtual bool Verify(const string& value) const {
-        return value.size() < m_MaxLength;
+        CFile fname(value);
+        return fname.GetName().size() < m_MaxLength;
     }
 
     /// Overloaded method from CArgAllow
     virtual string GetUsage(void) const {
-        return "string length < " + NStr::IntToString(m_MaxLength);
+        return "file name length < " + NStr::IntToString(m_MaxLength);
     }
     
 private:
