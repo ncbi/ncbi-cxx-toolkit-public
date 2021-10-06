@@ -581,10 +581,19 @@ bool CWiggleWriter::xIsVariableStepData(
         if (header.IsSetField_name()) {
             string fieldName = header.GetField_name();
             if (fieldName == "span") {
-                if (!columns[u]->IsSetDefault()) {
-                    return false;
+                for (size_t i=0; i < numRows; ++i) {
+                    int curspan = 0;
+                    if (!columns[u]->TryGetInt(i, curspan)) {
+                        return false;
+                    }
+                    if (span == 0) {
+                        span = curspan;
+                    }
+                    else if (curspan != span) {
+                        return false;
+                    }
                 }
-                return (columns[u]->TryGetInt(0, span));
+                return true;
             }
         }
     }
@@ -688,10 +697,20 @@ bool CWiggleWriter::xWriteTableBedStyle(
     const CSeq_table& table)
 //
 //  Record format is:
-//      chromName posIn posOut value
+//      chromName posIn+1 posOut+1 value
+//  or:
+//      variableStep chrom=chromName span=intervalSize
+//      posIn+1   value
+// or:
+//      posIn+1   value
+// if the span has not changed from the last record.
 //  ----------------------------------------------------------------------------
 {
+    map<string, string> bestIdCache;
+
     int numRows = table.GetNum_rows();
+    int lastSpan(0);
+
     for (int i=0; i < numRows; ++i) {
 
         if (IsCanceled()) {
@@ -705,25 +724,48 @@ bool CWiggleWriter::xWriteTableBedStyle(
         if (!xTableGetChromName(table, i, chrom)) {
             return false;
         }
-        m_Os << chrom;
+        auto idIt = bestIdCache.find(chrom);
+        if (idIt != bestIdCache.end()) {
+            chrom = idIt->second;
+        }
+        else {
+            if (mpScope) {
+                string bestId;
+                CGenbankIdResolve::Get().GetBestId(
+                    CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
+                bestIdCache[chrom] = bestId;
+                chrom = bestId;
+            }
+            else {
+                bestIdCache[chrom] = chrom;
+            }
+        }
 
         int posIn(0);
         if (!xTableGetPosIn(table, i, posIn)) {
             return false;
         }
-        m_Os << '\t' << (posIn+1);
 
         int posOut(0);
         if (!xTableGetPosOut(table, i, posIn, posOut)) {
             return false;
         }
-        m_Os << '\t' << (posOut+1);
 
         double value(0);
         if (!xTableGetValue(table, i, value)) {
             return false;
         }
-        m_Os << '\t' << value << '\n';
+#define BED_AS_VARSTEP 1
+#if BED_AS_VARSTEP
+        auto span = posOut - posIn;
+        if (span != lastSpan) {
+            m_Os << "variableStep chrom=" << chrom << " span=" << span << '\n';
+            lastSpan = span;
+        }
+        m_Os << posIn+1 << '\t' << value << '\n';
+#else
+        m_Os << chrom << '\t' << (posIn + 1) << '\t' << (posOut + 1) << '\t' << value << '\n';
+#endif
     }
     return true;
 }
