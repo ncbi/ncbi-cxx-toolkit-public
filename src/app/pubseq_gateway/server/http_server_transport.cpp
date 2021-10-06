@@ -409,3 +409,22 @@ void GetSSLSettings(bool &  enabled,
     ciphers = app->GetSSLCiphers();
 }
 
+
+// Moved here to avoid a compiler warning
+template<typename P>
+void CHttpConnection<P>::PostponedStart(shared_ptr<CPSGS_Reply>  reply)
+{
+    auto    http_reply = reply->GetHttpReply();
+    if (!http_reply->IsPostponed())
+        NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
+                   "Request has not been postponed");
+    if (IsClosed())
+        NCBI_THROW(CPubseqGatewayException, eConnectionClosed,
+                   "Request handling can not be started after connection was closed");
+    for (auto req: http_reply->GetPendingReqs())
+        req->Start();
+}
+
+// Explicit instantiation due to PostponedStart() method is in the .cpp file
+template class CHttpConnection<CPendingOperation>;
+
