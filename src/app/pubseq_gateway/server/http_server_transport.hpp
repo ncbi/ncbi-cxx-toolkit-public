@@ -781,18 +781,9 @@ public:
         }
     }
 
-    void PostponedStart(shared_ptr<CPSGS_Reply>  reply)
-    {
-        auto    http_reply = reply->GetHttpReply();
-        if (!http_reply->IsPostponed())
-            NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
-                       "Request has not been postponed");
-        if (IsClosed())
-            NCBI_THROW(CPubseqGatewayException, eConnectionClosed,
-                       "Request handling can not be started after connection was closed");
-        for (auto req: http_reply->GetPendingReqs())
-            req->Start();
-    }
+    // Implementation moved to the .cpp file to avoid a compilation warning
+    // related to an 'incomplete type'
+    void PostponedStart(shared_ptr<CPSGS_Reply>  reply);
 
     void Postpone(list<unique_ptr<P>>  pending_reqs,
                   shared_ptr<CPSGS_Reply>  reply)
