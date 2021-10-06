@@ -323,9 +323,11 @@ public:
 
     /// Mark all cookies as secure.
     void SetAllCookiesSecure(bool value);
+    bool GetAllCookiesSecure(void) const { return m_AllSecure; }
 
     /// Mark all cookies as HTTP_ONLY.
     void SetAllCookiesHttpOnly(bool value);
+    bool GetAllCookiesHttpOnly(void) const { return m_AllHttpOnly; }
 
 private:
     enum ECheckResult {
@@ -342,6 +344,8 @@ private:
     NStr::EUrlEncode m_EncodeFlag;
     TSet             m_Cookies;
     bool             m_Secure;
+    bool             m_AllSecure;
+    bool             m_AllHttpOnly;
 
     /// prohibit default initialization and assignment
     CCgiCookies(const CCgiCookies&);
@@ -1064,7 +1068,9 @@ inline void CCgiCookie::ResetInvalid(TInvalidFlag flag)
 inline CCgiCookies::CCgiCookies(void)
     : m_EncodeFlag(NStr::eUrlEnc_SkipMarkChars),
       m_Cookies(),
-      m_Secure(false)
+      m_Secure(false),
+      m_AllSecure(false),
+      m_AllHttpOnly(false)
 {
     return;
 }
@@ -1072,7 +1078,9 @@ inline CCgiCookies::CCgiCookies(void)
 inline CCgiCookies::CCgiCookies(EUrlEncode encode_flag)
     : m_EncodeFlag(NStr::EUrlEncode(encode_flag)),
       m_Cookies(),
-      m_Secure(false)
+      m_Secure(false),
+      m_AllSecure(false),
+      m_AllHttpOnly(false)
 {
     return;
 }
@@ -1082,7 +1090,9 @@ inline CCgiCookies::CCgiCookies(const string& str,
                                 EUrlEncode   encode_flag)
     : m_EncodeFlag(NStr::EUrlEncode(encode_flag)),
       m_Cookies(),
-      m_Secure(false)
+      m_Secure(false),
+      m_AllSecure(false),
+      m_AllHttpOnly(false)
 {
     Add(str, on_bad_cookie);
 }

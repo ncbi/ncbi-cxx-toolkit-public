@@ -794,6 +794,7 @@ void CCgiCookies::Clear(void)
 
 void CCgiCookies::SetAllCookiesSecure(bool value)
 {
+    m_AllSecure = value;
     NON_CONST_ITERATE (TSet, cookie, m_Cookies) {
         (*cookie)->SetSecure(value);
     }
@@ -802,6 +803,7 @@ void CCgiCookies::SetAllCookiesSecure(bool value)
 
 void CCgiCookies::SetAllCookiesHttpOnly(bool value)
 {
+    m_AllHttpOnly = value;
     NON_CONST_ITERATE (TSet, cookie, m_Cookies) {
         (*cookie)->SetHttpOnly(value);
     }
