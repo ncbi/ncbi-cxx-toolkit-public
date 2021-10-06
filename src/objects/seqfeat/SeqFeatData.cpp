@@ -3921,6 +3921,7 @@ const vector<string>& CSeqFeatData::GetRegulatoryClassList()
         "minus_35_signal",
         "polyA_signal_sequence",
         "recoding_stimulatory_region",
+        "recombination_enhancer",
         "replication_regulatory_region",
         "response_element",
         "riboswitch",
@@ -3928,6 +3929,7 @@ const vector<string>& CSeqFeatData::GetRegulatoryClassList()
         "TATA_box",
         "terminator",
         "transcriptional_cis_regulatory_region",
+        "uORF",
     };
 
     return choices;
