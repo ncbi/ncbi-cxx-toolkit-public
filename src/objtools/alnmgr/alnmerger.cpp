@@ -1207,7 +1207,7 @@ CAlnMixMerger::x_CreateDenseg()
             starts[offset + start_its_i->first->m_RowIdx] =
                 start_its_i->second->first;
 
-            if (start_its_i->second->first != -1) {
+            if (start_its_i->second->first != kInvalidSeqPos) {
                 row_empty[start_its_i->first->m_RowIdx] = false;
             }
         }
