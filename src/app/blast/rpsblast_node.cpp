@@ -147,7 +147,7 @@ CRPSBlastNode::Main()
         formatter.SetQueryRange(query_opts->GetRange());
         formatter.SetLineLength(fmt_args->GetLineLength());
         if(UseXInclude(*fmt_args, args[kArgOutput].AsString())) {
-        	formatter.SetBaseFile(args[kArgOutput].AsString());
+        	formatter.SetBaseFile(args[kArgOutput].AsString() +  "_" + NStr::IntToString(GetNodeNum()));
         }
         formatter.PrintProlog();
 
