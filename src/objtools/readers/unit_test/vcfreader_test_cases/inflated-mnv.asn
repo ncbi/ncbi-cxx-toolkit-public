@@ -33,7 +33,8 @@ specs/dbSNP_BitField_latest.pdf",
  of gene symbol:gene id.  The gene symbol and id are delimited by a colon (:)
  and each pair is delimited by a vertical bar (|)"">",
             "INFO=<ID=dbSNPBuildID,Number=1,Type=Integer,Description=""First
- dbSNP Build for RS"">",
+ dbSNP Build for RS (NOTE: absent for RS created from Frequency Data without
+ Submission SNPs)"">",
             "INFO=<ID=SAO,Number=1,Type=Integer,Description=""Variant Allele
  Origin: 0 - unspecified, 1 - Germline, 2 - Somatic, 3 - Both"">",
             "INFO=<ID=SSR,Number=1,Type=Integer,Description=""Variant Suspect
