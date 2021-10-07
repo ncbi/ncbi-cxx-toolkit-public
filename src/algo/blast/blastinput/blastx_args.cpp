@@ -170,7 +170,7 @@ CBlastxNodeArgs::CBlastxNodeArgs(const string & input)
 CBlastxNodeArgs::~CBlastxNodeArgs()
 {
 	if (m_InputStream) {
-		free(m_InputStream);
+		delete m_InputStream;
 		m_InputStream = NULL;
 	}
 }

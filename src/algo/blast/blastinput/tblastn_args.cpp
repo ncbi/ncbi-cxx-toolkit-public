@@ -195,7 +195,7 @@ CTblastnNodeArgs::CTblastnNodeArgs(const string & input)
 CTblastnNodeArgs::~CTblastnNodeArgs()
 {
 	if (m_InputStream) {
-		free(m_InputStream);
+		delete m_InputStream;
 		m_InputStream = NULL;
 	}
 }
