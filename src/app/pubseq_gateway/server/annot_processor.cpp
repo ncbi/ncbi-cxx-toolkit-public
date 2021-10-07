@@ -616,6 +616,9 @@ void CPSGS_AnnotProcessor::OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
                                            CBlobRecord const &  blob,
                                            bool is_found)
 {
+    // Annotation blob properties may come only once
+    fetch_details->SetReadFinished();
+
     if (m_Cancelled) {
         m_Completed = true;
         return;
@@ -628,8 +631,12 @@ void CPSGS_AnnotProcessor::OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
                 IPSGS_Processor::m_Request->GetStartTimestamp());
         }
 
-        m_Completed = true;
-        SignalFinishProcessing();
+        if (AreAllFinishedRead()) {
+            m_Completed = true;
+            SignalFinishProcessing();
+        } else {
+            x_Peek(false);
+        }
         return;
     }
 
@@ -645,8 +652,12 @@ void CPSGS_AnnotProcessor::OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
                 IPSGS_Processor::m_Request->GetStartTimestamp());
         }
 
-        m_Completed = true;
-        SignalFinishProcessing();
+        if (AreAllFinishedRead()) {
+            m_Completed = true;
+            SignalFinishProcessing();
+        } else {
+            x_Peek(false);
+        }
         return;
     }
 
