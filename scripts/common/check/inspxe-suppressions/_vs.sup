@@ -311,3 +311,13 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "False positive with aligned alloc/free - invalid memory access, missed allocation. CXX-12112"
+	type = {prob_dealloc_invalid,prob_mem_invalid}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=aligned_free;
+		}
+	}
+}
