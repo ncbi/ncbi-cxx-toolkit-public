@@ -157,7 +157,7 @@ CBlastxNode::Main()
         formatter.SetHspsSortOption(fmt_args->GetHspsSortOption());
         formatter.SetCustomDelimiter(fmt_args->GetCustomDelimiter());
         if(UseXInclude(*fmt_args, args[kArgOutput].AsString())) {
-        	formatter.SetBaseFile(args[kArgOutput].AsString());
+        	formatter.SetBaseFile(args[kArgOutput].AsString() +  "_" + NStr::IntToString(GetNodeNum()));
         }
         formatter.PrintProlog();
 
