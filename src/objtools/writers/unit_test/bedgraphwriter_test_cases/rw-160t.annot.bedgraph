@@ -1,4 +1,4 @@
-track name="test-table.input" description="sorted coverage graph"
+track type="bedGraph" name="test-table.input" description="sorted coverage graph"
 224514631	99990	99994	5
 224514631	99994	99997	4.954
 224514631	99997	99999	4.906
