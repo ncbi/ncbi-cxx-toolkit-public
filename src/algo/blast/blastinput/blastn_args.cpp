@@ -159,7 +159,7 @@ CBlastnNodeArgs::CBlastnNodeArgs(const string & input)
 CBlastnNodeArgs::~CBlastnNodeArgs()
 {
 	if (m_InputStream) {
-		free(m_InputStream);
+		delete m_InputStream;
 		m_InputStream = NULL;
 	}
 }
