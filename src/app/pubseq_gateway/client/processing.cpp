@@ -852,18 +852,21 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
             replies.emplace_back(reply);
 
             metrics->Set(SMetricType::eReply);
-            bool success = reply->GetStatus(CDeadline::eInfinite) == EPSG_Status::eSuccess;
-            metrics->Set(SMetricType::eDone);
 
-            while (success) {
+            bool success = true;
+
+            for (;;) {
                 auto reply_item = reply->GetNextItem(CDeadline::eInfinite);
                 _ASSERT(reply_item);
 
                 if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
 
                 metrics->NewItem();
-                success = reply_item->GetStatus(CDeadline::eInfinite) == EPSG_Status::eSuccess;
+                success = success && (reply_item->GetStatus(CDeadline::eInfinite) == EPSG_Status::eSuccess);
             }
+
+            success = success && (reply->GetStatus(CDeadline::eInfinite) == EPSG_Status::eSuccess);
+            metrics->Set(SMetricType::eDone);
 
             if (success) metrics->SetSuccess();
 
