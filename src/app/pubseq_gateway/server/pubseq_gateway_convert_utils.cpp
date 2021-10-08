@@ -251,6 +251,7 @@ CJsonNode ToJson(const CNAnnotRecord &  annot_record,
     json.SetInteger(kSeqIdType, annot_record.GetSeqIdType());
     json.SetInteger(kStart, annot_record.GetStart());
     json.SetInteger(kStop, annot_record.GetStop());
+    json.SetString("annot_info", "{}");
     json.SetString(kSeqAnnotInfo, NStr::Base64Encode(annot_record.GetSeqAnnotInfo(), 0));
     return json;
 }
