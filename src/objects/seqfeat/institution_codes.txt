@@ -405,6 +405,7 @@ BAG	s	Ministry of Agriculture
 BAH<BRZ>	s	Empresa Baiana de Desenvolvimento Agricola			
 BAH<GRM>	s	Biologische Anstalt Helgoland Marine Station			
 BAI	s	Instituto Forestal Nacional (IFONA), Centro Forestal Castelar			
+BAIK	s	Western Baikal Protected Areas			
 BAIL	s	Conservatoire Botanique National de Bailleul			
 BAJ	s	Instituto Municipal de Botanica, Parque Pte. Dr. Nicolas Avellaneda			
 BAK	s	Azerbaijan National Academy of Sciences (ANAS)			
@@ -899,6 +900,7 @@ CAS:SUA	s	California Academy of Sciences, Stanford University Collection of amph
 CAS:SUR	s	California Academy of Sciences, Stanford University Collection of reptiles		
 CAS:TYPE	s	California Academy of Sciences, Entomology Type Collection		
 CASA	s	Casa da Floresta Assessoria Ambiental			
+CASCT	s	CASABIO - The Home of Biodiversity			
 CASM	s	Chicago Academy of Sciences, Museum of Natural History			
 CASMB	s	Centre of Advanced Study in Marine Biology			
 CASS	s	Chinese Academy of Sciences, Shenyang			
@@ -1368,6 +1370,7 @@ COAD	c	Colecao Octavio de Almeida Drumond
 COAH	s	Herbario Amazonico Colombiano (Instituto Amazonico de Investigaciones Cientificas SINCHI)	COAH<IH>		
 COCA	s	Comision Tecnico Consultiva de Coeficientes de Agostadero (COTECOCA)			
 COCAZ	s	Coconino National Forest Herbarium			
+COCC	s	Central Oregon Community College			
 COCH	s	Universidad Mayor de San Simon, Departamento de Botanica			
 COCO	s	Colorado College, Biology Department			
 CODAGEM	s	Universidad Autonoma del Estado de Mexico			
@@ -1659,6 +1662,7 @@ DEN	s	Denison University, Biology Department
 DENA	s	Watt Institute			
 DEND	s	University of Zagreb			
 DENF	s	Grand Mesa-Uncompahgre-Gunnison Natonal Forests			
+DEP	s	DePaul University			
 DERM	s	Intermountain Experiment Station			
 DES	sb	Desert Botanical Garden, Research Department			
 DEV	s	St. Joseph's College			
@@ -2098,6 +2102,7 @@ FERM	c	Patent and Bio-Resource Center, National Institute of Advanced Industrial
 FESC	s	Facultad de Estudios Superiores Cuautitlan, Universidad Nacional Autonoma de Mexico			
 FEUH	s	Far Eastern University, Manila			
 FEZA	s	Universidad Nacional Autonoma de Mexico, Carrera de Biologia			
+FFAAS	s	Fujian Academy of Agricultural Sciences			
 FFB	s	Atlantic Forestry Centre, Canadian Forest Service			
 FFBNM	s	Florissant Fossil Beds National Monument			
 FFCL	s	Nossa Senhora do Patrocinia			
@@ -2562,6 +2567,7 @@ HBOM	s	Harbor Branch Oceanographic Museum	HBOI
 HBR	s	Herbario Barbosa Rodrigues			
 HBRA	s	Universidade Federal do Para, Campus Braganca			
 HBSH	s	Highlands Biological Station			
+HBU	s	Hebei University			
 HBUM	s	College of Life Sciences Hebei Univesity, Baoding			
 HC	s	Hangchow Christian College			
 HCAT	s	University of Tabriz, Landscape Department			
@@ -2773,6 +2779,7 @@ HOL	s	Holden Arboretum
 HOLZ	s	Paleontological Collection			
 HOMP	s	Okresni muzeum Pribram Brezove Hory			
 HON	s	Sichuan Grassland Research Institute			
+HOSP	s	Hot Springs National Park			
 HOXA	s	Estacion biologica del Jardin Botanico de Missouri			
 HPAN	s	University of the State of Mato Grosso, UNEMAT			
 HPBR	s	Universidade Regional Integrada do Alto Uruguai e das Missoes			
@@ -2978,7 +2985,7 @@ IBH	s	Universidad Nacional Autonoma de Mexico, Instituto de Biologia
 IBI	s	Instituto Biologico, Laboratorio de Micologia			
 IBIGEO	s	Instituto de Bio y Geociencias del NOA			
 IBIR	s	Institutul Agronomic			
-IBIW	s	I. D. Papanin Institute for Biology of Inland Waters			
+IBIW	s	Papanin Institute for Biology of Inland Waters			
 IBK	s	Guangxi Institute of Botany			
 IBK<UKR>	c	Mushroom Culture Collection of the M.G. Kholodny Institute of Botany			
 IBL<ISR>	s	Independent Biological Laboratories			
@@ -3197,6 +3204,7 @@ INA<RUS>	c	Culture Collection of the Institute of New Antibiotics
 InaCC	c	Indonesian Culture Collection, Research Center for Biology, Indonesian Institute of Sciences			
 INALI	s	Instituto Limnologia			
 iNAT	b	iNaturalist		https://www.inaturalist.org/observations/	
+INAT	s	National Institute of Agronomy			
 INB	s	Instituto Nacional de Biodiversidad, Departamento de Botanica			
 INBC	s	Instituto Nacional de Biodiversidad (INBio)			
 INBIO	s	National Biodiversity Institute, Costa Rica			
@@ -3700,6 +3708,7 @@ KPE	s	Kyungpook Earth, Kyungpook National University
 KPM	s	Kanagawa Prefectural Museum of Natural History			
 KPM-NI	s	Kanagawa Prefectural Museum of Natural History			
 KPMC	s	Kalamazoo, Kalamazoo Public Museum			
+KPU	s	Volodymyr VynnychenkoCentral Ukrainian State Pedagogical University			
 KR	s	Staatliches Museum fuer Naturkunde Karlsruhe			
 KRA	s	Jagiellonian University			
 KRAM	s	Polish Academy of Sciences, Department of Plant Systematics			
@@ -4115,6 +4124,7 @@ MA:Musci	s	Real Jardin Botanico, Bryophyte collection
 MAA	s	Escuela Tecnica Superior de Ingenieros Agronomos, Departamento de Produccion Vegetal			
 MAAS	s	Natuurhistorisch Museum Maastricht, Botany Department			
 MAB	s	Musee Anne de Beaujeu			
+MABIK	s	National Marine Biodiversity Institute of Korea			
 MAC	s	Instituto do Meio Ambiente			
 MACA	s	Parque da Reserva de Siac Pai van Coloane Island			
 MACB	s	Universidad Complutense, Departamento de Biologia Vegetal 1			
@@ -4773,6 +4783,7 @@ MSTR	s	Westfalisches Museum fur Naturkunde
 MSU<THA>	c	Acetobacter			
 MSU<USA-MI>	s	Michigan State University Museum	MSUC,MSUM		
 MSUD	s	I. I. Mecynikov State University of Odessa, Department of Morphology and Systematics of Plants			
+MSUDEN	s	Metropolitan State University of Denver			
 MSUH	s	University of Mosul, Biology Department			
 MSUMC	s	Murray State University			
 MSUMZ	s	Memphis State University			
@@ -6359,6 +6370,7 @@ SCZ	s	Smithsonian Tropical Research Institute	STRI
 SD	s	Herbarium, San Diego Natural History Museum			
 SDAKS	s	South Dakota State University			
 SDAU	s	Shandong Agricultural University			
+SDBG	s	San Diego Botanic Garden			
 SDC	s	South Dakota State University, Department of Biology			
 SDCM	s	Shandong College of Traditional Chinese Medicine			
 SDFH	s	Shandong Drug and Food Vocational College			
@@ -6766,6 +6778,7 @@ SPTS	s	Southport Scientific Society
 SPWH	s	Marine Biological Laboratory			
 SQB	s	Societe quebecoise de bryologie			
 SQF	s	Universidad de Chile, Laboratorio de Botanica, Escuela de Quimica y Farmacia			
+SQNU	s	Shangqiu Normal University			
 SQUCC	c	Sultan Qaboos University Culture Collection			
 SQUH	s	Sultan Qaboos University			
 SR	s	Sichuan Institute of Natural Resources			
@@ -7948,6 +7961,7 @@ VMNH	s	Virginia Museum of Natural History
 VMSL	s	I.N.T.A., E.E.A. San Luis, Pastizales Naturales			
 VNC	s	Los Angeles Valley College, Life Sciences Department			
 VNF	s	Vietnam Forestry Herbarium			
+VNFSIH	s	Forest Science Institute of Central Highlands and South of Central Vietnam (FSIH			
 VNGA	s	Vorarlberger Naturschau			
 VNIRO	s	Institute of Oceanography			
 VNM	s	Institute of Tropical Biology			
