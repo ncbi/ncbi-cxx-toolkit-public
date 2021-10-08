@@ -10,7 +10,7 @@
 
 ##############################################################################
 # Find datatool app
-set(NCBI_DATATOOL "${CONAN_BIN_DIRS_NCBI_CXX_TEST}/datatool${CMAKE_EXECUTABLE_SUFFIX}")
+set(NCBI_DATATOOL "${CMAKE_CURRENT_LIST_DIR}/../../../bin/datatool${CMAKE_EXECUTABLE_SUFFIX}")
 
 ##############################################################################
 function(NCBI_generate_cpp GEN_SOURCES GEN_HEADERS)
