@@ -211,6 +211,7 @@ void SPSG_Reply::SetComplete()
         reply_item_locked->state.SetComplete();
     }
 
+    reply_item.NotifyOne();
     queue->CV().NotifyOne();
 }
 
@@ -230,6 +231,7 @@ void SPSG_Reply::SetFailed(string message, SState::EState state)
         reply_item_locked->state.SetState(state);
     }
 
+    reply_item.NotifyOne();
     queue->CV().NotifyOne();
 }
 
