@@ -1875,9 +1875,9 @@ xid_utils needs xcgi
 xid_utils needs xmlwrapp
 xid_utils needs xobjutil
 xid_utils needs xslt_libxml
-xid_utils_load includes xid_pubseqos
-xid_utils_load includes xid_utils
 xid_utils_load needs psloader
+xid_utils_load needs xid_pubseqos
+xid_utils_load needs xid_utils
 xid_utils_noncorelib needs txclient
 xid_utils_noncorelib needs xid_pubseqos
 xid_utils_noncorelib needs xid_utils
