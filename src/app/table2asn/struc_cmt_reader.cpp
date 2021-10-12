@@ -61,14 +61,14 @@ CTable2AsnStructuredCommentsReader::CTable2AsnStructuredCommentsReader(const std
     CRef<ILineReader> reader{ILineReader::New(filename)};
     m_vertical = IsVertical(*reader);
     if (m_vertical) {
+        m_comments.push_back({});
+        LoadCommentsByRow(*reader, m_comments.front());
+        _CheckStructuredCommentsSuffix(m_comments.front());
+    } else {
         LoadComments(*reader, m_comments, CSeq_id::fParse_AnyLocal);
         for (CStructComment& comment : m_comments) {
             _CheckStructuredCommentsSuffix(comment);
         }
-    } else {
-        m_comments.push_back({});
-        LoadCommentsByRow(*reader, m_comments.front());
-        _CheckStructuredCommentsSuffix(m_comments.front());
     }
 }
 
@@ -189,7 +189,7 @@ bool CTable2AsnStructuredCommentsReader::IsVertical(ILineReader& reader)
         line = reader.GetCurrentLine();
         vector<CTempString> values;
         NStr::Split(line, "\t", values);
-        vert = values.size()>2;
+        vert = values.size()<=2;
         reader.UngetLine();
     }
     return vert;
