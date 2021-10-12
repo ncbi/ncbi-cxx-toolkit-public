@@ -476,6 +476,8 @@ static CSeq_id_Handle s_IdxFindBestIdChoice(const CBioseq_Handle::TId& ids)
             case CSeq_id::e_Genbank:
             case CSeq_id::e_Embl:
             case CSeq_id::e_Ddbj:
+            case CSeq_id::e_Swissprot:
+            case CSeq_id::e_Pir:
             case CSeq_id::e_Gi:
             case CSeq_id::e_Other:
             case CSeq_id::e_General:
@@ -535,6 +537,8 @@ void CSeqMasterIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt
                         case CSeq_id::e_Genbank:
                         case CSeq_id::e_Embl:
                         case CSeq_id::e_Ddbj:
+                        case CSeq_id::e_Swissprot:
+                        case CSeq_id::e_Pir:
                         case CSeq_id::e_Gi:
                         case CSeq_id::e_Other:
                         case CSeq_id::e_General:
