@@ -16,7 +16,7 @@ arch=${2}
 
 cmd_DebugMT='--with-debug --with-mt  --without-dll CFLAGS=-g0 CXXFLAGS=-g0'
 cmd_ReleaseMT='--without-debug --with-mt --without-dll'
-cmd_common='--without-internal'
+cmd_common='--without-internal --without-ccache'
 
 timer="date +'%H:%M'"
 
