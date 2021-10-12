@@ -1,0 +1,150 @@
+[LMDB_CACHE]
+; Path to the file where an LMDB si2csi cache file is located
+; If not provided then no cache will be used.
+dbfile_si2csi={si2csi.db}
+; Path to the file where an LMDB bioseq_info cache file is located
+; If not provided then no cache will be used.
+dbfile_bioseq_info={bioseq_info.db}
+; Path to the file where an LMDB blob_prop cache file is located
+; If not provided then no cache will be used.
+dbfile_blob_prop={blob_prop.db}
+
+
+[SERVER]
+; HTTP port (1...65534)
+; No default. If port is not specified or is out of range the server
+; will not start
+port={port}
+
+; Number of HTTP workers (1...100)
+; Default: 32
+workers=32
+
+; Listener backlog (5...2048)
+; Default: 256
+backlog=256
+
+; Max number of connections (5...65000)
+; Default: 4096
+maxconn=4096
+
+; Operation timeout in milliseconds
+; Default: 30000
+optimeout=30000
+
+; Max Cassandra operation retries
+; Default: 1
+maxretries=1
+
+log=false
+
+; Cassandra keyspace where BIOSEQ_INFO and SI2CSI tables are
+; There is no default value. If not provided then the server does not start
+root_keyspace=psg_test_info
+
+slim_max_blob_size=10KB
+
+
+[DEBUG]
+DIAG_POST_LEVEL=Warning
+psg_allow_io_test=false
+diag_trace=false
+
+[STATISTICS]
+small_blob_size = 255
+min=0
+; 16 * 1024 * 1024
+max=16777216
+; can be "log" or "linear"
+type=log
+
+
+
+[CASSANDRA_DB]
+; default: false
+cassandralog=false
+
+; Connection timeout in ms
+; Default: 30000
+ctimeout=15000
+
+; Query timeout in ms
+; Default: 5000
+qtimeout=2500
+
+; Data namespace
+; Default: empty string
+namespace=
+
+; Fallback read consistency
+; Default: false
+fallbackrdconsistency=false
+
+; Lower down consistency of BD write operations if local quorum can't be achieved
+; 0 - default cassandra driver behavior
+; Default: 0
+fallbackwriteconsistency=0
+
+; Load balancing policy. Accepted values are: DCAware, RoundRobin
+; Default: DCAware
+loadbalancing=DCAware
+
+; Enables TokenAware routing
+; Default: true
+tokenaware=true
+
+; Enables LatencyAware routing
+; Default: true
+latencyaware=true
+
+; Number of io threads to async processing (1...32)
+; Default: 4
+numthreadsio=4
+
+; Number of connections per node (1...8)
+; Default: 2
+numconnperhost=2
+
+; Maximum count of connections per node (1...8)
+; Default: 4
+maxconnperhost=4
+
+; TCP keep-alive the initial delay in seconds
+; Default: 0
+keepalive=0
+
+; Cassandra password file and a section where credentials are stored
+; Default: empty, i.e. no user/password combination is used.
+password_file=""
+password_section=""
+
+
+; LBSM name or a list of host[:port] items (',' or ' ' separated).
+; If the value has neither ' ', nor ',' nor ':' then it is treated as a
+; load balancer name. The load balancer resolved host ports are are sorted
+; in accordance with their rates.
+; The list of host[:port] items, regardless where it came from - directly from
+; a parameter value or from a load balancer - is analyzed further. The
+; analizis checks that if ports are provided then they are the same. If the
+; port is provided then it is used for the Cassandra cluster. If no ports are
+; provided then the Cassandra driver uses its default one.
+
+service=ID_CASS_TEST
+
+
+[CASSANDRA_PROCESSOR]
+enabled=true
+
+[OSG_PROCESSOR]
+enabled=false
+
+[HEALTH]
+test_seq_id=RuBBiSH
+test_seq_id_ignore_error=true
+
+[SSL]
+ssl_enable=false
+ssl_cert_file=""
+ssl_key_file=""
+ssl_ciphers=""
+
