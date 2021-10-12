@@ -75,11 +75,13 @@ private:
 class CJsonResponse : public CJson_Document
 {
 public:
+    enum EExceptionHandling { eReport, eRethrow };
+
     template <class TItem>
-    CJsonResponse(EPSG_Status status, TItem item);
+    CJsonResponse(EPSG_Status status, TItem item, EExceptionHandling ex_handling = eReport);
 
     CJsonResponse(const string& id, bool result);
-    CJsonResponse(const string& id, const CJson_Document& result);
+    CJsonResponse(const string& id, const CJsonResponse& result);
     CJsonResponse(const string& id, int code, const string& message);
 
     static void SetReplyType(bool value) { sm_SetReplyType = value; }
@@ -129,6 +131,7 @@ private:
     static void Set(CJson_Value value, bool v)          { value.SetBool(v);   }
 
     CJson_Object m_JsonObj;
+    bool m_Error = false;
     static bool sm_SetReplyType;
     static bool sm_Verbose;
 };
