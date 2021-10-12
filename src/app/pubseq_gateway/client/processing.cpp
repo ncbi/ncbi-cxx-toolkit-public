@@ -52,6 +52,12 @@ BEGIN_NCBI_SCOPE
 bool CJsonResponse::sm_SetReplyType = true;
 bool CJsonResponse::sm_Verbose = false;
 
+enum EJsonRpcErrors {
+    eJsonRpc_ParseError         = -32700,
+    eJsonRpc_InvalidRequest     = -32600,
+    eJsonRpc_ExceptionOnRead    = -32000,
+};
+
 struct SNewRequestContext
 {
     SNewRequestContext() :
@@ -137,14 +143,28 @@ SJsonOut::~SJsonOut()
 }
 
 template <class TItem>
-CJsonResponse::CJsonResponse(EPSG_Status status, TItem item) :
+CJsonResponse::CJsonResponse(EPSG_Status status, TItem item, EExceptionHandling ex_handling) :
     m_JsonObj(SetObject())
 {
     if (auto request_id = s_GetReply(item)->GetRequest()->template GetUserContext<string>()) {
         Set("request_id", *request_id);
     }
 
-    Fill(status, item);
+    try {
+        Fill(status, item);
+    }
+    catch (exception& e) {
+        if (ex_handling == eRethrow) {
+            throw;
+        }
+
+        CJson_Document new_doc;
+        new_doc.ResetObject()["data"].AssignCopy(*this);
+        AssignCopy(new_doc);
+        Set("code",    eJsonRpc_ExceptionOnRead);
+        Set("message", e.what());
+        m_Error = true;
+    }
 }
 
 CJsonResponse::CJsonResponse(const string& id, bool result) :
@@ -153,10 +173,10 @@ CJsonResponse::CJsonResponse(const string& id, bool result) :
     Set("result", result);
 }
 
-CJsonResponse::CJsonResponse(const string& id, const CJson_Document& result) :
+CJsonResponse::CJsonResponse(const string& id, const CJsonResponse& result) :
     CJsonResponse(id)
 {
-    m_JsonObj["result"].AssignCopy(result);
+    m_JsonObj[result.m_Error ? "error" : "result"].AssignCopy(result);
 }
 
 CJsonResponse::CJsonResponse(const string& id, int code, const string& message) :
@@ -665,9 +685,9 @@ void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue&
         CJson_Document json_doc;
 
         if (!json_doc.ParseString(line)) {
-            json_out << CJsonResponse(s_GetId(json_doc), -32700, json_doc.GetReadError());
+            json_out << CJsonResponse(s_GetId(json_doc), eJsonRpc_ParseError, json_doc.GetReadError());
         } else if (!json_schema.Validate(json_doc)) {
-            json_out << CJsonResponse(s_GetId(json_doc), -32600, json_schema.GetValidationError());
+            json_out << CJsonResponse(s_GetId(json_doc), eJsonRpc_InvalidRequest, json_schema.GetValidationError());
         } else {
             if (echo) json_out << json_doc;
 
@@ -990,7 +1010,7 @@ int s_CheckItems(bool expect_errors, const string& request_id, shared_ptr<CPSG_R
 
         if (status == EPSG_Status::eSuccess) {
             try {
-                CJsonResponse check(status, reply_item);
+                CJsonResponse check(status, reply_item, CJsonResponse::eRethrow);
             }
             catch (exception& e) {
                 cerr << "Error on reading reply item for request '" << request_id << "': " << e.what() << endl;
