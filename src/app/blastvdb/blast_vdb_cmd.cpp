@@ -112,50 +112,195 @@ CBlastVdbCmdApp::CBlastVdbCmdApp(): m_allDbs(kEmptyStr), m_origDbs(kEmptyStr), m
  */
 class CVdbFastaExtractor {
 public:
-    CVdbFastaExtractor(CRef<CVDBBlastUtil> sraobj, CNcbiOstream& out,
-		       	   	   TSeqPos line_width = 80 )
-        : m_VdbBlastDB(sraobj), m_Out(out), m_LineWidth(line_width) {}
+    CVdbFastaExtractor(CRef<CVDBBlastUtil> sraobj, CNcbiOstream& out, const string & fmt_spec,
+		       	   	   TSeqPos line_width = 80);
 
-    void Write(CRef<CSeq_id> seqid) {
-        CRef<CBioseq> bioseq = m_VdbBlastDB->CreateBioseqFromVDBSeqId(seqid);
-        if (bioseq.Empty()) {
-            throw runtime_error("Failed to find Bioseq for '" + seqid->AsFastaString() + "'");
-        }
-        CFastaOstream fasta(m_Out);
-        fasta.SetWidth(m_LineWidth);
-        fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps);
-        fasta.Write(*bioseq);
-    }
+    void Write(CRef<CSeq_id> seqid);
+    void Write(CRef<CBioseq> bioseq, int oid);
+    void DumpAll();
 
-    void DumpAll() {
-        CFastaOstream fasta(m_Out);
-        fasta.SetWidth(m_LineWidth);
-        fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps);
-        BlastSeqSrc* seqsrc = m_VdbBlastDB->GetSRASeqSrc();
-        BlastSeqSrcGetSeqArg seq_arg = { '\0' };
-        BlastSeqSrcIterator * itr = BlastSeqSrcIteratorNewEx(1);
-   	    while ((seq_arg.oid = BlastSeqSrcIteratorNext(seqsrc, itr)) !=
-        	          BLAST_SEQSRC_EOF)
-        {
-   	    	 if (seq_arg.oid == BLAST_SEQSRC_ERROR) {
-          			ERR_POST("Iterator returns BLAST_SEQSRC_ERROR");
-           			return;
-             }
-   	    	 CRef<CBioseq> bioseq = m_VdbBlastDB->CreateBioseqFromOid(seq_arg.oid);
-             if (bioseq.Empty())
-             {
-        	  		ERR_POST("Empty Bioseq");
-        	    	return;
-             }
-             fasta.Write(*bioseq);
-        }
-    }
 private:
     CRef<CVDBBlastUtil> m_VdbBlastDB;
     CNcbiOstream& m_Out;
+    const string m_FmtSpec;
     TSeqPos m_LineWidth;
+    /// Vector of offsets where the replacements will take place
+    vector<string> m_Seperators;
+    /// Vector of convertor objects
+    vector<char> m_ReplTypes;
+    bool m_FastaOnly;
+    bool m_LoadSeq;
 
 };
+
+CVdbFastaExtractor::CVdbFastaExtractor(CRef<CVDBBlastUtil> sraobj, CNcbiOstream& out, const string & fmt_spec, TSeqPos line_width)
+     : m_VdbBlastDB(sraobj), m_Out(out), m_FmtSpec(fmt_spec), m_LineWidth(line_width), m_FastaOnly(false), m_LoadSeq(false)
+{
+    string sp = kEmptyStr;
+    for (SIZE_TYPE i = 0; i < m_FmtSpec.size(); i++) {
+        if (m_FmtSpec[i] == '%') {
+            if ( m_FmtSpec[i+1] == '%') {
+                // remove the escape character for '%'
+                i++;
+                sp += m_FmtSpec[i];
+                continue;
+            }
+            i++;
+            m_ReplTypes.push_back(m_FmtSpec[i]);
+            m_Seperators.push_back(sp);
+            sp = kEmptyStr;
+        }
+        else {
+            sp += m_FmtSpec[i];
+        }
+    }
+    m_Seperators.push_back(sp);
+
+    if (m_ReplTypes.empty() || (m_ReplTypes.size() + 1 != m_Seperators.size())) {
+        NCBI_THROW(CBlastException, eInvalidOptions,
+                   "Invalid format specification");
+    }
+
+   	for (unsigned int i=0; i < m_ReplTypes.size(); i++) {
+   		if(m_ReplTypes[i] == 'f') {
+   			m_FastaOnly = true;
+   			m_LoadSeq = true;
+   			break;
+   		}
+   		else if(m_ReplTypes[i] == 's') {
+    			m_LoadSeq = true;
+    	}
+    }
+}
+
+void CVdbFastaExtractor::Write(CRef<CSeq_id> seqid)
+{
+    CRef<CBioseq> bioseq = m_VdbBlastDB->CreateBioseqFromVDBSeqId(seqid);
+    if (bioseq.Empty()) {
+        ERR_POST("Failed to find Bioseq for '" + seqid->AsFastaString() + "'");
+        return;
+    }
+
+    if (m_FastaOnly) {
+    	CFastaOstream fasta(m_Out);
+    	fasta.SetWidth(m_LineWidth);
+    	fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps);
+    	fasta.Write(*bioseq);
+    }
+    else {
+    	int oid = -1;
+    	Write(bioseq, oid);
+    }
+}
+
+void CVdbFastaExtractor::Write(CRef<CBioseq> bioseq, int oid)
+{
+	if ((!bioseq->IsSetInst()) || (!bioseq->GetInst().IsSetSeq_data())) {
+        ERR_POST("Bioseq constains no sequence data");
+        return;
+	}
+	const CSeq_inst & si = bioseq->GetInst();
+
+    for(unsigned int i =0; i < m_ReplTypes.size(); i++) {
+	    m_Out << m_Seperators[i];
+	    switch (m_ReplTypes[i]) {
+	        case 's':
+	        {
+	        	const CSeq_data & d = si.GetSeq_data();
+	        	string sa = "N/A";
+	        	if (d.IsIupacna()) {
+	        		sa = d.GetIupacna().Get();
+	        	}
+	            m_Out << sa;
+	            break;
+	        }
+	        case 'a':
+	        {
+	        	const CSeq_id * id = bioseq->GetFirstId();
+	            m_Out << id->GetSeqIdString(true);
+	            break;
+	        }
+	        case 'i':
+	        {
+	        	const CSeq_id * id = bioseq->GetFirstId();
+	            m_Out << id->AsFastaString() ;
+	            break;
+	        }
+	        case 'o':
+	        {
+	        	if (oid == -1) {
+	        		CRef<CSeq_id> cid(const_cast<CSeq_id *> (bioseq->GetFirstId()));
+	        		oid = (int) m_VdbBlastDB->GetOIDFromVDBSeqId(cid);
+	        	}
+	            m_Out << NStr::NumericToString(oid);
+	            break;
+	        }
+	        case 't':
+	        {
+	        	string t = "N/A";
+	        	if(bioseq->IsSetDescr() && bioseq->GetDescr().IsSet()) {
+	        		CRef<CSeqdesc> descTitle = bioseq->GetDescr().Get().front();
+	        		t = descTitle->GetTitle();
+	        	}
+        		m_Out << t;
+	            break;
+	        }
+	        case 'l':
+	        {
+	        	string l = "N/A";
+	        	if(si.IsSetLength()){
+	        		l = NStr::NumericToString(si.GetLength());
+	        	}
+	            m_Out << l;
+	            break;
+	        }
+	        default:
+	            CNcbiOstrstream os;
+	            os << "Unrecognized format specification: '%" << m_ReplTypes[i] << "'";
+	            NCBI_THROW(CInputException, eInvalidInput, CNcbiOstrstreamToString(os));
+	        }
+	    }
+	    m_Out << m_Seperators.back();
+	    m_Out << endl;
+}
+
+ void CVdbFastaExtractor::DumpAll() {
+     BlastSeqSrc* seqsrc = m_VdbBlastDB->GetSRASeqSrc();
+     BlastSeqSrcGetSeqArg seq_arg = { '\0' };
+     BlastSeqSrcIterator * itr = BlastSeqSrcIteratorNewEx(1);
+	 if (m_FastaOnly) {
+         CFastaOstream fasta(m_Out);
+         fasta.SetWidth(m_LineWidth);
+         fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps);
+	     while ((seq_arg.oid = BlastSeqSrcIteratorNext(seqsrc, itr)) != BLAST_SEQSRC_EOF) {
+	    	 if (seq_arg.oid == BLAST_SEQSRC_ERROR) {
+       			ERR_POST("Iterator returns BLAST_SEQSRC_ERROR");
+        		return;
+             }
+	    	 CRef<CBioseq> bioseq = m_VdbBlastDB->CreateBioseqFromOid(seq_arg.oid);
+             if (bioseq.Empty()) {
+     	  		ERR_POST("Empty Bioseq");
+     	    	return;
+             }
+             fasta.Write(*bioseq);
+         }
+	 }
+	 else {
+	     while ((seq_arg.oid = BlastSeqSrcIteratorNext(seqsrc, itr)) != BLAST_SEQSRC_EOF) {
+	    	 if (seq_arg.oid == BLAST_SEQSRC_ERROR) {
+       			ERR_POST("Iterator returns BLAST_SEQSRC_ERROR");
+        		return;
+             }
+	    	 CRef<CBioseq> bioseq = m_VdbBlastDB->CreateBioseqFromOid(seq_arg.oid);
+             if (bioseq.Empty()) {
+     	  		ERR_POST("Empty Bioseq");
+     	  		continue;
+             }
+             Write(bioseq, seq_arg.oid);
+         }
+
+	 }
+ }
 
 string s_GetCSRADBs(const string & db_list, string & not_csra_list) {
 	vector<string> dbs;
@@ -228,7 +373,7 @@ CBlastVdbCmdApp::x_ProcessSearchRequest()
     if (args["entry"].HasValue() && args["entry"].AsString() == "all") {
         try {
         	CRef<CVDBBlastUtil> util = x_GetVDBBlastUtil(m_isRef);
-        	CVdbFastaExtractor seq_fmt(util, out,  args["line_length"].AsInteger());
+        	CVdbFastaExtractor seq_fmt(util, out, args["outfmt"].AsString(), args["line_length"].AsInteger());
             seq_fmt.DumpAll();
         } catch (const CException& e) {
             ERR_POST(Error << e.GetMsg());
@@ -244,12 +389,12 @@ CBlastVdbCmdApp::x_ProcessSearchRequest()
     _ASSERT( !queries.empty() );
 
     CRef<CVDBBlastUtil> util = x_GetVDBBlastUtil(false);
-    CVdbFastaExtractor seq_fmt(util, out, args["line_length"].AsInteger());
+    CVdbFastaExtractor seq_fmt(util, out, args["outfmt"].AsString(), args["line_length"].AsInteger());
 
    	CRef<CVDBBlastUtil> util_csra = x_GetVDBBlastUtil(true);
     CVdbFastaExtractor * seq_fmt_csra = NULL;
    	if(util_csra.NotEmpty()) {
-    	seq_fmt_csra = new CVdbFastaExtractor(util_csra, out, args["line_length"].AsInteger());
+    	seq_fmt_csra = new CVdbFastaExtractor(util_csra, out, args["outfmt"].AsString(), args["line_length"].AsInteger());
     }
 
     NON_CONST_ITERATE(vector<string>, itr, queries) {
@@ -292,16 +437,7 @@ CBlastVdbCmdApp::x_ProcessSearchRequest()
 string
 CBlastVdbCmdApp::x_FormatRuntime(const CStopWatch& sw) const
 {
-    const string& outfmt = GetArgs()["outfmt"].AsString();
-    string retval;
-    if (outfmt == "smart") {
-        retval = sw.AsSmartString();
-    } else if (outfmt == "seconds") {
-        retval = NStr::IntToString((int)sw.Elapsed());
-    } else {
-        abort();
-    }
-    return retval;
+    return sw.AsSmartString();
 }
 
 void
@@ -509,10 +645,20 @@ void CBlastVdbCmdApp::Init()
                      "File with a newline delimited list of VDB Run accessions",
                      CArgDescriptions::eInputFile);
     arg_desc->SetDependency("db", CArgDescriptions::eExcludes, "dbs_file");
-    arg_desc->AddDefaultKey("outfmt", "output_format", 
-                            "Runtime output format (e.g.: smart, seconds)",
-                            CArgDescriptions::eString, "smart");
-    arg_desc->SetConstraint("outfmt", &(*new CArgAllow_Strings, "smart", "seconds"));
+    // The format specifiers below should be handled in
+    // CSeqFormatter::x_Builder
+    arg_desc->AddDefaultKey("outfmt", "format",
+                            "Output format, where the available format specifiers are:\n"
+                            "\t\t%f means sequence in FASTA format\n"
+                            "\t\t%s means sequence data (without defline)\n"
+                            "\t\t%a means accession\n"
+                            "\t\t%o means ordinal id (OID)\n"
+                            "\t\t%i means sequence id\n"
+                            "\t\t%t means sequence title\n"
+                            "\t\t%l means sequence length\n"
+                            "\tFor every format except '%f', each line of output will "
+                            "correspond\n\tto a sequence.\n",
+                            CArgDescriptions::eString, "%f");
 
     arg_desc->SetCurrentGroup("Retrieval options");
     arg_desc->AddOptionalKey("entry", "sequence_identifier",
