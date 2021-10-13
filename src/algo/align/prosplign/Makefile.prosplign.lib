@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = kiryutin chetvern
+WATCHERS = kiryutin
 
 ASN_DEP = seqset
 
