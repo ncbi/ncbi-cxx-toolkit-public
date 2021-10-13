@@ -398,7 +398,13 @@ CBlastVdbCmdApp::x_ProcessSearchRequest()
     }
 
     NON_CONST_ITERATE(vector<string>, itr, queries) {
-        try { 
+    	if(itr->find("|") == NPOS) {
+    		CSeq_id::EAccessionInfo acc_info =  CSeq_id::IdentifyAccession(*itr);
+    		if(acc_info == CSeq_id::eAcc_unknown) {
+    			*itr = "SRA:" + *itr;
+    		}
+    	}
+    	try {
         	CRef<CSeq_id> seq_id (new CSeq_id(*itr));
         	switch (CVDBBlastUtil::VDBIdType(*seq_id)) {
         	case CVDBBlastUtil::eSRAId:
