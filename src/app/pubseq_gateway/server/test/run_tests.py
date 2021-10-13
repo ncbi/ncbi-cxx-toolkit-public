@@ -71,6 +71,6 @@ if port is not None:
 else:
     server += ':2180'
 
-cmd = 'udc --variable PSG_SERVER:' + server + ' --variable PSG_HTTPS:' + str(https) + ' ' + dirname
+cmd = 'udc --variable PSG_SERVER:' + server + ' --variable PSG_HTTPS:' + str(https) + ' ' + dirname + '/psg.robot'
 sys.exit(os.system(cmd))
 
