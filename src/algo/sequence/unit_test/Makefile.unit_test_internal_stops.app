@@ -17,4 +17,4 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD = unit_test_internal_stops
 CHECK_COPY =
 
-WATCHERS = chetvern
+WATCHERS = dicuccio mozese2
