@@ -3254,7 +3254,7 @@ void CFeatureItem::x_AddQualsBond(
         return;
     }
     
-    if ( ctx.IsGenbankFormat()  &&  ctx.IsProt() ) {
+    if ( ( ctx.IsGenbankFormat() || ctx.Config().IsFormatGBSeq() || ctx.Config().IsFormatINSDSeq() )  &&  ctx.IsProt() ) {
         x_AddQual( eFQ_bond_type, new CFlatStringQVal( bond ) );
     } else {
         x_AddQual( eFQ_bond, new CFlatBondQVal( bond ) );
