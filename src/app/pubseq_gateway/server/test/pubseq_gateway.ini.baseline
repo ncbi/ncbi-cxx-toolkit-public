@@ -143,8 +143,8 @@ test_seq_id=RuBBiSH
 test_seq_id_ignore_error=true
 
 [SSL]
-ssl_enable=false
-ssl_cert_file=""
-ssl_key_file=""
+ssl_enable={ssl_enable}
+ssl_cert_file={ssl_cert}
+ssl_key_file={ssl_key}
 ssl_ciphers=""
 
