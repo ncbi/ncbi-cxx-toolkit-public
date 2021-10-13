@@ -12,8 +12,10 @@ set script_dir=%~dp0
 set tree_root=%initial_dir%
 
 set vsver=2019
-set build_root=%NCBI%\Lib\Ncbi\CXX_Toolkit
-set build_vs=vs%vsver%.64
+REM set build_root=%NCBI%\Lib\Ncbi\CXX_Toolkit
+REM set build_vs=vs%vsver%.64
+set build_root=%NCBI%\Lib\Ncbi\CXX
+set build_vs=.
 set build_pfx=cxx.cmake.
 set build_def=stable
 set build_dir=%build_pfx%%build_def%
@@ -165,7 +167,8 @@ if "%1"=="help"                (set do_help=YES&  echo:&      goto :CONTINUEPARS
 if "%1"=="-h"                  (set do_help=YES&  echo:&      goto :CONTINUEPARSEARGS)
 if "%1"=="/?"                  (set do_help=YES&  echo:&      goto :CONTINUEPARSEARGS)
 if "%1"=="--noconfig"          (set noconfig=YES&      goto :CONTINUEPARSEARGS)
-if "%1"=="--with-vs"           (set vsver=%~2& set build_vs=vs%~2.64& shift& goto :CONTINUEPARSEARGS)
+REM if "%1"=="--with-vs"           (set vsver=%~2& set build_vs=vs%~2.64& shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-vs"           (set vsver=%~2& shift& goto :CONTINUEPARSEARGS)
 if "%pos%"=="0" (
   set prj_name=%~1
 ) else if "%pos%"=="1" (
