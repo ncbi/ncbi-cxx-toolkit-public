@@ -196,7 +196,7 @@ endfunction()
 # Load conan package
 # grpc/1.31.1@inexorgame/stable
 # grpc/1.28.1@inexorgame/stable
-install_conan_package("Z" "zlib/1.2.11@conan/stable")
+install_conan_package("Z" "zlib/1.2.11")
 install_conan_package("TIFF" "libtiff/4.0.9")
 #Wild giflib is not compatible with toolkit
 #install_conan_package("GIF" "giflib/5.1.4@bincrafters/stable")
