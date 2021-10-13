@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-WATCHERS = chetvern
+WATCHERS = kiryutin
 
 APP = prosplign_demo
 SRC = prosplign_demo
