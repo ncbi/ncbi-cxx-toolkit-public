@@ -165,7 +165,8 @@ PC-Compound ::= SEQUENCE {
     props          SEQUENCE OF PC-InfoData       OPTIONAL, -- Derived (computed) Properties
     stereogroups   SEQUENCE OF PC-StereoGroup    OPTIONAL, -- Relative stereochemistry groups
     count          PC-Count                      OPTIONAL, -- Counts of various properties
-    vbalt          PC-Compounds                  OPTIONAL  -- Alternate Valence-Bond Forms
+    vbalt          PC-Compounds                  OPTIONAL, -- Alternate Valence-Bond Forms
+    groups         SEQUENCE OF PC-Group          OPTIONAL  -- Superatom groups
 }
 
 
@@ -196,6 +197,79 @@ PC-CompoundType ::= SEQUENCE {
                     sid        INTEGER,                    --  PubChem Substance (for "mixture" type compounds)
                     xid        INTEGER                     --  PubChem Theoretical Compound
                 }                                OPTIONAL
+}
+
+
+-- Superatom group (e.g. from MOL Sgroup)
+PC-Group ::= SEQUENCE {
+
+    -- Atoms in this group (list of aid from PC-Atoms, e.g. from MOL FIELD SAL)
+    atoms                    SEQUENCE OF INTEGER,
+    
+    -- These enumerated values are adapted from the ctfile format specification
+    type                     INTEGER {                     -- Type of group (e.g. from MOL field STY)
+                                 sup        (1),           -- Superatom
+                                 mul        (2),           -- Multiple group
+                                 sru        (3),           -- Structure repeat unit (polymer)
+                                 mon        (4),           -- Monomer
+                                 mer        (5),           -- Mer type
+                                 cop        (6),           -- Copolymer
+                                 cro        (7),           -- Crosslink
+                                 mod        (8),           -- Modification
+                                 gra        (9),           -- Graft
+                                 com       (10),           -- Component
+                                 mix       (11),           -- Mixture
+                                 for       (12),           -- Formulation
+                                 dat       (13),           -- Data Sgroup
+                                 any       (14),           -- Any polymer
+                                 gen       (15),           -- Generic
+                                 unknown  (255)
+                             },
+    subtype                  INTEGER {                     -- Subtype (e.g. from MOL field SST)
+                                 alt        (1),           -- Alternating
+                                 ran        (2),           -- Random
+                                 blo        (3),           -- Block
+                                 unknown  (255)
+                             } OPTIONAL, 
+    connectivity             INTEGER {                     -- Connectivity (e.g. from MOL field SCN)
+                                 hh         (1),           -- Head-to-head
+                                 ht         (2),           -- Head-to-tail
+                                 eu         (3),           -- Either unknown
+                                 unknown  (255)
+                             } OPTIONAL,
+
+    label                    INTEGER OPTIONAL,             -- Label (e.g. from MOL field SLB)
+    subscript                VisibleString OPTIONAL,       -- Subscript (e.g. from MOL field SMT)
+    
+    repeat-count             CHOICE {                      -- Repeat count (e.g. for polymers)
+                                 exact     INTEGER,
+                                 range     SEQUENCE {
+                                     lower     INTEGER,
+                                     upper     INTEGER
+                                 }
+                             } OPTIONAL,
+    
+    -- Special bonds in this group (typically capping/crossing bonds, e.g. from MOL field SBL)
+    --   If present, from and to must be parallel lists of aid from PC-Bonds
+    bonds                    SEQUENCE {
+                                 from      SEQUENCE OF INTEGER,
+                                 to        SEQUENCE OF INTEGER
+                             } OPTIONAL,
+    
+    -- Bracket display (e.g. from MOL field SDI)
+    brackets                 SEQUENCE {
+                                 left      PC-Bracket,
+                                 right     PC-Bracket
+                             } OPTIONAL
+}
+
+
+-- Display coordinates for a bracket (e.g. from MOL field SDI)
+PC-Bracket ::= SEQUENCE {
+    x1                       REAL,
+    y1                       REAL,
+    x2                       REAL,
+    y2                       REAL
 }
 
 
@@ -475,7 +549,7 @@ PC-Element::= INTEGER {
     md(101), no(102), lr(103), rf(104), db(105),
     sg(106), bh(107), hs(108), mt(109), ds(110),
     rg(111), cn(112), nh(113), fl(114), mc(115),
-		lv(116), ts(117), og(118)
+    lv(116), ts(117), og(118)
 }
 
 

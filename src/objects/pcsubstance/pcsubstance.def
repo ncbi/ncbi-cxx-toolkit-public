@@ -29,3 +29,8 @@ element._type = vector
 aid1._type = vector
 aid2._type = vector
 order._type = vector
+
+[PC-Group]
+atoms._type = vector
+bonds.from._type = vector
+bonds.to._type = vector
