@@ -14,4 +14,4 @@ REQUIRES = Boost.Test.Included
 CHECK_COPY = test_chainer.ini
 CHECK_CMD =
 
-WATCHERS = chetvern
+WATCHERS = souvorov

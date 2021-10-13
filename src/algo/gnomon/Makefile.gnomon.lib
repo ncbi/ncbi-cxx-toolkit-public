@@ -11,7 +11,7 @@ DLL_LIB = xalgoseq xobjutil $(SOBJMGR_LIBS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-WATCHERS = chetvern souvorov
+WATCHERS = souvorov
 
 
 USES_LIBRARIES =  \

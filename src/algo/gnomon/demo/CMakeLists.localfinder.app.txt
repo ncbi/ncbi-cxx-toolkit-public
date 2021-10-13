@@ -3,6 +3,6 @@
 NCBI_begin_app(localfinder)
   NCBI_sources(local_finder)
   NCBI_uses_toolkit_libraries(xalgognomon xobjread)
-  NCBI_project_watchers(chetvern)
+  NCBI_project_watchers(souvorov)
 NCBI_end_app()
 

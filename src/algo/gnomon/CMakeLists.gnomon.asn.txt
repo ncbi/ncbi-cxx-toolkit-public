@@ -7,6 +7,6 @@ NCBI_begin_lib(xalgognomon)
     annot select_alignments_alt aligncollapser glb_align
   )
   NCBI_uses_toolkit_libraries(xalgoseq)
-  NCBI_project_watchers(chetvern souvorov)
+  NCBI_project_watchers(souvorov)
 NCBI_end_lib()
 
