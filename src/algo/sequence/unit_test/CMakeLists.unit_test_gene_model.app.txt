@@ -10,7 +10,7 @@ NCBI_begin_app(unit_test_gene_model)
     NCBI_set_test_command(unit_test_gene_model -data-in alignments.asn -data-expected annotations.asn -seqdata-expected seqdata.asn -combined-data-expected combined_annot.asn -combined-with-omission-expected combined_with_omission.asn)
   NCBI_end_test()
 
-  NCBI_project_watchers(dicuccio chetvern mozese2)
+  NCBI_project_watchers(dicuccio mozese2)
 
 NCBI_end_app()
 

@@ -15,4 +15,4 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD = unit_test_gene_model -data-in alignments.asn -data-expected annotations.asn -seqdata-expected seqdata.asn -combined-data-expected combined_annot.asn -combined-with-omission-expected combined_with_omission.asn /CHECK_NAME=unit_test_gene_model
 CHECK_COPY = alignments.asn annotations.asn seqdata.asn combined_annot.asn combined_with_omission.asn
 
-WATCHERS = dicuccio chetvern mozese2
+WATCHERS = dicuccio mozese2
