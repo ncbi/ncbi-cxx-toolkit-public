@@ -180,6 +180,7 @@ an_core needs pathogen_connection
 an_core needs reftrack_access
 an_core needs simple_asm
 an_core needs xgencoll
+an_euk_pipeline needs bacterial_pipeline_proc
 an_euk_pipeline needs bag_access
 an_euk_pipeline needs gcaccess_utils
 an_euk_pipeline needs gpipe_an_base
@@ -499,6 +500,7 @@ gc_assm_rpt needs xgencoll
 gc_common needs xutil
 gc_load_utils needs gc_organism
 gc_load_utils needs gc_utils
+gc_load_utils needs xid_utils_load
 gc_organism needs gpipe_attr
 gc_schedule needs ncbi_xcache_netcache
 gc_utils needs $(GPIPE_COMMON_LIBS)
@@ -1260,6 +1262,7 @@ pn_ctl needs bacterial_pipeline_proc
 pn_ctl needs gpipe_clean_prot_names
 pn_ctl needs gpipe_jira
 pn_ctl needs idload_utils
+pn_ctl needs xid_utils_load
 png needs $(Z_LIB)
 png needs3party $(ORIG_LIBS)
 png needs3party $(Z_LIBS)
@@ -1986,6 +1989,7 @@ xstruct_util needs $(BLAST_LIBS)
 xstruct_util needs xstruct_dp
 xstruct_util needs3party $(BLAST_THIRD_PARTY_LIBS)
 xsubmit2id needs idload_utils
+xsubmit2id needs xid_utils_load
 xthrserv needs xconnect
 xthrserv needs xutil
 xunittestutil needs xobjutil
