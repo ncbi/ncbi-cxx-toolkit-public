@@ -398,14 +398,14 @@ CBlastVdbCmdApp::x_ProcessSearchRequest()
     }
 
     NON_CONST_ITERATE(vector<string>, itr, queries) {
-    	if(itr->find("|") == NPOS) {
-    		CSeq_id::EAccessionInfo acc_info =  CSeq_id::IdentifyAccession(*itr);
-    		if(acc_info == CSeq_id::eAcc_unknown) {
-    			*itr = "SRA:" + *itr;
-    		}
-    	}
     	try {
-        	CRef<CSeq_id> seq_id (new CSeq_id(*itr));
+    		CRef<CSeq_id> seq_id;
+    		try {
+    			seq_id.Reset(new CSeq_id(*itr));
+    		} catch (const CException & e) {
+    			*itr = "SRA:" + *itr;
+    			seq_id.Reset(new CSeq_id(*itr));
+    	    }
         	switch (CVDBBlastUtil::VDBIdType(*seq_id)) {
         	case CVDBBlastUtil::eSRAId:
         	case CVDBBlastUtil::eWGSId:
