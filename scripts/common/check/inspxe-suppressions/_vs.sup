@@ -125,6 +125,18 @@ suppression = {
 	}
 }
 suppression = {
+	name = "ODBC32.dll - SQLExecDirectW/memcpy - invalid memory access"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=memcpy;
+			...;
+			mod=ODBC32.dll,func=SQLExecDirectW;
+		}
+	}
+}
+suppression = {
 	name = "dbghelp.dll"
 	type = {invalid_memory_access}
 	stacks = {
@@ -260,7 +272,7 @@ suppression = {
 	}
 }
 suppression = {
-	name = "ucrtbase.dll -- system()/wspawnvpe()"
+	name = "ucrtbase.dll - System()/wspawnvpe() - ncbiexec.cpp"
 	type = {invalid_memory_access}
 	stacks = {
 		{
@@ -270,7 +282,19 @@ suppression = {
 		}
 	}
 }
-
+suppression = {
+	name = "ucrtbase.DLL - system/spawn - invalid memory access"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=getenv;
+			...;
+			mod=ucrtbase.DLL,func=get_initial_narrow_environment;
+			mod=ucrtbase.DLL,func=wspawnvpe;
+		}
+	}
+}
 suppression = {
 	name = "False positive in sscanf()"
 	type = {invalid_memory_access_partial}
@@ -318,6 +342,61 @@ suppression = {
 		{
 			...;
 			mod=ucrtbase.DLL,func=aligned_free;
+		}
+	}
+}
+suppression = {
+	name = "ntdll.dll - RtlCompareUnicodeStrings - invalid memory access"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlCompareUnicodeStrings;
+		}
+		allocation={
+			...;
+		}
+		deallocation={
+			...;
+		}
+	}
+}
+suppression = {
+	name = "ucrtbase.DLL - vsprintf/isdigit/strnlen - invalid partial memory access"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=strnlen;
+			mod=ucrtbase.DLL,func=isdigit;
+			...;
+			mod=ucrtbase.DLL,func=_stdio_common_vsprintf;
+		}
+	}
+}
+suppression = {
+	name = "ucrtbase.DLL - putenv/strnlen - invalid partial memory access"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=strnlen;
+			mod=ucrtbase.DLL,func=getenv_s;
+			...;
+			mod=ucrtbase.DLL,func=putenv_s;
+		}
+	}
+}
+suppression = {
+	name = "ucrtbase.DLL - putenv/strnlen - invalid partial memory access"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=strnlen;
+			mod=ucrtbase.DLL,func=getenv_s;
+			...;
+			mod=ucrtbase.DLL,func=putenv_s;
 		}
 	}
 }
