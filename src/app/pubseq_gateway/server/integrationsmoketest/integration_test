@@ -10,6 +10,8 @@ NO_UDC_ROBOT = 1
 NO_PSG_CLIENT = 2
 MALFORMED_ARGUMENTS = 3
 
+# Path to the psg_client
+PSG_CLIENT = None
 
 """Driver to run udc and psg_client"""
 
@@ -50,7 +52,7 @@ def driveUDC():
         return MALFORMED_ARGUMENTS
 
     service = sys.argv[1]
-    retCode = os.system('udc -v SERVICE:' + service + ' ' + dirname)
+    retCode = os.system('udc -v SERVICE:' + service + ' ' + robotFile)
     if retCode != 0:
         low=retCode&0xFF
         hi=(retCode>>8)&0xFF
@@ -61,6 +63,10 @@ def driveUDC():
 
 def getPSGClientPath():
     """First tries to use the same location as the script; then PATH"""
+    global PSG_CLIENT
+    if PSG_CLIENT is not None:
+        return PSG_CLIENT
+
     candidate = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'psg_client'
     if os.path.exists(candidate):
         return candidate
@@ -86,6 +92,9 @@ def drivePSGClient():
     # Need to suppress -logfile <file>
     # Need to suppress -h
     # Need to take out -o <file> and use file for redirection
+    # Need to suppress -psgclient <path>
+    global PSG_CLIENT
+
     params = sys.argv[1:]
     if '-h' in params:
         print('Unexpected argument: -h is supposed only for interactive calls',
@@ -99,6 +108,11 @@ def drivePSGClient():
         index = params.index('-logfile')
         params.pop(index)
         params.pop(index)
+
+    if '-psgclient' in params:
+        index = params.index('-psgclient')
+        params.pop(index)
+        PSG_CLIENT = params.pop(index)
 
     if '-o' not in params:
         print('Unexpected arguments: -o <file> is not found',
