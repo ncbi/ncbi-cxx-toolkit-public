@@ -323,10 +323,12 @@ CVDBBlastUtil::GetSRASeqInfoSrc()
 static bool 
 s_IsWGSId(const string & id)
 {
-	if (CSeq_id::IdentifyAccession(id) & CSeq_id::eAcc_wgs) {
-		return true;
+	size_t first_digit_pos = id.find_first_of(kDigits);
+	if((first_digit_pos > 3) && (first_digit_pos <= 6)) {
+	    if(id.find_first_not_of(kDigits, first_digit_pos) == std::string::npos) {
+	    	return true;
+	    }
 	}
-
     return false;
 }
 
@@ -873,11 +875,8 @@ bool CVDBBlastUtil::IsWGS()
 			tmp = dbs[i].substr(last_pos +1);
 		}
 
-		size_t first_digit_pos = tmp.find_first_of(kDigits);
-		if((first_digit_pos > 3) && (first_digit_pos < 6)) {
-            if(tmp.find_first_not_of(kDigits, first_digit_pos) == std::string::npos) {
-            	num_wgs ++;
-            }
+		if(s_IsWGSId(tmp)) {
+           	num_wgs ++;
 		}
 	}
 
