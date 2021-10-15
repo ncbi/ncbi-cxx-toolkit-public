@@ -4487,7 +4487,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MIB:ZPL\ts\tUniversity of Milano - Bicocca, Department of Biotechnology and Biosciences, ZooPlantLab\t\t",
 "MIC\ts\tMar Ivanios College (Zoology museum)\t\t\t",
 "MICG\ts\tUniversidad de San Carlos de Guatemala\t\t\t",
-"MICH\ts\tUniversity of Michigan\t\thttp://quod.lib.umich.edu/h/herb4ic/x-mich10007/MICH&spec;\t",
+"MICH\ts\tUniversity of Michigan\t\thttp://quod.lib.umich.edu/h/herb4ic/x-MICH&spec;\t",
 "MICH:CZEUM\ts\tUniversity of Michigan, Collection of Zoosporic Eufungi at the University of Michigan\t",
 "MICKKU\tc\tMICKKU Culture Collection\t\t\t",
 "MICOCL\ts\tONG Micofilos\t\t\t",
