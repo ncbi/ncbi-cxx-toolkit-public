@@ -130,6 +130,113 @@ const CBioSource* GetBioSource(const CBioseq_Handle& handle)
     return NULL;
 }
 
+CConstRef<CSeq_feat> GetSourceFeatForProduct(const CBioseq_Handle& bsh)
+{
+    CConstRef<CSeq_feat> cds_feat;
+    CConstRef<CSeq_loc> cds_loc;
+    CConstRef<CBioSource> src_ref;
+
+    CScope& scope = bsh.GetScope();
+
+    cds_feat = sequence::GetCDSForProduct(bsh);
+
+    if (cds_feat) {
+        cds_loc = &cds_feat->GetLocation();
+        if (cds_loc) {
+            CRef<CSeq_loc> cleaned_location(new CSeq_loc);
+            cleaned_location->Assign(*cds_loc);
+            CConstRef<CSeq_feat> src_feat
+                = sequence::GetBestOverlappingFeat(*cleaned_location, CSeqFeatData::eSubtype_biosrc, sequence::eOverlap_SubsetRev, scope);
+            if (!src_feat && cleaned_location->IsSetStrand() && IsReverse(cleaned_location->GetStrand())) {
+                CRef<CSeq_loc> rev_loc(sequence::SeqLocRevCmpl(*cleaned_location, &scope));
+                cleaned_location->Assign(*rev_loc);
+                src_feat = sequence::GetBestOverlappingFeat(*cleaned_location, CSeqFeatData::eSubtype_biosrc, sequence::eOverlap_SubsetRev, scope);
+            }
+            if (src_feat) {
+                const CSeq_feat& feat = *src_feat;
+                if (feat.IsSetData()) {
+                    return src_feat;
+                }
+            }
+        }
+    }
+
+    return CConstRef<CSeq_feat>();
+}
+
+TTaxId GetTaxIdForProduct(const CBioseq_Handle& bsh)
+{
+    if (!bsh.IsAa()) {
+        return ZERO_TAX_ID;
+    }
+    auto pSourceFeat = GetSourceFeatForProduct(bsh);
+    if (!pSourceFeat) {
+        auto& scope = bsh.GetScope();
+        const auto& idh = bsh.GetAccessSeq_id_Handle();
+        if (idh) {
+            return scope.GetTaxId(idh);
+        }
+        else {
+            return ZERO_TAX_ID;
+        }
+    }
+    const auto& bioSource = pSourceFeat->GetData().GetBiosrc();
+    if (!bioSource.CanGetOrg()) {
+        return ZERO_TAX_ID;
+    }
+    return bioSource.GetOrg().GetTaxId();
+}
+
+void GetOrg_refForProduct(const CBioseq_Handle& bsh, const COrg_ref* pOrgRef)
+{
+    pOrgRef = nullptr;
+
+    if (bsh.IsAa()) {
+        auto pSourceFeat = GetSourceFeatForProduct(bsh);
+        if (pSourceFeat) {
+            const auto& bioSource = pSourceFeat->GetData().GetBiosrc();
+            if (bioSource.CanGetOrg()) {
+                pOrgRef = &bioSource.GetOrg();
+                return;
+            }
+        }
+    }
+}
+
+
+const COrg_ref* GetOrg_refForBioseq(const CBioseq_Handle& bsh)
+{
+    const auto* pSource = GetBioSourceForBioseq(bsh);
+    if (!pSource  ||  !pSource->CanGetOrg()) {
+        return nullptr;
+    }
+    return &pSource->GetOrg();
+}
+
+const CBioSource* GetBioSourceForBioseq(const CBioseq_Handle& bsh)
+{
+    if (bsh.IsAa()) {
+        auto pSourceFeat = GetSourceFeatForProduct(bsh);
+        if (pSourceFeat) {
+            return &pSourceFeat->GetData().GetBiosrc();
+        }
+    }
+
+    // find a biosource descriptor
+    CSeqdesc_CI dsrcIt(bsh, CSeqdesc::e_Source);
+    if (dsrcIt) {
+        return &dsrcIt->GetSource();
+    }
+
+    // if no descriptor was found, try a source feature
+    CFeat_CI fsrcIt(bsh, CSeqFeatData::e_Biosrc);
+    if (fsrcIt) {
+        const CSeq_feat& src_feat = fsrcIt->GetOriginalFeature();
+        return &src_feat.GetData().GetBiosrc();
+    }
+
+    return nullptr;
+}
 
 const COrg_ref* GetOrg_refOrNull(const CBioseq_Handle& handle)
 {

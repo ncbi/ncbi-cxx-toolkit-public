@@ -2412,16 +2412,15 @@ bool CGff3Writer::xAssignSourceAttributesBioSource(
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
-    CSeqdesc_CI sdi( bsh.GetParentEntry(), CSeqdesc::e_Source, 0 );
-    if (!sdi) {
+    const CBioSource* pSource = sequence::GetBioSourceForBioseq(bsh);
+    if (!pSource) {
         return true;
     }
-    const CBioSource& bioSrc = sdi->GetSource();
-    return (xAssignSourceAttributeGenome(record, bioSrc)  &&
-        xAssignSourceAttributeName(record, bioSrc)  &&
-        xAssignSourceAttributeDbxref(record, bioSrc)  &&
-        xAssignSourceAttributesOrgMod(record, bioSrc)  &&
-        xAssignSourceAttributesSubSource(record, bioSrc));
+    return (xAssignSourceAttributeGenome(record, *pSource)  &&
+        xAssignSourceAttributeName(record, *pSource)  &&
+        xAssignSourceAttributeDbxref(record, *pSource)  &&
+        xAssignSourceAttributesOrgMod(record, *pSource)  &&
+        xAssignSourceAttributesSubSource(record, *pSource));
 }
 
 //  ----------------------------------------------------------------------------

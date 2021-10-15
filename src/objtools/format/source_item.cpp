@@ -105,7 +105,7 @@ const string       CSourceItem::scm_Unknown        = "Unknown.";
 const string       CSourceItem::scm_Unclassified   = "Unclassified.";
 const list<string> CSourceItem::scm_EmptyList;
 
-
+/* Moved to sequence:: (RW-1446)
 static CConstRef<CSeq_feat> x_GetSourceFeatFromCDS  (
     const CBioseq_Handle& bsh
 )
@@ -142,6 +142,7 @@ static CConstRef<CSeq_feat> x_GetSourceFeatFromCDS  (
 
     return CConstRef<CSeq_feat> ();
 }
+*/
 
 static const char * legal_organelles[] = {
     "chloroplast",
@@ -204,7 +205,7 @@ void CSourceItem::x_GatherInfo(CBioseqContext& ctx)
 
     if (ctx.IsProt()) {
         const CBioseq_Handle& bsh = ctx.GetHandle();
-        src_feat = x_GetSourceFeatFromCDS (bsh);
+        src_feat = sequence::GetSourceFeatForProduct(bsh);
         if (src_feat.NotEmpty()) {
             const CSeq_feat& feat = *src_feat;
             x_SetSource(feat.GetData().GetBiosrc(), feat);
@@ -255,7 +256,7 @@ void CSourceItem::x_GatherInfo(CBioseqContext& ctx, const CBioSource& bsrc, cons
 
     if (ctx.IsProt()) {
         const CBioseq_Handle& bsh = ctx.GetHandle();
-        src_feat = x_GetSourceFeatFromCDS (bsh);
+        src_feat = sequence::GetSourceFeatForProduct(bsh);
         if (src_feat.NotEmpty()) {
             const CSeq_feat& feat = *src_feat;
             x_SetSource(feat.GetData().GetBiosrc(), feat);

@@ -1962,7 +1962,7 @@ void CFlatGatherer::x_CollectSourceFeatures
     }
 }
 
-
+/* moved to sequence:: (RW-1446)
 static CConstRef<CSeq_feat> x_GetSourceFeatFromCDS  (
     const CBioseq_Handle& bsh
 )
@@ -1999,6 +1999,7 @@ static CConstRef<CSeq_feat> x_GetSourceFeatFromCDS  (
 
     return CConstRef<CSeq_feat> ();
 }
+*/
 
 void CFlatGatherer::x_CollectBioSourcesOnBioseq
 (const CBioseq_Handle& bh,
@@ -2012,7 +2013,7 @@ void CFlatGatherer::x_CollectBioSourcesOnBioseq
     if ( ctx.IsProt() ) {
         // collect biosources features on bioseq
         if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() || cfg.IsPolicyFtp() ) {
-            CConstRef<CSeq_feat> src_feat = x_GetSourceFeatFromCDS (bh);
+            CConstRef<CSeq_feat> src_feat = sequence::GetSourceFeatForProduct(bh);
             if (src_feat.NotEmpty()) {
                 // CMappedFeat mapped_feat(bh.GetScope().GetSeq_featHandle(*src_feat));
                 const CSeq_feat& feat = *src_feat;
