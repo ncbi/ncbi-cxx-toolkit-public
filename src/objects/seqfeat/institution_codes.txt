@@ -4454,7 +4454,7 @@ MIB	s	University of Milano - Bicocca, Department of Biotechnology and Bioscience
 MIB:ZPL	s	University of Milano - Bicocca, Department of Biotechnology and Biosciences, ZooPlantLab		
 MIC	s	Mar Ivanios College (Zoology museum)			
 MICG	s	Universidad de San Carlos de Guatemala			
-MICH	s	University of Michigan		http://quod.lib.umich.edu/h/herb4ic/x-mich10007/MICH&spec;	
+MICH	s	University of Michigan		http://quod.lib.umich.edu/h/herb4ic/x-MICH&spec;	
 MICH:CZEUM	s	University of Michigan, Collection of Zoosporic Eufungi at the University of Michigan	
 MICKKU	c	MICKKU Culture Collection			
 MICOCL	s	ONG Micofilos			
