@@ -71,6 +71,7 @@ class CSeq_entry_handle;
 class CGenetic_code;
 class CMolInfo;
 class CSeq_gap;
+class COrgMod;
 
 BEGIN_SCOPE(sequence)
 
@@ -715,6 +716,30 @@ CBioseq_Handle GetBioseqFromSeqLoc(const CSeq_loc& loc, CScope& scope,
 NCBI_XOBJUTIL_EXPORT
 string GetProteinName(const CBioseq_Handle& seq);
 
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetSourceFeatForProduct(const CBioseq_Handle& bsh);
+
+NCBI_XOBJUTIL_EXPORT
+TTaxId GetTaxIdForProduct(const CBioseq_Handle& bsh);
+
+NCBI_XOBJUTIL_EXPORT
+void GetOrg_refForProduct(const CBioseq_Handle& bsh, const COrg_ref*);
+
+/// Find an Org-ref for the given Bioseq:
+///  If it's a protein then look on the source feature of the product.
+///  Otherwise find a source descriptor for the sequence.
+///  Otherwise, try to find a source feature for the sequence.
+///  Return nullptr if we still turn up empty.
+NCBI_XOBJUTIL_EXPORT
+const COrg_ref* GetOrg_refForBioseq(const CBioseq_Handle& bsh);
+
+/// Find a BioSource for the given Bioseq:
+///  If it's a protein then look for the source feature of the product.
+///  Otherwise find a source descriptor for the sequence.
+///  Otherwise, try to find a source feature for the sequence.
+///  Return nullptr if we still turn up empty.
+NCBI_XOBJUTIL_EXPORT
+const CBioSource* GetBioSourceForBioseq(const CBioseq_Handle& bsh);
 
 /* @} */
 
