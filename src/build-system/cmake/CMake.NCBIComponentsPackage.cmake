@@ -15,7 +15,6 @@
 ##  HAVE_XXX
 
 
-set(NCBI_TRACE_ALLCOMPONENTS TRUE)
 conan_define_targets()
 #############################################################################
 function(NCBI_define_Pkgcomponent)
@@ -93,7 +92,9 @@ function(NCBI_define_Pkgcomponent)
             message("----------------------")
         endif()
     else()
-        message("NOT FOUND ${DC_NAME}")
+        if(NCBI_TRACE_COMPONENT_${DC_NAME} OR NCBI_TRACE_ALLCOMPONENTS)
+            message("NOT FOUND ${DC_NAME}")
+        endif()
     endif()
 endfunction()
 
@@ -253,13 +254,8 @@ NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE libnghttp2)
 
 ##############################################################################
 # GRPC/PROTOBUF
-if(WIN32)
-    set(NCBI_PROTOC_APP "${CONAN_BIN_DIRS_PROTOBUF}/protoc.exe")
-    set(NCBI_GRPC_PLUGIN "${CONAN_BIN_DIRS_GRPC}/grpc_cpp_plugin.exe")
-else()
-    set(NCBI_PROTOC_APP "${CONAN_BIN_DIRS_PROTOBUF}/protoc")
-    set(NCBI_GRPC_PLUGIN "${CONAN_BIN_DIRS_GRPC}/grpc_cpp_plugin")
-endif()
+set(NCBI_PROTOC_APP "${CONAN_BIN_DIRS_PROTOBUF}/protoc${CMAKE_EXECUTABLE_SUFFIX}")
+set(NCBI_GRPC_PLUGIN "${CONAN_BIN_DIRS_GRPC}/grpc_cpp_plugin${CMAKE_EXECUTABLE_SUFFIX}")
 NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE protobuf)
 NCBI_define_Pkgcomponent(NAME GRPC PACKAGE grpc)
 
