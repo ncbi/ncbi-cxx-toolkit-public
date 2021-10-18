@@ -181,15 +181,10 @@ void CUsedTlsBases::ClearAllCurrentThread(CTlsBase::ECleanupMode mode)
 
 struct SNativeThreadTlsCleanup
 {
-    SNativeThreadTlsCleanup(void) {
-    }
     ~SNativeThreadTlsCleanup(void) {
         CUsedTlsBases::ClearAllCurrentThread(CTlsBase::eCleanup_Native);
     }
 };
-
-
-static thread_local SNativeThreadTlsCleanup s_NativeThreadTlsCleanup;
 
 
 void CTlsBase::CleanupTlsData(void* data, ECleanupMode mode)
@@ -202,13 +197,20 @@ void CTlsBase::CleanupTlsData(void* data, ECleanupMode mode)
 }
 
 
-#if defined(NCBI_POSIX_THREADS)
-// pthread can handle automatic cleanup
-extern "C" void s_PosixTlsCleanup(void* ptr)
+void CTlsBase::CleanupAndDeleteTlsData(void* data, ECleanupMode mode)
 {
-    CTlsBase::CleanupTlsData(ptr);
+    if (!data) return;
+    STlsData* tls_data = static_cast<STlsData*>(data);
+    CleanupTlsData(data, mode);
+    delete tls_data;
 }
-#endif
+
+
+void CTlsBase::x_CleanupThreadCallback(void* ptr)
+{
+    CTlsBase::CleanupAndDeleteTlsData(ptr);
+}
+
 
 void CTlsBase::x_Init(void)
 {
@@ -216,7 +218,7 @@ void CTlsBase::x_Init(void)
 #if defined(NCBI_WIN32_THREADS)
     xncbi_VerifyAndErrorReport((m_Key = TlsAlloc()) != DWORD(-1));
 #elif defined(NCBI_POSIX_THREADS)
-    xncbi_VerifyAndErrorReport(pthread_key_create(&m_Key, s_PosixTlsCleanup) == 0);
+    xncbi_VerifyAndErrorReport(pthread_key_create(&m_Key, x_CleanupThreadCallback) == 0);
     // pthread_key_create does not reset the value to 0 if the key has been
     // used and deleted.
     xncbi_VerifyAndErrorReport(pthread_setspecific(m_Key, 0) == 0);
@@ -290,6 +292,10 @@ void CTlsBase::x_SetValue(void*        value,
         tls_data->m_CleanupFunc = 0;
         tls_data->m_CleanupData = 0;
         tls_data->m_Native = eSkipCleanup;
+
+#ifdef NCBI_WIN32_THREADS
+        static thread_local SNativeThreadTlsCleanup s_NativeThreadTlsCleanup;
+#endif
     }
 
     // Cleanup
@@ -325,8 +331,7 @@ bool CTlsBase::x_DeleteTlsData(ECleanupMode mode)
     }
 
     // Cleanup & destroy
-    CleanupTlsData(tls_data, mode);
-    delete tls_data;
+    CleanupAndDeleteTlsData(tls_data, mode);
 
     // Store NULL in the TLS
     s_TlsSetValue(m_Key, 0,

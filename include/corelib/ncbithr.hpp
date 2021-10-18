@@ -138,9 +138,12 @@ private:
     /// Returns true if CTlsBase must be deregistered from current thread
     bool x_DeleteTlsData(ECleanupMode mode = eCleanup_Toolkit);
 
-public:
+    static void CleanupAndDeleteTlsData(void *data, ECleanupMode mode = eCleanup_Toolkit);
     static void CleanupTlsData(void *data, ECleanupMode mode = eCleanup_Toolkit);
+    
+    static void x_CleanupThreadCallback(void* ptr);
 
+public:
     template<class TValue>
     static void DefaultCleanup(TValue *value, void*) {
         if (value) {
