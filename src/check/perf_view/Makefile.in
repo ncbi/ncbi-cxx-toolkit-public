@@ -1,7 +1,6 @@
 # $Id$
 
-USR_PROJ = check
-EXPENDABLE_SUB_PROJ = perf_view
+APP_PROJ = perf_view
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
