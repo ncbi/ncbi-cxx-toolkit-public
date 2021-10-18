@@ -39,6 +39,8 @@
 #include <thread>
 #include <random>
 
+#include <common/test_assert.h>  /* This header must go last */
+
 USING_NCBI_SCOPE;
 
 const char kAllowedChars[] = "0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
