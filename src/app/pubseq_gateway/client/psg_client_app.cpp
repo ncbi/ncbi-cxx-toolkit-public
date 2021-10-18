@@ -37,6 +37,8 @@
 #include "processing.hpp"
 #include "performance.hpp"
 
+#include <common/test_assert.h>  /* This header must go last */
+
 USING_NCBI_SCOPE;
 
 class CPsgClientApp;
