@@ -36,7 +36,16 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiatomic.hpp>
 #include <corelib/ncbi_process.hpp>
+#include <corelib/ncbisys.hpp> // for NcbiSys_write
+#include <corelib/request_ctx.hpp>
 #include <vector>
+#include <thread>
+#include <stdio.h> // for perror
+#ifdef _MSC_VER
+# include <io.h>
+#else
+# include <unistd.h>
+#endif
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -281,6 +290,27 @@ private:
 };
 
 
+void s_Write(int hd, const char* ptr, unsigned len)
+{
+    while (len) {
+        int written = NcbiSys_write(hd, ptr, len);
+        if (written == -1) {
+            perror("stderr write failed");
+            exit(1);
+        }
+        len -= written;
+        ptr += written;
+    }
+}
+
+void s_ReportTLSPtr(TTlsKey key, const char* action, const void* ptr)
+{
+    char buffer[256];
+    unsigned len = sprintf(buffer, "TLS[%d] T%u %s %p\n", key, CThread::GetSelf(), action, ptr);
+    s_Write(1, buffer, len);
+}
+
+
 static const CAtomicCounter::TValue kLastNewTypeMultiple = 1;
 static DECLARE_TLS_VAR(void*, s_LastNewPtr);
 static DECLARE_TLS_VAR(CAtomicCounter::TValue, s_LastNewType);
@@ -292,13 +322,19 @@ static TLastNewPtrMultiple s_LastNewPtrMultiple;
 static TTlsKey s_LastNewPtrMultiple_key;
 #endif
 
-#ifdef NCBI_POSIX_THREADS
-static
-void sx_EraseLastNewPtrMultiple(void* ptr)
-{
-    delete (TLastNewPtrMultiple*)ptr;
-}
+struct SEraseLastNewPtrMultiple {
+    static void sx_Cleanup(void* ptr)
+    {
+        TLastNewPtrMultiple* set = static_cast<TLastNewPtrMultiple*>(ptr);
+        s_ReportTLSPtr(s_LastNewPtrMultiple_key, "- Deleting ", set);
+        delete set;
+    }
+    ~SEraseLastNewPtrMultiple() {
+#ifdef NCBI_WIN32_THREADS
+        sx_Cleanup(TlsGetValue(s_LastNewPtrMultiple_key));
 #endif
+    }
+};
 
 static
 TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
@@ -315,7 +351,7 @@ TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
 #  ifdef NCBI_WIN32_THREADS
                 _VERIFY((key = TlsAlloc()) != DWORD(-1));
 #  else
-                _VERIFY(pthread_key_create(&key, sx_EraseLastNewPtrMultiple)==0);
+                _VERIFY(pthread_key_create(&key, SEraseLastNewPtrMultiple::sx_Cleanup)==0);
 #  endif
             } while ( !key );
 #  ifndef NCBI_WIN32_THREADS
@@ -334,9 +370,11 @@ TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
         set = new TLastNewPtrMultiple();
 #  ifdef NCBI_WIN32_THREADS
         TlsSetValue(s_LastNewPtrMultiple_key, set);
+        static thread_local SEraseLastNewPtrMultiple s_Cleanup;
 #  else
         pthread_setspecific(s_LastNewPtrMultiple_key, set);
 #  endif
+        s_ReportTLSPtr(s_LastNewPtrMultiple_key, "+ Allocated", set);
     }
     return *set;
 #endif
@@ -588,6 +626,14 @@ int RecursiveNewTLS(int level);
 
 bool CTestTlsObjectApp::Thread_Run(int /*idx*/)
 {
+    if (1) {
+        for (int i = 0; i < 1000; ++i) {
+            CDiagContext::GetRequestContext();
+        }
+        for (int i = 0; i < 100; ++i) {
+            thread(CDiagContext::GetRequestContext).join();
+        }
+    }
     try {
         RunTest();
         RunTest();
@@ -922,7 +968,6 @@ void CTestTlsObjectApp::RunTest(void)
 bool CTestTlsObjectApp::TestApp_Init(void)
 {
     static string sss = "xxx";
-    s_NumThreads = 20;
     total_steps = s_NumThreads;
     total_steps *= 3; // iterations in thread
     total_steps *= 9; // passes in iteration
@@ -974,6 +1019,7 @@ int RecursiveNewTLS(int level)
 
 int main(int argc, const char* argv[]) 
 {
+    s_NumThreads = 20; // change default
     // Execute main application function
     return CTestTlsObjectApp().AppMain(argc, argv);
 }
