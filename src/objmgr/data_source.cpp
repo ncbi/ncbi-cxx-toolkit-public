@@ -101,7 +101,7 @@ unsigned CDataSource::GetDefaultBlobCacheSizeLimit(void)
 
 
 NCBI_PARAM_DECL(bool, OBJMGR, BULK_CHUNKS);
-NCBI_PARAM_DEF_EX(bool, OBJMGR, BULK_CHUNKS, false,
+NCBI_PARAM_DEF_EX(bool, OBJMGR, BULK_CHUNKS, true,
                   eParam_NoThread, OBJMGR_BULK_CHUNKS);
 
 static bool s_GetBulkChunks(void)
