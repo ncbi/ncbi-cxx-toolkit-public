@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 // Directly include miniz library
 
 // disable zlib emulation, we have it separately anyway
-#define MINIZ_NO_ZLIB_APIS      
+#define MINIZ_NO_ZLIB_APIS
 
 // Disable miniz warning about using large files on BSD and Cygwin64
 #if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_CYGWIN)
@@ -56,7 +56,18 @@ BEGIN_NCBI_SCOPE
 #  define _LARGEFILE64_SOURCE
 #endif
 
+#if 1
+
 #include "miniz/miniz.c"
+
+#else
+
+#include "miniz_old/miniz.c"
+#include "miniz_old/miniz_zip.c"
+#include "miniz_old/miniz_tdef.c"
+#include "miniz_old/miniz_tinfl.c"
+
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -488,6 +499,9 @@ void CArchiveZip::TestEntry(const CArchiveEntryInfo& info)
 void CArchiveZip::AddEntryFromFileSystem(const CArchiveEntryInfo& info, 
                                          const string& src_path, ELevel level)
 {
+    if (level == CCompression::eLevel_Default) {
+        level = ELevel(MZ_DEFAULT_LEVEL);
+    }
     const string& comment = info.m_Comment;
     mz_uint16 comment_size = (mz_uint16)comment.size();
     mz_bool status;
@@ -512,6 +526,9 @@ void CArchiveZip::AddEntryFromFileSystem(const CArchiveEntryInfo& info,
 void CArchiveZip::AddEntryFromMemory(const CArchiveEntryInfo& info,
                                      void* buf, size_t size, ELevel level)
 {
+    if (level == CCompression::eLevel_Default) {
+        level = ELevel(MZ_DEFAULT_LEVEL);
+    }
     const string& comment = info.m_Comment;
     mz_uint16 comment_size = (mz_uint16)comment.size();
     mz_bool status;
