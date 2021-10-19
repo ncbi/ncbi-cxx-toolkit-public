@@ -1,6 +1,11 @@
 #############################################################################
 # $Id$
 #############################################################################
+#############################################################################
+##
+##  NCBI C++ Toolkit CMake wrapper
+##    Author: Andrei Gourianov, gouriano@ncbi
+##
 
 if(NOT DEFINED NCBI_TOOLKIT_NCBIPTB_BUILD_SYSTEM_INCLUDED)
 set( NCBI_TOOLKIT_NCBIPTB_BUILD_SYSTEM_INCLUDED ON)

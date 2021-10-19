@@ -15,7 +15,6 @@
 ##  HAVE_XXX
 
 
-conan_define_targets()
 #############################################################################
 function(NCBI_define_Pkgcomponent)
     cmake_parse_arguments(DC "" "NAME;PACKAGE" "" ${ARGN})
