@@ -74,6 +74,7 @@ macro(find_package arg_mod)
 endmacro()
 endif()
 
+if(OFF)
 ##############################################################################
 ##
 ## Recurse a directory, but only if the directory actually exists
@@ -266,6 +267,7 @@ macro( RunDatatool MODULE MODULE_SEARCH )
     endif()
 
 endmacro( RunDatatool )
+endif()
 
 
 ##############################################################################
