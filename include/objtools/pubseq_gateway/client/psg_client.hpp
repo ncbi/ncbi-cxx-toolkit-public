@@ -112,7 +112,8 @@ public:
     string GetId() const { return x_GetId(); }
 
     /// Set hops
-    void SetHops(unsigned hops) { m_Hops = hops; }
+    /// @deprecated use SetUserArgs instead
+    NCBI_DEPRECATED void SetHops(unsigned hops) { m_Hops = hops; }
 
     /// Set arbitrary URL arguments to add to this request.
     /// @code
