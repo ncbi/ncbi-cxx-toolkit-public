@@ -290,12 +290,14 @@ private:
 };
 
 
-void s_Write(int hd, const char* ptr, unsigned len)
+//#define TLS_DEBUG_TRACE
+#ifdef TLS_DEBUG_TRACE
+static void s_Write(int hd, const char* ptr, unsigned len)
 {
     while (len) {
         int written = NcbiSys_write(hd, ptr, len);
         if (written == -1) {
-            perror("stderr write failed");
+            perror("write failed");
             exit(1);
         }
         len -= written;
@@ -303,12 +305,17 @@ void s_Write(int hd, const char* ptr, unsigned len)
     }
 }
 
-void s_ReportTLSPtr(TTlsKey key, const char* action, const void* ptr)
+static void s_ReportTLSPtr(TTlsKey key, const char* action, const void* ptr)
 {
     char buffer[256];
     unsigned len = sprintf(buffer, "TLS[%d] T%u %s %p\n", key, CThread::GetSelf(), action, ptr);
     s_Write(1, buffer, len);
 }
+#else
+static void s_ReportTLSPtr(TTlsKey /*key*/, const char* /*action*/, const void* /*ptr*/)
+{
+}
+#endif
 
 
 static const CAtomicCounter::TValue kLastNewTypeMultiple = 1;
@@ -654,6 +661,9 @@ static const size_t COUNT = 2000;
 
 void CTestTlsObjectApp::RunTest(void)
 {
+    CRef<CRequestContext> context(new CRequestContext());
+    context->SetRequestID();
+    CDiagContext::SetRequestContext(context);
     const size_t OBJECT_SIZE = sizeof(CObjectWithNew);
     for ( int t = 0; t < 1; ++t ) {
         // prealloc
@@ -725,6 +735,22 @@ void CTestTlsObjectApp::RunTest(void)
         sw.Start();
         _VERIFY(sx_PopLastNewPtr(ptr));
         delete ptr;
+        double t2 = sw.Elapsed();
+        message("tls", "set", t1, "get", t2, COUNT);
+    }
+    check_cnts();
+    {
+        sw.Start();
+        int* ptr1 = new int;
+        sx_PushLastNewPtr(ptr1, 2);
+        int* ptr2 = new int;
+        sx_PushLastNewPtr(ptr2, 2);
+        double t1 = sw.Elapsed();
+        sw.Start();
+        _VERIFY(sx_PopLastNewPtr(ptr2));
+        _VERIFY(sx_PopLastNewPtr(ptr1));
+        delete ptr2;
+        delete ptr1;
         double t2 = sw.Elapsed();
         message("tls", "set", t1, "get", t2, COUNT);
     }
