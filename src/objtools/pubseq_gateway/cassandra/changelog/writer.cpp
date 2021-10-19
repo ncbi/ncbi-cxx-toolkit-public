@@ -44,6 +44,12 @@ USING_NCBI_SCOPE;
 void CBlobChangelogWriter::WriteChangelogEvent(
     CCassQuery* query, string const &keyspace, CBlobChangelogRecord const& record) const
 {
+    if (record.GetLastModified() == 0) {
+        string message =
+            "Changelog record blob modified value is zero. It is always wrong. ("
+            + keyspace + "." + to_string(record.GetSatKey()) + ")";
+        NCBI_THROW(CCassandraException, eInconsistentData, message);
+    }
     string sql = "INSERT INTO " + keyspace + ".blob_prop_change_log "
         "(updated_time, sat_key, last_modified, op) VALUES (?,?,?,?) USING TTL "
         + NStr::NumericToString(CBlobChangelogRecord::GetTTL());
