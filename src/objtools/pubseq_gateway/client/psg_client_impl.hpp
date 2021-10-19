@@ -88,6 +88,24 @@ private:
     TReplyItem* CreateImpl(TReplyItem* item, const vector<SPSG_Chunk>& chunks);
 };
 
+struct SPSG_UserArgsBuilder
+{
+    SPSG_UserArgsBuilder() { x_UpdateCache(); }
+    void SetQueueArgs(SPSG_UserArgs queue_args) { m_QueueArgs = move(queue_args); x_UpdateCache(); }
+    void Build(ostream& os, const SPSG_UserArgs& request_args);
+
+private:
+    void x_UpdateCache();
+
+    struct MergeValues; // A function-like class
+    static bool Merge(SPSG_UserArgs& higher_priority, const SPSG_UserArgs& lower_priority);
+
+    static const SPSG_UserArgs& s_GetIniArgs();
+    
+    SPSG_UserArgs m_QueueArgs;
+    string m_CachedArgs;
+};
+
 struct CPSG_Queue::SImpl
 {
     shared_ptr<TPSG_Queue> queue;
@@ -99,6 +117,7 @@ struct CPSG_Queue::SImpl
     bool WaitForEvents(CDeadline deadline);
 
     bool RejectsRequests() const { return m_Service.ioc.RejectsRequests(); }
+    void SetUserArgs(SPSG_UserArgs user_args) { m_UserArgsBuilder.GetLock()->SetQueueArgs(move(user_args)); }
 
     static TApiLock GetApiLock() { return CService::GetMap(); }
 
@@ -124,7 +143,19 @@ private:
     string x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request);
 
     CService m_Service;
+    SThreadSafe<SPSG_UserArgsBuilder> m_UserArgsBuilder;
 };
+
+inline ostream& operator<<(ostream& os, const SPSG_UserArgs& request_args)
+{
+    for (const auto& p : request_args) {
+        for (const auto& s : p.second) {
+            os << '&' << p.first << '=' << s;
+        }
+    }
+
+    return os;
+}
 
 END_NCBI_SCOPE
 
