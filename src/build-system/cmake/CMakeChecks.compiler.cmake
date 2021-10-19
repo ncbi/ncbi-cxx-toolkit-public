@@ -99,7 +99,7 @@ if (WIN32)
     list(LENGTH CMAKE_CONFIGURATION_TYPES _count)
     if ("${CMAKE_BUILD_TYPE}" STREQUAL "" AND NOT "${_count}" EQUAL "1")
         set(NCBI_CONFIGURATION_RUNTIMELIB "")
-        if(NOT NCBI_PTBCFG_PACKAGE)
+        if(NOT NCBI_PTBCFG_PACKAGING)
             if (BUILD_SHARED_LIBS)
                 set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL)
             else()
@@ -363,7 +363,7 @@ endif (CMAKE_USE_PTHREADS_INIT)
 #
 # OpenMP
 if (NOT APPLE AND NOT CYGWIN AND NOT NCBI_COMPILER_LLVM_CLANG
-    AND NOT NCBI_PTBCFG_PACKAGE
+    AND NOT NCBI_PTBCFG_PACKAGING
     AND NOT noOpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
 find_package(OpenMP)
 ## message("OPENMP_FOUND: ${OPENMP_FOUND}")
@@ -518,7 +518,7 @@ macro(set_c_compiler_flag_optional)
     endif()
 endmacro()
 
-if(NOT NCBI_PTBCFG_PACKAGE
+if(NOT NCBI_PTBCFG_PACKAGING
     AND "${HOST_CPU}" MATCHES "x86"
     AND NOT noSSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
 	set_cxx_compiler_flag_optional("-msse4.2")

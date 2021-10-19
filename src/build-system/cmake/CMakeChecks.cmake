@@ -1,114 +1,18 @@
 #############################################################################
 # $Id$
 #############################################################################
-#
-# Note:
-# This file is included before everything else
-# Anything related to the initial state should go early in this file!
-
-
-if("${CMAKE_GENERATOR}" STREQUAL "Xcode")
-    if(NOT DEFINED XCODE)
-        set(XCODE ON)
-    endif()
-endif()
-
-string(TIMESTAMP NCBI_TIMESTAMP_START "%s")
-string(TIMESTAMP _start)
-message("Started: ${_start}")
-
 #############################################################################
-# Source tree description
-#
-set(NCBI_DIRNAME_RUNTIME bin)
-set(NCBI_DIRNAME_ARCHIVE lib)
-if (WIN32)
-    set(NCBI_DIRNAME_SHARED ${NCBI_DIRNAME_RUNTIME})
-else()
-    set(NCBI_DIRNAME_SHARED ${NCBI_DIRNAME_ARCHIVE})
-endif()
-set(NCBI_DIRNAME_SRC             src)
-set(NCBI_DIRNAME_INCLUDE         include)
-set(NCBI_DIRNAME_COMMON_INCLUDE  common)
-set(NCBI_DIRNAME_CFGINC          inc)
-set(NCBI_DIRNAME_INTERNAL        internal)
-if(NCBI_PTBCFG_PACKAGE)
-    set(NCBI_DIRNAME_EXPORT          res)
-else()
-    set(NCBI_DIRNAME_EXPORT          cmake)
-endif()
-set(NCBI_DIRNAME_TESTING         testing)
-set(NCBI_DIRNAME_SCRIPTS         scripts)
-set(NCBI_DIRNAME_COMMON_SCRIPTS  scripts/common)
-set(NCBI_DIRNAME_BUILDCFG ${NCBI_DIRNAME_SRC}/build-system)
-set(NCBI_DIRNAME_CMAKECFG ${NCBI_DIRNAME_SRC}/build-system/cmake)
+##
+##  NCBI CMake wrapper
+##    Author: Andrei Gourianov, gouriano@ncbi
+##
+##  Checks and configuration
 
 
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/CMake.NCBIptb.cmake")
-    set(_this_root     ${CMAKE_CURRENT_SOURCE_DIR}/..)
-else()
-    set(_this_root     ${CMAKE_SOURCE_DIR})
-endif()
-get_filename_component(_this_root  "${_this_root}"     ABSOLUTE)
-get_filename_component(top_src_dir "${CMAKE_CURRENT_LIST_DIR}/../../.."   ABSOLUTE)
-
-set(NCBI_TREE_ROOT    ${_this_root})
-set(NCBI_SRC_ROOT     ${NCBI_TREE_ROOT}/${NCBI_DIRNAME_SRC})
-set(NCBI_INC_ROOT     ${NCBI_TREE_ROOT}/${NCBI_DIRNAME_INCLUDE})
-set(NCBITK_TREE_ROOT  ${top_src_dir})
-set(NCBITK_SRC_ROOT   ${NCBITK_TREE_ROOT}/${NCBI_DIRNAME_SRC})
-set(NCBITK_INC_ROOT   ${NCBITK_TREE_ROOT}/${NCBI_DIRNAME_INCLUDE})
-if (NOT EXISTS "${NCBI_SRC_ROOT}")
-    set(NCBI_SRC_ROOT   ${NCBI_TREE_ROOT})
-endif()
-if (NOT EXISTS "${NCBI_INC_ROOT}")
-    set(NCBI_INC_ROOT   ${NCBI_TREE_ROOT})
-endif()
-set(NCBI_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-
-set(build_root      ${CMAKE_BINARY_DIR})
-set(builddir        ${CMAKE_BINARY_DIR})
-set(includedir0     ${NCBI_INC_ROOT})
-set(includedir      ${NCBI_INC_ROOT})
-set(incdir          ${CMAKE_BINARY_DIR}/${NCBI_DIRNAME_CFGINC})
-set(incinternal     ${NCBI_INC_ROOT}/${NCBI_DIRNAME_INTERNAL})
-
-set(NCBI_DIRNAME_BUILD  build)
-if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
-    string(FIND ${CMAKE_BINARY_DIR} ${NCBI_TREE_ROOT} _pos_root)
-    string(FIND ${CMAKE_BINARY_DIR} ${NCBI_SRC_ROOT}  _pos_src)
-    if(NOT "${_pos_root}" LESS "0" AND "${_pos_src}" LESS "0" AND NOT "${CMAKE_BINARY_DIR}" STREQUAL "${NCBI_TREE_ROOT}")
-        get_filename_component(NCBI_BUILD_ROOT "${CMAKE_BINARY_DIR}/.." ABSOLUTE)
-	    get_filename_component(NCBI_DIRNAME_BUILD ${CMAKE_BINARY_DIR} NAME)
-    else()
-        get_filename_component(NCBI_BUILD_ROOT "${CMAKE_BINARY_DIR}" ABSOLUTE)
-    endif()
-else()
-    get_filename_component(NCBI_BUILD_ROOT "${CMAKE_BINARY_DIR}/.." ABSOLUTE)
-    get_filename_component(NCBI_DIRNAME_BUILD ${CMAKE_BINARY_DIR} NAME)
-endif()
-
-set(NCBI_CFGINC_ROOT   ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CFGINC})
-
-get_filename_component(incdir "${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CFGINC}" ABSOLUTE)
-if(ON)
-    if(WIN32 OR XCODE)
-        set(incdir          ${incdir}/$<CONFIG>)
-    endif()
-else()
-    if (WIN32)
-        set(incdir          ${incdir}/\$\(Configuration\))
-    elseif (XCODE)
-        set(incdir          ${incdir}/\$\(CONFIGURATION\))
-    endif()
-endif()
-
+############################################################################
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_RUNTIME}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_SHARED}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_ARCHIVE}")
-
-set(NCBI_TREE_CMAKECFG "${CMAKE_CURRENT_LIST_DIR}")
-get_filename_component(NCBI_TREE_BUILDCFG "${CMAKE_CURRENT_LIST_DIR}/.."   ABSOLUTE)
 
 if(EXISTS ${NCBI_TREE_ROOT}/CMake.CustomConfig.txt)
 	include(${NCBI_TREE_ROOT}/CMake.CustomConfig.txt)
@@ -167,19 +71,7 @@ list(REMOVE_DUPLICATES _inc_dirs)
 include_directories(${incdir} ${_inc_dirs})
 include_regular_expression("^.*[.](h|hpp|c|cpp|inl|inc)$")
 if(OFF)
-message("CMAKE_SOURCE_DIR    = ${CMAKE_SOURCE_DIR}")
-message("NCBI_CURRENT_SOURCE_DIR   = ${NCBI_CURRENT_SOURCE_DIR}")
-message("NCBI_TREE_ROOT      = ${NCBI_TREE_ROOT}")
-message("NCBI_SRC_ROOT       = ${NCBI_SRC_ROOT}")
-message("NCBI_INC_ROOT       = ${NCBI_INC_ROOT}")
-message("NCBITK_TREE_ROOT    = ${NCBITK_TREE_ROOT}")
-message("NCBITK_SRC_ROOT     = ${NCBITK_SRC_ROOT}")
-message("NCBITK_INC_ROOT     = ${NCBITK_INC_ROOT}")
-message("NCBI_BUILD_ROOT     = ${NCBI_BUILD_ROOT}")
-message("NCBI_CFGINC_ROOT    = ${NCBI_CFGINC_ROOT}")
-message("NCBI_TREE_BUILDCFG  = ${NCBI_TREE_BUILDCFG}")
-message("NCBI_TREE_CMAKECFG  = ${NCBI_TREE_CMAKECFG}")
-message("include_directories(${incdir} ${_inc_dirs})")
+    message("include_directories(${incdir} ${_inc_dirs})")
 endif()
 
 if (DEFINED NCBI_EXTERNAL_TREE_ROOT)

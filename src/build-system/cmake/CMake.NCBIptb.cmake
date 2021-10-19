@@ -533,8 +533,8 @@ macro(NCBI_begin_test)
     if ("${ARGC}" GREATER "0")
         set(_testname "${ARGV}")
         set(_testalias "${_testname}")
-        if(WIN32)
-            string(REPLACE ".exe" "" _testalias "${_testalias}")
+        if(NOT "${CMAKE_EXECUTABLE_SUFFIX}" STREQUAL "")
+            string(REPLACE "${CMAKE_EXECUTABLE_SUFFIX}" "" _testalias "${_testalias}")
         endif()
         if ( "${_testname}" STREQUAL "")
             set(_testname "${NCBI_PROJECT}${NCBITEST_${NCBI_PROJECT}_NUM}")
@@ -721,7 +721,7 @@ macro(NCBI_internal_analyze_tree)
         "${NCBI_PTBCFG_PROJECT_TAGS}" STREQUAL "" AND
         "${NCBI_PTBCFG_PROJECT_LIST}" STREQUAL ""
         AND NOT DEFINED NCBI_EXTERNAL_TREE_ROOT
-        AND NOT DEFINED NCBI_PTBCFG_PACKAGE
+        AND NOT DEFINED NCBI_PTBCFG_PACKAGING
         AND NOT DEFINED NCBI_PTBCFG_COLLECT_REQUIRES)
         set(NCBI_PTB_NOFILTERS TRUE)
     endif()
@@ -1385,7 +1385,7 @@ macro(NCBI_internal_process_project_requires)
     endforeach()
 
     if (NOT NCBI_PTBMODE_COLLECT_DEPS AND (NOT ${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "STATIC"
-        OR DEFINED NCBI_PTBCFG_PACKAGE))
+        OR DEFINED NCBI_PTBCFG_PACKAGING))
         get_property(_all GLOBAL PROPERTY NCBI_PTBPROP_IMPLREQ_${NCBI_PROJECT})
         foreach(_req IN LISTS _all)
             NCBI_util_parse_sign(${_req} _value _negate)
@@ -1677,7 +1677,7 @@ endfunction()
 ##############################################################################
 function(NCBI_internal_process_project_filters _result)
 
-    if(NCBI_PTBCFG_PACKAGE)
+    if(NCBI_PTBCFG_PACKAGING)
         if(NOT "${NCBI_${NCBI_PROJECT}_TYPE}" STREQUAL "")
             if(${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "CONSOLEAPP" OR ${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "GUIAPP")
                 NCBI_util_get_value(PROPERTY_EXPORT _entry)
