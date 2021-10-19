@@ -84,6 +84,15 @@ void CCassBlobTaskInsertExtended::Wait1()
 
             case eInit: {
                 CloseAll();
+                if (m_Blob->GetModified() == 0) {
+                    string message =
+                        "Blob modified value is zero. It is always wrong. ("
+                        + m_Keyspace + "." + to_string(m_Key) + ")";
+                    Error(CRequestStatus::e400_BadRequest,
+                        CCassandraException::eQueryFailed,
+                        eDiag_Error, message);
+                    return;
+                }
                 m_QueryArr.reserve(m_Blob->GetNChunks());
                 m_State = eInsertChunks;
                 b_need_repeat = true;
