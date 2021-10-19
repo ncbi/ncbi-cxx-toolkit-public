@@ -51,6 +51,7 @@ BEGIN_NCBI_SCOPE
 
 bool CJsonResponse::sm_SetReplyType = true;
 bool CJsonResponse::sm_Verbose = false;
+SPSG_UserArgs CProcessing::user_args;
 
 enum EJsonRpcErrors {
     eJsonRpc_ParseError         = -32700,
@@ -614,6 +615,8 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
         queue = CPSG_EventLoop(service, item_complete, reply_complete);
     }
 
+    queue.SetUserArgs(user_args);
+
     _VERIFY(queue.SendRequest(request, CDeadline::eInfinite));
     queue.Stop();
     _VERIFY(queue.Run(CDeadline::eInfinite));
@@ -633,6 +636,7 @@ CParallelProcessing::CParallelProcessing(const string& service, bool pipe, const
     for (int n = max(kMin, min(kMax, args["worker-threads"].AsInteger())); n > 0; --n) {
         m_PsgQueues.emplace_back(service, item_complete, reply_complete);
         auto& queue = m_PsgQueues.back();
+        queue.SetUserArgs(CProcessing::user_args);
         m_Threads.emplace_back(&CPSG_EventLoop::Run, ref(queue), CDeadline::eInfinite);
 
         if (batch_resolve) {
@@ -695,12 +699,13 @@ void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue&
             auto method = json_obj["method"].GetValue().GetString();
             auto id = json_obj["id"].GetValue().GetString();
             auto params_obj = json_obj["params"].GetObject();
+            auto user_args = params_obj.has("user_args") ? params_obj["user_args"].GetValue().GetString() : string();
             auto user_context = make_shared<string>(id);
 
             SInteractiveNewRequestStart new_request_start(params_obj);
             auto request_context = new_request_start.Clone();
 
-            if (auto request = SRequestBuilder::Build(method, params_obj, move(user_context), move(request_context))) {
+            if (auto request = SRequestBuilder::Build(method, params_obj, user_args, move(user_context), move(request_context))) {
                 _VERIFY(output.SendRequest(move(request), CDeadline::eInfinite));
             }
         }
@@ -811,11 +816,12 @@ vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create
             CJson_ConstObject json_obj(json_doc.GetObject());
             auto method = json_obj["method"].GetValue().GetString();
             auto params_obj = json_obj["params"].GetObject();
+            auto user_args = params_obj.has("user_args") ? params_obj["user_args"].GetValue().GetString() : string();
             auto user_context = create_context(id, params_obj);
 
             if (!user_context) return {};
 
-            if (auto request = SRequestBuilder::Build(method, params_obj, move(user_context))) {
+            if (auto request = SRequestBuilder::Build(method, params_obj, user_args, move(user_context))) {
                 requests.emplace_back(move(request));
                 if (requests.size() % 2000 == 0) cerr << '.';
             }
@@ -830,6 +836,7 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
     SIoRedirector io_redirector(cout, os);
 
     CPSG_Queue global_queue(service);
+    global_queue.SetUserArgs(user_args);
 
     cerr << "Preparing requests: ";
     auto requests = ReadCommands([](string id, CJson_ConstNode&){ return make_shared<SMetrics>(move(id)); });
@@ -848,6 +855,7 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
             queue = shared_ptr<CPSG_Queue>(shared_ptr<CPSG_Queue>(), &global_queue);
         } else {
             queue = make_shared<CPSG_Queue>(service);
+            queue->SetUserArgs(user_args);
         }
 
         start--;
@@ -1035,6 +1043,7 @@ int CProcessing::Testing(const string& service)
 {
     const TPSG_RequestTimeout kDefaultTimeout(TPSG_RequestTimeout::eGetDefault);
     CPSG_Queue queue(service);
+    queue.SetUserArgs(user_args);
     ifstream input_file("psg_client_test.json");
     SIoRedirector ior(cin, input_file);
 
@@ -1261,6 +1270,7 @@ void SIoWorker::Do()
     const CDeadline kInfinite = CDeadline::eInfinite;
 
     CPSG_Queue queue(m_Context.service);
+    queue.SetUserArgs(CProcessing::user_args);
     auto request = make_shared<CPSG_Request_Io>(m_Context.size);
     ostringstream err_stream;
 
@@ -1752,6 +1762,10 @@ CJson_Document CProcessing::RequestSchema()
                 "phid": { "type": "string" },
                 "client_ip": { "type": "string" }
             }
+        },
+        "user_args": {
+            "$id": "#user_args",
+            "type": "string"
         }
     },
     "oneOf": [
@@ -1767,7 +1781,8 @@ CJson_Document CProcessing::RequestSchema()
                         "exclude_blobs": { "$ref": "#/definitions/exclude_blobs" },
                         "acc_substitution": { "$ref": "#/definitions/acc_substitution" },
                         "auto_blob_skipping": { "type": "boolean" },
-                        "context": { "$ref": "#/definitions/context" }
+                        "context": { "$ref": "#/definitions/context" },
+                        "user_args": { "$ref": "#/definitions/user_args" }
                     },
                     "required": [ "bio_id" ]
                 },
@@ -1784,7 +1799,8 @@ CJson_Document CProcessing::RequestSchema()
                     "properties": {
                         "blob_id": { "$ref": "#/definitions/blob_id" },
                         "include_data": { "$ref": "#/definitions/include_data" },
-                        "context": { "$ref": "#/definitions/context" }
+                        "context": { "$ref": "#/definitions/context" },
+                        "user_args": { "$ref": "#/definitions/user_args" }
                     },
                     "required": [ "blob_id" ]
                 },
@@ -1802,7 +1818,8 @@ CJson_Document CProcessing::RequestSchema()
                         "bio_id" : { "$ref": "#/definitions/bio_id" },
                         "include_info": { "$ref": "#/definitions/include_info" },
                         "acc_substitution": { "$ref": "#/definitions/acc_substitution" },
-                        "context": { "$ref": "#/definitions/context" }
+                        "context": { "$ref": "#/definitions/context" },
+                        "user_args": { "$ref": "#/definitions/user_args" }
                     },
                     "required": [ "bio_id" ]
                 },
@@ -1820,7 +1837,8 @@ CJson_Document CProcessing::RequestSchema()
                         "bio_id" : { "$ref": "#/definitions/bio_id" },
                         "named_annots": { "$ref": "#/definitions/named_annots" },
                         "acc_substitution": { "$ref": "#/definitions/acc_substitution" },
-                        "context": { "$ref": "#/definitions/context" }
+                        "context": { "$ref": "#/definitions/context" },
+                        "user_args": { "$ref": "#/definitions/user_args" }
                     },
                     "required": [ "bio_id","named_annots" ]
                 },
@@ -1836,7 +1854,8 @@ CJson_Document CProcessing::RequestSchema()
                     "type": "object",
                     "properties": {
                         "chunk_id": { "$ref": "#/definitions/chunk_id" },
-                        "context": { "$ref": "#/definitions/context" }
+                        "context": { "$ref": "#/definitions/context" },
+                        "user_args": { "$ref": "#/definitions/user_args" }
                     },
                     "required": [ "chunk_id" ]
                 },
