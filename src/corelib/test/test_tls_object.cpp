@@ -305,11 +305,15 @@ static void s_Write(int hd, const char* ptr, unsigned len)
     }
 }
 
-static void s_ReportTLSPtr(TTlsKey key, const char* action, const void* ptr)
+void s_ReportTLSPtr(TTlsKey key, const char* action, const void* ptr)
 {
     char buffer[256];
     unsigned len = sprintf(buffer, "TLS[%d] T%u %s %p\n", key, CThread::GetSelf(), action, ptr);
     s_Write(1, buffer, len);
+}
+#else
+void s_ReportTLSPtr(TTlsKey /*key*/, const char* /*action*/, const void* /*ptr*/)
+{
 }
 #endif
 
