@@ -39,6 +39,8 @@
 #include <string>
 #include <thread>
 #include <type_traits>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_base64.h>
@@ -430,6 +432,139 @@ shared_ptr<CPSG_Queue::SImpl::CService::TMap> CPSG_Queue::SImpl::CService::GetMa
 }
 
 
+SPSG_UserArgs::SPSG_UserArgs(const CUrlArgs& url_args)
+{
+    for (const auto& p : url_args.GetArgs()) {
+        operator[](p.name).emplace(p.value);
+    }
+}
+
+
+// This class is used to split a complex merge function into four,
+// much simpler members without a need to pass many parameters around
+struct SPSG_UserArgsBuilder::MergeValues
+{
+    using TValues = SPSG_UserArgs::mapped_type;
+
+    MergeValues(const string& name, SPSG_UserArgs& to, const TValues& from_values) :
+        m_Name(name),
+        m_To(to),
+        m_ToValues(m_To[name]),
+        m_FromValues(from_values),
+        m_ToValuesSizeBefore(m_ToValues.size())
+    {}
+
+    // The rvalue ref-qualifier allows using the class like a function and also prevents
+    // the operator (doing the merge) from being accidentally called more than once
+    explicit operator bool() &&;
+
+private:
+    bool AddNoMerge();
+    void AddCorrelated(const string& correlated_name);
+    void AddAll() { m_ToValues.insert(m_FromValues.begin(), m_FromValues.end()); }
+
+    const string& m_Name;
+    SPSG_UserArgs& m_To;
+    TValues& m_ToValues;
+    const TValues& m_FromValues;
+    TValues::size_type m_ToValuesSizeBefore;
+};
+
+SPSG_UserArgsBuilder::MergeValues::operator bool() &&
+{
+    static const unordered_map<string, string> correlations{
+        { "enable_processor", "disable_processor" },
+        { "disable_processor", "enable_processor" },
+    };
+
+    if (!AddNoMerge()) {
+        auto found = correlations.find(m_Name);
+
+        if (found == correlations.end()) {
+            AddAll();
+        } else {
+            AddCorrelated(found->second);
+        }
+    }
+
+    return m_ToValues.size() > m_ToValuesSizeBefore;
+}
+
+bool SPSG_UserArgsBuilder::MergeValues::AddNoMerge()
+{
+    static const unordered_set<string> no_merge{
+        "hops",
+    };
+
+    if (no_merge.find(m_Name) == no_merge.end()) {
+        return false;
+    }
+
+    if (m_ToValues.empty()) {
+        AddAll();
+    }
+
+    return true;
+}
+
+void SPSG_UserArgsBuilder::MergeValues::AddCorrelated(const string& correlated_name)
+{
+    auto found = m_To.find(correlated_name);
+
+    if (found == m_To.end()) {
+        AddAll();
+    } else {
+        const auto& correlated = found->second;
+        set_difference(m_FromValues.begin(), m_FromValues.end(), correlated.begin(), correlated.end(), inserter(m_ToValues, m_ToValues.end()));
+    }
+}
+
+bool SPSG_UserArgsBuilder::Merge(SPSG_UserArgs& higher_priority, const SPSG_UserArgs& lower_priority)
+{
+    bool added_something = false;
+
+    for (const auto& p : lower_priority) {
+        if (MergeValues(p.first, higher_priority, p.second)) {
+            added_something = true;
+        }
+    }
+
+    return added_something;
+}
+
+void SPSG_UserArgsBuilder::Build(ostream& os, const SPSG_UserArgs& request_args)
+{
+    if (!request_args.empty()) {
+        auto combined_args = s_GetIniArgs();
+
+        // We can use cached args unless request_args are actually adding something
+        if (Merge(combined_args, request_args)) {
+            Merge(combined_args, m_QueueArgs);
+            os << combined_args;
+            return;
+        }
+    }
+
+    os << m_CachedArgs;
+}
+
+void SPSG_UserArgsBuilder::x_UpdateCache()
+{
+    auto combined_args = s_GetIniArgs();
+    Merge(combined_args, m_QueueArgs);
+
+    ostringstream os;
+    os << combined_args;
+    m_CachedArgs = os.str();
+}
+
+const SPSG_UserArgs& SPSG_UserArgsBuilder::s_GetIniArgs()
+{
+    static SPSG_UserArgs instance(TPSG_RequestUserArgs::GetDefault());
+    return instance;
+}
+
+
 CPSG_Queue::SImpl::SImpl(const string& service) :
     queue(make_shared<TPSG_Queue>()),
     m_Service(service)
@@ -450,13 +585,33 @@ const char* s_GetTSE(CPSG_Request_Biodata::EIncludeData include_data)
     return nullptr;
 }
 
-string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request)
+string s_GetOtherArgs()
 {
     ostringstream os;
+    TPSG_UseCache use_cache(TPSG_UseCache::eGetDefault);
+
+    switch (use_cache) {
+        case EPSG_UseCache::eDefault:                         break;
+        case EPSG_UseCache::eNo:      os << "&use_cache=no";  break;
+        case EPSG_UseCache::eYes:     os << "&use_cache=yes"; break;
+    }
+
+    os << "&client_id=" << GetDiagContext().GetStringUID();
+
+    return os.str();
+}
+
+string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request)
+{
+    static const string other_args(s_GetOtherArgs());
+
+    ostringstream os;
     user_request->x_GetAbsPathRef(os);
-    os << m_Service.ioc.GetUrlArgs();
 
     if (const auto hops = user_request->m_Hops) os << "&hops=" << hops;
+
+    os << other_args;
+    m_UserArgsBuilder.GetLock()->Build(os, user_request->m_UserArgs);
     return os.str();
 }
 
@@ -1054,6 +1209,12 @@ bool CPSG_Queue::RejectsRequests() const
 {
     _ASSERT(m_Impl);
     return m_Impl->RejectsRequests();
+}
+
+
+void CPSG_Queue::SetUserArgs(SPSG_UserArgs user_args)
+{
+    m_Impl->SetUserArgs(move(user_args));
 }
 
 

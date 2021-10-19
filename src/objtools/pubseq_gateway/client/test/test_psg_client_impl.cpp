@@ -584,4 +584,30 @@ BOOST_AUTO_TEST_CASE(StreamRead)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(PSG)
+
+SPSG_UserArgs s_Build(SPSG_UserArgsBuilder& builder, const SPSG_UserArgs& request_args)
+{
+    ostringstream os;
+    builder.Build(os, request_args);
+    return os.str();
+}
+
+BOOST_AUTO_TEST_CASE(UserArgsBuilder)
+{
+    TPSG_RequestUserArgs::SetDefault("enable_processor=cdd&enable_processor=osg&hops=3");
+    SPSG_UserArgsBuilder builder;
+    SPSG_UserArgs request_user_args("enable_processor=snp&disable_processor=cdd&hops=2&use_cache=no");
+
+    BOOST_CHECK_EQUAL(s_Build(builder, {}), SPSG_UserArgs("&enable_processor=cdd&enable_processor=osg&hops=3"));
+    BOOST_CHECK_EQUAL(s_Build(builder, request_user_args), SPSG_UserArgs("&enable_processor=cdd&enable_processor=osg&enable_processor=snp&hops=3&use_cache=no"));
+
+    builder.SetQueueArgs({{"enable_processor", {"wgs"}}, {"disable_processor", {"snp", "cdd"}}, {"hops", {"1"}}});
+
+    BOOST_CHECK_EQUAL(s_Build(builder, {}), SPSG_UserArgs("&disable_processor=snp&enable_processor=cdd&enable_processor=osg&enable_processor=wgs&hops=3"));
+    BOOST_CHECK_EQUAL(s_Build(builder, request_user_args), SPSG_UserArgs("&enable_processor=cdd&enable_processor=osg&enable_processor=snp&enable_processor=wgs&hops=3&use_cache=no"));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 #endif

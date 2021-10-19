@@ -41,6 +41,8 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
 
+#include <unordered_map>
+
 
 #if defined(NCBI_THREADS) && defined(HAVE_LIBNGHTTP2) && defined(HAVE_LIBUV)
 #  define HAVE_PSG_CLIENT 1
@@ -69,6 +71,26 @@ public:
 
 
 
+/// Arbitrary request URL arguments
+///
+struct SPSG_UserArgs : unordered_map<string, set<string>>
+{
+    /// Allows regular construction.
+    /// @code
+    /// SPSG_UserArgs args{{ "param1", { "value1", "value2" }}, { "param2", { "value3" }}};
+    /// @endcode
+    using unordered_map<string, set<string>>::unordered_map;
+
+    /// Allow construction from a CUrlArgs instance or using CUrlArgs parsing.
+    /// @code
+    /// SPSG_UserArgs args("param1=value1&param1=value2&param2=value3");
+    /// @endcode
+    SPSG_UserArgs(const CUrlArgs& url_args);
+    SPSG_UserArgs(const string& query) : SPSG_UserArgs(CUrlArgs(query)) {}
+};
+
+
+
 /// Request to the PSG server (see "CPSG_Request_*" below)
 ///
 
@@ -92,6 +114,13 @@ public:
     /// Set hops
     void SetHops(unsigned hops) { m_Hops = hops; }
 
+    /// Set arbitrary URL arguments to add to this request.
+    /// @code
+    /// request->SetUserArgs("param1=value1&param1=value2&param2=value3");
+    /// request->SetUserArgs({{ "param1", { "value1", "value2" }}, { "param2", { "value3" }}});
+    /// @endcode
+    void SetUserArgs(SPSG_UserArgs user_args) { m_UserArgs = move(user_args); }
+
 protected:
     CPSG_Request(shared_ptr<void> user_context = {},
                  CRef<CRequestContext> request_context = {})
@@ -109,6 +138,7 @@ private:
     shared_ptr<void> m_UserContext;
     CRef<CRequestContext> m_RequestContext;
     unsigned m_Hops = 0;
+    SPSG_UserArgs m_UserArgs;
 
     friend class CPSG_Queue;
 };
@@ -952,6 +982,14 @@ public:
 
     /// Is the queue in a state (possibly temporary) when requests get immediately rejected.
     bool RejectsRequests() const;
+
+
+    /// Set arbitrary URL arguments to add to every request.
+    /// @code
+    /// queue.SetUserArgs("param1=value1&param1=value2&param2=value3");
+    /// queue.SetUserArgs({{ "param1", { "value1", "value2" }}, { "param2", { "value3" }}});
+    /// @endcode
+    void SetUserArgs(SPSG_UserArgs user_args);
 
 
     /// Get an API lock.

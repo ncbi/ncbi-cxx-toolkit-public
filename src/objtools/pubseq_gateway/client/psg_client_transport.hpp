@@ -693,7 +693,6 @@ struct SPSG_IoCoordinator
     SPSG_IoCoordinator(CServiceDiscovery service);
     bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
     string GetNewRequestId() { return to_string(m_RequestId++); }
-    const string& GetUrlArgs() const { return m_UrlArgs; }
     bool RejectsRequests() const { return m_Servers->fail_requests; }
 
 private:
@@ -703,7 +702,6 @@ private:
     vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;
     atomic<size_t> m_RequestCounter;
     atomic<size_t> m_RequestId;
-    const string m_UrlArgs;
 };
 
 END_NCBI_SCOPE
