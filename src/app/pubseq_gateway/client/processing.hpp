@@ -198,6 +198,8 @@ public:
         SParams(const CArgs& args);
     };
 
+    static SPSG_UserArgs user_args;
+
     static int OneRequest(const string& service, shared_ptr<CPSG_Request> request, SParams params);
     static int ParallelProcessing(const string& service, const CArgs& args, bool batch_resolve, bool echo);
     static int Performance(const string& service, size_t user_threads, double delay, bool local_queue, ostream& os);
@@ -224,7 +226,7 @@ struct SRequestBuilder
     static shared_ptr<TRequest> Build(const TInput& input, TArgs&&... args);
 
     template <class... TArgs>
-    static shared_ptr<CPSG_Request> Build(const string& name, const CJson_ConstObject& input, TArgs&&... args);
+    static shared_ptr<CPSG_Request> Build(const string& name, const CJson_ConstObject& input, const string& user_args, TArgs&&... args);
 
     static const initializer_list<SDataFlag>& GetDataFlags();
     static const initializer_list<SInfoFlag>& GetInfoFlags();
@@ -328,23 +330,27 @@ shared_ptr<TRequest> SRequestBuilder::Build(const TInput& input, TArgs&&... args
 }
 
 template <class... TArgs>
-shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const CJson_ConstObject& input, TArgs&&... args)
+shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const CJson_ConstObject& input, const string& user_args, TArgs&&... args)
 {
     SImpl<CJson_ConstObject> build(input, forward<TArgs>(args)...);
+    shared_ptr<CPSG_Request> rv;
 
     if (name == "biodata") {
-        return static_cast<shared_ptr<CPSG_Request_Biodata>>(build);
+        rv = static_cast<shared_ptr<CPSG_Request_Biodata>>(build);
     } else if (name == "blob") {
-        return static_cast<shared_ptr<CPSG_Request_Blob>>(build);
+        rv = static_cast<shared_ptr<CPSG_Request_Blob>>(build);
     } else if (name == "resolve") {
-        return static_cast<shared_ptr<CPSG_Request_Resolve>>(build);
+        rv = static_cast<shared_ptr<CPSG_Request_Resolve>>(build);
     } else if (name == "named_annot") {
-        return static_cast<shared_ptr<CPSG_Request_NamedAnnotInfo>>(build);
+        rv = static_cast<shared_ptr<CPSG_Request_NamedAnnotInfo>>(build);
     } else if (name == "chunk") {
-        return static_cast<shared_ptr<CPSG_Request_Chunk>>(build);
+        rv = static_cast<shared_ptr<CPSG_Request_Chunk>>(build);
     } else {
         return {};
     }
+
+    rv->SetUserArgs(user_args);
+    return rv;
 }
 
 template <class TInput>

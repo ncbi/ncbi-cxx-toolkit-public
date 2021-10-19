@@ -167,6 +167,7 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("use-cache", "USE_CACHE", "Whether to use LMDB cache (no|yes|default)", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("timeout", "SECONDS", "Set request timeout (in seconds)", CArgDescriptions::eInteger);
     arg_desc.AddOptionalKey("debug-printout", "WHAT", "Debug printout of PSG protocol (some|all).", CArgDescriptions::eString, CArgDescriptions::fHidden);
+    arg_desc.AddOptionalKey("user-args", "USER_ARGS", "Arbitrary request URL arguments (queue-wide)", CArgDescriptions::eString);
     arg_desc.AddFlag("https", "Enable HTTPS");
     arg_desc.AddFlag("latency", "Latency output", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_desc.AddFlag("verbose", "Verbose output");
@@ -319,6 +320,11 @@ const string& s_SetPsgDefaults(const CArgs& args, bool parallel)
     if (args["debug-printout"].HasValue()) {
         auto debug_printout = args["debug-printout"].AsString();
         TPSG_DebugPrintout::SetDefault(debug_printout);
+    }
+
+    if (args["user-args"].HasValue()) {
+        const auto& user_args = args["user-args"].AsString();
+        CProcessing::user_args = user_args;
     }
 
     CJsonResponse::Verbose(args["verbose"].HasValue());
