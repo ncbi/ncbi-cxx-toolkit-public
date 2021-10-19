@@ -311,10 +311,6 @@ static void s_ReportTLSPtr(TTlsKey key, const char* action, const void* ptr)
     unsigned len = sprintf(buffer, "TLS[%d] T%u %s %p\n", key, CThread::GetSelf(), action, ptr);
     s_Write(1, buffer, len);
 }
-#else
-static void s_ReportTLSPtr(TTlsKey /*key*/, const char* /*action*/, const void* /*ptr*/)
-{
-}
 #endif
 
 
@@ -639,9 +635,11 @@ bool CTestTlsObjectApp::Thread_Run(int /*idx*/)
         for (int i = 0; i < 1000; ++i) {
             CDiagContext::GetRequestContext();
         }
+#ifndef NCBI_NO_THREADS
         for (int i = 0; i < 100; ++i) {
             thread(CDiagContext::GetRequestContext).join();
         }
+#endif
     }
     try {
         RunTest();
