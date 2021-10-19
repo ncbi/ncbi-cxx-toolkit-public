@@ -83,7 +83,7 @@ private:
 
 struct SInteractiveNewRequestStart : SNewRequestContext
 {
-    SInteractiveNewRequestStart(CJson_ConstNode params);
+    SInteractiveNewRequestStart(CJson_ConstObject params_obj);
 
 private:
     struct SExtra : private CDiagContext_Extra
@@ -694,13 +694,13 @@ void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue&
             CJson_ConstObject json_obj(json_doc.GetObject());
             auto method = json_obj["method"].GetValue().GetString();
             auto id = json_obj["id"].GetValue().GetString();
-            auto params = json_obj.has("params") ? json_obj["params"] : CJson_Document();
+            auto params_obj = json_obj["params"].GetObject();
             auto user_context = make_shared<string>(id);
 
-            SInteractiveNewRequestStart new_request_start(params);
+            SInteractiveNewRequestStart new_request_start(params_obj);
             auto request_context = new_request_start.Clone();
 
-            if (auto request = SRequestBuilder::Build(method, params.GetObject(), move(user_context), move(request_context))) {
+            if (auto request = SRequestBuilder::Build(method, params_obj, move(user_context), move(request_context))) {
                 _VERIFY(output.SendRequest(move(request), CDeadline::eInfinite));
             }
         }
@@ -810,12 +810,12 @@ vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create
         } else {
             CJson_ConstObject json_obj(json_doc.GetObject());
             auto method = json_obj["method"].GetValue().GetString();
-            auto params = json_obj.has("params") ? json_obj["params"] : CJson_Document();
-            auto user_context = create_context(id, params);
+            auto params_obj = json_obj["params"].GetObject();
+            auto user_context = create_context(id, params_obj);
 
             if (!user_context) return {};
 
-            if (auto request = SRequestBuilder::Build(method, params.GetObject(), move(user_context))) {
+            if (auto request = SRequestBuilder::Build(method, params_obj, move(user_context))) {
                 requests.emplace_back(move(request));
                 if (requests.size() % 2000 == 0) cerr << '.';
             }
@@ -956,17 +956,14 @@ struct STestingContext : string
 
     STestingContext(string id, EExpected e) : string(move(id)), expected(e) {}
 
-    static shared_ptr<STestingContext> CreateContext(string id, CJson_ConstNode& params);
+    static shared_ptr<STestingContext> CreateContext(string id, CJson_ConstObject params_obj);
 };
 
-shared_ptr<STestingContext> STestingContext::CreateContext(string id, CJson_ConstNode& params)
+shared_ptr<STestingContext> STestingContext::CreateContext(string id, CJson_ConstObject params_obj)
 {
-    _ASSERT(params.IsObject());
     string error;
 
     try {
-        auto params_obj = params.GetObject();
-
         if (params_obj.has("expected_result")) {
             auto expected = params_obj["expected_result"].GetValue().GetString();
             auto result = expected == "success" ? eSuccess : eFailure;
@@ -1095,11 +1092,10 @@ bool CProcessing::ReadLine(string& line, istream& is)
     }
 }
 
-SInteractiveNewRequestStart::SInteractiveNewRequestStart(CJson_ConstNode params)
+SInteractiveNewRequestStart::SInteractiveNewRequestStart(CJson_ConstObject params_obj)
 {
     // All JSON types have already been validated with the scheme
 
-    auto params_obj = params.GetObject();
     auto context = params_obj.find("context");
     auto& ctx = CDiagContext::GetRequestContext();
 
@@ -1129,7 +1125,7 @@ SInteractiveNewRequestStart::SInteractiveNewRequestStart(CJson_ConstNode params)
     if (!ctx.IsSetHitID())     ctx.SetHitID();
 
     SExtra extra;
-    extra.Print("params", params);
+    extra.Print("params", params_obj);
 }
 
 void SInteractiveNewRequestStart::SExtra::Print(const string& prefix, CJson_ConstValue json)
