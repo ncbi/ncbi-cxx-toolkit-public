@@ -8,9 +8,44 @@
 ##    Author: Andrei Gourianov, gouriano@ncbi
 ##
 
-set(___silent ${CONAN_CMAKE_SILENT_OUTPUT})
-set(CONAN_CMAKE_SILENT_OUTPUT TRUE)
-conan_define_targets()
-set(CONAN_CMAKE_SILENT_OUTPUT ${___silent})
-include(${CMAKE_CURRENT_LIST_DIR}/../../ncbi-cpp-toolkit.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/CMake.NCBIpkg.codegen.cmake)
+if(NOT DEFINED NCBI_TOOLKIT_NCBIPTB_BUILD_SYSTEM_INCLUDED)
+set( NCBI_TOOLKIT_NCBIPTB_BUILD_SYSTEM_INCLUDED ON)
+
+###############################################################################
+set(NCBI_PTBCFG_PACKAGED               ON)
+set(NCBI_PTBCFG_ENABLE_COLLECTOR       ON)
+#set(NCBI_VERBOSE_ALLPROJECTS           OFF)
+#set(NCBI_PTBCFG_ALLOW_COMPOSITE        OFF)
+#set(NCBI_PTBCFG_ADDTEST                OFF)
+
+###############################################################################
+set(NCBI_PTBCFG_INSTALL_EXPORT ncbi-cpp-toolkit)
+
+set(_listdir "${CMAKE_CURRENT_LIST_DIR}")
+
+include(${_listdir}/CMake.NCBIptb.definitions.cmake)
+include(${_listdir}/CMakeMacros.cmake)
+include(${_listdir}/CMake.NCBIptb.cmake)
+include(${_listdir}/CMake.NCBIComponents.cmake)
+include_directories(${NCBI_INC_ROOT})
+
+include(${_listdir}/CMake.NCBIptb.datatool.cmake)
+include(${_listdir}/CMake.NCBIptb.grpc.cmake)
+include(${_listdir}/CMake.NCBIpkg.codegen.cmake)
+if(NCBI_PTBCFG_ADDTEST)
+    include(${_listdir}/CMake.NCBIptb.ctest.cmake)
+endif()
+
+if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
+    set(NCBI_EXTERNAL_BUILD_ROOT ${NCBI_EXTERNAL_TREE_ROOT})
+    if (EXISTS ${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}/${NCBI_PTBCFG_INSTALL_EXPORT}.cmake)
+        include(${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}/${NCBI_PTBCFG_INSTALL_EXPORT}.cmake)
+    else()
+        message(FATAL_ERROR "${NCBI_PTBCFG_INSTALL_EXPORT} was not found in ${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}")
+    endif()
+    NCBI_import_hostinfo(${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}/${NCBI_PTBCFG_INSTALL_EXPORT}.hostinfo)
+    NCBI_process_imports(${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}/${NCBI_PTBCFG_INSTALL_EXPORT}.imports)
+endif()
+
+include(${_listdir}/CMakeChecks.final-message.cmake)
+endif(NOT DEFINED NCBI_TOOLKIT_NCBIPTB_BUILD_SYSTEM_INCLUDED)
