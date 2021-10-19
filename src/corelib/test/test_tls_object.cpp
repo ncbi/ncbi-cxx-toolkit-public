@@ -333,7 +333,9 @@ struct SEraseLastNewPtrMultiple {
     static void sx_Cleanup(void* ptr)
     {
         TLastNewPtrMultiple* set = static_cast<TLastNewPtrMultiple*>(ptr);
+#ifdef NCBI_THREADS
         s_ReportTLSPtr(s_LastNewPtrMultiple_key, "- Deleting ", set);
+#endif
         delete set;
     }
     ~SEraseLastNewPtrMultiple() {
