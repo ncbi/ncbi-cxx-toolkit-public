@@ -358,12 +358,14 @@ bool CFormatGuessEx::x_TryFasta()
     CRef<CSeq_entry> Result;
     try {
         CFastaReader Reader(m_LocalBuffer);
-        Result = Reader.ReadSet();
-    } catch(CException&) {
-    } catch(...) {
+        Result = Reader.ReadSet(1);
+    }
+    catch(...) {
+        return false;
     }
 
-    return Result.NotEmpty();
+    // 
+    return (Result  &&  Result->IsSet()  &&  !Result->GetSet().GetSeq_set().empty());
 }
 
 //  bool x_TryTextAsn();
