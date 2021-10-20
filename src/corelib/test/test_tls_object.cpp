@@ -640,7 +640,7 @@ bool CTestTlsObjectApp::Thread_Run(int /*idx*/)
             CDiagContext::GetRequestContext();
         }
 #ifndef NCBI_NO_THREADS
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 0; i < 10; ++i) {
             thread(CDiagContext::GetRequestContext).join();
         }
 #endif
