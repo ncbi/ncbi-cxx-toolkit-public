@@ -331,8 +331,11 @@ void CPSGS_GetBlobProcessor::ProcessEvent(void)
 
 void CPSGS_GetBlobProcessor::x_Peek(bool  need_wait)
 {
-    if (m_Cancelled)
+    if (m_Cancelled) {
+        m_Completed = true;
+        SignalFinishProcessing();
         return;
+    }
 
     if (m_InPeek)
         return;

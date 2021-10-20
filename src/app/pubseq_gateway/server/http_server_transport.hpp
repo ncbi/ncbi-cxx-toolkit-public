@@ -830,16 +830,12 @@ private:
     void x_CancelAll(void)
     {
         x_CancelBacklog();
-        while (!m_Pending.empty()) {
-            x_MaintainFinished();
-            for (auto &  it: m_Pending) {
-                if (!it->IsFinished()) {
-                    auto    http_reply = it->GetHttpReply();
-                    http_reply->CancelPending();
-                    http_reply->PeekPending();
-                }
+        for (auto &  it: m_Pending) {
+            if (!it->IsFinished()) {
+                auto    http_reply = it->GetHttpReply();
+                http_reply->CancelPending();
+                http_reply->PeekPending();
             }
-            x_MaintainFinished();
         }
     }
 
