@@ -48,7 +48,6 @@ slim_max_blob_size=10KB
 [DEBUG]
 DIAG_POST_LEVEL=Warning
 psg_allow_io_test=false
-diag_trace=false
 
 [STATISTICS]
 small_blob_size = 255
