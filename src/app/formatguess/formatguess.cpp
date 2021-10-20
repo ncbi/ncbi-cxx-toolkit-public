@@ -155,13 +155,9 @@ CFormatGuessApp::Run(void)
 //  ============================================================================
 {
     const CArgs& args = GetArgs();
-    //CNcbiIstream & input_stream = args["i"].AsInputFile(CArgValue::fBinary);
-    string name_of_input_stream = args["i"].AsString();
-    if( name_of_input_stream.empty() || name_of_input_stream == "-" ) {
-        name_of_input_stream = "stdin";
-    }
+    CNcbiIstream & input_stream = args["i"].AsInputFile(CArgValue::fBinary);
 
-    CFormatGuessEx guesser( name_of_input_stream );
+    CFormatGuessEx guesser(input_stream);
     CFileContentInfo contentInfo;
     guesser.SetRecognizedGenbankTypes(sDefaultRecognizedGenbankObjectTypes);
     CFormatGuess::EFormat uFormat = guesser.GuessFormatAndContent(contentInfo);
@@ -228,6 +224,10 @@ CFormatGuessApp::Run(void)
     
     const string output_format = args["output-format"].AsString();
     
+    string name_of_input_stream = args["i"].AsString();
+    if( name_of_input_stream.empty() || name_of_input_stream == "-" ) {
+        name_of_input_stream = "stdin";
+    }
     if( output_format == "text" ) {
         cout << name_of_input_stream << " :   ";
         
