@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = blastn_vdb 
+APP_PROJ = blastn_vdb blast_vdb_cmd tblastn_vdb blast_formatter_vdb
 
 REQUIRES = objects algo app
 
