@@ -11,7 +11,7 @@
 ##############################################################################
 # Find datatool app
 if(NOT DEFINED NCBITK_TREE_ROOT)
-    set(NCBI_PKG_ROOT "${CMAKE_CURRENT_LIST_DIR}/../..")
+    set(NCBI_PKG_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../..")
 else()
     set(NCBI_PKG_ROOT "${NCBITK_TREE_ROOT}")
 endif()
