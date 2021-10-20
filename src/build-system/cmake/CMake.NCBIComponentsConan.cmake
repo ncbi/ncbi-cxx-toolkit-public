@@ -69,7 +69,7 @@ function(fetch_build_package packageurl)
   endif()
 
   execute_process(COMMAND
-    conan install "."
+    conan install "." "--build=*"
     WORKING_DIRECTORY "${BASEDIR}/package"
     RESULT_VARIABLE CONAN_INSTALL_RESULT
   )
@@ -100,6 +100,7 @@ endfunction()
 
 #not pip-installing conan for now
 #ignoring compile flags
+set(_TOBEREBUILT "protobuf/3.17.1" "protobuf/3.9.1" "make" "list")
 function(install_conan_package component pkgname)
   message("INSTALL_CONAN_PACKAGE ${component} ${pkgname}")
   set(BASEDIR "/tmp/xxx.cmake.0123.${pkgname}")
@@ -109,8 +110,16 @@ function(install_conan_package component pkgname)
 
   file(WRITE "${BASEDIR}/conanfile.txt" "[requires]\n${pkgname}\n\n[generators]\ncmake\n")
 
+  set(build "--build=missing")
+  list(FIND _TOBEREBUILT "${pkgname}" _index)
+  message("AAAAAAAAAAAA ${_TOBEREBUILT} AAAAAA ${pkgname} ${_index}")
+  if (${_index} GREATER -1)
+    set(build "--build=*")
+  endif()
+  message("BUILD for ${pkgname} is ${build}")
+
   execute_process(COMMAND 
-    conan install "." "--build=missing" 
+    conan install "." "${build}" 
     WORKING_DIRECTORY "${BASEDIR}"
     RESULT_VARIABLE CONAN_INSTALL_RESULT
   )
@@ -222,7 +231,8 @@ install_conan_package("XML" "libxml2/2.9.9")
 install_conan_package("XSLT" "libxslt/1.1.34")
 install_conan_package("EXSLT" "libxslt/1.1.34")
 #install_conan_package("PROTOBUF" "protobuf/3.6.1@bincrafters/stable")
-#install_conan_package("PROTOBUF" "protobuf/3.12.4")
+#install_conan_package("PROTOBUF" "protobuf/3.17.1")
+install_conan_package("PROTOBUF" "protobuf/3.9.1")
 #install_conan_package("wxWidgets" "wxwidgets/3.1.3@bincrafters/stable")
 
 # GRPC is not orking yet
