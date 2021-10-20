@@ -765,8 +765,11 @@ void CPSGS_AnnotProcessor::ProcessEvent(void)
 
 void CPSGS_AnnotProcessor::x_Peek(bool  need_wait)
 {
-    if (m_Cancelled)
+    if (m_Cancelled) {
+        m_Completed = true;
+        SignalFinishProcessing();
         return;
+    }
 
     if (m_InPeek)
         return;

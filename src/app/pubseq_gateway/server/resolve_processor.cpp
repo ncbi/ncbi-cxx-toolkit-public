@@ -230,6 +230,8 @@ void CPSGS_ResolveProcessor::ProcessEvent(void)
 void CPSGS_ResolveProcessor::x_Peek(bool  need_wait)
 {
     if (m_Cancelled) {
+        m_Completed = true;
+        SignalFinishProcessing();
         return;
     }
 
