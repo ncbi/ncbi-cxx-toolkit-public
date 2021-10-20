@@ -689,20 +689,22 @@ static bool fta_ranges_to_hist(const objects::CGB_block::TExtra_accessions& extr
     p = StringChr(acc1, '-');
     q = StringChr(acc2, '-');
 
-    if((p == NULL && q == NULL) || (p != NULL && q != NULL))
+    if(p != NULL && q != NULL)
         return true;
 
     if(p == NULL)
     {
         master = acc1;
         range = acc2;
-        *q = '\0';
+        if(q != NULL)
+            *q = '\0';
     }
     else
     {
         master = acc2;
         range = acc1;
-        *p = '\0';
+        if(p != NULL)
+            *p = '\0';
     }
 
     if(fta_if_wgs_acc(master) != 0 || fta_if_wgs_acc(range) != 1)
