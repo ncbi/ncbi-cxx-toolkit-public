@@ -72,5 +72,11 @@ else:
     server += ':2180'
 
 cmd = 'udc --variable PSG_SERVER:' + server + ' --variable PSG_HTTPS:' + str(https) + ' ' + dirname + '/psg.robot'
-sys.exit(os.system(cmd))
+retCode = os.system(cmd)
+if retCode != 0:
+    low = retCode & 0xFF
+    hi = (retCode >> 8) & 0xFF
+    if low == 0:
+        retCode = hi
+sys.exit(retCode)
 

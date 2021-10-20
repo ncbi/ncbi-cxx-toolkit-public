@@ -1,0 +1,727 @@
+#!/usr/bin/env python3
+
+import sys, datetime, shutil, os, os.path, subprocess, signal
+from optparse import OptionParser
+
+
+# Order is important
+SUPPORTED_COMMANDS = ['all', 'build', 'functional_test', 'memcheck', 'stress_test',
+                      'compare', 'toolkit_test', 'archive']
+
+VERBOSE = False
+PORT1 = 10999
+PORT2 = 10888
+
+
+def timestamp():
+    now = datetime.datetime.now()
+    return now.strftime('%Y-%m-%d %H:%M:%S')
+
+def print_verbose(msg):
+    if VERBOSE:
+        print(timestamp() + ' ' + msg)
+
+def print_error(msg):
+    print(timestamp() + ' ' + msg, file=sys.stderr)
+
+def getArtefactDir(options):
+    try:
+        dirName = 'PSG-' + options.psg_ver
+    except:
+        raise Exception('Script logic error: options must be checked before proceeding')
+
+    currentDir = os.path.abspath(os.getcwd())
+    fullPath = os.path.normpath(currentDir + os.path.sep + dirName)
+    if not fullPath.endswith(os.path.sep):
+        fullPath += os.path.sep
+    return fullPath
+
+def getPsgClientPath():
+    try:
+        path = os.environ['NCBI']
+        path = os.path.normpath(path + os.path.sep + 'bin' + os.path.sep + 'psg_client')
+        if os.path.exists(path):
+            return path
+        return None
+    except Exception as exc:
+        print_error('Error getting path to psg_client: ' + str(exc))
+        return None
+
+
+def prepareConfigFile(source, target, subst):
+    f = open(source, 'r')
+    content = f.read()
+    f.close()
+
+    for sub in subst:
+        content = content.replace('{' + sub + '}', subst[sub])
+
+    f = open(target, 'w')
+    f.write(content)
+    f.close()
+
+
+def getBuildResultsDir(options):
+    artefactDir = getArtefactDir(options)
+    buildResultsDir = None
+    for item in os.listdir(artefactDir):
+        if item.startswith('prepare_release.'):
+            if item.endswith(options.psg_ver):
+                if '.build.' in item:
+                    buildResultsDir = artefactDir + item + os.path.sep
+                    break
+
+    if buildResultsDir is None:
+        print_error(f'Cannot find the build directory in created on the "build" stage. '
+                     'Expected here: {artefactDir}')
+        return None
+    return buildResultsDir
+
+def findBuildArchive(buildResultsDir, variant):
+    buildArchive = None
+    for item in os.listdir(buildResultsDir):
+        if item.startswith('Linux64-Centos-pubseq_gateway-'):
+            if item.endswith('.tar.gz'):
+                if not item.endswith('src.tar.gz'):
+                    if variant in item:
+                        buildArchive = buildResultsDir + item
+                        break
+    if buildArchive is None:
+        print_error(f'Cannot find the "{variant}" build results in {buildResultsDir}')
+        return None
+    return buildArchive
+
+
+def findBuildResultDir(buildResultsDir, variant):
+    buildResultDir = None
+    for item in os.listdir(buildResultsDir):
+        if item.startswith('Linux64-Centos-pubseq_gateway-'):
+            if os.path.isdir(buildResultsDir + item):
+                if variant in item:
+                    buildResultDir = buildResultsDir + item + os.path.sep
+                    break
+    if buildResultDir is None:
+        print_error(f'Cannot find the unpacked "{variant}" build results in {buildResultsDir}')
+        return None
+    return buildResultDir
+
+def prepareSandboxFiles(buildResultsDir, testDir, artefactDir):
+    # Unpack the source code. Needed items are:
+    # - baseline ini
+    # - LMDB cache
+    # - https cert
+    srcArchive = f'{buildResultsDir}releaseSrc.tar.gz'
+    if not os.path.exists(srcArchive):
+        print_error(f'Cannot find the source code archive {srcArchive}')
+        return 1
+
+    cmdLine = f'cd {buildResultsDir} && tar -xzf {srcArchive}'
+    print_verbose(f'Command line to invoke: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Unpacking the source code archive return code: {ret}')
+    if ret != 0:
+        print_error(f'Unpacking the source code archive {srcArchive} error')
+        return ret
+
+    # Copy the baseline ini file, LMDB cache and https files
+    filesToCopy = ['pubseq_gateway.ini.baseline',
+                   'frozen_db_cache/bioseq_info.db',
+                   'frozen_db_cache/blob_prop.db',
+                   'frozen_db_cache/si2csi.db',
+                   'ssl/psg.crt',
+                   'ssl/psg.key']
+    for fName in filesToCopy:
+        cmdLine = f'cp -f {testDir}{fName} {artefactDir}'
+        print_verbose(f'Command line to invoke: {cmdLine}')
+        ret = os.system(cmdLine)
+        print_verbose(f'Copy pattern ini file return code: {ret}')
+        if ret != 0:
+            print_error(f'Error copying test file {fName} from {testDir}')
+            return ret
+    return 0
+
+def saveProcessArtefacts(srv, dst):
+    content = f'Return code: {srv.returncode}\n\n'
+    if srv.stdout is None:
+        content += 'StdOut:\nNone\n\n'
+    else:
+        content += 'StdOut:\n' + srv.stdout.read().decode('utf-8') + '\n\n'
+    if srv.stderr is None:
+        content += 'StdErr:\nNone'
+    else:
+        content += 'StdErr:\n' + srv.stderr.read().decode('utf-8')
+
+    f = open(dst, 'w')
+    f.write(content)
+    f.close()
+
+
+def stopServer(srv):
+    srv.send_signal(signal.SIGINT)
+    srv.wait()
+
+
+def main():
+
+    global VERBOSE
+
+    parser = OptionParser(
+    """
+    %prog <command> [options]
+    Supported commands:
+        no command      - print help message
+        build           - tag, configure, build and archive the release
+                          (accepts all arguments of the prepare_release script)
+        functional_test - run functional tests
+        memcheck        - run tests against 'sanitized' build
+        stress_test     - run stress tests
+        compare         - compare performance against another release
+        toolkit_test    - checkout and build C++ Toolkit from current SC.
+                          Run its testsuite against the release.
+        archive         - Archive the completed release
+        all             - do all of the above except archive
+    """)
+
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose", default=False,
+                      help="be verbose (default: False)")
+    parser.add_option("--psg-version",
+                      action="store", type="string", dest="psg_ver",
+                      help="PSG release: should be int.int.int")
+    parser.add_option("-g", "--debug",
+                      action="store_true", dest="debug", default=False,
+                      help="don't clean up garbage after failed run (default: False)")
+    parser.add_option("-m", "--message",
+                      default="NOJIRA", dest="message",
+                      help="SVN commit message (default: NOJIRA). "
+                           "Affects 'tag', 'conf' and 'build' actions "
+                           "if --local option is not given.")
+
+    options, args = parser.parse_args()
+    if len(args) == 0:
+        parser.print_help()
+        return 0
+
+    if len(args) != 1:
+        print_error('Bad arguments. Command is not specified')
+        return 1
+
+    command = args[0]
+    if command not in SUPPORTED_COMMANDS + ['all']:
+        print_error(f'Command "{command}" is not supported')
+        return 1
+
+    if command == 'all':
+        commands = SUPPORTED_COMMANDS
+    else:
+        commands = [command]
+
+    VERBOSE = options.verbose
+
+    # The commands are in the order of the execution
+    # Loop 1: check the command arguments before starting
+    for command in commands:
+        if command == 'all':
+            continue
+        checkArgsMethod = globals().get(f'{command}_check_args')
+        if checkArgsMethod:
+            print_verbose(f'Invoking check arguments for command "{command}"...')
+            ret = checkArgsMethod(commands, options, args)
+            if ret != 0:
+                print_verbose(f'Failed to check arguments for command "{command}"')
+                return ret
+        else:
+            print_verbose(f'Check arguments method for command "{command}" is not found. Skipping.')
+
+
+    # Loop 2: check the command implementation
+    for command in commands:
+        if command == 'all':
+            continue
+        method = globals().get(command)
+        if method:
+            print_verbose(f'Implementation of the command "{command}" is found')
+        else:
+            print_error(f'Implementation of the command "{command}" is not found')
+            return 1
+
+    # Loop 3: invoking the commands
+    for command in commands:
+        if command == 'all':
+            continue
+        method = globals().get(command)
+        print_verbose(f'Invoking command "{command}"...')
+        ret = method(commands, options, args)
+        print_verbose(f'Command "{command}" finished with return code {ret}')
+        if ret != 0:
+            return ret
+
+    return 0
+
+
+# Set of methods which should check the options for the command
+# The names must be formed as {command}_check_args
+def build_check_args(commands, options, args):
+    if shutil.which('prepare_release') is None:
+        print_error('prepare_release executable is not in the PATH')
+        return 1
+    if not options.psg_ver:
+        print_error('The "--psg-version" option must be specified')
+        return 1
+    if not options.message:
+        print_error('The "--message" option must be specified')
+        return 1
+
+    artefactDir = getArtefactDir(options)
+    if os.path.exists(artefactDir):
+        print_error(f'The directory for storing results {artefactDir} already exists. '
+                     'Remove it first or use another PSG version')
+        return 1
+    return 0
+
+def functional_test_check_args(commands, options, args):
+    if 'all' in commands:
+        # Everything will be created on the previous stages
+        return 0
+
+    if not options.psg_ver:
+        print_error('The "--psg-version" option must be specified')
+        return 1
+
+    artefactDir = getArtefactDir(options)
+    if not os.path.exists(artefactDir):
+        print_error(f'The build stage directory {artefactDir} is not found')
+        return 1
+    return 0
+
+def memcheck_check_args(commands, options, args):
+    if 'all' in commands:
+        # Everything will be created on the previous stages
+        return 0
+
+    if not options.psg_ver:
+        print_error('The "--psg-version" option must be specified')
+        return 1
+
+    artefactDir = getArtefactDir(options)
+    if not os.path.exists(artefactDir):
+        print_error(f'The build stage directory {artefactDir} is not found')
+        return 1
+    return 0
+
+def stress_test_check_args(commands, options, args):
+    if 'all' in commands:
+        # Everything will be created on the previous stages
+        return 0
+    return 0
+
+def compare_check_args(commands, options, args):
+    if 'all' in commands:
+        # Everything will be created on the previous stages
+        return 0
+    return 0
+
+def toolkit_test_check_args(commands, options, args):
+    if 'all' in commands:
+        # Everything will be created on the previous stages
+        return 0
+    return 0
+
+def archive_check_args(commands, options, args):
+    if 'all' in commands:
+        # Everything will be created on the previous stages
+        return 0
+    return 0
+
+
+# Set of methods for running the commands.
+# The name must match the command name
+def build(commands, options, args):
+    artefactDir = getArtefactDir(options)
+    print_verbose(f'Artefact directory: {artefactDir}')
+
+    # Create the artefact directory - throws an exception in case of a problem
+    os.mkdir(artefactDir)
+
+    cmdLine = f'cd {artefactDir} && prepare_release tag pubseq_gateway {options.psg_ver} '
+    cmdLine += f'--strip-sensitive-sources=no -m "{options.message}"'
+
+    if options.debug:
+        cmdLine += ' -g'
+
+    print_verbose(f'Command line to invoke: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Tagging return code: {ret}')
+    if ret != 0:
+        return ret
+
+    cmdLine = f'cd {artefactDir} && prepare_release conf pubseq_gateway {options.psg_ver} '
+    cmdLine += f'-m "{options.message}"'
+
+    if options.debug:
+        cmdLine += ' -g'
+
+    print_verbose(f'Command line to invoke: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Configuring return code: {ret}')
+    if ret != 0:
+        return ret
+
+    cmdLine = f'cd {artefactDir} && prepare_release build pubseq_gateway {options.psg_ver} '
+    cmdLine += f'--no-tests -m "{options.message}"'
+
+    if options.debug:
+        cmdLine += ' -g'
+
+    print_verbose(f'Command line to invoke: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Building return code: {ret}')
+    return ret
+
+
+def functional_test(commands, options, args):
+    # Check the build dir in the artefact directory
+    artefactDir = getArtefactDir(options)
+    buildResultsDir = getBuildResultsDir(options)
+    if buildResultsDir is None:
+        return 1
+
+    print_verbose(f'Build result directory: {buildResultsDir}')
+
+    # Find the archive with o2g build
+    o2gArchive = findBuildArchive(buildResultsDir, 'O2g')
+    if o2gArchive is None:
+        return 1
+
+    # Need to create a sandbox with the server binary, config file, LMDB cache
+
+    # Unpack the binary archive
+    cmdLine = f'cd {buildResultsDir} && tar -xzf {o2gArchive}'
+    print_verbose(f'Command line to invoke: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Unpacking the build archive return code: {ret}')
+    if ret != 0:
+        print_error(f'Unpacking the build archive {o2gArchive} error')
+        return ret
+
+    # Find the directory where the build result are unpacked
+    o2gBuildResultDir = findBuildResultDir(buildResultsDir, 'O2g')
+    if o2gBuildResultDir is None:
+        return 1
+
+    # Copy the binary
+    cmdLine = f'cp -f {o2gBuildResultDir}bin/pubseq_gateway {artefactDir}'
+    print_verbose(f'Command line to invoke: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Copy binary return code: {ret}')
+    if ret != 0:
+        print_error(f'Copy binary {o2gBuildResultDir}bin/pubseq_gateway error')
+        return ret
+
+    testDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/test/'
+
+    # Copy LMDB, ini, https files
+    if prepareSandboxFiles(buildResultsDir, testDir, artefactDir) != 0:
+        return 1
+
+
+    # Round up 1: Prepare the config file for UT (http)
+    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
+                      artefactDir + 'pubseq_gateway.ini',
+                      {'si2csi.db': artefactDir + 'si2csi.db',
+                       'bioseq_info.db': artefactDir +'bioseq_info.db',
+                       'blob_prop.db': artefactDir + 'blob_prop.db',
+                       'port': f'{PORT1}',
+                       'ssl_enable': 'false',
+                       'ssl_cert': '',
+                       'ssl_key': ''})
+
+    # Run the server
+    cmdLine = [artefactDir + 'pubseq_gateway',
+               '-conffile', artefactDir + 'pubseq_gateway.ini',
+               '-logfile', artefactDir + 'pubseq_gateway-ut-http.log']
+    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
+    srv = subprocess.Popen(cmdLine)
+
+    # Run the tests
+    errors = []
+
+    cmdLine = f'{testDir}run_tests.py localhost:{PORT1} > {artefactDir}ut-http.log 2>&1'
+    print_verbose(f'Running http unit tests: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'http unit tests return code: {ret}')
+    if ret != 0:
+        errors.append(f'Error executing http unit tests. Return code: {ret}')
+        print_verbose('http unit tests failed')
+    else:
+        print_verbose('http unit tests succeeded')
+    stopServer(srv)
+
+    # Round up 2: Prepare the config file for UT (https)
+    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
+                      artefactDir + 'pubseq_gateway.ini',
+                      {'si2csi.db': artefactDir + 'si2csi.db',
+                       'bioseq_info.db': artefactDir +'bioseq_info.db',
+                       'blob_prop.db': artefactDir + 'blob_prop.db',
+                       'port': '10999',
+                       'ssl_enable': 'true',
+                       'ssl_cert': artefactDir + 'psg.crt',
+                       'ssl_key': artefactDir + 'psg.key'})
+
+    # Run the server
+    cmdLine = [artefactDir + 'pubseq_gateway',
+               '-conffile', artefactDir + 'pubseq_gateway.ini',
+               '-logfile', artefactDir + 'pubseq_gateway-ut-https.log']
+    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
+    srv = subprocess.Popen(cmdLine)
+
+    # Run the tests
+
+    cmdLine = f'{testDir}run_tests.py --https localhost:10999 > {artefactDir}ut-https.log 2>&1'
+    print_verbose(f'Running https unit tests: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'https unit tests return code: {ret}')
+    if ret != 0:
+        errors.append(f'Error executing https unit tests. Return code: {ret}')
+        print_verbose('https unit tests failed')
+    else:
+        print_verbose('https unit tests succeeded')
+    stopServer(srv)
+
+
+    # Round up 3: integration smoke test using psg_client
+
+    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
+                      artefactDir + 'pubseq_gateway.ini',
+                      {'si2csi.db': artefactDir + 'si2csi.db',
+                       'bioseq_info.db': artefactDir +'bioseq_info.db',
+                       'blob_prop.db': artefactDir + 'blob_prop.db',
+                       'port': '10999',
+                       'ssl_enable': 'false',
+                       'ssl_cert': '',
+                       'ssl_key': ''})
+
+    psg_client_path = getPsgClientPath()
+    if psg_client_path is None:
+        errors.append('Cannot find psg_client. The integration smoke tests are skipped')
+    else:
+        cmdLine = f'cp -f {psg_client_path} {artefactDir}'
+        print_verbose(f'Copying psg_client from {psg_client_path} ...')
+        ret = os.system(cmdLine)
+        if ret != 0:
+            errors.append(f'Error copying psg_client from {psg_client_path}')
+        else:
+            # Run the server
+            cmdLine = [artefactDir + 'pubseq_gateway',
+                       '-conffile', artefactDir + 'pubseq_gateway.ini',
+                       '-logfile', artefactDir + 'pubseq_gateway-integration-test.log']
+            print_verbose('Running PSG server: ' + ' '.join(cmdLine))
+            srv = subprocess.Popen(cmdLine)
+
+            # Run the tests
+            integrationTestDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/integrationsmoketest/'
+            cmdLine = f'{integrationTestDir}integration_test -psgclient {artefactDir}psg_client localhost:{10999} > {artefactDir}integration-test.log 2>&1'
+            print_verbose(f'Running integration tests: {cmdLine}')
+            ret = os.system(cmdLine)
+            print_verbose(f'integration tests return code: {ret}')
+            if ret != 0:
+                errors.append(f'Error executing integration tests. Return code: {ret}')
+                print_verbose('integration tests failed')
+            else:
+                print_verbose('integration tests succeeded')
+            stopServer(srv)
+
+    if errors:
+        print_error('Unit test errors:')
+        for err in errors:
+            print_error(err)
+        return 1
+    return 0
+
+def memcheck(commands, options, args):
+    artefactDir = getArtefactDir(options)
+    buildResultsDir = getBuildResultsDir(options)
+    if buildResultsDir is None:
+        return 1
+
+    print_verbose(f'Build result directory: {buildResultsDir}')
+
+    # Find the archive with max debug build
+    maxDebugArchive = findBuildArchive(buildResultsDir, 'MaxDebug')
+    if maxDebugArchive is None:
+        return 1
+
+    # Unpack the binary archive
+    cmdLine = f'cd {buildResultsDir} && tar -xzf {maxDebugArchive}'
+    print_verbose(f'Command line to invoke: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Unpacking the build archive return code: {ret}')
+    if ret != 0:
+        print_error(f'Unpacking the build archive {maxDebugArchive} error')
+        return ret
+
+    # Find the directory where the build result are unpacked
+    maxDebugBuildResultDir = findBuildResultDir(buildResultsDir, 'MaxDebug')
+    if maxDebugBuildResultDir is None:
+        return 1
+
+    # Copy the binary
+    cmdLine = f'cp -f {maxDebugBuildResultDir}bin/pubseq_gateway {artefactDir}'
+    print_verbose(f'Command line to invoke: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Copy binary return code: {ret}')
+    if ret != 0:
+        print_error(f'Copy binary {maxDebugBuildResultDir}bin/pubseq_gateway error')
+        return ret
+
+
+    testDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/test/'
+
+    # Copy LMDB, ini, https files
+    if prepareSandboxFiles(buildResultsDir, testDir, artefactDir) != 0:
+        return 1
+
+    # Round up 1: Prepare the config file for UT (http)
+    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
+                      artefactDir + 'pubseq_gateway.ini',
+                      {'si2csi.db': artefactDir + 'si2csi.db',
+                       'bioseq_info.db': artefactDir +'bioseq_info.db',
+                       'blob_prop.db': artefactDir + 'blob_prop.db',
+                       'port': f'{PORT1}',
+                       'ssl_enable': 'false',
+                       'ssl_cert': '',
+                       'ssl_key': ''})
+
+    # Run the server
+    cmdLine = [artefactDir + 'pubseq_gateway',
+               '-conffile', artefactDir + 'pubseq_gateway.ini',
+               '-logfile', artefactDir + 'pubseq_gateway-memcheck-ut-http.log']
+    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
+    srv = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Run the tests
+    errors = []
+
+    cmdLine = f'{testDir}run_tests.py localhost:{PORT1} > {artefactDir}memcheck-ut-http.log 2>&1'
+    print_verbose(f'Running http unit tests: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'http unit tests return code: {ret}')
+    if ret != 0:
+        errors.append(f'Error executing http unit tests. Return code: {ret}')
+        print_verbose('http unit tests failed')
+    else:
+        print_verbose('http unit tests succeeded')
+
+    stopServer(srv)
+    saveProcessArtefacts(srv, f'{artefactDir}memcheck-ut-http.sanitizer.log')
+
+    # Round up 2: Prepare the config file for UT (https)
+    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
+                      artefactDir + 'pubseq_gateway.ini',
+                      {'si2csi.db': artefactDir + 'si2csi.db',
+                       'bioseq_info.db': artefactDir +'bioseq_info.db',
+                       'blob_prop.db': artefactDir + 'blob_prop.db',
+                       'port': '10999',
+                       'ssl_enable': 'true',
+                       'ssl_cert': artefactDir + 'psg.crt',
+                       'ssl_key': artefactDir + 'psg.key'})
+
+    # Run the server
+    cmdLine = [artefactDir + 'pubseq_gateway',
+               '-conffile', artefactDir + 'pubseq_gateway.ini',
+               '-logfile', artefactDir + 'pubseq_gateway-memcheck-ut-https.log']
+    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
+    srv = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Run the tests
+
+    cmdLine = f'{testDir}run_tests.py --https localhost:10999 > {artefactDir}memcheck-ut-https.log 2>&1'
+    print_verbose(f'Running https unit tests: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'https unit tests return code: {ret}')
+    if ret != 0:
+        errors.append(f'Error executing https unit tests. Return code: {ret}')
+        print_verbose('https unit tests failed')
+    else:
+        print_verbose('https unit tests succeeded')
+
+    stopServer(srv)
+    saveProcessArtefacts(srv, f'{artefactDir}memcheck-ut-https.sanitizer.log')
+
+    # Round up 3: integration smoke test using psg_client
+
+    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
+                      artefactDir + 'pubseq_gateway.ini',
+                      {'si2csi.db': artefactDir + 'si2csi.db',
+                       'bioseq_info.db': artefactDir +'bioseq_info.db',
+                       'blob_prop.db': artefactDir + 'blob_prop.db',
+                       'port': '10999',
+                       'ssl_enable': 'false',
+                       'ssl_cert': '',
+                       'ssl_key': ''})
+
+    psg_client_path = getPsgClientPath()
+    if psg_client_path is None:
+        errors.append('Cannot find psg_client. The integration smoke tests are skipped')
+    else:
+        cmdLine = f'cp -f {psg_client_path} {artefactDir}'
+        print_verbose(f'Copying psg_client from {psg_client_path} ...')
+        ret = os.system(cmdLine)
+        if ret != 0:
+            errors.append(f'Error copying psg_client from {psg_client_path}')
+        else:
+            # Run the server
+            cmdLine = [artefactDir + 'pubseq_gateway',
+                       '-conffile', artefactDir + 'pubseq_gateway.ini',
+                       '-logfile', artefactDir + 'pubseq_gateway-memcheck-integration-test.log']
+            print_verbose('Running PSG server: ' + ' '.join(cmdLine))
+            srv = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            # Run the tests
+            integrationTestDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/integrationsmoketest/'
+            cmdLine = f'{integrationTestDir}integration_test -psgclient {artefactDir}psg_client localhost:{10999} > {artefactDir}memcheck-integration-test.log 2>&1'
+            print_verbose(f'Running integration tests: {cmdLine}')
+            ret = os.system(cmdLine)
+            print_verbose(f'integration tests return code: {ret}')
+            if ret != 0:
+                errors.append(f'Error executing integration tests. Return code: {ret}')
+                print_verbose('integration tests failed')
+            else:
+                print_verbose('integration tests succeeded')
+            stopServer(srv)
+            saveProcessArtefacts(srv, f'{artefactDir}memcheck-integration-test.sanitizer.log')
+
+    if errors:
+        print_error('Unit test errors:')
+        for err in errors:
+            print_error(err)
+        return 1
+
+    return 0
+
+def stress_test(commands, options, args):
+    return 0
+
+def compare(commands, options, args):
+    return 0
+
+def toolkit_test(commands, options, args):
+    return 0
+
+def archive(commands, options, args):
+    return 0
+
+
+
+if __name__ == '__main__':
+    try:
+        retVal = main()
+    except KeyboardInterrupt:
+        retVal = 2
+        print('Interrupted from the keyboard', file=sys.stderr)
+    except Exception as exc:
+        print(str(exc), file=sys.stderr)
+        retVal = 3
+
+    sys.exit(retVal)
+
