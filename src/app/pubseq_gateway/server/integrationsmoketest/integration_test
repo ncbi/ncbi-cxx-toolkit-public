@@ -33,6 +33,8 @@ def driveUDC():
        - the psg_client
        - service spec
        run udc approprietely"""
+    global PSG_CLIENT
+
     dirname = os.path.abspath(os.path.dirname(sys.argv[0])) + os.path.sep
     robotFile = dirname + 'udc.robot'
     if not os.path.exists(robotFile):
@@ -40,24 +42,32 @@ def driveUDC():
               file=sys.stderr)
         return NO_UDC_ROBOT
 
+    # Need to suppress -psgclient <path>
+    params = sys.argv[1:]
+    if '-psgclient' in params:
+        index = params.index('-psgclient')
+        params.pop(index)
+        PSG_CLIENT = params.pop(index)
+
     # Check the psg_client availability
-    if getPSGClientPath() is None:
+    psgClientPath = getPSGClientPath()
+    if psgClientPath is None:
         print('psg_client is not found', file=sys.stderr)
         return NO_PSG_CLIENT
 
-    if len(sys.argv) != 2:
+    if len(params) != 1:
         exename = os.path.basename(sys.argv[0])
         print('Unexpected number of arguments\nUsage: ' +
               exename + ' <service to connect to>', file=sys.stderr)
         return MALFORMED_ARGUMENTS
 
-    service = sys.argv[1]
-    retCode = os.system('udc -v SERVICE:' + service + ' ' + robotFile)
+    service = params[0]
+    retCode = os.system('udc -v SERVICE:' + service + ' -v PSG_CLIENT:' + psgClientPath + ' ' + robotFile)
     if retCode != 0:
-        low=retCode&0xFF
-        hi=(retCode>>8)&0xFF
-        if low==0:
-            retCode=hi
+        low = retCode & 0xFF
+        hi = (retCode >> 8) & 0xFF
+        if low == 0:
+            retCode = hi
     return retCode
 
 
@@ -91,8 +101,9 @@ def drivePSGClient():
     # Need to suppress -i
     # Need to suppress -logfile <file>
     # Need to suppress -h
-    # Need to take out -o <file> and use file for redirection
     # Need to suppress -psgclient <path>
+    # Need to take out -o <file> and use file for redirection
+
     global PSG_CLIENT
 
     params = sys.argv[1:]
@@ -109,11 +120,6 @@ def drivePSGClient():
         params.pop(index)
         params.pop(index)
 
-    if '-psgclient' in params:
-        index = params.index('-psgclient')
-        params.pop(index)
-        PSG_CLIENT = params.pop(index)
-
     if '-o' not in params:
         print('Unexpected arguments: -o <file> is not found',
               file=sys.stderr)
@@ -122,6 +128,11 @@ def drivePSGClient():
     index = params.index('-o')
     params.pop(index)
     outputFile = params.pop(index)
+
+    if '-psgclient' in params:
+        index = params.index('-psgclient')
+        params.pop(index)
+        PSG_CLIENT = params.pop(index)
 
     if '-service' not in params:
         print('Unexpected arguments: -service <file> is not found',
