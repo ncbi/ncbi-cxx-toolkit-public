@@ -29,6 +29,7 @@ set(NCBI_PTBCFG_KNOWN_FOLDERS
 )
 
 if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake AND NOT DEFINED CONAN_PACKAGE_NAME)
+  set(CONAN_CMAKE_CXX_STANDARD 17)
   include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
   conan_basic_setup()
 endif()
