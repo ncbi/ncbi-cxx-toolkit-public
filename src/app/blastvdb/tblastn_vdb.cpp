@@ -353,6 +353,7 @@ int CVDBTblastnApp::Run(void)
 
     m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
     m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
+   	m_UsageReport.AddParam(CBlastUsageReport::eProgram, (string) "tblastn_vdb");
     return status;
 }
 
