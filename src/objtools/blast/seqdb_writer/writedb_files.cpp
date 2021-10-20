@@ -400,7 +400,7 @@ void CWriteDB_IndexFile::x_Flush()
 const string CWriteDB_IndexFile::x_MakeLmdbName()
 {
     string suffix = (m_Protein ? ".pdb" : ".ndb");
-    size_t last_slash = m_BaseName.find_last_of('/');
+    size_t last_slash = m_BaseName.find_last_of(CFile::GetPathSeparator());
     if (last_slash == m_BaseName.npos) {
         return m_BaseName + suffix;
     } else {
