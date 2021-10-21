@@ -15,6 +15,8 @@
 ##  HAVE_XXX
 
 
+include(CheckIncludeFile)
+include(CheckSymbolExists)
 #############################################################################
 function(NCBI_define_Pkgcomponent)
     cmake_parse_arguments(DC "" "NAME;PACKAGE" "" ${ARGN})
