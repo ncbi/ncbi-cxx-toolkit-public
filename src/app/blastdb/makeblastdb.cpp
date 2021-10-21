@@ -296,7 +296,7 @@ void CMakeBlastDBApp::Init()
                             new CArgAllow_Integers(eBDB_Version4, eBDB_Version5));
     arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
                             "Maximum file size for BLAST database files",
-                            CArgDescriptions::eString, "1GB");
+                            CArgDescriptions::eString, "3GB");
     arg_desc->AddOptionalKey("logfile", "File_Name",
                              "File to which the program log should be redirected",
                              CArgDescriptions::eOutputFile,
