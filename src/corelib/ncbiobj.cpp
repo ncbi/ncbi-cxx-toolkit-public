@@ -187,13 +187,17 @@ static TLastNewPtrMultiple* s_LastNewPtrMultiple_ptr;
 static TTlsKey s_LastNewPtrMultiple_key;
 #endif
 
-#ifdef NCBI_POSIX_THREADS
-static
-void sx_EraseLastNewPtrMultiple(void* ptr)
-{
-    delete (TLastNewPtrMultiple*)ptr;
-}
+struct SEraseLastNewPtrMultiple {
+    static void sx_Cleanup(void* ptr)
+    {
+        delete (TLastNewPtrMultiple*)ptr;
+    }
+    ~SEraseLastNewPtrMultiple() {
+#ifdef NCBI_WIN32_THREADS
+        sx_Cleanup(TlsGetValue(s_LastNewPtrMultiple_key));
 #endif
+    }
+};
 
 static
 TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
@@ -214,7 +218,7 @@ TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
 #  ifdef NCBI_WIN32_THREADS
                 _VERIFY((key = TlsAlloc()) != DWORD(-1));
 #  else
-                _VERIFY(pthread_key_create(&key, sx_EraseLastNewPtrMultiple)==0);
+                _VERIFY(pthread_key_create(&key, SEraseLastNewPtrMultiple::sx_Cleanup)==0);
 #  endif
             } while ( !key );
 #  ifndef NCBI_WIN32_THREADS
@@ -233,6 +237,7 @@ TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
         set = new TLastNewPtrMultiple();
 #  ifdef NCBI_WIN32_THREADS
         TlsSetValue(s_LastNewPtrMultiple_key, set);
+        static thread_local SEraseLastNewPtrMultiple s_Cleanup;
 #  else
         pthread_setspecific(s_LastNewPtrMultiple_key, set);
 #  endif
