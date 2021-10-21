@@ -2214,6 +2214,9 @@ same id type" } },
    { eErr_SEQ_FEAT_GeneOnNucPositionOfPeptide,
    { "GeneOnNucPositionOfPeptide",
      "Peptide under CDS matches small Gene" } },
+   { eErr_SEQ_FEAT_ShortTRNAIntron,
+   { "ShortTRNAIntron",
+     "Bacterial tRNA intron less than 100 bp" } },
 
 /* SEQ_ALIGN */
 
