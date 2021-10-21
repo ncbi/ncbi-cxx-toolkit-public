@@ -202,257 +202,342 @@ static CRef<objects::CDate> get_lanl_date(char* s)
  *   if any.
  *
  **********************************************************/
-static char* clean_up(char* str)
-{
-    char* newp;
-    char* s;
-
-    if(str == NULL)
-        return(NULL);
-
-    s = str + StringLen(str) - 1;
-    if(*s == ';')
-        *s = '\0';
-
-    while(*str == '\"' || *str == '\'')
-        str++;
-
-    newp = strdup(str);
-    size_t size = StringLen(newp);
-    while(size > 0 && (newp[size-1] == '\"' || newp[size-1] == '\''))
+    static char* clean_up(char* str)
     {
-        size--;
-        newp[size] = '\0';
-    }
+        char* newp;
+        char* s;
 
-    return(newp);
-}
-
-/**********************************************************
-*
-*   static ValNodePtr get_num(str):
-*
-*      Get gb serial number and put it to PUB_Gen.
-*
-*                                              12-4-93
-*
-**********************************************************/
-static CRef<objects::CPub> get_num(char* str)
-{
-    int serial_num = NStr::StringToInt(str, NStr::fAllowTrailingSymbols);
-
-    CRef<objects::CPub> ret(new objects::CPub);
-    ret->SetGen().SetSerial_number(serial_num);
-
-    return ret;
-}
-
-/**********************************************************
- *
- *   static ValNodePtr get_muid(str, format):
- *
- *      Get gb MUID and put it to PUB_Gen.
- *
- *                                              12-4-93
- *
- **********************************************************/
-static CRef<objects::CPub> get_muid(char* str, Parser::EFormat format)
-{
-    char* p;
-    Int4    i;
-
-    CRef<objects::CPub> muid;
-
-    if(str == NULL)
-        return muid;
-
-    if(format == Parser::EFormat::GenBank || format == Parser::EFormat::XML)
-        p = str;
-    else if(format == Parser::EFormat::EMBL)
-    {
-        p = StringIStr(str, "MEDLINE;");
-        if(p == NULL)
-            return muid;
-        for(p += 8; *p == ' ';)
-            p++;
-    }
-    else
-        return muid;
-
-    i = NStr::StringToInt(p, NStr::fAllowTrailingSymbols);
-    if(i < 1)
-        return muid;
-
-    muid.Reset(new objects::CPub);
-    muid->SetMuid(ENTREZ_ID_FROM(int, i));
-    return muid;
-}
-
-/**********************************************************/
-static char* get_embl_str_pub_id(char* str, const Char *tag)
-{
-    char* p;
-    char* q;
-    char* ret;
-    Char    ch;
-
-    if(str == NULL || tag == NULL)
-        return(NULL);
-
-    p = StringIStr(str, tag);
-    if(p == NULL)
-        return(NULL);
-    for(p += StringLen(tag); *p == ' ';)
-        p++;
-
-    ret = NULL;
-    for(q = p; *q != ' ' && *q != '\0';)
-        q++;
-    q--;
-    if(*q != '.')
-        q++;
-    ch = *q;
-    *q = '\0';
-    ret = StringSave(p);
-    *q = ch;
-    return(ret);
-}
-
-/**********************************************************/
-static Int4 get_embl_pmid(char* str)
-{
-    char* p;
-    Int4    i;
-
-    if(str == NULL)
-        return(0);
-
-    p = StringIStr(str, "PUBMED;");
-    if(p == NULL)
-        return(0);
-    for(p += 7; *p == ' ';)
-        p++;
-    i = (Int4) atol(p);
-    if(i < 1)
-        return(0);
-    return(i);
-}
-
-/**********************************************************
- *
- *   static char* check_book_tit(title):
- *
- *      Get volume from book title.
- *
- *                                              12-4-93
- *
- **********************************************************/
-static char* check_book_tit(char* title)
-{
-    char* p;
-    char* q;
-    char* r;
-
-    p = StringRStr(title, "Vol");
-    if(p == NULL)
-        return(NULL);
-
-    if(p[3] == '.')
-        q = p + 4;
-    else if(StringNCmp(p + 3, "ume", 3) == 0)
-        q = p + 6;
-    else
-        return(NULL);
-
-    while(*q == ' ' || *q == '\t')
-        q++;
-    for(r = q; *r >= '0' && *r <= '9';)
-        r++;
-
-    if(r == q || *r != '\0')
-        return(NULL);
-
-    if(p > title)
-    {
-        p--;
-        if(*p != ' ' && *p != '\t' && *p != ',' && *p != ';' && *p != '.')
+        if(str == NULL)
             return(NULL);
 
-        while(*p == ' ' || *p == '\t' || *p == ',' || *p == ';' || *p == '.')
+        s = str + StringLen(str) - 1;
+        if(*s == ';')
+            *s = '\0';
+
+        while(*str == '\"' || *str == '\'')
+            str++;
+
+        newp = strdup(str);
+        size_t size = StringLen(newp);
+        while(size > 0 && (newp[size-1] == '\"' || newp[size-1] == '\''))
         {
-            if(p == title)
-                break;
-            p--;
+            size--;
+            newp[size] = '\0';
         }
-        if(*p != ' ' && *p != '\t' && *p != ',' && *p != ';' && *p != '.')
+
+        return(newp);
+    }
+
+    /**********************************************************
+    *
+    *   static ValNodePtr get_num(str):
+    *
+    *      Get gb serial number and put it to PUB_Gen.
+    *
+    *                                              12-4-93
+    *
+    **********************************************************/
+    static CRef<objects::CPub> get_num(char* str)
+    {
+        int serial_num = NStr::StringToInt(str, NStr::fAllowTrailingSymbols);
+
+        CRef<objects::CPub> ret(new objects::CPub);
+        ret->SetGen().SetSerial_number(serial_num);
+
+        return ret;
+    }
+
+    /**********************************************************
+     *
+     *   static ValNodePtr get_muid(str, format):
+     *
+     *      Get gb MUID and put it to PUB_Gen.
+     *
+     *                                              12-4-93
+     *
+     **********************************************************/
+    static CRef<objects::CPub> get_muid(char* str, Parser::EFormat format)
+    {
+        char* p;
+        Int4    i;
+
+        CRef<objects::CPub> muid;
+
+        if(str == NULL)
+            return muid;
+
+        if(format == Parser::EFormat::GenBank || format == Parser::EFormat::XML)
+            p = str;
+        else if(format == Parser::EFormat::EMBL)
+        {
+            p = StringIStr(str, "MEDLINE;");
+            if(p == NULL)
+                return muid;
+            for(p += 8; *p == ' ';)
+                p++;
+        }
+        else
+            return muid;
+
+        i = NStr::StringToInt(p, NStr::fAllowTrailingSymbols);
+        if(i < 1)
+            return muid;
+
+        muid.Reset(new objects::CPub);
+        muid->SetMuid(ENTREZ_ID_FROM(int, i));
+        return muid;
+    }
+
+    /**********************************************************/
+    static char* get_embl_str_pub_id(char* str, const Char *tag)
+    {
+        char* p;
+        char* q;
+        char* ret;
+        Char    ch;
+
+        if(str == NULL || tag == NULL)
+            return(NULL);
+
+        p = StringIStr(str, tag);
+        if(p == NULL)
+            return(NULL);
+        for(p += StringLen(tag); *p == ' ';)
             p++;
-    }
-    *p = '\0';
 
-    return(q);
-}
-
-/**********************************************************
- *
- *   static CitPatPtr get_pat(pp, bptr, auth, title, eptr):
- *
- *      Return a CitPat pointer for patent ref in ncbi or
- *   embl or ddbj.
- *      Leading "I" or "AR" for NCBI or "A" for EMBL or
- *   "E" for DDBJ in accesion number requiered
- *
- *   JOURNAL   Patent: US 4446235-A 6 01-MAY-1984;
- *   or
- *   RL   Patent number US4446235-A/6, 01-MAY-1984.
- *
- *                                              11-14-93
- *
- **********************************************************/
-static CRef<objects::CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title, char* eptr)
-{
-    IndexblkPtr ibp;
-
-    CRef<objects::CCit_pat> cit_pat;
-
-    char*     country;
-    char*     number;
-    char*     type;
-    char*     app;
-    char*     s;
-    char*     p;
-    char*     q;
-    char*     temp;
-
-    ErrSev      sev;
-    Char        ch;
-
-    ibp = pp->entrylist[pp->curindx];
-
-    temp = StringSave(bptr);
-
-    ch = (pp->format == Parser::EFormat::EMBL) ? '.' : ';';
-    p = StringChr(temp, ch);
-    if(p != NULL)
-        *p = '\0';
-
-    p = StringChr(bptr, ch);
-    if(p != NULL)
-        *p = '\0';
-
-    if(ibp->is_pat && ibp->psip.NotEmpty())
-    {
-        ErrPostStr(SEV_ERROR, ERR_FORMAT_MultiplePatRefs,
-                   "Too many patent references for patent sequence; ignoring all but the first.");
+        ret = NULL;
+        for(q = p; *q != ' ' && *q != '\0';)
+            q++;
+        q--;
+        if(*q != '.')
+            q++;
+        ch = *q;
+        *q = '\0';
+        ret = StringSave(p);
+        *q = ch;
+        return(ret);
     }
 
-    if(pp->source == Parser::ESource::USPTO)
-        s = bptr;
-    else
+    /**********************************************************/
+    static Int4 get_embl_pmid(char* str)
     {
-        q = (pp->format == Parser::EFormat::EMBL) ? (char *) "Patent number" :
-                                                    (char *) "Patent:";
-        size_t len = StringLen(q);
-        if(StringNICmp(q, bptr, len) != 0)
+        char* p;
+        Int4    i;
+
+        if(str == NULL)
+            return(0);
+
+        p = StringIStr(str, "PUBMED;");
+        if(p == NULL)
+            return(0);
+        for(p += 7; *p == ' ';)
+            p++;
+        i = (Int4) atol(p);
+        if(i < 1)
+            return(0);
+        return(i);
+    }
+
+    /**********************************************************
+     *
+     *   static char* check_book_tit(title):
+     *
+     *      Get volume from book title.
+     *
+     *                                              12-4-93
+     *
+     **********************************************************/
+    static char* check_book_tit(char* title)
+    {
+        char* p;
+        char* q;
+        char* r;
+
+        p = StringRStr(title, "Vol");
+        if(p == NULL)
+            return(NULL);
+
+        if(p[3] == '.')
+            q = p + 4;
+        else if(StringNCmp(p + 3, "ume", 3) == 0)
+            q = p + 6;
+        else
+            return(NULL);
+
+        while(*q == ' ' || *q == '\t')
+            q++;
+        for(r = q; *r >= '0' && *r <= '9';)
+            r++;
+
+        if(r == q || *r != '\0')
+            return(NULL);
+
+        if(p > title)
+        {
+            p--;
+            if(*p != ' ' && *p != '\t' && *p != ',' && *p != ';' && *p != '.')
+                return(NULL);
+
+            while(*p == ' ' || *p == '\t' || *p == ',' || *p == ';' || *p == '.')
+            {
+                if(p == title)
+                    break;
+                p--;
+            }
+            if(*p != ' ' && *p != '\t' && *p != ',' && *p != ';' && *p != '.')
+                p++;
+        }
+        *p = '\0';
+
+        return(q);
+    }
+
+    /**********************************************************
+     *
+     *   static CitPatPtr get_pat(pp, bptr, auth, title, eptr):
+     *
+     *      Return a CitPat pointer for patent ref in ncbi or
+     *   embl or ddbj.
+     *      Leading "I" or "AR" for NCBI or "A" for EMBL or
+     *   "E" for DDBJ in accesion number requiered
+     *
+     *   JOURNAL   Patent: US 4446235-A 6 01-MAY-1984;
+     *   or
+     *   RL   Patent number US4446235-A/6, 01-MAY-1984.
+     *
+     *                                              11-14-93
+     *
+     **********************************************************/
+    static CRef<objects::CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title, char* eptr)
+    {
+        IndexblkPtr ibp;
+
+        CRef<objects::CCit_pat> cit_pat;
+
+        char*     country;
+        char*     number;
+        char*     type;
+        char*     app;
+        char*     s;
+        char*     p;
+        char*     q;
+        char*     temp;
+
+        ErrSev      sev;
+        Char        ch;
+
+        ibp = pp->entrylist[pp->curindx];
+
+        temp = StringSave(bptr);
+
+        ch = (pp->format == Parser::EFormat::EMBL) ? '.' : ';';
+        p = StringChr(temp, ch);
+        if(p != NULL)
+            *p = '\0';
+
+        p = StringChr(bptr, ch);
+        if(p != NULL)
+            *p = '\0';
+
+        if(ibp->is_pat && ibp->psip.NotEmpty())
+        {
+            ErrPostStr(SEV_ERROR, ERR_FORMAT_MultiplePatRefs,
+                       "Too many patent references for patent sequence; ignoring all but the first.");
+        }
+
+        if(pp->source == Parser::ESource::USPTO)
+            s = bptr;
+        else
+        {
+            q = (pp->format == Parser::EFormat::EMBL) ? (char *) "Patent number" :
+                                                        (char *) "Patent:";
+            size_t len = StringLen(q);
+            if(StringNICmp(q, bptr, len) != 0)
+            {
+                ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
+                          "Illegal format: \"%s\"", temp);
+                MemFree(temp);
+                return cit_pat;
+            }
+
+            for(s = bptr + len; *s == ' ';)
+                s++;
+        }
+
+        for(country = s, q = s; isalpha((int) *s) != 0 || *s == ' '; s++)
+            if(*s != ' ')
+                q = s;
+        if(country == q)
+        {
+            ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
+                      "No Patent Document Country: \"%s\"", temp);
+            MemFree(temp);
+            return cit_pat;
+        }
+        s = q + 1;
+
+        if(pp->format != Parser::EFormat::EMBL &&
+           pp->format != Parser::EFormat::XML)
+            *s++ = '\0';
+        while(*s == ' ')
+            s++;
+        for(number = s, q = s; isdigit((int) *s) != 0 || *s == ','; s++)
+            if(*s != ',')
+                *q++ = *s;
+
+        if(number == s)
+        {
+            ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
+                      "No Patent Document Number: \"%s\"", temp);
+            MemFree(temp);
+            return cit_pat;
+        }
+
+        if(q != s)
+            *q = '\0';
+
+        if(*s == '-')
+        {
+            *s++ = '\0';
+            for(type = s; *s != ' ' && *s != '/' && *s != '\0';)
+                s++;
+            if(type == s)
+                type = NULL;
+        }
+        else
+            type = NULL;
+        if(*s != '\0')
+            *s++ = '\0';
+
+        if(type == NULL)
+        {
+            sev = (ibp->is_pat ? SEV_ERROR : SEV_WARNING);
+            ErrPostEx(sev, ERR_REFERENCE_Fail_to_parse,
+                      "No Patent Document Type: \"%s\"", temp);
+        }
+
+        for(app = s, q = s; *s >= '0' && *s <= '9';)
+            s++;
+        if(*s != '\0' && *s != ',' && *s != '.' && *s != ' ' && *s != ';' &&
+           *s != '\n')
+        {
+            sev = (ibp->is_pat ? SEV_ERROR : SEV_WARNING);
+            ErrPostEx(sev, ERR_REFERENCE_Fail_to_parse,
+                      "No number of sequence in patent: \"%s\"", temp);
+            app = NULL;
+            s = q;
+        }
+        else if(*s != '\0')
+            for(*s++ = '\0'; *s == ' ';)
+                s++;
+
+        CRef<objects::CDate_std> std_date;
+        if(*s != '\0')
+        {
+            std_date = get_full_date(s, true, pp->source);
+        }
+
+        if (std_date.Empty())
         {
             ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
                       "Illegal format: \"%s\"", temp);
@@ -460,252 +545,201 @@ static CRef<objects::CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<objects::C
             return cit_pat;
         }
 
-        for(s = bptr + len; *s == ' ';)
-            s++;
-    }
+        if(p != NULL)
+            *p = ch;
 
-    for(country = s, q = s; isalpha((int) *s) != 0 || *s == ' '; s++)
-        if(*s != ' ')
-            q = s;
-    if(country == q)
-    {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
-                  "No Patent Document Country: \"%s\"", temp);
+        std::string msg = NStr::Sanitize(number);
+        if(pp->format == Parser::EFormat::EMBL ||
+           pp->source == Parser::ESource::USPTO)
+            *number = '\0';
+
+        cit_pat.Reset(new objects::CCit_pat);
+
+        cit_pat->SetCountry(country);
+        cit_pat->SetNumber(msg);
+
+        cit_pat->SetDoc_type(type == NULL ? "" : type);
+        cit_pat->SetDate_issue().SetStd(*std_date);
+        cit_pat->SetTitle(title.Empty() ? "" : title->GetName());
+
+        if (auth_list.Empty() || !auth_list->IsSetNames())
+        {
+            objects::CAuth_list& pat_auth_list = cit_pat->SetAuthors();
+            pat_auth_list.SetNames().SetStr().push_back("");
+        }
+        else
+            cit_pat->SetAuthors(*auth_list);
+
+        if (auth_list.NotEmpty())
+        {
+            objects::CAffil& affil = auth_list->SetAffil();
+
+            s += 13;
+            if (s < eptr && *s != '\0')
+                affil.SetStr(s);
+            else
+                affil.SetStr("");
+        }
+
+        if(ibp->is_pat && ibp->psip.Empty())
+        {
+            ibp->psip = new objects::CPatent_seq_id;
+            ibp->psip->SetCit().SetCountry(country);
+            ibp->psip->SetCit().SetId().SetNumber(msg);
+            ibp->psip->SetSeqid(app != NULL ? atoi(app) : 0);
+            if(type)
+                ibp->psip->SetCit().SetDoc_type(type);
+        }
+
         MemFree(temp);
         return cit_pat;
     }
-    s = q + 1;
 
-    if(pp->format != Parser::EFormat::EMBL &&
-       pp->format != Parser::EFormat::XML)
-        *s++ = '\0';
-    while(*s == ' ')
-        s++;
-    for(number = s, q = s; isdigit((int) *s) != 0 || *s == ','; s++)
-        if(*s != ',')
-            *q++ = *s;
-
-    if(number == s)
+    /**********************************************************/
+    static void fta_get_part_sup(char* parts, objects::CImprint& imp)
     {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
-                  "No Patent Document Number: \"%s\"", temp);
-        MemFree(temp);
-        return cit_pat;
-    }
+        char* start;
+        char* end;
+        char* p;
+        char* q;
+        Char    ch;
+        Int4    i;
+        Int4    j;
 
-    if(q != s)
+        if(parts == NULL || *parts == '\0')
+            return;
+
+        for(p = parts, i = 0, j = 0; *p != '\0'; p++)
+        {
+            if(*p == '(')
+                i++;
+            else if(*p == ')')
+                j++;
+
+            if(j > i || i - j > 1)
+                break;
+        }
+
+        if(*p != '\0' || i < 2)
+            return;
+
+        start = StringChr(parts, '(');
+        end = StringChr(start + 1, ')');
+
+        for(p = start + 1; *p == ' ';)
+            p++;
+        if(p == end)
+            return;
+
+        for(q = end - 1; *q == ' ' && q > p;)
+            q--;
+        if(*q != ' ')
+            q++;
+
+        ch = *q;
         *q = '\0';
 
-    if(*s == '-')
-    {
-        *s++ = '\0';
-        for(type = s; *s != ' ' && *s != '/' && *s != '\0';)
-            s++;
-        if(type == s)
-            type = NULL;
-    }
-    else
-        type = NULL;
-    if(*s != '\0')
-        *s++ = '\0';
+        imp.SetPart_sup(p);
+        *q = ch;
 
-    if(type == NULL)
-    {
-        sev = (ibp->is_pat ? SEV_ERROR : SEV_WARNING);
-        ErrPostEx(sev, ERR_REFERENCE_Fail_to_parse,
-                  "No Patent Document Type: \"%s\"", temp);
+        fta_StringCpy(start, end + 1);
     }
 
-    for(app = s, q = s; *s >= '0' && *s <= '9';)
-        s++;
-    if(*s != '\0' && *s != ',' && *s != '.' && *s != ' ' && *s != ';' &&
-       *s != '\n')
+    /**********************************************************
+     *
+     *   static bool get_parts(bptr, eptr, imp):
+     *
+     *      Return a PARTS from medart2asn.c.
+     *
+     **********************************************************/
+    static bool get_parts(char* bptr, char* eptr, objects::CImprint& imp)
     {
-        sev = (ibp->is_pat ? SEV_ERROR : SEV_WARNING);
-        ErrPostEx(sev, ERR_REFERENCE_Fail_to_parse,
-                  "No number of sequence in patent: \"%s\"", temp);
-        app = NULL;
-        s = q;
-    }
-    else if(*s != '\0')
-        for(*s++ = '\0'; *s == ' ';)
-            s++;
+        char* parts;
+        char* p;
+        char* q;
+        Char    ch;
+        Int4    bad;
 
-    CRef<objects::CDate_std> std_date;
-    if(*s != '\0')
-    {
-        std_date = get_full_date(s, true, pp->source);
-    }
+        if(bptr == NULL || eptr == NULL)
+            return false;
 
-    if (std_date.Empty())
-    {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
-                  "Illegal format: \"%s\"", temp);
-        MemFree(temp);
-        return cit_pat;
-    }
+        ch = *eptr;
+        *eptr = '\0';
+        parts = StringSave(bptr);
+        *eptr = ch;
 
-    if(p != NULL)
-        *p = ch;
+        for(p = parts; *p != '\0'; p++)
+            if(*p == '\t')
+                *p = ' ';
 
-    std::string msg = NStr::Sanitize(number);
-    if(pp->format == Parser::EFormat::EMBL ||
-       pp->source == Parser::ESource::USPTO)
-        *number = '\0';
+        fta_get_part_sup(parts, imp);
 
-    cit_pat.Reset(new objects::CCit_pat);
+        bad = 0;
+        q = StringChr(parts, '(');
+        p = StringChr(parts, ')');
 
-    cit_pat->SetCountry(country);
-    cit_pat->SetNumber(msg);
-
-    cit_pat->SetDoc_type(type == NULL ? "" : type);
-    cit_pat->SetDate_issue().SetStd(*std_date);
-    cit_pat->SetTitle(title.Empty() ? "" : title->GetName());
-
-    if (auth_list.Empty() || !auth_list->IsSetNames())
-    {
-        objects::CAuth_list& pat_auth_list = cit_pat->SetAuthors();
-        pat_auth_list.SetNames().SetStr().push_back("");
-    }
-    else
-        cit_pat->SetAuthors(*auth_list);
-
-    if (auth_list.NotEmpty())
-    {
-        objects::CAffil& affil = auth_list->SetAffil();
-
-        s += 13;
-        if (s < eptr && *s != '\0')
-            affil.SetStr(s);
-        else
-            affil.SetStr("");
-    }
-
-    if(ibp->is_pat && ibp->psip.Empty())
-    {
-        ibp->psip = new objects::CPatent_seq_id;
-        ibp->psip->SetCit().SetCountry(country);
-        ibp->psip->SetCit().SetId().SetNumber(msg);
-        ibp->psip->SetSeqid(app != NULL ? atoi(app) : 0);
-        if(type)
-            ibp->psip->SetCit().SetDoc_type(type);
-    }
-
-    MemFree(temp);
-    return cit_pat;
-}
-
-/**********************************************************/
-static void fta_get_part_sup(char* parts, objects::CImprint& imp)
-{
-    char* start;
-    char* end;
-    char* p;
-    char* q;
-    Char    ch;
-    Int4    i;
-    Int4    j;
-
-    if(parts == NULL || *parts == '\0')
-        return;
-
-    for(p = parts, i = 0, j = 0; *p != '\0'; p++)
-    {
-        if(*p == '(')
-            i++;
-        else if(*p == ')')
-            j++;
-
-        if(j > i || i - j > 1)
-            break;
-    }
-
-    if(*p != '\0' || i < 2)
-        return;
-
-    start = StringChr(parts, '(');
-    end = StringChr(start + 1, ')');
-
-    for(p = start + 1; *p == ' ';)
-        p++;
-    if(p == end)
-        return;
-
-    for(q = end - 1; *q == ' ' && q > p;)
-        q--;
-    if(*q != ' ')
-        q++;
-
-    ch = *q;
-    *q = '\0';
-
-    imp.SetPart_sup(p);
-    *q = ch;
-
-    fta_StringCpy(start, end + 1);
-}
-
-/**********************************************************
- *
- *   static bool get_parts(bptr, eptr, imp):
- *
- *      Return a PARTS from medart2asn.c.
- *
- **********************************************************/
-static bool get_parts(char* bptr, char* eptr, objects::CImprint& imp)
-{
-    char* parts;
-    char* p;
-    char* q;
-    Char    ch;
-    Int4    bad;
-
-    if(bptr == NULL || eptr == NULL)
-        return false;
-
-    ch = *eptr;
-    *eptr = '\0';
-    parts = StringSave(bptr);
-    *eptr = ch;
-
-    for(p = parts; *p != '\0'; p++)
-        if(*p == '\t')
-            *p = ' ';
-
-    fta_get_part_sup(parts, imp);
-
-    bad = 0;
-    q = StringChr(parts, '(');
-    p = StringChr(parts, ')');
-
-    if(p != NULL && q != NULL)
-    {
-        if(p < q || StringChr(p + 1, ')') != NULL ||
-           StringChr(q + 1, '(') != NULL)
+        if(p != NULL && q != NULL)
+        {
+            if(p < q || StringChr(p + 1, ')') != NULL ||
+               StringChr(q + 1, '(') != NULL)
+                bad = 1;
+        }
+        else if(p != NULL || q != NULL)
             bad = 1;
-    }
-    else if(p != NULL || q != NULL)
-        bad = 1;
 
-    if(bad != 0)
-    {
-        MemFree(parts);
-        return false;
-    }
+        if(bad != 0)
+        {
+            MemFree(parts);
+            return false;
+        }
 
-    if(q != NULL)
-    {
-        *q++ = '\0';
-        *p = '\0';
+        if(q != NULL)
+        {
+            *q++ = '\0';
+            *p = '\0';
 
-        for(p = q; *p == ' ';)
+            for(p = q; *p == ' ';)
+                p++;
+            for(q = p; *q != '\0' && *q != ' ';)
+                q++;
+            if(*q != '\0')
+                *q++ = '\0';
+            if(q > p)
+                imp.SetIssue(p);
+            for(p = q; *p == ' ';)
+                p++;
+            for(q = p; *q != '\0';)
+                q++;
+            if(q > p)
+            {
+                for(q--; *q == ' ';)
+                    q--;
+                *++q = '\0';
+
+                std::string supi(" ");
+                supi += p;
+                imp.SetPart_supi(supi);
+            }
+
+            const Char* issue_str = imp.IsSetIssue() ? imp.GetIssue().c_str() : NULL;
+            if (imp.IsSetPart_supi() && issue_str != NULL &&
+                (issue_str[0] == 'P' || issue_str[0] == 'p') && (issue_str[1] == 'T' || issue_str[1] == 't') &&
+                issue_str[2] == '\0')
+            {
+                std::string& issue = imp.SetIssue();
+                issue += imp.GetPart_supi();
+                imp.ResetPart_supi();
+            }
+        }
+
+        for(p = parts; *p == ' ';)
             p++;
         for(q = p; *q != '\0' && *q != ' ';)
             q++;
         if(*q != '\0')
             *q++ = '\0';
         if(q > p)
-            imp.SetIssue(p);
+            imp.SetVolume(p);
         for(p = q; *p == ' ';)
             p++;
         for(q = p; *q != '\0';)
@@ -715,1418 +749,1384 @@ static bool get_parts(char* bptr, char* eptr, objects::CImprint& imp)
             for(q--; *q == ' ';)
                 q--;
             *++q = '\0';
-
-            std::string supi(" ");
-            supi += p;
-            imp.SetPart_supi(supi);
+            imp.SetPart_sup(p);
         }
 
-        const Char* issue_str = imp.IsSetIssue() ? imp.GetIssue().c_str() : NULL;
-        if (imp.IsSetPart_supi() && issue_str != NULL &&
-            (issue_str[0] == 'P' || issue_str[0] == 'p') && (issue_str[1] == 'T' || issue_str[1] == 't') &&
-            issue_str[2] == '\0')
-        {
-            std::string& issue = imp.SetIssue();
-            issue += imp.GetPart_supi();
-            imp.ResetPart_supi();
-        }
+        MemFree(parts);
+        return true;
     }
 
-    for(p = parts; *p == ' ';)
-        p++;
-    for(q = p; *q != '\0' && *q != ' ';)
-        q++;
-    if(*q != '\0')
-        *q++ = '\0';
-    if(q > p)
-        imp.SetVolume(p);
-    for(p = q; *p == ' ';)
-        p++;
-    for(q = p; *q != '\0';)
-        q++;
-    if(q > p)
+    /**********************************************************
+     *
+     *   static CitArtPtr get_art(pp, bptr, auth, title, pre,
+     *                            has_muid, all_zeros, er):
+     *
+     *      Return a CitArt pointer for GENBANK or EMBL mode.
+     *
+     **********************************************************/
+    static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title,
+                             int pre, bool has_muid, bool* all_zeros, Int4 er)
     {
-        for(q--; *q == ' ';)
-            q--;
-        *++q = '\0';
-        imp.SetPart_sup(p);
-    }
+        char*      eptr;
+        char*      end_tit;
+        char*      s;
+        char*      p;
+        char*      ss;
+        char*      end_volume;
+        char*      end_pages;
+        char*      tit = NULL;
+        char*      volume = NULL;
+        char*      pages = NULL;
+        char*      year;
+        Char         symbol;
 
-    MemFree(parts);
-    return true;
-}
+        Int4         i;
+        Int4         is_er;
 
-/**********************************************************
- *
- *   static CitArtPtr get_art(pp, bptr, auth, title, pre,
- *                            has_muid, all_zeros, er):
- *
- *      Return a CitArt pointer for GENBANK or EMBL mode.
- *
- **********************************************************/
-static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title,
-                         int pre, bool has_muid, bool* all_zeros, Int4 er)
-{
-    char*      eptr;
-    char*      end_tit;
-    char*      s;
-    char*      p;
-    char*      ss;
-    char*      end_volume;
-    char*      end_pages;
-    char*      tit = NULL;
-    char*      volume = NULL;
-    char*      pages = NULL;
-    char*      year;
-    Char         symbol;
+        *all_zeros = false;
 
-    Int4         i;
-    Int4         is_er;
+        is_er = 0;
+        if(er > 0)
+            is_er |= 01;                    /* based on REMARKs */
+        if(StringNCmp(bptr, "(er)", 4) == 0)
+            is_er |= 02;
 
-    *all_zeros = false;
+        CRef<objects::CCit_art> cit_art;
 
-    is_er = 0;
-    if(er > 0)
-        is_er |= 01;                    /* based on REMARKs */
-    if(StringNCmp(bptr, "(er)", 4) == 0)
-        is_er |= 02;
-
-    CRef<objects::CCit_art> cit_art;
-
-    if(pp->format == Parser::EFormat::GenBank || pp->format == Parser::EFormat::PRF)
-        symbol = ',';
-    else if(pp->format == Parser::EFormat::EMBL)
-        symbol = ':';
-    else if(pp->format == Parser::EFormat::XML)
-    {
-        if(pp->source == Parser::ESource::EMBL)
-            symbol = ':';
-        else
+        if(pp->format == Parser::EFormat::GenBank || pp->format == Parser::EFormat::PRF)
             symbol = ',';
-    }
-    else
-        return cit_art;
-
-    end_volume = NULL;
-
-    size_t len = StringLen(bptr);
-    unique_ptr<char> pBuf(new char[len+1]);
-    char* buf = pBuf.get();
-    StringCpy(buf, bptr);
-    eptr = buf + len - 1;
-    while(eptr > buf && (*eptr == ' ' || *eptr == '\t' || *eptr == '.'))
-        *eptr-- = '\0';
-    if(*eptr != ')')
-    {
-        return cit_art;
-    }
-    for(s = eptr - 1; s > buf && *s != '(';)
-        s--;
-    if(*s != '(')
-    {
-        return cit_art;
-    }
-
-    if(pp->format == Parser::EFormat::PRF && s > buf &&
-       (StringLen(s) != 6 || s[1] < '1' || s[1] > '2' || s[2] < '0' ||
-        s[2] > '9' || s[3] < '0' || s[3] > '9' || s[4] < '0' || s[4] > '9'))
-    {
-        for(p = s - 1; p > buf && *p != '(';)
-            p--;
-        if(*p == '(' && p[5] == ')' && p[1] > '0' && p[1] < '3' &&
-           p[2] >= '0' && p[2] <= '9' && p[3] >= '0' && p[3] <= '9' &&
-           p[4] >= '0' && p[4] <= '9')
-        {
-            *s = '\0';
-            s = p;
-        }
-    }
-
-    year = s + 1;
-    for(s--; s >= buf && isspace((int) *s) != 0;)
-        s--;
-    if(s < buf)
-        s = buf;
-    end_pages = s + 1;
-    if(buf[0] == 'G' && buf[1] == '3')
-        ss = buf + 2;
-    else
-        ss = buf;
-    for(i = 0; ss <= year; ss++)
-    {
-        if(*ss == '(')
-            i++;
-        else if(*ss == ')')
-            i--;
-        else if(*ss >= '0' && *ss <= '9' && i == 0)
-            break;
-    }
-
-    for(s = end_pages; s >= buf && *s != symbol;)
-        s--;
-    if(s < buf)
-        s = buf;
-    if(*s != symbol)
-    {
-        /* try delimiter from other format
-         */
-        if(pp->format == Parser::EFormat::GenBank)
-            symbol = ':';
         else if(pp->format == Parser::EFormat::EMBL)
-            symbol = ',';
+            symbol = ':';
         else if(pp->format == Parser::EFormat::XML)
         {
             if(pp->source == Parser::ESource::EMBL)
-                symbol = ',';
-            else
                 symbol = ':';
+            else
+                symbol = ',';
+        }
+        else
+            return cit_art;
+
+        end_volume = NULL;
+
+        size_t len = StringLen(bptr);
+        unique_ptr<char> pBuf(new char[len+1]);
+        char* buf = pBuf.get();
+        StringCpy(buf, bptr);
+        eptr = buf + len - 1;
+        while(eptr > buf && (*eptr == ' ' || *eptr == '\t' || *eptr == '.'))
+            *eptr-- = '\0';
+        if(*eptr != ')')
+        {
+            return cit_art;
+        }
+        for(s = eptr - 1; s > buf && *s != '(';)
+            s--;
+        if(*s != '(')
+        {
+            return cit_art;
+        }
+
+        if(pp->format == Parser::EFormat::PRF && s > buf &&
+           (StringLen(s) != 6 || s[1] < '1' || s[1] > '2' || s[2] < '0' ||
+            s[2] > '9' || s[3] < '0' || s[3] > '9' || s[4] < '0' || s[4] > '9'))
+        {
+            for(p = s - 1; p > buf && *p != '(';)
+                p--;
+            if(*p == '(' && p[5] == ')' && p[1] > '0' && p[1] < '3' &&
+               p[2] >= '0' && p[2] <= '9' && p[3] >= '0' && p[3] <= '9' &&
+               p[4] >= '0' && p[4] <= '9')
+            {
+                *s = '\0';
+                s = p;
+            }
+        }
+
+        year = s + 1;
+        for(s--; s >= buf && isspace((int) *s) != 0;)
+            s--;
+        if(s < buf)
+            s = buf;
+        end_pages = s + 1;
+        if(buf[0] == 'G' && buf[1] == '3')
+            ss = buf + 2;
+        else
+            ss = buf;
+        for(i = 0; ss <= year; ss++)
+        {
+            if(*ss == '(')
+                i++;
+            else if(*ss == ')')
+                i--;
+            else if(*ss >= '0' && *ss <= '9' && i == 0)
+                break;
         }
 
         for(s = end_pages; s >= buf && *s != symbol;)
             s--;
         if(s < buf)
             s = buf;
-    }
-
-    if(*s == symbol && ss != year)
-    {
-        if(ss > s)
-            ss = s + 1;
-        end_volume = s;
-        for(pages = s + 1; isspace(*pages) != 0;)
-            pages++;
-        end_tit = ss - 1;
-        if(end_volume > ss)
+        if(*s != symbol)
         {
-            volume = ss;
-            if(*end_tit == '(')
-                volume--;
+            /* try delimiter from other format
+             */
+            if(pp->format == Parser::EFormat::GenBank)
+                symbol = ':';
+            else if(pp->format == Parser::EFormat::EMBL)
+                symbol = ',';
+            else if(pp->format == Parser::EFormat::XML)
+            {
+                if(pp->source == Parser::ESource::EMBL)
+                    symbol = ',';
+                else
+                    symbol = ':';
+            }
+
+            for(s = end_pages; s >= buf && *s != symbol;)
+                s--;
+            if(s < buf)
+                s = buf;
         }
-    }
-    else
-    {
-        if(pre != 1)
-            pre = 2;
 
-        end_tit = end_pages;
-    }
+        if(*s == symbol && ss != year)
+        {
+            if(ss > s)
+                ss = s + 1;
+            end_volume = s;
+            for(pages = s + 1; isspace(*pages) != 0;)
+                pages++;
+            end_tit = ss - 1;
+            if(end_volume > ss)
+            {
+                volume = ss;
+                if(*end_tit == '(')
+                    volume--;
+            }
+        }
+        else
+        {
+            if(pre != 1)
+                pre = 2;
 
-    if(*year == '0')
-    {
-        if(pages != NULL && StringNCmp(pages, "0-0", 3) == 0 &&
-           pp->source == Parser::ESource::EMBL)
-            *all_zeros = true;
-        return cit_art;
-    }
-
-    tit = buf;
-    if(*tit == '\0')
-    {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
-                   "No journal title.");
-        return cit_art;
-    }
-
-    cit_art.Reset(new objects::CCit_art);
-    objects::CCit_jour& journal = cit_art->SetFrom().SetJournal();
-    objects::CImprint& imp = journal.SetImp();
-
-    if (pre > 0)
-        imp.SetPrepub(static_cast<objects::CImprint::EPrepub>(pre));
-
-    *end_pages = '\0';
-    if(pages != NULL && StringNCmp(pages, "0-0", 3) != 0)
-    {
-        i = valid_pages_range(pages, tit, is_er, (pre == 2));
-        if(i == 0)
-            imp.SetPages(pages);
-        else if(i == 1)
             end_tit = end_pages;
-        else if(i == -1 && is_er > 0)
-        {
-            cit_art.Reset();
-            return cit_art;
         }
-    }
-    else if(pre != 1)
-        pre = 2;
 
-    if(volume != NULL)
-    {
-        if(!get_parts(volume, end_volume, imp))
+        if(*year == '0')
         {
-            cit_art.Reset();
+            if(pages != NULL && StringNCmp(pages, "0-0", 3) == 0 &&
+               pp->source == Parser::ESource::EMBL)
+                *all_zeros = true;
             return cit_art;
         }
 
-        if(pre != 1 && !imp.IsSetVolume())
+        tit = buf;
+        if(*tit == '\0')
         {
-            if(imp.IsSetPages())
+            ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
+                       "No journal title.");
+            return cit_art;
+        }
+
+        cit_art.Reset(new objects::CCit_art);
+        objects::CCit_jour& journal = cit_art->SetFrom().SetJournal();
+        objects::CImprint& imp = journal.SetImp();
+
+        if (pre > 0)
+            imp.SetPrepub(static_cast<objects::CImprint::EPrepub>(pre));
+
+        *end_pages = '\0';
+        if(pages != NULL && StringNCmp(pages, "0-0", 3) != 0)
+        {
+            i = valid_pages_range(pages, tit, is_er, (pre == 2));
+            if(i == 0)
+                imp.SetPages(pages);
+            else if(i == 1)
+                end_tit = end_pages;
+            else if(i == -1 && is_er > 0)
             {
                 cit_art.Reset();
                 return cit_art;
             }
+        }
+        else if(pre != 1)
             pre = 2;
-        }
-    }
-    else if(is_er > 0 && pre != 2)
-    {
-        cit_art.Reset();
-        return cit_art;
-    }
 
-    CRef<objects::CDate> date;
-    if (*year != '0')
-        date = get_date(year);
-
-    if(date.Empty())
-    {
-        if(is_er == 0)
-            ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
-                       "No date in journal reference");
-
-        cit_art.Reset();
-        return cit_art;
-    }
-
-    *end_tit = '\0';
-
-    CRef<objects::CTitle::C_E> journal_title(new objects::CTitle::C_E);
-
-    for (char* aux = end_tit - 1; aux > tit && *aux != '.' && *aux != ')' && !isalnum(*aux); --aux)
-        *aux = 0;
-
-    journal_title->SetIso_jta(NStr::Sanitize(tit));
-    journal.SetTitle().Set().push_back(journal_title);
-
-    imp.SetDate(*date);
-    if (pre > 0)
-        imp.SetPrepub(static_cast<objects::CImprint::EPrepub>(pre));
-
-    if((is_er & 01) == 01)
-    {
-        if(er == 1)
-            imp.SetPubstatus(3);         /* epublish     */
-        else
-            imp.SetPubstatus(10);        /* aheadofprint */
-    }
-
-    /* check invalid "in-press"
-     */
-    if(pre == 2)
-    {
-        if(has_muid)
+        if(volume != NULL)
         {
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_InvalidInPress,
-                      "Reference flagged as In-press, but Medline UID exists, In-press ignored: %s",
-                      buf);
-            imp.ResetPrepub();
+            if(!get_parts(volume, end_volume, imp))
+            {
+                cit_art.Reset();
+                return cit_art;
+            }
+
+            if(pre != 1 && !imp.IsSetVolume())
+            {
+                if(imp.IsSetPages())
+                {
+                    cit_art.Reset();
+                    return cit_art;
+                }
+                pre = 2;
+            }
+        }
+        else if(is_er > 0 && pre != 2)
+        {
+            cit_art.Reset();
+            return cit_art;
         }
 
-        if(imp.IsSetPages() && imp.IsSetVolume() && imp.IsSetDate())
+        CRef<objects::CDate> date;
+        if (*year != '0')
+            date = get_date(year);
+
+        if(date.Empty())
         {
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_InvalidInPress,
-                      "Reference flagged as In-press, but citation is complete, In-press ignored: %s",
-                      buf);
-            imp.ResetPrepub();
-        }
-    }
-
-    /* Title and authors are optional for cit_art
-     */
-    if(title != NULL)
-        cit_art->SetTitle().Set().push_back(title);
-
-    if (auth_list.NotEmpty())
-        cit_art->SetAuthors(*auth_list);
-
-    return cit_art;
-}
-
-/**********************************************************
- *
- *   static CitGenPtr get_unpub(bptr, eptr, auth, title):
- *
- *      Return a CitGen pointer.
- *
- *                                              11-14-93
- *
- **********************************************************/
-static CRef<objects::CCit_gen> get_unpub(char* bptr, char* eptr, CRef<objects::CAuth_list>& auth_list,
-                                                     const Char* title)
-{
-    CRef<objects::CCit_gen> cit_gen(new objects::CCit_gen);
-
-    char*   s;
-    char*   str;
-
-    if (bptr != NULL)
-    {
-        for(s = bptr; *s != '\0' && *s != '(';)
-            s++;
-        for(str = s - 1; str > bptr && isspace(*str) != 0;)
-            str--;
-        if(*s == '(')
-            s += 6;
-
-        if (s < eptr && *s != '\0' && auth_list.NotEmpty())
-            auth_list->SetAffil().SetStr(NStr::Sanitize(s));
-
-        cit_gen->SetCit(std::string(bptr, str + 1));
-    }
-
-    if (auth_list.NotEmpty())
-        cit_gen->SetAuthors(*auth_list);
-
-    if (title != NULL)
-        cit_gen->SetTitle(title);
-
-    return cit_gen;
-}
-
-/**********************************************************
- *
- *   static CitArtPtr get_book(bptr, auth, title, pre,
- *                             format, p):
- *
- *      Return a CitArt pointer (!!! that is an article
- *   from book!!).
- *
- *                                              11-14-93
- *
- **********************************************************/
-static CRef<objects::CCit_art> get_book(char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title,
-                                                    int pre, Parser::EFormat format, char* jour)
-{
-    char*    s;
-    char*    ss;
-    char*    tit;
-    char*    volume;
-    char*    pages;
-    char*    press;
-
-    Uint1      ref_fmt;
-    bool       IS_AUTH = false;
-    char*    tbptr;
-    char*    p;
-    Char       c;
-    Int4       i;
-
-    tit = NULL;
-    ref_fmt = GB_REF;
-
-    tbptr = (bptr == NULL) ? NULL : StringSave(bptr);
-
-    switch(format)
-    {
-        case Parser::EFormat::EMBL:
-            ref_fmt = EMBL_REF;
-            break;
-        case Parser::EFormat::GenBank:
-            ref_fmt = GB_REF;
-            break;
-        case Parser::EFormat::PIR:
-            ref_fmt = PIR_REF;
-            break;
-        case Parser::EFormat::SPROT:
-            ref_fmt = SP_REF;
-            break;
-        default:
-            break;
-    }
-
-    CRef<objects::CCit_art> cit_art(new objects::CCit_art);
-    objects::CCit_book& cit_book = cit_art->SetFrom().SetBook();
-
-    if (pre > 0)
-        cit_book.SetImp().SetPrepub(static_cast<objects::CImprint::EPrepub>(pre));
-
-    p = tbptr;
-    CRef<objects::CTitle::C_E> book_title(new objects::CTitle::C_E);
-
-    if(StringNCmp("(in)", tbptr, 4) == 0)
-    {
-        for(s = tbptr + 4; *s == ' ';)
-            s++;
-        for(bptr = s; *s != ';' && *s != '(' && *s != '\0';)
-            s++;
-        if(StringNICmp(s, "(Eds.)", 6) == 0)
-        {
-            tit = s + 6;
-            IS_AUTH = true;
-        }
-        else if(StringNICmp(s, "(Ed.)", 5) == 0)
-        {
-            tit = s + 5;
-            IS_AUTH = true;
-        }
-        else if(*s == ';')
-            tit = s;
-        if(tit != NULL)
-            while(*tit == ' ' || *tit == ';' || *tit == '\n')
-                tit++;
-        c = *s;
-        *s++ = '\0';
-        if(IS_AUTH && *bptr != '\0')
-        {
-            CRef<objects::CAuth_list> book_auth_list;
-            get_auth(bptr, ref_fmt, jour, book_auth_list);
-            if (book_auth_list.NotEmpty())
-                cit_book.SetAuthors(*book_auth_list);
-        }
-        else
-        {
-            ErrPostEx(SEV_ERROR, ERR_REFERENCE_UnusualBookFormat,
-                      "Cannot parse unusually formatted book reference (generating Cit-gen instead): %s",
-                      p);
-            if(tbptr != NULL)
-                MemFree(tbptr);
+            if(is_er == 0)
+                ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
+                           "No date in journal reference");
 
             cit_art.Reset();
             return cit_art;
         }
 
-        ss = StringRChr(tit, ';');
-        if(ss == NULL)
-            for(ss = tit; *ss != '\0';)
-                ss++;
-        for(s = ss; *s != ':' && s != tit;)
-            s--;
-        if(*s != ':')
-            s = ss;
-        c = *s;
-        if(*s != '\0')
-            *s++ = '\0';
+        *end_tit = '\0';
 
-        book_title->SetName("");
-        if(*tit != '\0')
+        CRef<objects::CTitle::C_E> journal_title(new objects::CTitle::C_E);
+
+        for (char* aux = end_tit - 1; aux > tit && *aux != '.' && *aux != ')' && !isalnum(*aux); --aux)
+            *aux = 0;
+
+        journal_title->SetIso_jta(NStr::Sanitize(tit));
+        journal.SetTitle().Set().push_back(journal_title);
+
+        imp.SetDate(*date);
+        if (pre > 0)
+            imp.SetPrepub(static_cast<objects::CImprint::EPrepub>(pre));
+
+        if((is_er & 01) == 01)
         {
-            volume = check_book_tit(tit);
-            if(volume != NULL)
-                cit_book.SetImp().SetVolume(volume);
-
-            book_title->SetName(NStr::Sanitize(tit));
+            if(er == 1)
+                imp.SetPubstatus(3);         /* epublish     */
+            else
+                imp.SetPubstatus(10);        /* aheadofprint */
         }
 
-        if(c == ':')
+        /* check invalid "in-press"
+         */
+        if(pre == 2)
         {
-            for(pages = s; *s != '\0' && *s != ',' && *s != ';';)
+            if(has_muid)
+            {
+                ErrPostEx(SEV_WARNING, ERR_REFERENCE_InvalidInPress,
+                          "Reference flagged as In-press, but Medline UID exists, In-press ignored: %s",
+                          buf);
+                imp.ResetPrepub();
+            }
+
+            if(imp.IsSetPages() && imp.IsSetVolume() && imp.IsSetDate())
+            {
+                ErrPostEx(SEV_WARNING, ERR_REFERENCE_InvalidInPress,
+                          "Reference flagged as In-press, but citation is complete, In-press ignored: %s",
+                          buf);
+                imp.ResetPrepub();
+            }
+        }
+
+        /* Title and authors are optional for cit_art
+         */
+        if(title != NULL)
+            cit_art->SetTitle().Set().push_back(title);
+
+        if (auth_list.NotEmpty())
+            cit_art->SetAuthors(*auth_list);
+
+        return cit_art;
+    }
+
+    /**********************************************************
+     *
+     *   static CitGenPtr get_unpub(bptr, eptr, auth, title):
+     *
+     *      Return a CitGen pointer.
+     *
+     *                                              11-14-93
+     *
+     **********************************************************/
+    static CRef<objects::CCit_gen> get_unpub(char* bptr, char* eptr, CRef<objects::CAuth_list>& auth_list,
+                                                         const Char* title)
+    {
+        CRef<objects::CCit_gen> cit_gen(new objects::CCit_gen);
+
+        char*   s;
+        char*   str;
+
+        if (bptr != NULL)
+        {
+            for(s = bptr; *s != '\0' && *s != '(';)
+                s++;
+            for(str = s - 1; str > bptr && isspace(*str) != 0;)
+                str--;
+            if(*s == '(')
+                s += 6;
+
+            if (s < eptr && *s != '\0' && auth_list.NotEmpty())
+                auth_list->SetAffil().SetStr(NStr::Sanitize(s));
+
+            cit_gen->SetCit(std::string(bptr, str + 1));
+        }
+
+        if (auth_list.NotEmpty())
+            cit_gen->SetAuthors(*auth_list);
+
+        if (title != NULL)
+            cit_gen->SetTitle(title);
+
+        return cit_gen;
+    }
+
+    /**********************************************************
+     *
+     *   static CitArtPtr get_book(bptr, auth, title, pre,
+     *                             format, p):
+     *
+     *      Return a CitArt pointer (!!! that is an article
+     *   from book!!).
+     *
+     *                                              11-14-93
+     *
+     **********************************************************/
+    static CRef<objects::CCit_art> get_book(char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title,
+                                                        int pre, Parser::EFormat format, char* jour)
+    {
+        char*    s;
+        char*    ss;
+        char*    tit;
+        char*    volume;
+        char*    pages;
+        char*    press;
+
+        Uint1      ref_fmt;
+        bool       IS_AUTH = false;
+        char*    tbptr;
+        char*    p;
+        Char       c;
+        Int4       i;
+
+        tit = NULL;
+        ref_fmt = GB_REF;
+
+        tbptr = (bptr == NULL) ? NULL : StringSave(bptr);
+
+        switch(format)
+        {
+            case Parser::EFormat::EMBL:
+                ref_fmt = EMBL_REF;
+                break;
+            case Parser::EFormat::GenBank:
+                ref_fmt = GB_REF;
+                break;
+            case Parser::EFormat::PIR:
+                ref_fmt = PIR_REF;
+                break;
+            case Parser::EFormat::SPROT:
+                ref_fmt = SP_REF;
+                break;
+            default:
+                break;
+        }
+
+        CRef<objects::CCit_art> cit_art(new objects::CCit_art);
+        objects::CCit_book& cit_book = cit_art->SetFrom().SetBook();
+
+        if (pre > 0)
+            cit_book.SetImp().SetPrepub(static_cast<objects::CImprint::EPrepub>(pre));
+
+        p = tbptr;
+        CRef<objects::CTitle::C_E> book_title(new objects::CTitle::C_E);
+
+        if(StringNCmp("(in)", tbptr, 4) == 0)
+        {
+            for(s = tbptr + 4; *s == ' ';)
+                s++;
+            for(bptr = s; *s != ';' && *s != '(' && *s != '\0';)
+                s++;
+            if(StringNICmp(s, "(Eds.)", 6) == 0)
+            {
+                tit = s + 6;
+                IS_AUTH = true;
+            }
+            else if(StringNICmp(s, "(Ed.)", 5) == 0)
+            {
+                tit = s + 5;
+                IS_AUTH = true;
+            }
+            else if(*s == ';')
+                tit = s;
+            if(tit != NULL)
+                while(*tit == ' ' || *tit == ';' || *tit == '\n')
+                    tit++;
+            c = *s;
+            *s++ = '\0';
+            if(IS_AUTH && *bptr != '\0')
+            {
+                CRef<objects::CAuth_list> book_auth_list;
+                get_auth(bptr, ref_fmt, jour, book_auth_list);
+                if (book_auth_list.NotEmpty())
+                    cit_book.SetAuthors(*book_auth_list);
+            }
+            else
+            {
+                ErrPostEx(SEV_ERROR, ERR_REFERENCE_UnusualBookFormat,
+                          "Cannot parse unusually formatted book reference (generating Cit-gen instead): %s",
+                          p);
+                if(tbptr != NULL)
+                    MemFree(tbptr);
+
+                cit_art.Reset();
+                return cit_art;
+            }
+
+            ss = StringRChr(tit, ';');
+            if(ss == NULL)
+                for(ss = tit; *ss != '\0';)
+                    ss++;
+            for(s = ss; *s != ':' && s != tit;)
+                s--;
+            if(*s != ':')
+                s = ss;
+            c = *s;
+            if(*s != '\0')
+                *s++ = '\0';
+
+            book_title->SetName("");
+            if(*tit != '\0')
+            {
+                volume = check_book_tit(tit);
+                if(volume != NULL)
+                    cit_book.SetImp().SetVolume(volume);
+
+                book_title->SetName(NStr::Sanitize(tit));
+            }
+
+            if(c == ':')
+            {
+                for(pages = s; *s != '\0' && *s != ',' && *s != ';';)
+                    s++;
+                if(*s != '\0')
+                    *s++ = '\0';
+
+                while(*pages == ' ')
+                    pages++;
+
+                if (StringNCmp(pages, "0-0",  3) == 0)
+                    cit_book.SetImp().SetPrepub(objects::CImprint::ePrepub_in_press);
+                else
+                {
+                    bool is_in_press = cit_book.GetImp().IsSetPrepub() && cit_book.GetImp().GetPrepub() == objects::CImprint::ePrepub_in_press;
+                    i = valid_pages_range(pages, book_title->GetName().c_str(), 0, is_in_press);
+
+                    if(i == 0)
+                        cit_book.SetImp().SetPages(NStr::Sanitize(pages));
+                    else if(i == 1)
+                    {
+                        std::string new_title = book_title->GetName();
+                        new_title += ": ";
+                        new_title += pages;
+                        book_title->SetName(new_title);
+                    }
+                }
+            }
+
+            for(press = s; *s != '(' && *s != '\0';)
                 s++;
             if(*s != '\0')
                 *s++ = '\0';
 
-            while(*pages == ' ')
-                pages++;
+            cit_book.SetImp().SetPub().SetStr(NStr::Sanitize(press));
 
-            if (StringNCmp(pages, "0-0",  3) == 0)
-                cit_book.SetImp().SetPrepub(objects::CImprint::ePrepub_in_press);
-            else
+            CRef<objects::CDate> date = get_date(s);
+            if (date.Empty())
             {
-                bool is_in_press = cit_book.GetImp().IsSetPrepub() && cit_book.GetImp().GetPrepub() == objects::CImprint::ePrepub_in_press;
-                i = valid_pages_range(pages, book_title->GetName().c_str(), 0, is_in_press);
+                ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
+                           "No date in book reference");
+                ErrPostEx(SEV_WARNING, ERR_REFERENCE_Illegalreference,
+                          "Book format error (cit-gen created): %s", p);
+                if(tbptr != NULL)
+                    MemFree(tbptr);
 
-                if(i == 0)
-                    cit_book.SetImp().SetPages(NStr::Sanitize(pages));
-                else if(i == 1)
-                {
-                    std::string new_title = book_title->GetName();
-                    new_title += ": ";
-                    new_title += pages;
-                    book_title->SetName(new_title);
-                }
+                cit_art.Reset();
+                return cit_art;
             }
+
+            cit_book.SetImp().SetDate(*date);
         }
 
-        for(press = s; *s != '(' && *s != '\0';)
+        cit_book.SetTitle().Set().push_back(book_title);
+
+        if (title.NotEmpty())
+            cit_art->SetTitle().Set().push_back(title);
+
+        if (auth_list.NotEmpty())
+            cit_art->SetAuthors(*auth_list);
+
+        if(tbptr != NULL)
+            MemFree(tbptr);
+
+        return cit_art;
+    }
+
+    /**********************************************************
+     *
+     *   static CitBookPtr get_thesis(bptr, auth, title, pre):
+     *
+     *      Return a CitBook pointer.
+     *
+     *                                              11-14-93
+     *
+     **********************************************************/
+    static CRef<objects::CCit_let> get_thesis(char* bptr, CRef<objects::CAuth_list>& auth_list,
+                                                          CRef<objects::CTitle::C_E>& title, int pre)
+    {
+        CRef<objects::CCit_let> cit_let(new objects::CCit_let);
+
+        cit_let->SetType(objects::CCit_let::eType_thesis);
+
+        objects::CCit_book& book = cit_let->SetCit();
+
+        if (pre > 0)
+            book.SetImp().SetPrepub(static_cast<objects::CImprint::EPrepub>(pre));
+
+        char* s;
+        for (s = bptr; *s != '\0' && *s != '(';)
             s++;
-        if(*s != '\0')
-            *s++ = '\0';
 
-        cit_book.SetImp().SetPub().SetStr(NStr::Sanitize(press));
-
-        CRef<objects::CDate> date = get_date(s);
-        if (date.Empty())
+        if(*s == '(')
         {
-            ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
-                       "No date in book reference");
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_Illegalreference,
-                      "Book format error (cit-gen created): %s", p);
-            if(tbptr != NULL)
-                MemFree(tbptr);
+            CRef<objects::CDate> date = get_date(s + 1);
+            if (date.NotEmpty())
+                book.SetImp().SetDate(*date);
 
-            cit_art.Reset();
-            return cit_art;
+            s = s + 6;
         }
 
-        cit_book.SetImp().SetDate(*date);
-    }
+        if (!book.GetImp().IsSetDate())
+        {
+            ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
+                      "Fail to parse thesis: missing date");
 
-    cit_book.SetTitle().Set().push_back(book_title);
+            cit_let.Reset();
+            return cit_let;
+        }
 
-    if (title.NotEmpty())
-        cit_art->SetTitle().Set().push_back(title);
+        if(*s != '\0')
+            book.SetImp().SetPub().SetStr(NStr::Sanitize(s));
 
-    if (auth_list.NotEmpty())
-        cit_art->SetAuthors(*auth_list);
+        if (title.NotEmpty())
+            book.SetTitle().Set().push_back(title);
+        else
+        {
+            ErrPostStr(SEV_WARNING, ERR_REFERENCE_Thesis, "Missing thesis title");
 
-    if(tbptr != NULL)
-        MemFree(tbptr);
+            CRef<objects::CTitle::C_E> empty_title(new objects::CTitle::C_E);
+            empty_title->SetName("");
+            book.SetTitle().Set().push_back(empty_title);
+        }
 
-    return cit_art;
-}
-
-/**********************************************************
- *
- *   static CitBookPtr get_thesis(bptr, auth, title, pre):
- *
- *      Return a CitBook pointer.
- *
- *                                              11-14-93
- *
- **********************************************************/
-static CRef<objects::CCit_let> get_thesis(char* bptr, CRef<objects::CAuth_list>& auth_list,
-                                                      CRef<objects::CTitle::C_E>& title, int pre)
-{
-    CRef<objects::CCit_let> cit_let(new objects::CCit_let);
-
-    cit_let->SetType(objects::CCit_let::eType_thesis);
-
-    objects::CCit_book& book = cit_let->SetCit();
-
-    if (pre > 0)
-        book.SetImp().SetPrepub(static_cast<objects::CImprint::EPrepub>(pre));
-
-    char* s;
-    for (s = bptr; *s != '\0' && *s != '(';)
-        s++;
-
-    if(*s == '(')
-    {
-        CRef<objects::CDate> date = get_date(s + 1);
-        if (date.NotEmpty())
-            book.SetImp().SetDate(*date);
-
-        s = s + 6;
-    }
-
-    if (!book.GetImp().IsSetDate())
-    {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
-                  "Fail to parse thesis: missing date");
-
-        cit_let.Reset();
+        if (auth_list.NotEmpty())
+            book.SetAuthors(*auth_list);
         return cit_let;
     }
 
-    if(*s != '\0')
-        book.SetImp().SetPub().SetStr(NStr::Sanitize(s));
-
-    if (title.NotEmpty())
-        book.SetTitle().Set().push_back(title);
-    else
+    /**********************************************************
+     *
+     *   static CitBookPtr get_whole_book(bptr, auth, title,
+     *                                    pre):
+     *
+     *      Return a CitBook pointer.
+     *
+     *                                              11-14-93
+     *
+     **********************************************************/
+    static CRef<objects::CCit_book> get_whole_book(char* bptr, CRef<objects::CAuth_list>& auth_list,
+                                     CRef<objects::CTitle::C_E>& title, int pre)
     {
-        ErrPostStr(SEV_WARNING, ERR_REFERENCE_Thesis, "Missing thesis title");
+        CRef<objects::CCit_book> cit_book;
 
-        CRef<objects::CTitle::C_E> empty_title(new objects::CTitle::C_E);
-        empty_title->SetName("");
-        book.SetTitle().Set().push_back(empty_title);
-    }
+        char*    s;
 
-    if (auth_list.NotEmpty())
-        book.SetAuthors(*auth_list);
-    return cit_let;
-}
-
-/**********************************************************
- *
- *   static CitBookPtr get_whole_book(bptr, auth, title,
- *                                    pre):
- *
- *      Return a CitBook pointer.
- *
- *                                              11-14-93
- *
- **********************************************************/
-static CRef<objects::CCit_book> get_whole_book(char* bptr, CRef<objects::CAuth_list>& auth_list,
-                                 CRef<objects::CTitle::C_E>& title, int pre)
-{
-    CRef<objects::CCit_book> cit_book;
-
-    char*    s;
-
-    for(bptr += 5; isspace(*bptr) != 0;)
-        bptr++;
+        for(bptr += 5; isspace(*bptr) != 0;)
+            bptr++;
 
 
-    for(s = bptr; *s != '\0' && *s != '(';)
-        s++;
+        for(s = bptr; *s != '\0' && *s != '(';)
+            s++;
 
-    if(*s != '(')
-    {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
-                  "Fail to parse book: missing date");
+        if(*s != '(')
+        {
+            ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
+                      "Fail to parse book: missing date");
+            return cit_book;
+        }
+
+        cit_book.Reset(new objects::CCit_book);
+
+        if (pre > 0)
+            cit_book->SetImp().SetPrepub(static_cast<objects::CImprint::EPrepub>(pre));
+
+        CRef<objects::CDate> date = get_date(s + 1);
+        if (date.NotEmpty())
+            cit_book->SetImp().SetDate(*date);
+
+        *s = '\0';
+        for(s = bptr; *s != '\0' && *s != '.';)
+            s++;
+
+        CRef<objects::CTitle::C_E> book_title(new objects::CTitle::C_E);
+        book_title->SetName(std::string(bptr, s));
+        cit_book->SetTitle().Set().push_back(book_title);
+
+        if(*s == '.')
+        {
+            for(s++; isspace(*s) != 0;)
+                s++;
+
+            cit_book->SetImp().SetPub().SetStr(NStr::Sanitize(s));
+        }
+
+        if (auth_list.Empty() || !auth_list->IsSetNames())
+        {
+            ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
+                      "Fail to parse thesis: missing thesis author");
+            cit_book.Reset();
+            return cit_book;
+        }
+
+        cit_book->SetAuthors(*auth_list);
+
         return cit_book;
     }
 
-    cit_book.Reset(new objects::CCit_book);
-
-    if (pre > 0)
-        cit_book->SetImp().SetPrepub(static_cast<objects::CImprint::EPrepub>(pre));
-
-    CRef<objects::CDate> date = get_date(s + 1);
-    if (date.NotEmpty())
-        cit_book->SetImp().SetDate(*date);
-
-    *s = '\0';
-    for(s = bptr; *s != '\0' && *s != '.';)
-        s++;
-
-    CRef<objects::CTitle::C_E> book_title(new objects::CTitle::C_E);
-    book_title->SetName(std::string(bptr, s));
-    cit_book->SetTitle().Set().push_back(book_title);
-
-    if(*s == '.')
+    /**********************************************************
+     *
+     *   static CitSubPtr get_sub(pp, bptr, auth):
+     *
+     *      Return a CitSub pointer.
+     *
+     **********************************************************/
+    static CRef<objects::CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<objects::CAuth_list>& auth_list)
     {
-        for(s++; isspace(*s) != 0;)
+        const char  **b;
+        char*     s;
+        Int2        medium = OTHER_MEDIUM;
+
+        CRef<objects::CCit_sub> ret;
+
+        for(s = bptr; *s != '(' &&  *s != '\0';)
             s++;
-
-        cit_book->SetImp().SetPub().SetStr(NStr::Sanitize(s));
-    }
-
-    if (auth_list.Empty() || !auth_list->IsSetNames())
-    {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
-                  "Fail to parse thesis: missing thesis author");
-        cit_book.Reset();
-        return cit_book;
-    }
-
-    cit_book->SetAuthors(*auth_list);
-
-    return cit_book;
-}
-
-/**********************************************************
- *
- *   static CitSubPtr get_sub(pp, bptr, auth):
- *
- *      Return a CitSub pointer.
- *
- **********************************************************/
-static CRef<objects::CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<objects::CAuth_list>& auth_list)
-{
-    const char  **b;
-    char*     s;
-    Int2        medium = OTHER_MEDIUM;
-
-    CRef<objects::CCit_sub> ret;
-
-    for(s = bptr; *s != '(' &&  *s != '\0';)
-        s++;
-    if(*s == '\0')
-    {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
-                  "Fail to parse submission: missing date");
-        return ret;
-    }
-
-    ret.Reset(new objects::CCit_sub);
-    CRef<objects::CDate> date;
-
-    if(pp != NULL && pp->entrylist != NULL &&
-       IsNewAccessFormat(pp->entrylist[pp->curindx]->acnum) == 0 &&
-       (StringChr(ParFlat_LANL_AC,
-                  pp->entrylist[pp->curindx]->acnum[0]) != NULL) &&
-       isdigit((int) *(s + 1)) == 0)
-    {
-        date = get_lanl_date(s);
-    }
-    else
-    {
-        CRef<objects::CDate_std> std_date = get_full_date(s + 1, true, pp->source);
-        date.Reset(new objects::CDate);
-        date->SetStd(*std_date);
-    }
-
-    if (date.Empty())
-        return ret;
-
-    ret.Reset(new objects::CCit_sub);
-    ret->SetDate(*date);
-
-    s = s + 13;
-    if(StringStr(s, "E-mail") != NULL)
-        medium = EMAIL_MEDIUM;
-
-    if(StringNICmp(" on tape", s, 8) == 0)
-    {
-        medium = TAPE_MEDIUM;
-        for(s += 8; *s != '\0' && *s != ':';)
-            s++;
-    }
-    if(*s != '\0' && *(s + 1) != '\0')
-    {
-        while(*s == ' ')
-            s++;
-
-        if(*s == ':')
-            s++;
-        for(;;)
+        if(*s == '\0')
         {
-            for(b = strip_sub_str; *b != NULL; b++)
-            {
-                size_t l_str = StringLen(*b);
-                if(StringNCmp(s, *b, l_str) == 0)
-                {
-                    for(s += l_str; *s == ' ' || *s == '.';)
-                        s++;
-                    break;
-                }
-            }
-            if(*b == NULL)
-                break;
+            ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
+                      "Fail to parse submission: missing date");
+            return ret;
         }
 
-        if (*s != '\0' && auth_list.NotEmpty())
+        ret.Reset(new objects::CCit_sub);
+        CRef<objects::CDate> date;
+
+        if(pp != NULL && pp->entrylist != NULL &&
+           IsNewAccessFormat(pp->entrylist[pp->curindx]->acnum) == 0 &&
+           (StringChr(ParFlat_LANL_AC,
+                      pp->entrylist[pp->curindx]->acnum[0]) != NULL) &&
+           isdigit((int) *(s + 1)) == 0)
         {
-            auth_list->SetAffil().SetStr(NStr::Sanitize(s));
+            date = get_lanl_date(s);
         }
-    }
-
-    if(*s == '\0')
-    {
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_NoContactInfo,
-                  "Missing contact info : %s", bptr);
-    }
-
-    if (auth_list.Empty() || !auth_list->IsSetNames())
-    {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
-                  "Direct submission: missing author (cit-gen created)");
-
-        ret.Reset();
-        return ret;
-    }
-
-    ret->SetAuthors(*auth_list);
-    ret->SetMedium(static_cast<objects::CCit_sub::EMedium>(medium));
-
-    return ret;
-}
-
-/**********************************************************
- *
- *   static CitSubPtr get_sub_gsdb(bptr, auth, title, pp):
- *
- *      GSDB specific format for CitSub :
- *   REFERENCE   1  (bases 1 to 378)
- *     AUTHORS   Mundt,M.O.
- *     TITLE     Published by M.O. Mundt, Genomics LS-3,
- *               Los Alamos National Laboratory,
- *               Mail Stop M888, Los Alamos, NM, USA, 87545
- *     JOURNAL   Published in GSDB (11-OCT-1996)
- *
- **********************************************************/
-static CRef<objects::CCit_sub> get_sub_gsdb(char* bptr, CRef<objects::CAuth_list>& auth_list,
-                              CRef<objects::CTitle::C_E>& title, ParserPtr pp)
-{
-    CRef<objects::CCit_sub> cit_sub;
-
-    char*   s;
-
-    for(s = bptr; *s != '(' && *s != '\0';)
-        s++;
-    if(*s == '\0')
-    {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
-                  "Fail to parse submission: missing date");
-        return cit_sub;
-    }
-
-    CRef<objects::CDate_std> std_date = get_full_date(s + 1, true, pp->source);
-    if(std_date.Empty())
-        return cit_sub;
-
-    CRef<objects::CDate> date;
-    date->SetStd(*std_date);
-
-    if (auth_list.Empty() || !auth_list->IsSetNames())
-    {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
-                  "Direct submission: missing author (cit-gen created)");
-        return cit_sub;
-    }
-
-    cit_sub.Reset(new objects::CCit_sub);
-    cit_sub->SetAuthors(*auth_list);
-    cit_sub->SetDate(*date);
-
-    if (title.NotEmpty())
-    {
-        const Char* s = title->GetName().c_str();
-        size_t l_str = StringLen("Published by");
-        if(StringNCmp(s, "Published by", l_str) == 0)
+        else
         {
-            s += l_str;
-            while(*s == ' ')
+            CRef<objects::CDate_std> std_date = get_full_date(s + 1, true, pp->source);
+            date.Reset(new objects::CDate);
+            date->SetStd(*std_date);
+        }
+
+        if (date.Empty())
+            return ret;
+
+        ret.Reset(new objects::CCit_sub);
+        ret->SetDate(*date);
+
+        s = s + 13;
+        if(StringStr(s, "E-mail") != NULL)
+            medium = EMAIL_MEDIUM;
+
+        if(StringNICmp(" on tape", s, 8) == 0)
+        {
+            medium = TAPE_MEDIUM;
+            for(s += 8; *s != '\0' && *s != ':';)
                 s++;
         }
-
-        if(*s != '\0')
+        if(*s != '\0' && *(s + 1) != '\0')
         {
-            auth_list->SetAffil().SetStr(NStr::Sanitize(s));
+            while(*s == ' ')
+                s++;
+
+            if(*s == ':')
+                s++;
+            for(;;)
+            {
+                for(b = strip_sub_str; *b != NULL; b++)
+                {
+                    size_t l_str = StringLen(*b);
+                    if(StringNCmp(s, *b, l_str) == 0)
+                    {
+                        for(s += l_str; *s == ' ' || *s == '.';)
+                            s++;
+                        break;
+                    }
+                }
+                if(*b == NULL)
+                    break;
+            }
+
+            if (*s != '\0' && auth_list.NotEmpty())
+            {
+                auth_list->SetAffil().SetStr(NStr::Sanitize(s));
+            }
+        }
+
+        if(*s == '\0')
+        {
+            ErrPostEx(SEV_WARNING, ERR_REFERENCE_NoContactInfo,
+                      "Missing contact info : %s", bptr);
+        }
+
+        if (auth_list.Empty() || !auth_list->IsSetNames())
+        {
+            ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
+                      "Direct submission: missing author (cit-gen created)");
+
+            ret.Reset();
+            return ret;
+        }
+
+        ret->SetAuthors(*auth_list);
+        ret->SetMedium(static_cast<objects::CCit_sub::EMedium>(medium));
+
+        return ret;
+    }
+
+    /**********************************************************
+     *
+     *   static CitSubPtr get_sub_gsdb(bptr, auth, title, pp):
+     *
+     *      GSDB specific format for CitSub :
+     *   REFERENCE   1  (bases 1 to 378)
+     *     AUTHORS   Mundt,M.O.
+     *     TITLE     Published by M.O. Mundt, Genomics LS-3,
+     *               Los Alamos National Laboratory,
+     *               Mail Stop M888, Los Alamos, NM, USA, 87545
+     *     JOURNAL   Published in GSDB (11-OCT-1996)
+     *
+     **********************************************************/
+    static CRef<objects::CCit_sub> get_sub_gsdb(char* bptr, CRef<objects::CAuth_list>& auth_list,
+                                  CRef<objects::CTitle::C_E>& title, ParserPtr pp)
+    {
+        CRef<objects::CCit_sub> cit_sub;
+
+        char*   s;
+
+        for(s = bptr; *s != '(' && *s != '\0';)
+            s++;
+        if(*s == '\0')
+        {
+            ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
+                      "Fail to parse submission: missing date");
+            return cit_sub;
+        }
+
+        CRef<objects::CDate_std> std_date = get_full_date(s + 1, true, pp->source);
+        if(std_date.Empty())
+            return cit_sub;
+
+        CRef<objects::CDate> date;
+        date->SetStd(*std_date);
+
+        if (auth_list.Empty() || !auth_list->IsSetNames())
+        {
+            ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse,
+                      "Direct submission: missing author (cit-gen created)");
+            return cit_sub;
+        }
+
+        cit_sub.Reset(new objects::CCit_sub);
+        cit_sub->SetAuthors(*auth_list);
+        cit_sub->SetDate(*date);
+
+        if (title.NotEmpty())
+        {
+            const Char* s = title->GetName().c_str();
+            size_t l_str = StringLen("Published by");
+            if(StringNCmp(s, "Published by", l_str) == 0)
+            {
+                s += l_str;
+                while(*s == ' ')
+                    s++;
+            }
+
+            if(*s != '\0')
+            {
+                auth_list->SetAffil().SetStr(NStr::Sanitize(s));
+            }
+            else
+            {
+                ErrPostEx(SEV_WARNING, ERR_REFERENCE_NoContactInfo,
+                          "Missing contact info : %s", bptr);
+            }
         }
         else
         {
             ErrPostEx(SEV_WARNING, ERR_REFERENCE_NoContactInfo,
                       "Missing contact info : %s", bptr);
         }
-    }
-    else
-    {
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_NoContactInfo,
-                  "Missing contact info : %s", bptr);
+
+        return cit_sub;
     }
 
-    return cit_sub;
-}
-
-/**********************************************************/
-static CRef<objects::CCit_gen> fta_get_citgen(char* bptr, CRef<objects::CAuth_list>& auth_list,
-                                                          CRef<objects::CTitle::C_E>& title)
-{
-    CRef<objects::CCit_gen> cit_gen;
-
-    char*   p;
-    char*   q;
-    char*   r;
-    Char      ch;
-    Int2      year;
-
-    if (bptr == NULL || auth_list.Empty() || !auth_list->IsSetNames() || title.Empty())
-        return cit_gen;
-
-    year = 0;
-    p = StringChr(bptr, '(');
-    if(p != NULL)
+    /**********************************************************/
+    static CRef<objects::CCit_gen> fta_get_citgen(char* bptr, CRef<objects::CAuth_list>& auth_list,
+                                                              CRef<objects::CTitle::C_E>& title)
     {
-        for(p++; *p == ' ' || *p == '\t';)
-            p++;
-        for(q = p; *p >= '0' && *p <= '9';)
-            p++;
-        for(r = p; *p == ' ' || *p == '\t' || *p == ')';)
-            p++;
-        if(*p == '\n' || *p == '\0')
+        CRef<objects::CCit_gen> cit_gen;
+
+        char*   p;
+        char*   q;
+        char*   r;
+        Char      ch;
+        Int2      year;
+
+        if (bptr == NULL || auth_list.Empty() || !auth_list->IsSetNames() || title.Empty())
+            return cit_gen;
+
+        year = 0;
+        p = StringChr(bptr, '(');
+        if(p != NULL)
         {
-            ch = *r;
-            *r = '\0';
-            year = atoi(q);
-            if(year < 1900)
-                *r = ch;
-            else
+            for(p++; *p == ' ' || *p == '\t';)
+                p++;
+            for(q = p; *p >= '0' && *p <= '9';)
+                p++;
+            for(r = p; *p == ' ' || *p == '\t' || *p == ')';)
+                p++;
+            if(*p == '\n' || *p == '\0')
             {
-                for(q--; *q == ' ' || *q == '\t' || *q == '(';)
-                    q--;
-                *++q = '\0';
+                ch = *r;
+                *r = '\0';
+                year = atoi(q);
+                if(year < 1900)
+                    *r = ch;
+                else
+                {
+                    for(q--; *q == ' ' || *q == '\t' || *q == '(';)
+                        q--;
+                    *++q = '\0';
+                }
             }
         }
+
+        cit_gen.Reset(new objects::CCit_gen);
+
+        if(bptr != NULL)
+            cit_gen->SetCit(bptr);
+
+        cit_gen->SetAuthors(*auth_list);
+        cit_gen->SetTitle(title->GetName());
+
+        if(year >= 1900)
+            cit_gen->SetDate().SetStd().SetYear(year);
+
+        return cit_gen;
     }
 
-    cit_gen.Reset(new objects::CCit_gen);
-
-    if(bptr != NULL)
-        cit_gen->SetCit(bptr);
-
-    cit_gen->SetAuthors(*auth_list);
-    cit_gen->SetTitle(title->GetName());
-
-    if(year >= 1900)
-        cit_gen->SetDate().SetStd().SetYear(year);
-
-    return cit_gen;
-}
-
-/**********************************************************
- *
- *   ValNodePtr journal(pp, bptr, eptr, auth, title,
- *                      has_muid, cit_art, er):
- *
- *      Return a ValNodePtr.
- *
- **********************************************************/
-CRef<objects::CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<objects::CAuth_list>& auth_list,
-                                        CRef<objects::CTitle::C_E>& title, bool has_muid, CRef<objects::CCit_art>& cit_art, Int4 er)
-{
-    int        pre = 0;
-    char*    p;
-    char*    nearend;
-    char*    end;
-    bool       all_zeros;
-    int        retval = ParFlat_MISSING_JOURNAL;
-
-    CRef<objects::CPub> ret(new objects::CPub);
-    if(bptr == NULL)
+    /**********************************************************
+     *
+     *   ValNodePtr journal(pp, bptr, eptr, auth, title,
+     *                      has_muid, cit_art, er):
+     *
+     *      Return a ValNodePtr.
+     *
+     **********************************************************/
+    CRef<objects::CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<objects::CAuth_list>& auth_list,
+                                            CRef<objects::CTitle::C_E>& title, bool has_muid, CRef<objects::CCit_art>& cit_art, Int4 er)
     {
-        const Char* title_str = title.Empty() ? NULL : title->GetName().c_str();
-        ret->SetGen(*get_unpub(bptr, eptr, auth_list, title_str));
-        return ret;
-    }
+        int        pre = 0;
+        char*    p;
+        char*    nearend;
+        char*    end;
+        bool       all_zeros;
+        int        retval = ParFlat_MISSING_JOURNAL;
 
-    p = bptr;
-    size_t my_len = StringLen(p);
-    if(my_len > 7)
-    {
-        nearend = p + StringLen(p) - 1;
-        while(*nearend == ' ' || *nearend == '\t' || *nearend == '.')
-            *nearend-- = '\0';
+        CRef<objects::CPub> ret(new objects::CPub);
+        if(bptr == NULL)
+        {
+            const Char* title_str = title.Empty() ? NULL : title->GetName().c_str();
+            ret->SetGen(*get_unpub(bptr, eptr, auth_list, title_str));
+            return ret;
+        }
 
-        nearend -= 8;
-        end = nearend + 2;
-        if(StringNICmp("In press", nearend + 1, 8) == 0)
+        p = bptr;
+        size_t my_len = StringLen(p);
+        if(my_len > 7)
         {
-            pre = 2;
-            *(nearend + 1) = '\0';
-        }
-        if(StringNICmp("Submitted", nearend, 9) == 0)
-        {
-            pre = 1;
-            *nearend = '\0';
-        }
-        if(pre == 0 && *end == '(' && isdigit(*(end + 1)) != 0)
-        {
-            for(nearend = end - 1; nearend > bptr && *nearend != ' ';)
-                nearend--;
+            nearend = p + StringLen(p) - 1;
+            while(*nearend == ' ' || *nearend == '\t' || *nearend == '.')
+                *nearend-- = '\0';
+
+            nearend -= 8;
+            end = nearend + 2;
             if(StringNICmp("In press", nearend + 1, 8) == 0)
             {
                 pre = 2;
                 *(nearend + 1) = '\0';
             }
-        }
-    }
-
-    if(my_len >= 6 && *p == '(')
-    {
-        p += 6;
-        my_len -= 6;
-        if(StringNCmp(" In press", p, 9) == 0)
-        {
-            retval = ParFlat_IN_PRESS;
-            pre = 2;
-        }
-    }
-
-    p = bptr;
-    my_len = StringLen(p);
-    if(StringNCmp("Unpub", p, 5) == 0 || StringNCmp("Unknown", p, 7) == 0)
-    {
-        retval = ParFlat_UNPUB_JOURNAL;
-        const Char* title_str = title.Empty() ? NULL : title->GetName().c_str();
-        ret->SetGen(*get_unpub(bptr, eptr, auth_list, title_str));
-    }
-    else if(StringNCmp("(in)", p, 4) == 0)
-    {
-        retval = ParFlat_MONOGRAPH_NOT_JOURNAL;
-
-        CRef<objects::CCit_art> article = get_book(bptr, auth_list, title, pre, pp->format, p);
-
-        if (article.Empty())
-            ret->SetGen(*get_error(bptr, auth_list, title));
-        else
-            ret->SetArticle(*article);
-
-    }
-    else if (StringNCmp("Thesis", p, 6) == 0)
-    {
-        retval = ParFlat_THESIS_CITATION;
-
-        CRef<objects::CCit_let> cit_let = get_thesis(bptr, auth_list, title, pre);
-        if (cit_let.Empty())
-        {
-            ret.Reset();
-            return ret;
-        }
-        ret->SetMan(*cit_let);
-    }
-    else if (StringNCmp("Submi", p,  5) == 0)
-    {
-        retval = ParFlat_SUBMITTED;
-
-        CRef<objects::CCit_sub> cit_sub = get_sub(pp, bptr, auth_list);
-        if (cit_sub.Empty())
-        {
-            ret.Reset();
-            return ret;
-        }
-        
-        ret->SetSub(*cit_sub);
-    }
-    else if(StringNCmp("Published in GSDB", p,  17) == 0)
-    {
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_GsdbRefDropped,
-                  "A published-in-gsdb reference was encountered and has been dropped [%s]",
-                  bptr);
-        retval = ParFlat_SUBMITTED;
-
-        CRef<objects::CCit_sub> cit_sub = get_sub_gsdb(bptr, auth_list, title, pp);
-        if (cit_sub.Empty())
-        {
-            ret.Reset();
-            return ret;
+            if(StringNICmp("Submitted", nearend, 9) == 0)
+            {
+                pre = 1;
+                *nearend = '\0';
+            }
+            if(pre == 0 && *end == '(' && isdigit(*(end + 1)) != 0)
+            {
+                for(nearend = end - 1; nearend > bptr && *nearend != ' ';)
+                    nearend--;
+                if(StringNICmp("In press", nearend + 1, 8) == 0)
+                {
+                    pre = 2;
+                    *(nearend + 1) = '\0';
+                }
+            }
         }
 
-        ret->SetSub(*cit_sub);
-    }
-    else if(StringNCmp("Patent", p, 6) == 0 ||
-            pp->source == Parser::ESource::USPTO)
-    {
-        retval = ParFlat_PATENT_CITATION;
-
-        if (pp->seqtype == objects::CSeq_id::e_Genbank || pp->seqtype == objects::CSeq_id::e_Ddbj ||
-            pp->seqtype == objects::CSeq_id::e_Embl || pp->seqtype == objects::CSeq_id::e_Other ||
-            pp->seqtype == objects::CSeq_id::e_Tpe || pp->seqtype == objects::CSeq_id::e_Tpg ||
-            pp->seqtype == objects::CSeq_id::e_Tpd ||
-            pp->source == Parser::ESource::USPTO)
+        if(my_len >= 6 && *p == '(')
         {
-            CRef<objects::CCit_pat> cit_pat = get_pat(pp, bptr, auth_list, title, eptr);
-            if (cit_pat.Empty())
+            p += 6;
+            my_len -= 6;
+            if(StringNCmp(" In press", p, 9) == 0)
+            {
+                retval = ParFlat_IN_PRESS;
+                pre = 2;
+            }
+        }
+
+        p = bptr;
+        my_len = StringLen(p);
+        if(StringNCmp("Unpub", p, 5) == 0 || StringNCmp("Unknown", p, 7) == 0)
+        {
+            retval = ParFlat_UNPUB_JOURNAL;
+            const Char* title_str = title.Empty() ? NULL : title->GetName().c_str();
+            ret->SetGen(*get_unpub(bptr, eptr, auth_list, title_str));
+        }
+        else if(StringNCmp("(in)", p, 4) == 0)
+        {
+            retval = ParFlat_MONOGRAPH_NOT_JOURNAL;
+
+            CRef<objects::CCit_art> article = get_book(bptr, auth_list, title, pre, pp->format, p);
+
+            if (article.Empty())
+                ret->SetGen(*get_error(bptr, auth_list, title));
+            else
+                ret->SetArticle(*article);
+
+        }
+        else if (StringNCmp("Thesis", p, 6) == 0)
+        {
+            retval = ParFlat_THESIS_CITATION;
+
+            CRef<objects::CCit_let> cit_let = get_thesis(bptr, auth_list, title, pre);
+            if (cit_let.Empty())
+            {
+                ret.Reset();
+                return ret;
+            }
+            ret->SetMan(*cit_let);
+        }
+        else if (StringNCmp("Submi", p,  5) == 0)
+        {
+            retval = ParFlat_SUBMITTED;
+
+            CRef<objects::CCit_sub> cit_sub = get_sub(pp, bptr, auth_list);
+            if (cit_sub.Empty())
+            {
+                ret.Reset();
+                return ret;
+            }
+            
+            ret->SetSub(*cit_sub);
+        }
+        else if(StringNCmp("Published in GSDB", p,  17) == 0)
+        {
+            ErrPostEx(SEV_WARNING, ERR_REFERENCE_GsdbRefDropped,
+                      "A published-in-gsdb reference was encountered and has been dropped [%s]",
+                      bptr);
+            retval = ParFlat_SUBMITTED;
+
+            CRef<objects::CCit_sub> cit_sub = get_sub_gsdb(bptr, auth_list, title, pp);
+            if (cit_sub.Empty())
             {
                 ret.Reset();
                 return ret;
             }
 
-            ret->SetPatent(*cit_pat);
+            ret->SetSub(*cit_sub);
         }
-        else
+        else if(StringNCmp("Patent", p, 6) == 0 ||
+                pp->source == Parser::ESource::USPTO)
         {
-            ret.Reset();
-            return ret;
-        }
-    }
-    else if(StringNCmp("Book:", p, 5) == 0)
-    {
-        retval = ParFlat_BOOK_CITATION;
+            retval = ParFlat_PATENT_CITATION;
 
-        CRef<objects::CCit_book> book = get_whole_book(bptr, auth_list, title, pre);
-        if(book.Empty())
-        {
-            ret.Reset();
-            return ret;
-        }
-
-        ret->SetBook(*book);
-    }
-    else if(StringNICmp("Published Only in Database", p, 26) == 0)
-    {
-        retval = ParFlat_GEN_CITATION;
-        CRef<objects::CCit_gen> cit_gen = fta_get_citgen(bptr, auth_list, title);
-
-        if (cit_gen.Empty())
-        {
-            ret.Reset();
-            return ret;
-        }
-
-        ret->SetGen(*cit_gen);
-    }
-    else if(StringNICmp("Online Publication", p, 18) == 0)
-    {
-        retval = ParFlat_ONLINE_CITATION;
-
-        CRef<objects::CCit_gen> cit_gen = fta_get_citgen(bptr, auth_list, title);
-
-        if (cit_gen.Empty())
-        {
-            ret.Reset();
-            return ret;
-        }
-
-        ret->SetGen(*cit_gen);
-    }
-
-    if(retval == ParFlat_MISSING_JOURNAL)
-    {
-        if(cit_art.NotEmpty())
-            ret->SetArticle(*cit_art);
-        else
-        {
-            CRef<objects::CCit_art> new_art = get_art(pp, bptr, auth_list, title, pre,
-                                                                  has_muid, &all_zeros, er);
-            if (new_art.Empty())
+            if (pp->seqtype == objects::CSeq_id::e_Genbank || pp->seqtype == objects::CSeq_id::e_Ddbj ||
+                pp->seqtype == objects::CSeq_id::e_Embl || pp->seqtype == objects::CSeq_id::e_Other ||
+                pp->seqtype == objects::CSeq_id::e_Tpe || pp->seqtype == objects::CSeq_id::e_Tpg ||
+                pp->seqtype == objects::CSeq_id::e_Tpd ||
+                pp->source == Parser::ESource::USPTO)
             {
-                if(!all_zeros &&
-                   StringNCmp(bptr, "(er)", 4) != 0 && er == 0)
-                    ErrPostEx(SEV_WARNING, ERR_REFERENCE_Illegalreference,
-                              "Journal format error (cit-gen created): %s",
-                              bptr);
+                CRef<objects::CCit_pat> cit_pat = get_pat(pp, bptr, auth_list, title, eptr);
+                if (cit_pat.Empty())
+                {
+                    ret.Reset();
+                    return ret;
+                }
 
-                ret->SetGen(*get_error(bptr, auth_list, title));
+                ret->SetPatent(*cit_pat);
             }
             else
-                ret->SetArticle(*new_art);
-        }
-    }
-
-    return ret;
-}
-
-/**********************************************************/
-static char* FindBackSemicolon(char* pchStart, char* pchCurrent)
-{
-    if(pchStart == NULL || pchCurrent == NULL || pchStart >= pchCurrent)
-        return(NULL);
-
-    for(pchCurrent--; pchCurrent >= pchStart; pchCurrent--)
-    {
-        if(isspace((int) *pchCurrent) != 0)
-            continue;
-        if(*pchCurrent == ';')
-            return(pchCurrent);
-        break;
-    }
-
-    return(NULL);
-}
-
-/**********************************************************/
-static char* FindSemicolon(char* str)
-{
-    if(str == nullptr || *str == '\0')
-        return nullptr;
-
-    while (*str && std::isspace(*str)) str++;
-
-    if(*str == ';')
-        return(str);
-
-    return nullptr;
-}
-
-/**********************************************************/
-static char* ExtractErratum(char* comm)
-{
-    char* start;
-    char* pchNumber = NULL;
-    char* end;
-    char* p;
-
-    if(comm == NULL)
-        return(NULL);
-
-    start = StringStr(comm, "Erratum:");
-    if(start == NULL)
-        return(comm);
-
-    end = StringChr(start, ']');
-    if(end == NULL)
-        return(comm);
-
-    pchNumber = end + 1;
-    end = FindSemicolon(pchNumber);
-    if(end != NULL)
-        pchNumber = end + 1;
-    p = FindBackSemicolon(comm, start);
-    if(p != NULL)
-        start = p;
-    fta_StringCpy(start, pchNumber);
-
-    /* Check if the string after cutting signature is empty. If it's really
-     * empty we have to ignore the whole string (comment).
-     * Do you want to have a comment which contains nothing!? Probably no.
-     */
-    for(p = comm; *p == ' ' || *p == '\t' || *p == '\n';)
-        p++;
-    if(*p == '\0')
-        *comm = '\0';
-
-    return(comm);
-}
-
-/**********************************************************/
-static void XMLGetXrefs(char* entry, XmlIndexPtr xip, TQualVector& quals)
-{
-    XmlIndexPtr xipqual;
-
-    if(entry == NULL || xip == NULL)
-        return;
-
-    for (; xip != NULL; xip = xip->next)
-    {
-        if(xip->subtags == NULL)
-            continue;
-
-        CRef<objects::CGb_qual> qual(new objects::CGb_qual);
-
-        for(xipqual = xip->subtags; xipqual != NULL; xipqual = xipqual->next)
-        {
-            if (xipqual->tag == INSDXREF_DBNAME)
-                qual->SetQual(XMLGetTagValue(entry, xipqual));
-            else if(xipqual->tag == INSDXREF_ID)
-                qual->SetVal(XMLGetTagValue(entry, xipqual));
-        }
-
-        if (qual->IsSetQual() && !qual->GetQual().empty())
-            quals.push_back(qual);
-    }
-}
-
-/**********************************************************/
-static void fta_add_article_ids(objects::CPub& pub, const std::string& doi, const std::string& agricola)
-{
-    if (doi.empty() && agricola.empty())
-        return;
-
-    if (pub.IsArticle())
-    {
-        objects::CCit_art& cit_art = pub.SetArticle();
-
-        if (!agricola.empty())
-        {
-            CRef<objects::CArticleId> id(new objects::CArticleId);
-            id->SetOther().SetDb("AGRICOLA");
-            id->SetOther().SetTag().SetStr(agricola);
-
-            cit_art.SetIds().Set().push_front(id);
-        }
-
-        if (!doi.empty())
-        {
-            CRef<objects::CArticleId> id(new objects::CArticleId);
-            id->SetDoi().Set(doi);
-
-            cit_art.SetIds().Set().push_front(id);
-        }
-    }
-}
-
-/**********************************************************/
-Int4 fta_remark_is_er(const Char* str)
-{
-    const char **b;
-    char*    s;
-    Int4       i;
-
-    s = StringSave(str);
-    ShrinkSpaces(s);
-    for(i = 1, b = ERRemarks; *b != NULL; b++, i++)
-        if(StringIStr(s, *b) != NULL)
-            break;
-
-    MemFree(s);
-    if(*b == NULL)
-        return(0);
-    if(i < 7)
-        return(1);                      /* epublish     */
-    return(2);                          /* aheadofprint */
-}
-
-/**********************************************************/
-static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool& rej)
-{
-    char*           title;
-
-    char*           p;
-    char*           q;
-    char*           r;
-    bool              is_online;
-    Int4              pmid;
-    bool              retstat;
-
-    XmlIndexPtr       xip;
-
-    Int4              er;
-
-    CRef<objects::CPubdesc> desc;
-
-    if(pp == NULL || dbp == NULL || dbp->mOffset == NULL || dbp->mpData == NULL)
-        return desc;
-
-    desc.Reset(new objects::CPubdesc);
-
-    p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
-                        INSDREFERENCE_REFERENCE);
-    if(p != NULL && isdigit((int) *p) != 0)
-    {
-        desc->SetPub().Set().push_back(get_num(p));
-    }
-    else
-    {
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_Illegalreference,
-                  "No reference number.");
-    }
-
-    if(p != NULL)
-        MemFree(p);
-
-    p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
-                        INSDREFERENCE_MEDLINE);
-    if(p != NULL)
-    {
-        rej = true;
-        MemFree(p);
-        desc.Reset();
-        return desc;
-    }
-
-    pmid = 0;
-    p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
-                        INSDREFERENCE_PUBMED);
-    if(p != NULL)
-    {
-        pmid = NStr::StringToInt(p, NStr::fAllowTrailingSymbols);
-        MemFree(p);
-    }
-
-    CRef<objects::CAuth_list> auth_list;
-
-    p = XMLConcatSubTags(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
-                         INSDREFERENCE_AUTHORS, ',');
-    if(p != NULL)
-    {
-        if(pp->xml_comp)
-        {
-            q = StringRChr(p, '.');
-            if(q == NULL || q[1] != '\0')
             {
-                q = (char*) MemNew(StringLen(p) + 2);
-                StringCpy(q, p);
-                StringCat(q, ".");
-                MemFree(p);
-                p = q;
-                q = NULL;
+                ret.Reset();
+                return ret;
             }
         }
-        for(q = p; *q == ' ' || *q == '.' || *q == ',';)
-            q++;
-        if(*q != '\0')
+        else if(StringNCmp("Book:", p, 5) == 0)
         {
-            q = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
-                                INSDREFERENCE_JOURNAL);
-            get_auth(p, (pp->source == Parser::ESource::EMBL) ? EMBL_REF : GB_REF, q, auth_list);
-            MemFree(q);
+            retval = ParFlat_BOOK_CITATION;
+
+            CRef<objects::CCit_book> book = get_whole_book(bptr, auth_list, title, pre);
+            if(book.Empty())
+            {
+                ret.Reset();
+                return ret;
+            }
+
+            ret->SetBook(*book);
         }
-        MemFree(p);
+        else if(StringNICmp("Published Only in Database", p, 26) == 0)
+        {
+            retval = ParFlat_GEN_CITATION;
+            CRef<objects::CCit_gen> cit_gen = fta_get_citgen(bptr, auth_list, title);
+
+            if (cit_gen.Empty())
+            {
+                ret.Reset();
+                return ret;
+            }
+
+            ret->SetGen(*cit_gen);
+        }
+        else if(StringNICmp("Online Publication", p, 18) == 0)
+        {
+            retval = ParFlat_ONLINE_CITATION;
+
+            CRef<objects::CCit_gen> cit_gen = fta_get_citgen(bptr, auth_list, title);
+
+            if (cit_gen.Empty())
+            {
+                ret.Reset();
+                return ret;
+            }
+
+            ret->SetGen(*cit_gen);
+        }
+
+        if(retval == ParFlat_MISSING_JOURNAL)
+        {
+            if(cit_art.NotEmpty())
+                ret->SetArticle(*cit_art);
+            else
+            {
+                CRef<objects::CCit_art> new_art = get_art(pp, bptr, auth_list, title, pre,
+                                                                      has_muid, &all_zeros, er);
+                if (new_art.Empty())
+                {
+                    if(!all_zeros &&
+                       StringNCmp(bptr, "(er)", 4) != 0 && er == 0)
+                        ErrPostEx(SEV_WARNING, ERR_REFERENCE_Illegalreference,
+                                  "Journal format error (cit-gen created): %s",
+                                  bptr);
+
+                    ret->SetGen(*get_error(bptr, auth_list, title));
+                }
+                else
+                    ret->SetArticle(*new_art);
+            }
+        }
+
+        return ret;
     }
 
-    p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
-                        INSDREFERENCE_CONSORTIUM);
-    if(p != NULL)
+    /**********************************************************/
+    static char* FindBackSemicolon(char* pchStart, char* pchCurrent)
     {
-        for(q = p; *q == ' ' || *q == '.' || *q == ',';)
-            q++;
+        if(pchStart == NULL || pchCurrent == NULL || pchStart >= pchCurrent)
+            return(NULL);
 
-        if (*q != '\0')
-            get_auth_consortium(p, auth_list);
+        for(pchCurrent--; pchCurrent >= pchStart; pchCurrent--)
+        {
+            if(isspace((int) *pchCurrent) != 0)
+                continue;
+            if(*pchCurrent == ';')
+                return(pchCurrent);
+            break;
+        }
 
-        MemFree(p);
+        return(NULL);
     }
 
-    if (auth_list.Empty() || !auth_list->IsSetNames())
-        no_auth = true;
+    /**********************************************************/
+    static char* FindSemicolon(char* str)
+    {
+        if(str == nullptr || *str == '\0')
+            return nullptr;
 
-    p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
-                        INSDREFERENCE_TITLE);
+        while (*str && std::isspace(*str)) str++;
 
-    CRef<objects::CTitle::C_E> title_art(new objects::CTitle::C_E);
+        if(*str == ';')
+            return(str);
+
+        return nullptr;
+    }
+
+    /**********************************************************/
+    static char* ExtractErratum(char* comm)
+    {
+        char* start;
+        char* pchNumber = NULL;
+        char* end;
+        char* p;
+
+        if(comm == NULL)
+            return(NULL);
+
+        start = StringStr(comm, "Erratum:");
+        if(start == NULL)
+            return(comm);
+
+        end = StringChr(start, ']');
+        if(end == NULL)
+            return(comm);
+
+        pchNumber = end + 1;
+        end = FindSemicolon(pchNumber);
+        if(end != NULL)
+            pchNumber = end + 1;
+        p = FindBackSemicolon(comm, start);
+        if(p != NULL)
+            start = p;
+        fta_StringCpy(start, pchNumber);
+
+        /* Check if the string after cutting signature is empty. If it's really
+         * empty we have to ignore the whole string (comment).
+         * Do you want to have a comment which contains nothing!? Probably no.
+         */
+        for(p = comm; *p == ' ' || *p == '\t' || *p == '\n';)
+            p++;
+        if(*p == '\0')
+            *comm = '\0';
+
+        return(comm);
+    }
+
+    /**********************************************************/
+    static void XMLGetXrefs(char* entry, XmlIndexPtr xip, TQualVector& quals)
+    {
+        XmlIndexPtr xipqual;
+
+        if(entry == NULL || xip == NULL)
+            return;
+
+        for (; xip != NULL; xip = xip->next)
+        {
+            if(xip->subtags == NULL)
+                continue;
+
+            CRef<objects::CGb_qual> qual(new objects::CGb_qual);
+
+            for(xipqual = xip->subtags; xipqual != NULL; xipqual = xipqual->next)
+            {
+                if (xipqual->tag == INSDXREF_DBNAME)
+                    qual->SetQual(XMLGetTagValue(entry, xipqual));
+                else if(xipqual->tag == INSDXREF_ID)
+                    qual->SetVal(XMLGetTagValue(entry, xipqual));
+            }
+
+            if (qual->IsSetQual() && !qual->GetQual().empty())
+                quals.push_back(qual);
+        }
+    }
+
+    /**********************************************************/
+    static void fta_add_article_ids(objects::CPub& pub, const std::string& doi, const std::string& agricola)
+    {
+        if (doi.empty() && agricola.empty())
+            return;
+
+        if (pub.IsArticle())
+        {
+            objects::CCit_art& cit_art = pub.SetArticle();
+
+            if (!agricola.empty())
+            {
+                CRef<objects::CArticleId> id(new objects::CArticleId);
+                id->SetOther().SetDb("AGRICOLA");
+                id->SetOther().SetTag().SetStr(agricola);
+
+                cit_art.SetIds().Set().push_front(id);
+            }
+
+            if (!doi.empty())
+            {
+                CRef<objects::CArticleId> id(new objects::CArticleId);
+                id->SetDoi().Set(doi);
+
+                cit_art.SetIds().Set().push_front(id);
+            }
+        }
+    }
+
+    /**********************************************************/
+    Int4 fta_remark_is_er(const Char* str)
+    {
+        const char **b;
+        char*    s;
+        Int4       i;
+
+        s = StringSave(str);
+        ShrinkSpaces(s);
+        for(i = 1, b = ERRemarks; *b != NULL; b++, i++)
+            if(StringIStr(s, *b) != NULL)
+                break;
+
+        MemFree(s);
+        if(*b == NULL)
+            return(0);
+        if(i < 7)
+            return(1);                      /* epublish     */
+        return(2);                          /* aheadofprint */
+    }
+
+    /**********************************************************/
+    static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool& rej)
+    {
+        char*           title;
+
+        char*           p;
+        char*           q;
+        char*           r;
+        bool              is_online;
+        Int4              pmid;
+        bool              retstat;
+
+        XmlIndexPtr       xip;
+
+        Int4              er;
+
+        CRef<objects::CPubdesc> desc;
+
+        if(pp == NULL || dbp == NULL || dbp->mOffset == NULL || dbp->mpData == NULL)
+            return desc;
+
+        desc.Reset(new objects::CPubdesc);
+
+        p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
+                            INSDREFERENCE_REFERENCE);
+        if(p != NULL && isdigit((int) *p) != 0)
+        {
+            desc->SetPub().Set().push_back(get_num(p));
+        }
+        else
+        {
+            ErrPostEx(SEV_WARNING, ERR_REFERENCE_Illegalreference,
+                      "No reference number.");
+        }
+
+        if(p != NULL)
+            MemFree(p);
+
+        p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
+                            INSDREFERENCE_MEDLINE);
+        if(p != NULL)
+        {
+            rej = true;
+            MemFree(p);
+            desc.Reset();
+            return desc;
+        }
+
+        pmid = 0;
+        p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
+                            INSDREFERENCE_PUBMED);
+        if(p != NULL)
+        {
+            pmid = NStr::StringToInt(p, NStr::fAllowTrailingSymbols);
+            MemFree(p);
+        }
+
+        CRef<objects::CAuth_list> auth_list;
+
+        p = XMLConcatSubTags(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
+                             INSDREFERENCE_AUTHORS, ',');
+        if(p != NULL)
+        {
+            if(pp->xml_comp)
+            {
+                q = StringRChr(p, '.');
+                if(q == NULL || q[1] != '\0')
+                {
+                    q = (char*) MemNew(StringLen(p) + 2);
+                    StringCpy(q, p);
+                    StringCat(q, ".");
+                    MemFree(p);
+                    p = q;
+                    q = NULL;
+                }
+            }
+            for(q = p; *q == ' ' || *q == '.' || *q == ',';)
+                q++;
+            if(*q != '\0')
+            {
+                q = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
+                                    INSDREFERENCE_JOURNAL);
+                get_auth(p, (pp->source == Parser::ESource::EMBL) ? EMBL_REF : GB_REF, q, auth_list);
+                MemFree(q);
+            }
+            MemFree(p);
+        }
+
+        p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
+                            INSDREFERENCE_CONSORTIUM);
+        if(p != NULL)
+        {
+            for(q = p; *q == ' ' || *q == '.' || *q == ',';)
+                q++;
+
+            if (*q != '\0')
+                get_auth_consortium(p, auth_list);
+
+            MemFree(p);
+        }
+
+        if (auth_list.Empty() || !auth_list->IsSetNames())
+            no_auth = true;
+
+        p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
+                            INSDREFERENCE_TITLE);
+
+        CRef<objects::CTitle::C_E> title_art(new objects::CTitle::C_E);
     if (p != NULL)
     {
         if(StringNCmp(p, "Direct Submission", 17) != 0 &&
@@ -2136,7 +2136,7 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
             if(title != NULL)
             {
                 title_art->SetName(tata_save(title));
-                MemFree(title);
+                free(title);
             }
         }
         MemFree(p);
@@ -2341,7 +2341,7 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
             {
                 title_art.Reset(new objects::CTitle::C_E);
                 title_art->SetName(NStr::Sanitize(q));
-                MemFree(q);
+                free(q);
             }
         }
     }
@@ -2529,7 +2529,7 @@ static CRef<objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_
                 title_art.Reset(new objects::CTitle::C_E);
                 title_art->SetName(NStr::Sanitize(title));
             }
-            MemFree(title);
+            free(title);
         }
     }
 
