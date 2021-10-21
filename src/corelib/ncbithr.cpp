@@ -159,7 +159,7 @@ CUsedTlsBases& CUsedTlsBases::GetUsedTlsBases(void)
     if ( !tls )
     {
         tls = new CUsedTlsBases();
-        sm_UsedTlsBases.SetValue(tls, s_CleanupUsedTlsBases);
+        sm_UsedTlsBases.SetValue(tls, s_CleanupUsedTlsBases, nullptr, CTlsBase::eDoCleanup);
     }
     return *tls;
 }
