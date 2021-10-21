@@ -3223,6 +3223,75 @@ void CRNAValidator::x_ValidateTrnaType()
     }
 
     x_ValidateTrnaOverlap();
+
+    bool isLessThan100 = false;
+    const CSeq_loc& loc = m_Feat.GetLocation();
+    CSeq_loc_CI li(loc);
+
+    TSeqPos last_start = li.GetRange().GetFrom();
+    TSeqPos last_stop = li.GetRange().GetTo();
+    CRef<CSeq_id> last_id(new CSeq_id());
+    last_id->Assign(li.GetSeq_id());
+
+    ++li;
+    while (li) {
+        TSeqPos this_start = li.GetRange().GetFrom();
+        TSeqPos this_stop = li.GetRange().GetTo();
+        if (abs ((int)this_start - (int)last_stop) < 100 || abs ((int)this_stop - (int)last_start) < 100) {
+            if (li.GetSeq_id().Equals(*last_id)) {
+                // definitely same bioseq, definitely report
+                isLessThan100 = true;
+                break;
+            } else {
+                // only report if definitely on same bioseq
+                CBioseq_Handle last_bsh = m_Scope.GetBioseqHandle(*last_id);
+                if (last_bsh) {
+                    for (auto id_it : last_bsh.GetId()) {
+                        if (id_it.GetSeqId()->Equals(li.GetSeq_id())) {
+                             isLessThan100 = true;
+                             break;
+                        }
+                    }
+                }
+            }
+        }
+        last_start = this_start;
+        last_stop = this_stop;
+        last_id->Assign(li.GetSeq_id());
+        ++li;
+    }
+    bool pseudo = m_Feat.IsSetPseudo()  &&  m_Feat.GetPseudo() ;
+    if ( !pseudo ) {
+        const CGene_ref* grp = m_Feat.GetGeneXref();
+        if ( grp == NULL ) {
+            CConstRef<CSeq_feat> gene = GetOverlappingGene(loc, m_Scope);
+            if (gene) {
+                pseudo = gene->IsSetPseudo()  &&  gene->GetPseudo();
+                if ( !pseudo ) {
+                    grp = &(gene->GetData().GetGene());
+                }
+            }
+        }
+        if ( !pseudo  &&  grp != NULL ) {
+            pseudo = grp->GetPseudo();
+        }
+    }
+    if (isLessThan100 && ! pseudo) {
+        CBioseq_Handle bsh = m_Scope.GetBioseqHandle(loc);
+        if (bsh) {
+            CSeqdesc_CI sd(bsh, CSeqdesc::e_Source);
+            if (sd) {
+                const CSeqdesc::TSource& source = sd->GetSource();
+                if (source.IsSetLineage()) {
+                    string lineage = source.GetLineage();
+                    if (NStr::StartsWith(lineage, "Bacteria; ")) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_ShortTRNAIntron,
+                            "tRNA intron in bacteria is less than 100 bp");
+                    }
+                }
+            }
+        }
+    }
 }
 
 
