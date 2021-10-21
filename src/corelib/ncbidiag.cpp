@@ -962,7 +962,8 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
         // upon TLS cleanup.
         data = new CDiagContextThreadData;
         s_ThreadData.SetValue(data, CDiagContext::sx_ThreadDataTlsCleanup,
-            !CThread::IsMain() ? 0 : (void*)(1));
+            !CThread::IsMain() ? 0 : (void*)(1),
+            CTlsBase::eDoCleanup);
     }
 
     s_ThreadDataState = eInitialized;
