@@ -861,7 +861,6 @@ void BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char *subkw)
     {
         InsertDatablkVal((DataBlkPtr*) &dbp->mpData, subtype, bptr,
                             eptr - bptr);
-        cerr << string(bptr, (eptr - bptr)) << endl;
     }
 }
 
