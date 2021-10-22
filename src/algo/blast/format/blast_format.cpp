@@ -1076,7 +1076,7 @@ CBlastFormat::WriteArchive(blast::IQueryFactory& queries,
         archive = BlastBuildArchive(queries, options_handle, results, subjects);
         
     }
-    else
+    else if (!m_SearchDb.Empty())
     {
     	// Use only by psi blast
     	if(num_iters != 0) {
@@ -1085,6 +1085,19 @@ CBlastFormat::WriteArchive(blast::IQueryFactory& queries,
     	else {
     		archive = BlastBuildArchive(queries, options_handle, results, m_SearchDb );
     	}
+    }
+    else
+    {
+    	if(m_DbInfo.empty()) {
+    		NCBI_THROW(CException, eUnknown, "Subject or DB info not available");
+    	}
+    	string db_list = kEmptyStr;
+    	CSearchDatabase::EMoleculeType mol_type = m_DbInfo[0].is_protein ? CSearchDatabase::eBlastDbIsProtein : CSearchDatabase::eBlastDbIsNucleotide;
+    	for (unsigned int i=0; i < m_DbInfo.size(); i++) {
+    		db_list += m_DbInfo[i].name;
+    	}
+    	CRef<CSearchDatabase>  sdb (new CSearchDatabase(db_list, mol_type));
+    	archive = BlastBuildArchive(queries, options_handle, results, sdb);
     }
 
     if(msg.size() > 0) {
