@@ -7255,6 +7255,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "TUC\ts\tUniversity of Arizona, Ecology and Evolutionary Biology Department\t\t\t",
 "TUCH\ts\tTribhuvan University, Central Department of Botany\t\t\t",
 "TUCIM\tc\tTU Wien collection of industrial microorganisms\t\t\t",
+"TUF\ts\tUniversity of Tartu\t\t\t",
 "TUFC\ts\tTottori University Fungal Culture Collection\t\t\t",
 "TUFIL\ts\tTokyo University of Fisheries, Ichthyological Laboratory\t\t\t",
 "TUFT\ts\tTufts University, Biology Department\t\t\t",
