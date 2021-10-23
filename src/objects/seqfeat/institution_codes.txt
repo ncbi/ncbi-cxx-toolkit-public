@@ -7222,6 +7222,7 @@ TUBSB	b	Tohoku University Brassica Seed Bank
 TUC	s	University of Arizona, Ecology and Evolutionary Biology Department			
 TUCH	s	Tribhuvan University, Central Department of Botany			
 TUCIM	c	TU Wien collection of industrial microorganisms			
+TUF	s	University of Tartu			
 TUFC	s	Tottori University Fungal Culture Collection			
 TUFIL	s	Tokyo University of Fisheries, Ichthyological Laboratory			
 TUFT	s	Tufts University, Biology Department			
