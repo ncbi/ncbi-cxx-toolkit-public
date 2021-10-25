@@ -772,11 +772,11 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char *fmt, ...)
         if (fpi.strsubcode) {
             textStream << "." << fpi.strsubcode;
         }
-        textStream << "] ";
+        textStream << "]  ";
     }
 
     if (bmp->show_log_codeline) {
-        textStream << "{" << fpi.fname << ", line " << fpi.line;
+        textStream << "{" << fpi.fname << ", line  " << fpi.line;
     }
     if (bmp->prefix_locus) {
         textStream << bmp->prefix_locus << ": ";
@@ -785,7 +785,7 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char *fmt, ...)
         textStream << bmp->prefix_accession << ": ";
     }
     if (bmp->prefix_feature) {
-        textStream << bmp->prefix_feature << " ";
+        textStream << bmp->prefix_feature << "   ";
     }
     textStream << fpi.buffer;
 
