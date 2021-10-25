@@ -130,7 +130,7 @@ function(NCBI_internal_process_dataspec _variable _access _value)
         VERBATIM
     )
 
-    if(NOT NCBI_PTBCFG_PACKAGED)
+    if(NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_PACKAGING)
         set(_opm)
         if(DEFINED NCBI_EXTERNAL_TREE_ROOT)
             set(_opm "-opm \"${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_SRC}\"")
@@ -210,7 +210,7 @@ if(NOT IS_ABSOLUTE "${NCBI_DATATOOL}")
 endif()
 NCBI_register_hook(DATASPEC NCBI_internal_process_dataspec ".asn;.dtd;.xsd;.wsdl;.jsd;.json")
 
-if(NOT NCBI_PTBCFG_PACKAGED)
+if(NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_PACKAGING)
     set(NCBI_GENERATESRC_DATATOOL   ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/CMakeFiles/generate_sources.datatool)
     if (EXISTS ${NCBI_GENERATESRC_DATATOOL})
         file(REMOVE ${NCBI_GENERATESRC_DATATOOL})

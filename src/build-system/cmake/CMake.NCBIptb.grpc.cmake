@@ -57,7 +57,7 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
             VERBATIM
         )
 
-        if(NOT NCBI_PTBCFG_PACKAGED)
+        if(NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_PACKAGING)
             if(WIN32)
                 set(_app \"${NCBI_PROTOC_APP}\")
                 set(_cmk \"${CMAKE_COMMAND}\")
@@ -94,7 +94,7 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
             VERBATIM
         )
 
-        if(NOT NCBI_PTBCFG_PACKAGED)
+        if(NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_PACKAGING)
             if(WIN32)
                 set(_app \"${NCBI_PROTOC_APP}\")
                 set(_plg \"${NCBI_GRPC_PLUGIN}\")
@@ -124,7 +124,7 @@ endfunction()
 #############################################################################
 NCBI_register_hook(DATASPEC NCBI_internal_process_proto_dataspec ".proto")
 
-if(NOT NCBI_PTBCFG_PACKAGED)
+if(NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_PACKAGING)
     set(NCBI_GENERATESRC_GRPC   ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/CMakeFiles/generate_sources.grpc)
     if (EXISTS ${NCBI_GENERATESRC_GRPC})
         file(REMOVE ${NCBI_GENERATESRC_GRPC})
