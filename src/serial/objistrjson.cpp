@@ -898,6 +898,16 @@ TMemberIndex CObjectIStreamJson::BeginClassMember(const CClassTypeInfo* classTyp
             UndoClassMember();
             return last;
         }
+        if (!m_GotNameless && classType->GetDataSpec() == EDataSpec::eJSON) {
+            if (CanSkipUnknownMembers()) {
+                SetFailFlags(fUnknownValue);
+                SkipAnyContent();
+                m_ExpectValue = false;
+                return BeginClassMember(classType);
+            } else {
+                UnexpectedMember(tagName, classType->GetMembers());
+            }
+        }
     } else {
         if (classType->GetMembers().GetItemInfo(ind)->GetId().HasNotag()) {
             TopFrame().SetNotag();
