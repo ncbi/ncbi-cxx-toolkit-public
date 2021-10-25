@@ -11,6 +11,9 @@ if(NOT DEFINED NCBI_TOOLKIT_NCBIPTB_BUILD_SYSTEM_INCLUDED)
 set( NCBI_TOOLKIT_NCBIPTB_BUILD_SYSTEM_INCLUDED ON)
 
 ###############################################################################
+cmake_policy(SET CMP0054 NEW)
+cmake_policy(SET CMP0057 NEW)
+
 set(NCBI_VERBOSE_ALLPROJECTS           OFF)
 if(NCBI_PTBCFG_SKIP_ANALYSIS)
     set(NCBI_PTBCFG_ENABLE_COLLECTOR       OFF)

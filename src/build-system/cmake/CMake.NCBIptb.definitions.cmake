@@ -13,9 +13,6 @@ string(TIMESTAMP NCBI_TIMESTAMP_START "%s")
 string(TIMESTAMP _start)
 message("Started: ${_start}")
 
-cmake_policy(SET CMP0054 NEW)
-cmake_policy(SET CMP0057 NEW)
-
 #############################################################################
 if("${CMAKE_GENERATOR}" STREQUAL "Xcode")
     if(NOT DEFINED XCODE)
