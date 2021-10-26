@@ -83,7 +83,6 @@ private:
 
 struct SInteractive {};
 struct SPerformance {};
-struct SReport {};
 struct STesting {};
 struct SIo {};
 struct SJsonCheck {};
@@ -100,7 +99,6 @@ CPsgClientApp::CPsgClientApp() :
             s_GetCommand<CPSG_Request_Chunk>         ("chunk",       "Request blob data chunk by chunk ID"),
             s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode", SCommand::fParallel),
             s_GetCommand<SPerformance>               ("performance", "Performance testing", SCommand::fHidden),
-            s_GetCommand<SReport>                    ("report",      "Performance reporting", SCommand::fHidden),
             s_GetCommand<STesting>                   ("test",        "Testing mode", SCommand::fHidden),
             s_GetCommand<SIo>                        ("io",          "IO mode", SCommand::fHidden),
             s_GetCommand<SJsonCheck>                 ("json_check",  "JSON document validate", SCommand::fHidden),
@@ -256,14 +254,6 @@ void CPsgClientApp::s_InitRequest<SPerformance>(CArgDescriptions& arg_desc)
 }
 
 template <>
-void CPsgClientApp::s_InitRequest<SReport>(CArgDescriptions& arg_desc)
-{
-    arg_desc.AddDefaultKey("input-file", "FILENAME", "Input file containing raw performance metrics", CArgDescriptions::eInputFile, "-");
-    arg_desc.AddDefaultKey("output-file", "FILENAME", "Output file to contain result performance metrics", CArgDescriptions::eOutputFile, "psg_client.table.txt");
-    arg_desc.AddDefaultKey("percentage", "PERCENTAGE", "Use only PERCENTAGE of top values for results", CArgDescriptions::eDouble, "99.9");
-}
-
-template <>
 void CPsgClientApp::s_InitRequest<STesting>(CArgDescriptions&)
 {
 }
@@ -383,22 +373,6 @@ int CPsgClientApp::RunRequest<SPerformance>(const string& service, const CArgs& 
     }
 
     return CProcessing::Performance(service, user_threads, delay, local_queue, os);
-}
-
-template <>
-int CPsgClientApp::RunRequest<SReport>(const string&, const CArgs& args)
-{
-    const auto pipe = args["input-file"].AsString() == "-";
-    auto& is = pipe ? cin : args["input-file"].AsInputFile();
-    auto& os = args["output-file"].AsOutputFile();
-    const auto percentage = args["percentage"].AsDouble();
-
-    if ((percentage <= 0.0) || (percentage > 100.0)) {
-        cerr << "PERCENTAGE should be in range (0.0, 100.0]" << endl;
-        return -1;
-    }
-
-    return CProcessing::Report(is, os, percentage);
 }
 
 template <>
