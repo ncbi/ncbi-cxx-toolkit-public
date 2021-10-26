@@ -12,12 +12,12 @@ NCBI_begin_lib(ncbi_core SHARED)
     util/qparse/xqueryparse
     connect/xthrserv
     connect/services/xconnserv
-    connect/connect
-    connect/xxconnect
+    connect/xconnect
     serial/serial
   )
   NCBI_hosts_virtual_projects(
-    xconnect
+    connect
+    xxconnect
     connssl
   )
   NCBI_add_definitions(NCBI_CORE_EXPORTS)
