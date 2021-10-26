@@ -1931,14 +1931,14 @@ static string GetNextSubitemId(size_t num)
 
 DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, SEQUENCE, eDisc | eSubmitter | eSmart, "Feature Location Conflict")
 {
-   if (context.InGenProdSet()) {
+    if (context.InGenProdSet()) {
         return;
     }
     const CSeqdesc* biosrc = context.GetBiosource();
-    bool eucariotic = context.IsEukaryotic(biosrc ? &biosrc->GetSource() : nullptr);
+    bool eukaryotic = context.IsEukaryotic(biosrc ? &biosrc->GetSource() : nullptr);
     const auto& all = context.FeatAll();
     for (const CSeq_feat* feat : all) {
-        if (feat->IsSetData() && feat->IsSetLocation() && (feat->GetData().IsRna() || (!eucariotic && feat->GetData().IsCdregion()))) {
+        if (feat->IsSetData() && feat->IsSetLocation() && (feat->GetData().IsRna() || (!eukaryotic && feat->GetData().IsCdregion()))) {
             ENa_strand feat_strand = feat->GetLocation().GetStrand();
             const CGene_ref* gx = feat->GetGeneXref();
             const CSeq_feat* gene = context.GetGeneForFeature(*feat);

@@ -126,7 +126,7 @@ typedef map<string, CRef<CDiscrepancyCase> > TDiscrepancyCaseMap;
 class NCBI_DISCREPANCY_EXPORT CDiscrepancySet : public CObject
 {
 public:
-    CDiscrepancySet() : m_SesameStreetCutoff(0.75), /*m_Eucariote(false),*/ m_Gui(false), m_UserData(nullptr) {}
+    CDiscrepancySet() : m_SesameStreetCutoff(0.75), /*m_Eukaryote(false),*/ m_Gui(false), m_UserData(nullptr) {}
     virtual ~CDiscrepancySet(){}
 
     template<typename Container>
@@ -163,7 +163,7 @@ public:
     void* GetUserData() const { return m_UserData; }
     //virtual void SetFile(const string& fname) = 0;
     void SetLineage(const string& s) { m_Lineage = s; }
-    //void SetEucariote(bool b){ m_Eucariote = b; }
+    //void SetEukaryote(bool b) { m_Eukaryote = b; }
     void SetSesameStreetCutoff(float f){ m_SesameStreetCutoff = f; }
     virtual void SetSuspectRules(const string& name, bool read = true) = 0;
     void SetGui(bool b){ m_Gui = b; }
@@ -175,7 +175,7 @@ public:
 protected:
     string m_Lineage;
     float m_SesameStreetCutoff;
-    //bool m_Eucariote;
+    //bool m_Eukaryote;
     bool m_Gui;
     void* m_UserData;
 };
