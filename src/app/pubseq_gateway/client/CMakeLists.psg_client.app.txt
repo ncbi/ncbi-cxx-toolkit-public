@@ -1,7 +1,7 @@
 # $Id$
 
 NCBI_begin_app(psg_client)
-  NCBI_sources(psg_client_app processing performance)
+  NCBI_sources(psg_client_app processing)
   NCBI_uses_toolkit_libraries(psg_client seqset xcompress)
 
   NCBI_set_test_requires(in-house-resources)

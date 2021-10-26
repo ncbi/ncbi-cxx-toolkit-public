@@ -104,6 +104,27 @@ private:
 string s_GetId(const CJson_Document& req_doc);
 CRequestStatus::ECode s_PsgStatusToRequestStatus(EPSG_Status psg_status);
 
+const char* SMetricType::Name(EType t)
+{
+    switch (t) {
+        case eStart:   return "Start";
+        case eSubmit:  return "Submit";
+        case eReply:   return "Reply";
+        case eDone:    return "Done";
+        case eSend:    return "Send";
+        case eReceive: return "Receive";
+        case eClose:   return "Close";
+        case eRetry:   return "Retry";
+        case eFail:    return "Fail";
+
+        case eLastType:
+        case eError:   break;
+    }
+
+    _TROUBLE;
+    return "ERROR";
+}
+
 const char* s_StrStatus(EPSG_Status status)
 {
     switch (status) {
@@ -947,12 +968,6 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
     }
 
     cerr << '\n';
-    return 0;
-}
-
-int CProcessing::Report(istream& is, ostream& os, double percentage)
-{
-    SPercentiles::Report(is, os, percentage);
     return 0;
 }
 
