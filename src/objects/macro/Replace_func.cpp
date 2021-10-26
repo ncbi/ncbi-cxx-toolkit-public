@@ -52,51 +52,62 @@ CReplace_func::~CReplace_func(void)
 {
 }
 
+static
+size_t s_FindFromNocase(const string& val, const string& find, size_t from)
+{
+    SIZE_TYPE pos = NStr::Find(CTempString(val, from), find, NStr::eNocase);
+    if (pos != NPOS) {
+        return pos + from;
+    } else {
+        return string::npos;
+    }
+}
 
+static
 bool s_WholeWordReplaceNocase(string& val, const string& find, const string& repl)
 {
     if (find.empty()) {
         return false;
     }
-    size_t pos = NStr::Find(val, find, 0, string::npos, NStr::eFirst, NStr::eNocase);
+    size_t pos = s_FindFromNocase(val, find, 0);
     size_t len = find.length();
     bool rval = false;
 
     while (pos != string::npos) {
-        if ((pos == 0 || !isalpha(val.c_str()[pos - 1]))
-            && !isalpha(val.c_str()[pos + len])) {
+        if ((pos == 0 || !isalpha(val[pos - 1]))
+            && !isalpha(val[pos + len])) {
             if (pos == 0) {
-                val = repl + val.substr(len);                
+                val = repl + val.substr(len);
             } else {
                 val = val.substr(0, pos) + repl + val.substr(pos + len);
             }
             rval = true;
-            pos = NStr::Find(val, find, pos + repl.length(), string::npos, NStr::eFirst, NStr::eNocase);
+            pos = s_FindFromNocase(val, find, pos + repl.length());
         } else {
-            pos = NStr::Find(val, find, pos + 1, string::npos, NStr::eFirst, NStr::eNocase);
+            pos = s_FindFromNocase(val, find, pos + 1);
         }
     }
     return rval;
 }
 
-
+static
 bool s_ReplaceNocase(string& val, const string& find, const string& repl)
 {
     if (find.empty()) {
         return false;
     }
-    size_t pos = NStr::Find(val, find, 0, string::npos, NStr::eFirst, NStr::eNocase);
+    size_t pos = s_FindFromNocase(val, find, 0);
     size_t len = find.length();
     bool rval = false;
 
     while (pos != string::npos) {
         if (pos == 0) {
-            val = repl + val.substr(len);                
+            val = repl + val.substr(len);
         } else {
             val = val.substr(0, pos) + repl + val.substr(pos + len);
         }
         rval = true;
-        pos = NStr::Find(val, find, pos + repl.length(), string::npos, NStr::eFirst, NStr::eNocase);
+        pos = s_FindFromNocase(val, find, pos + repl.length());
     }
     return rval;
 }
