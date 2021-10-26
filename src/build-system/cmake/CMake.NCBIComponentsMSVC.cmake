@@ -128,6 +128,7 @@ if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
         set(NCBI_COMPONENT_C-Toolkit_FOUND NCBI_C)
     endif()
 else()
+    set(NCBI_COMPONENT_NCBI_C_FOUND NO)
     message("DISABLED NCBI_C")
 endif()
 
