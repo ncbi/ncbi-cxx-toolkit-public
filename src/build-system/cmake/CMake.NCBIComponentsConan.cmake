@@ -100,7 +100,7 @@ endfunction()
 
 #not pip-installing conan for now
 #ignoring compile flags
-set(_TOBEREBUILT "protobuf/3.17.1" "protobuf/3.9.1" "make" "list")
+set(_TOBEREBUILT "protobuf/3.17.1" "protobuf/3.9.1" "grpc/1.39.1" "make" "list")
 function(install_conan_package component pkgname)
   message("INSTALL_CONAN_PACKAGE ${component} ${pkgname}")
   set(BASEDIR "/tmp/xxx.cmake.0123.${pkgname}")
