@@ -201,6 +201,10 @@ function(install_conan_package component pkgname)
     set(NCBI_PROTOC_APP "${PBDIR}/bin/protoc" PARENT_SCOPE)
     message("XXX PROTOC ${PBDIR} // ${NCBI_PROTOC_APP} //// ${BUILDDIRS}")
   endif()
+  if(${component} STREQUAL "GRPC")
+    set(NCBI_GRPC_PLUGIN "${PBDIR}/bin/grpc_cpp_plugin")
+    message("XXX GRPC PLUGIN ${NCBI_GRPC_PLUGIN}")
+  endif()
 endfunction()
 
 # Load conan package
@@ -234,7 +238,6 @@ install_conan_package("PROTOBUF" "protobuf/3.9.1")
 #install_conan_package("wxWidgets" "wxwidgets/3.1.3@bincrafters/stable")
 
 install_conan_package("GRPC" "grpc/1.39.1")
-#set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/${NCBI_BUILD_TYPE}/bin/grpc_cpp_plugin")
 
 install_conan_package("SQLITE3" "sqlite3/3.29.0")
 if(NCBI_COMPONENT_SQLITE3_FOUND)
