@@ -100,7 +100,7 @@ endfunction()
 
 #not pip-installing conan for now
 #ignoring compile flags
-set(_TOBEREBUILT "protobuf/3.17.1" "protobuf/3.9.1" "grpc/1.39.1" "make" "list")
+set(_TOBEREBUILT "protobuf/3.17.1" "protobuf/3.9.1" "grpc/1.39.1" "grpc/1.38.1" "grpc/1.38.0" "grpc/1.37.1" "grpc/1.37.0" "make" "list")
 function(install_conan_package component pkgname)
   message("INSTALL_CONAN_PACKAGE ${component} ${pkgname}")
   set(BASEDIR "/tmp/xxx.cmake.0123.${pkgname}")
@@ -114,7 +114,8 @@ function(install_conan_package component pkgname)
   list(FIND _TOBEREBUILT "${pkgname}" _index)
   message("AAAAAAAAAAAA ${_TOBEREBUILT} AAAAAA ${pkgname} ${_index}")
   if (${_index} GREATER -1)
-    set(build "--build=*")
+    #set(build "--build=*")
+    set(build "--build=${pkgname}")
   endif()
   message("BUILD for ${pkgname} is ${build}")
 
@@ -233,11 +234,12 @@ install_conan_package("XML" "libxml2/2.9.9")
 install_conan_package("XSLT" "libxslt/1.1.34")
 install_conan_package("EXSLT" "libxslt/1.1.34")
 #install_conan_package("PROTOBUF" "protobuf/3.6.1@bincrafters/stable")
-#install_conan_package("PROTOBUF" "protobuf/3.17.1")
-install_conan_package("PROTOBUF" "protobuf/3.9.1")
+install_conan_package("PROTOBUF" "protobuf/3.17.1")
+#install_conan_package("PROTOBUF" "protobuf/3.9.1")
 #install_conan_package("wxWidgets" "wxwidgets/3.1.3@bincrafters/stable")
 
 install_conan_package("GRPC" "grpc/1.39.1")
+#install_conan_package("GRPC" "grpc/1.37.0")
 
 install_conan_package("SQLITE3" "sqlite3/3.29.0")
 if(NCBI_COMPONENT_SQLITE3_FOUND)
