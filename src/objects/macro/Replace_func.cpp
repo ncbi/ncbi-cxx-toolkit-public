@@ -55,7 +55,7 @@ CReplace_func::~CReplace_func(void)
 static
 size_t s_FindFromNocase(const string& val, const string& find, size_t from)
 {
-    SIZE_TYPE pos = NStr::Find(CTempString(val, from), find, NStr::eNocase);
+    SIZE_TYPE pos = NStr::Find(CTempString(val, from, CTempString::npos), find, NStr::eNocase);
     if (pos != NPOS) {
         return pos + from;
     } else {
