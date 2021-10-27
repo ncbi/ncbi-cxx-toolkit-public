@@ -195,7 +195,7 @@ function(install_conan_package component pkgname)
   set(HAVE_LIB${component} 1 PARENT_SCOPE)
   set(HAVE_${component} 1 PARENT_SCOPE)
 
-  if(${component} STREQUAL "PROTOBUF")
+  if(${component} STREQUAL "PROTOBUF" OR ${component} STREQUAL "GRPC")
     list(GET BUILDDIRS 0 PBDIR)
     set(NCBI_PROTOC_APP "${PBDIR}/bin/protoc")
     set(NCBI_PROTOC_APP "${PBDIR}/bin/protoc" PARENT_SCOPE)
@@ -204,8 +204,6 @@ function(install_conan_package component pkgname)
 endfunction()
 
 # Load conan package
-# grpc/1.31.1@inexorgame/stable
-# grpc/1.28.1@inexorgame/stable
 install_conan_package("Z" "zlib/1.2.11")
 install_conan_package("TIFF" "libtiff/4.0.9")
 #Wild giflib is not compatible with toolkit
@@ -235,9 +233,8 @@ install_conan_package("EXSLT" "libxslt/1.1.34")
 install_conan_package("PROTOBUF" "protobuf/3.9.1")
 #install_conan_package("wxWidgets" "wxwidgets/3.1.3@bincrafters/stable")
 
-# GRPC is not orking yet
-#fetch_build_package("https://github.com/inexorgame/conan-grpc.git")
-#install_conan_package("GRPC" "grpc/0.0.1")
+install_conan_package("GRPC" "grpc/1.39.1")
+#set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/${NCBI_BUILD_TYPE}/bin/grpc_cpp_plugin")
 
 install_conan_package("SQLITE3" "sqlite3/3.29.0")
 if(NCBI_COMPONENT_SQLITE3_FOUND)
