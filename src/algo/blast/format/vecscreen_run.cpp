@@ -237,7 +237,7 @@ void CVecscreenRun::x_RunBlast()
    m_RawBlastResults = blaster.Run();
    _ASSERT(m_RawBlastResults->size() == 1);
    CRef<CBlastAncillaryData> ancillary_data((*m_RawBlastResults)[0].GetAncillaryData());
-
+   
    // The vecscreen stuff follows.
    m_Vecscreen = new CVecscreen(*((*m_RawBlastResults)[0].GetSeqAlign()), GetLength(*m_SeqLoc, m_Scope));
 
@@ -336,17 +336,17 @@ CVecscreenRun::CFormatter::FormatResults(CNcbiOstream& out,
     }
     
     list<SVecscreenSummary> match_list = m_Screener.GetList();
-
+    
     if(kPrintBlastTab || kPrintJson || kPrintAsnText) {
         CRef<CSearchResultSet> result_set = m_Screener.GetSearchResultSet();
         _ASSERT(result_set->size() == 1);
 
-        CSeq_align_set& alignments = * ((*result_set)[0]).SetSeqAlign();
+       // CSeq_align_set& alignments = * ((*result_set)[0]).SetSeqAlign();
+        CSeq_align_set& alignments = * m_Screener.GetSeqalignSet();
 
         ITERATE(list<SVecscreenSummary>, mi, match_list) {
             NON_CONST_ITERATE(list<CRef<CSeq_align> >, align_iter, alignments.Set()) {
-            
-                if( mi->range == (*align_iter)->GetSeqRange(0)) {
+                if(mi->range.IntersectionWith((*align_iter)->GetSeqRange(0))==mi->range) {
                     if(mi->seqid->Equals( (*align_iter)->GetSeq_id(0))) {
                         (*align_iter)->SetNamedScore("match_type", match_type_ints[mi->match_type]);
                     }
