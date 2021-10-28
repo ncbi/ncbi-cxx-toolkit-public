@@ -95,7 +95,7 @@ bool CPSGS_CassProcessorBase::AreAllFinishedRead(void) const
             }
         }
     }
-    return started_count != 0;
+    return started_count != 0 || m_Cancelled;
 }
 
 

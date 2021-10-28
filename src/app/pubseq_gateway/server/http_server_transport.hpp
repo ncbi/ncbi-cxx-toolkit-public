@@ -81,6 +81,7 @@ void GetSSLSettings(bool &  enabled,
                     string &  cert_file,
                     string &  key_file,
                     string &  ciphers);
+void NotifyRequestFinished(size_t  request_id);
 
 struct CQueryParam
 {
@@ -363,17 +364,19 @@ private:
 
         virtual void OnData() override
         {
-            bool        b = false;
-            if (m_Triggered.compare_exchange_weak(b, true) && m_Proto)
-                m_Proto->WakeWorker();
+            if (!m_Proto)
+                return;
 
+            bool        b = false;
+            if (m_Triggered.compare_exchange_weak(b, true)) {
+                m_Proto->WakeWorker();
+            }
         }
 
         bool CheckResetTriggered(void)
         {
             bool        b = true;
             return m_Triggered.compare_exchange_weak(b, false);
-
         }
 
     private:
@@ -689,34 +692,57 @@ private:
 };
 
 
+// Settings for the CHttpConnection
+const size_t    kHttpMaxBacklog = 1024;
+const size_t    kHttpMaxPending = 32;
+
 
 template<typename P>
 class CHttpConnection
 {
 public:
     CHttpConnection() :
-        m_HttpMaxBacklog(1024),
-        m_HttpMaxPending(16),
         m_IsClosed(false)
     {}
+
+    ~CHttpConnection()
+    {
+        // Note: this should not happened that there are records in the pending
+        // and backlog lists. The reason is that the CHttpConnection instances
+        // are reused and each time the are recycled the ResetForReuse() is
+        // called. So the check below is rather a sanity check.
+        while (!m_Backlog.empty()) {
+            auto it = m_Backlog.begin();
+            (*it)->GetHttpReply()->CancelPending();
+            x_UnregisterBacklog(it);
+        }
+
+        while (!m_Pending.empty()) {
+            auto it = m_Pending.begin();
+            (*it)->GetHttpReply()->CancelPending();
+            x_UnregisterPending(it);
+        }
+    }
 
     bool IsClosed(void) const
     {
         return m_IsClosed;
     }
 
-    void Reset(void)
+    void ResetForReuse(void)
     {
-        auto    cnt = m_Backlog.size();
-        if (cnt > 0) {
-            m_Backlog.clear();
-            g_ShutdownData.m_ActiveRequestCount -= cnt;
+        while (!m_Backlog.empty()) {
+            auto it = m_Backlog.begin();
+            (*it)->GetHttpReply()->CancelPending();
+            x_UnregisterBacklog(it);
         }
-        cnt = m_Pending.size();
-        if (cnt > 0) {
-            m_Pending.clear();
-            g_ShutdownData.m_ActiveRequestCount -= cnt;
+
+        while (!m_Pending.empty()) {
+            auto it = m_Pending.begin();
+            (*it)->GetHttpReply()->CancelPending();
+            x_UnregisterPending(it);
         }
+
         m_IsClosed = false;
     }
 
@@ -755,7 +781,7 @@ public:
     void RegisterPending(list<unique_ptr<P>>  pending_reqs,
                          shared_ptr<CPSGS_Reply>  reply)
     {
-        if (m_Pending.size() < m_HttpMaxPending) {
+        if (m_Pending.size() < kHttpMaxPending) {
             auto req_it = x_RegisterPending(reply, m_Pending);
             for (auto & pending_req: pending_reqs) {
                 reply->GetHttpReply()->AssignPendingReq(move(pending_req));
@@ -765,7 +791,7 @@ public:
                 PSG_TRACE("Postpone self-drained");
                 x_UnregisterPending(req_it);
             }
-        } else if (m_Backlog.size() < m_HttpMaxBacklog) {
+        } else if (m_Backlog.size() < kHttpMaxBacklog) {
             x_RegisterPending(reply, m_Backlog);
             for (auto & pending_req: pending_reqs) {
                 reply->GetHttpReply()->AssignPendingReq(move(pending_req));
@@ -809,18 +835,15 @@ public:
 
         http_reply->SetPostponed();
         RegisterPending(move(pending_reqs), reply);
-
     }
+
     void OnTimer(void)
     {
         PeekAsync(false);
-        // x_MaintainFinished();
-        // x_MaintainBacklog();
+        x_MaintainFinished();
     }
 
 private:
-    unsigned short                      m_HttpMaxBacklog;
-    unsigned short                      m_HttpMaxPending;
     volatile bool                       m_IsClosed;
 
     list<shared_ptr<CPSGS_Reply>>       m_Backlog;
@@ -837,10 +860,13 @@ private:
                 http_reply->PeekPending();
             }
         }
+        x_MaintainFinished();
     }
 
     void x_UnregisterPending(reply_list_iterator_t &  it)
     {
+        size_t request_id = (*it)->GetRequestId();
+
         // Note: without this call there will be memory leaks.
         // The infrastructure holds a shared_ptr to the reply, the pending
         // operation instance also holds a shared_ptr to the very same reply
@@ -854,6 +880,19 @@ private:
 
         m_Pending.erase(it);
         --g_ShutdownData.m_ActiveRequestCount;
+
+        NotifyRequestFinished(request_id);
+    }
+
+    void x_UnregisterBacklog(reply_list_iterator_t &  it)
+    {
+        // Very similar to unregistering pending
+        size_t request_id = (*it)->GetRequestId();
+
+        (*it)->GetHttpReply()->ResetPendingRequest();
+        m_Backlog.erase(it);
+        --g_ShutdownData.m_ActiveRequestCount;
+        NotifyRequestFinished(request_id);
     }
 
     reply_list_iterator_t x_RegisterPending(shared_ptr<CPSGS_Reply>  reply,
@@ -883,7 +922,7 @@ private:
 
     void x_MaintainBacklog(void)
     {
-        while (m_Pending.size() < m_HttpMaxPending && !m_Backlog.empty()) {
+        while (m_Pending.size() < kHttpMaxPending && !m_Backlog.empty()) {
             auto    it = m_Backlog.begin();
             m_Pending.splice(m_Pending.cend(), m_Backlog, it);
             PostponedStart(*it);
@@ -892,14 +931,10 @@ private:
 
     void x_CancelBacklog(void)
     {
-        auto    cnt = m_Backlog.size();
-        if (cnt > 0) {
-            for (auto &  it : m_Backlog) {
-                it->GetHttpReply()->CancelPending();
-            }
-
-            m_Backlog.clear();
-            g_ShutdownData.m_ActiveRequestCount -= cnt;
+        while (!m_Backlog.empty()) {
+            auto it = m_Backlog.begin();
+            (*it)->GetHttpReply()->CancelPending();
+            x_UnregisterBacklog(it);
         }
     }
 };

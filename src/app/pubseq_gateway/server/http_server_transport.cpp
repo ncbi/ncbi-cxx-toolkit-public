@@ -410,6 +410,13 @@ void GetSSLSettings(bool &  enabled,
 }
 
 
+void NotifyRequestFinished(size_t  request_id)
+{
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    app->NotifyRequestFinished(request_id);
+}
+
+
 // Moved here to avoid a compiler warning
 template<typename P>
 void CHttpConnection<P>::PostponedStart(shared_ptr<CPSGS_Reply>  reply)

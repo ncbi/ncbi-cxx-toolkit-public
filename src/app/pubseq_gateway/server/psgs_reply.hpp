@@ -63,7 +63,8 @@ public:
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
         m_ChunksLock(false),
-        m_ConnectionCanceled(false)
+        m_ConnectionCanceled(false),
+        m_RequestId(0)
     {
         SetContentType(ePSGS_PSGMime);
     }
@@ -77,7 +78,8 @@ public:
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
         m_ChunksLock(false),
-        m_ConnectionCanceled(false)
+        m_ConnectionCanceled(false),
+        m_RequestId(0)
     {
         SetContentType(ePSGS_PSGMime);
     }
@@ -127,6 +129,16 @@ public:
         auto    ret = ++m_NextItemId;
         m_NextItemIdLock = false;
         return ret;
+    }
+
+    void SetRequestId(size_t  request_id)
+    {
+        m_RequestId = request_id;
+    }
+
+    size_t GetRequestId(void) const
+    {
+        return m_RequestId;
     }
 
 public:
@@ -309,6 +321,7 @@ private:
     atomic<bool>                        m_ChunksLock;
     vector<h2o_iovec_t>                 m_Chunks;
     volatile bool                       m_ConnectionCanceled;
+    size_t                              m_RequestId;
 };
 
 

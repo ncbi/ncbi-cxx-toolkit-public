@@ -115,17 +115,20 @@ void CPendingOperation::Start(void)
 
 void CPendingOperation::Peek(bool  need_wait)
 {
+    if (m_InProcess) {
+        // Prevent recursion due to SignalProcessorFinished() call from
+        // processor->ProcessEvent()
+        return;
+    }
+
     if (m_ConnectionCanceled) {
         if (m_Reply->IsOutputReady() && !m_Reply->IsFinished()) {
             m_Reply->GetHttpReply()->Send(nullptr, 0, true, true);
             m_Reply->SetCompleted();
         }
-        return;
-    }
-
-    if (m_InProcess) {
-        // Prevent recursion due to SignalProcessorFinished() call from
-        // processor->ProcessEvent()
+        // To handle the canceled connection
+        CPubseqGatewayApp::GetInstance()->SignalFinishProcessing(
+                        m_Processor.get(), CPSGS_Dispatcher::ePSGS_Fromework);
         return;
     }
 

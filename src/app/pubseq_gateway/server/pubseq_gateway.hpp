@@ -166,6 +166,8 @@ public:
 
     virtual int Run(void);
 
+    void NotifyRequestFinished(size_t  request_id);
+
     static CPubseqGatewayApp *  GetInstance(void);
 
     COperationTiming & GetTiming(void)

@@ -65,6 +65,11 @@ public:
     CPSGS_Dispatcher()
     {}
 
+    // Low level can have the pending request removed e.g. due to a canceled
+    // connection. This method is used to notify the dispatcher that the
+    // request is deleted and that the processors group is not needed anymore.
+    void NotifyRequestFinished(size_t  request_id);
+
     /// Register processor (one to serve as a processor factory)
     void AddProcessor(unique_ptr<IPSGS_Processor> processor);
 

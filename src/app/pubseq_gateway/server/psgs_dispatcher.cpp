@@ -425,3 +425,23 @@ CPSGS_Dispatcher::x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  st
     return CRequestStatus::e500_InternalServerError;
 }
 
+
+void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
+{
+    // Low level destroyed the pending request which is associated with the
+    // provided request id. So check if the processors group is still held.
+
+    m_GroupsLock.lock();
+
+    auto    procs = m_ProcessorGroups.find(request_id);
+    if (procs == m_ProcessorGroups.end()) {
+        // The processors group does not exist any more
+    } else {
+        // Remove the group because the low level request structures have
+        // already been dismissed
+        m_ProcessorGroups.erase(procs);
+    }
+
+    m_GroupsLock.unlock();
+}
+

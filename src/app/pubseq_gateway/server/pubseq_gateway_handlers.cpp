@@ -1451,7 +1451,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
         auto        now = chrono::steady_clock::now();
         auto        expiration = now + chrono::seconds(timeout);
         if (g_ShutdownData.m_ShutdownRequested) {
-            // Consequest shutdown request
+            // Consequent shutdown request
             if (expiration >= g_ShutdownData.m_Expired) {
                 msg += ". The previous shutdown expiration is shorter "
                        "than this one. Ignored.";
@@ -2003,6 +2003,8 @@ void CPubseqGatewayApp::x_DispatchRequest(shared_ptr<CPSGS_Request>  request,
     }
 
     if (!pending_ops.empty()) {
+        reply->SetRequestId(request->GetRequestId());
+
         auto    http_conn = reply->GetHttpReply()->GetHttpConnection();
         http_conn->Postpone(move(pending_ops), reply);
     }

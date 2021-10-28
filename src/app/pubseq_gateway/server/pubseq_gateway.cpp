@@ -172,6 +172,11 @@ CPubseqGatewayApp::~CPubseqGatewayApp()
 {}
 
 
+void CPubseqGatewayApp::NotifyRequestFinished(size_t  request_id)
+{
+    m_RequestDispatcher.NotifyRequestFinished(request_id);
+}
+
 void CPubseqGatewayApp::Init(void)
 {
     unique_ptr<CArgDescriptions>    argdesc(new CArgDescriptions());
