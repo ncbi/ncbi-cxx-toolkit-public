@@ -138,7 +138,7 @@ suppression = {
 }
 
 suppression = {
-	name = "gethostbyname() - 1"
+	name = "gethostbyname() - invalid partial memory access - 1"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		allocation={
@@ -149,7 +149,7 @@ suppression = {
 }
 
 suppression = {
-	name = "gethostbyname() - 2"
+	name = "gethostbyname() - invalid partial memory access - 1"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
@@ -159,3 +159,14 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "gethostbyname() - invalid memory access"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=WS2_32.dll,func=gethostbyname;
+		}
+	}
+}
+
