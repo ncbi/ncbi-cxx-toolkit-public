@@ -7,6 +7,10 @@ SRC = hgvs_lexer hgvs_parser hgvs_protein_parser \
       protein_irep_to_seqfeat post_process variation_ref_utils \
       special_irep_to_seqfeat
 
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) 
+
+REQUIRES = Boost.Test.Included
+
 USES_LIBRARIES = varrep $(PCRE_LIBS)
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) 
+
