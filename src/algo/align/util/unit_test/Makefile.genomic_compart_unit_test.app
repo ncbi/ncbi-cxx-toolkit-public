@@ -13,7 +13,7 @@ LIBS = $(NETWORK_LIBS) $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY
 
 REQUIRES = Boost.Test.Included objects
 
-CHECK_CMD = genomic_compart_unit_test -input-dir data -expected-results data/genomic_compart.test.results
+CHECK_CMD = genomic_compart_unit_test -input-dir data -expected-results data/genomic_compart.test.results /CHECK_NAME=genomic_compart_unit_test
 CHECK_COPY = data
 
 
