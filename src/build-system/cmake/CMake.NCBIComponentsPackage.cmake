@@ -15,11 +15,17 @@
 ##  HAVE_XXX
 
 
+#set(NCBI_TRACE_ALLCOMPONENTS ON)
+set(__silent ${CONAN_CMAKE_SILENT_OUTPUT})
+set(CONAN_CMAKE_SILENT_OUTPUT TRUE)
+conan_define_targets()
+set(CONAN_CMAKE_SILENT_OUTPUT ${__silent})
+
 include(CheckIncludeFile)
 include(CheckSymbolExists)
 #############################################################################
 function(NCBI_define_Pkgcomponent)
-    cmake_parse_arguments(DC "" "NAME;PACKAGE" "" ${ARGN})
+    cmake_parse_arguments(DC "" "NAME;PACKAGE" "REQUIRES" ${ARGN})
 
     if("${DC_NAME}" STREQUAL "")
         message(FATAL_ERROR "No component name")
@@ -27,56 +33,71 @@ function(NCBI_define_Pkgcomponent)
     if("${DC_PACKAGE}" STREQUAL "")
         message(FATAL_ERROR "No package name")
     endif()
-    set(_package ${DC_PACKAGE})
-    string(TOUPPER ${DC_PACKAGE} DC_PACKAGE)
-    if(NCBI_PTBCFG_COMPONENT_StaticComponents)
-        set(_suffixes .a .so)
+    if(WIN32)
+        set(_prefix "")
+        set(_suffixes ${CMAKE_STATIC_LIBRARY_SUFFIX})
     else()
-        if(BUILD_SHARED_LIBS OR TRUE)
-            set(_suffixes .so .a)
+        set(_prefix lib)
+        if(NCBI_PTBCFG_COMPONENT_StaticComponents)
+            set(_suffixes ${CMAKE_STATIC_LIBRARY_SUFFIX} ${CMAKE_SHARED_LIBRARY_SUFFIX})
         else()
-            set(_suffixes .a .so)
+            if(BUILD_SHARED_LIBS OR TRUE)
+                set(_suffixes ${CMAKE_SHARED_LIBRARY_SUFFIX} ${CMAKE_STATIC_LIBRARY_SUFFIX})
+            else()
+                set(_suffixes ${CMAKE_STATIC_LIBRARY_SUFFIX} ${CMAKE_SHARED_LIBRARY_SUFFIX})
+            endif()
         endif()
     endif()
+    string(TOUPPER ${DC_PACKAGE} _UPPACKAGE)
+    set(DC_REQUIRES ${DC_PACKAGE} ${DC_REQUIRES})
 
     set(NCBI_COMPONENT_${DC_NAME}_FOUND NO PARENT_SCOPE)
     if(NCBI_COMPONENT_${DC_NAME}_DISABLED)
         message("DISABLED ${DC_NAME}")
-    elseif(DEFINED CONAN_${DC_PACKAGE}_ROOT)
+    elseif(DEFINED CONAN_${_UPPACKAGE}_ROOT)
         set(NCBI_COMPONENT_${DC_NAME}_FOUND YES PARENT_SCOPE)
-        set(_include ${CONAN_INCLUDE_DIRS_${DC_PACKAGE}})
-        set(_defines ${CONAN_DEFINES_${DC_PACKAGE}})
+        set(_include ${CONAN_INCLUDE_DIRS_${_UPPACKAGE}})
+        set(_defines ${CONAN_DEFINES_${_UPPACKAGE}})
         set(NCBI_COMPONENT_${DC_NAME}_INCLUDE ${_include} PARENT_SCOPE)
         set(NCBI_COMPONENT_${DC_NAME}_DEFINES ${_defines} PARENT_SCOPE)
-        if(TARGET CONAN_PKG::${_package})
-            set(_all_libs CONAN_PKG::${_package})
-        else()
-            set(_all_libs "")
-            if(NOT "${CONAN_LIB_DIRS_${DC_PACKAGE}}" STREQUAL "" AND NOT "${CONAN_LIBS_${DC_PACKAGE}}" STREQUAL "")
-                foreach(_lib IN LISTS CONAN_LIBS_${DC_PACKAGE})
-                    set(_this_found NO)
-                    foreach(_dir IN LISTS CONAN_LIB_DIRS_${DC_PACKAGE})
-                        foreach(_sfx IN LISTS _suffixes)
-                            if(EXISTS ${_dir}/lib${_lib}${_sfx})
-                                list(APPEND _all_libs ${_dir}/lib${_lib}${_sfx})
-                                set(_this_found YES)
-                                if(NCBI_TRACE_COMPONENT_${DC_NAME} OR NCBI_TRACE_ALLCOMPONENTS)
-                                    message("${DC_NAME}: found:  ${_dir}/lib${_lib}${_sfx}")
+
+        set(_all_libs "")
+        foreach(_package IN LISTS DC_REQUIRES)
+            string(TOUPPER ${_package} _UPPACKAGE)
+            if(DEFINED CONAN_${_UPPACKAGE}_ROOT)
+                if(TARGET CONAN_PKG::${_package})
+                    list(APPEND _all_libs CONAN_PKG::${_package})
+                else()
+                    if(NOT "${CONAN_LIB_DIRS_${_UPPACKAGE}}" STREQUAL "" AND NOT "${CONAN_LIBS_${_UPPACKAGE}}" STREQUAL "")
+                        foreach(_lib IN LISTS CONAN_LIBS_${_UPPACKAGE})
+                            set(_this_found NO)
+                            foreach(_dir IN LISTS CONAN_LIB_DIRS_${_UPPACKAGE})
+                                foreach(_sfx IN LISTS _suffixes)
+                                    if(EXISTS ${_dir}/${_prefix}${_lib}${_sfx})
+                                        list(APPEND _all_libs ${_dir}/${_prefix}${_lib}${_sfx})
+                                        set(_this_found YES)
+                                        if(NCBI_TRACE_COMPONENT_${DC_NAME} OR NCBI_TRACE_ALLCOMPONENTS)
+                                            message("${DC_NAME}: found:  ${_dir}/${_prefix}${_lib}${_sfx}")
+                                        endif()
+                                        break()
+                                    endif()
+                                endforeach()
+                                if(_this_found)
+                                    break()
                                 endif()
-                                break()
+                            endforeach()
+                            if(NOT _this_found)
+                                list(APPEND _all_libs ${_lib})
                             endif()
                         endforeach()
-                        if(_this_found)
-                            break()
-                        endif()
-                    endforeach()
-                    if(NOT _this_found)
-                        list(APPEND _all_libs ${_lib})
                     endif()
-                endforeach()
+                endif()
+            else()
+                message("ERROR: ${DC_NAME}: ${_package} not found")
             endif()
-        endif()
+        endforeach()
         set(NCBI_COMPONENT_${DC_NAME}_LIBS ${_all_libs} PARENT_SCOPE)
+
         string(TOUPPER ${DC_NAME} _upname)
         set(HAVE_LIB${_upname} 1 PARENT_SCOPE)
         string(REPLACE "." "_" _altname ${_upname})
@@ -124,7 +145,7 @@ endif()
 
 #############################################################################
 # PCRE
-NCBI_define_Pkgcomponent(NAME PCRE PACKAGE pcre)
+NCBI_define_Pkgcomponent(NAME PCRE PACKAGE pcre REQUIRES bzip2;zlib)
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
     set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
     set(NCBI_COMPONENT_PCRE_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
@@ -206,7 +227,7 @@ NCBI_define_Pkgcomponent(NAME JPEG PACKAGE libjpeg)
 
 #############################################################################
 # PNG
-NCBI_define_Pkgcomponent(NAME PNG PACKAGE libpng)
+NCBI_define_Pkgcomponent(NAME PNG PACKAGE libpng REQUIRES zlib)
 
 #############################################################################
 # GIF
@@ -214,7 +235,7 @@ NCBI_define_Pkgcomponent(NAME GIF PACKAGE giflib)
 
 #############################################################################
 # TIFF
-NCBI_define_Pkgcomponent(NAME TIFF PACKAGE libtiff)
+NCBI_define_Pkgcomponent(NAME TIFF PACKAGE libtiff REQUIRES zlib;libdeflate;xz_utils;libjpeg;jbig;zstd;libwebp)
 
 #############################################################################
 # SQLITE3
@@ -235,15 +256,15 @@ endif()
 
 #############################################################################
 # XML
-NCBI_define_Pkgcomponent(NAME XML PACKAGE libxml2)
+NCBI_define_Pkgcomponent(NAME XML PACKAGE libxml2 REQUIRES zlib;libiconv)
 
 #############################################################################
 # XSLT
-NCBI_define_Pkgcomponent(NAME XSLT PACKAGE libxslt)
+NCBI_define_Pkgcomponent(NAME XSLT PACKAGE libxslt REQUIRES libxml2;zlib;libiconv)
 
 #############################################################################
 # EXSLT
-NCBI_define_Pkgcomponent(NAME EXSLT PACKAGE libxslt)
+NCBI_define_Pkgcomponent(NAME EXSLT PACKAGE libxslt REQUIRES libxml2;zlib;libiconv)
 
 #############################################################################
 # UV
@@ -251,14 +272,14 @@ NCBI_define_Pkgcomponent(NAME UV PACKAGE libuv)
 
 #############################################################################
 # NGHTTP2
-NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE libnghttp2)
+NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE libnghttp2 REQUIRES zlib)
 
 ##############################################################################
 # GRPC/PROTOBUF
 set(NCBI_PROTOC_APP "${CONAN_BIN_DIRS_PROTOBUF}/protoc${CMAKE_EXECUTABLE_SUFFIX}")
 set(NCBI_GRPC_PLUGIN "${CONAN_BIN_DIRS_GRPC}/grpc_cpp_plugin${CMAKE_EXECUTABLE_SUFFIX}")
-NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE protobuf)
-NCBI_define_Pkgcomponent(NAME GRPC PACKAGE grpc)
+NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE protobuf REQUIRES zlib)
+NCBI_define_Pkgcomponent(NAME GRPC PACKAGE grpc REQUIRES zlib;openssl;protobuf;c-ares;abseil;re2)
 
 #############################################################################
 # CASSANDRA
@@ -266,4 +287,4 @@ NCBI_define_Pkgcomponent(NAME CASSANDRA PACKAGE cassandra-cpp-driver)
 
 #############################################################################
 # MySQL
-NCBI_define_Pkgcomponent(NAME MySQL PACKAGE libmysqlclient)
+NCBI_define_Pkgcomponent(NAME MySQL PACKAGE libmysqlclient REQUIRES openssl;zlib;zstd;lz4)
