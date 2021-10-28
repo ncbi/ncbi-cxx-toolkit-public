@@ -106,7 +106,7 @@ CPSGS_CassBlobBase::OnGetBlobProp(TBlobPropsCB  blob_props_cb,
                                  eDiag_Error);
             x_PrepareBlobCompletion(fetch_details);
 
-            SetFinished(fetch_details);
+            fetch_details->SetReadFinished();
             return;
         }
 
@@ -114,7 +114,7 @@ CPSGS_CassBlobBase::OnGetBlobProp(TBlobPropsCB  blob_props_cb,
             if (!blob.GetId2Info().empty()) {
                 if (!x_ParseId2Info(fetch_details, blob)) {
                     x_PrepareBlobPropCompletion(fetch_details);
-                    SetFinished(fetch_details);
+                    fetch_details->SetReadFinished();
                     return;
                 }
             }
@@ -165,7 +165,7 @@ CPSGS_CassBlobBase::x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details)
 {
     // Nothing else to be sent
     x_PrepareBlobPropCompletion(fetch_details);
-    SetFinished(fetch_details);
+    fetch_details->SetReadFinished();
 }
 
 
@@ -717,7 +717,7 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                  code, severity);
     }
 
-    SetFinished(fetch_details);
+    fetch_details->SetReadFinished();
 }
 
 
@@ -772,7 +772,7 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
 
     if (cancelled) {
         fetch_details->GetLoader()->Cancel();
-        SetFinished(fetch_details);
+        fetch_details->SetReadFinished();
         return;
     }
     if (m_Reply->IsFinished()) {
@@ -799,7 +799,7 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
 
         // End of the blob
         x_PrepareBlobCompletion(fetch_details);
-        SetFinished(fetch_details);
+        fetch_details->SetReadFinished();
 
         // Note: no need to set the blob completed in the exclude blob cache.
         // It will happen in Peek()
@@ -838,7 +838,7 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
     fetch_details->RemoveFromExcludeBlobCache();
 
     x_PrepareBlobPropCompletion(fetch_details);
-    SetFinished(fetch_details);
+    fetch_details->SetReadFinished();
 }
 
 
@@ -866,13 +866,6 @@ CPSGS_CassBlobBase::x_ParseId2Info(CCassBlobFetch *  fetch_details,
     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
     PSG_ERROR(err_msg);
     return false;
-}
-
-
-void
-CPSGS_CassBlobBase::SetFinished(CCassBlobFetch *  fetch_details)
-{
-    fetch_details->SetReadFinished();
 }
 
 
@@ -1125,8 +1118,8 @@ CPSGS_CassBlobBase::OnPublicCommentError(
     m_Request->SetRequestContext();
 
     if (m_Cancelled) {
-        fetch_details->SetReadFinished();
         fetch_details->GetLoader()->Cancel();
+        fetch_details->SetReadFinished();
         return;
     }
 

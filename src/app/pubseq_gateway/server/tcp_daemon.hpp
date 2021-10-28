@@ -155,9 +155,17 @@ public:
 
     static void s_OnWatchDog(uv_timer_t *  handle)
     {
+        CTcpWorkersList<P, U, D> *      self =
+                        static_cast<CTcpWorkersList<P, U, D>*>(handle->data);
+
         if (g_ShutdownData.m_ShutdownRequested) {
             if (g_ShutdownData.m_ActiveRequestCount == 0) {
-                uv_stop(handle->loop);
+                if (self->AnyWorkerIsRunning()) {
+                    self->KillAll();
+                } else {
+                    self->JoinWorkers();
+                    uv_stop(handle->loop);
+                }
             } else {
                 if (chrono::steady_clock::now() > g_ShutdownData.m_Expired) {
                     PSG_MESSAGE("Shutdown timeout is over when there are "
@@ -167,9 +175,6 @@ public:
             }
             return;
         }
-
-        CTcpWorkersList<P, U, D> *      self =
-                        static_cast<CTcpWorkersList<P, U, D>*>(handle->data);
 
         if (!self->AnyWorkerIsRunning()) {
             uv_stop(handle->loop);
@@ -412,6 +417,21 @@ struct CTcpWorker
             if (tcp == &std::get<0>(*it)) {
                 m_protocol.OnClientClosedConnection(reinterpret_cast<uv_stream_t*>(handle),
                                                     &std::get<1>(*it));
+                // NOTE: it is important to reset for reuse before moving
+                // between the lists. The CHttpConnection instance holds a list
+                // of the pending requests. Sometimes there are a few items in
+                // the pending list when a connection is canceled. However if
+                // the item is moved to the free list the items from the
+                // pending list magically disappear.
+                // Also, in general prospective, it is better to clean the data
+                // structures as early as possible and this point is the
+                // earliest. On top of it the clearing of the pending requests
+                // process will notify the high level dispatcher that the
+                // processors group can be removed.
+                std::get<1>(*it).ResetForReuse();
+
+                // Move the closed connection instance to the free list for
+                // reuse later.
                 m_free_list.splice(m_free_list.begin(), m_connected_list, it);
                 return;
             }
@@ -518,7 +538,6 @@ private:
             uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
             return;
         }
-        std::get<1>(*it).Reset();
         m_protocol.OnNewConnection(reinterpret_cast<uv_stream_t*>(tcp),
                                    &std::get<1>(*it), s_OnClientClosed);
     }

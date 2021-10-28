@@ -143,22 +143,22 @@ for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 
 finilize "get_na_slim_send_if_small_50000"
 
 echo "status..."
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ADMIN/status" > ${outdir}/h2load.${i}.out &); done
+for i in `seq 1 50`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 1000 -c 4 -t 4 -m 4  "${url}/ADMIN/status" > ${outdir}/h2load.${i}.out &); done
 finilize "status"
 
 echo "config..."
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ADMIN/config" > ${outdir}/h2load.${i}.out &); done
+for i in `seq 1 50`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 1000 -c 4 -t 4 -m 4  "${url}/ADMIN/config" > ${outdir}/h2load.${i}.out &); done
 finilize "config"
 
 echo "info..."
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ADMIN/info" > ${outdir}/h2load.${i}.out &); done
+for i in `seq 1 50`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 1000 -c 4 -t 4 -m 4  "${url}/ADMIN/info" > ${outdir}/h2load.${i}.out &); done
 finilize "info"
 
 echo "get_alerts..."
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ADMIN/get_alerts" > ${outdir}/h2load.${i}.out &); done
+for i in `seq 1 50`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 1000 -c 4 -t 4 -m 4  "${url}/ADMIN/get_alerts" > ${outdir}/h2load.${i}.out &); done
 finilize "get_alerts"
 
 echo "notservingurl..."
-for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/notservingurl" > ${outdir}/h2load.${i}.out &); done
+for i in `seq 1 50`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 1000 -c 4 -t 4 -m 4  "${url}/notservingurl" > ${outdir}/h2load.${i}.out &); done
 finilize "notservingurl"
 

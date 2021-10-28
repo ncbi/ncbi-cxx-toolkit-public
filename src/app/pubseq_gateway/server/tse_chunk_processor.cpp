@@ -600,7 +600,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                 ePSGS_BlobPropsNotFound, eDiag_Error);
         IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
                 fetch_details, GetName());
-        SetFinished(fetch_details);
+        fetch_details->SetReadFinished();
     }
 
     if (IPSGS_Processor::m_Reply->IsOutputReady())
@@ -666,7 +666,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
                 message, status, code, severity);
     }
 
-    SetFinished(fetch_details);
+    fetch_details->SetReadFinished();
 
     if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);
@@ -686,7 +686,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 
     if (m_Cancelled) {
         fetch_details->GetLoader()->Cancel();
-        SetFinished(fetch_details);
+        fetch_details->SetReadFinished();
         if (IPSGS_Processor::m_Reply->IsOutputReady())
             x_Peek(false);
         return;
@@ -724,7 +724,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
         // End of the blob
         IPSGS_Processor::m_Reply->PrepareTSEBlobCompletion(
                 fetch_details, GetName());
-        SetFinished(fetch_details);
+        fetch_details->SetReadFinished();
 
         // Note: no need to set the blob completed in the exclude blob cache.
         // It will happen in Peek()

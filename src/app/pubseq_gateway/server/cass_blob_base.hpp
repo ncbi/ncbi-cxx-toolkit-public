@@ -69,7 +69,6 @@ protected:
                         CCassBlobFetch *  fetch_details,
                         const unsigned char *  chunk_data,
                         unsigned int  data_size, int  chunk_no);
-    void SetFinished(CCassBlobFetch *  fetch_details);
     bool CountError(CRequestStatus::ECode  status,
                     int  code,
                     EDiagSev  severity,
