@@ -13,7 +13,7 @@ LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(PCRE_LIBS) $(CMPRS_LIBS) $(
 
 REQUIRES = Boost.Test.Included objects
 
-CHECK_CMD = score_builder_unit_test -data-in data/seqalign.asn
+CHECK_CMD = score_builder_unit_test -data-in data/seqalign.asn /CHECK_NAME=score_builder_unit_test
 CHECK_COPY = data
 
 

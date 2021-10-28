@@ -12,7 +12,7 @@ LIBS = $(NETWORK_LIBS) $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY
 
 REQUIRES = Boost.Test.Included objects
 
-CHECK_CMD = blast_tabular_unit_test -input-dir data -expected-results data/blast_tabular.test.results
+CHECK_CMD = blast_tabular_unit_test -input-dir data -expected-results data/blast_tabular.test.results /CHECK_NAME=blast_tabular_unit_test
 CHECK_COPY = data
 
 

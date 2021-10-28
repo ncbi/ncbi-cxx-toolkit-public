@@ -12,7 +12,7 @@ LIBS = $(NETWORK_LIBS) $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY
 
 REQUIRES = Boost.Test.Included objects
 
-CHECK_CMD = collection_scores_unit_test -input-binary -seq-entry data/collection_score_entries.asnb -aligns data/collection_score_blast.asnb
+CHECK_CMD = collection_scores_unit_test -input-binary -seq-entry data/collection_score_entries.asnb -aligns data/collection_score_blast.asnb /CHECK_NAME=collection_scores_unit_test
 CHECK_COPY = data
 
 WATCHERS = whlavina

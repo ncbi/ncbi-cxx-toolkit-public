@@ -4,8 +4,10 @@ NCBI_begin_app(genomic_compart_unit_test)
   NCBI_sources(genomic_compart_unit_test)
   NCBI_uses_toolkit_libraries(xalgoalignutil)
 
-  NCBI_set_test_assets(data)
-  NCBI_add_test(genomic_compart_unit_test -input-dir data -expected-results data/genomic_compart.test.results)
+  NCBI_begin_test(genomic_compart_unit_test)
+    NCBI_set_test_command(genomic_compart_unit_test -input-dir data -expected-results data/genomic_compart.test.results)
+    NCBI_set_test_assets(data)
+  NCBI_end_test()
 
   NCBI_project_watchers(mozese2)
 
