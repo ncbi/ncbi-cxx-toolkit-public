@@ -136,6 +136,26 @@ private:
     static bool sm_Verbose;
 };
 
+struct SOneRequestParams
+{
+    struct SLatency
+    {
+        const bool enabled;
+        const bool debug;
+    };
+
+    struct SDataOnly
+    {
+        const bool enabled;
+        const ESerialDataFormat output_format;
+    };
+
+    SLatency latency;
+    SDataOnly data_only;
+
+    SOneRequestParams(const CArgs& args);
+};
+
 class CParallelProcessing
 {
 public:
@@ -178,29 +198,9 @@ private:
 class CProcessing
 {
 public:
-    struct SParams
-    {
-        struct SLatency
-        {
-            const bool enabled;
-            const bool debug;
-        };
-
-        struct SDataOnly
-        {
-            const bool enabled;
-            const ESerialDataFormat output_format;
-        };
-
-        SLatency latency;
-        SDataOnly data_only;
-
-        SParams(const CArgs& args);
-    };
-
     static SPSG_UserArgs user_args;
 
-    static int OneRequest(const string& service, shared_ptr<CPSG_Request> request, SParams params);
+    static int OneRequest(const string& service, shared_ptr<CPSG_Request> request, const SOneRequestParams params);
     static int ParallelProcessing(const string& service, const CArgs& args, bool batch_resolve, bool echo);
     static int Performance(const string& service, size_t user_threads, double delay, bool local_queue, bool report_immediately, ostream& os);
     static int Testing(const string& service);
