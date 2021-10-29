@@ -360,19 +360,7 @@ template <>
 int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args)
 {
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::ePerformance);
-
-    auto user_threads = static_cast<size_t>(args["user-threads"].AsInteger());
-    auto delay = args["delay"].AsDouble();
-    auto local_queue = args["local-queue"].AsBoolean();
-    auto report_immediately = args["report-immediately"].AsBoolean();
-    auto& os = args["output-file"].AsOutputFile();
-
-    if (delay < 0.0) {
-        cerr << "DELAY must be non-negative" << endl;
-        return -1;
-    }
-
-    return CProcessing::Performance(args, user_threads, delay, local_queue, report_immediately, os);
+    return CProcessing::Performance(args);
 }
 
 template <>

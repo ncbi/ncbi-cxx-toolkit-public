@@ -175,6 +175,17 @@ struct SParallelProcessingParams : SParams
     SParallelProcessingParams(const CArgs& a, bool br, bool e);
 };
 
+struct SPerformanceParams : SParams
+{
+    const size_t user_threads;
+    const double delay;
+    const bool local_queue;
+    const bool report_immediately;
+    ostream& os;
+
+    SPerformanceParams(const CArgs& args);
+};
+
 struct SIoParams : SParams
 {
     const time_t start_time;
@@ -231,7 +242,7 @@ public:
 
     static int OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Request> request);
     static int ParallelProcessing(const SParallelProcessingParams params);
-    static int Performance(const SParams params, size_t user_threads, double delay, bool local_queue, bool report_immediately, ostream& os);
+    static int Performance(const SPerformanceParams params);
     static int Testing(const SParams params);
     static int Io(const SIoParams params);
     static int JsonCheck(istream* schema_is, istream& doc_is);
