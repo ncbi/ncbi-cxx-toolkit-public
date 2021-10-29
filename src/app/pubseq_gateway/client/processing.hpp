@@ -253,7 +253,7 @@ public:
 
 private:
     template <class TCreateContext>
-    static vector<shared_ptr<CPSG_Request>> ReadCommands(TCreateContext create_context);
+    static vector<shared_ptr<CPSG_Request>> ReadCommands(TCreateContext create_context, size_t report_progress_after = 0);
 
     static bool ReadLine(string& line, istream& is = cin);
 };
