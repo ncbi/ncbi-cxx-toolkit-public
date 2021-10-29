@@ -262,6 +262,23 @@ public:
         m_Length = new_to - new_from + 1;
         return *this;
     }
+    TThisType& IntersectSecondWith(const CRange<position_type>& r)
+    {
+        int new_from = max(GetSecondFrom(), r.GetFrom());
+        int new_to = min(GetSecondTo(), r.GetTo());
+        if(new_to < new_from)  {
+            new_to = new_from - 1;
+        }
+        if(IsReversed())    {
+            m_FirstFrom += GetSecondTo() - new_to; 
+        } else {
+            m_FirstFrom += new_from - GetSecondFrom();
+        }
+       
+        m_SecondFrom = new_from;
+        m_Length = new_to - new_from + 1;
+        return *this;
+    }
     bool IntersectingWith(const CRange<position_type>& r) const
     {
         return ! (this->GetFirstFrom() > r.GetTo()
