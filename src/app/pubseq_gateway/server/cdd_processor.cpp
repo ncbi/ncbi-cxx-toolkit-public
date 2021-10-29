@@ -561,9 +561,15 @@ bool CPSGS_CDDProcessor::x_SignalStartProcessing()
 bool CPSGS_CDDProcessor::x_CanProcessAnnotRequest(SPSGS_AnnotRequest& annot_request,
                                                   TProcessorPriority priority) const
 {
-    CSeq_id id(annot_request.m_SeqId);
-    if (!id.IsGi() && !id.GetTextseq_Id()) return false;
-    if (!m_ClientPool->IsValidId(id)) return false;
+    try {
+        CSeq_id id(annot_request.m_SeqId);
+        if (!id.IsGi() && !id.GetTextseq_Id()) return false;
+        if (!m_ClientPool->IsValidId(id)) return false;
+    }
+    catch (exception& e) {
+        ERR_POST("Bad seq-id: " << annot_request.m_SeqId);
+        return false;
+    }
     return x_NameIncluded(annot_request.GetNotProcessedName(priority));
 }
 
