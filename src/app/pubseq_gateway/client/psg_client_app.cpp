@@ -230,7 +230,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_NamedAnnotInfo>(CArgDescriptions&
 template <>
 void CPsgClientApp::s_InitRequest<CPSG_Request_Chunk>(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddPositional("ID2_CHUNK", "ID2 chunk number", CArgDescriptions::eInt8);
+    arg_desc.AddPositional("ID2_CHUNK", "ID2 chunk number", CArgDescriptions::eInteger);
     arg_desc.AddPositional("ID2_INFO", "ID2 info", CArgDescriptions::eString);
     s_InitDataOnly(arg_desc);
 }
