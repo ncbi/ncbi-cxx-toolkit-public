@@ -249,6 +249,7 @@ void CPsgClientApp::s_InitRequest<SPerformance>(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey("user-threads", "THREADS_NUM", "Number of user threads", CArgDescriptions::eInteger, "1");
     arg_desc.AddDefaultKey("delay", "SECONDS", "Delay between consecutive requests (in seconds)", CArgDescriptions::eDouble, "0.0");
     arg_desc.AddFlag("local-queue", "Whether user threads to use separate queues");
+    arg_desc.AddFlag("report-immediately", "Whether to report metrics immediately (or at the end)");
     arg_desc.AddDefaultKey("output-file", "FILENAME", "Output file to contain raw performance metrics", CArgDescriptions::eOutputFile, "-");
 }
 
@@ -364,6 +365,7 @@ int CPsgClientApp::RunRequest<SPerformance>(const string& service, const CArgs& 
     auto user_threads = static_cast<size_t>(args["user-threads"].AsInteger());
     auto delay = args["delay"].AsDouble();
     auto local_queue = args["local-queue"].AsBoolean();
+    auto report_immediately = args["report-immediately"].AsBoolean();
     auto& os = args["output-file"].AsOutputFile();
 
     if (delay < 0.0) {
@@ -371,7 +373,7 @@ int CPsgClientApp::RunRequest<SPerformance>(const string& service, const CArgs& 
         return -1;
     }
 
-    return CProcessing::Performance(service, user_threads, delay, local_queue, os);
+    return CProcessing::Performance(service, user_threads, delay, local_queue, report_immediately, os);
 }
 
 template <>

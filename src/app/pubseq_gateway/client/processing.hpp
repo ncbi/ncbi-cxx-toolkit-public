@@ -202,7 +202,7 @@ public:
 
     static int OneRequest(const string& service, shared_ptr<CPSG_Request> request, SParams params);
     static int ParallelProcessing(const string& service, const CArgs& args, bool batch_resolve, bool echo);
-    static int Performance(const string& service, size_t user_threads, double delay, bool local_queue, ostream& os);
+    static int Performance(const string& service, size_t user_threads, double delay, bool local_queue, bool report_immediately, ostream& os);
     static int Testing(const string& service);
     static int Io(const string& service, time_t start_time, int duration, int user_threads, int download_size);
     static int JsonCheck(istream* schema_is, istream& doc_is);
