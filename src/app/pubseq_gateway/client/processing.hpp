@@ -163,6 +163,16 @@ struct SOneRequestParams : SParams
     SOneRequestParams(const CArgs& args);
 };
 
+struct SIoParams : SParams
+{
+    const time_t start_time;
+    const int duration;
+    const int user_threads;
+    const int download_size;
+
+    SIoParams(const CArgs& args);
+};
+
 class CParallelProcessing
 {
 public:
@@ -211,7 +221,7 @@ public:
     static int ParallelProcessing(const SParams params, const CArgs& args, bool batch_resolve, bool echo);
     static int Performance(const SParams params, size_t user_threads, double delay, bool local_queue, bool report_immediately, ostream& os);
     static int Testing(const SParams params);
-    static int Io(const SParams params, time_t start_time, int duration, int user_threads, int download_size);
+    static int Io(const SIoParams params);
     static int JsonCheck(istream* schema_is, istream& doc_is);
 
     static void ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);

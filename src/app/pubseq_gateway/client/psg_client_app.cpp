@@ -387,11 +387,7 @@ int CPsgClientApp::RunRequest<STesting>(const CArgs& args)
 template <>
 int CPsgClientApp::RunRequest<SIo>(const CArgs& args)
 {
-    auto start_time = args["START_TIME"].AsInteger();
-    auto duration = args["DURATION"].AsInteger();
-    auto user_threads = args["USER_THREADS"].AsInteger();
-    auto download_size = args["DOWNLOAD_SIZE"].AsInteger();
-    return CProcessing::Io(args, start_time, duration, user_threads, download_size);
+    return CProcessing::Io(args);
 }
 
 template <>

@@ -419,6 +419,15 @@ SParams::SParams(const CArgs& args) :
 {
 }
 
+SIoParams::SIoParams(const CArgs& args) :
+    SParams(args),
+    start_time(args["START_TIME"].AsInteger()),
+    duration(args["DURATION"].AsInteger()),
+    user_threads(args["USER_THREADS"].AsInteger()),
+    download_size(args["DOWNLOAD_SIZE"].AsInteger())
+{
+}
+
 template <class TItem, class TStr>
 void s_ReportErrors(ostream& os, EPSG_Status status, TItem item, TStr prefix, const char* delim = "\n\t")
 {
@@ -1259,12 +1268,11 @@ private:
 
 struct SIoContext
 {
-    const string service;
-    const size_t size;
+    const SIoParams& params;
     mutex m;
     condition_variable cv;
 
-    SIoContext(const string& s, size_t z) : service(s), size(z), m_Work(true) {}
+    SIoContext(const SIoParams& p) : params(p), m_Work(true) {}
 
     bool Work() const { return m_Work; }
     void Stop() { m_Work = false; }
@@ -1295,9 +1303,9 @@ void SIoWorker::Do()
 {
     const CDeadline kInfinite = CDeadline::eInfinite;
 
-    CPSG_Queue queue(m_Context.service);
+    CPSG_Queue queue(m_Context.params.service);
     queue.SetUserArgs(CProcessing::user_args);
-    auto request = make_shared<CPSG_Request_Io>(m_Context.size);
+    auto request = make_shared<CPSG_Request_Io>(m_Context.params.download_size);
     ostringstream err_stream;
 
     // Wait
@@ -1408,7 +1416,7 @@ void SIoOutput::Output(size_t errors)
     cout << "Max: " << stats.back() << endl;
 }
 
-int CProcessing::Io(const SParams params, time_t start_time, int duration, int user_threads, int download_size)
+int CProcessing::Io(const SIoParams params)
 {
     SIoOutput io_output;
 
@@ -1418,33 +1426,33 @@ int CProcessing::Io(const SParams params, time_t start_time, int duration, int u
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eIo);
 
     auto now = chrono::system_clock::now();
-    auto start = chrono::system_clock::from_time_t(start_time);
+    auto start = chrono::system_clock::from_time_t(params.start_time);
     auto sleep = chrono::duration_cast<chrono::milliseconds>(start - now) - kWarmUpDelay;
 
     if (sleep.count() <= 0) {
-        cerr << "Warning: Start time (" << start_time << ") has already passed or too close\n";
+        cerr << "Warning: Start time (" << params.start_time << ") has already passed or too close\n";
         sleep = chrono::milliseconds::zero();
     }
 
     this_thread::sleep_for(sleep);
 
-    SIoContext context(params.service, download_size);
+    SIoContext context(params);
 
     vector<SIoWorker> threads;
-    threads.reserve(user_threads);
+    threads.reserve(params.user_threads);
 
     // Start threads in advance so it won't affect metrics
-    for (int i = 0; i < user_threads; ++i) {
+    for (int i = 0; i < params.user_threads; ++i) {
         threads.emplace_back(context);
     }
 
     this_thread::sleep_for(kWarmUpDelay);
     context.cv.notify_all();
 
-    if (duration < 1) {
-        cerr << "Warning: Duration (" << duration << ") is less that a second\n";
+    if (params.duration < 1) {
+        cerr << "Warning: Duration (" << params.duration << ") is less that a second\n";
     } else {
-        this_thread::sleep_for(chrono::seconds(duration));
+        this_thread::sleep_for(chrono::seconds(params.duration));
     }
 
     context.Stop();
@@ -1462,15 +1470,15 @@ int CProcessing::Io(const SParams params, time_t start_time, int duration, int u
 
     // Report statistics
     auto start_format = CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeFrac);
-    CTime start_ctime(start_time);
+    CTime start_ctime(params.start_time);
     auto start_ctime_str = start_ctime.GetLocalTime().AsString(start_format);
 
     io_output.Reset();
 
     cout << "Start: " << start_ctime_str << " = " << start_ctime.GetTimeT() << "." << setfill('0') << setw(3) << start_ctime.MilliSecond() << endl;
-    cout << "Duration: " << static_cast<double>(duration) << endl;
-    cout << "Threads: " << user_threads << endl;
-    cout << "Size: " << download_size << endl;
+    cout << "Duration: " << static_cast<double>(params.duration) << endl;
+    cout << "Threads: " << params.user_threads << endl;
+    cout << "Size: " << params.download_size << endl;
 
     io_output.Output(errors);
     return 0;
