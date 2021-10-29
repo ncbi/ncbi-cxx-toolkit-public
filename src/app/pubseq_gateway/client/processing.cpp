@@ -430,6 +430,16 @@ SParallelProcessingParams::SParallelProcessingParams(const CArgs& a, bool br, bo
 {
 }
 
+SPerformanceParams::SPerformanceParams(const CArgs& args) :
+    SParams(args),
+    user_threads(static_cast<size_t>(args["user-threads"].AsInteger())),
+    delay(args["delay"].AsDouble()),
+    local_queue(args["local-queue"].AsBoolean()),
+    report_immediately(args["report-immediately"].AsBoolean()),
+    os(args["output-file"].AsOutputFile())
+{
+}
+
 SIoParams::SIoParams(const CArgs& args) :
     SParams(args),
     start_time(args["START_TIME"].AsInteger()),
@@ -875,17 +885,22 @@ vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create
     return requests;
 }
 
-int CProcessing::Performance(const SParams params, size_t user_threads, double delay, bool local_queue, bool report_immediately, ostream& os)
+int CProcessing::Performance(const SPerformanceParams params)
 {
+    if (params.delay < 0.0) {
+        cerr << "DELAY must be non-negative" << endl;
+        return -1;
+    }
+
     using TReplyStorage = deque<shared_ptr<CPSG_Reply>>;
-    SIoRedirector io_redirector(cout, os);
+    SIoRedirector io_redirector(cout, params.os);
 
     cerr << "Preparing requests: ";
     auto requests = ReadCommands([](string id, CJson_ConstNode&){ return make_shared<SMetrics>(move(id)); });
 
     if (requests.empty()) return -1;
 
-    atomic_size_t start(user_threads);
+    atomic_size_t start(params.user_threads);
     atomic_int to_submit(static_cast<int>(requests.size()));
     auto wait = [&]() { while (start > 0) this_thread::sleep_for(chrono::microseconds(1)); };
 
@@ -927,7 +942,7 @@ int CProcessing::Performance(const SParams params, size_t user_threads, double d
 
             if (success) metrics->SetSuccess();
 
-            if (report_immediately) {
+            if (params.report_immediately) {
                 // Metrics are reported on destruction
                 metrics.reset();
                 request.reset();
@@ -937,26 +952,26 @@ int CProcessing::Performance(const SParams params, size_t user_threads, double d
                 replies.emplace_back(reply);
             }
 
-            if (delay) {
-                this_thread::sleep_for(chrono::duration<double>(delay));
+            if (params.delay) {
+                this_thread::sleep_for(chrono::duration<double>(params.delay));
             }
         }
     };
 
     vector<CPSG_Queue> queues;
-    vector<TReplyStorage> replies(user_threads);
+    vector<TReplyStorage> replies(params.user_threads);
 
-    for (size_t i = 0; i < (local_queue ? user_threads : 1); ++i) {
+    for (size_t i = 0; i < (params.local_queue ? params.user_threads : 1); ++i) {
         queues.emplace_back(params.service);
         queues.back().SetUserArgs(user_args);
     }
 
     vector<thread> threads;
-    threads.reserve(user_threads);
+    threads.reserve(params.user_threads);
 
     // Start threads in advance so it won't affect metrics
-    for (size_t i = 0; i < user_threads; ++i) {
-        threads.emplace_back(l, ref(queues[local_queue ? i : 0]), ref(replies[i]));
+    for (size_t i = 0; i < params.user_threads; ++i) {
+        threads.emplace_back(l, ref(queues[params.local_queue ? i : 0]), ref(replies[i]));
     }
 
     wait();
@@ -974,7 +989,7 @@ int CProcessing::Performance(const SParams params, size_t user_threads, double d
         }
     }
 
-    cerr << "\nWaiting for threads: " << user_threads << '\n';
+    cerr << "\nWaiting for threads: " << params.user_threads << '\n';
 
     for (auto& t : threads) {
         t.join();
