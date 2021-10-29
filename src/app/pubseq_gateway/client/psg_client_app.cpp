@@ -311,8 +311,6 @@ void s_SetPsgDefaults(const CArgs& args, bool parallel)
         auto debug_printout = args["debug-printout"].AsString();
         TPSG_DebugPrintout::SetDefault(debug_printout);
     }
-
-    CJsonResponse::Verbose(args["verbose"].HasValue());
 }
 
 template <class TRequest>

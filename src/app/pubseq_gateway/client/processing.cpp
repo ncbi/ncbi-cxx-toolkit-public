@@ -50,7 +50,7 @@
 BEGIN_NCBI_SCOPE
 
 bool CJsonResponse::sm_SetReplyType = true;
-bool CJsonResponse::sm_Verbose = false;
+bool SParams::verbose = false;
 
 enum EJsonRpcErrors {
     eJsonRpc_ParseError         = -32700,
@@ -246,7 +246,7 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
         Set("reply", s_GetItemName(reply_item_type));
     }
 
-    if (sm_Verbose) {
+    if (SParams::verbose) {
         Set("processor_id", reply_item->GetProcessorId());
     }
 
@@ -417,6 +417,7 @@ SParams::SParams(const CArgs& args) :
     service(args["service"].AsString()),
     user_args(args["user-args"].HasValue() ? args["user-args"].AsString() : SPSG_UserArgs())
 {
+    verbose = args["verbose"].HasValue();
 }
 
 SParallelProcessingParams::SParallelProcessingParams(const CArgs& a, bool br, bool e) :
