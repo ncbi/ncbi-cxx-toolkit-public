@@ -624,6 +624,16 @@ public:
         return m_Insertions;
     }
 
+    void IntersectFirst(const CRange<position_type>& range) {
+        x_IntersectFirst(m_Ranges, range);
+        x_IntersectFirst(m_Insertions, range);
+    }
+
+    void IntersectSecond(const CRange<position_type>& range) {
+        x_IntersectSecond(m_Ranges, range);
+        x_IntersectSecond(m_Insertions, range);
+    }
+
 protected:
     void x_SetFlags(int flags)
     {
@@ -688,6 +698,39 @@ protected:
             rg.SetLength(rg.GetLength()*3);
         }
     }
+
+    void x_IntersectFirst(TAlignRangeVector& ranges, const CRange<position_type>& range) {
+        typename TAlignRangeVector::iterator it = ranges.begin();
+        while (it != ranges.end()) {
+            if (!it->IntersectingWith(range)) {
+                typename TAlignRangeVector::iterator del = it;
+                ++it;
+                ranges.erase(del);
+                continue;
+            }
+            if (it->GetFirstFrom() < range.GetFrom() || it->GetFirstTo() > range.GetTo()) {
+                it->IntersectWith(range);
+            }
+            ++it;
+        }
+    }
+
+    void x_IntersectSecond(TAlignRangeVector& ranges, const CRange<position_type>& range) {
+        typename TAlignRangeVector::iterator it = ranges.begin();
+        while (it != ranges.end()) {
+            if (it->GetSecondTo() < range.GetFrom() || it->GetSecondFrom() > range.GetTo()) {
+                typename TAlignRangeVector::iterator del = it;
+                ++it;
+                ranges.erase(del);
+                continue;
+            }
+            if (it->GetSecondFrom() < range.GetFrom() || it->GetSecondTo() > range.GetTo()) {
+                it->IntersectSecondWith(range);
+            }
+            ++it;
+        }
+    }
+
     TAlignRangeVector    m_Ranges;
     TAlignRangeVector    m_Insertions;
     int m_Flags;    /// combination of EFlags
@@ -1497,6 +1540,16 @@ public:
         return m_Insertions;
     }
 
+    void IntersectFirst(const CRange<position_type>& range) {
+        x_IntersectFirst(m_RangesList, range);
+        x_IntersectFirst(m_Insertions, range);
+    }
+
+    void IntersectSecond(const CRange<position_type>& range) {
+        x_IntersectSecond(m_RangesList, range);
+        x_IntersectSecond(m_Insertions, range);
+    }
+
 protected:
     void x_SetFlags(int flags)
     {
@@ -1703,6 +1756,40 @@ protected:
         }
     }
     
+    template<class TRanges>
+    void x_IntersectFirst(TRanges& ranges, const CRange<position_type>& range) {
+        typename TRanges::iterator it = ranges.begin();
+        while (it != ranges.end()) {
+            if (!it->IntersectingWith(range)) {
+                typename TRanges::iterator del = it;
+                ++it;
+                ranges.erase(del);
+                continue;
+            }
+            if (it->GetFirstFrom() < range.GetFrom() || it->GetFirstTo() > range.GetTo()) {
+                it->IntersectWith(range);
+            }
+            ++it;
+        }
+    }
+
+    template<class TRanges>
+    void x_IntersectSecond(TRanges& ranges, const CRange<position_type>& range) {
+        typename TRanges::iterator it = ranges.begin();
+        while (it != ranges.end()) {
+            if (it->GetSecondTo() < range.GetFrom() || it->GetSecondFrom() > range.GetTo()) {
+                typename TRanges::iterator del = it;
+                ++it;
+                ranges.erase(del);
+                continue;
+            }
+            if (it->GetSecondFrom() < range.GetFrom() || it->GetSecondTo() > range.GetTo()) {
+                it->IntersectSecondWith(range);
+            }
+            ++it;
+        }
+    }
+
     mutable TAlignRangeVectorImpl m_RangesVector; // vector of align ranges for indexed access
     TAlignRangeList   m_RangesList; // main align range storage
     TInsertions       m_Insertions; // insertions storage
