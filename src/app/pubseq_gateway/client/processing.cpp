@@ -854,10 +854,8 @@ vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create
 
 int CProcessing::Performance(const string& service, size_t user_threads, double delay, bool local_queue, ostream& os)
 {
+    using TReplyStorage = deque<shared_ptr<CPSG_Reply>>;
     SIoRedirector io_redirector(cout, os);
-
-    CPSG_Queue global_queue(service);
-    global_queue.SetUserArgs(user_args);
 
     cerr << "Preparing requests: ";
     auto requests = ReadCommands([](string id, CJson_ConstNode&){ return make_shared<SMetrics>(move(id)); });
@@ -868,17 +866,7 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
     atomic_int to_submit(static_cast<int>(requests.size()));
     auto wait = [&]() { while (start > 0) this_thread::sleep_for(chrono::microseconds(1)); };
 
-    auto l = [&]() {
-        shared_ptr<CPSG_Queue> queue;
-        deque<shared_ptr<CPSG_Reply>> replies;
-        
-        if (!local_queue) {
-            queue = shared_ptr<CPSG_Queue>(shared_ptr<CPSG_Queue>(), &global_queue);
-        } else {
-            queue = make_shared<CPSG_Queue>(service);
-            queue->SetUserArgs(user_args);
-        }
-
+    auto l = [&](CPSG_Queue& queue, TReplyStorage& replies) {
         start--;
         wait();
 
@@ -892,7 +880,7 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
             auto metrics = request->GetUserContext<SMetrics>();
 
             metrics->Set(SMetricType::eStart);
-            auto reply = queue->SendRequestAndGetReply(request, CDeadline::eInfinite);
+            auto reply = queue.SendRequestAndGetReply(request, CDeadline::eInfinite);
             metrics->Set(SMetricType::eSubmit);
 
             _ASSERT(reply);
@@ -925,12 +913,20 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
         }
     };
 
+    vector<CPSG_Queue> queues;
+    vector<TReplyStorage> replies(user_threads);
+
+    for (size_t i = 0; i < (local_queue ? user_threads : 1); ++i) {
+        queues.emplace_back(service);
+        queues.back().SetUserArgs(user_args);
+    }
+
     vector<thread> threads;
     threads.reserve(user_threads);
 
     // Start threads in advance so it won't affect metrics
     for (size_t i = 0; i < user_threads; ++i) {
-        threads.emplace_back(l);
+        threads.emplace_back(l, ref(queues[local_queue ? i : 0]), ref(replies[i]));
     }
 
     wait();
@@ -954,17 +950,19 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
         t.join();
     }
 
-    // Release any replies held in the queue
-    global_queue = CPSG_Queue();
+    // Release all replies held in queues, if any
+    queues.clear();
 
     // Output metrics
     cerr << "Outputting metrics: ";
+    requests.clear();
     size_t output = 0;
 
-    for (auto& request : requests) {
-        auto metrics = request->GetUserContext<SMetrics>();
-        cout << *metrics;
-        if (++output % 2000 == 0) cerr << '.';
+    for (auto& thread_replies : replies) {
+        for (auto& reply : thread_replies) {
+            reply.reset();
+            if (++output % 2000 == 0) cerr << '.';
+        }
     }
 
     cerr << '\n';

@@ -72,6 +72,7 @@ struct SMetrics : string, private SMetricType
     using duration = chrono::duration<double, milli>;
 
     SMetrics(string id) : string(move(id)) {}
+    ~SMetrics() { cout << *this; }
 
     void Set(EType t)
     {
