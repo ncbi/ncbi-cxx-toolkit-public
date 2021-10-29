@@ -51,7 +51,6 @@ BEGIN_NCBI_SCOPE
 
 bool CJsonResponse::sm_SetReplyType = true;
 bool CJsonResponse::sm_Verbose = false;
-SPSG_UserArgs CProcessing::user_args;
 
 enum EJsonRpcErrors {
     eJsonRpc_ParseError         = -32700,
@@ -415,7 +414,8 @@ void CJsonResponse::Set(CJson_Node node, const CPSG_ChunkId& chunk_id)
 }
 
 SParams::SParams(const CArgs& args) :
-    service(args["service"].AsString())
+    service(args["service"].AsString()),
+    user_args(args["user-args"].HasValue() ? args["user-args"].AsString() : SPSG_UserArgs())
 {
 }
 
@@ -672,7 +672,7 @@ int CProcessing::OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Requ
         queue = CPSG_EventLoop(params.service, item_complete, reply_complete);
     }
 
-    queue.SetUserArgs(user_args);
+    queue.SetUserArgs(params.user_args);
 
     _VERIFY(queue.SendRequest(request, CDeadline::eInfinite));
     queue.Stop();
@@ -690,7 +690,7 @@ CParallelProcessing::CParallelProcessing(const SParallelProcessingParams& params
     for (int n = params.worker_threads; n > 0; --n) {
         m_PsgQueues.emplace_back(params.service, item_complete, reply_complete);
         auto& queue = m_PsgQueues.back();
-        queue.SetUserArgs(CProcessing::user_args);
+        queue.SetUserArgs(params.user_args);
         m_Threads.emplace_back(&CPSG_EventLoop::Run, ref(queue), CDeadline::eInfinite);
 
         if (params.batch_resolve) {
@@ -963,7 +963,7 @@ int CProcessing::Performance(const SPerformanceParams params)
 
     for (size_t i = 0; i < (params.local_queue ? params.user_threads : 1); ++i) {
         queues.emplace_back(params.service);
-        queues.back().SetUserArgs(user_args);
+        queues.back().SetUserArgs(params.user_args);
     }
 
     vector<thread> threads;
@@ -1101,7 +1101,7 @@ int CProcessing::Testing(const SParams params)
 {
     const TPSG_RequestTimeout kDefaultTimeout(TPSG_RequestTimeout::eGetDefault);
     CPSG_Queue queue(params.service);
-    queue.SetUserArgs(user_args);
+    queue.SetUserArgs(params.user_args);
     ifstream input_file("psg_client_test.json");
     SIoRedirector ior(cin, input_file);
 
@@ -1323,7 +1323,7 @@ void SIoWorker::Do()
     const CDeadline kInfinite = CDeadline::eInfinite;
 
     CPSG_Queue queue(m_Context.params.service);
-    queue.SetUserArgs(CProcessing::user_args);
+    queue.SetUserArgs(m_Context.params.user_args);
     auto request = make_shared<CPSG_Request_Io>(m_Context.params.download_size);
     ostringstream err_stream;
 
