@@ -852,7 +852,7 @@ vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create
     return requests;
 }
 
-int CProcessing::Performance(const string& service, size_t user_threads, double delay, bool local_queue, ostream& os)
+int CProcessing::Performance(const string& service, size_t user_threads, double delay, bool local_queue, bool report_immediately, ostream& os)
 {
     using TReplyStorage = deque<shared_ptr<CPSG_Reply>>;
     SIoRedirector io_redirector(cout, os);
@@ -885,9 +885,6 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
 
             _ASSERT(reply);
 
-            // Store the reply for now to prevent internal metrics from being written to cout (affects performance)
-            replies.emplace_back(reply);
-
             metrics->Set(SMetricType::eReply);
 
             bool success = true;
@@ -906,6 +903,16 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
             metrics->Set(SMetricType::eDone);
 
             if (success) metrics->SetSuccess();
+
+            if (report_immediately) {
+                // Metrics are reported on destruction
+                metrics.reset();
+                request.reset();
+                reply.reset();
+            } else {
+                // Store the reply for now to prevent metrics from being written to cout (affects performance)
+                replies.emplace_back(reply);
+            }
 
             if (delay) {
                 this_thread::sleep_for(chrono::duration<double>(delay));
