@@ -46,7 +46,7 @@ class CPsgClientApp;
 struct SCommand
 {
     using TInit = function<void(CArgDescriptions&)>;
-    using TRun = function<int(CPsgClientApp*, const string&, const CArgs&)>;
+    using TRun = function<int(CPsgClientApp*, const CArgs&)>;
     enum EFlags { eDefault, fHidden = 1 << 0, fParallel = 1 << 1 };
 
     const string name;
@@ -73,10 +73,10 @@ private:
     static void s_InitRequest(CArgDescriptions& arg_desc);
 
     template <class TRequest>
-    static int s_RunRequest(CPsgClientApp* that, const string& service, const CArgs& args) { _ASSERT(that); return that->RunRequest<TRequest>(service, args); }
+    static int s_RunRequest(CPsgClientApp* that, const CArgs& args) { _ASSERT(that); return that->RunRequest<TRequest>(args); }
 
     template <class TRequest>
-    int RunRequest(const string& service, const CArgs& args);
+    int RunRequest(const CArgs& args);
 
     vector<SCommand> m_Commands;
 };
@@ -88,7 +88,7 @@ struct SIo {};
 struct SJsonCheck {};
 
 void s_InitPsgOptions(CArgDescriptions& arg_desc);
-const string& s_SetPsgDefaults(const CArgs& args, bool parallel);
+void s_SetPsgDefaults(const CArgs& args, bool parallel);
 
 CPsgClientApp::CPsgClientApp() :
     m_Commands({
@@ -128,14 +128,14 @@ void CPsgClientApp::Init()
 
 int CPsgClientApp::Run()
 {
-    auto& args = GetArgs();
+    const auto& args = GetArgs();
     auto name = args.GetCommand();
 
     for (const auto& command : m_Commands) {
         if (command.name == name) {
             const bool parallel = command.flags & SCommand::fParallel;
-            const auto& service = s_SetPsgDefaults(args, parallel);
-            return command.run(this, service, args);
+            s_SetPsgDefaults(args, parallel);
+            return command.run(this, args);
         }
     }
 
@@ -274,7 +274,7 @@ void CPsgClientApp::s_InitRequest<SJsonCheck>(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey("input-file", "FILENAME", "JSON-RPC requests file (one per line)", CArgDescriptions::eInputFile, "-");
 }
 
-const string& s_SetPsgDefaults(const CArgs& args, bool parallel)
+void s_SetPsgDefaults(const CArgs& args, bool parallel)
 {
     if (args["io-threads"].HasValue()) {
         auto io_threads = args["io-threads"].AsInteger();
@@ -318,24 +318,23 @@ const string& s_SetPsgDefaults(const CArgs& args, bool parallel)
     }
 
     CJsonResponse::Verbose(args["verbose"].HasValue());
-    return args["service"].AsString();
 }
 
 template <class TRequest>
-int CPsgClientApp::RunRequest(const string& service, const CArgs& args)
+int CPsgClientApp::RunRequest(const CArgs& args)
 {
     auto request = SRequestBuilder::Build<TRequest>(args);
-    return CProcessing::OneRequest(service, request, args);
+    return CProcessing::OneRequest(args, request);
 }
 
 template<>
-int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const string& service, const CArgs& args)
+int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const CArgs& args)
 {
     const auto single_request = args["ID"].HasValue();
 
     if (single_request) {
         auto request = SRequestBuilder::Build<CPSG_Request_Resolve>(args);
-        return CProcessing::OneRequest(service, request, args);
+        return CProcessing::OneRequest(args, request);
     } else {
         auto& ctx = CDiagContext::GetRequestContext();
 
@@ -344,21 +343,21 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const string& service, const
         ctx.SetHitID();
 
         CJsonResponse::SetReplyType(false);
-        return CProcessing::ParallelProcessing(service, args, true, false);
+        return CProcessing::ParallelProcessing(args, args, true, false);
     }
 }
 
 template<>
-int CPsgClientApp::RunRequest<SInteractive>(const string& service, const CArgs& args)
+int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args)
 {
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eInteractive);
 
     const auto echo = args["echo"].HasValue();
-    return CProcessing::ParallelProcessing(service, args, false, echo);
+    return CProcessing::ParallelProcessing(args, args, false, echo);
 }
 
 template <>
-int CPsgClientApp::RunRequest<SPerformance>(const string& service, const CArgs& args)
+int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args)
 {
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::ePerformance);
 
@@ -373,30 +372,30 @@ int CPsgClientApp::RunRequest<SPerformance>(const string& service, const CArgs& 
         return -1;
     }
 
-    return CProcessing::Performance(service, user_threads, delay, local_queue, report_immediately, os);
+    return CProcessing::Performance(args, user_threads, delay, local_queue, report_immediately, os);
 }
 
 template <>
-int CPsgClientApp::RunRequest<STesting>(const string& service, const CArgs&)
+int CPsgClientApp::RunRequest<STesting>(const CArgs& args)
 {
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eInteractive);
     TPSG_FailOnUnknownItems::SetDefault(true);
 
-    return CProcessing::Testing(service);
+    return CProcessing::Testing(args);
 }
 
 template <>
-int CPsgClientApp::RunRequest<SIo>(const string& service, const CArgs& args)
+int CPsgClientApp::RunRequest<SIo>(const CArgs& args)
 {
     auto start_time = args["START_TIME"].AsInteger();
     auto duration = args["DURATION"].AsInteger();
     auto user_threads = args["USER_THREADS"].AsInteger();
     auto download_size = args["DOWNLOAD_SIZE"].AsInteger();
-    return CProcessing::Io(service, start_time, duration, user_threads, download_size);
+    return CProcessing::Io(args, start_time, duration, user_threads, download_size);
 }
 
 template <>
-int CPsgClientApp::RunRequest<SJsonCheck>(const string&, const CArgs& args)
+int CPsgClientApp::RunRequest<SJsonCheck>(const CArgs& args)
 {
     const auto& schema = args["schema-file"];
     auto& doc_is = args["input-file"].AsInputFile();

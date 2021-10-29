@@ -414,6 +414,11 @@ void CJsonResponse::Set(CJson_Node node, const CPSG_ChunkId& chunk_id)
     Set(obj["id2_info"],  chunk_id.GetId2Info());
 }
 
+SParams::SParams(const CArgs& args) :
+    service(args["service"].AsString())
+{
+}
+
 template <class TItem, class TStr>
 void s_ReportErrors(ostream& os, EPSG_Status status, TItem item, TStr prefix, const char* delim = "\n\t")
 {
@@ -587,6 +592,7 @@ bool s_GetDataOnly(const CArgs& args)
 }
 
 SOneRequestParams::SOneRequestParams(const CArgs& args) :
+    SParams(args),
     latency({args["latency"].HasValue(), args["debug-printout"].HasValue()}),
     data_only({s_GetDataOnly(args), s_GetOutputFormat(args)})
 {
@@ -606,7 +612,7 @@ void CProcessing::ReplyComplete(SJsonOut& output, EPSG_Status status, const shar
     }
 }
 
-int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> request, const SOneRequestParams params)
+int CProcessing::OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Request> request)
 {
     SDataOnlyCopy data_only_copy(params.data_only);
     CLogLatencyReport latency_report{
@@ -629,11 +635,11 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
     if (params.data_only.enabled) {
         auto item_complete = bind(&SDataOnlyCopy::ItemComplete, &data_only_copy, _1, _2);
         auto reply_complete = bind(&SDataOnlyCopy::ReplyComplete, &data_only_copy, _1, _2);
-        queue = CPSG_EventLoop(service, item_complete, reply_complete);
+        queue = CPSG_EventLoop(params.service, item_complete, reply_complete);
     } else {
         auto item_complete = bind(&CProcessing::ItemComplete, ref(json_out), _1, _2);
         auto reply_complete = bind(&CProcessing::ReplyComplete, ref(json_out), _1, _2);
-        queue = CPSG_EventLoop(service, item_complete, reply_complete);
+        queue = CPSG_EventLoop(params.service, item_complete, reply_complete);
     }
 
     queue.SetUserArgs(user_args);
@@ -852,7 +858,7 @@ vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create
     return requests;
 }
 
-int CProcessing::Performance(const string& service, size_t user_threads, double delay, bool local_queue, bool report_immediately, ostream& os)
+int CProcessing::Performance(const SParams params, size_t user_threads, double delay, bool local_queue, bool report_immediately, ostream& os)
 {
     using TReplyStorage = deque<shared_ptr<CPSG_Reply>>;
     SIoRedirector io_redirector(cout, os);
@@ -924,7 +930,7 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
     vector<TReplyStorage> replies(user_threads);
 
     for (size_t i = 0; i < (local_queue ? user_threads : 1); ++i) {
-        queues.emplace_back(service);
+        queues.emplace_back(params.service);
         queues.back().SetUserArgs(user_args);
     }
 
@@ -1059,10 +1065,10 @@ int s_CheckItems(bool expect_errors, const string& request_id, shared_ptr<CPSG_R
     return SExitCode::eSuccess;
 }
 
-int CProcessing::Testing(const string& service)
+int CProcessing::Testing(const SParams params)
 {
     const TPSG_RequestTimeout kDefaultTimeout(TPSG_RequestTimeout::eGetDefault);
-    CPSG_Queue queue(service);
+    CPSG_Queue queue(params.service);
     queue.SetUserArgs(user_args);
     ifstream input_file("psg_client_test.json");
     SIoRedirector ior(cin, input_file);
@@ -1219,13 +1225,13 @@ void SInteractiveNewRequestStart::SExtra::Print(const string& prefix, CJson_Cons
     };
 }
 
-int CProcessing::ParallelProcessing(const string& service, const CArgs& args, bool batch_resolve, bool echo)
+int CProcessing::ParallelProcessing(const SParams params, const CArgs& args, bool batch_resolve, bool echo)
 {
     const string input_file = batch_resolve ? "id-file" : "input-file";
     const auto pipe = args[input_file].AsString() == "-";
     auto& is = pipe ? cin : args[input_file].AsInputFile();
 
-    CParallelProcessing parallel_processing(service, pipe, args, echo, batch_resolve);
+    CParallelProcessing parallel_processing(params.service, pipe, args, echo, batch_resolve);
     string line;
 
     while (ReadLine(line, is)) {
@@ -1402,7 +1408,7 @@ void SIoOutput::Output(size_t errors)
     cout << "Max: " << stats.back() << endl;
 }
 
-int CProcessing::Io(const string& service, time_t start_time, int duration, int user_threads, int download_size)
+int CProcessing::Io(const SParams params, time_t start_time, int duration, int user_threads, int download_size)
 {
     SIoOutput io_output;
 
@@ -1422,7 +1428,7 @@ int CProcessing::Io(const string& service, time_t start_time, int duration, int 
 
     this_thread::sleep_for(sleep);
 
-    SIoContext context(service, download_size);
+    SIoContext context(params.service, download_size);
 
     vector<SIoWorker> threads;
     threads.reserve(user_threads);
