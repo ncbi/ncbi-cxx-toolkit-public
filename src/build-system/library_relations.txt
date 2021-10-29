@@ -1864,9 +1864,12 @@ xid_stream_cass needs psg_cassandra
 xid_stream_cass needs xutil
 xid_utils includes xid_pubseqos
 xid_utils needs $(CONNEXT)
-xid_utils needs xcgi
-xid_utils needs xmlwrapp
+xid_utils needs xconnect
 xid_utils needs xobjutil
+xid_utils needs3party $(LIBXML_LIBS)
+xid_utils_cgi needs xcgi
+xid_utils_cgi needs xmlwrapp
+xid_utils_cgi needs xslt_libxml
 xid_utils_load needs psloader
 xid_utils_load needs xid_utils
 xid_utils_noncorelib needs txclient
@@ -1889,6 +1892,7 @@ xlsxwriter needs3party $(Z_LIBS)
 xmergetree needs $(SOBJMGR_LIBS)
 xml2 needs3party $(ORIG_LIBS)
 xmlcgi needs sssutils
+xmlcgi needs xcgi
 xmlcgi needs xhtml
 xmlcgi needs xslt_libxml
 xmlreaders needs xmlwrapp
@@ -1953,6 +1957,7 @@ xser needs xutil
 xslt needs3party $(LIBXML_LIBS)
 xslt needs3party $(ORIG_LIBS)
 xslt_libxml needs xid_utils
+xslt_libxml needs3party $(LIBXSLT_LIBS)
 xslt_xalan needs xid_utils
 xslt_xalan needs3party $(CURL_LIBS)
 xslt_xalan needs3party $(ICU_LIBS)
