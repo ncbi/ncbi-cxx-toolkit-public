@@ -163,6 +163,18 @@ struct SOneRequestParams : SParams
     SOneRequestParams(const CArgs& args);
 };
 
+struct SParallelProcessingParams : SParams
+{
+    const CArgs& args;
+    const int worker_threads;
+    const bool batch_resolve;
+    const bool echo;
+    const bool pipe;
+    istream& is;
+
+    SParallelProcessingParams(const CArgs& a, bool br, bool e);
+};
+
 struct SIoParams : SParams
 {
     const time_t start_time;
@@ -176,7 +188,7 @@ struct SIoParams : SParams
 class CParallelProcessing
 {
 public:
-    CParallelProcessing(const string& service, bool pipe, const CArgs& args, bool echo, bool batch_resolve);
+    CParallelProcessing(const SParallelProcessingParams& params);
     ~CParallelProcessing();
 
     void operator()(string id) { m_InputQueue.Push(move(id)); }
@@ -218,7 +230,7 @@ public:
     static SPSG_UserArgs user_args;
 
     static int OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Request> request);
-    static int ParallelProcessing(const SParams params, const CArgs& args, bool batch_resolve, bool echo);
+    static int ParallelProcessing(const SParallelProcessingParams params);
     static int Performance(const SParams params, size_t user_threads, double delay, bool local_queue, bool report_immediately, ostream& os);
     static int Testing(const SParams params);
     static int Io(const SIoParams params);

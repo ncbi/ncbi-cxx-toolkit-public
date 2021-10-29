@@ -343,7 +343,7 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const CArgs& args)
         ctx.SetHitID();
 
         CJsonResponse::SetReplyType(false);
-        return CProcessing::ParallelProcessing(args, args, true, false);
+        return CProcessing::ParallelProcessing({ args, true, false });
     }
 }
 
@@ -353,7 +353,7 @@ int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args)
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eInteractive);
 
     const auto echo = args["echo"].HasValue();
-    return CProcessing::ParallelProcessing(args, args, false, echo);
+    return CProcessing::ParallelProcessing({ args, false, echo });
 }
 
 template <>

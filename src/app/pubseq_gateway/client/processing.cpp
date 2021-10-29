@@ -419,6 +419,17 @@ SParams::SParams(const CArgs& args) :
 {
 }
 
+SParallelProcessingParams::SParallelProcessingParams(const CArgs& a, bool br, bool e) :
+    SParams(a),
+    args(a),
+    worker_threads(max(1, min(10, args["worker-threads"].AsInteger()))),
+    batch_resolve(br),
+    echo(e),
+    pipe(args[batch_resolve ? "id-file" : "input-file"].AsString() == "-"),
+    is(pipe ? cin : args[batch_resolve ? "id-file" : "input-file"].AsInputFile())
+{
+}
+
 SIoParams::SIoParams(const CArgs& args) :
     SParams(args),
     start_time(args["START_TIME"].AsInteger()),
@@ -659,26 +670,23 @@ int CProcessing::OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Requ
     return 0;
 }
 
-CParallelProcessing::CParallelProcessing(const string& service, bool pipe, const CArgs& args, bool echo, bool batch_resolve) :
-    m_JsonOut(pipe)
+CParallelProcessing::CParallelProcessing(const SParallelProcessingParams& params) :
+    m_JsonOut(params.pipe)
 {
-    const int kMin = 1;
-    const int kMax = 10;
-
     using namespace placeholders;
-    auto item_complete = bind(batch_resolve ? &CProcessing::ItemComplete : &Interactive::ItemComplete, ref(m_JsonOut), _1, _2);
-    auto reply_complete = bind(batch_resolve ? &CProcessing::ReplyComplete : &Interactive::ReplyComplete, ref(m_JsonOut), _1, _2);
+    auto item_complete = bind(params.batch_resolve ? &CProcessing::ItemComplete : &Interactive::ItemComplete, ref(m_JsonOut), _1, _2);
+    auto reply_complete = bind(params.batch_resolve ? &CProcessing::ReplyComplete : &Interactive::ReplyComplete, ref(m_JsonOut), _1, _2);
 
-    for (int n = max(kMin, min(kMax, args["worker-threads"].AsInteger())); n > 0; --n) {
-        m_PsgQueues.emplace_back(service, item_complete, reply_complete);
+    for (int n = params.worker_threads; n > 0; --n) {
+        m_PsgQueues.emplace_back(params.service, item_complete, reply_complete);
         auto& queue = m_PsgQueues.back();
         queue.SetUserArgs(CProcessing::user_args);
         m_Threads.emplace_back(&CPSG_EventLoop::Run, ref(queue), CDeadline::eInfinite);
 
-        if (batch_resolve) {
-            m_Threads.emplace_back(&BatchResolve::Submitter, ref(m_InputQueue), ref(queue), cref(args));
+        if (params.batch_resolve) {
+            m_Threads.emplace_back(&BatchResolve::Submitter, ref(m_InputQueue), ref(queue), cref(params.args));
         } else {
-            m_Threads.emplace_back(&Interactive::Submitter, ref(m_InputQueue), ref(queue), ref(m_JsonOut), echo);
+            m_Threads.emplace_back(&Interactive::Submitter, ref(m_InputQueue), ref(queue), ref(m_JsonOut), params.echo);
         }
     }
 }
@@ -1234,16 +1242,12 @@ void SInteractiveNewRequestStart::SExtra::Print(const string& prefix, CJson_Cons
     };
 }
 
-int CProcessing::ParallelProcessing(const SParams params, const CArgs& args, bool batch_resolve, bool echo)
+int CProcessing::ParallelProcessing(const SParallelProcessingParams params)
 {
-    const string input_file = batch_resolve ? "id-file" : "input-file";
-    const auto pipe = args[input_file].AsString() == "-";
-    auto& is = pipe ? cin : args[input_file].AsInputFile();
-
-    CParallelProcessing parallel_processing(params.service, pipe, args, echo, batch_resolve);
+    CParallelProcessing parallel_processing(params);
     string line;
 
-    while (ReadLine(line, is)) {
+    while (ReadLine(line, params.is)) {
         _ASSERT(!line.empty()); // ReadLine makes sure it's not empty
         parallel_processing(move(line));
     }
