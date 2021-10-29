@@ -139,6 +139,7 @@ private:
 struct SParams
 {
     const string& service;
+    const SPSG_UserArgs user_args;
 
     SParams(const CArgs& args);
 };
@@ -238,8 +239,6 @@ private:
 class CProcessing
 {
 public:
-    static SPSG_UserArgs user_args;
-
     static int OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Request> request);
     static int ParallelProcessing(const SParallelProcessingParams params);
     static int Performance(const SPerformanceParams params);

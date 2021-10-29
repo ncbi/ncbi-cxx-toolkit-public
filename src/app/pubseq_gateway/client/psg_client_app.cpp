@@ -312,11 +312,6 @@ void s_SetPsgDefaults(const CArgs& args, bool parallel)
         TPSG_DebugPrintout::SetDefault(debug_printout);
     }
 
-    if (args["user-args"].HasValue()) {
-        const auto& user_args = args["user-args"].AsString();
-        CProcessing::user_args = user_args;
-    }
-
     CJsonResponse::Verbose(args["verbose"].HasValue());
 }
 
