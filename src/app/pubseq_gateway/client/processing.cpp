@@ -840,7 +840,7 @@ string s_GetId(const CJson_Document& req_doc)
 }
 
 template <class TCreateContext>
-vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create_context)
+vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create_context, size_t report_progress_after)
 {
     static CJson_Schema json_schema(RequestSchema());
     string line;
@@ -878,7 +878,7 @@ vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create
 
             if (auto request = SRequestBuilder::Build(method, params_obj, user_args, move(user_context))) {
                 requests.emplace_back(move(request));
-                if (requests.size() % 2000 == 0) cerr << '.';
+                if (report_progress_after && (requests.size() % report_progress_after == 0)) cerr << '.';
             }
         }
     }
@@ -893,11 +893,13 @@ int CProcessing::Performance(const SPerformanceParams params)
         return -1;
     }
 
+    const size_t kReportProgressAfter = 2000;
+
     using TReplyStorage = deque<shared_ptr<CPSG_Reply>>;
     SIoRedirector io_redirector(cout, params.os);
 
-    cerr << "Preparing requests: ";
-    auto requests = ReadCommands([](string id, CJson_ConstNode&){ return make_shared<SMetrics>(move(id)); });
+    if (SParams::verbose) cerr << "Preparing requests: ";
+    auto requests = ReadCommands([](string id, CJson_ConstNode&){ return make_shared<SMetrics>(move(id)); }, SParams::verbose ? kReportProgressAfter : 0);
 
     if (requests.empty()) return -1;
 
@@ -978,19 +980,23 @@ int CProcessing::Performance(const SPerformanceParams params)
     wait();
 
     // Start processing replies
-    cerr << "\nSubmitting requests: ";
-    size_t previous = requests.size() / 2000;
+    if (SParams::verbose) {
+        cerr << "\nSubmitting requests: ";
+        size_t previous = requests.size() / kReportProgressAfter;
 
-    while (to_submit > 0) {
-        size_t current = to_submit / 2000;
+        while (to_submit > 0) {
+            size_t current = to_submit / kReportProgressAfter;
 
-        if (current < previous) {
-            cerr << '.';
+            for (auto i = current; i < previous; ++i) {
+                cerr << '.';
+            }
+
             previous = current;
+            this_thread::sleep_for(chrono::milliseconds(100));
         }
-    }
 
-    cerr << "\nWaiting for threads: " << params.user_threads << '\n';
+        cerr << "\nWaiting for threads: " << params.user_threads << '\n';
+    }
 
     for (auto& t : threads) {
         t.join();
@@ -1000,18 +1006,18 @@ int CProcessing::Performance(const SPerformanceParams params)
     queues.clear();
 
     // Output metrics
-    cerr << "Outputting metrics: ";
+    if (SParams::verbose) cerr << "Outputting metrics: ";
     requests.clear();
     size_t output = 0;
 
     for (auto& thread_replies : replies) {
         for (auto& reply : thread_replies) {
             reply.reset();
-            if (++output % 2000 == 0) cerr << '.';
+            if (SParams::verbose && (++output % kReportProgressAfter == 0)) cerr << '.';
         }
     }
 
-    cerr << '\n';
+    if (SParams::verbose) cerr << '\n';
     return 0;
 }
 
