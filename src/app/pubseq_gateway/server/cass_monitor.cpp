@@ -39,16 +39,26 @@
 #include "shutdown_data.hpp"
 extern SShutdownData    g_ShutdownData;
 
+const size_t    kCheckPeriodSeconds = 60;   // Once per minute
+
+
 void CassMonitorThreadedFunction(void)
 {
-    auto    app = CPubseqGatewayApp::GetInstance();
+    auto        app = CPubseqGatewayApp::GetInstance();
+    size_t      loop_count = 0;
 
     for ( ; ; ) {
-        // The thread should wake up once per minute
-        std::this_thread::sleep_for(std::chrono::seconds(60));
-
+        // The thread should wake up once per minute; sleeping for 1 second is
+        // to have the shutdown request checking more often
+        std::this_thread::sleep_for(std::chrono::seconds(1));
         if (g_ShutdownData.m_ShutdownRequested)
             break;
+
+        ++loop_count;
+        if (loop_count < 60) {
+            continue;
+        }
+        loop_count = 0;
 
         switch (app->GetStartupDataState()) {
             case ePSGS_NoCassConnection:
