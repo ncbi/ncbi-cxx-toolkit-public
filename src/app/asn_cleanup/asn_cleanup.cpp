@@ -953,7 +953,7 @@ bool CCleanupApp::x_FixCDS(CSeq_entry_Handle seh, Uint4 options, const string& m
             }
             //also set protein name if missing, change takes place on protein bioseq
             if (!NStr::IsBlank(missing_prot_name)) {
-                string current_name = CCleanup::GetProteinName(*sf, seh.GetScope());
+                string current_name = CCleanup::GetProteinName(*sf, seh);
                 if (NStr::IsBlank(current_name)) {
                     CCleanup::SetProteinName(*sf, missing_prot_name, false, seh.GetScope());
                     any_changes = true;
