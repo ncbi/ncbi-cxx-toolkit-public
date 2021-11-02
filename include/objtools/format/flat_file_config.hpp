@@ -194,6 +194,7 @@ public:
         fExpandGaps            = 1 << 3,
         fShowSNPFeatures       = 1 << 6,
         fShowCDDFeatures       = 1 << 7,
+        fShowDebugTiming       = 1 << 8,
         fDisableAnnotRefs      = 1 << 10,
         fUseSeqEntryIndexer    = 1 << 11,
         fUseAutoDef            = 1 << 12,
@@ -619,6 +620,7 @@ public:
     bool ExpandGaps            (void) const;
     bool ShowSNPFeatures       (void) const;
     bool ShowCDDFeatures       (void) const;
+    bool ShowDebugTiming       (void) const;
     bool DisableAnnotRefs      (void) const;
     bool UseSeqEntryIndexer    (void) const;
     bool UseAutoDef            (void) const;
@@ -637,6 +639,7 @@ public:
     CFlatFileConfig& SetExpandGaps            (bool val = true);
     CFlatFileConfig& SetShowSNPFeatures       (bool val = true);
     CFlatFileConfig& SetShowCDDFeatures       (bool val = true);
+    CFlatFileConfig& SetShowDebugTiming       (bool val = true);
     CFlatFileConfig& SetDisableAnnotRefs      (bool val = true);
     CFlatFileConfig& SetUseSeqEntryIndexer    (bool val = true);
     CFlatFileConfig& SetUseAutoDef            (bool val = true);
@@ -837,6 +840,7 @@ CUSTOM_ARG_IMP(LongLocusNames)
 CUSTOM_ARG_IMP(ExpandGaps)
 CUSTOM_ARG_IMP(ShowSNPFeatures)
 CUSTOM_ARG_IMP(ShowCDDFeatures)
+CUSTOM_ARG_IMP(ShowDebugTiming)
 CUSTOM_ARG_IMP(DisableAnnotRefs)
 CUSTOM_ARG_IMP(UseSeqEntryIndexer)
 CUSTOM_ARG_IMP(UseAutoDef)
