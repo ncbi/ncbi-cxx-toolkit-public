@@ -22070,6 +22070,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_166)
     string host = "Atlantic white-sided dolphin";
     string error_msg;
 
+    BOOST_CHECK_EQUAL(true, IsSpecificHostValid("Exotic creature", error_msg)); // RW-1491
     BOOST_CHECK_EQUAL("Atlantic white-sided dolphin", FixSpecificHost("Atlantic white-sided dolphin"));
     BOOST_CHECK_EQUAL(true, IsSpecificHostValid("Atlantic white-sided dolphin", error_msg));
 
