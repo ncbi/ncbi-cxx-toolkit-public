@@ -1515,6 +1515,42 @@ const string& CCleanup::GetProteinName(const CProt_ref& prot)
 }
 
 
+static const string& s_GetProteinNameFromXrefOrQual(const CSeq_feat& cds) {
+    if (cds.IsSetXref()) {
+        ITERATE(CSeq_feat::TXref, it, cds.GetXref()) {
+            if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
+                return CCleanup::GetProteinName((*it)->GetData().GetProt());
+            }
+        }
+    }
+    if (cds.IsSetQual()) {
+        for (auto it = cds.GetQual().begin(); it != cds.GetQual().end(); it++) {
+            if ((*it)->IsSetQual() && (*it)->IsSetVal() && NStr::EqualNocase((*it)->GetQual(), "product")) {
+                return (*it)->GetVal();
+            }
+        }
+    }
+
+    return kEmptyStr;
+}
+
+
+const string& CCleanup::GetProteinName(const CSeq_feat& cds, CSeq_entry_Handle seh)
+{
+    if (cds.IsSetProduct() && cds.GetProduct().GetId()) {
+        CBioseq_Handle prot = seh.GetBioseqHandle(*(cds.GetProduct().GetId()));
+        if (prot) {
+            CFeat_CI f(prot, CSeqFeatData::eSubtype_prot);
+            if (f) {
+                return GetProteinName(f->GetData().GetProt());
+            }
+        }
+    }
+
+    return s_GetProteinNameFromXrefOrQual(cds);
+}
+
+
 const string& CCleanup::GetProteinName(const CSeq_feat& cds, CScope& scope)
 {
     if (cds.IsSetProduct()) {
@@ -1526,21 +1562,8 @@ const string& CCleanup::GetProteinName(const CSeq_feat& cds, CScope& scope)
             }
         }
     }
-    if (cds.IsSetXref()) {
-        ITERATE(CSeq_feat::TXref, it, cds.GetXref()) {
-            if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
-                return GetProteinName((*it)->GetData().GetProt());
-            }
-        }
-    }
-    if (cds.IsSetQual()) {
-        for (auto it = cds.GetQual().begin(); it != cds.GetQual().end(); it++) {
-            if ((*it)->IsSetQual() && (*it)->IsSetVal() && NStr::EqualNocase((*it)->GetQual(), "product")) {
-                return (*it)->GetVal();
-            }
-        }
-    }
-    return kEmptyStr;
+
+    return s_GetProteinNameFromXrefOrQual(cds);
 }
 
 
@@ -2677,7 +2700,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
         if (sequence::IsPseudo(*(cds_it->GetSeq_feat()), entry.GetScope())) {
             change_this_cds = RemovePseudoProduct(*new_cds, entry.GetScope());
         } else {
-            string current_name = GetProteinName(*new_cds, entry.GetScope());
+            string current_name = GetProteinName(*new_cds, entry);
 
             change_this_cds |= SetBestFrame(*new_cds, entry.GetScope());
 
