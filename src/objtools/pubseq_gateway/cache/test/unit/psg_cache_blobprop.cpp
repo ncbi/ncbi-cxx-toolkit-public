@@ -182,5 +182,23 @@ TEST_F(CPsgCacheBlobPropTest, LookupBlobPropForLastRecord)
     EXPECT_EQ(last.GetSize(), response[0].GetSize());
 }
 
+TEST_F(CPsgCacheBlobPropTest, EnumerateBlobProp)
+{
+    CPubseqGatewayCache::TBlobPropRequest request;
+    int rows{0};
+    m_Cache->EnumerateBlobProp(4,
+        [&rows] (int32_t sat_key, int64_t modified)
+        {
+            if (rows == 0) {
+                EXPECT_EQ(4317, sat_key);
+                EXPECT_EQ(1009491218503, modified);
+            }
+            ++rows;
+            return true;
+        }
+    );
+    EXPECT_EQ(20, rows);
+}
+
 END_SCOPE()
 
