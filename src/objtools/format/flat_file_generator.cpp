@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbitime.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
@@ -630,6 +631,10 @@ void CFlatFileGenerator::Generate
 
     const CFlatFileConfig& cfg = m_Ctx->GetConfig();
 
+    bool showDebugTiming = cfg.ShowDebugTiming();
+
+    CStopWatch sw;
+
     bool doNuc = false;
     bool doProt = false;
 
@@ -647,6 +652,9 @@ void CFlatFileGenerator::Generate
 
     if ( cfg.BasicCleanup() )
     {
+        if (showDebugTiming) {
+            sw.Start();
+        }
 
         entry.GetTopLevelEntry().GetCompleteObject();
         CSeq_entry_EditHandle tseh = entry.GetTopLevelEntry().GetEditHandle();
@@ -676,6 +684,15 @@ void CFlatFileGenerator::Generate
         else {
             tseh.SelectSeq(bseqh);
         }
+
+        if (showDebugTiming) {
+            NcbiCerr << "Cleanup: " << sw.Elapsed() << ", ";
+            sw.Reset();
+        }
+    }
+
+    if (showDebugTiming) {
+        sw.Start();
     }
 
     m_Ctx->SetSGS(false);
@@ -774,10 +791,24 @@ void CFlatFileGenerator::Generate
     }
     formatter->SetContext(*m_Ctx);
 
+    if (showDebugTiming) {
+        // NcbiCerr << "Prepare: " << sw.Elapsed() << ", ";
+        sw.Reset();
+    }
+
     // internal Bioseq iterator loop moved up from x_GatherSeqEntry
     for (CBioseq_CI bioseq_it(entry);  bioseq_it;  ++bioseq_it) {
+
+        if (showDebugTiming) {
+            sw.Start();
+        }
+
         CBioseq_Handle bsh = *bioseq_it;
         if (! bsh) continue;
+        CSeq_id_Handle sidh = bsh.GetAccessSeq_id_Handle();
+        if (showDebugTiming) {
+            NcbiCerr << "Accession: " << sidh << ", ";
+        }
         const CSeq_entry_Handle ent = bsh.GetSeq_entry_Handle();
         CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
 
@@ -886,6 +917,11 @@ void CFlatFileGenerator::Generate
         }
 
         gatherer->Gather(*m_Ctx, *pItemOS, ent, bsh, useSeqEntryIndexing, doNuc, doProt);
+
+        if (showDebugTiming) {
+            NcbiCerr << "Elapsed: " << sw.Elapsed() << NcbiEndl;
+            sw.Reset();
+        }
     }
 
     /// reset the context, but preserve our selector
