@@ -232,7 +232,7 @@ void CVecscreenRun::x_RunBlast()
 
    // Constructor for blast run.
    CLocalBlast blaster(query_factory, opts, target_db);
-
+ 
    // BLAST run.
    m_RawBlastResults = blaster.Run();
    _ASSERT(m_RawBlastResults->size() == 1);
@@ -346,7 +346,8 @@ CVecscreenRun::CFormatter::FormatResults(CNcbiOstream& out,
 
         ITERATE(list<SVecscreenSummary>, mi, match_list) {
             NON_CONST_ITERATE(list<CRef<CSeq_align> >, align_iter, alignments.Set()) {
-                if(mi->range.IntersectionWith((*align_iter)->GetSeqRange(0))==mi->range) {
+                if(mi->range.IntersectionWith((*align_iter)->GetSeqRange(0))==mi->range ||
+                   mi->range.IntersectionWith((*align_iter)->GetSeqRange(0))==(*align_iter)->GetSeqRange(0)) {
                     if(mi->seqid->Equals( (*align_iter)->GetSeq_id(0))) {
                         (*align_iter)->SetNamedScore("match_type", match_type_ints[mi->match_type]);
                     }
