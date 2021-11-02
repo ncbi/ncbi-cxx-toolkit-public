@@ -313,6 +313,7 @@ public:
     static void SetProteinName(CSeq_feat& cds, const string& protein_name, bool append, CScope& scope);
     static void SetMrnaName(CSeq_feat& mrna, const string& protein_name);
     static const string& GetProteinName(const CProt_ref& prot);
+    static const string& GetProteinName(const CSeq_feat& cds, CSeq_entry_Handle seh);
     static const string& GetProteinName(const CSeq_feat& cds, CScope& scope);
 
 /// Sets MolInfo::tech for a sequence
