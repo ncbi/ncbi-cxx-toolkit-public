@@ -199,6 +199,13 @@ CPubseqGatewayCache::TBlobPropResponse CPubseqGatewayCache::FetchBlobPropLast(TB
     return TBlobPropResponse();
 }
 
+void CPubseqGatewayCache::EnumerateBlobProp(int32_t sat, TBlobPropEnumerateFn fn)
+{
+    if (m_BlobPropCache) {
+        m_BlobPropCache->EnumerateBlobProp(sat, move(fn));
+    }
+}
+
 CPubseqGatewayCache::TSi2CsiResponse CPubseqGatewayCache::FetchSi2Csi(TSi2CsiRequest const& request)
 {
     if (m_Si2CsiCache && request.HasField(TSi2CsiRequest::EFields::eSecSeqId)) {

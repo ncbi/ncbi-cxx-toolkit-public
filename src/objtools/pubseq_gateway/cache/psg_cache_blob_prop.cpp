@@ -207,6 +207,30 @@ vector<CBlobRecord> CPubseqGatewayCacheBlobProp::FetchLast(CBlobFetchRequest con
     return response;
 }
 
+void CPubseqGatewayCacheBlobProp::EnumerateBlobProp(int32_t sat, TBlobPropEnumerateFn fn)
+{
+    if (m_Env && sat >= 0 && static_cast<size_t>(sat) < m_Dbis.size() && m_Dbis[sat])
+    {
+        auto rdtxn = BeginReadTxn();
+        auto cursor = lmdb::cursor::open(rdtxn, *m_Dbis[sat]);
+        lmdb::val key, val;
+        bool has_current = cursor.get(key, val, MDB_FIRST);
+        while (has_current) {
+            int64_t last_modified{-1};
+            CBlobRecord::TSatKey sat_key{-1};
+            if (key.size() == kPackedKeySize
+                && UnpackKey(key.data<const char>(), key.size(), last_modified, sat_key)
+            ) {
+                bool more = fn(sat_key, last_modified);
+                if (!more) {
+                    return;
+                }
+            }
+            has_current = cursor.get(key, val, MDB_NEXT);
+        }
+    }
+}
+
 string CPubseqGatewayCacheBlobProp::PackKey(int32_t sat_key)
 {
     string rv;

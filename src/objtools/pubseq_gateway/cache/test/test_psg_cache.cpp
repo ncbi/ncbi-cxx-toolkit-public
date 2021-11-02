@@ -209,7 +209,7 @@ int CTestPsgCache::Run()
 {
     ParseArgs();
     m_LookupCache.reset(new CPubseqGatewayCache(m_BioseqInfoDbFile, m_Si2csiDbFile, m_BlobPropDbFile));
-    m_LookupCache->Open({4});
+    m_LookupCache->Open({50});
 
     switch (m_job) {
         case TJob::jb_last_si: {

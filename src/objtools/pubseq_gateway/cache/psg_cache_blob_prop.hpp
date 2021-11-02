@@ -51,12 +51,15 @@ class CPubseqGatewayCacheBlobProp
     : public CPubseqGatewayCacheBase
 {
  public:
+    using TBlobPropEnumerateFn = function<bool(int32_t, int64_t)>;
+
     explicit CPubseqGatewayCacheBlobProp(const string& file_name);
     virtual ~CPubseqGatewayCacheBlobProp() override;
     void Open(const set<int>& sat_ids);
 
     vector<CBlobRecord> Fetch(CBlobFetchRequest const& request);
     vector<CBlobRecord> FetchLast(CBlobFetchRequest const& request);
+    void EnumerateBlobProp(int32_t sat, TBlobPropEnumerateFn fn);
 
     static string PackKey(int32_t sat_key);
     static string PackKey(int32_t sat_key, int64_t last_modified);

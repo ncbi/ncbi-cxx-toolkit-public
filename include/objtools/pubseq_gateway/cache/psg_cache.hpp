@@ -62,6 +62,8 @@ class CPubseqGatewayCache
         string message;
     };
 
+    using TBlobPropEnumerateFn = function<bool(int32_t, int64_t)>;
+
  public:
     using TRuntimeError = SRuntimeError;
     using TRuntimeErrorList = deque<SRuntimeError>;
@@ -110,6 +112,8 @@ class CPubseqGatewayCache
     static string PackBlobPropKey(int32_t sat_key, int64_t last_modified);
     static bool UnpackBlobPropKey(const char* key, size_t key_sz, int64_t& last_modified);
     static bool UnpackBlobPropKey(const char* key, size_t key_sz, int64_t& last_modified, int32_t& sat_key);
+
+    void EnumerateBlobProp(int32_t sat, TBlobPropEnumerateFn fn);
 
  private:
     string m_BioseqInfoPath;
