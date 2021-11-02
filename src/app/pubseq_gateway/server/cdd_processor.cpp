@@ -210,7 +210,7 @@ void CCDDProcessorRef::GetBlobByBlobId(shared_ptr<CCDDProcessorRef> ref)
 
 CPSGS_CDDProcessor::CPSGS_CDDProcessor(void)
     : m_ClientPool(new CCDDClientPool()),
-      m_Status(ePSGS_InProgress),
+      m_Status(ePSGS_NotFound),
       m_Canceled(false)
 {
 }
