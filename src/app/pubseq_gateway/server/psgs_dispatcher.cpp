@@ -439,6 +439,16 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
     } else {
         // Remove the group because the low level request structures have
         // already been dismissed
+
+        // Note: it is possible that a processor is on a wait for another
+        // processor. This should be taken care of. A Cancel() call will make
+        // the locking processor to unlock the waiter
+        for (auto &  proc: procs->second) {
+            if (proc.m_DispatchStatus == ePSGS_Up) {
+                proc.m_Processor->Cancel();
+            }
+        }
+
         m_ProcessorGroups.erase(procs);
     }
 

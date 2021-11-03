@@ -2004,6 +2004,7 @@ void CPubseqGatewayApp::x_DispatchRequest(shared_ptr<CPSGS_Request>  request,
 
     if (!pending_ops.empty()) {
         reply->SetRequestId(request->GetRequestId());
+        request->SetConcurrentProcessorCount(pending_ops.size());
 
         auto    http_conn = reply->GetHttpReply()->GetHttpConnection();
         http_conn->Postpone(move(pending_ops), reply);

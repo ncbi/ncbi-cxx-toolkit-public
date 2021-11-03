@@ -127,6 +127,7 @@ void CPendingOperation::Peek(bool  need_wait)
             m_Reply->SetCompleted();
         }
         // To handle the canceled connection
+        m_Processor->Cancel();  // Just in case
         CPubseqGatewayApp::GetInstance()->SignalFinishProcessing(
                         m_Processor.get(), CPSGS_Dispatcher::ePSGS_Fromework);
         return;
