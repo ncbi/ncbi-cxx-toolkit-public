@@ -221,6 +221,7 @@ public:
         ePolicy_External,
         ePolicy_Exhaustive,
         ePolicy_Ftp,
+        ePolicy_Genomes,
         ePolicy_Web
     };
 
@@ -501,6 +502,7 @@ public:
     bool IsPolicyExternal (void) const { return m_Policy == ePolicy_External;  }
     bool IsPolicyExhaustive (void) const { return m_Policy == ePolicy_Exhaustive;  }
     bool IsPolicyFtp (void) const { return m_Policy == ePolicy_Ftp;  }
+    bool IsPolicyGenomes (void) const { return m_Policy == ePolicy_Genomes;  }
     bool IsPolicyWeb (void) const { return m_Policy == ePolicy_Web;  }
     // setters
     void SetPolicy(const TPolicy& Policy) { m_Policy = Policy;  }
@@ -509,6 +511,7 @@ public:
     void SetPolicyExternal (void) { m_Policy = ePolicy_External;  }
     void SetPolicyExhaustive (void) { m_Policy = ePolicy_Exhaustive;  }
     void SetPolicyFtp (void) { m_Policy = ePolicy_Ftp;  }
+    void SetPolicyGenomes (void) { m_Policy = ePolicy_Genomes;  }
     void SetPolicyWeb (void) { m_Policy = ePolicy_Web;  }
 
     // -- Flags

@@ -95,7 +95,8 @@ public:
         eExternal = 2,
         eExhaustive = 3,
         eFtp = 4,
-        eWeb = 5
+        eGenomes = 6,
+        eWeb = 6
     };
 
     enum EFlags {
