@@ -1493,6 +1493,10 @@ void CTabularFormatter_OrgName::PrintHelpText(CNcbiOstream& ostr) const
     case eGenus:
         ostr << "Genus name of the ";
         break;
+
+    case eKingdom:
+        ostr << "Kingdom name of the ";
+        break;
     }
 
     switch (m_Row) {
@@ -1519,6 +1523,7 @@ void CTabularFormatter_OrgName::PrintHeader(CNcbiOstream& ostr) const
     case eFullTaxName:  ostr << "taxname";  break;
     case eSpecies:      ostr << "species";  break;
     case eGenus:        ostr << "genus";  break;
+    case eKingdom:      ostr << "kingdom";  break;
     }
 }
 
@@ -1548,6 +1553,10 @@ void CTabularFormatter_OrgName::Print(CNcbiOstream& ostr,
 
     case eGenus:
         taxid = m_Taxon1->GetGenus(taxid);
+        break;
+
+    case eKingdom:
+        taxid = m_Taxon1->GetSuperkingdom(taxid);
         break;
 
     default:
@@ -2558,6 +2567,9 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
     formatter.RegisterField("qgenus",
             new CTabularFormatter_OrgName
             (0, CTabularFormatter_OrgName::eGenus));
+    formatter.RegisterField("qkingdom",
+            new CTabularFormatter_OrgName
+            (0, CTabularFormatter_OrgName::eKingdom));
 
     formatter.RegisterField("staxname",
             new CTabularFormatter_OrgName
@@ -2568,6 +2580,9 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
     formatter.RegisterField("sgenus",
             new CTabularFormatter_OrgName
             (1, CTabularFormatter_OrgName::eGenus));
+    formatter.RegisterField("skingdom",
+            new CTabularFormatter_OrgName
+            (1, CTabularFormatter_OrgName::eKingdom));
 
     formatter.RegisterField("align_id",
             new CTabularFormatter_AlignId());
