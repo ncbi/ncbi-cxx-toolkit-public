@@ -2175,7 +2175,7 @@ void CFeatureItem::x_AddQualsRna(
                                 x_AddQual(slot, new CFlatSeqIdQVal(*acc_id));
                             }
                             /*
-                            if (! (cfg.HideGI() || cfg.IsPolicyFtp())) {
+                            if (! (cfg.HideGI() || cfg.IsPolicyFtp() || cfg.IsPolicyGenomes())) {
                                 x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*sip, true));
                             }
                             */
@@ -2606,7 +2606,7 @@ void CFeatureItem::x_GetAssociatedProtInfoIdx(
     if ( protId ) {
         if ( !cfg.AlwaysTranslateCDS() ) {
             CScope::EGetBioseqFlag get_flag = CScope::eGetBioseq_Loaded;
-            if ( cfg.ShowFarTranslations() || ctx.IsGED() || ctx.IsRefSeq() || cfg.IsPolicyFtp() ) {
+            if ( cfg.ShowFarTranslations() || ctx.IsGED() || ctx.IsRefSeq() || cfg.IsPolicyFtp() || cfg.IsPolicyGenomes() ) {
                 get_flag = CScope::eGetBioseq_All;
             }
             protHandle =  scope.GetBioseqHandle(*protId, get_flag);
@@ -2655,7 +2655,7 @@ void CFeatureItem::x_GetAssociatedProtInfo(
     if ( protId ) {
         if ( !cfg.AlwaysTranslateCDS() ) {
             CScope::EGetBioseqFlag get_flag = CScope::eGetBioseq_Loaded;
-            if ( cfg.ShowFarTranslations() || ctx.IsGED() || ctx.IsRefSeq() || cfg.IsPolicyFtp() ) {
+            if ( cfg.ShowFarTranslations() || ctx.IsGED() || ctx.IsRefSeq() || cfg.IsPolicyFtp() || cfg.IsPolicyGenomes() ) {
                 get_flag = CScope::eGetBioseq_All;
             }
             protHandle =  scope.GetBioseqHandle(*protId, get_flag);
@@ -2766,7 +2766,7 @@ void CFeatureItem::x_AddQualProteinId(
             case CSeq_id::e_Gi:
                 if( seqid.GetGi() > ZERO_GI ) {
                     const CFlatFileConfig& cfg = GetContext()->Config();
-                    if (! (cfg.HideGI() || cfg.IsPolicyFtp())) {
+                    if (! (cfg.HideGI() || cfg.IsPolicyFtp() || cfg.IsPolicyGenomes())) {
                         if ( eLastRegularChoice == CSeq_id::e_not_set ) {
                             // use as protein_id if it's the first usable one
                             x_AddQual( eFQ_protein_id, new CFlatSeqIdQVal( seqid ) );
@@ -3147,7 +3147,7 @@ void CFeatureItem::x_AddProductIdQuals(
         const CFlatFileConfig& cfg = GetContext()->Config();
         ITERATE( CBioseq_Handle::TId, id_iter, ids ) {
             if( id_iter->IsGi() ) {
-                if (! (cfg.HideGI() || cfg.IsPolicyFtp())) {
+                if (! (cfg.HideGI() || cfg.IsPolicyFtp() || cfg.IsPolicyGenomes())) {
                     x_AddQual( eFQ_db_xref,
                         new CFlatStringQVal("GI:" + NStr::NumericToString(id_iter->GetGi()) ));
                 }
@@ -5695,7 +5695,8 @@ void CFeatureItem::x_AddFTableRnaQuals(
         CBioseq_Handle prod = 
             ctx.GetScope().GetBioseqHandle(m_Feat.GetProductId());
         if ( prod ) {
-            string id_str = x_SeqIdWriteForTable(*(prod.GetBioseqCore()), ctx.Config().SuppressLocalId(), !(ctx.Config().HideGI() || ctx.Config().IsPolicyFtp()));
+            string id_str = x_SeqIdWriteForTable(*(prod.GetBioseqCore()), ctx.Config().SuppressLocalId(),
+                                                 !(ctx.Config().HideGI() || ctx.Config().IsPolicyFtp() || ctx.Config().IsPolicyGenomes()));
             if (!NStr::IsBlank(id_str)) {
                 x_AddFTableQual("transcript_id", id_str);
             }
@@ -5828,7 +5829,8 @@ void CFeatureItem::x_AddFTableCdregionQuals(
     }
 
     if (prod && !cfg.HideProteinID()) {
-        string id_str = x_SeqIdWriteForTable(*(prod.GetBioseqCore()), ctx.Config().SuppressLocalId(), !(ctx.Config().HideGI() || ctx.Config().IsPolicyFtp()));
+        string id_str = x_SeqIdWriteForTable(*(prod.GetBioseqCore()), ctx.Config().SuppressLocalId(),
+                                             !(ctx.Config().HideGI() || ctx.Config().IsPolicyFtp() || ctx.Config().IsPolicyGenomes()));
         if (!NStr::IsBlank(id_str)) {
             x_AddFTableQual("protein_id", id_str);
         }
