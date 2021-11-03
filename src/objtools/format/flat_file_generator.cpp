@@ -285,7 +285,7 @@ void CFlatFileGenerator::Generate
                 CSeqEntryIndex::EPolicy policy = CSeqEntryIndex::eAdaptive;
                 CSeqEntryIndex::TFlags flags = CSeqEntryIndex::fDefault;
                 const CFlatFileConfig& cfg = m_Ctx->GetConfig();
-                if ( cfg.OnlyNearFeatures() && ! cfg.IsPolicyFtp() ) {
+                if ( cfg.OnlyNearFeatures() && ! ( cfg.IsPolicyFtp() || cfg.IsPolicyGenomes() ) ) {
                     policy = CSeqEntryIndex::eInternal;
                 }
                 if ( cfg.HideSNPFeatures() ) {
@@ -323,6 +323,9 @@ void CFlatFileGenerator::Generate
                 }
                 if ( cfg.IsPolicyFtp() ) {
                     policy = CSeqEntryIndex::eFtp;
+                }
+                if ( cfg.IsPolicyGenomes() ) {
+                    policy = CSeqEntryIndex::eGenomes;
                 }
                 if ( cfg.IsPolicyWeb() ) {
                     policy = CSeqEntryIndex::eWeb;
@@ -739,7 +742,7 @@ void CFlatFileGenerator::Generate
             try {
                 CSeqEntryIndex::EPolicy policy = CSeqEntryIndex::eAdaptive;
                 CSeqEntryIndex::TFlags flags = CSeqEntryIndex::fDefault;
-                if ( cfg.OnlyNearFeatures() && ! cfg.IsPolicyFtp() ) {
+                if ( cfg.OnlyNearFeatures() && ! ( cfg.IsPolicyFtp() || cfg.IsPolicyGenomes() ) ) {
                     policy = CSeqEntryIndex::eInternal;
                 }
                 if ( cfg.HideSNPFeatures() ) {
@@ -763,6 +766,9 @@ void CFlatFileGenerator::Generate
                 }
                 if ( cfg.IsPolicyFtp() ) {
                     policy = CSeqEntryIndex::eFtp;
+                }
+                if ( cfg.IsPolicyGenomes() ) {
+                    policy = CSeqEntryIndex::eGenomes;
                 }
                 if ( cfg.IsPolicyWeb() ) {
                     policy = CSeqEntryIndex::eWeb;

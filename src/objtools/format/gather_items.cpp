@@ -2012,7 +2012,7 @@ void CFlatGatherer::x_CollectBioSourcesOnBioseq
     // if protein, get sources applicable to DNA location of CDS
     if ( ctx.IsProt() ) {
         // collect biosources features on bioseq
-        if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() || cfg.IsPolicyFtp() ) {
+        if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() || ( cfg.IsPolicyFtp() || cfg.IsPolicyGenomes() ) ) {
             CConstRef<CSeq_feat> src_feat = sequence::GetSourceFeatForProduct(bh);
             if (src_feat.NotEmpty()) {
                 // CMappedFeat mapped_feat(bh.GetScope().GetSeq_featHandle(*src_feat));
@@ -2034,7 +2034,7 @@ void CFlatGatherer::x_CollectBioSourcesOnBioseq
 
     if ( ! ctx.IsProt() ) {
         // collect biosources features on bioseq
-        if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() || cfg.IsPolicyFtp() ) {
+        if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() || cfg.IsPolicyFtp() || cfg.IsPolicyGenomes() ) {
             x_CollectSourceFeatures(bh, range, ctx, srcs);
         }
     }
@@ -2530,7 +2530,7 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
             sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
         }
 
-        if (cfg.ShowContigFeatures() || cfg.IsPolicyFtp() ) {
+        if (cfg.ShowContigFeatures() || cfg.IsPolicyFtp() || cfg.IsPolicyGenomes() ) {
             sel.SetResolveAll()
                 .SetAdaptiveDepth(true);
         } else {
@@ -4315,7 +4315,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProductIdx(
 
     CBioseq_Handle  prot;
 
-    if (cfg.IsPolicyInternal() || cfg.IsPolicyFtp()) {
+    if (cfg.IsPolicyInternal() || cfg.IsPolicyFtp() || cfg.IsPolicyGenomes()) {
         prot = scope.GetBioseqHandleFromTSE(*prot_id, ctx.GetHandle());
     } else {
         prot = scope.GetBioseqHandle(*prot_id);
@@ -4350,7 +4350,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProductIdx(
             continue;
         }
 
-        if ( cfg.HideCDDFeatures() || ( ! cfg.ShowCDDFeatures() && ! cfg.IsPolicyFtp() ) )  {
+        if ( cfg.HideCDDFeatures() || ( ! cfg.ShowCDDFeatures() && ! ( cfg.IsPolicyFtp() || cfg.IsPolicyGenomes() ) ) )  {
             if (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site) {
                 if ( s_IsCDD(curr) ) {
                     // passing this test prevents mapping of COG CDD region features
