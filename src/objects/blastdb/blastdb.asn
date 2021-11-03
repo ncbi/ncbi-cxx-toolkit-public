@@ -73,8 +73,25 @@ Blast-db-mask-info ::= SEQUENCE {
     algo-options VisibleString,
     -- This object was originally created to allow pagination of the sequence
     -- masks, but this feature was discontinued in 01/21/2010
-    masks        Blast-mask-list
+    masks        Blast-mask-list 
 }
 
+Blast-db-metadata ::= SEQUENCE {
+    dbname                          SEQUENCE OF VisibleString,
+    dbtype                          VisibleString,
+    version                         INTEGER,
+    db-version                      INTEGER,
+    description                     VisibleString OPTIONAL,
+    number-of-letters               INTEGER,
+    number-of-sequences             INTEGER,
+    last-updated                    VisibleString,
+    bytes-total                     INTEGER,
+    bytes-to-cache                  INTEGER,
+    number-of-volumes               INTEGER,
+    number-of-taxids                INTEGER OPTIONAL,
+    files SEQUENCE OF               VisibleString OPTIONAL,
+    bytes-total-compressed          INTEGER OPTIONAL,
+    compressed-files SEQUENCE OF    VisibleString OPTIONAL
+}
 END
 
