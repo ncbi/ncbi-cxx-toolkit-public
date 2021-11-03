@@ -45,6 +45,9 @@ USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
 
+const string    kCassandraProcessorEvent = "Cassandra";
+
+
 class CPSGS_CassProcessorBase : public IPSGS_Processor
 {
 public:
@@ -53,6 +56,9 @@ public:
                             shared_ptr<CPSGS_Reply> reply,
                             TProcessorPriority  priority);
     virtual ~CPSGS_CassProcessorBase();
+    virtual void Cancel(void);
+    void SignalFinishProcessing(void);
+    void UnlockWaitingProcessor(void);
 
 protected:
     IPSGS_Processor::EPSGS_Status GetStatus(void) const;
@@ -78,6 +84,7 @@ protected:
 
     bool                            m_Cancelled;
     bool                            m_InPeek;
+    bool                            m_Unlocked;
 
     // The overall processor status.
     // It should not interfere the other processor statuses and be updated

@@ -134,9 +134,13 @@ void CPSGS_AnnotProcessor::Process(void)
     if (m_ValidNames.empty()) {
         UpdateOverallStatus(CRequestStatus::e200_Ok);
         m_Completed = true;
-        SignalFinishProcessing();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
+
+    // Lock the request for all the cassandra processors so that the other
+    // processors may wait on the event
+    IPSGS_Processor::m_Request->Lock(kCassandraProcessorEvent);
 
     // In both cases: sync or async resolution --> a callback will be called
     ResolveInputSeqId();
@@ -173,7 +177,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveError(
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 
     m_Completed = true;
-    SignalFinishProcessing();
+    CPSGS_CassProcessorBase::SignalFinishProcessing();
 }
 
 
@@ -327,7 +331,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
 
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         m_Completed = true;
-        SignalFinishProcessing();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return false;
     }
 
@@ -340,7 +344,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         // should continue.
         if (AreAllFinishedRead()) {
             m_Completed = true;
-            SignalFinishProcessing();
+            CPSGS_CassProcessorBase::SignalFinishProcessing();
             return false;
         }
 
@@ -442,7 +446,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
         // There will be no more activity
         fetch_details->SetReadFinished();
         m_Completed = true;
-        SignalFinishProcessing();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
     } else {
         x_Peek(false);
     }
@@ -503,7 +507,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
         // after sending the annotation so it is safe to say that the processor
         // is finished
         m_Completed = true;
-        SignalFinishProcessing();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -524,7 +528,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                     IPSGS_Processor::m_Reply->PrepareBlobExcluded(
                             blob_id.ToString(), GetName(), ePSGS_BlobInProgress);
                 m_Completed = true;
-                SignalFinishProcessing();
+                CPSGS_CassProcessorBase::SignalFinishProcessing();
                 return;
             }
         }
@@ -569,7 +573,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
             fetch_details->RemoveFromExcludeBlobCache();
 
             m_Completed = true;
-            SignalFinishProcessing();
+            CPSGS_CassProcessorBase::SignalFinishProcessing();
             return;
         }
 
@@ -633,7 +637,7 @@ void CPSGS_AnnotProcessor::OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
 
         if (AreAllFinishedRead()) {
             m_Completed = true;
-            SignalFinishProcessing();
+            CPSGS_CassProcessorBase::SignalFinishProcessing();
         } else {
             x_Peek(false);
         }
@@ -654,7 +658,7 @@ void CPSGS_AnnotProcessor::OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
 
         if (AreAllFinishedRead()) {
             m_Completed = true;
-            SignalFinishProcessing();
+            CPSGS_CassProcessorBase::SignalFinishProcessing();
         } else {
             x_Peek(false);
         }
@@ -731,13 +735,6 @@ void CPSGS_AnnotProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 }
 
 
-void CPSGS_AnnotProcessor::Cancel(void)
-{
-    m_Cancelled = true;
-    CancelLoaders();
-}
-
-
 IPSGS_Processor::EPSGS_Status CPSGS_AnnotProcessor::GetStatus(void)
 {
     auto    status = CPSGS_CassProcessorBase::GetStatus();
@@ -767,7 +764,7 @@ void CPSGS_AnnotProcessor::x_Peek(bool  need_wait)
 {
     if (m_Cancelled) {
         m_Completed = true;
-        SignalFinishProcessing();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -850,7 +847,7 @@ bool CPSGS_AnnotProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         fetch_details->SetReadFinished();
-        SignalFinishProcessing();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 
     return final_state;

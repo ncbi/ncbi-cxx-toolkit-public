@@ -105,6 +105,10 @@ CPSGS_AccessionVersionHistoryProcessor::CreateProcessor(
 
 void CPSGS_AccessionVersionHistoryProcessor::Process(void)
 {
+    // Lock the request for all the cassandra processors so that the other
+    // processors may wait on the event
+    IPSGS_Processor::m_Request->Lock(kCassandraProcessorEvent);
+
     // In both cases: sync or async resolution --> a callback will be called
     ResolveInputSeqId();
 }
@@ -140,7 +144,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveError(
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 
     m_Completed = true;
-    SignalFinishProcessing();
+    CPSGS_CassProcessorBase::SignalFinishProcessing();
 }
 
 
@@ -257,7 +261,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
 
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         m_Completed = true;
-        SignalFinishProcessing();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return false;
     }
 
@@ -268,7 +272,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
             UpdateOverallStatus(CRequestStatus::e404_NotFound);
 
         m_Completed = true;
-        SignalFinishProcessing();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return false;
     }
 
@@ -326,17 +330,10 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistError(
         // There will be no more activity
         fetch_details->SetReadFinished();
         m_Completed = true;
-        SignalFinishProcessing();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
     } else {
         x_Peek(false);
     }
-}
-
-
-void CPSGS_AccessionVersionHistoryProcessor::Cancel(void)
-{
-    m_Cancelled = true;
-    CancelLoaders();
 }
 
 
@@ -369,7 +366,7 @@ void CPSGS_AccessionVersionHistoryProcessor::x_Peek(bool  need_wait)
 {
     if (m_Cancelled) {
         m_Completed = true;
-        SignalFinishProcessing();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -436,7 +433,7 @@ bool CPSGS_AccessionVersionHistoryProcessor::x_Peek(unique_ptr<CCassFetch> &  fe
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         fetch_details->SetReadFinished();
-        SignalFinishProcessing();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 
     return final_state;
@@ -454,5 +451,9 @@ void CPSGS_AccessionVersionHistoryProcessor::x_OnResolutionGoodData(void)
     if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
         m_Completed = true;
     }
+
+    // If the other processor waits then let it go but after sending the signal
+    // of the good data (it may cancel the other processors)
+    UnlockWaitingProcessor();
 }
 

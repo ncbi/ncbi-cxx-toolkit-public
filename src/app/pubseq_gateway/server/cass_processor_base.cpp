@@ -43,6 +43,7 @@ CPSGS_CassProcessorBase::CPSGS_CassProcessorBase() :
     m_Completed(false),
     m_Cancelled(false),
     m_InPeek(false),
+    m_Unlocked(false),
     m_Status(CRequestStatus::e200_Ok)
 {}
 
@@ -54,6 +55,7 @@ CPSGS_CassProcessorBase::CPSGS_CassProcessorBase(
     m_Completed(false),
     m_Cancelled(false),
     m_InPeek(false),
+    m_Unlocked(false),
     m_Status(CRequestStatus::e200_Ok)
 {
     IPSGS_Processor::m_Request = request;
@@ -63,7 +65,36 @@ CPSGS_CassProcessorBase::CPSGS_CassProcessorBase(
 
 
 CPSGS_CassProcessorBase::~CPSGS_CassProcessorBase()
-{}
+{
+    UnlockWaitingProcessor();
+}
+
+
+void CPSGS_CassProcessorBase::Cancel(void)
+{
+    // The other processors may wait on a lock
+    UnlockWaitingProcessor();
+
+    m_Cancelled = true;
+    CancelLoaders();
+}
+
+
+void CPSGS_CassProcessorBase::SignalFinishProcessing(void)
+{
+    // It is safe to unlock the request many times
+    UnlockWaitingProcessor();
+    IPSGS_Processor::SignalFinishProcessing();
+}
+
+
+void CPSGS_CassProcessorBase::UnlockWaitingProcessor(void)
+{
+    if (!m_Unlocked) {
+        m_Unlocked = true;
+        IPSGS_Processor::m_Request->Unlock(kCassandraProcessorEvent);
+    }
+}
 
 
 IPSGS_Processor::EPSGS_Status CPSGS_CassProcessorBase::GetStatus(void) const
@@ -204,7 +235,7 @@ CPSGS_CassProcessorBase::TranslateSatToKeyspace(CBioseqInfoRecord::TSat  sat,
     PSG_ERROR(msg);
 
     m_Completed = true;
-    SignalFinishProcessing();
+    CPSGS_CassProcessorBase::SignalFinishProcessing();
 
     // Return invalid blob id
     return SCass_BlobId();

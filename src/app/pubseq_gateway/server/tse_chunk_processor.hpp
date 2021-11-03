@@ -49,7 +49,6 @@ public:
                                              shared_ptr<CPSGS_Reply> reply,
                                              TProcessorPriority  priority) const;
     virtual void Process(void);
-    virtual void Cancel(void);
     virtual EPSGS_Status GetStatus(void);
     virtual string GetName(void) const;
     virtual void ProcessEvent(void);

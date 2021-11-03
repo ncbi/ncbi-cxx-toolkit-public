@@ -117,12 +117,17 @@ void CPSGS_GetBlobProcessor::Process(void)
         PSG_WARNING(err_msg);
 
         m_Completed = true;
-        SignalFinishProcessing();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
 
         if (IPSGS_Processor::m_Reply->IsOutputReady())
             x_Peek(false);
         return;
     }
+
+    // Lock the request for all the cassandra processors so that the other
+    // processors may wait on the event
+    IPSGS_Processor::m_Request->Lock(kCassandraProcessorEvent);
+
 
     bool    added_to_exclude_cache = false;
     if (!m_BlobRequest->m_ClientId.empty()) {
@@ -186,7 +191,7 @@ void CPSGS_GetBlobProcessor::Process(void)
             // Finished without reaching cassandra
             UpdateOverallStatus(ret_status);
             m_Completed = true;
-            SignalFinishProcessing();
+            CPSGS_CassProcessorBase::SignalFinishProcessing();
             return;
         }
 
@@ -251,6 +256,10 @@ void CPSGS_GetBlobProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
         return;
     }
 
+    // If the other processor waits then let it go but after sending the signal
+    // of the good data (it may cancel the other processors)
+    UnlockWaitingProcessor();
+
     CPSGS_CassBlobBase::OnGetBlobProp(bind(&CPSGS_GetBlobProcessor::OnGetBlobProp,
                                            this, _1, _2, _3),
                                       bind(&CPSGS_GetBlobProcessor::OnGetBlobChunk,
@@ -297,13 +306,6 @@ void CPSGS_GetBlobProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 }
 
 
-void CPSGS_GetBlobProcessor::Cancel(void)
-{
-    m_Cancelled = true;
-    CancelLoaders();
-}
-
-
 IPSGS_Processor::EPSGS_Status CPSGS_GetBlobProcessor::GetStatus(void)
 {
     auto    status = CPSGS_CassProcessorBase::GetStatus();
@@ -333,7 +335,7 @@ void CPSGS_GetBlobProcessor::x_Peek(bool  need_wait)
 {
     if (m_Cancelled) {
         m_Completed = true;
-        SignalFinishProcessing();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -405,7 +407,7 @@ bool CPSGS_GetBlobProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         fetch_details->SetReadFinished();
-        SignalFinishProcessing();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 
     return final_state;

@@ -39,6 +39,8 @@
 #include <chrono>
 #include <string>
 #include <vector>
+#include <mutex>
+#include <condition_variable>
 
 #include "pubseq_gateway_exception.hpp"
 #include "pubseq_gateway_types.hpp"
@@ -127,6 +129,7 @@ public:
 
 public:
     CPSGS_Request();
+    ~CPSGS_Request();
     CPSGS_Request(unique_ptr<SPSGS_RequestBase> req,
                   CRef<CRequestContext>  request_context);
 
@@ -135,6 +138,25 @@ public:
     {
         return m_RequestId;
     }
+
+    void  SetConcurrentProcessorCount(size_t  cnt)
+    {
+        m_ConcurrentProcessorCount = cnt;
+    }
+
+    size_t  GetConcurrentProcessorCount(void) const
+    {
+        return m_ConcurrentProcessorCount;
+    }
+
+    // The Lock() call makes it possible for the other processors to wait for
+    // the event name
+    void Lock(const string &  event_name);
+    // The Unlock() call signals for the waiting processors that they can
+    // continue
+    void Unlock(const string &  event_name);
+    // The WaitFor() call blocks the processor till the event is unlocked
+    void WaitFor(const string &  event_name, size_t  timeout_sec = 10);
 
     template<typename TRequest> TRequest& GetRequest(void)
     {
@@ -165,6 +187,28 @@ private:
     unique_ptr<SPSGS_RequestBase>   m_Request;
     CRef<CRequestContext>           m_RequestContext;
     size_t                          m_RequestId;
+
+private:
+    struct SWaitData
+    {
+        enum EPSGS_WaitObjectState {
+            ePSGS_LockedNobodyWaits,
+            ePSGS_LockedOneWaits,
+            ePSGS_Unlocked
+        };
+
+        SWaitData() :
+            m_State(ePSGS_LockedNobodyWaits)
+        {}
+
+        EPSGS_WaitObjectState   m_State;
+        condition_variable      m_WaitObject;
+    };
+
+    // Number of processors serving the request
+    size_t                          m_ConcurrentProcessorCount;
+    mutex                           m_WaitLock;
+    map<string, SWaitData *>        m_Wait;
 };
 
 

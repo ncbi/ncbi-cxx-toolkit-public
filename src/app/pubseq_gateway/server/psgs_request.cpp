@@ -33,6 +33,7 @@
 #include <corelib/ncbistr.hpp>
 
 #include "psgs_request.hpp"
+#include "pubseq_gateway_logging.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -50,15 +51,41 @@ size_t  GetNextRequestId(void)
 
 
 CPSGS_Request::CPSGS_Request() :
-    m_RequestId(0)
+    m_RequestId(0),
+    m_ConcurrentProcessorCount(0)
 {}
+
+
+CPSGS_Request::~CPSGS_Request()
+{
+    for (auto it: m_Wait) {
+        switch (it.second->m_State) {
+            case SWaitData::ePSGS_Unlocked:
+            case SWaitData::ePSGS_LockedNobodyWaits:
+                delete it.second;
+                break;
+            case SWaitData::ePSGS_LockedOneWaits:
+                // This is rather strange: a processor is still waiting on the
+                // condition variable and at the same time the request is going
+                // to be destroyed.
+                // Just in case, lets unlock the condition variable and then
+                // delete the associated data
+                PSG_ERROR("Reply is going to be deleted when a processor is "
+                          "locked on a condition variable");
+                it.second->m_WaitObject.notify_one();
+                delete it.second;
+                break;
+        }
+    }
+}
 
 
 CPSGS_Request::CPSGS_Request(unique_ptr<SPSGS_RequestBase> req,
                              CRef<CRequestContext>  request_context) :
     m_Request(move(req)),
     m_RequestContext(request_context),
-    m_RequestId(GetNextRequestId())
+    m_RequestId(GetNextRequestId()),
+    m_ConcurrentProcessorCount(0)
 {}
 
 
@@ -67,6 +94,99 @@ CPSGS_Request::EPSGS_Type  CPSGS_Request::GetRequestType(void) const
     if (m_Request)
         return m_Request->GetRequestType();
     return ePSGS_UnknownRequest;
+}
+
+
+void CPSGS_Request::Lock(const string &  event_name)
+{
+    if (m_ConcurrentProcessorCount < 2)
+        return;     // No parallel processors so there is no point to wait
+
+    unique_lock<mutex>   scope_lock(m_WaitLock);
+
+    if (m_Wait.find(event_name) != m_Wait.end()) {
+        // Double locking; it is rather an error
+        NCBI_THROW(CPubseqGatewayException, eLogic,
+                   "Multple lock of the same event is not supported");
+    }
+
+    m_Wait[event_name] = new SWaitData();
+    m_Wait[event_name]->m_State = SWaitData::ePSGS_LockedNobodyWaits;
+}
+
+
+void CPSGS_Request::Unlock(const string &  event_name)
+{
+    if (m_ConcurrentProcessorCount < 2)
+        return;     // No parallel processors so there is no point to wait
+
+    unique_lock<mutex>   scope_lock(m_WaitLock);
+
+    auto it = m_Wait.find(event_name);
+    if (it == m_Wait.end()) {
+        // Unlocking something which was not locked
+        return;
+    }
+
+    switch (it->second->m_State) {
+        case SWaitData::ePSGS_LockedNobodyWaits:
+            it->second->m_State = SWaitData::ePSGS_Unlocked;
+            break;
+        case SWaitData::ePSGS_Unlocked:
+            // Double unlocking; it's OK
+            break;
+        case SWaitData::ePSGS_LockedOneWaits:
+            it->second->m_State = SWaitData::ePSGS_Unlocked;
+            it->second->m_WaitObject.notify_one();
+            break;
+    }
+}
+
+
+void CPSGS_Request::WaitFor(const string &  event_name, size_t  timeout_sec)
+{
+    if (m_ConcurrentProcessorCount < 2) {
+        // No parallel processors so there is no point to wait
+        return;
+    }
+
+    unique_lock<mutex>   scope_lock(m_WaitLock);
+
+    auto it = m_Wait.find(event_name);
+    if (it == m_Wait.end()) {
+        // There was no Lock() call for that event
+        return;
+    }
+
+    switch (it->second->m_State) {
+        case SWaitData::ePSGS_LockedNobodyWaits:
+            // The logic to initiate waiting is below
+            break;
+        case SWaitData::ePSGS_Unlocked:
+            // It has already been unlocked
+            return;
+        case SWaitData::ePSGS_LockedOneWaits:
+            NCBI_THROW(CPubseqGatewayException, eLogic,
+                       "Multple waiting of the same event is not supported");
+    }
+
+    it->second->m_State = SWaitData::ePSGS_LockedOneWaits;
+    auto    status = it->second->m_WaitObject.wait_for(scope_lock,
+                                                       chrono::seconds(timeout_sec));
+    if (status == cv_status::timeout) {
+        // Still locked but noboby waits anymore
+        it->second->m_State = SWaitData::ePSGS_LockedNobodyWaits;
+
+        PSG_WARNING("Timeout waiting on event '" + event_name + "'");
+        NCBI_THROW(CPubseqGatewayException, eLogic,
+                   "Multple lock of the same event is not supported");
+    }
+
+    // Here:
+    // - scope_lock mutex is released inside wait_for()
+    // - waiting has completed within the timeout
+    // - there is no need to change the state because it is done in Unlock()
+    //   by unlocking processor and the state here is ePSGS_Unlocked
 }
 
 
