@@ -316,7 +316,7 @@ void err_install(IndexblkPtr ibp, bool accver)
 /**********************************************************/
 static void CreateSeqGap(objects::CSeq_literal& seq_lit, GapFeatsPtr gfp)
 {
-    if (gfp == NULL)
+    if (gfp == nullptr)
         return;
 
     objects::CSeq_gap& sgap = seq_lit.SetSeq_data().SetGap();
@@ -325,12 +325,12 @@ static void CreateSeqGap(objects::CSeq_literal& seq_lit, GapFeatsPtr gfp)
     if (!gfp->asn_linkage_evidence.empty())
         sgap.SetLinkage_evidence().swap(gfp->asn_linkage_evidence);
 
-    string gapType(gfp->gap_type);
-    if (gapType == "unknown"  ||  gapType == "within scaffold"  || gapType == "repeat within scaffold") {
-        sgap.SetLinkage(1);
-    }
-    else {
-        sgap.SetLinkage(0);
+    sgap.SetLinkage(0);
+    if (gfp->gap_type) {
+        string gapType(gfp->gap_type);
+        if (gapType == "unknown"  ||  gapType == "within scaffold"  || gapType == "repeat within scaffold") {
+            sgap.SetLinkage(1);
+        }
     }
 }
 
