@@ -1290,6 +1290,15 @@ void CMsvcProjectGenerator::GenerateMsbuild(
         if (!tmp.empty()) {
             __SET_PROPGROUP_ELEMENT( t, "WindowsTargetPlatformVersion", tmp);
         }
+        const CMsvcMetaMakefile&  meta_mk = GetApp().GetMetaMakefile();
+        string extra = meta_mk.GetConfigurationOpt("PtbExtensions", SConfigInfo());
+        if (!extra.empty()) {
+            list<string> ex_list;
+            NStr::Split(extra, LIST_SEPARATOR, ex_list, NStr::fSplit_Tokenize);
+            for (const string& entry : ex_list) {
+                __SET_PROPGROUP_ELEMENT( t, entry, meta_mk.GetConfigurationOpt( entry, SConfigInfo()));
+            }
+        }
     }
     {
         // project configurations
