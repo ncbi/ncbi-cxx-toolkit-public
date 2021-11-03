@@ -37,6 +37,7 @@
 #include <vector>
 
 #include <corelib/ncbidbg.hpp>
+#include <objtools/pubseq_gateway/client/psg_client.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -80,20 +81,15 @@ struct SMetrics : string, private SMetricType
         m_Data[t] = chrono::steady_clock::now();
     }
 
-    void SetSuccess() { m_Success = true; }
-    void NewItem() { ++m_Items; }
-
-    static bool GetSuccess(const string& rest)
-    {
-        return (rest.length() > 4) && (rest.compare(rest.length() - 4, 4, "true") == 0);
-    }
+    using TItem = pair<CPSG_ReplyItem::EType, EPSG_Status>;
+    void AddItem(TItem item) { m_Items.emplace_back(move(item)); }
 
 private:
     duration::rep Get(EType t) const { return duration(m_Data[t].time_since_epoch()).count(); }
+    void OutputItems(ostream& os) const;
 
     array<time_point, eSize> m_Data;
-    bool m_Success = false;
-    size_t m_Items = 0;
+    vector<TItem> m_Items;
 
     friend ostream& operator<<(ostream& os, const SMetrics& metrics)
     {
@@ -104,7 +100,7 @@ private:
                 metrics.Get(t) << '\t' << t << '\t' << this_thread::get_id();
            
             if (t == eDone) {
-                os << "\titems=" << metrics.m_Items << "\tsuccess=" << metrics.m_Success;
+                metrics.OutputItems(os);
             }
 
             os << '\n';
