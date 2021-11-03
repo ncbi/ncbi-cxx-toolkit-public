@@ -191,6 +191,7 @@ struct SEraseLastNewPtrMultiple {
     static void sx_Cleanup(void* ptr)
     {
         delete (TLastNewPtrMultiple*)ptr;
+        s_LastNewPtrMultiple_key = 0;
     }
     ~SEraseLastNewPtrMultiple() {
 #ifdef NCBI_WIN32_THREADS
