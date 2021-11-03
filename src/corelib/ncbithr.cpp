@@ -182,6 +182,7 @@ void CUsedTlsBases::ClearAllCurrentThread(CTlsBase::ECleanupMode mode)
 struct SNativeThreadTlsCleanup
 {
     ~SNativeThreadTlsCleanup(void) {
+        if ( CThread::IsMain() ) return;
         CUsedTlsBases::ClearAllCurrentThread(CTlsBase::eCleanup_Native);
     }
 };
