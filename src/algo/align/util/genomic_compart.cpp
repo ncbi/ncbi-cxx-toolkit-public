@@ -84,7 +84,7 @@ bool IsConsistent(const pair<TSeqRange, TSeqRange>& r1,
                   ENa_strand s1, ENa_strand s2)
 {
     bool is_consistent = false;
-    if (s1 == s2) {
+    if (SameOrientation(s1, s2)) {
         is_consistent = (r1.first <= r2.first  &&  r1.second <= r2.second)  ||
                         (r2.first <= r1.first  &&  r2.second <= r1.second);
     }
@@ -94,17 +94,23 @@ bool IsConsistent(const pair<TSeqRange, TSeqRange>& r1,
     }
 
 #ifdef _VERBOSE_DEBUG
-    cerr << "("
+    cerr << "[("
         << r1.first << ", "
         << r1.second
         << ", " << (s1 == eNa_strand_minus ? '-' : '+') << ")"
+        << ":" << s1
         << " x ("
         << r2.first << ", "
         << r2.second
         << ", " << (s2 == eNa_strand_minus ? '-' : '+') << ")"
+        << ":" << s2
         << ": is_consistent = "
         << (is_consistent ? "true" : "false")
-        << endl;
+        << " r1.first <= r2.first: "
+        << (r1.first <= r2.first ? "true" : "false")
+        << " r1.second <= r2.second: "
+        << (r1.second <= r2.second ? "true" : "false")
+        << ']';
 #endif
 
     return is_consistent;
@@ -458,7 +464,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
 			std::sort(aligns.begin(), aligns.end(), SSeqAlignsBySize());
         }
 
-#ifdef DEBUG_VERBOSE_OUTPUT
+#ifdef _VERBOSE_DEBUG
         {{
              cerr << "ids: " << id_pair.first.first << " x "
                  << id_pair.second.first << endl;
