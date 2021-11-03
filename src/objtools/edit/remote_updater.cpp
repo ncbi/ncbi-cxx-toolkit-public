@@ -781,7 +781,7 @@ CConstRef<CTaxon3_reply> CRemoteUpdater::SendOrgRefList(const vector<CRef<COrg_r
 {
     std::lock_guard<std::mutex> guard(m_Mutex);
 
-    CRef<CTaxon3_reply> reply = m_taxClient->SendOrgRefList(list, m_logger);
+    CRef<CTaxon3_reply> reply = m_taxClient->SendOrgRefList(list, nullptr);
     return reply;
 }
 
