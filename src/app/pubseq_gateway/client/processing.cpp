@@ -222,7 +222,7 @@ CJsonResponse::CJsonResponse(const string& id) :
     }
 }
 
-const char* s_GetItemName(CPSG_ReplyItem::EType type)
+const char* s_GetItemName(CPSG_ReplyItem::EType type, bool trouble = true)
 {
     switch (type) {
         case CPSG_ReplyItem::eBlobData:       return "BlobData";
@@ -232,7 +232,7 @@ const char* s_GetItemName(CPSG_ReplyItem::EType type)
         case CPSG_ReplyItem::eNamedAnnotInfo: return "NamedAnnotInfo";
         case CPSG_ReplyItem::ePublicComment:  return "PublicComment";
         case CPSG_ReplyItem::eProcessor:      return "Processor";
-        case CPSG_ReplyItem::eEndOfReply:     _TROUBLE;
+        case CPSG_ReplyItem::eEndOfReply:     if (!trouble) return "Reply"; _TROUBLE;
     }
 
     return nullptr;
@@ -411,6 +411,13 @@ void CJsonResponse::Set(CJson_Node node, const CPSG_ChunkId& chunk_id)
     auto obj = node.ResetObject();
     Set(obj["id2_chunk"], chunk_id.GetId2Chunk());
     Set(obj["id2_info"],  chunk_id.GetId2Info());
+}
+
+void SMetrics::OutputItems(ostream& os) const
+{
+    for (const auto& item : m_Items) {
+        os << '\t' << s_GetItemName(item.first, false) << '=' << s_StrStatus(item.second);
+    }
 }
 
 SParams::SParams(const CArgs& args) :
@@ -928,22 +935,21 @@ int CProcessing::Performance(const SPerformanceParams params)
 
             metrics->Set(SMetricType::eReply);
 
-            bool success = true;
-
             for (;;) {
                 auto reply_item = reply->GetNextItem(CDeadline::eInfinite);
                 _ASSERT(reply_item);
 
-                if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
+                const auto type = reply_item->GetType();
 
-                metrics->NewItem();
-                success = success && (reply_item->GetStatus(CDeadline::eInfinite) == EPSG_Status::eSuccess);
+                if (type == CPSG_ReplyItem::eEndOfReply) break;
+
+                const auto status = reply_item->GetStatus(CDeadline::eInfinite);
+                metrics->AddItem({type, status});
             }
 
-            success = success && (reply->GetStatus(CDeadline::eInfinite) == EPSG_Status::eSuccess);
+            const auto status = reply->GetStatus(CDeadline::eInfinite);
             metrics->Set(SMetricType::eDone);
-
-            if (success) metrics->SetSuccess();
+            metrics->AddItem({CPSG_ReplyItem::eEndOfReply, status});
 
             if (params.report_immediately) {
                 // Metrics are reported on destruction
