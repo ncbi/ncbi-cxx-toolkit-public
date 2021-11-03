@@ -492,7 +492,8 @@ public:
     enum EField {
         eFullTaxName,
         eSpecies,
-        eGenus
+        eGenus,
+        eKingdom
     };
     CTabularFormatter_OrgName(int row, EField field = eFullTaxName);
     ~CTabularFormatter_OrgName();
