@@ -1532,6 +1532,13 @@ CSeqDBImpl::FindVolumePaths(vector<string> & paths, bool recursive) const
     m_Aliases.FindVolumePaths(paths, NULL, recursive);
 }
 
+void
+CSeqDBImpl::FindVolumePaths(vector<string> & paths, vector<string> & alias, bool recursive) const
+{
+    CHECK_MARKER();
+    m_Aliases.FindVolumePaths(paths, &alias, recursive);
+}
+
 void CSeqDBImpl::GetAliasFileValues(TAliasFileValues & afv)
 {
     CHECK_MARKER();
@@ -2646,6 +2653,16 @@ EBlastDbVersion CSeqDBImpl::GetBlastDbVersion() const
 {
 	return (m_LMDBSet.IsBlastDBVersion5() ? eBDB_Version5 : eBDB_Version4);
 
+}
+
+int CSeqDBImpl::GetNumOfVols() const
+{
+  	m_VolSet.GetNumVols();
+}
+
+void CSeqDBImpl::GetLMDBFileNames(vector<string> & lmdb_list) const
+{
+	m_LMDBSet.GetLMDBFileNames(lmdb_list);
 }
 
 END_NCBI_SCOPE
