@@ -457,7 +457,7 @@ private:
     string                    m_DiagPrefixEnv;
 
     /// @sa FASTCGI_ScheduleExit()
-    bool m_ShouldExit;
+    bool m_ShouldExit = false;
 
     // forbidden
     CCgiApplication(const CCgiApplication&);
