@@ -50,6 +50,8 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/blastdb/Blast_db_metadata.hpp>
+#include <objects/blastdb/Blast_db_mask_info.hpp>
 #include <util/sequtil/sequtil.hpp>
 #include <util/range.hpp>
 #include <set>
@@ -1506,6 +1508,8 @@ public:
     /// @param tax_ids	return taxonomy ids in db
     void GetDBTaxIds(set<TTaxId> & tax_ids) const;
 
+    CRef<CBlast_db_metadata> GetDBMetaData(string user_path = kEmptyStr);
+
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;
@@ -1515,6 +1519,8 @@ protected:
     /// This version of the constructor is used as an extension by the
     /// 'expert' interface in seqdbexpert.hpp.
     CSeqDB();
+
+    void x_GetDBFilesMetaData(Int8 & disk_bytes, Int8 & cached_bytes, vector<string> & db_files, const string & user_path) const;
 };
 
 /// Structure to define basic information to initialize a BLAST DB
