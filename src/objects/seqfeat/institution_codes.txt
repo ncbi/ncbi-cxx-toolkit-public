@@ -8267,10 +8267,12 @@ YDC	s	Yunnan Institute for Drug Control
 YELLO	s	Yellowstone National Park			
 YEO	s	Yeovil Museum			
 YF	s	Yanbei Forestry Institute			
+YFCC	c	Yunnan Fungal Culture Collection			
 YFS	s	Yunnan Forestry School			
 YFTC	s	Yale Fish Tissue Collection			
 YH	s	Lutheran College			
 YHB<CAN>	s	Yukon Heritage Resources Unit, Paleontology Program	YHB		
+YHH	s	Yunnan Herbal Herbarium			
 YIM	c	Yunnan Institute of Microbiology			
 YIM<herbarium>	s	Yunnan Institute of Pharmacology			
 YIO	s	Yamashina Institute for Ornithology			
