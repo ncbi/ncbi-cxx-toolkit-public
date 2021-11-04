@@ -1485,6 +1485,7 @@ Int8 CSeqDB::GetDiskUsage() const
     return retval;
 }
 
+
 CSeqDB::ESeqType
 ParseMoleculeTypeString(const string& s)
 {
@@ -1566,6 +1567,141 @@ void CSeqDB::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 EBlastDbVersion CSeqDB::GetBlastDbVersion() const
 {
 	 return m_Impl->GetBlastDbVersion();
+}
+
+
+void CSeqDB::x_GetDBFilesMetaData(Int8 & disk_bytes, Int8 & cached_bytes, vector<string> & db_files, const string & user_path) const
+{
+    vector<string> paths;
+    vector<string> alias;
+    m_Impl->FindVolumePaths(paths, alias, true);
+    _ASSERT( !paths.empty() );
+
+    db_files.clear();
+    cached_bytes = 0;
+    disk_bytes = 0;
+
+    ITERATE(vector<string>, a, alias) {
+   		CFile af(*a);
+   		if (af.Exists()) {
+   			string fn = user_path + af.GetName();
+   			db_files.push_back(fn);
+   			Int8 afl = af.GetLength();
+   			if (afl != -1) {
+   				disk_bytes += afl;
+   			} else {
+   				ERR_POST(Error << "Error retrieving file size for " << af.GetPath());
+   			}
+   		}
+    }
+
+    vector<string> extn;
+    const bool is_protein(GetSequenceType() == CSeqDB::eProtein);
+    SeqDB_GetFileExtensions(is_protein, extn, EBlastDbVersion::eBDB_Version4);
+
+    const string kExtnMol(1, is_protein ? 'p' : 'n');
+    const string index_ext = kExtnMol + "in";
+    const string seq_ext = kExtnMol + "sq";
+
+    ITERATE(vector<string>, path, paths) {
+        ITERATE(vector<string>, ext, extn) {
+            CFile file(*path + "." + *ext);
+            if (file.Exists()) {
+            	string f = user_path + file.GetName();
+            	db_files.push_back(f);
+                Int8 length = file.GetLength();
+                if (length != -1) {
+                    disk_bytes += length;
+                    if((*ext == index_ext) || (*ext == seq_ext)) {
+                    	cached_bytes += length;
+                    }
+                } else {
+                    ERR_POST(Error << "Error retrieving file size for "
+                                   << file.GetPath());
+                }
+            }
+        }
+    }
+
+    if (GetBlastDbVersion() == EBlastDbVersion::eBDB_Version5) {
+    	vector<string> lmdb_list;
+    	m_Impl->GetLMDBFileNames(lmdb_list);
+
+     	ITERATE(vector<string>, l, lmdb_list) {
+     		CFile file(*l);
+     		if (file.Exists()) {
+     		   string f = user_path + file.GetName();
+      	 	   db_files.push_back(f);
+      	 	   Int8 length = file.GetLength();
+       	   	   if (length != -1) {
+       	   		   disk_bytes += length;
+       	   	   } else {
+       	   		   ERR_POST(Error << "Error retrieving file size for " << file.GetPath());
+       	   	   }
+       	   	   static const char * v5_exts[]={"os", "ot", "tf", "to", NULL};
+       	   	   for(const char ** p=v5_exts; *p != NULL; p++) {
+       	    		CFile v(file.GetDir() + file.GetBase() + "." + kExtnMol + (*p));
+       	    		if (v.Exists()) {
+       	    			string vf = user_path + v.GetName();
+       	    			db_files.push_back(vf);
+       	    			Int8 vl = v.GetLength();
+       	    			if (vl != -1) {
+       	    				disk_bytes += vl;
+       	    			} else {
+       	    				ERR_POST(Error << "Error retrieving file size for " << v.GetPath());
+       	    			}
+       	    		}
+       	   	   }
+     	   }
+    	}
+    }
+}
+
+CRef<CBlast_db_metadata> CSeqDB::GetDBMetaData(string user_path)
+{
+	CRef<CBlast_db_metadata> m (new CBlast_db_metadata());
+	CBlast_db_metadata::TDbname & dblist = m->SetDbname();
+	int num_seqs = 0;
+	Uint8 total_length = 0;
+
+	GetTotals(CSeqDB::eFilteredAll, &num_seqs, &total_length, true);
+	NStr::Split(GetDBNameList(), " ", dblist, NStr::fSplit_Tokenize);
+	NON_CONST_ITERATE(CBlast_db_metadata::TDbname, itr, dblist) {
+		int off = (*itr).find_last_of(CFile::GetPathSeparator());
+	    if (off != -1) {
+	        (*itr).erase(0, off+1);
+	    }
+	}
+
+    m->SetDbtype(GetSequenceType() == CSeqDB::eProtein ? "Protein" : "Nucleotide" );
+	m->SetDb_version(GetBlastDbVersion() == EBlastDbVersion::eBDB_Version5?5:4);
+	m->SetVersion(2);
+	m->SetDescription(GetTitle());
+	m->SetNumber_of_letters(total_length);
+	m->SetNumber_of_sequences(num_seqs);
+	m->SetLast_updated(GetDate());
+
+	Int8 disk_bytes;
+	Int8 cached_bytes;
+	vector<string> db_files;
+	x_GetDBFilesMetaData(disk_bytes, cached_bytes, db_files, user_path);
+	m->SetBytes_total(disk_bytes);
+	m->SetBytes_to_cache(cached_bytes);
+	CBlast_db_metadata::TFiles & file_list = m->SetFiles();
+	for (unsigned int i=0; i < db_files.size(); i++) {
+		file_list.push_back(db_files[i]);
+	}
+
+	m->SetNumber_of_volumes(m_Impl->GetNumOfVols());
+
+	if (GetBlastDbVersion() == EBlastDbVersion::eBDB_Version5) {
+		set<TTaxId> tax_ids;
+		GetDBTaxIds(tax_ids);
+		if((tax_ids.size() > 1) || ((tax_ids.size() == 1) && (0 != *tax_ids.begin()))){
+			m->SetNumber_of_taxids(tax_ids.size());
+		}
+	}
+	return m;
 }
 
 END_NCBI_SCOPE
