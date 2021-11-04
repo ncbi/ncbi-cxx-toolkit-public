@@ -2657,7 +2657,7 @@ EBlastDbVersion CSeqDBImpl::GetBlastDbVersion() const
 
 int CSeqDBImpl::GetNumOfVols() const
 {
-  	m_VolSet.GetNumVols();
+  	return m_VolSet.GetNumVols();
 }
 
 void CSeqDBImpl::GetLMDBFileNames(vector<string> & lmdb_list) const
