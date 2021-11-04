@@ -54,7 +54,6 @@ set PTB_SLN=%BUILD_TREE_ROOT%\static\build\UtilityProjects\PTB.sln
 set NCBICONF_MSVC=%TREE_ROOT%\include\common\config\ncbiconf_msvc_site.h
 if exist "%NCBICONF_MSVC%" (
   del "%NCBICONF_MSVC%"
-  set NCBICONF_MSVC=
 )
 
 REM --- get solution dir ---
