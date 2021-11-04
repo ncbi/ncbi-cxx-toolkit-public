@@ -2666,6 +2666,14 @@ void SeqDB_GetLMDBFileExtensions(bool db_is_protein, vector<string>& extn)
 	}
 }
 
+
+void SeqDB_GetMetadataFileExtension(bool db_is_protein, string & extn)
+{
+	const string kExtnMol(1, db_is_protein ? 'p' : 'n');
+	extn = kExtnMol + "js";
+	return;
+}
+
 bool IsStringId(const CSeq_id & id)
 {
 	 switch(id.Which()) {

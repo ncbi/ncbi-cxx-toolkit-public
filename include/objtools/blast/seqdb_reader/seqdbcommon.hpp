@@ -2020,6 +2020,9 @@ NCBI_XOBJREAD_EXPORT
 void SeqDB_GetLMDBFileExtensions(bool db_is_protein,
 		                         vector<string>& extn);
 
+NCBI_XOBJREAD_EXPORT
+void SeqDB_GetMetadataFileExtension(bool db_is_protein, string & extn);
+
 /// Determine if id is srting id
 /// @param id input id for check
 /// @return
