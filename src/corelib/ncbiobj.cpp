@@ -185,7 +185,6 @@ typedef vector<TLastNewPtrMultipleInfo> TLastNewPtrMultiple;
 static TLastNewPtrMultiple* s_LastNewPtrMultiple_ptr;
 #else
 static TTlsKey s_LastNewPtrMultiple_key;
-#endif
 
 struct SEraseLastNewPtrMultiple {
     static void sx_Cleanup(void* ptr)
@@ -199,6 +198,8 @@ struct SEraseLastNewPtrMultiple {
 #endif
     }
 };
+#endif
+
 
 static
 TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
