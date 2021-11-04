@@ -676,6 +676,8 @@ public:
     ///   If true the search will traverse the full alias node tree
     void FindVolumePaths(vector<string> & paths, bool recursive) const;
 
+    void FindVolumePaths(vector<string> & paths, vector<string> & alias, bool recursive) const;
+
     /// Set Iteration Range
     ///
     /// This method sets the iteration range as a pair of OIDs.
@@ -1071,6 +1073,10 @@ public:
     /// Get all unique tax ids from db
     /// @param tax_ids	return taxonomy ids in db
     void GetDBTaxIds(set<TTaxId> & tax_ids);
+
+    int GetNumOfVols() const;
+
+    void GetLMDBFileNames(vector<string> & lmdb_list) const;
 
 private:
     CLASS_MARKER_FIELD("IMPL")
