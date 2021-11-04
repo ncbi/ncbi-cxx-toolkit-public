@@ -53,6 +53,7 @@ set PTB_INI=%TREE_ROOT%\src\build-system\project_tree_builder.ini
 set PTB_SLN=%BUILD_TREE_ROOT%\static\build\UtilityProjects\PTB.sln
 set NCBICONF_MSVC=%TREE_ROOT%\include\common\config\ncbiconf_msvc_site.h
 if exist "%NCBICONF_MSVC%" (
+  del "%NCBICONF_MSVC%"
   set NCBICONF_MSVC=
 )
 
