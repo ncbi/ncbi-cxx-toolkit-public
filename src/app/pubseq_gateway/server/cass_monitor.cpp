@@ -50,12 +50,12 @@ void CassMonitorThreadedFunction(void)
     for ( ; ; ) {
         // The thread should wake up once per minute; sleeping for 1 second is
         // to have the shutdown request checking more often
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         if (g_ShutdownData.m_ShutdownRequested)
             break;
 
         ++loop_count;
-        if (loop_count < 60) {
+        if (loop_count < kCheckPeriodSeconds * 10) {
             continue;
         }
         loop_count = 0;

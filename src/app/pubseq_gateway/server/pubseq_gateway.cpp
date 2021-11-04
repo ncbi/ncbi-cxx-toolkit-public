@@ -633,23 +633,19 @@ int CPubseqGatewayApp::Run(void)
     } catch (const CException &  exc) {
         ERR_POST(Critical << exc);
         ret_code = 1;
-        g_ShutdownData.m_ShutdownRequested = true;
-        monitoring_thread.detach();     // to avoid up to 60 sec delay
     } catch (const exception &  exc) {
         ERR_POST(Critical << exc);
         ret_code = 1;
-        g_ShutdownData.m_ShutdownRequested = true;
-        monitoring_thread.detach();     // to avoid up to 60 sec delay
     } catch (...) {
         ERR_POST(Critical << "Unknown exception while running TCP daemon");
         ret_code = 1;
-        g_ShutdownData.m_ShutdownRequested = true;
-        monitoring_thread.detach();     // to avoid up to 60 sec delay
     }
 
-    if (monitoring_thread.joinable()) {
-        monitoring_thread.join();
-    }
+    // To stop the monitoring thread a shutdown flag needs to be set.
+    // It is going to take no more than 0.1 second because the period of
+    // checking the shutdown flag in the monitoring thread is 100ms
+    g_ShutdownData.m_ShutdownRequested = true;
+    monitoring_thread.join();
 
     CloseCass();
     return ret_code;
