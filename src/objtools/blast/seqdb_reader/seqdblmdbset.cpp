@@ -394,4 +394,12 @@ void CSeqDBLMDBSet::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTa
 
 
 }
+
+void CSeqDBLMDBSet::GetLMDBFileNames(vector<string> & lmdb_list) const
+{
+	lmdb_list.clear();
+	for(unsigned int i=0; i < m_LMDBEntrySet.size(); i++) {
+		lmdb_list.push_back(m_LMDBEntrySet[i]->GetLMDBFileName());
+	}
+}
 END_NCBI_SCOPE
