@@ -179,6 +179,8 @@ public:
 
     void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids) const;
 
+    void GetLMDBFileNames(vector<string> & lmdb_list) const;
+
 private:
     vector<CRef<CSeqDBLMDBEntry> >  m_LMDBEntrySet;
 
