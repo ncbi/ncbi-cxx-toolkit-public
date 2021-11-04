@@ -11,6 +11,9 @@ script="$0"
 cfgs="${1:-DebugDLL ReleaseDLL}"
 arch="$2"
 
+Build environment:
+env
+
 
 #---------------- Configuration ----------------
 
