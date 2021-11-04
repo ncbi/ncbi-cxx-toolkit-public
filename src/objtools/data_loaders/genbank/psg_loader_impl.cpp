@@ -577,8 +577,8 @@ void CPSG_Task::OnStatusChange(EStatus old)
 
 bool CPSG_Task::CheckReplyStatus(void)
 {
-    EPSG_Status status = m_Reply->GetStatus(0);
-    if (status != EPSG_Status::eSuccess && status != EPSG_Status::eInProgress) {
+    EPSG_Status status = m_Reply->GetStatus(CDeadline::eInfinite);
+    if (status != EPSG_Status::eSuccess) {
         ReportStatus(m_Reply, status);
         m_Status = eFailed;
         return false;
@@ -597,8 +597,9 @@ void CPSG_Task::ReadReply(void)
         if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
         if (IsCancelled()) return;
 
-        EPSG_Status status = reply_item->GetStatus(0);
-        if (status != EPSG_Status::eSuccess && status != EPSG_Status::eInProgress) {
+        EPSG_Status status = reply_item->GetStatus(CDeadline::eInfinite);
+        if (IsCancelled()) return;
+        if (status != EPSG_Status::eSuccess) {
             ReportStatus(reply_item, status);
             if ( status == EPSG_Status::eNotFound ) {
                 m_GotNotFound = true;
@@ -608,15 +609,6 @@ void CPSG_Task::ReadReply(void)
                 m_GotForbidden = true;
                 continue;
             }
-            m_Status = eFailed;
-            return;
-        }
-        if (status == EPSG_Status::eInProgress) {
-            status = reply_item->GetStatus(CDeadline::eInfinite);
-            if (IsCancelled()) return;
-        }
-        if (status != EPSG_Status::eSuccess) {
-            ReportStatus(reply_item, status);
             m_Status = eFailed;
             return;
         }
@@ -2052,20 +2044,12 @@ CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
             auto reply_item = reply->GetNextItem(DEFAULT_DEADLINE);
             if (!reply_item) continue;
             if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
-            EPSG_Status status = reply_item->GetStatus(0);
-            if (status != EPSG_Status::eSuccess && status != EPSG_Status::eInProgress) {
+            EPSG_Status status = reply_item->GetStatus(CDeadline::eInfinite);
+            if (status != EPSG_Status::eSuccess) {
                 ReportStatus(reply_item, status);
                 if ( status == EPSG_Status::eNotFound ) {
                     continue;
                 }
-                failed = true;
-                break;
-            }
-            if (status == EPSG_Status::eInProgress) {
-                status = reply_item->GetStatus(CDeadline::eInfinite);
-            }
-            if (status != EPSG_Status::eSuccess) {
-                ReportStatus(reply_item, status);
                 failed = true;
                 break;
             }
