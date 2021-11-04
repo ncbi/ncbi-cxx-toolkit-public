@@ -11,9 +11,6 @@ script="$0"
 cfgs="${1:-DebugDLL ReleaseDLL}"
 arch="$2"
 
-Build environment:
-env
-
 
 #---------------- Configuration ----------------
 
@@ -26,10 +23,13 @@ export NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI_UNICODE
 
 # Bootstrap mode
 
-#PREBUILT_PTB_EXE=bootstrap
-#export PREBUILT_PTB_EXE
+PREBUILT_PTB_EXE=bootstrap
+export PREBUILT_PTB_EXE
 #PREBUILT_DATATOOL_EXE=bootstrap
 #export PREBUILT_DATATOOL_EXE
+
+echo Build environment:
+env | sort
 
 
 #---------------- Global variables ----------------
