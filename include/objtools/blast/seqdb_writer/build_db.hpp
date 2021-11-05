@@ -452,6 +452,7 @@ public:
     /// @param dbname output blast db name (with path)
     static void CreateDirectories(const string& dbname);
 
+    string GetOutputDbName() const { return m_OutputDbName; }
 private:
     /// Get a scope for remote loading of objects.
     objects::CScope & x_GetScope();
@@ -654,6 +655,8 @@ private:
 
     /// If set to true, skip GIs with value > 0x7FFFFFFF
     bool m_SkipLargeGis;
+
+    string m_OutputDbName;
 };
 
 END_NCBI_SCOPE
