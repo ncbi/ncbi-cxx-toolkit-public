@@ -852,6 +852,13 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
                     continue;
        }
 
+       if (bs->GetLength() > 0x7fffffff)
+       {
+                   NCBI_THROW(CWriteDBException,
+                   eArgErr,
+                   "Sequences longer than 2,147,483,647 bases are not supported.  Offending sequence is " + bioseq_id);
+       }
+
         if ((bs->GetLength() == 0) || (!x_EditAndAddBioseq(bs, NULL, add_pig))){
             m_LogFile << "Ignoring sequence '" << bioseq_id
                       << "' as it has no sequence data" << endl;
