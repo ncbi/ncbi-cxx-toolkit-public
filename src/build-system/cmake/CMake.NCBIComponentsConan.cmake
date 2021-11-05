@@ -53,11 +53,19 @@ endif()
     set(ORIG_LIBS   ${DL_LIBS} ${RT_LIBS} ${MATH_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 
-function(fetch_build_package packageurl)
-  set(BASEDIR "/tmp/xxx.cmake.0123")
-  execute_process(COMMAND rm -rf ${BASEDIR})
-  file(MAKE_DIRECTORY ${BASEDIR})
+function(maketempdir pkgname0)
+  string(REPLACE "/" "_" pkgname "${pkgname0}")
+  set(_COUNTER 0)
+  while(EXISTS "/tmp/xxx.cmake.toolkit.${_COUNTER}.${pkgname}")
+    math(EXPR _COUNTER "${_COUNTER} + 1")
+  endwhile()
+  set(BASEDIR "/tmp/xxx.cmake.toolkit.${_COUNTER}.${pkgname}")
+  set(BASEDIR "/tmp/xxx.cmake.toolkit.${_COUNTER}.${pkgname}" PARENT_SCOPE)
+  file(MAKE_DIRECTORY "${BASEDIR}")
+endfunction()
 
+function(fetch_build_package packageurl)
+  maketempdir("nopackage")
   execute_process(COMMAND 
     git clone "${packageurl}" "package"
     WORKING_DIRECTORY "${BASEDIR}"
@@ -95,6 +103,7 @@ function(fetch_build_package packageurl)
   if(NOT CONAN_EXPORT_RESULT EQUAL "0")
     message(FATAL_ERROR "Conan export error")
   endif()
+  file(REMOVE_RECURSE "${BASEDIR}")
 endfunction()
 
 
@@ -103,9 +112,7 @@ endfunction()
 set(_TOBEREBUILT "protobuf/3.17.1" "protobuf/3.9.1" "grpc/1.39.1" "grpc/1.38.1" "grpc/1.38.0" "grpc/1.37.1" "grpc/1.37.0" "make" "list")
 function(install_conan_package component pkgname)
   message("INSTALL_CONAN_PACKAGE ${component} ${pkgname}")
-  set(BASEDIR "/tmp/xxx.cmake.0123.${pkgname}")
-  file(REMOVE_RECURSE BASEDIR)
-  file(MAKE_DIRECTORY BASEDIR)
+  maketempdir("${pkgname}")
   message("BASEDIR for ${pkgname} was ${BASEDIR}")
 
   file(WRITE "${BASEDIR}/conanfile.txt" "[requires]\n${pkgname}\n\n[generators]\ncmake\n")
@@ -206,6 +213,7 @@ function(install_conan_package component pkgname)
     set(NCBI_GRPC_PLUGIN "${PBDIR}/bin/grpc_cpp_plugin")
     message("XXX GRPC PLUGIN ${NCBI_GRPC_PLUGIN}")
   endif()
+  file(REMOVE_RECURSE "${BASEDIR}")
 endfunction()
 
 # Load conan package
@@ -233,13 +241,10 @@ install_conan_package("Boost.Thread" "boost/1.69.0")
 install_conan_package("XML" "libxml2/2.9.9")
 install_conan_package("XSLT" "libxslt/1.1.34")
 install_conan_package("EXSLT" "libxslt/1.1.34")
-#install_conan_package("PROTOBUF" "protobuf/3.6.1@bincrafters/stable")
 install_conan_package("PROTOBUF" "protobuf/3.17.1")
-#install_conan_package("PROTOBUF" "protobuf/3.9.1")
 #install_conan_package("wxWidgets" "wxwidgets/3.1.3@bincrafters/stable")
 
 install_conan_package("GRPC" "grpc/1.39.1")
-#install_conan_package("GRPC" "grpc/1.37.0")
 
 install_conan_package("SQLITE3" "sqlite3/3.29.0")
 if(NCBI_COMPONENT_SQLITE3_FOUND)
