@@ -3065,7 +3065,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
 
             const CFlatFileConfig& cfg = ctx.Config();
             CSeqFeatData::ESubtype subtype = feat.GetFeatSubtype();
-            if (cfg.HideCDDFeatures()  &&
+            if ( ( cfg.HideCDDFeatures() || cfg.IsPolicyGenomes() )  &&
                 (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
                 s_IsCDD(feat)) {
                 return;
