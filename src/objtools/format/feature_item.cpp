@@ -537,7 +537,7 @@ static bool s_SkipFeature(const CMappedFeat& feat,
         }
     }
 
-    if ( cfg.HideExonFeatures()  &&  subtype == CSeqFeatData::eSubtype_exon ) {
+    if ( ( cfg.HideExonFeatures() || cfg.IsPolicyGenomes() )  &&  subtype == CSeqFeatData::eSubtype_exon ) {
         return true;
     }
 
