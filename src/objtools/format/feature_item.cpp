@@ -554,6 +554,16 @@ static bool s_SkipFeature(const CMappedFeat& feat,
         }
     }
 
+    if ( cfg.IsPolicyGenomes()  &&  type == CSeqFeatData::e_Imp && subtype == CSeqFeatData::eSubtype_variation ) {
+        const CSeq_feat::TDbxref& dbxref = feat.GetDbxref();
+        ITERATE (CSeq_feat::TDbxref, it, dbxref) {
+            const CDbtag& dbt = **it;
+            if ( dbt.IsSetDb()  &&  !dbt.GetDb().empty()  &&  dbt.GetDb() == "dbSNP") {
+                return true;
+            }
+        }
+    }
+
     if ( cfg.GeneRNACDSFeatures() ) {
         if ( type != CSeqFeatData::e_Gene &&
             type != CSeqFeatData::e_Rna &&
