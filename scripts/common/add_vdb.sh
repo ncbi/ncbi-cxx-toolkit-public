@@ -44,14 +44,14 @@ else
 fi
 ./configure --prefix=$root/$name --build-prefix=$root/build/$name $archflag \
     ${LIBXML_LIBPATH:+"LDFLAGS=$LIBXML_LIBPATH"}
-make
+make NO_VDB3=1
 
 for x in lib lib64; do
     if [ -L $root/$name/$x ]; then
         rm $root/$name/$x
     fi
 done
-make install
+make install NO_VDB3=1
 if [ -f $root/$name/include/klib/rc.h ]; then
     :
 else
