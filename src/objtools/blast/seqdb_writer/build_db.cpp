@@ -1420,7 +1420,7 @@ bool CBuildDatabase::x_EndBuild(bool erase, const CException * close_exception)
 
     m_OutputDb->ListVolumes(vols);
     m_OutputDb->ListFiles(files);
-    m_OutputDb.Reset();
+    //m_OutputDb.Reset();
 
     m_LogFile << endl;
 
