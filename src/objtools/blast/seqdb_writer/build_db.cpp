@@ -1077,7 +1077,8 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
       m_LongIDs      (long_seqids),
       m_FoundMatchingMasks(false),
       m_SkipCopyingGis(false),
-      m_SkipLargeGis(true)
+      m_SkipLargeGis(true),
+      m_OutputDbName(kEmptyStr)
 {
     CreateDirectories(dbname);
     const string output_dbname = CDirEntry::CreateAbsolutePath(dbname);
@@ -1109,6 +1110,7 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
     // Standard 1 GB limit
 
     m_OutputDb->SetMaxFileSize(1000*1000*1000);
+    m_OutputDbName = output_dbname;
 }
 
 CBuildDatabase::CBuildDatabase(const string & dbname,
@@ -1171,6 +1173,7 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
     // Standard 1 GB limit
 
     m_OutputDb->SetMaxFileSize(1000*1000*1000);
+    m_OutputDbName = output_dbname;
 }
 
 CBuildDatabase::~CBuildDatabase()
@@ -1417,6 +1420,7 @@ bool CBuildDatabase::x_EndBuild(bool erase, const CException * close_exception)
 
     m_OutputDb->ListVolumes(vols);
     m_OutputDb->ListFiles(files);
+    m_OutputDb.Reset();
 
     m_LogFile << endl;
 
