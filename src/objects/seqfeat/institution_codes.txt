@@ -3112,7 +3112,7 @@ IFGP	s	Pacific Southwest Research Station, USDA Forest Service
 IFI	s	Imperial Fisheries Institute			
 IFM<AUS>	c	IFM Quality Services Pty Ltd			
 IFM<JPN>	c	Research Center for Pathogenic Fungi and Microbial Toxicoses, Chiba University			
-IFO	c	Institute for Fermentation			
+IFO	c	Institute for Fermentation	NBRC		
 IFP	s	Institute of Applied Ecology, Academia Sinica			
 IFRD	s	Research Institute of Resource Insects			
 IFRDCC	c	International Fungal Research and Development Culture Collection			
@@ -3124,7 +3124,7 @@ IG	s	Institute of Geology
 IGA	s	Wetland Herbarium, Northeast Institute of Geography and Agroecology, Chinese Academy of Sciences			
 IGB<ISR>	sb	Israel Plant Gene Bank			
 IGBRU	s	USDA/ARS, Insect Genetics and Biochemistry Research Unit			
-IGC	c	Portuguese Yeast Culture Collection			
+IGC	c	Portuguese Yeast Culture Collection	PYCC		
 IGCAGS	s	Institute of geology, Chinese Academy of Geological Science			
 IGCU	s	Instituto de Geologia, Ciudad Universitaria			
 IGESALQ	c	Colecao Microorganismos			
@@ -5953,7 +5953,7 @@ PW	s	Paleontological Collections
 PWRC	s	Patuxent Wildlife Research Center			
 PWU	s	V.G.Korolenko Poltava National Pedagogical University			
 PY	s	Centro de Estudios y Colecciones Biologicas para la Conservacion			
-PYCC	c	Portuguese Yeast Culture Collection		http://pycc.bio-aware.com/BioloMICS.aspx?Table=PYCC%20strains&Name=PYCC%20	
+PYCC	c	Portuguese Yeast Culture Collection	IGC	http://pycc.bio-aware.com/BioloMICS.aspx?Table=PYCC%20strains&Name=PYCC%20	
 PYU	s	Yunnan University, Laboratory of Pteridophyta			
 PZL	s	Penzance Library			
 PZV	s	Petrozavodsk State University, Department of Botany and Plant Physiology			
