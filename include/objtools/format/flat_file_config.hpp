@@ -217,12 +217,12 @@ public:
     enum EPolicy {
         // far feature fetch policy
         ePolicy_Adaptive = 0,
-        ePolicy_Internal,
-        ePolicy_External,
-        ePolicy_Exhaustive,
-        ePolicy_Ftp,
-        ePolicy_Genomes,
-        ePolicy_Web
+        ePolicy_Internal = 1,
+        ePolicy_External = 2,
+        ePolicy_Exhaustive = 3,
+        ePolicy_Ftp = 4,
+        ePolicy_Web = 5,
+        ePolicy_Genomes = 6
     };
 
     // These flags are used to select the GenBank sections to print or skip.
@@ -502,8 +502,8 @@ public:
     bool IsPolicyExternal (void) const { return m_Policy == ePolicy_External;  }
     bool IsPolicyExhaustive (void) const { return m_Policy == ePolicy_Exhaustive;  }
     bool IsPolicyFtp (void) const { return m_Policy == ePolicy_Ftp;  }
-    bool IsPolicyGenomes (void) const { return m_Policy == ePolicy_Genomes;  }
     bool IsPolicyWeb (void) const { return m_Policy == ePolicy_Web;  }
+    bool IsPolicyGenomes (void) const { return m_Policy == ePolicy_Genomes;  }
     // setters
     void SetPolicy(const TPolicy& Policy) { m_Policy = Policy;  }
     void SetPolicyAdaptive (void) { m_Policy = ePolicy_Adaptive;  }
@@ -511,8 +511,8 @@ public:
     void SetPolicyExternal (void) { m_Policy = ePolicy_External;  }
     void SetPolicyExhaustive (void) { m_Policy = ePolicy_Exhaustive;  }
     void SetPolicyFtp (void) { m_Policy = ePolicy_Ftp;  }
-    void SetPolicyGenomes (void) { m_Policy = ePolicy_Genomes;  }
     void SetPolicyWeb (void) { m_Policy = ePolicy_Web;  }
+    void SetPolicyGenomes (void) { m_Policy = ePolicy_Genomes;  }
 
     // -- Flags
     // getters

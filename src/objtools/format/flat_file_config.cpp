@@ -537,7 +537,7 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
                                  "Far fetch policy",
                                  CArgDescriptions::eString, "adaptive");
          arg_desc->SetConstraint("policy",
-                                 &(*new CArgAllow_Strings, "adaptive", "internal", "external", "exhaustive", "ftp", "genomes", "web"));
+                                 &(*new CArgAllow_Strings, "adaptive", "internal", "external", "exhaustive", "ftp", "web", "genomes"));
 
 #define DENT "  "
          // flags (default: 0)
@@ -760,10 +760,10 @@ CFlatFileConfig::EPolicy x_GetPolicy(const CArgs& args)
         return CFlatFileConfig::ePolicy_Exhaustive;
     } else if ( Policy == "ftp" ) {
         return CFlatFileConfig::ePolicy_Ftp;
-    } else if ( Policy == "genomes" ) {
-        return CFlatFileConfig::ePolicy_Genomes;
     } else if ( Policy == "web" ) {
         return CFlatFileConfig::ePolicy_Web;
+    } else if ( Policy == "genomes" ) {
+        return CFlatFileConfig::ePolicy_Genomes;
     }
 
     // default
