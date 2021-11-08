@@ -275,11 +275,12 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
             auto keywordSq = emblKeywords[ParFlat_SQ];
             auto keywordOs = emblKeywords[ParFlat_OS];
             auto keywordSv = emblKeywords[ParFlat_SV];
+            auto keywordKw = emblKeywords[ParFlat_KW];
 
             while (!end_of_file &&
                   StringNCmp(finfo->str, keywordEnd.c_str(), keywordEnd.size()) != 0)
             {
-                if(StringNCmp(finfo->str, keywordEnd.c_str(), 2) == 0)
+                if(StringNCmp(finfo->str, keywordKw.c_str(), 2) == 0)
                 {
                     if(pp->source == Parser::ESource::EMBL ||
                        pp->source == Parser::ESource::DDBJ)
