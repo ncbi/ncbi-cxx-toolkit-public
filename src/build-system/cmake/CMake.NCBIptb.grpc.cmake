@@ -121,8 +121,27 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
     endif()
 endfunction()
 
+##############################################################################
+function(NCBI_internal_adjust_proto_target _variable _access _value)
+    if(NOT "${_access}" STREQUAL "MODIFIED_ACCESS" OR "${_value}" STREQUAL "")
+        return()
+    endif()
+    if( (DEFINED NCBI_${NCBI_PROJECT}_REQUIRES AND (GRPC IN_LIST NCBI_${NCBI_PROJECT}_REQUIRES OR PROTOBUF IN_LIST NCBI_${NCBI_PROJECT}_REQUIRES)) OR
+        (DEFINED NCBI_${NCBI_PROJECT}_COMPONENTS AND (GRPC IN_LIST NCBI_${NCBI_PROJECT}_COMPONENTS OR PROTOBUF IN_LIST NCBI_${NCBI_PROJECT}_COMPONENTS)))
+        if(DEFINED NCBI_${NCBI_PROJECT}_DATASPEC)
+            foreach(_spec IN LISTS NCBI_${NCBI_PROJECT}_DATASPEC)
+                if("${_spec}" MATCHES "[.]proto$")
+                    set_property(TARGET ${NCBI_PROJECT} PROPERTY CXX_STANDARD 14)
+                    return()
+                endif()
+            endforeach()
+        endif()
+    endif()
+endfunction()
+
 #############################################################################
 NCBI_register_hook(DATASPEC NCBI_internal_process_proto_dataspec ".proto")
+NCBI_register_hook(TARGET_ADDED NCBI_internal_adjust_proto_target)
 
 if(NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_PACKAGING)
     set(NCBI_GENERATESRC_GRPC   ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/CMakeFiles/generate_sources.grpc)
