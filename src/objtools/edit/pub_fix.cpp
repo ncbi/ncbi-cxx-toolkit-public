@@ -1365,10 +1365,14 @@ CAuthListValidator::EOutcome CAuthListValidator::validate(const CCit_art& gb_art
     if (pub_year < 1900 || pub_year > 3000) {
         throw logic_error("Publication from PubMed has invalid year: " + std::to_string(pub_year));
     }
-    gb_type = CAuth_list::C_Names::SelectionName(gb_art.GetAuthors().GetNames().Which());
-    get_lastnames(gb_art.GetAuthors(), removed, gb_auth_string);
-    pm_type = CAuth_list::C_Names::SelectionName(pm_art.GetAuthors().GetNames().Which());
-    get_lastnames(pm_art.GetAuthors(), added, pm_auth_string);
+    if (gb_art.IsSetAuthors()) {
+        gb_type = CAuth_list::C_Names::SelectionName(gb_art.GetAuthors().GetNames().Which());
+        get_lastnames(gb_art.GetAuthors(), removed, gb_auth_string);
+    }
+    if (pm_art.IsSetAuthors()) {
+        pm_type = CAuth_list::C_Names::SelectionName(pm_art.GetAuthors().GetNames().Which());
+        get_lastnames(pm_art.GetAuthors(), added, pm_auth_string);
+    }
     matched.clear();
     compare_lastnames();
     actual_matched_to_min = double(cnt_matched) / cnt_min;
