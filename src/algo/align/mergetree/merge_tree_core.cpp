@@ -525,9 +525,9 @@ bool CMergeTree::x_FindBefores_Up_Iter(TMergeNode New, TMergeNode StartCurr, set
 
     vector<TFrameRef> FrameStack;
 
-    TFrameRef NextFrame = FrameBuffer.begin();
+    TFrameBuffer::iterator NextFrame = FrameBuffer.begin();
 
-    TFrameRef FirstFrame =  NextFrame++;
+    TFrameRef FirstFrame =  &*NextFrame++;
     FirstFrame->Curr = StartCurr;
     FirstFrame->Returned = false;
     FirstFrame->VisitCount = 0;
@@ -609,7 +609,7 @@ bool CMergeTree::x_FindBefores_Up_Iter(TMergeNode New, TMergeNode StartCurr, set
                         NextFrame = FrameBuffer.insert(FrameBuffer.end(),
                                                        SFindBeforesIterFrame());
                     }
-                    TFrameRef NewFrame = NextFrame++;
+                    TFrameRef NewFrame = &*NextFrame++;
                     NewFrame->Curr = *ParentIter;
                     NewFrame->Returned = false;
                     NewFrame->VisitCount = 0;

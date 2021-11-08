@@ -125,8 +125,7 @@ public:
     const static unsigned int kMaxChildFrames = 2;
 
     struct SFindBeforesIterFrame;
-    typedef deque<SFindBeforesIterFrame> TFrameBuffer;
-    typedef TFrameBuffer::iterator TFrameRef;
+    typedef SFindBeforesIterFrame *TFrameRef;
 
     struct SFindBeforesIterFrame {
         TMergeNode Curr;
@@ -140,6 +139,8 @@ public:
             ChildFrames.reserve(kMaxChildFrames);
         }
     };
+
+    typedef deque<SFindBeforesIterFrame> TFrameBuffer;
 
     struct SScoring {
         int Match;
