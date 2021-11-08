@@ -358,7 +358,7 @@ CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener) :
     {
         m_logger = [this](const string& error_message)
         {
-            m_pMessageListener->PutMessage(CObjEditMessage(error_message, eDiag_Error));
+            m_pMessageListener->PutMessage(CObjEditMessage(error_message, eDiag_Warning));
         };
     }
     xSetTaxonTimeoutFromConfig();
