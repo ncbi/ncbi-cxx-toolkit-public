@@ -399,7 +399,7 @@ void g_InstantiateMissingProteins(CSeq_entry_Handle entryHandle)
             if (protHandle) {
                 CFeat_CI feat_ci(protHandle, CSeqFeatData::eSubtype_prot);
                 if (!feat_ci) {
-                    string protName = CCleanup::GetProteinName(*pCds, scope);
+                    string protName = CCleanup::GetProteinName(*pCds, entryHandle);
                     if (NStr::IsBlank(protName)) {
                         protName = "hypothetical protein";
                     }   
