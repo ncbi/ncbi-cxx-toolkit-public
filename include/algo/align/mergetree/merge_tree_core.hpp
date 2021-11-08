@@ -101,6 +101,8 @@ typedef vector<TMergeNode> TMergeNodeVec;
 
 bool operator<(const TMergeNode& A, const TMergeNode& B);
 
+class CTreeAlignMerger;
+
 // Only Valid for Split Equivs
 //   100 equivs is instant
 //   1000 takes a second
@@ -109,12 +111,35 @@ bool operator<(const TMergeNode& A, const TMergeNode& B);
 class CMergeTree 
 {
 public:
-    CMergeTree() : m_Callback(NULL), m_CallbackData(NULL), m_Interrupted(false), m_InterruptCounter(0) { 
+    CMergeTree(CTreeAlignMerger &align_merger) : m_Callback(NULL), m_CallbackData(NULL), m_Interrupted(false), m_InterruptCounter(0), m_AlignMerger(align_merger)
+    {
         m_NodeIdCounter = 0;
         m_Root.Reset(new CMergeNode(m_NodeIdCounter));
         m_NodeIdCounter++;
     }
     ~CMergeTree();
+
+    typedef bitvec<unsigned int> TBitVec;
+
+    const static unsigned int kFrameBufSize = 20000;
+    const static unsigned int kMaxChildFrames = 2;
+
+    struct SFindBeforesIterFrame;
+    typedef deque<SFindBeforesIterFrame> TFrameBuffer;
+    typedef TFrameBuffer::iterator TFrameRef;
+
+    struct SFindBeforesIterFrame {
+        TMergeNode Curr;
+        bool Returned;
+    
+        int VisitCount;
+        vector<TFrameRef> ChildFrames;
+    
+        SFindBeforesIterFrame()
+        {
+            ChildFrames.reserve(kMaxChildFrames);
+        }
+    };
 
     struct SScoring {
         int Match;
@@ -172,12 +197,12 @@ private:
     void x_CheckInterruptCallback();
     const static unsigned int INTERRUPT_CHECK_RATE = 100;
 
+    CTreeAlignMerger &m_AlignMerger;
+
     typedef map<int, TMergeNode> TNodeCache;
     TNodeCache m_NodeCache;
     TMergeNode x_GetNode(CEquivRange Equiv);
 
-    typedef bitvec<unsigned int> TBitVec;
-    
     void x_FindLeafs(TMergeNode Curr, set<TMergeNode>& Leafs, TBitVec& Explored);
     
     // Trickles down

@@ -44,6 +44,7 @@
 #include <algo/align/mergetree/bitvec.hpp>
 #include <algo/align/mergetree/equiv_range.hpp>
 #include <algo/align/mergetree/merge_tree_core.hpp>
+#include <algo/align/mergetree/merge_tree.hpp>
 
 /* Clear out any possible macro definition of CS, which shows up on
  * Solaris/x86 when building with GCC (per sys/ucontext.h).
@@ -204,7 +205,11 @@ bool s_SortMergeNodeBySubjt(const TMergeNode& A, const TMergeNode& B) {
 
 void CMergeTree::AddEquiv(CEquivRange NewEquiv) 
 {
-    bitvec<unsigned int> Explored(512), Inserted(512);
+    TBitVec &Explored = m_AlignMerger.m_Explored,
+            &Inserted = m_AlignMerger.m_Inserted;
+
+    Explored.clear();
+    Inserted.clear();
         
     TMergeNode NewNode = x_GetNode(NewEquiv);
    
@@ -513,29 +518,25 @@ bool CMergeTree::x_FindBefores_Up_Recur(TMergeNode New, TMergeNode Curr, set<TMe
     return false;
 }
 
-
-struct SFindBeforesIterFrame : public CObject {
-    TMergeNode Curr;
-    bool Returned;
-
-    int VisitCount;
-    list< CRef< SFindBeforesIterFrame> > ChildFrames;
-};
-
 bool CMergeTree::x_FindBefores_Up_Iter(TMergeNode New, TMergeNode StartCurr, set<TMergeNode>& Befores, 
                               TBitVec& Explored, TBitVec& Inserted, int& Depth) 
 {
-    vector< CRef<SFindBeforesIterFrame> > FrameStack;
+    TFrameBuffer &FrameBuffer = m_AlignMerger.m_FrameBuffer;
 
-    CRef<SFindBeforesIterFrame> FirstFrame(new SFindBeforesIterFrame);
+    vector<TFrameRef> FrameStack;
+
+    TFrameRef NextFrame = FrameBuffer.begin();
+
+    TFrameRef FirstFrame =  NextFrame++;
     FirstFrame->Curr = StartCurr;
     FirstFrame->Returned = false;
     FirstFrame->VisitCount = 0;
+    FirstFrame->ChildFrames.clear();
     FrameStack.push_back(FirstFrame);
 
     while(!FrameStack.empty()) {
 //cerr << FrameStack.size() << "  " << New->Equiv << endl;
-        CRef<SFindBeforesIterFrame> Frame = FrameStack.back();
+        TFrameRef Frame = FrameStack.back();
        
         if(Frame->Curr.IsNull()) {
             FrameStack.pop_back();
@@ -603,10 +604,16 @@ bool CMergeTree::x_FindBefores_Up_Iter(TMergeNode New, TMergeNode StartCurr, set
             if(Frame->VisitCount == 0) {
                 Explored.set(Frame->Curr->Id, false); // unset the non-backtrack Explored
                 ITERATE(set<TMergeNode>, ParentIter, Frame->Curr->Parents) {
-                    CRef<SFindBeforesIterFrame> NewFrame(new SFindBeforesIterFrame);
+                    if (NextFrame == FrameBuffer.end()) {
+                        /// Filled up buffer; increase it
+                        NextFrame = FrameBuffer.insert(FrameBuffer.end(),
+                                                       SFindBeforesIterFrame());
+                    }
+                    TFrameRef NewFrame = NextFrame++;
                     NewFrame->Curr = *ParentIter;
                     NewFrame->Returned = false;
                     NewFrame->VisitCount = 0;
+                    NewFrame->ChildFrames.clear();
                     FrameStack.push_back(NewFrame);
                     Frame->ChildFrames.push_back(NewFrame);
                 }
@@ -614,8 +621,8 @@ bool CMergeTree::x_FindBefores_Up_Iter(TMergeNode New, TMergeNode StartCurr, set
                 continue;
             } else {
                 bool SubInsert = false; //!Curr->Children.empty();
-                ITERATE(list<CRef<SFindBeforesIterFrame> >, ChildFrameIter, Frame->ChildFrames) {
-                    SubInsert |= (*ChildFrameIter)->Returned;
+                for (TFrameRef ChildFrame : Frame->ChildFrames) {
+                    SubInsert |= ChildFrame->Returned;
                 }
                 Frame->ChildFrames.clear();
                 Frame->Returned = SubInsert;
