@@ -49,6 +49,7 @@
 
 
 #include <algo/align/ngalign/ngalign_interface.hpp>
+#include <algo/align/mergetree/merge_tree.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -100,6 +101,7 @@ private:
 
     int m_Threshold;
     TMode m_Mode;
+    CTreeAlignMerger m_TreeAlignMerger;
 };
 
 
