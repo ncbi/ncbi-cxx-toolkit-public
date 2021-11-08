@@ -77,7 +77,7 @@ class CTreeAlignMerger
 {
 public:
     
-    CTreeAlignMerger() : m_Scope(NULL), Callback(NULL), CallbackData(NULL) { ; }
+    CTreeAlignMerger() : m_Scope(NULL), Callback(NULL), CallbackData(NULL), m_Explored(512), m_Inserted(512), m_FrameBuffer(CMergeTree::kFrameBufSize) { }
     
     void SetScope(objects::CScope* Scope) { m_Scope = Scope; }
     void SetScoring(CMergeTree::SScoring Scoring) { m_Scoring = Scoring; }
@@ -102,11 +102,17 @@ public:
 
 private:
     
+    friend class CMergeTree;
+
     objects::CScope* m_Scope;
     CMergeTree::SScoring m_Scoring;
 
     CMergeTree::TInterruptFnPtr Callback;
     void* CallbackData;
+
+    CMergeTree::TBitVec m_Explored, m_Inserted;
+    
+    CMergeTree::TFrameBuffer m_FrameBuffer;
 
     CRef<objects::CSeq_align> 
     x_MakeSeqAlign(TEquivList& Equivs, 

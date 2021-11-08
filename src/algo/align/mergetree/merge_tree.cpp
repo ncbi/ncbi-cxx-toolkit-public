@@ -509,7 +509,7 @@ void CTreeAlignMerger::Merge_AllAtOnce(const list< CRef<CSeq_align> >& Input,
         }}*/
         EquivRangeBuilder.SplitIntersections(OrigEquivs, SplitEquivs);
         
-        CMergeTree Tree;
+        CMergeTree Tree(*this);
         if(Callback != NULL)
             Tree.SetInterruptCallback(Callback, CallbackData);
         Tree.SetScoring(m_Scoring);
@@ -644,7 +644,7 @@ void CTreeAlignMerger::Merge_Pairwise(const list< CRef<CSeq_align> >& Input,
             EquivRangeBuilder.SplitIntersections(CurrEquivs, SplitEquivs);
          
        
-            CMergeTree Tree;
+            CMergeTree Tree(*this);
             if(Callback != NULL)
                 Tree.SetInterruptCallback(Callback, CallbackData);
             Tree.SetScoring(m_Scoring);
@@ -1292,7 +1292,7 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
             TEquivList SplitEquivs;
             EquivRangeBuilder.SplitIntersections(CurrEquivs, SplitEquivs);
         
-            CMergeTree Tree;
+            CMergeTree Tree(*this);
             if(Callback != NULL)
                 Tree.SetInterruptCallback(Callback, CallbackData);
             Tree.SetScoring(m_Scoring);
