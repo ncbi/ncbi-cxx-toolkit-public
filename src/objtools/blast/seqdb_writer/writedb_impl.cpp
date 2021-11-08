@@ -374,6 +374,8 @@ void CWriteDB_Impl::Close()
         		vol_num_oids[i] = v->GetOID();
         	}
             m_Lmdbdb->InsertVolumesInfo(vol_names, vol_num_oids);
+            m_Lmdbdb.Reset();
+            m_Taxdb.Reset();
         }
 
         m_Volume.Reset();
