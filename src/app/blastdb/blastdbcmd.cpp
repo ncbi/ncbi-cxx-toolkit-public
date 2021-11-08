@@ -928,11 +928,26 @@ void CBlastDBCmdApp::Init()
     const char* exclusions[]  = { "entry", "entry_batch", "outfmt", "strand",
         "target_only", "ctrl_a", "get_dups", "pig", "range",
         "mask_sequence", "list", "remove_redundant_dbs", "recursive",
-        "list_outfmt", kArgTaxIdListFile.c_str(), kArgTaxIdList.c_str()};
+        "list_outfmt", "metadata", "metadata_files_path", kArgTaxIdListFile.c_str(), kArgTaxIdList.c_str()};
     for (size_t i = 0; i < sizeof(exclusions)/sizeof(*exclusions); i++) {
         arg_desc->SetDependency("info", CArgDescriptions::eExcludes,
                                 string(exclusions[i]));
     }
+
+    arg_desc->AddFlag("metadata", "BLAST database metatdata", true);
+    // All other options to this program should be here
+    const char* exclusions_m[]  = { "entry", "entry_batch", "outfmt", "strand",
+        "target_only", "ctrl_a", "get_dups", "pig", "range",
+        "mask_sequence", "list", "remove_redundant_dbs", "recursive",
+        "list_outfmt", "info", kArgTaxIdListFile.c_str(), kArgTaxIdList.c_str()};
+    for (size_t i = 0; i < sizeof(exclusions_m)/sizeof(*exclusions_m); i++) {
+        arg_desc->SetDependency("metadata", CArgDescriptions::eExcludes,
+                                string(exclusions_m[i]));
+    }
+
+    arg_desc->AddOptionalKey("metadata_files_path", "",
+    						"User configurable path for metadata file list", CArgDescriptions::eString);
+    arg_desc->SetDependency("metadata_files_path", CArgDescriptions::eRequires, "metadata");
 
     arg_desc->AddFlag("tax_info",
     		          "Print taxonomic information contained in this BLAST database.\n"
@@ -1135,6 +1150,19 @@ int CBlastDBCmdApp::Run(void)
         	x_InitBlastDB();
             x_PrintBlastDatabaseInformation();
         }
+        else if (args["metadata"]) {
+        	x_InitBlastDB();
+        	string user_path = kEmptyStr;
+        	if (args["metadata_files_path"].HasValue()) {
+        		user_path = args["metadata_files_path"].AsString();
+        		const char sp = CFile::GetPathSeparator();
+        		if (user_path.back() != sp) {
+        			user_path += sp;
+        		}
+        	}
+        	CRef<CBlast_db_metadata> m = m_BlastDb->GetDBMetaData(user_path);
+        	out << MSerial_Json << *m;
+        }
         else if (args["tax_info"]) {
         	x_InitBlastDB();
             x_PrintBlastDatabaseTaxInformation();
@@ -1184,8 +1212,16 @@ void CBlastDBCmdApp::x_AddCmdOptions()
     	m_UsageReport.AddParam(CBlastUsageReport::eOutputFmt, args["outfmt"].AsString());
     }
 
+	vector<string> db_list;
+	NStr::Split(m_BlastDb->GetDBNameList(), " ", db_list,NStr::fSplit_Tokenize);
+	NON_CONST_ITERATE(vector<string>, itr, db_list) {
+		int off = (*itr).find_last_of(CFile::GetPathSeparator());
+	    if (off != -1) {
+	        (*itr).erase(0, off+1);
+	    }
+	}
+	string db_name = NStr::Join(db_list, " ");
 
-	string db_name = m_BlastDb->GetDBNameList();
 	int off = db_name.find_last_of(CFile::GetPathSeparator());
     if (off != -1) {
     	db_name.erase(0, off+1);
