@@ -35,7 +35,6 @@
 #include <math.h>
 
 #include <algo/align/ngalign/merge_aligner.hpp>
-#include <algo/align/mergetree/merge_tree.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -68,6 +67,7 @@ TAlignResultsRef CMergeAligner::GenerateAlignments(objects::CScope& Scope,
                                                 TAlignResultsRef AccumResults)
 {
     TAlignResultsRef NewResults(new CAlignResultsSet);
+    m_TreeAlignMerger.SetScope(&Scope);
 
     NON_CONST_ITERATE(CAlignResultsSet::TQueryToSubjectSet,
                       QueryIter, AccumResults->Get()) {
@@ -185,9 +185,7 @@ CMergeAligner::x_MergeSeqAlignSet(CSeq_align_set& InAligns, objects::CScope& Sco
             }}
         case eTreeAlignMerger:
             {{
-                CTreeAlignMerger merger;
-                merger.SetScope(&Scope);
-                merger.Merge(In, Out->Set());
+                m_TreeAlignMerger.Merge(In, Out->Set());
                 break;
             }}
         }
