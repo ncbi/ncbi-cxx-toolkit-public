@@ -588,6 +588,7 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
          DENT "ShowSNPFeatures          (64) - show SNP features\n"
          DENT "ShowCDDFeatures         (128) - show CDD features\n"
          DENT "ShowDebugTiming         (256) - show debug timing\n"
+         DENT "FasterReleaseSets       (512) - faster release sets\n"
          DENT "DisableAnnotRefs       (1024) - disable annot references\n"
          DENT "UseSeqEntryIndexer     (2048) - use SeqEntryIndexer\n"
          DENT "GeneRNACDSFeatures    (16384) - only Gene, RNA, and CDS features",
@@ -917,6 +918,7 @@ CFlatFileConfig::TCustom x_GetCustom(const CArgs& args)
                     DOFLG(ShowSNPFeatures),
                     DOFLG(ShowCDDFeatures),
                     DOFLG(ShowDebugTiming),
+                    DOFLG(FasterReleaseSets),
                     DOFLG(DisableAnnotRefs),
                     DOFLG(UseSeqEntryIndexer),
                     DOFLG(UseAutoDef),
@@ -951,6 +953,7 @@ CFlatFileConfig::TCustom x_GetCustom(const CArgs& args)
             DOFLG(ShowSNPFeatures),
             DOFLG(ShowCDDFeatures),
             DOFLG(ShowDebugTiming),
+            DOFLG(FasterReleaseSets),
             DOFLG(DisableAnnotRefs),
             DOFLG(UseSeqEntryIndexer),
             DOFLG(UseAutoDef),
