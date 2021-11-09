@@ -37,6 +37,7 @@
 #include "osg_fetch.hpp"
 #include "osg_caller.hpp"
 #include "osg_connection.hpp"
+#include "cass_processor_base.hpp"
 
 #include <objects/id2/ID2_Request_Packet.hpp>
 #include <objects/id2/ID2_Request.hpp>
@@ -182,6 +183,15 @@ void COSGProcessorRef::SetRequestContext()
 }
 
 
+void COSGProcessorRef::WaitForOtherProcessors()
+{
+    CFastMutexGuard guard(m_ProcessorPtrMutex);
+    if ( m_ProcessorPtr ) {
+        m_ProcessorPtr->WaitForOtherProcessors();
+    }
+}
+
+
 bool COSGProcessorRef::NeedTrace() const
 {
     CFastMutexGuard guard(m_ProcessorPtrMutex);
@@ -320,6 +330,11 @@ void COSGProcessorRef::Process()
             return;
         }
         tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() got replies: "<<GetStatus());
+        WaitForOtherProcessors();
+        if ( IsCanceled() ) {
+            SEND_TRACE("OSG: Process() canceled");
+            return;
+        }
         if ( 1 ) {
             SEND_TRACE("OSG: switching to UV loop");
             ProcessRepliesInUvLoop();
@@ -412,6 +427,18 @@ CPSGS_OSGProcessorBase::~CPSGS_OSGProcessorBase()
     if ( m_ProcessorRef ) {
         m_ProcessorRef->Detach();
     }
+}
+
+
+void CPSGS_OSGProcessorBase::WaitForOtherProcessors()
+{
+}
+
+
+void CPSGS_OSGProcessorBase::WaitForCassandra()
+{
+    SendTrace("OSG: waiting for Cassandra results");
+    GetRequest()->WaitFor(kCassandraProcessorEvent);
 }
 
 
