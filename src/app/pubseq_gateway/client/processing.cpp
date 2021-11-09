@@ -1094,7 +1094,10 @@ int s_CheckItems(bool expect_errors, const string& request_id, shared_ptr<CPSG_R
             }
 
         } else if (!expect_errors) {
-            cerr << "Fail on getting item for request '" << request_id << "' expected to succeed" << endl;
+            stringstream ss;
+            ss << "Fail for request '" << request_id << "' expected to succeed: ";
+            s_ReportErrors(ss, status, reply_item, "", ", ");
+            cerr << ss.rdbuf();
             return SExitCode::eTestFail;
 
         } else {
