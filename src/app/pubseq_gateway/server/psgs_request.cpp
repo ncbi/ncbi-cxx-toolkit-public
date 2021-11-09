@@ -107,7 +107,7 @@ void CPSGS_Request::Lock(const string &  event_name)
     if (m_Wait.find(event_name) != m_Wait.end()) {
         // Double locking; it is rather an error
         NCBI_THROW(CPubseqGatewayException, eLogic,
-                   "Multple lock of the same event is not supported");
+                   "Multiple lock of the same event is not supported");
     }
 
     m_Wait[event_name] = new SWaitData();
@@ -167,7 +167,7 @@ void CPSGS_Request::WaitFor(const string &  event_name, size_t  timeout_sec)
             return;
         case SWaitData::ePSGS_LockedOneWaits:
             NCBI_THROW(CPubseqGatewayException, eLogic,
-                       "Multple waiting of the same event is not supported");
+                       "Multiple waiting of the same event is not supported");
     }
 
     it->second->m_State = SWaitData::ePSGS_LockedOneWaits;
@@ -178,8 +178,8 @@ void CPSGS_Request::WaitFor(const string &  event_name, size_t  timeout_sec)
         it->second->m_State = SWaitData::ePSGS_LockedNobodyWaits;
 
         PSG_WARNING("Timeout waiting on event '" + event_name + "'");
-        NCBI_THROW(CPubseqGatewayException, eLogic,
-                   "Multple lock of the same event is not supported");
+        NCBI_THROW(CPubseqGatewayException, eTimeout,
+                   "Timeout of waiting on event '" + event_name + "'");
     }
 
     // Here:
