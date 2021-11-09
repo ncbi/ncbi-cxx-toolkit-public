@@ -35,6 +35,10 @@
 #include <corelib/ncbiexec.hpp>
 #include <corelib/jaeger/jaeger_tracer.hpp>
 
+#include <common/ncbi_sanitizers.h>
+#include <common/test_assert.h>  /* This header must go last */
+
+
 USING_NCBI_SCOPE;
 
 
@@ -126,5 +130,13 @@ int CJaegerTestApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
+#if defined(NCBI_USE_TSAN)
+    cout << "This test is disabled to run under thread sanitizer, "
+         << "it constantly fails with memory allocation errors" 
+         << endl
+         << "NCBI_UNITTEST_DISABLED" 
+         << endl;
+    return 0;
+#endif
     return CJaegerTestApp().AppMain(argc, argv);
 }
