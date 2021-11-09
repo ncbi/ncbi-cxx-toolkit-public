@@ -51,19 +51,14 @@ USING_NCBI_SCOPE;
 
 namespace {
 
-string gResolveNamerdHosts(string const& service_name, char delimiter)
+string gResolveNamerdHosts(string const& service_name, string const& delimiter)
 {
     const vector<CSERV_Info> hosts = SERV_GetServers(service_name, fSERV_Standalone);
-    stringstream result;
-    bool is_first{true};
-    for (auto const& host : hosts) {
-        if (!is_first) {
-            result << delimiter;
+    return NStr::TransformJoin(hosts.begin(), hosts.end(), delimiter,
+        [](const auto& host) -> string {
+            return host.GetHost() + ":" + to_string(host.GetPort());
         }
-        is_first = false;
-        result << host.GetHost() << ":" << host.GetPort();
-    }
-    return result.str();
+    );
 }
 
 }
@@ -244,7 +239,7 @@ void CCassConnectionFactory::GetHostPort(string & cass_hosts, short & cass_port)
             hosts = LbsmLookup::s_Resolve(m_CassHosts, ',');
         break;
         case ECassandraNameResolver::eNAMERD:
-            hosts = gResolveNamerdHosts(m_CassHosts, ',');
+            hosts = gResolveNamerdHosts(m_CassHosts, ",");
         break;
         default:
             NCBI_THROW(CCassandraException, eGeneric, "Failed to resolve (unknown name resolver): " + m_CassHosts);
