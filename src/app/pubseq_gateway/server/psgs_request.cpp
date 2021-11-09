@@ -174,12 +174,14 @@ void CPSGS_Request::WaitFor(const string &  event_name, size_t  timeout_sec)
     auto    status = it->second->m_WaitObject.wait_for(scope_lock,
                                                        chrono::seconds(timeout_sec));
     if (status == cv_status::timeout) {
-        // Still locked but noboby waits anymore
+        // Still locked
         it->second->m_State = SWaitData::ePSGS_LockedNobodyWaits;
 
-        PSG_WARNING("Timeout waiting on event '" + event_name + "'");
-        NCBI_THROW(CPubseqGatewayException, eTimeout,
-                   "Timeout of waiting on event '" + event_name + "'");
+        string  message = "Timeout (" + to_string(timeout_sec) +
+                          " seconds) waiting on event '" + event_name + "'";
+
+        PSG_WARNING(message);
+        NCBI_THROW(CPubseqGatewayException, eTimeout, message);
     }
 
     // Here:
