@@ -40,6 +40,8 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbiargs.hpp>
 
+#include <connect/ncbi_service.hpp>
+
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/lbsm_resolver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
@@ -47,6 +49,24 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
+namespace {
+
+string gResolveNamerdHosts(string const& service_name, char delimiter)
+{
+    const vector<CSERV_Info> hosts = SERV_GetServers(service_name, fSERV_Standalone);
+    stringstream result;
+    bool is_first{true};
+    for (auto const& host : hosts) {
+        if (!is_first) {
+            result << delimiter;
+        }
+        is_first = false;
+        result << host.GetHost() << ":" << host.GetPort();
+    }
+    return result.str();
+}
+
+}
 
 const string                    kCassConfigSection = "CASSANDRA_DB";
 
@@ -70,6 +90,8 @@ const unsigned int              kCassFallbackWrConsistencyMin = 0;
 const unsigned int              kCassFallbackWrConsistencyMax = UINT_MAX;
 const unsigned int              kCassFallbackWrConsistencyDefault = 0;
 
+const char * CCassConnectionFactory::kNameResolverLBSM = "LBSM";
+const char * CCassConnectionFactory::kNameResolverNamerd = "NAMERD";
 
 const map<string, loadbalancing_policy_t>     kPolicyArgMap = {
     {"", kLoadBalancingDefaultPolicy},
@@ -187,6 +209,16 @@ void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry & registry)
                 << m_Section << "' of registry");
         }
 
+        string name_resolver = registry.GetString(m_Section, "name_resolver", "");
+        if (name_resolver == kNameResolverLBSM || name_resolver.empty()) {
+            m_ServiceNameResolver = ECassandraNameResolver::eLBSM;
+        } else if (name_resolver == kNameResolverNamerd) {
+            m_ServiceNameResolver = ECassandraNameResolver::eNAMERD;
+        } else {
+            NCBI_THROW(CCassandraException, eGeneric, "Wrong name_resolver parameter value: '" + name_resolver + "'");
+        }
+
+
         ProcessParams();
     }
 }
@@ -199,14 +231,23 @@ void CCassConnectionFactory::GetHostPort(string & cass_hosts, short & cass_port)
         NCBI_THROW(CCassandraException, eGeneric, "Cassandra connection point is not specified");
     }
 
-    bool is_lbsm = (m_CassHosts.find(':') == string::npos)
-        && (m_CassHosts.find(' ') == string::npos)
-        && (m_CassHosts.find(',') == string::npos);
+    bool is_hostlist = (m_CassHosts.find(':') != string::npos)
+        || (m_CassHosts.find(' ') != string::npos)
+        || (m_CassHosts.find(',') != string::npos);
 
-    if (is_lbsm) {
-        hosts = LbsmLookup::s_Resolve(m_CassHosts, ',');
+    if (!is_hostlist) {
         if (hosts.empty()) {
             NCBI_THROW(CCassandraException, eGeneric, "Failed to resolve: " + m_CassHosts);
+        }
+        switch (m_ServiceNameResolver) {
+        case ECassandraNameResolver::eLBSM:
+            hosts = LbsmLookup::s_Resolve(m_CassHosts, ',');
+        break;
+        case ECassandraNameResolver::eNAMERD:
+            hosts = gResolveNamerdHosts(m_CassHosts, ',');
+        break;
+        default:
+            NCBI_THROW(CCassandraException, eGeneric, "Failed to resolve (unknown name resolver): " + m_CassHosts);
         }
     }
 
@@ -217,18 +258,17 @@ void CCassConnectionFactory::GetHostPort(string & cass_hosts, short & cass_port)
     cass_port = 0;
     for (const auto & item : items) {
         string item_host;
-        string item_port;
-        if (NStr::SplitInTwo(item, ":", item_host, item_port)) {
+        string item_port_token;
+        if (NStr::SplitInTwo(item, ":", item_host, item_port_token)) {
             // Delimiter was found, i.e. there is a port number
-            short item_port_number = NStr::StringToNumeric<short>(item_port);
+            short item_port = NStr::StringToNumeric<short>(item_port_token);
             if (cass_port == 0) {
-                cass_port = item_port_number;
+                cass_port = item_port;
             } else {
-                if (item_port_number != cass_port)
-                    NCBI_THROW(CCassandraException, eGeneric,
-                               "Unmatching port numbers found: " +
-                               NStr::NumericToString(cass_port) + " and " +
-                               NStr::NumericToString(item_port_number));
+                if (item_port != cass_port) {
+                    NCBI_THROW(CCassandraException, eGeneric, "Unmatching port numbers found: " +
+                        to_string(cass_port) + " and " + to_string(item_port));
+                }
             }
         }
 
