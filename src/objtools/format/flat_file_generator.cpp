@@ -930,9 +930,11 @@ void CFlatFileGenerator::Generate
         }
     }
 
+    /*
     if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
         m_Ctx->ResetSeqEntryIndex();
     }
+    */
 
     /// reset the context, but preserve our selector
     /// we do this a bit oddly since resetting the context erases the selector;
