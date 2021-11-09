@@ -119,58 +119,6 @@ void CCassBlobOp::GetBlobChunkSize(unsigned int timeout_ms, int64_t * chunk_size
     GetBlobChunkSize(timeout_ms, m_Keyspace, chunk_size);
 }
 
-void CCassBlobOp::GetBlob(unsigned int  op_timeout_ms,
-                          int32_t  key, unsigned int  max_retries,
-                          SBlobStat *  blob_stat,
-                          TBlobChunkCallback data_chunk_cb)
-{
-    string errmsg;
-    bool is_error = false;
-
-    CCassBlobLoader loader(
-        op_timeout_ms, m_Conn, m_Keyspace, key, false, max_retries,
-        move(data_chunk_cb),
-        [&is_error, &errmsg](
-            CRequestStatus::ECode /*status*/,
-            int /*code*/,
-            EDiagSev /*severity*/,
-            const string & message
-        ) {
-            is_error = 1;
-            errmsg = message;
-        }
-    );
-
-    CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
-        [&loader, &is_error, &errmsg](bool /*is_repeated*/)
-        {
-            bool b = loader.Wait();
-            return b;
-        }
-    );
-
-    if (is_error) {
-        RAISE_DB_ERROR(eQueryFailed, errmsg);
-    }
-    if (blob_stat) {
-        *blob_stat = loader.GetBlobStat();
-    }
-}
-
-
-void CCassBlobOp::GetBlobAsync(unsigned int  op_timeout_ms,
-                               int32_t  key, unsigned int  max_retries,
-                               TBlobChunkCallback data_chunk_cb,
-                               TDataErrorCallback error_cb,
-                               unique_ptr<CCassBlobWaiter> &  Waiter)
-{
-    Waiter.reset(new CCassBlobLoader(
-        op_timeout_ms, m_Conn, m_Keyspace,
-        key, true, max_retries,
-        move(data_chunk_cb), move(error_cb)
-    ));
-}
-
 void CCassBlobOp::InsertBlobExtended(unsigned int  op_timeout_ms, unsigned int  max_retries,
                                   CBlobRecord *  blob_rslt, TDataErrorCallback  error_cb,
                                   unique_ptr<CCassBlobWaiter> &  Waiter)

@@ -265,17 +265,6 @@ class CCassBlobWaiter
         return CanRestart(it.query, it.restart_count);
     }
 
-    // This function is deprecated and will be removed after Dec-1 2020
-    NCBI_DEPRECATED static string AllParams(shared_ptr<CCassQuery> qry) {
-        string rv;
-        for (size_t i = 0; i < qry->ParamCount(); ++i) {
-            if (i > 0)
-                rv.append(", ");
-            rv.append(qry->ParamAsStr(i));
-        }
-        return rv;
-    }
-
     bool CheckReady(shared_ptr<CCassQuery> qry, unsigned int restart_counter, bool& need_repeat)
     {
         need_repeat = false;
@@ -350,75 +339,6 @@ class CCassBlobWaiter
     string QueryParamsToStringForDebug(shared_ptr<CCassQuery> const& query) const;
 };
 
-class CCassBlobLoader: public CCassBlobWaiter
-{
- public:
-    CCassBlobLoader(const CCassBlobLoader&) = delete;
-    CCassBlobLoader(CCassBlobLoader&&) = delete;
-    CCassBlobLoader& operator=(const CCassBlobLoader&) = delete;
-    CCassBlobLoader& operator=(CCassBlobLoader&&) = delete;
-
-    CCassBlobLoader(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        int32_t key,
-        bool async,
-        unsigned int max_retries,
-        TBlobChunkCallback data_chunk_cb,
-        TDataErrorCallback DataErrorCB
-    );
-
-    void SetDataChunkCB(TBlobChunkCallback chunk_callback);
-    void SetDataReadyCB(TDataReadyCallback datareadycb, void * data);
-
-    SBlobStat GetBlobStat(void) const;
-    uint64_t GetBlobSize(void) const;
-    int32_t GetTotalChunksInBlob(void) const;
-    void SetPropsCallback(TPropsCallback prop_cb)
-    {
-        m_PropsCallback = std::move(prop_cb);
-    }
-
- protected:
-    virtual void Wait1(void) override;
-
- private:
-    enum EBlobLoaderState {
-        eInit = CCassBlobWaiter::eInit,
-        eReadingEntity,
-        eReadingChunks,
-        eCheckingFlags,
-        eDone = CCassBlobWaiter::eDone,
-        eError = CCassBlobWaiter::eError
-    };
-
-    void x_RequestFlags(shared_ptr<CCassQuery> qry, bool with_data);
-    void x_RequestChunk(shared_ptr<CCassQuery> qry, int local_id);
-    void x_RequestChunksAhead(void);
-
-    void x_PrepareChunkRequests(void);
-    int x_GetReadyChunkNo(bool &  have_inactive);
-    bool x_AreAllChunksProcessed(void);
-    void x_MarkChunkProcessed(size_t  chunk_no);
-
-    TDataReadyCallback  m_DataReadyCb;
-    void *              m_DataReadyData;
-
-    TPropsCallback      m_PropsCallback;
-    bool                m_StatLoaded;
-    SBlobStat           m_BlobStat;
-    TBlobChunkCallback  m_DataCb;
-    int64_t             m_ExpectedSize;
-    int64_t             m_RemainingSize;
-    int32_t             m_LargeParts;
-
-    // Support for sending chunks as soon as they are ready regardless of the
-    // order they are delivered from Cassandra
-    vector<bool> m_ProcessedChunks;
-};
-
-
 class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
 {
  public:
@@ -457,14 +377,6 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         return m_Keyspace;
     }
 
-    void GetBlob(unsigned int  op_timeout_ms,
-                 int32_t  key, unsigned int  max_retries,
-                 SBlobStat *  blob_stat, TBlobChunkCallback data_chunk_cb);
-    void GetBlobAsync(unsigned int  op_timeout_ms,
-                      int32_t  key, unsigned int  max_retries,
-                      TBlobChunkCallback data_chunk_cb,
-                      TDataErrorCallback error_cb,
-                      unique_ptr<CCassBlobWaiter> &  waiter);
     void InsertBlobExtended(unsigned int  op_timeout_ms, unsigned int  max_retries,
                          CBlobRecord *  blob_rslt, TDataErrorCallback  error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
@@ -519,7 +431,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         int16_t seq_id_type = 0
     );
 
-  
+
     void DeleteBlobExtended(unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,
                          TDataErrorCallback error_cb,

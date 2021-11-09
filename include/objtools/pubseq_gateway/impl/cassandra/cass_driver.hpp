@@ -61,19 +61,12 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-#define CASS_PREPARED_Q 1
 #define CASS_DRV_TIMEOUT_MS 2000U
-#define CASS_ERROR_SERVER_CONSISTENCY_NOT_ACHIEVED 0xC40063C0
-
-#define ASYNC_RESULT_MAP(XX) \
-    XX(ar_wait, "Wait") \
-    XX(ar_done, "Done") \
-    XX(ar_dataready, "DataReady")
 
 typedef enum {
-    #define XX(name, _) name,
-    ASYNC_RESULT_MAP(XX)
-    #undef XX
+    ar_wait,
+    ar_done,
+    ar_dataready,
     ASYNC_RSLT_LAST_ENTRY
 } async_rslt_t;
 
@@ -167,7 +160,12 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
 
     unsigned int QryTimeout(void) const;
     unsigned int QryTimeoutMks(void) const;
-    void SetRtLimits(unsigned int numThreadsIo, unsigned int numConnPerHost, unsigned int maxConnPerHost);
+
+    // This function is deprecated and will be removed after Jan-1 2022
+    // Use 2 parameters version
+    NCBI_DEPRECATED void SetRtLimits(unsigned int numThreadsIo, unsigned int numConnPerHost, unsigned int /*maxConnPerHost*/);
+
+    void SetRtLimits(unsigned int numThreadsIo, unsigned int numConnPerHost);
 
     void SetKeepAlive(unsigned int keepalive);
 
@@ -206,7 +204,6 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     bool                            m_latencyaware;
     unsigned int                    m_numThreadsIo;
     unsigned int                    m_numConnPerHost;
-    unsigned int                    m_maxConnPerHost;
     unsigned int                    m_keepalive;
     bool                            m_fallback_readconsistency;
     unsigned int                    m_FallbackWriteConsistency;
@@ -572,29 +569,15 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
 {
  public:
     explicit CCassQueryCbRef(shared_ptr<CCassQuery> query)
-        : m_ondata(nullptr)
-        , m_data(nullptr)
-        , m_ondata2(nullptr)
-        , m_data2(nullptr)
-        , m_query(query)
-    {
-    }
+        : m_query(query)
+    {}
 
     virtual ~CCassQueryCbRef()
-    {
-    }
+    {}
 
-    void Attach(void (*ondata)(CCassQuery&, void*),
-                void* data, void (*ondata2)(void*), void* data2,
-                shared_ptr<CCassDataCallbackReceiver> ondata3)
+    void Attach(shared_ptr<CCassDataCallbackReceiver> ondata3)
     {
         m_self = shared_from_this();
-        m_data = data;
-        m_ondata = ondata;
-
-        m_data2 = data2;
-        m_ondata2 = ondata2;
-
         m_ondata3 = ondata3;
     }
 
@@ -611,15 +594,8 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
             shared_ptr<CCassQueryCbRef> self(static_cast<CCassQueryCbRef*>(data)->shared_from_this());
             assert(self->m_self);
             self->m_self = nullptr;
-
-            auto    query = self->m_query.lock();
+            auto query = self->m_query.lock();
             if (query != nullptr) {
-                if (self->m_ondata) {
-                    self->m_ondata(*query.get(), self->m_data);
-                }
-                if (self->m_ondata2) {
-                    self->m_ondata2(self->m_data2);
-                }
                 auto ondata3 = self->m_ondata3.lock();
                 if (ondata3) {
                     ondata3->OnData();
@@ -636,14 +612,7 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
     }
 
  private:
-    TCassQueryOnDataCallback        m_ondata;
-    void*                           m_data;
-
-    TCassQueryOnData2Callback       m_ondata2;
-    void*                           m_data2;
-
     weak_ptr<CCassDataCallbackReceiver> m_ondata3;
-
     weak_ptr<CCassQuery>            m_query;
     shared_ptr<CCassQueryCbRef>     m_self;
 };
@@ -697,12 +666,6 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
 
     shared_ptr<CCassQueryCbRef>     m_cb_ref;
 
-    TCassQueryOnDataCallback        m_ondata;
-    void*                           m_ondata_data;
-
-    TCassQueryOnData2Callback       m_ondata2;
-    void*                           m_ondata2_data;
-
     weak_ptr<CCassDataCallbackReceiver> m_ondata3;
 
     TCassQueryOnExecuteCallback     m_onexecute;
@@ -751,13 +714,9 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         m_page_start(false),
         m_results_expected(false),
         m_async(false),
-        m_allow_prepare(CASS_PREPARED_Q),
+        m_allow_prepare(true),
         m_is_prepared(false),
         m_serial_consistency(CASS_CONSISTENCY_ANY),
-        m_ondata(nullptr),
-        m_ondata_data(nullptr),
-        m_ondata2(nullptr),
-        m_ondata2_data(nullptr),
         m_onexecute(nullptr),
         m_onexecute_data(nullptr)
     {
@@ -783,14 +742,14 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
 
     /* returns resultset */
     void Query(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM,
-               bool run_async = false, bool allow_prepare = CASS_PREPARED_Q,
+               bool run_async = false, bool allow_prepare = true,
                unsigned int page_size = DEFAULT_PAGE_SIZE);
 
     void RestartQuery(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM);
 
     /* returns no resultset */
     void Execute(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM,
-                 bool run_async = false, bool allow_prepare = CASS_PREPARED_Q);
+                 bool run_async = false, bool allow_prepare = true);
     void RestartExecute(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM);
     void Restart(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM);
 
@@ -1336,52 +1295,6 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     shared_ptr<CCassConnection> GetConnection(void)
     {
         return m_connection;
-    }
-
-    /**
-     * Use SatOnData3. This one is unsafe and will be removed
-     */
-    NCBI_DEPRECATED void SetOnData(TCassQueryOnDataCallback cb, void* data)
-    {
-        if (m_ondata == cb && m_ondata_data == data) {
-            return;
-        }
-        if (m_future) {
-            if (m_ondata) {
-                RAISE_DB_ERROR(eSeqFailed, "Future callback has already been assigned");
-            }
-            if (!cb && m_future) {
-                RAISE_DB_ERROR(eSeqFailed, "Future callback can not be reset");
-            }
-        }
-        m_ondata = move(cb);
-        m_ondata_data = data;
-        if (m_future) {
-            SetupOnDataCallback();
-        }
-    }
-
-    /**
-     * Use SatOnData3. This one is unsafe and will be removed
-     */
-    NCBI_DEPRECATED void SetOnData2(TCassQueryOnData2Callback cb, void* Data)
-    {
-        if (m_ondata2 == cb && m_ondata2_data == Data) {
-            return;
-        }
-        if (m_future) {
-            if (m_ondata2) {
-                RAISE_DB_ERROR(eSeqFailed, "Future callback has already been assigned");
-            }
-            if (!cb) {
-                RAISE_DB_ERROR(eSeqFailed, "Future callback can not be reset");
-            }
-        }
-        m_ondata2 = cb;
-        m_ondata2_data = Data;
-        if (m_future) {
-            SetupOnDataCallback();
-        }
     }
 
     void SetOnData3(shared_ptr<CCassDataCallbackReceiver> cb)

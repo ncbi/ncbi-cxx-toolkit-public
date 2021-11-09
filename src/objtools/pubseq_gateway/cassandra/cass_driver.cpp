@@ -116,7 +116,6 @@ CCassConnection::CCassConnection()
     , m_latencyaware(false)
     , m_numThreadsIo(0)
     , m_numConnPerHost(0)
-    , m_maxConnPerHost(0)
     , m_keepalive(0)
     , m_fallback_readconsistency(false)
     , m_FallbackWriteConsistency(0)
@@ -169,12 +168,17 @@ unsigned int CCassConnection::QryTimeoutMks(void) const
     return QryTimeout() * 1000;
 }
 
+
 void CCassConnection::SetRtLimits(unsigned int  numThreadsIo, unsigned int  numConnPerHost,
-                 unsigned int  maxConnPerHost)
+                 unsigned int /*maxConnPerHost*/)
+{
+    SetRtLimits(numThreadsIo, numConnPerHost);
+}
+
+void CCassConnection::SetRtLimits(unsigned int numThreadsIo, unsigned int numConnPerHost)
 {
     m_numThreadsIo = numThreadsIo;
     m_numConnPerHost = numConnPerHost;
-    m_maxConnPerHost = maxConnPerHost;
 }
 
 void CCassConnection::SetKeepAlive(unsigned int keepalive)
@@ -295,11 +299,6 @@ void CCassConnection::Connect()
     cass_cluster_set_token_aware_routing(m_cluster, m_tokenaware ? cass_true : cass_false);
     cass_cluster_set_latency_aware_routing(m_cluster, m_latencyaware ? cass_true : cass_false);
     cass_cluster_set_num_threads_io(m_cluster, m_numThreadsIo ? m_numThreadsIo : kDefaultIOThreads);
-
-
-    if (m_maxConnPerHost) {
-        cass_cluster_set_max_connections_per_host(m_cluster, m_maxConnPerHost);
-    }
 
     if (m_numConnPerHost) {
         cass_cluster_set_core_connections_per_host(m_cluster, m_numConnPerHost);
@@ -613,7 +612,6 @@ vector<string> CCassConnection::GetPartitionKeyColumnNames(string const & keyspa
 const CassPrepared * CCassConnection::Prepare(const string &  sql)
 {
     const CassPrepared * rv = nullptr;
-#if CASS_PREPARED_Q
     {
         CSpinGuard guard(m_prepared_mux);
         auto it = m_prepared.find(sql);
@@ -641,8 +639,7 @@ const CassPrepared * CCassConnection::Prepare(const string &  sql)
             }
         );
 
-        bool b;
-        b = cass_future_wait_timed(future.get(), m_qtimeoutms * 1000L);
+        bool b = cass_future_wait_timed(future.get(), m_qtimeoutms * 1000L);
         if (!b) {
             RAISE_DB_QRY_TIMEOUT(m_qtimeoutms, 0, string("failed to prepare query \"") + sql + "\"");
         }
@@ -662,7 +659,6 @@ const CassPrepared * CCassConnection::Prepare(const string &  sql)
         rv = it->second;
         return rv;
     }
-#endif
     return rv;
 }
 
@@ -805,12 +801,10 @@ void CCassQuery::Close(void)
 CCassQuery::~CCassQuery()
 {
     Close();
-    m_ondata_data = nullptr;
-    m_ondata2_data = nullptr;
     m_onexecute_data = nullptr;
 }
 
-void CCassQuery::InternalClose(bool  closebatch)
+void CCassQuery::InternalClose(bool closebatch)
 {
     m_params.clear();
     if (m_future) {
@@ -848,7 +842,7 @@ void CCassQuery::InternalClose(bool  closebatch)
     m_page_size = 0;
     m_results_expected = false;
     m_async = false;
-    m_allow_prepare = CASS_PREPARED_Q;
+    m_allow_prepare = true;
     m_is_prepared = false;
     if (m_cb_ref) {
         m_cb_ref->Detach();
@@ -1244,7 +1238,7 @@ void CCassQuery::GetFuture()
             RAISE_DB_ERROR(eRsrcFailed, "failed to obtain cassandra query future");
         }
         m_futuretime = gettime();
-        if (m_ondata || m_ondata2 || m_ondata3.lock()) {
+        if (m_ondata3.lock()) {
             SetupOnDataCallback();
         }
     }
@@ -1302,14 +1296,14 @@ void CCassQuery::SetupOnDataCallback()
     if (!m_future) {
         RAISE_DB_ERROR(eSeqFailed, "Future is not assigned");
     }
-    if (!m_ondata && !m_ondata2 && !m_ondata3.lock()) {
-        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, m_ondata is not set");
+    if (!m_ondata3.lock()) {
+        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, m_ondata3 is not set");
     }
     if (m_cb_ref) {
         m_cb_ref->Detach();
     }
     m_cb_ref.reset(new CCassQueryCbRef(shared_from_this()));
-    m_cb_ref->Attach(m_ondata, m_ondata_data, m_ondata2, m_ondata2_data, m_ondata3.lock());
+    m_cb_ref->Attach(m_ondata3.lock());
     CassError rv = cass_future_set_callback(m_future, CCassQueryCbRef::s_OnFutureCb, m_cb_ref.get());
     if (rv != CASS_OK) {
         m_cb_ref->Detach(true);
