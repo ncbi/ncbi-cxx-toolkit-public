@@ -63,9 +63,6 @@ const unsigned int              kNumThreadsIoDefault = 4;
 const unsigned int              kNumConnPerHostMin = 1;
 const unsigned int              kNumConnPerHostMax = 8;
 const unsigned int              kNumConnPerHostDefault = 2;
-const unsigned int              kMaxConnPerHostMin = 1;
-const unsigned int              kMaxConnPerHostMax = 8;
-const unsigned int              kMaxConnPerHostDefault = 4;
 const unsigned int              kKeepaliveMin = 0;
 const unsigned int              kKeepaliveMax = UINT_MAX;
 const unsigned int              kKeepaliveDefault = 0;
@@ -92,7 +89,6 @@ CCassConnectionFactory::CCassConnectionFactory() :
     m_LatencyAware(true),
     m_NumThreadsIo(kNumThreadsIoDefault),
     m_NumConnPerHost(kNumConnPerHostDefault),
-    m_MaxConnPerHost(kMaxConnPerHostDefault),
     m_Keepalive(kKeepaliveDefault),
     m_LogSeverity(eDiag_Error),
     m_LogEnabled(false)
@@ -178,13 +174,19 @@ void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry & registry)
         m_LatencyAware = registry.GetBool(m_Section, "latencyaware", true);
         m_NumThreadsIo = registry.GetInt(m_Section, "numthreadsio", kNumThreadsIoDefault);
         m_NumConnPerHost = registry.GetInt(m_Section, "numconnperhost", kNumConnPerHostDefault);
-        m_MaxConnPerHost = registry.GetInt(m_Section, "maxconnperhost", kMaxConnPerHostDefault);
         m_Keepalive = registry.GetInt(m_Section, "keepalive", kKeepaliveDefault);
         m_PassFile = registry.GetString(m_Section, "password_file", "");
         m_PassSection = registry.GetString(m_Section, "password_section", "");
         m_CassHosts = registry.GetString(m_Section, "service", "");
         m_CassBlackList = registry.GetString(m_Section, "black_list", "");
         m_LogEnabled = registry.GetBool(m_Section, "log", false);
+
+        if (registry.HasEntry(m_Section, "maxconnperhost")) {
+            INFO_POST("Cassandra parameter 'maxconnperhost' is deprecated, "
+                "does not do anything and should be removed from section '"
+                << m_Section << "' of registry");
+        }
+
         ProcessParams();
     }
 }
@@ -255,7 +257,7 @@ shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance(void)
     rv->SetLoadBalancing(m_LoadBalancing);
     rv->SetTokenAware(m_TokenAware);
     rv->SetLatencyAware(m_LatencyAware);
-    rv->SetRtLimits(m_NumThreadsIo, m_NumConnPerHost, m_MaxConnPerHost);
+    rv->SetRtLimits(m_NumThreadsIo, m_NumConnPerHost);
     rv->SetKeepAlive(m_Keepalive);
 
     rv->SetTimeouts(m_CassConnTimeoutMs, m_CassQueryTimeoutMs);
@@ -342,16 +344,6 @@ void CCassConnectionFactory::x_ValidateArgs(void)
                  m_NumConnPerHost << ". Reset to "
                  "default: " << kNumConnPerHostDefault);
         m_NumConnPerHost = kNumConnPerHostDefault;
-    }
-
-    if (m_MaxConnPerHost < kMaxConnPerHostMin ||
-        m_MaxConnPerHost > kMaxConnPerHostMax) {
-        ERR_POST("The maximum count of connections per host is out of range. Allowed "
-                 "range: " << kMaxConnPerHostMin << "..." <<
-                 kMaxConnPerHostMax << ". Received: " <<
-                 m_MaxConnPerHost << ". Reset to "
-                 "default: " << kMaxConnPerHostDefault);
-        m_MaxConnPerHost = kMaxConnPerHostDefault;
     }
 
     if (m_Keepalive < kKeepaliveMin ||

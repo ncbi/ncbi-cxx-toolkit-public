@@ -104,7 +104,6 @@ class CCassConnectionFactory:
     bool                    m_LatencyAware;
     unsigned int            m_NumThreadsIo;
     unsigned int            m_NumConnPerHost;
-    unsigned int            m_MaxConnPerHost;
     unsigned int            m_Keepalive;
 
     EDiagSev                m_LogSeverity;
