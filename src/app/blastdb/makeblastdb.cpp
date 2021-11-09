@@ -1208,7 +1208,19 @@ void CMakeBlastDBApp::x_BuildDatabase()
 #endif
     x_ProcessInputData(args[kInput].AsString(), is_protein);
 
-    m_DB->EndBuild();
+    bool success = m_DB->EndBuild();
+    if(success) {
+    	string new_db = m_DB->GetOutputDbName();
+    	CSeqDB::ESeqType t = is_protein? CSeqDB::eProtein: CSeqDB::eNucleotide;
+    	CSeqDB sdb(new_db, t);
+    	CRef<CBlast_db_metadata> m = sdb.GetDBMetaData();
+    	string extn (kEmptyStr);
+    	SeqDB_GetMetadataFileExtension(is_protein, extn);
+    	string metadata_filename = new_db + "." + extn;
+    	ofstream outp(metadata_filename.c_str());
+        outp << MSerial_Json << *m;
+        outp.close();
+    }
 }
 
 int CMakeBlastDBApp::Run(void)
