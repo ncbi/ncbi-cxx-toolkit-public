@@ -35,7 +35,6 @@
 #include "osg_getblob_base.hpp"
 #include "osg_fetch.hpp"
 #include "osg_connection.hpp"
-#include "cass_processor_base.hpp"
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/id2/id2__.hpp>
@@ -148,6 +147,12 @@ void CPSGS_OSGResolve::CreateRequests()
 }
 
 
+void CPSGS_OSGResolve::WaitForOtherProcessors()
+{
+    WaitForCassandra();
+}
+
+
 void CPSGS_OSGResolve::ProcessReplies()
 {
     bool got_blob_id = false;
@@ -178,8 +183,6 @@ void CPSGS_OSGResolve::ProcessReplies()
             }
         }
     }
-    SendTrace("OSG-resolve: waiting for Cassandra results");
-    GetRequest()->WaitFor(kCassandraProcessorEvent);
     if ( IsCanceled() ) {
         SendTrace("OSG-resolve: canceled");
         return;
@@ -268,6 +271,12 @@ bool CPSGS_OSGGetBlobBySeqId::BlobIsExcluded(const string& psg_blob_id)
 }
 
 
+void CPSGS_OSGGetBlobBySeqId::WaitForOtherProcessors()
+{
+    WaitForCassandra();
+}
+
+
 void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
 {
     for ( auto& f : GetFetches() ) {
@@ -303,8 +312,6 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
             }
         }
     }
-    SendTrace("OSG-get: waiting for Cassandra results");
-    GetRequest()->WaitFor(kCassandraProcessorEvent);
     if ( IsCanceled() ) {
         SendTrace("OSG-get: canceled");
         return;

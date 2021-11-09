@@ -100,6 +100,7 @@ public:
     void Process();
     static void s_Process(shared_ptr<COSGProcessorRef> processor);
     void Cancel();
+    void WaitForOtherProcessors();
     
     void FinalizeResult(IPSGS_Processor::EPSGS_Status status);
     IPSGS_Processor::EPSGS_Status GetStatus() const;
@@ -145,6 +146,10 @@ public:
     virtual void Process(void) override;
     virtual void Cancel(void) override;
     virtual EPSGS_Status GetStatus(void) override;
+
+    virtual void WaitForOtherProcessors();
+
+    void WaitForCassandra();
 
     bool NeedTrace() const
         {
