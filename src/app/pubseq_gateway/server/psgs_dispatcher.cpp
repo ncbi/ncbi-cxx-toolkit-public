@@ -455,3 +455,28 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
     m_GroupsLock.unlock();
 }
 
+
+// Used when shutdown is timed out
+void CPSGS_Dispatcher::CancelAll(void)
+{
+    list<IPSGS_Processor *>     to_be_canceled;     // To avoid calling Cancel()
+                                                    // under the lock
+
+    m_GroupsLock.lock();
+
+    for (auto & procs :  m_ProcessorGroups) {
+        for (auto &  proc: procs.second) {
+            if (proc.m_DispatchStatus == ePSGS_Up) {
+                proc.m_DispatchStatus = ePSGS_Canceled;
+                to_be_canceled.push_back(proc.m_Processor);
+            }
+        }
+    }
+
+    m_GroupsLock.unlock();
+
+    for (auto & proc: to_be_canceled) {
+        proc->Cancel();
+    }
+}
+

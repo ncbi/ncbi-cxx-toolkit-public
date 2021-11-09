@@ -42,11 +42,13 @@ struct SShutdownData
 {
     atomic_int_fast64_t                         m_ActiveRequestCount;
     atomic_bool                                 m_ShutdownRequested;
+    atomic_bool                                 m_CancelSent;
     chrono::time_point<chrono::steady_clock>    m_Expired;
 
     SShutdownData() :
         m_ActiveRequestCount(0),
-        m_ShutdownRequested(false)
+        m_ShutdownRequested(false),
+        m_CancelSent(false)
     {}
 };
 

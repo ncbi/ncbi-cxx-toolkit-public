@@ -274,16 +274,18 @@ public:
                 unique_ptr<CPSGS_UvLoopBinder>(new CPSGS_UvLoopBinder(uv_loop));
     }
 
-    CPSGS_UvLoopBinder &  GetUvLoopBinder(uv_thread_t  uv_thread_id)
+    void UnregisterUVLoop(uv_thread_t  uv_thread)
     {
-        auto it = m_ThreadToBinder.find(uv_thread_id);
-        if (it == m_ThreadToBinder.end()) {
-            // Fallback: worker thread is not found; bind to the main loop
-            PSG_ERROR("Worker thread id is not found; binding to the main loop");
-            return *(m_MainUvLoopBinder.get());
-        }
-        return *(it->second.get());
+        lock_guard<mutex>   guard(m_ThreadToBinderGuard);
+        m_ThreadToBinder[uv_thread]->x_Unregister();
     }
+
+    void CancelAllProcessors(void)
+    {
+        m_RequestDispatcher.CancelAll();
+    }
+
+    CPSGS_UvLoopBinder &  GetUvLoopBinder(uv_thread_t  uv_thread_id);
 
 private:
     struct SRequestParameter
@@ -458,7 +460,6 @@ private:
     map<uv_thread_t,
         unique_ptr<CPSGS_UvLoopBinder>> m_ThreadToBinder;
     mutex                               m_ThreadToBinderGuard;
-    unique_ptr<CPSGS_UvLoopBinder>      m_MainUvLoopBinder;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

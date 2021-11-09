@@ -82,12 +82,16 @@ CPSGS_UvLoopBinder::CPSGS_UvLoopBinder(uv_loop_t *  loop) :
 
 CPSGS_UvLoopBinder::~CPSGS_UvLoopBinder()
 {
-    // This call always succeeds
-    #if USE_PREPARE_CB
-        uv_prepare_stop(&m_Prepare);
-    #else
-        uv_check_stop(&m_Check);
-    #endif
+    // Note: Closing of the handles is done in the x_Unregister() method.
+    // It must not be done in the destructor.
+    // This is because the libuv appraoach. It has to be done as follows:
+    // - to close the handles the libuv loop must still exist
+    // - the loop is stopped
+    // - the handles need to be closed
+    // - the loop should have at least one more iteration within which the
+    //   handles are really removed from the loop
+    // So the x_Unregister() method is called by the workers at the appropriate
+    // moment.
 }
 
 
@@ -117,11 +121,19 @@ void CPSGS_UvLoopBinder::x_UvOnCallback(void)
     }
 }
 
-
-void CPSGS_UvLoopBinder::SendAsyncEvent(void)
+void CPSGS_UvLoopBinder::x_Unregister(void)
 {
-    int     ret = uv_async_send(&m_Async);
-    if (ret < 0)
-        PSG_ERROR("Async send error: " + string(uv_strerror(ret)));
+    // See the comment in the destructor
+
+    uv_close(reinterpret_cast<uv_handle_t*>(&m_Async), NULL);
+
+    // This call always succeeds
+    #if USE_PREPARE_CB
+        uv_prepare_stop(&m_Prepare);
+        uv_close(reinterpret_cast<uv_handle_t*>(&m_Prepare), NULL);
+    #else
+        uv_check_stop(&m_Check);
+        uv_close(reinterpret_cast<uv_handle_t*>(&m_Check), NULL);
+    #endif
 }
 

@@ -1345,10 +1345,8 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
 {
     // NOTE: expected to work regardless of the shutdown request
 
-    static const char *     s_ImmediateShutdown = "Immediate shutdown request accepted";
-    static const char *     s_GracefulShutdown = "Graceful shutdown request accepted";
-    static size_t           s_ImmediateShutdownSize = strlen(s_ImmediateShutdown);
-    static size_t           s_GracefulShutdownSize = strlen(s_GracefulShutdown);
+    static const char *     s_Shutdown = "Shutdown request accepted";
+    static size_t           s_ShutdownSize = strlen(s_Shutdown);
 
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
@@ -1428,28 +1426,18 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
         }
 
         reply->SetContentType(ePSGS_PlainTextMime);
-        if (timeout == 0) {
-            // Immediate shutdown is requested
-            msg = "Immediate shutdown request received from ";
-            if (username.empty())
-                msg += "an unknown user";
-            else
-                msg += "user " + username;
-            PSG_MESSAGE(msg);
 
-            reply->Send202(s_ImmediateShutdown, s_ImmediateShutdownSize);
-            x_PrintRequestStop(context, CRequestStatus::e202_Accepted);
-            exit(0);
-        }
-
-        msg = "Graceful shutdown request received from ";
+        msg = "Shutdown request received from ";
         if (username.empty())
             msg += "an unknown user";
         else
             msg += "user " + username;
 
         auto        now = chrono::steady_clock::now();
-        auto        expiration = now + chrono::seconds(timeout);
+        auto        expiration = now;
+        if (timeout > 0)
+           expiration += chrono::seconds(timeout);
+
         if (g_ShutdownData.m_ShutdownRequested) {
             // Consequent shutdown request
             if (expiration >= g_ShutdownData.m_Expired) {
@@ -1465,9 +1453,10 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
         // New shutdown request or a shorter expiration request
         PSG_MESSAGE(msg);
 
-        reply->Send202(s_GracefulShutdown, s_GracefulShutdownSize);
+        reply->Send202(s_Shutdown, s_ShutdownSize);
         x_PrintRequestStop(context, CRequestStatus::e202_Accepted);
 
+        // The actual shutdown processing is in s_OnWatchDog() method
         g_ShutdownData.m_Expired = expiration;
         g_ShutdownData.m_ShutdownRequested = true;
     } catch (const exception &  exc) {

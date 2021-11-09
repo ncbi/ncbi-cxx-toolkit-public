@@ -53,7 +53,9 @@ extern SShutdownData       g_ShutdownData;
 
 
 void CollectGarbage(void);
+void UnregisterUVLoop(uv_thread_t  uv_thread);
 void RegisterUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop);
+void CancelAllProcessors(void);
 
 namespace TSL {
 
@@ -160,17 +162,23 @@ public:
 
         if (g_ShutdownData.m_ShutdownRequested) {
             if (g_ShutdownData.m_ActiveRequestCount == 0) {
-                if (self->AnyWorkerIsRunning()) {
-                    self->KillAll();
-                } else {
-                    self->JoinWorkers();
-                    uv_stop(handle->loop);
-                }
+                self->m_daemon->StopDaemonLoop();
             } else {
-                if (chrono::steady_clock::now() > g_ShutdownData.m_Expired) {
-                    PSG_MESSAGE("Shutdown timeout is over when there are "
-                                "unfinished requests. Exiting immediately.");
-                    exit(0);
+                if (chrono::steady_clock::now() >= g_ShutdownData.m_Expired) {
+                    if (g_ShutdownData.m_CancelSent) {
+                        PSG_MESSAGE("Shutdown timeout is over when there are "
+                                    "unfinished requests. Exiting immediately.");
+                        _exit(0);
+                    } else {
+                        // Extend the expiration for 2 second;
+                        // Send cancel to all processors;
+                        g_ShutdownData.m_Expired = chrono::steady_clock::now() + chrono::seconds(2);
+                        g_ShutdownData.m_CancelSent = true;
+
+                        // Canceling processors prevents from the tries to
+                        // write to the reply object
+                        CancelAllProcessors();
+                    }
                 }
             }
             return;
@@ -334,6 +342,9 @@ struct CTcpWorker
             RegisterUVLoop(uv_thread_self(), m_internal->m_loop.Handle());
 
             err_code = uv_run(m_internal->m_loop.Handle(), UV_RUN_DEFAULT);
+
+            UnregisterUVLoop(uv_thread_self());
+
             PSG_INFO("uv_run (1) worker " << m_id <<
                      " returned " <<  err_code);
         } catch (const CPubseqGatewayUVException &  exc) {
@@ -562,12 +573,16 @@ private:
 private:
     static void s_OnMainSigInt(uv_signal_t *  /* req */, int  /* signum */)
     {
+        // This is also for Ctrl+C
+        // Note: exit(0) instead of the shutdown request may hang.
         PSG_MESSAGE("SIGINT received. Immediate shutdown performed.");
-        exit(0);
+        g_ShutdownData.m_Expired = chrono::steady_clock::now();
+        g_ShutdownData.m_ShutdownRequested = true;
+
         // The uv_stop() may hang if some syncronous long operation is in
-        // progress. So it was decided to use exit() which is not a big problem
-        // for PSG because it is a stateless server.
-        // uv_stop(req->loop);
+        // progress. So the shutdown with 0 delay is chosen. The cases when
+        // some operations require too much time are handled in the
+        // s_OnWatchDog() where the shutdown request is actually processed
     }
 
     static void s_OnMainSigTerm(uv_signal_t *  /* req */, int  /* signum */)
@@ -617,7 +632,6 @@ protected:
     static constexpr const char IPC_PIPE_NAME[] = "tcp_daemon_startup_rpc";
 
 public:
-    CUvLoop         loop;
 
     CTcpDaemon(const std::string &  Address, unsigned short  Port,
                unsigned short  NumWorkers, unsigned short  BackLog,
@@ -630,6 +644,13 @@ public:
         m_workers(nullptr),
         m_connection_count(0)
     {}
+
+    CUvLoop * m_UVLoop;
+
+    void StopDaemonLoop(void)
+    {
+        m_UVLoop->Stop();
+    }
 
     bool OnRequest(P **  p)
     {
@@ -679,6 +700,9 @@ public:
 
         CTcpWorkersList<P, U, D>    workers(this);
         {{
+            CUvLoop         loop;
+            m_UVLoop = &loop;
+
             CUvSignal       sigint(loop.Handle());
             sigint.Start(SIGINT, s_OnMainSigInt);
 

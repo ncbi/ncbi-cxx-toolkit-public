@@ -91,6 +91,8 @@ public:
     /// such a case
     void SignalConnectionCanceled(size_t  request_id);
 
+    void CancelAll(void);
+
 private:
     void x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
                             CRequestStatus::ECode  status);
