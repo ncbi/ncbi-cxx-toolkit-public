@@ -30,19 +30,31 @@
  */
 
 /// @file ncbi_sanitizers.h
-/// Common macro to suppress memory leaks if run under LeakSanitizer.
-
+/// Common macro to detect used sanitizers and suppress memory leaks if run under LeakSanitizer.
 
 #if defined(__has_feature)
+#  if __has_feature(address_sanitizer)
+#      define NCBI_USE_ASAN
+#  endif
 #  if __has_feature(memory_sanitizer)
 #      define NCBI_USE_LSAN
+#  endif
+#  if __has_feature(thread_sanitizer)
+#      define NCBI_USE_TSAN
 #  endif
 #else
 // Fallback for older compilers
 #  if defined(__SANITIZE_ADDRESS__)
+#      define NCBI_USE_ASAN
+#  endif
+#  if defined(__SANITIZE_MEMORY__)
 #      define NCBI_USE_LSAN
 #  endif
+#  if defined(__SANITIZE_THREAD__)
+#      define NCBI_USE_TSAN
+#  endif
 #endif
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
