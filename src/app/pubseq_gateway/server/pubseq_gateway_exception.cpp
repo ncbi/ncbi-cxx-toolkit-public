@@ -122,6 +122,8 @@ const char *  CPubseqGatewayException::GetErrCodeString(void) const
             return "eInvalidTimerStart";
         case eInvalidAsyncInit:
             return "eInvalidAsyncInit";
+        case eTimeout:
+            return "eTimeout";
 
         default:
             return CException::GetErrCodeString();

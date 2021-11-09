@@ -86,7 +86,8 @@ public:
         eInvalidTimerInit,
         eInvalidTimerStart,
 
-        eInvalidAsyncInit
+        eInvalidAsyncInit,
+        eTimeout
     };
 
     virtual const char *  GetErrCodeString(void) const;
