@@ -13,7 +13,7 @@ NCBI_begin_lib(psg_cassandra)
     status_history/insert status_history/delete status_history/get_public_comment status_history/fetch
     acc_ver_hist/insert acc_ver_hist/fetch
   )
-  NCBI_uses_toolkit_libraries(connect xncbi)
+  NCBI_uses_toolkit_libraries(xconnect connect xncbi)
   NCBI_requires(CASSANDRA)
   NCBI_project_watchers(satskyse saprykin)
 NCBI_end_lib()
