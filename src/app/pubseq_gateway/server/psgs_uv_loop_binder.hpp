@@ -94,7 +94,7 @@ class CPSGS_UvLoopBinder
             return m_Loop;
         }
 
-        void SendAsyncEvent(void);
+        void x_Unregister(void);
 
     private:
         struct SUserCallback

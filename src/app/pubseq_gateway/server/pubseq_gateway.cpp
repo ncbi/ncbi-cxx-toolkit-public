@@ -608,10 +608,6 @@ int CPubseqGatewayApp::Run(void)
                                                m_ListenerBacklog,
                                                m_TcpMaxConn));
 
-    // The binder must be initialized after the UV main loop has been created
-    m_MainUvLoopBinder.reset(new CPSGS_UvLoopBinder(m_TcpDaemon->GetUVLoop()));
-
-
     // Run the monitoring thread
     int             ret_code = 0;
     std::thread     monitoring_thread(CassMonitorThreadedFunction);
@@ -1589,6 +1585,23 @@ void CPubseqGatewayApp::x_RegisterProcessors(void)
 }
 
 
+CPSGS_UvLoopBinder &
+CPubseqGatewayApp::GetUvLoopBinder(uv_thread_t  uv_thread_id)
+{
+    auto it = m_ThreadToBinder.find(uv_thread_id);
+    if (it == m_ThreadToBinder.end()) {
+        // Binding is suppposed only for the processors (which work in their
+        // threads, which in turn have their thread id registered at the moment
+        // they start)
+        PSG_ERROR("Binding is supported only for the worker threads");
+        NCBI_THROW(CPubseqGatewayException, eLogic,
+                   "Binding is supported only for the worker threads");
+    }
+    return *(it->second.get());
+}
+
+
+
 int main(int argc, const char* argv[])
 {
     srand(time(NULL));
@@ -1619,5 +1632,19 @@ void RegisterUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop)
 {
     CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
     app->RegisterUVLoop(uv_thread, uv_loop);
+}
+
+
+void UnregisterUVLoop(uv_thread_t  uv_thread)
+{
+    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+    app->UnregisterUVLoop(uv_thread);
+}
+
+
+void CancelAllProcessors(void)
+{
+    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+    app->CancelAllProcessors();
 }
 
