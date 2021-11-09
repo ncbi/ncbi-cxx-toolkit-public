@@ -279,12 +279,12 @@ NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE libnghttp2 REQUIRES zlib)
 set(NCBI_PROTOC_APP "${CONAN_BIN_DIRS_PROTOBUF}/protoc${CMAKE_EXECUTABLE_SUFFIX}")
 set(NCBI_GRPC_PLUGIN "${CONAN_BIN_DIRS_GRPC}/grpc_cpp_plugin${CMAKE_EXECUTABLE_SUFFIX}")
 NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE protobuf REQUIRES zlib)
-NCBI_define_Pkgcomponent(NAME GRPC PACKAGE grpc REQUIRES zlib;openssl;protobuf;c-ares;abseil;re2)
+NCBI_define_Pkgcomponent(NAME GRPC PACKAGE grpc REQUIRES abseil;c-ares;openssl;protobuf;re2;zlib)
 
 #############################################################################
 # CASSANDRA
-NCBI_define_Pkgcomponent(NAME CASSANDRA PACKAGE cassandra-cpp-driver)
+NCBI_define_Pkgcomponent(NAME CASSANDRA PACKAGE cassandra-cpp-driver REQUIRES http_parser;libuv;minizip;openssl;rapidjson;zlib)
 
 #############################################################################
 # MySQL
-NCBI_define_Pkgcomponent(NAME MySQL PACKAGE libmysqlclient REQUIRES openssl;zlib;zstd;lz4)
+NCBI_define_Pkgcomponent(NAME MySQL PACKAGE libmysqlclient REQUIRES lz4;openssl;zlib;zstd)
