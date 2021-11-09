@@ -79,6 +79,8 @@ public:
             return *m_RequestPacket;
         }
 
+    size_t GetConnectionID() const;
+
 protected:
     const CRef<COSGConnection>& GetConnection() const
         {

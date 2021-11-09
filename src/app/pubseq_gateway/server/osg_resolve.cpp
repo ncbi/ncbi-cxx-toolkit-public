@@ -177,9 +177,13 @@ void CPSGS_OSGResolve::ProcessReplies()
             }
         }
     }
+    SendTrace("OSG-resolve: waiting for Cassandra results");
+    GetRequest()->WaitFor("Cassandra");
     if ( IsCanceled() ) {
+        SendTrace("OSG-resolve: canceled");
         return;
     }
+    SendTrace("OSG-resolve: sending reply");
     if ( m_BioseqInfoFlags == 0 ) {
         FinalizeResult(ePSGS_NotFound);
     }
@@ -298,9 +302,13 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
             }
         }
     }
+    SendTrace("OSG-get: waiting for Cassandra results");
+    GetRequest()->WaitFor("Cassandra");
     if ( IsCanceled() ) {
+        SendTrace("OSG-get: canceled");
         return;
     }
+    SendTrace("OSG-get: sending reply");
     if ( !(m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_BlobId) ) {
         FinalizeResult(ePSGS_NotFound);
     }

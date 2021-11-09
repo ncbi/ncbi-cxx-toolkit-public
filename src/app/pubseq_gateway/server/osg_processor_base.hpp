@@ -86,6 +86,8 @@ public:
     ~COSGProcessorRef();
 
     void SetRequestContext();
+    bool NeedTrace() const;
+    void SendTrace(const string& str);
 
     typedef vector<CRef<COSGFetch>> TFetches;
     TFetches GetFetches();
@@ -144,6 +146,12 @@ public:
     virtual void Cancel(void) override;
     virtual EPSGS_Status GetStatus(void) override;
 
+    bool NeedTrace() const
+        {
+            return m_NeedTrace;
+        }
+    void SendTrace(const string& str);
+    
     bool IsCanceled() const
         {
             return m_Status == ePSGS_Cancelled;
@@ -200,6 +208,7 @@ private:
     TFetches m_Fetches;
     shared_ptr<COSGProcessorRef> m_ProcessorRef;
     EPSGS_Status m_Status;
+    bool m_NeedTrace;
 };
 
 
