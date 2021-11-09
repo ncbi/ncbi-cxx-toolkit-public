@@ -12,7 +12,8 @@ SRC = cass_util cass_blob_op cass_conv cass_driver cass_factory lbsm_resolver Sy
     acc_ver_hist/insert acc_ver_hist/fetch
 
 LIB = psg_cassandra
-LIBS = xconnect connect $(CASSANDRA_LIBS)
+LIBS = $(CASSANDRA_LIBS)
+DLL_LIB = xconnect
 
 USES_LIBRARIES = xconnect
 
