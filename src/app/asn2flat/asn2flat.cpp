@@ -1204,9 +1204,15 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
     CFlatFileConfig cfg;
     cfg.FromArguments(args);
 
-    string cust = args["custom"].AsString();
-    int val = NStr::StringToInt(cust);
-    m_FasterReleaseSets = (( val & 512 ) != 0);
+    m_FasterReleaseSets = false;
+    try {
+        string cust = args["custom"].AsString();
+        if (! cust.empty()) {
+            int val = NStr::StringToInt(cust);
+            m_FasterReleaseSets = (( val & 512 ) != 0);
+        }
+    } catch( ... ) {
+    }
 
     m_do_cleanup = ( ! args["nocleanup"]);
     cfg.BasicCleanup(false);
