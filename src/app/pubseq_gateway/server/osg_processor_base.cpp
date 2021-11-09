@@ -58,6 +58,15 @@ BEGIN_NAMESPACE(osg);
 # define tLOG_POST(m) ((void)0)
 #endif
 
+#define SEND_TRACE(str) SendTrace(str)
+#define SEND_TRACE_FMT(m)                                               \
+    do {                                                                \
+        if ( NeedTrace() ) {                                            \
+            ostringstream str;                                          \
+            str << m;                                                   \
+            SendTrace(str.str());                                       \
+        }                                                               \
+    } while(0)
 
 /////////////////////////////////////////////////////////////////////////////
 // COSGProcessorRef
@@ -156,6 +165,7 @@ void COSGProcessorRef::Detach()
 
 void COSGProcessorRef::ProcessReplies()
 {
+    SEND_TRACE("OSG: processing replies");
     CFastMutexGuard guard(m_ProcessorPtrMutex);
     if ( m_ProcessorPtr ) {
         m_ProcessorPtr->ProcessReplies();
@@ -172,17 +182,31 @@ void COSGProcessorRef::SetRequestContext()
 }
 
 
+bool COSGProcessorRef::NeedTrace() const
+{
+    CFastMutexGuard guard(m_ProcessorPtrMutex);
+    if ( m_ProcessorPtr ) {
+        return m_ProcessorPtr->NeedTrace();
+    }
+    return false;
+}
+
+
+void COSGProcessorRef::SendTrace(const string& str)
+{
+    CFastMutexGuard guard(m_ProcessorPtrMutex);
+    if ( m_ProcessorPtr ) {
+        m_ProcessorPtr->SendTrace(str);
+    }
+}
+
+
 void COSGProcessorRef::s_ProcessReplies(void *data)
 {
     CRequestContextResetter     context_resetter;
     shared_ptr<COSGProcessorRef>& ref = *static_cast<shared_ptr<COSGProcessorRef>*>(data);
     ref->SetRequestContext();
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( ref->m_ProcessorPtr ) {
-            ref->m_ProcessorPtr->ProcessReplies();
-        }
-    }}
+    ref->ProcessReplies();
     delete &ref;
 }
 
@@ -207,6 +231,7 @@ void COSGProcessorRef::s_Process(shared_ptr<COSGProcessorRef> processor)
 
 void COSGProcessorRef::Process()
 {
+    SEND_TRACE("OSG: Process() started");
     CRequestContextResetter     context_resetter;
     SetRequestContext();
 
@@ -214,6 +239,7 @@ void COSGProcessorRef::Process()
         tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() start: "<<GetStatus());
         for ( double retry_count = m_ConnectionPool->GetRetryCount(); retry_count > 0; ) {
             if ( IsCanceled() ) {
+                SEND_TRACE("OSG: Process() canceled");
                 return;
             }
         
@@ -233,7 +259,9 @@ void COSGProcessorRef::Process()
             bool last_attempt = retry_count <= 1;
             COSGCaller caller;
             try {
+                SEND_TRACE("OSG: allocating connection");
                 caller.AllocateConnection(m_ConnectionPool);
+                SEND_TRACE_FMT("OSG: allocated connection: "<<caller.GetConnectionID());
             }
             catch ( exception& exc ) {
                 if ( last_attempt ) {
@@ -249,6 +277,7 @@ void COSGProcessorRef::Process()
             }
         
             if ( IsCanceled() ) {
+                SEND_TRACE("OSG: Process() canceled");
                 return;
             }
         
@@ -281,14 +310,17 @@ void COSGProcessorRef::Process()
         }
 
         if ( IsCanceled() ) {
+            SEND_TRACE("OSG: Process() canceled");
             return;
         }
         tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() got replies: "<<GetStatus());
         if ( 1 ) {
+            SEND_TRACE("OSG: switching to UV loop");
             ProcessRepliesInUvLoop();
             tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() return with async post: "<<GetStatus());
         }
         else {
+            SEND_TRACE("OSG: processing replies");
             ProcessReplies();
             tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() finished: "<<GetStatus());
             _ASSERT(GetStatus() != IPSGS_Processor::ePSGS_InProgress);
@@ -316,7 +348,8 @@ CPSGS_OSGProcessorBase::CPSGS_OSGProcessorBase(TEnabledFlags enabled_flags,
     : m_Context(request->GetRequestContext()),
       m_ConnectionPool(pool),
       m_EnabledFlags(enabled_flags),
-      m_Status(IPSGS_Processor::ePSGS_InProgress)
+      m_Status(IPSGS_Processor::ePSGS_InProgress),
+      m_NeedTrace(request->NeedTrace())
 {
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CPSGS_OSGProcessorBase()");
     m_Request = request;
@@ -376,6 +409,14 @@ CPSGS_OSGProcessorBase::~CPSGS_OSGProcessorBase()
 }
 
 
+void CPSGS_OSGProcessorBase::SendTrace(const string& str)
+{
+    if ( NeedTrace() ) {
+        m_Reply->SendTrace(str, m_Request->GetStartTimestamp());
+    }
+}
+
+
 void CPSGS_OSGProcessorBase::StopAsyncThread()
 {
     if ( m_ProcessorRef ) {
@@ -394,6 +435,7 @@ void CPSGS_OSGProcessorBase::StopAsyncThread()
 
 void CPSGS_OSGProcessorBase::Process()
 {
+    SEND_TRACE("OSG: Process() called");
     CRequestContextResetter     context_resetter;
     GetRequest()->SetRequestContext();
 
@@ -413,6 +455,7 @@ void CPSGS_OSGProcessorBase::Process()
     _ASSERT(!GetFetches().empty());
     m_ProcessorRef = make_shared<COSGProcessorRef>(this);
     if ( m_ConnectionPool->GetAsyncProcessing() ) {
+        SEND_TRACE("OSG: switching Process() to background thread");
         ProcessAsync();
     }
     else {

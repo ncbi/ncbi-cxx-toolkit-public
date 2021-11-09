@@ -139,6 +139,12 @@ size_t COSGCaller::GetRequestIndex(const CID2_Reply& reply) const
 }
 
 
+size_t COSGCaller::GetConnectionID() const
+{
+    return m_Connection? m_Connection->GetConnectionID(): 0;
+}
+
+
 void COSGCaller::AllocateConnection(const CRef<COSGConnectionPool>& connection_pool)
 {
     _ASSERT(!m_ConnectionPool);
@@ -156,7 +162,20 @@ void COSGCaller::SendRequest(COSGProcessorRef& processor)
     m_RequestPacket = MakePacket(processor.GetFetches());
     _ASSERT(m_RequestPacket->Get().size() < 999999); // overflow guard
     if ( !m_RequestPacket->Get().empty() ) {
+        if ( processor.NeedTrace() ) {
+            ostringstream str;
+            str << "OSG("<<m_Connection->GetConnectionID()<<") sending request: "
+                << MSerial_AsnText << *m_RequestPacket;
+            processor.SendTrace(str.str());
+        }
         m_Connection->SendRequestPacket(*m_RequestPacket);
+    }
+    else {
+        if ( processor.NeedTrace() ) {
+            ostringstream str;
+            str << "OSG("<<m_Connection->GetConnectionID()<<") empty request packet";
+            processor.SendTrace(str.str());
+        }
     }
 }
 
@@ -168,7 +187,17 @@ void COSGCaller::WaitForReplies(COSGProcessorRef& processor)
     CRef<CID2_Error> failed;
     size_t waiting_count = m_RequestPacket->Get().size();
     while ( waiting_count > 0 ) {
+        if ( processor.NeedTrace() ) {
+            ostringstream str;
+            str << "OSG("<<m_Connection->GetConnectionID()<<") reading reply";
+            processor.SendTrace(str.str());
+        }
         CRef<CID2_Reply> reply = m_Connection->ReceiveReply();
+        if ( processor.NeedTrace() ) {
+            ostringstream str;
+            str << "OSG("<<m_Connection->GetConnectionID()<<") received reply";
+            processor.SendTrace(str.str());
+        }
         if ( reply->IsSetError() ) {
             for ( auto& error : reply->GetError() ) {
                 if ( error->GetSeverity() == CID2_Error::eSeverity_failed_command ) {
@@ -185,6 +214,11 @@ void COSGCaller::WaitForReplies(COSGProcessorRef& processor)
         if ( !failed ) {
             processor.NotifyOSGCallReply(*reply);
         }
+    }
+    if ( processor.NeedTrace() ) {
+        ostringstream str;
+        str << "OSG("<<m_Connection->GetConnectionID()<<") releasing connection";
+        processor.SendTrace(str.str());
     }
     m_ConnectionPool->ReleaseConnection(m_Connection);
     _ASSERT(!m_Connection);
