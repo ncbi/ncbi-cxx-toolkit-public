@@ -205,8 +205,14 @@ void COSGProcessorRef::s_ProcessReplies(void *data)
 {
     CRequestContextResetter     context_resetter;
     shared_ptr<COSGProcessorRef>& ref = *static_cast<shared_ptr<COSGProcessorRef>*>(data);
-    ref->SetRequestContext();
-    ref->ProcessReplies();
+    try {
+        ref->SetRequestContext();
+        ref->ProcessReplies();
+    }
+    catch ( exception& exc ) {
+        ERR_POST("OSG: ProcessReplies() failed: "<<exc.what());
+        ref->FinalizeResult(IPSGS_Processor::ePSGS_Error);
+    }
     delete &ref;
 }
 

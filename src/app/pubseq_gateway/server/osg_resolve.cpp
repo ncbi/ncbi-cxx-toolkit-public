@@ -35,6 +35,7 @@
 #include "osg_getblob_base.hpp"
 #include "osg_fetch.hpp"
 #include "osg_connection.hpp"
+#include "cass_processor_base.hpp"
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/id2/id2__.hpp>
@@ -178,7 +179,7 @@ void CPSGS_OSGResolve::ProcessReplies()
         }
     }
     SendTrace("OSG-resolve: waiting for Cassandra results");
-    GetRequest()->WaitFor("Cassandra");
+    GetRequest()->WaitFor(kCassandraProcessorEvent);
     if ( IsCanceled() ) {
         SendTrace("OSG-resolve: canceled");
         return;
@@ -303,7 +304,7 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
         }
     }
     SendTrace("OSG-get: waiting for Cassandra results");
-    GetRequest()->WaitFor("Cassandra");
+    GetRequest()->WaitFor(kCassandraProcessorEvent);
     if ( IsCanceled() ) {
         SendTrace("OSG-get: canceled");
         return;
