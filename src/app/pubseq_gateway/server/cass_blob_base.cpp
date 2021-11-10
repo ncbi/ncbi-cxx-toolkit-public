@@ -810,7 +810,7 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
 void
 CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
 {
-    // Not found, report 500 because it is data inconsistency
+    // Not found, report 502 because it is data inconsistency
     // or 404 if it was requested via sat.sat_key
     auto *  app = CPubseqGatewayApp::GetInstance();
     app->GetCounters().Increment(CPSGSCounters::ePSGS_BlobPropsNotFoundError);
@@ -828,9 +828,9 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
     } else {
         // Server error, data inconsistency
         PSG_ERROR(message);
-        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        UpdateOverallStatus(CRequestStatus::e502_BadGateway);
         x_PrepareBlobPropMessage(fetch_details, message,
-                                 CRequestStatus::e500_InternalServerError,
+                                 CRequestStatus::e502_BadGateway,
                                  ePSGS_BlobPropsNotFound, eDiag_Error);
     }
 
