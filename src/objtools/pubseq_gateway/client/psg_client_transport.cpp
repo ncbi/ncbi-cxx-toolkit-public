@@ -238,7 +238,7 @@ void SPSG_Reply::SetFailed(string message, SState::EState state)
 SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params) :
     full_path(move(p)),
     reply(r),
-    context(c ? c->Clone() : null),
+    context(c),
     m_State(params.client_mode == EPSG_PsgClientMode::eIo ?
             &SPSG_Request::StateIo : &SPSG_Request::StatePrefix),
     m_Retries(params.request_retries)

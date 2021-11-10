@@ -105,6 +105,9 @@ public:
     /// Get request context
     CRef<CRequestContext> GetRequestContext() const { return m_RequestContext; }
 
+    /// Set request context
+    void SetRequestContext(CRef<CRequestContext> request_context);
+
     /// Get request type
     string GetType() const { return x_GetType(); }
 
@@ -123,10 +126,12 @@ public:
     void SetUserArgs(SPSG_UserArgs user_args) { m_UserArgs = move(user_args); }
 
 protected:
+    template <class T> T GetCtx(T c) { return c ? c : T(&CDiagContext::GetRequestContext()); }
+
     CPSG_Request(shared_ptr<void> user_context = {},
                  CRef<CRequestContext> request_context = {})
         : m_UserContext(user_context),
-          m_RequestContext(request_context)
+          m_RequestContext(GetCtx(move(request_context)))
     {}
 
     virtual ~CPSG_Request() = default;
@@ -1099,6 +1104,11 @@ private:
 };
 
 
+
+inline void CPSG_Request::SetRequestContext(CRef<CRequestContext> request_context)
+{
+    m_RequestContext = GetCtx(move(request_context));
+}
 
 inline bool CPSG_EventLoop::Run(CDeadline deadline)
 {
