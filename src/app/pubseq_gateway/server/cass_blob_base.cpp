@@ -104,7 +104,6 @@ CPSGS_CassBlobBase::OnGetBlobProp(TBlobPropsCB  blob_props_cb,
                                  CRequestStatus::e403_Forbidden,
                                  ePSGS_BlobRetrievalIsNotAuthorized,
                                  eDiag_Error);
-            x_PrepareBlobCompletion(fetch_details);
 
             fetch_details->SetReadFinished();
             return;
@@ -386,10 +385,10 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(TBlobPropsCB  blob_props_cb,
                               ") to a cassandra keyspace for the blob " +
                               fetch_details->GetBlobId().ToString();
         x_PrepareBlobPropMessage(fetch_details, message,
-                                 CRequestStatus::e500_InternalServerError,
+                                 CRequestStatus::e502_BadGateway,
                                  ePSGS_BadID2Info, eDiag_Error);
         app->GetCounters().Increment(CPSGSCounters::ePSGS_ServerSatToSatNameError);
-        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        UpdateOverallStatus(CRequestStatus::e502_BadGateway);
         PSG_ERROR(message);
         return;
     }
@@ -605,7 +604,6 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(TBlobPropsCB  blob_props_cb,
                                              CRequestStatus::e500_InternalServerError,
                                              ePSGS_BlobPropsNotFound, eDiag_Error);
                 }
-                x_PrepareBlobPropCompletion(details.get());
                 PSG_WARNING(message);
                 continue;
             }
@@ -672,12 +670,10 @@ CPSGS_CassBlobBase::PrepareServerErrorMessage(CCassBlobFetch *  fetch_details,
         x_PrepareBlobPropMessage(fetch_details, message,
                                  CRequestStatus::e500_InternalServerError,
                                  code, severity);
-        x_PrepareBlobPropCompletion(fetch_details);
     } else {
         x_PrepareBlobMessage(fetch_details, message,
                              CRequestStatus::e500_InternalServerError,
                              code, severity);
-        x_PrepareBlobCompletion(fetch_details);
     }
 }
 
@@ -837,7 +833,6 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
     // Remove from the already-sent cache if necessary
     fetch_details->RemoveFromExcludeBlobCache();
 
-    x_PrepareBlobPropCompletion(fetch_details);
     fetch_details->SetReadFinished();
 }
 
@@ -1069,6 +1064,8 @@ CPSGS_CassBlobBase::x_PrepareBlobPropMessage(CCassBlobFetch *  fetch_details,
             fetch_details, m_ProcessorId,
             message, status, err_code, severity);
     }
+
+    x_PrepareBlobPropCompletion(fetch_details);
 }
 
 
@@ -1091,6 +1088,8 @@ CPSGS_CassBlobBase::x_PrepareBlobMessage(CCassBlobFetch *  fetch_details,
             fetch_details, m_ProcessorId,
             message, status, err_code, severity, m_LastModified);
     }
+
+    x_PrepareBlobCompletion(fetch_details);
 }
 
 
