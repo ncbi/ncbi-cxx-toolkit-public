@@ -367,11 +367,16 @@ if test -n "\$NCBI_AUTOMATED_BUILD"; then
    fi
 fi
 
-# Check for ncbi_applog
+# Check for some executables
 have_ncbi_applog=false
 if (ncbi_applog generate) >/dev/null 2>&1; then
    have_ncbi_applog=true
 fi
+have_uptime=false
+if (which uptime) >/dev/null 2>&1; then
+   have_uptime=true
+fi
+
 
 #//////////////////////////////////////////////////////////////////////////
 
