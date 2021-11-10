@@ -56,7 +56,7 @@ race:^ncbi::CPoolOfThreads_ForServer::AcceptRequest
 ################################################################
 # lavr CXX-11285
 
-# test_ncbi_trigger -- confirmed false-positive by Anton (emails)
+# test_ncbi_trigger -- confirmed false-positive (lavr)
 race:^TRIGGER_Reset
 
 # thread leak in test_ncbi_trigger, probably can be rewritten
@@ -77,6 +77,9 @@ race:^s_InitAPI_$
 
 # This is a debugging aid, code sanity check. /connect/ncbi_core.c
 race:^MT_LOCK_AddRef$
+
+# test_ncbi_conn_stream_mt -- confirmet false positive (lavr)
+race:^MT_LOCK_DoInternal
 
 
 
