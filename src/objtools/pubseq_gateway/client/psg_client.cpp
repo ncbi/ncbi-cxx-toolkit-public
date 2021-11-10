@@ -730,7 +730,11 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
     const auto request_id = user_context ? *user_context : ioc.GetNewRequestId();
     auto reply = make_shared<SPSG_Reply>(move(request_id), params, queue);
     auto abs_path_ref = x_GetAbsPathRef(user_request);
-    auto request = make_shared<SPSG_Request>(move(abs_path_ref), reply, user_request->m_RequestContext, params);
+    const auto& request_context = user_request->m_RequestContext;
+
+    _ASSERT(request_context);
+
+    auto request = make_shared<SPSG_Request>(move(abs_path_ref), reply, request_context->Clone(), params);
 
     if (ioc.AddRequest(request, queue->Stopped(), deadline)) {
         shared_ptr<CPSG_Reply> user_reply(new CPSG_Reply);
