@@ -108,6 +108,15 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
             ) {
             m_ColFmt[nof_item].maxlength = sizeof(CS_NUMERIC);
         }
+#else
+        if (m_ColFmt[nof_item].maxlength <= MAX_VARCHAR_SIZE
+            &&  m_ColFmt[nof_item].maxlength >= 0) {
+            if (m_ColFmt[nof_item].datatype == CS_IMAGE_TYPE) {
+                m_ColFmt[nof_item].datatype = CS_VARBINARY_TYPE;
+            } else if (m_ColFmt[nof_item].datatype == CS_TEXT_TYPE) {
+                m_ColFmt[nof_item].datatype = CS_VARCHAR_TYPE;
+            }
+        }
 #endif
 
         m_CachedRowInfo.Add(
@@ -549,6 +558,13 @@ CDB_Object* CTL_RowResult::GetItemInternal(
         }
 
         my_ct_get_data(cmd, item_no, v, maxlength, &outlen, is_null);
+        if (datatype == CS_VARBINARY_TYPE) {
+            v += offsetof(CS_VARBINARY, array);
+            outlen -= offsetof(CS_VARBINARY, array);
+        } else if (datatype == CS_VARCHAR_TYPE) {
+            v += offsetof(CS_VARCHAR, str);
+            outlen -= offsetof(CS_VARCHAR, str);
+        }
 
         ENSURE_ITEM();
 
