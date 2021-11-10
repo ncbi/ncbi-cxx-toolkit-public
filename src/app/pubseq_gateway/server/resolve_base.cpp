@@ -705,7 +705,7 @@ void CPSGS_ResolveBase::x_OnSeqIdResolveFinished(
 
                 // It is a bioseq inconsistency case
                 x_OnSeqIdResolveError(
-                                CRequestStatus::e500_InternalServerError,
+                                CRequestStatus::e502_BadGateway,
                                 ePSGS_NoBioseqInfo, eDiag_Error,
                                 "Data inconsistency: the bioseq key info was "
                                 "resolved for seq_id " + GetRequestSeqId() +
