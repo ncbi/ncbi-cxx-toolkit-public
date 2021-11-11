@@ -495,7 +495,8 @@ private:
 class CTopLevelSeqEntryContext  : public CObject
 {
 public:
-    CTopLevelSeqEntryContext( const CSeq_entry_Handle &entry_handle );
+    CTopLevelSeqEntryContext( const CSeq_entry_Handle &entry_handle, bool useIndexedFasterSets  = false );
+    void x_InitSeqs (const CSeq_entry& sep, CScope& scope);
 
     bool GetCanSourcePubsBeFused(void) const { return m_CanSourcePubsBeFused; }
     bool GetHasSmallGenomeSet(void) const { return m_HasSmallGenomeSet; }

@@ -640,6 +640,7 @@ void CFlatFileGenerator::Generate
 
     bool doNuc = false;
     bool doProt = false;
+    bool doFastSets = false;
 
     // doNuc and doProt arguments also set by relevant flags in CFlatFileConfig
     if ( cfg.IsViewNuc() ) {
@@ -651,6 +652,9 @@ void CFlatFileGenerator::Generate
     if ( cfg.IsViewAll() ) {
         doNuc = true;
         doProt = true;
+    }
+    if ( cfg.FasterReleaseSets() ) {
+        doFastSets = true;
     }
 
     if ( cfg.BasicCleanup() )
@@ -922,7 +926,7 @@ void CFlatFileGenerator::Generate
             NCBI_THROW(CFlatException, eInternal, "Unable to initialize gatherer");
         }
 
-        gatherer->Gather(*m_Ctx, *pItemOS, ent, bsh, useSeqEntryIndexing, doNuc, doProt);
+        gatherer->Gather(*m_Ctx, *pItemOS, ent, bsh, useSeqEntryIndexing, doNuc, doProt, doFastSets);
 
         if (showDebugTiming) {
             NcbiCerr << "Elapsed: " << sw.Elapsed() << NcbiEndl;

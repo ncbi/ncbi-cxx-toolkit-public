@@ -66,7 +66,7 @@ public:
                         bool doNuc = true, bool doProt = true) const;
     virtual void Gather(CFlatFileContext& ctx, CFlatItemOStream& os,
                         const CSeq_entry_Handle& entry, CBioseq_Handle bsh, bool useSeqEntryIndexing,
-                        bool doNuc = true, bool doProt = true) const;
+                        bool doNuc = true, bool doProt = true, bool fasterSets = false) const;
 
     virtual void SetCanceledCallback(const ICanceled* pCanceledCallback) {
         m_pCanceledCallback = pCanceledCallback;

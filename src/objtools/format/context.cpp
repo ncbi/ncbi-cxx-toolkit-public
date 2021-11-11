@@ -1245,10 +1245,87 @@ void CMasterContext::x_SetBaseName(void)
 //
 // CTopLevelSeqEntryContext
 
-CTopLevelSeqEntryContext::CTopLevelSeqEntryContext( const CSeq_entry_Handle &entry_handle )
+void CTopLevelSeqEntryContext::x_InitSeqs (const CSeq_entry& sep, CScope& scope)
+{
+    if (sep.IsSeq()) {
+        // Is Bioseq
+        const CBioseq& bsp = sep.GetSeq();
+        CBioseq_Handle bsh = scope.GetBioseqHandle(bsp);
+        if (bsh) {
+            const CBioseq_Handle::TId& ids = bsh.GetId();
+            if (! ids.empty()) {
+                ITERATE( CBioseq_Handle::TId, it, ids ) {
+                    CConstRef<CSeq_id> seqId = (*it).GetSeqIdOrNull();
+                    if( ! seqId.IsNull() ) {
+                    switch( seqId->Which() ) {
+                        case CSeq_id_Base::e_Gibbsq:
+                        case CSeq_id_Base::e_Gibbmt:
+                        case CSeq_id_Base::e_Embl:
+                        case CSeq_id_Base::e_Pir:
+                        case CSeq_id_Base::e_Swissprot:
+                        case CSeq_id_Base::e_Patent:        
+                        case CSeq_id_Base::e_Ddbj:
+                        case CSeq_id_Base::e_Prf:
+                        case CSeq_id_Base::e_Pdb:
+                        case CSeq_id_Base::e_Tpe:
+                        case CSeq_id_Base::e_Tpd:
+                        case CSeq_id_Base::e_Gpipe:
+                            // with some types, it's okay to merge
+                            m_CanSourcePubsBeFused = true;
+                            break;                        
+                        case CSeq_id_Base::e_Genbank:
+                        case CSeq_id_Base::e_Tpg:
+                            // Genbank allows merging only if it's the old-style 1 + 5 accessions
+                            if( NULL != seqId->GetTextseq_Id() &&
+                                seqId->GetTextseq_Id()->IsSetAccession() &&
+                                seqId->GetTextseq_Id()->GetAccession().length() == 6 ) {
+                                    m_CanSourcePubsBeFused = true;
+                            }
+                            break;
+                        case CSeq_id_Base::e_not_set:
+                        case CSeq_id_Base::e_Local:
+                        case CSeq_id_Base::e_Other:
+                        case CSeq_id_Base::e_General:
+                        case CSeq_id_Base::e_Giim:                        
+                        case CSeq_id_Base::e_Gi:
+                            break;
+                        default:
+                            break;
+                    }
+                    }
+                }
+            }
+        }
+    } else if (sep.IsSet()) {
+        // Is Bioseq-set
+        const CBioseq_set& bssp = sep.GetSet();
+        if (bssp.CanGetClass() && bssp.GetClass() == CBioseq_set::eClass_small_genome_set) {
+            m_HasSmallGenomeSet = true;
+        }
+        CBioseq_set_Handle ssh = scope.GetBioseq_setHandle(bssp);
+        if (ssh) {
+            if (bssp.CanGetSeq_set()) {
+                // recursively explore current Bioseq-set
+                for (const CRef<CSeq_entry>& tmp : bssp.GetSeq_set()) {
+                    x_InitSeqs(*tmp, scope);
+                }
+            }
+        }
+    }
+}
+
+CTopLevelSeqEntryContext::CTopLevelSeqEntryContext( const CSeq_entry_Handle &entry_handle, bool useIndexedFasterSets )
 {
     m_CanSourcePubsBeFused = false;
     m_HasSmallGenomeSet = false;
+
+    if (useIndexedFasterSets) {
+        CSeq_entry_Handle tseh = entry_handle.GetTopLevelEntry();
+        CConstRef<CSeq_entry> tcsep = tseh.GetCompleteSeq_entry();
+        CSeq_entry& topsep = const_cast<CSeq_entry&>(*tcsep);
+        x_InitSeqs( topsep, entry_handle.GetScope() );
+        return;
+    }
 
     CBioseq_CI bioseq_iter( entry_handle.GetScope(), *entry_handle.GetSeq_entryCore() );
     for( ; bioseq_iter; ++bioseq_iter ) {

@@ -46,7 +46,6 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seq/seq_macros.hpp>
-#include <objects/seqset/seqset_macros.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -319,7 +318,6 @@ public:
     void Init() override;
     int Run() override;
 
-    bool HandleSeqEntry(const CSeq_entry& seqentry, int idx);
     bool HandleSeqEntry(CRef<CSeq_entry>& se) override;
     bool HandleSeqEntry(const CSeq_entry_Handle& seh);
 
@@ -368,7 +366,6 @@ private:
     CRef<CFlatFileGenerator>    m_FFGenerator;  // Flat-file generator
     unique_ptr<ICanceled>       m_pCanceledCallback;
     bool                        m_do_cleanup;
-    bool                        m_FasterReleaseSets;
     bool                        m_Exception;
     bool                        m_FetchFail;
     bool                        m_PSGMode;
@@ -1111,10 +1108,14 @@ CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseqSet(CObjectIStream& is, 
 }
 
 
-bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry& seqentry, int idx)
+bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 {
+    if (!se) {
+        return false;
+    }
+
     // add entry to scope
-    CSeq_entry_Handle entry = m_Scope->AddTopLevelSeqEntry(seqentry);
+    CSeq_entry_Handle entry = m_Scope->AddTopLevelSeqEntry(*se);
     if ( !entry ) {
         NCBI_THROW(CException, eUnknown, "Failed to insert entry to scope.");
     }
@@ -1124,31 +1125,6 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry& seqentry, int idx)
     // and we end up with significant slowdown due to repeatedly doing
     // linear scans on a growing CScope.
     m_Scope->ResetDataAndHistory();
-    return ret;
-}
-
-bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
-{
-    if (!se) {
-        return false;
-    }
-
-    bool ret = true;
- 
-    if (m_FasterReleaseSets && se->IsSet()) {
-        int idx = 0;
-        const CBioseq_set& topset = se->GetSet();
-        VISIT_ALL_SEQENTRYS_WITHIN_SEQSET(se_itr, topset) {
-            idx++;
-            const CSeq_entry& seqentry = *se_itr;
-            if (! HandleSeqEntry(seqentry, idx)) {
-                ret = false;
-            }
-        }
-    } else {
-        ret = HandleSeqEntry(*se, 1);
-    }
-
     return ret;
 }
 
@@ -1203,17 +1179,6 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
 {
     CFlatFileConfig cfg;
     cfg.FromArguments(args);
-
-    m_FasterReleaseSets = false;
-    try {
-        string cust = args["custom"].AsString();
-        if (! cust.empty()) {
-            int val = NStr::StringToInt(cust);
-            m_FasterReleaseSets = (( val & 512 ) != 0);
-        }
-    } catch( ... ) {
-    }
-
     m_do_cleanup = ( ! args["nocleanup"]);
     cfg.BasicCleanup(false);
 
