@@ -230,12 +230,12 @@ void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, bool doN
 }
 
 
-void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, const CSeq_entry_Handle& entry, CBioseq_Handle bsh, bool useSeqEntryIndexing, bool doNuc, bool doProt) const
+void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, const CSeq_entry_Handle& entry, CBioseq_Handle bsh, bool useSeqEntryIndexing, bool doNuc, bool doProt, bool fasterSets) const
 {
     m_ItemOS.Reset(&os);
     m_Context.Reset(&ctx);
 
-    CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext( new CTopLevelSeqEntryContext(ctx.GetEntry()) );
+    CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext( new CTopLevelSeqEntryContext(ctx.GetEntry(), useSeqEntryIndexing & fasterSets) );
 
     // See if there even are any Bioseqs to print
     // (If we don't do this test, we might print a CStartItem
