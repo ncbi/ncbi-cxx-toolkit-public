@@ -2152,17 +2152,17 @@ extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
 
 /** Find and return IPv4 address of a named host.  The call also accepts dotted
  * IPv4 notation, in which case the conversion is done without consulting the
- * name resolver).
+ * name resolver (DNS).
  * @param hostname
- *  [in]  specified host, or the current host if hostname is 0
+ *  [in]  specified host, or the current host if hostname is either 0 or ""
  * @param log
  *  [in]  whether to log failures
  * @return
- *  IPv4 host address (in network byte order) of the specified host (or of
- *  local host, if hostname is passed as NULL), which could have been specified
+ *  IPv4 host address (in network byte order) of the specified host (or of the
+ *  local host, if hostname is passed as NULL / empty), which can be specified
  *  as either a domain name or an IPv4 address in the dotted notation (e.g.
  *  "123.45.67.89\0").  Return 0 on error.
- * @note "0.0.0.0" and "255.255.255.255" are both considered invalid.
+ * @note "0.0.0.0" and "255.255.255.255" are both considered invalid
  * @sa
  *  SOCK_gethostbyname, SOCK_gethostname, NcbiStringToIPv4
  */
