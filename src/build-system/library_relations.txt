@@ -1286,8 +1286,7 @@ psg_cache needs psg_cassandra
 psg_cache needs psg_protobuf
 psg_cache needs3party $(LMDB_LIBS)
 psg_cassandra needs $(Z_LIB)
-psg_cassandra needs connect
-psg_cassandra needs xncbi
+psg_cassandra needs xconnect
 psg_cassandra needs3party $(CASSANDRA_LIBS)
 psg_cassandra needs3party $(KRB5_LIBS)
 psg_cassandra needs3party $(OPENSSL_LIBS)
