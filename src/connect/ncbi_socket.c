@@ -1330,7 +1330,7 @@ static unsigned int s_gethostbyname(const char* hostname,
     static void* /*bool*/ s_Once = 0/*false*/;
     unsigned int retval;
 
-    if (hostname &&  !*hostname)
+    if (hostname  &&  !*hostname)
         hostname = 0;
     if (!(retval = s_gethostbyname_(hostname, not_ip, 0/*any*/, log))) {
         if (s_ErrHook) {
