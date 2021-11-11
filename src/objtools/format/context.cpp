@@ -1250,10 +1250,8 @@ void CTopLevelSeqEntryContext::x_InitSeqs (const CSeq_entry& sep, CScope& scope)
     if (sep.IsSeq()) {
         // Is Bioseq
         const CBioseq& bsp = sep.GetSeq();
-        FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bsp) {
-            const CSeq_id& sid = **sid_itr;
-            TSEQID_CHOICE chs = sid.Which();
-            switch (chs) {
+        for (auto& sid : bsp.GetId()) {
+            switch (sid->Which()) {
                 case CSeq_id_Base::e_Gibbsq:
                 case CSeq_id_Base::e_Gibbmt:
                 case CSeq_id_Base::e_Embl:
@@ -1272,9 +1270,9 @@ void CTopLevelSeqEntryContext::x_InitSeqs (const CSeq_entry& sep, CScope& scope)
                 case CSeq_id_Base::e_Genbank:
                 case CSeq_id_Base::e_Tpg:
                     // Genbank allows merging only if it's the old-style 1 + 5 accessions
-                    if( NULL != sid.GetTextseq_Id() &&
-                        sid.GetTextseq_Id()->IsSetAccession() &&
-                        sid.GetTextseq_Id()->GetAccession().length() == 6 ) {
+                    if( NULL != sid->GetTextseq_Id() &&
+                        sid->GetTextseq_Id()->IsSetAccession() &&
+                        sid->GetTextseq_Id()->GetAccession().length() == 6 ) {
                             m_CanSourcePubsBeFused = true;
                     }
                     break;
@@ -1295,10 +1293,9 @@ void CTopLevelSeqEntryContext::x_InitSeqs (const CSeq_entry& sep, CScope& scope)
         if (bssp.CanGetClass() && bssp.GetClass() == CBioseq_set::eClass_small_genome_set) {
             m_HasSmallGenomeSet = true;
         }
-        VISIT_ALL_SEQENTRYS_WITHIN_SEQSET (set_itr, bssp) {
-            const CSeq_entry& seqentry = *set_itr;
+        for (auto& seqentry : bssp.GetSeq_set()) {
             // recursively explore current Bioseq-set
-            x_InitSeqs(seqentry, scope);
+            x_InitSeqs(*seqentry, scope);
         }
     }
 }
