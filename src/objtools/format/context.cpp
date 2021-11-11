@@ -1250,50 +1250,43 @@ void CTopLevelSeqEntryContext::x_InitSeqs (const CSeq_entry& sep, CScope& scope)
     if (sep.IsSeq()) {
         // Is Bioseq
         const CBioseq& bsp = sep.GetSeq();
-        CBioseq_Handle bsh = scope.GetBioseqHandle(bsp);
-        if (bsh) {
-            const CBioseq_Handle::TId& ids = bsh.GetId();
-            if (! ids.empty()) {
-                ITERATE( CBioseq_Handle::TId, it, ids ) {
-                    CConstRef<CSeq_id> seqId = (*it).GetSeqIdOrNull();
-                    if( ! seqId.IsNull() ) {
-                    switch( seqId->Which() ) {
-                        case CSeq_id_Base::e_Gibbsq:
-                        case CSeq_id_Base::e_Gibbmt:
-                        case CSeq_id_Base::e_Embl:
-                        case CSeq_id_Base::e_Pir:
-                        case CSeq_id_Base::e_Swissprot:
-                        case CSeq_id_Base::e_Patent:        
-                        case CSeq_id_Base::e_Ddbj:
-                        case CSeq_id_Base::e_Prf:
-                        case CSeq_id_Base::e_Pdb:
-                        case CSeq_id_Base::e_Tpe:
-                        case CSeq_id_Base::e_Tpd:
-                        case CSeq_id_Base::e_Gpipe:
-                            // with some types, it's okay to merge
+        FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bsp) {
+            const CSeq_id& sid = **sid_itr;
+            TSEQID_CHOICE chs = sid.Which();
+            switch (chs) {
+                case CSeq_id_Base::e_Gibbsq:
+                case CSeq_id_Base::e_Gibbmt:
+                case CSeq_id_Base::e_Embl:
+                case CSeq_id_Base::e_Pir:
+                case CSeq_id_Base::e_Swissprot:
+                case CSeq_id_Base::e_Patent:        
+                case CSeq_id_Base::e_Ddbj:
+                case CSeq_id_Base::e_Prf:
+                case CSeq_id_Base::e_Pdb:
+                case CSeq_id_Base::e_Tpe:
+                case CSeq_id_Base::e_Tpd:
+                case CSeq_id_Base::e_Gpipe:
+                    // with some types, it's okay to merge
+                    m_CanSourcePubsBeFused = true;
+                    break;                        
+                case CSeq_id_Base::e_Genbank:
+                case CSeq_id_Base::e_Tpg:
+                    // Genbank allows merging only if it's the old-style 1 + 5 accessions
+                    if( NULL != sid.GetTextseq_Id() &&
+                        sid.GetTextseq_Id()->IsSetAccession() &&
+                        sid.GetTextseq_Id()->GetAccession().length() == 6 ) {
                             m_CanSourcePubsBeFused = true;
-                            break;                        
-                        case CSeq_id_Base::e_Genbank:
-                        case CSeq_id_Base::e_Tpg:
-                            // Genbank allows merging only if it's the old-style 1 + 5 accessions
-                            if( NULL != seqId->GetTextseq_Id() &&
-                                seqId->GetTextseq_Id()->IsSetAccession() &&
-                                seqId->GetTextseq_Id()->GetAccession().length() == 6 ) {
-                                    m_CanSourcePubsBeFused = true;
-                            }
-                            break;
-                        case CSeq_id_Base::e_not_set:
-                        case CSeq_id_Base::e_Local:
-                        case CSeq_id_Base::e_Other:
-                        case CSeq_id_Base::e_General:
-                        case CSeq_id_Base::e_Giim:                        
-                        case CSeq_id_Base::e_Gi:
-                            break;
-                        default:
-                            break;
                     }
-                    }
-                }
+                    break;
+                case CSeq_id_Base::e_not_set:
+                case CSeq_id_Base::e_Local:
+                case CSeq_id_Base::e_Other:
+                case CSeq_id_Base::e_General:
+                case CSeq_id_Base::e_Giim:                        
+                case CSeq_id_Base::e_Gi:
+                    break;
+                default:
+                    break;
             }
         }
     } else if (sep.IsSet()) {
@@ -1302,14 +1295,10 @@ void CTopLevelSeqEntryContext::x_InitSeqs (const CSeq_entry& sep, CScope& scope)
         if (bssp.CanGetClass() && bssp.GetClass() == CBioseq_set::eClass_small_genome_set) {
             m_HasSmallGenomeSet = true;
         }
-        CBioseq_set_Handle ssh = scope.GetBioseq_setHandle(bssp);
-        if (ssh) {
-            if (bssp.CanGetSeq_set()) {
-                // recursively explore current Bioseq-set
-                for (const CRef<CSeq_entry>& tmp : bssp.GetSeq_set()) {
-                    x_InitSeqs(*tmp, scope);
-                }
-            }
+        VISIT_ALL_SEQENTRYS_WITHIN_SEQSET (set_itr, bssp) {
+            const CSeq_entry& seqentry = *set_itr;
+            // recursively explore current Bioseq-set
+            x_InitSeqs(seqentry, scope);
         }
     }
 }
