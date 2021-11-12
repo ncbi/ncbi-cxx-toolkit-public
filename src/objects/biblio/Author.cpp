@@ -245,7 +245,6 @@ CRef<CPerson_id> CAuthor::x_ConvertMlToStandard(const string& name, const bool n
         person_id->SetName().SetLast(last);
         if (!initials.empty()) {
             person_id->SetName().SetInitials(initials);
-            person_id->SetName().SetFirst(initials.substr(0, 1));
         }
         if (!suffix.empty()) {
             person_id->SetName().SetSuffix(suffix);
