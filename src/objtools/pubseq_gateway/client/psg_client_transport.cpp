@@ -112,9 +112,13 @@ struct SContextSetter
     void operator=(const SContextSetter&) = delete;
 };
 
-void SDebugPrintout::Print(SSocketAddress address, const string& path)
+void SDebugPrintout::Print(SSocketAddress address, const string& path, const string& sid, const string& phid, const string& ip)
 {
-    ERR_POST(Message << id << ": " << address.AsString() << path);
+    if (ip.empty()) {
+        ERR_POST(Message << id << ": " << address.AsString() << path << ";SID=" << sid << ";PHID=" << phid);
+    } else {
+        ERR_POST(Message << id << ": " << address.AsString() << path << ";SID=" << sid << ";PHID=" << phid << ";IP=" << ip);
+    }
 }
 
 void SDebugPrintout::Print(const SPSG_Args& args, const SPSG_Chunk& chunk)
@@ -623,14 +627,15 @@ bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
     const auto& path = req->full_path;
     const auto& session_id = context.GetSessionID();
     const auto& sub_hit_id = context.GetNextSubHitID();
+    const auto& client_ip = context.GetClientIP();
     auto headers_size = m_Headers.size();
 
     m_Headers[ePath] = path;
     m_Headers[eSessionID] = session_id;
     m_Headers[eSubHitID] = sub_hit_id;
 
-    if (context.IsSetClientIP()) {
-        m_Headers[eClientIP] = context.GetClientIP();
+    if (!client_ip.empty()) {
+        m_Headers[eClientIP] = client_ip;
     } else {
         --headers_size;
     }
@@ -648,7 +653,7 @@ bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
         return false;
     }
 
-    req->reply->debug_printout << server.address << path << endl;
+    req->reply->debug_printout << server.address << path << session_id << sub_hit_id << client_ip << endl;
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " submitted");
     m_Requests.emplace(stream_id, move(req));
     return Send();

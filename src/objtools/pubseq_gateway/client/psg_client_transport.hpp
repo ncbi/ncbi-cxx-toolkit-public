@@ -155,7 +155,8 @@ private:
 
     enum EType { eSend = 1000, eReceive, eClose, eRetry, eFail };
 
-    void Event(SSocketAddress, const string&)       { Event(eSend);    }
+    template <class ...TArgs>
+    void Event(SSocketAddress, TArgs&&... args)     { Event(eSend);    }
     void Event(const SPSG_Args&, const SPSG_Chunk&) { Event(eReceive); }
     void Event(uint32_t)                            { Event(eClose);   }
     void Event(unsigned, const SUvNgHttp2_Error&)   { Event(eRetry);   }
@@ -168,7 +169,7 @@ private:
         m_Events.emplace_back(ms, type, thread_id);
     }
 
-    void Print(SSocketAddress address, const string& path);
+    void Print(SSocketAddress address, const string& path, const string& sid, const string& phid, const string& ip);
     void Print(const SPSG_Args& args, const SPSG_Chunk& chunk);
     void Print(uint32_t error_code);
     void Print(unsigned retries, const SUvNgHttp2_Error& error);
