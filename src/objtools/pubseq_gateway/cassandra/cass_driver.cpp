@@ -1219,6 +1219,14 @@ void CCassQuery::Restart(CassConsistency c)
     if (!m_future) {
         RAISE_DB_ERROR(eSeqFailed, "Query is is not in restartable state");
     }
+    string params;
+    for (size_t i = 0; i < ParamCount(); ++i) {
+        params += (i > 0 ? "," : "" ) + ParamAsStrForDebug(i);
+    }
+    if (!params.empty()) {
+        params = "; params - (" + params + ")";
+    }
+    ERR_POST(Warning << "Cassandra query restarted: SQL - '" << m_sql << "'" << params);
     if (m_results_expected) {
         RestartQuery(c);
     } else {
