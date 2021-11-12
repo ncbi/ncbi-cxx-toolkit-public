@@ -104,10 +104,6 @@ numthreadsio=4
 ; Default: 2
 numconnperhost=2
 
-; Maximum count of connections per node (1...8)
-; Default: 4
-maxconnperhost=4
-
 ; TCP keep-alive the initial delay in seconds
 ; Default: 0
 keepalive=0
