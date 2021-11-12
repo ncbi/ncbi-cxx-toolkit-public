@@ -72,7 +72,7 @@ struct SNewRequestContext
         CDiagContext::SetRequestContext(nullptr);
     }
 
-    CRef<CRequestContext> Clone() { return m_RequestContext->Clone(); }
+    CRef<CRequestContext> Get() const { return m_RequestContext; }
 
 private:
     SNewRequestContext(const SNewRequestContext&) = delete;
@@ -716,7 +716,6 @@ CParallelProcessing::~CParallelProcessing()
 
 void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue& output, const CArgs& args)
 {
-    auto request_context = CDiagContext::GetRequestContext().Clone();
     auto type(args["type"].HasValue() ? SRequestBuilder::GetBioIdType(args["type"].AsString()) : CPSG_BioId::TType());
     auto include_info(SRequestBuilder::GetIncludeInfo(SRequestBuilder::GetSpecified<CPSG_Request_Resolve>(args)));
 
@@ -726,7 +725,7 @@ void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue
         _ASSERT(!id.empty()); // ReadLine makes sure it's not empty
         auto bio_id = CPSG_BioId(id, type);
         auto user_context = make_shared<string>(move(id));
-        auto request = make_shared<CPSG_Request_Resolve>(move(bio_id), move(user_context), move(request_context));
+        auto request = make_shared<CPSG_Request_Resolve>(move(bio_id), move(user_context));
 
         request->IncludeInfo(include_info);
 
@@ -765,7 +764,7 @@ void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue&
             auto user_context = make_shared<string>(id);
 
             SInteractiveNewRequestStart new_request_start(params_obj);
-            auto request_context = new_request_start.Clone();
+            auto request_context = new_request_start.Get();
 
             if (auto request = SRequestBuilder::Build(method, params_obj, user_args, move(user_context), move(request_context))) {
                 _VERIFY(output.SendRequest(move(request), CDeadline::eInfinite));
