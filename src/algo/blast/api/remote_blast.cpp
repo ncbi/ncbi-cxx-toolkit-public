@@ -2568,14 +2568,7 @@ void CRemoteBlast::x_GetSubjects(void)
         return; // already got data
 
     // Build the request
-    CRef<CBlast4_get_search_info_request> info_request( new CBlast4_get_search_info_request );
-    info_request->SetRequest_id( m_RID );
-    info_request->SetInfo().Add(kBlast4SearchInfoReqName_Search, 
-                                kBlast4SearchInfoReqValue_Subjects);
-
-    CRef<CBlast4_request_body> body(new CBlast4_request_body);
-    body->SetGet_search_info( *info_request );
-
+    CRef<CBlast4_request_body> body = s_BuildSearchInfoRequest(m_RID, kBlast4SearchInfoReqName_Search, kBlast4SearchInfoReqValue_Subjects);
     CRef<CBlast4_request> request(new CBlast4_request);
     request->SetBody(*body);
     
