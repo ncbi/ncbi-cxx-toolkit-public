@@ -80,7 +80,7 @@ const char* NcbiDumpIPRange(const SIPRange* range, char* buf, size_t bufsize);
  * hostname:        DNS format
  * @note
  *   IP subnets (both IPv4 and IPv6) require that the unmasked "host" portion
- *   of the address was 0.
+ *   of the address was 0 (otherwise, parsing fails).
  * @return
  *   0 (false) if failed;  non-zero (true) if successful and the parsed range
  *   stored at the location pointed to by "range".
