@@ -45,17 +45,9 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-enum class ECassandraNameResolver {
-    eUndefined = 0,
-    eLBSM = 1,
-    eNAMERD = 2,
-};
-
 class CCassConnectionFactory:
     public enable_shared_from_this<CCassConnectionFactory>
 {
-    static const char * kNameResolverLBSM;
-    static const char * kNameResolverNamerd;
  public:
     CCassConnectionFactory(const CCassConnectionFactory&) = delete;
     CCassConnectionFactory& operator=(const CCassConnectionFactory&) = delete;
@@ -114,8 +106,6 @@ class CCassConnectionFactory:
     unsigned int            m_NumThreadsIo;
     unsigned int            m_NumConnPerHost;
     unsigned int            m_Keepalive;
-
-    ECassandraNameResolver  m_ServiceNameResolver{ECassandraNameResolver::eLBSM};
 
     EDiagSev                m_LogSeverity;
     bool                    m_LogEnabled;
