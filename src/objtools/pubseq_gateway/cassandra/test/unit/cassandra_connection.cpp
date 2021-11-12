@@ -34,13 +34,16 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbireg.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 
 namespace {
 
@@ -103,6 +106,102 @@ TEST_F(CCassConnectionTest, ReconnectShouldNotFail) {
     connection->Connect();
 
     ASSERT_TRUE(connection->IsConnected()) << "Connection should be UP after the reason of failure is fixed";
+}
+
+TEST_F(CCassConnectionTest, QueryRetryTimeout) {
+    const string config_section = "TEST";
+    auto factory = CCassConnectionFactory::s_Create();
+    CNcbiRegistry r;
+    r.Set(config_section, "service", "ID_CASS_TEST", IRegistry::fPersistent);
+    r.Set(config_section, "qtimeout", "1", IRegistry::fPersistent);
+    r.Set(config_section, "qtimeout_retry", "1000", IRegistry::fPersistent);
+    factory->LoadConfig(r, config_section);
+    auto connection = factory->CreateInstance();
+    connection->Connect();
+    EXPECT_EQ(1UL, connection->QryTimeoutMs());
+    EXPECT_EQ(1000UL, connection->QryTimeoutRetryMs());
+    auto query = connection->NewQuery();
+    EXPECT_EQ(1UL, query->Timeout());
+    query->SetSQL("select * from test_ipg_storage_entrez.ipg_report LIMIT 10000", 0);
+    query->Query(CASS_CONSISTENCY_ALL, true, false, 10000);
+    try {
+        query->WaitAsync(query->Timeout() * 1000 + 10);
+        ASSERT_TRUE(false) << "Query with 1ms timeout should throw.";
+    }
+    catch (CCassandraException const& ex) {
+        EXPECT_EQ(CCassandraException::eQueryTimeout, ex.GetErrCode());
+    }
+    auto start = chrono::steady_clock::now();
+    EXPECT_NO_THROW(query->Restart(CASS_CONSISTENCY_ONE)) << "Query with 1000ms timeout should not throw.";
+    EXPECT_EQ(1000UL, query->Timeout());
+    EXPECT_EQ(ar_dataready, query->WaitAsync(query->Timeout() * 1000));
+
+    // Operation should take longer than (timeout_before_retry * 3)
+    EXPECT_LT(3 * 1, chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count());
+}
+
+TEST_F(CCassConnectionTest, LoadBlobRetryTimeout)
+{
+    int32_t sat_key1{6592654}, sat_key2{5179655};
+
+    const string config_section = "TEST";
+    auto factory = CCassConnectionFactory::s_Create();
+    CNcbiRegistry r;
+    r.Set(config_section, "service", "ID_CASS_TEST", IRegistry::fPersistent);
+    // Too small value here prevents prepare operation
+    r.Set(config_section, "qtimeout", "1", IRegistry::fPersistent);
+    r.Set(config_section, "qtimeout_retry", "1000", IRegistry::fPersistent);
+    factory->LoadConfig(r, config_section);
+
+    auto connection = factory->CreateInstance();
+    connection->Connect();
+
+    int call_count{0};
+    auto timeout_error =
+    [&call_count]
+    (CRequestStatus::ECode status, int code, EDiagSev, const string & message)
+    {
+        EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+        EXPECT_EQ(2007, code);
+        ++call_count;
+    };
+
+    // Failing task without retries
+    {
+        CCassBlobTaskLoadBlob task(
+            1000'000, // not used
+            1, //retry
+            connection, "satold01", sat_key1,
+            true, // chunks for timeout
+            timeout_error
+        );
+        task.SetUsePrepared(false);
+        while(!task.Wait()) {
+            this_thread::sleep_for(chrono::milliseconds(2));
+        }
+        EXPECT_GT(call_count, 0);
+        EXPECT_TRUE(task.HasError());
+    }
+
+    // Task with 2 retries with changed timeout
+    {
+        call_count = 0;
+        CCassBlobTaskLoadBlob task(
+            1000'000, // not used
+            2, //retry
+            connection, "satold01", sat_key2,
+            true, // no chunks
+            timeout_error
+        );
+        task.SetUsePrepared(false);
+        testing::internal::CaptureStderr();
+        while(!task.Wait()) {
+            this_thread::sleep_for(chrono::milliseconds(2));
+        }
+        testing::internal::GetCapturedStderr();
+        EXPECT_EQ(0, call_count);
+        EXPECT_FALSE(task.HasError());
+    }
 }
 
 }  // namespace

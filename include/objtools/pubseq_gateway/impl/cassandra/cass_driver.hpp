@@ -147,6 +147,7 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
 
     void SetTimeouts(unsigned int ConnTimeoutMs);
     void SetTimeouts(unsigned int ConnTimeoutMs, unsigned int QryTimeoutMs);
+    void SetQueryTimeoutRetry(unsigned int timeout_ms);
 
     void SetFallBackRdConsistency(bool value);
     bool GetFallBackRdConsistency(void) const;
@@ -158,8 +159,11 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     static void DisableLogging(void);
     static void UpdateLogging(void);
 
-    unsigned int QryTimeout(void) const;
-    unsigned int QryTimeoutMks(void) const;
+    // Use QryTimeoutMs. It announces units at least
+    NCBI_DEPRECATED unsigned int QryTimeout() const;
+    unsigned int QryTimeoutRetryMs() const;
+    unsigned int QryTimeoutMs() const;
+    unsigned int QryTimeoutMks() const;
 
     // This function is deprecated and will be removed after Jan-1 2022
     // Use 2 parameters version
@@ -198,6 +202,7 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     CassSession *                   m_session;
     unsigned int                    m_ctimeoutms;
     unsigned int                    m_qtimeoutms;
+    unsigned int                    m_qtimeout_retry_ms{0};
     unsigned int                    m_last_query_cnt;
     loadbalancing_policy_t          m_loadbalancing;
     bool                            m_tokenaware;
@@ -646,6 +651,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
 
     shared_ptr<CCassConnection>     m_connection;
     unsigned int                    m_qtimeoutms;
+    bool                            m_use_per_request_timeout{false};
     int64_t                         m_futuretime;
     CassFuture *                    m_future;
     CassBatch *                     m_batch;
@@ -733,6 +739,10 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     void SetTimeout(unsigned int t);
 
     unsigned int Timeout(void) const;
+
+    // Switch to use per request timeout. Currently used just for Retry operations
+    // @todo Switch to ExecutionProfiles
+    void UsePerRequestTimeout(bool value);
 
     bool IsReady(void);
     void NewBatch(void);

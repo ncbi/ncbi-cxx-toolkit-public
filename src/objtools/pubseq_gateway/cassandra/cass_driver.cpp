@@ -56,7 +56,7 @@ BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
 BEGIN_SCOPE()
-    constexpr unsigned kDefaultIOThreads = 32;
+    constexpr unsigned kDefaultIOThreads = 4;
     constexpr cass_duration_t kDisconnectTimeoutMcs = 5000000;
     void LogCallback(const CassLogMessage * message, void * /*data*/)
     {
@@ -110,6 +110,7 @@ CCassConnection::CCassConnection()
     , m_session(nullptr)
     , m_ctimeoutms(0)
     , m_qtimeoutms(0)
+    , m_qtimeout_retry_ms(0)
     , m_last_query_cnt(0)
     , m_loadbalancing(LB_DCAWARE)
     , m_tokenaware(true)
@@ -158,14 +159,24 @@ void CCassConnection::UpdateLogging(void)
     }
 }
 
-unsigned int CCassConnection::QryTimeout(void) const
+unsigned int CCassConnection::QryTimeout() const
 {
     return m_qtimeoutms;
 }
 
-unsigned int CCassConnection::QryTimeoutMks(void) const
+unsigned int CCassConnection::QryTimeoutRetryMs() const
 {
-    return QryTimeout() * 1000;
+    return m_qtimeout_retry_ms;
+}
+
+unsigned int CCassConnection::QryTimeoutMks() const
+{
+    return QryTimeoutMs() * 1000;
+}
+
+unsigned int CCassConnection::QryTimeoutMs() const
+{
+    return m_qtimeoutms;
 }
 
 
@@ -228,6 +239,14 @@ void CCassConnection::SetTimeouts(unsigned int ConnTimeoutMs, unsigned int QryTi
     if (m_cluster) {
         cass_cluster_set_request_timeout(m_cluster, m_qtimeoutms);
     }
+}
+
+void CCassConnection::SetQueryTimeoutRetry(unsigned int timeout_ms)
+{
+    if (timeout_ms > kCassMaxTimeout) {
+        timeout_ms = kCassMaxTimeout;
+    }
+    m_qtimeout_retry_ms = timeout_ms;
 }
 
 void CCassConnection::SetFallBackRdConsistency(bool value)
@@ -638,7 +657,6 @@ const CassPrepared * CCassConnection::Prepare(const string &  sql)
                 cass_future_free(future);
             }
         );
-
         bool b = cass_future_wait_timed(future.get(), m_qtimeoutms * 1000L);
         if (!b) {
             RAISE_DB_QRY_TIMEOUT(m_qtimeoutms, 0, string("failed to prepare query \"") + sql + "\"");
@@ -791,6 +809,11 @@ void CCassQuery::SetTimeout(unsigned int t)
 unsigned int CCassQuery::Timeout(void) const
 {
     return m_qtimeoutms;
+}
+
+void CCassQuery::UsePerRequestTimeout(bool value)
+{
+    m_use_per_request_timeout = value;
 }
 
 void CCassQuery::Close(void)
@@ -990,6 +1013,13 @@ void CCassQuery::NewBatch()
     if (!m_batch) {
         RAISE_DB_ERROR(eRsrcFailed, "failed to create batch");
     }
+
+    if (m_use_per_request_timeout) {
+        CassError rc = cass_batch_set_request_timeout(m_batch, m_qtimeoutms);
+        if (rc != CASS_OK) {
+            RAISE_CASS_ERROR(rc, eQueryFailed, "Failed to set batch timeout to " + to_string(static_cast<int>(m_qtimeoutms)));
+        }
+    }
 }
 
 
@@ -1043,6 +1073,12 @@ void CCassQuery::Query(CassConsistency  c, bool  run_async,
                 RAISE_CASS_ERROR(rc, eQueryFailed, "Failed to set page size to " + to_string(static_cast<int>(page_size)));
             }
         }
+        if (m_use_per_request_timeout) {
+            rc = cass_statement_set_request_timeout(m_statement, m_qtimeoutms);
+            if (rc != CASS_OK) {
+                RAISE_CASS_ERROR(rc, eQueryFailed, "Failed to set statement timeout to " + to_string(static_cast<int>(m_qtimeoutms)));
+            }
+        }
 
         m_page_start = true;
         m_page_size = page_size;
@@ -1072,6 +1108,11 @@ void CCassQuery::RestartQuery(CassConsistency c)
     bool async = m_async, allow_prepared = m_is_prepared;
     Close();
     m_params = move(params);
+    auto retry_timeout = m_connection->QryTimeoutRetryMs();
+    if (retry_timeout != 0) {
+        SetTimeout(retry_timeout);
+        UsePerRequestTimeout(true);
+    }
     Query(c, async, allow_prepared, page_size);
 }
 
@@ -1125,6 +1166,13 @@ void CCassQuery::Execute(CassConsistency c, bool run_async, bool allow_prepared)
             }
             cass_statement_free(m_statement);
             m_statement = nullptr;
+        } else {
+            if (m_use_per_request_timeout) {
+                rc = cass_statement_set_request_timeout(m_statement, m_qtimeoutms);
+                if (rc != CASS_OK) {
+                    RAISE_CASS_ERROR(rc, eQueryFailed, "Failed to set statement timeout to " + to_string(static_cast<int>(m_qtimeoutms)));
+                }
+            }
         }
 
         m_page_start = false;
@@ -1157,6 +1205,12 @@ void CCassQuery::RestartExecute(CassConsistency c)
     bool async = m_async, allow_prepared = m_is_prepared;
     Close();
     m_params = move(params);
+    auto retry_timeout = m_connection->QryTimeoutRetryMs();
+    if (retry_timeout != 0) {
+        SetTimeout(retry_timeout);
+        UsePerRequestTimeout(true);
+    }
+
     Execute(c, async, allow_prepared);
 }
 
