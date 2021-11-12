@@ -225,4 +225,39 @@ BOOST_AUTO_TEST_CASE(TestSimpleAlignment_RmtBlastDBLoader)
     BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eRemote, true));
 }
 
+BOOST_AUTO_TEST_CASE(TestLargeGi)
+{
+    const string seqAlignFileName_in = "data/large_gi.asn";
+    CRef<CSeq_annot> san(new CSeq_annot);
+
+    ifstream in(seqAlignFileName_in.c_str());
+    in >> MSerial_AsnText >> *san;
+    in.close();
+
+    CRef<CSeq_align_set> fileSeqAlignSet(new CSeq_align_set);
+    fileSeqAlignSet->Set() = san->GetData().GetAlign();
+
+    const string kDbName("data/nucl_32b_gi");
+    const CBlastDbDataLoader::EDbType kDbType(CBlastDbDataLoader::eNucleotide);
+    TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
+    CRef<CScope> scope = tmp_data_loader.NewScope();
+
+    CDisplaySeqalign ds(*fileSeqAlignSet, *scope);
+    ds.SetDbName(kDbName);
+    ds.SetDbType((kDbType == CBlastDbDataLoader::eNucleotide));
+    int flags = CDisplaySeqalign::eShowBlastInfo |
+        CDisplaySeqalign::eShowBlastStyleId |
+        CDisplaySeqalign::eShowGi;
+    ds.SetAlignOption(flags);
+    ds.SetSeqLocChar(CDisplaySeqalign::eLowerCase);
+    CNcbiOstrstream output_stream;
+    ds.DisplaySeqalign(output_stream);
+    string output = CNcbiOstrstreamToString(output_stream);
+    BOOST_REQUIRE(output.find("2271278971") != NPOS);
+    BOOST_REQUIRE(output.find("698036805") != NPOS);
+    BOOST_REQUIRE(output.find("4294967295") != NPOS);
+    BOOST_REQUIRE(output.find("2966748774") != NPOS);
+    scope->GetObjectManager().RevokeAllDataLoaders();
+}
+
 BOOST_AUTO_TEST_SUITE_END()
