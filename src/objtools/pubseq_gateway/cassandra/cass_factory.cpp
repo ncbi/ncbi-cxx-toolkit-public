@@ -85,9 +85,6 @@ const unsigned int              kCassFallbackWrConsistencyMin = 0;
 const unsigned int              kCassFallbackWrConsistencyMax = UINT_MAX;
 const unsigned int              kCassFallbackWrConsistencyDefault = 0;
 
-const char * CCassConnectionFactory::kNameResolverLBSM = "LBSM";
-const char * CCassConnectionFactory::kNameResolverNamerd = "NAMERD";
-
 const map<string, loadbalancing_policy_t>     kPolicyArgMap = {
     {"", kLoadBalancingDefaultPolicy},
     {"dcaware", LB_DCAWARE},
@@ -206,16 +203,6 @@ void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry & registry)
                 << m_Section << "' of registry");
         }
 
-        string name_resolver = registry.GetString(m_Section, "name_resolver", "");
-        if (name_resolver == kNameResolverLBSM || name_resolver.empty()) {
-            m_ServiceNameResolver = ECassandraNameResolver::eLBSM;
-        } else if (name_resolver == kNameResolverNamerd) {
-            m_ServiceNameResolver = ECassandraNameResolver::eNAMERD;
-        } else {
-            NCBI_THROW(CCassandraException, eGeneric, "Wrong name_resolver parameter value: '" + name_resolver + "'");
-        }
-
-
         ProcessParams();
     }
 }
@@ -236,16 +223,7 @@ void CCassConnectionFactory::GetHostPort(string & cass_hosts, short & cass_port)
         if (hosts.empty()) {
             NCBI_THROW(CCassandraException, eGeneric, "Failed to resolve: " + m_CassHosts);
         }
-        switch (m_ServiceNameResolver) {
-        case ECassandraNameResolver::eLBSM:
-            hosts = LbsmLookup::s_Resolve(m_CassHosts, ',');
-        break;
-        case ECassandraNameResolver::eNAMERD:
-            hosts = gResolveNamerdHosts(m_CassHosts, ",");
-        break;
-        default:
-            NCBI_THROW(CCassandraException, eGeneric, "Failed to resolve (unknown name resolver): " + m_CassHosts);
-        }
+        hosts = LbsmLookup::s_Resolve(m_CassHosts, ',');
     }
 
     // Here: the 'hosts' variable has a list of host[:port] items came
