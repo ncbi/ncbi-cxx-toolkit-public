@@ -121,13 +121,13 @@ void CCassBlobOp::GetBlobChunkSize(unsigned int timeout_ms, int64_t * chunk_size
 
 void CCassBlobOp::InsertBlobExtended(unsigned int  op_timeout_ms, unsigned int  max_retries,
                                   CBlobRecord *  blob_rslt, TDataErrorCallback  error_cb,
-                                  unique_ptr<CCassBlobWaiter> &  Waiter)
+                                  unique_ptr<CCassBlobWaiter> &  waiter)
 {
-    Waiter.reset(new CCassBlobTaskInsertExtended(
+    waiter = make_unique<CCassBlobTaskInsertExtended>(
         op_timeout_ms, m_Conn, m_Keyspace,
         blob_rslt, true, max_retries,
         move(error_cb)
-    ));
+    );
 }
 
 void CCassBlobOp::InsertNAnnot(
@@ -138,11 +138,11 @@ void CCassBlobOp::InsertNAnnot(
     unique_ptr<CCassBlobWaiter> & waiter
 )
 {
-    waiter.reset(new CCassNAnnotTaskInsert(
+    waiter = make_unique<CCassNAnnotTaskInsert>(
         op_timeout_ms, m_Conn, m_Keyspace,
         blob, annot, max_retries,
         move(error_cb)
-    ));
+    );
 }
 
 void CCassBlobOp::InsertID2Split(
@@ -153,11 +153,11 @@ void CCassBlobOp::InsertID2Split(
     unique_ptr<CCassBlobWaiter> & waiter
 )
 {
-    waiter.reset(new CCassID2SplitTaskInsert(
+    waiter = make_unique<CCassID2SplitTaskInsert>(
         op_timeout_ms, m_Conn, m_Keyspace,
         blob, id2_split, max_retries,
         move(error_cb)
-    ));
+    );
 }
 
 void CCassBlobOp::DeleteNAnnot(
@@ -168,11 +168,11 @@ void CCassBlobOp::DeleteNAnnot(
     unique_ptr<CCassBlobWaiter> & waiter
 )
 {
-    waiter.reset(new CCassNAnnotTaskDelete(
+    waiter = make_unique<CCassNAnnotTaskDelete>(
         op_timeout_ms, m_Conn, m_Keyspace,
         annot, max_retries,
         move(error_cb)
-    ));
+    );
 }
 
 void CCassBlobOp::FetchNAnnot(
@@ -187,11 +187,11 @@ void CCassBlobOp::FetchNAnnot(
     unique_ptr<CCassBlobWaiter> & waiter
 )
 {
-    waiter.reset(new CCassNAnnotTaskFetch(
+    waiter = make_unique<CCassNAnnotTaskFetch>(
         op_timeout_ms, max_retries, m_Conn, m_Keyspace,
         accession, version, seq_id_type, annot_names,
         move(consume_callback), move(error_cb)
-    ));
+    );
 }
 
 void CCassBlobOp::FetchNAnnot(
@@ -206,11 +206,11 @@ void CCassBlobOp::FetchNAnnot(
     unique_ptr<CCassBlobWaiter> & waiter
 )
 {
-    waiter.reset(new CCassNAnnotTaskFetch(
+    waiter = make_unique<CCassNAnnotTaskFetch>(
         op_timeout_ms, max_retries, m_Conn, m_Keyspace,
         accession, version, seq_id_type, annot_names,
         move(consume_callback), move(error_cb)
-    ));
+    );
 }
 
 void CCassBlobOp::FetchNAnnot(
@@ -224,11 +224,11 @@ void CCassBlobOp::FetchNAnnot(
     unique_ptr<CCassBlobWaiter> & waiter
 )
 {
-    waiter.reset(new CCassNAnnotTaskFetch(
+    waiter = make_unique<CCassNAnnotTaskFetch>(
         op_timeout_ms, max_retries, m_Conn, m_Keyspace,
         accession, version, seq_id_type,
         move(consume_callback), move(error_cb)
-    ));
+    );
 }
 
 void CCassBlobOp::FetchAccVerHistory(
@@ -242,22 +242,22 @@ void CCassBlobOp::FetchAccVerHistory(
     int16_t seq_id_type
 )
 {
-    waiter.reset(new CCassAccVerHistoryTaskFetch(
+    waiter = make_unique<CCassAccVerHistoryTaskFetch>(
         op_timeout_ms, max_retries, m_Conn, m_Keyspace,
         accession,
         move(consume_callback), move(error_cb), version, seq_id_type
-    ));
+    );
 }
 
 void CCassBlobOp::DeleteBlobExtended(unsigned int  op_timeout_ms,
                                   int32_t  key, unsigned int  max_retries,
                                   TDataErrorCallback error_cb,
-                                  unique_ptr<CCassBlobWaiter> &  Waiter)
+                                  unique_ptr<CCassBlobWaiter> & waiter)
 {
-    Waiter.reset(new CCassBlobTaskDelete(
+    waiter = make_unique<CCassBlobTaskDelete>(
         op_timeout_ms, m_Conn, m_Keyspace,
         key, true, max_retries, move(error_cb)
-    ));
+    );
 }
 
 void CCassBlobOp::DeleteExpiredBlobVersion(unsigned int op_timeout_ms,
@@ -267,51 +267,34 @@ void CCassBlobOp::DeleteExpiredBlobVersion(unsigned int op_timeout_ms,
                              TDataErrorCallback error_cb,
                              unique_ptr<CCassBlobWaiter> & waiter)
 {
-    waiter.reset(new CCassBlobTaskDeleteExpired(
+    waiter = make_unique<CCassBlobTaskDeleteExpired>(
         op_timeout_ms, m_Conn, m_Keyspace,
         key, last_modified, expiration, max_retries, move(error_cb)
-    ));
+    );
 }
 
 unique_ptr<CCassBlobTaskLoadBlob> CCassBlobOp::GetBlobExtended(
-    unsigned int op_timeout_ms,
+    unsigned int timeout_ms,
     unsigned int max_retries,
     CBlobRecord::TSatKey sat_key,
     bool load_chunks,
     TDataErrorCallback error_cb
 ) {
-    return unique_ptr<CCassBlobTaskLoadBlob>(
-        new CCassBlobTaskLoadBlob(
-            op_timeout_ms,
-            max_retries,
-            m_Conn,
-            m_Keyspace,
-            sat_key,
-            load_chunks,
-            move(error_cb)
-        )
+    return make_unique<CCassBlobTaskLoadBlob>(
+        timeout_ms, max_retries, m_Conn, m_Keyspace, sat_key, load_chunks, move(error_cb)
     );
 }
 
 unique_ptr<CCassBlobTaskLoadBlob> CCassBlobOp::GetBlobExtended(
-    unsigned int op_timeout_ms,
+    unsigned int timeout_ms,
     unsigned int max_retries,
     CBlobRecord::TSatKey sat_key,
     CBlobRecord::TTimestamp modified,
     bool load_chunks,
     TDataErrorCallback error_cb
 ) {
-    return unique_ptr<CCassBlobTaskLoadBlob>(
-        new CCassBlobTaskLoadBlob(
-            op_timeout_ms,
-            max_retries,
-            m_Conn,
-            m_Keyspace,
-            sat_key,
-            modified,
-            load_chunks,
-            move(error_cb)
-        )
+    return make_unique<CCassBlobTaskLoadBlob>(
+        timeout_ms, max_retries, m_Conn, m_Keyspace, sat_key, modified, load_chunks, move(error_cb)
     );
 }
 
@@ -322,10 +305,8 @@ unique_ptr<CCassBlobTaskLoadBlob> CCassBlobOp::GetBlobExtended(
     bool load_chunks,
     TDataErrorCallback error_cb
 ) {
-    return unique_ptr<CCassBlobTaskLoadBlob>(
-        new CCassBlobTaskLoadBlob(
-            timeout_ms, max_retries, m_Conn, m_Keyspace, move(blob_record), load_chunks, move(error_cb)
-        )
+    return make_unique<CCassBlobTaskLoadBlob>(
+        timeout_ms, max_retries, m_Conn, m_Keyspace, move(blob_record), load_chunks, move(error_cb)
     );
 }
 

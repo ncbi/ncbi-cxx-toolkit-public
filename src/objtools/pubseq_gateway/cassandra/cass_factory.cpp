@@ -49,20 +49,6 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-namespace {
-
-string gResolveNamerdHosts(string const& service_name, string const& delimiter)
-{
-    const vector<CSERV_Info> hosts = SERV_GetServers(service_name, fSERV_Standalone);
-    return NStr::TransformJoin(hosts.begin(), hosts.end(), delimiter,
-        [](const auto& host) -> string {
-            return host.GetHost() + ":" + to_string(host.GetPort());
-        }
-    );
-}
-
-}
-
 const string                    kCassConfigSection = "CASSANDRA_DB";
 
 const unsigned int              kCassConnTimeoutDefault = 30000;
