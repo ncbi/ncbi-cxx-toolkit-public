@@ -623,6 +623,7 @@ static const char* s_StringToAddr(TNCBI_IPv6Addr* addr,
     const char* tmp;
     size_t n;
 
+    assert(how);
     if (!addr)
         return 0/*failure*/;
     memset(addr, 0, sizeof(*addr));
