@@ -1251,7 +1251,8 @@ void CTopLevelSeqEntryContext::x_InitSeqs (const CSeq_entry& sep, CScope& scope)
         // Is Bioseq
         const CBioseq& bsp = sep.GetSeq();
         for (auto& sid : bsp.GetId()) {
-            switch (sid->Which()) {
+            TSEQID_CHOICE chs = sid->Which();
+            switch (chs) {
                 case CSeq_id_Base::e_Gibbsq:
                 case CSeq_id_Base::e_Gibbmt:
                 case CSeq_id_Base::e_Embl:
