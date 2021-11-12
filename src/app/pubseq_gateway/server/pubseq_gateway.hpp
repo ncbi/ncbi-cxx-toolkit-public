@@ -386,6 +386,7 @@ private:
     size_t                              m_MappingIndex;
     SCassMapping                        m_CassMapping[2];
     vector<string>                      m_SatNames;
+    vector<int32_t>                     m_BioseqNAKeyspaces;
     unique_ptr<CPSGMessages>            m_PublicComments;
 
     unsigned short                      m_HttpPort;

@@ -327,7 +327,13 @@ void CPubseqGatewayApp::OpenCache(void)
         set<int>        sat_ids;
         for (size_t  index = 0; index < m_SatNames.size(); ++index) {
             if (!m_SatNames[index].empty()) {
-                sat_ids.insert(index);
+                // Need to exclude the bioseq NA keyspaces because they are not
+                // in cache. They use a different schema
+                if (find(m_BioseqNAKeyspaces.begin(),
+                         m_BioseqNAKeyspaces.end(),
+                         index) == m_BioseqNAKeyspaces.end()) {
+                    sat_ids.insert(index);
+                }
             }
         }
 
@@ -1339,6 +1345,12 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
                          m_RootKeyspace + "' keyspace.");
 
     if (errors.empty()) {
+
+        m_BioseqNAKeyspaces.clear();
+        for (auto & item : m_CassMapping[vacant_index].m_BioseqNAKeyspaces) {
+            m_BioseqNAKeyspaces.push_back(item.second);
+        }
+
         m_MappingIndex = vacant_index;
 
         // Next step in the startup data initialization
