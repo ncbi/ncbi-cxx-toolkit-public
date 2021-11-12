@@ -294,11 +294,9 @@ class CCassBlobWaiter
         bool rv = CheckReady(it.query, it.restart_count, need_restart);
         if (!rv && need_restart) {
             try {
-                ERR_POST(Warning
-                    << "In-place restart (" + to_string(it.restart_count + 1) + "):\n"
-                    << it.query->GetSQL() << "\nParams:\n" << QueryParamsToStringForDebug(it.query));
-                it.query->Restart();
                 ++it.restart_count;
+                ERR_POST(Warning << "CCassBlobWaiter query retry: " + to_string(it.restart_count));
+                it.query->Restart();
             } catch (const exception& ex) {
                 ERR_POST(NCBI_NS_NCBI::Error << "Failed to restart query (p2): " << ex.what());
                 throw;
@@ -334,9 +332,6 @@ class CCassBlobWaiter
     atomic_bool                     m_Cancelled;
 
     vector<SQueryRec>  m_QueryArr;
-
- private:
-    string QueryParamsToStringForDebug(shared_ptr<CCassQuery> const& query) const;
 };
 
 class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>

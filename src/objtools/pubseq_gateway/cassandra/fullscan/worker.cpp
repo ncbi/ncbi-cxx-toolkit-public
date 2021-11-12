@@ -178,18 +178,11 @@ bool CCassandraFullscanWorker::ProcessQueryResult(size_t index)
     }
 
     if (restart_request) {
-        string params;
-        for (size_t i = 0; i < context->query->ParamCount(); ++i) {
-            params += (i > 0 ? "," : "" ) + context->query->ParamAsStr(i);
-        }
-        ERR_POST(
-            (context->retires > 1 ? Info : Warning) << "Query restarted! SQL - " << context->query->ToString()
-            << " Params - (" << params  << ") Restart count - " << context->retires
-        );
         try {
-            context->query->RestartQuery(m_Consistency);
+            ERR_POST(Warning << "Fullscan query retry: retries left - " << context->retires);
+            context->query->Restart(m_Consistency);
         } catch(exception const & e) {
-            ERR_POST(Warning << "Query restart failed");
+            ERR_POST(Error << "Query restart failed");
             ProcessError(e);
             result = false;
         }

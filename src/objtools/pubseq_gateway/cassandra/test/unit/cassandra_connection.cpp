@@ -132,7 +132,10 @@ TEST_F(CCassConnectionTest, QueryRetryTimeout) {
         EXPECT_EQ(CCassandraException::eQueryTimeout, ex.GetErrCode());
     }
     auto start = chrono::steady_clock::now();
+    testing::internal::CaptureStderr();
     EXPECT_NO_THROW(query->Restart(CASS_CONSISTENCY_ONE)) << "Query with 1000ms timeout should not throw.";
+    auto warning = testing::internal::GetCapturedStderr();
+    EXPECT_EQ("Warning: Cassandra query restarted: SQL - 'select * from test_ipg_storage_entrez.ipg_report LIMIT 10000'\n", warning);
     EXPECT_EQ(1000UL, query->Timeout());
     EXPECT_EQ(ar_dataready, query->WaitAsync(query->Timeout() * 1000));
 
