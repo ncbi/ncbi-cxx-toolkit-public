@@ -253,7 +253,7 @@ class CCassBlobWaiter
                                     (restart_count >= m_MaxRetries - 1);
 
         ERR_POST(Info << "CanRestartQ? t/o=" << is_timedout <<
-                 ", o/r=" << is_out_of_retries <<
+                 ", out_of_retries=" << is_out_of_retries <<
                  ", last_active=" << m_LastActivityMs <<
                  ", time=" << gettime() / 1000L <<
                  ", timeout=" << m_OpTimeoutMs);

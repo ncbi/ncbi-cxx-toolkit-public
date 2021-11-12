@@ -138,6 +138,13 @@ class CCassBlobTaskLoadBlob
     void SetPropsCallback(TBlobPropsCallback callback);
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
 
+    // Required to test variable timeouts.
+    // Prepared statements interfere with testing process.
+    void SetUsePrepared(bool value)
+    {
+        m_UsePrepared = value;
+    }
+
  protected:
     virtual void Wait1(void) override;
 
@@ -157,6 +164,7 @@ class CCassBlobTaskLoadBlob
     size_t m_ActiveQueries;
     CBlobRecord::TSize m_RemainingSize;
     bool m_ExplicitBlob;
+    bool m_UsePrepared{true};
 };
 
 END_IDBLOB_SCOPE

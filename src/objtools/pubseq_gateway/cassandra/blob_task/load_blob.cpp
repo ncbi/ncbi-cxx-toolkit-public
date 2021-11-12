@@ -194,7 +194,7 @@ void CCassBlobTaskLoadBlob::Wait1()
 
                     SetupQueryCB3(qry);
                     UpdateLastActivity();
-                    qry->Query(GetQueryConsistency(), m_Async, true);
+                    qry->Query(GetQueryConsistency(), m_Async, m_UsePrepared);
                     m_State = eWaitingForPropsFetch;
                 }
             break;
@@ -439,7 +439,7 @@ void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
         }
     }
     UpdateLastActivity();
-    qry.Query(GetQueryConsistency(), true);
+    qry.Query(GetQueryConsistency(), true, m_UsePrepared);
 }
 
 unique_ptr<CBlobRecord> CCassBlobTaskLoadBlob::ConsumeBlobRecord()

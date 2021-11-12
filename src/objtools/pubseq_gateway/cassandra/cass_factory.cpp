@@ -99,6 +99,7 @@ const map<string, loadbalancing_policy_t>     kPolicyArgMap = {
 CCassConnectionFactory::CCassConnectionFactory() :
     m_CassConnTimeoutMs(kCassConnTimeoutDefault),
     m_CassQueryTimeoutMs(kCassQueryTimeoutDefault),
+    m_CassQueryRetryTimeoutMs(0),
     m_CassFallbackRdConsistency(false),
     m_CassFallbackWrConsistency(kCassFallbackWrConsistencyDefault),
     m_LoadBalancing(kLoadBalancingDefaultPolicy),
@@ -182,6 +183,7 @@ void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry & registry)
     if (!registry.Empty()) {
         m_CassConnTimeoutMs = registry.GetInt(m_Section, "ctimeout", kCassConnTimeoutDefault);
         m_CassQueryTimeoutMs = registry.GetInt(m_Section, "qtimeout", kCassQueryTimeoutDefault);
+        m_CassQueryRetryTimeoutMs = registry.GetInt(m_Section, "qtimeout_retry", 0);
         m_CassDataNamespace = registry.GetString(m_Section, "namespace", "");
         m_CassFallbackRdConsistency = registry.GetBool(m_Section, "fallbackrdconsistency", false);
         m_CassFallbackWrConsistency = registry.GetInt(
@@ -296,6 +298,7 @@ shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance(void)
     rv->SetKeepAlive(m_Keepalive);
 
     rv->SetTimeouts(m_CassConnTimeoutMs, m_CassQueryTimeoutMs);
+    rv->SetQueryTimeoutRetry(m_CassQueryRetryTimeoutMs);
     rv->SetFallBackRdConsistency(m_CassFallbackRdConsistency);
     rv->SetBlackList(m_CassBlackList);
 
