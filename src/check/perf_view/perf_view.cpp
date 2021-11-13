@@ -54,7 +54,7 @@ class CPsgPerfApplication : public CNcbiApplication
     typedef map<TType, TNameTime> TRun;
     void ProcessFile(const string& file_ext);
     void ProcessLine(const char* line, const string& file_ext);
-    void PrintResult();
+    void PrintResult(bool print_unk);
 
     typedef map<TSetup, TRun> TResults;
     TResults m_Results;
@@ -62,6 +62,11 @@ class CPsgPerfApplication : public CNcbiApplication
     string ColorMe(const string& value, const TSetup& color);
 
     set<TName> m_Names;
+    struct SNameAttr {
+        bool has_special;
+        bool has_unknown;
+    };
+    map<TName, SNameAttr> m_NameAttr;
 
 private:
     virtual void Init(void);
@@ -115,7 +120,9 @@ int CPsgPerfApplication::Run(void)
         ProcessFile(args[extra].AsString());
     }
 
-    PrintResult();
+    PrintResult(false);
+    cout << endl;
+    PrintResult(true);
 
     return 0;
 }
@@ -219,6 +226,11 @@ void CPsgPerfApplication::ProcessLine(const char* line, const string& file_ext)
     }
     m_Names.insert(name);
 
+    if (loader == "UNK")
+        m_NameAttr[name].has_unknown = true;
+    else
+        m_NameAttr[name].has_special = true;
+
     // TIME (or status, if not OK)
     string stime;
     if ( CRegexpUtil(line).Extract("^OK").empty() ) {
@@ -267,29 +279,29 @@ string CPsgPerfApplication::ColorMe(const string& value, const TSetup& color)
 }
 
 
-void CPsgPerfApplication::PrintResult()
+void CPsgPerfApplication::PrintResult(bool print_unk)
 {
     // Legend
-
-    if ( GetArgs()["nocolor"] ) {
-        cout << R"delimiter(
+    if ( !print_unk ) {
+        if ( GetArgs()["nocolor"] ) {
+            cout << R"delimiter(
 CXYZ = client "C" against server + "PSG-X.Y.Z"
 where "C" is:
 *  'T' - contemporary TRUNK
 *  'S' - latest SC in SVN
 *  'P' - contemporary full production build
 )delimiter";
-    }
-    else {
-        cout << R"delimiter(
+        }
+        else {
+            cout << R"delimiter(
 {{{color:blue}*C*{color}{color:red}*XYZ*{color}}} = client {color:blue}{{*C*}}{color} against server + {{PSG-{color:red}*X.Y.Z*{color}}}, _where_ {color:blue}{{*C*}}{color}:
 *    '{color:blue}{{T}}{color}' - contemporary TRUNK
 *    '{color:blue}{{S}}{color}' - latest SC in SVN
 *    '{color:blue}{{P}}{color}' - contemporary full production build
 )delimiter";
-    }
+        }
 
-    cout << R"delimiter(
+        cout << R"delimiter(
 
 For the special case of OBJMGR_PERF_TEST the test name is decomposed and then
 converted into a shorter form "IDs/Threads/Parameters" -- where:
@@ -298,13 +310,22 @@ converted into a shorter form "IDs/Threads/Parameters" -- where:
 * *Par*: N = No-Split, S = Split;  BD = Bulk-Data, BB = Bulk-Bioseq
 
 )delimiter";
+    }
 
     vector<TType> loaders = { "PSG", "OSG", "PSOS", "UNK" };
 
     // Header
-    cout << " || IDs/Thr/Par || ";
+    if ( print_unk )
+        cout << " || Name || ";
+    else
+        cout << " || IDs/Thr/Par || ";
+
     size_t loader_idx = 0;
     for (const string& loader : loaders) {
+        if (   ( print_unk  &&  loader != "UNK")
+            || (!print_unk  &&  loader == "UNK"))
+            continue;
+
         bool loader_empty = true;
         for (const auto& x_run : m_Results) {
             for (const auto& x_loader : x_run.second) {
@@ -323,7 +344,8 @@ converted into a shorter form "IDs/Threads/Parameters" -- where:
         }
         loader_idx++;
 
-        cout << loader << ": ";
+        if ( !print_unk )
+            cout << loader << ": ";
         for (const auto& run : m_Results) {
             cout << ColorMe(run.first, run.first) << " ";
         }
@@ -333,8 +355,16 @@ converted into a shorter form "IDs/Threads/Parameters" -- where:
 
     // Values
     for (const TName& name : m_Names) {
+        if (   ( print_unk  &&  !m_NameAttr[name].has_unknown)
+            || (!print_unk  &&  !m_NameAttr[name].has_special) )
+            continue;
+ 
         cout << " | " << name << " | ";
         for (const string& loader : loaders) {
+            if (   ( print_unk  &&  loader != "UNK")
+                || (!print_unk  &&  loader == "UNK"))
+                continue;
+
             if ( loader.empty() )
                 continue;
 
@@ -357,16 +387,24 @@ converted into a shorter form "IDs/Threads/Parameters" -- where:
             }
 
             // Print time values
+            ostringstream ostr;
+            bool has_non_abs_values = false;
             bool first = true;
             for (const auto& run : m_Results) {
                 if (!first)
-                    cout << " - ";
+                    ostr << " - ";
                 first = false;
                 string& time = m_Results[run.first][loader][name];
                 if ( time.empty() )
                     time = "abs";
-                cout << ColorMe(time, run.first);
+                else
+                    has_non_abs_values = true;
+                ostr << ColorMe(time, run.first);
             }
+            if ( has_non_abs_values )
+                cout << ostr.str();
+            else
+                cout << "_abs_";
             cout << " | ";
         }
         cout << endl;
