@@ -5901,7 +5901,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "PPL\ts\tAgricultural Development and Advisory Service, Harpenden Laboratory\t\t\t",
 "PPNP\ts\tPoint Pelee National Park\t\t\t",
 "PPPO\ts\tPusat Penelitian dan Pengembangan Oseanologi\t\t\t",
-"PPPPB\tc\tARC-Plant Protection Research Institute, Plant Pathogenic and Plant Protecting Bacteria\t\t\t",
+"PPPPB\tc\t Plant Pathogenic and Plant Protecting Bacteria (ARC-Plant Protection Research Institute)\t\t\t",
 "PPRI\tc\tARC-Plant Protection Research, National Collection of Fungi: Culture Collection\t\t\t",
 "PPRL\ts\tUSDA-ARS Poisonous Plant Research Lab\t\t\t",
 "PPRZ\ts\tPlant Protection Research Institute\t\t\t",

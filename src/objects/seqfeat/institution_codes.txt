@@ -5868,7 +5868,7 @@ PPKU1	c	Department of Plant Pathology, Faculty of Agriculture, Thailand
 PPL	s	Agricultural Development and Advisory Service, Harpenden Laboratory			
 PPNP	s	Point Pelee National Park			
 PPPO	s	Pusat Penelitian dan Pengembangan Oseanologi			
-PPPPB	c	ARC-Plant Protection Research Institute, Plant Pathogenic and Plant Protecting Bacteria			
+PPPPB	c	 Plant Pathogenic and Plant Protecting Bacteria (ARC-Plant Protection Research Institute)			
 PPRI	c	ARC-Plant Protection Research, National Collection of Fungi: Culture Collection			
 PPRL	s	USDA-ARS Poisonous Plant Research Lab			
 PPRZ	s	Plant Protection Research Institute			
