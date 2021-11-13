@@ -257,7 +257,7 @@ string CPsgPerfApplication::ColorMe(const string& value, const TSetup& color)
     }
 
     if (value == "abs")
-        return "{color:grey}abs{color}";
+        return "_abs_";
 
     string x_value = value;
     if (x_value.find_first_not_of("0123456789. *") != string::npos)
