@@ -59,6 +59,8 @@ class CPsgPerfApplication : public CNcbiApplication
     typedef map<TSetup, TRun> TResults;
     TResults m_Results;
 
+    string ColorMe(const string& value, const TSetup& color);
+
     set<TName> m_Names;
 
 private:
@@ -80,6 +82,12 @@ void CPsgPerfApplication::Init(void)
                               "Compose summary of 'check.sh.log' files");
 
     // Describe the expected command-line arguments
+
+    // Whether to use JIRA colors
+    arg_desc->AddFlag
+        ("nocolor", "Do not use JIRA colors");
+
+    // Set of file extensions (perf_view.EXT) to process
     arg_desc->AddExtra
         (1,  // one mandatory extra args
          8,  // up to 8 extra args
@@ -145,6 +153,7 @@ void CPsgPerfApplication::ProcessLine(const char* line, const string& file_ext)
 
         // TEST NAME
         re.Reset(line);
+        re.Reset( re.Extract("-- .*") );
         name = re.Extract("] [^(]*");
         name.erase(0, 1);
         NStr::TruncateSpacesInPlace(name);
@@ -211,43 +220,86 @@ void CPsgPerfApplication::ProcessLine(const char* line, const string& file_ext)
     m_Names.insert(name);
 
     // TIME (or status, if not OK)
-    string xtime;
+    string stime;
     if ( CRegexpUtil(line).Extract("^OK").empty() ) {
-        xtime = string(line).substr(0,3); 
+        stime = string(line).substr(0,3); 
     }
     else {
         re.Reset(line);
-        re.Reset( re.Extract("real  *[0-9.]*") );
-        string time = re.Extract("[^ ]*$");
+        re.Reset( re.Extract("real  *[0-9]\\.*[0-9]*") );
+        string xtime = re.Extract("[^ ]*$");
         //cout << "TIME: '" << time << "'" << endl;
-        double dtime = NStr::StringToDouble(time);
+        double dtime = NStr::StringToDouble(xtime, NStr::fConvErr_NoThrow);
         ostringstream os;
         os << setprecision(dtime < 100.0 ? 2 : 3) << dtime;
-        xtime = os.str();
+        stime = os.str();
         //cout << "XTIME: '" << xtime << "'" << endl;    
     }
 
-    m_Results[file_ext][loader][name] = xtime;
+    m_Results[file_ext][loader][name] = stime;
+}
+
+
+string CPsgPerfApplication::ColorMe(const string& value, const TSetup& color)
+{
+    if ( GetArgs()["nocolor"] )
+        return value;
+
+    static map<TSetup, string> m_Colors;
+
+    if ( m_Colors[color].empty() ) {
+        static size_t color_counter = 0;
+        static const vector<string> kColors =
+            { "black",  "red",  "blue",  "green",
+              "orange", "pink", "brown", "purple" };
+
+        m_Colors[color] = kColors[color_counter++ % kColors.size()];
+    }
+
+    if (value == "abs")
+        return "{color:grey}abs{color}";
+
+    string x_value = value;
+    if (x_value.find_first_not_of("0123456789. *") != string::npos)
+        x_value = "*" + x_value + "*";
+
+    return "{color:" + m_Colors[color] + "}" + x_value + "{color}";
 }
 
 
 void CPsgPerfApplication::PrintResult()
 {
+    // Legend
+
+    if ( GetArgs()["nocolor"] ) {
+        cout << R"delimiter(
+CXYZ = client "C" against server + "PSG-X.Y.Z"
+where "C" is:
+*  'T' - contemporary TRUNK
+*  'S' - latest SC in SVN
+*  'P' - contemporary full production build
+)delimiter";
+    }
+    else {
+        cout << R"delimiter(
+{{{color:blue}*C*{color}{color:red}*XYZ*{color}}} = client {color:blue}{{*C*}}{color} against server + {{PSG-{color:red}*X.Y.Z*{color}}}, _where_ {color:blue}{{*C*}}{color}:
+*    '{color:blue}{{T}}{color}' - contemporary TRUNK
+*    '{color:blue}{{S}}{color}' - latest SC in SVN
+*    '{color:blue}{{P}}{color}' - contemporary full production build
+)delimiter";
+    }
+
     cout << R"delimiter(
-T235 = TRUNK client + {{PSG-2.3.5}} server
-S235 = SC-25 client + {{PSG-2.3.5}} server
-T212 = TRUNK client + {{PSG-2.1.2}} server
-S212 = SC-25 client + {{PSG-2.1.2}} server
 
 For the special case of OBJMGR_PERF_TEST the test name is decomposed and then
 converted into a shorter form "IDs/Threads/Parameters" -- where:
-* IDs:  File of seq-ids
-* Thr:  Threads (if specified)
-* Par:  N = No-Split, S = Split;  BD = Bulk-Data, BB = Bulk-Bioseq
+* *IDs*: file of seq-ids
+* *Thr*: number of threads (if specified)
+* *Par*: N = No-Split, S = Split;  BD = Bulk-Data, BB = Bulk-Bioseq
 
 )delimiter";
 
-    vector<string> loaders = { "PSG", "OSG", "PSOS", "UNK" };
+    vector<TType> loaders = { "PSG", "OSG", "PSOS", "UNK" };
 
     // Header
     cout << " || IDs/Thr/Par || ";
@@ -273,9 +325,9 @@ converted into a shorter form "IDs/Threads/Parameters" -- where:
 
         cout << loader << ": ";
         for (const auto& run : m_Results) {
-            cout << run.first << " ";
+            cout << ColorMe(run.first, run.first) << " ";
         }
-        cout << " || ";
+       cout << " || ";
     }
     cout << endl;
 
@@ -286,15 +338,34 @@ converted into a shorter form "IDs/Threads/Parameters" -- where:
             if ( loader.empty() )
                 continue;
 
+            // Mark min time value(s) with bold font
+            string min_stime = " ";
+            double min_dtime = numeric_limits<double>::max();
+            for (const auto& run : m_Results) {
+                double dtime = NStr::StringToDouble
+                    (m_Results[run.first][loader][name],
+                     NStr::fConvErr_NoThrow);
+                if (dtime  &&  dtime < min_dtime) {
+                    min_dtime = dtime;
+                    min_stime = m_Results[run.first][loader][name];
+                }
+            }
+            for (const auto& run : m_Results) {
+                if (m_Results[run.first][loader][name] == min_stime)
+                    m_Results[run.first][loader][name] =
+                        "*" + m_Results[run.first][loader][name] + "*";
+            }
+
+            // Print time values
             bool first = true;
             for (const auto& run : m_Results) {
                 if (!first)
                     cout << " - ";
-                first =false;
+                first = false;
                 string& time = m_Results[run.first][loader][name];
                 if ( time.empty() )
-                    time = "ABS";
-                cout << time;
+                    time = "abs";
+                cout << ColorMe(time, run.first);
             }
             cout << " | ";
         }
