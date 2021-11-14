@@ -59,7 +59,8 @@ class CPsgPerfApplication : public CNcbiApplication
     typedef map<TSetup, TRun> TResults;
     TResults m_Results;
 
-    string ColorMe(const string& value, const TSetup& color);
+    string ColorMe(const string& value, const TSetup& color,
+                   bool is_header = false);
 
     set<TName> m_Names;
     struct SNameAttr {
@@ -252,7 +253,8 @@ void CPsgPerfApplication::ProcessLine(const char* line, const string& file_ext)
 }
 
 
-string CPsgPerfApplication::ColorMe(const string& value, const TSetup& color)
+string CPsgPerfApplication::ColorMe(const string& value, const TSetup& color,
+                                    bool is_header)
 {
     if ( GetArgs()["nocolor"] )
         return value;
@@ -272,7 +274,8 @@ string CPsgPerfApplication::ColorMe(const string& value, const TSetup& color)
         return "_abs_";
 
     string x_value = value;
-    if (x_value.find_first_not_of("0123456789. *") != string::npos)
+    if (!is_header
+        && x_value.find_first_not_of("0123456789. *") != string::npos)
         x_value = "*" + x_value + "*";
 
     return "{color:" + m_Colors[color] + "}" + x_value + "{color}";
@@ -308,6 +311,10 @@ converted into a shorter form "IDs/Threads/Parameters" -- where:
 * *IDs*: file of seq-ids
 * *Thr*: number of threads (if specified)
 * *Par*: N = No-Split, S = Split;  BD = Bulk-Data, BB = Bulk-Bioseq
+
+Minimum time/s for each run are highlighted in *bold*.
+
+Average time for each run is shown as "= _*avg*_".
 
 )delimiter";
     }
@@ -345,9 +352,9 @@ converted into a shorter form "IDs/Threads/Parameters" -- where:
         loader_idx++;
 
         if ( !print_unk )
-            cout << loader << ": ";
+            cout << "*_" << loader << "_*\n";
         for (const auto& run : m_Results) {
-            cout << ColorMe(run.first, run.first) << " ";
+            cout << ColorMe(run.first, run.first, true) << " ";
         }
        cout << " || ";
     }
@@ -368,22 +375,23 @@ converted into a shorter form "IDs/Threads/Parameters" -- where:
             if ( loader.empty() )
                 continue;
 
-            // Mark min time value(s) with bold font
+            // Calk min and average time values
             string min_stime = " ";
             double min_dtime = numeric_limits<double>::max();
+            unsigned n_time = 0;
+            double avg_time = {};
             for (const auto& run : m_Results) {
                 double dtime = NStr::StringToDouble
                     (m_Results[run.first][loader][name],
                      NStr::fConvErr_NoThrow);
-                if (dtime  &&  dtime < min_dtime) {
-                    min_dtime = dtime;
-                    min_stime = m_Results[run.first][loader][name];
+                if ( dtime ) {
+                    if (dtime < min_dtime) {
+                        min_dtime = dtime;
+                        min_stime = m_Results[run.first][loader][name];
+                    }
+                    n_time++;
+                    avg_time += dtime;
                 }
-            }
-            for (const auto& run : m_Results) {
-                if (m_Results[run.first][loader][name] == min_stime)
-                    m_Results[run.first][loader][name] =
-                        "*" + m_Results[run.first][loader][name] + "*";
             }
 
             // Print time values
@@ -397,13 +405,22 @@ converted into a shorter form "IDs/Threads/Parameters" -- where:
                 string& time = m_Results[run.first][loader][name];
                 if ( time.empty() )
                     time = "abs";
-                else
+                else {
                     has_non_abs_values = true;
+                    if (n_time > 1  &&  time == min_stime)
+                        time = "*" + time + "*";
+                }
                 ostr << ColorMe(time, run.first);
             }
-            if ( has_non_abs_values )
+            if ( has_non_abs_values ) {
                 cout << ostr.str();
-            else
+                if (n_time > 1  &&  avg_time) {
+                    avg_time /= n_time;
+                    ostr.str("");
+                    ostr << setprecision(avg_time < 100.0 ? 2 : 3) << avg_time;
+                    cout << " = _*" << ColorMe(ostr.str(), "AVERAGE") << "*_";
+                }
+            } else
                 cout << "_abs_";
             cout << " | ";
         }
