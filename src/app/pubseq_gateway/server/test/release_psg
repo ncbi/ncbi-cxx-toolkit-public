@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 
-import sys, datetime, shutil, os, os.path, subprocess, signal
+import sys, datetime, shutil, os, os.path, subprocess, signal, psutil, time
 from optparse import OptionParser
 
 
 # Order is important
-SUPPORTED_COMMANDS = ['all', 'build', 'functional_test', 'memcheck', 'stress_test',
+SUPPORTED_COMMANDS = ['all', 'build', 'functional_test', 'drop_client_test', 'memcheck', 'stress_test',
                       'compare', 'toolkit_test', 'archive']
 
 VERBOSE = False
 PORT1 = 10999
 PORT2 = 10888
+SRV1 = None
+SRV2 = None
 
 
 def timestamp():
@@ -157,8 +159,69 @@ def saveProcessArtefacts(srv, dst):
 
 
 def stopServer(srv):
-    srv.send_signal(signal.SIGINT)
-    srv.wait()
+    global SRV1
+    global SRV2
+
+    if srv is SRV1:
+        srv.send_signal(signal.SIGINT)
+        srv.wait()
+        SRV1 = None
+    else:
+        srv.send_signal(signal.SIGINT)
+        srv.wait()
+        SRV2 = None
+
+
+def prepareO2Gsandbox(options):
+    artefactDir = getArtefactDir(options)
+    buildResultsDir = getBuildResultsDir(options)
+    if buildResultsDir is None:
+        return 1
+
+    print_verbose(f'Build result directory: {buildResultsDir}')
+
+    # Find the archive with o2g build
+    o2gArchive = findBuildArchive(buildResultsDir, 'O2g')
+    if o2gArchive is None:
+        return 1
+
+    # Need to create a sandbox with the server binary, config file, LMDB cache
+
+    # Unpack the binary archive
+    cmdLine = f'cd {buildResultsDir} && tar -xzf {o2gArchive}'
+    print_verbose(f'Command line to invoke: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Unpacking the build archive return code: {ret}')
+    if ret != 0:
+        print_error(f'Unpacking the build archive {o2gArchive} error')
+        return ret
+
+    # Find the directory where the build result are unpacked
+    o2gBuildResultDir = findBuildResultDir(buildResultsDir, 'O2g')
+    if o2gBuildResultDir is None:
+        return 1
+
+    # Copy the binary
+    cmdLine = f'cp -f {o2gBuildResultDir}bin/pubseq_gateway {artefactDir}'
+    print_verbose(f'Command line to invoke: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Copy binary return code: {ret}')
+    if ret != 0:
+        print_error(f'Copy binary {o2gBuildResultDir}bin/pubseq_gateway error')
+        return ret
+
+    testDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/test/'
+
+    # Copy LMDB, ini, https files
+    if prepareSandboxFiles(buildResultsDir, testDir, artefactDir) != 0:
+        return 1
+
+    return 0
+
+def getCPUUsage(srv):
+    proc = psutil.Process(pid=srv.pid)
+    # CPU percent (float) during the 3 seconds interval (blocking call)
+    return proc.cpu_percent(interval=3)
 
 
 def main():
@@ -294,6 +357,21 @@ def functional_test_check_args(commands, options, args):
         return 1
     return 0
 
+def drop_client_test_check_args(commands, options, args):
+    if 'all' in commands:
+        # Everything will be created on the previous stages
+        return 0
+
+    if not options.psg_ver:
+        print_error('The "--psg-version" option must be specified')
+        return 1
+
+    artefactDir = getArtefactDir(options)
+    if not os.path.exists(artefactDir):
+        print_error(f'The build stage directory {artefactDir} is not found')
+        return 1
+    return 0
+
 def memcheck_check_args(commands, options, args):
     if 'all' in commands:
         # Everything will be created on the previous stages
@@ -380,50 +458,12 @@ def build(commands, options, args):
 
 
 def functional_test(commands, options, args):
-    # Check the build dir in the artefact directory
+    global SRV1
+
+    if prepareO2Gsandbox(options) != 0:
+        return 1
+
     artefactDir = getArtefactDir(options)
-    buildResultsDir = getBuildResultsDir(options)
-    if buildResultsDir is None:
-        return 1
-
-    print_verbose(f'Build result directory: {buildResultsDir}')
-
-    # Find the archive with o2g build
-    o2gArchive = findBuildArchive(buildResultsDir, 'O2g')
-    if o2gArchive is None:
-        return 1
-
-    # Need to create a sandbox with the server binary, config file, LMDB cache
-
-    # Unpack the binary archive
-    cmdLine = f'cd {buildResultsDir} && tar -xzf {o2gArchive}'
-    print_verbose(f'Command line to invoke: {cmdLine}')
-    ret = os.system(cmdLine)
-    print_verbose(f'Unpacking the build archive return code: {ret}')
-    if ret != 0:
-        print_error(f'Unpacking the build archive {o2gArchive} error')
-        return ret
-
-    # Find the directory where the build result are unpacked
-    o2gBuildResultDir = findBuildResultDir(buildResultsDir, 'O2g')
-    if o2gBuildResultDir is None:
-        return 1
-
-    # Copy the binary
-    cmdLine = f'cp -f {o2gBuildResultDir}bin/pubseq_gateway {artefactDir}'
-    print_verbose(f'Command line to invoke: {cmdLine}')
-    ret = os.system(cmdLine)
-    print_verbose(f'Copy binary return code: {ret}')
-    if ret != 0:
-        print_error(f'Copy binary {o2gBuildResultDir}bin/pubseq_gateway error')
-        return ret
-
-    testDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/test/'
-
-    # Copy LMDB, ini, https files
-    if prepareSandboxFiles(buildResultsDir, testDir, artefactDir) != 0:
-        return 1
-
 
     # Round up 1: Prepare the config file for UT (http)
     prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
@@ -441,7 +481,7 @@ def functional_test(commands, options, args):
                '-conffile', artefactDir + 'pubseq_gateway.ini',
                '-logfile', artefactDir + 'pubseq_gateway-ut-http.log']
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-    srv = subprocess.Popen(cmdLine)
+    SRV1 = subprocess.Popen(cmdLine)
 
     # Run the tests
     errors = []
@@ -455,7 +495,7 @@ def functional_test(commands, options, args):
         print_verbose('http unit tests failed')
     else:
         print_verbose('http unit tests succeeded')
-    stopServer(srv)
+    stopServer(SRV1)
 
     # Round up 2: Prepare the config file for UT (https)
     prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
@@ -473,7 +513,7 @@ def functional_test(commands, options, args):
                '-conffile', artefactDir + 'pubseq_gateway.ini',
                '-logfile', artefactDir + 'pubseq_gateway-ut-https.log']
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-    srv = subprocess.Popen(cmdLine)
+    SRV1 = subprocess.Popen(cmdLine)
 
     # Run the tests
 
@@ -486,7 +526,7 @@ def functional_test(commands, options, args):
         print_verbose('https unit tests failed')
     else:
         print_verbose('https unit tests succeeded')
-    stopServer(srv)
+    stopServer(SRV1)
 
 
     # Round up 3: integration smoke test using psg_client
@@ -516,7 +556,7 @@ def functional_test(commands, options, args):
                        '-conffile', artefactDir + 'pubseq_gateway.ini',
                        '-logfile', artefactDir + 'pubseq_gateway-integration-test.log']
             print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-            srv = subprocess.Popen(cmdLine)
+            SRV1 = subprocess.Popen(cmdLine)
 
             # Run the tests
             integrationTestDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/integrationsmoketest/'
@@ -529,7 +569,7 @@ def functional_test(commands, options, args):
                 print_verbose('integration tests failed')
             else:
                 print_verbose('integration tests succeeded')
-            stopServer(srv)
+            stopServer(SRV1)
 
     if errors:
         print_error('Unit test errors:')
@@ -537,6 +577,80 @@ def functional_test(commands, options, args):
             print_error(err)
         return 1
     return 0
+
+
+def drop_client_test(commands, options, args):
+    global SRV1
+
+    if prepareO2Gsandbox(options) != 0:
+        return 1
+
+    artefactDir = getArtefactDir(options)
+
+    # Round up 1: Prepare the config file for UT (http)
+    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
+                      artefactDir + 'pubseq_gateway.ini',
+                      {'si2csi.db': artefactDir + 'si2csi.db',
+                       'bioseq_info.db': artefactDir +'bioseq_info.db',
+                       'blob_prop.db': artefactDir + 'blob_prop.db',
+                       'port': f'{PORT1}',
+                       'ssl_enable': 'false',
+                       'ssl_cert': '',
+                       'ssl_key': ''})
+
+
+    errors = []
+    testCases = ['ID/resolve?psg_protocol=yes&seq_id=XP_015453951&fmt=json&all_info=yes',
+                 'ID/get_na?fmt=json&all_info=yes&seq_id=NW_017890465&psg_protocol=yes&names=NA000122.1',
+                 'ID/get?seq_id=164040&seq_id_type=3&exclude_blobs=1.1,4.8091,3.3',
+                 'ID/getblob?blob_id=4.509567&tse=whole',
+                 'ID/get_tse_chunk?id2_chunk=999999999&id2_info=25.116773935.5']
+    for testCase in testCases:
+        # Run the server
+        cmdLine = [artefactDir + 'pubseq_gateway',
+                   '-conffile', artefactDir + 'pubseq_gateway.ini',
+                   '-logfile', artefactDir + 'pubseq_gateway-drop-client-http.log']
+        print_verbose('Running PSG server: ' + ' '.join(cmdLine))
+        SRV1 = subprocess.Popen(cmdLine)
+
+        # Run the clients
+        clients = []
+        for x in range(100):
+            clientCmdLine = ['h2load', '-n' '10000', '-c', '4', '-t', '4', '-m', '4',
+                             f'http://localhost{PORT1}/{testCase}']
+            print_verbose(f'Runnig client #{x}: ' + ' '.join(clientCmdLine))
+            clients.append(subprocess.Popen(clientCmdLine))
+
+        # Let clients work for 3 seconds
+        time.sleep(3)
+
+        # Kill the clients
+        print_verbose('Killing all h2load at once...')
+        os.system('killall h2load')
+        for client in clients:
+            client.wait()
+
+        # Let the server to calm down
+        print_verbose('All h2load have been killed. '
+                      'Allow the server some time to handle the closed connections.')
+        time.sleep(3)
+
+        # Check CPU usage
+        cpuUsage = getCPUUsage(SRV1)
+        print_verbose(f'PSG CPU usage for the last few seconds is {cpuUsage}')
+        if cpuUsage > 10.0:
+            errors.append(f'Server CPU usage after clients are killed is too high: {cpuUsage}. Test case: {testCase}')
+
+        # Stop the server
+        stopServer(SRV1)
+
+    if errors:
+        print_error('Drop client test errors:')
+        for err in errors:
+            print_error(err)
+        return 1
+    return 0
+
 
 def memcheck(commands, options, args):
     artefactDir = getArtefactDir(options)
@@ -597,7 +711,7 @@ def memcheck(commands, options, args):
                '-conffile', artefactDir + 'pubseq_gateway.ini',
                '-logfile', artefactDir + 'pubseq_gateway-memcheck-ut-http.log']
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-    srv = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Run the tests
     errors = []
@@ -612,8 +726,8 @@ def memcheck(commands, options, args):
     else:
         print_verbose('http unit tests succeeded')
 
-    stopServer(srv)
-    saveProcessArtefacts(srv, f'{artefactDir}memcheck-ut-http.sanitizer.log')
+    stopServer(SRV1)
+    saveProcessArtefacts(SRV1, f'{artefactDir}memcheck-ut-http.sanitizer.log')
 
     # Round up 2: Prepare the config file for UT (https)
     prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
@@ -631,7 +745,7 @@ def memcheck(commands, options, args):
                '-conffile', artefactDir + 'pubseq_gateway.ini',
                '-logfile', artefactDir + 'pubseq_gateway-memcheck-ut-https.log']
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-    srv = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Run the tests
 
@@ -645,8 +759,8 @@ def memcheck(commands, options, args):
     else:
         print_verbose('https unit tests succeeded')
 
-    stopServer(srv)
-    saveProcessArtefacts(srv, f'{artefactDir}memcheck-ut-https.sanitizer.log')
+    stopServer(SRV1)
+    saveProcessArtefacts(SRV1, f'{artefactDir}memcheck-ut-https.sanitizer.log')
 
     # Round up 3: integration smoke test using psg_client
 
@@ -675,7 +789,7 @@ def memcheck(commands, options, args):
                        '-conffile', artefactDir + 'pubseq_gateway.ini',
                        '-logfile', artefactDir + 'pubseq_gateway-memcheck-integration-test.log']
             print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-            srv = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
             # Run the tests
             integrationTestDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/integrationsmoketest/'
@@ -688,8 +802,8 @@ def memcheck(commands, options, args):
                 print_verbose('integration tests failed')
             else:
                 print_verbose('integration tests succeeded')
-            stopServer(srv)
-            saveProcessArtefacts(srv, f'{artefactDir}memcheck-integration-test.sanitizer.log')
+            stopServer(SRV1)
+            saveProcessArtefacts(SRV1, f'{artefactDir}memcheck-integration-test.sanitizer.log')
 
     if errors:
         print_error('Unit test errors:')
@@ -722,6 +836,11 @@ if __name__ == '__main__':
     except Exception as exc:
         print(str(exc), file=sys.stderr)
         retVal = 3
+
+    if SRV1 is not None:
+        stopServer(SRV1)
+    if SRV2 is not None:
+        stopServer(SRV2)
 
     sys.exit(retVal)
 
