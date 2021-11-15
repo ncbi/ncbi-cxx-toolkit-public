@@ -79,10 +79,19 @@
 
 #include <objtools/edit/feattable_edit.hpp>
 
-#include <objtools/flatfile/flatfile_parser.hpp>
 #include <corelib/stream_utils.hpp>
 
+#ifndef NCBI_SC_VERSION
+#   define FLATFILE_PARSER_ENABLED
+#endif
+
+#ifdef FLATFILE_PARSER_ENABLED
+#   include <objtools/flatfile/flatfile_parser.hpp>
+#endif
+
 #include <common/test_assert.h>  /* This header must go last */
+
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -435,9 +444,11 @@ CFormatGuess::EFormat CMultiReader::xAnnotGetFormat(CNcbiIstream& istr) const
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff2);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGtf);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFiveColFeatureTable);
+#ifdef FLATFILE_PARSER_ENABLED
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFlatFileGenbank);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFlatFileEna);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFlatFileUniProt);
+#endif
     FG.GetFormatHints().DisableAllNonpreferred();
 
     return FG.GuessFormat();
@@ -918,7 +929,7 @@ CMultiReader::TAnnots CMultiReader::xReadGFF3(CNcbiIstream& instream, bool post_
     flags |= CGff3Reader::fGeneXrefs;
     flags |= CGff3Reader::fAllIdsAsLocal;
     CGff3Reader reader(flags, m_AnnotName, m_AnnotTitle);
-    
+
     CStreamLineReader lr(instream);
     TAnnots annots;
 
@@ -944,7 +955,7 @@ void CMultiReader::x_PostProcessAnnots(TAnnots& annots)
         if (!data.IsFtable()  ||  data.GetFtable().empty()) {
             continue; // all that follows applies to feature tables only
         }
-        
+
         edit::CFeatTableEdit fte(
             annot, 0, m_context.m_locus_tag_prefix, startingLocusTagNumber, startingFeatureId, m_context.m_logger);
         //fte.InferPartials();
@@ -1147,6 +1158,7 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
     case CFormatGuess::eGffAugustus:
         annots = xReadGTF(*in);
         break;
+#ifdef FLATFILE_PARSER_ENABLED
     case CFormatGuess::eFlatFileGenbank:
     case CFormatGuess::eFlatFileEna:
     case CFormatGuess::eFlatFileUniProt:
@@ -1158,6 +1170,8 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
         }
     }
         break;
+#endif
+
     default:
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "Annotation file format not recognized. Run format validator on your annotation file", 1);
@@ -1336,6 +1350,7 @@ CMultiReader::TAnnots CMultiReader::xReadGTF(CNcbiIstream& instream)
     return annots;
 }
 
+#ifdef FLATFILE_PARSER_ENABLED
 CRef<CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat format, const string& filename)
 {
     unique_ptr<Parser> pp(new Parser);
@@ -1392,5 +1407,6 @@ CRef<CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat format, const
     }
     return {};
 }
+#endif
 
 END_NCBI_SCOPE
