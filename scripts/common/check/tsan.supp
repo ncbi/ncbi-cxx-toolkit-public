@@ -3,6 +3,8 @@ race:^ncbi::ncbi_namespace_mutex_mt::SSystemMutex::Lock(
 race:^ncbi::CSafeStatic<ncbi::CParam
 
 
+
+
 ################################################################
 # grichenk
 
@@ -31,6 +33,11 @@ race:^ncbi::objects::CSeq_id_Textseq_Tree::Empty()
 # This is actually a race, but harmless. CXX-10546
 race:^s_ResetInstance$
 race:^ncbi::objects::CSeq_id_Which_Tree::DropInfo
+
+#  write protected, read without any protection. CXX-11270
+race:^ncbi::CHookData<ncbi::CWriteClassMemberHook
+
+
 
 
 ################################################################
@@ -83,12 +90,15 @@ race:^MT_LOCK_DoInternal
 
 
 
+
 ################################################################
 # ucko CXX-11303
 
 # the race is real, but AFAICT harmless in this context
 race:^tds_socket_write$
 race:^tds_socket_read$
+
+
 
 
 ################################################################
