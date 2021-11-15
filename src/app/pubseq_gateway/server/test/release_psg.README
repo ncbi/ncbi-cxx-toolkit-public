@@ -1,0 +1,9 @@
+Requirements to run release_psg script:
+
+- prepare_release script must be in PATH
+- h2load utility must be in PATH
+- python 3 higher than 3.3 must be used
+- the python 'psutil' module must be available.
+  It may be more convenient to create a virtual environment and install psutil as
+  $ pip install psutil
+
