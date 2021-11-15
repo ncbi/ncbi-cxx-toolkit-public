@@ -206,10 +206,10 @@ void CCassConnectionFactory::GetHostPort(string & cass_hosts, short & cass_port)
         || (m_CassHosts.find(',') != string::npos);
 
     if (!is_hostlist) {
+        hosts = LbsmLookup::s_Resolve(m_CassHosts, ',');
         if (hosts.empty()) {
             NCBI_THROW(CCassandraException, eGeneric, "Failed to resolve: " + m_CassHosts);
         }
-        hosts = LbsmLookup::s_Resolve(m_CassHosts, ',');
     }
 
     // Here: the 'hosts' variable has a list of host[:port] items came
