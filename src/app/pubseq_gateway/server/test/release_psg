@@ -358,6 +358,10 @@ def functional_test_check_args(commands, options, args):
     return 0
 
 def drop_client_test_check_args(commands, options, args):
+    if shutil.which('h2load') is None:
+        print_error('h2load executable is not in the PATH')
+        return 1
+
     if 'all' in commands:
         # Everything will be created on the previous stages
         return 0
@@ -486,6 +490,8 @@ def functional_test(commands, options, args):
     # Run the tests
     errors = []
 
+    buildResultsDir = getBuildResultsDir(options)
+    testDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/test/'
     cmdLine = f'{testDir}run_tests.py localhost:{PORT1} > {artefactDir}ut-http.log 2>&1'
     print_verbose(f'Running http unit tests: {cmdLine}')
     ret = os.system(cmdLine)
@@ -616,10 +622,10 @@ def drop_client_test(commands, options, args):
         # Run the clients
         clients = []
         for x in range(100):
-            clientCmdLine = ['h2load', '-n' '10000', '-c', '4', '-t', '4', '-m', '4',
-                             f'http://localhost{PORT1}/{testCase}']
+            clientCmdLine = ['h2load', '-n', '10000', '-c', '4', '-t', '4', '-m', '4',
+                             f'http://localhost:{PORT1}/{testCase}']
             print_verbose(f'Runnig client #{x}: ' + ' '.join(clientCmdLine))
-            clients.append(subprocess.Popen(clientCmdLine))
+            clients.append(subprocess.Popen(clientCmdLine, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
 
         # Let clients work for 3 seconds
         time.sleep(3)
