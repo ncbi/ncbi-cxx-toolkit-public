@@ -225,6 +225,7 @@ BOOST_AUTO_TEST_CASE(TestSimpleAlignment_RmtBlastDBLoader)
     BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eRemote, true));
 }
 
+#ifndef NCBI_INT4_GI
 BOOST_AUTO_TEST_CASE(TestLargeGi)
 {
     const string seqAlignFileName_in = "data/large_gi.asn";
@@ -259,5 +260,7 @@ BOOST_AUTO_TEST_CASE(TestLargeGi)
     BOOST_REQUIRE(output.find("2966748774") != NPOS);
     scope->GetObjectManager().RevokeAllDataLoaders();
 }
+#endif
+
 
 BOOST_AUTO_TEST_SUITE_END()
