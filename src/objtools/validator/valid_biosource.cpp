@@ -395,7 +395,7 @@ CBioSourceKind& CBioSourceKind::operator=(const CBioSource& bsrc)
     return *this;
 }
 
-
+static thread_local const CBioSource* pCurrentBioSource = nullptr;
 
 void CValidError_imp::ValidateBioSource
 (const CBioSource&    bsrc,
@@ -407,6 +407,8 @@ const CSeq_entry *ctx)
             "No organism has been applied to this Bioseq.  Other qualifiers may exist.", obj, ctx);
         return;
     }
+
+    pCurrentBioSource = &bsrc;
 
     const COrg_ref& orgref = bsrc.GetOrg();
 
@@ -945,10 +947,13 @@ const CSeq_entry *ctx)
             obj, ctx);
     }
 
+    m_biosource_kind = bsrc;
     ValidateOrgRef(orgref, obj, ctx);
     if (bsrc.IsSetPcr_primers()) {
         ValidatePCRReactionSet(bsrc.GetPcr_primers(), obj, ctx);
     }
+
+    pCurrentBioSource = nullptr;
 }
 
 
@@ -1401,6 +1406,91 @@ EDiagSev CValidError_imp::x_SalmonellaErrorLevel()
 //    }
 }
 
+// Temporary code for RW-1498
+static bool s_ShouldReportId(const CBioseq& bioseq)
+{
+    if (bioseq.IsSetId()) {
+        bool all_local_or_general = true;
+        for (auto pId : bioseq.GetId()) {
+            if (!pId) {
+                continue;
+            }
+            switch(pId->Which()) {
+            case CSeq_id::e_Genbank:
+            case CSeq_id::e_Tpd:
+            case CSeq_id::e_Tpe:
+            case CSeq_id::e_Tpg:
+                return true;
+            case CSeq_id::e_Local:
+            case CSeq_id::e_General:
+                break;
+            default:
+                all_local_or_general = false;
+            }
+        }
+        return all_local_or_general;     
+    }
+    return false;
+}
+
+static bool s_ReportUndefinedSpeciesId(const CBioseq& bioseq)
+{
+    if (bioseq.IsSetId()) {
+        bool all_local_or_gnl = true;
+        for (auto pId : bioseq.GetId()) {
+            switch (pId->Which()) {
+            case CSeq_id::e_Genbank:
+            case CSeq_id::e_Tpd:
+            case CSeq_id::e_Tpg:
+                return true;
+            case CSeq_id::e_Local:
+            case CSeq_id::e_General:
+                break;
+            default:
+                all_local_or_gnl = false;
+            }
+        }
+        return all_local_or_gnl;
+    }
+
+    return false;
+}
+
+
+static bool s_IsChromosome(const CBioSource& biosource) 
+{
+    return biosource.IsSetGenome() && 
+        biosource.GetGenome() == CBioSource::eGenome_chromosome;
+}
+
+static bool s_HasWGSTech(const CBioseq& bioseq) {
+
+    if (!bioseq.IsSetDescr()) {
+        return false;
+    }
+
+    for (auto pDesc : bioseq.GetDescr().Get()) {
+        if (pDesc->IsMolinfo()) {
+            const auto& molinfo = pDesc->GetMolinfo();
+            return (molinfo.IsSetTech() && molinfo.GetTech() == CMolInfo::eTech_wgs);
+        }
+    }
+    return false;
+}
+
+
+static bool s_IsUndefinedSpecies(const string& taxname)
+{
+    return (NStr::EndsWith(taxname, " sp.", NStr::eNocase) ||
+            NStr::EndsWith(taxname, " sp", NStr::eNocase) ||
+            NStr::EndsWith(taxname, " (in: Fungi)", NStr::eNocase) ||
+            NStr::EndsWith(taxname, " (in: Bacteria)", NStr::eNocase) ||
+            NStr::EndsWith(taxname, " bacterium", NStr::eNocase) ||
+            NStr::EndsWith(taxname, " archaeon", NStr::eNocase) ||
+            NStr::EqualNocase(taxname, "bacterium") ||
+            NStr::EqualNocase(taxname, "archaeon"));
+}
+
 
 void CValidError_imp::ValidateOrgRef
 (const COrg_ref&    orgref,
@@ -1419,19 +1509,19 @@ const CSeq_entry *ctx)
     if (orgref.IsSetOrgname() && orgref.GetOrgname().IsSetLineage()) {
         lineage = orgref.GetOrgname().GetLineage();
     }
+
     if (orgref.IsSetTaxname()) {
         taxname = orgref.GetTaxname();
-        if (IsGenomeSubmission()) {
-            if (s_HasMetagenomeSource(orgref)) {
-                // suppress OrganismIsUndefinedSpecies message
-            } else if ((NStr::EndsWith(taxname, " sp.", NStr::eNocase) ||
-                NStr::EndsWith(taxname, " sp", NStr::eNocase) ||
-                NStr::EndsWith(taxname, " (in: Fungi)", NStr::eNocase) ||
-                NStr::EndsWith(taxname, " (in: Bacteria)", NStr::eNocase) ||
-                NStr::EndsWith(taxname, " bacterium", NStr::eNocase) ||
-                NStr::EndsWith(taxname, " archaeon", NStr::eNocase) ||
-                NStr::EqualNocase(taxname, "bacterium") ||
-                NStr::EqualNocase(taxname, "archaeon")) &&
+        if (!s_HasMetagenomeSource(orgref) && 
+                (IsGenomeSubmission() ||
+                 (ctx && ctx->IsSeq() && s_ReportUndefinedSpeciesId(ctx->GetSeq()) &&
+                  (pCurrentBioSource && s_IsChromosome(*pCurrentBioSource) || s_HasWGSTech(ctx->GetSeq())) &&
+                  m_biosource_kind.IsOrganismBacteria() ||
+                  m_biosource_kind.IsOrganismArchaea() ||
+                  m_biosource_kind.IsOrganismEukaryote()
+                  )))
+        {
+                if(s_IsUndefinedSpecies(taxname) &&
                 !NStr::StartsWith(taxname, "uncultured ", NStr::eNocase) &&
                 !NStr::Equal(taxname, "Haemoproteus sp.", NStr::eNocase) &&
                 !NStr::StartsWith(taxname, "symbiont ", NStr::eNocase) &&
