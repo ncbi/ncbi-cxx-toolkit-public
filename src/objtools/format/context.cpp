@@ -1253,37 +1253,31 @@ void CTopLevelSeqEntryContext::x_InitSeqs (const CSeq_entry& sep, CScope& scope)
         for (auto& sid : bsp.GetId()) {
             TSEQID_CHOICE chs = sid->Which();
             switch (chs) {
-                case CSeq_id_Base::e_Gibbsq:
-                case CSeq_id_Base::e_Gibbmt:
+                case CSeq_id_Base::e_Genbank:
+                case CSeq_id_Base::e_Tpg:
+                    // Genbank allows merging only if it's the old-style 1 + 5 accessions
+                    {
+                        const CTextseq_id* tsid = sid->GetTextseq_Id ();
+                        if (tsid && tsid->IsSetAccession() && tsid->GetAccession().length() == 6) {
+                            m_CanSourcePubsBeFused = true;
+                        }
+                    }
+                    break;
                 case CSeq_id_Base::e_Embl:
+                case CSeq_id_Base::e_Ddbj:
                 case CSeq_id_Base::e_Pir:
                 case CSeq_id_Base::e_Swissprot:
-                case CSeq_id_Base::e_Patent:        
-                case CSeq_id_Base::e_Ddbj:
                 case CSeq_id_Base::e_Prf:
                 case CSeq_id_Base::e_Pdb:
                 case CSeq_id_Base::e_Tpe:
                 case CSeq_id_Base::e_Tpd:
                 case CSeq_id_Base::e_Gpipe:
+                case CSeq_id_Base::e_Patent:
+                case CSeq_id_Base::e_Gibbsq:
+                case CSeq_id_Base::e_Gibbmt:
                     // with some types, it's okay to merge
                     m_CanSourcePubsBeFused = true;
                     break;                        
-                case CSeq_id_Base::e_Genbank:
-                case CSeq_id_Base::e_Tpg:
-                    // Genbank allows merging only if it's the old-style 1 + 5 accessions
-                    if( NULL != sid->GetTextseq_Id() &&
-                        sid->GetTextseq_Id()->IsSetAccession() &&
-                        sid->GetTextseq_Id()->GetAccession().length() == 6 ) {
-                            m_CanSourcePubsBeFused = true;
-                    }
-                    break;
-                case CSeq_id_Base::e_not_set:
-                case CSeq_id_Base::e_Local:
-                case CSeq_id_Base::e_Other:
-                case CSeq_id_Base::e_General:
-                case CSeq_id_Base::e_Giim:                        
-                case CSeq_id_Base::e_Gi:
-                    break;
                 default:
                     break;
             }
