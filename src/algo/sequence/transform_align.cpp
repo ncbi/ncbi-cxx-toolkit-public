@@ -842,12 +842,15 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
             CFeatureGenerator::SImplementation::TrimRightExon(range_left - right_exon_it->genomic_from, eTrimGenomic,
                           right_exon_it, exons.end(), right_spl_exon_it,
                           product_strand, genomic_strand);
-        
+        bool delete_me = false;
         if (left_exon_it.base() != right_exon_it) {
+            delete_me = true;
+        }
+        if(delete_me) {
             right_exon_it = exons.erase(left_exon_it.base(), right_exon_it);
             right_spl_exon_it = spliced_seg.SetExons().erase(left_spl_exon_it.base(), right_spl_exon_it);
         }
-
+        
         if (right_exon_it == exons.end())
             break;
     }
@@ -1043,7 +1046,34 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
                 exon.SetGenomic_end() -= genomic_size;
         }
     }
-
+    if (spliced_seg.IsSetExons()) {
+        auto& spliced_exons = spliced_seg.SetExons();
+        for(auto exon_it = spliced_exons.begin(); exon_it != spliced_exons.end();) {
+            bool delete_me = false;
+            if( (*exon_it)->IsSetParts() ) {
+                //
+                //  check if we perchance eliminated all meaningful "parts" and nothing left from either genome or product
+                //
+                delete_me = true;
+                for (auto part_it: (*exon_it)->GetParts()) {
+                    switch( part_it->Which()) {
+                        case CSpliced_exon_chunk::e_Match:
+                        case CSpliced_exon_chunk::e_Mismatch:
+                        case CSpliced_exon_chunk::e_Diag:
+                            delete_me = false;
+                            break;
+                        default: break;
+                    }
+                }
+            }
+            if(delete_me) {
+                exon_it = spliced_exons.erase(exon_it);
+            }
+            else {
+                exon_it++;
+            }
+        }
+    }
     if (GetExons(*align) != orig_exons) {
         ClearScores(*align);
     }
