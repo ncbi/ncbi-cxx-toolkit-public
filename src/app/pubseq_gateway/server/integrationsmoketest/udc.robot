@@ -11,9 +11,9 @@
 
 # Local application
 | ${IS_LOCAL}              | true                           | # Enable testing the application locally (with command line) |
-| ${APP_NAME}              | integration_test -psgclient ${PSG_CLIENT} -service ${SERVICE}              | # Name of the application |
+| ${APP_NAME}              | integration_test               | # Name of the application |
 | ${PARAMS}                | ${EMPTY}                       | # Parameters for finding server
-| ${APP_BN}                | ${TEST_APPS_DIR}${APP_NAME} ${PARAMS} | # Path to the application |
+| ${APP_BN}                | ${TEST_APPS_DIR}${APP_NAME} -psgclient ${PSG_CLIENT} -service ${SERVICE} | # Path to the application |
 | ${RUN_FROM_APP_DIR}      | false                          | # Run the application to be tested from its own directory |
 | ${USE_DASHI_DASHO}       | true                           | # Automatically pass "-i" and "-o" parameters to the application |
 | ${IS_GRID_WORKER}        | false                          | # Automatically set "-offline-input-dir" and "-offline-output-dir" flags |
