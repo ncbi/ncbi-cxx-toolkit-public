@@ -34,9 +34,8 @@
 
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_service.hpp>
-#include <connect/ncbi_socket.h>
 #include <connect/ncbi_socket.hpp>
-#include <corelib/ncbidiag.hpp>
+#include <corelib/ncbidbg.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -53,8 +52,8 @@ struct Deleter<SConnNetInfo>
 /////////////////////////////////////////////////////////////////////////////
 // SERV_GetServers implementation
 extern
-vector<CSERV_Info> SERV_GetServers(const string& service,
-                                   TSERV_Type    types)
+vector<CSERV_Info> SERV_GetServers(const string&  service,
+                                   TSERV_TypeOnly types)
 {
     // Share core functionality with C-language CONNECT library.
     {
@@ -63,33 +62,35 @@ vector<CSERV_Info> SERV_GetServers(const string& service,
         } conn_initer;  /*NCBI_FAKE_WARNING*/
     }
 
-    vector<CSERV_Info>  servers;
+    vector<CSERV_Info> servers;
 
     AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(service.c_str()));
 
     SERV_ITER iter = SERV_Open(service.c_str(), fSERV_All, SERV_ANYHOST,
                                net_info.get());
     if (iter != 0) {
-        const SSERV_Info * info;
+        const SSERV_Info* info;
         while ((info = SERV_GetNextInfo(iter)) != 0) {
-            unsigned int    host = info->host;
-            unsigned int    port = info->port;
-            double          rate = info->rate;
-            ESERV_Type      type = info->type;
-
-            if (host == 0) {
-                string msg("GetHostsForService: Service '");
-                msg += service + "' is not operational.";
+            if (info->host == 0) {
+                string msg
+                    = "SERV_GetServers('" + service
+                    + "'): Service not operational";
                 NCBI_THROW(CException, eUnknown, msg);
             }
 
-            string hostname(CSocketAPI::gethostbyaddr(host));
             if (types == fSERV_Any  ||  (types & info->type)) {
-                servers.push_back(CSERV_Info(hostname, port, rate, type));
+                servers.push_back(CSERV_Info
+                                  (CSocketAPI::ntoa(info->host), info->port,
+                                   info->rate, info->type));
             } else {
-                ERR_POST(Info << "Skipping " << hostname
-                    << " due to incompatible type " << info->type
-                    << " (mask=0x" << hex << types << ").");
+                _TRACE("SERV_GetServers('" << service << "'): Skipping "
+                       << (CSocketAPI::ntoa(info->host)
+                           + (info->port
+                              ? ':' + NStr::NumericToString(info->port)
+                              : kEmptyStr)) << " due to incompatible type "
+                       << SERV_TypeStr(info->type)
+                       << hex << setiosflags(IOS_BASE::uppercase)
+                       << "(0x" << info->type << ") vs. mask=0x" << types);
             }
         }
         SERV_Close(iter);
