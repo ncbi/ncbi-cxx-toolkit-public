@@ -6,7 +6,7 @@
 SUB_PROJ = asn2asn asn2fasta asn2flat flat2asn asnval asn_cleanup \
            id1_fetch blast convert_seq \
            nmer_repeats objmgr gi2taxid netschedule grid netstorage igblast \
-           winmasker dustmasker segmasker blastdb vecscreen \
+           winmasker dustmasker segmasker blastdb blastvdb vecscreen \
            agpconvert id2_fetch agp_validate objextract \
            bdb_env_keeper nw_aligner speedtest idmapper formatguess \
            multireader read_blast_result splign hfilter \
