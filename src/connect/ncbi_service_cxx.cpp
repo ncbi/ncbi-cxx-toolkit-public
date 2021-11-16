@@ -65,8 +65,11 @@ vector<CSERV_Info> SERV_GetServers(const string&  service,
     vector<CSERV_Info> servers;
 
     AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(service.c_str()));
+    TSERV_TypeOnly what = fSERV_All;
+    if (!(types & fSERV_Firewall))
+        what &= ~fSERV_Firewall;
 
-    SERV_ITER iter = SERV_Open(service.c_str(), fSERV_All, SERV_ANYHOST,
+    SERV_ITER iter = SERV_Open(service.c_str(), what, SERV_ANYHOST,
                                net_info.get());
     if (iter != 0) {
         const SSERV_Info* info;
