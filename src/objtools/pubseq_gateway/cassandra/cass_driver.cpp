@@ -197,24 +197,20 @@ void CCassConnection::SetKeepAlive(unsigned int keepalive)
     m_keepalive = keepalive;
 }
 
-
 shared_ptr<CCassConnection> CCassConnection::Create()
 {
     return shared_ptr<CCassConnection>(new CCassConnection());
 }
-
 
 void CCassConnection::SetLoadBalancing(loadbalancing_policy_t  policy)
 {
     m_loadbalancing = policy;
 }
 
-
 void CCassConnection::SetTokenAware(bool  value)
 {
     m_tokenaware = value;
 }
-
 
 void CCassConnection::SetLatencyAware(bool  value)
 {
@@ -501,7 +497,7 @@ void CCassConnection::GetTokenRanges(TTokenRanges &ranges)
     set<TTokenValue> cluster_tokens;
     map<string, vector<TTokenValue>> peer_tokens;
 
-    shared_ptr<CCassQuery> query(NewQuery());
+    auto query = NewQuery();
     query->SetSQL("select data_center, schema_version, host_id, tokens "
                   "from system.local", 0);
     query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
@@ -581,6 +577,81 @@ void CCassConnection::GetTokenRanges(TTokenRanges &ranges)
         lower_bound = token;
     }
     ranges.push_back(make_pair(lower_bound, numeric_limits<TTokenValue>::max()));
+}
+
+vector<SCassSizeEstimate> CCassConnection::GetSizeEstimates(string const& datacenter, string const& keyspace, string const& table)
+{
+    string estimates_sql{"SELECT range_start, range_end, mean_partition_size, partitions_count FROM system.size_estimates "
+        " WHERE keyspace_name = ? AND table_name = ?"};
+    auto peers = GetLocalPeersAddressList(datacenter);
+    vector<SCassSizeEstimate> estimates;
+    for (auto const& peer : peers) {
+        auto query = NewQuery();
+        query->SetHost(peer);
+        query->SetSQL(estimates_sql, 2);
+        query->BindStr(0, keyspace);
+        query->BindStr(1, table);
+        query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
+        while (query->NextRow() == ar_dataready) {
+            SCassSizeEstimate estimate;
+            string value = query->FieldGetStrValue(0);
+            estimate.range_start = NStr::StringToNumeric<int64_t>(value);
+            value = query->FieldGetStrValue(1);
+            estimate.range_end = NStr::StringToNumeric<int64_t>(value);
+            estimate.mean_partition_size = query->FieldGetInt64Value(2);
+            estimate.partitions_count = query->FieldGetInt64Value(3);
+            // One off to preserve assumption range_start < range_end;
+            if (estimate.range_end == numeric_limits<int64_t>::min()) {
+                estimate.range_end = numeric_limits<int64_t>::max();
+            }
+            estimates.push_back(estimate);
+        }
+    }
+    sort(estimates.begin(), estimates.end(),
+        [](const SCassSizeEstimate& a, const SCassSizeEstimate& b) -> bool {
+            return a.range_start < b.range_start;
+        }
+    );
+    return estimates;
+}
+
+vector<string> CCassConnection::GetLocalPeersAddressList(string const & datacenter)
+{
+    string peers_sql{"SELECT rpc_address FROM system.peers WHERE data_center = ? ALLOW FILTERING"};
+    set<string> hosts;
+    auto query = NewQuery();
+    query->SetSQL(peers_sql, 1);
+    query->BindStr(0, datacenter);
+    query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
+    while (query->NextRow() == ar_dataready) {
+        hosts.insert(query->FieldGetStrValue(0));
+    }
+    if (hosts.empty()) {
+        return {};
+    }
+    // Second pass to fetch view from other host (lets choose first from current peer list)
+    query = NewQuery();
+    query->SetHost(*hosts.begin());
+    query->SetSQL(peers_sql, 1);
+    query->BindStr(0, datacenter);
+    query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
+    while (query->NextRow() == ar_dataready) {
+        hosts.insert(query->FieldGetStrValue(0));
+    }
+    vector<string> result(hosts.size());
+    copy(hosts.begin(), hosts.end(), result.begin());
+    return result;
+}
+
+string CCassConnection::GetDatacenterName()
+{
+    auto query = NewQuery();
+    query->SetSQL("SELECT data_center FROM system.local", 0);
+    query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
+    if (query->NextRow() == ar_dataready) {
+        return query->FieldGetStrValue(0);
+    }
+    return "";
 }
 
 vector<string> CCassConnection::GetPartitionKeyColumnNames(string const & keyspace, string const & table) const
@@ -1022,6 +1093,10 @@ void CCassQuery::NewBatch()
     }
 }
 
+void CCassQuery::SetHost(const string& hostname)
+{
+    m_execution_host = hostname;
+}
 
 void CCassQuery::Query(CassConsistency  c, bool  run_async,
                        bool  allow_prepared, unsigned int  page_size)
@@ -1051,6 +1126,10 @@ void CCassQuery::Query(CassConsistency  c, bool  run_async,
 
     if (!m_statement) {
         RAISE_DB_ERROR(eRsrcFailed, string("failed to create cassandra query"));
+    }
+
+    if (!m_execution_host.empty()) {
+        cass_statement_set_host_n(m_statement, m_execution_host.c_str(), m_execution_host.size(), m_connection->m_port);
     }
 
     try {

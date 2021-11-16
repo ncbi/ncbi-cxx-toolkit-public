@@ -108,6 +108,36 @@ TEST_F(CCassConnectionTest, ReconnectShouldNotFail) {
     ASSERT_TRUE(connection->IsConnected()) << "Connection should be UP after the reason of failure is fixed";
 }
 
+TEST_F(CCassConnectionTest, LocalPeersList) {
+    auto connection = m_Factory->CreateInstance();
+    connection->Connect();
+    string dc = connection->GetDatacenterName();
+    EXPECT_FALSE(dc.empty());
+    auto peer_list = connection->GetLocalPeersAddressList(dc);
+    EXPECT_EQ(8UL, peer_list.size());
+    for (auto const& peer : peer_list) {
+        EXPECT_EQ(0UL, peer.find("130.14."));
+    }
+}
+
+TEST_F(CCassConnectionTest, GetSizeEstimates) {
+    auto connection = m_Factory->CreateInstance();
+    connection->Connect();
+    auto estimates = connection->GetSizeEstimates("DC1", "idmain2", "si2csi");
+    ASSERT_FALSE(estimates.empty());
+    auto current_start = estimates.begin()->range_start;
+    for (auto const& estimate : estimates) {
+        EXPECT_GE(estimate.range_start, current_start);
+        EXPECT_GT(estimate.range_end, estimate.range_start);
+        EXPECT_GE(estimate.partitions_count, 0);
+        EXPECT_GE(estimate.mean_partition_size, 0);
+        current_start = estimate.range_end;
+    }
+
+    EXPECT_TRUE(connection->GetSizeEstimates("WRONGDC", "idmain2", "si2csi").empty());
+    EXPECT_TRUE(connection->GetSizeEstimates("DC1", "idmain2", "").empty());
+}
+
 TEST_F(CCassConnectionTest, QueryRetryTimeout) {
     const string config_section = "TEST";
     auto factory = CCassConnectionFactory::s_Create();

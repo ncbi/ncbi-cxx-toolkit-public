@@ -41,12 +41,7 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-CCassandraFullscanPlan::CCassandraFullscanPlan()
-    : m_Connection(nullptr)
-    , m_FieldList({"*"})
-    , m_MinPartitionsForSubrangeScan(kMinPartitionsForSubrangeScanDefault)
-{
-}
+CCassandraFullscanPlan::CCassandraFullscanPlan() = default;
 
 CCassandraFullscanPlan& CCassandraFullscanPlan::SetConnection(shared_ptr<CCassConnection> connection)
 {
@@ -81,6 +76,16 @@ CCassandraFullscanPlan& CCassandraFullscanPlan::SetKeyspace(string const & keysp
 CCassandraFullscanPlan& CCassandraFullscanPlan::SetTable(string const & table)
 {
     m_Table = table;
+    return *this;
+}
+
+CCassandraFullscanPlan& CCassandraFullscanPlan::SetPartitionCountPerQueryLimit(int64_t value)
+{
+    if (value < 0) {
+        ERR_POST(Warning << "CCassandraFullscanPlanner::SetPartitionCountPerQueryLimit - wrong value ignored '" << value << "'");
+    } else {
+        m_PartitionCountPerQueryLimit = value;
+    }
     return *this;
 }
 
@@ -154,6 +159,11 @@ size_t CCassandraFullscanPlan::GetQueryCount() const
     return m_TokenRanges.size();
 }
 
+void CCassandraFullscanPlan::SplitTokenRangesForLimits()
+{
+
+}
+
 void CCassandraFullscanPlan::Generate()
 {
     if (!m_Connection || m_Keyspace.empty() || m_Table.empty()) {
@@ -163,17 +173,22 @@ void CCassandraFullscanPlan::Generate()
     m_TokenRanges.clear();
     if (GetPartitionCountEstimate() < m_MinPartitionsForSubrangeScan) {
         m_SqlTemplate = "SELECT " + NStr::Join(m_FieldList, ", ") + " FROM " + m_Keyspace + "." + m_Table;
-        if (!m_WhereFilter.empty())
+        if (!m_WhereFilter.empty()) {
             m_SqlTemplate += " WHERE " + m_WhereFilter + " ALLOW FILTERING";
+        }
         m_TokenRanges.push_back(make_pair(0, 0));
     } else {
         vector<string> partition_fields = m_Connection->GetPartitionKeyColumnNames(m_Keyspace, m_Table);
         m_Connection->GetTokenRanges(m_TokenRanges);
+        if (m_PartitionCountPerQueryLimit > 0) {
+            SplitTokenRangesForLimits();
+        }
         string partition = NStr::Join(partition_fields, ",");
         m_SqlTemplate = "SELECT " + NStr::Join(m_FieldList, ", ") + " FROM "
             + m_Keyspace + "." + m_Table + " WHERE TOKEN(" + partition + ") > ? AND TOKEN(" + partition + ") <= ?";
-        if (!m_WhereFilter.empty())
+        if (!m_WhereFilter.empty()) {
             m_SqlTemplate += " AND " + m_WhereFilter + " ALLOW FILTERING";
+        }
         ERR_POST(Trace << "CCassandraFullscanPlanner::Generate - Sql template = '" << m_SqlTemplate << "'");
     }
 }

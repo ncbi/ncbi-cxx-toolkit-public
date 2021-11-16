@@ -72,26 +72,30 @@ class CCassandraFullscanPlan
     CCassandraFullscanPlan& SetMinPartitionsForSubrangeScan(size_t value);
     CCassandraFullscanPlan& SetKeyspace(string const & keyspace);
     CCassandraFullscanPlan& SetTable(string const & table);
+    CCassandraFullscanPlan& SetPartitionCountPerQueryLimit(int64_t value);
     size_t GetMinPartitionsForSubrangeScan();
 
     virtual void Generate();
     virtual TQueryPtr GetNextQuery();
     virtual size_t    GetQueryCount() const;
-    
+
  protected:
     CCassConnection::TTokenRanges& GetTokenRanges();
 
  private:
     size_t GetPartitionCountEstimate();
+    void SplitTokenRangesForLimits();
 
     shared_ptr<CCassConnection> m_Connection;
-    vector<string> m_FieldList;
+    vector<string> m_FieldList{"*"};
     string m_Keyspace;
     string m_Table;
     string m_WhereFilter;
     string m_SqlTemplate;
     CCassConnection::TTokenRanges m_TokenRanges;
-    size_t m_MinPartitionsForSubrangeScan;
+    size_t m_MinPartitionsForSubrangeScan{kMinPartitionsForSubrangeScanDefault};
+    int64_t m_PartitionCountPerQueryLimit{0};
+
 };
 
 END_IDBLOB_SCOPE
