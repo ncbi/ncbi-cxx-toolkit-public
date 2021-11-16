@@ -345,9 +345,9 @@ static TNCBI_Time x_ParseExpires(const char* expires, time_t utc,
         /* Get the UTC epoch time for the expires value */
         ||  (tm_exp.tm_year -= 1900,  /* years since 1900 */
              tm_exp.tm_mon--,         /* months since January: 0-11 */
-             (exp = mktime(&tm_exp)) == (time_t)(-1))) {
+             (exp = mktime(&tm_exp)) == (time_t)(-1L))) {
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
-                    ("[%s]  Unexpected JSON {\"addrs[" FMT_SIZE_T
+                    ("[%s]  Invalid JSON {\"addrs[" FMT_SIZE_T
                      "].meta.expires\"} value \"%s\"", name, i, expires));
         return 0/*failure*/;
     }
@@ -355,7 +355,7 @@ static TNCBI_Time x_ParseExpires(const char* expires, time_t utc,
     CORE_LOCK_WRITE;
     tm_now = *gmtime(&utc);
     CORE_UNLOCK;
-    verify((now = mktime(&tm_now)) != (time_t)(-1));
+    verify((now = mktime(&tm_now)) != (time_t)(-1L));
 
     /* Adjust for time diff between local and UTC, which should
        correspond to 3600 x (number of time zones from UTC),
@@ -364,10 +364,12 @@ static TNCBI_Time x_ParseExpires(const char* expires, time_t utc,
     assert(-12 * 3600 <= tzdiff  &&  tzdiff <= 14 * 3600);
     exp += (time_t) tzdiff;
     if (exp < utc) {
+        time_t diff = utc - exp;
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
                     ("[%s]  Unexpected JSON {\"addrs[" FMT_SIZE_T
                      "].meta.expires\"} value expired: " FMT_TIME_T " vs. "
-                     FMT_TIME_T " now", name, i, exp, utc));
+                     FMT_TIME_T " now, ahead by " FMT_TIME_T " second%s",
+                     name, i, exp, utc, diff, &"s"[diff==1]));
         return 0/*failure*/;
     }
     return (TNCBI_Time) exp;
