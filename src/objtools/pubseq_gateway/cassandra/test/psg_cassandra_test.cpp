@@ -33,9 +33,13 @@
 
 #include <ncbi_pch.hpp>
 
+#include <corelib/ncbidiag.hpp>
+#include <connect/ncbi_core_cxx.hpp>
+
 #include "gtest/gtest.h"
 
 GTEST_API_ int main(int argc, char **argv) {
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+    ncbi::CONNECT_Init();
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
