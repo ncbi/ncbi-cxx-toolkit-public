@@ -55,8 +55,8 @@ protected:
 private:
     bool x_ParseTypes(void);
 
-    static string       sm_Service;
-    static TSERV_Type   sm_Types;
+    static string         sm_Service;
+    static TSERV_TypeOnly sm_Types;
 
     static string   sm_ThreadsPassed;
     static string   sm_ThreadsFailed;
@@ -64,8 +64,8 @@ private:
 };
 
 
-string      CTestApp::sm_Service;
-TSERV_Type  CTestApp::sm_Types = fSERV_Any;
+string         CTestApp::sm_Service;
+TSERV_TypeOnly CTestApp::sm_Types = fSERV_Any;
 
 string  CTestApp::sm_ThreadsPassed;
 string  CTestApp::sm_ThreadsFailed;
@@ -119,19 +119,19 @@ bool CTestApp::Thread_Run(int idx)
 
     PushDiagPostPrefix(("@" + id).c_str());
 
-    vector<CSERV_Info>  hosts;
-    hosts = SERV_GetServers(sm_Service, sm_Types);
-    if (hosts.size() > 0) {
-        ERR_POST(Info << "Hosts for service '" << sm_Service << "':");
-        for (const auto& h : hosts) {
-            ERR_POST(Info << "    " << h.GetHost() << ":" << h.GetPort() <<
-                "  (type = " << SERV_TypeStr(h.GetType()) << "; " <<
-                "rate = " << h.GetRate() << ")");
+    vector<CSERV_Info> servers = SERV_GetServers(sm_Service, sm_Types);
+
+    if (servers.size() > 0) {
+        ERR_POST(Info << "Server(s) for service '" << sm_Service << "':");
+        for (const auto& s : servers) {
+            ERR_POST(Info << "    " << s.GetHost() << ':' << s.GetPort()
+                     << "  (type = " << SERV_TypeStr(s.GetType())
+                     << "; rate = " << s.GetRate() << ')');
         }
         retval = true;
     } else {
         ERR_POST(Error << "Service '" << sm_Service
-            << "' appears to have no hosts.");
+                 << "' appears to have no servers.");
     }
 
     PopDiagPostPrefix();
@@ -167,11 +167,11 @@ bool CTestApp::x_ParseTypes(void)
         sm_Types = fSERV_Any;
     } else {
         list<string> types_list;
-        NStr::Split(types_str, " |+,;", types_list, NStr::fSplit_Tokenize);
+        NStr::Split(types_str, " \t|+,;", types_list, NStr::fSplit_Tokenize);
         for (auto typ : types_list) {
             ESERV_Type etyp;
-            const char* styp = SERV_ReadType(NStr::ToUpper(typ).c_str(), &etyp);
-            if ( ! styp) {
+            const char* styp = SERV_ReadType(typ.c_str(), &etyp);
+            if ( ! styp  ||  *styp) {
                 ERR_POST(Critical << "Invalid server type '" << typ << "'.");
                 return false;
             }

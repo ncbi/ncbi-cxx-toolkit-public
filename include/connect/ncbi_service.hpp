@@ -35,7 +35,6 @@
  */
 
 #include <corelib/ncbistl.hpp>
-#include <connect/ncbi_server_info.h>
 #include <connect/ncbi_service.h>
 #include <vector>
 
@@ -53,21 +52,21 @@ BEGIN_NCBI_SCOPE
 ///
 class NCBI_XCONNECT_EXPORT CSERV_Info {
 public:
-    CSERV_Info(const string& host, unsigned int port, double rate, ESERV_Type type) :
+    CSERV_Info(const string& host, unsigned short port,
+               double rate, ESERV_Type type) :
         m_Host(host), m_Port(port), m_Rate(rate), m_Type(type)
-    {
-    }
+    { }
 
-    string          GetHost(void) const { return m_Host; }
-    unsigned int    GetPort(void) const { return m_Port; }
-    double          GetRate(void) const { return m_Rate; }
-    ESERV_Type      GetType(void) const { return m_Type; }
+    string         GetHost(void) const { return m_Host; }
+    unsigned short GetPort(void) const { return m_Port; }
+    double         GetRate(void) const { return m_Rate; }
+    ESERV_Type     GetType(void) const { return m_Type; }
 
 private:
-    string          m_Host;
-    unsigned int    m_Port;
-    double          m_Rate;
-    ESERV_Type      m_Type;
+    string         m_Host;
+    unsigned short m_Port;
+    double         m_Rate;
+    ESERV_Type     m_Type;
 };
 
 
@@ -76,12 +75,12 @@ private:
 /// @param[in] service
 ///  Service name
 /// @param[in] types
-///  Which service types to check
+///  Which service types to obtain
 /// @return
 ///  List of servers (ordered according to their rates)
 extern NCBI_XCONNECT_EXPORT
-vector<CSERV_Info> SERV_GetServers(const string& service,
-                                   TSERV_Type    types = fSERV_Any);
+vector<CSERV_Info> SERV_GetServers(const string&  service,
+                                   TSERV_TypeOnly types = fSERV_Any);
 
 
 END_NCBI_SCOPE
