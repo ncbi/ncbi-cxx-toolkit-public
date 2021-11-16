@@ -321,6 +321,17 @@ def main():
 
     return 0
 
+def checkVersionOptionAndDirectory(options):
+    if not options.psg_ver:
+        print_error('The "--psg-version" option must be specified')
+        return 1
+
+    artefactDir = getArtefactDir(options)
+    if not os.path.exists(artefactDir):
+        print_error(f'The build stage directory {artefactDir} is not found')
+        return 1
+    return 0
+
 
 # Set of methods which should check the options for the command
 # The names must be formed as {command}_check_args
@@ -347,15 +358,7 @@ def functional_test_check_args(commands, options, args):
         # Everything will be created on the previous stages
         return 0
 
-    if not options.psg_ver:
-        print_error('The "--psg-version" option must be specified')
-        return 1
-
-    artefactDir = getArtefactDir(options)
-    if not os.path.exists(artefactDir):
-        print_error(f'The build stage directory {artefactDir} is not found')
-        return 1
-    return 0
+    return checkVersionOptionAndDirectory(options)
 
 def drop_client_test_check_args(commands, options, args):
     if shutil.which('h2load') is None:
@@ -366,36 +369,25 @@ def drop_client_test_check_args(commands, options, args):
         # Everything will be created on the previous stages
         return 0
 
-    if not options.psg_ver:
-        print_error('The "--psg-version" option must be specified')
-        return 1
-
-    artefactDir = getArtefactDir(options)
-    if not os.path.exists(artefactDir):
-        print_error(f'The build stage directory {artefactDir} is not found')
-        return 1
-    return 0
+    return checkVersionOptionAndDirectory(options)
 
 def memcheck_check_args(commands, options, args):
     if 'all' in commands:
         # Everything will be created on the previous stages
         return 0
 
-    if not options.psg_ver:
-        print_error('The "--psg-version" option must be specified')
-        return 1
-
-    artefactDir = getArtefactDir(options)
-    if not os.path.exists(artefactDir):
-        print_error(f'The build stage directory {artefactDir} is not found')
-        return 1
-    return 0
+    return checkVersionOptionAndDirectory(options)
 
 def stress_test_check_args(commands, options, args):
+    if shutil.which('h2load') is None:
+        print_error('h2load executable is not in the PATH')
+        return 1
+
     if 'all' in commands:
         # Everything will be created on the previous stages
         return 0
-    return 0
+
+    return checkVersionOptionAndDirectory(options)
 
 def compare_check_args(commands, options, args):
     if 'all' in commands:
@@ -614,18 +606,24 @@ def drop_client_test(commands, options, args):
     for testCase in testCases:
         # Run the server
         cmdLine = [artefactDir + 'pubseq_gateway',
-                   '-conffile', artefactDir + 'pubseq_gateway.ini',
-                   '-logfile', artefactDir + 'pubseq_gateway-drop-client-http.log']
+                   '-conffile',
+                   artefactDir + 'pubseq_gateway.ini',
+                   '-logfile',
+                   artefactDir + 'pubseq_gateway-drop-client-http.log']
         print_verbose('Running PSG server: ' + ' '.join(cmdLine))
         SRV1 = subprocess.Popen(cmdLine)
 
         # Run the clients
         clients = []
-        for x in range(100):
-            clientCmdLine = ['h2load', '-n', '10000', '-c', '4', '-t', '4', '-m', '4',
+        for client_number in range(100):
+            clientCmdLine = ['h2load', '-n', '10000', '-c', '4',
+                             '-t', '4', '-m', '4',
                              f'http://localhost:{PORT1}/{testCase}']
-            print_verbose(f'Runnig client #{x}: ' + ' '.join(clientCmdLine))
-            clients.append(subprocess.Popen(clientCmdLine, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+            print_verbose(f'Runnig client #{client_number}: ' +
+                          ' '.join(clientCmdLine))
+            clients.append(subprocess.Popen(clientCmdLine,
+                                            stdout=subprocess.DEVNULL,
+                                            stderr=subprocess.DEVNULL))
 
         # Let clients work for 3 seconds
         time.sleep(3)
@@ -659,6 +657,8 @@ def drop_client_test(commands, options, args):
 
 
 def memcheck(commands, options, args):
+    global SRV1
+
     artefactDir = getArtefactDir(options)
     buildResultsDir = getBuildResultsDir(options)
     if buildResultsDir is None:
@@ -820,6 +820,84 @@ def memcheck(commands, options, args):
     return 0
 
 def stress_test(commands, options, args):
+    global SRV1
+
+    if prepareO2Gsandbox(options) != 0:
+        return 1
+
+    artefactDir = getArtefactDir(options)
+
+    # Round up 1: Prepare the config file for stress test (http)
+    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
+                      artefactDir + 'pubseq_gateway.ini',
+                      {'si2csi.db': artefactDir + 'si2csi.db',
+                       'bioseq_info.db': artefactDir +'bioseq_info.db',
+                       'blob_prop.db': artefactDir + 'blob_prop.db',
+                       'port': f'{PORT1}',
+                       'ssl_enable': 'false',
+                       'ssl_cert': '',
+                       'ssl_key': ''})
+
+    # Run the server
+    cmdLine = [artefactDir + 'pubseq_gateway',
+               '-conffile', artefactDir + 'pubseq_gateway.ini',
+               '-logfile', artefactDir + 'pubseq_gateway-stress-http.log']
+    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
+    SRV1 = subprocess.Popen(cmdLine)
+
+    # Run the tests
+    errors = []
+
+    buildResultsDir = getBuildResultsDir(options)
+    testDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/test/'
+    cmdLine = f'/bash {testDir}stresstests.sh localhost:{PORT1} > {artefactDir}stress-http.log 2>&1'
+    print_verbose(f'Running http stress tests: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'http stress tests return code: {ret}')
+    if ret != 0:
+        errors.append(f'Error executing http stress tests. Return code: {ret}')
+        print_verbose('http stress tests failed')
+    else:
+        print_verbose('http stress tests succeeded')
+    stopServer(SRV1)
+
+    # Round up 2: Prepare the config file for UT (https)
+    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
+                      artefactDir + 'pubseq_gateway.ini',
+                      {'si2csi.db': artefactDir + 'si2csi.db',
+                       'bioseq_info.db': artefactDir +'bioseq_info.db',
+                       'blob_prop.db': artefactDir + 'blob_prop.db',
+                       'port': '10999',
+                       'ssl_enable': 'true',
+                       'ssl_cert': artefactDir + 'psg.crt',
+                       'ssl_key': artefactDir + 'psg.key'})
+
+    # Run the server
+    cmdLine = [artefactDir + 'pubseq_gateway',
+               '-conffile', artefactDir + 'pubseq_gateway.ini',
+               '-logfile', artefactDir + 'pubseq_gateway-stress-https.log']
+    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
+    SRV1 = subprocess.Popen(cmdLine)
+
+    # Run the tests
+
+    cmdLine = f'bash {testDir}stresstests.sh --https localhost:10999 > {artefactDir}stress-https.log 2>&1'
+    print_verbose(f'Running https stress tests: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'https stress tests return code: {ret}')
+    if ret != 0:
+        errors.append(f'Error executing https stress tests. Return code: {ret}')
+        print_verbose('https stress tests failed')
+    else:
+        print_verbose('https stress tests succeeded')
+    stopServer(SRV1)
+
+    if errors:
+        print_error('Stress test errors:')
+        for err in errors:
+            print_error(err)
+        return 1
+
     return 0
 
 def compare(commands, options, args):
