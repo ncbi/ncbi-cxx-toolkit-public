@@ -103,6 +103,12 @@ using TCassQueryOnDataCallback = void(*)(CCassQuery&, void *);
 using TCassQueryOnExecuteCallback = void(*)(CCassQuery&, void *);
 using TCassQueryOnData2Callback = void(*)(void *);
 
+struct SCassSizeEstimate {
+    int64_t range_start{0};
+    int64_t range_end{0};
+    int64_t mean_partition_size{0};
+    int64_t partitions_count{0};
+};
 
 class CCassConnection: public std::enable_shared_from_this<CCassConnection>
 {
@@ -180,9 +186,16 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
 
     shared_ptr<CCassQuery> NewQuery();
     void GetTokenRanges(TTokenRanges &ranges);
-    // @deprecated
-    void getTokenRanges(TTokenRanges &ranges);
+    NCBI_DEPRECATED void getTokenRanges(TTokenRanges &ranges);
     vector<string> GetPartitionKeyColumnNames(string const & keyspace, string const & table) const;
+
+    // For multi-datacenter environment picture will be not complete
+    // system.size_estimates contains data for PRIMARY range only and other datacenter hosts
+    // are most likely not available for CQL (e.g. COLO from Bethesda)
+    // So maybe there will be necessary to make second level of estimations based on available data
+    vector<SCassSizeEstimate> GetSizeEstimates(string const& datacenter, string const& keyspace, string const& table);
+    vector<string> GetLocalPeersAddressList(string const & datacenter);
+    string GetDatacenterName();
     static string NewTimeUUID();
     static void Perform(
         unsigned int optimeoutms,
@@ -677,6 +690,8 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     TCassQueryOnExecuteCallback     m_onexecute;
     void*                           m_onexecute_data;
 
+    string                          m_execution_host;
+
     async_rslt_t Wait(unsigned int timeoutmks);
     void Bind(void);
 
@@ -749,6 +764,14 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     async_rslt_t RunBatch();
 
     void SetSQL(const string& sql, unsigned int PrmCount);
+
+    // Set Cassandra host to execute current query.
+    // Useful for schema explorations using system.* tables
+    //   without configuring whitelists for connection.
+    // Works for SELECT queries only.
+    //
+    // Empty $hostname turns off filtering
+    void SetHost(const string& hostname);
 
     /* returns resultset */
     void Query(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM,

@@ -271,6 +271,14 @@ void CassValueConvert<string>(const CassValue *  Val, string& v)
             v = string(fetched_buffer);
             break;
         }
+        case CASS_VALUE_TYPE_INET: {
+            CassInet fetched_value;
+            char fetched_buffer[CASS_INET_STRING_LENGTH];
+            cass_value_get_inet(Val, &fetched_value);
+            cass_inet_string(fetched_value, fetched_buffer);
+            v = string(fetched_buffer);
+            break;
+        }
         default:
             if (type == CASS_VALUE_TYPE_UNKNOWN && cass_value_is_null(Val))
                 return;
