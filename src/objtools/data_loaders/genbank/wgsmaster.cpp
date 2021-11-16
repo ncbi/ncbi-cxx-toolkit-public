@@ -177,6 +177,7 @@ CSeq_id_Handle CWGSMasterSupport::GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
     case CSeq_id::eAcc_wgs:
     case CSeq_id::eAcc_wgs_intermed:
     case CSeq_id::eAcc_tsa:
+    case CSeq_id::eAcc_targeted:
         break;
     default:
         return master_idh;
