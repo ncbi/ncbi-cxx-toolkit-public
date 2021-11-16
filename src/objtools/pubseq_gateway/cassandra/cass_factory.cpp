@@ -206,10 +206,14 @@ void CCassConnectionFactory::GetHostPort(string & cass_hosts, short & cass_port)
         || (m_CassHosts.find(',') != string::npos);
 
     if (!is_hostlist) {
+        ERR_POST(Info << "Cassandra connection uses service name: '" << hosts << "'");
         hosts = LbsmLookup::s_Resolve(m_CassHosts, ',');
         if (hosts.empty()) {
-            NCBI_THROW(CCassandraException, eGeneric, "Failed to resolve: " + m_CassHosts);
+            NCBI_THROW(CCassandraException, eGeneric, "Failed to resolve service name: '" + m_CassHosts + "'");
         }
+        ERR_POST(Info << "Cassandra service name resolved as: '" << hosts << "'");
+    } else {
+        ERR_POST(Info << "Cassandra connection uses host list: '" << hosts << "'");
     }
 
     // Here: the 'hosts' variable has a list of host[:port] items came
@@ -238,6 +242,8 @@ void CCassConnectionFactory::GetHostPort(string & cass_hosts, short & cass_port)
         }
         cass_hosts += item_host;
     }
+    ERR_POST(Info << "Cassandra connection parameters resolved as: hosts - '"
+        << cass_hosts << "'; port - " << to_string(cass_port));
 }
 
 string CCassConnectionFactory::GetUserName() const

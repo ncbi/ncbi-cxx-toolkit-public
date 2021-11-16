@@ -68,13 +68,31 @@ TEST(CCassNameResolverTest, NamerdResolverTest) {
     r.Set(config_section, "service", "SNPS_CASS_TEST", IRegistry::fPersistent);
     map<string, string> env{
         {"CONN_LBSMD_DISABLE", "1"},
-        {"CONN_NAMERD_ENABLE", "1"}};
+        {"CONN_NAMERD_ENABLE", "1"},
+        //{"http_proxy", "linkerd:4140"},
+        //{"DIAG_POST_LEVEL", "Info"},
+        {"DIAG_TRACE", "1"},
+        {"CONN_DEBUG_PRINTOUT", "ALL"},
+    };
     populate_environment(env);
     auto factory = CCassConnectionFactory::s_Create();
     factory->LoadConfig(r, config_section);
     string host;
     short port;
-    factory->GetHostPort(host, port);
+    string stderr_content;
+    //string stdout_content;
+    testing::internal::CaptureStderr();
+    //testing::internal::CaptureStdout();
+    try {
+        factory->GetHostPort(host, port);
+        testing::internal::GetCapturedStderr();
+        //testing::internal::GetCapturedStdout();
+    }
+    catch (CCassandraException& exception) {
+        stderr_content = testing::internal::GetCapturedStderr();
+        //stdout_content = testing::internal::GetCapturedStdout();
+    }
+    EXPECT_EQ("", stderr_content) << "Stderr content should be empty";
     EXPECT_EQ(9042, port);
     vector<string> items;
     NStr::Split(host, ",", items, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
@@ -128,8 +146,14 @@ TEST(CCassNameResolverTest, NoneResolverTest) {
     auto factory = CCassConnectionFactory::s_Create();
     factory->LoadConfig(r, config_section);
     string host;
-    short port;
-    factory->GetHostPort(host, port);
+    short port{0};
+    try {
+        factory->GetHostPort(host, port);
+        FAIL() << "Name resolution without name resolver should throw";
+    } catch (CCassandraException& exception) {
+        ASSERT_EQ(exception.GetErrCode(), CCassandraException::eGeneric) << "Exception code should be CCassandraException::eGeneric";
+    }
+
     EXPECT_EQ(0, port);
     EXPECT_EQ("", host);
     clear_environment(env);
