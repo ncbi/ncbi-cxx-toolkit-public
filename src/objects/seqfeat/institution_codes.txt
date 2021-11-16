@@ -954,6 +954,7 @@ CCALA	c	Culture Collection of Autotrophic Organisms
 CCAP	c	Culture Collection of Algae and Protozoa		https://www.ccap.ac.uk/strain_info.php?Strain_No=	
 CCARM	c	Culture Collection of Antimirobial Resistant Microorganisms			
 CCAU	s	Central China Agricultural University			
+CCB-MBL	c	Centre for Chemical Biology - Microbial Biodiversity Library			
 CCB<BRZ>	c	Colecao de Culturas de Basidiomicetos			
 CCB<IND>	s	Central College, Bangalore			
 CCBAS	c	Culture Collection of Basidiomycetes			

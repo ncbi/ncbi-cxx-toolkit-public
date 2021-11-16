@@ -987,6 +987,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCAP\tc\tCulture Collection of Algae and Protozoa\t\thttps://www.ccap.ac.uk/strain_info.php?Strain_No=\t",
 "CCARM\tc\tCulture Collection of Antimirobial Resistant Microorganisms\t\t\t",
 "CCAU\ts\tCentral China Agricultural University\t\t\t",
+"CCB-MBL\tc\tCentre for Chemical Biology - Microbial Biodiversity Library\t\t\t",
 "CCB<BRZ>\tc\tColecao de Culturas de Basidiomicetos\t\t\t",
 "CCB<IND>\ts\tCentral College, Bangalore\t\t\t",
 "CCBAS\tc\tCulture Collection of Basidiomycetes\t\t\t",
