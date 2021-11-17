@@ -40,7 +40,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-extern const string kArgSRASearchMode;
+NCBI_VDB2BLAST_EXPORT extern const string kArgSRASearchMode;
 
 /// Argument class to collect database/subject arguments
 class NCBI_VDB2BLAST_EXPORT CBlastVDatabaseArgs : public CBlastDatabaseArgs
