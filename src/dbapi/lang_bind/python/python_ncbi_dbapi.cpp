@@ -4154,7 +4154,8 @@ static struct PyMethodDef python_ncbi_dbapi_methods[] = {
         "v2.0."
     },
     {(char*)"connect", (PyCFunction) python::Connect, METH_VARARGS, (char*)
-        "connect(driver_name, db_type, server_name, database_name, userid, password) "
+        "connect(driver_name, db_type, server_name, database_name, userid, password,"
+     "[extra/use_std_interface]) "
         "-- connect to the "
         "driver_name; db_type; server_name; database_name; userid; password;"
     },
