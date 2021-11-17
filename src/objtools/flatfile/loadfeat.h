@@ -43,21 +43,15 @@
 
 BEGIN_NCBI_SCOPE
 
-typedef struct feature_block {
-    Int4      num;
-    char*   key;
-    char*   location;
+struct FeatBlk {
+    Int4      num = 0;
+    char*   key = nullptr;
+    char*   location = nullptr;
 
     TQualVector quals;
+};
 
-    feature_block() :
-        num(0),
-        key(NULL),
-        location(NULL)
-    {
-    }
-
-} FeatBlk, *FeatBlkPtr;
+using FeatBlkPtr = FeatBlk*;
 
 void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq);
 int  ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Int2 source, Parser::EFormat format);
