@@ -1664,7 +1664,17 @@ CRef<CBlast_db_metadata> CSeqDB::GetDBMetaData(string user_path)
 	Uint8 total_length = 0;
 
 	GetTotals(CSeqDB::eFilteredAll, &num_seqs, &total_length, true);
-	m->SetDbname(GetDBNameList());
+	vector<string> dblist;
+    NStr::Split(GetDBNameList(), " ", dblist, NStr::fSplit_Tokenize);
+    NON_CONST_ITERATE(vector<string>, itr, dblist) {
+        int off = (*itr).find_last_of(CFile::GetPathSeparator());
+        if (off != -1) {
+        	(*itr).erase(0, off+1);
+        }
+    }
+
+	string dbnames = NStr::Join(dblist, " ");
+	m->SetDbname(dbnames);
 
     m->SetDbtype(GetSequenceType() == CSeqDB::eProtein ? "Protein" : "Nucleotide" );
 	m->SetDb_version(GetBlastDbVersion() == EBlastDbVersion::eBDB_Version5?5:4);
