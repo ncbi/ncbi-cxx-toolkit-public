@@ -152,7 +152,7 @@ typedef struct token_statistics_block {
                                            chain list */
 } TokenStatBlk, *TokenStatBlkPtr;
 
-typedef struct _XmlIndex {
+struct XmlIndex {
     Int4                  tag;
     Int4                  order;
     size_t                start;        /* Offset from the beginning of the
@@ -162,9 +162,11 @@ typedef struct _XmlIndex {
     Int4                  start_line;
     Int4                  end_line;
     Int2                  type;         /* Used for references */
-    struct _XmlIndex *subtags;
-    struct _XmlIndex *next;
-} XmlIndex, *XmlIndexPtr;
+    XmlIndex *subtags;
+    XmlIndex *next;
+};
+
+using XmlIndexPtr = XmlIndex*;
 
 typedef std::list<std::string> TKeywordList;
 
