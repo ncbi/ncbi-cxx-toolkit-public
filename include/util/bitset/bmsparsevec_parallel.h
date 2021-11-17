@@ -50,53 +50,48 @@ public:
         typedef typename parent_type::task_vector_type  task_vector_type;
     };
 
-    void build_plan(task_batch& batch,
-                    sparse_vector_type& sv,
-                    typename bvector_type::optmode opt_mode,
-                    typename sparse_vector_type::statistics* st)
+    /**
+        Build paralell optimization batch (of tasks) for sparse vector
+        @param batch - target batch (can be re-used for multiple vectors)
+        @param sv - sparse vector for optimization
+        @param opt_mode - optimization mode (see bvector<>::optmode)
+        @param st - sparse vector statistics to compute with optimization pass (optional)
+    */
+    static
+    void build_plan(task_batch&                              batch,
+                    sparse_vector_type&                      sv,
+                    typename bvector_type::optmode
+                                    opt_mode = bvector_type::opt_compress,
+                    typename sparse_vector_type::statistics* st = 0)
     {
         typename task_batch::task_vector_type& tv = batch.get_task_vector();
         auto rsize = sv.get_bmatrix().rows();
         tv.reserve(rsize);
+        if (st)
+            st->reset();
+
         for (unsigned k = 0; k < rsize; ++k)
         {
-            bvector_type* bv = sv.get_bmatrix().get_row(k);
-            if (bv)
+            if (bvector_type* bv = sv.get_bmatrix().get_row(k))
             {
-                bm::task_description& tdescr = tv.add();
-                tdescr.init(task_run, (void*)&tdescr,
-                            (void*)bv, (void*)st, opt_mode);
+                bm::task_function_t task([bv, opt_mode, st] (void* /*argp*/) {
+                    typename bvector_type::statistics stbv;
+                    stbv.reset();
+                    BM_DECLARE_TEMP_BLOCK(tb)
+                    bv->optimize(tb, opt_mode, &stbv);
+                    if (st)
+                    {
+                        static lock_type lk;
+                        bm::lock_guard<lock_type> lg(lk);
+                        st->add(stbv);
+                    }
+                    return 0;
+                });
+                batch.add(task, 0);
             }
         } // for
     }
 
-
-protected:
-    /// Task execution Entry Point
-    /// @internal
-    static void* task_run(void* argp)
-    {
-        if (!argp)
-            return 0;
-        bm::task_description* tdescr = static_cast<bm::task_description*>(argp);
-
-        bvector_type* bv = static_cast<bvector_type*>(tdescr->ctx0);
-        sv_statistics_type* st = static_cast<sv_statistics_type*>(tdescr->ctx1);
-        optmode_type opt_mode = static_cast<optmode_type>(tdescr->param0);
-
-        typename bvector_type::statistics stbv;
-        stbv.reset();
-        BM_DECLARE_TEMP_BLOCK(tb)
-        bv->optimize(tb, opt_mode, &stbv);
-
-        if (st)
-        {
-            static lock_type lk;
-            bm::lock_guard<lock_type> lg(lk);
-            st->add(stbv);
-        }
-        return 0;
-    }
 };
 
 /**
@@ -126,52 +121,31 @@ public:
     {
         sim_model.bv_blocks.clear(true);
         ref_vect.build_nb_digest_and_xor_matrix(sim_model.matr,
-                                                 sim_model.bv_blocks);
+                                                sim_model.bv_blocks);
 
         typename bvector_type::size_type nb_count = sim_model.bv_blocks.count();
         typename task_batch::task_vector_type& tv = batch.get_task_vector();
         tv.reserve(nb_count);
 
+        typename xor_sim_model<BV>::matrix_chain_type &sm_matr = sim_model.matr;
+
         typename bvector_type::enumerator en(sim_model.bv_blocks);
         for (size_type col = 0; en.valid(); ++en, ++col)
         {
             size_type nb = *en;
-            bm::task_description& tdescr = tv.add();
-            tdescr.init(task_run, (void*)&tdescr,
-                        (void*)&sim_model, (void*)&ref_vect, nb);
-            tdescr.payload0.u64 = col; // rank
-            tdescr.payload1.void_ptr = (void*)&xs_params;
+            bm::task_function_t task(
+            [nb, col, &xs_params, &sm_matr, &ref_vect] (void* /*argp*/) {
+                thread_local bm::xor_scanner<BV> xor_scan;
+                xor_scan.set_ref_vector(&ref_vect);
+                xor_scan.sync_nb_vect();
+                xor_scan.compute_sim_model(sm_matr, nb, col, xs_params);
+                return 0;
+            });
+            batch.add(task, 0);
         } // for en
     }
-
-protected:
-
-    /// Task execution Entry Point
-    /// @internal
-    static void* task_run(void* argp)
-    {
-        thread_local bm::xor_scanner<BV> xor_scan;
-
-        if (!argp)
-            return 0;
-        bm::task_description* tdescr =
-            static_cast<bm::task_description*>(argp);
-        bm::xor_sim_model<BV>* sim_model =
-            static_cast<bm::xor_sim_model<BV>*>(tdescr->ctx0);
-        const bv_ref_vector_type* bv_ref =
-            static_cast<const bv_ref_vector_type*>(tdescr->ctx1);
-
-        xor_scan.set_ref_vector(bv_ref);
-        size_type nb   = (size_type) tdescr->param0;
-        size_type rank = (size_type) tdescr->payload0.u64;
-        const bm::xor_sim_params* params =
-            static_cast<const bm::xor_sim_params*>(tdescr->payload1.void_ptr);
-
-        xor_scan.sync_nb_vect();
-        xor_scan.compute_sim_model(*sim_model, nb, rank, *params);
-        return 0;
-    }
 };
+
 
 
 /**
@@ -236,32 +210,43 @@ public:
                     const sparse_vector_type& sv)
     {
         typename task_batch::task_vector_type& tv = batch.get_task_vector();
-        unsigned planes = sv.stored_planes();
+        unsigned planes = sv.stored_slices();
         tv.reserve(planes + 1); // +1 for finalization task
 
         batch.s_params = s_params_;
 
         for (unsigned i = 0; i < planes; ++i)
         {
-            typename SV::bvector_type_const_ptr bv = sv.get_plane(i);
+            typename SV::bvector_type_const_ptr bv = sv.get_slice(i);
             if (!bv)  // empty plane
             {
                 sv_layout.set_plane(i, 0, 0);
                 continue;
             }
+            unsigned bv_idx = (unsigned)s_params_.bv_ref_ptr_->find_bv(bv);
+            BM_ASSERT(bv_idx != s_params_.bv_ref_ptr_->not_found());
 
-            bm::task_description& tdescr = tv.add();
-            tdescr.init(task_run, (void*)&tdescr,
-                        (void*)bv, (void*)&batch.s_params, 0);
-            tdescr.ret = (void*)&sv_layout;
+            bm::task_function_t task(
+                [bv_idx, &sv_layout] (void* /*argp*/) {
+                    //TODO: full implementation
+                    BM_ASSERT(0);
+                    return 0;
+            });
+
+            bm::task_descr& tdescr = tv.add();
+            tdescr.init(task, (void*)&tdescr);
+
+//            tdescr.ret = (void*)&sv_layout;
 
             if (s_params_.bv_ref_ptr_)
             {
                 BM_ASSERT(batch.s_params.sim_model_ptr_);
+                /*
                 tdescr.payload0.u32 =
                     (unsigned)s_params_.bv_ref_ptr_->find_bv(bv);
                 BM_ASSERT(tdescr.payload0.u32
                           != s_params_.bv_ref_ptr_->not_found());
+                */
             }
             else
             {
@@ -272,12 +257,17 @@ public:
         } // for i
 
         // Add barrier task at the end to finalize the compression
+        bm::task_function_t task_final(
+            [&sv_layout] (void* /*argp*/) {
+                //TODO: full implementation
+                BM_ASSERT(0);
+                return 0;
+        });
 
-        bm::task_description& tdescr = tv.add();
-        tdescr.init(task_run_final, (void*)&tdescr,
-                    (void*)0, (void*)&batch.s_params, 0);
-        tdescr.flags = bm::task_description::barrier_ok;
-        tdescr.ret = (void*)&sv_layout;
+        bm::task_descr& tdescr = tv.add();
+        tdescr.init(task_final, (void*)&tdescr);
+        tdescr.flags = bm::task_descr::barrier_ok;
+        //tdescr.ret = (void*)&sv_layout;
     }
 protected:
     /// Task execution Entry Point
@@ -300,6 +290,7 @@ protected:
 protected:
     serialization_params s_params_;
 };
+
 
 } // namespace bm
 

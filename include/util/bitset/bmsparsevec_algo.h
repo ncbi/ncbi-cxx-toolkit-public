@@ -63,7 +63,7 @@ namespace bm
 template<typename SV>
 void dynamic_range_clip_high(SV& svect, unsigned high_bit)
 {
-    unsigned sv_planes = svect.planes();
+    unsigned sv_planes = svect.slices();
     
     BM_ASSERT(sv_planes > high_bit && high_bit > 0);
     
@@ -73,20 +73,19 @@ void dynamic_range_clip_high(SV& svect, unsigned high_bit)
     // combine all the high bits into accumulator vector
     for (i = high_bit+1; i < sv_planes; ++i)
     {
-        typename SV::bvector_type* bv_plane = svect.plane(i);
-        if (bv_plane)
+        if (typename SV::bvector_type* bv = svect.slice(i))
         {
-            bv_acc.bit_or(*bv_plane);
-            svect.free_plane(i);
+            bv_acc.bit_or(*bv);
+            svect.free_slice(i);
         }
     } // for i
     
     // set all bits ON for all low vectors, which happen to be clipped
     for (i = high_bit; true; --i)
     {
-        typename SV::bvector_type* bv_plane = svect.get_plane(i);
-        bv_plane->bit_or(bv_acc);
-        if (i == 0)
+        typename SV::bvector_type* bv = svect.get_create_slice(i);
+        bv->bit_or(bv_acc);
+        if (!i)
             break;
     } // for i
 }
@@ -105,31 +104,29 @@ template<typename SV>
 void dynamic_range_clip_low(SV& svect, unsigned low_bit)
 {
     if (low_bit == 0) return; // nothing to do
-    BM_ASSERT(svect.planes() > low_bit);
+    BM_ASSERT(svect.slices() > low_bit);
     
-    unsigned sv_planes = svect.planes();
+    unsigned sv_planes = svect.slices();
     typename SV::bvector_type bv_acc1;
     unsigned i;
     
     // combine all the high bits into accumulator vector
     for (i = low_bit+1; i < sv_planes; ++i)
     {
-        typename SV::bvector_type* bv_plane = svect.plane(i);
-        if (bv_plane)
-            bv_acc1.bit_or(*bv_plane);
+        if (typename SV::bvector_type* bv = svect.slice(i))
+            bv_acc1.bit_or(*bv);
     } // for i
     
     // accumulate all vectors below the clipping point
     typename SV::bvector_type bv_acc2;
-    typename SV::bvector_type* bv_low_plane = svect.get_plane(low_bit);
+    typename SV::bvector_type* bv_low_plane = svect.get_create_slice(low_bit);
     
     for (i = low_bit-1; true; --i)
     {
-        typename SV::bvector_type* bv_plane = svect.plane(i);
-        if (bv_plane)
+        if (typename SV::bvector_type* bv = svect.slice(i))
         {
-            bv_acc2.bit_or(*bv_plane);
-            svect.free_plane(i);
+            bv_acc2.bit_or(*bv);
+            svect.free_slice(i);
             if (i == 0)
                 break;
         }
@@ -177,8 +174,11 @@ bool sparse_vector_find_first_mismatch(const SV& sv1,
 
     unsigned sv_idx = 0;
 
-    unsigned planes1 = sv1.planes();
+    unsigned planes1 = (unsigned)sv1.get_bmatrix().rows();
     BM_ASSERT(planes1);
+
+    typename SV::bvector_type_const_ptr bv_null1 = sv1.get_null_bvector();
+    typename SV::bvector_type_const_ptr bv_null2 = sv2.get_null_bvector();
 
     // for RSC vector do NOT compare NULL planes
 
@@ -190,8 +190,6 @@ bool sparse_vector_find_first_mismatch(const SV& sv1,
     {
         if (null_proc == bm::use_null)
         {
-            typename SV::bvector_type_const_ptr bv_null1 = sv1.get_null_bvector();
-            typename SV::bvector_type_const_ptr bv_null2 = sv2.get_null_bvector();
             if (bv_null1 && bv_null2) // both (not) NULL vectors present
             {
                 bool f = bv_null1->find_first_mismatch(*bv_null2, midx, mismatch);
@@ -199,7 +197,6 @@ bool sparse_vector_find_first_mismatch(const SV& sv1,
                 {
                     found = f; mismatch = midx;
                 }
-
             }
             else // one or both NULL vectors are not present
             {
@@ -234,8 +231,13 @@ bool sparse_vector_find_first_mismatch(const SV& sv1,
 
     for (unsigned i = 0; mismatch && (i < planes1); ++i)
     {
-        typename SV::bvector_type_const_ptr bv1 = sv1.get_plane(i);
-        typename SV::bvector_type_const_ptr bv2 = sv2.get_plane(i);
+        typename SV::bvector_type_const_ptr bv1 = sv1.get_slice(i);
+        if (bv1 == bv_null1)
+            bv1 = 0;
+        typename SV::bvector_type_const_ptr bv2 = sv2.get_slice(i);
+        if (bv2 == bv_null2)
+            bv2 = 0;
+
         if (!bv1)
         {
             if (!bv2)
@@ -291,7 +293,19 @@ bool sparse_vector_find_first_mismatch(const SV& sv1,
                 BM_ASSERT(0);
             }
             BM_ASSERT(found);
+            midx = mismatch;
         }
+        if (null_proc == bm::use_null)
+        {
+            // no need for address translation in this case
+            bool f = bv_null1->find_first_mismatch(*bv_null2, midx, mismatch);
+            if (f && (midx < mismatch)) // better mismatch found
+            {
+                found = f; mismatch = midx;
+            }
+        }
+
+/*
         else // search for mismatch in the NOT NULL vectors
         {
             if (null_proc == bm::use_null)
@@ -302,6 +316,7 @@ bool sparse_vector_find_first_mismatch(const SV& sv1,
                 found = bv_null1->find_first_mismatch(*bv_null2, mismatch);
             }
         }
+*/
     }
 
     midx = mismatch; // minimal mismatch
@@ -352,14 +367,14 @@ void sparse_vector_find_mismatch(typename SV1::bvector_type& bv,
 
     bv.clear();
 
-    unsigned planes = sv1.planes();
-    if (planes < sv2.planes())
-        planes = sv2.planes();
+    unsigned planes = sv1.effective_slices();; // slices();
+    if (planes < sv2.slices())
+        planes = sv2.slices();
 
     for (unsigned i = 0; i < planes; ++i)
     {
-        typename SV1::bvector_type_const_ptr bv1 = sv1.get_plane(i);
-        typename SV2::bvector_type_const_ptr bv2 = sv2.get_plane(i);
+        typename SV1::bvector_type_const_ptr bv1 = sv1.get_slice(i);
+        typename SV2::bvector_type_const_ptr bv2 = sv2.get_slice(i);
 
         if (!bv1)
         {
@@ -472,7 +487,8 @@ void sparse_vector_find_mismatch(typename SV1::bvector_type& bv,
     like "find all sparse vector elements equivalent to XYZ".
 
     Class uses fast algorithms based on properties of bit-planes.
-    This is NOT a brute force, direct scan.
+    This is NOT a brute force, direct scan, scanner uses search space pruning and cache optimizations
+    to run the search.
  
     @ingroup svalgo
     @ingroup setalgo
@@ -489,7 +505,100 @@ public:
     
     typedef typename bvector_type::allocator_type        allocator_type;
     typedef typename allocator_type::allocator_pool_type allocator_pool_type;
-    
+
+    typedef bm::aggregator<bvector_type>    aggregator_type;
+    typedef
+    bm::heap_vector<value_type, typename bvector_type::allocator_type, true>
+                                                    remap_vector_type;
+    typedef
+    bm::heap_vector<bvector_type*, allocator_type, true> bvect_vector_type;
+    typedef
+    typename aggregator_type::bv_count_vector_type bv_count_vector_type;
+
+    /**
+       Scanner options to control execution
+     */
+    typedef
+    typename aggregator_type::run_options run_options;
+
+public:
+
+
+    /**
+        Pipeline to run multiple searches against a particular SV faster using cache optimizations.
+        USAGE:
+        - setup the pipeline (add searches)
+        - run all searches at once
+        - get the search results (in the order it was added)
+     */
+    template<class Opt = bm::agg_run_options<> >
+    class pipeline
+    {
+    public:
+        typedef
+        typename aggregator_type::template pipeline<Opt> aggregator_pipeline_type;
+    public:
+        pipeline(const SV& sv)
+        : sv_(sv)
+        {}
+
+        /// Set pipeline run options
+        run_options& options() BMNOEXCEPT
+            { return agg_pipe_.options(); }
+
+        /// Get pipeline run options
+        const run_options& get_options() const BMNOEXCEPT
+            { return agg_pipe_.options(); }
+
+        /**
+            Attach OR (aggregator vector).
+            Pipeline results all will be OR-ed (UNION) into the OR target vector
+           @param bv_or - OR target vector
+         */
+        void set_or_target(bvector_type* bv_or) BMNOEXCEPT
+            { agg_pipe_.set_or_target(bv_or); }
+
+        /*! @name pipeline fill-in methods */
+        //@{
+
+        void add(const typename SV::value_type* str);
+
+        /** Prepare pipeline for the execution (resize and init internal structures)
+            Once complete, you cannot add() to it.
+        */
+        void complete() { agg_pipe_.complete(); }
+        
+        bool is_complete() const BMNOEXCEPT
+            { return agg_pipe_.is_complete(); }
+        //@}
+
+        /** Return results vector used for pipeline execution */
+        bvect_vector_type& get_bv_res_vector()  BMNOEXCEPT
+            { return agg_pipe_.get_bv_res_vector(); }
+        /** Return results vector count used for pipeline execution */
+
+        bv_count_vector_type& get_bv_count_vector()  BMNOEXCEPT
+            { return agg_pipe_.get_bv_count_vector(); }
+
+
+        /**
+            get aggregator pipeline (access to compute internals)
+            @internal
+         */
+         aggregator_pipeline_type& get_aggregator_pipe() BMNOEXCEPT
+            { return agg_pipe_; }
+
+    protected:
+        friend class sparse_vector_scanner;
+
+        pipeline(const pipeline&) = delete;
+        pipeline& operator=(const pipeline&) = delete;
+    protected:
+        const SV&                    sv_; ///< target sparse vector ref
+        aggregator_pipeline_type     agg_pipe_; ///< traget aggregator pipeline
+        remap_vector_type            remap_value_vect_; ///< remap buffer
+    };
+
 public:
     sparse_vector_scanner();
 
@@ -517,7 +626,7 @@ public:
 
         \param sv - input sparse vector
         \param value - value to search for
-        \param bv_out - search result bit-vector (search result masks 1 elements)
+        \param bv_out - search result bit-vector (search result  is a vector of 1s when sv[i] == value)
     */
     void find_eq(const SV&                  sv,
                  typename SV::value_type    value,
@@ -539,19 +648,21 @@ public:
                  typename SV::value_type    value,
                  typename SV::size_type&    pos);
     /**
-        \brief lower bound search for an array position
+        \brief binary search for position in the sorted sparse vector
 
-        Method assumes the sparse array is sorted
+        Method assumes the sparse array is sorted, if value is found pos returns its index,
+        if not found, pos would contain index where it could be inserted to maintain the order
 
         \param sv - input sparse vector
         \param val - value to search for
-        \param pos - output sparse vector element index
+        \param pos - output sparse vector element index (actual index if found or insertion
+                    point if not found)
 
         \return true if value found
     */
-    bool lower_bound(const SV&                      sv,
-                     const typename SV::value_type  val,
-                     typename SV::size_type&        pos);
+    bool bfind(const SV&                      sv,
+               const typename SV::value_type  val,
+               typename SV::size_type&        pos);
 
     //@}
 
@@ -611,6 +722,12 @@ public:
                      const typename SV::value_type* str,
                      typename SV::bvector_type&     bv_out);
 
+    /**
+        \brief find sparse vector elements using search pipeline
+        @param pipe  - pipeline to run
+     */
+    template<class TPipe>
+    void find_eq_str(TPipe& pipe);
 
     /**
         \brief binary find first sparse vector element (string)     
@@ -662,6 +779,17 @@ public:
     */
     void find_nonzero(const SV& sv, typename SV::bvector_type& bv_out);
 
+    /*!
+        \brief Find positive (greter than zero elements)
+        Output vector is computed as a logical OR (join) of all planes
+
+        \param  sv - input sparse vector
+        \param  bv_out - output bit-bector of non-zero elements
+    */
+    void find_positive(const SV& sv,
+                      typename SV::bvector_type& bv_out);
+
+
     /**
         \brief invert search result ("EQ" to "not EQ")
 
@@ -705,6 +833,7 @@ public:
             correct_nulls(sv, bv_out);
     }
 
+
     /// For testing purposes only
     ///
     /// @internal
@@ -712,13 +841,33 @@ public:
                  typename SV::value_type           value,
                  typename SV::bvector_type&        bv_out);
 
+    /// For testing purposes only
+    ///
+    /// @internal
+    void find_gt_horizontal(const SV&   sv,
+                         typename SV::value_type     value,
+                         typename SV::bvector_type&  bv_out,
+                         bool null_correct = true);
+
+
     /** Exclude possible NULL values from the result vector
         \param  sv - input sparse vector
         \param  bv_out - output bit-bector of non-zero elements
     */
     void correct_nulls(const SV&   sv, typename SV::bvector_type& bv_out);
+
+    /// Return allocator pool for blocks
+    ///  (Can be used to improve performance of repeated searches with the same scanner)
+    ///
+    allocator_pool_type& get_bvector_alloc_pool() BMNOEXCEPT { return pool_; }
     
 protected:
+
+    /// Remap input value into SV char encodings
+    static
+    bool remap_tosv(remap_vector_type& remap_vect_target,
+                    const typename SV::value_type* str,
+                    const SV& sv);
 
     /// set search boundaries (hint for the aggregator)
     void set_search_range(size_type from, size_type to);
@@ -768,17 +917,33 @@ protected:
     /// compare sv[idx] with input value
     int compare(const SV& sv, size_type idx, const value_type val) BMNOEXCEPT;
 
+    ///  @internal
+    void aggregate_OR_slices(bvector_type& bv_target, const SV& sv,
+                unsigned from, unsigned total_planes);
+
+    ///  @internal
+    static
+    void aggregate_AND_OR_slices(bvector_type& bv_target,
+                const bvector_type& bv_mask,
+                const SV& sv,
+                unsigned from, unsigned total_planes);
+
+    /// Return the slice limit for signed/unsigned vector value types
+    /// @internal
+    static constexpr int gt_slice_limit() noexcept
+    {
+        if constexpr (std::is_signed<value_type>::value)
+            return 1; // last plane
+        else
+            return 0;
+    }
+
+
 protected:
     sparse_vector_scanner(const sparse_vector_scanner&) = delete;
     void operator=(const sparse_vector_scanner&) = delete;
 
 protected:
-
-    enum vector_capacity
-    {
-        max_columns = SV::max_vector_size
-    };
-    
     enum search_algo_params
     {
         linear_cutoff1 = 16,
@@ -786,16 +951,58 @@ protected:
     };
 
     typedef bm::dynamic_heap_matrix<value_type, allocator_type> heap_matrix_type;
-    typedef bm::heap_matrix<typename SV::value_type,
-                           linear_cutoff2,
-                           SV::sv_octet_planes,
-                           allocator_type> matrix_search_buf_type;
+    typedef bm::dynamic_heap_matrix<value_type, allocator_type> matrix_search_buf_type;
 
+    typedef
+    bm::heap_vector<bm::id64_t, typename bvector_type::allocator_type, true>
+                                            mask_vector_type;
+
+protected:
+
+    /// Addd char  to aggregator (AND-SUB)
+    template<typename AGG>
+    static
+    void add_agg_char(AGG& agg,
+                      const SV& sv,
+                      int octet_idx, bm::id64_t planes_mask,
+                      unsigned value)
+    {
+        unsigned char bits[64];
+        unsigned short bit_count_v = bm::bitscan(value, bits);
+        for (unsigned i = 0; i < bit_count_v; ++i)
+        {
+            unsigned bit_idx = bits[i];
+            BM_ASSERT(value & (value_type(1) << bit_idx));
+            unsigned plane_idx = (unsigned(octet_idx) * 8) + bit_idx;
+            const bvector_type* bv = sv.get_slice(plane_idx);
+            agg.add(bv, 0); // add to the AND group
+        } // for i
+
+        unsigned vinv = unsigned(value);
+        if constexpr (sizeof(value_type) == 1)
+            vinv ^= 0xFF;
+        else // 2-byte char
+        {
+            BM_ASSERT(sizeof(value_type) == 2);
+            vinv ^= 0xFFFF;
+        }
+        // exclude the octet bits which are all not set (no vectors)
+        vinv &= unsigned(planes_mask);
+        for (unsigned octet_plane = (unsigned(octet_idx) * 8); vinv; vinv &= vinv-1)
+        {
+            bm::id_t t = vinv & -vinv;
+            unsigned bit_idx = bm::word_bitcount(t - 1);
+            unsigned plane_idx = octet_plane + bit_idx;
+            const bvector_type* bv = sv.get_slice(plane_idx);
+            BM_ASSERT(bv);
+            agg.add(bv, 1); // add to SUB group
+        } // for
+    }
 
 private:
     allocator_pool_type                pool_;
     bvector_type                       bv_tmp_;
-    bm::aggregator<bvector_type>       agg_;
+    aggregator_type                    agg_;
     bm::rank_compressor<bvector_type>  rank_compr_;
     
     size_type                          mask_from_;
@@ -807,9 +1014,9 @@ private:
     heap_matrix_type                   block3_elements_cache_; ///< cache for elements[16384x] of each block
     size_type                          effective_str_max_;
     
-    value_type                         remap_value_vect_[SV::max_vector_size];
+    remap_vector_type                  remap_value_vect_; ///< remap buffer
     /// masks of allocated bit-planes (1 - means there is a bit-plane)
-    bm::id64_t                         vector_plane_masks_[SV::max_vector_size];
+    mask_vector_type                   vector_plane_masks_;
     matrix_search_buf_type             hmatr_; ///< heap matrix for string search linear stage
 };
 
@@ -949,6 +1156,9 @@ template<typename SV>
 set2set_11_transform<SV>::set2set_11_transform()
 : sv_ptr_(0), gb_(0), have_stats_(false)
 {
+    // set2set_11_transform for signed int is not implemented yet
+    static_assert(std::is_unsigned<value_type>::value,
+                  "BM: unsigned sparse vector is required for transform");
     gb_ = (gather_buffer_type*)::malloc(sizeof(gather_buffer_type));
     if (!gb_)
     {
@@ -1173,42 +1383,47 @@ sparse_vector_scanner<SV>::sparse_vector_scanner()
 template<typename SV>
 void sparse_vector_scanner<SV>::bind(const SV&  sv, bool sorted)
 {
+    (void)sorted; // MSVC warning over if constexpr variable "not-referenced"
     bound_sv_ = &sv;
-    if (sorted)
+
+    if constexpr (SV::is_str()) // bindings for the string sparse vector
     {
-        size_type sv_sz = sv.size();
-        BM_ASSERT(sv_sz);
-        size_type total_nb = sv_sz / bm::gap_max_bits + 1;
         effective_str_max_ = sv.effective_vector_max();
-
-        block0_elements_cache_.resize(total_nb, effective_str_max_+1);
-        block0_elements_cache_.set_zero();
-
-        block3_elements_cache_.resize(total_nb * 3, effective_str_max_+1);
-        block3_elements_cache_.set_zero();
-        
-        // fill in elements cache
-        for (size_type i = 0; i < sv_sz; i+= bm::gap_max_bits)
+        if (sorted)
         {
-            size_type nb = (i >> bm::set_block_shift);
-            value_type* s0 = block0_elements_cache_.row(nb);
-            sv.get(i, s0, size_type(block0_elements_cache_.cols()));
-            
-            for (size_type k = 0; k < 3; ++k)
+            size_type sv_sz = sv.size();
+            BM_ASSERT(sv_sz);
+            size_type total_nb = sv_sz / bm::gap_max_bits + 1;
+
+            block0_elements_cache_.resize(total_nb, effective_str_max_+1);
+            block0_elements_cache_.set_zero();
+
+            block3_elements_cache_.resize(total_nb * 3, effective_str_max_+1);
+            block3_elements_cache_.set_zero();
+
+            // fill in elements cache
+            for (size_type i = 0; i < sv_sz; i+= bm::gap_max_bits)
             {
-                value_type* s1 = block3_elements_cache_.row(nb * 3 + k);
-                size_type idx = i + (k+1) * bm::sub_block3_size;
-                sv.get(idx, s1, size_type(block3_elements_cache_.cols()));
-            } // for k
+                size_type nb = (i >> bm::set_block_shift);
+                value_type* s0 = block0_elements_cache_.row(nb);
+                sv.get(i, s0, size_type(block0_elements_cache_.cols()));
+
+                for (size_type k = 0; k < 3; ++k)
+                {
+                    value_type* s1 = block3_elements_cache_.row(nb * 3 + k);
+                    size_type idx = i + (k+1) * bm::sub_block3_size;
+                    sv.get(idx, s1, size_type(block3_elements_cache_.cols()));
+                } // for k
+            } // for i
+        }
+        // pre-calculate vector plane masks
+        //
+        vector_plane_masks_.resize(effective_str_max_);
+        for (unsigned i = 0; i < effective_str_max_; ++i)
+        {
+            vector_plane_masks_[i] = sv.get_slice_mask(i);
         } // for i
     }
-    // pre-calculate vector plane masks
-    //
-    for (unsigned i = 0; i < SV::max_vector_size; ++i)
-    {
-        vector_plane_masks_[i] = sv.get_planes_mask(i);
-    } // for i
-    
 }
 
 //----------------------------------------------------------------------------
@@ -1256,6 +1471,12 @@ void sparse_vector_scanner<SV>::invert(const SV& sv, typename SV::bvector_type& 
         return;
     }
     // TODO: find a better algorithm (NAND?)
+    auto old_sz = bv_out.size();
+    bv_out.resize(sv.size());
+    bv_out.invert();
+    bv_out.resize(old_sz);
+    correct_nulls(sv, bv_out);
+    /*
     bv_out.invert();
     const bvector_type* bv_null = sv.get_null_bvector();
     if (bv_null) // correct result to only use not NULL elements
@@ -1265,6 +1486,7 @@ void sparse_vector_scanner<SV>::invert(const SV& sv, typename SV::bvector_type& 
         // TODO: use the shorter range to clear the tail
         bv_out.set_range(sv.size(), bm::id_max - 1, false);
     }
+    */
 }
 
 //----------------------------------------------------------------------------
@@ -1336,10 +1558,11 @@ bool sparse_vector_scanner<SV>::find_first_eq(const SV&   sv,
 //----------------------------------------------------------------------------
 
 template<typename SV>
-bool sparse_vector_scanner<SV>::find_first_eq(const SV&                   sv,
-                                          const typename SV::value_type*  str,
-                                          size_type&                      idx,
-                                          bool                            remaped)
+bool sparse_vector_scanner<SV>::find_first_eq(
+                                const SV&                       sv,
+                                const typename SV::value_type*  str,
+                                size_type&                      idx,
+                                bool                            remaped)
 {
     if (sv.empty())
         return false; // nothing to do
@@ -1350,7 +1573,6 @@ bool sparse_vector_scanner<SV>::find_first_eq(const SV&                   sv,
 
     agg_.reset();
     unsigned common_prefix_len = 0;
-    
     if (mask_set_)
     {
         agg_.set_range_hint(mask_from_, mask_to_);
@@ -1359,16 +1581,17 @@ bool sparse_vector_scanner<SV>::find_first_eq(const SV&                   sv,
     
     if (remaped)
     {
-        str = remap_value_vect_;
+        str = remap_value_vect_.data();
     }
     else
     {
-        if (sv.is_remap() && str != remap_value_vect_)
+        if (sv.is_remap() && (str != remap_value_vect_.data()))
         {
-            bool r = sv.remap_tosv(remap_value_vect_, SV::max_vector_size, str);
+            bool r = sv.remap_tosv(
+                remap_value_vect_.data(), sv.effective_max_str(), str);
             if (!r)
                 return r;
-            str = remap_value_vect_;
+            str = remap_value_vect_.data();
         }
     }
     
@@ -1389,8 +1612,6 @@ bool sparse_vector_scanner<SV>::prepare_and_sub_aggregator(const SV&  sv,
                                       unsigned octet_start,
                                       bool prefix_sub)
 {
-    unsigned char bits[64];
-
     int len = 0;
     for (; str[len] != 0; ++len)
     {}
@@ -1407,46 +1628,14 @@ bool sparse_vector_scanner<SV>::prepare_and_sub_aggregator(const SV&  sv,
         
         bm::id64_t planes_mask;
         if (&sv == bound_sv_)
-            planes_mask = vector_plane_masks_[octet_idx];
+            planes_mask = vector_plane_masks_[unsigned(octet_idx)];
         else
-            planes_mask = sv.get_planes_mask(unsigned(octet_idx));
+            planes_mask = sv.get_slice_mask(unsigned(octet_idx));
 
         if ((value & planes_mask) != value) // pre-screen for impossible values
             return false; // found non-existing plane
 
-        // prep the lists for combined AND-SUB aggregator
-        //
-        unsigned short bit_count_v = bm::bitscan(value, bits);
-        for (unsigned i = 0; i < bit_count_v; ++i)
-        {
-            unsigned bit_idx = bits[i];
-            BM_ASSERT(value & (value_type(1) << bit_idx));
-            unsigned plane_idx = (unsigned(octet_idx) * 8) + bit_idx;
-            const bvector_type* bv = sv.get_plane(plane_idx);
-            agg_.add(bv);
-        } // for i
-        
-        unsigned vinv = unsigned(value);
-        if (bm::conditional<sizeof(value_type) == 1>::test())
-        {
-            vinv ^= 0xFF;
-        }
-        else // 2-byte char
-        {
-            BM_ASSERT(sizeof(value_type) == 2);
-            vinv ^= 0xFFFF;
-        }
-        // exclude the octet bits which are all not set (no vectors)
-        vinv &= unsigned(planes_mask);
-        for (unsigned octet_plane = (unsigned(octet_idx) * 8); vinv; vinv &= vinv-1)
-        {
-            bm::id_t t = vinv & -vinv;
-            unsigned bit_idx = bm::word_bitcount(t - 1);
-            unsigned plane_idx = octet_plane + bit_idx;
-            const bvector_type* bv = sv.get_plane(plane_idx);
-            BM_ASSERT(bv);
-            agg_.add(bv, 1); // agg to SUB group
-        } // for
+        add_agg_char(agg_, sv, octet_idx, planes_mask, value); // AND-SUB aggregator
      } // for octet_idx
     
     // add all vectors above string len to the SUB aggregation group
@@ -1454,16 +1643,10 @@ bool sparse_vector_scanner<SV>::prepare_and_sub_aggregator(const SV&  sv,
     if (prefix_sub)
     {
         unsigned plane_idx = unsigned(len * 8);
-        typename SV::size_type planes;
-        if (&sv != bound_sv_)
-        {
-            effective_str_max_ = sv.effective_vector_max();
-        }
-        planes = effective_str_max_ * unsigned(sizeof(value_type)) * 8;
+        typename SV::size_type planes = sv.get_bmatrix().rows();
         for (; plane_idx < planes; ++plane_idx)
         {
-            bvector_type_const_ptr bv = sv.get_plane(plane_idx);
-            if (bv)
+            if (bvector_type_const_ptr bv = sv.get_slice(plane_idx))
                 agg_.add(bv, 1); // agg to SUB group
         } // for
     }
@@ -1476,10 +1659,16 @@ template<typename SV>
 bool sparse_vector_scanner<SV>::prepare_and_sub_aggregator(const SV&   sv,
                                            typename SV::value_type   value)
 {
+    using unsigned_value_type = typename SV::unsigned_value_type;
+
+    agg_.reset();
+
     unsigned char bits[sizeof(value) * 8];
-    unsigned short bit_count_v = bm::bitscan(value, bits);
+    unsigned_value_type uv = sv.s2u(value);
+
+    unsigned short bit_count_v = bm::bitscan(uv, bits);
     BM_ASSERT(bit_count_v);
-    const value_type mask1 = 1;
+    const unsigned_value_type mask1 = 1;
 
     // prep the lists for combined AND-SUB aggregator
     //   (backward order has better chance for bit reduction on AND)
@@ -1487,20 +1676,17 @@ bool sparse_vector_scanner<SV>::prepare_and_sub_aggregator(const SV&   sv,
     for (unsigned i = bit_count_v; i > 0; --i)
     {
         unsigned bit_idx = bits[i-1];
-        BM_ASSERT(value & (mask1 << bit_idx));
-        const bvector_type* bv = sv.get_plane(bit_idx);
-        if (bv)
+        BM_ASSERT(uv & (mask1 << bit_idx));
+        if (const bvector_type* bv = sv.get_slice(bit_idx))
             agg_.add(bv);
         else
             return false;
     }
-    
-    unsigned sv_planes = sv.effective_planes();
+    unsigned sv_planes = sv.effective_slices();
     for (unsigned i = 0; i < sv_planes; ++i)
     {
-        bvector_type_const_ptr bv = sv.get_plane(i);
-        value_type mask = mask1 << i;
-        if (bv && !(value & mask))
+        unsigned_value_type mask = mask1 << i;
+        if (bvector_type_const_ptr bv = sv.get_slice(i); bv && !(uv & mask))
             agg_.add(bv, 1); // agg to SUB group
     } // for i
     return true;
@@ -1514,6 +1700,7 @@ void sparse_vector_scanner<SV>::find_eq_with_nulls_horizontal(const SV&  sv,
     typename SV::value_type    value,
     typename SV::bvector_type& bv_out)
 {
+    bv_out.clear();
     if (sv.empty())
         return; // nothing to do
 
@@ -1524,23 +1711,21 @@ void sparse_vector_scanner<SV>::find_eq_with_nulls_horizontal(const SV&  sv,
     }
 
     unsigned char bits[sizeof(value) * 8];
-    unsigned short bit_count_v = bm::bitscan(value, bits);
+    typename SV::unsigned_value_type uv = sv.s2u(value);
+    unsigned short bit_count_v = bm::bitscan(uv, bits);
     BM_ASSERT(bit_count_v);
 
     // aggregate AND all matching vectors
+    if (const bvector_type* bv_plane = sv.get_slice(bits[--bit_count_v]))
+        bv_out = *bv_plane;
+    else // plane not found
     {
-        const bvector_type* bv_plane = sv.get_plane(bits[--bit_count_v]);
-        if (bv_plane)
-            bv_out = *bv_plane;
-        else // plane not found
-        {
-            bv_out.clear();
-            return;
-        }
+        bv_out.clear();
+        return;
     }
     for (unsigned i = 0; i < bit_count_v; ++i)
     {
-        const bvector_type* bv_plane = sv.get_plane(bits[i]);
+        const bvector_type* bv_plane = sv.get_slice(bits[i]);
         if (bv_plane)
             bv_out &= *bv_plane;
         else // mandatory plane not found - empty result!
@@ -1551,12 +1736,224 @@ void sparse_vector_scanner<SV>::find_eq_with_nulls_horizontal(const SV&  sv,
     } // for i
 
     // SUB all other planes
-    unsigned sv_planes = sv.effective_planes();
-    for (unsigned i = 0; (i < sv_planes) && value; ++i)
+    unsigned sv_planes = sv.effective_slices();
+    for (unsigned i = 0; (i < sv_planes) && uv; ++i)
     {
-        const bvector_type* bv_plane = sv.get_plane(i);
-        if (bv_plane && !(value & (value_type(1) << i)))
-            bv_out -= *bv_plane;
+        if (const bvector_type* bv = sv.get_slice(i); bv && !(uv & (1u << i)))
+            bv_out -= *bv;
+    } // for i
+}
+//----------------------------------------------------------------------------
+
+
+template<typename SV>
+void sparse_vector_scanner<SV>::find_gt_horizontal(const SV&   sv,
+                                         typename SV::value_type     value,
+                                         typename SV::bvector_type&  bv_out,
+                                         bool null_correct)
+{
+    unsigned char blist[64];
+    unsigned bit_count_v;
+
+    if (sv.empty())
+    {
+        bv_out.clear();
+        return; // nothing to do
+    }
+
+    if (!value)
+    {
+        bvector_type bv_zero;
+        find_zero(sv, bv_zero);
+        auto sz = sv.size();
+        bv_out.set_range(0, sz-1);
+        bv_out.bit_sub(bv_zero);  // all but zero
+
+        if constexpr (std::is_signed<value_type>::value)
+        {
+            if (const bvector_type* bv_sign = sv.get_slice(0)) // sign bvector
+                bv_out.bit_sub(*bv_sign);  // all but negatives
+        }
+        if (null_correct)
+            correct_nulls(sv, bv_out);
+        return;
+    }
+    bv_out.clear();
+
+    bvector_type gtz_bv; // all >= 0
+
+    if constexpr (std::is_signed<value_type>::value)
+    {
+        find_positive(sv, gtz_bv); // all positives are greater than all negs
+        if (value == -1)
+        {
+            bv_out.swap(gtz_bv);
+            if (null_correct)
+                correct_nulls(sv, bv_out);
+            return;
+        }
+        if (value == -2)
+        {
+            find_eq(sv, -1, bv_out);
+            bv_out.bit_or(gtz_bv);
+            if (null_correct)
+                correct_nulls(sv, bv_out);
+            return;
+        }
+
+        auto uvalue = SV::s2u(value + bool(value < 0)); // turns it int LE expression
+        uvalue &= ~1u; // drop the negative bit
+        BM_ASSERT(uvalue);
+        bit_count_v = bm::bitscan(uvalue, blist);
+    }
+    else
+        bit_count_v = bm::bitscan(value, blist);
+
+    BM_ASSERT(bit_count_v);
+
+
+    // aggregate all top bit-slices (surely greater)
+    // TODO: use aggregator function
+    bvector_type top_or_bv;
+
+    unsigned total_planes = sv.effective_slices();
+    const bvector_type* bv_sign = sv.get_slice(0); (void)bv_sign;
+
+    agg_.reset();
+    if constexpr (std::is_signed<value_type>::value)
+    {
+        if (value < 0)
+        {
+            if (!bv_sign) // no negatives at all
+            {
+                bv_out.swap(gtz_bv); // return all >= 0
+                if (null_correct)
+                    correct_nulls(sv, bv_out);
+                return;
+            }
+            aggregate_AND_OR_slices(top_or_bv, *bv_sign, sv, blist[bit_count_v-1]+1, total_planes);
+        }
+        else // value > 0
+        {
+            aggregate_OR_slices(top_or_bv, sv, blist[bit_count_v-1]+1, total_planes);
+        }
+    }
+    else
+    {
+        if (total_planes < unsigned(blist[bit_count_v-1]+1))
+            return; // number is greater than anything in this vector (empty set)
+        aggregate_OR_slices(top_or_bv, sv, blist[bit_count_v-1]+1, total_planes);
+    }
+    agg_.reset();
+
+    // TODO: optimize FULL blocks
+
+    bvector_type and_eq_bv; // AND accum
+    bool first = true; // flag for initial assignment
+
+    // GT search
+    for (int i = int(bit_count_v)-1; i >= 0; --i)
+    {
+        int slice_idx = blist[i];
+        if (slice_idx == gt_slice_limit()) // last plane
+            break;
+        const bvector_type* bv_base_plane = sv.get_slice(unsigned(slice_idx));
+        if (!bv_base_plane)
+            break;
+        if (first)
+        {
+            first = false;
+            if constexpr (std::is_signed<value_type>::value)
+            {
+                if (value < 0)
+                    and_eq_bv.bit_and(*bv_base_plane, *bv_sign); // use negatives for AND mask
+                else // value > 0
+                    and_eq_bv.bit_and(*bv_base_plane, gtz_bv);
+            }
+            else
+                and_eq_bv = *bv_base_plane; // initial assignment
+        }
+        else
+            and_eq_bv.bit_and(*bv_base_plane); // AND base to accumulator
+
+        int next_slice_idx = 0;
+        if (i)
+        {
+            next_slice_idx = blist[i-1];
+            if (slice_idx-1 == next_slice_idx)
+                continue;
+            ++next_slice_idx;
+        }
+
+        // AND-OR the mid-planes
+        //
+        for (int j = slice_idx-1; j >= next_slice_idx; --j)
+        {
+            if constexpr (std::is_signed<value_type>::value)
+                if (j == 0) // sign plane
+                    break; // do not process the sign plane at all
+            if (const bvector_type* bv_sub_plane = sv.get_slice(unsigned(j)))
+                bv_out.bit_or_and(and_eq_bv, *bv_sub_plane);
+        } // for j
+    } // for i
+
+    bv_out.merge(top_or_bv);
+
+    if constexpr (std::is_signed<value_type>::value)
+    {
+        if (value < 0)
+        {
+            // now we have negatives greter by abs value
+            top_or_bv.set_range(0, sv.size()-1);
+            top_or_bv.bit_sub(bv_out);
+            bv_out.swap(top_or_bv);
+        }
+        else // value > 0
+        {
+            gtz_bv.resize(sv.size());
+            gtz_bv.invert(); // now it is all < 0
+            bv_out.bit_sub(gtz_bv); // exclude all negatives
+        }
+    }
+
+    if (null_correct)
+        correct_nulls(sv, bv_out);
+}
+
+//----------------------------------------------------------------------------
+
+template<typename SV>
+void sparse_vector_scanner<SV>::aggregate_OR_slices(
+                bvector_type& bv_target,
+                const SV& sv,
+                unsigned from, unsigned total_planes)
+{
+    for (unsigned i = from; i < total_planes; ++i)
+    {
+        if (const bvector_type* bv_slice = sv.get_slice(i))
+        {
+            BM_ASSERT(bv_slice != sv.get_null_bvector());
+            agg_.add(bv_slice);
+        }
+    }
+    agg_.combine_or(bv_target);
+}
+
+//----------------------------------------------------------------------------
+
+template<typename SV>
+void sparse_vector_scanner<SV>::aggregate_AND_OR_slices(bvector_type& bv_target,
+            const bvector_type& bv_mask,
+            const SV& sv,
+            unsigned from, unsigned total_planes)
+{
+    for (unsigned i = from; i < total_planes; ++i)
+    {
+        if (const bvector_type* bv_slice = sv.get_slice(i))
+        {
+            BM_ASSERT(bv_slice != sv.get_null_bvector());
+            bv_target.bit_or_and(bv_mask, *bv_slice);
+        }
     }
 }
 
@@ -1594,14 +1991,17 @@ bool sparse_vector_scanner<SV>::find_eq_str(const SV&                      sv,
     if (*str)
     {
         bool remaped = false;
-        if (bm::conditional<SV::is_remap_support::value>::test()) // test remapping trait
+        if constexpr (SV::is_remap_support::value) // test remapping trait
         {
-            if (sv.is_remap() && str != remap_value_vect_)
+            if (sv.is_remap() && str != remap_value_vect_.data())
             {
-                remaped = sv.remap_tosv(remap_value_vect_, SV::max_vector_size, str);
+                auto str_len = sv.effective_vector_max();
+                remap_value_vect_.resize(str_len);
+                remaped = sv.remap_tosv(
+                    remap_value_vect_.data(), str_len, str);
                 if (!remaped)
                     return remaped;
-                str = remap_value_vect_;
+                str = remap_value_vect_.data();
             }
         }
     
@@ -1610,7 +2010,7 @@ bool sparse_vector_scanner<SV>::find_eq_str(const SV&                      sv,
         if (found)
         {
             pos = found_pos;
-            if (bm::conditional<SV::is_rsc_support::value>::test()) // test rank/select trait
+            if constexpr (SV::is_rsc_support::value) // test rank/select trait
             {
                 if (sv.is_compressed()) // if compressed vector - need rank translation
                     found = sv.find_rank(found_pos + 1, pos);
@@ -1650,6 +2050,20 @@ bool sparse_vector_scanner<SV>::find_eq_str(const SV&                      sv,
 //----------------------------------------------------------------------------
 
 template<typename SV>
+bool sparse_vector_scanner<SV>::remap_tosv(
+                                remap_vector_type& remap_vect_target,
+                                const typename SV::value_type* str,
+                                const SV& sv)
+{
+    auto str_len = sv.effective_vector_max();
+    remap_vect_target.resize(str_len);
+    bool remaped = sv.remap_tosv(remap_vect_target.data(), str_len, str);
+    return remaped;
+}
+
+//----------------------------------------------------------------------------
+
+template<typename SV>
 bool sparse_vector_scanner<SV>::find_eq_str_impl(const SV&  sv,
                              const typename SV::value_type* str,
                              typename SV::bvector_type& bv_out,
@@ -1659,7 +2073,7 @@ bool sparse_vector_scanner<SV>::find_eq_str_impl(const SV&  sv,
     bv_out.clear(true);
     if (sv.empty())
         return false; // nothing to do
-    if (bm::conditional<SV::is_rsc_support::value>::test()) // test rank/select trait
+    if constexpr (SV::is_rsc_support::value) // test rank/select trait
     {
         // search in RS compressed string vectors is not implemented
         BM_ASSERT(0);
@@ -1667,15 +2081,14 @@ bool sparse_vector_scanner<SV>::find_eq_str_impl(const SV&  sv,
 
     if (*str)
     {
-        bool remaped = false;
-        if (bm::conditional<SV::is_remap_support::value>::test()) // test remapping trait
+        if constexpr (SV::is_remap_support::value) // test remapping trait
         {
-            if (sv.is_remap() && str != remap_value_vect_)
+            if (sv.is_remap() && (str != remap_value_vect_.data()))
             {
-                remaped = sv.remap_tosv(remap_value_vect_, SV::max_vector_size, str);
+                bool remaped = remap_tosv(remap_value_vect_, str, sv);
                 if (!remaped)
                     return false; // not found because
-                str = remap_value_vect_;
+                str = remap_value_vect_.data();
             }
         }
         /// aggregator search
@@ -1699,13 +2112,21 @@ bool sparse_vector_scanner<SV>::find_eq_str_impl(const SV&  sv,
 
 }
 
+//----------------------------------------------------------------------------
+
+template<typename SV> template<class TPipe>
+void sparse_vector_scanner<SV>::find_eq_str(TPipe& pipe)
+{
+    agg_.combine_and_sub(pipe.agg_pipe_);
+}
 
 //----------------------------------------------------------------------------
 
 template<typename SV>
-bool sparse_vector_scanner<SV>::bfind_eq_str(const SV&                      sv,
-                                             const typename SV::value_type* str,
-                                             typename SV::size_type&        pos)
+bool sparse_vector_scanner<SV>::bfind_eq_str(
+                                    const SV&                      sv,
+                                    const typename SV::value_type* str,
+                                    typename SV::size_type&        pos)
 {
     bool found = false;
     if (sv.empty())
@@ -1715,12 +2136,13 @@ bool sparse_vector_scanner<SV>::bfind_eq_str(const SV&                      sv,
     {
         bool remaped = false;
         // test search pre-condition based on remap tables
-        if (bm::conditional<SV::is_remap_support::value>::test())
+        if constexpr (SV::is_remap_support::value)
         {
-            if (sv.is_remap() && str != remap_value_vect_)
+            if (sv.is_remap() && (str != remap_value_vect_.data()))
             {
-                remaped = sv.remap_tosv(
-                                remap_value_vect_, SV::max_vector_size, str);
+                auto str_len = sv.effective_vector_max();
+                remap_value_vect_.resize(str_len);
+                remaped = sv.remap_tosv(remap_value_vect_.data(), str_len, str);
                 if (!remaped)
                     return remaped;
             }
@@ -1863,9 +2285,9 @@ bool sparse_vector_scanner<SV>::bfind_eq_str(const typename SV::value_type* str,
 //----------------------------------------------------------------------------
 
 template<typename SV>
-bool sparse_vector_scanner<SV>::lower_bound(const SV&                      sv,
-                                            const typename SV::value_type  val,
-                                            typename SV::size_type&        pos)
+bool sparse_vector_scanner<SV>::bfind(const SV&                      sv,
+                                      const typename SV::value_type  val,
+                                      typename SV::size_type&        pos)
 {
     int cmp;
     size_type l = 0, r = sv.size();
@@ -2075,8 +2497,12 @@ bool sparse_vector_scanner<SV>::lower_bound_str(
         dist = r - l;
         if (dist < linear_cutoff2) // do linear scan here
         {
-            hmatr_.init();
-            
+            if (!hmatr_.is_init())
+            {
+                unsigned max_str = (unsigned)sv.effective_max_str();
+                hmatr_.resize(linear_cutoff2, max_str+1, false);
+            }
+
             dist = sv.decode(hmatr_, l, dist+1);
             for (unsigned i = 0; i < dist; ++i, ++l)
             {
@@ -2136,8 +2562,6 @@ int sparse_vector_scanner<SV>::compare_str(const SV& sv,
                 if (res || !octet)
                     break;
             } // for i
-
-            //BM_ASSERT(res == sv.compare(idx, str));
             return res;
         }
         else
@@ -2154,7 +2578,6 @@ int sparse_vector_scanner<SV>::compare_str(const SV& sv,
                     if (res || !octet)
                         break;
                 } // for i
-                //BM_ASSERT(res == sv.compare(idx, str));
                 return res;
             }
         }
@@ -2233,10 +2656,34 @@ void sparse_vector_scanner<SV>::find_nonzero(const SV& sv,
                                              typename SV::bvector_type& bv_out)
 {
     agg_.reset(); // in case if previous scan was interrupted
-    for (unsigned i = 0; i < sv.planes(); ++i)
-        agg_.add(sv.get_plane(i));
+    auto sz = sv.effective_slices(); // sv.slices();
+    unsigned i;
+    if constexpr (SV::is_str()) // string vector
+        i = 0;
+    else // numeric vector: int, unsigned, etc
+        if constexpr (std::is_signed<value_type>::value)
+            i = 1; // do not process the sign plane
+        else
+            i = 0;
+    for (; i < sz; ++i)
+        agg_.add(sv.get_slice(i));
     agg_.combine_or(bv_out);
     agg_.reset();
+}
+
+//----------------------------------------------------------------------------
+
+template<typename SV>
+void sparse_vector_scanner<SV>::find_positive(const SV& sv,
+                                     typename SV::bvector_type& bv_out)
+{
+    BM_ASSERT(sv.size());
+    bv_out.set_range(0, sv.size()-1); // select all elements
+    if constexpr (std::is_signed<value_type>::value)
+    {
+        if (const bvector_type* bv_sign = sv.get_slice(0)) // sign bvector
+            bv_out.bit_sub(*bv_sign);  // all MINUS negatives
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -2277,7 +2724,75 @@ void sparse_vector_scanner<SV>::reset_search_range()
 
 
 //----------------------------------------------------------------------------
-//
+// sparse_vector_scanner<SV>::pipeline<Opt>
+//----------------------------------------------------------------------------
+
+template<typename SV> template<class Opt>
+void
+sparse_vector_scanner<SV>::pipeline<Opt>::add(const typename SV::value_type* str)
+{
+    BM_ASSERT(str);
+
+    typename aggregator_type::arg_groups* arg = agg_pipe_.add();
+    BM_ASSERT(arg);
+
+    if constexpr (SV::is_remap_support::value) // test remapping trait
+    {
+        if (sv_.is_remap() && (str != remap_value_vect_.data()))
+        {
+            bool remaped = remap_tosv(remap_value_vect_, str, sv_);
+            if (!remaped)
+                return; // not found (leaves the arg(arg_group) empty
+            str = remap_value_vect_.data();
+        }
+    }
+    int len = 0;
+    for (; str[len] != 0; ++len)
+    {}
+    BM_ASSERT(len);
+
+
+    // use reverse order (faster for sorted arrays)
+    for (int octet_idx = len-1; octet_idx >= 0; --octet_idx)
+    {
+        //if (unsigned(octet_idx) < octet_start) // common prefix
+        //    break;
+
+        unsigned value = unsigned(str[octet_idx]) & 0xFF;
+        BM_ASSERT(value != 0);
+
+        bm::id64_t planes_mask;
+        /*
+        if (&sv == bound_sv_)
+            planes_mask = vector_plane_masks_[unsigned(octet_idx)];
+        else */
+        planes_mask = sv_.get_slice_mask(unsigned(octet_idx));
+
+        if ((value & planes_mask) != value) // pre-screen for impossible values
+            return; // found non-existing plane
+
+        sparse_vector_scanner<SV>::add_agg_char(
+            *arg, sv_, octet_idx, planes_mask, value); // AND-SUB aggregator
+     } // for octet_idx
+
+    // add all vectors above string len to the SUB aggregation group
+    //
+    //if (prefix_sub)
+    {
+        unsigned plane_idx = unsigned(len * 8);
+        typename SV::size_type planes = sv_.get_bmatrix().rows();
+        for (; plane_idx < planes; ++plane_idx)
+        {
+            if (bvector_type_const_ptr bv = sv_.get_slice(plane_idx))
+                arg->add(bv, 1); // agg to SUB group
+        } // for
+    }
+
+
+    //return true;
+
+}
+
 //----------------------------------------------------------------------------
 
 
