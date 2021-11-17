@@ -55,6 +55,7 @@
 #include <util/util_exception.hpp>
 #include <objtools/blast/seqdb_writer/build_db.hpp>
 
+#include <serial/objostrjson.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>
 #include "../blast/blast_app_util.hpp"
 #include "masked_range_set.hpp"
@@ -1218,8 +1219,9 @@ void CMakeBlastDBApp::x_BuildDatabase()
     	SeqDB_GetMetadataFileExtension(is_protein, extn);
     	string metadata_filename = new_db + "." + extn;
     	ofstream outp(metadata_filename.c_str());
-        outp << MSerial_Json << *m;
-        outp.close();
+		TTypeInfo typeInfo = m->GetThisTypeInfo();
+       	CObjectOStreamJson js(outp, eNoOwnership);
+       	js.WriteObject(m.GetPointer(), typeInfo);
     }
 }
 
