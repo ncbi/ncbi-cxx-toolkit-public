@@ -242,7 +242,7 @@ void CCassConnectionFactory::GetHostPort(string & cass_hosts, short & cass_port)
         }
         cass_hosts += item_host;
     }
-    ERR_POST(Info << "Cassandra connection parameters resolved as: hosts - '"
+    ERR_POST(Info << "Cassandra connection parameters parsed as: hosts - '"
         << cass_hosts << "'; port - " << to_string(cass_port));
 }
 
