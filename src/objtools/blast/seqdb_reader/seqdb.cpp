@@ -1678,7 +1678,6 @@ CRef<CBlast_db_metadata> CSeqDB::GetDBMetaData(string user_path)
 
     m->SetDbtype(GetSequenceType() == CSeqDB::eProtein ? "Protein" : "Nucleotide" );
 	m->SetDb_version(GetBlastDbVersion() == EBlastDbVersion::eBDB_Version5?5:4);
-	m->SetVersion("2.0");
 	m->SetDescription(GetTitle());
 	m->SetNumber_of_letters(total_length);
 	m->SetNumber_of_sequences(num_seqs);

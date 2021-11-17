@@ -34,6 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <serial/objostrjson.hpp>
 #include <algo/blast/api/version.hpp>
 #include <objtools/blast/seqdb_reader/seqdbexpert.hpp>
 #include <objtools/blast/seqdb_reader/impl/seqdbtax.hpp>
@@ -1162,9 +1163,11 @@ int CBlastDBCmdApp::Run(void)
         		}
         	}
         	CRef<CBlast_db_metadata> m = m_BlastDb->GetDBMetaData(user_path);
-			TTypeInfo typeInfo = m->GetThisTypeInfo();
-        	CObjectOStreamJson js(out, eNoOwnership);
-        	js.WriteObject(m.GetPointer(), typeInfo);
+            unique_ptr<CObjectOStreamJson> json_out(new CObjectOStreamJson(out, eNoOwnership));
+            json_out->SetDefaultStringEncoding(eEncoding_Ascii);
+            //json_out->AllowHyphens();
+            CConstObjectInfo obj_info(m, m->GetTypeInfo());
+            json_out->WriteObject(obj_info);
         }
         else if (args["tax_info"]) {
         	x_InitBlastDB();

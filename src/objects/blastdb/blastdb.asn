@@ -77,20 +77,22 @@ Blast-db-mask-info ::= SEQUENCE {
 }
 
 Blast-db-metadata ::= SEQUENCE {
+    -- Default indicates the starting version
+    version                         VisibleString DEFAULT "1.2",
     dbname                          VisibleString,
     dbtype                          VisibleString,
-    version                         VisibleString,
-    db-version                      INTEGER,
+    -- Default indicates the starting version
+    db-version                      INTEGER DEFAULT 5,
     description                     VisibleString OPTIONAL,
     number-of-letters               INTEGER,
     number-of-sequences             INTEGER,
     last-updated                    VisibleString,
-    bytes-total                     INTEGER,
-    bytes-to-cache                  INTEGER,
     number-of-volumes               INTEGER,
     number-of-taxids                INTEGER OPTIONAL,
-    files SEQUENCE OF               VisibleString OPTIONAL,
+    bytes-total                     INTEGER,
+    bytes-to-cache                  INTEGER,
     bytes-total-compressed          INTEGER OPTIONAL,
+    files SEQUENCE OF               VisibleString OPTIONAL,
     compressed-files SEQUENCE OF    VisibleString OPTIONAL
 }
 END
