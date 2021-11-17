@@ -2342,14 +2342,14 @@ void CheckAuthNameSingleInitialFix(const string& first, const string& initials, 
 
 BOOST_AUTO_TEST_CASE(Test_SQD_4536)
 {
-    CheckAuthNameSingleInitialFix("", "A", "A", "A.");
-    CheckAuthNameSingleInitialFix("", "A.", "A", "A.");
+    CheckAuthNameSingleInitialFix("", "A", "", "A.");
+    CheckAuthNameSingleInitialFix("", "A.", "", "A.");
 
     CheckAuthNameSingleInitialFix("B", "A", "B", "B.A.");
     CheckAuthNameSingleInitialFix("B", "A.", "B", "B.A.");
 
     // now fixing even if more than one initial
-    CheckAuthNameSingleInitialFix("", "M.E.", "M", "M.E.");
+    CheckAuthNameSingleInitialFix("", "M.E.", "", "M.E.");
 
 }
 
