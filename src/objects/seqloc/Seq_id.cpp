@@ -1757,8 +1757,9 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
 
     SIZE_TYPE flag_len = (flag_char == '\0') ? 0 : 1;
     SIZE_TYPE digit_count = main_size - digit_pos - flag_len;
+    auto& guide = *s_Guide;
     const EAccessionInfo& found_ai
-        = (*s_Guide)->Find(SAccGuide::s_Key(digit_pos, digit_count), main_acc);
+        = guide->Find(SAccGuide::s_Key(digit_pos, digit_count), main_acc);
     EAccessionInfo ai = found_ai;
     if ((ai & fAcc_specials) != 0) {
         ai = EAccessionInfo(ai & ~fAcc_specials);
@@ -1769,8 +1770,8 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
         if ((flags & fParse_FallbackOK) == 0  &&  !s_ReportedFallback ) {
             // TODO - arrange to skip when only interested in the overall type
             s_ReportedFallback = true;
-            auto it = (*s_Guide)->fallbacks.find(&found_ai);
-            if (it != (*s_Guide)->fallbacks.end()) {
+            auto it = guide->fallbacks.find(&found_ai);
+            if (it != guide->fallbacks.end()) {
                 ERR_POST_X(14, Warning << "CSeq_id::IdentifyAccession:"
                            " Returning fallback type "
                            << it->second.first << " for accession "
