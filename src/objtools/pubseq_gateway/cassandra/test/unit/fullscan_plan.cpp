@@ -188,4 +188,14 @@ TEST_F(CCassandraFullscanPlanTest, CheckQueryCount) {
         << "Short plan should have one query";
 }
 
+TEST_F(CCassandraFullscanPlanTest, CheckPartitionCountPerQueryLimit) {
+    CCassandraFullscanPlan plan;
+    plan
+        .SetConnection(s_Connection)
+        .SetKeyspace("idmain2")
+        .SetTable("si2csi")
+        .SetPartitionCountPerQueryLimit(100000);
+    plan.Generate();
+}
+
 }  // namespace
