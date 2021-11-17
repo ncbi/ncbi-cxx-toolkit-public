@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-import sys, datetime, shutil, os, os.path, subprocess, signal, psutil, time
+import sys, datetime, shutil, os, os.path, subprocess, signal, psutil, time, pwd
 from optparse import OptionParser
 
 
 # Order is important
-SUPPORTED_COMMANDS = ['all', 'build', 'functional_test', 'drop_client_test', 'memcheck', 'stress_test',
-                      'compare', 'toolkit_test', 'archive']
+SUPPORTED_COMMANDS = ['all', 'build', 'functional_test', 'stability_test', 'memcheck', 'stress_test',
+                      'compare', 'toolkit_test', 'perf_test', 'archive']
 
 VERBOSE = False
 PORT1 = 10999
@@ -223,6 +223,29 @@ def getCPUUsage(srv):
     # CPU percent (float) during the 3 seconds interval (blocking call)
     return proc.cpu_percent(interval=3)
 
+def getArchivedBinaryPath(ver):
+    if not ver:
+        print_error('Another PSG binary version must be provided '
+                    'via the --against-binary option')
+        return None
+    candidateDir = f'/am/ncbiapdata/release/pubseq_gateway/builds/{ver}/Linux64/'
+    try:
+        for item in os.listdir(candidateDir):
+            if os.path.isdir(item):
+                if item.endswith('-O2g'):
+                    candidate = candidateDir + item + '/bin/pubseq_gateway'
+                    if os.path.exists(candidate):
+                        return candidate
+                    print_error(f'Another PSG binary is not found. Expected here: {candidate}')
+                    return None
+    except Exception as exc:
+        print_error('Error getting another PSG binary of version ' + ver + '\n'
+                    + str(exc))
+        return None
+
+    print_error(f'Cannot find another PSG binary of version {ver}')
+    return None
+
 
 def main():
 
@@ -251,6 +274,10 @@ def main():
     parser.add_option("--psg-version",
                       action="store", type="string", dest="psg_ver",
                       help="PSG release: should be int.int.int")
+    parser.add_option("--against-binary",
+                      action="store", type="string", dest="against_binary",
+                      help="The PSG version against which the performance is "
+                           "compared: should be int.int.int")
     parser.add_option("-g", "--debug",
                       action="store_true", dest="debug", default=False,
                       help="don't clean up garbage after failed run (default: False)")
@@ -276,6 +303,8 @@ def main():
 
     if command == 'all':
         commands = SUPPORTED_COMMANDS
+        commands.remove('archive')
+        commands.remove('perf_test')
     else:
         commands = [command]
 
@@ -360,7 +389,7 @@ def functional_test_check_args(commands, options, args):
 
     return checkVersionOptionAndDirectory(options)
 
-def drop_client_test_check_args(commands, options, args):
+def stability_test_check_args(commands, options, args):
     if shutil.which('h2load') is None:
         print_error('h2load executable is not in the PATH')
         return 1
@@ -390,10 +419,15 @@ def stress_test_check_args(commands, options, args):
     return checkVersionOptionAndDirectory(options)
 
 def compare_check_args(commands, options, args):
+    if not options.against_binary:
+        print_error('The "--against-binary" option must be specified')
+        return 1
+
     if 'all' in commands:
         # Everything will be created on the previous stages
         return 0
-    return 0
+
+    return checkVersionOptionAndDirectory(options)
 
 def toolkit_test_check_args(commands, options, args):
     if 'all' in commands:
@@ -402,9 +436,16 @@ def toolkit_test_check_args(commands, options, args):
     return 0
 
 def archive_check_args(commands, options, args):
-    if 'all' in commands:
-        # Everything will be created on the previous stages
-        return 0
+    userName = pwd.getpwuid(os.getuid()).pw_name
+    if userName != 'coremake':
+        print_error("Archive action requires to be performed on behalf of the 'coremake' user")
+        return 1
+
+    if checkVersionOptionAndDirectory(options) != 0:
+        return 1
+
+    if getBuildResultsDir(options) is None:
+        return 1
     return 0
 
 
@@ -577,7 +618,7 @@ def functional_test(commands, options, args):
     return 0
 
 
-def drop_client_test(commands, options, args):
+def stability_test(commands, options, args):
     global SRV1
 
     if prepareO2Gsandbox(options) != 0:
@@ -901,13 +942,57 @@ def stress_test(commands, options, args):
     return 0
 
 def compare(commands, options, args):
+    global SRV1
+    global SRV2
+
+    if prepareO2Gsandbox(options) != 0:
+        return 1
+
+    artefactDir = getArtefactDir(options)
+
+    # Run the server pointed by the --against-binary option
+    oldVersion = options.against_binary
+    if not oldVersion:
+        print_error('Another PSG binary version must be provided '
+                    'via the --against-binary option')
+        return 1
+    archivedBinaryPath = getArchivedBinaryPath(oldVersion)
+
+
+
+
+
+    # Run the currently built server
+
+    # Run the comparison script
+
+
+
     return 0
 
 def toolkit_test(commands, options, args):
     return 0
 
 def archive(commands, options, args):
-    return 0
+    artefactDir = getArtefactDir(options)
+    buildResultsDir = getBuildResultsDir(options)
+    if buildResultsDir is None:
+        return 1
+
+    cmdLine = ['prepare_release', 'archive', buildResultsDir]
+    print_verbose('Running release archiving: ' + ' '.join(cmdLine))
+    proc = subprocess.Popen(cmdLine, stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE)
+    out, err = proc.communicate('all\n')
+    ret = proc.returncode
+    if ret == 0:
+        print_verbose('Archiving succeeded')
+        return 0
+
+    resultFile = artefactDir + 'archive-release.log'
+    saveProcessArtefacts(proc, resultFile)
+    print_error(f'Archiving error. Return code {ret}; results are in {resultFile}')
+    return ret
 
 
 
