@@ -8,12 +8,29 @@ projects="objtools/test/objmgr app/objmgr/test app/pubseq_gateway/client"
 if [ "$services" = "" ]; then
     echo Missing service argument.
     echo Usage:
-    echo "$0 <service-1> [<service-2> ...]"
+    echo "$0 <service-1:port-1>[/suffix-1] [<service-2:port-2>[suffix-2] ...]"
     exit 0
 fi
+for srv in $services; do
+    x=`echo $srv | grep :`
+    if test $? -ne 0; then
+        echo "Invalid service format: '$srv'"
+        echo "Expected: <service>:<port>[/suffix]"
+        exit 1
+    fi
+done
 
 export GENBANK_LOADER_PSG=t
 base_dir=`pwd`
+
+get_suffix() {
+    srv=`echo $1 | sed 's/[\:\/]/_/g'`
+    sfx=`echo $1 | sed 's/^.*\///'`
+    if [ "$sfx" = "$1" ]; then
+        sfx=
+    fi
+    service=`echo $1 | sed 's/\/.*$//'`
+}
 
 do_build() {
     build=$1
@@ -48,14 +65,14 @@ do_check() {
         if test $error -ne 0; then
             return
         fi
-        for service in $services; do
-            srv=`echo $service | sed 's/\:/_/'`
+        for s in $services; do
+            get_suffix $s
             echo "Testing $build / $service..."
             export PSG_LOADER_SERVICE_NAME=$service
             rm -f check.sh.log
             echo "\n\n" | make check_r
             log_file=`echo $proj | sed 's/\//_/g'`
-            fname=$base_dir/$bld.$srv.$log_file.out
+            fname=$base_dir/$bld.$srv.$log_file.tmp
             mv check.sh.log $fname
             cat $fname >> $base_dir/perf_view.$bld$srv
         done
@@ -64,20 +81,20 @@ do_check() {
     done
 }
 
-rm -rf ./trunk ./perf_view.* ./*.out
+rm -rf ./trunk ./perf_view.* ./*.tmp
 all_tags=
 
 for bld in $builds; do
     do_check $bld
-    for service in $services; do
-        srv=`echo $service | sed 's/\:/_/'`
+    for s in $services; do
+        get_suffix $s
         ver=`curl -s "http://$service/ADMIN/info" | sed '{ s/^.*Version// ; s/\,.*// ; s/[^0-9]*//g }'`
         if [ "$ver" = "" ]; then
             echo "Warning: failed to get server info"
             ver="000"
         fi
         echo "Service $service version=$ver"
-        tag=$bld$ver
+        tag=$bld$ver$sfx
         mv $base_dir/perf_view.$bld$srv $base_dir/perf_view.$tag
         all_tags="$all_tags $tag"
     done
@@ -96,4 +113,4 @@ if test $error -ne 0; then
     echo "Error: perf_view failed, error $error"
     exit $error
 fi
-rm -rf ./trunk
+rm -rf ./trunk *.tmp
