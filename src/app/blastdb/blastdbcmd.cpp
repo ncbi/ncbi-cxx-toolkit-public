@@ -44,6 +44,7 @@
 #include <objtools/blast/blastdb_format/blastdb_seqid.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
+#include <serial/objostrjson.hpp>
 #include "../blast/blast_app_util.hpp"
 #include <iomanip>
 
@@ -1161,7 +1162,9 @@ int CBlastDBCmdApp::Run(void)
         		}
         	}
         	CRef<CBlast_db_metadata> m = m_BlastDb->GetDBMetaData(user_path);
-        	out << MSerial_Json << *m;
+			TTypeInfo typeInfo = m->GetThisTypeInfo();
+        	CObjectOStreamJson js(out, eNoOwnership);
+        	js.WriteObject(m.GetPointer(), typeInfo);
         }
         else if (args["tax_info"]) {
         	x_InitBlastDB();
