@@ -33,6 +33,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <serial/objostrjson.hpp>
 #include <algo/blast/api/version.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -1218,10 +1219,12 @@ void CMakeBlastDBApp::x_BuildDatabase()
     	string extn (kEmptyStr);
     	SeqDB_GetMetadataFileExtension(is_protein, extn);
     	string metadata_filename = new_db + "." + extn;
-    	ofstream outp(metadata_filename.c_str());
-		TTypeInfo typeInfo = m->GetThisTypeInfo();
-       	CObjectOStreamJson js(outp, eNoOwnership);
-       	js.WriteObject(m.GetPointer(), typeInfo);
+        ofstream out(metadata_filename.c_str());
+        unique_ptr<CObjectOStreamJson> json_out(new CObjectOStreamJson(out, eNoOwnership));
+        json_out->SetDefaultStringEncoding(eEncoding_Ascii);
+        //json_out->AllowHyphens();
+        CConstObjectInfo obj_info(m, m->GetTypeInfo());
+        json_out->WriteObject(obj_info);
     }
 }
 
