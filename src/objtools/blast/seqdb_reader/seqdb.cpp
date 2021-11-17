@@ -1660,26 +1660,23 @@ void CSeqDB::x_GetDBFilesMetaData(Int8 & disk_bytes, Int8 & cached_bytes, vector
 CRef<CBlast_db_metadata> CSeqDB::GetDBMetaData(string user_path)
 {
 	CRef<CBlast_db_metadata> m (new CBlast_db_metadata());
-	CBlast_db_metadata::TDbname & dblist = m->SetDbname();
 	int num_seqs = 0;
 	Uint8 total_length = 0;
 
 	GetTotals(CSeqDB::eFilteredAll, &num_seqs, &total_length, true);
-	NStr::Split(GetDBNameList(), " ", dblist, NStr::fSplit_Tokenize);
-	NON_CONST_ITERATE(CBlast_db_metadata::TDbname, itr, dblist) {
-		int off = (*itr).find_last_of(CFile::GetPathSeparator());
-	    if (off != -1) {
-	        (*itr).erase(0, off+1);
-	    }
-	}
+	m->SetDbname(GetDBNameList());
 
     m->SetDbtype(GetSequenceType() == CSeqDB::eProtein ? "Protein" : "Nucleotide" );
 	m->SetDb_version(GetBlastDbVersion() == EBlastDbVersion::eBDB_Version5?5:4);
-	m->SetVersion(2);
+	m->SetVersion("2.0");
 	m->SetDescription(GetTitle());
 	m->SetNumber_of_letters(total_length);
 	m->SetNumber_of_sequences(num_seqs);
-	m->SetLast_updated(GetDate());
+
+	CTimeFormat timeFmt = CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeSec);
+	string fmt = "b d, Y  H:m P";
+	CTime date(GetDate(), fmt);
+	m->SetLast_updated(date.AsString(timeFmt));
 
 	Int8 disk_bytes;
 	Int8 cached_bytes;
