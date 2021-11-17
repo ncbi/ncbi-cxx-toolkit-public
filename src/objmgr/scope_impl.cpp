@@ -3163,6 +3163,19 @@ CScope_Impl::x_GetSynonyms(CBioseq_ScopeInfo& info)
                     else {
                         x_AddSynonym(*it, *syn_set, info);
                     }
+                    if ( it->IsAccVer() ) {
+                        // add no-name and no-release version of Seq-id explicitly
+                        auto seq_id = it->GetSeqId();
+                        auto text_id = seq_id->GetTextseq_Id();
+                        if ( text_id->IsSetAccession() &&
+                             (text_id->IsSetName() || text_id->IsSetRelease()) ) {
+                            CRef<CSeq_id> new_id(SerialClone(*seq_id));
+                            auto new_text_id = const_cast<CTextseq_id*>(new_id->GetTextseq_Id());
+                            new_text_id->ResetName();
+                            new_text_id->ResetRelease();
+                            x_AddSynonym(CSeq_id_Handle::GetHandle(*new_id), *syn_set, info);
+                        }
+                    }
                 }
             }
             info.m_SynCache = syn_set;
