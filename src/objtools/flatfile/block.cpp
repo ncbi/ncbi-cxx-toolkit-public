@@ -72,6 +72,39 @@ void GapFeatsFree(GapFeatsPtr gfp)
     }
 }
 
+void s_FreeDataBlk(DataBlkPtr dbp)
+{
+    DataBlkPtr temp;
+
+    while(dbp != NULL)
+    {
+        if(dbp->mpData != NULL)
+        {
+            temp = (DataBlkPtr) dbp->mpData;
+            dbp->mpData = NULL;
+            s_FreeDataBlk(temp);
+        }
+
+        temp = dbp;
+        dbp = dbp->mpNext;
+        temp->mpNext = NULL;
+
+        if(temp->mType == ParFlat_ENTRYNODE && temp->mOffset != NULL)
+            MemFree(temp->mOffset);
+
+        if(temp->mpQscore != NULL)
+            MemFree(temp->mpQscore);
+        MemFree(temp);
+    }
+}
+
+void DataBlk::operator delete(void* p)
+{
+    if (!p) {
+        return;
+    }
+    s_FreeDataBlk(static_cast<DataBlkPtr>(p));
+}
 /**********************************************************
  *
  *   void FreeEntry(entry):
@@ -83,6 +116,7 @@ void GapFeatsFree(GapFeatsPtr gfp)
  *                                              5-12-93
  *
  **********************************************************/
+
 void xFreeEntry(DataBlkPtr entry)
 {
     FreeEntryBlk(reinterpret_cast<EntryBlkPtr>(entry->mpData));
@@ -107,6 +141,22 @@ void FreeEntryBlk(EntryBlkPtr ebp)
 EntryBlkPtr CreateEntryBlk()
 {
     return new EntryBlk;
+}
+
+DataBlkPtr CreateDataBlk(DataBlk* parent, int type, char* offset, size_t len)
+{
+    auto result = reinterpret_cast<DataBlkPtr>(MemNew(sizeof(DataBlk)));
+    result->mType = type;
+    result->mOffset = offset;
+    result->len = len;
+    
+    if (parent) {
+        while (parent->mpNext) {
+            parent = parent->mpNext;
+        }
+        parent->mpNext = result;
+    }
+    return result;
 }
 
 /**********************************************************/
