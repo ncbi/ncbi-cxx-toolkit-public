@@ -33,6 +33,7 @@
 #include <vector>
 #include <string>
 #include <utility>
+#include <cmath>
 #include <memory>
 #include <algorithm>
 
@@ -40,6 +41,48 @@
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
+
+namespace {
+
+// In multidc environment size estimates are incomplete
+//    (contain data for local primary ranges only).
+// We will fill gaps using neighboring ranges data.
+vector<SCassSizeEstimate> NormalizeSizeEstimates(vector<SCassSizeEstimate> const & input)
+{
+    vector<SCassSizeEstimate> output;
+    output.reserve(input.size() * 3);
+    int64_t current_range_start = numeric_limits<int64_t>::min();
+    for (auto const & estimate : input) {
+        if (estimate.range_start > current_range_start) {
+            SCassSizeEstimate new_estimate;
+            new_estimate.range_start = current_range_start;
+            new_estimate.range_end = estimate.range_start;
+            new_estimate.mean_partition_size = estimate.mean_partition_size;
+            double size_ratio =
+                (1.0 * (new_estimate.range_end - new_estimate.range_start)) /
+                (estimate.range_end - estimate.range_start);
+            new_estimate.partitions_count = static_cast<int64_t>(size_ratio * estimate.partitions_count);
+            output.push_back(new_estimate);
+        }
+        current_range_start = estimate.range_end;
+        output.push_back(estimate);
+    }
+    if (current_range_start < numeric_limits<int64_t>::max() && !input.empty()) {
+        SCassSizeEstimate new_estimate;
+        new_estimate.range_start = current_range_start;
+        new_estimate.range_end = numeric_limits<int64_t>::max();
+        auto last = input.rbegin();
+        new_estimate.mean_partition_size = last->mean_partition_size;
+        double size_ratio =
+            (1.0 * (new_estimate.range_end - new_estimate.range_start)) /
+            (last->range_end - last->range_start);
+        new_estimate.partitions_count = static_cast<int64_t>(size_ratio * last->partitions_count);
+        output.push_back(new_estimate);
+    }
+    return output;
+}
+
+}
 
 CCassandraFullscanPlan::CCassandraFullscanPlan() = default;
 
@@ -161,7 +204,50 @@ size_t CCassandraFullscanPlan::GetQueryCount() const
 
 void CCassandraFullscanPlan::SplitTokenRangesForLimits()
 {
+    auto local_dc = m_Connection->GetDatacenterName();
+    auto local_estimates = m_Connection->GetSizeEstimates(local_dc, m_Keyspace, m_Table);
+    auto estimates = NormalizeSizeEstimates(local_estimates);
 
+    auto search_start = estimates.begin();
+    CCassConnection::TTokenRanges result_ranges;
+    for (auto const & range : m_TokenRanges) {
+        auto range_start = range.first;
+        auto range_end = range.second;
+        auto itr = search_start;
+        while (itr != estimates.end() && itr->range_end <= range_start) {
+            ++itr;
+        }
+        search_start = itr;
+
+        int64_t partitions_count{0};
+        while (itr != estimates.end() && itr->range_start < range_end) {
+            auto intersect_start = max(itr->range_start, range_start);
+            auto intersect_end = min(itr->range_end, range_end);
+            double size_ratio =
+                (1.0 * (intersect_end - intersect_start)) /
+                (itr->range_end - itr->range_start);
+            partitions_count += size_ratio * itr->partitions_count;
+            ++itr;
+        }
+
+        if (partitions_count > m_PartitionCountPerQueryLimit) {
+            int64_t parts = static_cast<int64_t>(ceil(1.0 * partitions_count / m_PartitionCountPerQueryLimit));
+            if (parts > 1) {
+                int64_t step = (range_end - range_start) / parts;
+                assert(step > 0);
+                auto start = range_start;
+                while (start < range_end) {
+                    auto end = (range_end - start) < step ? range_end : (start + step);
+                    result_ranges.push_back(make_pair(start, end));
+                    start = end;
+                }
+            } else {
+                result_ranges.push_back(range);
+            }
+        } else {
+            result_ranges.push_back(range);
+        }
+    }
 }
 
 void CCassandraFullscanPlan::Generate()
