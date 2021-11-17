@@ -77,9 +77,9 @@ Blast-db-mask-info ::= SEQUENCE {
 }
 
 Blast-db-metadata ::= SEQUENCE {
-    dbname                          SEQUENCE OF VisibleString,
+    dbname                          VisibleString,
     dbtype                          VisibleString,
-    version                         INTEGER,
+    version                         VisibleString,
     db-version                      INTEGER,
     description                     VisibleString OPTIONAL,
     number-of-letters               INTEGER,
