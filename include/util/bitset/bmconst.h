@@ -223,13 +223,13 @@ enum null_support
 */
 template<bool T> struct _copyright
 {
-    static const char _p[];
-    static const unsigned _v[3];
+    static const char _p[]; ///< Version as a text
+    static const unsigned _v[3]; ///< MAJOR.MINOR.PATCH version components
 };
 
 template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic C++ Library. v.7.3.3 (c) 2002-2021 Anatoliy Kuznetsov.";
-template<bool T> const unsigned _copyright<T>::_v[3] = {7, 3, 3};
+    "BitMagic C++ Library. v.7.7.7 (c) 2002-2021 Anatoliy Kuznetsov.";
+template<bool T> const unsigned _copyright<T>::_v[3] = {7, 7, 7};
 
 
 
@@ -417,7 +417,8 @@ enum simd_codes
     simd_sse2  = 1,   ///!< Intel SSE2
     simd_sse42 = 2,   ///!< Intel SSE4.2
     simd_avx2  = 5,   ///!< Intel AVX2
-    simd_avx512  = 6  ///!< Intel AVX512
+    simd_avx512  = 6,  ///!< Intel AVX512
+    simd_wasm128 = 7   ///! WASM SIMD 128
 };
 
 

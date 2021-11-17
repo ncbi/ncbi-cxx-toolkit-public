@@ -23,6 +23,7 @@ For more information please visit:  http://bitmagic.io
 */
 
 #include <memory.h>
+#include <type_traits>
 
 #include "bmdef.h"
 #include "bmutil.h"
@@ -111,6 +112,24 @@ struct bv_statistics
         max_serialize_mem += st.max_serialize_mem + 8;
         memory_used += st.memory_used;
         gap_cap_overhead += st.gap_cap_overhead;
+    }
+};
+
+/*!
+    @brief Structure with statistical information about memory
+            allocation for arena based vectors
+    @ingroup bvector
+*/
+struct bv_arena_statistics
+{
+    size_t bit_blocks_sz;      ///< Total size of bit blocks
+    size_t gap_blocks_sz;      ///< Total size of gap blocks
+    size_t ptr_sub_blocks_sz;  ///< Total size of sub-blocks ptrs
+
+    /// Reset statisctics
+    void reset() BMNOEXCEPT
+    {
+        bit_blocks_sz = gap_blocks_sz = ptr_sub_blocks_sz = 0;
     }
 };
 
@@ -784,13 +803,14 @@ bitscan_popcnt64(bm::id64_t w, B* bits, unsigned short offs) BMNOEXCEPT
 template<typename V, typename B>
 unsigned short bitscan(V w, B* bits) BMNOEXCEPT
 {
+    static_assert(std::is_unsigned<V>::value, "BM: unsigned type is required");
 #if (defined(__arm__) || defined(__aarch64__))
-    if (bm::conditional<sizeof(V) == 8>::test())
+    if constexpr (sizeof(V) == 8)
         return bm::bitscan_bsf64(w, bits);
     else
         return bm::bitscan_bsf((bm::word_t)w, bits);
 #else
-    if (bm::conditional<sizeof(V) == 8>::test())
+    if constexpr (sizeof(V) == 8)
         return bm::bitscan_popcnt64(w, bits);
     else
         return bm::bitscan_popcnt((bm::word_t)w, bits);
@@ -1358,7 +1378,7 @@ template<bool T> struct all_set
         all_set_block() BMNOEXCEPT
         {
             ::memset(_p, 0xFF, sizeof(_p)); // set FULL BLOCK content (all 1s)
-            if (bm::conditional<sizeof(void*) == 8>::test())
+            if constexpr (sizeof(void*) == 8)
             {
                 const unsigned long long magic_mask = 0xFFFFfffeFFFFfffe;
                 ::memcpy(&_p_fullp, &magic_mask, sizeof(magic_mask));
@@ -1381,7 +1401,7 @@ template<bool T> struct all_set
     static bm::id64_t block_type(const bm::word_t* bp) BMNOEXCEPT
     {
         bm::id64_t type;
-        if (bm::conditional<sizeof(void*) == 8>::test())
+        if constexpr (sizeof(void*) == 8)
         {
             bm::id64_t w = reinterpret_cast<unsigned long long>(bp);
             type = (w & 3) | // FULL BLOCK or GAP
@@ -3176,6 +3196,10 @@ unsigned gap_set_value(unsigned val,
     return end;
 }
 
+
+
+
+
 /*!
    \brief Sets or clears bit in the GAP buffer.
 
@@ -3885,6 +3909,7 @@ void gap_add_to_bitset(unsigned* BMRESTRICT dest,
     BM_ASSERT(dest && pcurr);
     
     const T* pend = pcurr + len;
+    BM_ASSERT(*pend == 65535);
     if (*pcurr & 1)  // Starts with 1
     {
         bm::or_bit_block(dest, 0, 1 + pcurr[1]);
@@ -4298,15 +4323,19 @@ void bit_block_set(bm::word_t* BMRESTRICT dst, bm::word_t value) BMNOEXCEPT
    \brief GAP block to bitblock conversion.
    \param dest - bitblock buffer pointer.
    \param buf  - GAP buffer pointer.
+   \param len - GAP length
 
    @ingroup gapfunc
 */
 template<typename T> 
 void gap_convert_to_bitset(unsigned* BMRESTRICT dest,
-                           const T* BMRESTRICT buf) BMNOEXCEPT
+                           const T* BMRESTRICT buf,
+                           unsigned len=0) BMNOEXCEPT
 {
     bm::bit_block_set(dest, 0);
-    bm::gap_add_to_bitset(dest, buf);
+    if (!len)
+        len = bm::gap_length(buf)-1;
+    bm::gap_add_to_bitset(dest, buf, len);
 }
 
 
@@ -6577,10 +6606,9 @@ unsigned gap_count_sub(const gap_word_t* BMRESTRICT vect1,
 
 
 /*!
-   \brief Bitblock copy operation. 
-
-   \param dst - destination block.
-   \param src - source block.
+   \brief Bitblock copy operation.
+   \param dst [out] - destination block.
+   \param src [in] - source block.
 
    @ingroup bitfunc
 */
@@ -6594,6 +6622,26 @@ void bit_block_copy(bm::word_t* BMRESTRICT dst,
     ::memcpy(dst, src, bm::set_block_size * sizeof(bm::word_t));
 #endif
 }
+
+/*!
+   \brief Bitblock copy operation (unaligned src)
+   \param dst [out] - destination block.
+   \param src [in] - source block.
+
+   @ingroup bitfunc
+*/
+inline
+void bit_block_copy_unalign(bm::word_t* BMRESTRICT dst,
+                            const bm::word_t* BMRESTRICT src) BMNOEXCEPT
+{
+#ifdef VECT_COPY_BLOCK_UNALIGN
+    VECT_COPY_BLOCK_UNALIGN(dst, src);
+#else
+    ::memcpy(dst, src, bm::set_block_size * sizeof(bm::word_t));
+#endif
+}
+
+
 
 /*!
    \brief Bitblock copy/stream operation.
@@ -6613,6 +6661,25 @@ void bit_block_stream(bm::word_t* BMRESTRICT dst,
     ::memcpy(dst, src, bm::set_block_size * sizeof(bm::word_t));
 #endif
 }
+
+/*!
+   \brief Bitblock copy/stream operation (unaligned src)
+   \param dst [out] - destination block.
+   \param src [in] - source block (unaligned address)
+
+   @ingroup bitfunc
+*/
+inline
+void bit_block_stream_unalign(bm::word_t* BMRESTRICT dst,
+                              const bm::word_t* BMRESTRICT src) BMNOEXCEPT
+{
+#ifdef VECT_STREAM_BLOCK_UNALIGN
+    VECT_STREAM_BLOCK_UNALIGN(dst, src);
+#else
+    ::memcpy(dst, src, bm::set_block_size * sizeof(bm::word_t));
+#endif
+}
+
 
 
 /*!
@@ -6836,6 +6903,74 @@ bm::id64_t bit_block_and_2way(bm::word_t* BMRESTRICT dst,
         d = bm::bmi_bslr_u64(d); // d &= d - 1;
     } // while
     
+    return digest;
+}
+
+
+/*!
+   \brief digest based bit-block AND - OR
+
+   dst =dst OR (src1 AND src2)
+
+   \param dst - destination block.
+   \param src1 - source block.
+   \param src2 - source block.
+   \param digest - known initial digest
+
+   \return new digest (for the AND operation)
+
+   @ingroup bitfunc
+*/
+inline
+bm::id64_t bit_block_and_or_2way(bm::word_t* BMRESTRICT dst,
+                                const bm::word_t* BMRESTRICT src1,
+                                const bm::word_t* BMRESTRICT src2,
+                                bm::id64_t digest) BMNOEXCEPT
+{
+    BM_ASSERT(dst);
+    BM_ASSERT(src1 && src2);
+    BM_ASSERT(dst != src1 && dst != src2);
+
+    const bm::id64_t mask(1ull);
+    bm::id64_t d = digest;
+    while (d)
+    {
+        bm::id64_t t = bm::bmi_blsi_u64(d); // d & -d;
+
+        unsigned wave = bm::word_bitcount64(t - 1);
+        unsigned off = wave * bm::set_block_digest_wave_size;
+
+        #if defined(VECT_AND_OR_DIGEST_2WAY)
+            bool all_zero =
+                VECT_AND_OR_DIGEST_2WAY(&dst[off], &src1[off], &src2[off]);
+            if (all_zero)
+                digest &= ~(mask << wave);
+        #else
+            const bm::bit_block_t::bunion_t* BMRESTRICT src_u1 =
+                                (const bm::bit_block_t::bunion_t*)(&src1[off]);
+            const bm::bit_block_t::bunion_t* BMRESTRICT src_u2 =
+                                (const bm::bit_block_t::bunion_t*)(&src2[off]);
+            bm::bit_block_t::bunion_t* BMRESTRICT dst_u =
+                                (bm::bit_block_t::bunion_t*)(&dst[off]);
+
+            bm::id64_t acc = 0;
+            unsigned j = 0;
+            do
+            {
+                acc |= dst_u->w64[j+0] |= src_u1->w64[j+0] & src_u2->w64[j+0];
+                acc |= dst_u->w64[j+1] |= src_u1->w64[j+1] & src_u2->w64[j+1];
+                acc |= dst_u->w64[j+2] |= src_u1->w64[j+2] & src_u2->w64[j+2];
+                acc |= dst_u->w64[j+3] |= src_u1->w64[j+3] & src_u2->w64[j+3];
+                j+=4;
+            } while (j < bm::set_block_digest_wave_size/2);
+
+            if (!acc) // all zero
+                digest &= ~(mask  << wave);
+        #endif
+
+        d = bm::bmi_bslr_u64(d); // d &= d - 1;
+    } // while
+
     return digest;
 }
 
@@ -9173,14 +9308,15 @@ void bit_block_gather_scatter(unsigned* BMRESTRICT arr,
 typedef unsigned TRGW;
 typedef unsigned IDX;
 #if defined(BM64_SSE4)
+    // TODO: provide 16 and 64-bit optimized implementations
     // optimized for unsigned
-    if (bm::conditional<sizeof(TRGW)==4 && sizeof(IDX)==4>::test())
+    if constexpr (sizeof(TRGW)==4 && sizeof(IDX)==4)
     {
         sse4_bit_block_gather_scatter(arr, blk, idx, size, start, bit_idx);
         return;
     }
 #elif defined(BM64_AVX2) || defined(BM64_AVX512)
-    if (bm::conditional<sizeof(TRGW)==4 && sizeof(IDX)==4>::test())
+    if constexpr (sizeof(TRGW)==4 && sizeof(IDX)==4)
     {
         avx2_bit_block_gather_scatter(arr, blk, idx, size, start, bit_idx);
         return;
@@ -9332,17 +9468,18 @@ void set_block_bits_u32(bm::word_t* BMRESTRICT block,
                         const unsigned* BMRESTRICT idx,
                         unsigned start, unsigned stop ) BMNOEXCEPT
 {
+    BM_ASSERT(start < stop);
 #if defined(VECT_SET_BLOCK_BITS)
     VECT_SET_BLOCK_BITS(block, idx, start, stop);
 #else
-    for (unsigned i = start; i < stop; ++i)
+    do
     {
-        unsigned n = idx[i];
+        unsigned n = idx[start++];
         unsigned nbit = unsigned(n & bm::set_block_mask);
         unsigned nword  = nbit >> bm::set_word_shift;
         nbit &= bm::set_word_mask;
         block[nword] |= (1u << nbit);
-    } // for i
+    } while (start < stop);
 #endif
 }
 
@@ -9375,10 +9512,8 @@ bool block_ptr_array_range(bm::word_t** arr,
         return false; // nothing here
     }
     for (j = bm::set_sub_array_size-1; j != i; --j)
-    {
         if (arr[j])
             break;
-    }
     right = j;
     return true;
 }
@@ -9502,6 +9637,24 @@ unsigned lower_bound_u64(const unsigned long long* arr,
         }
     }
     return l;
+}
+
+/**
+    Scan search for pointer value in unordered array
+    @return found flag and  index
+    @internal
+ */
+inline
+bool find_ptr(const void* const * p_arr, size_t arr_size,
+              const void* ptr, size_t *idx) BMNOEXCEPT
+{
+    // TODO: SIMD?
+    for (size_t i = 0; i < arr_size; ++i)
+        if (ptr == p_arr[i])
+        {
+            *idx = i; return true;
+        }
+    return false;
 }
 
 

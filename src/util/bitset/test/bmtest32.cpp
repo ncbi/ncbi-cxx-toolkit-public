@@ -24,6 +24,7 @@ For more information please visit:  http://bitmagic.io
 #include <stdio.h>
 #include <sstream>
 
+//#define BMWASMSIMDOPT
 //#define BMSSE2OPT
 //#define BMSSE42OPT
 //#define BMAVX2OPT
@@ -38,6 +39,7 @@ For more information please visit:  http://bitmagic.io
 #include <vector>
 #include <random>
 #include <memory>
+#include <algorithm>
 
 #include <util/bitset/ncbi_bitset_alloc.hpp>
 #include <util/bitset/ncbi_bitset_util.hpp>
@@ -72,6 +74,7 @@ std::mt19937 gen(rand_dev()); // mersenne_twister_engine
 std::uniform_int_distribution<> rand_dis(0, BSIZE); // generate uniform numebrs for [1, vector_max]
 
 typedef bm::bvector<> bvect;
+typedef bm::str_sparse_vector<char, bvect, 8> str_svect_type;
 
 
 // generate pseudo-random bit-vector, mix of compressed/non-compressed blocks
@@ -95,7 +98,7 @@ void generate_bvector(bvect& bv, unsigned vector_max = 40000000, bool optimize =
         // generate GAP (compressed) blocks
         for (j = 0; j < 65535; i += 120, j++)
         {
-            unsigned len = rand() % 64;
+            unsigned len = (unsigned)rand() % 64;
             bv.set_range(i, i + len);
             i += len;
             if (i > vector_max)
@@ -138,7 +141,7 @@ void FillSetsIntervals(test_bitset* bset,
 {
     while(fill_factor==0)
     {
-        fill_factor=rand()%10;
+        fill_factor=(unsigned)rand()%10;
     }
 
     unsigned i, j;
@@ -170,7 +173,7 @@ void FillSetsIntervals(test_bitset* bset,
                            
         } // j
         i = end;
-        len = rand() % 10;
+        len = (unsigned)rand() % 10;
 
         i+=len;
         {
@@ -919,6 +922,79 @@ void BitTestSparseTest()
 }
 
 static
+void BitSetConditionalTest()
+{
+    const unsigned repeats = 10;
+    std::random_device rd;
+    std::mt19937 g(rd());
+
+    std::vector<bvect::size_type> idx_vect;
+    for (bvect::size_type i = 0; i < bm::id_max-256; i+=100)
+        idx_vect.push_back(i);
+
+    std::shuffle(idx_vect.begin(), idx_vect.end(), g);
+
+    {
+        bvect bv2(bm::BM_BIT);
+        bv2.invert();
+        bvect bv3(bm::BM_GAP);
+        bv3.invert();
+
+        {
+            bm::chrono_taker tt("BitSetConditional: bvector<>::set_bit_conditional() (BIT) ", repeats);
+            for (bvect::size_type i = 0; i < idx_vect.size(); ++i)
+            {
+                auto idx = idx_vect[i];
+                bool changed = bv2.set_bit_conditional(idx, false, true);
+                if (!changed) {
+                    cout << "Conditional bit set failed. " << i << endl;
+                    exit(1);
+                }
+                changed = bv2.set_bit_conditional(idx, false, true);
+                if (changed) {
+                    cout << "Conditional bit set failed. " << i << endl;
+                    exit(1);
+                }
+            } // for
+        }
+        unsigned c = 0;
+        {
+            bv2.invert();
+            auto cnt = bv2.count();
+            c+=cnt;
+            assert(cnt == idx_vect.size());
+            bv2.clear(true);
+        }
+        {
+            bm::chrono_taker tt("BitSetConditional: bvector<>::set_bit_conditional() (GAP) ", repeats);
+            for (bvect::size_type i = 0; i < idx_vect.size(); ++i)
+            {
+                auto idx = idx_vect[i];
+                bool changed = bv3.set_bit_conditional(idx, false, true);
+                if (!changed) {
+                    cout << "Conditional bit set failed. " << i << endl;
+                    exit(1);
+                }
+                changed = bv3.set_bit_conditional(idx, false, true);
+                if (changed) {
+                    cout << "Conditional bit set failed. " << i << endl;
+                    exit(1);
+                }
+            } // for
+        }
+        {
+            bv3.invert();
+            auto cnt = bv3.count();
+            c+=cnt;
+            assert(cnt == idx_vect.size());
+        }
+        if (!c) // this is to fool compiler from de-optimizing
+            cout << "\r";
+    }
+}
+
+
+static
 void EnumeratorGoToTest()
 {
     unique_ptr<bvect>  bv0(new bvect());
@@ -1395,7 +1471,7 @@ void SerializationTest()
     // far from the beginning
     for (unsigned i = 0; i < 5; ++i)
     {
-        bv_sparse[BSIZE/2 + i * 3] = true;
+        bv_sparse[BSIZE/2 + i * 3] = true;		
     }
     bv_sparse[100] = true;
     bv_sparse[70000] = true;
@@ -1550,6 +1626,54 @@ void AndTest()
     delete bset1;
     delete bset2;
 }
+
+static
+void OrAndTest()
+{
+    bvect bv_res1, bv_res2;
+    bvect*  bv1 = new bvect();
+    test_bitset*  bset1 = new test_bitset();
+    test_bitset*  bset2 = new test_bitset();
+    bvect*  bv2 = new bvect();
+    unsigned i;
+    //unsigned value = 0;
+
+    SimpleFillSets(bset1, *bv1, 0, BSIZE, 100);
+    SimpleFillSets(bset1, *bv2, 0, BSIZE, 100);
+
+    {
+    bm::chrono_taker tt("AND+OR bvector test", REPEATS*4);
+    for (i = 0; i < REPEATS*4; ++i)
+    {
+        bvect bv;
+        bv.bit_and(*bv1, *bv2);
+        bv_res1 |= bv;
+    }
+    }
+
+    {
+    bm::chrono_taker tt("AND_OR( fused) bvector test", REPEATS*4);
+    for (i = 0; i < REPEATS*4; ++i)
+    {
+        bv_res2.bit_or_and(*bv1, *bv2);
+    }
+    }
+
+    bool b = bv_res1.equal(bv_res2);
+    if (!b)
+    {
+        cerr << "OR-AND test failed!" << endl;
+        exit(1);
+    }
+
+
+    delete bv1;
+    delete bv2;
+
+    delete bset1;
+    delete bset2;
+}
+
 
 static
 void XorTest()
@@ -2369,6 +2493,7 @@ void ptest()
 
 typedef bm::sparse_vector<unsigned, bvect> svect;
 typedef bm::sparse_vector<unsigned, bvect> sparse_vector_u32;
+typedef bm::sparse_vector<int, bvect> sparse_vector_i32;
 
 typedef bm::sparse_vector<unsigned, bvect > sparse_vector_u32;
 typedef bm::sparse_vector<unsigned long long, bvect > sparse_vector_u64;
@@ -2377,28 +2502,35 @@ typedef bm::rsc_sparse_vector<unsigned, sparse_vector_u32> rsc_sparse_vector_u32
 
 // create a benchmark svector with a few dufferent distribution patterns
 //
-static
-void FillSparseIntervals(svect& sv)
+template<class SV>
+void FillSparseIntervals(SV& sv)
 {
     sv.resize(250000000);
     unsigned i;
     for (i = 256000; i < 712000 * 2; ++i)
     {
-        sv.set(i, 0xFFE);
+        if constexpr (SV::is_signed())
+            sv.set(i, -0xFFE);
+        else
+            sv.set(i, 0xFFE);
     }
     for (i = 712000 * 3; i < 712000 * 5; ++i)
     {
-        sv.set(i, i);
+        sv.set(i, (typename SV::value_type)i);
     }
     for (i = 180000000; i < 190000000; ++i)
     {
-        sv.set(i, rand() % 128000);
+        sv.set(i, (typename SV::value_type)rand() % 128000);
     }
     for (i = 200000000; i < 210000000; ++i)
     {
-        sv.set(i, rand() % 128000);
+        if constexpr (SV::is_signed())
+            sv.set(i, (typename SV::value_type)(0 - (rand() % 128000)));
+        else
+            sv.set(i, (typename SV::value_type)rand() % 128000);
     }
 }
+
 
 template<class SV>
 void FillSparseNullVector(SV& sv, typename SV::size_type size,
@@ -2478,6 +2610,7 @@ void SparseVectorAccessTest()
         }
     }
 
+
     unsigned long long cnt = 0;
     
     unsigned gather_from = 256000;
@@ -2512,7 +2645,7 @@ void SparseVectorAccessTest()
     {
         sum2 += target_v[i];
         auto idx_v = idx[i];
-        auto v = sv1[idx_v];
+        auto v = sv1[idx_v]; (void) v;
         assert(v == target_v[i]);
     }
     if (sum1 != sum2)
@@ -2532,9 +2665,9 @@ void SparseVectorAccessTest()
     target_v.resize(0);
     target_v.shrink_to_fit();
 
-/*
+
     {
-        TimeTaker tt("sparse_vector const_iterator test", REPEATS );
+        bm::chrono_taker tt("sparse_vector const_iterator test", REPEATS );
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
             auto it = sv1.begin();
@@ -2547,8 +2680,8 @@ void SparseVectorAccessTest()
             }
         }
     }
-    */
-/*
+
+
     // check 
     //
     size_t sz = min(target1.size(), target2.size());
@@ -2563,12 +2696,168 @@ void SparseVectorAccessTest()
             exit(1);
         }
     }
-*/
+
     
     char buf[256];
     sprintf(buf, "%i", (int)cnt); // to fool some smart compilers like ICC
 
 }
+
+static
+void SparseVectorSignedAccessTest()
+{
+    std::vector<int> target, target1, target2;
+    sparse_vector_i32   sv1;
+
+    FillSparseIntervals(sv1);
+    BM_DECLARE_TEMP_BLOCK(tb)
+    sv1.optimize(tb);
+
+    {
+        sparse_vector_i32 sv2, sv3;
+        {
+            bm::chrono_taker tt("sparse_vector<int> random element assignment test", REPEATS / 10);
+            for (unsigned i = 0; i < REPEATS / 10; ++i)
+            {
+                for (unsigned j = 256000; j < 19000000 / 2; ++j)
+                {
+                    sv2.set(j, -0xF8A);
+                }
+            }
+        }
+
+        {
+            bm::chrono_taker tt("sparse_vector<int> back_inserter test", REPEATS / 10);
+            for (unsigned i = 0; i < REPEATS / 10; ++i)
+            {
+                {
+                    sv3.resize(256000);
+                    sparse_vector_i32::back_insert_iterator bi(sv3.get_back_inserter());
+                    for (unsigned j = 256000; j < 19000000 / 2; ++j)
+                    {
+                        *bi = -0xF8A;
+                    }
+                }
+            }
+        }
+
+        // check
+        //
+        if (!sv2.equal(sv3))
+        {
+            std::cerr << "Error! sparse_vector<int> back_insert mismatch."
+                << std::endl;
+            std::cerr << "sv2.size()=" << sv2.size() << std::endl;
+            std::cerr << "sv3.size()=" << sv3.size() << std::endl;
+
+            for (unsigned i = 0; i < sv2.size(); ++i)
+            {
+                const auto v2 = sv2[i];
+                const auto v3 = sv3[i];
+                if (v2 != v3)
+                {
+                    std::cerr << "mismatch at: " << i
+                        << " v2=" << v2 << " v3=" << v3
+                        << std::endl;
+                    exit(1);
+                }
+            }
+            exit(1);
+        }
+    }
+
+    unsigned long long cnt = 0;
+
+    unsigned gather_from = 256000;
+    unsigned gather_to = 19000000/2;
+    std::vector<unsigned> idx;
+    for (unsigned j = gather_from; j < gather_to; ++j)
+    {
+        idx.push_back(j);
+    }
+
+    long long sum1 = 0;
+    {
+        bm::chrono_taker tt("sparse_vector<int> random element access test", REPEATS/10 );
+        for (unsigned i = 0; i < REPEATS/10; ++i)
+        {
+            for (unsigned j = gather_from; j < gather_to; ++j)
+                sum1 += sv1[j];
+        }
+    }
+
+    std::vector<int> target_v;
+    target_v.resize(idx.size());
+    {
+        bm::chrono_taker tt("sparse_vectot<int>::gather() UNSORTED ", REPEATS/5 );
+        for (unsigned i = 0; i < REPEATS/10; ++i)
+        {
+            sv1.gather(target_v.data(), idx.data(), unsigned(idx.size()), bm::BM_UNSORTED);
+        }
+    }
+    long long sum2 = 0;
+    for (size_t i = 0; i < idx.size(); ++i)
+    {
+        sum2 += target_v[i];
+        const auto idx_v = idx[i];
+        const auto v = sv1[idx_v]; (void)v;
+        assert(v == target_v[i]);
+    }
+    if (sum1 != sum2)
+    {
+        cout << "\r";
+    }
+
+    {
+        bm::chrono_taker tt("sparse_vector<int>::decode()", REPEATS / 5);
+        auto from = gather_from;
+        for (unsigned i = 0; i < REPEATS / 10; ++i)
+        {
+            auto dsize = sv1.decode(target_v.data(), gather_from, (unsigned)idx.size(), (i == 0));
+            from += (dsize % 123);
+        }
+    }
+    target_v.resize(0);
+    target_v.shrink_to_fit();
+
+
+    {
+        bm::chrono_taker tt("sparse_vector<int> const_iterator test", REPEATS );
+        for (unsigned i = 0; i < REPEATS/10; ++i)
+        {
+            auto it = sv1.begin();
+            auto it_end = sv1.end();
+            auto sz = target2.size();
+            for (unsigned k = 0; it != it_end && k < sz; ++it, ++k)
+            {
+                auto v = *it;
+                target2[k] = v;
+            }
+        }
+    }
+
+
+    // check
+    //
+    size_t sz = min(target1.size(), target2.size());
+    for (unsigned j = 0; j < sz; ++j)
+    {
+        if (target1[j] != target2[j])
+        {
+            std::cerr << "Error! sparse_vector<int> mismatch at: " << j
+            << " t1 = " << target1[j] << " t2 = " << target2[j]
+            << " sv[] = " << sv1[j]
+            << std::endl;
+            exit(1);
+        }
+    }
+
+
+    char buf[256];
+    sprintf(buf, "%i", (int)cnt); // to fool some smart compilers like ICC
+
+}
+
 
 static
 void RSC_SparseVectorFillTest()
@@ -2650,7 +2939,7 @@ void RSC_SparseVectorAccesTest()
 
     sparse_vector_u32   sv1(bm::use_null);
     rsc_sparse_vector_u32::size_type sz, sz1;
-
+    (void)sz1;
 
     FillSparseNullVector(sv1, test_size, 2, 150);
     {
@@ -3078,8 +3367,8 @@ void RangeCopyTest()
         for (unsigned i = 0; i < REPEATS * 25; ++i)
         {
             unsigned from = vect_max / 4;
-            from = from * (rand() % 3);
-            unsigned to = from + 1 + (65536 * rand() % 5);
+            from = from * (unsigned)(rand() % 3);
+            unsigned to = from + 1 + (unsigned)(65536 * rand() % 5);
             bvect bv_cp;
             bv_cp.copy_range(bv, from, to);
         } // for
@@ -3089,8 +3378,8 @@ void RangeCopyTest()
         for (unsigned i = 0; i < REPEATS * 25; ++i)
         {
             unsigned from = vect_max / 4;
-            from = from * (rand() % 3);
-            unsigned to = from + 1 + (65536 * rand() % 5);
+            from = from * (unsigned)(rand() % 3);
+            unsigned to = from + 1 + (unsigned)(65536 * rand() % 5);
             bvect bv_cp(bv, from, to);
         } // for
     }
@@ -3100,8 +3389,8 @@ void RangeCopyTest()
         for (unsigned i = 0; i < REPEATS * 25; ++i)
         {
             unsigned from = vect_max / 4;
-            from = from * (rand() % 3);
-            unsigned to = from + 1 + (65536 * rand() % 5);
+            from = from * (unsigned)(rand() % 3);
+            unsigned to = from + 1 + (unsigned)(65536 * rand() % 5);
             bvect bv_cp;
             bv_cp.set_range(from, to);
             bv_cp &= bv;
@@ -3152,7 +3441,7 @@ void IntervalsTest()
             iit.flush();
 
             ilen += 1;
-            b = bv.test(istart + ilen);
+            b = bv.test(istart + ilen); (void)b;
             assert(!b);
             istart += (ilen + 2);
             if (ilen > 1024)
@@ -3523,14 +3812,14 @@ void generate_serialization_test_set(sparse_vector_u32&   sv,
     unsigned v = 0;
     for (unsigned i = 0; i < vector_max; ++i)
     {
-        unsigned plato = rand() % 16;
+        unsigned plato = (unsigned)rand() % 16;
         for (unsigned j = 0; i < vector_max && j < plato; ++i, ++j)
         {
             *bi = v;
         } // for j
         if (++v > 100000)
             v = 0;
-        unsigned nulls = rand() % 16;
+        unsigned nulls = (unsigned)rand() % 16;
         if (nulls)
             bi.add_null(nulls);
         i += nulls;
@@ -3661,6 +3950,197 @@ void SparseVectorScannerTest()
 }
 
 
+
+inline
+void GeneratePipelineTestData(std::vector<string>& str_coll,
+                              str_svect_type&      str_sv,
+                              unsigned max_coll = 8000000,
+                              unsigned repeat_factor=10)
+{
+    auto bi(str_sv.get_back_inserter());
+    string str;
+    for (unsigned i = 10; i < max_coll; i+= (rand()&0xF))
+    {
+        switch (i & 0xF)
+        {
+        case 0: str = "AB"; break;
+        case 1: str = "GTx"; break;
+        case 2: str = "cnv"; break;
+        default: str = "AbY11"; break;
+        }
+        str.append(to_string(i));
+
+        for (unsigned k = 0; k < repeat_factor; ++k)
+        {
+            str_coll.emplace_back(str);
+            bi = str;
+        }
+    } // for i
+    bi.flush();
+}
+
+static
+void SparseVectorPipelineScannerTest()
+{
+   const unsigned max_coll = 8000000;
+   std::vector<string> str_coll;
+   str_svect_type      str_sv;
+
+
+   GeneratePipelineTestData(str_coll, str_sv, max_coll, 10);
+
+    str_sv.remap();
+    str_sv.optimize();
+
+
+    //bm::print_svector_stat(str_sv);
+
+    unsigned test_runs = 10000;
+    std::vector<string> str_test_coll;
+    for (bvect::size_type i = 0; i < test_runs; ++i)
+    {
+        bvect::size_type idx = (unsigned) rand() % test_runs;
+        if (idx >= test_runs)
+            idx = test_runs/2;
+        str_test_coll.push_back(str_coll[idx]);
+    }
+    assert(str_test_coll.size() == test_runs);
+
+    unsigned search_repeats = test_runs;
+
+    std::vector<unique_ptr<bvect> > res_vec1;
+    bm::sparse_vector_scanner<str_svect_type> scanner;
+
+    {
+        bm::chrono_taker tt("scanner::find_eq_str()", search_repeats);
+
+        for (bvect::size_type i = 0; i < test_runs; ++i)
+        {
+            const string& str = str_test_coll[i];
+            str_svect_type::bvector_type* bv_res(new bvect);
+            scanner.find_eq_str(str_sv, str.c_str(), *bv_res);
+            res_vec1.emplace_back(unique_ptr<bvect>(bv_res));
+        } // for
+    }
+
+    bm::sparse_vector_scanner<str_svect_type>::pipeline<> pipe(str_sv);
+    {
+        bm::chrono_taker tt("scanner::pipeline find_eq_str()", search_repeats);
+
+        for (bvect::size_type i = 0; i < test_runs; ++i)
+        {
+            const string& str = str_test_coll[i];
+            pipe.add(str.c_str());
+        }
+        pipe.complete(); // finish the pipeline construction with this call
+        scanner.find_eq_str(pipe); // run the search pipeline
+    }
+
+    bm::sparse_vector_scanner<str_svect_type>::pipeline<bm::agg_opt_only_counts> pipe2(str_sv);
+    {
+        bm::chrono_taker tt("scanner::pipeline find_eq_str()-count()", search_repeats);
+
+        for (bvect::size_type i = 0; i < test_runs; ++i)
+        {
+            const string& str = str_test_coll[i];
+            pipe2.add(str.c_str());
+        }
+        pipe2.complete(); // finish the pipeline construction with this call
+        scanner.find_eq_str(pipe2); // run the search pipeline
+    }
+
+    unsigned c1 = 0;
+    bvect bv_or_acc;
+    {
+        auto& res_vect = pipe.get_bv_res_vector();
+        auto& cnt_vect = pipe2.get_bv_count_vector();
+
+        for (size_t i = 0; i < res_vect.size(); ++i)
+        {
+            const bvect* bv1 = res_vec1[i].get();
+            const auto* bv = res_vect[i];
+            assert(bv);
+            bool match = bv1->equal(*bv);
+            assert(match); (void)match;
+            auto c = cnt_vect[i];
+            auto cnt = bv->count();
+            assert(cnt == c);
+            c1 += cnt; c1+= c;
+            bv_or_acc |= *bv;
+        }
+    }
+    if (!c1)
+        cout << "\r";
+
+    bvect bv_or;
+    typedef bm::agg_run_options<false, false> scanner_custom_opt;
+    bm::sparse_vector_scanner<str_svect_type>::pipeline<scanner_custom_opt> pipe3(str_sv);
+    {
+        bm::chrono_taker tt("scanner::pipeline find_eq_str()-OR", search_repeats);
+        pipe3.set_or_target(&bv_or); // Assign OR aggregation target
+
+        for (bvect::size_type i = 0; i < test_runs; ++i)
+        {
+            const string& str = str_test_coll[i];
+            pipe3.add(str.c_str());
+        }
+        pipe3.complete(); // finish the pipeline construction with this call
+        scanner.find_eq_str(pipe3); // run the search pipeline
+    }
+    bool match = bv_or.equal(bv_or_acc);
+    if (!match)
+    {
+        cerr << "scanner::pipeline<>-OR vector mismatch!" << endl;
+        assert(0);
+        exit(1);
+    }
+
+    bv_or.clear(true);
+
+    typedef bm::agg_run_options<false, true> scanner_custom_opt4;
+    bm::sparse_vector_scanner<str_svect_type>::pipeline<scanner_custom_opt4> pipe4(str_sv);
+    {
+        bm::chrono_taker tt("scanner::pipeline find_eq_str()-count-OR", search_repeats);
+        pipe4.set_or_target(&bv_or); // Assign OR aggregation target
+
+        for (bvect::size_type i = 0; i < test_runs; ++i)
+        {
+            const string& str = str_test_coll[i];
+            pipe4.add(str.c_str());
+        }
+        pipe4.complete(); // finish the pipeline construction with this call
+        scanner.find_eq_str(pipe4); // run the search pipeline
+    }
+
+    match = bv_or.equal(bv_or_acc);
+    if (!match)
+    {
+        cerr << "scanner::pipeline<>-count-OR vector mismatch!" << endl;
+        assert(0);
+        exit(1);
+    }
+
+    {
+        auto& res_vect = pipe.get_bv_res_vector();
+        auto& cnt_vect = pipe4.get_bv_count_vector();
+
+        for (size_t i = 0; i < res_vect.size(); ++i)
+        {
+            const bvect* bv1 = res_vec1[i].get();
+            auto c = cnt_vect[i];
+            auto cnt = bv1->count();
+            assert(cnt == c);
+            if (cnt != c)
+            {
+                cerr << "Failed count check!" << endl;
+                exit(1);
+            }
+        }
+    }
+
+}
+
+
 static
 void SparseVectorSerializationTest()
 {
@@ -3673,7 +4153,7 @@ void SparseVectorSerializationTest()
     sparse_vector_u32 sv3(bm::use_null);
 
     unsigned sv_size = BSIZE;
-    if (bm::conditional<sizeof(void*) == 4>::test())
+    if constexpr (sizeof(void*) == 4)
     {
         sv_size = sv_size / 2;
     }
@@ -3842,7 +4322,6 @@ void SparseVectorRangeDeserializationTest()
 
 
 
-typedef bm::str_sparse_vector<char, bvect, 32> str_svect_type;
 
 static
 void GenerateTestStrCollection(std::vector<string>& str_coll, unsigned max_coll)
@@ -3857,7 +4336,7 @@ void GenerateTestStrCollection(std::vector<string>& str_coll, unsigned max_coll)
         
         {
             prefix.clear();
-            unsigned prefix_len = rand() % 5;
+            unsigned prefix_len = (unsigned)rand() % 5;
             for (unsigned j = 0; j < prefix_len; ++j)
             {
                 char cch = char('a' + rand() % 26);
@@ -3872,8 +4351,8 @@ void GenerateTestStrCollection(std::vector<string>& str_coll, unsigned max_coll)
 static
 void StrSparseVectorTest()
 {
-    unsigned max_coll = 20000000;
-    if (bm::conditional<sizeof(void*) == 4>::test())
+    unsigned max_coll = 30000000;
+    if constexpr (sizeof(void*) == 4)
     {
         max_coll = max_coll / 2;
     }
@@ -3891,7 +4370,7 @@ void StrSparseVectorTest()
        }
     }
     str_sv.optimize();
-    
+
     {
        str_svect_type str_sv0;
        {
@@ -3909,8 +4388,33 @@ void StrSparseVectorTest()
             cerr << "Bit-transposed str_sv comparison failed(1)!" << endl;
             exit(1);
        }
+
+       str_svect_type str_sv1;
+       {
+           bm::chrono_taker tt("bm::str_sparse_vector<>::remap ", 1);
+           str_sv1.remap_from(str_sv0);
+       }
+       str_sv1.optimize();
+
+       {
+            str_svect_type::const_iterator it = str_sv.begin();
+            str_svect_type::const_iterator it_end = str_sv.end();
+            str_svect_type::const_iterator it1 = str_sv1.begin();
+            for (; it < it_end; ++it, ++it1)
+            {
+                assert(it1.valid());
+                const char* s = *it;
+                const char* s1 = *it1;
+                int cmp = ::strcmp(s, s1);
+                if (cmp != 0)
+                {
+                    cerr << "Bit-transposed(remap) str_sv comparison failed(2)!" << endl;
+                    exit(1);
+                }
+            }
+       }
     }
-    
+
     {
     string str;
 
@@ -3929,6 +4433,24 @@ void StrSparseVectorTest()
 
     {
         bm::chrono_taker tt("bm::str_sparse_vector<>::const_iterator ", 1);
+        str_svect_type::const_iterator it = str_sv.begin();
+        str_svect_type::const_iterator it_end = str_sv.end();
+
+        for (unsigned i=0; it < it_end; ++it, ++i)
+        {
+            const char* s = *it;
+            const std::string& sc = str_coll[i];
+            int cmp = ::strcmp(s, sc.c_str());
+            if (cmp != 0)
+            {
+                cerr << "String random access check failure!" << endl;
+                exit(1);
+            }
+        }
+    }
+
+    {
+        bm::chrono_taker tt("bm::str_sparse_vector<>::const_iterator (remap)", 1);
         str_svect_type::const_iterator it = str_sv.begin();
         str_svect_type::const_iterator it_end = str_sv.end();
 
@@ -3983,7 +4505,7 @@ unsigned generate_inter_test(V* arr, unsigned inc_factor, unsigned target_size)
     if (inc_factor < 2)
         inc_factor = 65535;
 
-    unsigned start = rand() % 256;
+    unsigned start = (unsigned)rand() % 256;
     if (!start)
         start = 1;
     unsigned sz = 0;
@@ -4024,7 +4546,7 @@ void InterpolativeCodingTest()
     bm::word_t* src_arr = &sa[0];
     bm::word_t* dst_arr = &da[0];
     unsigned sz;
-    unsigned inc = rand() % (65536 * 256);
+    unsigned inc = (unsigned)rand() % (65536 * 256);
     sz = generate_inter_test_linear(src_arr, inc, test_size);
     assert(sz);
     assert(src_arr[0]);
@@ -4065,6 +4587,7 @@ void InterpolativeCodingTest()
 int main(void)
 {
     cout << bm::_copyright<true>::_p << endl;
+    cout << "SIMD code = " << bm::simd_version() << endl;
 //    ptest();
 
     bm::chrono_taker tt("TOTAL", 1);
@@ -4084,6 +4607,12 @@ int main(void)
         cout << endl;
 
         BitTestSparseTest();
+        cout << endl;
+
+        BitSetConditionalTest();
+        cout << endl;
+
+
         BitCompareTest();
         cout << endl;
 
@@ -4122,6 +4651,9 @@ int main(void)
         AndTest();
         XorTest();
         SubTest();
+
+        cout << endl;
+        OrAndTest();
         cout << endl;
 
         InvertTest();
@@ -4141,7 +4673,13 @@ int main(void)
         SparseVectorAccessTest();
         cout << endl;
 
+        SparseVectorSignedAccessTest();
+        cout << endl;
+
         SparseVectorScannerTest();
+        cout << endl;
+
+        SparseVectorPipelineScannerTest();
         cout << endl;
 
         SparseVectorSerializationTest();
@@ -4156,6 +4694,7 @@ int main(void)
 
         StrSparseVectorTest();
         cout << endl;
+
     }
     catch (std::exception& ex)
     {

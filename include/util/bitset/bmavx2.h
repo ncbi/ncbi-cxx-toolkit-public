@@ -594,6 +594,46 @@ bool avx2_and_digest_2way(__m256i* BMRESTRICT dst,
 }
 
 /*!
+    @brief AND-OR block digest stride 2 way
+    *dst  |= *src1 & *src2
+
+    @return true if stide is all zero
+    @ingroup AVX2
+*/
+inline
+bool avx2_and_or_digest_2way(__m256i* BMRESTRICT dst,
+                            const __m256i* BMRESTRICT src1,
+                            const __m256i* BMRESTRICT src2)
+{
+    __m256i m1A, m1B, m1C, m1D;
+    __m256i mACC1;
+
+    m1A = _mm256_and_si256(_mm256_load_si256(src1+0), _mm256_load_si256(src2+0));
+    m1B = _mm256_and_si256(_mm256_load_si256(src1+1), _mm256_load_si256(src2+1));
+    m1C = _mm256_and_si256(_mm256_load_si256(src1+2), _mm256_load_si256(src2+2));
+    m1D = _mm256_and_si256(_mm256_load_si256(src1+3), _mm256_load_si256(src2+3));
+
+    mACC1 =
+        _mm256_or_si256(_mm256_or_si256(m1A, m1B), _mm256_or_si256(m1C, m1D));
+    bool all_z = _mm256_testz_si256(mACC1, mACC1);
+    if (all_z)
+        return all_z;
+
+    m1A = _mm256_or_si256(_mm256_load_si256(dst+0), m1A);
+    m1B = _mm256_or_si256(_mm256_load_si256(dst+1), m1B);
+    m1C = _mm256_or_si256(_mm256_load_si256(dst+2), m1C);
+    m1D = _mm256_or_si256(_mm256_load_si256(dst+3), m1D);
+
+    _mm256_store_si256(dst+0, m1A);
+    _mm256_store_si256(dst+1, m1B);
+    _mm256_store_si256(dst+2, m1C);
+    _mm256_store_si256(dst+3, m1D);
+
+    return all_z;
+}
+
+
+/*!
     @brief AND block digest stride
     @ingroup AVX2
 */
@@ -1266,6 +1306,50 @@ void avx2_copy_block(__m256i* BMRESTRICT dst,
 }
 
 /*!
+    @brief AVX2 block copy (unaligned SRC)
+    *dst = *src
+
+    @ingroup AVX2
+*/
+inline
+void avx2_copy_block_unalign(__m256i* BMRESTRICT dst,
+                             const __m256i* BMRESTRICT src)
+{
+    __m256i ymm0, ymm1, ymm2, ymm3;
+
+    const __m256i* BMRESTRICT src_end =
+        (const __m256i*)((bm::word_t*)(src) + bm::set_block_size);
+
+    do
+    {
+        ymm0 = _mm256_loadu_si256(src+0);
+        ymm1 = _mm256_loadu_si256(src+1);
+        ymm2 = _mm256_loadu_si256(src+2);
+        ymm3 = _mm256_loadu_si256(src+3);
+
+        _mm256_store_si256(dst+0, ymm0);
+        _mm256_store_si256(dst+1, ymm1);
+        _mm256_store_si256(dst+2, ymm2);
+        _mm256_store_si256(dst+3, ymm3);
+
+        ymm0 = _mm256_loadu_si256(src+4);
+        ymm1 = _mm256_loadu_si256(src+5);
+        ymm2 = _mm256_loadu_si256(src+6);
+        ymm3 = _mm256_loadu_si256(src+7);
+
+        _mm256_store_si256(dst+4, ymm0);
+        _mm256_store_si256(dst+5, ymm1);
+        _mm256_store_si256(dst+6, ymm2);
+        _mm256_store_si256(dst+7, ymm3);
+
+        src += 8; dst += 8;
+
+    } while (src < src_end);
+}
+
+
+
+/*!
     @brief AVX2 block copy
     *dst = *src
 
@@ -1306,6 +1390,49 @@ void avx2_stream_block(__m256i* BMRESTRICT dst,
 
     } while (src < src_end);
 }
+
+/*!
+    @brief AVX2 block copy (unaligned SRC)
+    *dst = *src
+
+    @ingroup AVX2
+*/
+inline
+void avx2_stream_block_unalign(__m256i* BMRESTRICT dst,
+                              const __m256i* BMRESTRICT src)
+{
+    __m256i ymm0, ymm1, ymm2, ymm3;
+
+    const __m256i* BMRESTRICT src_end =
+        (const __m256i*)((bm::word_t*)(src) + bm::set_block_size);
+
+    do
+    {
+        ymm0 = _mm256_loadu_si256(src+0);
+        ymm1 = _mm256_loadu_si256(src+1);
+        ymm2 = _mm256_loadu_si256(src+2);
+        ymm3 = _mm256_loadu_si256(src+3);
+
+        _mm256_stream_si256(dst+0, ymm0);
+        _mm256_stream_si256(dst+1, ymm1);
+        _mm256_stream_si256(dst+2, ymm2);
+        _mm256_stream_si256(dst+3, ymm3);
+
+        ymm0 = _mm256_loadu_si256(src+4);
+        ymm1 = _mm256_loadu_si256(src+5);
+        ymm2 = _mm256_loadu_si256(src+6);
+        ymm3 = _mm256_loadu_si256(src+7);
+
+        _mm256_stream_si256(dst+4, ymm0);
+        _mm256_stream_si256(dst+5, ymm1);
+        _mm256_stream_si256(dst+6, ymm2);
+        _mm256_stream_si256(dst+7, ymm3);
+
+        src += 8; dst += 8;
+
+    } while (src < src_end);
+}
+
 
 
 /*!
@@ -3087,6 +3214,9 @@ void avx2_bit_block_xor_2way(bm::word_t* target_block,
 #define VECT_AND_DIGEST_2WAY(dst, src1, src2) \
     avx2_and_digest_2way((__m256i*) dst, (const __m256i*) (src1), (const __m256i*) (src2))
 
+#define VECT_AND_OR_DIGEST_2WAY(dst, src1, src2) \
+    avx2_and_or_digest_2way((__m256i*) dst, (const __m256i*) (src1), (const __m256i*) (src2))
+
 #define VECT_AND_DIGEST_5WAY(dst, src1, src2, src3, src4) \
     avx2_and_digest_5way((__m256i*) dst, (const __m256i*) (src1), (const __m256i*) (src2), (const __m256i*) (src3), (const __m256i*) (src4))
 
@@ -3123,8 +3253,14 @@ void avx2_bit_block_xor_2way(bm::word_t* target_block,
 #define VECT_COPY_BLOCK(dst, src) \
     avx2_copy_block((__m256i*) dst, (__m256i*) (src))
 
+#define VECT_COPY_BLOCK_UNALIGN(dst, src) \
+    avx2_copy_block_unalign((__m256i*) dst, (__m256i*) (src))
+
 #define VECT_STREAM_BLOCK(dst, src) \
     avx2_stream_block((__m256i*) dst, (__m256i*) (src))
+
+#define VECT_STREAM_BLOCK_UNALIGN(dst, src) \
+    avx2_stream_block_unalign((__m256i*) dst, (__m256i*) (src))
 
 #define VECT_SET_BLOCK(dst, value) \
     avx2_set_block((__m256i*) dst, (value))

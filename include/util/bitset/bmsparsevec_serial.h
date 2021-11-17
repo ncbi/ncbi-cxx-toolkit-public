@@ -58,9 +58,10 @@ struct sparse_vector_serial_layout
 {
     typedef typename SV::value_type   value_type;
     typedef typename SV::bvector_type bvector_type;
+    typedef typename bvector_type::allocator_type allocator_type;
     typedef typename serializer<bvector_type>::buffer buffer_type;
 
-    sparse_vector_serial_layout() {}
+    sparse_vector_serial_layout() BMNOEXCEPT {}
     
     ~sparse_vector_serial_layout() {}
     
@@ -81,39 +82,53 @@ struct sparse_vector_serial_layout
     }
     
     /// return current serialized size
-    size_t  size() const { return buf_.size();  }
+    size_t  size() const BMNOEXCEPT { return buf_.size();  }
     
     /// Set new serialized size
     void resize(size_t ssize) { buf_.resize(ssize);  }
     
     /// return serialization buffer capacity
-    size_t  capacity() const { return buf_.capacity(); }
+    size_t  capacity() const BMNOEXCEPT { return buf_.capacity(); }
     
     /// free memory
-    void freemem() { buf_.release(); }
+    void freemem() BMNOEXCEPT { buf_.release(); }
     
     /// Set plane output pointer and size
-    void set_plane(unsigned i, unsigned char* ptr, size_t buf_size)
+    void set_plane(unsigned i, unsigned char* ptr, size_t buf_size) BMNOEXCEPT
     {
         plane_ptrs_[i] = ptr;
         plane_size_[i] = buf_size;
     }
     
     /// Get plane pointer
-    const unsigned char* get_plane(unsigned i) const { return plane_ptrs_[i]; }
+    const unsigned char* get_plane(unsigned i) const BMNOEXCEPT
+        { return plane_ptrs_[i]; }
     
     /// Return serialization buffer pointer
-    const unsigned char* buf() const { return buf_.buf();  }
+    const unsigned char* buf() const BMNOEXCEPT { return buf_.buf();  }
     /// Return serialization buffer pointer
-    const unsigned char* data() const { return buf_.buf();  }
+    const unsigned char* data() const BMNOEXCEPT { return buf_.buf();  }
+
+    /// Resize for the target number of plains / bit-slices
+    void resize_slices(unsigned new_slices_size)
+    {
+        plane_ptrs_.resize(new_slices_size);
+        plane_size_.resize(new_slices_size);
+    }
 
 private:
     sparse_vector_serial_layout(const sparse_vector_serial_layout&);
     void operator=(const sparse_vector_serial_layout&);
 protected:
-    buffer_type    buf_;                       ///< serialization buffer
-    unsigned char* plane_ptrs_[SV::sv_planes]; ///< pointers on serialized bit-planes
-    size_t         plane_size_[SV::sv_planes]; ///< serialized plane size
+    typedef bm::heap_vector<unsigned char*, allocator_type, true> ptr_vector_type;
+    typedef bm::heap_vector<size_t, allocator_type, true> sizet_vector_type;
+
+
+    buffer_type       buf_;                       ///< serialization buffer
+    ptr_vector_type   plane_ptrs_; ///< pointers on serialized bit-planes
+    sizet_vector_type plane_size_; ///< serialized plane size
+//    unsigned char* plane_ptrs_[SV::sv_slices]; ///< pointers on serialized bit-planes
+//    size_t         plane_size_[SV::sv_slices]; ///< serialized plane size
 };
 
 // -------------------------------------------------------------------------
@@ -178,7 +193,7 @@ public:
 
 
     /*! @name Compression settings                               */
-    //@{
+    ///@{
 
     /**
         Add skip-markers for faster range deserialization
@@ -244,13 +259,15 @@ public:
     */
     bool is_xor_ref() const BMNOEXCEPT { return is_xor_ref_; }
 
-    //@}
+    ///@}
 
+    /*! @name Serialization                                     */
+    ///@{
 
     /*!
         \brief Serialize sparse vector into a memory buffer(s) structure
      
-        \param sv         - sparse vector to serialize
+        \param sv                 - sparse vector to serialize
         \param sv_layout  - buffer structure to keep the result
         as defined in bm::serialization_flags
     */
@@ -263,6 +280,8 @@ public:
     */
     bm::serializer<bvector_type>& get_bv_serializer() BMNOEXCEPT
         { return bvs_; }
+        
+    ///@}
 
 
 protected:
@@ -499,7 +518,7 @@ void sparse_vector_serialize(
 {
     (void)temp_block;
     bm::sparse_vector_serializer<SV> sv_serializer;
-    sv_serializer.enable_xor_compression();
+//    sv_serializer.enable_xor_compression();
     sv_serializer.serialize(sv, sv_layout);
 }
 
@@ -895,10 +914,10 @@ void sparse_vector_serializer<SV>::build_plane_digest(bvector_type& digest_bv,
 {
     digest_bv.init();
     digest_bv.clear(false);
-    unsigned planes = sv.stored_planes();
+    unsigned planes = (unsigned)sv.get_bmatrix().rows();
     for (unsigned i = 0; i < planes; ++i)
     {
-        typename SV::bvector_type_const_ptr bv = sv.get_plane(i);
+        typename SV::bvector_type_const_ptr bv = sv.get_slice(i);
         if (bv)
             digest_bv.set_bit_no_check(i);
     } // for i
@@ -925,7 +944,8 @@ void sparse_vector_serializer<SV>::serialize(const SV&  sv,
     bvs_.set_ref_vectors(0); // disable possible XOR compression for offs.bv
     bvs_.serialize(plane_digest_bv_, plane_digest_buf_);
 
-    unsigned planes = sv.stored_planes();
+    unsigned planes = (unsigned)sv.get_bmatrix().rows();
+    sv_layout.resize_slices(planes);
 
     // ----------------------------------------------------
     // memory pre-reservation
@@ -983,7 +1003,7 @@ void sparse_vector_serializer<SV>::serialize(const SV&  sv,
 
     for (unsigned i = 0; i < planes; ++i)
     {
-        typename SV::bvector_type_const_ptr bv = sv.get_plane(i);
+        typename SV::bvector_type_const_ptr bv = sv.get_slice(i);
         if (!bv)  // empty plane
         {
             sv_layout.set_plane(i, 0, 0);
@@ -1047,7 +1067,7 @@ void sparse_vector_serializer<SV>::serialize(const SV&  sv,
                     use_64bit = true;
                     break;
                 }
-                plane_off_vect_.push_back(unsigned(offset));
+                plane_off_vect_.push_back(unsigned(offset)); // cast is not a bug
             }
         } // for i
         bm::encoder enc_o(buf_ptr, sv_stat.max_serialize_mem);
@@ -1207,7 +1227,7 @@ void sparse_vector_deserializer<SV>::deserialize_structure(SV& sv,
         if (!off_vect_[i]) // empty vector
             continue;
 
-        bvector_type*  bv = sv.get_plane(i);
+        bvector_type* bv = sv.get_create_slice(i);
         BM_ASSERT(bv); (void)bv;
 
     } // for
@@ -1243,6 +1263,7 @@ void sparse_vector_deserializer<SV>::deserialize_range(SV& sv,
 
     setup_xor_compression();
 
+    sv.get_bmatrix().allocate_rows(planes);
 
     // TODO: add range for not NULL plane
     planes = (unsigned)load_null_plane(sv, int(planes), buf, 0);
@@ -1310,7 +1331,9 @@ void sparse_vector_deserializer<SV>::deserialize_sv(SV& sv,
 
     setup_xor_compression();
 
+    sv.get_bmatrix().allocate_rows(planes);
     planes = (unsigned)load_null_plane(sv, int(planes), buf, mask_bv);
+
 
     // check if mask needs to be relaculated using the NULL (index) vector
     if (bm::conditional<SV::is_rsc_support::value>::test())
@@ -1335,6 +1358,23 @@ void sparse_vector_deserializer<SV>::deserialize_sv(SV& sv,
 
     deserialize_planes(sv, planes, buf, mask_bv);
 
+    // restore NULL slice index
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4127)
+#endif
+    if (sv.max_vector_size == 1)
+    {
+        // NULL vector at: (sv.max_vector_size * sizeof(value_type) * 8 + 1)
+        const bvector_type* bv_null = sv.get_slice(sv.sv_value_slices);
+        if (bv_null)
+            sv.mark_null_idx(sv.sv_value_slices); // last slice is NULL
+    }
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
+
+
     clear_xor_compression();
 
     // load the remap matrix
@@ -1355,6 +1395,7 @@ template<typename SV>
 unsigned sparse_vector_deserializer<SV>::load_header(
         bm::decoder& dec, SV& sv, unsigned char& matr_s_ser)
 {
+    (void)sv;
     bm::id64_t planes_code = 0;
     unsigned char h1 = dec.get_8();
     unsigned char h2 = dec.get_8();
@@ -1382,14 +1423,15 @@ unsigned sparse_vector_deserializer<SV>::load_header(
     #ifdef BM64ADDR
     #else
         if (matr_s_ser == 2) // 64-bit matrix
-        {
             raise_invalid_64bit();
-        }
     #endif
 
-    unsigned sv_planes = sv.stored_planes();
-    if (!planes || planes > sv_planes)
-        raise_invalid_bitdepth();
+    if constexpr (SV::is_dynamic_splices::value == false)
+    {
+        unsigned sv_planes = sv.stored_slices();
+        if (!planes || planes > sv_planes)
+            raise_invalid_bitdepth();
+    }
 
     sv_size_ = dec.get_64();
 
@@ -1423,7 +1465,7 @@ void sparse_vector_deserializer<SV>::deserialize_planes(
         if (!offset) // empty vector
             continue;
         const unsigned char* bv_buf_ptr = buf + offset; // seek to position
-        bvector_type*  bv = sv.get_plane(unsigned(i));
+        bvector_type*  bv = sv.get_create_slice(unsigned(i));
         BM_ASSERT(bv);
 
         // add the vector into the XOR reference list
@@ -1499,7 +1541,7 @@ int sparse_vector_deserializer<SV>::load_null_plane(SV& sv,
         // the NULL vector just to get to the offset of remap table
 
         const unsigned char* bv_buf_ptr = buf + offset; // seek to position
-        bvector_type*  bv = sv.get_plane(unsigned(i));
+        bvector_type*  bv = sv.get_create_slice(unsigned(i));
 
         if (!bv_ref_ptr_)
             bv_ref_.add(bv, unsigned(i));
@@ -1646,7 +1688,7 @@ void sparse_vector_deserializer<SV>::load_remap(SV& sv,
 
     case 'C': // CSR remap
         {
-            sv.init_remap_buffer();
+            //sv.init_remap_buffer();
             typename SV::remap_matrix_type* rmatr = sv.get_remap_matrix();
             if (!rmatr)
             {
@@ -1658,6 +1700,8 @@ void sparse_vector_deserializer<SV>::load_remap(SV& sv,
             {
                 raise_invalid_format();
             }
+            rmatr->resize(rows, cols, false);
+            rmatr->set_zero();
 
             // read gamma encoded row lens
             remap_rlen_vect_.resize(0);
@@ -1676,8 +1720,7 @@ void sparse_vector_deserializer<SV>::load_remap(SV& sv,
                 size_t cnt = remap_rlen_vect_[r];
                 if (!cnt || cnt > 256)
                 {
-                    // throw an exception here (format corruption!)
-                    raise_invalid_format();
+                    raise_invalid_format(); // format corruption!
                 }
                 for (size_t j = 0; j < cnt; ++j)
                 {
