@@ -293,10 +293,12 @@ struct FTAOperon
     mutable string mLocStr;
 };
 
+
 //  ============================================================================
-struct DataBlk
+class DataBlk
 //  ============================================================================
 {
+public:
     DataBlk(
         DataBlk* parent = nullptr,
         int type_ = 0,
@@ -318,15 +320,20 @@ struct DataBlk
         }
     };
 
+    static void operator delete(void* p);
+/*
     ~DataBlk()
     {
         delete[] mpQscore;
-        delete (char*) mpData;
+        //delete (char*) mpData;
+        delete reinterpret_cast<char*>(mpData);
         if (mType == ParFlat_ENTRYNODE) {
             delete mOffset;
         }
         delete mpNext;
     }
+    */
+public:
 
     int mType;  // which keyword block or node type
     void* mpData;  // any pointer type points to information block
@@ -364,9 +371,10 @@ void xFreeEntry(DataBlkPtr entry);
 void FreeIndexblk(IndexblkPtr ibp);
 void GapFeatsFree(GapFeatsPtr gfp);
 void XMLIndexFree(XmlIndexPtr xip);
-
 void FreeEntryBlk(EntryBlkPtr entry);
 EntryBlkPtr CreateEntryBlk();
+DataBlkPtr CreateDataBlk(DataBlk* parent=nullptr, int type=0, char* offset=nullptr, size_t len=0);
+
 
 END_NCBI_SCOPE
 

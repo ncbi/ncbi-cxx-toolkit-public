@@ -1594,7 +1594,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
     char* ptr;
     char* eptr;
     char* div;
-    unique_ptr<DataBlk>  pEntry;
+    unique_ptr<DataBlk, decltype(&xFreeEntry)>  pEntry(nullptr, &xFreeEntry);
     EntryBlkPtr ebp;
 
     //    unsigned char*    dnaconv;

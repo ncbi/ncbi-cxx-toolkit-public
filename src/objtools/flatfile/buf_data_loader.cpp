@@ -366,7 +366,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
 
 static DataBlkPtr make_entry(char* entry_str)
 {
-    DataBlkPtr entry = new DataBlk;
+    DataBlkPtr entry = CreateDataBlk();
 
     if (entry != NULL) {
         entry->mType = ParFlat_ENTRYNODE;

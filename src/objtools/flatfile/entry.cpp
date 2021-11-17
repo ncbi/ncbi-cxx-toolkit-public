@@ -229,7 +229,7 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
     pp->ffbuf.current = pp->ffbuf.start + offset;
     i = 0;
 
-    entry = new DataBlk;
+    entry = CreateDataBlk();
     entry->mType = ParFlat_ENTRYNODE;
     entry->mpNext = NULL;                 /* assume no segment at this time */
     entry->mOffset = (char*)MemNew(len + 1); /* plus 1 for null byte */
@@ -330,7 +330,7 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
     pp->ffbuf.current = pp->ffbuf.start + offset;
     i = 0;
 
-    entry = new DataBlk;
+    entry = CreateDataBlk();
     entry->mType = ParFlat_ENTRYNODE;
     entry->mpNext = NULL;                 /* assume no segment at this time */
     entry->mOffset = (char*)MemNew(len + 1); /* plus 1 for null byte */

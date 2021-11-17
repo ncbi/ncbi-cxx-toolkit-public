@@ -2541,7 +2541,6 @@ bool EmblAscii(ParserPtr pp)
 
     auto dnaconv = GetDNAConv();             /* set up sequence alphabets */
 
-    unique_ptr<DataBlk> pEntry;
     for(imax = pp->indx, i = 0; i < imax; i++)
     {
         pp->curindx = i;
@@ -2550,7 +2549,9 @@ bool EmblAscii(ParserPtr pp)
         err_install(ibp, pp->accver);
         if(ibp->drop != 1)
         {
-            pEntry.reset(LoadEntry(pp, ibp->offset, ibp->len));
+            unique_ptr<DataBlk, decltype(&xFreeEntry)> pEntry(
+                    LoadEntry(pp, ibp->offset, ibp->len), &xFreeEntry);
+            //pEntry.reset(LoadEntry(pp, ibp->offset, ibp->len));
             if(!pEntry)
             {
                 FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
