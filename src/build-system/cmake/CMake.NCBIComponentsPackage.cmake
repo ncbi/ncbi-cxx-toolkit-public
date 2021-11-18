@@ -183,49 +183,53 @@ NCBI_define_Pkgcomponent(NAME LZO PACKAGE lzo)
 #############################################################################
 # Boost
 NCBI_define_Pkgcomponent(NAME Boost PACKAGE boost)
+set(Boost_FOUND ${NCBI_COMPONENT_Boost_FOUND})
 
 #############################################################################
 # Boost.Test.Included
 if(NCBI_COMPONENT_Boost_FOUND)
-  set(NCBI_COMPONENT_Boost.Test.Included_FOUND YES)
-  set(NCBI_COMPONENT_Boost.Test.Included_INCLUDE ${NCBI_COMPONENT_Boost_INCLUDE})
-  set(NCBI_COMPONENT_Boost.Test.Included_DEFINES BOOST_TEST_NO_LIB)
+    set(NCBI_COMPONENT_Boost.Test.Included_FOUND YES)
+    set(NCBI_COMPONENT_Boost.Test.Included_INCLUDE ${NCBI_COMPONENT_Boost_INCLUDE})
+    set(NCBI_COMPONENT_Boost.Test.Included_DEFINES BOOST_TEST_NO_LIB)
+    list(APPEND NCBI_ALL_COMPONENTS Boost.Test.Included)
 else()
-  set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)
+    set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)  
 endif()
-
-# so far we use "boost:header_only = True"
-# hence some tricks
-set(NCBI_COMPONENT_Boost_FOUND NO)
 
 #############################################################################
 # Boost.Test
 if(NCBI_COMPONENT_Boost_FOUND)
-  set(NCBI_COMPONENT_Boost.Test_FOUND YES)
-  set(NCBI_COMPONENT_Boost.Test_INCLUDE ${NCBI_COMPONENT_Boost_INCLUDE})
-  set(NCBI_COMPONENT_Boost.Test_LIBS    ${NCBI_COMPONENT_Boost_LIBS})
+    set(NCBI_COMPONENT_Boost.Test_FOUND YES)
+    set(NCBI_COMPONENT_Boost.Test_INCLUDE ${NCBI_COMPONENT_Boost_INCLUDE})
+    set(NCBI_COMPONENT_Boost.Test_LIBS    ${NCBI_COMPONENT_Boost_LIBS})
+    set(NCBI_COMPONENT_Boost.Test_DEFINES ${NCBI_COMPONENT_Boost_DEFINES} BOOST_AUTO_LINK_NOMANGLE)
+    list(APPEND NCBI_ALL_COMPONENTS Boost.Test)
 else()
-  set(NCBI_COMPONENT_Boost.Test_FOUND NO)
+    set(NCBI_COMPONENT_Boost.Test_FOUND NO)
 endif()
 
 #############################################################################
 # Boost.Spirit
 if(NCBI_COMPONENT_Boost_FOUND)
-  set(NCBI_COMPONENT_Boost.Spirit_FOUND YES)
-  set(NCBI_COMPONENT_Boost.Spirit_INCLUDE ${NCBI_COMPONENT_Boost_INCLUDE})
-#  set(NCBI_COMPONENT_Boost.Spirit_LIBS    ${Boost_LIBRARIES})
+    set(NCBI_COMPONENT_Boost.Spirit_FOUND YES)
+    set(NCBI_COMPONENT_Boost.Spirit_INCLUDE ${NCBI_COMPONENT_Boost_INCLUDE})
+    set(NCBI_COMPONENT_Boost.Spirit_LIBS    ${NCBI_COMPONENT_Boost_LIBS})
+    set(NCBI_COMPONENT_Boost.Spirit_DEFINES ${NCBI_COMPONENT_Boost_DEFINES} BOOST_AUTO_LINK_NOMANGLE)
+    list(APPEND NCBI_ALL_COMPONENTS Boost.Spirit)
 else()
-  set(NCBI_COMPONENT_Boost.Spirit_FOUND NO)
+    set(NCBI_COMPONENT_Boost.Spirit_FOUND NO)
 endif()
 
 #############################################################################
 # Boost.Thread
 if(NCBI_COMPONENT_Boost_FOUND)
-  set(NCBI_COMPONENT_Boost.Thread_FOUND YES)
-  set(NCBI_COMPONENT_Boost.Thread_INCLUDE ${NCBI_COMPONENT_Boost_INCLUDE})
-  set(NCBI_COMPONENT_Boost.Thread_LIBS    ${Boost_LIBRARIES})
+    set(NCBI_COMPONENT_Boost.Thread_FOUND YES)    
+    set(NCBI_COMPONENT_Boost.Thread_INCLUDE ${NCBI_COMPONENT_Boost_INCLUDE})
+    set(NCBI_COMPONENT_Boost.Thread_LIBS    ${Boost_LIBRARIES})
+    set(NCBI_COMPONENT_Boost.Thread_DEFINES ${NCBI_COMPONENT_Boost_DEFINES} BOOST_AUTO_LINK_NOMANGLE)
+    list(APPEND NCBI_ALL_COMPONENTS Boost.Thread)
 else()
-  set(NCBI_COMPONENT_Boost.Thread_FOUND NO)
+    set(NCBI_COMPONENT_Boost.Thread_FOUND NO)
 endif()
 
 #############################################################################
