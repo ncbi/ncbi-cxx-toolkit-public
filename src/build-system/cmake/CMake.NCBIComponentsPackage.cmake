@@ -55,6 +55,9 @@ function(NCBI_define_Pkgcomponent)
     if(NCBI_COMPONENT_${DC_NAME}_DISABLED)
         message("DISABLED ${DC_NAME}")
     elseif(DEFINED CONAN_${_UPPACKAGE}_ROOT)
+        if(NOT NCBI_PTBCFG_PACKAGED)
+            message(STATUS "Found ${DC_NAME}: ${CONAN_${_UPPACKAGE}_ROOT}")
+        endif()
         set(NCBI_COMPONENT_${DC_NAME}_FOUND YES PARENT_SCOPE)
         set(_include ${CONAN_INCLUDE_DIRS_${_UPPACKAGE}})
         set(_defines ${CONAN_DEFINES_${_UPPACKAGE}})
@@ -191,6 +194,10 @@ else()
   set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)
 endif()
 
+# so far we use "boost:header_only = True"
+# hence some tricks
+set(NCBI_COMPONENT_Boost_FOUND NO)
+
 #############################################################################
 # Boost.Test
 if(NCBI_COMPONENT_Boost_FOUND)
@@ -203,7 +210,7 @@ endif()
 
 #############################################################################
 # Boost.Spirit
-if(Boost_FOUND)
+if(NCBI_COMPONENT_Boost_FOUND)
   set(NCBI_COMPONENT_Boost.Spirit_FOUND YES)
   set(NCBI_COMPONENT_Boost.Spirit_INCLUDE ${NCBI_COMPONENT_Boost_INCLUDE})
 #  set(NCBI_COMPONENT_Boost.Spirit_LIBS    ${Boost_LIBRARIES})
@@ -213,7 +220,7 @@ endif()
 
 #############################################################################
 # Boost.Thread
-if(Boost_FOUND)
+if(NCBI_COMPONENT_Boost_FOUND)
   set(NCBI_COMPONENT_Boost.Thread_FOUND YES)
   set(NCBI_COMPONENT_Boost.Thread_INCLUDE ${NCBI_COMPONENT_Boost_INCLUDE})
   set(NCBI_COMPONENT_Boost.Thread_LIBS    ${Boost_LIBRARIES})
@@ -261,6 +268,10 @@ NCBI_define_Pkgcomponent(NAME XML PACKAGE libxml2 REQUIRES zlib;libiconv)
 #############################################################################
 # XSLT
 NCBI_define_Pkgcomponent(NAME XSLT PACKAGE libxslt REQUIRES libxml2;zlib;libiconv)
+if(NOT DEFINED NCBI_XSLTPROCTOOL AND DEFINED CONAN_BIN_DIRS_LIBXSLT)
+    set(NCBI_XSLTPROCTOOL "${CONAN_BIN_DIRS_LIBXSLT}/xsltproc${CMAKE_EXECUTABLE_SUFFIX}")
+    set(NCBI_REQUIRE_XSLTPROCTOOL_FOUND YES)
+endif()
 
 #############################################################################
 # EXSLT
@@ -276,8 +287,12 @@ NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE libnghttp2 REQUIRES zlib)
 
 ##############################################################################
 # GRPC/PROTOBUF
-set(NCBI_PROTOC_APP "${CONAN_BIN_DIRS_PROTOBUF}/protoc${CMAKE_EXECUTABLE_SUFFIX}")
-set(NCBI_GRPC_PLUGIN "${CONAN_BIN_DIRS_GRPC}/grpc_cpp_plugin${CMAKE_EXECUTABLE_SUFFIX}")
+if(NOT DEFINED NCBI_PROTOC_APP AND DEFINED CONAN_BIN_DIRS_PROTOBUF)
+    set(NCBI_PROTOC_APP "${CONAN_BIN_DIRS_PROTOBUF}/protoc${CMAKE_EXECUTABLE_SUFFIX}")
+endif()
+if(NOT DEFINED NCBI_GRPC_PLUGIN AND DEFINED CONAN_BIN_DIRS_GRPC)
+    set(NCBI_GRPC_PLUGIN "${CONAN_BIN_DIRS_GRPC}/grpc_cpp_plugin${CMAKE_EXECUTABLE_SUFFIX}")
+endif()
 NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE protobuf REQUIRES zlib)
 NCBI_define_Pkgcomponent(NAME GRPC PACKAGE grpc REQUIRES abseil;c-ares;openssl;protobuf;re2;zlib)
 
