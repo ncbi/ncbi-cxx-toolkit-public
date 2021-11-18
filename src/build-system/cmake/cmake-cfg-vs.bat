@@ -70,6 +70,7 @@ echo   --with-vs=N              -- use Visual Studio N generator
 echo                  examples:    --with-vs=2019  (default)
 echo                               --with-vs=2017
 echo   --with-generator="X"     -- use generator X
+echo   --with-conan             -- use Conan to install required components
 echo OPTIONAL ENVIRONMENT VARIABLES:
 echo   CMAKE_CMD                -- full path to 'cmake'
 echo   CMAKE_ARGS               -- additional arguments to pass to 'cmake'
@@ -178,6 +179,7 @@ if "%1"=="--with-vs"           (set VISUAL_STUDIO=%~2&     shift& goto :CONTINUE
 if "%1"=="--with-install"      (set INSTALL_PATH=%~2&      shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--without-analysis"  (set SKIP_ANALYSIS=ON&             goto :CONTINUEPARSEARGS)
 if "%1"=="--with-generator"    (set CMAKE_GENERATOR=%~2&   shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-conan"        (set WITH_CONAN=ON&                goto :CONTINUEPARSEARGS)
 if "%1"=="--with-prebuilt"     (set prebuilt_dir=%~dp2& set prebuilt_name=%~nx2&   shift& goto :CONTINUEPARSEARGS)
 set first=%1
 set first=%first:~0,2%
@@ -314,6 +316,9 @@ set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TAGS="%PROJECT_TAGS%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TARGETS="%PROJECT_TARGETS%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_VERBOSE_PROJECTS="%PROJECT_DETAILS%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_SKIP_ANALYSIS=%SKIP_ANALYSIS%
+if not "%WITH_CONAN%"=="" (
+  set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_USECONAN="%WITH_CONAN%"
+)
 if not "%INSTALL_PATH%"=="" (
   set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_INSTALL_PATH="%INSTALL_PATH%"
 )

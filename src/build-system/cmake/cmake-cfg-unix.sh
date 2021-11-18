@@ -93,6 +93,7 @@ OPTIONS:
   --without-analysis         -- skip source tree analysis
   --with-generator="X"       -- use generator X
   --with-conan-components    -- use conan to fetch dependencies
+  --with-conan               -- use Conan to install required components
 OPTIONAL ENVIRONMENT VARIABLES:
   CMAKE_CMD                  -- full path to 'cmake'
   CMAKE_ARGS                 -- additional arguments to pass to 'cmake'
@@ -256,6 +257,9 @@ do
       ;; 
     --with-conan-components)
       CONANCOMPONENTS="ON"
+      ;;
+    --with-conan)
+      WITH_CONAN="ON"
       ;;
     [A-Z]*)
       cxx_name=$arg
@@ -442,6 +446,9 @@ CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TAGS=$(Quote "${PROJECT_TAGS}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TARGETS=$(Quote "${PROJECT_TARGETS}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_VERBOSE_PROJECTS=$(Quote "${PROJECT_DETAILS}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_SKIP_ANALYSIS=$(Quote "${SKIP_ANALYSIS}")"
+if [ -n "$WITH_CONAN" ]; then
+  CMAKE_ARGS="$CMAKE_ARGS -DNCBI_PTBCFG_USECONAN=$(Quote "${WITH_CONAN}")"
+fi
 if [ -n "$INSTALL_PATH" ]; then
   CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_INSTALL_PATH=$(Quote "${INSTALL_PATH}")"
 fi
