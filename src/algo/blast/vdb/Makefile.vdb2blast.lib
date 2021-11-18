@@ -19,6 +19,8 @@ SRC = \
       blastn_vdb_args \
       tblastn_vdb_args 
 
+LIB_OR_DLL = lib
+
 LIB = vdb2blast
 ASN_DEP = blastdb xnetblast
 

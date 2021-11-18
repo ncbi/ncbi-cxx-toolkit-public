@@ -63,7 +63,7 @@ BEGIN_NCBI_SCOPE
 /// provides conversions between OIDs and high-level sequence objects
 /// containing SRA-specific information (SeqIDs, Bioseqs).
 
-class NCBI_VDB2BLAST_EXPORT CVDBBlastUtil : public CObject
+class CVDBBlastUtil : public CObject
 {
 
 public:
