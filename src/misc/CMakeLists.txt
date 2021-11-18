@@ -16,7 +16,6 @@ NCBI_add_subdirectory(
   lapackwrapp 
   cgi_redirect 
   pmcidconv_client 
-  fix_pub
   third_party 
   third_party_static
 )
