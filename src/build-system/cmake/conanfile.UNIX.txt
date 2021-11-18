@@ -1,0 +1,72 @@
+# $Id$
+#  NCBI C++ Toolkit requirements for Conan/UNIX
+
+[requires]
+libdb/5.3.28
+boost/1.76.0
+bzip2/1.0.8
+cassandra-cpp-driver/2.15.3
+giflib/5.2.1
+grpc/1.39.1
+libjpeg/9d
+lmdb/0.9.29
+lzo/2.10
+libmysqlclient/8.0.25
+libnghttp2/1.45.1
+pcre/8.45
+libpng/1.6.37
+protobuf/3.17.1
+sqlite3/3.36.0
+libtiff/4.3.0
+libxml2/2.9.12
+libxslt/1.1.34
+libuv/1.42.0
+zlib/1.2.11
+openssl/1.1.1l
+
+[options]
+libnghttp2:with_app = False
+libnghttp2:with_hpack = False
+grpc:cpp_plugin = True
+grpc:csharp_plugin = False
+grpc:node_plugin = False
+grpc:objective_c_plugin = False
+grpc:php_plugin = False
+grpc:python_plugin = False
+grpc:ruby_plugin = False
+#
+boost:header_only = True
+#boost:without_atomic = True
+#boost:without_chrono = True
+#boost:without_container = True
+#boost:without_context = True
+boost:without_contract = True
+boost:without_coroutine = True
+#boost:without_date_time = True
+#boost:without_exception = True
+boost:without_fiber = True
+#boost:without_filesystem = True
+boost:without_graph = True
+boost:without_graph_parallel = True
+#boost:without_iostreams = True
+boost:without_json = True
+boost:without_locale = True
+boost:without_log = True
+boost:without_math = True
+boost:without_mpi = True
+boost:without_nowide = True
+boost:without_program_options = True
+boost:without_python = True
+#boost:without_random = True
+#boost:without_regex = True
+#boost:without_serialization = True
+boost:without_stacktrace = True
+#boost:without_system = True
+boost:without_test = True
+#boost:without_thread = True
+#boost:without_timer = True
+boost:without_type_erasure = True
+boost:without_wave = True
+
+[generators]
+cmake
