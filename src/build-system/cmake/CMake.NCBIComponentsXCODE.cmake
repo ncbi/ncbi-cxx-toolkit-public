@@ -436,7 +436,7 @@ endif()
 # GRPC/PROTOBUF
 if(NOT DEFINED NCBI_PROTOC_APP)
     set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/bin/protoc")
-setendif()
+endif()
 if(NOT DEFINED NCBI_GRPC_PLUGIN)
     set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/bin/grpc_cpp_plugin")
 endif()
