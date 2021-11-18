@@ -58,10 +58,8 @@ USING_SCOPE(objects);
 USING_SCOPE(sequence);
 #endif
 
-// static const string kGifLegend[] = {"Strong", "Moderate", "Weak", "Suspect"};
-
-map<string, int> match_type_ints = { {"Strong",1}, {"Moderate",2}, {"Weak",3}, {"Suspect",4} };
-map<int, string> match_type_strs = { {0,"UNKNOWN"}, {1,"Strong"}, {2,"Moderate"}, {3,"Weak"}, {4,"Suspect"} };
+map<string, int> match_type_ints = { {"Strong",0}, {"Moderate",1}, {"Weak",2}, {"Suspect",3},{"Absent",4} };
+map<int, string> match_type_strs = { {0,"Strong"}, {1,"Moderate"}, {2,"Weak"}, {3,"Suspect"},{4,"Absent"} };
 
 
 string s_PopFastaPipe(const string& in_str) 
@@ -360,58 +358,98 @@ CVecscreenRun::CFormatter::FormatResults(CNcbiOstream& out,
                                               m_Screener.m_Queries);
         }
         else if(kPrintBlastTab) {
-            out << "#qid\tqstart\tqend\tmatch_strength\tsid\tstitle" << endl;
-            ITERATE(list<CRef<CSeq_align> >, align_iter, alignments.Set()) {
-                const CSeq_align& align = **align_iter;
-                int match_score=0;
-                align.GetNamedScore("match_type", match_score);
-                
-                string qtitle, stitle;
-                string qid, sid;
-                x_GetIdsAndTitlesForSeqAlign(align, qid, qtitle, sid, stitle);
+            if(!match_list.empty()) {
+            out << "#qid\tqstart\tqend\tmatch_strength\tdrop_count\tsid\tstitle" << endl;
+            ITERATE(list<SVecscreenSummary>, mi, match_list) { 
+                string qtitle="", stitle="";
+                string qid="", sid="";
+               
+                if(!mi->aligns.empty()) {
+                    x_GetIdsAndTitlesForSeqAlign(*mi->aligns.front(), qid, qtitle, sid, stitle);
+                } else {
+                    qid = mi->seqid->GetSeqIdString(true);
+                }
 
-                out << qid << "\t"
+                ITERATE(TAlignList, align_iter, mi->aligns) {
+                    const CSeq_align& align = **align_iter;
+                    qid=sid=qtitle=stitle="";
+
+                    int match_score=0;
+                    align.GetNamedScore("vs_match_type", match_score);
+                    
+                    x_GetIdsAndTitlesForSeqAlign(align, qid, qtitle, sid, stitle);
+                    
+                    out << qid << "\t"
+                        << align.GetSeqStart(0) + 1 << "\t"
+                        << align.GetSeqStop(0) + 1 << "\t"
+                        << match_type_strs[match_score] << "\t"
+                        << mi->drops.size() << "\t"
+                        << sid << "\t"
+                        << stitle 
+                        << endl;
+                }
+                /*
+                ITERATE(TAlignList, align_iter, mi->drops) {
+                    const CSeq_align& align = **align_iter;
+                    qid=sid=qtitle=stitle="";
+                    
+                    int match_score=0;
+                    align.GetNamedScore("vs_match_type", match_score);
+
+                    x_GetIdsAndTitlesForSeqAlign(align, qid, qtitle, sid, stitle);
+                    
+                    out << "%%\t" 
+                    << qid << "\t"
                     << align.GetSeqStart(0) + 1 << "\t"
                     << align.GetSeqStop(0) + 1 << "\t"
-                    << match_type_strs[match_score] << "\t" 
+                    << match_type_strs[match_score] << "\t"
                     << sid << "\t"
                     << stitle 
                     << endl;
+                }*/
             }
+            }    
         } else if(kPrintJson) {
             CJson_Document doc;
             CJson_Object top_obj = doc.SetObject();
             CJson_Array hits_array = top_obj.insert_array("hits");
             
+            string qtitle="", stitle="";
+            string qid="", sid="";
+
             string last_qid = "";
-            ITERATE(list<CRef<CSeq_align> >, align_iter, alignments.Set()) {
-                const CSeq_align& align = **align_iter;
-                int match_score=0;
-                align.GetNamedScore("match_type", match_score);
-                
-                string qtitle, stitle;
-                string qid, sid;
-                x_GetIdsAndTitlesForSeqAlign(align, qid, qtitle, sid, stitle);
+            int align_count=0;
+            ITERATE(list<SVecscreenSummary>, mi, match_list) { 
+                ITERATE(TAlignList, align_iter, mi->aligns) {
+                    const CSeq_align& align = **align_iter;
+                    qid=sid=qtitle=stitle="";
 
-                CJson_Object jobj = hits_array.push_back_object();
+                    int match_score=0;
+                    align.GetNamedScore("vs_match_type", match_score);
+                    
+                    x_GetIdsAndTitlesForSeqAlign(align, qid, qtitle, sid, stitle);
 
-                jobj.insert("query_id", qid);
-                jobj.insert("query_start", align.GetSeqStart(0)+1);
-                jobj.insert("query_end", align.GetSeqStop(0)+1);
-                jobj.insert("match_strength", match_type_strs[match_score]);
-                jobj.insert("subject_id", sid);
-                jobj.insert("subject_title", stitle);
+                    CJson_Object jobj = hits_array.push_back_object();
+
+                    jobj.insert("query_id", qid);
+                    jobj.insert("query_start", align.GetSeqStart(0)+1);
+                    jobj.insert("query_end", align.GetSeqStop(0)+1);
+                    jobj.insert("match_strength", match_type_strs[match_score]);
+                    jobj.insert("drop_count", mi->drops.size());
+                    jobj.insert("subject_id", sid);
+                    jobj.insert("subject_title", stitle);
                 
-                last_qid = qid;
-            }
-            if(!alignments.Set().empty()) {
+                    last_qid = qid;
+                    align_count++;
+                } // align loop                
+            } // range loop
+            if(align_count > 0) { // leave out queries with no output
                 top_obj.insert("query_id", last_qid);
                 doc.Write(out);
-            }
-        }
-
+            }  
+        } // end kPrintJson
         return;
-    }
+    } // end or or
 
 
     // Acknowledge the query if the alignments section won't be printed (this
@@ -485,7 +523,8 @@ CVecscreenRun::GetList() const
     ITERATE(list<CVecscreen::AlnInfo*>, ai, *aln_info_ptr) {
         if ((*ai)->type == CVecscreen::eNoMatch) 
             continue;
-        CVecscreen::AlnInfo align_info((*ai)->range, (*ai)->type);
+        CVecscreen::AlnInfo align_info((*ai)->range, (*ai)->type, (*ai)->get_aligns());
+        align_info.align_drops = (*ai)->align_drops;
         aln_info.push_back(align_info);
     }
     aln_info.sort();
@@ -495,6 +534,8 @@ CVecscreenRun::GetList() const
        summary.seqid = m_SeqLoc->GetId();
        summary.range = ai->range;
        summary.match_type = CVecscreen::GetStrengthString(ai->type);
+       summary.aligns = ai->get_aligns();
+       summary.drops = ai->align_drops;
        retval.push_back(summary);
     }
     return retval;

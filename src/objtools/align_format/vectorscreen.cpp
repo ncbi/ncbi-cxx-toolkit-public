@@ -226,6 +226,7 @@ CVecscreen::MatchType CVecscreen::x_GetMatchType(const CSeq_align& seqalign,
                    seqalign.GetSeqRange(0).GetFrom());
     CAlignFormatUtil::GetAlnScores(seqalign, score, bits, evalue,
                                    sum_n, num_ident,use_this_gi);
+    
     if(aln_start < kTerminalFexibility || 
        aln_stop > master_len - 1 - kTerminalFexibility){
         //terminal match       
@@ -263,6 +264,7 @@ void CVecscreen::x_MergeLowerRankSeqalign(CSeq_align_set& seqalign_higher,
                                           CSeq_align_set& seqalign_lower)
 {
     //get merged range for higher seqalign
+    map<TSeqRange, int> range_to_id; // id is whichever came first, not perfect
     list<CRange<TSeqPos> > range_list;
     CRange<TSeqPos> prev_range, cur_range;
     int j = 0;
@@ -275,10 +277,13 @@ void CVecscreen::x_MergeLowerRankSeqalign(CSeq_align_set& seqalign_higher,
             if(prev_range.IntersectingWith(cur_range)){
                 range_list.back() = 
                     range_list.back().CombinationWith(cur_range);
+                range_to_id[range_list.back()] = range_to_id[prev_range];
             } else {
+                range_to_id[cur_range]=x_GetId(**iter);
                 range_list.push_back(cur_range);
             }
         } else {
+            range_to_id[cur_range]=x_GetId(**iter);
             range_list.push_back(cur_range); //store current range
         }
         j ++;
@@ -297,18 +302,23 @@ void CVecscreen::x_MergeLowerRankSeqalign(CSeq_align_set& seqalign_higher,
                iter_higher->GetFrom() &&
                (*iter_lower)->GetSeqRange(0).GetTo() <=
                iter_higher->GetTo()){
+                
+                x_DropToKeepMap[x_GetId(**iter_lower)] = range_to_id[*iter_higher];
+                x_IdToDropIdMap[range_to_id[*iter_higher]].push_back(x_GetId(**iter_lower));
+
                 CSeq_align_set::Tdata::iterator temp_iter = iter_lower;
                 iter_lower ++;
                 seqalign_lower.Set().erase(temp_iter);
             } else if ((*iter_lower)->GetSeqRange(0).
                        IntersectingWith(*iter_higher)){
+                int id= range_to_id[*iter_higher];
                 CRange<TSeqPos> lower_range = (*iter_lower)->GetSeqRange(0);
                 *iter_higher = 
                     iter_higher->CombinationWith(lower_range);
                 iter_lower ++;
+                range_to_id[*iter_higher]=id;
             }else {
                 iter_lower ++;
-                
             }
         }
     }
@@ -349,6 +359,8 @@ void CVecscreen::x_MergeInclusiveSeqalign(CSeq_align_set& seqalign)
             if (cur_range.GetFrom() <= next_range.GetFrom() &&
                 cur_range.GetTo() >= next_range.GetTo()){
                 //if cur_range contains next_range
+                x_DropToKeepMap[x_GetId(**next_iter)] = x_GetId(**cur_iter);
+                x_IdToDropIdMap[x_GetId(**cur_iter)].push_back(x_GetId(**next_iter));
                 CSeq_align_set::Tdata::iterator temp_iter = next_iter;
                 next_iter ++;
                 seqalign.Set().erase(temp_iter); 
@@ -382,6 +394,8 @@ void CVecscreen::x_MergeSeqalign(CSeq_align_set& seqalign)
     }
 
     //seperate seqalign with different catagory
+    int next_id=1;
+    x_OrigAlignsById.push_back(CRef<CSeq_align>()); // zero is not being used
     ITERATE(CSeq_align_set::Tdata, iter, seqalign.Get()){
         MatchType type = x_GetMatchType(**iter, m_MasterLen, start_edge, end_dege);
         if(type != eNoMatch){
@@ -390,8 +404,10 @@ void CVecscreen::x_MergeSeqalign(CSeq_align_set& seqalign)
             if(new_align->GetSeqStrand(0) == eNa_strand_minus){
                 new_align->Reverse();
             }
+            new_align->SetNamedScore("vs_match_type", type);
+            new_align->SetNamedScore("vs_id", next_id); next_id++;
+            x_OrigAlignsById.push_back(new_align);
             catagorized_seqalign[type]->Set().push_back(new_align);
-            
         } 
     }
     
@@ -421,6 +437,20 @@ void CVecscreen::x_MergeSeqalign(CSeq_align_set& seqalign)
     }
     
     x_BuildNonOverlappingRange(catagorized_seqalign);
+
+
+    NON_CONST_ITERATE(list<AlnInfo*>, aln_info_iter, m_AlnInfoList) {
+        AlnInfo::TAlignList aligns_to_add;
+        ITERATE(AlnInfo::TAlignList, aln_iter, (*aln_info_iter)->get_aligns()) {
+            set<int> drop_ids;
+            x_GetAllDropIdsForKeepId(x_GetId(**aln_iter), drop_ids);
+            ITERATE(set<int>, di, drop_ids) {
+                const CSeq_align& da = *x_OrigAlignsById[*di];
+                aligns_to_add.push_back(x_OrigAlignsById[*di]);
+            }
+        }
+        (*aln_info_iter)->add_drops(aligns_to_add);
+    }
 }
 
 void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
@@ -557,16 +587,17 @@ void CVecscreen::VecscreenPrint(CNcbiOstream& out){
     x_BuildHtmlBar(out);
 }
 
-CVecscreen::AlnInfo* CVecscreen::x_GetAlnInfo(TSeqPos from, TSeqPos to, MatchType type){
+CVecscreen::AlnInfo* CVecscreen::x_GetAlnInfo(TSeqPos from, TSeqPos to, MatchType type, 
+        const AlnInfo::TAlignList aligns){
     AlnInfo* aln_info = new AlnInfo;
     aln_info->range.Set(from, to);
     aln_info->type = type;
+    aln_info->add_aligns(aligns);
     return aln_info;
 }
 
 void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> > 
                                             seqalign_vec){
-
     vector< list<AlnInfo*> > aln_info_vec(seqalign_vec.size());
     CRange<TSeqPos>* prev_range;
     
@@ -578,6 +609,7 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
             cur_aln_info->range.Set((*iter)->GetSeqRange(0).GetFrom(), 
                                     (*iter)->GetSeqRange(0).GetTo());
             cur_aln_info->type = (MatchType)i;
+            cur_aln_info->add_align(*iter);
             //merge if previous range intersect with current range
             if(j > 0){ 
                 prev_range = &(aln_info_vec[i].back()->range);
@@ -586,6 +618,7 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
                     aln_info_vec[i].back()->range = 
                         aln_info_vec[i].back()->range.CombinationWith(cur_aln_info->range);
                     delete cur_aln_info;
+                    aln_info_vec[i].back()->add_align(*iter);
                 } else {
                     aln_info_vec[i].push_back(cur_aln_info);
                 }
@@ -614,6 +647,7 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
                             if((*iter_higher)->range.GetTo() >=
                                (*iter_lower)->range.GetTo()){
                                 //higher include lower. delete lower.
+                                (*iter_higher)->add_aligns((*iter_lower)->get_aligns());
                                 iter_temp = iter_lower;
                                 iter_lower ++;
                                 aln_info_vec[j].erase(iter_temp);
@@ -632,14 +666,16 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
                                 //lower includes higher. need to break up lower
                                 //to 3 parts and delete the middle one(included
                                 //in higher one)
-                               
+                              
                                 aln_info_vec[j].
                                     insert(iter_lower, 
                                            x_GetAlnInfo((*iter_lower)->range.
                                                         GetFrom(),
                                                         (*iter_higher)->range.
                                                         GetFrom() - 1 ,
-                                                        (MatchType)j));
+                                                        (MatchType)j,
+                                                        (*iter_lower)->get_aligns() ));
+
                                 if ((*iter_higher)->range.GetTo() <
                                     (*iter_lower)->range.GetTo()) {
                                     //insert another piece only if lower has extra piece
@@ -648,16 +684,14 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
                                                x_GetAlnInfo((*iter_higher)->range.
                                                             GetTo() + 1,
                                                             (*iter_lower)->range.GetTo() ,
-                                                            (MatchType)j));
+                                                            (MatchType)j,
+                                                            (*iter_lower)->get_aligns() ));
                                 }
                                 
                                 iter_temp = iter_lower;
                                 iter_lower ++;
                                 aln_info_vec[j].erase(iter_temp);
 
-                                
-                               
-                               
                             } else {
                                 //partially overlap
                                 //reduce latter part of lower

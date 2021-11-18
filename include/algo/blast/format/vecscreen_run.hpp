@@ -68,6 +68,7 @@ class NCBI_XBLASTFORMAT_EXPORT CVecscreenRun
 {
 public:
 
+     typedef list<CRef<objects::CSeq_align> > TAlignList;
      /// Summary of hits.
      struct SVecscreenSummary {
         /// Seq-id of query.
@@ -76,6 +77,8 @@ public:
         CRange<TSeqPos> range;
         /// Categorizes strength of match.
         string match_type;
+        // contributing seq-aligns
+        TAlignList aligns, drops;
      };
 
      /// Constructor

@@ -67,14 +67,59 @@ public:
         eNoMatch
     };
 
+    vector<CRef<objects::CSeq_align> > x_OrigAlignsById;
+    typedef map<int, list<int> > TIdToDropIdMap;
+    TIdToDropIdMap x_IdToDropIdMap;
+    typedef map<int, int > TDropToKeepMap;
+    TDropToKeepMap x_DropToKeepMap;
+
+    int x_GetId(const objects::CSeq_align& a) {
+        int id=0;
+        a.GetNamedScore("vs_id", id);
+        return id;
+    }
+
+    void x_GetAllDropIdsForKeepId(int keep_id, set<int>& drop_ids) 
+    {
+        size_t prev_size = drop_ids.size();
+        drop_ids.insert(x_IdToDropIdMap[keep_id].begin(), x_IdToDropIdMap[keep_id].end());
+        
+        while(prev_size != drop_ids.size()) {
+            prev_size = drop_ids.size();
+            ITERATE(set<int>, ci, drop_ids) {
+                drop_ids.insert(x_IdToDropIdMap[*ci].begin(), x_IdToDropIdMap[*ci].end());
+            }
+        }
+    }
+
     ///Match info
     struct AlnInfo {
         TSeqRange range;
         MatchType type;
 
-        AlnInfo(TSeqRange r = TSeqRange::GetEmpty(), MatchType m = eNoMatch) 
-            : range(r), type(m) {}
+        typedef list<CRef<objects::CSeq_align> > TAlignList;
+        TAlignList align_parts;
+        TAlignList align_drops;
+        const TAlignList& get_aligns() const { return align_parts; }
+        const TAlignList& get_drops() const { return align_drops; }
+        void add_align(CRef<objects::CSeq_align> a) { align_parts.push_back(a); }
+        void add_aligns(const TAlignList& al) {
+            x_add_aligns(align_parts, al);
+        }
+        void add_drops(const TAlignList& al) {
+            x_add_aligns(align_drops, al);
+        }
+        void x_add_aligns(TAlignList & dest, const TAlignList& al) {
+            ITERATE(TAlignList, iter, al) {
+                if( (*iter)->GetSeqRange(0).IntersectingWith(range) ) {
+                    dest.push_back(*iter);
+                }
+            }
+        }
 
+
+        AlnInfo(TSeqRange r = TSeqRange::GetEmpty(), MatchType m = eNoMatch, const TAlignList& l=TAlignList()) 
+            : range(r), type(m) { add_aligns(l); }
         /// to allow sorting in std::list
         int operator<(const AlnInfo& rhs) const {
             if (this == &rhs) {
@@ -212,7 +257,7 @@ protected:
     ///@param to: align to
     ///@param type: the match type
     ///
-    AlnInfo* x_GetAlnInfo(TSeqPos from, TSeqPos to, MatchType type);
+    AlnInfo* x_GetAlnInfo(TSeqPos from, TSeqPos to, MatchType type, const AlnInfo::TAlignList aligns=AlnInfo::TAlignList() );
 
     ///Output the graphic
     ///@param out: the stream for output
