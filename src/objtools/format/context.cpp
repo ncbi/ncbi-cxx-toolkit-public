@@ -1245,7 +1245,7 @@ void CMasterContext::x_SetBaseName(void)
 //
 // CTopLevelSeqEntryContext
 
-void CTopLevelSeqEntryContext::x_InitSeqs (const CSeq_entry& sep, CScope& scope)
+void CTopLevelSeqEntryContext::x_InitSeqs (const CSeq_entry& sep)
 {
     if (sep.IsSeq()) {
         // Is Bioseq
@@ -1290,7 +1290,7 @@ void CTopLevelSeqEntryContext::x_InitSeqs (const CSeq_entry& sep, CScope& scope)
         }
         for (auto& seqentry : bssp.GetSeq_set()) {
             // recursively explore current Bioseq-set
-            x_InitSeqs(*seqentry, scope);
+            x_InitSeqs(*seqentry);
         }
     }
 }
@@ -1304,7 +1304,7 @@ CTopLevelSeqEntryContext::CTopLevelSeqEntryContext( const CSeq_entry_Handle &ent
         CSeq_entry_Handle tseh = entry_handle.GetTopLevelEntry();
         CConstRef<CSeq_entry> tcsep = tseh.GetCompleteSeq_entry();
         CSeq_entry& topsep = const_cast<CSeq_entry&>(*tcsep);
-        x_InitSeqs( topsep, entry_handle.GetScope() );
+        x_InitSeqs( topsep );
         return;
     }
 

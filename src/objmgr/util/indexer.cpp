@@ -532,7 +532,8 @@ void CSeqMasterIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt
             const CBioseq_Handle::TId& ids = bsh.GetId();
             if (! ids.empty()) {
                 ITERATE( CBioseq_Handle::TId, it, ids ) {
-                    switch( (*it).Which() ) {
+                    TSEQID_CHOICE chs = (*it).Which();
+                    switch( chs ) {
                         case CSeq_id::e_Local:
                         case CSeq_id::e_Genbank:
                         case CSeq_id::e_Embl:
@@ -603,11 +604,9 @@ void CSeqMasterIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt
             // record CSeqsetIndex in vector
             m_SsxList.push_back(ssx);
 
-            if (bssp.CanGetSeq_set()) {
+            for (auto& seqentry : bssp.GetSeq_set()) {
                 // recursively explore current Bioseq-set
-                for (const CRef<CSeq_entry>& tmp : bssp.GetSeq_set()) {
-                    x_InitSeqs(*tmp, ssx, level + 1);
-                }
+                x_InitSeqs(*seqentry, ssx, level + 1);
             }
 
             if (bssp.IsSetAnnot()) {
