@@ -249,7 +249,9 @@ NCBI_define_Xcomponent(NAME LZO LIB lzo2)
 
 #############################################################################
 # BOOST
-include(${NCBI_TREE_CMAKECFG}/CMakeChecks.boost.cmake)
+if(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
+    include(${NCBI_TREE_CMAKECFG}/CMakeChecks.boost.cmake)
+endif()
 
 #############################################################################
 # Boost.Test.Included
@@ -448,15 +450,17 @@ endif()
 # XSLT
 NCBI_define_Xcomponent(NAME XSLT MODULE libxslt PACKAGE LibXslt LIB xslt ADD_COMPONENT XML)
 if(NCBI_COMPONENT_XSLT_FOUND)
-    if(LIBXSLT_XSLTPROC_EXECUTABLE)
-        set(NCBI_XSLTPROCTOOL ${LIBXSLT_XSLTPROC_EXECUTABLE})
-    elseif(EXISTS ${NCBI_ThirdParty_XSLT}/bin/xsltproc)
-        set(NCBI_XSLTPROCTOOL ${NCBI_ThirdParty_XSLT}/bin/xsltproc)
-    else()
-        find_program(NCBI_XSLTPROCTOOL xsltproc)
-    endif()
-    if(NCBI_XSLTPROCTOOL)
-        set(NCBI_REQUIRE_XSLTPROCTOOL_FOUND YES)
+    if(NOT DEFINED NCBI_XSLTPROCTOOL)
+        if(LIBXSLT_XSLTPROC_EXECUTABLE)
+            set(NCBI_XSLTPROCTOOL ${LIBXSLT_XSLTPROC_EXECUTABLE})
+        elseif(EXISTS ${NCBI_ThirdParty_XSLT}/bin/xsltproc)
+            set(NCBI_XSLTPROCTOOL ${NCBI_ThirdParty_XSLT}/bin/xsltproc)
+        else()
+            find_program(NCBI_XSLTPROCTOOL xsltproc)
+        endif()
+        if(NCBI_XSLTPROCTOOL)
+            set(NCBI_REQUIRE_XSLTPROCTOOL_FOUND YES)
+        endif()
     endif()
 endif()
 if(NCBI_COMPONENT_XSLT_FOUND)
@@ -546,8 +550,12 @@ endif()
 
 ##############################################################################
 # GRPC/PROTOBUF
-set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/${NCBI_BUILD_TYPE}/bin/protoc")
-set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/${NCBI_BUILD_TYPE}/bin/grpc_cpp_plugin")
+if(NOT DEFINED NCBI_PROTOC_APP)
+    set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/${NCBI_BUILD_TYPE}/bin/protoc")
+endif()
+if(NOT DEFINED NCBI_GRPC_PLUGIN)
+    set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/${NCBI_BUILD_TYPE}/bin/grpc_cpp_plugin")
+endif()
 if(NOT EXISTS "${NCBI_PROTOC_APP}")
     set(NCBI_PROTOC_APP)
     find_program(NCBI_PROTOC_APP protoc)

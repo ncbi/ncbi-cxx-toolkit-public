@@ -402,8 +402,12 @@ endif()
 
 ##############################################################################
 # GRPC/PROTOBUF
-set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/bin/ReleaseDLL/protoc.exe")
-set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/bin/ReleaseDLL/grpc_cpp_plugin.exe")
+if(NOT DEFINED NCBI_PROTOC_APP)
+    set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/bin/ReleaseDLL/protoc.exe")
+endif()
+if(NOT DEFINED NCBI_GRPC_PLUGIN)
+    set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/bin/ReleaseDLL/grpc_cpp_plugin.exe")
+endif()
 if(NOT EXISTS "${NCBI_PROTOC_APP}")
     message("NOT FOUND: ${NCBI_PROTOC_APP}")
 else()
