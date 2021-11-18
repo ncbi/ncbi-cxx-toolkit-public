@@ -27,6 +27,7 @@ openssl/1.1.1l
 [options]
 libnghttp2:with_app = False
 libnghttp2:with_hpack = False
+#
 grpc:cpp_plugin = True
 grpc:csharp_plugin = False
 grpc:node_plugin = False
@@ -35,7 +36,8 @@ grpc:php_plugin = False
 grpc:python_plugin = False
 grpc:ruby_plugin = False
 #
-boost:header_only = True
+#boost:header_only = True
+boost:header_only = False
 #boost:without_atomic = True
 #boost:without_chrono = True
 #boost:without_container = True
