@@ -70,6 +70,7 @@ CObjectOStreamJson::CObjectOStreamJson(CNcbiOstream& out, bool deleteOut)
     m_FileHeader(false),
     m_BlockStart(false),
     m_ExpectValue(false),
+    m_PreserveKeys(false),
     m_StringEncoding(eEncoding_UTF8),
     m_BinaryFormat(eDefault),
     m_WrapAt(0)
@@ -83,6 +84,7 @@ CObjectOStreamJson::CObjectOStreamJson(CNcbiOstream& out, EOwnership deleteOut)
     m_FileHeader(false),
     m_BlockStart(false),
     m_ExpectValue(false),
+    m_PreserveKeys(false),
     m_StringEncoding(eEncoding_UTF8),
     m_BinaryFormat(eDefault),
     m_WrapAt(0)
@@ -778,7 +780,9 @@ void CObjectOStreamJson::x_WriteString(const string& value, EStringType type)
 void CObjectOStreamJson::WriteKey(const string& key)
 {
     string s(key);
-    NStr::ReplaceInPlace(s,"-","_");
+    if (!m_PreserveKeys) {
+        NStr::ReplaceInPlace(s,"-","_");
+    }
     x_WriteString(s);
     NameSeparator();
 }
