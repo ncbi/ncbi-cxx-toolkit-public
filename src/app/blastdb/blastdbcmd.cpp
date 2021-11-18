@@ -1165,7 +1165,7 @@ int CBlastDBCmdApp::Run(void)
         	CRef<CBlast_db_metadata> m = m_BlastDb->GetDBMetaData(user_path);
             unique_ptr<CObjectOStreamJson> json_out(new CObjectOStreamJson(out, eNoOwnership));
             json_out->SetDefaultStringEncoding(eEncoding_Ascii);
-            //json_out->AllowHyphens();
+            json_out->PreserveKeyNames();
             CConstObjectInfo obj_info(m, m->GetTypeInfo());
             json_out->WriteObject(obj_info);
         }

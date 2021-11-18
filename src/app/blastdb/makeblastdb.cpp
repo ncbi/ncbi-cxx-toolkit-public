@@ -1222,7 +1222,7 @@ void CMakeBlastDBApp::x_BuildDatabase()
         ofstream out(metadata_filename.c_str());
         unique_ptr<CObjectOStreamJson> json_out(new CObjectOStreamJson(out, eNoOwnership));
         json_out->SetDefaultStringEncoding(eEncoding_Ascii);
-        //json_out->AllowHyphens();
+        json_out->PreserveKeyNames();
         CConstObjectInfo obj_info(m, m->GetTypeInfo());
         json_out->WriteObject(obj_info);
     }
