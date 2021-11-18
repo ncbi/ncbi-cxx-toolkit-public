@@ -36,7 +36,7 @@ elseif(NCBI_PTBCFG_USECONAN)
     endif()
     find_program(NCBI_CMAKE_APP cmake${CMAKE_EXECUTABLE_SUFFIX})
     message("CMake: ${NCBI_CMAKE_APP}")
-    set(_cmd install . --build missing)
+    set(_cmd install . --build missing --build b2)
     execute_process(
         COMMAND ${NCBI_CONAN_APP} ${_cmd}
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
