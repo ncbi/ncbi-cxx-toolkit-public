@@ -930,7 +930,7 @@ void CBlastDBCmdApp::Init()
     const char* exclusions[]  = { "entry", "entry_batch", "outfmt", "strand",
         "target_only", "ctrl_a", "get_dups", "pig", "range",
         "mask_sequence", "list", "remove_redundant_dbs", "recursive",
-        "list_outfmt", "metadata", "metadata_files_path", kArgTaxIdListFile.c_str(), kArgTaxIdList.c_str()};
+        "list_outfmt", "metadata", "metadata_output_prefix", kArgTaxIdListFile.c_str(), kArgTaxIdList.c_str()};
     for (size_t i = 0; i < sizeof(exclusions)/sizeof(*exclusions); i++) {
         arg_desc->SetDependency("info", CArgDescriptions::eExcludes,
                                 string(exclusions[i]));
@@ -947,9 +947,9 @@ void CBlastDBCmdApp::Init()
                                 string(exclusions_m[i]));
     }
 
-    arg_desc->AddOptionalKey("metadata_files_path", "",
-    						"User configurable path for metadata file list", CArgDescriptions::eString);
-    arg_desc->SetDependency("metadata_files_path", CArgDescriptions::eRequires, "metadata");
+    arg_desc->AddOptionalKey("metadata_output_prefix", "",
+    						"Path prefix for location of database files in metadata", CArgDescriptions::eString);
+    arg_desc->SetDependency("metadata_output_prefix", CArgDescriptions::eRequires, "metadata");
 
     arg_desc->AddFlag("tax_info",
     		          "Print taxonomic information contained in this BLAST database.\n"
@@ -1155,8 +1155,8 @@ int CBlastDBCmdApp::Run(void)
         else if (args["metadata"]) {
         	x_InitBlastDB();
         	string user_path = kEmptyStr;
-        	if (args["metadata_files_path"].HasValue()) {
-        		user_path = args["metadata_files_path"].AsString();
+        	if (args["metadata_output_prefix"].HasValue()) {
+        		user_path = args["metadata_output_prefix"].AsString();
         		const char sp = CFile::GetPathSeparator();
         		if (user_path.back() != sp) {
         			user_path += sp;
@@ -1168,6 +1168,9 @@ int CBlastDBCmdApp::Run(void)
             json_out->PreserveKeyNames();
             CConstObjectInfo obj_info(m, m->GetTypeInfo());
             json_out->WriteObject(obj_info);
+            json_out->Flush();
+            out.flush();
+            out << NcbiEndl;
         }
         else if (args["tax_info"]) {
         	x_InitBlastDB();
