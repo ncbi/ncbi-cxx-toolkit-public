@@ -40,10 +40,10 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-NCBI_VDB2BLAST_EXPORT extern const string kArgSRASearchMode;
+extern const string kArgSRASearchMode;
 
 /// Argument class to collect database/subject arguments
-class NCBI_VDB2BLAST_EXPORT CBlastVDatabaseArgs : public CBlastDatabaseArgs
+class CBlastVDatabaseArgs : public CBlastDatabaseArgs
 {
 public:
 
@@ -64,7 +64,7 @@ public:
 };
 
 /// Handles command line arguments for blastn binary
-class NCBI_VDB2BLAST_EXPORT CBlastnVdbAppArgs : public CBlastAppArgs
+class  CBlastnVdbAppArgs : public CBlastAppArgs
 {
 public:
     /// Constructor

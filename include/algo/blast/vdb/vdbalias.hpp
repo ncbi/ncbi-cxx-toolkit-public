@@ -28,7 +28,7 @@ class CVDBAliasNode;
 /// functionality to classes like CSeqDBImpl (and others) that do not
 /// need to understand alias walkers, nodes, and tree traversal.
 
-class NCBI_VDB2BLAST_EXPORT CVDBAliasUtil {
+class CVDBAliasUtil {
 
 public:
 

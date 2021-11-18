@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
-NCBI_VDB2BLAST_EXPORT const string kArgSRASearchMode("sra_mode");
+const string kArgSRASearchMode("sra_mode");
 
 void
 CBlastVDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)

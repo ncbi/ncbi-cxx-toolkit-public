@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 
-class NCBI_VDB2BLAST_EXPORT CLocalVDBBlast : public CObject
+class CLocalVDBBlast : public CObject
 {
 
 private:

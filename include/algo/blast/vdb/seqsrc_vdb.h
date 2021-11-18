@@ -64,7 +64,7 @@ extern "C" {
 /// @param sraRunAccessions Array of SRA run accessions to open. [in]
 /// @param numRuns Number of SRA run accessions to open. [in]
 /// @return Pointer to a properly initialized BlastSeqSrc object.
-NCBI_VDB2BLAST_EXPORT
+
 BlastSeqSrc*
 SRABlastSeqSrcInit(const char** sraRunAccessions, Uint4 numRuns,
 		           Boolean isProtein,  Boolean* excluded_runs, Uint4 * status,
