@@ -299,6 +299,8 @@ void CMakeBlastDBApp::Init()
     arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
                             "Maximum file size for BLAST database files",
                             CArgDescriptions::eString, "3GB");
+    arg_desc->AddOptionalKey("metadata_output_prefix", "",
+    						"Path prefix for location of database files in metadata", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("logfile", "File_Name",
                              "File to which the program log should be redirected",
                              CArgDescriptions::eOutputFile,
@@ -1215,7 +1217,12 @@ void CMakeBlastDBApp::x_BuildDatabase()
     	string new_db = m_DB->GetOutputDbName();
     	CSeqDB::ESeqType t = is_protein? CSeqDB::eProtein: CSeqDB::eNucleotide;
     	CSeqDB sdb(new_db, t);
-    	CRef<CBlast_db_metadata> m = sdb.GetDBMetaData();
+        string output_prefix = args["metadata_output_prefix"]
+                ? args["metadata_output_prefix"].AsString()
+                : kEmptyStr;
+        if (!output_prefix.empty() && (output_prefix.back() != CFile::GetPathSeparator()))
+            output_prefix += CFile::GetPathSeparator();
+    	CRef<CBlast_db_metadata> m = sdb.GetDBMetaData(output_prefix);
     	string extn (kEmptyStr);
     	SeqDB_GetMetadataFileExtension(is_protein, extn);
     	string metadata_filename = new_db + "." + extn;
@@ -1225,6 +1232,9 @@ void CMakeBlastDBApp::x_BuildDatabase()
         json_out->PreserveKeyNames();
         CConstObjectInfo obj_info(m, m->GetTypeInfo());
         json_out->WriteObject(obj_info);
+        json_out->Flush();
+        out.flush();
+        out << NcbiEndl;
     }
 }
 
