@@ -1845,6 +1845,27 @@ CJson_Object::insert(const CJson_Node::TKeyType& name, const Uint8& v) {
     rapidjson::Value sv_name(name.c_str(), *a);
     m_Impl->AddMember( sv_name, rapidjson::Value().SetUint64(v).SetValueAllocator(a), *a);
 }
+#if NCBI_INT8_IS_LONG
+template<> inline void
+CJson_Object::insert(const CJson_Node::TKeyType& name, const long long& v) {
+    insert(name, static_cast<Int8>(v));
+}
+template<> inline void
+CJson_Object::insert(const CJson_Node::TKeyType& name,
+                     const unsigned long long& v) {
+    insert(name, static_cast<Uint8>(v));
+}
+#elif SIZEOF_LONG == 8
+template<> inline void
+CJson_Object::insert(const CJson_Node::TKeyType& name, const long& v) {
+    insert(name, static_cast<Int8>(v));
+}
+template<> inline void
+CJson_Object::insert(const CJson_Node::TKeyType& name, const unsigned long& v)
+{
+    insert(name, static_cast<Uint8>(v));
+}
+#endif
 template<> inline void
 CJson_Object::insert(const CJson_Node::TKeyType& name, const float& v) {
     rapidjson::Value::AllocatorType* a = m_Impl->GetValueAllocator();
