@@ -2,8 +2,12 @@
 # $Id$
 #
 
-. ncbi_test_data
+# Testsuite automatically define $NCBI_TEST_DATA, source it if run manually only
+if test -z "$NCBI_TEST_DATA"; then
+    . ../../../check/ncbi_test_data
+fi
 base="${1:-$NCBI_TEST_DATA/feat_tree}"
+
 if test ! -d $base; then
     echo "Error -- test data dir not found: $base"
     exit 1
