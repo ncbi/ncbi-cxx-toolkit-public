@@ -256,19 +256,21 @@ endif()
 #############################################################################
 # Boost.Test.Included
 if(Boost_FOUND)
-  set(NCBI_COMPONENT_Boost.Test.Included_FOUND YES)
-  set(NCBI_COMPONENT_Boost.Test.Included_INCLUDE ${Boost_INCLUDE_DIRS})
-  set(NCBI_COMPONENT_Boost.Test.Included_DEFINES BOOST_TEST_NO_LIB)
+    set(NCBI_COMPONENT_Boost.Test.Included_FOUND YES)
+    set(NCBI_COMPONENT_Boost.Test.Included_INCLUDE ${Boost_INCLUDE_DIRS})
+    set(NCBI_COMPONENT_Boost.Test.Included_DEFINES BOOST_TEST_NO_LIB)
+    list(APPEND NCBI_ALL_COMPONENTS Boost.Test.Included)
 else()
-  set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)
+    set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)
 endif()
 
 #############################################################################
 # Boost.Test
 if(Boost_FOUND)
-  set(NCBI_COMPONENT_Boost.Test_FOUND YES)
-  set(NCBI_COMPONENT_Boost.Test_INCLUDE ${Boost_INCLUDE_DIRS})
-  set(NCBI_COMPONENT_Boost.Test_LIBS    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+    set(NCBI_COMPONENT_Boost.Test_FOUND YES)
+    set(NCBI_COMPONENT_Boost.Test_INCLUDE ${Boost_INCLUDE_DIRS})
+    set(NCBI_COMPONENT_Boost.Test_LIBS    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+    list(APPEND NCBI_ALL_COMPONENTS Boost.Test)
 else()
   set(NCBI_COMPONENT_Boost.Test_FOUND NO)
 endif()
@@ -276,32 +278,34 @@ endif()
 #############################################################################
 # Boost.Spirit
 if(Boost_FOUND)
-  set(NCBI_COMPONENT_Boost.Spirit_FOUND YES)
-  set(NCBI_COMPONENT_Boost.Spirit_INCLUDE ${Boost_INCLUDE_DIRS})
-#  set(NCBI_COMPONENT_Boost.Spirit_LIBS    ${Boost_LIBRARIES})
+    set(NCBI_COMPONENT_Boost.Spirit_FOUND YES)
+    set(NCBI_COMPONENT_Boost.Spirit_INCLUDE ${Boost_INCLUDE_DIRS})
+    set(NCBI_COMPONENT_Boost.Spirit_LIBS    ${Boost_LIBRARIES})
+    list(APPEND NCBI_ALL_COMPONENTS Boost.Spirit)
 else()
-  set(NCBI_COMPONENT_Boost.Spirit_FOUND NO)
+    set(NCBI_COMPONENT_Boost.Spirit_FOUND NO)
 endif()
 
 #############################################################################
 # Boost.Thread
 if(Boost_FOUND)
-  set(NCBI_COMPONENT_Boost.Thread_FOUND YES)
-  set(NCBI_COMPONENT_Boost.Thread_INCLUDE ${Boost_INCLUDE_DIRS})
-  set(NCBI_COMPONENT_Boost.Thread_LIBS    ${Boost_LIBRARIES})
+    set(NCBI_COMPONENT_Boost.Thread_FOUND YES)
+    set(NCBI_COMPONENT_Boost.Thread_INCLUDE ${Boost_INCLUDE_DIRS})
+    set(NCBI_COMPONENT_Boost.Thread_LIBS    ${Boost_LIBRARIES})
+    list(APPEND NCBI_ALL_COMPONENTS Boost.Thread)
 else()
-  set(NCBI_COMPONENT_Boost.Thread_FOUND NO)
+    set(NCBI_COMPONENT_Boost.Thread_FOUND NO)
 endif()
 
 #############################################################################
 # Boost
 if(Boost_FOUND)
-  set(NCBI_COMPONENT_Boost_FOUND YES)
-  set(NCBI_COMPONENT_Boost_INCLUDE ${Boost_INCLUDE_DIRS})
-  set(NCBI_COMPONENT_Boost_LIBS    ${Boost_LIBRARIES})
+    set(NCBI_COMPONENT_Boost_FOUND YES)
+    set(NCBI_COMPONENT_Boost_INCLUDE ${Boost_INCLUDE_DIRS})
+    set(NCBI_COMPONENT_Boost_LIBS    ${Boost_LIBRARIES})
     list(APPEND NCBI_ALL_COMPONENTS Boost)
 else()
-  set(NCBI_COMPONENT_Boost_FOUND NO)
+    set(NCBI_COMPONENT_Boost_FOUND NO)
 endif()
 
 #############################################################################
