@@ -131,6 +131,16 @@ public:
     /// @param suffix
     ///   Receives JSONP suffix
     void GetJsonpPadding(string* prefix, string* suffix) const;
+    
+    /// Preserve key names
+    /// By default, hyphens in key names are changed into underscores
+    /// to be compatible with JavaScript variable names
+    ///
+    /// @param preserve
+    ///   when TRUE, keep key names unchanged
+    void PreserveKeyNames(bool preserve=true) {
+        m_PreserveKeys = preserve;
+    }
 
     virtual void WriteFileHeader(TTypeInfo type) override;
     virtual void EndOfWrite(void) override;
@@ -240,6 +250,7 @@ private:
     bool m_FileHeader;
     bool m_BlockStart;
     bool m_ExpectValue;
+    bool m_PreserveKeys;
     string m_SkippedMemberId;
     EEncoding m_StringEncoding;
     EBinaryDataFormat m_BinaryFormat;
