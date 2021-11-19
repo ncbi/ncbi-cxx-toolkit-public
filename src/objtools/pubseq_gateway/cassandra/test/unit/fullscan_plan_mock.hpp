@@ -45,6 +45,16 @@ class MockCassandraFullscanPlan
     MOCK_METHOD0(Generate, void());
 };
 
+class CCassandraFullscanPlanExpose
+    : public CCassandraFullscanPlan
+{
+ public:
+    CCassConnection::TTokenRanges CopyRanges()
+    {
+        return GetTokenRanges();
+    }
+};
+
 END_IDBLOB_SCOPE
 
 
