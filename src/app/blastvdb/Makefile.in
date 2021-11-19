@@ -2,7 +2,7 @@
 
 APP_PROJ = blastn_vdb 
 
-REQUIRES = objects algo app
+REQUIRES = objects algo app VDB
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
