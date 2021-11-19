@@ -180,9 +180,10 @@ public:
     void          SetAppState(EDiagAppState state);
 
     /// Client IP/hostname
-    const string& GetClientIP(void) const;
+    string        GetClientIP(void) const;
     void          SetClientIP(const string& client);
     bool          IsSetClientIP(void) const;
+    bool          IsSetExplicitClientIP(void) const;
     void          UnsetClientIP(void);
 
     /// Session ID
@@ -660,13 +661,21 @@ void CRequestContext::UnsetRequestID(void)
 
 
 inline
-const string& CRequestContext::GetClientIP(void) const
+string CRequestContext::GetClientIP(void) const
 {
-    return x_IsSetProp(eProp_ClientIP) ? m_ClientIP : kEmptyStr;
+    return x_IsSetProp(eProp_ClientIP) ?
+        m_ClientIP : GetDiagContext().GetDefaultClientIP();
 }
 
 inline
 bool CRequestContext::IsSetClientIP(void) const
+{
+    return IsSetExplicitClientIP() ||
+        !GetDiagContext().GetDefaultClientIP().empty();
+}
+
+inline
+bool CRequestContext::IsSetExplicitClientIP(void) const
 {
     return x_IsSetProp(eProp_ClientIP);
 }

@@ -2841,7 +2841,7 @@ NCBI_PARAM_DEF_EX(string, Log, Client_Ip, "", eParam_NoThread,
 static CSafeStatic<NCBI_PARAM_TYPE(Log, Client_Ip)> s_DefaultClientIp;
 
 
-const string CDiagContext::GetDefaultClientIP(void)
+string CDiagContext::GetDefaultClientIP(void)
 {
     return s_DefaultClientIp->Get();
 }
@@ -3078,7 +3078,7 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
     char uid[17];
     GetStringUID(msg.GetUID(), uid);
     const string& host = msg.GetHost();
-    const string& client = msg.GetClient();
+    string client = msg.GetClient();
     string session = msg.GetSession();
     const string& app = msg.GetAppName();
     const char* app_state = s_AppStateToStr(msg.GetAppState());
@@ -3118,7 +3118,7 @@ void CDiagContext::x_StartRequest(void)
     }
 
     // Use the default client ip if no other value is set.
-    if ( !ctx.IsSetClientIP() ) {
+    if ( !ctx.IsSetExplicitClientIP() ) {
         string ip = GetDefaultClientIP();
         if ( !ip.empty() ) {
             ctx.SetClientIP(ip);
@@ -5871,7 +5871,7 @@ const string& SDiagMessage::GetHost(void) const
 }
 
 
-const string& SDiagMessage::GetClient(void) const
+string SDiagMessage::GetClient(void) const
 {
     return m_Data ? m_Data->m_Client
         : CDiagContext::GetRequestContext().GetClientIP();
