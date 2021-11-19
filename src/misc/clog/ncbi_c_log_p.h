@@ -72,8 +72,8 @@ extern "C" {
 #define NCBILOG_ENTRY_MIN        127    /* string length */
 
 /** Maximum length of each log entry, all text after this position will be truncated */
-#define NCBILOG_ENTRY_MAX_ALLOC 8192   /* 8Kb*/ 
-#define NCBILOG_ENTRY_MAX       8190   /* NCBILOG_ENTRY_MAX_ALLOC - 2, for ending '\n\0' */ 
+#define NCBILOG_ENTRY_MAX_ALLOC 65536  /* 64 Kb */ 
+#define NCBILOG_ENTRY_MAX       65534  /* NCBILOG_ENTRY_MAX_ALLOC - 2, for ending '\n\0' */ 
 
 
 
