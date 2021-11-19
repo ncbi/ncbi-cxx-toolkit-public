@@ -122,7 +122,8 @@ void xFreeEntry(DataBlkPtr entry)
     FreeEntryBlk(reinterpret_cast<EntryBlkPtr>(entry->mpData));
 
     entry->mpData = NULL;
-    delete entry;
+    s_FreeDataBlk(entry);
+    //delete entry;
 }
 
 /**********************************************************/
@@ -131,7 +132,8 @@ void FreeEntryBlk(EntryBlkPtr ebp)
     if (ebp == NULL)
         return;
 
-    delete ebp->chain;
+    //delete ebp->chain;
+    s_FreeDataBlk(ebp->chain);
     ebp->chain = NULL;
 
     delete ebp;
