@@ -584,7 +584,8 @@ string CRequestContext::SelectLastHitID(const string& hit_ids)
         return hit_ids;
     }
     list<string> ids;
-    NStr::Split(hit_ids, ", ", ids,
+    // '+' is a temporary workaround for mismatched encoding/decoding of spaces.
+    NStr::Split(hit_ids, ", +", ids,
         NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     return ids.empty() ? kEmptyStr : ids.back();
 }
