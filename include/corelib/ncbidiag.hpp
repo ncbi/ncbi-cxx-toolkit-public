@@ -1699,7 +1699,7 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
 
     /// Access to strings stored in SDiagMessageData.
     const string& GetHost(void) const;
-    const string& GetClient(void) const;
+    string GetClient(void) const;
     string GetSession(void) const;
     const string& GetAppName(void) const;
     EDiagAppState GetAppState(void) const;
@@ -2244,7 +2244,7 @@ public:
     /// Get default client ip. The ip may be set using SetDefaultClientIP(),
     /// NCBI_LOG_CLIENT_IP env. variable or Log.Client_Ip value in the INI
     /// file.
-    static const string GetDefaultClientIP(void);
+    static string GetDefaultClientIP(void);
     /// Set new default client ip. This value is used only if by the time
     /// 'request start' is logged there's no explicit ip set in the current
     /// request context.

@@ -316,7 +316,7 @@ static bool IsValidHitID(const string& hit) {
             sep_pos = pos;
             break;
         }
-        if (!isalnum(hit[pos])  &&  id_std.find(hit[pos]) == NPOS) {
+        if (!isalnum(c)  &&  id_std.find(c) == NPOS) {
             return false;
         }
     }
@@ -338,7 +338,7 @@ static bool IsValidHitID(const string& hit) {
             sep_pos = pos;
             continue;
         }
-        if (!isalnum(hit[pos])  &&  id_std.find(hit[pos]) == NPOS) {
+        if (!isalnum(c)  &&  id_std.find(c) == NPOS) {
             return false;
         }
         if ( isdigit(c) ) last_digit = pos;
