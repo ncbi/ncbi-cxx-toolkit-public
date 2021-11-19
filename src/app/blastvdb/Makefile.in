@@ -1,14 +1,25 @@
 # $Id$
 
-APP_PROJ = blastn_vdb 
+APP_PROJ = blastn_vdb tblastn_vdb blast_vdb_cmd blast_formatter_vdb
 
 REQUIRES = objects algo app VDB
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
+.PHONY: all $(APP_PROJ)
+
 blastn_vdb: 
 	${MAKE} ${MFLAGS} -f Makefile.blastn_vdb_app
+
+tblastn_vdb: 
+	${MAKE} ${MFLAGS} -f Makefile.tblastn_vdb_app
+
+blast_vdb_cmd:
+	${MAKE} ${MFLAGS} -f Makefile.blast_vdb_cmd_app
+
+blast_formatter_vdb:
+	${MAKE} ${MFLAGS} -f Makefile.blast_formatter_vdb_app
 
 # Example meta-makefile; uncomment and fill out whichever of these
 # apply.  (Built in the following order.)
