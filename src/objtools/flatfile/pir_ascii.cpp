@@ -265,6 +265,19 @@ const char **sub_tag[] = {
     sub_tag_END,
 };
 
+class CDBPArray : public CFlatFileData {
+public:
+    using TDBP = DataBlkPtr;
+    const TDBP& operator[](size_t pos) const {
+        return  mData[pos];
+    }
+    TDBP& operator[](size_t pos) {
+        return mData[pos];
+    }
+    array<DataBlkPtr,MAXTAG> mData;   
+};
+
+
 DataBlkPtr sub_ind_ENTRY[MAXTAG];
 DataBlkPtr sub_ind_TITLE[MAXTAG];
 DataBlkPtr sub_ind_ALTERNATE_NAMES[MAXTAG];
@@ -310,7 +323,9 @@ DataBlkPtr* sub_ind[] = {
 #define MAXMAX     70000
 
 static DataBlk         db[MAXDBP];
-static DataBlk*    subdb[MAXDBP*MAXTAG];
+static DataBlkPtr    subdb[MAXDBP*MAXTAG];
+
+static CDBPArray new_subdb[MAXDBP];
 
 static int             i_dbp;
 static int             i_subdbp;
@@ -1547,7 +1562,8 @@ static CRef<objects::CCit_art> pir_journal(char* bptr, CRef<objects::CAuth_list>
 }
 
 /**********************************************************/
-static CRef<objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
+//static CRef<objects::CPubdesc> get_pir_ref(DataBlkPtr* sub_ind)
+static CRef<objects::CPubdesc> get_pir_ref(const CDBPArray& sub_ind)
 {
     DataBlkPtr  dbp;
 
@@ -1860,7 +1876,13 @@ static void get_pir_descr(DataBlkPtr* ind,
     {
         for(dbp = ind[ParFlatPIR_REFERENCE]; dbp != NULL; dbp = dbp->mpNext)
         {
-            CRef<objects::CPubdesc> pubdesc = get_pir_ref((DataBlkPtr*) dbp->mpData);
+            if (!dbp->mpData) {
+                continue;
+            }
+
+            //CRef<objects::CPubdesc> pubdesc = get_pir_ref((DataBlkPtr*) dbp->mpData);
+            CRef<objects::CPubdesc> pubdesc = get_pir_ref(*(reinterpret_cast<CDBPArray*>(dbp->mpData)));
+
             if (pubdesc.NotEmpty())
             {
                 CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
@@ -2460,6 +2482,16 @@ static DataBlkPtr* SubdbpNew(int size)
     return(subdb + i);
 }
 
+static CDBPArray* AssignArraySpace()
+{
+    if (i_subdbp == MAXDBP) {
+        fprintf(stderr, "Too many subdbp's: %d\n", i_subdbp*MAXTAG);
+        exit(1);
+    }
+    int current_pos = i_subdbp++;
+    return new_subdb + current_pos;
+}
+
 /**********************************************************/
 static DataBlkPtr PirDataBlkNew()
 {
@@ -2591,7 +2623,6 @@ static void subdbp_func(DataBlkPtr dbp)
 {
     DataBlkPtr      tmp;
     DataBlkPtr      subdbp;
-    DataBlkPtr* si;
     char*         str;
     const char      **tags;
     int             type;
@@ -2654,9 +2685,14 @@ static void subdbp_func(DataBlkPtr dbp)
         }
         subdbp->len = tmp->mOffset + tmp->len - subdbp->mOffset;
     }
-    si = SubdbpNew(MAXTAG);
-    memcpy(si, sub_ind[type], MAXTAG * sizeof(si[0]));
-    dbp->mpData = si;
+    DataBlkPtr* si = SubdbpNew(MAXTAG);
+    copy(sub_ind[type], sub_ind[type]+MAXTAG, si);
+
+    CDBPArray* pDBPArray = AssignArraySpace();
+    copy(sub_ind[type], sub_ind[type]+MAXTAG, begin(pDBPArray->mData));
+    //memcpy(si, sub_ind[type], MAXTAG * sizeof(DataBlkPtr));
+    //dbp->mpData = si;
+    dbp->mpData = pDBPArray;
 }
 
 /**********************************************************/

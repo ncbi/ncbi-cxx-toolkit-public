@@ -152,7 +152,15 @@ typedef struct token_statistics_block {
                                            chain list */
 } TokenStatBlk, *TokenStatBlkPtr;
 
-struct XmlIndex {
+
+class CFlatFileData {
+public:
+    virtual ~CFlatFileData() = default;
+};
+
+
+struct XmlIndex : public CFlatFileData 
+{
     Int4                  tag;
     Int4                  order;
     size_t                start;        /* Offset from the beginning of the
@@ -297,7 +305,7 @@ struct FTAOperon
 
 
 //  ============================================================================
-class DataBlk
+class DataBlk : public CFlatFileData
 //  ============================================================================
 {
 public:
@@ -338,7 +346,8 @@ public:
 public:
 
     int mType;  // which keyword block or node type
-    void* mpData;  // any pointer type points to information block
+    CFlatFileData* mpData;  // any pointer type points to information block
+    //void* mpData;  // any pointer type points to information block
     char* mOffset;  // points to beginning of the entry in the memory
     size_t len;  // lenght of data in bytes 
     char* mpQscore;  // points to quality score buffer
@@ -349,7 +358,8 @@ using DataBlkPtr = DataBlk*;
 
 
 //  ============================================================================
-struct EntryBlk {
+struct EntryBlk : public CFlatFileData
+{
 //  ============================================================================
     DataBlkPtr              chain;      /* a header points to key-word
                                            block information */

@@ -43,7 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
-struct FeatBlk {
+struct FeatBlk : public CFlatFileData {
     Int4      num = 0;
     char*   key = nullptr;
     char*   location = nullptr;
