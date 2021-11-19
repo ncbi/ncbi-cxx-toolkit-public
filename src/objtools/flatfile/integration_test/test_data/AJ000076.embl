@@ -1,0 +1,99 @@
+ID   AJ000076; SV 1; linear; genomic DNA; STD; FUN; 2198 BP.
+AC   AJ000076;
+DT   05-NOV-1997 (Rel. 53, Created)
+DT   15-APR-2005 (Rel. 83, Last updated, Version 5)
+DE   Kluyveromyces marxianus epg1 gene encoding endopolygalacturonase, partial
+KW   endopolygalacturonase; epg1 gene.
+OS   Kluyveromyces marxianus
+OC   Eukaryota; Fungi; Dikarya; Ascomycota; Saccharomycotina; Saccharomycetes;
+OC   Saccharomycetales; Saccharomycetaceae; Kluyveromyces.
+RN   [1]
+RC   revised by author 04-NOV-97
+RP   1-2198
+RA   Siekstele R.;
+RT   ;
+RL   Submitted (07-JUL-1997) to the EMBL/GenBank/DDBJ databases.
+RL   Siekstele R., Gene engineering laboratory, Institute of Biotechnology,
+RL   V.Graiciuno 8, 2028, LITHUANIAN REPUBLIC.
+RN   [2]
+RX   DOI; 10.1002/(SICI)1097-0061(19990315)15:4<311::AID-YEA379>3.0.CO;2-9.
+RX   PUBMED; 10206190.
+RA   Siekstele R., Bartkeviciute D., Sasnauskas K.;
+RT   "Cloning, targeted disruption and heterologous expression of the
+RT   Kluyveromyces marxianus endopolygalacturonase gene (EPG1)";
+RL   Yeast 15(4):311-322(1999).
+FH   Key             Location/Qualifiers
+FH
+FT   source          1..2198
+FT                   /organism="Kluyveromyces marxianus"
+FT                   /chromosome="VI"
+FT                   /strain="BMK Y-719"
+FT                   /mol_type="genomic DNA"
+FT                   /db_xref="taxon:4911"
+FT   TATA_signal     338..352
+FT                   /gene="epg1"
+FT   CDS             573..>1655
+FT                   /codon_start=1
+FT                   /gene="epg1"
+FT                   /product="endopolygalacturonase"
+FT                   /EC_number="3.2.1.15"
+FT                   /db_xref="GOA:O13478"
+FT                   /db_xref="HSSP:1CZF"
+FT                   /db_xref="InterPro:IPR000743"
+FT                   /db_xref="InterPro:IPR006626"
+FT                   /db_xref="InterPro:IPR011050"
+FT                   /db_xref="InterPro:IPR012334"
+FT                   /db_xref="UniProtKB/TrEMBL:O13478"
+FT                   /protein_id="CAA03900.1"
+FT                   /translation="MLFSNTLLIAAASALLAEASPLEKRDSCTLSGKTAGGGLSNCATV
+FT                   TVNNVEVPSGKTLDLTGLPDGATVNFVGQVTFGYDEWVGPLVSISGKNIKVVGKSGHLL
+FT                   DGDGARWWDGKGDGGKKKPKFMSLRLTGNSDVGGLQIKNTPIQAISVNSCSDTVIHDVT
+FT                   IDNRDGDKDNLGHNTDGFDVGNVNNVTIENSHVYNQDDCIAVNSGTGVYFKNNYCSGGH
+FT                   GASIGSVGLRSNNVVDTVYFENNQIVNSDNGLRIKTIQKATGSVNNVHFLSNTISGIRK
+FT                   FGIVVETDYSNGSTTGTPGSKVPITNFEVDGLTGSVDSSAYRVKIFVAGASKWTWKNVD
+FT                   ITGGSSFGSCTGIPSGSGAFC"
+FT   sig_peptide     573..657
+FT                   /gene="epg1"
+FT   mat_peptide     658..>1655
+FT                   /gene="epg1"
+FT                   /product="endopolygalacturonase"
+FT                   /EC_number="3.2.1.15"
+SQ   Sequence 2198 BP; 635 A; 441 C; 452 G; 670 T; 0 other;
+     gcagccgttt tgcttacagt tctcatgcac aatcagccag attttgcaat agtattaact        60
+     tagaattaag gcaacatctt tggatatgca tgtagagtaa gtcgttcgaa accattatta       120
+     ttattattat tattattatt attattatta ttattattat tagtattatt gaaattgtta       180
+     ttgttcttag tttcactact attattattc atattcatgt tattgacatc gccgaacgac       240
+     cagcctccat accgattaga caggatctca aacgtgggct ccagagctca cacattatgc       300
+     taaataacta tctactgtaa cagctacaga aaaaaaacta taaaagagcg agggataaac       360
+     cactctcttg tgaatcagga tcagtaggta actcataaac cttcttcttt tctctcaaaa       420
+     tatcaaataa cagtagtatc aacaacgata tcgaataata ctaactacta caacagtagg       480
+     aacagtaacg acaacgacaa cgatagtaac gacaataacg acaccaacaa acaacaggaa       540
+     cacagattaa gctcagaaac aaaaaaaaaa aaatgttatt cagcaacacc ttattgatcg       600
+     cagcagctag tgcattatta gctgaagctt ctccattgga aaagagagac agttgtacct       660
+     tgagtgggaa gacagccgga ggtggtttgt ccaactgtgc cacggtcact gtcaacaacg       720
+     tcgaagtccc atctggtaag actttggact tgacaggctt gccagacggt gcgacagtta       780
+     atttcgtcgg gcaggttacc tttggttacg atgaatgggt gggtccattg gtctccatct       840
+     ccggtaagaa catcaaggtg gtaggtaaat ctggccactt gttagatggt gatggtgcac       900
+     gttggtggga cgggaagggt gacggtggta aaaagaagcc taagttcatg agcttgagat       960
+     taactggcaa ctcagatgtc ggtgggttgc aaatcaagaa taccccaatt caagctatct      1020
+     cagtgaactc ttgtagtgac actgtaattc acgatgtcac cattgacaac agagatggtg      1080
+     acaaggacaa cttgggtcac aacactgacg gtttcgatgt tggtaacgtt aacaacgtca      1140
+     ccattgagaa cagtcatgtc tacaaccaag atgactgtat cgccgtcaac tccggtaccg      1200
+     gtgtctactt caagaacaac tactgttctg gtggtcatgg tgcttccatt ggttcagtcg      1260
+     gtcttcgctc aaacaatgtg gttgacaccg tttacttcga gaacaaccaa attgtcaact      1320
+     ctgacaacgg tttgagaatt aagaccattc aaaaggccac tggttccgtc aacaacgtgc      1380
+     acttcttgtc caacactatc tccggcatca gaaagtttgg tattgttgtt gaaactgatt      1440
+     acagcaatgg atccaccacc ggtaccccag gtagcaaggt cccaatcacc aacttcgaag      1500
+     tcgatggttt gactggttca gttgactctt ccgcttacag agtcaagatc ttcgttgctg      1560
+     gtgcttctaa gtggacttgg aagaatgttg atatcactgg tggttcttct ttcggttcat      1620
+     gtactggtat tccatctggt agcggagcct tctgttaagc gtctcttttt attttttttt      1680
+     ttttttttat taacgtgaag aagataaggg aagtcttcaa tgcggttctg aatggttgat      1740
+     ccatttcgat acctcgggga cttcctttga atatattctg agagtatgac agttggtttt      1800
+     ctttctttct ttctattgtt tttgttttta tggaaatata gctttgatga tttaggatat      1860
+     tttttgtagt gaaccaatac atgcttgatt aatatacgta cgaggtgggc attctactct      1920
+     cattattggt gttttattgg agggaaaaat taaatctagg agtatcgttt agagcgcgaa      1980
+     cgtaatatcc atgttcttct ctttgaagag gtcccaccat tgcttcccag atagccagca      2040
+     ttcttccatg atattttgcg cttgttttgc actggtgaca ccctttcgaa ccaaagatgt      2100
+     caagtgctgc tgatacaaca acctgtattc atacaattct ggatccatca gctcacaatc      2160
+     cacagctgaa gatacagaaa atgatacatg tctctgca                              2198
+//
