@@ -78,7 +78,7 @@ LIB =   xbma_refiner_gui wx_tools xbma_refiner xcd_utils xstruct_util xstruct_dp
 
 # removed xmlwrapp from LIB
 
-CPPFLAGS = $(PLATFORM_DB_SYMBOLS) \
+CPPFLAGS = -D_STRUCTURE_USE_LONG_PDB_CHAINS_ $(PLATFORM_DB_SYMBOLS) \
 	$(ORIG_CPPFLAGS) \
 	$(WXWIDGETS_INCLUDE) $(OPENGL_INCLUDE) \
 	$(Z_INCLUDE) $(PNG_INCLUDE) $(PCRE_INCLUDE)
