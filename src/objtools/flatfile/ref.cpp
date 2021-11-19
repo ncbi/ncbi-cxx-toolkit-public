@@ -810,7 +810,7 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
     end_volume = NULL;
 
     size_t len = StringLen(bptr);
-    unique_ptr<char> pBuf(new char[len+1]);
+    unique_ptr<char[]> pBuf(new char[len+1]);
     char* buf = pBuf.get();
     StringCpy(buf, bptr);
     eptr = buf + len - 1;
