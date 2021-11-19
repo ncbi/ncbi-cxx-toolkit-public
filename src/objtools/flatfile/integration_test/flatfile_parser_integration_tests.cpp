@@ -126,6 +126,46 @@ BOOST_AUTO_TEST_CASE(TestFileInterface)
     BOOST_REQUIRE(success);
 }
 
+BOOST_AUTO_TEST_CASE(TestENAFile)
+{
+    string test_data_dir {"test_data"};
+
+    unique_ptr<Parser> pConfig(new Parser()); 
+    pConfig->mode = Parser::EMode::Release;
+    pConfig->output_format = Parser::EOutput::Seqsubmit;
+    string format {"embl"};
+    string source {"embl"};
+    fta_set_format_source(*pConfig, format, source);
+
+    string filestub = CDir::ConcatPath(test_data_dir, "AJ000076");
+    string inputFile = filestub + ".embl";
+    BOOST_REQUIRE(CDirEntry(inputFile).Exists());
+
+    CFlatFileParser ffparser(nullptr);
+    auto pResult = ffparser.Parse(*pConfig, inputFile);
+    BOOST_REQUIRE(pResult.NotNull());
+
+    const string& outputName = CDirEntry::GetTmpName();
+    CNcbiOfstream ofstr(outputName);
+    ofstr << MSerial_AsnText << *pResult;
+    ofstr.close();
+
+    CFile goldenFile(filestub + ".asn");
+    BOOST_REQUIRE(goldenFile.Exists());
+
+    bool success = goldenFile.CompareTextContents(outputName, CFile::eIgnoreWs);
+
+    if (!success) {
+        const auto& args = CNcbiApplication::Instance()->GetArgs();
+        if (args["keep-diffs"]) {
+            CDirEntry outputFile(outputName);
+            outputFile.Copy(filestub + ".new");
+        }
+    }
+
+    BOOST_REQUIRE(success);
+}
+
 
 NCBITEST_INIT_CMDLINE(argDescrs) 
 {

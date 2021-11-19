@@ -1,0 +1,357 @@
+Seq-submit ::= {
+  sub {
+    contact {
+    },
+    cit {
+      authors {
+        names str {
+          "European Nucleotide Archive"
+        }
+      }
+    }
+  },
+  data entrys {
+    set {
+      level 1,
+      class nuc-prot,
+      descr {
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Siekstele",
+                      initials "R."
+                    }
+                  }
+                },
+                affil str "Siekstele R., Gene engineering laboratory,
+ Institute of Biotechnology, V.Graiciuno 8, 2028, LITHUANIAN REPUBLIC"
+              },
+              medium other,
+              date std {
+                year 1997,
+                month 7,
+                day 7
+              }
+            }
+          },
+          comment "revised by author 04-NOV-97"
+        },
+        pub {
+          pub {
+            article {
+              title {
+                name "Cloning, targeted disruption and heterologous expression
+ of the Kluyveromyces marxianus endopolygalacturonase gene (EPG1)"
+              },
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Siekstele",
+                      initials "R."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Bartkeviciute",
+                      initials "D."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Sasnauskas",
+                      initials "K."
+                    }
+                  }
+                }
+              },
+              from journal {
+                title {
+                  iso-jta "Yeast"
+                },
+                imp {
+                  date std {
+                    year 1999
+                  },
+                  volume "15",
+                  issue "4",
+                  pages "311-322"
+                }
+              },
+              ids {
+                pubmed 10206190,
+                doi "10.1002/(SICI)1097-0061(19990315)15:4<311::AID-YEA379>3.0
+.CO;2-9"
+              }
+            },
+            pmid 10206190
+          },
+          reftype no-target
+        },
+        update-date std {
+          year 2005,
+          month 4,
+          day 15
+        },
+        create-date std {
+          year 1997,
+          month 11,
+          day 5
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            embl {
+              accession "AJ000076",
+              version 5
+            }
+          },
+          descr {
+            source {
+              org {
+                taxname "Kluyveromyces marxianus",
+                orgname {
+                  mod {
+                    {
+                      subtype strain,
+                      subname "BMK Y-719"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Kluyveromyces"
+                }
+              },
+              subtype {
+                {
+                  subtype chromosome,
+                  name "VI"
+                }
+              }
+            },
+            title "Kluyveromyces marxianus epg1 gene encoding
+ endopolygalacturonase, partial",
+            molinfo {
+              biomol genomic
+            },
+            embl {
+              div fun,
+              creation-date std {
+                year 1997,
+                month 11,
+                day 5
+              },
+              update-date std {
+                year 2005,
+                month 4,
+                day 15
+              },
+              keywords {
+                "endopolygalacturonase",
+                "epg1 gene"
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 2198,
+            seq-data ncbi2na '925BFE7C4BDD3910D2523FE432CF07C83C2904DFE8CE4EC8
+B0B6F6014F3CF3CF3CF3CF3CF3CF3CF3CB3CF80FBCFBDF2FD1C73CF3D33D3BCF84D96061497531
+63C84A37406EA75227444F39C0C1CDC7B049C480001CC02262A3014777EE0D28D2CAC1D3017DF7
+FDDD00CD0304B2CD0418CD830C7071C412CA04B0610610632C18430611410104A0448F09D20100
+00003BCF49045F3E3649272E4F3C9E09F753E8022212FB17E2EA084968AEBFB507B946B47B4106
+D82D537AC21FE87E129F9486B984BC3F6DA92BC5FEBC6383ABAB53EB75375AC204D0AEB2B037A5
+1FBC8EB8EB91BEBA86A0AB86BAC00825C2F4E27E23C1E90748EDAEAF903420C550F427374B81DF
+B2E11EC3D18ED14F841223AE10A107EAD104786BF63BEB06F041B453E204B4EDC4142387B365B4
+1D6B16BB71F42041C7BDEBAD3AE7D4FAF4B6B7D9D010EEBE116FC7D8810503ED077841AFE20F08
+53D00A51EBD6D041B91F7ED411CDD693480BFACFBEF8078F1243A35145AC552B242B5434507D82
+D8EBF87AF4BE1DF59F122D08DF6F9EB9F70BA1FA083BE3347AEBDF7F6BD3B1EB3D4DEB26897DEF
+09B77FF3FFFFFFFF3C1B8208C2A0B7D0E6BDE0EBE353F63176A87D7F8333DE22CE12FAFF7F7F7F
+73EFFEFFCE80CC9FE38FCA33FFECB8143139F8F0CC6C62BA93DC774F3EBBFCFA2A003C0DCA2CDB
+F226606C3353BDF77F822B5453E7D5232524F7D4E33FE67EFF91EB8457F605023B42E79E310417
+B3D310F7A35349D10D449E08C48038C4EDDE40'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data imp {
+                    key "regulatory"
+                  },
+                  location int {
+                    from 337,
+                    to 351,
+                    id embl {
+                      accession "AJ000076"
+                    }
+                  },
+                  qual {
+                    {
+                      qual "regulatory_class",
+                      val "TATA_box"
+                    }
+                  }
+                },
+                {
+                  data imp {
+                    key "sig_peptide"
+                  },
+                  location int {
+                    from 572,
+                    to 656,
+                    id embl {
+                      accession "AJ000076"
+                    }
+                  }
+                },
+                {
+                  data imp {
+                    key "mat_peptide"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 657,
+                    to 1654,
+                    id embl {
+                      accession "AJ000076"
+                    },
+                    fuzz-to lim gt
+                  },
+                  qual {
+                    {
+                      qual "product",
+                      val "endopolygalacturonase"
+                    },
+                    {
+                      qual "EC_number",
+                      val "3.2.1.15"
+                    }
+                  }
+                },
+                {
+                  data gene {
+                    locus "epg1"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 337,
+                    to 1654,
+                    id embl {
+                      accession "AJ000076"
+                    },
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "AJ000076_1"
+          },
+          descr {
+            molinfo {
+              biomol peptide,
+              completeness no-right
+            },
+            title "endopolygalacturonase [Kluyveromyces marxianus]"
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 361,
+            seq-data ncbieaa "MLFSNTLLIAAASALLAEASPLEKRDSCTLSGKTAGGGLSNCATVTVN
+NVEVPSGKTLDLTGLPDGATVNFVGQVTFGYDEWVGPLVSISGKNIKVVGKSGHLLDGDGARWWDGKGDGGKKKPKFM
+SLRLTGNSDVGGLQIKNTPIQAISVNSCSDTVIHDVTIDNRDGDKDNLGHNTDGFDVGNVNNVTIENSHVYNQDDCIA
+VNSGTGVYFKNNYCSGGHGASIGSVGLRSNNVVDTVYFENNQIVNSDNGLRIKTIQKATGSVNNVHFLSNTISGIRKF
+GIVVETDYSNGSTTGTPGSKVPITNFEVDGLTGSVDSSAYRVKIFVAGASKWTWKNVDITGGSSFGSCTGIPSGSGAFC"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "endopolygalacturonase"
+                    },
+                    ec {
+                      "3.2.1.15"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 360,
+                    id local str "AJ000076_1",
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "AJ000076_1",
+              location int {
+                from 572,
+                to 1654,
+                id embl {
+                  accession "AJ000076"
+                },
+                fuzz-to lim gt
+              },
+              dbxref {
+                {
+                  db "GOA",
+                  tag str "O13478"
+                },
+                {
+                  db "HSSP",
+                  tag str "1CZF"
+                },
+                {
+                  db "InterPro",
+                  tag str "IPR000743"
+                },
+                {
+                  db "InterPro",
+                  tag str "IPR006626"
+                },
+                {
+                  db "InterPro",
+                  tag str "IPR011050"
+                },
+                {
+                  db "InterPro",
+                  tag str "IPR012334"
+                },
+                {
+                  db "UniProtKB/TrEMBL",
+                  tag str "O13478"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
