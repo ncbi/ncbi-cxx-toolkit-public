@@ -646,7 +646,6 @@ CRef<CAuthor> StdAuthorFromMl(const string& val)
         new_auth->SetName().SetName().SetSuffix(suffix);
     }
     if (!NStr::IsBlank(init)) {
-        new_auth->SetName().SetName().SetFirst(init.substr(0, 1));
         vector<string> letters;
         NStr::Split(init, "", letters);
         string initials = NStr::Join(letters, ".");
