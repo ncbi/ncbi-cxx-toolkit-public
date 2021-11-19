@@ -193,7 +193,7 @@ an_prok_pipeline needs gpipe_an_base
 an_prok_pipeline needs gpipe_fileutils
 an_prok_pipeline needs gpipe_kmer_metadata_cache
 an_prok_pipeline needs gpipe_xmlutil
-an_prok_pipeline needs pathogen_connection
+an_prok_pipeline needs sra_cache
 an_prok_pipeline needs tax_xml
 an_prok_pipeline needs xalgophytree
 an_prok_pipeline needs xobjwrite
@@ -469,9 +469,6 @@ fbsdstd_g needs3party $(ORIG_LIBS)
 fcgi needs3party $(ORIG_LIBS)
 featdef needs xser
 filter_snps needs xalnmgr
-fix_pub needs $(OBJEDIT_LIBS)
-fix_pub needs eutils_client
-fix_pub needs xobjutil
 freetype needs $(BZ2_LIB)
 freetype needs3party $(BZ2_LIBS)
 freetype needs3party $(ORIG_LIBS)
@@ -1399,6 +1396,8 @@ splitdbasncpp_g needs xnetblast
 sqlite3 needs3party $(ORIG_LIBS)
 sqlitewrapp needs xncbi
 sqlitewrapp needs3party $(SQLITE3_LIBS)
+sra_cache needs grid_wrapper
+sra_cache needs pathogen_connection
 sraread needs $(SOBJMGR_LIBS)
 sraread needs3party $(VDB_LIBS)
 ssh2 needs $(Z_LIB)
