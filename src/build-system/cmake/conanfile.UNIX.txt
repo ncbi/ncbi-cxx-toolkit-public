@@ -2,6 +2,7 @@
 #  NCBI C++ Toolkit requirements for Conan/UNIX
 
 [requires]
+backward-cpp/1.6
 libdb/5.3.28
 boost/1.76.0
 bzip2/1.0.8
