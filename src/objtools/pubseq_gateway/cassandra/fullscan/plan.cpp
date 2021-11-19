@@ -82,6 +82,34 @@ vector<SCassSizeEstimate> NormalizeSizeEstimates(vector<SCassSizeEstimate> const
     return output;
 }
 
+// @todo in the future leave for Debug only
+void VerifySizeEstimates(vector<SCassSizeEstimate> const & estimates)
+{
+    if (
+        estimates.empty()
+        || estimates.cbegin()->range_start != numeric_limits<int64_t>::min()
+        || estimates.crbegin()->range_end != numeric_limits<int64_t>::max()
+    ) {
+        NCBI_THROW(CCassandraException, eFatal, "Token range size estimates empty or have wrong min/max");
+    }
+    for (auto itr = estimates.cbegin(); itr != estimates.cend(); ++itr) {
+        if (itr->range_start >= itr->range_end) {
+            NCBI_THROW_FMT(CCassandraException, eFatal, "Token range has wrong borders: "
+                << itr->range_start << ":" << itr->range_end);
+        }
+        if (itr->partitions_count < 0) {
+            NCBI_THROW_FMT(CCassandraException, eFatal, "Token range has wrong partitions_count: "
+                << itr->range_start << ":" << itr->range_end << " - " << itr->partitions_count);
+        }
+        auto next = itr + 1;
+        if (next != estimates.cend() && itr->range_end != next->range_start) {
+            NCBI_THROW_FMT(CCassandraException, eFatal, "Adjacent ranges have gap: "
+                << itr->range_start << ":" << itr->range_end
+                << " and " << next->range_start << ":" << next->range_end);
+        }
+    }
+}
+
 }
 
 CCassandraFullscanPlan::CCassandraFullscanPlan() = default;
@@ -208,17 +236,23 @@ void CCassandraFullscanPlan::SplitTokenRangesForLimits()
     auto local_estimates = m_Connection->GetSizeEstimates(local_dc, m_Keyspace, m_Table);
     auto estimates = NormalizeSizeEstimates(local_estimates);
 
+    // Additional verification of estimates data
+    VerifySizeEstimates(estimates);
+
     auto search_start = estimates.begin();
     CCassConnection::TTokenRanges result_ranges;
     for (auto const & range : m_TokenRanges) {
         auto range_start = range.first;
         auto range_end = range.second;
+
+        // Search for first intersecting range
         auto itr = search_start;
         while (itr != estimates.end() && itr->range_end <= range_start) {
             ++itr;
         }
         search_start = itr;
 
+        // Counting total partitions from size estimates
         int64_t partitions_count{0};
         while (itr != estimates.end() && itr->range_start < range_end) {
             auto intersect_start = max(itr->range_start, range_start);
@@ -230,6 +264,7 @@ void CCassandraFullscanPlan::SplitTokenRangesForLimits()
             ++itr;
         }
 
+        // Split token range if required
         if (partitions_count > m_PartitionCountPerQueryLimit) {
             int64_t parts = static_cast<int64_t>(ceil(1.0 * partitions_count / m_PartitionCountPerQueryLimit));
             if (parts > 1) {

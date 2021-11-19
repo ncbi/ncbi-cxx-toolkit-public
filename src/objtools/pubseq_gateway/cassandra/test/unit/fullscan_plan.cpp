@@ -46,6 +46,8 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/fullscan/plan.hpp>
 
+#include "fullscan_plan_mock.hpp"
+
 namespace {
 
 USING_NCBI_SCOPE;
@@ -189,13 +191,24 @@ TEST_F(CCassandraFullscanPlanTest, CheckQueryCount) {
 }
 
 TEST_F(CCassandraFullscanPlanTest, CheckPartitionCountPerQueryLimit) {
-    CCassandraFullscanPlan plan;
+    CCassandraFullscanPlanExpose plan;
     plan
         .SetConnection(s_Connection)
         .SetKeyspace("idmain2")
         .SetTable("si2csi")
-        .SetPartitionCountPerQueryLimit(100000);
+        .SetPartitionCountPerQueryLimit(100'000);
     plan.Generate();
+    auto ranges = plan.CopyRanges();
+    EXPECT_FALSE(ranges.empty());
+    EXPECT_EQ(numeric_limits<int64_t>::min(), ranges.cbegin()->first);
+    EXPECT_EQ(numeric_limits<int64_t>::max(), ranges.crbegin()->second);
+    for (auto itr = ranges.cbegin(); itr != ranges.cend(); ++itr) {
+        EXPECT_LT(itr->first, itr->second) << "Range start should be less than range end";
+        auto next = itr + 1;
+        if (next != ranges.cend()) {
+            EXPECT_EQ(itr->second, next->first) << "Adjacent ranges should have equal border";
+        }
+    }
 }
 
 }  // namespace
