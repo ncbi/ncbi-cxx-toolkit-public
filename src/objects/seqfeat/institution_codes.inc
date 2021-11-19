@@ -2986,7 +2986,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IAFB\tc\tCulture Collection of Industrial Microorganisms, Prof. Wac&#322;aw D&#261;browski Institute of Agricultural and Food Biotechnology\t\t\t",
 "IAGB\ts\tBotanical Garden \"Anastasie Fatu\" of Iasi\t\t\t",
 "IAL<BRA-Bahia>\ts\tHerbario, Centro Nacional de Pesquisa de Mandioca e Fruticultura, EMBRAPA\t\t\t",
-"IAL<BRA-SaoPaulo>\tc\tSecao de Colecao de Culturas\t\t\t",
+"IAL<BRA-SaoPaulo>\tc\tSecao de Colecao de Culturas Instituto Adolfo Lu\t\t\t",
 "IALCEL\tc\tSecao de Culturas Celulares\t\t\t",
 "IALMIC\tc\tMicoteca do Insituto Adolfo Lutz\t\t\t",
 "IAM\tc\tIAM Culture Collection, Center for Cellular and Molecular Research\t\t\t",
