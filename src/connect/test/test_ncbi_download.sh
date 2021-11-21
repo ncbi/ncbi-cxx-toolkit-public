@@ -1,7 +1,7 @@
 #! /bin/sh
 # $Id$
 
-fw="`expr $$ '%' 1`"
+fw="`expr $$ '%' 2`"
 
 if [ "$fw" = "1" ]; then
   CONN_FIREWALL=TRUE
