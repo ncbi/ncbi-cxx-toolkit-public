@@ -367,9 +367,9 @@ static TNCBI_Time x_ParseExpires(const char* expires, time_t utc,
         time_t diff = utc - exp;
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
                     ("[%s]  Unexpected JSON {\"addrs[" FMT_SIZE_T
-                     "].meta.expires\"} value expired: " FMT_TIME_T " vs. "
+                     "].meta.expires\"} value expired: %s=" FMT_TIME_T " vs. "
                      FMT_TIME_T " now, ahead by " FMT_TIME_T " second%s",
-                     name, i, exp, utc, diff, &"s"[diff==1]));
+                     name, i, expires, exp, utc, diff, &"s"[diff==1]));
         return 0/*failure*/;
     }
     return (TNCBI_Time) exp;
