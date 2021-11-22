@@ -316,7 +316,7 @@ void CPSGS_CDDProcessor::x_ProcessResolveRequest(void)
         m_SeqId = CSeq_id_Handle::GetHandle(id);
     }
     catch (exception& e) {
-        ERR_POST("Bad seq-id: " << annot_request.m_SeqId);
+        ERR_POST(Warning << "Bad seq-id: " << annot_request.m_SeqId);
         x_Finish(ePSGS_Error);
         return;
     }
@@ -567,7 +567,7 @@ bool CPSGS_CDDProcessor::x_CanProcessAnnotRequest(SPSGS_AnnotRequest& annot_requ
         if (!m_ClientPool->IsValidId(id)) return false;
     }
     catch (exception& e) {
-        ERR_POST("Bad seq-id: " << annot_request.m_SeqId);
+        ERR_POST(Warning << "Bad seq-id: " << annot_request.m_SeqId);
         return false;
     }
     return x_NameIncluded(annot_request.GetNotProcessedName(priority));
