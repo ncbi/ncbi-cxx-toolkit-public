@@ -1406,32 +1406,6 @@ EDiagSev CValidError_imp::x_SalmonellaErrorLevel()
 //    }
 }
 
-// Temporary code for RW-1498
-static bool s_ShouldReportId(const CBioseq& bioseq)
-{
-    if (bioseq.IsSetId()) {
-        bool all_local_or_general = true;
-        for (auto pId : bioseq.GetId()) {
-            if (!pId) {
-                continue;
-            }
-            switch(pId->Which()) {
-            case CSeq_id::e_Genbank:
-            case CSeq_id::e_Tpd:
-            case CSeq_id::e_Tpe:
-            case CSeq_id::e_Tpg:
-                return true;
-            case CSeq_id::e_Local:
-            case CSeq_id::e_General:
-                break;
-            default:
-                all_local_or_general = false;
-            }
-        }
-        return all_local_or_general;     
-    }
-    return false;
-}
 
 static bool s_ReportUndefinedSpeciesId(const CBioseq& bioseq)
 {
@@ -1516,9 +1490,9 @@ const CSeq_entry *ctx)
                 (IsGenomeSubmission() ||
                  (ctx && ctx->IsSeq() && s_ReportUndefinedSpeciesId(ctx->GetSeq()) &&
                   (pCurrentBioSource && s_IsChromosome(*pCurrentBioSource) || s_HasWGSTech(ctx->GetSeq())) &&
-                  m_biosource_kind.IsOrganismBacteria() ||
-                  m_biosource_kind.IsOrganismArchaea() ||
-                  m_biosource_kind.IsOrganismEukaryote()
+                  (m_biosource_kind.IsOrganismBacteria() ||
+                   m_biosource_kind.IsOrganismArchaea() ||
+                   m_biosource_kind.IsOrganismEukaryote())
                   )))
         {
                 if(s_IsUndefinedSpecies(taxname) &&
