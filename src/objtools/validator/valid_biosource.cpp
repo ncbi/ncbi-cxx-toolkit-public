@@ -395,7 +395,60 @@ CBioSourceKind& CBioSourceKind::operator=(const CBioSource& bsrc)
     return *this;
 }
 
-static thread_local const CBioSource* pCurrentBioSource = nullptr;
+static bool s_IsEukaryoteOrProkaryote(const CBioSourceKind& biosourceKind)
+{
+    return biosourceKind.IsOrganismBacteria() ||
+           biosourceKind.IsOrganismArchaea() ||
+           biosourceKind.IsOrganismEukaryote();
+}
+
+
+static bool s_ReportUndefinedSpeciesId(const CBioseq& bioseq)
+{
+    if (bioseq.IsSetId()) {
+        bool all_local_or_gnl = true;
+        for (auto pId : bioseq.GetId()) {
+            switch (pId->Which()) {
+            case CSeq_id::e_Genbank:
+            case CSeq_id::e_Tpd:
+            case CSeq_id::e_Tpg:
+                return true;
+            case CSeq_id::e_Local:
+            case CSeq_id::e_General:
+                break;
+            default:
+                all_local_or_gnl = false;
+            }
+        }
+        return all_local_or_gnl;
+    }
+
+    return false;
+}
+
+
+static bool s_IsChromosome(const CBioSource& biosource) 
+{
+    return biosource.IsSetGenome() && 
+        biosource.GetGenome() == CBioSource::eGenome_chromosome;
+}
+
+
+static bool s_HasWGSTech(const CBioseq& bioseq) {
+
+    if (!bioseq.IsSetDescr()) {
+        return false;
+    }
+
+    for (auto pDesc : bioseq.GetDescr().Get()) {
+        if (pDesc->IsMolinfo()) {
+            const auto& molinfo = pDesc->GetMolinfo();
+            return (molinfo.IsSetTech() && molinfo.GetTech() == CMolInfo::eTech_wgs);
+        }
+    }
+    return false;
+}
+
 
 void CValidError_imp::ValidateBioSource
 (const CBioSource&    bsrc,
@@ -408,12 +461,11 @@ const CSeq_entry *ctx)
         return;
     }
 
-    pCurrentBioSource = &bsrc;
-
     const COrg_ref& orgref = bsrc.GetOrg();
+    const bool hasTaxname = orgref.IsSetTaxname();
 
     // look at uncultured required modifiers
-    if (orgref.IsSetTaxname()) {
+    if (hasTaxname) {
         const string & taxname = orgref.GetTaxname();
         if (NStr::StartsWith(taxname, "uncultured ", NStr::eNocase)) {
             bool is_env_sample = false;
@@ -648,7 +700,7 @@ const CSeq_entry *ctx)
             break;
 
         case CSubSource::eSubtype_cell_line:
-            if ((*ssit)->IsSetName() && orgref.IsSetTaxname()) {
+            if ((*ssit)->IsSetName() && hasTaxname) {
                 string warning = CSubSource::CheckCellLine((*ssit)->GetName(), orgref.GetTaxname());
                 if (!NStr::IsBlank(warning)) {
                     PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_SuspectedContaminatedCellLine,
@@ -948,12 +1000,17 @@ const CSeq_entry *ctx)
     }
 
     m_biosource_kind = bsrc;
-    ValidateOrgRef(orgref, obj, ctx);
+    const bool checkForUndefinedSpecies =  hasTaxname &&
+        (IsGenomeSubmission() ||
+         ((ctx && ctx->IsSeq() && s_ReportUndefinedSpeciesId(ctx->GetSeq())) &&
+          (s_IsChromosome(bsrc) || s_HasWGSTech(ctx->GetSeq())) &&
+          s_IsEukaryoteOrProkaryote(m_biosource_kind)));
+
+    ValidateOrgRef(orgref, obj, ctx, checkForUndefinedSpecies);
     if (bsrc.IsSetPcr_primers()) {
         ValidatePCRReactionSet(bsrc.GetPcr_primers(), obj, ctx);
     }
 
-    pCurrentBioSource = nullptr;
 }
 
 
@@ -1407,52 +1464,6 @@ EDiagSev CValidError_imp::x_SalmonellaErrorLevel()
 }
 
 
-static bool s_ReportUndefinedSpeciesId(const CBioseq& bioseq)
-{
-    if (bioseq.IsSetId()) {
-        bool all_local_or_gnl = true;
-        for (auto pId : bioseq.GetId()) {
-            switch (pId->Which()) {
-            case CSeq_id::e_Genbank:
-            case CSeq_id::e_Tpd:
-            case CSeq_id::e_Tpg:
-                return true;
-            case CSeq_id::e_Local:
-            case CSeq_id::e_General:
-                break;
-            default:
-                all_local_or_gnl = false;
-            }
-        }
-        return all_local_or_gnl;
-    }
-
-    return false;
-}
-
-
-static bool s_IsChromosome(const CBioSource& biosource) 
-{
-    return biosource.IsSetGenome() && 
-        biosource.GetGenome() == CBioSource::eGenome_chromosome;
-}
-
-static bool s_HasWGSTech(const CBioseq& bioseq) {
-
-    if (!bioseq.IsSetDescr()) {
-        return false;
-    }
-
-    for (auto pDesc : bioseq.GetDescr().Get()) {
-        if (pDesc->IsMolinfo()) {
-            const auto& molinfo = pDesc->GetMolinfo();
-            return (molinfo.IsSetTech() && molinfo.GetTech() == CMolInfo::eTech_wgs);
-        }
-    }
-    return false;
-}
-
-
 static bool s_IsUndefinedSpecies(const string& taxname)
 {
     return (NStr::EndsWith(taxname, " sp.", NStr::eNocase) ||
@@ -1469,7 +1480,8 @@ static bool s_IsUndefinedSpecies(const string& taxname)
 void CValidError_imp::ValidateOrgRef
 (const COrg_ref&    orgref,
 const CSerialObject& obj,
-const CSeq_entry *ctx)
+const CSeq_entry *ctx,
+const bool checkForUndefinedSpecies)
 {
     // Organism must have a name.
     if ((!orgref.IsSetTaxname() || orgref.GetTaxname().empty()) &&
@@ -1486,14 +1498,7 @@ const CSeq_entry *ctx)
 
     if (orgref.IsSetTaxname()) {
         taxname = orgref.GetTaxname();
-        if (!s_HasMetagenomeSource(orgref) && 
-                (IsGenomeSubmission() ||
-                 (ctx && ctx->IsSeq() && s_ReportUndefinedSpeciesId(ctx->GetSeq()) &&
-                  (pCurrentBioSource && s_IsChromosome(*pCurrentBioSource) || s_HasWGSTech(ctx->GetSeq())) &&
-                  (m_biosource_kind.IsOrganismBacteria() ||
-                   m_biosource_kind.IsOrganismArchaea() ||
-                   m_biosource_kind.IsOrganismEukaryote())
-                  )))
+        if (checkForUndefinedSpecies && !s_HasMetagenomeSource(orgref))
         {
                 if(s_IsUndefinedSpecies(taxname) &&
                 !NStr::StartsWith(taxname, "uncultured ", NStr::eNocase) &&
