@@ -111,6 +111,9 @@
 #  define UNUSED_ARG(x)  x##_UNUSED
 #endif
 
+/* min() */
+#define min_value(a,b) ((a) < (b) ? (a) : (b))
+
 /* Directory separator */
 #if defined(NCBI_OS_MSWIN)
 #  define DIR_SEPARATOR     '\\'
@@ -2165,7 +2168,7 @@ static size_t s_PrintParamsStr(char* dst, size_t pos, const char* params)
     if (pos >= NCBILOG_ENTRY_MAX) {
         return pos; /* overflow */
     }
-    len = min(strlen(params), NCBILOG_ENTRY_MAX-pos);
+    len = min_value(strlen(params), NCBILOG_ENTRY_MAX-pos);
     memcpy(dst + pos, params, len);
     pos += len;
     dst[pos] = '\0';
