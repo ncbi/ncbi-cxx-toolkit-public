@@ -259,7 +259,7 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
                     return addr  &&  !(addr & ~temp);
                 } else if (!ipv4
                            &&  (size_t) d <= (sizeof(range->a.octet) << 3)) {
-                    if (!d  ||  d == (sizeof(range->a.octet) << 3)) {
+                    if (!d  ||  (size_t) d == (sizeof(range->a.octet) << 3)) {
                         range->b    = 0;
                         range->type = eIPRange_Host;
                         return 1/*success*/;
