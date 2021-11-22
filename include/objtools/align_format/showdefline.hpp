@@ -101,6 +101,14 @@ public:
         eShowCSVDescr = (1 << 14)       //show comma separated descriptions table
     };
 
+    struct SClusterMemberInfo {
+        string clustAcc;
+        string memAcc;
+        TTaxId taxid;
+        string commonName;
+        string sciName;                       
+    };
+    
     ///Data Representing each defline
     struct SDeflineInfo {
         CConstRef<objects::CSeq_id> id;         //best accession type id
@@ -114,10 +122,14 @@ public:
         bool is_new;                   //is this sequence new (for psiblast)?
         bool was_checked;              //was this sequence checked before?
 	    string fullDefline;            //defline, containing all seq defines (PIG for example)
-        TTaxId taxid;
-        string  textSeqID;      
+        TTaxId taxid;                  //taxid
+        string  textSeqID;             //Text Seq ID 
+        int     clustMemberNum;        //Number of cluster members
+        int     clustTaxaNum;          //Number of cluster taxa
+        vector <SClusterMemberInfo>    clustMemList;        
     };
 
+    
     //Data representing templates for defline display 
     struct SDeflineTemplates {
         string defLineTmpl;           ///< whole defilne template
@@ -128,6 +140,7 @@ public:
         string psiFirstNewAnchorTmpl; ///< first new seq anchor template (psi blast)
         string psiGoodGiHiddenTmpl;   ///< good gi hidden field tewmplate (psi blast)
         string deflineTxtHeader;
+        string clusterMemTmpl;
         bool   advancedView;
     };
 
@@ -166,7 +179,25 @@ public:
         vector <string> percentIdentityVec;
     };
 
-    
+    struct SScoreInfo {        
+        list<string> use_this_seqid;   // Limit formatting by these seqids.
+        string bit_string;             //bit score
+        string raw_score_string;       //raw score
+        string evalue_string;          //e value
+        int sum_n;                     //sum_n in score block
+        string total_bit_string;       //total bit score for this hit
+        int match;                     //number of matches for the top hsp with the hit
+        int master_covered_length;     //total length covered by alignment
+        int align_length;              //length of alignment
+        int percent_coverage;          //query coverage 
+        double percent_identity;       //percent identity   
+        CConstRef<objects::CSeq_id> id;
+        int blast_rank;                // "Rank" of defline.
+        int hspNum;                    //hsp number
+        Int8 totalLen;                 //total alignment length
+        CRange<TSeqPos> subjRange;     //subject sequence range
+        bool flip;					   //indicates opposite strands in the first seq align	
+    };
     ///options per DisplayOption
     ///@param option: input option using bit numbers defined in DisplayOption
     ///
@@ -374,6 +405,27 @@ public:
     ///Initialize defline params
     void Init(void);
 
+    ///Get score info list
+    ///@return: vector of SScoreInfo
+    vector<SScoreInfo*> &GetScoreList(void){return m_ScoreList;}
+
+    ///Get one defline info
+    /// @param id Seq-id [in]
+    /// @param use_this_seqid list of seq ida to use in the defline. All will be used 
+    ///                    if the list is empty. [in]
+    /// @param blast_rank  "rank" of defline [in]
+    ///@return struct SDeflineInfo for one defiline
+    SDeflineInfo* GetDeflineInfo(CConstRef<objects::CSeq_id> id, list<string> &use_this_seqid, int blast_rank) {
+        return(x_GetDeflineInfo(id,use_this_seqid,blast_rank));
+    };
+
+    ///Display one defline
+    ///@param out stream to output
+    ///@param sdl struct SDeflineInfo with info for one defline [in]
+    ///@param iter struct SScoreInfo with score info for one defline [in]
+    ///@param is_first bool true if first in the list [in]
+    void DisplayOneDefline(CNcbiOstream & out,SDeflineInfo* sdl, SScoreInfo* iter, bool &is_first);
+
     ///Get  deflines formatting info
     ///@return vector of SDeflineFormattingInfo structs for defilens
     vector <CShowBlastDefline::SDeflineFormattingInfo *> GetFormattingInfo(void);
@@ -395,26 +447,7 @@ public:
 
 protected:
     /// Internal data with score information for each defline.
-    struct SScoreInfo {        
-        list<string> use_this_seqid;   // Limit formatting by these seqids.
-        string bit_string;             //bit score
-        string raw_score_string;       //raw score
-        string evalue_string;          //e value
-        int sum_n;                     //sum_n in score block
-        string total_bit_string;       //total bit score for this hit
-        int match;                     //number of matches for the top hsp with the hit
-        int master_covered_length;     //total length covered by alignment
-        int align_length;              //length of alignment
-        int percent_coverage;          //query coverage 
-        double percent_identity;       //percent identity   
-        CConstRef<objects::CSeq_id> id;
-        int blast_rank;                // "Rank" of defline.
-        int hspNum;                    //hsp number
-        Int8 totalLen;                 //total alignment length
-        CRange<TSeqPos> subjRange;     //subject sequence range
-        bool flip;					   //indicates opposite strands in the first seq align	
-    };
-    
+        
     ///Seqalign 
     CConstRef<objects::CSeq_align_set> m_AlnSetRef;   
 
@@ -597,6 +630,7 @@ protected:
     string x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo* iter,bool &first_new);    
     ///Format PSI blat related data
     string x_FormatPsi(SDeflineInfo* sdl, bool &first_new);
+    string x_FormatClusterData(SDeflineInfo* sdl, string defline);
     ///Display defline for table output using templates
     ///
     void x_DisplayDeflineTableTemplate(CNcbiOstream & out);
