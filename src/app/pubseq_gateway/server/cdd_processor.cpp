@@ -34,6 +34,7 @@
 #include "cdd_processor.hpp"
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
+#include "pubseq_gateway_logging.hpp"
 #include <objtools/data_loaders/cdd/cdd_access/cdd_client.hpp>
 #include <objtools/data_loaders/cdd/cdd_access/CDD_Rep_Get_Blob_By_Seq_Id.hpp>
 #include <objtools/data_loaders/cdd/cdd_access/CDD_Reply_Get_Blob_Id.hpp>
@@ -316,7 +317,7 @@ void CPSGS_CDDProcessor::x_ProcessResolveRequest(void)
         m_SeqId = CSeq_id_Handle::GetHandle(id);
     }
     catch (exception& e) {
-        ERR_POST(Warning << "Bad seq-id: " << annot_request.m_SeqId);
+        PSG_WARNING("Bad seq-id: " << annot_request.m_SeqId);
         x_Finish(ePSGS_Error);
         return;
     }
@@ -567,7 +568,7 @@ bool CPSGS_CDDProcessor::x_CanProcessAnnotRequest(SPSGS_AnnotRequest& annot_requ
         if (!m_ClientPool->IsValidId(id)) return false;
     }
     catch (exception& e) {
-        ERR_POST(Warning << "Bad seq-id: " << annot_request.m_SeqId);
+        PSG_WARNING("Bad seq-id: " << annot_request.m_SeqId);
         return false;
     }
     return x_NameIncluded(annot_request.GetNotProcessedName(priority));
