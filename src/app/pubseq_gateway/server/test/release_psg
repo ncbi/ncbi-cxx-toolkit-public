@@ -182,18 +182,20 @@ def saveProcessArtefacts(srv, dst):
     f.close()
 
 
-def stopServer(srv):
+def stopServer(srv, reset=True):
     global SRV1
     global SRV2
 
     if srv is SRV1:
         srv.send_signal(signal.SIGINT)
         srv.wait()
-        SRV1 = None
+        if reset:
+            SRV1 = None
     else:
         srv.send_signal(signal.SIGINT)
         srv.wait()
-        SRV2 = None
+        if reset:
+            SRV2 = None
 
 
 def prepareO2Gsandbox(options):
@@ -797,8 +799,9 @@ def memcheck(commands, options, args):
     else:
         print_verbose('http unit tests succeeded')
 
-    stopServer(SRV1)
+    stopServer(SRV1, False)
     saveProcessArtefacts(SRV1, f'{artefactDir}memcheck-ut-http.sanitizer.log')
+    SRV1 = None
 
     # Round up 2: Prepare the config file for UT (https)
     prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
@@ -830,8 +833,9 @@ def memcheck(commands, options, args):
     else:
         print_verbose('https unit tests succeeded')
 
-    stopServer(SRV1)
+    stopServer(SRV1, False)
     saveProcessArtefacts(SRV1, f'{artefactDir}memcheck-ut-https.sanitizer.log')
+    SRV1 = None
 
     # Round up 3: integration smoke test using psg_client
 
@@ -873,8 +877,9 @@ def memcheck(commands, options, args):
                 print_verbose('integration tests failed')
             else:
                 print_verbose('integration tests succeeded')
-            stopServer(SRV1)
+            stopServer(SRV1, False)
             saveProcessArtefacts(SRV1, f'{artefactDir}memcheck-integration-test.sanitizer.log')
+            SRV1 = None
 
     if errors:
         print_error('Unit test errors:')
