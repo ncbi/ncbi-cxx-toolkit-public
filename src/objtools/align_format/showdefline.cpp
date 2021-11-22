@@ -1621,6 +1621,7 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)
     }
 }
 
+
 SSeqDBTaxInfo taxInfo;
 static void s_GetTaxonomyInfoForTaxID(TTaxId sdlTaxid, SSeqDBTaxInfo &taxInfo)
 {
@@ -1637,6 +1638,59 @@ static void s_GetTaxonomyInfoForTaxID(TTaxId sdlTaxid, SSeqDBTaxInfo &taxInfo)
         }        
     }    
 }          
+
+static int s_getNumTaxa(vector <CShowBlastDefline::SClusterMemberInfo>  clustMemList)
+{
+    int memListSize = clustMemList.size();
+    int count = memListSize;
+    int current;
+    int i, j;
+
+    for (i = 0; i < memListSize; i++){
+        current = clustMemList[i].taxid;
+        for (j = i + 1; j < memListSize; j++) // checks values after [i]th element.
+            if (current == clustMemList[j].taxid)
+                --count; // decrease count by 1;
+    }
+
+    if (count >= 0)
+        return count;
+    else return 0;
+}
+
+string CShowBlastDefline::x_FormatClusterData(SDeflineInfo* sdl, string defLine)
+{
+    if(!sdl->clustMemList.empty()) {                    
+        string allClustRows;        
+        for (size_t i =0; i < sdl->clustMemList.size(); i++) {            
+            string clustRow = CAlignFormatUtil::MapTemplate(m_DeflineTemplates->clusterMemTmpl,"clust_mem",sdl->clustMemList[i].memAcc);
+            clustRow = CAlignFormatUtil::MapTemplate(clustRow,"clust_mem_sci_name",sdl->clustMemList[i].sciName);
+            clustRow = CAlignFormatUtil::MapTemplate(clustRow,"clust_mem_cmn_name",sdl->clustMemList[i].commonName);
+            clustRow = CAlignFormatUtil::MapTemplate(clustRow,"clust_mem_taxid",NStr::IntToString(sdl->clustMemList[i].taxid));
+            allClustRows += clustRow;
+        }
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_mem_rows",allClustRows);                    
+    }
+    int numTaxa = sdl->clustMemList.size() ? s_getNumTaxa(sdl->clustMemList) : 0;
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_member_num",NStr::NumericToString(sdl->clustMemList.size()));                    
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_taxa_num",NStr::IntToString(numTaxa));            
+    return defLine;
+}
+
+void CShowBlastDefline::DisplayOneDefline(CNcbiOstream & out, SDeflineInfo* sdl, SScoreInfo* iter, bool &is_first)
+{
+    bool first_new = true;
+    string defLine = x_FormatDeflineTableLine(sdl,iter,first_new);            
+    if(!m_DeflineTemplates->clusterMemTmpl.empty()) {
+        defLine = x_FormatClusterData(sdl, defLine);
+    }
+    
+    string firstSeq = (is_first) ? "firstSeq" : "";
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"firstSeq",firstSeq);    
+    is_first = false;
+    out << defLine;
+    delete sdl;    
+}
 
 void CShowBlastDefline::x_DisplayDeflineTableTemplateCSV(CNcbiOstream & out)
 {
@@ -1834,8 +1888,8 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     defLine = CAlignFormatUtil::MapTemplate(defLine,"common_name",taxInfo.common_name);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"scientific_name",taxInfo.scientific_name);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"blast_name",taxInfo.blast_name);
-    defLine = CAlignFormatUtil::MapTemplate(defLine,"taxid",NStr::IntToString(sdl->taxid));            
-        
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"taxid",NStr::IntToString(sdl->taxid));                
+            
     int len = sequence::GetLength(*sdl->id, m_ScopeRef);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"acclen",NStr::IntToString(len));        
     //Setup applog info structure
