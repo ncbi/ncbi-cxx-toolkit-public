@@ -2090,6 +2090,21 @@ _ct_get_client_type(CS_CONTEXT *ctx, TDSCOLUMN *col)
 	case SYBUINT8:
 		return CS_UBIGINT_TYPE;
 		break;
+        case SYBUINTN:
+                switch (col->column_size) {
+                case 8:
+                        return CS_UBIGINT_TYPE;
+                case 4:
+                        return CS_UINT_TYPE;
+                case 2:
+                        return CS_USMALLINT_TYPE;
+                case 1:
+                        return CS_TINYINT_TYPE;
+                default:
+                        _csclient_msg(ctx, "_ct_get_client_type", 2, 1, 16, 28,
+                                      "%d", col->column_size);
+                }
+                break;
 	case SYBDATE:
 		return CS_DATE_TYPE;
 		break;
