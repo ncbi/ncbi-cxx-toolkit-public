@@ -1,7 +1,31 @@
 #!/usr/bin/env python3
 
-import sys, datetime, shutil, os, os.path, subprocess, signal, psutil, time, pwd
+
+# pylint: disable=C0301     # too long lines
+# pylint: disable=C0116     # docstring
+# pylint: disable=C0114     # module docstring
+# pylint: disable=C0302     # too many lines in the module
+# pylint: disable=C0305     # trailing newlines
+# pylint: disable=C0410     # multiple imports in one line
+# pylint: disable=W0613     # unused argument
+# pylint: disable=W0603     # using global
+# pylint: disable=W0703     # too general exception
+# pylint: disable=W0612     # unused variable
+# pylint: disable=R0912     # too many branches
+# pylint: disable=R0911     # too many return statements
+# pylint: disable=R0915     # too many statements
+
+
 from optparse import OptionParser
+import sys
+import datetime
+import shutil
+import os, os.path
+import subprocess
+import signal
+import time
+import pwd
+import psutil
 
 
 # Order is important
@@ -74,8 +98,8 @@ def getBuildResultsDir(options):
                     break
 
     if buildResultsDir is None:
-        print_error(f'Cannot find the build directory in created on the "build" stage. '
-                     'Expected here: {artefactDir}')
+        print_error('Cannot find the build directory in created on the "build" stage. ' +
+                    f'Expected here: {artefactDir}')
         return None
     return buildResultsDir
 
@@ -136,7 +160,7 @@ def prepareSandboxFiles(buildResultsDir, testDir, artefactDir):
         cmdLine = f'cp -f {testDir}{fName} {artefactDir}'
         print_verbose(f'Command line to invoke: {cmdLine}')
         ret = os.system(cmdLine)
-        print_verbose(f'Copy pattern ini file return code: {ret}')
+        print_verbose(f'Copy {fName} file return code: {ret}')
         if ret != 0:
             print_error(f'Error copying test file {fName} from {testDir}')
             return ret
@@ -252,7 +276,7 @@ def main():
     global VERBOSE
 
     parser = OptionParser(
-    """
+        """
     %prog <command> [options]
     Supported commands:
         no command      - print help message
@@ -378,7 +402,7 @@ def build_check_args(commands, options, args):
     artefactDir = getArtefactDir(options)
     if os.path.exists(artefactDir):
         print_error(f'The directory for storing results {artefactDir} already exists. '
-                     'Remove it first or use another PSG version')
+                    'Remove it first or use another PSG version')
         return 1
     return 0
 
@@ -950,25 +974,75 @@ def compare(commands, options, args):
 
     artefactDir = getArtefactDir(options)
 
-    # Run the server pointed by the --against-binary option
+    # Prepare the server pointed by the --against-binary option
     oldVersion = options.against_binary
     if not oldVersion:
         print_error('Another PSG binary version must be provided '
                     'via the --against-binary option')
         return 1
+
     archivedBinaryPath = getArchivedBinaryPath(oldVersion)
+    if archivedBinaryPath is None:
+        return 1
 
+    cmdLine = f'cp -f {archivedBinaryPath} {artefactDir}pubseq_gateway-{oldVersion}-o2g'
+    print_verbose(f'Command line to invoke: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Copy {archivedBinaryPath} file return code: {ret}')
+    if ret != 0:
+        print_error(f'Error copying {archivedBinaryPath} to {artefactDir}')
+        return 1
 
+    prepareConfigFile(f'{artefactDir}pubseq_gateway.ini.baseline',
+                      f'{artefactDir}pubseq_gateway.ini-{oldVersion}',
+                      {'si2csi.db': f'{artefactDir}si2csi.db',
+                       'bioseq_info.db': f'{artefactDir}bioseq_info.db',
+                       'blob_prop.db': f'{artefactDir}blob_prop.db',
+                       'port': f'{PORT1}',
+                       'ssl_enable': 'false',
+                       'ssl_cert': '',
+                       'ssl_key': ''})
 
+    # Run the old server
+    cmdLine = [f'{artefactDir}pubseq_gateway-{oldVersion}-o2g',
+               '-conffile', f'{artefactDir}pubseq_gateway.ini-{oldVersion}'
+               '-logfile', f'{artefactDir}pubseq_gateway-compare-{oldVersion}.log']
+    print_verbose('Running old PSG server: ' + ' '.join(cmdLine))
+    SRV1 = subprocess.Popen(cmdLine)
 
+    # Prepare the currently built server
+    prepareConfigFile(f'{artefactDir}pubseq_gateway.ini.baseline',
+                      f'{artefactDir}pubseq_gateway.ini',
+                      {'si2csi.db': f'{artefactDir}si2csi.db',
+                       'bioseq_info.db': f'{artefactDir}bioseq_info.db',
+                       'blob_prop.db': f'{artefactDir}blob_prop.db',
+                       'port': f'{PORT2}',
+                       'ssl_enable': 'false',
+                       'ssl_cert': '',
+                       'ssl_key': ''})
 
     # Run the currently built server
+    cmdLine = [f'{artefactDir}pubseq_gateway',
+               '-conffile', f'{artefactDir}pubseq_gateway.ini',
+               '-logfile', f'{artefactDir}pubseq_gateway-compare.log']
+    print_verbose('Running current PSG server: ' + ' '.join(cmdLine))
+    SRV2 = subprocess.Popen(cmdLine)
 
     # Run the comparison script
+    buildResultsDir = getBuildResultsDir(options)
+    testDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/test/'
+    cmdLine = f'{testDir}psg_perf.py localhost:{PORT1} localhost:{PORT2} --runs=50 > perf-v{oldVersion}-vs-v{options.psg_ver}.txt'
+    print_verbose(f'Running performance comparison: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Comparison script return code: {ret}')
+    if ret != 0:
+        print_error(f'Error running comparison script. Return code: {ret}')
+    else:
+        print_verbose('Performance comparison script succeeded')
 
-
-
-    return 0
+    stopServer(SRV1)
+    stopServer(SRV2)
+    return ret
 
 def toolkit_test(commands, options, args):
     return 0
