@@ -411,6 +411,7 @@ static bool s_ReportUndefinedSpeciesId(const CBioseq& bioseq)
             switch (pId->Which()) {
             case CSeq_id::e_Genbank:
             case CSeq_id::e_Tpd:
+            case CSeq_id::e_Tpe:
             case CSeq_id::e_Tpg:
                 return true;
             case CSeq_id::e_Local:
