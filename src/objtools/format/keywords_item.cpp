@@ -259,6 +259,12 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
 
         case CMolInfo::eTech_unknown:
         case CMolInfo::eTech_standard:
+        case CMolInfo::eTech_concept_trans:
+        case CMolInfo::eTech_seq_pept:
+        case CMolInfo::eTech_both:
+        case CMolInfo::eTech_seq_pept_overlap:
+        case CMolInfo::eTech_seq_pept_homol:
+        case CMolInfo::eTech_concept_trans_a:
         case CMolInfo::eTech_other:
             if (is_env_sample) {
                 x_AddKeyword("ENV");
