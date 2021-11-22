@@ -81,11 +81,26 @@ do_check() {
     done
 }
 
-rm -rf ./trunk ./perf_view.* ./*.tmp
+run_perf_view() {
+    out=$1
+    shift
+    args=$@
+    echo "Building table for $args..."
+    trunk/c++/src/check/perf_view/perf_view $args > perf_view_out.$out
+    error=$?
+    if test $error -ne 0; then
+        echo "Error: perf_view failed, error $error"
+    fi
+}
+
+rm -rf ./trunk ./perf_view.* ./perf_view_out.* ./*.tmp
 all_tags=
+all_builds=
 
 for bld in $builds; do
     do_check $bld
+    all_builds="$all_builds $bld"
+    all_services=
     for s in $services; do
         get_suffix $s
         ver=`curl -s "http://$service/ADMIN/info" | sed '{ s/^.*Version// ; s/\,.*// ; s/[^0-9]*//g }'`
@@ -97,6 +112,7 @@ for bld in $builds; do
         tag=$bld$ver$sfx
         mv $base_dir/perf_view.$bld$srv $base_dir/perf_view.$tag
         all_tags="$all_tags $tag"
+        all_services="$all_services $ver$sfx"
     done
 done
 
@@ -106,11 +122,21 @@ if test $error -ne 0; then
     exit $error
 fi
 cd $base_dir
-echo "Running 'perf_view $all_tags'..."
-trunk/c++/src/check/perf_view/perf_view $all_tags > perf_view.out
-error=$?
-if test $error -ne 0; then
-    echo "Error: perf_view failed, error $error"
-    exit $error
-fi
+
+run_perf_view all $all_tags
+for s in $all_services; do
+    perf_view_args=
+    for b in $all_builds; do
+        perf_view_args="$perf_view_args $b$s"
+    done
+    run_perf_view $s $perf_view_args
+done
+for b in $all_builds; do
+    perf_view_args=
+    for s in $all_services; do
+        perf_view_args="$perf_view_args $b$s"
+    done
+    run_perf_view $b $perf_view_args
+done
+
 rm -rf ./trunk *.tmp
