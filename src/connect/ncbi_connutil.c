@@ -3206,8 +3206,8 @@ extern int/*bool*/ MIME_ParseContentTypeEx
     strlwr(strcpy(x_buf, str));
 
     if ((sscanf(x_buf, " content-type: %s ", x_type) != 1  &&
-         sscanf(x_buf, " %s ", x_type) != 1)  ||
-        (x_subtype = strchr(x_type, '/')) == 0) {
+         sscanf(x_buf, " %s ",               x_type) != 1)
+        ||  !(x_subtype = strchr(x_type, '/'))) {
         free(x_buf);
         return 0/*failure*/;
     }
