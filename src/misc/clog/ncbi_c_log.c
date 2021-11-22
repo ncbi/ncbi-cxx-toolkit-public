@@ -80,6 +80,7 @@
 
 #include <assert.h>
 
+/* Macro to catch a minor errors on a debug stage. See VERIFY() */
 #if defined(NDEBUG)
 #  define verify(expr)  while ( expr ) break
 #else
@@ -1707,6 +1708,7 @@ static void s_SetSession(char* dst, const char* session)
         size_t len, r_len, w_len;
         len = strlen(session);
         s_URL_Encode(session, len, &r_len, dst, 3*NCBILOG_SESSION_MAX, &w_len);
+        verify(len == r_len);
         dst[w_len] = '\0';
     } else {
         dst[0] = '\0';
@@ -1722,6 +1724,7 @@ static void s_SetHitID(char* dst, const char* hit_id)
         size_t len, r_len, w_len;
         len = strlen(hit_id);
         s_URL_Encode(hit_id, len, &r_len, dst, 3*NCBILOG_HITID_MAX, &w_len);
+        verify(len == r_len);
         dst[w_len] = '\0';
     } else {
         dst[0] = '\0';
@@ -2077,22 +2080,28 @@ static int s_AddParamsPair(SNcbiLog_Param params[], int index, const char* key, 
 
 /** Print one parameter's pair (key, value) to message buffer.
  *  Automatically URL encode each key and value.
- *  Return new position in the buffer, or zero on error.
+ *  Return new position in the buffer.
  */
 static size_t s_PrintParamsPair(char* dst, size_t pos, const char* key, const char* value)
 {
     size_t len, r_len, w_len;
 
-    if (!key  ||  key[0] == '\0') {
-        return pos;
+    if (pos >= NCBILOG_ENTRY_MAX) {
+        return pos; /* error, pre-check on overflow */
     }
+
     /* Key */
+    if (!key  ||  key[0] == '\0') {
+        return pos;  /* error */
+    }
     len = strlen(key);
     s_URL_Encode(key, len, &r_len, dst + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
     pos += w_len;
-    if (pos >= NCBILOG_ENTRY_MAX-1) {
-        return 0;  /* error */
+    if (pos > NCBILOG_ENTRY_MAX-2) {
+        /* we should have space at least for 2 chars '=<value>' */
+        return pos;  /* error, overflow */
     }
+
     /* Value */
     dst[pos++] = '=';
     if (!value  ||  value[0] == '\0') {
@@ -2101,6 +2110,9 @@ static size_t s_PrintParamsPair(char* dst, size_t pos, const char* key, const ch
     len = strlen(value);
     s_URL_Encode(value, len, &r_len, dst + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
     pos += w_len;
+    if (pos > NCBILOG_ENTRY_MAX) {
+        return pos;  /* error, overflow */
+    }
     dst[pos] = '\0';
 
     return pos;
@@ -2108,11 +2120,12 @@ static size_t s_PrintParamsPair(char* dst, size_t pos, const char* key, const ch
 
 
 /** Print parameters to message buffer.
- *  Return new position in the buffer, or zero on error.
+ *  Return new position in the buffer.
  */
 static size_t s_PrintParams(char* dst, size_t pos, const SNcbiLog_Param* params)
 {
     int/*bool*/ amp = 0;
+    size_t      new_pos = 0;
 
     /* Walk through the list of arguments */
     if (params) {
@@ -2123,8 +2136,12 @@ static size_t s_PrintParams(char* dst, size_t pos, const SNcbiLog_Param* params)
                 } else {
                     amp = 1;
                 }
-                pos = s_PrintParamsPair(dst, pos, params->key, params->value);
-                VERIFY(pos);
+                /* Write 'whole' pair or ignore */
+                new_pos = s_PrintParamsPair(dst, pos, params->key, params->value);
+                if (new_pos >= NCBILOG_ENTRY_MAX) {
+                    break;  /* overflow */
+                }
+                pos = new_pos;
             }
             params++;
         }
@@ -2136,7 +2153,7 @@ static size_t s_PrintParams(char* dst, size_t pos, const SNcbiLog_Param* params)
 
 /** Print parameters to message buffer (string version).
  *  The 'params' must be already prepared pairs with URL-encoded key and value.
- *  Return new position in the buffer, or zero on error.
+ *  Return new position in the buffer.
  */
 static size_t s_PrintParamsStr(char* dst, size_t pos, const char* params)
 {
@@ -2145,10 +2162,10 @@ static size_t s_PrintParamsStr(char* dst, size_t pos, const char* params)
     if (!params) {
         return pos;
     }
-    len = strlen(params);
-    if (len >= NCBILOG_ENTRY_MAX - pos) {
-        return 0;  /* error */
+    if (pos >= NCBILOG_ENTRY_MAX) {
+        return pos; /* overflow */
     }
+    len = min(strlen(params), NCBILOG_ENTRY_MAX-pos);
     memcpy(dst + pos, params, len);
     pos += len;
     dst[pos] = '\0';
@@ -2214,6 +2231,7 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg, int/*boo
     s_Post(ctx, diag);
 
     MT_UNLOCK;
+
     if (severity == eNcbiLog_Fatal) {
         s_Abort(0,0); /* no additional error reporting */
     }
@@ -2277,6 +2295,7 @@ static void s_Init(const char* appname)
     len = strlen(sx_Info->app_base_name);
     s_URL_Encode(sx_Info->app_base_name, len, &r_len,
                 (char*)sx_Info->appname, 3*NCBILOG_APPNAME_MAX, &w_len);
+    verify(len == r_len);
     sx_Info->appname[w_len] = '\0';
 
     /* Allocate memory for message buffer */
@@ -3281,15 +3300,11 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
     /* Print host role/location -- add it before users parameters */
     prev = pos;
     pos = s_PrintReqStartExtraParams(pos);
-    VERIFY(pos);
     if (prev != pos  &&  params  &&  params->key  &&  params->key[0]  &&  pos < NCBILOG_ENTRY_MAX) {
         sx_Info->message[pos++] = '&';
     }
-
     /* User request parameters */
     pos = s_PrintParams(sx_Info->message, pos, params);
-    VERIFY(pos);
-
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 
@@ -3312,15 +3327,11 @@ extern void NcbiLogP_ReqStartStr(const char* params)
     /* Print host role/location */
     prev = pos;
     pos = s_PrintReqStartExtraParams(pos);
-    VERIFY(pos);
     if (prev != pos  &&  params  &&  params[0]  &&  pos < NCBILOG_ENTRY_MAX) {
         sx_Info->message[pos++] = '&';
     }
-
     /* Parameters */
     pos = s_PrintParamsStr(sx_Info->message, pos, params);
-    VERIFY(pos);
-
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 
@@ -3411,7 +3422,6 @@ static void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
     pos += (size_t) sprintf(buf + pos, "%-13s ", "extra");
     /* Parameters */
     pos = s_PrintParams(buf, pos, params);
-    VERIFY(pos);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 }
@@ -3430,7 +3440,6 @@ static void s_ExtraStr(TNcbiLog_Context ctx, const char* params)
     pos += (size_t) sprintf(buf + pos, "%-13s ", "extra");
     /* Parameters */
     pos = s_PrintParamsStr(buf, pos, params);
-    VERIFY(pos);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 }
@@ -3480,7 +3489,6 @@ extern void NcbiLog_Perf(int status, double timespan, const SNcbiLog_Param* para
     /* Parameters */
     pos_prev = pos;
     pos = s_PrintParams(buf, pos, params);
-    VERIFY(pos);
 
     /* Add PHID if known */
     if (s_IsInsideRequest(ctx)) {
@@ -3494,9 +3502,7 @@ extern void NcbiLog_Perf(int status, double timespan, const SNcbiLog_Param* para
             buf[pos++] = '&';
         }
         pos = s_PrintParamsPair(buf, pos, "ncbi_phid", hit_id);
-        VERIFY(pos);
     }
-
     /* Post a message */
     s_Post(ctx, eDiag_Perf);
 
@@ -3526,7 +3532,6 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
     /* Parameters */
     pos_prev = pos;
     pos = s_PrintParamsStr(buf, pos, params);
-    VERIFY(pos);
 
     /* Add PHID if known */
     if (s_IsInsideRequest(ctx)) {
@@ -3540,9 +3545,7 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
             buf[pos++] = '&';
         }
         pos = s_PrintParamsPair(buf, pos, "ncbi_phid", hit_id);
-        VERIFY(pos);
     }
-
     /* Post a message */
     s_Post(ctx, eDiag_Perf);
 
