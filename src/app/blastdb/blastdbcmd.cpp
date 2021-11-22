@@ -1154,15 +1154,12 @@ int CBlastDBCmdApp::Run(void)
         }
         else if (args["metadata"]) {
         	x_InitBlastDB();
-        	string user_path = kEmptyStr;
-        	if (args["metadata_output_prefix"].HasValue()) {
-        		user_path = args["metadata_output_prefix"].AsString();
-        		const char sp = CFile::GetPathSeparator();
-        		if (user_path.back() != sp) {
-        			user_path += sp;
-        		}
-        	}
-        	CRef<CBlast_db_metadata> m = m_BlastDb->GetDBMetaData(user_path);
+            string output_prefix = args["metadata_output_prefix"]
+                    ? args["metadata_output_prefix"].AsString()
+                    : kEmptyStr;
+            if (!output_prefix.empty() && (output_prefix.back() != CFile::GetPathSeparator()))
+                output_prefix += CFile::GetPathSeparator();
+        	CRef<CBlast_db_metadata> m = m_BlastDb->GetDBMetaData(output_prefix);
             unique_ptr<CObjectOStreamJson> json_out(new CObjectOStreamJson(out, eNoOwnership));
             json_out->SetDefaultStringEncoding(eEncoding_Ascii);
             json_out->PreserveKeyNames();
