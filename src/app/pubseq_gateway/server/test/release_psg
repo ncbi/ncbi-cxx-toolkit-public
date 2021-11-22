@@ -914,13 +914,14 @@ def stress_test(commands, options, args):
                '-logfile', artefactDir + 'pubseq_gateway-stress-http.log']
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
+    time.sleep(2)
 
     # Run the tests
     errors = []
 
     buildResultsDir = getBuildResultsDir(options)
     testDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/test/'
-    cmdLine = f'/bash {testDir}stresstests.sh localhost:{PORT1} > {artefactDir}stress-http.log 2>&1'
+    cmdLine = f'/usr/bin/bash {testDir}stresstests.sh --server localhost:{PORT1} > {artefactDir}stress-http.log 2>&1'
     print_verbose(f'Running http stress tests: {cmdLine}')
     ret = os.system(cmdLine)
     print_verbose(f'http stress tests return code: {ret}')
@@ -948,10 +949,11 @@ def stress_test(commands, options, args):
                '-logfile', artefactDir + 'pubseq_gateway-stress-https.log']
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
+    time.sleep(2)
 
     # Run the tests
 
-    cmdLine = f'bash {testDir}stresstests.sh --https localhost:10999 > {artefactDir}stress-https.log 2>&1'
+    cmdLine = f'/usr/bin/bash {testDir}stresstests.sh --https --server localhost:10999 > {artefactDir}stress-https.log 2>&1'
     print_verbose(f'Running https stress tests: {cmdLine}')
     ret = os.system(cmdLine)
     print_verbose(f'https stress tests return code: {ret}')
