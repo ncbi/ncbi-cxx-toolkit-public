@@ -246,6 +246,8 @@ static int/*bool*/ s_IsContentTypeDefined(const char*         service,
                                           EMIME_SubType       mime_s,
                                           EMIME_Encoding      mime_e)
 {
+    static const char   kContentType[] = "content-type:";
+    static const size_t kCTLen         = sizeof(kContentType)-1;
     const char* s;
 
     assert(net_info);
@@ -254,7 +256,8 @@ static int/*bool*/ s_IsContentTypeDefined(const char*         service,
             s++;
         if (!*s)
             break;
-        if (strncasecmp(s, "content-type: ", 14) == 0) {
+        if (strncasecmp(s, kContentType, kCTLen) == 0
+            &&  isspace((unsigned char) s[kCTLen])) {
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
             EMIME_Type     m_t;
             EMIME_SubType  m_s;
@@ -273,7 +276,7 @@ static int/*bool*/ s_IsContentTypeDefined(const char*         service,
                 const char* c;
                 size_t len;
                 char* t;
-                for (s += 14;  *s;  s++) {
+                for (s += kCTLen + 1;  *s;  ++s) {
                     if (!isspace((unsigned char)(*s)))
                         break;
                 }
@@ -331,9 +334,8 @@ static const char* s_AdjustNetParams(const char*    service,
         ConnNetInfo_SetPath(net_info, cgi_path);
     if (args)
         ConnNetInfo_SetArgs(net_info, args);
-    ConnNetInfo_DeleteAllArgs(net_info, cgi_args);
 
-    if (ConnNetInfo_PrependArg(net_info, cgi_args, 0)) {
+    if (ConnNetInfo_PreOverrideArg(net_info, cgi_args, 0)) {
         size_t sh_len = static_header ? strlen(static_header) : 0;
         size_t eh_len = extend_header ? strlen(extend_header) : 0;
         char   c_t[CONN_CONTENT_TYPE_LEN+1];
@@ -594,6 +596,7 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     SSERV_InfoCPtr     info;
 
     assert(n  ||  uuu->extra.adjust);
+    assert(net_info != uuu->net_info);
     assert(!net_info->firewall  ||  net_info->stateless);
 
     if (n == (unsigned int)(-1))
