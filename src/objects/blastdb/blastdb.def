@@ -6,6 +6,8 @@ taxid._type = ncbi::TTaxId
 taxid._storage_type = int
 
 [Blast-db-metadata]
+files._type = vector
+compressed-files._type = vector
 number-of-letters._type = Uint8
 number-of-sequences._type = Int8
 bytes-total._type = Uint8 
