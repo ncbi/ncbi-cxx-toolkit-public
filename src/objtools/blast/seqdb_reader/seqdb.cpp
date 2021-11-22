@@ -1655,6 +1655,14 @@ void CSeqDB::x_GetDBFilesMetaData(Int8 & disk_bytes, Int8 & cached_bytes, vector
      	   }
     	}
     }
+
+    // FIXME: increase the version for this new file type
+    //string ext;
+    //SeqDB_GetMetadataFileExtension(is_protein, ext);
+    //const CFile dbfile(paths.front());
+    //db_files.push_back(user_path + dbfile.GetBase() + "." + ext);
+
+    sort(db_files.begin(), db_files.end());
 }
 
 CRef<CBlast_db_metadata> CSeqDB::GetDBMetaData(string user_path)
@@ -1687,16 +1695,10 @@ CRef<CBlast_db_metadata> CSeqDB::GetDBMetaData(string user_path)
 	CTime date(GetDate(), fmt);
 	m->SetLast_updated(date.AsString(timeFmt));
 
-	Int8 disk_bytes;
-	Int8 cached_bytes;
-	vector<string> db_files;
-	x_GetDBFilesMetaData(disk_bytes, cached_bytes, db_files, user_path);
+	Int8 disk_bytes(0), cached_bytes(0);
+	x_GetDBFilesMetaData(disk_bytes, cached_bytes, m->SetFiles(), user_path);
 	m->SetBytes_total(disk_bytes);
 	m->SetBytes_to_cache(cached_bytes);
-	CBlast_db_metadata::TFiles & file_list = m->SetFiles();
-	for (unsigned int i=0; i < db_files.size(); i++) {
-		file_list.push_back(db_files[i]);
-	}
 
 	m->SetNumber_of_volumes(m_Impl->GetNumOfVols());
 
