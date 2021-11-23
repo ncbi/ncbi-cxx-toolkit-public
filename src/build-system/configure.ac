@@ -3745,7 +3745,7 @@ AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,
     fi])
 
 if test "$ncbi_cv_func_gethostbyname_r" != "no" ; then
-   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, $ncbi_cv_func_gethostbyname_r,
+   AC_DEFINE_UNQUOTED(NCBI_HAVE_GETHOSTBYNAME_R, $ncbi_cv_func_gethostbyname_r,
     [If you have the `gethostbyname_r' function, define to the number of
      arguments it takes (normally 5 or 6).])
 fi
@@ -3797,7 +3797,7 @@ AC_CACHE_CHECK([for gethostbyaddr_r], ncbi_cv_func_gethostbyaddr_r,
     fi])
 
 if test "$ncbi_cv_func_gethostbyaddr_r" != "no" ; then
-   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYADDR_R, $ncbi_cv_func_gethostbyaddr_r,
+   AC_DEFINE_UNQUOTED(NCBI_HAVE_GETHOSTBYADDR_R, $ncbi_cv_func_gethostbyaddr_r,
     [If you have the `gethostbyaddr_r' function, define to the number of
      arguments it takes (normally 7 or 8).])
 fi
@@ -3837,7 +3837,7 @@ AC_CACHE_CHECK([for getservbyname_r], ncbi_cv_func_getservbyname_r,
     fi])
 
 if test "$ncbi_cv_func_getservbyname_r" != "no" ; then
-   AC_DEFINE_UNQUOTED(HAVE_GETSERVBYNAME_R, $ncbi_cv_func_getservbyname_r,
+   AC_DEFINE_UNQUOTED(NCBI_HAVE_GETSERVBYNAME_R, $ncbi_cv_func_getservbyname_r,
     [If you have the `getservbyname_r' function, define to the number of
      arguments it takes (normally 5 or 6).])
 fi

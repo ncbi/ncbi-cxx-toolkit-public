@@ -150,9 +150,9 @@ check_function_exists(vsnprintf HAVE_VSNPRINTF)
 check_function_exists(writev HAVE_WRITEV)
 
 # TODO Need to check the number of arguments for gethostbyaddr_r, gethostbyname_r, getservbyname_r 
-check_function_exists(gethostbyaddr_r HAVE_GETHOSTBYADDR_R)
-check_function_exists(gethostbyname_r HAVE_GETHOSTBYNAME_R)
-check_function_exists(getservbyname_r HAVE_GETSERVBYNAME_R)
+check_function_exists(gethostbyaddr_r NCBI_HAVE_GETHOSTBYADDR_R)
+check_function_exists(gethostbyname_r NCBI_HAVE_GETHOSTBYNAME_R)
+check_function_exists(getservbyname_r NCBI_HAVE_GETSERVBYNAME_R)
 
 check_include_file_cxx(cxxabi.h HAVE_CXXABI_H)
 if (${HAVE_CXXABI_H})

@@ -34,24 +34,24 @@
 #  define ENABLE_EXTRA_CHECKS 1
 #endif
 
-#if defined(HAVE_GETHOSTBYADDR_R)
-#  if   HAVE_GETHOSTBYADDR_R == 5
+#if defined(NCBI_HAVE_GETHOSTBYADDR_R)
+#  if   NCBI_HAVE_GETHOSTBYADDR_R == 5
 #    define HAVE_FUNC_GETHOSTBYADDR_R_5 1
-#  elif HAVE_GETHOSTBYADDR_R == 7
+#  elif NCBI_HAVE_GETHOSTBYADDR_R == 7
 #    define HAVE_FUNC_GETHOSTBYADDR_R_7 1
-#  elif HAVE_GETHOSTBYADDR_R == 8
+#  elif NCBI_HAVE_GETHOSTBYADDR_R == 8
 #    define HAVE_FUNC_GETHOSTBYADDR_R_8 1
 #  else
 #    error "Unexpected number of arguments detected for gethostbyaddr_r()"
 #  endif
 #endif
 
-#if defined(HAVE_GETHOSTBYNAME_R)
-#  if   HAVE_GETHOSTBYNAME_R == 3
+#if defined(NCBI_HAVE_GETHOSTBYNAME_R)
+#  if   NCBI_HAVE_GETHOSTBYNAME_R == 3
 #     define HAVE_FUNC_GETHOSTBYNAME_R_3 1
-#  elif HAVE_GETHOSTBYNAME_R == 5
+#  elif NCBI_HAVE_GETHOSTBYNAME_R == 5
 #     define HAVE_FUNC_GETHOSTBYNAME_R_5 1
-#  elif HAVE_GETHOSTBYNAME_R == 6
+#  elif NCBI_HAVE_GETHOSTBYNAME_R == 6
 #     define HAVE_FUNC_GETHOSTBYNAME_R_6 1
 #  else
 #    error "Unexpected number of arguments detected for gethostbyname_r()"
@@ -71,12 +71,12 @@
 #  endif
 #endif
 
-#if defined(HAVE_GETSERVBYNAME_R)
-#  if HAVE_GETSERVBYNAME_R == 4
+#if defined(NCBI_HAVE_GETSERVBYNAME_R)
+#  if NCBI_HAVE_GETSERVBYNAME_R == 4
 #    define HAVE_FUNC_GETSERVBYNAME_R_4 1
-#  elif HAVE_GETSERVBYNAME_R == 5
+#  elif NCBI_HAVE_GETSERVBYNAME_R == 5
 #    define HAVE_FUNC_GETSERVBYNAME_R_5 1
-#  elif HAVE_GETSERVBYNAME_R == 6
+#  elif NCBI_HAVE_GETSERVBYNAME_R == 6
 #    define HAVE_FUNC_GETSERVBYNAME_R_6 1
 #  else
 #    error "Unexpected number of arguments detected for getservbyname_r()"

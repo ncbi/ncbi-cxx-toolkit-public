@@ -191,14 +191,6 @@
 /* Define to 1 if you have the `getgrouplist' function. */
 #undef HAVE_GETGROUPLIST
 
-/* If you have the `gethostbyaddr_r' function, define to the number of
-   arguments it takes (normally 7 or 8). */
-#undef HAVE_GETHOSTBYADDR_R
-
-/* If you have the `gethostbyname_r' function, define to the number of
-   arguments it takes (normally 5 or 6). */
-#undef HAVE_GETHOSTBYNAME_R
-
 /* Define to 1 if you have the `gethostent_r' function. */
 #undef HAVE_GETHOSTENT_R
 
@@ -240,10 +232,6 @@
 
 /* Define to 1 if you have the `getrusage' function. */
 #undef HAVE_GETRUSAGE
-
-/* If you have the `getservbyname_r' function, define to the number of
-   arguments it takes (normally 5 or 6). */
-#undef HAVE_GETSERVBYNAME_R
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
@@ -1043,9 +1031,21 @@
 /* Rename DBLIB symbols in FTDS to avoid name clash with Sybase DBLIB. */
 #undef NCBI_FTDS_RENAME_SYBDB
 
+/* If you have the `gethostbyaddr_r' function, define to the number of
+   arguments it takes (normally 7 or 8). */
+#undef NCBI_HAVE_GETHOSTBYADDR_R
+
+/* If you have the `gethostbyname_r' function, define to the number of
+   arguments it takes (normally 5 or 6). */
+#undef NCBI_HAVE_GETHOSTBYNAME_R
+
 /* If you have the `getpwuid_r' function, define to the number of arguments it
    takes (normally 4 or 5). */
 #undef NCBI_HAVE_GETPWUID_R
+
+/* If you have the `getservbyname_r' function, define to the number of
+   arguments it takes (normally 5 or 6). */
+#undef NCBI_HAVE_GETSERVBYNAME_R
 
 /* If you have the `readdir_r' function, define to the number of arguments it
    takes (normally 2 or 3). */
