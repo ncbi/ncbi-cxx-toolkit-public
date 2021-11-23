@@ -251,7 +251,7 @@ bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
     // authors come back in a weird format that we need
     // to convert to ISO
     if (new_pub->IsSetAuthors())
-        CRemoteUpdater::ConvertToStandardAuthors((CAuth_list&)new_pub->GetAuthors());
+        CRemoteUpdater::ConvertToStandardAuthors(new_pub->SetAuthors());
 
     arr.clear();
     CRef<CPub> new_pmid(new CPub);
@@ -595,115 +595,19 @@ void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeq_entry_EditHandle& o
 }
 
 
-namespace
-{
-bool s_IsAllCaps(const string& str)
-{
-    ITERATE(string, it, str) {
-        if (!isalpha(*it) || !isupper(*it)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-string s_GetInitials(vector<string>& tokens)
-{
-    string init;
-    if (tokens.size() > 1) {
-        string val = tokens.back();
-        if (s_IsAllCaps(val)) {
-            init = val;
-            tokens.pop_back();
-            if (tokens.size() > 1) {
-                val = tokens.back();
-                if (s_IsAllCaps(val)) {
-                    init = val + init;
-                    tokens.pop_back();
-                }
-            }
-        }
-    }
-    return init;
-}
-
-CRef<CAuthor> StdAuthorFromMl(const string& val)
-{
-    CRef<CAuthor> new_auth(new CAuthor());
-    vector<string> tokens;
-    NStr::Split(val, " ", tokens);
-    string suffix;
-    string init = s_GetInitials(tokens);
-    if (NStr::IsBlank(init) && tokens.size() > 1) {
-        suffix = tokens.back();
-        tokens.pop_back();
-        init = s_GetInitials(tokens);
-    }
-    string last = NStr::Join(tokens, " ");
-    new_auth->SetName().SetName().SetLast(last);
-    if (!NStr::IsBlank(suffix)) {
-        new_auth->SetName().SetName().SetSuffix(suffix);
-    }
-    if (!NStr::IsBlank(init)) {
-        vector<string> letters;
-        NStr::Split(init, "", letters);
-        string initials = NStr::Join(letters, ".");
-        new_auth->SetName().SetName().SetInitials(initials);
-    }
-    return new_auth;
-}
-
-void FixMedLineList(CAuth_list& auth_list)
-{
-    list< CRef< CAuthor > > standard_names;
-
-    ITERATE(CAuth_list::TNames::TMl, it, auth_list.GetNames().GetMl()) {
-        if (!NStr::IsBlank(*it)) {
-            CRef<CAuthor> new_auth = StdAuthorFromMl(*it);
-            standard_names.push_back(new_auth);
-        }
-    }
-    auth_list.SetNames().Reset();
-    auth_list.SetNames().SetStd().insert(auth_list.SetNames().SetStd().begin(), standard_names.begin(), standard_names.end());
-}
-
-}
-
 void CRemoteUpdater::ConvertToStandardAuthors(CAuth_list& auth_list)
 {
     if (!auth_list.IsSetNames()) {
         return;
     }
-/*
-    const bool fix_suffix = false;
-    if (auth_list.GetNames().IsMl()) {
-        list<CRef<CAuthor>> new_authors;
-        for (const string& ml_name : auth_list.GetNames().GetMl()) {
-            new_authors.push_back(CAuthor::ConvertMlToStandard(ml_name, fix_suffix));
-        }
-        auth_list.SetNames().Reset();
-        auth_list.SetNames().SetStd().insert(auth_list.SetNames().SetStd().begin(), new_authors.begin(), new_authors.end());
-        return;
-    }
 
-    if (auth_list.GetNames().IsStd()) {
-        for (CRef<CAuthor> author : auth_list.SetNames().SetStd()) {
-            if (author->GetName().IsMl()) {
-                CRef<CAuthor> new_author = CAuthor::ConvertMlToStandard(*author, fix_suffix);
-                author->Assign(*new_author);
-            }
-        }
-    }
-*/
     if (auth_list.GetNames().IsMl()) {
-        FixMedLineList(auth_list);
-        return;
+        auth_list.ConvertMlToStandard();
     } else if (auth_list.GetNames().IsStd()) {
         list< CRef<CAuthor> > authors_with_affil;
         NON_CONST_ITERATE(CAuth_list::TNames::TStd, it, auth_list.SetNames().SetStd()) {
             if ((*it)->GetName().IsMl()) {
-                CRef<CAuthor> new_auth = StdAuthorFromMl((*it)->GetName().GetMl());
+                CRef<CAuthor> new_auth = CAuthor::ConvertMlToStandard((*it)->GetName().GetMl());
                 (*it)->SetName(new_auth->SetName());
             }
             if ((*it)->IsSetAffil()) {
@@ -756,7 +660,7 @@ void CRemoteUpdater::PostProcessPubs(CPubdesc& pubdesc)
     {
         if ((**it).IsSetAuthors())
         {
-            ConvertToStandardAuthors((CAuth_list&)(**it).GetAuthors());
+            ConvertToStandardAuthors((**it).SetAuthors());
         }
     }
 }
