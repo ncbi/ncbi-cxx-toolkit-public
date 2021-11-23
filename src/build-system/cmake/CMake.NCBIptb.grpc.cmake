@@ -45,17 +45,28 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
 
     if (EXISTS "${NCBI_PROTOC_APP}" AND "PROTOBUF" IN_LIST DT_REQUIRES)
         set(_cmd ${NCBI_PROTOC_APP} --cpp_out=. -I. ${_relpath}/${_basename}${_ext})
-        add_custom_command(
-            OUTPUT ${_pb_srcfiles} ${_pb_incfiles}
-            COMMAND ${_cmd} VERBATIM
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${NCBI_INC_ROOT}/${_relpath}
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
-            COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.pb.h VERBATIM
-            WORKING_DIRECTORY ${NCBI_SRC_ROOT}
-            COMMENT "Generate PROTOC C++ classes from ${DT_DATASPEC}"
-            DEPENDS ${DT_DATASPEC}
-            VERBATIM
-        )
+        if("${NCBI_SRC_ROOT}" STREQUAL "${NCBI_INC_ROOT}")
+            add_custom_command(
+                OUTPUT ${_pb_srcfiles} ${_pb_incfiles}
+                COMMAND ${_cmd} VERBATIM
+                WORKING_DIRECTORY ${NCBI_SRC_ROOT}
+                COMMENT "Generate PROTOC C++ classes from ${DT_DATASPEC}"
+                DEPENDS ${DT_DATASPEC}
+                VERBATIM
+            )
+        else()
+            add_custom_command(
+                OUTPUT ${_pb_srcfiles} ${_pb_incfiles}
+                COMMAND ${_cmd} VERBATIM
+                COMMAND ${CMAKE_COMMAND} -E make_directory ${NCBI_INC_ROOT}/${_relpath}
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
+                COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.pb.h VERBATIM
+                WORKING_DIRECTORY ${NCBI_SRC_ROOT}
+                COMMENT "Generate PROTOC C++ classes from ${DT_DATASPEC}"
+                DEPENDS ${DT_DATASPEC}
+                VERBATIM
+            )
+        endif()
 
         if(NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_PACKAGING)
             if(WIN32)
@@ -73,26 +84,39 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
             else()
                 file(APPEND ${NCBI_GENERATESRC_GRPC} "test $? -eq 0 || GENERATESRC_RESULT=1\n")
             endif()
-            file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E make_directory ${NCBI_INC_ROOT}/${_relpath}\n")
-            file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E copy_if_different ${_path}/${_basename}.pb.h ${NCBI_INC_ROOT}/${_relpath}\n")
-            file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E remove -f ${_path}/${_basename}.pb.h\n")
+            if(NOT "${NCBI_SRC_ROOT}" STREQUAL "${NCBI_INC_ROOT}")
+                file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E make_directory ${NCBI_INC_ROOT}/${_relpath}\n")
+                file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E copy_if_different ${_path}/${_basename}.pb.h ${NCBI_INC_ROOT}/${_relpath}\n")
+                file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E remove -f ${_path}/${_basename}.pb.h\n")
+            endif()
         endif()
     endif()
     if (EXISTS "${NCBI_PROTOC_APP}" AND EXISTS "${NCBI_GRPC_PLUGIN}" AND "GRPC" IN_LIST DT_REQUIRES)
         set(_cmd ${NCBI_PROTOC_APP} --grpc_out=generate_mock_code=true:. --plugin=protoc-gen-grpc=${NCBI_GRPC_PLUGIN} -I. ${_relpath}/${_basename}${_ext})
-        add_custom_command(
-            OUTPUT ${_gr_srcfiles} ${_gr_incfiles}
-            COMMAND ${_cmd} VERBATIM
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${NCBI_INC_ROOT}/${_relpath}
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}_mock.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
-            COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.grpc.pb.h VERBATIM
-            COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}_mock.grpc.pb.h VERBATIM
-            WORKING_DIRECTORY ${NCBI_SRC_ROOT}
-            COMMENT "Generate GRPC C++ classes from ${DT_DATASPEC}"
-            DEPENDS ${DT_DATASPEC}
-            VERBATIM
-        )
+        if("${NCBI_SRC_ROOT}" STREQUAL "${NCBI_INC_ROOT}")
+            add_custom_command(
+                OUTPUT ${_gr_srcfiles} ${_gr_incfiles}
+                COMMAND ${_cmd} VERBATIM
+                WORKING_DIRECTORY ${NCBI_SRC_ROOT}
+                COMMENT "Generate GRPC C++ classes from ${DT_DATASPEC}"
+                DEPENDS ${DT_DATASPEC}
+                VERBATIM
+            )
+        else()
+            add_custom_command(
+                OUTPUT ${_gr_srcfiles} ${_gr_incfiles}
+                COMMAND ${_cmd} VERBATIM
+                COMMAND ${CMAKE_COMMAND} -E make_directory ${NCBI_INC_ROOT}/${_relpath}
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}_mock.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
+                COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.grpc.pb.h VERBATIM
+                COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}_mock.grpc.pb.h VERBATIM
+                WORKING_DIRECTORY ${NCBI_SRC_ROOT}
+                COMMENT "Generate GRPC C++ classes from ${DT_DATASPEC}"
+                DEPENDS ${DT_DATASPEC}
+                VERBATIM
+            )
+        endif()
 
         if(NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_PACKAGING)
             if(WIN32)
@@ -112,11 +136,13 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
             else()
                 file(APPEND ${NCBI_GENERATESRC_GRPC} "test $? -eq 0 || GENERATESRC_RESULT=1\n")
             endif()
-            file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E make_directory ${NCBI_INC_ROOT}/${_relpath}\n")
-            file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E copy_if_different ${_path}/${_basename}.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath}\n")
-            file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E copy_if_different ${_path}/${_basename}_mock.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath}\n")
-            file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E remove -f ${_path}/${_basename}.grpc.pb.h\n")
-            file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E remove -f ${_path}/${_basename}_mock.grpc.pb.h\n")
+            if(NOT "${NCBI_SRC_ROOT}" STREQUAL "${NCBI_INC_ROOT}")
+                file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E make_directory ${NCBI_INC_ROOT}/${_relpath}\n")
+                file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E copy_if_different ${_path}/${_basename}.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath}\n")
+                file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E copy_if_different ${_path}/${_basename}_mock.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath}\n")
+                file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E remove -f ${_path}/${_basename}.grpc.pb.h\n")
+                file(APPEND ${NCBI_GENERATESRC_GRPC} "${_cmk} -E remove -f ${_path}/${_basename}_mock.grpc.pb.h\n")
+            endif()
         endif()
     endif()
 endfunction()
