@@ -76,6 +76,7 @@ static
 int _ct_translate_severity(int tds_severity)
 {
         switch (tds_severity) {
+        case 0:
         case EXINFO:        return CS_SV_INFORM; /* unused */
         case EXUSER:        return CS_SV_CONFIG_FAIL;
         case EXNONFATAL:    return CS_SV_INTERNAL_FAIL; /* unused */
