@@ -1425,7 +1425,7 @@ bool XMLAscii(ParserPtr pp)
             continue;
         }
 
-        ebp = CreateEntryBlk();
+        ebp = new EntryBlk();
 
         CRef<objects::CBioseq> bioseq = CreateEntryBioseq(pp, true);
         ebp->seq_entry.Reset(new objects::CSeq_entry);

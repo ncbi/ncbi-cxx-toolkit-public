@@ -361,14 +361,13 @@ using DataBlkPtr = DataBlk*;
 struct EntryBlk : public CFlatFileData
 {
 //  ============================================================================
-    DataBlkPtr              chain;      /* a header points to key-word
+    DataBlkPtr  chain = nullptr;      /* a header points to key-word
                                            block information */
     CRef<objects::CSeq_entry> seq_entry; /* points to sequence entry */
 
-    EntryBlk() :
-        chain(nullptr)
-    {}
+    ~EntryBlk();
 };
+
 using EntryBlkPtr = EntryBlk*;
 
 
@@ -383,8 +382,6 @@ void xFreeEntry(DataBlkPtr entry);
 void FreeIndexblk(IndexblkPtr ibp);
 void GapFeatsFree(GapFeatsPtr gfp);
 void XMLIndexFree(XmlIndexPtr xip);
-void FreeEntryBlk(EntryBlkPtr entry);
-EntryBlkPtr CreateEntryBlk();
 DataBlkPtr CreateDataBlk(DataBlk* parent=nullptr, int type=0, char* offset=nullptr, size_t len=0);
 
 
