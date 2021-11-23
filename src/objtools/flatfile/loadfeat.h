@@ -42,13 +42,14 @@
 #include "asci_blk.h"
 
 BEGIN_NCBI_SCOPE
-
 struct FeatBlk : public CFlatFileData {
     Int4      num = 0;
     char*   key = nullptr;
     char*   location = nullptr;
 
     TQualVector quals;
+
+    ~FeatBlk();
 };
 
 using FeatBlkPtr = FeatBlk*;
