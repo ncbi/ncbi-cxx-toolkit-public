@@ -1104,7 +1104,6 @@ void CCgiApplication::x_OnEvent(CCgiRequestProcessor* pprocessor, EEvent event, 
                 }
                 extra.Flush();
             }
-            processor.OnEvent(event, status);
             break;
         }
     case eSuccess:
@@ -1137,7 +1136,6 @@ void CCgiApplication::x_OnEvent(CCgiRequestProcessor* pprocessor, EEvent event, 
             }
             catch (const exception&) {
             }
-            processor.OnEvent(event, status);
             break;
         }
     case eEndRequest:
@@ -1178,7 +1176,6 @@ void CCgiApplication::x_OnEvent(CCgiRequestProcessor* pprocessor, EEvent event, 
                 }
                 rctx.Reset();
             }
-            processor.OnEvent(event, status);
             break;
         }
     case eExit:
