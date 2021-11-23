@@ -120,7 +120,7 @@ void DataBlk::operator delete(void* p)
 void xFreeEntry(DataBlkPtr entry)
 {
     if (entry->mpData) {
-        delete reinterpret_cast<EntryBlkPtr>(entry->mpData);
+        delete entry->mpData;
         entry->mpData = nullptr;
     }
 
