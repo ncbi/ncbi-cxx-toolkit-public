@@ -561,13 +561,18 @@ StrNum LinkageEvidenceValues[] = {
     {NULL,                 -1}
 };
 
-/**********************************************************/
-static void FreeFeatBlkQual(FeatBlkPtr fbp)
-{
-    MemFree(fbp->key);
-    MemFree(fbp->location);
-    delete fbp;
+
+FeatBlk::~FeatBlk() {
+    if (key) {
+        MemFree(key);
+        key = nullptr;
+    }
+    if (location) {
+        MemFree(location);
+        location = nullptr;
+    }
 }
+
 
 /**********************************************************/
 static void FreeFeatBlk(DataBlkPtr dbp, Parser::EFormat format)
@@ -581,7 +586,7 @@ static void FreeFeatBlk(DataBlkPtr dbp, Parser::EFormat format)
         fbp = (FeatBlkPtr) dbp->mpData;
         if(fbp != NULL)
         {
-            FreeFeatBlkQual(fbp);
+            delete fbp;
             dbp->mpData = NULL;
         }
         if(format == Parser::EFormat::XML)
@@ -3045,7 +3050,7 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
                       (fbp2->location == NULL) ? "???" : fbp2->location,
                       (ch == '\0') ? "" : "...");
 
-            FreeFeatBlkQual(fbp2);
+            delete fbp2;
             tdbpprev->mpNext = tdbpnext;
             MemFree(tdbp);
         }
