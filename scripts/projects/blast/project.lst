@@ -97,6 +97,7 @@ app/blastdb
 app/winmasker$
 app/dustmasker$
 app/segmasker$
+app/blastvdb
 objtools/simple$
 -objects/.*/test
 -objects/.*/demo
