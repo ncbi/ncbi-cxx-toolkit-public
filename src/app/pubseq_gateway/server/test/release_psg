@@ -257,7 +257,7 @@ def getArchivedBinaryPath(ver):
     candidateDir = f'/am/ncbiapdata/release/pubseq_gateway/builds/{ver}/Linux64/'
     try:
         for item in os.listdir(candidateDir):
-            if os.path.isdir(item):
+            if os.path.isdir(candidateDir + item):
                 if item.endswith('-O2g'):
                     candidate = candidateDir + item + '/bin/pubseq_gateway'
                     if os.path.exists(candidate):
@@ -285,11 +285,13 @@ def main():
         build           - tag, configure, build and archive the release
                           (accepts all arguments of the prepare_release script)
         functional_test - run functional tests
+        stability_test  - run tests when many clients drop their connections
         memcheck        - run tests against 'sanitized' build
         stress_test     - run stress tests
         compare         - compare performance against another release
         toolkit_test    - checkout and build C++ Toolkit from current SC.
                           Run its testsuite against the release.
+        perf_test       - run performance tests
         archive         - Archive the completed release
         all             - do all of the above except archive
     """)
@@ -445,6 +447,10 @@ def stress_test_check_args(commands, options, args):
     return checkVersionOptionAndDirectory(options)
 
 def compare_check_args(commands, options, args):
+    if shutil.which('h2load') is None:
+        print_error('h2load executable is not in the PATH')
+        return 1
+
     if not options.against_binary:
         print_error('The "--against-binary" option must be specified')
         return 1
@@ -1000,6 +1006,28 @@ def compare(commands, options, args):
         print_error(f'Error copying {archivedBinaryPath} to {artefactDir}')
         return 1
 
+    h2loadPath = shutil.which('h2load')
+    cmdLine = f'cp -f {h2loadPath} {artefactDir}h2load'
+    print_verbose(f'Command line to invoke: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Copy {h2loadPath} file return code: {ret}')
+    if ret != 0:
+        print_error(f'Error copying {h2loadPath} to {artefactDir}')
+        return 1
+
+    buildResultsDir = getBuildResultsDir(options)
+    testDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/test/'
+    toCopy = ['performance.sh', 'psg_perf.py', 'aggregate.py']
+    for name in toCopy:
+        cmdLine = f'cp -f {testDir}{name} {artefactDir}{name}'
+        print_verbose(f'Command line to invoke: {cmdLine}')
+        ret = os.system(cmdLine)
+        print_verbose(f'Copy {name} file return code: {ret}')
+        if ret != 0:
+            print_error(f'Error copying {testDir}{name} to {artefactDir}')
+            return 1
+
+
     prepareConfigFile(f'{artefactDir}pubseq_gateway.ini.baseline',
                       f'{artefactDir}pubseq_gateway.ini-{oldVersion}',
                       {'si2csi.db': f'{artefactDir}si2csi.db',
@@ -1012,10 +1040,11 @@ def compare(commands, options, args):
 
     # Run the old server
     cmdLine = [f'{artefactDir}pubseq_gateway-{oldVersion}-o2g',
-               '-conffile', f'{artefactDir}pubseq_gateway.ini-{oldVersion}'
+               '-conffile', f'{artefactDir}pubseq_gateway.ini-{oldVersion}',
                '-logfile', f'{artefactDir}pubseq_gateway-compare-{oldVersion}.log']
     print_verbose('Running old PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
+    time.sleep(2)
 
     # Prepare the currently built server
     prepareConfigFile(f'{artefactDir}pubseq_gateway.ini.baseline',
@@ -1034,11 +1063,10 @@ def compare(commands, options, args):
                '-logfile', f'{artefactDir}pubseq_gateway-compare.log']
     print_verbose('Running current PSG server: ' + ' '.join(cmdLine))
     SRV2 = subprocess.Popen(cmdLine)
+    time.sleep(2)
 
     # Run the comparison script
-    buildResultsDir = getBuildResultsDir(options)
-    testDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/test/'
-    cmdLine = f'{testDir}psg_perf.py localhost:{PORT1} localhost:{PORT2} --runs=50 > perf-v{oldVersion}-vs-v{options.psg_ver}.txt'
+    cmdLine = f'cd {artefactDir} && ./psg_perf.py localhost:{PORT1} localhost:{PORT2} > perf-v{oldVersion}-vs-v{options.psg_ver}.txt'
     print_verbose(f'Running performance comparison: {cmdLine}')
     ret = os.system(cmdLine)
     print_verbose(f'Comparison script return code: {ret}')
@@ -1062,9 +1090,10 @@ def archive(commands, options, args):
 
     cmdLine = ['prepare_release', 'archive', buildResultsDir]
     print_verbose('Running release archiving: ' + ' '.join(cmdLine))
-    proc = subprocess.Popen(cmdLine, stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE)
-    out, err = proc.communicate('all\n')
+    proc = subprocess.Popen(cmdLine, stdin=subprocess.PIPE)
+    time.sleep(2)
+
+    out, err = proc.communicate(b'all\n')
     ret = proc.returncode
     if ret == 0:
         print_verbose('Archiving succeeded')
