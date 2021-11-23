@@ -252,14 +252,6 @@
 /* Define to 1 if you have the `getaddrinfo' function. */
 #define HAVE_GETADDRINFO 1
 
-/* If you have the `gethostbyaddr_r' function, define to the number of
-   arguments it takes (normally 7 or 8). */
-/* #undef HAVE_GETHOSTBYADDR_R */
-
-/* If you have the `gethostbyname_r' function, define to the number of
-   arguments it takes (normally 5 or 6). */
-/* #undef HAVE_GETHOSTBYNAME_R */
-
 /* Define to 1 if you have the `gethostent_r' function. */
 /* #undef HAVE_GETHOSTENT_R */
 
@@ -295,10 +287,6 @@
 
 /* Define to 1 if you have the `getrusage' function. */
 #define HAVE_GETRUSAGE 1
-
-/* If you have the `getservbyname_r' function, define to the number of
-   arguments it takes (normally 5 or 6). */
-/* #undef HAVE_GETSERVBYNAME_R */
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
@@ -800,9 +788,21 @@
 /* Rename DBLIB symbols in FTDS to avoid name clash with Sybase DBLIB. */
 #define NCBI_FTDS_RENAME_SYBDB 1
 
+/* If you have the `gethostbyaddr_r' function, define to the number of
+   arguments it takes (normally 7 or 8). */
+/* #undef NCBI_HAVE_GETHOSTBYADDR_R */
+
+/* If you have the `gethostbyname_r' function, define to the number of
+   arguments it takes (normally 5 or 6). */
+/* #undef NCBI_HAVE_GETHOSTBYNAME_R */
+
 /* If you have the `getpwuid_r' function, define to the number of arguments it
    takes (normally 4 or 5). */
 #define NCBI_HAVE_GETPWUID_R 5
+
+/* If you have the `getservbyname_r' function, define to the number of
+   arguments it takes (normally 5 or 6). */
+/* #undef NCBI_HAVE_GETSERVBYNAME_R */
 
 /* If you have the `readdir_r' function, define to the number of arguments it
    takes (normally 2 or 3). */
