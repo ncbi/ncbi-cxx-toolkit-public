@@ -2468,8 +2468,10 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp,
         if(newglp->slibp == NULL)
         {
             MemFree(newglp);
-            if(gene != NULL)
+            if(gene) {
                 MemFree(gene);
+                gene = nullptr;
+            }
             if(locus_tag != NULL)
                 MemFree(locus_tag);
             continue;
@@ -2523,6 +2525,10 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp,
 
     if(gnp->gelop != NULL)
         gnp->gelop = fta_sort_feat_list(gnp->gelop);
+
+    if (gene) {
+        MemFree(gene);
+    }
 }
 
 /**********************************************************/
@@ -3133,6 +3139,11 @@ static void FixAnnot(CBioseq::TAnnot& annots, const Char* acnum, GeneRefFeats& g
             if ((*feat)->GetQual().empty())
                 (*feat)->ResetQual();
             ++feat;
+        
+            if (gene) {
+                MemFree(gene);
+            }
+
         }
 
         if (feat_table.empty())

@@ -870,6 +870,7 @@ static void GetProtRefDescr(objects::CSeq_feat& feat, Uint1 method, const object
     descr.Reset(new objects::CSeqdesc);
     descr->SetTitle(q);
     descrs.push_back(descr);
+    MemFree(q);
 }
 
 /**********************************************************

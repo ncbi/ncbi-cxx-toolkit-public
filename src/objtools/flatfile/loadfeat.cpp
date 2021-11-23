@@ -2179,6 +2179,9 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
     if (type != objects::CRNA_ref::eType_tRNA)                  /* if tRNA and codon value exist */
         return;
 
+    if (qval) {
+        MemFree(qval);
+    }
     qval = GetTheQualValue(feat.SetQual(), "anticodon");
     CRef<objects::CTrna_ext> trnaa;
     if (qval != NULL)
@@ -2198,6 +2201,7 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
         }
 
         MemFree(qval);
+        qval = nullptr;
     }
 
     qval = CpTheQualValue(feat.SetQual(), "product");
@@ -2207,6 +2211,7 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
     {
         trnap = fta_get_trna_from_product(feat, qval, NULL);
         MemFree(qval);
+        qval = nullptr;
     }
 
     if (feat.IsSetComment() && feat.GetComment().empty())
@@ -2766,10 +2771,14 @@ static CRef<objects::CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqId
 
     if (!fbp->quals.empty())
     {
-        const Char* comment = GetTheQualValue(fbp->quals, "note");
+        char* comment = GetTheQualValue(fbp->quals, "note");
 
-        if (comment && comment[0])
-            feat->SetComment(comment);
+        if (comment) {
+            if( comment[0]) {
+                feat->SetComment(comment);
+            }
+            MemFree(comment);
+        }
     }
 
     /* assume all imp for now
@@ -4145,7 +4154,6 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, XmlIndexPtr xip)
  **********************************************************/
 static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
 {
-    char*   note;
     char*   p;
     char*   q;
 
@@ -4191,7 +4199,7 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
     if(size == 0)
         return(fbp);
 
-    note = (char*) MemNew(size);
+    char* note = (char*) MemNew(size);
     p = note;
 
     for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end();)
@@ -4233,6 +4241,7 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
     CRef<objects::CGb_qual> qual_new(new objects::CGb_qual);
     qual_new->SetQual("note");
     qual_new->SetVal(note);
+    MemFree(note);
 
     fbp->quals.push_back(qual_new);
 
