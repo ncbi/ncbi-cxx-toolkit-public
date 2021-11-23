@@ -2461,6 +2461,12 @@ string CCgiRequestProcessor::GetSelfReferer(void) const
 }
 
 
+NCBI_PARAM_DECL(string, CGI, Exception_Message);
+NCBI_PARAM_DEF_EX(string, CGI, Exception_Message, "", eParam_NoThread,
+                  CGI_EXCEPTION_MESSAGE);
+typedef NCBI_PARAM_TYPE(CGI, Exception_Message) TExceptionMessage;
+
+
 int CCgiRequestProcessor::OnException(std::exception& e, CNcbiOstream& os)
 {
     // Discriminate between different types of error
@@ -2500,6 +2506,11 @@ int CCgiRequestProcessor::OnException(std::exception& e, CNcbiOstream& os)
     // Don't try to write to a broken output
     if (!os.good()  ||  GetOutputBroken()) {
         return -1;
+    }
+
+    string expt_msg = TExceptionMessage::GetDefault();
+    if ( !expt_msg.empty() ) {
+        message = expt_msg;
     }
 
     try {
