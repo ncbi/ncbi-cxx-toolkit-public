@@ -2465,13 +2465,17 @@ static CRef<objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_
         p = ind[ParFlat_RX]->mOffset;
         CRef<objects::CPub> pub = get_muid(p, Parser::EFormat::EMBL);
 
-        const Char* id = get_embl_str_pub_id(p, "DOI;");
-        if (id)
+        char* id = get_embl_str_pub_id(p, "DOI;");
+        if (id) {
             doi = id;
+            MemFree(id); 
+        }
 
         id = get_embl_str_pub_id(p, "AGRICOLA;");
-        if (id)
+        if (id) {
             agricola = id;
+            MemFree(id);
+        }
 
         if (pub.NotEmpty())
         {

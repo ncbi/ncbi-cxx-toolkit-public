@@ -990,6 +990,7 @@ static void FakeGenBankBioSources(const DataBlk& entry, objects::CBioseq& bioseq
     if(ptr != NULL)
     {
         org_ref.SetOrgname().SetLineage(ptr);
+        MemFree(ptr);
     }
 
     CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
