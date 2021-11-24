@@ -16,11 +16,11 @@ SRC = pubseq_gateway  \
       osg_connection osg_mapper osg_caller osg_fetch osg_processor osg_processor_base \
       osg_resolve_base osg_resolve osg_getblob_base osg_getblob osg_annot cdd_processor \
       psgs_io_callbacks accession_version_history_processor psgs_uv_loop_binder \
-      bioseq_info_record_selector
+      bioseq_info_record_selector split_info_utils
 
-LIBS = $(PCRE_LIBS) $(OPENSSL_LIBS) $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) $(LIBUV_STATIC_LIBS) $(LMDB_STATIC_LIBS) $(PROTOBUF_LIBS) $(KRB5_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
-CPPFLAGS = $(OPENSSL_INCLUDE) $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(ORIG_CPPFLAGS)
-LIB = cdd_access id2 seqsplit seqset $(SEQ_LIBS) xregexp $(PCRE_LIB) pub medline biblio general xser psg_cassandra psg_protobuf psg_cache xconnext connext xconnserv xconnect xutil xncbi
+LIBS = $(PCRE_LIBS) $(OPENSSL_LIBS) $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) $(LIBUV_STATIC_LIBS) $(LMDB_STATIC_LIBS) $(PROTOBUF_LIBS) $(KRB5_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
+CPPFLAGS = $(OPENSSL_INCLUDE) $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(CMPRS_INCLUDE) $(ORIG_CPPFLAGS)
+LIB = cdd_access id2 seqsplit seqset $(SEQ_LIBS) xregexp $(PCRE_LIB) pub medline biblio general xser psg_cassandra psg_protobuf psg_cache xconnext connext xconnserv xconnect xcompress xutil xncbi
 
 REQUIRES = CASSANDRA MT Linux H2O LMDB LIBUV PROTOBUF -ICC
 
