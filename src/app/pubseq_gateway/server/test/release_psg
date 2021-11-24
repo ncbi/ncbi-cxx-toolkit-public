@@ -26,11 +26,12 @@ import signal
 import time
 import pwd
 import psutil
+import ncbi.grid.deployment_info.services as services
 
 
 # Order is important
 SUPPORTED_COMMANDS = ['all', 'build', 'functional_test', 'stability_test', 'memcheck', 'stress_test',
-                      'compare', 'toolkit_test', 'perf_test', 'archive']
+                      'compare', 'perf_test', 'archive']
 
 VERBOSE = False
 PORT1 = 10999
@@ -272,6 +273,25 @@ def getArchivedBinaryPath(ver):
     print_error(f'Cannot find another PSG binary of version {ver}')
     return None
 
+def resolveService(name):
+    instances = []
+    deploymentServices = services.get_services()
+    for svc in deploymentServices[0]:
+        if svc.name.upper() == name.upper():
+            instances.append((svc.host, int(svc.port)))
+    return instances
+
+def getDevProdServerPair():
+    devInstances = resolveService('PSG2_DEV')
+    prodInstances = resolveService('PSG2')
+
+    # They must work on the same host
+    for devInstance in devInstances:
+        for prodInstance in prodInstances:
+            if devInstance[0] == prodInstance[0]:
+                return devInstance[0] + ':' + str(devInstance[1]), prodInstance[0] + ':' +str(prodInstance[1])
+    return None, None
+
 
 def main():
 
@@ -289,8 +309,6 @@ def main():
         memcheck        - run tests against 'sanitized' build
         stress_test     - run stress tests
         compare         - compare performance against another release
-        toolkit_test    - checkout and build C++ Toolkit from current SC.
-                          Run its testsuite against the release.
         perf_test       - run performance tests
         archive         - Archive the completed release
         all             - do all of the above except archive
@@ -461,11 +479,12 @@ def compare_check_args(commands, options, args):
 
     return checkVersionOptionAndDirectory(options)
 
-def toolkit_test_check_args(commands, options, args):
+def perf_test_check_args(commands, options, args):
     if 'all' in commands:
         # Everything will be created on the previous stages
         return 0
-    return 0
+
+    return checkVersionOptionAndDirectory(options)
 
 def archive_check_args(commands, options, args):
     userName = pwd.getpwuid(os.getuid()).pw_name
@@ -1079,9 +1098,6 @@ def compare(commands, options, args):
     stopServer(SRV2)
     return ret
 
-def toolkit_test(commands, options, args):
-    return 0
-
 def archive(commands, options, args):
     artefactDir = getArtefactDir(options)
     buildResultsDir = getBuildResultsDir(options)
@@ -1104,6 +1120,38 @@ def archive(commands, options, args):
     print_error(f'Archiving error. Return code {ret}; results are in {resultFile}')
     return ret
 
+def perf_test(commands, options, args):
+    devInstance, prodInstance = getDevProdServerPair()
+    if devInstance is None or prodInstance is None:
+        print_error('Cannot find dev and prod PSG instances which are running on the same host')
+        return 1
+
+    print_verbose('Dev instance to use: ' + devInstance)
+    print_verbose('Prod instance to use: ' + prodInstance)
+
+    artefactDir = getArtefactDir(options)
+    buildResultsDir = getBuildResultsDir(options)
+    testDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/test/'
+    toCopy = ['perf_test.sh']
+    for name in toCopy:
+        cmdLine = f'cp -f {testDir}{name} {artefactDir}{name}'
+        print_verbose(f'Command line to invoke: {cmdLine}')
+        ret = os.system(cmdLine)
+        print_verbose(f'Copy {name} file return code: {ret}')
+        if ret != 0:
+            print_error(f'Error copying {testDir}{name} to {artefactDir}')
+            return 1
+
+    # Run the comparison script
+    cmdLine = f'cd {artefactDir} && ./perf_test.sh {prodInstance} {devInstance} > perf_test.sh.log 2>&1'
+    print_verbose(f'Running perf test: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Perf test script return code: {ret}')
+    if ret != 0:
+        print_error(f'Error running perf test script. Return code: {ret}')
+    else:
+        print_verbose('Perf test script succeeded')
+    return ret
 
 
 if __name__ == '__main__':
