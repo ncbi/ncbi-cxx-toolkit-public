@@ -658,12 +658,22 @@ extern int/*bool*/ SERV_EqualInfo(const SSERV_Info *i1,
 }
 
 
-extern const char* SERV_HostOfInfo(const SSERV_Info* info)
+const char* SERV_HostOfInfo(const SSERV_Info* info)
 {
     const SSERV_Attr* attr;
     if (!info->vhost  ||  !(attr = s_GetAttrByType(info->type)))
         return 0;
     return (const char*) &info->u + attr->ops.SizeOf(&info->u);
+}
+
+
+TNCBI_IPv6Addr SERV_AddrOfInfo(const SSERV_Info* info)
+{
+    TNCBI_IPv6Addr addr;
+    if (!NcbiIsEmptyIPv6(&info->addr))
+        return info->addr;
+    NcbiIPv4ToIPv6(&addr, info->host, 0);
+    return addr;
 }
 
 

@@ -107,6 +107,13 @@ const char* SERV_HostOfInfo
  );
 
 
+/* Return info's host address packed as IPv6. */
+NCBI_XCONNECT_EXPORT
+TNCBI_IPv6Addr SERV_AddrOfInfo
+(const SSERV_Info* info
+ );
+
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
