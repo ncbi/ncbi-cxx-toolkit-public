@@ -78,9 +78,9 @@ bool CTestApp::TestApp_Args(CArgDescriptions& args)
         CArgDescriptions::eString);
 
     args.AddDefaultKey("types",
-        "Types", "Server type(s), eg 'ANY', 'ALL', 'HTTP_GET', "
-        "'DNS | HTTP', 'NCBID+STANDALONE', 'NCBID, HTTP', etc.  "
-        "From: { NCBID, STANDALONE, HTTP_GET, HTTP_POST, HTTP, FIREWALL, DNS }",
+        "Types", "Server type(s), e.g. 'ANY', 'ALL', 'HTTP_GET', 'DNS | HTTP',"
+        " 'NCBID+STANDALONE', 'NCBID, HTTP', etc. from: "
+        "{ NCBID, STANDALONE, HTTP_GET, HTTP_POST, HTTP, FIREWALL, DNS }",
         CArgDescriptions::eString,
         "ANY");
 
