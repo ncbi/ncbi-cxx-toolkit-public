@@ -1,9 +1,62 @@
 Requirements to run release_psg script:
+--------------------------------------
 
 - prepare_release script must be in PATH
 - h2load utility must be in PATH
 - python 3 higher than 3.3 must be used
-- the python 'psutil' module must be available.
-  It may be more convenient to create a virtual environment and install psutil as
+- the python 'psutil' and 'grid-deployment-info' modules must be available.
+  It may be more convenient to create a virtual environment and install modules as
   $ pip install psutil
+  $ pip install grid-deployment-info
+
+Return value:
+------------
+0    -> the required action(s) completed successfully
+!= 0 -> there were errors
+
+Artefacts:
+---------
+
+- all the script artefacts are stored in <curret working dir>/PSG-X.X.X
+  directory
+
+  'build' action:
+  -- two subdirectories .../PSG-X.X.X/prepare_release....conf.pubseq_gateway-0.0.0
+                        .../PSG-X.X.X/prepare_release....build.pubseq_gateway-0.0.0
+
+  'functional_test' action:
+  -- .../PSG-X.X.X/pubseq_gateway-ut-http.log
+  -- .../PSG-X.X.X/ut-http.log
+  -- .../PSG-X.X.X/pubseq_gateway-ut-https.log
+  -- .../PSG-X.X.X/ut-https.log
+  -- .../PSG-X.X.X/pubseq_gateway-integration-test.log
+  -- .../PSG-X.X.X/integration-test.log
+
+  'stability_test' action:
+  -- ../PSG-X.X.X/pubseq_gateway-drop-client-http.log
+
+  'memcheck' action:
+  -- .../PSG-X.X.X/pubseq_gateway-memcheck-ut-http.log
+  -- .../PSG-X.X.X/memcheck-ut-http.log
+  -- .../PSG-X.X.X/pubseq_gateway-memcheck-ut-https.log
+  -- .../PSG-X.X.X/memcheck-ut-https.log
+  -- .../PSG-X.X.X/pubseq_gateway-memcheck-integration-test.log
+  -- .../PSG-X.X.X/memcheck-integration-test.log
+
+  'stress_test' action:
+  -- .../PSG-X.X.X/pubseq_gateway-stress-http.log
+  -- .../PSG-X.X.X/stress-http.log
+  -- .../PSG-X.X.X/pubseq_gateway-stress-https.log
+  -- .../PSG-X.X.X/stress-https.log
+
+  'compare' action:
+  -- .../PSG-X.X.X/pubseq_gateway-compare-Y.Y.Y.log
+  -- .../PSG-X.X.X/pubseq_gateway-compare.log
+  -- .../PSG-X.X.X/perf-vY.Y.Y-vs-vX.X.X.txt
+
+  'perf_test' action:
+  -- .../PSG-X.X.X/???
+
+  'archive' action:
+  -- archived release at /am/ncbiapdata/releases/pubseq_gateway/...
 
