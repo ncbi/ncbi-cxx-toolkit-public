@@ -2953,7 +2953,7 @@ IADIZA-CM	s	Instituto Argentino de Investigaciones de las Zonas Aridas
 IAFB	c	Culture Collection of Industrial Microorganisms, Prof. Wac&#322;aw D&#261;browski Institute of Agricultural and Food Biotechnology			
 IAGB	s	Botanical Garden "Anastasie Fatu" of Iasi			
 IAL<BRA-Bahia>	s	Herbario, Centro Nacional de Pesquisa de Mandioca e Fruticultura, EMBRAPA			
-IAL<BRA-SaoPaulo>	c	Secao de Colecao de Culturas Instituto Adolfo Lu			
+IAL<BRA-SaoPaulo>	c	Departament of Culture Collection of Instituto  Adolfo Lutz			
 IALCEL	c	Secao de Culturas Celulares			
 IALMIC	c	Micoteca do Insituto Adolfo Lutz			
 IAM	c	IAM Culture Collection, Center for Cellular and Molecular Research			
@@ -7049,9 +7049,9 @@ TEU	s	Teikyo University, Education Department
 TEUI	s	U.S. Forest Service Southwest Region, Terrestrial Ecological Unit Inventory			
 TEX	s	University of Texas at Austin, Plant Resources Center			
 TEXA	s	Blackland Experiment Station			
-TF<JPN>	s	Forestry and Forest Products Research Institute	TFA		
+TF<JPN>	s	Forestry and Forest Products Research Institute			
 TF<THA>	s	Department of Mineral Resources			
-TFA	s	Forestry and Forest Products Research Institute	TF		
+TFA	s	"Tama Forest Science Garden, "Forestry and Forest Products Research Institute			
 TFAV	s	Servicio Autonomo para el Desarrollo Ambiental del Estado Amazonas			
 TFC	s	Universidad de La Laguna, Departamento de Biologia Vegetal (Botanica)			
 TFC<EST>	c	Tartu Fungal Culture Collection			
