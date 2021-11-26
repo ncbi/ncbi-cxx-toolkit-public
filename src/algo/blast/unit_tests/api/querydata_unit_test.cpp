@@ -628,17 +628,17 @@ BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_LocalDataFromBlastQueryVector_Nucleotid
 }
 
 BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_RemoteData_SingleBioseqFromTSeqLocVector) {
-    const int kGi = 129295;
+    TGi kGi = GI_CONST(129295);
     TSeqLocVector queries;
     CSeq_id qid(CSeq_id::e_Gi, kGi);
     unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(qid));
     queries.push_back(*sl);
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(queries));
-    CSequenceDataTester(query_factory, GI_FROM(int, kGi))();
+    CSequenceDataTester(query_factory, kGi)();
 }
 
 BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_RemoteData_SingleBioseqFromBlastQueryVector) {
-    const TIntId kGi = 129295;
+    TGi kGi = GI_CONST(129295);
 
     CRef<CBlastQueryVector> queries(new CBlastQueryVector);
     CSeq_id qid(CSeq_id::e_Gi, kGi);
@@ -649,7 +649,7 @@ BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_RemoteData_SingleBioseqFromBlastQueryVe
     queries->AddQuery(sq);
     
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(*queries));
-    CSequenceDataTester(query_factory, GI_FROM(int, kGi))();
+    CSequenceDataTester(query_factory, kGi)();
 }
 
 BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_EmptyTSeqLocVector) {
