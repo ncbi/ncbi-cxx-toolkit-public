@@ -358,7 +358,7 @@ BOOST_AUTO_TEST_CASE(testDiscMegaBlastPartialRun)
     const TGi kQueryGi = GI_CONST(14702146); 
     const string kDbName("data/seqn");
     const size_t kNumHits = 2;
-    const TIntId kGis[kNumHits] = { 46071158, 46072400 };
+    const TGi kGis[kNumHits] = { GI_CONST(46071158), GI_CONST(46072400) };
     const int kScores[kNumHits] = { 1024, 944 };
     const int kNumIdent[kNumHits] = { 458, 423 };
 
@@ -406,9 +406,9 @@ BOOST_AUTO_TEST_CASE(testDiscMegaBlastPartialRun)
 
     if ( !CSeq_id::PreferAccessionOverGi() ) {
         BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, first_hit->GetSeq_id(1).Which());
-        BOOST_REQUIRE_EQUAL(GI_FROM(TIntId, kGis[0]), first_hit->GetSeq_id(1).GetGi());
+        BOOST_REQUIRE_EQUAL(kGis[0], first_hit->GetSeq_id(1).GetGi());
         BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, second_hit->GetSeq_id(1).Which());
-        BOOST_REQUIRE_EQUAL(GI_FROM(TIntId, kGis[1]), second_hit->GetSeq_id(1).GetGi());
+        BOOST_REQUIRE_EQUAL(kGis[1], second_hit->GetSeq_id(1).GetGi());
     }
     else {
         BOOST_REQUIRE_EQUAL(CSeq_id::e_Ddbj, first_hit->GetSeq_id(1).Which());
