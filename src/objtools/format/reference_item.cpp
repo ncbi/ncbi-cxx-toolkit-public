@@ -1412,105 +1412,13 @@ void CReferenceItem::ChangeMedlineAuthorsToISO( CRef<CPub> pub )
     const CAuth_list::C_Names::TMl & ml_names = pub->GetAuthors().GetNames().GetMl();
     ITERATE( CAuth_list::C_Names::TMl, ml_name_iter, ml_names ) {
         string author_name = *ml_name_iter;
-
-        // we will fill in these 3 as we go along
-        string lastname;
-        string initials;
-        string suffix;
-
-        // this scope fills in lastname, initials, and suffix
-        {
-            NStr::TruncateSpacesInPlace(author_name);
-            vector<string> tokens;
-            NStr::Split(author_name, " ", tokens, 
-                        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-
-            // get suffix if it exists, and remove it from the list
-            if( tokens.size() >= 3 && 
-                ! x_StringIsJustCapitalLetters(tokens.back()) && 
-                x_StringIsJustCapitalLetters(tokens[tokens.size() - 2]) ) 
-            {
-                suffix = tokens.back();
-                tokens.pop_back();
-            }
-
-            // get initials if they exist, and remove them from the list
-            if( tokens.size() >= 2 &&
-                x_StringIsJustCapitalLetters(tokens.back()) )
-            {
-                initials = tokens.back();
-                tokens.pop_back();
-            }
-
-            // remaining pieces belong to the last name
-            lastname = NStr::Join(tokens, " ");
-        }
-
-        // put period in initials. e.g. "MJ" -> "M.J."
-        {
-            string new_initials;
-            ITERATE( string, ch_iter, initials ) {
-                new_initials += *ch_iter;
-                new_initials += '.';
-            }
-            // swap is faster than assignment
-            initials.swap(new_initials);
-        }
-
-        // a couple of static transformations for the suffix
-        typedef SStaticPair<const char*, const char*> TSufElem;
-        static const TSufElem sc_suf_map[] = {
-            { "1d",  "I" },
-            { "1st", "I" },
-            { "2d",  "II" },
-            { "2nd", "II" },
-            { "3d",  "III" },
-            { "3rd", "III" },
-            { "4th", "IV" },
-            { "5th", "V" },
-            { "6th", "VI" },
-            { "Jr",  "Jr." },
-            { "Sr",  "Sr."}
-        };
-        typedef CStaticArrayMap<const char *, const char *, PCase_CStr> TSufMap;
-        DEFINE_STATIC_ARRAY_MAP(TSufMap, sc_SufMap, sc_suf_map);
-
-        TSufMap::const_iterator suf_find_iter = sc_SufMap.find(suffix.c_str());
-        if( suf_find_iter != sc_SufMap.end() ) {
-            suffix = suf_find_iter->second;
-        }
-
-        CRef<CAuthor> new_author( new CAuthor );
-        CPerson_id_Base::TName & name = new_author->SetName().SetName();
-        name.SetLast( lastname );
-        if( ! initials.empty() ) {
-            name.SetInitials( initials );
-        }
-        if( ! suffix.empty() ) {
-            name.SetSuffix( suffix );
-        }
-
+        CRef<CAuthor> new_author = CAuthor::ConvertMlToStandard(author_name, true);
         new_authors.push_back( new_author );
     }
     
     copy( new_authors.begin(), 
         new_authors.end(),
         back_inserter( pub->SetArticle().SetAuthors().SetNames().SetStd() ) );
-}
-
-bool CReferenceItem::x_StringIsJustCapitalLetters( const string & str )
-{
-    if( str.empty() ) {
-        return false;
-    }
-
-    ITERATE(string, ch_iter, str ) {
-        if( ! isupper(*ch_iter) ) {
-            return false;
-        }
-    }
-
-    return true;
 }
 
 
