@@ -547,7 +547,7 @@ static int/*bool*/ x_SetHostPort(SConnNetInfo* net_info,
     if (vhost) {
         assert((size_t) info->vhost < sizeof(net_info->host));
         strncpy0(net_info->host, vhost, (size_t) info->vhost);
-    } else if (info->host == SOCK_HostToNetLong((unsigned int)(-1L))) {
+    } else if (info->host == SOCK_HostToNetLong((unsigned int)(-1))) {
         int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr);
         char* end = NcbiAddrToString(net_info->host + ipv6,
                                      sizeof(net_info->host) - (size_t)(2*ipv6),
@@ -561,8 +561,11 @@ static int/*bool*/ x_SetHostPort(SConnNetInfo* net_info,
             *end++ = ']';
             *end = '\0';
         }
-    } else
+    } else if (info->host) {
         SOCK_ntoa(info->host, net_info->host, sizeof(net_info->host));
+        assert(*net_info->host);
+    } else
+        *net_info->host = '\0';
 
     net_info->port = info->port;
     return 1/*success*/;
