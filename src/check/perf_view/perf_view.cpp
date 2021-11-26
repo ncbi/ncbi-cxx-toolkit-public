@@ -235,7 +235,7 @@ void CPsgPerfApplication::ProcessLine(const char* line, const string& file_ext)
     // TIME (or status, if not OK)
     string stime;
     if ( CRegexpUtil(line).Extract("^OK").empty() ) {
-        stime = string(line).substr(0,3); 
+        stime = NStr::TruncateSpaces_Unsafe(string(line).substr(0,3));
     }
     else {
         re.Reset(line);
