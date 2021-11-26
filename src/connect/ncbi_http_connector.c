@@ -1364,7 +1364,7 @@ static EIO_Status x_ReadChunkHead(SHttpConnector* uuu, int/*bool*/ first)
                      url ? url  : "",
                      &"\""[!str],
                      !str ? (int) strlen(err) : (int)(size - (first ? 2 : 4)),
-                     !str ?              err  :        str  + (first ? 0 : 2),
+                     !str ?              err  :       str  + (first ? 0 : 2),
                      &"\""[!str]));
         if (url)
             free(url);
