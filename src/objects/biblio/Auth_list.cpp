@@ -180,7 +180,7 @@ bool CAuth_list::GetLabelV2(string* label, TLabelFlags flags) const
 }
 
 
-void CAuth_list::ConvertMlToStandard(void)
+void CAuth_list::ConvertMlToStandard(bool normalize_suffix)
 {
     if (!IsSetNames() || !GetNames().IsMl()) {
         return;
@@ -189,7 +189,7 @@ void CAuth_list::ConvertMlToStandard(void)
 
     for (auto& author_ml_str: GetNames().GetMl()) {
         if (!NStr::IsBlank(author_ml_str)) {
-            CRef<CAuthor> new_auth = CAuthor::ConvertMlToStandard(author_ml_str);
+            CRef<CAuthor> new_auth = CAuthor::ConvertMlToStandard(author_ml_str, normalize_suffix);
             standard_names.push_back(new_auth);
         }
     }
