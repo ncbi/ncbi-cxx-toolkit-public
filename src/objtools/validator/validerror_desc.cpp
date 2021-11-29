@@ -707,6 +707,17 @@ bool CValidError_desc::ValidateDblink
                         }
                     }
                 }
+            } else if (NStr::EqualNocase(label_str, "Trace Assembly Archive")) {
+                if (fld.IsSetData() && fld.GetData().IsStrs()) {
+                    const CUser_field::C_Data::TStrs& strs = fld.GetData().GetStrs();
+                    ITERATE(CUser_field::C_Data::TStrs, st_itr, strs) {
+                        const string& str = *st_itr;
+                        if ( ! NStr::StartsWith (str, "TI", NStr::eNocase) ) {
+                            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkBadFormat,
+                                    "Trace Asssembly Archive accession " + str + " does not begin with TI prefix", *m_Ctx, desc);
+                        }
+                    }
+                }
             }
 
             for ( size_t i = 0; i < sizeof(s_legalDblinkNames) / sizeof(string); ++i) {
