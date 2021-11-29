@@ -154,6 +154,10 @@ public:
     ///   the stopwatch, only the printed value is adjusted.
     void Adjust(CTimeSpan timespan);
 
+    /// Get time of the first call to Start(). Returns empty value if the
+    /// logger was never actually started.
+    const CTime& GetStartTime(void) const { return m_StartTime; }
+
 private:
     bool x_CheckValidity(const CTempString& err_msg) const;
     friend class CPerfLogGuard;
@@ -164,6 +168,7 @@ private:
     CStopWatch::EStart     m_TimerState;     // Internal timer state to save cycles
     bool                   m_IsDiscarded;    // TRUE if Post() or Discard() is already called
     double                 m_Adjustment;     // Accumulated elapsed time adjustment
+    CTime                  m_StartTime;      // Time of the first start.
 };
 
 
@@ -354,6 +359,9 @@ void CPerfLogger::Start()
         return;
     }
     if ( CPerfLogger::IsON() ) {
+        if ( m_StartTime.IsEmpty() ) {
+            m_StartTime = GetFastLocalTime();
+        }
         m_StopWatch->Start();
     }
     m_TimerState = CStopWatch::eStart;
