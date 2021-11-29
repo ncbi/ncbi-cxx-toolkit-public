@@ -1661,7 +1661,7 @@ static int s_getNumTaxa(vector <CShowBlastDefline::SClusterMemberInfo>  clustMem
 string CShowBlastDefline::x_FormatClusterData(SDeflineInfo* sdl, string defLine)
 {
     if(!sdl->clustMemList.empty()) {                    
-        string allClustRows;        
+        string allClustRows;         
         for (size_t i =0; i < sdl->clustMemList.size(); i++) {            
             string clustRow = CAlignFormatUtil::MapTemplate(m_DeflineTemplates->clusterMemTmpl,"clust_mem",sdl->clustMemList[i].memAcc);
             clustRow = CAlignFormatUtil::MapTemplate(clustRow,"clust_mem_sci_name",sdl->clustMemList[i].sciName);
@@ -1669,7 +1669,14 @@ string CShowBlastDefline::x_FormatClusterData(SDeflineInfo* sdl, string defLine)
             clustRow = CAlignFormatUtil::MapTemplate(clustRow,"clust_mem_taxid",NStr::IntToString(sdl->clustMemList[i].taxid));
             allClustRows += clustRow;
         }
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_mem_rows",allClustRows);                    
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_mem_rows",allClustRows);                            
+        string clustMemDiff, clustSizeShow;
+        if(sdl->clustMemberNum > sdl->clustMemList.size()) {
+            clustMemDiff = NStr::NumericToString(sdl->clustMemberNum - sdl->clustMemList.size());            
+            clustSizeShow = "shown";            
+        }
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_size_show",clustSizeShow);
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_mem_diff",clustMemDiff);
     }
     int numTaxa = sdl->clustMemList.size() ? s_getNumTaxa(sdl->clustMemList) : 0;
     defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_member_num",NStr::NumericToString(sdl->clustMemList.size()));                    
