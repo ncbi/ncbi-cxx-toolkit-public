@@ -785,6 +785,7 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
         }
 
         if (bin_hdr.empty()) {
+	    try {
             x_GetFastaReaderDeflines(*bioseq,
                                      deflines,
                                      membbits,
@@ -793,6 +794,9 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                      false,
                                      parse_ids,
                                      long_ids);
+	      } catch ( const CSeqIdException&e ) {
+		//LOG_POST(Info << "x_GetFastaReaderDeflines " << e.GetMsg() );
+	    }
         }
 
         if(!s_UseFastaReaderDeflines(bioseq, deflines, long_ids)) {
