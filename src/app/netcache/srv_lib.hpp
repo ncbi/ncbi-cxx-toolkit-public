@@ -331,6 +331,9 @@ public:
     const string& GetDefaultHitID(void) { return m_hid; }
     CSharedHitId x_GetDefaultHitID(EDefaultHitIDFlags);
     bool x_IsSetDefaultHitID(void) const {return false;}
+    string GetDefaultClientIP(void) {
+        return "";
+    }
 private:
     string m_hid;
 };
