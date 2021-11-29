@@ -3932,7 +3932,12 @@ bool CCleanup::ConvertSrcFeatsToSrcDescs(CSeq_entry_Handle seh)
 
                 // remove feature
                 CSeq_feat_EditHandle feh(*p);
+                CSeq_annot_Handle ah = feh.GetAnnot(); 
                 feh.Remove();
+                if (CNewCleanup_imp::ShouldRemoveAnnot(*(ah.GetCompleteSeq_annot()))) {
+                    CSeq_annot_EditHandle aeh(ah);
+                    aeh.Remove();
+                }
 
                 any_change = true;
             }
