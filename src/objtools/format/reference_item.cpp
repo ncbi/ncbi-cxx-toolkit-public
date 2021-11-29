@@ -1406,19 +1406,7 @@ void CReferenceItem::ChangeMedlineAuthorsToISO( CRef<CPub> pub )
         return;
     }
 
-    // build our new authors list in here
-    CAuth_list::C_Names::TStd new_authors;
-
-    const CAuth_list::C_Names::TMl & ml_names = pub->GetAuthors().GetNames().GetMl();
-    ITERATE( CAuth_list::C_Names::TMl, ml_name_iter, ml_names ) {
-        string author_name = *ml_name_iter;
-        CRef<CAuthor> new_author = CAuthor::ConvertMlToStandard(author_name, true);
-        new_authors.push_back( new_author );
-    }
-    
-    copy( new_authors.begin(), 
-        new_authors.end(),
-        back_inserter( pub->SetArticle().SetAuthors().SetNames().SetStd() ) );
+    pub->SetArticle().SetAuthors().ConvertMlToStandard(true);
 }
 
 
