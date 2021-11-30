@@ -155,7 +155,6 @@ private:
 bool CFlat2AsnApp::x_OpenFiles(const CArgs& args, TConfig& config, IObjtoolsListener& listener)
 {
     Char      str[1000];
-    bool delin=false;
 
     m_InputFile = args["i"].AsString();
     if (m_InputFile == "stdin")
