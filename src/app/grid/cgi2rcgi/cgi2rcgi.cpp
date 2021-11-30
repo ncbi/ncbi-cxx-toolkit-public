@@ -231,6 +231,7 @@ struct SExceptionMessage
     string operator()(const string& what)
     {
         _ASSERT(m_Registry);
+        // Must correspond to TExceptionMessage
         auto message = m_Registry->GetString("CGI", "Exception_Message", "Some exception was thrown (not shown for safety reasons)");
         return message.empty() ? what : message;
     }
@@ -556,6 +557,11 @@ void CCgi2RCgiApp::Init()
 
     // Must correspond to TEnableVersionRequest
     config.Set("CGI", "EnableVersionRequest", "false");
+
+    // Must correspond to TServConn_ErrorOnUnexpectedReply
+    if (!config.HasEntry("netservice_api", "error_on_unexpected_reply")) {
+        config.Set("netservice_api", "error_on_unexpected_reply", "true");
+    }
 
     // Default value must correspond to SRCgiWait value
     m_RefreshDelay = config.GetInt(grid_cgi_section,

@@ -50,6 +50,7 @@ struct SExceptionMessage
     string operator()(const string& what)
     {
         _ASSERT(m_Registry);
+        // Must correspond to TExceptionMessage
         auto message = m_Registry->GetString("CGI", "Exception_Message", "Some exception was thrown (not shown for safety reasons)");
         return message.empty() ? what : message;
     }
@@ -193,6 +194,13 @@ bool CGridCgiApplication::IsCachingNeeded(const CCgiRequest& request) const
 
 void CGridCgiApplication::InitGridClient()
 {
+    auto& config = GetConfig();
+
+    // Must correspond to TServConn_ErrorOnUnexpectedReply
+    if (!config.HasEntry("netservice_api", "error_on_unexpected_reply")) {
+        config.Set("netservice_api", "error_on_unexpected_reply", "true");
+    }
+
     m_RefreshDelay = 
         GetConfig().GetInt("grid_cgi", "refresh_delay", 5, IRegistry::eReturn);
     m_FirstDelay = 

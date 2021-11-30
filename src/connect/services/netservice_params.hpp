@@ -77,6 +77,9 @@ NCBI_PARAM_DECL(bool, netservice_api, connection_data_logging);
 typedef NCBI_PARAM_TYPE(netservice_api, connection_data_logging)
     TServConn_ConnDataLogging;
 
+NCBI_PARAM_DECL(bool, netservice_api, error_on_unexpected_reply);
+typedef NCBI_PARAM_TYPE(netservice_api, error_on_unexpected_reply) TServConn_ErrorOnUnexpectedReply;
+
 NCBI_PARAM_DECL(bool, netservice_api, warn_on_unexpected_reply);
 typedef NCBI_PARAM_TYPE(netservice_api, warn_on_unexpected_reply) TServConn_WarnOnUnexpectedReply;
 
