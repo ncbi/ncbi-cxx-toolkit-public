@@ -136,9 +136,9 @@ int CTestApplication::Run()
     CRef<CGBDataLoader> pLoader(CGBDataLoader::RegisterInObjectManager(*pOm)
         .GetLoader());
 
-    for ( TIntId gi = 18565540;  gi < 18565650; gi++ ) {
+    for ( TGi gi = GI_CONST(18565540);  gi < GI_CONST(18565650); gi++ ) {
         CSeq_id id;
-        id.SetGi(GI_FROM(TIntId, gi));
+        id.SetGi(gi);
         CConstRef<CSeqref> sr = pLoader->GetSatSatkey(id);
         if ( !sr ) {
             ERR_POST(Fatal << "Gi (" << gi << "):: not found in ID");
@@ -149,11 +149,11 @@ int CTestApplication::Run()
         }
     }
 
-    for ( TIntId gi = 18565530;  gi < 18565550; gi++ ) {
+    for ( TGi gi = GI_CONST(18565530);  gi < GI_CONST(18565550); gi++ ) {
         CScope scope(*pOm);
         scope.AddDefaults();
         CSeq_id id;
-        id.SetGi(GI_FROM(TIntId, gi));
+        id.SetGi(gi);
         CBioseq_Handle h = scope.GetBioseqHandle(id);
         if ( !h ) {
             ERR_POST(Fatal << "Gi (" << gi << "):: not found in ID");
@@ -180,7 +180,7 @@ int CTestApplication::Run()
                 LOG_POST("Data: " << NStr::PrintableString(vs.substr(0, 40)));
             }
             CRef<CSeq_loc> loc(new CSeq_loc);
-            loc->SetWhole().SetGi(GI_FROM(TIntId, gi));
+            loc->SetWhole().SetGi(gi);
             int fcount = 0;
             {{ // Creating a block to destroy the iterator after using it
                 CFeat_CI feat_it1(scope, *loc, CSeqFeatData::e_Cdregion);
