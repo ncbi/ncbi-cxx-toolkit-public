@@ -784,18 +784,151 @@ BOOST_AUTO_TEST_CASE(Test_FixPub)
          } \
        }";
 
-   CPub pub;
-   CNcbiIstrstream input(TEST_PUB);
+    static const string TEST_PUB_GOOD =
+R"(Pub ::= equiv {
+  pmid 17659802,
+  article {
+    title {
+      name "Genetic diversity and reassortments among Akabane virus field
+ isolates."
+    },
+    authors {
+      names std {
+        {
+          name name {
+            last "Kobayashi",
+            initials "T."
+          },
+          affil str "Division 1, Second Production Department, the
+ Chemo-Sero-Therapeutic Research Institute, 1-6-1 Okubo, Kumamoto 860-8568,
+ Japan."
+        },
+        {
+          name name {
+            last "Yanase",
+            initials "T."
+          }
+        },
+        {
+          name name {
+            last "Yamakawa",
+            initials "M."
+          }
+        },
+        {
+          name name {
+            last "Kato",
+            initials "T."
+          }
+        },
+        {
+          name name {
+            last "Yoshida",
+            initials "K."
+          }
+        },
+        {
+          name name {
+            last "Tsuda",
+            initials "T."
+          }
+        }
+      }
+    },
+    from journal {
+      title {
+        iso-jta "Virus Res",
+        ml-jta "Virus Res",
+        issn "0168-1702",
+        name "Virus research"
+      },
+      imp {
+        date std {
+          year 2007,
+          month 12
+        },
+        volume "130",
+        issue "1-2",
+        pages "162-171",
+        language "eng",
+        pubstatus ppublish,
+        history {
+          {
+            pubstatus received,
+            date std {
+              year 2007,
+              month 1,
+              day 15
+            }
+          },
+          {
+            pubstatus revised,
+            date std {
+              year 2007,
+              month 6,
+              day 5
+            }
+          },
+          {
+            pubstatus accepted,
+            date std {
+              year 2007,
+              month 6,
+              day 11
+            }
+          },
+          {
+            pubstatus pubmed,
+            date std {
+              year 2007,
+              month 7,
+              day 31,
+              hour 9,
+              minute 0
+            }
+          },
+          {
+            pubstatus medline,
+            date std {
+              year 2008,
+              month 1,
+              day 23,
+              hour 9,
+              minute 0
+            }
+          },
+          {
+            pubstatus other,
+            date std {
+              year 2007,
+              month 7,
+              day 31,
+              hour 9,
+              minute 0
+            }
+          }
+        }
+      }
+    },
+    ids {
+      pubmed 17659802,
+      pii "S0168-1702(07)00221-3",
+      doi "10.1016/j.virusres.2007.06.007"
+    }
+  }
+})";
 
-   input >> MSerial_AsnText >> pub;
+    CPub pub, pub_good;
+    CNcbiIstrstream(TEST_PUB) >> MSerial_AsnText >> pub;
+    CNcbiIstrstream(TEST_PUB_GOOD) >> MSerial_AsnText >> pub_good;
 
-   CPubFix pub_fixing(true, true, true, nullptr);
-   pub_fixing.FixPub(pub);
+    CPubFix pub_fixing(true, true, true, nullptr);
+    pub_fixing.FixPub(pub);
+    BOOST_CHECK_EQUAL(pub.Equals(pub_good), true);
 
+    pub_fixing.FixPub(pub);
+    BOOST_CHECK_EQUAL(pub_good.Equals(pub), true);
 
-   // cout << MSerial_AsnText << pub;
-
-   // No any tests for now. There will be in the future
 }
 
 
@@ -924,16 +1057,185 @@ BOOST_AUTO_TEST_CASE(Test_FixPubPreserveOriginalListOfAuthors)
            } \
          }";
 
-    CPub pub;
-    CNcbiIstrstream input(TEST_PUB);
+    static const string TEST_PUB_GOOD =
+R"(Pub ::= equiv {
+  pmid 1302004,
+  article {
+    title {
+      name "A survey of expressed genes in Caenorhabditis elegans."
+    },
+    authors {
+      names std {
+        {
+          name name {
+            last "Waterston",
+            initials "R."
+          }
+        },
+        {
+          name name {
+            last "Martin",
+            initials "C."
+          }
+        },
+        {
+          name name {
+            last "Craxton",
+            initials "M."
+          }
+        },
+        {
+          name name {
+            last "Huynh",
+            initials "C."
+          }
+        },
+        {
+          name name {
+            last "Coulson",
+            initials "A."
+          }
+        },
+        {
+          name name {
+            last "Hillier",
+            initials "L."
+          }
+        },
+        {
+          name name {
+            last "Durbin",
+            initials "R.K."
+          }
+        },
+        {
+          name name {
+            last "Green",
+            initials "P."
+          }
+        },
+        {
+          name name {
+            last "Shownkeen",
+            initials "R."
+          }
+        },
+        {
+          name name {
+            last "Halloran",
+            initials "N."
+          }
+        },
+        {
+          name name {
+            last "Hawkins",
+            initials "T."
+          }
+        },
+        {
+          name name {
+            last "Wilson",
+            initials "R."
+          }
+        },
+        {
+          name name {
+            last "Berks",
+            initials "M."
+          }
+        },
+        {
+          name name {
+            last "Du",
+            initials "Z."
+          }
+        },
+        {
+          name name {
+            last "Thomas",
+            initials "K."
+          }
+        },
+        {
+          name name {
+            last "Thierry-Mieg",
+            initials "J."
+          }
+        },
+        {
+          name name {
+            last "Sulston",
+            initials "J."
+          }
+        }
+      }
+    },
+    from journal {
+      title {
+        iso-jta "Nat Genet",
+        ml-jta "Nat Genet",
+        issn "1061-4036",
+        name "Nature genetics"
+      },
+      imp {
+        date std {
+          year 1992,
+          month 5
+        },
+        volume "1",
+        issue "2",
+        pages "114-123",
+        language "eng",
+        pubstatus ppublish,
+        history {
+          {
+            pubstatus pubmed,
+            date std {
+              year 1992,
+              month 5,
+              day 1
+            }
+          },
+          {
+            pubstatus medline,
+            date std {
+              year 1992,
+              month 5,
+              day 1,
+              hour 0,
+              minute 1
+            }
+          },
+          {
+            pubstatus other,
+            date std {
+              year 1992,
+              month 5,
+              day 1,
+              hour 0,
+              minute 0
+            }
+          }
+        }
+      }
+    },
+    ids {
+      pubmed 1302004,
+      doi "10.1038/ng0592-114"
+    }
+  }
+}
+)";
 
-    input >> MSerial_AsnText >> pub;
+    CPub pub, pub_good;
+    CNcbiIstrstream(TEST_PUB) >> MSerial_AsnText >> pub;
+    CNcbiIstrstream(TEST_PUB_GOOD) >> MSerial_AsnText >> pub_good;
 
     CPubFix pub_fixing(true, true, true, nullptr);
     pub_fixing.FixPub(pub);
+    BOOST_CHECK_EQUAL(pub.Equals(pub_good), true);
 
+    pub_fixing.FixPub(pub);
+    BOOST_CHECK_EQUAL(pub_good.Equals(pub), true);
 
-    // cout << MSerial_AsnText << pub;
-
-    // No any tests for now. There will be in the future
 }
