@@ -9553,7 +9553,6 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
         !seq.GetDescr().IsSet()) {
         return;
     }
-    auto& data = seq.SetDescr().Set();
 
     x_SetMolInfoTechFromGenBankBlock(seq.SetDescr());
     bool is_patent = false;
