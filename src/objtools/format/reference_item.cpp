@@ -705,7 +705,9 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
             if( new_pub ) {
                 // authors come back in a weird format that we need
                 // to convert to ISO
-                ChangeMedlineAuthorsToISO(new_pub);
+                if (new_pub->IsArticle() && new_pub->IsSetAuthors()) {
+                    new_pub->SetArticle().SetAuthors().ConvertMlToStandard(true);
+                }
 
                 new_pubs.push_back(new_pub);
             }
@@ -1395,18 +1397,6 @@ void CReferenceItem::x_CapitalizeTitleIfNecessary()
                 break;
         }
     }
-}
-
-void CReferenceItem::ChangeMedlineAuthorsToISO( CRef<CPub> pub )
-{
-    // leave early if it doesn't need to be changed
-    if( ! pub || ! pub->IsArticle() || ! pub->IsSetAuthors() || ! pub->GetAuthors().IsSetNames() ||
-        ! pub->GetAuthors().GetNames().IsMl() )
-    {
-        return;
-    }
-
-    pub->SetArticle().SetAuthors().ConvertMlToStandard(true);
 }
 
 

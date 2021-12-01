@@ -190,8 +190,6 @@ public:
     // format affiliation
     static void FormatAffil(const CAffil& affil, string& result, bool gen_sub = false);
 
-    static void ChangeMedlineAuthorsToISO( CRef<CPub> pub );
-
     virtual EItem GetItemType(void) const;
 private:
  
