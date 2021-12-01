@@ -1400,6 +1400,18 @@ void CReferenceItem::x_CapitalizeTitleIfNecessary()
 }
 
 
+void CReferenceItem::ChangeMedlineAuthorsToISO(CRef<CPub> pub)
+{
+    // leave early if it doesn't need to be changed
+    if (!pub || !pub->IsArticle() || !pub->IsSetAuthors() || !pub->GetAuthors().IsSetNames() ||
+        !pub->GetAuthors().GetNames().IsMl()) {
+        return;
+    }
+
+    pub->SetArticle().SetAuthors().ConvertMlToStandard(true);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Genbank Format Specific
