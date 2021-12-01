@@ -601,17 +601,13 @@ void CRemoteUpdater::ConvertToStandardAuthors(CAuth_list& auth_list)
         return;
     }
 
-    if (auth_list.GetNames().IsMl()) {
-        auth_list.ConvertMlToStandard();
-    } else if (auth_list.GetNames().IsStd()) {
-        list< CRef<CAuthor> > authors_with_affil;
-        NON_CONST_ITERATE(CAuth_list::TNames::TStd, it, auth_list.SetNames().SetStd()) {
-            if ((*it)->GetName().IsMl()) {
-                CRef<CAuthor> new_auth = CAuthor::ConvertMlToStandard((*it)->GetName().GetMl());
-                (*it)->SetName(new_auth->SetName());
-            }
-            if ((*it)->IsSetAffil()) {
-                authors_with_affil.push_back(*it);
+    auth_list.ConvertMlToISO(false);
+
+    if (auth_list.GetNames().IsStd()) {
+        list<CRef<CAuthor>> authors_with_affil;
+        for (CRef<CAuthor>& it : auth_list.SetNames().SetStd()) {
+            if (it->IsSetAffil()) {
+                authors_with_affil.push_back(it);
             }
         }
 
