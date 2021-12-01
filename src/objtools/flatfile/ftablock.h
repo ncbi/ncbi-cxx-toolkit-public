@@ -111,15 +111,17 @@ typedef struct protein_block {
 
 } ProtBlk, *ProtBlkPtr;
 
-typedef struct _locus_cont {
-    Int4 bases;
-    Int4 bp;
-    Int4 strand;
-    Int4 molecule;
-    Int4 topology;
-    Int4 div;
-    Int4 date;
-} LocusCont, *LocusContPtr;
+struct LocusCont {
+    Int4 bases = 0;
+    Int4 bp = 0;
+    Int4 strand = 0;
+    Int4 molecule = 0;
+    Int4 topology = 0;
+    Int4 div = 0;
+    Int4 date = 0;
+};
+
+using LocusContPtr = LocusCont*;
 
 
 typedef struct _gap_feats {
@@ -179,94 +181,93 @@ using XmlIndexPtr = XmlIndex*;
 typedef std::list<std::string> TKeywordList;
 
 struct Indexblk {
-    Char               acnum[200];      /* accession num */
-    Int2               vernum;          /* version num */
-    size_t             offset;          /* byte-offset of in the flatfile at
-                                           which the entry starts */
-    Char               locusname[200];  /* locus name */
-    Char               division[4];     /* division code */
-    size_t             bases;           /* basepair length of the entry */
-    Uint2              segnum;          /* the number of the entry w/i a
-                                           segment set */
-    Uint2              segtotal;        /* total number of members in
-                                           segmented set to which this
-                                           entry belongs */
-    Char               blocusname[200]; /* base locus name s.t. w/o tailing
-                                           number */
-    size_t             linenum;         /* line number at which the entry
-                                           starts */
-    Uint1              drop;            /* 1 if the accession should be
-                                           dropped, otherwise 0 */
-    size_t             len;             /* total length (or sizes in bytes)
-                                           of the entry */
+    Char               acnum[200];          /* accession num */
+    Int2               vernum = 0;          /* version num */
+    size_t             offset = 0;          /* byte-offset of in the flatfile at
+                                               which the entry starts */
+    Char               locusname[200];      /* locus name */
+    Char               division[4];         /* division code */
+    size_t             bases = 0;           /* basepair length of the entry */
+    Uint2              segnum = 0;          /* the number of the entry w/i a
+                                               segment set */
+    Uint2              segtotal = 0;        /* total number of members in
+                                               segmented set to which this
+                                               entry belongs */
+    Char               blocusname[200];     /* base locus name s.t. w/o tailing
+                                               number */
+    size_t             linenum = 0;         /* line number at which the entry
+                                               starts */
+    Uint1              drop = 0;            /* 1 if the accession should be
+                                               dropped, otherwise 0 */
+    size_t             len = 0;             /* total length (or sizes in bytes)
+                                               of the entry */
 
     CRef<objects::CDate_std> date; /* the record's entry-date or last
                                                   update's date */
 
     CRef<objects::CPatent_seq_id> psip; /* patent reference */
 
-    bool               EST;             /* special EST entries */
-    bool               STS;             /* special STS entries */
-    bool               GSS;             /* special Genome servey entries */
-    bool               HTC;             /* high throughput cDNA */
-    Int2               htg;             /* special HTG [0,1,2,3] entries */
-    bool               is_contig;       /* TRUE if entry has CONTIG line,
-                                           otherwise FALSE */
-    bool               is_mga;          /* TRUE if entry has MGA line,
-                                           otherwise FALSE */
-    bool               origin;          /* TRUE if sequence is present */
-    bool               is_pat;          /* TRUE if accession prefix is
-                                           patented and matches source.
-                                           FALSE - otherwise. */
-    bool               is_wgs;
-    bool               is_tpa;
-    bool               is_tsa;
-    bool               is_tls;
-    bool               is_tpa_wgs_con;  /* TRUE if "is_contig", "is_wgs" and
-                                           "is_tpa" are TRUE */
-    bool               tsa_allowed;
+    bool               EST = false;             /* special EST entries */
+    bool               STS = false;             /* special STS entries */
+    bool               GSS = false;             /* special Genome servey entries */
+    bool               HTC = false;             /* high throughput cDNA */
+    Int2               htg = 0;                 /* special HTG [0,1,2,3] entries */
+    bool               is_contig = false;       /* TRUE if entry has CONTIG line,
+                                                   otherwise FALSE */
+    bool               is_mga = false;          /* TRUE if entry has MGA line,
+                                                   otherwise FALSE */
+    bool               origin = false;          /* TRUE if sequence is present */
+    bool               is_pat = false;          /* TRUE if accession prefix is
+                                                   patented and matches source.
+                                                   FALSE - otherwise. */
+    bool               is_wgs = false;
+    bool               is_tpa = false;
+    bool               is_tsa = false;
+    bool               is_tls = false;
+    bool               is_tpa_wgs_con = false;  /* TRUE if "is_contig", "is_wgs" and
+                                                  "is_tpa" are TRUE */
+    bool               tsa_allowed = false;
     LocusCont          lc;
-    string            moltype;         /* the value of /mol_type qual */
-    GapFeatsPtr        gaps;
+    string             moltype;         /* the value of /mol_type qual */
+    GapFeatsPtr        gaps = nullptr;
 
-    TokenBlkPtr        secaccs;
-    XmlIndexPtr        xip;
-    bool               embl_new_ID;
-    bool               env_sample_qual; /* TRUE if at least one source
-                                           feature has /environmental_sample
-                                           qualifier */
-    bool               is_prot;
-    string            organism;        /* The value of /organism qualifier */
-    Int4               taxid;           /* The value gotten from source feature
-                                           /db_xref qualifier if any */
-    bool               no_gc_warning;   /* If TRUE then suppress
-                                           ERR_SERVER_GcFromSuppliedLineage
-                                           WARNING message */
-    size_t             qsoffset;
-    size_t             qslength;
-    Int4               wgs_and_gi;      /* 01 - has GI, 02 - WGS contig,
-                                           03 - both above */
-    bool               got_plastid;     /* Set to TRUE if there is at least
-                                           one /organelle qual beginning
-                                           with "plastid" */
-    string               wgssec;     /* Reserved buffer for WGS master or
-                                           project accession as secondary */
-    int               gc_genomic;      /* Genomic Genetic code from OrgRef */
-    int               gc_mito;         /* Mitochondrial Genetic code */
-    TKeywordList       keywords;        /* All keywords from a flat record */
-    bool               assembly;        /* TRUE for TPA:assembly in
-                                           KEYWORDS line */
-    bool               specialist_db;   /* TRUE for TPA:specialist_db in
-                                           KEYWORDS line */
-    bool               inferential;     /* TRUE for TPA:inferential in
-                                           KEYWORDS line */
-    bool               experimental;    /* TRUE for TPA:experimental in
-                                           KEYWORDS line */
+    TokenBlkPtr        secaccs = nullptr;
+    XmlIndexPtr        xip = nullptr;
+    bool               embl_new_ID = false;
+    bool               env_sample_qual = false; /* TRUE if at least one source
+                                                   feature has /environmental_sample
+                                                   qualifier */
+    bool               is_prot = false;
+    string             organism;                /* The value of /organism qualifier */
+    Int4               taxid = 0;               /* The value gotten from source feature
+                                                /db_xref qualifier if any */
+    bool               no_gc_warning = false;   /* If TRUE then suppress
+                                                   ERR_SERVER_GcFromSuppliedLineage
+                                                   WARNING message */
+    size_t             qsoffset = 0;
+    size_t             qslength = 0;
+    Int4               wgs_and_gi = 0;          /* 01 - has GI, 02 - WGS contig,
+                                                   03 - both above */
+    bool               got_plastid = false;     /* Set to TRUE if there is at least
+                                                   one /organelle qual beginning
+                                                   with "plastid" */
+    string             wgssec;                  /* Reserved buffer for WGS master or
+                                                   project accession as secondary */
+    int                gc_genomic = 0;          /* Genomic Genetic code from OrgRef */
+    int                gc_mito = 0;             /* Mitochondrial Genetic code */
+    TKeywordList       keywords;                /* All keywords from a flat record */
+    bool               assembly = false;        /* TRUE for TPA:assembly in
+                                                   KEYWORDS line */
+    bool               specialist_db = false;   /* TRUE for TPA:specialist_db in
+                                                   KEYWORDS line */
+    bool               inferential = false;     /* TRUE for TPA:inferential in
+                                                   KEYWORDS line */
+    bool               experimental = false;    /* TRUE for TPA:experimental in
+                                                   KEYWORDS line */
     string            submitter_seqid;
-    Parser *ppp;
+    Parser *ppp = nullptr;
 
     Indexblk();
-
 };
     
 using IndexblkPtr = Indexblk*;
