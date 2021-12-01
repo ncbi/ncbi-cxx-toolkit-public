@@ -176,30 +176,14 @@ static void MedlineToISO(objects::CCit_art& cit_art)
     {
         if (auths.GetNames().IsMl())            /* ml style names */
         {
-            objects::CAuth_list::C_Names& old_names = auths.SetNames();
-            CRef<objects::CAuth_list::C_Names> new_names(new objects::CAuth_list::C_Names);
-
-            ITERATE(objects::CAuth_list::C_Names::TMl, name, old_names.GetMl())
-            {
-                CRef<CAuthor> author = get_std_auth(name->c_str(), ML_REF);
-                if (author.Empty())
-                    continue;
-
-                new_names->SetStd().push_back(author);
-            }
-
-            auths.ResetNames();
-            auths.SetNames(*new_names);
+            auths.ConvertMlToStandard(true);
         }
         else if (auths.GetNames().IsStd())       /* std style names */
         {
-            NON_CONST_ITERATE(objects::CAuth_list::C_Names::TStd, auth, auths.SetNames().SetStd())
+            for (CRef<CAuthor>& auth : auths.SetNames().SetStd())
             {
-                if (!(*auth)->IsSetName() || !(*auth)->GetName().IsMl())
-                    continue;
-
-                std::string cur_name = (*auth)->GetName().GetMl();
-                GetNameStdFromMl((*auth)->SetName().SetName(), cur_name.c_str());
+                if (auth->IsSetName() && auth->GetName().IsMl())
+                    auth = CAuthor::ConvertMlToStandard(*auth, true);
             }
         }
     }
