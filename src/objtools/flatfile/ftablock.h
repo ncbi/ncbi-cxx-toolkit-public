@@ -178,7 +178,7 @@ using XmlIndexPtr = XmlIndex*;
 
 typedef std::list<std::string> TKeywordList;
 
-typedef struct indexblk_struct {
+struct Indexblk {
     Char               acnum[200];      /* accession num */
     Int2               vernum;          /* version num */
     size_t             offset;          /* byte-offset of in the flatfile at
@@ -229,7 +229,6 @@ typedef struct indexblk_struct {
     string            moltype;         /* the value of /mol_type qual */
     GapFeatsPtr        gaps;
 
-//    list<string>       secondary_accessions;
     TokenBlkPtr        secaccs;
     XmlIndexPtr        xip;
     bool               embl_new_ID;
@@ -266,9 +265,11 @@ typedef struct indexblk_struct {
     string            submitter_seqid;
     Parser *ppp;
 
-    indexblk_struct();
+    Indexblk();
 
-} Indexblk, *IndexblkPtr;
+};
+    
+using IndexblkPtr = Indexblk*;
 
 //  ============================================================================
 struct FTAOperon

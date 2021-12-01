@@ -729,9 +729,9 @@ static bool fta_check_embl_moltype(char* str)
 }
 
 /*********************************************************
-indexblk_struct constructor
+Indexblk constructor
 **********************************************************/
-indexblk_struct::indexblk_struct() :
+Indexblk::Indexblk() :
     vernum(0),
     offset(0),
     bases(0),
@@ -769,6 +769,7 @@ indexblk_struct::indexblk_struct() :
     got_plastid(false),
     gc_genomic(0),
     gc_mito(0),
+    assembly(false),
     specialist_db(false),
     inferential(false),
     experimental(false),
