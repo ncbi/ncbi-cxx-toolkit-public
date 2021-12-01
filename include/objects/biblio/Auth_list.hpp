@@ -65,6 +65,7 @@ public:
     size_t GetNameCount(void) const;
 
     void ConvertMlToStandard(bool normalize_suffix=false);
+    void ConvertMlToISO(bool normalize_suffix);
     bool SameCitation(const CAuth_list& other) const;
 
 protected:

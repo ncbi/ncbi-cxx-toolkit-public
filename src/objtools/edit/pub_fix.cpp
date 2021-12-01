@@ -156,20 +156,7 @@ namespace fix_pub
 void MedlineToISO(CCit_art& cit_art)
 {
     if (cit_art.IsSetAuthors()) {
-
-        CAuth_list& auths = cit_art.SetAuthors();
-        if (auths.IsSetNames()) {
-            if (auths.GetNames().IsMl()) {
-                auths.ConvertMlToStandard();
-            }
-            else if (auths.GetNames().IsStd()) {
-                for (auto& auth : auths.SetNames().SetStd()) {
-                    if (auth->IsSetName() && auth->GetName().IsMl()) {
-                        auth = CAuthor::ConvertMlToStandard(*auth);
-                    }
-                }
-            }
-        }
+        cit_art.SetAuthors().ConvertMlToISO(false);
     }
 
     if (!cit_art.IsSetFrom() || !cit_art.GetFrom().IsJournal())

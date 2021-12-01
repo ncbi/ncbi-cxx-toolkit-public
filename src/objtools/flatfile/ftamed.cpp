@@ -171,22 +171,7 @@ static void MedlineToISO(objects::CCit_art& cit_art)
 {
     bool     is_iso;
 
-    objects::CAuth_list& auths = cit_art.SetAuthors();
-    if (auths.IsSetNames())
-    {
-        if (auths.GetNames().IsMl())            /* ml style names */
-        {
-            auths.ConvertMlToStandard(true);
-        }
-        else if (auths.GetNames().IsStd())       /* std style names */
-        {
-            for (CRef<CAuthor>& auth : auths.SetNames().SetStd())
-            {
-                if (auth->IsSetName() && auth->GetName().IsMl())
-                    auth = CAuthor::ConvertMlToStandard(*auth, true);
-            }
-        }
-    }
+    cit_art.SetAuthors().ConvertMlToISO(true);
 
     if (!cit_art.IsSetFrom() || !cit_art.GetFrom().IsJournal())
         return;
