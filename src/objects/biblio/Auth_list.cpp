@@ -201,11 +201,11 @@ void CAuth_list::ConvertMlToISO(bool normalize_suffix)
 {
     if (IsSetNames()) {
         if (GetNames().IsMl()) {
-            ConvertMlToStandard(true);
+            ConvertMlToStandard(normalize_suffix);
         } else if (GetNames().IsStd()) {
             for (CRef<CAuthor>& auth : SetNames().SetStd()) {
                 if (auth->IsSetName() && auth->GetName().IsMl())
-                    auth = CAuthor::ConvertMlToStandard(*auth, true);
+                    auth = CAuthor::ConvertMlToStandard(*auth, normalize_suffix);
             }
         }
     }
