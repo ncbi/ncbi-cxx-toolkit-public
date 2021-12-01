@@ -5907,7 +5907,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
     }
 
     if (!seq_id) {
-        if (ibp->acnum && !NStr::IsBlank(ibp->acnum)) {
+        if (!NStr::IsBlank(ibp->acnum)) {
             seq_id = Ref(new CSeq_id(CSeq_id::e_Local, ibp->acnum));
         }
         else if (pp->mode == Parser::EMode::Relaxed) {
