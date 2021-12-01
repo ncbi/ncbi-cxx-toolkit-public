@@ -22,6 +22,15 @@ done
 
 export GENBANK_LOADER_PSG=t
 base_dir=`pwd`
+d=`date +%Y%m%d-%H%M%S`
+res_dir=$base_dir/results.$d
+mkdir $res_dir
+error=$?
+if test $error -ne 0; then
+    echo "Error: can not create output directory $res_dir"
+    exit $error
+fi
+cd $res_dir
 
 get_suffix() {
     srv=`echo $1 | sed 's/[\:\/]/_/g'`
@@ -71,12 +80,15 @@ do_check() {
             export PSG_LOADER_SERVICE_NAME=$service
             rm -f check.sh.log
             echo "\n\n" | make check_r
-            log_file=`echo $proj | sed 's/\//_/g'`
-            fname=$base_dir/$bld.$srv.$log_file.tmp
-            mv check.sh.log $fname
-            cat $fname >> $base_dir/perf_view.$bld$srv
+            cat check.sh.log >> $res_dir/perf_view.$bld$srv
+            grep '^ERR\|^TO' check.sh.log >& /dev/null
+            if test $? -eq 0; then
+                out_dir=$res_dir/test_out_$bld$srv
+                mkdir $out_dir
+                mv *.test_out* $out_dir
+            fi
         done
-        cd $base_dir
+        cd $res_dir
         rm -rf ./trunk
     done
 }
@@ -110,7 +122,12 @@ for bld in $builds; do
         fi
         echo "Service $service version=$ver"
         tag=$bld$ver$sfx
-        mv $base_dir/perf_view.$bld$srv $base_dir/perf_view.$tag
+        mv $res_dir/perf_view.$bld$srv $res_dir/perf_view.$tag
+        out_dir=$res_dir/test_out_$bld$srv
+        if test -d $out_dir; then
+            mv $out_dir $res_dir/$tag
+            echo Errors detected, test output saved to $res_dir/$tag
+        fi
         all_tags="$all_tags $tag"
         all_services="$all_services $ver$sfx"
     done
@@ -121,7 +138,7 @@ error=$?
 if test $error -ne 0; then
     exit $error
 fi
-cd $base_dir
+cd $res_dir
 
 run_perf_view all $all_tags
 for s in $all_services; do
