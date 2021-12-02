@@ -124,7 +124,7 @@ public:
 	    string fullDefline;            //defline, containing all seq defines (PIG for example)
         TTaxId taxid;                  //taxid
         string  textSeqID;             //Text Seq ID 
-        int     clustMemberNum;        //Number of cluster members
+        int     clustMemberNum;        //Number of cluster members  
         int     clustTaxaNum;          //Number of cluster taxa
         vector <SClusterMemberInfo>    clustMemList;        
     };
@@ -631,11 +631,13 @@ protected:
     ///Format PSI blat related data
     string x_FormatPsi(SDeflineInfo* sdl, bool &first_new);
     string x_FormatClusterData(SDeflineInfo* sdl, string defline);
+    string x_FormatClusterDataTxt(SDeflineInfo* sdl, string defline);
     ///Display defline for table output using templates
     ///
     void x_DisplayDeflineTableTemplate(CNcbiOstream & out);
     void x_DisplayDeflineTableTemplateText(CNcbiOstream & out);
     void x_DisplayDeflineTableTemplateCSV(CNcbiOstream & out);
+    string x_FormatDeflineTableLineText(SDeflineInfo* sdl,SScoreInfo* iter);    
 
     void x_InitFormattingInfo(SScoreInfo* sci);    
     //For internal test
