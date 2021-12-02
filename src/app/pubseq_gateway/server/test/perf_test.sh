@@ -51,7 +51,7 @@ check_duplicate_services() {
             s2=$service
             v2=$ver
             if [ "$v1" = "$v2" ]; then
-                echo "Error: services $s1 and $s2 both have version $v1, no suffix provided"
+                echo "Error: services $s1 and $s2 both have version $v1 and the same suffix"
                 exit 1
             fi
         done
