@@ -70,6 +70,11 @@ CDiagContext_Extra CPerfLogger::Post(int         status,
                                      CTempString resource,
                                      CTempString status_msg)
 {
+    CTime now = GetFastLocalTime();
+    if ( m_FirstStartTime.IsEmpty() ) {
+        m_FirstStartTime = now;
+        m_LastStartTime = m_FirstStartTime;
+    }
     Suspend();
     if ( !x_CheckValidity("Post")  ||  !CPerfLogger::IsON() ) {
         Discard();
@@ -84,10 +89,14 @@ CDiagContext_Extra CPerfLogger::Post(int         status,
     if ( !status_msg.empty() ) {
         args.push_back(SDiagMessage::TExtraArg("status_msg", status_msg));
     }
-    if ( m_StartTime.IsEmpty() ) m_StartTime = GetFastLocalTime();
+    double elapsed = m_Elapsed + m_Adjustment;
+    CTime start = m_FirstStartTime - CTimeSpan(m_Adjustment);
+    if ( m_StopWatch ) {
+        elapsed = m_StopWatch->Elapsed() + m_Adjustment;
+        start = now - CTimeSpan(elapsed);
+    }
     args.push_back(SDiagMessage::TExtraArg("perf_logger_start",
-        m_StartTime.AsString("Y-M-DTh:m:s.rZ")));
-    double elapsed = m_StopWatch->Elapsed() + m_Adjustment;
+        start.AsString("Y-M-DTh:m:s.rZ")));
     CDiagContext_Extra extra = g_PostPerf((int)status,
         elapsed < 0.0 ? 0.0 : elapsed, args);
     Discard();
