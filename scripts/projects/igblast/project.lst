@@ -49,6 +49,7 @@ util/impl$
 util/qparse$
 util/lmdb$
 util/lmdbxx$
+util/profile
 objtools$
 objtools/alnmgr$
 objtools/readers$
@@ -68,6 +69,7 @@ objtools/format/items$
 objtools/align_format
 objtools/logging$
 objtools/pubseq_gateway
+objtools/eutils/api
 dbapi$
 dbapi/driver$
 dbapi/cache$
