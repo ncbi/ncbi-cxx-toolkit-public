@@ -1733,10 +1733,8 @@ void GetSequenceOfKeywords(const DataBlk& entry, Int2 type, Int2 col_data,
 
         if (std::find(keywords.begin(), keywords.end(), kw) == keywords.end())
             keywords.push_back(kw);
-        
-        if (kw) {
-            MemFree(kw);
-        }
+
+        MemFree(kw);
     }
 
     MemFree(kwstr);
