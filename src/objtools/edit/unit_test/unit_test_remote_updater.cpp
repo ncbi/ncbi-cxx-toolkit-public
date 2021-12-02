@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
 {
     CRef<CMLAClient> pMLAClient(new CMLAClient_THROW<eError_val_cannot_connect_pmdb>());
     auto pDesc = s_CreateDescriptor();
-    CRemoteUpdater updater;
+    CRemoteUpdater updater(nullptr);
     {
         updater.SetMLAClient(*pMLAClient);
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
@@ -146,19 +146,6 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
 
     pMLAClient.Reset(new CMLAClient_THROW<eError_val_not_found>());
     {
-        updater.SetMLAClient(*pMLAClient);
-        string expectedMsg = "Failed to retrieve publication for PMID 1234. "
-            "CMLAClient : not-found";
-        BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc),
-                CException,
-                CCheckMsg(expectedMsg));
-
-        BOOST_CHECK_THROW(updater.UpdatePubReferences(*pDesc), CException);
-    }
-
-
-    {
-        CRemoteUpdater updater(nullptr);
         updater.SetMLAClient(*pMLAClient);
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "CMLAClient : not-found";
