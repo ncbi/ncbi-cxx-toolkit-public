@@ -154,21 +154,18 @@ public:
     ///   the stopwatch, only the printed value is adjusted.
     void Adjust(CTimeSpan timespan);
 
-    /// Get time of the first call to Start(). Returns empty value if the
-    /// logger was never actually started.
-    const CTime& GetStartTime(void) const { return m_StartTime; }
-
 private:
     bool x_CheckValidity(const CTempString& err_msg) const;
     friend class CPerfLogGuard;
 
 private:
-    unique_ptr<CStopWatch> m_StopWatchGuard; // Internal timer if auto-created.
     CStopWatch*            m_StopWatch;      // Timer (internal or provided by user)
     CStopWatch::EStart     m_TimerState;     // Internal timer state to save cycles
     bool                   m_IsDiscarded;    // TRUE if Post() or Discard() is already called
     double                 m_Adjustment;     // Accumulated elapsed time adjustment
-    CTime                  m_StartTime;      // Time of the first start.
+    double                 m_Elapsed;        // Accumulated elapsed time
+    CTime                  m_FirstStartTime; // Time of the first start
+    CTime                  m_LastStartTime;  // Time of the last start
 };
 
 
@@ -301,6 +298,9 @@ public:
     /// info with status 500.
     ~CPerfLogGuard();
 
+    /// Access logger directly.
+    CPerfLogger& GetLogger(void) { return m_Logger; }
+
 private:
     CPerfLogger              m_Logger;
     string                   m_Resource;
@@ -324,10 +324,10 @@ private:
 inline
 CPerfLogger::CPerfLogger(EStart state)
 {
-    m_StopWatchGuard.reset(new CStopWatch);
-    m_StopWatch = m_StopWatchGuard.get();
+    m_StopWatch = nullptr;
     m_IsDiscarded = false;
     m_Adjustment = 0.0;
+    m_Elapsed = 0.0;
     m_TimerState  = CStopWatch::eStop;
     if ( state == eStart ) {
         Start();
@@ -341,6 +341,7 @@ CPerfLogger::CPerfLogger(CStopWatch& stopwatch, EStart state)
     m_StopWatch = &stopwatch;
     m_IsDiscarded = false;
     m_Adjustment = 0.0;
+    m_Elapsed = 0.0;
     m_TimerState  = CStopWatch::eStop;
     if ( state == eStart ) {
         Start();
@@ -359,10 +360,15 @@ void CPerfLogger::Start()
         return;
     }
     if ( CPerfLogger::IsON() ) {
-        if ( m_StartTime.IsEmpty() ) {
-            m_StartTime = GetFastLocalTime();
+        if ( m_StopWatch ) {
+            m_StopWatch->Start();
         }
-        m_StopWatch->Start();
+        else {
+            m_LastStartTime = GetFastLocalTime();
+            if ( m_FirstStartTime.IsEmpty() ) {
+                m_FirstStartTime = m_LastStartTime;
+            }
+        }
     }
     m_TimerState = CStopWatch::eStart;
 }
@@ -375,7 +381,12 @@ void CPerfLogger::Suspend()
         return;
     }
     if ( CPerfLogger::IsON() ) {
-        m_StopWatch->Stop();
+        if ( m_StopWatch ) {
+            m_StopWatch->Stop();
+        }
+        else {
+            m_Elapsed += GetFastLocalTime().DiffTimeSpan(m_LastStartTime).GetAsDouble();
+        }
     }
     m_TimerState = CStopWatch::eStop;
 }
