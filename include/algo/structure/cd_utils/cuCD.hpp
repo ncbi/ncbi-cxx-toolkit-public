@@ -180,10 +180,6 @@ bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields = tru
 NCBI_CDUTILS_EXPORT 
 int IntersectByMaster(CCdCore* ccd, double rowFraction = 1.0);
 
-//return the number of PDBs fixed
-NCBI_CDUTILS_EXPORT
-int FixPDBDefline(CCdCore* cd);
-
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 

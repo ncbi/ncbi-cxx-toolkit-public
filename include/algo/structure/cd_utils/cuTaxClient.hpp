@@ -39,7 +39,9 @@
 
 #include <objects/taxon1/taxon1.hpp>
 #include <objects/taxon1/Taxon2_data.hpp>
-#include <objects/id1/id1_client.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+
 #include <math.h>
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -103,7 +105,7 @@ public:
 private:
 
     CTaxon1 * m_taxonomyClient;
-	CID1Client* m_id1;
+    CScope * m_scope;
 };
 
 END_SCOPE(cd_utils)
