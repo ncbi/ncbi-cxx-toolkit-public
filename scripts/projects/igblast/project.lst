@@ -69,8 +69,7 @@ objtools/format/items$
 objtools/align_format
 objtools/logging$
 objtools/pubseq_gateway
-objtools/eutils/esearch
-objtools/eutils/api
+objtools/eutils
 dbapi$
 dbapi/driver$
 dbapi/cache$
