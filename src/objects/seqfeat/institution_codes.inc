@@ -7084,7 +7084,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "TEXA\ts\tBlackland Experiment Station\t\t\t",
 "TF<JPN>\ts\tForestry and Forest Products Research Institute\t\t\t",
 "TF<THA>\ts\tDepartment of Mineral Resources\t\t\t",
-"TFA\ts\t\"Tama Forest Science Garden, \"Forestry and Forest Products Research Institute\t\t\t",
+"TFA\ts\tTama Forest Science Garden, Forestry and Forest Products Research Institute\t\t\t",
 "TFAV\ts\tServicio Autonomo para el Desarrollo Ambiental del Estado Amazonas\t\t\t",
 "TFC\ts\tUniversidad de La Laguna, Departamento de Biologia Vegetal (Botanica)\t\t\t",
 "TFC<EST>\tc\tTartu Fungal Culture Collection\t\t\t",
