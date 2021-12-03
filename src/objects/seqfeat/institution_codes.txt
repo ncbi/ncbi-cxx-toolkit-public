@@ -7051,7 +7051,7 @@ TEX	s	University of Texas at Austin, Plant Resources Center
 TEXA	s	Blackland Experiment Station			
 TF<JPN>	s	Forestry and Forest Products Research Institute			
 TF<THA>	s	Department of Mineral Resources			
-TFA	s	"Tama Forest Science Garden, "Forestry and Forest Products Research Institute			
+TFA	s	Tama Forest Science Garden, Forestry and Forest Products Research Institute			
 TFAV	s	Servicio Autonomo para el Desarrollo Ambiental del Estado Amazonas			
 TFC	s	Universidad de La Laguna, Departamento de Biologia Vegetal (Botanica)			
 TFC<EST>	c	Tartu Fungal Culture Collection			
