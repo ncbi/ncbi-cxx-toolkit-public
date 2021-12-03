@@ -35,8 +35,6 @@
 #include <ncbi_pch.hpp>
 #include <algo/structure/cd_utils/cuAlign.hpp>
 #include <algo/structure/cd_utils/cuTaxClient.hpp>
-#include <objects/id1/Entry_complexities.hpp>
-#include <objects/id1/ID1server_maxcomplex.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
@@ -664,8 +662,6 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 	//LOG_POST("Process BLAST Hits and add them to "<<cd->GetAccession());
 	int completed = 0;
 	list< CRef< CSeq_align > >::iterator it = seqAligns.begin();
-	//CID1Client id1Client;
-	//id1Client.SetAllowDeadEntries(false);
 
 	CRef< CSeq_id > seqID, querySeqID;
 	CRef<CSeq_entry> seqEntry;
@@ -1069,18 +1065,6 @@ bool CDUpdater::isFragmentedSeq(CCdCore* cd, CRef< CSeq_align > seqAlign,
 		 return true;
 	else
 		return false;
-}
-
-bool CDUpdater::retrieveSeq(CID1Client& client, CRef<CSeq_id> seqID, CRef<CSeq_entry>& seqEntry)
-{
-	try {
-		//seqEntry = client.AskGetsefromgi(maxplex);
-		seqEntry = client.FetchEntry(*seqID, 1);
-	} catch (...)
-	{
-		return false;
-	}
-	return true;
 }
 
 bool CDUpdater::findSeq(CRef<CSeq_id> seqID, vector< CRef< CBioseq > >& bioseqs, CRef<CSeq_entry>& seqEntry)

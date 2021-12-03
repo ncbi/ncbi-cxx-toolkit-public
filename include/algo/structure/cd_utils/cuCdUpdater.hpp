@@ -42,7 +42,6 @@
 #include <algo/structure/cd_utils/cuCppNCBI.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
 #include <algo/structure/cd_utils/cuCdUpdateParameters.hpp>
-#include "objects/id1/id1_client.hpp"
 #include "objects/seqalign/Seq_align_set.hpp"
 #include "objects/entrez2/entrez2_client.hpp"
 #include <algo/structure/cd_utils/cuBlock.hpp>
@@ -158,8 +157,7 @@ public:
 
 	bool isFragmentedSeq(CCdCore* cd, CRef< CSeq_align > seqAlign, 
 						CRef< CSeq_entry > seqEntry);
-	static bool retrieveSeq(CID1Client& client, CRef<CSeq_id> seqID, 
-		CRef<CSeq_entry>& seqEntry);
+
 	CdUpdateParameters& getUpdateParameters() {return m_config;}
 	CDUpdateStats& getStats() {return m_stats;}
 	static int pickBioseq(CDRefresher* refresher, CRef< CSeq_align > seqAlignRef, 
