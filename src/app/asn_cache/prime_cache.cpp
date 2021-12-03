@@ -489,6 +489,23 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
         }
 
         CRef<CSeq_entry> entry = reader.ReadOneSeq(&messageListener);
+
+        if (GetArgs()["id-prefix"]) {
+            NON_CONST_ITERATE (CBioseq::TId, id_it, entry->SetSeq().SetId()) {
+                if ((*id_it)->IsLocal()) {
+                    if ((*id_it)->GetLocal().IsStr()) {
+                        (*id_it)->SetLocal().SetStr()
+                            .insert(0, GetArgs()["id-prefix"].AsString());
+                    } else {
+                        string str_id = NStr::NumericToString(
+                                            (*id_it)->GetLocal().GetId());
+                        (*id_it)->SetLocal().SetStr(
+                             GetArgs()["id-prefix"].AsString() + str_id);
+                    }
+                }
+            }
+        }
+
         // extract canonical ID
         CSeq_id_Handle idh = sequence::GetId(entry->GetSeq(), m_id_type);
         if (m_PreviousExecutionIds.count(idh)) {
@@ -557,22 +574,6 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
                 if ((*desc)->IsTitle()) {
                     entry->SetSeq().SetDescr().Set().erase(desc);
                     break;
-                }
-            }
-        }
-
-        if (GetArgs()["id-prefix"]) {
-            NON_CONST_ITERATE (CBioseq::TId, id_it, entry->SetSeq().SetId()) {
-                if ((*id_it)->IsLocal()) {
-                    if ((*id_it)->GetLocal().IsStr()) {
-                        (*id_it)->SetLocal().SetStr()
-                            .insert(0, GetArgs()["id-prefix"].AsString());
-                    } else {
-                        string str_id = NStr::NumericToString(
-                                            (*id_it)->GetLocal().GetId());
-                        (*id_it)->SetLocal().SetStr(
-                             GetArgs()["id-prefix"].AsString() + str_id);
-                    }
                 }
             }
         }
