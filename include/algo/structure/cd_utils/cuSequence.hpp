@@ -116,8 +116,6 @@ NCBI_CDUTILS_EXPORT
 bool GetAccAndVersion(const CRef< CBioseq > bioseq, string& acc, int& version, CRef< CSeq_id>& seqId);
 NCBI_CDUTILS_EXPORT 
 bool GetPDBBlockFromSeqEntry(CRef< CSeq_entry > seqEntry, CRef< CPDB_block >& pdbBlock);
-NCBI_CDUTILS_EXPORT 
-bool checkAndFixPdbBioseq(CRef< CBioseq > bioseq);
 
 //  Return 'false' if the bioseq doesn't have a gi-typed seq-id.
 //  Last arg tells which id to use if there are multiple gis.

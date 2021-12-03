@@ -50,14 +50,16 @@
 #include <math.h>
 
 #include <algo/structure/cd_utils/cuTaxClient.hpp>
-#include <objects/id1/id1_client.hpp>
+
+#include <objects/seq/seq_id_handle.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
 const bool   TaxClient::REFRESH_DEFAULT               = false;
 
-TaxClient::TaxClient(bool refresh) : m_taxonomyClient(0), m_id1(0)
+TaxClient::TaxClient(bool refresh) : m_taxonomyClient(0), m_scope(0)
 {
 }
 
@@ -68,8 +70,8 @@ TaxClient::~TaxClient() {
 		delete m_taxonomyClient;
 		m_taxonomyClient = 0;
 	}
-	if (m_id1)
-		delete m_id1;
+	if (m_scope)
+		delete m_scope;
 }
 
 bool TaxClient::init()
@@ -99,15 +101,34 @@ bool TaxClient::IsAlive() {
 TTaxId TaxClient::GetTaxIDForSeqId(CConstRef< CSeq_id > sid)
 {
 	TGi gi = ZERO_GI;
+    if (sid.Empty()) return ZERO_TAX_ID;
+    
     if (sid->IsGi()) 
 	{
         gi = sid->GetGi();  
     }
 	else
 	{
-		if (!m_id1)
-			m_id1= new CID1Client;
-		gi = m_id1->AskGetgi(*sid);
+        //  Lazy-create OM/Scope only when needed.
+        if (!m_scope) {
+            CRef<CObjectManager> objMgr = CObjectManager::GetInstance();
+            CGBDataLoader::RegisterInObjectManager(*objMgr); //  GenBank data loader
+
+            m_scope = new CScope(*objMgr);
+            if (m_scope)
+                m_scope->AddDefaults();
+            else
+                return ZERO_TAX_ID;
+        }
+        
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*sid);
+        vector<CSeq_id_Handle> ids = m_scope->GetIds(idh);
+        ITERATE ( vector<CSeq_id_Handle>, it, ids ) {
+            if (it->GetSeqId()->IsGi()) {
+                gi = it->GetSeqId()->GetGi();
+                break;
+            }
+        }        
 	}
 	return GetTaxIDForGI(gi);
 }

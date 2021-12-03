@@ -483,49 +483,6 @@ bool GetPDBBlockFromSeqEntry(CRef< CSeq_entry > seqEntry, CRef< CPDB_block >& pd
 	return false;
 }
 
-bool checkAndFixPdbBioseq(CRef< CBioseq > bioseq)
-{
-	const list< CRef< CSeq_id > >& idList = bioseq->GetId();
-	list< CRef< CSeq_id > >::const_iterator cit = idList.begin();
-	CRef< CSeq_id > pdbId;
-	for(; cit != idList.end(); cit++)
-		if( (*cit)->IsPdb() )
-			pdbId = *cit;
-	if (pdbId.Empty())
-		return false;
-	list< CRef< CSeqdesc > >& descrList = bioseq->SetDescr().Set();
-	list< CRef< CSeqdesc > >::const_iterator cdit = descrList.begin();
-	for (; cdit != descrList.end(); cdit++)
-	{
-		if ( (*cdit)->IsTitle() )
-			return false;
-	}
-	CID1Client id1Client;
-	id1Client.SetAllowDeadEntries(false);
-	CRef<CSeq_entry> seqEntry;
-	try {
-		seqEntry = id1Client.FetchEntry(*pdbId, 1);
-	} catch (...)
-	{
-		return false;
-	}
-	CRef< CPDB_block > pdbBlock;
-	if (GetPDBBlockFromSeqEntry(seqEntry, pdbBlock))
-	{
-		CRef< CSeqdesc > seqDesc(new CSeqdesc);
-		if (pdbBlock->CanGetCompound())
-		{
-			const list< string >& compounds = pdbBlock->GetCompound();
-			if (compounds.size() != 0)
-			{
-				seqDesc->SetTitle(*(compounds.begin()));
-				descrList.push_back(seqDesc);
-				return true;
-			}
-		}
-	}
-	return false;
-}
 
 bool CopyGiSeqId(const CRef<CBioseq>& bioseq, CRef<CSeq_id>& giSeqId, unsigned int nth)
 {

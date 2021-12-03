@@ -754,27 +754,6 @@ bool RemasterWithStructure(CCdCore* cd, string* msg)
 		return false;
 }
 
-//return the number of PDBs fixed
-int FixPDBDefline(CCdCore* cd)
-{
-	CRef< CSeq_id > seqId;
-	AlignmentCollection ac(cd,CCdCore::USE_NORMAL_ALIGNMENT);
-	int nrows = ac.GetNumRows();
-	int numFixed = 0;
-	for (int i = 0; i < nrows; i++)
-	{
-		ac.GetSeqIDForRow(i,seqId);
-		if (seqId->IsPdb())
-		{
-			CRef< CBioseq > bioseq;
-			ac.GetBioseqForRow(i, bioseq);
-			if (checkAndFixPdbBioseq(bioseq))
-				numFixed++;
-		}
-	}
-	return numFixed;
-}
-
 bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields)
 {
 	if (Row == 0)
