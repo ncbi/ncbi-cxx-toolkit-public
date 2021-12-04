@@ -904,6 +904,7 @@ idgen needs dbassist
 idload needs3party ctutils
 idload_utils needs gpipe_objutil
 idload_utils needs gpipe_sqlite
+idload_utils needs xid_utils_load
 igblast needs $(BLAST_LIBS)
 igblast needs3party $(BLAST_THIRD_PARTY_LIBS)
 insdseq needs xser
@@ -1770,12 +1771,13 @@ xbma_refiner needs xcd_utils
 xbma_refiner needs xstruct_util
 xbma_refiner_gui needs wx_tools
 xcd_utils needs $(BLAST_LIBS)
+xcd_utils needs $(OBJMGR_LIBS)
 xcd_utils needs entrez2cli
-xcd_utils needs id1cli
 xcd_utils needs ncbimime
 xcd_utils needs taxon1
 xcd_utils needs xregexp
 xcd_utils needs3party $(BLAST_THIRD_PARTY_LIBS)
+xcd_utils needs3party $(GENBANK_THIRD_PARTY_LIBS)
 xcddalignview needs ncbimime
 xcgi needs xutil
 xcgi_redirect needs xcgi
@@ -1974,7 +1976,6 @@ xstruct_util needs $(BLAST_LIBS)
 xstruct_util needs xstruct_dp
 xstruct_util needs3party $(BLAST_THIRD_PARTY_LIBS)
 xsubmit2id needs idload_utils
-xsubmit2id needs xid_utils_load
 xthrserv needs xconnect
 xthrserv needs xutil
 xunittestutil needs xobjutil
