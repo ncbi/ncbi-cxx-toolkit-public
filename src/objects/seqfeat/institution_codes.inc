@@ -170,6 +170,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AJU\ts\tUniversidade Tiradentes\t\t\t",
 "AK\ts\tAuckland War Memorial Museum\t\t\t",
 "AKASH\ts\tUniversity of Azad Jammu and Kashmir Pakistan\t\t\t",
+"AKDU\ts\tAkdeniz University Herbarium\t\t\t",
 "AKPM\ts\tAkita Prefectural Museum\t\t\t",
 "AKSU\ts\tAksaray University\t\t\t",
 "AKU<JPN>\tc\tFaculty of Agriculture\t\t\t",
