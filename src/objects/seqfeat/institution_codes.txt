@@ -137,6 +137,7 @@ AJOU	s	Ajou University, Biological Sciences Department
 AJU	s	Universidade Tiradentes			
 AK	s	Auckland War Memorial Museum			
 AKASH	s	University of Azad Jammu and Kashmir Pakistan			
+AKDU	s	Akdeniz University Herbarium			
 AKPM	s	Akita Prefectural Museum			
 AKSU	s	Aksaray University			
 AKU<JPN>	c	Faculty of Agriculture			
