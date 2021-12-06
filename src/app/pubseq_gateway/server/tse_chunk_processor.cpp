@@ -54,7 +54,13 @@ CPSGS_TSEChunkProcessor::CPSGS_TSEChunkProcessor(
             shared_ptr<CPSGS_SatInfoChunksVerFlavorId2Info> sat_info_chunk_ver_id2info,
             shared_ptr<CPSGS_IdModifiedVerFlavorId2Info>    id_mod_ver_id2info) :
     CPSGS_CassProcessorBase(request, reply, priority),
-    CPSGS_CassBlobBase(request, reply, GetName()),
+    CPSGS_CassBlobBase(request, reply, GetName(),
+                       bind(&CPSGS_TSEChunkProcessor::OnGetBlobProp,
+                            this, _1, _2, _3),
+                       bind(&CPSGS_TSEChunkProcessor::OnGetBlobChunk,
+                            this, _1, _2, _3, _4, _5),
+                       bind(&CPSGS_TSEChunkProcessor::OnGetBlobError,
+                            this, _1, _2, _3, _4, _5)),
     m_SatInfoChunkVerId2Info(sat_info_chunk_ver_id2info),
     m_IdModVerId2Info(id_mod_ver_id2info)
 {

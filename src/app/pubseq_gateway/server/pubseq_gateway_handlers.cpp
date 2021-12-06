@@ -1297,6 +1297,9 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  req,
             status, CPSGSCounters::ePSGS_ActiveRequest,
             static_cast<uint64_t>(g_ShutdownData.m_ActiveRequestCount.load()));
         m_Counters.AppendValueNode(
+            status, CPSGSCounters::ePSGS_SplitInfoCacheSize,
+            static_cast<uint64_t>(m_SplitInfoCache->Size()));
+        m_Counters.AppendValueNode(
             status, CPSGSCounters::ePSGS_ShutdownRequested,
             g_ShutdownData.m_ShutdownRequested);
 

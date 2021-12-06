@@ -154,6 +154,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_TestSeqId(kDefaultTestSeqId),
     m_TestSeqIdIgnoreError(kDefaultTestSeqIdIgnoreError),
     m_ExcludeBlobCache(nullptr),
+    m_SplitInfoCache(nullptr),
     m_StartupDataState(ePSGS_NoCassConnection),
     m_LogFields("http"),
     m_OSGProcessorsEnabled(kDefaultOSGProcessorsEnabled),
@@ -468,6 +469,8 @@ int CPubseqGatewayApp::Run(void)
         new CExcludeBlobCache(m_ExcludeCacheInactivityPurge,
                               m_ExcludeCacheMaxSize,
                               m_ExcludeCacheMaxSize - static_cast<size_t>(purge_size)));
+
+    m_SplitInfoCache.reset(new CSplitInfoCache());
 
     m_Timing.reset(new COperationTiming(m_MinStatValue,
                                         m_MaxStatValue,

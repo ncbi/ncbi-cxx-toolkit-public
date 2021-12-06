@@ -57,7 +57,13 @@ CPSGS_GetProcessor::CPSGS_GetProcessor(shared_ptr<CPSGS_Request> request,
                            this, _1, _2, _3, _4),
                       bind(&CPSGS_GetProcessor::x_OnResolutionGoodData,
                            this)),
-    CPSGS_CassBlobBase(request, reply, GetName())
+    CPSGS_CassBlobBase(request, reply, GetName(),
+                       bind(&CPSGS_GetProcessor::OnGetBlobProp,
+                            this, _1, _2, _3),
+                       bind(&CPSGS_GetProcessor::OnGetBlobChunk,
+                            this, _1, _2, _3, _4, _5),
+                       bind(&CPSGS_GetProcessor::OnGetBlobError,
+                            this, _1, _2, _3, _4, _5))
 {
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>() everywhere
@@ -167,6 +173,21 @@ CPSGS_GetProcessor::x_OnSeqIdResolveFinished(
 
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
+
+    try {
+        // Base class may need the resolved seq id so memorize it
+        auto &  bioseq_info_record = bioseq_resolution.GetBioseqInfo();
+        m_ResolvedSeqID.Set(CSeq_id_Base::E_Choice(bioseq_info_record.GetSeqIdType()),
+                            bioseq_info_record.GetAccession(),
+                            bioseq_info_record.GetName(),
+                            bioseq_info_record.GetVersion());
+    } catch (const exception &  exc) {
+        PSG_WARNING("Cannot build CSeq_id out of the resolved input seq_id "
+                    "due to: " + string(exc.what()));
+    } catch (...) {
+        PSG_WARNING("Cannot build CSeq_id out of the resolved input seq_id "
+                    "due to unknown reason");
+    }
 
     x_SendBioseqInfo(bioseq_resolution);
 
@@ -347,13 +368,7 @@ void CPSGS_GetProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
         return;
     }
 
-    CPSGS_CassBlobBase::OnGetBlobProp(bind(&CPSGS_GetProcessor::OnGetBlobProp,
-                                           this, _1, _2, _3),
-                                      bind(&CPSGS_GetProcessor::OnGetBlobChunk,
-                                           this, _1, _2, _3, _4, _5),
-                                      bind(&CPSGS_GetProcessor::OnGetBlobError,
-                                           this, _1, _2, _3, _4, _5),
-                                      fetch_details, blob, is_found);
+    CPSGS_CassBlobBase::OnGetBlobProp(fetch_details, blob, is_found);
 
     if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);

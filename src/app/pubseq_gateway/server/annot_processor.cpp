@@ -60,7 +60,13 @@ CPSGS_AnnotProcessor::CPSGS_AnnotProcessor(
                            this, _1, _2, _3, _4),
                       bind(&CPSGS_AnnotProcessor::x_OnResolutionGoodData,
                            this)),
-    CPSGS_CassBlobBase(request, reply, GetName()),
+    CPSGS_CassBlobBase(request, reply, GetName(),
+                       bind(&CPSGS_AnnotProcessor::OnGetBlobProp,
+                            this, _1, _2, _3),
+                       bind(&CPSGS_AnnotProcessor::OnGetBlobChunk,
+                            this, _1, _2, _3, _4, _5),
+                       bind(&CPSGS_AnnotProcessor::OnGetBlobError,
+                            this, _1, _2, _3, _4, _5)),
     m_BlobStage(false)
 {
     // Convenience to avoid calling
@@ -667,13 +673,7 @@ void CPSGS_AnnotProcessor::OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
 
     // Send the blob props and send a corresponding blob props
     m_BlobStage = true;
-    CPSGS_CassBlobBase::OnGetBlobProp(bind(&CPSGS_AnnotProcessor::OnGetBlobProp,
-                                           this, _1, _2, _3),
-                                      bind(&CPSGS_AnnotProcessor::OnGetBlobChunk,
-                                           this, _1, _2, _3, _4, _5),
-                                      bind(&CPSGS_AnnotProcessor::OnGetBlobError,
-                                           this, _1, _2, _3, _4, _5),
-                                      fetch_details, blob, is_found);
+    CPSGS_CassBlobBase::OnGetBlobProp(fetch_details, blob, is_found);
 
     if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);
@@ -689,13 +689,7 @@ void CPSGS_AnnotProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
         return;
     }
 
-    CPSGS_CassBlobBase::OnGetBlobProp(bind(&CPSGS_AnnotProcessor::OnGetBlobProp,
-                                           this, _1, _2, _3),
-                                      bind(&CPSGS_AnnotProcessor::OnGetBlobChunk,
-                                           this, _1, _2, _3, _4, _5),
-                                      bind(&CPSGS_AnnotProcessor::OnGetBlobError,
-                                           this, _1, _2, _3, _4, _5),
-                                      fetch_details, blob, is_found);
+    CPSGS_CassBlobBase::OnGetBlobProp(fetch_details, blob, is_found);
 
     if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);
