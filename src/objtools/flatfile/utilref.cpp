@@ -231,7 +231,9 @@ CRef<objects::CAuthor> get_std_auth(const Char* token, Uint1 format)
         namestd.SetLast(std::string(token, auth));
     }
     else if (format == ML_REF)
+    {
         _TROUBLE;
+    }
 
     if (!namestd.IsSetLast())
     {
