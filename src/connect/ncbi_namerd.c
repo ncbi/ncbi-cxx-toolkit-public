@@ -63,6 +63,13 @@
 #define NCBI_USE_ERRCODE_X   Connect_NamerdLinkerd
 
 
+#ifdef _DEBUG
+#define DEBUG_PARAM(x)  , x
+#else
+#define DEBUG_PARAM(x)  /*void*/
+#endif /*_DEBUG*/
+
+
 /* NAMERD subcodes [1-10] for CORE_LOG*X() macros */
 enum ENAMERD_Subcodes {
     eNSub_Message         = 0,   /**< not an error */
@@ -199,10 +206,7 @@ static CONNECTOR s_CreateConnectorMemory(SERV_ITER iter)
 
 
 static void s_RemoveServerInfo(struct SNAMERD_Data* data, size_t n, int del
-#ifdef _DEBUG
-                               , const char* name
-#endif /*_DEBUG*/
-                               )
+                               DEBUG_PARAM(const char* name))
 {
     CORE_TRACEF(("[%s]  %s server info " FMT_SIZE_T ": \"%s\" %p",
                  name, del ? "Deleting" : "Releasing", n,
@@ -219,10 +223,7 @@ static void s_RemoveServerInfo(struct SNAMERD_Data* data, size_t n, int del
 
 
 static void s_ProcessForStandby(struct SNAMERD_Data* data
-#ifdef _DEBUG
-                                , const char* name
-#endif /*_DEBUG*/
-                                )
+                                DEBUG_PARAM(const char* name))
 {
     double  max_rate = 0.0;
     int     all_standby = 1;
@@ -250,20 +251,14 @@ static void s_ProcessForStandby(struct SNAMERD_Data* data
         if (data->cand[--i].info->rate
             < (all_standby ? max_rate : LBSM_STANDBY_THRESHOLD)) {
             s_RemoveServerInfo(data, i, 1/*del*/
-#ifdef _DEBUG
-                               , name
-#endif /*_DEBUG*/
-                               );
+                               DEBUG_PARAM(name));
         }
     }
 }
 
 
 static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info
-#ifdef _DEBUG
-                                   , const char* name
-#endif /*_DEBUG*/
-                                   )
+                                   DEBUG_PARAM(const char* name))
 {
     const char* infoname = SERV_NameOfInfo(info);
     size_t n;
@@ -795,10 +790,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
 
         /* Add new info to collection */
         if (!s_AddServerInfo(data, info
-#ifdef _DEBUG
-                             , iter->name
-#endif /*_DEBUG*/
-                             )) {
+                             DEBUG_PARAM(iter->name))) {
             CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
                         ("[%s]  Failed to add server info", iter->name));
             CORE_TRACEF(("[%s]  Freeing server info: %p", iter->name, info));
@@ -809,10 +801,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
 
     /* Post process for standby's */
     s_ProcessForStandby(data
-#ifdef _DEBUG
-                        , iter->name
-#endif /*_DEBUG*/
-                        );
+                        DEBUG_PARAM(iter->name));
 
  out:
     if (root)
@@ -862,10 +851,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
 
 
 static int/*bool*/ s_IsUpdateNeeded(struct SNAMERD_Data* data, TNCBI_Time now
-#ifdef _DEBUG
-                                    , const char* name
-#endif /*_DEBUG*/
-                                    )
+                                    DEBUG_PARAM(const char* name))
 {
     int/*bool*/ expired = 0/*false*/;
     size_t i;
@@ -878,10 +864,7 @@ static int/*bool*/ s_IsUpdateNeeded(struct SNAMERD_Data* data, TNCBI_Time now
             CORE_TRACEF(("[%s]  NAMERD expired server info (%u < %u): %p",
                          name, info->time, now, info));
             s_RemoveServerInfo(data, i, 1/*del*/
-#ifdef _DEBUG
-                               , name
-#endif /*_DEBUG*/
-                               );
+                               DEBUG_PARAM(name));
             expired = 1/*true*/;
         }
     }
@@ -909,10 +892,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     if ((!data->n_cand  &&  !data->resolved)
         ||  s_IsUpdateNeeded(data, iter->time
-#ifdef _DEBUG
-                             , iter->name
-#endif /*_DEBUG*/
-                             )) {
+                             DEBUG_PARAM(iter->name))) {
         (void) s_Resolve(iter);
         assert(data->resolved);
     }
@@ -929,11 +909,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     /* Remove returned info */
     s_RemoveServerInfo(data, n, 0/*keep*/
-#ifdef _DEBUG
-                       , iter->name
-#endif /*_DEBUG*/
-                       );
-
+                       DEBUG_PARAM(iter->name));
     if (host_info)
         *host_info = 0;
 
@@ -991,30 +967,16 @@ static int/*bool*/ x_UpdateDtabInArgs(SConnNetInfo* net_info,
                                       const char*   dtab,
                                       const char*   name)
 {
-    size_t dtablen, arglen, bufsize, dtab_in, dtab_out;
+    size_t dtablen = strlen(dtab), arglen, bufsize, dtab_in, dtab_out;
     const char* arg;
     char* buf;
 
     CORE_TRACEF(("Enter NAMERD::x_UpdateDtabInArgs(\"%s\"): \"%s\"",
                  name, dtab));
-
-    /* Trim off all surrounding whitespace */
-    while (*dtab  &&  isspace((unsigned char)(*dtab)))
-        ++dtab;
-    dtablen = strlen(dtab);
-    while (dtablen  &&  isspace((unsigned char) dtab[dtablen - 1]))
-        --dtablen;
-    assert(!*dtab == !dtablen);
-
-    if (!*dtab) {
-        CORE_TRACEF(("Leave NAMERD::x_UpdateDtabInArgs(\"%s\"): nothing to do",
-                     name));
-        return 1/*success*/;
-    }
+    assert(dtablen);
 
     /* Find any existing dtab in the args */
-    arg = ConnNetInfo_GetArgs(net_info);
-    assert(arg);
+    verify(arg = ConnNetInfo_GetArgs(net_info));
     for ( ;  *arg  &&  *arg != '#';  arg += arglen + !(arg[arglen] != '&')) {
         arglen = strcspn(arg, "&#");
         if (arglen < sizeof(NAMERD_DTAB_ARG))
@@ -1038,8 +1000,8 @@ static int/*bool*/ x_UpdateDtabInArgs(SConnNetInfo* net_info,
     if (!(buf = (char*) malloc(bufsize))) {
         CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
                     ("[%s]  Failed to %s service dtab %s\"%s\"", name,
-                     arglen ? "extend" : "allocate for", dtab,
-                     arglen ? "with "  : ""));
+                     arglen ? "extend" : "allocate for",
+                     arglen ? "with "  : "", dtab));
         return 0/*failure*/;
     }
     if (arglen) {
@@ -1073,10 +1035,7 @@ static int/*bool*/ x_UpdateDtabInArgs(SConnNetInfo* net_info,
 
 
 static char* x_GetDtabFromHeader(const char* header
-#ifdef _DEBUG
-                                 , const char* name
-#endif /*_DEBUG*/
-                                 )
+                                 DEBUG_PARAM(const char* name))
 {
     const char* line;
     size_t linelen;
@@ -1095,10 +1054,17 @@ static char* x_GetDtabFromHeader(const char* header
                         sizeof(DTAB_HTTP_HEADER_TAG)-2/*":\0"*/) == 0) {
             line    += sizeof(DTAB_HTTP_HEADER_TAG)-1/*"\0"*/;
             linelen -= sizeof(DTAB_HTTP_HEADER_TAG)-1/*"\0"*/;
+            /* Trim off all surrounding whitespace */
+            while (linelen  &&  isspace((unsigned char)(*line))) {
+                --linelen;
+                ++line;
+            }
+            while (linelen  &&  isspace((unsigned char) line[linelen - 1]))
+                --linelen;
             CORE_TRACEF(("Leave NAMERD::x_GetDtabFromHeader(\"%s\"): "
                          DTAB_HTTP_HEADER_TAG " \"%.*s\"", name,
                          (int) linelen, line));
-            return strndup(line, linelen);
+            return linelen ? strndup(line, linelen) : (char*)(-1L);
         }
     }
 
@@ -1466,12 +1432,8 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
      *  requested service.  Instead, the namerd service uses the dtab argument
      *  for resolution. */
     /* 1: service DTAB (either service-specific or global) */
-    dtab = x_GetDtabFromHeader(net_info->http_user_header
-#ifdef _DEBUG
-                               , iter->name
-#endif /*_DEBUG*/
-                               );
-    if (!dtab) {
+    if (!(dtab = x_GetDtabFromHeader(net_info->http_user_header
+                                     DEBUG_PARAM(iter->name)))) {
         CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
                     ("[%s]  Unable to get service dtab from HTTP header",
                      iter->name));
