@@ -208,9 +208,9 @@ static void s_Resolve(SERV_ITER iter)
         const char* url = ConnNetInfo_URL(net_info);
         CORE_LOGF_X(5, eLOG_Error,
                     ("[%s]  Unable to create %s network dispatcher%s%s%s: %s",
-                     iter->name,  c ? "connection with" : "connector for",
+                     iter->name,  c ? "connection to" : "connector for",
                      url ? " at \"" : "", url ? url : "", &"\""[!url],
-                     IO_StatusStr(c ? status            : eIO_Unknown)));
+                     IO_StatusStr(c ? status          : eIO_Unknown)));
         if (url)
             free((void*) url);
         if (conn)
