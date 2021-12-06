@@ -44,6 +44,6 @@ DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
 
 Win64    : plain : static  64  ReleaseDLL 
 
-IntelMAC    : clang : Clang.sh    --with-bin-release --without-debug --without-pcre --without-openmp --with-mt --with-flat-makefile --with-ncbi-public --with-vdb=/net/snowman/vol/projects/trace_software/vdb/vdb-versions/cxx_toolkit/2 --with-static-vdb --without-gnutls --without-gcrypt --with-libuv=/netopt/ncbi_tools/libuv-1.35.0 --with-nghttp2=/netopt/ncbi_tools/nghttp2-1.40.0
+IntelMAC    : clang : Clang.sh    --with-bin-release --without-debug --without-pcre --without-openmp --with-mt --with-flat-makefile --with-ncbi-public --with-downloaded-vdb --with-static-vdb --without-gnutls --without-gcrypt --with-libuv=/netopt/ncbi_tools/libuv-1.35.0 --with-nghttp2=/netopt/ncbi_tools/nghttp2-1.40.0
 
 USE_COMPONENTS
