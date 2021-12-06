@@ -48,6 +48,7 @@
 #include "pubseq_gateway_utils.hpp"
 #include "pubseq_gateway_types.hpp"
 #include "exclude_blob_cache.hpp"
+#include "split_info_cache.hpp"
 #include "alerts.hpp"
 #include "timing.hpp"
 #include "psgs_dispatcher.hpp"
@@ -135,6 +136,11 @@ public:
     CExcludeBlobCache *  GetExcludeBlobCache(void)
     {
         return m_ExcludeBlobCache.get();
+    }
+
+    CSplitInfoCache *  GetSplitInfoCache(void)
+    {
+        return m_SplitInfoCache.get();
     }
 
     CPSGMessages *  GetPublicCommentsMapping(void)
@@ -428,6 +434,7 @@ private:
                                         m_TcpDaemon;
 
     unique_ptr<CExcludeBlobCache>       m_ExcludeBlobCache;
+    unique_ptr<CSplitInfoCache>         m_SplitInfoCache;
 
     CPSGAlerts                          m_Alerts;
     unique_ptr<COperationTiming>        m_Timing;

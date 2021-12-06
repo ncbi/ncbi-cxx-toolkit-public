@@ -52,7 +52,13 @@ CPSGS_GetBlobProcessor::CPSGS_GetBlobProcessor(
                                         TProcessorPriority  priority,
                                         const SCass_BlobId &  blob_id) :
     CPSGS_CassProcessorBase(request, reply, priority),
-    CPSGS_CassBlobBase(request, reply, GetName())
+    CPSGS_CassBlobBase(request, reply, GetName(),
+                       bind(&CPSGS_GetBlobProcessor::OnGetBlobProp,
+                            this, _1, _2, _3),
+                       bind(&CPSGS_GetBlobProcessor::OnGetBlobChunk,
+                            this, _1, _2, _3, _4, _5),
+                       bind(&CPSGS_GetBlobProcessor::OnGetBlobError,
+                            this, _1, _2, _3, _4, _5))
 {
     m_BlobId = blob_id;
 
@@ -260,13 +266,7 @@ void CPSGS_GetBlobProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
     // of the good data (it may cancel the other processors)
     UnlockWaitingProcessor();
 
-    CPSGS_CassBlobBase::OnGetBlobProp(bind(&CPSGS_GetBlobProcessor::OnGetBlobProp,
-                                           this, _1, _2, _3),
-                                      bind(&CPSGS_GetBlobProcessor::OnGetBlobChunk,
-                                           this, _1, _2, _3, _4, _5),
-                                      bind(&CPSGS_GetBlobProcessor::OnGetBlobError,
-                                           this, _1, _2, _3, _4, _5),
-                                      fetch_details, blob, is_found);
+    CPSGS_CassBlobBase::OnGetBlobProp(fetch_details, blob, is_found);
 
     if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);

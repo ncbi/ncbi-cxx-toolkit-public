@@ -93,7 +93,8 @@ class CPSGSCounters
             ePSGS_NumberOfConnections,
             ePSGS_ActiveRequest,
             ePSGS_ShutdownRequested,
-            ePSGS_GracefulShutdownExpiredInSec
+            ePSGS_GracefulShutdownExpiredInSec,
+            ePSGS_SplitInfoCacheSize
         };
 
     void Increment(EPSGS_CounterType  counter);

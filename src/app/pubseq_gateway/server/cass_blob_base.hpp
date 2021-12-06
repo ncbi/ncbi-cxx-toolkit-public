@@ -42,6 +42,8 @@
 #include "get_blob_callback.hpp"
 #include "id2info.hpp"
 #include "cass_blob_id.hpp"
+#include "split_info_utils.hpp"
+
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
@@ -53,14 +55,14 @@ public:
     CPSGS_CassBlobBase();
     CPSGS_CassBlobBase(shared_ptr<CPSGS_Request>  request,
                        shared_ptr<CPSGS_Reply>  reply,
-                       const string &  processor_id);
+                       const string &  processor_id,
+                       TBlobPropsCB  blob_props_cb,
+                       TBlobChunkCB  blob_chunk_cb,
+                       TBlobErrorCB  blob_error_cb);
     virtual ~CPSGS_CassBlobBase();
 
 protected:
-    void OnGetBlobProp(TBlobPropsCB  blob_props_cb,
-                       TBlobChunkCB  blob_chunk_cb,
-                       TBlobErrorCB  blob_error_cb,
-                       CCassBlobFetch *  fetch_details,
+    void OnGetBlobProp(CCassBlobFetch *  fetch_details,
                        CBlobRecord const &  blob, bool is_found);
     void OnGetBlobError(CCassBlobFetch *  fetch_details,
                         CRequestStatus::ECode  status, int  code,
@@ -89,41 +91,22 @@ protected:
 
 private:
     void x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details);
-    void x_OnBlobPropSlimTSE(TBlobPropsCB  blob_props_cb,
-                             TBlobChunkCB  blob_chunk_cb,
-                             TBlobErrorCB  blob_error_cb,
-                             CCassBlobFetch *  fetch_details,
+    void x_OnBlobPropSlimTSE(CCassBlobFetch *  fetch_details,
                              CBlobRecord const &  blob);
-    void x_OnBlobPropSmartTSE(TBlobPropsCB  blob_props_cb,
-                              TBlobChunkCB  blob_chunk_cb,
-                              TBlobErrorCB  blob_error_cb,
-                              CCassBlobFetch *  fetch_details,
+    void x_OnBlobPropSmartTSE(CCassBlobFetch *  fetch_details,
                               CBlobRecord const &  blob);
-    void x_OnBlobPropWholeTSE(TBlobPropsCB  blob_props_cb,
-                              TBlobChunkCB  blob_chunk_cb,
-                              TBlobErrorCB  blob_error_cb,
-                              CCassBlobFetch *  fetch_details,
+    void x_OnBlobPropWholeTSE(CCassBlobFetch *  fetch_details,
                               CBlobRecord const &  blob);
-    void x_OnBlobPropOrigTSE(TBlobChunkCB  blob_chunk_cb,
-                             TBlobErrorCB  blob_error_cb,
-                             CCassBlobFetch *  fetch_details,
+    void x_OnBlobPropOrigTSE(CCassBlobFetch *  fetch_details,
                              CBlobRecord const &  blob);
 
 private:
-    void x_RequestOriginalBlobChunks(TBlobChunkCB  blob_chunk_cb,
-                                     TBlobErrorCB  blob_error_cb,
-                                     CCassBlobFetch *  fetch_details,
+    void x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
                                      CBlobRecord const &  blob);
-    void x_RequestID2BlobChunks(TBlobPropsCB  blob_props_cb,
-                                TBlobChunkCB  blob_chunk_cb,
-                                TBlobErrorCB  blob_error_cb,
-                                CCassBlobFetch *  fetch_details,
+    void x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                                 CBlobRecord const &  blob,
                                 bool  info_blob_only);
-    void x_RequestId2SplitBlobs(TBlobPropsCB  blob_props_cb,
-                                TBlobChunkCB  blob_chunk_cb,
-                                TBlobErrorCB  blob_error_cb,
-                                CCassBlobFetch *  fetch_details,
+    void x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
                                 const string &  sat_name);
 
 
@@ -168,9 +151,22 @@ private:
     void x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
                                EPSGS_BlobSkipReason  skip_reason);
 
+    void x_DecideToRequestMoreChunksForSmartTSE(
+                                    CCassBlobFetch *  fetch_details,
+                                    SCass_BlobId const &  info_blob_id);
+    void x_DeserializeSplitInfo(CCassBlobFetch *  fetch_details);
+    void x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_details,
+                                        const vector<int> &  extra_chunks,
+                                        bool  need_wait);
+
 protected:
     // Used for get blob by sat/sat key request
     SCass_BlobId                                        m_BlobId;
+
+    // For the time being: only for the ID/get processor:
+    // it sets the value after the resultion has succeeded and the accession
+    // possibly adjusted
+    CSeq_id                                             m_ResolvedSeqID;
 
 private:
     bool                                                m_NeedToParseId2Info;
@@ -179,6 +175,18 @@ private:
 
     // last_modified from the original blob props
     CBlobRecord::TTimestamp                             m_LastModified;
+
+private:
+    // Support for collecting split INFO for further deserialization
+    bool                                                m_CollectSplitInfo;
+    SCass_BlobId                                        m_InfoBlobId;
+    bool                                                m_SplitInfoGzipFlag;
+    psg::CDataChunkStream                               m_CollectedSplitInfo;
+
+private:
+    TBlobPropsCB                                        m_BlobPropsCB;
+    TBlobChunkCB                                        m_BlobChunkCB;
+    TBlobErrorCB                                        m_BlobErrorCB;
 };
 
 #endif  // PSGS_CASSBLOBBASE__HPP
