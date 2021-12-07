@@ -9,7 +9,8 @@ HOSTED_LIBS    = xbma_refiner \
                       xstruct_thread
 
 DEPENDENCIES   = ncbi_core ncbi_algo ncbi_seq ncbi_general \
-                ncbi_pub ncbi_seqext ncbi_mmdb ncbi_xobjsimple
+                ncbi_pub ncbi_seqext ncbi_mmdb ncbi_xobjsimple \
+                ncbi_xloader_genbank
 
 CPPFLAGS = -DNCBI_ALGOSTRUCTURE_EXPORTS
 
