@@ -5375,7 +5375,7 @@ bool SprotAscii(ParserPtr pp)
 
                 cur_entry.Reset();
             }
-            delete entry;
+            //delete entry;
         }
         if(ibp->drop != 1)
         {
