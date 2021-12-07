@@ -736,6 +736,15 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     m_FastaReader->IgnoreProblem(ILineError::eProblem_TooManyAmbiguousResidues);
     m_FastaReader->IgnoreProblem(ILineError::eProblem_TooLong);
 
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app) {
+        const CNcbiRegistry& registry = app->GetConfig();
+        const string& value = registry.Get("BLAST", "MAX_SEQID_LENGTH");
+        if (!value.empty()) {
+            try { m_FastaReader->SetMaxIDLength(NStr::StringToUInt(value)); } 
+            catch (const exception&) {}  // Ignore errors
+        }
+    }
 }
 
 CFastaBioseqSource::~CFastaBioseqSource()
