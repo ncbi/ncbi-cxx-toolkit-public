@@ -115,7 +115,6 @@ void CCassBlobTaskInsertExtended::Wait1()
                         qry->BindInt32(2, i);
                         const CBlobRecord::TBlobChunk& chunk = m_Blob->GetChunk(i);
                         qry->BindBytes(3, chunk.data(), chunk.size());
-                        UpdateLastActivity();
                         SetupQueryCB3(qry);
                         qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
                     }
@@ -136,7 +135,6 @@ void CCassBlobTaskInsertExtended::Wait1()
                     ++i;
                 }
                 if (!anyrunning) {
-                    UpdateLastActivity();
                     CloseAll();
                     m_State = eInsertProps;
                     b_need_repeat = true;
@@ -177,7 +175,6 @@ void CCassBlobTaskInsertExtended::Wait1()
                     qry->BindInt32(1, split_version);
                     qry->BindInt64(2, m_Blob->GetModified());
                     qry->BindStr(3, m_Blob->GetId2Info());
-                    UpdateLastActivity();
                     qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
                 }
 
@@ -195,7 +192,6 @@ void CCassBlobTaskInsertExtended::Wait1()
                 qry->BindInt64(10, m_Blob->GetSize());
                 qry->BindInt64(11, m_Blob->GetSizeUnpacked());
                 qry->BindStr(12, m_Blob->GetUserName());
-                UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 CBlobChangelogWriter().WriteChangelogEvent(

@@ -281,10 +281,11 @@ shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance(void)
         rv->DisableLogging();
     }
 
-    string host;
+    string hostlist;
     short port;
-    GetHostPort(host, port);
-    rv->SetConnProp(host, m_CassUserName, m_CassPassword, port);
+    GetHostPort(hostlist, port);
+    rv->SetConnectionPoint(hostlist, port);
+    rv->SetCredentials(m_CassUserName, m_CassPassword);
     rv->SetKeyspace(m_CassDataNamespace);
     return rv;
 }

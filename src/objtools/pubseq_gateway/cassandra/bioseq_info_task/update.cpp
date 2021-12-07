@@ -119,7 +119,6 @@ void CCassBioseqInfoTaskUpdate::Wait1(void)
                 qry->BindInt8(12, m_Record->GetSeqState());
                 qry->BindInt8(13, m_Record->GetState());
                 qry->BindInt32(14, m_Record->GetTaxId());
-                UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 int64_t partition = CBiSiPartitionMaker().GetCurrentPartition();

@@ -160,7 +160,6 @@ void CCassBioseqInfoTaskFetch::x_InitializeAliveRecordQuery(void)
 void CCassBioseqInfoTaskFetch::x_StartQuery(void)
 {
     SetupQueryCB3(m_QueryArr[0].query);
-    UpdateLastActivity();
     m_QueryArr[0].query->Query(kBioSeqInfoConsistency, m_Async, true, m_PageSize);
 }
 
@@ -308,7 +307,6 @@ void CCassBioseqInfoTaskFetch::Wait1(void)
                         m_QueryArr[0].query->Close();
                         m_State = eInit;
                     }
-                    UpdateLastActivity();
                     break;
                 }
             // We can assume that getting into this state we have m_ConsumeCallback
@@ -337,7 +335,6 @@ void CCassBioseqInfoTaskFetch::Wait1(void)
                             m_State = eDone;
                         }
                     }
-                    UpdateLastActivity();
                     break;
                 }
             default: {

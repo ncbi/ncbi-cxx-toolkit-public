@@ -84,8 +84,6 @@ void CCassStatusHistoryTaskDelete::Wait1()
                 qry->SetSQL(sql, 2);
                 qry->BindInt32(0, m_Key);
                 qry->BindInt64(1, m_DoneWhen);
-
-                UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 CBlobChangelogWriter().WriteChangelogEvent(

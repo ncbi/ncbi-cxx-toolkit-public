@@ -85,7 +85,6 @@ void CCassSI2CSITaskDelete::Wait1(void)
                 qry->SetSQL(sql, 2);
                 qry->BindStr(0, m_SecSeqId);
                 qry->BindInt16(1, m_SecSeqIdType);
-                UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 int64_t partition = CBiSiPartitionMaker().GetCurrentPartition();

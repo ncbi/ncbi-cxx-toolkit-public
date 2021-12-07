@@ -236,7 +236,6 @@ void CCassNAnnotTaskFetch::Wait1()
                 }
 
                 SetupQueryCB3(m_QueryArr[0].query);
-                UpdateLastActivity();
                 m_QueryArr[0].query->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, true, m_PageSize);
                 m_State = eFetchStarted;
                 break;
@@ -287,7 +286,6 @@ void CCassNAnnotTaskFetch::Wait1()
                     m_QueryArr[0].query->Close();
                     m_State = eInit;
                 }
-                UpdateLastActivity();
                 break;
             }
 

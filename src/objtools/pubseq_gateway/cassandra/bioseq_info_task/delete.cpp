@@ -92,7 +92,6 @@ void CCassBioseqInfoTaskDelete::Wait1(void)
                 qry->BindInt16(1, m_Version);
                 qry->BindInt16(2, m_SeqIdType);
                 qry->BindInt64(3, m_GI);
-                UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 int64_t partition = CBiSiPartitionMaker().GetCurrentPartition();

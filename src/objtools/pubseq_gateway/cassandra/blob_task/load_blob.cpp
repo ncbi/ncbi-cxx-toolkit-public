@@ -193,7 +193,6 @@ void CCassBlobTaskLoadBlob::Wait1()
                     }
 
                     SetupQueryCB3(qry);
-                    UpdateLastActivity();
                     qry->Query(GetQueryConsistency(), m_Async, m_UsePrepared);
                     m_State = eWaitingForPropsFetch;
                 }
@@ -204,7 +203,6 @@ void CCassBlobTaskLoadBlob::Wait1()
                 if (CheckReady(it)) {
                     it.query->NextRow();
                     if (!it.query->IsEOF()) {
-                        UpdateLastActivity();
                         (*m_Blob)
                             .SetModified(it.query->FieldGetInt64Value(0))
                             .SetClass(it.query->FieldGetInt16Value(1))
@@ -363,7 +361,6 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                         Error(CRequestStatus::e502_BadGateway, CCassandraException::eInconsistentData, eDiag_Error, msg);
                         return;
                     } else {
-                        UpdateLastActivity();
                         const unsigned char * rawdata = nullptr;
                         int64_t len = it.query->FieldGetBlobRaw(0, &rawdata);
                         m_RemainingSize -= len;
@@ -438,7 +435,6 @@ void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
             Error(CRequestStatus::e502_BadGateway, CCassandraException::eUnknown, eDiag_Error, msg);
         }
     }
-    UpdateLastActivity();
     qry.Query(GetQueryConsistency(), true, m_UsePrepared);
 }
 

@@ -93,7 +93,6 @@ void CCassBlobTaskDeleteExpired::Wait1()
                 qry->BindInt64(1, m_LastModified);
                 SetupQueryCB3(qry);
                 qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
-                UpdateLastActivity();
                 m_State = eReadingWriteTime;
                 break;
             }
@@ -105,7 +104,6 @@ void CCassBlobTaskDeleteExpired::Wait1()
                     break;
                 }
                 it.query->NextRow();
-                UpdateLastActivity();
                 if (!it.query->IsEOF()) {
                     CBlobRecord::TTimestamp write_timestamp = it.query->FieldGetInt64Value(0);
                     CloseAll();
@@ -130,7 +128,6 @@ void CCassBlobTaskDeleteExpired::Wait1()
             }
 
             case eDeleteData: {
-                UpdateLastActivity();
                 auto& qry = m_QueryArr[0].query;
                 qry->NewBatch();
                 string sql = "DELETE FROM " + GetKeySpace() + ".blob_chunk WHERE sat_key = ? and last_modified = ?";
