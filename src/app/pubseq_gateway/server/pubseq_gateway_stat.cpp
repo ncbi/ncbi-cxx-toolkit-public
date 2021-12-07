@@ -245,6 +245,226 @@ CPSGSCounters::CPSGSCounters()
             "BioseqInfoError", "bioseq info Cassandra query execution error counter",
             "Number of times a Cassandra bioseq info query resulted in an error",
             true, true, false);
+    m_Counters[ePSGS_100] =
+        new SCounterInfo(
+            "RequestStop100", "Request stop counter with status 100",
+            "Number of times a request finished with status 100",
+            true, false, false);
+    m_Counters[ePSGS_101] =
+        new SCounterInfo(
+            "RequestStop101", "Request stop counter with status 101",
+            "Number of times a request finished with status 101",
+            true, false, false);
+    m_Counters[ePSGS_200] =
+        new SCounterInfo(
+            "RequestStop200", "Request stop counter with status 200",
+            "Number of times a request finished with status 200",
+            true, false, false);
+    m_Counters[ePSGS_201] =
+        new SCounterInfo(
+            "RequestStop201", "Request stop counter with status 201",
+            "Number of times a request finished with status 201",
+            true, false, false);
+    m_Counters[ePSGS_202] =
+        new SCounterInfo(
+            "RequestStop202", "Request stop counter with status 202",
+            "Number of times a request finished with status 202",
+            true, false, false);
+    m_Counters[ePSGS_203] =
+        new SCounterInfo(
+            "RequestStop203", "Request stop counter with status 203",
+            "Number of times a request finished with status 203",
+            true, false, false);
+    m_Counters[ePSGS_204] =
+        new SCounterInfo(
+            "RequestStop204", "Request stop counter with status 204",
+            "Number of times a request finished with status 204",
+            true, false, false);
+    m_Counters[ePSGS_205] =
+        new SCounterInfo(
+            "RequestStop205", "Request stop counter with status 205",
+            "Number of times a request finished with status 205",
+            true, false, false);
+    m_Counters[ePSGS_206] =
+        new SCounterInfo(
+            "RequestStop206", "Request stop counter with status 206",
+            "Number of times a request finished with status 206",
+            true, false, false);
+    m_Counters[ePSGS_299] =
+        new SCounterInfo(
+            "RequestStop299", "Request stop counter with status 299",
+            "Number of times a request finished with status 299",
+            true, false, false);
+    m_Counters[ePSGS_300] =
+        new SCounterInfo(
+            "RequestStop300", "Request stop counter with status 300",
+            "Number of times a request finished with status 300",
+            true, false, false);
+    m_Counters[ePSGS_301] =
+        new SCounterInfo(
+            "RequestStop301", "Request stop counter with status 301",
+            "Number of times a request finished with status 301",
+            true, false, false);
+    m_Counters[ePSGS_302] =
+        new SCounterInfo(
+            "RequestStop302", "Request stop counter with status 302",
+            "Number of times a request finished with status 302",
+            true, false, false);
+    m_Counters[ePSGS_303] =
+        new SCounterInfo(
+            "RequestStop303", "Request stop counter with status 303",
+            "Number of times a request finished with status 303",
+            true, false, false);
+    m_Counters[ePSGS_304] =
+        new SCounterInfo(
+            "RequestStop304", "Request stop counter with status 304",
+            "Number of times a request finished with status 304",
+            true, false, false);
+    m_Counters[ePSGS_305] =
+        new SCounterInfo(
+            "RequestStop305", "Request stop counter with status 305",
+            "Number of times a request finished with status 305",
+            true, false, false);
+    m_Counters[ePSGS_307] =
+        new SCounterInfo(
+            "RequestStop307", "Request stop counter with status 307",
+            "Number of times a request finished with status 307",
+            true, false, false);
+    m_Counters[ePSGS_400] =
+        new SCounterInfo(
+            "RequestStop400", "Request stop counter with status 400",
+            "Number of times a request finished with status 400",
+            true, false, false);
+    m_Counters[ePSGS_401] =
+        new SCounterInfo(
+            "RequestStop401", "Request stop counter with status 401",
+            "Number of times a request finished with status 401",
+            true, false, false);
+    m_Counters[ePSGS_402] =
+        new SCounterInfo(
+            "RequestStop402", "Request stop counter with status 402",
+            "Number of times a request finished with status 402",
+            true, false, false);
+    m_Counters[ePSGS_403] =
+        new SCounterInfo(
+            "RequestStop403", "Request stop counter with status 403",
+            "Number of times a request finished with status 403",
+            true, false, false);
+    m_Counters[ePSGS_404] =
+        new SCounterInfo(
+            "RequestStop404", "Request stop counter with status 404",
+            "Number of times a request finished with status 404",
+            true, false, false);
+    m_Counters[ePSGS_405] =
+        new SCounterInfo(
+            "RequestStop405", "Request stop counter with status 405",
+            "Number of times a request finished with status 405",
+            true, false, false);
+    m_Counters[ePSGS_406] =
+        new SCounterInfo(
+            "RequestStop406", "Request stop counter with status 406",
+            "Number of times a request finished with status 406",
+            true, false, false);
+    m_Counters[ePSGS_407] =
+        new SCounterInfo(
+            "RequestStop407", "Request stop counter with status 407",
+            "Number of times a request finished with status 407",
+            true, false, false);
+    m_Counters[ePSGS_408] =
+        new SCounterInfo(
+            "RequestStop408", "Request stop counter with status 408",
+            "Number of times a request finished with status 408",
+            true, false, false);
+    m_Counters[ePSGS_409] =
+        new SCounterInfo(
+            "RequestStop409", "Request stop counter with status 409",
+            "Number of times a request finished with status 409",
+            true, false, false);
+    m_Counters[ePSGS_410] =
+        new SCounterInfo(
+            "RequestStop410", "Request stop counter with status 410",
+            "Number of times a request finished with status 410",
+            true, false, false);
+    m_Counters[ePSGS_411] =
+        new SCounterInfo(
+            "RequestStop411", "Request stop counter with status 411",
+            "Number of times a request finished with status 411",
+            true, false, false);
+    m_Counters[ePSGS_412] =
+        new SCounterInfo(
+            "RequestStop412", "Request stop counter with status 412",
+            "Number of times a request finished with status 412",
+            true, false, false);
+    m_Counters[ePSGS_413] =
+        new SCounterInfo(
+            "RequestStop413", "Request stop counter with status 413",
+            "Number of times a request finished with status 413",
+            true, false, false);
+    m_Counters[ePSGS_414] =
+        new SCounterInfo(
+            "RequestStop414", "Request stop counter with status 414",
+            "Number of times a request finished with status 414",
+            true, false, false);
+    m_Counters[ePSGS_415] =
+        new SCounterInfo(
+            "RequestStop415", "Request stop counter with status 415",
+            "Number of times a request finished with status 415",
+            true, false, false);
+    m_Counters[ePSGS_416] =
+        new SCounterInfo(
+            "RequestStop416", "Request stop counter with status 416",
+            "Number of times a request finished with status 416",
+            true, false, false);
+    m_Counters[ePSGS_417] =
+        new SCounterInfo(
+            "RequestStop417", "Request stop counter with status 417",
+            "Number of times a request finished with status 417",
+            true, false, false);
+    m_Counters[ePSGS_422] =
+        new SCounterInfo(
+            "RequestStop422", "Request stop counter with status 422",
+            "Number of times a request finished with status 422",
+            true, false, false);
+    m_Counters[ePSGS_499] =
+        new SCounterInfo(
+            "RequestStop499", "Request stop counter with status 499",
+            "Number of times a request finished with status 499",
+            true, false, false);
+    m_Counters[ePSGS_500] =
+        new SCounterInfo(
+            "RequestStop500", "Request stop counter with status 500",
+            "Number of times a request finished with status 500",
+            true, false, false);
+    m_Counters[ePSGS_501] =
+        new SCounterInfo(
+            "RequestStop501", "Request stop counter with status 501",
+            "Number of times a request finished with status 501",
+            true, false, false);
+    m_Counters[ePSGS_502] =
+        new SCounterInfo(
+            "RequestStop502", "Request stop counter with status 502",
+            "Number of times a request finished with status 502",
+            true, false, false);
+    m_Counters[ePSGS_503] =
+        new SCounterInfo(
+            "RequestStop503", "Request stop counter with status 503",
+            "Number of times a request finished with status 503",
+            true, false, false);
+    m_Counters[ePSGS_504] =
+        new SCounterInfo(
+            "RequestStop504", "Request stop counter with status 504",
+            "Number of times a request finished with status 504",
+            true, false, false);
+    m_Counters[ePSGS_505] =
+        new SCounterInfo(
+            "RequestStop505", "Request stop counter with status 505",
+            "Number of times a request finished with status 505",
+            true, false, false);
+    m_Counters[ePSGS_xxx] =
+        new SCounterInfo(
+            "RequestStopXXX", "Request stop counter with unknown status",
+            "Number of times a request finished with unknown status",
+            true, false, false);
 
     // The counters below are for the sake of an identifier, name and
     // description. The name and description can be overwritten by the
@@ -311,6 +531,64 @@ void CPSGSCounters::Increment(EPSGS_CounterType  counter)
     }
 
     ++(it->second->m_Value);
+}
+
+
+CPSGSCounters::EPSGS_CounterType
+CPSGSCounters::StatusToCounterType(int  status)
+{
+    switch (status) {
+        case 100:   return ePSGS_100;
+        case 101:   return ePSGS_101;
+        case 200:   return ePSGS_200;
+        case 201:   return ePSGS_201;
+        case 202:   return ePSGS_202;
+        case 203:   return ePSGS_203;
+        case 204:   return ePSGS_204;
+        case 205:   return ePSGS_205;
+        case 206:   return ePSGS_206;
+        case 299:   return ePSGS_299;
+        case 300:   return ePSGS_300;
+        case 301:   return ePSGS_301;
+        case 302:   return ePSGS_302;
+        case 303:   return ePSGS_303;
+        case 304:   return ePSGS_304;
+        case 305:   return ePSGS_305;
+        case 307:   return ePSGS_307;
+        case 400:   return ePSGS_400;
+        case 401:   return ePSGS_401;
+        case 402:   return ePSGS_402;
+        case 403:   return ePSGS_403;
+        case 404:   return ePSGS_404;
+        case 405:   return ePSGS_405;
+        case 406:   return ePSGS_406;
+        case 407:   return ePSGS_407;
+        case 408:   return ePSGS_408;
+        case 409:   return ePSGS_409;
+        case 410:   return ePSGS_410;
+        case 411:   return ePSGS_411;
+        case 412:   return ePSGS_412;
+        case 413:   return ePSGS_413;
+        case 414:   return ePSGS_414;
+        case 415:   return ePSGS_415;
+        case 416:   return ePSGS_416;
+        case 417:   return ePSGS_417;
+        case 422:   return ePSGS_422;
+        case 499:   return ePSGS_499;
+        case 500:   return ePSGS_500;
+        case 501:   return ePSGS_501;
+        case 502:   return ePSGS_502;
+        case 503:   return ePSGS_503;
+        case 504:   return ePSGS_504;
+        case 505:   return ePSGS_505;
+    }
+    return ePSGS_xxx;
+}
+
+
+void CPSGSCounters::IncrementRequestStopCounter(int  status)
+{
+    Increment(StatusToCounterType(status));
 }
 
 

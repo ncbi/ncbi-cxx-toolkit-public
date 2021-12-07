@@ -84,6 +84,52 @@ class CPSGSCounters
             ePSGS_Si2csiError,
             ePSGS_BioseqInfoError,
 
+            // Request stop statuses
+            ePSGS_100,
+            ePSGS_101,
+            ePSGS_200,
+            ePSGS_201,
+            ePSGS_202,
+            ePSGS_203,
+            ePSGS_204,
+            ePSGS_205,
+            ePSGS_206,
+            ePSGS_299,
+            ePSGS_300,
+            ePSGS_301,
+            ePSGS_302,
+            ePSGS_303,
+            ePSGS_304,
+            ePSGS_305,
+            ePSGS_307,
+            ePSGS_400,
+            ePSGS_401,
+            ePSGS_402,
+            ePSGS_403,
+            ePSGS_404,
+            ePSGS_405,
+            ePSGS_406,
+            ePSGS_407,
+            ePSGS_408,
+            ePSGS_409,
+            ePSGS_410,
+            ePSGS_411,
+            ePSGS_412,
+            ePSGS_413,
+            ePSGS_414,
+            ePSGS_415,
+            ePSGS_416,
+            ePSGS_417,
+            ePSGS_422,
+            ePSGS_499,
+            ePSGS_500,
+            ePSGS_501,
+            ePSGS_502,
+            ePSGS_503,
+            ePSGS_504,
+            ePSGS_505,
+            ePSGS_xxx,  // unknown request stop status
+
             // Not pure monotonic counters;
             // They participate in the output though so the name and identifier will be
             // required for them too
@@ -97,7 +143,10 @@ class CPSGSCounters
             ePSGS_SplitInfoCacheSize
         };
 
+    static EPSGS_CounterType StatusToCounterType(int  status);
+
     void Increment(EPSGS_CounterType  counter);
+    void IncrementRequestStopCounter(int  status);
     void UpdateConfiguredNameDescription(
                             const map<string, tuple<string, string>> &  conf);
 
