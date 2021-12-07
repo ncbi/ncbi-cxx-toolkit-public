@@ -63,7 +63,7 @@ class CCassConnectionFactory:
     void ReloadConfig(const CNcbiRegistry &  registry);
     shared_ptr<CCassConnection> CreateInstance(void);
 
-    void GetHostPort(string & cass_hosts, short & cass_port);
+    void GetHostPort(string & hostlist, short & port);
     string GetUserName() const;
     string GetPassword() const;
 

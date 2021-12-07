@@ -79,7 +79,6 @@ void CCassBlobTaskDelete::Wait1()
                 qry->BindInt32(0, m_Key);
                 SetupQueryCB3(qry);
                 qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
-                UpdateLastActivity();
                 m_State = eReadingVersions;
                 break;
             }
@@ -92,7 +91,6 @@ void CCassBlobTaskDelete::Wait1()
                 }
                 async_rslt_t wr = static_cast<async_rslt_t>(-1);
                 if (!it.query->IsEOF()) {
-                    UpdateLastActivity();
                     while ((wr = it.query->NextRow()) == ar_dataready) {
                         m_ExtendedVersions.push_back(it.query->FieldGetInt64Value(0));
                     }
@@ -113,7 +111,6 @@ void CCassBlobTaskDelete::Wait1()
             }
 
             case eDeleteData: {
-                UpdateLastActivity();
                 auto qry = m_QueryArr[0].query;
                 qry->NewBatch();
                 CBlobChangelogWriter changelog;

@@ -91,7 +91,6 @@ void CCassNAnnotTaskDelete::Wait1()
                 );
                 SetupQueryCB3(query);
                 query->RunBatch();
-                UpdateLastActivity();
                 m_State = eWaitingChangelogInserted;
                 break;
             }
@@ -123,7 +122,6 @@ void CCassNAnnotTaskDelete::Wait1()
                         query->BindInt64(5, m_Annot->GetModified());
                     }
 
-                    UpdateLastActivity();
                     SetupQueryCB3(query);
                     query->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, false);
                     m_State = eWaitingBioseqNADeleted;

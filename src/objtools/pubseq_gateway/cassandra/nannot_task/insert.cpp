@@ -83,7 +83,7 @@ void CCassNAnnotTaskInsert::Wait1()
                     m_State = eInsertNAnnotInfo;
                 } else {
                     m_BlobInsertTask = make_unique<CCassBlobTaskInsertExtended>(
-                         m_OpTimeoutMs, m_Conn, m_Keyspace,
+                         0, m_Conn, m_Keyspace,
                          m_Blob, true, m_MaxRetries,
                          [this]
                          (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
@@ -140,8 +140,6 @@ void CCassNAnnotTaskInsert::Wait1()
                 auto annot_info_size = m_Annot->GetSeqAnnotInfo().size();
                 qry->BindBytes(8, reinterpret_cast<const unsigned char *>(annot_info_data), annot_info_size);
                 qry->BindInt64(9, m_Annot->GetAnnotInfoModified());
-
-                UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 CNAnnotChangelogWriter().WriteChangelogEvent(

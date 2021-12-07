@@ -121,7 +121,6 @@ void CCassBlobTaskFetchSplitHistory::Wait1(void)
                 }
 
                 SetupQueryCB3(query);
-                UpdateLastActivity();
                 query->Query(GetQueryConsistency(), m_Async, true);
                 m_State = eWaitingForFetch;
                 break;
@@ -153,7 +152,6 @@ void CCassBlobTaskFetchSplitHistory::Wait1(void)
                     m_State = eInit;
                     m_Result.clear();
                 }
-                UpdateLastActivity();
                 break;
             }
 

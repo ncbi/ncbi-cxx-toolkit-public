@@ -145,7 +145,28 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     bool IsConnected(void);
     int64_t GetActiveStatements(void) const;
     CassMetrics GetMetrics(void);
-    void SetConnProp(const string & host, const string & user, const string & pwd, int16_t port = 0);
+
+    /// Deprecated. Use SetConnectionPoint() + SetCredentials()
+    NCBI_DEPRECATED void SetConnProp(const string & host, const string & user, const string & pwd, int16_t port = 0);
+
+    /// Set connection point parameters.
+    ///
+    /// @param hostlist
+    ///   Comma separated list of IPs/hostnames used to connect to Cassandra cluster.
+    ///   Driver uses one alive host at random.
+    ///   It will retry connection attempts if first pick is dead.
+    /// @param port
+    ///   Port number used to connect to Cassandra native interface.
+    void SetConnectionPoint(string const& hostlist, int16_t port = 0);
+
+    /// Set credentials to use connecting to Cassandra cluster.
+    /// Empty username means no auth required.
+    ///
+    /// @param username
+    ///   Username to connect to Cassandra cluster
+    /// @param password
+    ///   Password to connect to Cassandra cluster
+    void SetCredentials(string const& username, string const& password);
 
     void SetLoadBalancing(loadbalancing_policy_t policy);
     void SetTokenAware(bool value);
@@ -179,6 +200,7 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
 
     void SetKeepAlive(unsigned int keepalive);
 
+    /// Warning! Not suitable for usage in multi-threaded environment in case of multiple keyspaces.
     void SetKeyspace(const string & keyspace);
     string Keyspace(void) const;
 
@@ -205,7 +227,7 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     );
 
  private:
-    string                          m_host;
+    string                          m_hostlist;
     int16_t                         m_port;
     string                          m_user;
     string                          m_pwd;

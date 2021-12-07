@@ -179,7 +179,6 @@ unsigned int CCassConnection::QryTimeoutMs() const
     return m_qtimeoutms;
 }
 
-
 void CCassConnection::SetRtLimits(unsigned int  numThreadsIo, unsigned int  numConnPerHost,
                  unsigned int /*maxConnPerHost*/)
 {
@@ -287,7 +286,7 @@ void CCassConnection::Connect()
     if (IsConnected()) {
         NCBI_THROW(CCassandraException, eSeqFailed, "cassandra driver has already been connected");
     }
-    if (m_host.empty()) {
+    if (m_hostlist.empty()) {
         NCBI_THROW(CCassandraException, eSeqFailed, "cassandra host list is empty");
     }
 
@@ -295,7 +294,7 @@ void CCassConnection::Connect()
     m_cluster = cass_cluster_new();
 
     cass_cluster_set_connect_timeout(m_cluster, m_ctimeoutms);
-    cass_cluster_set_contact_points(m_cluster, m_host.c_str());
+    cass_cluster_set_contact_points(m_cluster, m_hostlist.c_str());
     if (m_port > 0) {
         cass_cluster_set_port(m_cluster, m_port);
     }
@@ -444,10 +443,23 @@ void CCassConnection::SetConnProp(
     const string & pwd,
     int16_t port)
 {
-    m_host = host;
-    m_user = user;
-    m_pwd = pwd;
+    SetConnectionPoint(host, port);
+    SetCredentials(user, pwd);
+}
+
+void CCassConnection::SetConnectionPoint(string const& hostlist, int16_t port)
+{
+    m_hostlist = hostlist;
     m_port = port;
+    if (IsConnected()) {
+        Close();
+    }
+}
+
+void CCassConnection::SetCredentials(string const& username, string const& password)
+{
+    m_user = username;
+    m_pwd = password;
     if (IsConnected()) {
         Close();
     }

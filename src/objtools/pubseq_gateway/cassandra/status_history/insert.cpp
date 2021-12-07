@@ -89,8 +89,6 @@ void CCassStatusHistoryTaskInsert::Wait1()
                 qry->BindStr(4, m_Record->GetComment());
                 qry->BindStr(5, m_Record->GetPublicComment());
                 qry->BindInt32(6, m_Record->GetReplaces());
-
-                UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 CBlobChangelogWriter().WriteChangelogEvent(

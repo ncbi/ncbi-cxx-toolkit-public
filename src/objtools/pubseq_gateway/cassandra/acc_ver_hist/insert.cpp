@@ -91,8 +91,6 @@ void CCassAccVerHistoryTaskInsert::Wait1()
             query->BindInt32( 5, m_Record->sat_key);
             query->BindInt16( 6, m_Record->seq_id_type);
             query->BindInt64( 7, m_Record->date);
-               
-            UpdateLastActivity();
             query->Execute( CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 #if 000
             @@@

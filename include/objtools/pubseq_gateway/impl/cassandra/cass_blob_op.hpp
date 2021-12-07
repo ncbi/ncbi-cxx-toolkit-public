@@ -84,7 +84,7 @@ class CCassBlobWaiter
     CCassBlobWaiter& operator=(CCassBlobWaiter&&) = default;
 
     CCassBlobWaiter(
-        unsigned int op_timeout_ms,
+        unsigned int /*op_timeout_ms deprecated*/,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
         int32_t key,
@@ -97,8 +97,6 @@ class CCassBlobWaiter
       ,  m_Keyspace(keyspace)
       ,  m_Key(key)
       ,  m_State(eInit)
-      ,  m_OpTimeoutMs(op_timeout_ms)
-      ,  m_LastActivityMs(gettime() / 1000L)
       ,  m_MaxRetries(max_retries)  // 0 means no limit in auto-restart count,
                                     // any other positive value is the limit,
                                     // 1 means no 2nd start -> no re-starts at all
@@ -238,26 +236,15 @@ class CCassBlobWaiter
         m_ErrorCb(status, code, severity, message);
     }
 
-    bool IsTimedOut(void) const
+    bool CanRestart(shared_ptr<CCassQuery> query, unsigned int restart_count) const
     {
-        if (m_OpTimeoutMs > 0)
-            return ((gettime() / 1000L - m_LastActivityMs) >
-                    m_OpTimeoutMs);
-        return false;
-    }
-
-    bool CanRestart(shared_ptr<CCassQuery>, unsigned int restart_count) const
-    {
-        bool    is_timedout = IsTimedOut();
-        bool    is_out_of_retries = (m_MaxRetries > 0) &&
-                                    (restart_count >= m_MaxRetries - 1);
-
-        ERR_POST(Info << "CanRestartQ? t/o=" << is_timedout <<
-                 ", out_of_retries=" << is_out_of_retries <<
-                 ", last_active=" << m_LastActivityMs <<
+        bool is_out_of_retries = (m_MaxRetries > 0) &&
+                                 (restart_count >= m_MaxRetries - 1);
+        ERR_POST(Info << "CanRestartQ?" <<
+                 " out_of_retries=" << is_out_of_retries <<
                  ", time=" << gettime() / 1000L <<
-                 ", timeout=" << m_OpTimeoutMs);
-        return !is_out_of_retries && !is_timedout && !m_Cancelled;
+                 ", timeout=" << query->Timeout() << "ms");
+        return !is_out_of_retries && !m_Cancelled;
     }
 
     bool CanRestart(SQueryRec& it) const
@@ -305,11 +292,6 @@ class CCassBlobWaiter
         return rv;
     }
 
-    void UpdateLastActivity(void)
-    {
-        m_LastActivityMs = gettime() / 1000L;
-    }
-
     CassConsistency GetQueryConsistency(void)
     {
         return CASS_CONSISTENCY_LOCAL_QUORUM;
@@ -324,8 +306,6 @@ class CCassBlobWaiter
     string                          m_Keyspace;
     int32_t                         m_Key;
     atomic<int32_t>                 m_State;
-    unsigned int                    m_OpTimeoutMs;
-    int64_t                         m_LastActivityMs;
     string                          m_LastError;
     unsigned int                    m_MaxRetries;
     bool                            m_Async;

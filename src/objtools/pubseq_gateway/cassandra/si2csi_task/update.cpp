@@ -95,7 +95,6 @@ void CCassSI2CSITaskUpdate::Wait1(void)
                 qry->BindInt8(4, m_Record->GetSecSeqState());
                 qry->BindInt16(5, m_Record->GetSeqIdType());
                 qry->BindInt16(6, m_Record->GetVersion());
-                UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 int64_t partition = CBiSiPartitionMaker().GetCurrentPartition();

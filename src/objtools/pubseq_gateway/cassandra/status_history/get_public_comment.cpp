@@ -156,7 +156,6 @@ void CCassStatusHistoryTaskGetPublicComment::Wait1()
                 query->SetSQL(sql, 1);
                 query->BindInt32(0, m_Key);
                 SetupQueryCB3(query);
-                UpdateLastActivity();
                 query->Query(GetQueryConsistency(), m_Async, true);
                 m_State = eReadingHistory;
                 break;

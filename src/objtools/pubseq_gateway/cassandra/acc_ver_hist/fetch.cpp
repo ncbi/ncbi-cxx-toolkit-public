@@ -126,10 +126,10 @@ void CCassAccVerHistoryTaskFetch::Wait1()
                 sql += " AND id_type = ? ALLOW FILTERING";
                 ++params;
             }
-            
+
             m_QueryArr[0].query->SetSQL(sql, params);
             m_QueryArr[0].query->BindStr(0, m_Accession);
-            
+
             unsigned int param = 1;
             if( m_Version > 0)
             {
@@ -141,7 +141,6 @@ void CCassAccVerHistoryTaskFetch::Wait1()
             }
 
             SetupQueryCB3( m_QueryArr[0].query);
-            UpdateLastActivity();
             m_QueryArr[0].query->Query( CASS_CONSISTENCY_LOCAL_QUORUM,
                                         m_Async, true, m_PageSize);
             restarted = true;
@@ -192,10 +191,9 @@ void CCassAccVerHistoryTaskFetch::Wait1()
                 m_QueryArr[0].query->Close();
                 m_State = eInit;
             }
-            UpdateLastActivity();
             break;
         }
-        
+
         default:
         {
             char msg[1024];

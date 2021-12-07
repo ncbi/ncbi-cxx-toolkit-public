@@ -82,7 +82,7 @@ TEST_F(CCassConnectionTest, ReconnectShouldNotFail) {
     ASSERT_FALSE(connection->IsConnected()) << "Connection should be DOWN before running test";
 
     // Set impossible hostname to fail connection
-    connection->SetConnProp("192.168.111.111", "", "");
+    connection->SetConnectionPoint("192.168.111.111");
     try {
         connection->Connect();
         FAIL() << "Connect should fail for impossible hostname";
@@ -102,7 +102,7 @@ TEST_F(CCassConnectionTest, ReconnectShouldNotFail) {
     string host_list;
     int16_t port;
     m_Factory->GetHostPort(host_list, port);
-    connection->SetConnProp(host_list, m_Factory->GetUserName(), m_Factory->GetPassword(), port);
+    connection->SetConnectionPoint(host_list, port);
     connection->Connect();
 
     ASSERT_TRUE(connection->IsConnected()) << "Connection should be UP after the reason of failure is fixed";

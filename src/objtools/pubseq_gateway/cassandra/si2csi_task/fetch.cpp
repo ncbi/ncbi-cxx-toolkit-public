@@ -117,7 +117,6 @@ void CCassSI2CSITaskFetch::Wait1(void)
                     m_QueryArr[0] = {m_Conn->NewQuery(), 0};
                     x_InitializeQuery();
                     SetupQueryCB3(m_QueryArr[0].query);
-                    UpdateLastActivity();
                     m_QueryArr[0].query->Query(kSi2CsiConsistency, m_Async, true, m_PageSize);
                     m_State = eFetchStarted;
                     break;
@@ -157,7 +156,6 @@ void CCassSI2CSITaskFetch::Wait1(void)
                         m_State = eInit;
                         m_Records.clear();
                     }
-                    UpdateLastActivity();
                     break;
                 }
 

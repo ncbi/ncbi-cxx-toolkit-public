@@ -81,7 +81,7 @@ void CCassID2SplitTaskInsert::Wait1()
           {
                 m_BlobInsertTask = unique_ptr<CCassBlobTaskInsertExtended>(
                      new CCassBlobTaskInsertExtended(
-                         m_OpTimeoutMs, m_Conn, m_Keyspace,
+                         0, m_Conn, m_Keyspace,
                          m_Blob, true, m_MaxRetries,
                          [this]
                          (CRequestStatus::ECode status, int code, EDiagSev severity,
@@ -120,8 +120,6 @@ void CCassID2SplitTaskInsert::Wait1()
                 qry->BindInt32( 2, m_Id2Split->GetSatKey());
                 qry->BindInt32( 3, m_Id2Split->GetEntType());
                 qry->BindInt32( 4, m_Id2Split->GetSplitId());
-
-                UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 CBlobChangelogWriter().WriteChangelogEvent(
