@@ -189,12 +189,6 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
 }
 
 
-void cb(void *  d)
-{
-    IPSGS_Processor *  processor = (IPSGS_Processor *)(d);
-    CPubseqGatewayApp::GetInstance()->SignalFinishProcessing(processor, CPSGS_Dispatcher::ePSGS_Fromework);
-}
-
 void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                                               EPSGS_SignalSource  source)
 {
@@ -399,6 +393,8 @@ void CPSGS_Dispatcher::SignalConnectionCanceled(size_t      request_id)
 void CPSGS_Dispatcher::x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
                                           CRequestStatus::ECode  status)
 {
+    CPubseqGatewayApp::GetInstance()->GetCounters().IncrementRequestStopCounter(status);
+
     if (request->GetRequestContext().NotNull()) {
         request->SetRequestContext();
         CDiagContext::GetRequestContext().SetRequestStatus(status);
