@@ -520,8 +520,12 @@ public:
     void CancelAll(void)
     {
         {
-            CMutexGuard guard(m_Mutex);
-            for (CRef<CPSG_Task> task : m_Tasks) {
+            TTasks tasks;
+            {
+                CMutexGuard guard(m_Mutex);
+                tasks = m_Tasks;
+            }
+            for (CRef<CPSG_Task> task : tasks) {
                 task->RequestToCancel();
             }
         }
