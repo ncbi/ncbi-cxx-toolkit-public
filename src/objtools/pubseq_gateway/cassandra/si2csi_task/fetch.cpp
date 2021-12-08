@@ -63,8 +63,17 @@ CCassSI2CSITaskFetch::CCassSI2CSITaskFetch(
     : CCassBlobWaiter(timeout_ms, connection, keyspace, 0, true, max_retries, move(data_error_cb))
     , m_Request(request)
     , m_ConsumeCallback(consume_callback)
-    , m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE)
-    , m_RestartCounter(0)
+{}
+
+CCassSI2CSITaskFetch::CCassSI2CSITaskFetch(
+                            shared_ptr<CCassConnection> connection,
+                            const string &              keyspace,
+                            CSi2CsiFetchRequest const&  request,
+                            TSI2CSIConsumeCallback      consume_callback,
+                            TDataErrorCallback          data_error_cb)
+    : CCassBlobWaiter(move(connection), keyspace, true, move(data_error_cb))
+    , m_Request(request)
+    , m_ConsumeCallback(consume_callback)
 {}
 
 void CCassSI2CSITaskFetch::SetConsumeCallback(TSI2CSIConsumeCallback  callback)
@@ -81,7 +90,7 @@ void CCassSI2CSITaskFetch::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> 
     CCassBlobWaiter::SetDataReadyCB3(callback);
 }
 
-void CCassSI2CSITaskFetch::x_InitializeQuery(void)
+void CCassSI2CSITaskFetch::x_InitializeQuery()
 {
     static const string s_Select = "SELECT sec_seq_id_type, accession, gi, sec_seq_state, "
                                    "seq_id_type, version, writetime(accession) FROM ";
@@ -101,9 +110,9 @@ void CCassSI2CSITaskFetch::x_InitializeQuery(void)
     }
 }
 
-void CCassSI2CSITaskFetch::Wait1(void)
+void CCassSI2CSITaskFetch::Wait1()
 {
-    bool restarted;
+    bool restarted{false};
     do {
         restarted = false;
         switch (m_State) {
@@ -161,9 +170,10 @@ void CCassSI2CSITaskFetch::Wait1(void)
 
             default: {
                 char msg[1024];
+                string keyspace = GetKeySpace();
                 string sec_seqid = m_Request.GetSecSeqId();
                 snprintf(msg, sizeof(msg), "Failed to fetch canonical seq id (key=%s|%s|%d) unexpected state (%d)",
-                    m_Keyspace.c_str(), sec_seqid.c_str(),
+                    keyspace.c_str(), sec_seqid.c_str(),
                     static_cast<int>(m_Request.GetSecSeqIdType()), static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
             }

@@ -61,9 +61,16 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     };
 
  public:
+    NCBI_DEPRECATED
     CCassBioseqInfoTaskFetch(unsigned int timeout_ms,
                              unsigned int max_retries,
                              shared_ptr<CCassConnection> connection,
+                             const string & keyspace,
+                             CBioseqInfoFetchRequest const& request,
+                             TBioseqInfoConsumeCallback consume_callback,
+                             TDataErrorCallback data_error_cb);
+
+    CCassBioseqInfoTaskFetch(shared_ptr<CCassConnection> connection,
                              const string & keyspace,
                              CBioseqInfoFetchRequest const& request,
                              TBioseqInfoConsumeCallback consume_callback,
@@ -74,16 +81,16 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     void AllowInheritance(bool value);
 
  protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
  private:
-    void x_InitializeQuery(void);
-    void x_InitializeAliveRecordQuery(void);
+    void x_InitializeQuery();
+    void x_InitializeAliveRecordQuery();
     void x_PopulateRecord(CBioseqInfoRecord& record) const;
-    bool x_IsMatchingRecord(void);
+    bool x_IsMatchingRecord();
     bool x_IsMatchingNewRecord(CBioseqInfoRecord const& old_record, CBioseqInfoRecord const& new_record);
-    void x_ReadingLoop(void);
-    void x_StartQuery(void);
+    void x_ReadingLoop();
+    void x_StartQuery();
     void x_MergeSeqIds(CBioseqInfoRecord& target, CBioseqInfoRecord const& source);
     bool x_InheritanceRequired();
 
@@ -93,11 +100,11 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     TBioseqInfoConsumeCallback m_ConsumeCallback;
     vector<CBioseqInfoRecord> m_Records;
     set<size_t> m_InheritanceRequired;
-    bool m_InheritanceAllowed;
+    bool m_InheritanceAllowed{true};
 
  protected:
-    unsigned int m_PageSize;
-    unsigned int m_RestartCounter;
+    unsigned int m_PageSize{CCassQuery::DEFAULT_PAGE_SIZE};
+    unsigned int m_RestartCounter{0};
 };
 
 END_IDBLOB_SCOPE

@@ -71,6 +71,12 @@ const unsigned int              kCassFallbackWrConsistencyMin = 0;
 const unsigned int              kCassFallbackWrConsistencyMax = UINT_MAX;
 const unsigned int              kCassFallbackWrConsistencyDefault = 0;
 
+///   < 0 means not configured. Should not be used here
+///   0 means no limit in auto-restart count,
+///   1 means no 2nd start -> no re-starts at all
+///   n > 1 means n-1 restart allowed
+const int                       kMaxRetriesDefault = 1;
+
 const map<string, loadbalancing_policy_t>     kPolicyArgMap = {
     {"", kLoadBalancingDefaultPolicy},
     {"dcaware", LB_DCAWARE},
@@ -78,11 +84,11 @@ const map<string, loadbalancing_policy_t>     kPolicyArgMap = {
 };
 
 
-/* CCassConnectionFactory */
 CCassConnectionFactory::CCassConnectionFactory() :
     m_CassConnTimeoutMs(kCassConnTimeoutDefault),
     m_CassQueryTimeoutMs(kCassQueryTimeoutDefault),
     m_CassQueryRetryTimeoutMs(0),
+    m_MaxRetries(kMaxRetriesDefault),
     m_CassFallbackRdConsistency(false),
     m_CassFallbackWrConsistency(kCassFallbackWrConsistencyDefault),
     m_LoadBalancing(kLoadBalancingDefaultPolicy),
@@ -167,6 +173,7 @@ void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry & registry)
         m_CassConnTimeoutMs = registry.GetInt(m_Section, "ctimeout", kCassConnTimeoutDefault);
         m_CassQueryTimeoutMs = registry.GetInt(m_Section, "qtimeout", kCassQueryTimeoutDefault);
         m_CassQueryRetryTimeoutMs = registry.GetInt(m_Section, "qtimeout_retry", 0);
+        m_MaxRetries = registry.GetInt(m_Section, "maxretries", kMaxRetriesDefault);
         m_CassDataNamespace = registry.GetString(m_Section, "namespace", "");
         m_CassFallbackRdConsistency = registry.GetBool(m_Section, "fallbackrdconsistency", false);
         m_CassFallbackWrConsistency = registry.GetInt(
@@ -182,12 +189,6 @@ void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry & registry)
         m_CassHosts = registry.GetString(m_Section, "service", "");
         m_CassBlackList = registry.GetString(m_Section, "black_list", "");
         m_LogEnabled = registry.GetBool(m_Section, "log", false);
-
-        if (registry.HasEntry(m_Section, "maxconnperhost")) {
-            INFO_POST("Cassandra parameter 'maxconnperhost' is deprecated, "
-                "does not do anything and should be removed from section '"
-                << m_Section << "' of registry");
-        }
 
         ProcessParams();
     }
@@ -302,14 +303,27 @@ void CCassConnectionFactory::x_ValidateArgs(void)
         m_CassConnTimeoutMs = kCassConnTimeoutDefault;
     }
 
-    if (m_CassQueryTimeoutMs < kCassQueryTimeoutMin ||
-        m_CassQueryTimeoutMs > kCassQueryTimeoutMax) {
+    if (m_CassQueryTimeoutMs < kCassQueryTimeoutMin || m_CassQueryTimeoutMs > kCassQueryTimeoutMax) {
         ERR_POST("The cassandra query timeout is out of range. Allowed "
                  "range: " << kCassQueryTimeoutMin << "..." <<
                  kCassQueryTimeoutMax << ". Received: " <<
                  m_CassQueryTimeoutMs << ". Reset to "
                  "default: " << kCassQueryTimeoutDefault);
         m_CassQueryTimeoutMs = kCassQueryTimeoutDefault;
+    }
+
+    if (m_CassQueryRetryTimeoutMs < kCassQueryTimeoutMin || m_CassQueryRetryTimeoutMs > kCassQueryTimeoutMax) {
+        ERR_POST("The cassandra query retry timeout is out of range. Allowed "
+                 "range: " << kCassQueryTimeoutMin << "..." <<
+                 kCassQueryTimeoutMax << ". Received: " <<
+                 m_CassQueryRetryTimeoutMs << ". Reset to "
+                 "default: 0");
+        m_CassQueryTimeoutMs = 0;
+    }
+
+    if (m_MaxRetries < 0) {
+        ERR_POST("The max retries value is negative. Reset to " << kMaxRetriesDefault);
+        m_MaxRetries = kMaxRetriesDefault;
     }
 
     string      lowercase_policy = NStr::ToLower(m_LoadBalancingStr);

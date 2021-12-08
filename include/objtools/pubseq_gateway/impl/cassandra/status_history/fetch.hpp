@@ -59,7 +59,7 @@ class CCassStatusHistoryTaskFetch
     };
 
  public:
-    CCassStatusHistoryTaskFetch(
+    NCBI_DEPRECATED CCassStatusHistoryTaskFetch(
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -69,18 +69,27 @@ class CCassStatusHistoryTaskFetch
         TDataErrorCallback data_error_cb
     );
 
+    CCassStatusHistoryTaskFetch(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        int32_t sat_key,
+        int64_t done_when,
+        TDataErrorCallback data_error_cb
+    );
+
     unique_ptr<CBlobStatusHistoryRecord> Consume();
-    string GetKeyspace() const
+
+    /// Use GetKeySpace()
+    NCBI_DEPRECATED string GetKeyspace() const
     {
-        return m_Keyspace;
+        return GetKeySpace();
     }
 
  protected:
-    void Wait1(void) override;
+    void Wait1() override;
 
  private:
-    int32_t m_SatKey;
-    int64_t m_DoneWhen;
+    int64_t m_DoneWhen{-1};
     unique_ptr<CBlobStatusHistoryRecord> m_Record;
 };
 

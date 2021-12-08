@@ -58,10 +58,7 @@ class CBioseqInfoTaskFetchTest
     : public testing::Test
 {
  public:
-    CBioseqInfoTaskFetchTest()
-     : m_KeyspaceName("idmain2")
-     , m_Timeout(10000)
-    {}
+    CBioseqInfoTaskFetchTest() = default;
 
  protected:
     static void SetUpTestCase() {
@@ -84,8 +81,7 @@ class CBioseqInfoTaskFetchTest
     static shared_ptr<CCassConnectionFactory> m_Factory;
     static shared_ptr<CCassConnection> m_Connection;
 
-    string m_KeyspaceName;
-    unsigned int m_Timeout;
+    string m_KeyspaceName{"idmain2"};
 };
 
 const char* CBioseqInfoTaskFetchTest::m_TestClusterName = "ID_CASS_TEST";
@@ -112,7 +108,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionNotFound) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("FAKEACCESSION");
     CCassBioseqInfoTaskFetch fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, request,
+        m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             actual_records = move(records);
@@ -130,7 +126,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionMultiple) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("AC005299");
     CCassBioseqInfoTaskFetch fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, request,
+        m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> && records) {
             ++call_count;
             actual_records = move(records);
@@ -158,7 +154,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionVersionMultiple) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("AC005299").SetVersion(0);
     CCassBioseqInfoTaskFetch fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, request,
+        m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> && records) {
             ++call_count;
             actual_records = move(records);
@@ -186,7 +182,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionVersionSingle) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("AC005299").SetVersion(1);
     CCassBioseqInfoTaskFetch fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, request,
+        m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             actual_records = move(records);
@@ -209,7 +205,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionSeqIdType) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("AC005299").SetSeqIdType(5);
     CCassBioseqInfoTaskFetch fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, request,
+        m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             actual_records = move(records);
@@ -232,7 +228,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionGISingle) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("AC005299").SetGI(3643631);
     CCassBioseqInfoTaskFetch fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, request,
+        m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             actual_records = move(records);
@@ -255,7 +251,7 @@ TEST_F(CBioseqInfoTaskFetchTest, SeqIdsInheritance) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("NC_000001").SetVersion(5);
     CCassBioseqInfoTaskFetch fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, request,
+        m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             actual_records = move(records);
@@ -289,7 +285,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionGIWrongVersion) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("AC005299").SetVersion(5).SetGI(3643631);
     CCassBioseqInfoTaskFetch fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, request,
+        m_Connection, m_KeyspaceName, request,
         [&call_count](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             EXPECT_EQ(0UL, records.size());

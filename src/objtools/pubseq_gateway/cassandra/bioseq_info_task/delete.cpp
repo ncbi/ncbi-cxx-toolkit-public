@@ -68,10 +68,25 @@ CCassBioseqInfoTaskDelete::CCassBioseqInfoTaskDelete(
     , m_GI(gi)
 {}
 
+CCassBioseqInfoTaskDelete::CCassBioseqInfoTaskDelete(
+    shared_ptr<CCassConnection> connection,
+    const string & keyspace,
+    CBioseqInfoRecord::TAccession accession,
+    CBioseqInfoRecord::TVersion version,
+    CBioseqInfoRecord::TSeqIdType seq_id_type,
+    CBioseqInfoRecord::TGI gi,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(connection, keyspace, true, move(data_error_cb))
+    , m_Accession(move(accession))
+    , m_Version(version)
+    , m_SeqIdType(seq_id_type)
+    , m_GI(gi)
+{}
 
-void CCassBioseqInfoTaskDelete::Wait1(void)
+void CCassBioseqInfoTaskDelete::Wait1()
 {
-    bool restarted;
+    bool restarted{false};
     do {
         restarted = false;
         switch (m_State) {
@@ -118,7 +133,7 @@ void CCassBioseqInfoTaskDelete::Wait1(void)
 
             default: {
                 stringstream msg;
-                msg << "Failed to delete bioseq_info record (key=" << m_Keyspace << "." << m_Accession << "."
+                msg << "Failed to delete bioseq_info record (key=" << GetKeySpace() << "." << m_Accession << "."
                     << m_Version << "." << m_SeqIdType << "." << m_GI << ") unexpected state (" << static_cast<int>(m_State) << ")";
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg.str());
             }

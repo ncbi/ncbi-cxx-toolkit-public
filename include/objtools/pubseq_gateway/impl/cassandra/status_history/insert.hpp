@@ -59,7 +59,7 @@ class CCassStatusHistoryTaskInsert
     };
 
  public:
-    CCassStatusHistoryTaskInsert(
+    NCBI_DEPRECATED CCassStatusHistoryTaskInsert(
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -68,11 +68,18 @@ class CCassStatusHistoryTaskInsert
         TDataErrorCallback data_error_cb
     );
 
+    CCassStatusHistoryTaskInsert(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        CBlobStatusHistoryRecord * record,
+        TDataErrorCallback data_error_cb
+    );
+
  protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
  private:
-    CBlobStatusHistoryRecord * m_Record;
+    CBlobStatusHistoryRecord * m_Record{nullptr};
 };
 
 END_IDBLOB_SCOPE

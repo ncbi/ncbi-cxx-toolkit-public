@@ -55,7 +55,7 @@ class CCassBioseqInfoTaskDelete
     };
 
 public:
-    CCassBioseqInfoTaskDelete(
+    NCBI_DEPRECATED CCassBioseqInfoTaskDelete(
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -67,14 +67,24 @@ public:
         TDataErrorCallback data_error_cb
     );
 
+    CCassBioseqInfoTaskDelete(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        CBioseqInfoRecord::TAccession accession,
+        CBioseqInfoRecord::TVersion version,
+        CBioseqInfoRecord::TSeqIdType seq_id_type,
+        CBioseqInfoRecord::TGI gi,
+        TDataErrorCallback data_error_cb
+    );
+
 protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
 private:
     CBioseqInfoRecord::TAccession m_Accession;
-    CBioseqInfoRecord::TVersion m_Version;
-    CBioseqInfoRecord::TSeqIdType m_SeqIdType;
-    CBioseqInfoRecord::TGI m_GI;
+    CBioseqInfoRecord::TVersion m_Version{0};
+    CBioseqInfoRecord::TSeqIdType m_SeqIdType{0};
+    CBioseqInfoRecord::TGI m_GI{0};
 };
 
 END_IDBLOB_SCOPE

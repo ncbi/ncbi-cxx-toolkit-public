@@ -55,12 +55,19 @@ class CCassBioseqInfoTaskUpdate
     };
 
 public:
-    CCassBioseqInfoTaskUpdate(
+    NCBI_DEPRECATED CCassBioseqInfoTaskUpdate(
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
         CBioseqInfoRecord * record,
         unsigned int max_retries,
+        TDataErrorCallback data_error_cb
+    );
+
+    CCassBioseqInfoTaskUpdate(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        CBioseqInfoRecord * record,
         TDataErrorCallback data_error_cb
     );
 
@@ -70,11 +77,11 @@ public:
     }
 
 protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
 private:
-    CBioseqInfoRecord * m_Record;
-    bool m_UseWritetime;
+    CBioseqInfoRecord * m_Record{nullptr};
+    bool m_UseWritetime{false};
 };
 
 END_IDBLOB_SCOPE

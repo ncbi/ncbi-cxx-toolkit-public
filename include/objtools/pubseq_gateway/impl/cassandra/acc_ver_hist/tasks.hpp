@@ -58,7 +58,7 @@ class CCassAccVerHistoryTaskInsert
     };
 
  public:
-    CCassAccVerHistoryTaskInsert(
+    NCBI_DEPRECATED CCassAccVerHistoryTaskInsert(
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -67,11 +67,18 @@ class CCassAccVerHistoryTaskInsert
         TDataErrorCallback data_error_cb
     );
 
+    CCassAccVerHistoryTaskInsert(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        SAccVerHistRec * record,
+        TDataErrorCallback data_error_cb
+    );
+
  protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
  private:
-    SAccVerHistRec * m_Record;
+    SAccVerHistRec * m_Record{nullptr};
 };
 
 //::::::::
@@ -87,9 +94,19 @@ class CCassAccVerHistoryTaskFetch
     };
 
 public:
-    CCassAccVerHistoryTaskFetch(
+    NCBI_DEPRECATED CCassAccVerHistoryTaskFetch(
         unsigned int timeout_ms,
         unsigned int max_retries,
+        shared_ptr<CCassConnection> connection,
+        const string & keyspace,
+        string accession,
+        TAccVerHistConsumeCallback consume_callback,
+        TDataErrorCallback data_error_cb,
+        int16_t version = 0,
+        int16_t seq_id_type = 0
+    );
+
+    CCassAccVerHistoryTaskFetch(
         shared_ptr<CCassConnection> connection,
         const string & keyspace,
         string accession,
@@ -102,9 +119,10 @@ public:
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(TAccVerHistConsumeCallback callback);
 
-    string GetKeyspace() const
+    /// Use GetKeySpace()
+    NCBI_DEPRECATED string GetKeyspace() const
     {
-        return m_Keyspace;
+        return GetKeySpace();
     }
 
     string GetAccession() const
@@ -123,17 +141,17 @@ public:
     }
 
 protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
 private:
     string m_Accession;
-    int16_t m_Version;
-    int16_t m_SeqIdType;
+    int16_t m_Version{-1};
+    int16_t m_SeqIdType{-1};
 
     TAccVerHistConsumeCallback m_Consume;
 protected:
-    unsigned int m_PageSize;
-    unsigned int m_RestartCounter;
+    unsigned int m_PageSize{CCassQuery::DEFAULT_PAGE_SIZE};
+    unsigned int m_RestartCounter{0};
 };
 
 END_IDBLOB_SCOPE

@@ -57,7 +57,7 @@ class CCassBlobTaskInsertExtended
     };
 
 public:
-    CCassBlobTaskInsertExtended(
+    NCBI_DEPRECATED CCassBlobTaskInsertExtended(
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection>  conn,
         const string & keyspace,
@@ -67,11 +67,19 @@ public:
         TDataErrorCallback data_error_cb
     );
 
+    CCassBlobTaskInsertExtended(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        CBlobRecord * blob,
+        bool async,
+        TDataErrorCallback data_error_cb
+    );
+
 protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
 private:
-    CBlobRecord * m_Blob;
+    CBlobRecord * m_Blob{nullptr};
 };
 
 END_IDBLOB_SCOPE

@@ -123,47 +123,47 @@ class CSI2CSIRecord
 
 
     // Getters
-    TSecSeqId const & GetSecSeqId(void) const
+    TSecSeqId const & GetSecSeqId() const
     {
         return m_SecSeqId;
     }
 
-    TSecSeqIdType GetSecSeqIdType(void) const
+    TSecSeqIdType GetSecSeqIdType() const
     {
         return m_SecSeqIdType;
     }
 
-    TAccession const & GetAccession(void) const
+    TAccession const & GetAccession() const
     {
         return m_Accession;
     }
 
-    TGI GetGI(void) const
+    TGI GetGI() const
     {
         return m_GI;
     }
 
-    TSecSeqState GetSecSeqState(void) const
+    TSecSeqState GetSecSeqState() const
     {
         return m_SecSeqState;
     }
 
-    TSeqIdType GetSeqIdType(void) const
+    TSeqIdType GetSeqIdType() const
     {
         return m_SeqIdType;
     }
 
-    TVersion  GetVersion(void) const
+    TVersion  GetVersion() const
     {
         return m_Version;
     }
 
-    TWritetime  GetWritetime(void) const
+    TWritetime  GetWritetime() const
     {
         return m_Writetime;
     }
 
-    string ToString(void) const;
+    string ToString() const;
 
  private:
     TSecSeqId           m_SecSeqId;

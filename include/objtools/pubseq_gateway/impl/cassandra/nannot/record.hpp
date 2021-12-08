@@ -193,7 +193,7 @@ class CNAnnotRecord {
         return m_SeqAnnotInfo;
     }
 
-    TWritetime GetWritetime(void) const
+    TWritetime GetWritetime() const
     {
         return m_Writetime;
     }

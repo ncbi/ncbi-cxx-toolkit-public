@@ -63,7 +63,19 @@ CCassID2SplitTaskInsert::CCassID2SplitTaskInsert(
         max_retries, move(data_error_cb)
       )
     , m_Blob(blob)
-    , m_Id2Split( id2_split)
+    , m_Id2Split(id2_split)
+{}
+
+CCassID2SplitTaskInsert::CCassID2SplitTaskInsert(
+    shared_ptr<CCassConnection> conn,
+    const string & keyspace,
+    CBlobRecord * blob,
+    CID2SplitRecord* id2_split,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(conn), keyspace, blob->GetKey(), true, move(data_error_cb))
+    , m_Blob(blob)
+    , m_Id2Split(id2_split)
 {}
 
 void CCassID2SplitTaskInsert::Wait1()
@@ -76,36 +88,33 @@ void CCassID2SplitTaskInsert::Wait1()
             case eDone:
                 return;
 
-        case eInit:
+        case eInit: {
+            m_BlobInsertTask = make_unique<CCassBlobTaskInsertExtended>(
+                 m_Conn, GetKeySpace(),
+                 m_Blob, true,
+                 [this]
+                 (CRequestStatus::ECode status, int code, EDiagSev severity,
+                  const string & message)
+                 {this->m_ErrorCb(status, code, severity, message);}
+            );
+            m_BlobInsertTask->SetMaxRetries(GetMaxRetries());
+            m_State = eWaitingBlobInserted;
+            break;
+        }
 
-          {
-                m_BlobInsertTask = unique_ptr<CCassBlobTaskInsertExtended>(
-                     new CCassBlobTaskInsertExtended(
-                         0, m_Conn, m_Keyspace,
-                         m_Blob, true, m_MaxRetries,
-                         [this]
-                         (CRequestStatus::ECode status, int code, EDiagSev severity,
-                          const string & message)
-                         {this->m_ErrorCb(status, code, severity, message);}
-                     )
-                );
-                m_State = eWaitingBlobInserted;
-                break;
-            }
-
-            case eWaitingBlobInserted: {
-                if (m_BlobInsertTask->Wait()) {
-                    if (m_BlobInsertTask->HasError()) {
-                        m_State = eError;
-                        m_LastError = m_BlobInsertTask->LastError();
-                    } else {
-                        m_State = eInsertId2SplitInfo;
-                        b_need_repeat = true;
-                    }
-                    m_BlobInsertTask.reset();
+        case eWaitingBlobInserted: {
+            if (m_BlobInsertTask->Wait()) {
+                if (m_BlobInsertTask->HasError()) {
+                    m_State = eError;
+                    m_LastError = m_BlobInsertTask->LastError();
+                } else {
+                    m_State = eInsertId2SplitInfo;
+                    b_need_repeat = true;
                 }
-                break;
+                m_BlobInsertTask.reset();
             }
+            break;
+        }
 
             case eInsertId2SplitInfo: {
                 m_QueryArr.resize(1);
@@ -146,9 +155,10 @@ void CCassID2SplitTaskInsert::Wait1()
 
             default: {
                 char msg[1024];
+                string keyspace = GetKeySpace();
                 snprintf(msg, sizeof(msg),
                     "Failed to insert named annot (key=%s.%d) unexpected state (%d)",
-                    m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
+                    keyspace.c_str(), GetKey(), static_cast<int>(m_State));
                 Error( CRequestStatus::e502_BadGateway,
                        CCassandraException::eQueryFailed, eDiag_Error, msg);
             }

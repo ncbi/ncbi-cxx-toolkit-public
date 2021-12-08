@@ -59,7 +59,7 @@ class CCassStatusHistoryTaskDelete
     };
 
  public:
-    CCassStatusHistoryTaskDelete(
+    NCBI_DEPRECATED CCassStatusHistoryTaskDelete(
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -69,11 +69,19 @@ class CCassStatusHistoryTaskDelete
         TDataErrorCallback data_error_cb
     );
 
+    CCassStatusHistoryTaskDelete(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        int32_t sat_key,
+        int64_t done_when,
+        TDataErrorCallback data_error_cb
+    );
+
  protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
  private:
-    int64_t m_DoneWhen;
+    int64_t m_DoneWhen{-1};
 };
 
 END_IDBLOB_SCOPE

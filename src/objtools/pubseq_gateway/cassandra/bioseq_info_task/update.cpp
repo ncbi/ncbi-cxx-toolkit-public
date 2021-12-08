@@ -60,11 +60,19 @@ CCassBioseqInfoTaskUpdate::CCassBioseqInfoTaskUpdate(
 )
     : CCassBlobWaiter(op_timeout_ms, connection, keyspace, 0, true, max_retries, move(data_error_cb))
     , m_Record(record)
-    , m_UseWritetime(false)
 {}
 
+CCassBioseqInfoTaskUpdate::CCassBioseqInfoTaskUpdate(
+    shared_ptr<CCassConnection> connection,
+    const string & keyspace,
+    CBioseqInfoRecord * record,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(connection), keyspace, true, move(data_error_cb))
+    , m_Record(record)
+{}
 
-void CCassBioseqInfoTaskUpdate::Wait1(void)
+void CCassBioseqInfoTaskUpdate::Wait1()
 {
     bool restarted;
     do {
@@ -147,7 +155,7 @@ void CCassBioseqInfoTaskUpdate::Wait1(void)
 
             default: {
                 stringstream msg;
-                msg << "Failed to update bioseq_info record (key=" << m_Keyspace << "." << m_Record->GetAccession() << "."
+                msg << "Failed to update bioseq_info record (key=" << GetKeySpace() << "." << m_Record->GetAccession() << "."
                     << m_Record->GetVersion() << "." << m_Record->GetSeqIdType() << "." << m_Record->GetGI()
                     << ") unexpected state (" << static_cast<int>(m_State) << ")";
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg.str());

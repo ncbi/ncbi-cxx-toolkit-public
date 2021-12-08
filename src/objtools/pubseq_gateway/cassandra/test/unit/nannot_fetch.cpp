@@ -63,10 +63,7 @@ class CNAnnotTaskFetchTest
     : public testing::Test
 {
  public:
-    CNAnnotTaskFetchTest()
-     : m_KeyspaceName("nannotg2")
-     , m_Timeout(10000)
-    {}
+    CNAnnotTaskFetchTest() = default;
 
  protected:
     static void SetUpTestCase() {
@@ -89,16 +86,13 @@ class CNAnnotTaskFetchTest
     static shared_ptr<CCassConnectionFactory> m_Factory;
     static shared_ptr<CCassConnection> m_Connection;
 
-    string m_KeyspaceName;
-    unsigned int m_Timeout;
+    string m_KeyspaceName{"nannotg2"};
 };
 
 class CCassNAnnotTaskFetchWithTimeout : public CCassNAnnotTaskFetch
 {
  public:
     CCassNAnnotTaskFetchWithTimeout(
-        unsigned int timeout_ms,
-        unsigned int max_retries,
         shared_ptr<CCassConnection> connection,
         const string & keyspace,
         string accession,
@@ -107,7 +101,7 @@ class CCassNAnnotTaskFetchWithTimeout : public CCassNAnnotTaskFetch
         TNAnnotConsumeCallback consume_callback,
         TDataErrorCallback data_error_cb
     )
-        : CCassNAnnotTaskFetch(timeout_ms, max_retries, connection,
+        : CCassNAnnotTaskFetch(move(connection),
             keyspace, accession, version, seq_id_type,
             move(consume_callback), move(data_error_cb)
         )
@@ -119,8 +113,6 @@ class CCassNAnnotTaskFetchWithTimeout : public CCassNAnnotTaskFetch
     }
 
     CCassNAnnotTaskFetchWithTimeout(
-        unsigned int timeout_ms,
-        unsigned int max_retries,
         shared_ptr<CCassConnection> connection,
         const string & keyspace,
         string accession,
@@ -130,7 +122,7 @@ class CCassNAnnotTaskFetchWithTimeout : public CCassNAnnotTaskFetch
         TNAnnotConsumeCallback consume_callback,
         TDataErrorCallback data_error_cb
     )
-        : CCassNAnnotTaskFetch(timeout_ms, max_retries, connection,
+        : CCassNAnnotTaskFetch(move(connection),
             keyspace, accession, version, seq_id_type, annot_names,
             move(consume_callback), move(data_error_cb)
         )
@@ -141,7 +133,7 @@ class CCassNAnnotTaskFetchWithTimeout : public CCassNAnnotTaskFetch
         m_PageSize = 1;
     }
 
-    virtual void Wait1(void) override
+    virtual void Wait1() override
     {
         bool restartable_state = m_State != EBlobWaiterState::eInit
             && m_State != EBlobWaiterState::eDone
@@ -211,7 +203,7 @@ shared_ptr<CCassConnection> CNAnnotTaskFetchTest::m_Connection(nullptr);
 TEST_F(CNAnnotTaskFetchTest, SingleRetrievalVector) {
     size_t call_count = 0;
     CCassNAnnotTaskFetch fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        m_Connection, m_KeyspaceName,
         "NW_017889270", 1, 10, vector<string>({"NA000122202.1"}),
         [&call_count](CNAnnotRecord && entry, bool last) -> bool {
             EXPECT_TRUE(call_count == 0 || (last && call_count == 1));
@@ -241,7 +233,7 @@ TEST_F(CNAnnotTaskFetchTest, SingleRetrievalTempString) {
     vector<CTempString> annot_names;
     annot_names.push_back(CTempString(naccession));
     CCassNAnnotTaskFetch fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        m_Connection, m_KeyspaceName,
         "NW_017889270", 1, 10, annot_names,
         [&call_count](CNAnnotRecord && entry, bool last) -> bool {
             EXPECT_TRUE(call_count == 0 || (last && call_count == 1));
@@ -268,7 +260,7 @@ TEST_F(CNAnnotTaskFetchTest, SingleRetrievalTempString) {
 TEST_F(CNAnnotTaskFetchTest, MultipleRetrieval) {
     size_t call_count = 0;
     CCassNAnnotTaskFetch fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        m_Connection, m_KeyspaceName,
         "NW_017889270", 1, 10,
         [&call_count](CNAnnotRecord && entry, bool last) -> bool {
             switch(++call_count) {
@@ -323,7 +315,7 @@ TEST_F(CNAnnotTaskFetchTest, MultipleRetrieval) {
 TEST_F(CNAnnotTaskFetchTest, MultipleRetrievalWithTimeout) {
     size_t call_count = 0;
     CCassNAnnotTaskFetchWithTimeout fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        m_Connection, m_KeyspaceName,
         "NW_017889270", 1, 10,
         [&call_count](CNAnnotRecord && entry, bool last) -> bool {
             switch(++call_count) {
@@ -384,7 +376,7 @@ TEST_F(CNAnnotTaskFetchTest, MultipleRetrievalWithTimeout) {
 TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithTimeout) {
     size_t call_count = 0;
     CCassNAnnotTaskFetchWithTimeout fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        m_Connection, m_KeyspaceName,
         "NW_017889270", 1, 10, vector<string>({"NA000122203.1", "NA000122202.1", "NA000122204.1"}),
         [&call_count](CNAnnotRecord && entry, bool last) -> bool {
             switch(++call_count) {
@@ -438,7 +430,7 @@ TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithTimeout) {
 TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithTimeoutOnEOF) {
     size_t call_count = 0;
     CCassNAnnotTaskFetchWithTimeout fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        m_Connection, m_KeyspaceName,
         "NW_017889270", 1, 10, vector<string>({"NA000122203.1", "NA000122202.1", "NA000122204.1"}),
         [&call_count](CNAnnotRecord && entry, bool last) -> bool {
             switch(++call_count) {
@@ -494,7 +486,7 @@ TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithTimeoutOnEOF) {
 TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithCancel) {
     size_t call_count = 0;
     CCassNAnnotTaskFetchWithTimeout fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        m_Connection, m_KeyspaceName,
         "NW_017889270", 1, 10, vector<string>({"NA000122203.1", "NA000122202.1", "NA000122204.1"}),
         [&call_count](CNAnnotRecord && entry, bool last) -> bool {
             switch(++call_count) {
@@ -542,7 +534,7 @@ TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithCancel) {
 TEST_F(CNAnnotTaskFetchTest, RetrievalWithSeqAnnotInfo) {
     size_t call_count = 0;
     CCassNAnnotTaskFetch fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        m_Connection, m_KeyspaceName,
         "NW_017889735", 1, 10, vector<string>({"NA000122202.1"}),
         [&call_count](CNAnnotRecord && entry, bool last) -> bool {
             switch(++call_count) {
@@ -584,7 +576,7 @@ TEST_F(CNAnnotTaskFetchTest, RetrievalWithSeqAnnotInfo) {
 TEST_F(CNAnnotTaskFetchTest, RetrievalWithSeqAnnotInfo2) {
     size_t call_count = 0;
     CCassNAnnotTaskFetch fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        m_Connection, m_KeyspaceName,
         "NW_020201082", 1, 10, vector<string>({"NA000156740.1"}),
         [&call_count](CNAnnotRecord && entry, bool last) -> bool {
             switch(++call_count) {

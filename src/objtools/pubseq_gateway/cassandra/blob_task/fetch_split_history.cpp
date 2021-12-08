@@ -57,9 +57,10 @@ CCassBlobTaskFetchSplitHistory::CCassBlobTaskFetchSplitHistory(
     TDataErrorCallback data_error_cb
 )
     : CCassBlobTaskFetchSplitHistory(
-        op_timeout_ms, max_retries, conn, keyspace, sat_key, kAllVersions, move(consume_callback), data_error_cb
+        move(conn), keyspace, sat_key, kAllVersions, move(consume_callback), data_error_cb
     )
 {
+    SetMaxRetries(max_retries);
 }
 
 CCassBlobTaskFetchSplitHistory::CCassBlobTaskFetchSplitHistory(
@@ -75,7 +76,33 @@ CCassBlobTaskFetchSplitHistory::CCassBlobTaskFetchSplitHistory(
     : CCassBlobWaiter(timeout_ms, connection, keyspace, sat_key, true, max_retries, move(data_error_cb))
     , m_SplitVersion(split_version)
     , m_ConsumeCallback(move(consume_callback))
-    , m_RestartCounter(0)
+{
+}
+
+CCassBlobTaskFetchSplitHistory::CCassBlobTaskFetchSplitHistory(
+    shared_ptr<CCassConnection> connection,
+    const string & keyspace,
+    CBlobRecord::TSatKey sat_key,
+    TConsumeCallback consume_callback,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobTaskFetchSplitHistory(
+        move(connection), keyspace, sat_key, kAllVersions, move(consume_callback), data_error_cb
+    )
+{
+}
+
+CCassBlobTaskFetchSplitHistory::CCassBlobTaskFetchSplitHistory(
+    shared_ptr<CCassConnection> connection,
+    const string & keyspace,
+    CBlobRecord::TSatKey sat_key,
+    SSplitHistoryRecord::TSplitVersion split_version,
+    TConsumeCallback consume_callback,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(connection), keyspace, sat_key, true, move(data_error_cb))
+    , m_SplitVersion(split_version)
+    , m_ConsumeCallback(move(consume_callback))
 {
 }
 
@@ -94,9 +121,9 @@ void CCassBlobTaskFetchSplitHistory::SetDataReadyCB(shared_ptr<CCassDataCallback
     CCassBlobWaiter::SetDataReadyCB3(callback);
 }
 
-void CCassBlobTaskFetchSplitHistory::Wait1(void)
+void CCassBlobTaskFetchSplitHistory::Wait1()
 {
-    bool restarted;
+    bool restarted{false};
     do {
         restarted = false;
         switch (m_State) {
@@ -112,11 +139,11 @@ void CCassBlobTaskFetchSplitHistory::Wait1(void)
                     ".blob_split_history WHERE sat_key = ?";
                 if (m_SplitVersion == kAllVersions) {
                     query->SetSQL(sql, 1);
-                    query->BindInt32(0, m_Key);
+                    query->BindInt32(0, GetKey());
                 } else {
                     sql.append(" and split_version = ?");
                     query->SetSQL(sql, 2);
-                    query->BindInt32(0, m_Key);
+                    query->BindInt32(0, GetKey());
                     query->BindInt32(1, m_SplitVersion);
                 }
 
@@ -132,7 +159,7 @@ void CCassBlobTaskFetchSplitHistory::Wait1(void)
                     while (query->NextRow() == ar_dataready) {
                         size_t new_item_idx = m_Result.size();
                         m_Result.resize(new_item_idx + 1);
-                        m_Result[new_item_idx].sat_key = m_Key;
+                        m_Result[new_item_idx].sat_key = GetKey();
                         m_Result[new_item_idx].split_version = query->FieldGetInt32Value(0, 0);
                         m_Result[new_item_idx].modified = query->FieldGetInt64Value(1, 0);
                         m_Result[new_item_idx].id2_info = query->FieldGetStrValueDef(2, "");
@@ -156,10 +183,11 @@ void CCassBlobTaskFetchSplitHistory::Wait1(void)
             }
 
             default: {
-                char  msg[1024];
+                char msg[1024];
+                string keyspace = GetKeySpace();
                 snprintf(msg, sizeof(msg), "Failed to fetch bioseq info (key=%s.%d.%d) unexpected state (%d)",
-                    m_Keyspace.c_str(),
-                    m_Key,
+                    keyspace.c_str(),
+                    GetKey(),
                     static_cast<int>(m_SplitVersion),
                     static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);

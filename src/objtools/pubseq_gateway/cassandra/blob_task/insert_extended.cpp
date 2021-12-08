@@ -72,6 +72,15 @@ CCassBlobTaskInsertExtended::CCassBlobTaskInsertExtended(
     , m_Blob(blob)
 {}
 
+CCassBlobTaskInsertExtended::CCassBlobTaskInsertExtended(
+    shared_ptr<CCassConnection>  conn,
+    const string & keyspace, CBlobRecord * blob,
+    bool async, TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(conn, keyspace, blob->GetKey(), async, move(data_error_cb))
+    , m_Blob(blob)
+{}
+
 void CCassBlobTaskInsertExtended::Wait1()
 {
     bool b_need_repeat;
@@ -87,7 +96,7 @@ void CCassBlobTaskInsertExtended::Wait1()
                 if (m_Blob->GetModified() == 0) {
                     string message =
                         "Blob modified value is zero. It is always wrong. ("
-                        + m_Keyspace + "." + to_string(m_Key) + ")";
+                        + GetKeySpace() + "." + to_string(GetKey()) + ")";
                     Error(CRequestStatus::e400_BadRequest,
                         CCassandraException::eQueryFailed,
                         eDiag_Error, message);
@@ -216,9 +225,10 @@ void CCassBlobTaskInsertExtended::Wait1()
 
             default: {
                 char msg[1024];
+                string keyspace = GetKeySpace();
                 snprintf(msg, sizeof(msg),
                     "Failed to insert extended blob (key=%s.%d) unexpected state (%d)",
-                    m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
+                    keyspace.c_str(), GetKey(), static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway,
                     CCassandraException::eQueryFailed,
                     eDiag_Error, msg);

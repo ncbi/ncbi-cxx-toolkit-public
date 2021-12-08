@@ -60,10 +60,7 @@ class CGetPublicCommentTest
     : public testing::Test
 {
  public:
-    CGetPublicCommentTest()
-     : m_KeyspaceName("satncbi_extended")
-     , m_Timeout(10000)
-    {}
+    CGetPublicCommentTest() = default;
 
  protected:
     static void SetUpTestCase() {
@@ -86,8 +83,7 @@ class CGetPublicCommentTest
     static shared_ptr<CCassConnectionFactory> m_Factory;
     static shared_ptr<CCassConnection> m_Connection;
 
-    string m_KeyspaceName;
-    unsigned int m_Timeout;
+    string m_KeyspaceName{"satncbi_extended"};
 };
 
 const char* CGetPublicCommentTest::m_TestClusterName = "ID_CASS_TEST";
@@ -118,11 +114,7 @@ static auto error_function = [](CRequestStatus::ECode status, int code, EDiagSev
 };
 
 TEST_F(CGetPublicCommentTest, BasicSuppressed) {
-    CCassBlobTaskLoadBlob fetch_blob(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        130921029, false,
-        error_function
-    );
+    CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 130921029, false, error_function);
     blob_wait_function(fetch_blob);
     ASSERT_TRUE(fetch_blob.IsBlobPropsFound());
 
@@ -131,10 +123,7 @@ TEST_F(CGetPublicCommentTest, BasicSuppressed) {
     EXPECT_FALSE(blob->GetFlag(EBlobFlags::eWithdrawn));
 
     size_t call_count{0};
-    CCassStatusHistoryTaskGetPublicComment get_comment(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        *blob, error_function
-    );
+    CCassStatusHistoryTaskGetPublicComment get_comment(m_Connection, m_KeyspaceName, *blob, error_function);
     get_comment.SetCommentCallback(
         [&call_count]
         (string comment, bool isFound)
@@ -151,11 +140,7 @@ TEST_F(CGetPublicCommentTest, BasicSuppressed) {
 }
 
 TEST_F(CGetPublicCommentTest, BasicSuppressedFromDifferencesTask) {
-    CCassBlobTaskLoadBlob fetch_blob(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        130921029, false,
-        error_function
-    );
+    CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 130921029, false, error_function);
     blob_wait_function(fetch_blob);
     ASSERT_TRUE(fetch_blob.IsBlobPropsFound());
 
@@ -164,10 +149,7 @@ TEST_F(CGetPublicCommentTest, BasicSuppressedFromDifferencesTask) {
     EXPECT_FALSE(blob->GetFlag(EBlobFlags::eWithdrawn));
 
     size_t call_count{0};
-    CCassStatusHistoryTaskGetPublicComment get_comment(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        *blob, error_function
-    );
+    CCassStatusHistoryTaskGetPublicComment get_comment(m_Connection, m_KeyspaceName, *blob, error_function);
     get_comment.SetCommentCallback(
         [&call_count]
         (string comment, bool isFound)
@@ -183,11 +165,7 @@ TEST_F(CGetPublicCommentTest, BasicSuppressedFromDifferencesTask) {
 }
 
 TEST_F(CGetPublicCommentTest, BasicWithdrawn) {
-    CCassBlobTaskLoadBlob fetch_blob(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        1888383, false,
-        error_function
-    );
+    CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 1888383, false, error_function);
     blob_wait_function(fetch_blob);
     ASSERT_TRUE(fetch_blob.IsBlobPropsFound());
 
@@ -196,10 +174,7 @@ TEST_F(CGetPublicCommentTest, BasicWithdrawn) {
     EXPECT_TRUE(blob->GetFlag(EBlobFlags::eWithdrawn));
 
     size_t call_count{0};
-    CCassStatusHistoryTaskGetPublicComment get_comment(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        *blob, error_function
-    );
+    CCassStatusHistoryTaskGetPublicComment get_comment(m_Connection, m_KeyspaceName, *blob, error_function);
     get_comment.SetCommentCallback(
         [&call_count]
         (string comment, bool isFound)
@@ -221,11 +196,7 @@ TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo) {
     EXPECT_TRUE(FetchMessages("sat_info", m_Connection, messages, messages_error));
     EXPECT_EQ("", messages_error);
 
-    CCassBlobTaskLoadBlob fetch_blob(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        4317, false,
-        error_function
-    );
+    CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 4317, false, error_function);
     blob_wait_function(fetch_blob);
     ASSERT_TRUE(fetch_blob.IsBlobPropsFound());
 
@@ -234,10 +205,7 @@ TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo) {
     EXPECT_TRUE(blob->GetFlag(EBlobFlags::eWithdrawn));
 
     size_t call_count{0};
-    CCassStatusHistoryTaskGetPublicComment get_comment(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        *blob, error_function
-    );
+    CCassStatusHistoryTaskGetPublicComment get_comment(m_Connection, m_KeyspaceName, *blob, error_function);
     get_comment.SetMessages(&messages);
     get_comment.SetCommentCallback(
         [&call_count]
@@ -261,10 +229,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultComment) {
     blob.SetSuppress(true);
 
     size_t call_count{0};
-    CCassStatusHistoryTaskGetPublicComment get_comment(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        blob, error_function
-    );
+    CCassStatusHistoryTaskGetPublicComment get_comment(m_Connection, m_KeyspaceName, blob, error_function);
     get_comment.SetMessages(&messages);
     get_comment.SetCommentCallback(
         [&call_count, suppressed_value]
@@ -285,7 +250,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentNotConfigured) {
 
     size_t call_count{0}, error_call_count{0};
     CCassStatusHistoryTaskGetPublicComment get_comment(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, blob,
+        m_Connection, m_KeyspaceName, blob,
         [&error_call_count]
         (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
         {
@@ -314,7 +279,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentWrongMessage) {
 
     size_t call_count{0}, error_call_count{0};
     CCassStatusHistoryTaskGetPublicComment get_comment(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, blob,
+        m_Connection, m_KeyspaceName, blob,
         [&error_call_count]
         (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
         {
@@ -346,10 +311,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentFromSatInfo) {
     blob.SetSuppress(true);
 
     size_t call_count{0};
-    CCassStatusHistoryTaskGetPublicComment get_comment(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        blob, error_function
-    );
+    CCassStatusHistoryTaskGetPublicComment get_comment(m_Connection, m_KeyspaceName, blob, error_function);
     get_comment.SetMessages(&messages);
     get_comment.SetCommentCallback(
         [&call_count]
@@ -366,11 +328,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentFromSatInfo) {
 }
 
 TEST_F(CGetPublicCommentTest, AliveBlob) {
-    CCassBlobTaskLoadBlob fetch_blob(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        358006939, false,
-        error_function
-    );
+    CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 358006939, false, error_function);
     blob_wait_function(fetch_blob);
     ASSERT_TRUE(fetch_blob.IsBlobPropsFound());
 
@@ -379,10 +337,7 @@ TEST_F(CGetPublicCommentTest, AliveBlob) {
     EXPECT_FALSE(blob->GetFlag(EBlobFlags::eWithdrawn));
 
     size_t call_count{0};
-    CCassStatusHistoryTaskGetPublicComment get_comment(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        *blob, error_function
-    );
+    CCassStatusHistoryTaskGetPublicComment get_comment(m_Connection, m_KeyspaceName, *blob, error_function);
     get_comment.SetCommentCallback(
         [&call_count]
         (string comment, bool isFound)

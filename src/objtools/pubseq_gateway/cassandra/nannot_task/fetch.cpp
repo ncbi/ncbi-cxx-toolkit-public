@@ -69,8 +69,6 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_SeqIdType(seq_id_type)
     , m_AnnotNames(annot_names)
     , m_Consume(move(consume_callback))
-    , m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE)
-    , m_RestartCounter(0)
 {}
 
 CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
@@ -94,8 +92,6 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_SeqIdType(seq_id_type)
     , m_AnnotNamesTemp(annot_names)
     , m_Consume(move(consume_callback))
-    , m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE)
-    , m_RestartCounter(0)
 {}
 
 CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
@@ -117,8 +113,58 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_Version(version)
     , m_SeqIdType(seq_id_type)
     , m_Consume(move(consume_callback))
-    , m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE)
-    , m_RestartCounter(0)
+{}
+
+CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
+    shared_ptr<CCassConnection> connection,
+    const string & keyspace,
+    string accession,
+    int16_t version,
+    int16_t seq_id_type,
+    const vector<string> & annot_names,
+    TNAnnotConsumeCallback consume_callback,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(connection), keyspace, true, move(data_error_cb))
+    , m_Accession(move(accession))
+    , m_Version(version)
+    , m_SeqIdType(seq_id_type)
+    , m_AnnotNames(annot_names)
+    , m_Consume(move(consume_callback))
+{}
+
+CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
+    shared_ptr<CCassConnection> connection,
+    const string & keyspace,
+    string accession,
+    int16_t version,
+    int16_t seq_id_type,
+    const vector<CTempString> & annot_names,
+    TNAnnotConsumeCallback consume_callback,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(connection), keyspace, true, move(data_error_cb))
+    , m_Accession(move(accession))
+    , m_Version(version)
+    , m_SeqIdType(seq_id_type)
+    , m_AnnotNamesTemp(annot_names)
+    , m_Consume(move(consume_callback))
+{}
+
+CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
+    shared_ptr<CCassConnection> connection,
+    const string & keyspace,
+    string accession,
+    int16_t version,
+    int16_t seq_id_type,
+    TNAnnotConsumeCallback consume_callback,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(connection), keyspace, true, move(data_error_cb))
+    , m_Accession(move(accession))
+    , m_Version(version)
+    , m_SeqIdType(seq_id_type)
+    , m_Consume(move(consume_callback))
 {}
 
 void CCassNAnnotTaskFetch::SetConsumeCallback(TNAnnotConsumeCallback callback)
@@ -291,8 +337,9 @@ void CCassNAnnotTaskFetch::Wait1()
 
             default: {
                 char msg[1024];
+                string keyspace = GetKeySpace();
                 snprintf(msg, sizeof(msg), "Failed to fetch named annot (key=%s.%s|%hd|%hd) unexpected state (%d)",
-                    m_Keyspace.c_str(), m_Accession.c_str(), m_Version, m_SeqIdType, static_cast<int>(m_State));
+                    keyspace.c_str(), m_Accession.c_str(), m_Version, m_SeqIdType, static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
             }
         }

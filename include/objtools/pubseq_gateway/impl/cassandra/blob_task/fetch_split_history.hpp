@@ -70,7 +70,7 @@ class CCassBlobTaskFetchSplitHistory
     static const SSplitHistoryRecord::TSplitVersion kAllVersions = -1;
     using TConsumeCallback = function<void(vector<SSplitHistoryRecord> &&)>;
 
-    CCassBlobTaskFetchSplitHistory(
+    NCBI_DEPRECATED CCassBlobTaskFetchSplitHistory(
         unsigned int op_timeout_ms,
         unsigned int max_retries,
         shared_ptr<CCassConnection> conn,
@@ -80,7 +80,7 @@ class CCassBlobTaskFetchSplitHistory
         TDataErrorCallback data_error_cb
     );
 
-    CCassBlobTaskFetchSplitHistory(
+    NCBI_DEPRECATED CCassBlobTaskFetchSplitHistory(
         unsigned int op_timeout_ms,
         unsigned int max_retries,
         shared_ptr<CCassConnection> conn,
@@ -91,14 +91,27 @@ class CCassBlobTaskFetchSplitHistory
         TDataErrorCallback data_error_cb
     );
 
-    string GetKeyspace() const
-    {
-        return m_Keyspace;
-    }
+    CCassBlobTaskFetchSplitHistory(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        CBlobRecord::TSatKey sat_key,
+        TConsumeCallback consume_callback,
+        TDataErrorCallback data_error_cb
+    );
 
-    CBlobRecord::TSatKey GetKey() const
+    CCassBlobTaskFetchSplitHistory(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        CBlobRecord::TSatKey sat_key,
+        SSplitHistoryRecord::TSplitVersion split_version,
+        TConsumeCallback consume_callback,
+        TDataErrorCallback data_error_cb
+    );
+
+    /// Use GetKeySpace() from base class
+    NCBI_DEPRECATED string GetKeyspace() const
     {
-        return m_Key;
+        return GetKeySpace();
     }
 
     SSplitHistoryRecord::TSplitVersion GetSplitVersion() const
@@ -110,13 +123,13 @@ class CCassBlobTaskFetchSplitHistory
     void SetConsumeCallback(TConsumeCallback callback);
 
  protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
  private:
     SSplitHistoryRecord::TSplitVersion m_SplitVersion;
     vector<SSplitHistoryRecord> m_Result;
     TConsumeCallback m_ConsumeCallback;
-    unsigned int m_RestartCounter;
+    unsigned int m_RestartCounter{0};
 };
 
 END_IDBLOB_SCOPE

@@ -59,6 +59,16 @@ CCassBlobTaskDelete::CCassBlobTaskDelete(
     : CCassBlobWaiter(op_timeout_ms, conn, keyspace, key, async, max_retries, move(error_cb))
 {}
 
+CCassBlobTaskDelete::CCassBlobTaskDelete(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        int32_t key,
+        bool async,
+        TDataErrorCallback error_cb
+)
+    : CCassBlobWaiter(conn, keyspace, key, async, move(error_cb))
+{}
+
 void CCassBlobTaskDelete::Wait1()
 {
     bool b_need_repeat;
@@ -76,7 +86,7 @@ void CCassBlobTaskDelete::Wait1()
                 auto qry = m_QueryArr[0].query;
                 string sql = "SELECT last_modified FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ?";
                 qry->SetSQL(sql, 1);
-                qry->BindInt32(0, m_Key);
+                qry->BindInt32(0, GetKey());
                 SetupQueryCB3(qry);
                 qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
                 m_State = eReadingVersions;
@@ -101,8 +111,8 @@ void CCassBlobTaskDelete::Wait1()
 
                 CloseAll();
                 if (m_ExtendedVersions.empty()) {
-                    RAISE_DB_ERROR(eInconsistentData, string("Blob versions not found. key: ")
-                        + m_Keyspace + "." + NStr::NumericToString(m_Key)
+                    RAISE_DB_ERROR(eInconsistentData, "Blob versions not found. key: "
+                        + GetKeySpace() + "." + to_string(GetKey())
                     );
                 }
                 m_State = eDeleteData;
@@ -118,18 +128,18 @@ void CCassBlobTaskDelete::Wait1()
                     string sql = "DELETE FROM " + GetKeySpace()
                         + ".blob_chunk WHERE sat_key = ? and last_modified = ?";
                     qry->SetSQL(sql, 2);
-                    qry->BindInt32(0, m_Key);
+                    qry->BindInt32(0, GetKey());
                     qry->BindInt64(1, version);
                     qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
                     changelog.WriteChangelogEvent(
                         qry.get(),
                         GetKeySpace(),
-                        CBlobChangelogRecord(m_Key, version, TChangelogOperation::eDeleted)
+                        CBlobChangelogRecord(GetKey(), version, TChangelogOperation::eDeleted)
                     );
                 }
                 string sql = "DELETE FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ?";
                 qry->SetSQL(sql, 1);
-                qry->BindInt32(0, m_Key);
+                qry->BindInt32(0, GetKey());
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
                 SetupQueryCB3(qry);
                 qry->RunBatch();
@@ -148,9 +158,10 @@ void CCassBlobTaskDelete::Wait1()
 
             default: {
                 char msg[1024];
+                string keyspace = GetKeySpace();
                 snprintf(msg, sizeof(msg),
                          "Failed to delete blob (key=%s.%d) unexpected state (%d)",
-                         m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
+                         keyspace.c_str(), GetKey(), static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
             }
         }

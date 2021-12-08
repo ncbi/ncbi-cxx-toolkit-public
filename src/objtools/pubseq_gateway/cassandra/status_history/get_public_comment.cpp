@@ -85,12 +85,21 @@ CCassStatusHistoryTaskGetPublicComment::CCassStatusHistoryTaskGetPublicComment(
         op_timeout_ms, conn, keyspace, blob.GetKey(),
         true, max_retries, move(data_error_cb)
       )
-    , m_CommentCallback(nullptr)
-    , m_Messages(nullptr)
     , m_BlobFlags(blob.GetFlags())
-    , m_FirstHistoryFlags(-1)
-    , m_MatchingStatusRowFound(false)
     , m_ReplacesRetries(kMaxReplacesRetries)
+    , m_CurrentKey(blob.GetKey())
+{}
+
+CCassStatusHistoryTaskGetPublicComment::CCassStatusHistoryTaskGetPublicComment(
+    shared_ptr<CCassConnection> conn,
+    const string & keyspace,
+    CBlobRecord const &blob,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(conn), keyspace, blob.GetKey(), true, move(data_error_cb))
+    , m_BlobFlags(blob.GetFlags())
+    , m_ReplacesRetries(kMaxReplacesRetries)
+    , m_CurrentKey(blob.GetKey())
 {}
 
 void CCassStatusHistoryTaskGetPublicComment::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver>  callback)
@@ -106,7 +115,7 @@ void CCassStatusHistoryTaskGetPublicComment::SetDataReadyCB(shared_ptr<CCassData
 void CCassStatusHistoryTaskGetPublicComment::JumpToReplaced(CBlobRecord::TSatKey replaced)
 {
     --m_ReplacesRetries;
-    m_Key = replaced;
+    m_CurrentKey = replaced;
     m_MatchingStatusRowFound = false;
     m_State = eStartReading;
     m_PublicComment.clear();
@@ -154,7 +163,7 @@ void CCassStatusHistoryTaskGetPublicComment::Wait1()
                     "SELECT flags, public_comment, replaces "
                     "FROM " + GetKeySpace() + ".blob_status_history WHERE sat_key = ?";
                 query->SetSQL(sql, 1);
-                query->BindInt32(0, m_Key);
+                query->BindInt32(0, m_CurrentKey);
                 SetupQueryCB3(query);
                 query->Query(GetQueryConsistency(), m_Async, true);
                 m_State = eReadingHistory;
@@ -250,8 +259,9 @@ void CCassStatusHistoryTaskGetPublicComment::Wait1()
 
             default: {
                 char msg[1024];
+                string keyspace = GetKeySpace();
                 snprintf(msg, sizeof(msg), "Failed to get public comment for record (key=%s.%d) unexpected state (%d)",
-                    m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
+                    keyspace.c_str(), GetKey(), static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
             }
         }

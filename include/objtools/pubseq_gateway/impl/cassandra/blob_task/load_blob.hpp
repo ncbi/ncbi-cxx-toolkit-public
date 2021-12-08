@@ -66,7 +66,7 @@ class CCassBlobTaskLoadBlob
     using TBlobPropsCallback = function<void(CBlobRecord const & blob, bool isFound)>;
     using TBlobChunkCallbackEx = function<void(CBlobRecord const & blob,  const unsigned char * data, unsigned int size, int chunk_no)>;
 
-    CCassBlobTaskLoadBlob(
+    NCBI_DEPRECATED CCassBlobTaskLoadBlob(
         unsigned int op_timeout_ms,
         unsigned int max_retries,
         shared_ptr<CCassConnection>  conn,
@@ -76,7 +76,7 @@ class CCassBlobTaskLoadBlob
         TDataErrorCallback data_error_cb
     );
 
-    CCassBlobTaskLoadBlob(
+    NCBI_DEPRECATED CCassBlobTaskLoadBlob(
         unsigned int op_timeout_ms,
         unsigned int max_retries,
         shared_ptr<CCassConnection>  conn,
@@ -87,9 +87,34 @@ class CCassBlobTaskLoadBlob
         TDataErrorCallback data_error_cb
     );
 
-    CCassBlobTaskLoadBlob(
+    NCBI_DEPRECATED CCassBlobTaskLoadBlob(
         unsigned int op_timeout_ms,
         unsigned int max_retries,
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        unique_ptr<CBlobRecord> blob_record,
+        bool load_chunks,
+        TDataErrorCallback data_error_cb
+    );
+
+    CCassBlobTaskLoadBlob(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        CBlobRecord::TSatKey sat_key,
+        bool load_chunks,
+        TDataErrorCallback data_error_cb
+    );
+
+    CCassBlobTaskLoadBlob(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        CBlobRecord::TSatKey sat_key,
+        CBlobRecord::TTimestamp modified,
+        bool load_chunks,
+        TDataErrorCallback data_error_cb
+    );
+
+    CCassBlobTaskLoadBlob(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
         unique_ptr<CBlobRecord> blob_record,
@@ -107,9 +132,10 @@ class CCassBlobTaskLoadBlob
         m_QueryArr.clear();
     }
 
-    string GetKeyspace() const
+    /// Use GetKeySpace()
+    NCBI_DEPRECATED string GetKeyspace() const
     {
-        return m_Keyspace;
+        return GetKeySpace();
     }
 
     CBlobRecord::TSatKey GetSatKey() const
@@ -146,24 +172,24 @@ class CCassBlobTaskLoadBlob
     }
 
  protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
  private:
-    bool x_AreAllChunksProcessed(void) const;
+    bool x_AreAllChunksProcessed() const;
     void x_CheckChunksFinished(bool& need_repeat);
-    void x_RequestChunksAhead(void);
+    void x_RequestChunksAhead();
     void x_RequestChunk(CCassQuery& qry, int32_t chunk_no);
 
-    TBlobChunkCallbackEx m_ChunkCallback;
-    TBlobPropsCallback m_PropsCallback;
+    TBlobChunkCallbackEx m_ChunkCallback{nullptr};
+    TBlobPropsCallback m_PropsCallback{nullptr};
     unique_ptr<CBlobRecord> m_Blob;
-    CBlobRecord::TTimestamp m_Modified;
-    bool m_LoadChunks;
-    bool m_PropsFound;
+    CBlobRecord::TTimestamp m_Modified{-1};
+    bool m_LoadChunks{false};
+    bool m_PropsFound{false};
     vector<bool> m_ProcessedChunks;
-    size_t m_ActiveQueries;
-    CBlobRecord::TSize m_RemainingSize;
-    bool m_ExplicitBlob;
+    size_t m_ActiveQueries{0};
+    CBlobRecord::TSize m_RemainingSize{0};
+    bool m_ExplicitBlob{false};
     bool m_UsePrepared{true};
 };
 

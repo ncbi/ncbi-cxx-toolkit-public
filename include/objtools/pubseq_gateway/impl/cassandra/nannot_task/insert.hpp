@@ -61,7 +61,7 @@ class CCassNAnnotTaskInsert
     };
 
  public:
-    CCassNAnnotTaskInsert(
+    NCBI_DEPRECATED CCassNAnnotTaskInsert(
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -71,19 +71,27 @@ class CCassNAnnotTaskInsert
         TDataErrorCallback data_error_cb
     );
 
+    CCassNAnnotTaskInsert(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        CBlobRecord * blob,
+        CNAnnotRecord * annot,
+        TDataErrorCallback data_error_cb
+    );
+
     void UseWritetime(bool value)
     {
         m_UseWritetime = value;
     }
 
  protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
  private:
-    CBlobRecord * m_Blob;
-    CNAnnotRecord * m_Annot;
+    CBlobRecord * m_Blob{nullptr};
+    CNAnnotRecord * m_Annot{nullptr};
     unique_ptr<CCassBlobTaskInsertExtended> m_BlobInsertTask;
-    bool m_UseWritetime;
+    bool m_UseWritetime{false};
 };
 
 END_IDBLOB_SCOPE

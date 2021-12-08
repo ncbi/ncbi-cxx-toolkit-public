@@ -86,10 +86,19 @@ CCassBioseqInfoTaskFetch::CCassBioseqInfoTaskFetch(
                     true, max_retries, move(data_error_cb)),
     m_Request(request),
     m_Accession(request.GetAccession()),
-    m_ConsumeCallback(move(consume_callback)),
-    m_InheritanceAllowed(true),
-    m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE),
-    m_RestartCounter(0)
+    m_ConsumeCallback(move(consume_callback))
+{}
+
+CCassBioseqInfoTaskFetch::CCassBioseqInfoTaskFetch(
+                            shared_ptr<CCassConnection>    connection,
+                            const string &                 keyspace,
+                            CBioseqInfoFetchRequest const& request,
+                            TBioseqInfoConsumeCallback     consume_callback,
+                            TDataErrorCallback             data_error_cb) :
+    CCassBlobWaiter(move(connection), keyspace, true, move(data_error_cb)),
+    m_Request(request),
+    m_Accession(request.GetAccession()),
+    m_ConsumeCallback(move(consume_callback))
 {}
 
 void CCassBioseqInfoTaskFetch::SetConsumeCallback(TBioseqInfoConsumeCallback  callback)
@@ -112,7 +121,7 @@ void CCassBioseqInfoTaskFetch::AllowInheritance(bool value)
     m_InheritanceAllowed = value;
 }
 
-void CCassBioseqInfoTaskFetch::x_InitializeQuery(void)
+void CCassBioseqInfoTaskFetch::x_InitializeQuery()
 {
     static const string s_Where_1 = ".bioseq_info WHERE accession = ?";
     static const string s_Where_2 = s_Where_1 + " AND version = ?";
@@ -150,14 +159,14 @@ void CCassBioseqInfoTaskFetch::x_InitializeQuery(void)
     }
 }
 
-void CCassBioseqInfoTaskFetch::x_InitializeAliveRecordQuery(void)
+void CCassBioseqInfoTaskFetch::x_InitializeAliveRecordQuery()
 {
     string sql = kSelectStatement + GetKeySpace() + ".bioseq_info WHERE accession = ?";
     m_QueryArr[0].query->SetSQL(sql, 1);
     m_QueryArr[0].query->BindStr(0, m_Accession);
 }
 
-void CCassBioseqInfoTaskFetch::x_StartQuery(void)
+void CCassBioseqInfoTaskFetch::x_StartQuery()
 {
     SetupQueryCB3(m_QueryArr[0].query);
     m_QueryArr[0].query->Query(kBioSeqInfoConsistency, m_Async, true, m_PageSize);
@@ -227,7 +236,7 @@ void CCassBioseqInfoTaskFetch::x_PopulateRecord(CBioseqInfoRecord& record) const
         fnSeqIds, inserter(record.GetSeqIds(), record.GetSeqIds().end()));
 }
 
-void CCassBioseqInfoTaskFetch::x_ReadingLoop(void)
+void CCassBioseqInfoTaskFetch::x_ReadingLoop()
 {
     while (m_QueryArr[0].query->NextRow() == ar_dataready) {
         if (x_IsMatchingRecord()) {
@@ -254,7 +263,7 @@ void CCassBioseqInfoTaskFetch::x_MergeSeqIds(CBioseqInfoRecord& target, CBioseqI
 }
 
 
-void CCassBioseqInfoTaskFetch::Wait1(void)
+void CCassBioseqInfoTaskFetch::Wait1()
 {
     bool restarted;
     do {
@@ -339,10 +348,11 @@ void CCassBioseqInfoTaskFetch::Wait1(void)
                 }
             default: {
                 char msg[1024];
+                string keyspace = GetKeySpace();
                 auto version = m_Request.HasField(TField::eVersion) ? m_Request.GetVersion() : -1;
                 auto seq_id_type = m_Request.HasField(TField::eSeqIdType) ? m_Request.GetSeqIdType() : -1;
                 snprintf(msg, sizeof(msg), "Failed to fetch bioseq info (key=%s.%s.%d.%d) unexpected state (%d)",
-                    m_Keyspace.c_str(), m_Accession.c_str(),
+                    keyspace.c_str(), m_Accession.c_str(),
                     static_cast<int>(version), static_cast<int>(seq_id_type),
                     static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);

@@ -55,7 +55,7 @@ class CCassSI2CSITaskDelete
     };
 
 public:
-    CCassSI2CSITaskDelete(
+    NCBI_DEPRECATED CCassSI2CSITaskDelete(
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -65,12 +65,20 @@ public:
         TDataErrorCallback data_error_cb
     );
 
+    CCassSI2CSITaskDelete(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        CSI2CSIRecord::TSecSeqId sec_seq_id,
+        CSI2CSIRecord::TSecSeqIdType sec_seq_id_type,
+        TDataErrorCallback data_error_cb
+    );
+
 protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
 private:
     CSI2CSIRecord::TSecSeqId m_SecSeqId;
-    CSI2CSIRecord::TSecSeqIdType m_SecSeqIdType;
+    CSI2CSIRecord::TSecSeqIdType m_SecSeqIdType{0};
 };
 
 END_IDBLOB_SCOPE

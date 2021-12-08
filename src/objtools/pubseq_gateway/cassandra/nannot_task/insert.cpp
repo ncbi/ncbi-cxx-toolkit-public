@@ -64,12 +64,26 @@ CCassNAnnotTaskInsert::CCassNAnnotTaskInsert(
       )
     , m_Blob(blob)
     , m_Annot(annot)
-    , m_UseWritetime(false)
+{}
+
+CCassNAnnotTaskInsert::CCassNAnnotTaskInsert(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        CBlobRecord * blob,
+        CNAnnotRecord * annot,
+        TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(
+        move(conn), keyspace, blob == nullptr ? annot->GetSatKey() : blob->GetKey(),
+        true, move(data_error_cb)
+      )
+    , m_Blob(blob)
+    , m_Annot(annot)
 {}
 
 void CCassNAnnotTaskInsert::Wait1()
 {
-    bool b_need_repeat;
+    bool b_need_repeat{false};
     do {
         b_need_repeat = false;
         switch (m_State) {
@@ -83,12 +97,12 @@ void CCassNAnnotTaskInsert::Wait1()
                     m_State = eInsertNAnnotInfo;
                 } else {
                     m_BlobInsertTask = make_unique<CCassBlobTaskInsertExtended>(
-                         0, m_Conn, m_Keyspace,
-                         m_Blob, true, m_MaxRetries,
+                         m_Conn, GetKeySpace(), m_Blob, true,
                          [this]
                          (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
                          {this->m_ErrorCb(status, code, severity, message);}
                     );
+                    m_BlobInsertTask->SetMaxRetries(GetMaxRetries());
                     {
                         auto DataReadyCb3 = m_DataReadyCb3.lock();
                         if (DataReadyCb3) {
@@ -172,8 +186,9 @@ void CCassNAnnotTaskInsert::Wait1()
 
             default: {
                 char msg[1024];
+                string keyspace = GetKeySpace();
                 snprintf(msg, sizeof(msg), "Failed to insert named annot (key=%s.%d) unexpected state (%d)",
-                    m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
+                        keyspace.c_str(), GetKey(), static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
             }
         }

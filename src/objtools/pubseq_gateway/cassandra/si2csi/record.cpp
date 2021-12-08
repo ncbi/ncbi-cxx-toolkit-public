@@ -40,7 +40,7 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-string CSI2CSIRecord::ToString(void) const
+string CSI2CSIRecord::ToString() const
 {
     string s;
     return s.append("SecSeqId: ")

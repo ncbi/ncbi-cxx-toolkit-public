@@ -98,6 +98,7 @@ class CCassConnectionFactory:
     unsigned int            m_CassConnTimeoutMs;
     unsigned int            m_CassQueryTimeoutMs;
     unsigned int            m_CassQueryRetryTimeoutMs{0};
+    int                     m_MaxRetries;
     bool                    m_CassFallbackRdConsistency;
     unsigned int            m_CassFallbackWrConsistency;
     loadbalancing_policy_t  m_LoadBalancing;

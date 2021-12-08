@@ -62,9 +62,19 @@ CCassNAnnotTaskDelete::CCassNAnnotTaskDelete(
     , m_Annot(annot)
 {}
 
+CCassNAnnotTaskDelete::CCassNAnnotTaskDelete(
+    shared_ptr<CCassConnection> conn,
+    const string & keyspace,
+    CNAnnotRecord * annot,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(conn), keyspace, annot->GetSatKey(), true, move(data_error_cb))
+    , m_Annot(annot)
+{}
+
 void CCassNAnnotTaskDelete::Wait1()
 {
-    bool b_need_repeat;
+    bool b_need_repeat{false};
     do {
         b_need_repeat = false;
         switch (m_State) {
@@ -142,7 +152,7 @@ void CCassNAnnotTaskDelete::Wait1()
                 // It will be deleted while matching blob_prop table with Sybase
                 if (!applied) {
                     ERR_POST(Warning << "LWT was not able to delete 'bioseq_na' record key="
-                             << m_Keyspace << "." << m_Annot->GetSatKey()
+                             << GetKeySpace() << "." << m_Annot->GetSatKey()
                              << ", last_modified = " << m_Annot->GetModified()
                              << " seqid: " << m_Annot->GetAccession() << "."
                              << m_Annot->GetVersion() << "|" << m_Annot->GetSeqIdType()
@@ -181,8 +191,9 @@ void CCassNAnnotTaskDelete::Wait1()
 
             default: {
                 char msg[1024];
+                string keyspace = GetKeySpace();
                 snprintf(msg, sizeof(msg), "Failed to delete named annot (key=%s.%d) unexpected state (%d)",
-                    m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
+                        keyspace.c_str(), GetKey(), static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
             }
         }

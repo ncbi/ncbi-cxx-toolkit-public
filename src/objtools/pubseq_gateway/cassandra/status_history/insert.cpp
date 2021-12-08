@@ -62,9 +62,19 @@ CCassStatusHistoryTaskInsert::CCassStatusHistoryTaskInsert(
     , m_Record(record)
 {}
 
+CCassStatusHistoryTaskInsert::CCassStatusHistoryTaskInsert(
+    shared_ptr<CCassConnection> conn,
+    const string & keyspace,
+    CBlobStatusHistoryRecord * record,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(conn), keyspace, record->GetSatKey(), true, move(data_error_cb))
+    , m_Record(record)
+{}
+
 void CCassStatusHistoryTaskInsert::Wait1()
 {
-    bool b_need_repeat;
+    bool b_need_repeat{false};
     do {
         b_need_repeat = false;
         switch (m_State) {
@@ -114,8 +124,9 @@ void CCassStatusHistoryTaskInsert::Wait1()
 
             default: {
                 char msg[1024];
+                string keyspace = GetKeySpace();
                 snprintf(msg, sizeof(msg), "Failed to insert blob status history record (key=%s.%d.%ld) unexpected state (%d)",
-                    m_Keyspace.c_str(), m_Key, m_Record->GetDoneWhen(), static_cast<int>(m_State));
+                    keyspace.c_str(), GetKey(), m_Record->GetDoneWhen(), static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
             }
         }

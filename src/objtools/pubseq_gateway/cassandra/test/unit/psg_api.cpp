@@ -59,10 +59,7 @@ class CPsgApiTest
     : public testing::Test
 {
  public:
-    CPsgApiTest()
-     : m_KeyspaceName("idmain2")
-     , m_Timeout(10000)
-    {}
+    CPsgApiTest() = default;
 
  protected:
     static void SetUpTestCase() {
@@ -85,8 +82,7 @@ class CPsgApiTest
     static shared_ptr<CCassConnectionFactory> m_Factory;
     static shared_ptr<CCassConnection> m_Connection;
 
-    string m_KeyspaceName;
-    unsigned int m_Timeout;
+    string m_KeyspaceName{"idmain2"};
 };
 
 const char* CPsgApiTest::m_TestClusterName = "ID_CASS_TEST";
@@ -122,7 +118,7 @@ TEST_F(CPsgApiTest, ResolutionByGi) {
     CSi2CsiFetchRequest si2csi_request;
     si2csi_request.SetSecSeqId("3643631");
     CCassSI2CSITaskFetch si2csi_fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, si2csi_request,
+        m_Connection, m_KeyspaceName, si2csi_request,
         [&call_count, &si2csi_records](vector<CSI2CSIRecord> &&records) {
             ++call_count;
             si2csi_records = move(records);
@@ -144,7 +140,7 @@ TEST_F(CPsgApiTest, ResolutionByGi) {
     call_count = 0;
     vector<CBioseqInfoRecord> bioseq_records;
     CCassBioseqInfoTaskFetch bioseq_fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, bioseq_request,
+        m_Connection, m_KeyspaceName, bioseq_request,
         [&call_count, &bioseq_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             bioseq_records = move(records);
