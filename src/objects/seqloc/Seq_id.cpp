@@ -1510,10 +1510,11 @@ void SAccGuide::x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
                              const string* old_name,
                              const CTempString& new_name)
 {
-    auto left  = x_SplitSpecial(from, fmt),
-         right = x_SplitSpecial(to, fmt);
+    CTempString from_pfx = from, to_pfx = to;
+    auto left  = x_SplitSpecial(from_pfx, fmt),
+         right = x_SplitSpecial(to_pfx, fmt);
     const TAccInfo* value_ptr = nullptr;
-    if (from != to) {
+    if (from_pfx != to_pfx) {
         hints.prev_big_special
             = submap.big_specials.insert(hints.prev_big_special,
                                          make_pair(to, TPair(from, value)));
@@ -1535,23 +1536,23 @@ void SAccGuide::x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
     } else {
         TSmallSpecialMap::iterator it = submap.small_specials.end();
         if (hints.prev_small_special != submap.small_specials.end()
-            &&  hints.prev_small_special->first == from) {
+            &&  hints.prev_small_special->first == from_pfx) {
             it = hints.prev_small_special;
             it->second.first.clear_range(left, right);
             while ((it->second.second & ~CSeq_id::fAcc_fallback)
                    != (value & ~CSeq_id::fAcc_fallback)) {
                 if (it == submap.small_specials.begin()
-                    ||  (--it)->first != from) {
+                    ||  (--it)->first != from_pfx) {
                     it = hints.prev_small_special;
                     ++it;
                     break;
                 }
             }
         } else {
-            it = submap.small_specials.lower_bound(from);
+            it = submap.small_specials.lower_bound(from_pfx);
         }
         while (it != submap.small_specials.end()) {
-            if (it->first != from) {
+            if (it->first != from_pfx) {
                 it = submap.small_specials.end();
                 break;
             } else if ((it->second.second & ~CSeq_id::fAcc_fallback)
@@ -1562,7 +1563,7 @@ void SAccGuide::x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
             }
         }
         if (it != submap.small_specials.end()) {
-            _ASSERT(it->first == from);
+            _ASSERT(it->first == from_pfx);
             _ASSERT((it->second.second & ~CSeq_id::fAcc_fallback)
                     == (value & ~CSeq_id::fAcc_fallback));
             hints.prev_small_special = it;
@@ -1570,7 +1571,7 @@ void SAccGuide::x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
             auto size = kBVSizes[min(fmt & 0xffff, kMaxSmallSpecialDigits)];
             hints.prev_small_special = 
                 submap.small_specials.emplace(
-                    from, make_pair(bm::bvector<>(size), value));
+                    from_pfx, make_pair(bm::bvector<>(size), value));
         }
         hints.prev_small_special->second.first.set_range(left, right);
         // Account for possible refinement.
