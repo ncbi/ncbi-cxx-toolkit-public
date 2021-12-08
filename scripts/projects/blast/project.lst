@@ -104,6 +104,7 @@ objtools/simple$
 -objects/.*/test
 -objects/.*/demo
 -objects/.*/unit_test
+sra$
 sra/data_loaders/csra$
 sra/data_loaders/csra/impl$
 misc$
