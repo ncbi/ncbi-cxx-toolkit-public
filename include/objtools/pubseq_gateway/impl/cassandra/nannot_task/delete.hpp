@@ -62,7 +62,7 @@ class CCassNAnnotTaskDelete
     };
 
  public:
-    CCassNAnnotTaskDelete(
+    NCBI_DEPRECATED CCassNAnnotTaskDelete(
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -71,11 +71,18 @@ class CCassNAnnotTaskDelete
         TDataErrorCallback data_error_cb
     );
 
+    CCassNAnnotTaskDelete(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        CNAnnotRecord * annot,
+        TDataErrorCallback data_error_cb
+    );
+
  protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
  private:
-    CNAnnotRecord * m_Annot;
+    CNAnnotRecord * m_Annot{nullptr};
     unique_ptr<CCassBlobTaskDelete> m_BlobDeleteTask;
 };
 

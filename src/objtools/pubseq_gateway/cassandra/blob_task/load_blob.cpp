@@ -58,8 +58,6 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     TDataErrorCallback data_error_cb
 )
     : CCassBlobTaskLoadBlob(
-        op_timeout_ms,
-        max_retries,
         conn,
         keyspace,
         sat_key,
@@ -68,6 +66,7 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
         data_error_cb
     )
 {
+    SetMaxRetries(max_retries);
 }
 
 CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
@@ -84,15 +83,9 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
         op_timeout_ms, conn, keyspace, sat_key, true,
         max_retries, move(data_error_cb)
       )
-    , m_ChunkCallback(nullptr)
-    , m_PropsCallback(nullptr)
-    , m_Blob(new CBlobRecord(sat_key))
+    , m_Blob(make_unique<CBlobRecord>(sat_key))
     , m_Modified(modified)
     , m_LoadChunks(load_chunks)
-    , m_PropsFound(false)
-    , m_ActiveQueries(0)
-    , m_RemainingSize(0)
-    , m_ExplicitBlob(false)
 {
     m_Blob->SetModified(modified);
 }
@@ -110,15 +103,59 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
         op_timeout_ms, conn, keyspace, blob_record->GetKey(), true,
         max_retries, move(data_error_cb)
       )
-    , m_ChunkCallback(nullptr)
-    , m_PropsCallback(nullptr)
     , m_Blob(move(blob_record))
     , m_Modified(m_Blob->GetModified())
     , m_LoadChunks(load_chunks)
     , m_PropsFound(true)
-    , m_ActiveQueries(0)
-    , m_RemainingSize(0)
-    , m_ExplicitBlob(true)
+{
+}
+
+CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
+    shared_ptr<CCassConnection> conn,
+    const string & keyspace,
+    CBlobRecord::TSatKey sat_key,
+    bool load_chunks,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobTaskLoadBlob(
+        move(conn),
+        keyspace,
+        sat_key,
+        kAnyModified,
+        load_chunks,
+        data_error_cb
+    )
+{
+}
+
+CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
+    shared_ptr<CCassConnection> conn,
+    const string & keyspace,
+    CBlobRecord::TSatKey sat_key,
+    CBlobRecord::TTimestamp modified,
+    bool load_chunks,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(conn), keyspace, sat_key, true, move(data_error_cb))
+    , m_Blob(make_unique<CBlobRecord>(sat_key))
+    , m_Modified(modified)
+    , m_LoadChunks(load_chunks)
+{
+    m_Blob->SetModified(modified);
+}
+
+CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
+    shared_ptr<CCassConnection> conn,
+    const string & keyspace,
+    unique_ptr<CBlobRecord> blob_record,
+    bool load_chunks,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(conn), keyspace, blob_record->GetKey(), true, move(data_error_cb))
+    , m_Blob(move(blob_record))
+    , m_Modified(m_Blob->GetModified())
+    , m_LoadChunks(load_chunks)
+    , m_PropsFound(true)
 {
 }
 
@@ -184,11 +221,11 @@ void CCassBlobTaskLoadBlob::Wait1()
                     if (m_Blob->GetModified() == kAnyModified) {
                         sql += " LIMIT 1";
                         qry->SetSQL(sql, 1);
-                        qry->BindInt32(0, m_Key);
+                        qry->BindInt32(0, GetKey());
                     } else {
                         sql += " and last_modified = ?";
                         qry->SetSQL(sql, 2);
-                        qry->BindInt32(0, m_Key);
+                        qry->BindInt32(0, GetKey());
                         qry->BindInt64(1, m_Blob->GetModified());
                     }
 
@@ -235,7 +272,7 @@ void CCassBlobTaskLoadBlob::Wait1()
                 if (m_LoadChunks) {
                     if (!m_PropsFound) {
                         if (!m_PropsCallback) {
-                            string msg = "Blob not found, key: " + m_Keyspace + "." + NStr::NumericToString(m_Key);
+                            string msg = "Blob not found, key: " + GetKeySpace() + "." + to_string(GetKey());
                             // Call a CB which tells that a 404 reply should be sent
                             Error(
                                 CRequestStatus::e404_NotFound,
@@ -250,16 +287,16 @@ void CCassBlobTaskLoadBlob::Wait1()
                         if ((flags & static_cast<TBlobFlagBase>(EBlobFlags::eCheckFailed)) != 0) {
                             string msg = "Blob failed check or it's "
                                          "incomplete ("
-                                         "key=" + m_Keyspace + "." + NStr::NumericToString(m_Key) +
-                                         ", modified=" + NStr::NumericToString(m_Blob->GetModified()) +
+                                         "key=" + GetKeySpace() + "." + to_string(GetKey()) +
+                                         ", modified=" + to_string(m_Blob->GetModified()) +
                                          ", flags=0x" + NStr::NumericToString(flags, 16) + ")";
                             Error(CRequestStatus::e502_BadGateway,
                                   CCassandraException::eInconsistentData,
                                   eDiag_Error, msg);
                         }
                         else if (m_Blob->GetNChunks() < 0) {
-                            string msg = "Inconsistent n_chunks value: " + NStr::NumericToString(m_Blob->GetNChunks()) +
-                                         " (key=" + m_Keyspace + "." + NStr::NumericToString(m_Key) + ")";
+                            string msg = "Inconsistent n_chunks value: " + to_string(m_Blob->GetNChunks()) +
+                                         " (key=" + GetKeySpace() + "." + to_string(GetKey()) + ")";
                             Error(
                                 CRequestStatus::e500_InternalServerError,
                                 CCassandraException::eInconsistentData,
@@ -304,10 +341,11 @@ void CCassBlobTaskLoadBlob::Wait1()
                 if (x_AreAllChunksProcessed() && m_State != eError) {
                     if (m_RemainingSize > 0) {
                         char msg[1024]; msg[0] = '\0';
+                        string keyspace = GetKeySpace();
                         snprintf(msg, sizeof(msg),
                              "Failed to fetch blob (key=%s.%d) result is "
                              "incomplete remaining %ld bytes",
-                             m_Keyspace.c_str(), m_Key, m_RemainingSize);
+                             keyspace.c_str(), GetKey(), m_RemainingSize);
                         Error(CRequestStatus::e502_BadGateway,
                               CCassandraException::eInconsistentData,
                               eDiag_Error, msg);
@@ -321,9 +359,10 @@ void CCassBlobTaskLoadBlob::Wait1()
 
             default: {
                 char msg[1024];
+                string keyspace = GetKeySpace();
                 snprintf(msg, sizeof(msg),
                     "Failed to fetch blob (key=%s.%d) unexpected state (%d)",
-                    m_Keyspace.c_str(), m_Key, static_cast<int>(m_State));
+                    keyspace.c_str(), GetKey(), static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway,
                     CCassandraException::eQueryFailed,
                     eDiag_Error, msg);
@@ -332,7 +371,7 @@ void CCassBlobTaskLoadBlob::Wait1()
     } while (b_need_repeat);
 }
 
-bool CCassBlobTaskLoadBlob::x_AreAllChunksProcessed(void) const
+bool CCassBlobTaskLoadBlob::x_AreAllChunksProcessed() const
 {
     for (const auto & is_ready : m_ProcessedChunks) {
         if (!is_ready) {
@@ -356,8 +395,9 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                     it.query->NextRow();
                     if (it.query->IsEOF()) {
                         char msg[1024];
+                        string keyspace = GetKeySpace();
                         snprintf(msg, sizeof(msg),
-                             "Failed to fetch blob chunk (key=%s.%d, chunk=%d)", m_Keyspace.c_str(), m_Key, chunk_no);
+                             "Failed to fetch blob chunk (key=%s.%d, chunk=%d)", keyspace.c_str(), GetKey(), chunk_no);
                         Error(CRequestStatus::e502_BadGateway, CCassandraException::eInconsistentData, eDiag_Error, msg);
                         return;
                     } else {
@@ -367,9 +407,10 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                         if (m_RemainingSize < 0) {
                             char msg[1024];
                             msg[0] = '\0';
+                            string keyspace = GetKeySpace();
                             snprintf(msg, sizeof(msg),
                                  "Failed to fetch blob chunk (key=%s.%d, chunk=%d) size %ld "
-                                 "is too large", m_Keyspace.c_str(), m_Key, chunk_no, len);
+                                 "is too large", keyspace.c_str(), GetKey(), chunk_no, len);
                             Error(CRequestStatus::e502_BadGateway, CCassandraException::eInconsistentData, eDiag_Error, msg);
                             return;
                         }
@@ -386,7 +427,7 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
     }
 }
 
-void CCassBlobTaskLoadBlob::x_RequestChunksAhead(void)
+void CCassBlobTaskLoadBlob::x_RequestChunksAhead()
 {
     auto n_chunks = m_Blob->GetNChunks();
     bool passed_active_check = true;
@@ -420,7 +461,7 @@ void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
     string sql = "SELECT data FROM " + GetKeySpace() +
         ".blob_chunk WHERE sat_key = ? AND last_modified = ? AND chunk_no = ?";
     qry.SetSQL(sql, 3);
-    qry.BindInt32(0, m_Key);
+    qry.BindInt32(0, GetKey());
     qry.BindInt64(1, m_Blob->GetModified());
     qry.BindInt32(2, chunk_no);
     {
@@ -429,9 +470,10 @@ void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
             qry.SetOnData3(DataReadyCb3);
         } else if (IsDataReadyCallbackExpired()) {
             char msg[1024];
+            string keyspace = GetKeySpace();
             snprintf(msg, sizeof(msg),
                  "Failed to setup data ready callback (expired) for blob chunk (key=%s.%d, chunk=%d)",
-                 m_Keyspace.c_str(), m_Key, chunk_no);
+                 keyspace.c_str(), GetKey(), chunk_no);
             Error(CRequestStatus::e502_BadGateway, CCassandraException::eUnknown, eDiag_Error, msg);
         }
     }
@@ -440,7 +482,7 @@ void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
 
 unique_ptr<CBlobRecord> CCassBlobTaskLoadBlob::ConsumeBlobRecord()
 {
-    unique_ptr<CBlobRecord> tmp(new CBlobRecord(m_Key));
+    auto tmp = make_unique<CBlobRecord>(GetKey());
     tmp->SetModified(m_Blob->GetModified());
     tmp->SetNChunks(m_Blob->GetNChunks());
     m_PropsFound = false;

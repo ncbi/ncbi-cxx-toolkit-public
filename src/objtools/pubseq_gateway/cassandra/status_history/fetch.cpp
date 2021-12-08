@@ -54,13 +54,23 @@ CCassStatusHistoryTaskFetch::CCassStatusHistoryTaskFetch(
     TDataErrorCallback data_error_cb
 )
     : CCassBlobWaiter(timeout_ms, connection, keyspace, sat_key, true, max_retries, move(data_error_cb))
-    , m_SatKey(sat_key)
     , m_DoneWhen(done_when)
 {}
 
-void CCassStatusHistoryTaskFetch::Wait1(void)
+CCassStatusHistoryTaskFetch::CCassStatusHistoryTaskFetch(
+    shared_ptr<CCassConnection> connection,
+    const string &keyspace,
+    int32_t sat_key,
+    int64_t done_when,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(connection), keyspace, sat_key, true, move(data_error_cb))
+    , m_DoneWhen(done_when)
+{}
+
+void CCassStatusHistoryTaskFetch::Wait1()
 {
-    bool need_repeat;
+    bool need_repeat{false};
         do {
             need_repeat = false;
             switch (m_State) {
@@ -77,7 +87,7 @@ void CCassStatusHistoryTaskFetch::Wait1(void)
                         "FROM " + GetKeySpace() + ".blob_status_history "
                         "WHERE sat_key = ? and done_when = ?";
                     query->SetSQL(sql, 2);
-                    query->BindInt32(0, m_SatKey);
+                    query->BindInt32(0, GetKey());
                     query->BindInt64(1, m_DoneWhen);
 
                     SetupQueryCB3(m_QueryArr[0].query);
@@ -92,7 +102,7 @@ void CCassStatusHistoryTaskFetch::Wait1(void)
                         if (query->NextRow() == ar_dataready) {
                             m_Record = make_unique<CBlobStatusHistoryRecord>();
                             (*m_Record)
-                                .SetKey(m_SatKey)
+                                .SetKey(GetKey())
                                 .SetDoneWhen(m_DoneWhen)
                                 .SetComment(query->FieldGetStrValueDef(0, ""))
                                 .SetPublicComment(query->FieldGetStrValueDef(1, ""))
@@ -115,7 +125,7 @@ void CCassStatusHistoryTaskFetch::Wait1(void)
                 default: {
                     char msg[1024];
                     snprintf(msg, sizeof(msg), "Failed to fetch blob status history (key=%i.%ld) unexpected state (%d)",
-                        m_SatKey, m_DoneWhen, static_cast<int>(m_State));
+                        GetKey(), m_DoneWhen, static_cast<int>(m_State));
                     Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
                 }
             }

@@ -40,7 +40,7 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-void CBioseqInfoRecord::Reset(void)
+void CBioseqInfoRecord::Reset()
 {
     m_Accession.clear();
     m_Version = -1;
@@ -59,7 +59,7 @@ void CBioseqInfoRecord::Reset(void)
     m_Writetime = -1;
 }
 
-string CBioseqInfoRecord::ToString(void) const
+string CBioseqInfoRecord::ToString() const
 {
     string s;
     return s.append("Accession: ")

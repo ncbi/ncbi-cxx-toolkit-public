@@ -49,7 +49,7 @@ USING_NCBI_SCOPE;
 class CCassBlobTaskDeleteExpired: public CCassBlobWaiter
 {
  public:
-    CCassBlobTaskDeleteExpired(
+    NCBI_DEPRECATED CCassBlobTaskDeleteExpired(
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -60,10 +60,19 @@ class CCassBlobTaskDeleteExpired: public CCassBlobWaiter
         TDataErrorCallback error_cb
     );
 
+    CCassBlobTaskDeleteExpired(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        int32_t key,
+        CBlobRecord::TTimestamp last_modified,
+        CBlobRecord::TTimestamp expiration,
+        TDataErrorCallback error_cb
+    );
+
     bool IsExpiredVersionDeleted() const;
 
  protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
  private:
     enum EBlobDeleteState {
@@ -75,9 +84,9 @@ class CCassBlobTaskDeleteExpired: public CCassBlobWaiter
         eError = CCassBlobWaiter::eError
     };
 
-    CBlobRecord::TTimestamp m_LastModified;
-    CBlobRecord::TTimestamp m_Expiration;
-    bool m_ExpiredVersionDeleted;
+    CBlobRecord::TTimestamp m_LastModified{0};
+    CBlobRecord::TTimestamp m_Expiration{0};
+    bool m_ExpiredVersionDeleted{false};
 };
 
 END_IDBLOB_SCOPE

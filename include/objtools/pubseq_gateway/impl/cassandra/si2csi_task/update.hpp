@@ -55,12 +55,19 @@ class CCassSI2CSITaskUpdate
     };
 
 public:
-    CCassSI2CSITaskUpdate(
+    NCBI_DEPRECATED CCassSI2CSITaskUpdate(
         unsigned int op_timeout_ms,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
         CSI2CSIRecord * record,
         unsigned int max_retries,
+        TDataErrorCallback data_error_cb
+    );
+
+    CCassSI2CSITaskUpdate(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        CSI2CSIRecord * record,
         TDataErrorCallback data_error_cb
     );
 
@@ -70,11 +77,11 @@ public:
     }
 
 protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
 private:
-    CSI2CSIRecord * m_Record;
-    bool m_UseWritetime;
+    CSI2CSIRecord * m_Record{nullptr};
+    bool m_UseWritetime{false};
 };
 
 END_IDBLOB_SCOPE

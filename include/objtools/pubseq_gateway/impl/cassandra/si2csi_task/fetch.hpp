@@ -59,9 +59,16 @@ class CCassSI2CSITaskFetch : public CCassBlobWaiter
     };
 
  public:
+    NCBI_DEPRECATED
     CCassSI2CSITaskFetch(unsigned int                timeout_ms,
                          unsigned int                max_retries,
                          shared_ptr<CCassConnection> connection,
+                         const string &              keyspace,
+                         CSi2CsiFetchRequest const&  request,
+                         TSI2CSIConsumeCallback      consume_callback,
+                         TDataErrorCallback          data_error_cb);
+
+    CCassSI2CSITaskFetch(shared_ptr<CCassConnection> connection,
                          const string &              keyspace,
                          CSi2CsiFetchRequest const&  request,
                          TSI2CSIConsumeCallback      consume_callback,
@@ -71,18 +78,18 @@ class CCassSI2CSITaskFetch : public CCassBlobWaiter
     void SetConsumeCallback(TSI2CSIConsumeCallback callback);
 
  protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
  private:
-    void x_InitializeQuery(void);
+    void x_InitializeQuery();
 
     CSi2CsiFetchRequest    m_Request;
-    TSI2CSIConsumeCallback m_ConsumeCallback;
+    TSI2CSIConsumeCallback m_ConsumeCallback{nullptr};
     vector<CSI2CSIRecord>  m_Records;
 
  protected:
-    unsigned int m_PageSize;
-    unsigned int m_RestartCounter;
+    unsigned int m_PageSize{CCassQuery::DEFAULT_PAGE_SIZE};
+    unsigned int m_RestartCounter{0};
 };
 
 END_IDBLOB_SCOPE

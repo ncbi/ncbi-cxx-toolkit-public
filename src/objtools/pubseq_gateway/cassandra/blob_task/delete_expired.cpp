@@ -62,7 +62,19 @@ CCassBlobTaskDeleteExpired::CCassBlobTaskDeleteExpired(
     : CCassBlobWaiter(op_timeout_ms, conn, keyspace, key, true, max_retries, move(error_cb))
     , m_LastModified(last_modified)
     , m_Expiration(expiration)
-    , m_ExpiredVersionDeleted(false)
+{}
+
+CCassBlobTaskDeleteExpired::CCassBlobTaskDeleteExpired(
+    shared_ptr<CCassConnection> conn,
+    const string & keyspace,
+    int32_t key,
+    CBlobRecord::TTimestamp last_modified,
+    CBlobRecord::TTimestamp expiration,
+    TDataErrorCallback error_cb
+)
+    : CCassBlobWaiter(move(conn), keyspace, key, true, move(error_cb))
+    , m_LastModified(last_modified)
+    , m_Expiration(expiration)
 {}
 
 bool CCassBlobTaskDeleteExpired::IsExpiredVersionDeleted() const
@@ -89,7 +101,7 @@ void CCassBlobTaskDeleteExpired::Wait1()
                     + ".blob_prop WHERE sat_key = ? and last_modified = ?";
                 auto qry = m_QueryArr[0].query;
                 qry->SetSQL(sql, 2);
-                qry->BindInt32(0, m_Key);
+                qry->BindInt32(0, GetKey());
                 qry->BindInt64(1, m_LastModified);
                 SetupQueryCB3(qry);
                 qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
@@ -119,7 +131,7 @@ void CCassBlobTaskDeleteExpired::Wait1()
                     }
                 } else {
                     CloseAll();
-                    ERR_POST(Warning << "BlobDeleteExpired key=" << m_Keyspace << "." << m_Key
+                    ERR_POST(Warning << "BlobDeleteExpired key=" << GetKeySpace() << "." << GetKey()
                              << ", last_modified = " << m_LastModified << " is not found"
                     );
                     m_State = eDone;
@@ -132,20 +144,20 @@ void CCassBlobTaskDeleteExpired::Wait1()
                 qry->NewBatch();
                 string sql = "DELETE FROM " + GetKeySpace() + ".blob_chunk WHERE sat_key = ? and last_modified = ?";
                 qry->SetSQL(sql, 2);
-                qry->BindInt32(0, m_Key);
+                qry->BindInt32(0, GetKey());
                 qry->BindInt64(1, m_LastModified);
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 sql = "DELETE FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ? and last_modified = ?";
                 qry->SetSQL(sql, 2);
-                qry->BindInt32(0, m_Key);
+                qry->BindInt32(0, GetKey());
                 qry->BindInt64(1, m_LastModified);
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 CBlobChangelogWriter().WriteChangelogEvent(
                     qry.get(),
                     GetKeySpace(),
-                    CBlobChangelogRecord(m_Key, m_LastModified, TChangelogOperation::eDeleted)
+                    CBlobChangelogRecord(GetKey(), m_LastModified, TChangelogOperation::eDeleted)
                 );
 
                 SetupQueryCB3(qry);
@@ -166,9 +178,10 @@ void CCassBlobTaskDeleteExpired::Wait1()
 
             default: {
                 char msg[1024];
+                string keyspace = GetKeySpace();
                 snprintf(msg, sizeof(msg),
                          "Failed to delete expired version of blob (key=%s.%d, v= %" PRId64 ") unexpected state (%d)",
-                         m_Keyspace.c_str(), m_Key, m_LastModified, static_cast<int>(m_State));
+                         keyspace.c_str(), GetKey(), m_LastModified, static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
             }
         }

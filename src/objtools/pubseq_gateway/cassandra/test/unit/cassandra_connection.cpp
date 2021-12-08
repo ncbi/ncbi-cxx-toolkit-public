@@ -202,12 +202,11 @@ TEST_F(CCassConnectionTest, LoadBlobRetryTimeout)
     // Failing task without retries
     {
         CCassBlobTaskLoadBlob task(
-            1000'000, // not used
-            1, //retry
             connection, "satold01", sat_key1,
             true, // chunks for timeout
             timeout_error
         );
+        task.SetMaxRetries(1);
         task.SetUsePrepared(false);
         while(!task.Wait()) {
             this_thread::sleep_for(chrono::milliseconds(2));
@@ -220,12 +219,11 @@ TEST_F(CCassConnectionTest, LoadBlobRetryTimeout)
     {
         call_count = 0;
         CCassBlobTaskLoadBlob task(
-            1000'000, // not used
-            2, //retry
             connection, "satold01", sat_key2,
             true, // no chunks
             timeout_error
         );
+        task.SetMaxRetries(2);
         task.SetUsePrepared(false);
         testing::internal::CaptureStderr();
         while(!task.Wait()) {

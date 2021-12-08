@@ -58,10 +58,7 @@ class CBlobTaskLoadBlobTest
     : public testing::Test
 {
  public:
-    CBlobTaskLoadBlobTest()
-     : m_KeyspaceName("satncbi_extended")
-     , m_Timeout(10000)
-    {}
+    CBlobTaskLoadBlobTest() = default;
 
  protected:
     static void SetUpTestCase() {
@@ -84,8 +81,7 @@ class CBlobTaskLoadBlobTest
     static shared_ptr<CCassConnectionFactory> m_Factory;
     static shared_ptr<CCassConnection> m_Connection;
 
-    string m_KeyspaceName;
-    unsigned int m_Timeout;
+    string m_KeyspaceName{"satncbi_extended"};
 };
 
 const char* CBlobTaskLoadBlobTest::m_TestClusterName = "ID_CASS_TEST";
@@ -122,11 +118,7 @@ TEST_F(CBlobTaskLoadBlobTest, StaleBlobRecordFromCache) {
     cache_blob->SetModified(1342057137103);
     cache_blob->SetSize(12509);
     cache_blob->SetNChunks(1);
-    CCassBlobTaskLoadBlob fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        move(cache_blob), true,
-        fn404
-    );
+    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, move(cache_blob), true, fn404);
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
 }
@@ -142,21 +134,13 @@ TEST_F(CBlobTaskLoadBlobTest, ExpiredLastModified) {
         EXPECT_EQ(CRequestStatus::e404_NotFound, status);
         EXPECT_EQ(CCassandraException::eNotFound, code);
     };
-    CCassBlobTaskLoadBlob fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        2155365, 1342057137103, true,
-        fn404
-    );
+    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, 2155365, 1342057137103, true, fn404);
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
 }
 
 TEST_F(CBlobTaskLoadBlobTest, LatestBlobVersion) {
-    CCassBlobTaskLoadBlob fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName,
-        2155365, true,
-        error_function
-    );
+    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, 2155365, true, error_function);
     wait_function(fetch);
     EXPECT_TRUE(fetch.IsBlobPropsFound());
     auto blob = fetch.ConsumeBlobRecord();

@@ -65,9 +65,16 @@ class CCassStatusHistoryTaskGetPublicComment
  public:
     using TCommentCallback = function<void(string comment, bool isFound)>;
 
-    CCassStatusHistoryTaskGetPublicComment(
+    NCBI_DEPRECATED CCassStatusHistoryTaskGetPublicComment(
         unsigned int op_timeout_ms,
         unsigned int max_retries,
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        CBlobRecord const &blob,
+        TDataErrorCallback data_error_cb
+    );
+
+    CCassStatusHistoryTaskGetPublicComment(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
         CBlobRecord const &blob,
@@ -79,18 +86,19 @@ class CCassStatusHistoryTaskGetPublicComment
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
 
  protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
  private:
     void JumpToReplaced(CBlobRecord::TSatKey replaced);
 
-    TCommentCallback m_CommentCallback;
-    CPSGMessages const * m_Messages;
+    TCommentCallback m_CommentCallback{nullptr};
+    CPSGMessages const * m_Messages{nullptr};
     TBlobFlagBase m_BlobFlags;
-    TBlobStatusFlagsBase m_FirstHistoryFlags;
-    bool m_MatchingStatusRowFound;
-    int64_t m_ReplacesRetries;
+    TBlobStatusFlagsBase m_FirstHistoryFlags{-1};
+    bool m_MatchingStatusRowFound{false};
+    int64_t m_ReplacesRetries{-1};
     string m_PublicComment;
+    int32_t m_CurrentKey{-1};
 };
 
 END_IDBLOB_SCOPE

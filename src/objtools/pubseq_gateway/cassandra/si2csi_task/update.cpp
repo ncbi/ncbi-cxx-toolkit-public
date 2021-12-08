@@ -59,12 +59,21 @@ CCassSI2CSITaskUpdate::CCassSI2CSITaskUpdate(
 )
     : CCassBlobWaiter(op_timeout_ms, connection, keyspace, 0, true, max_retries, move(data_error_cb))
     , m_Record(record)
-    , m_UseWritetime(false)
 {}
 
-void CCassSI2CSITaskUpdate::Wait1(void)
+CCassSI2CSITaskUpdate::CCassSI2CSITaskUpdate(
+    shared_ptr<CCassConnection> connection,
+    const string & keyspace,
+    CSI2CSIRecord * record,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(connection), keyspace, true, move(data_error_cb))
+    , m_Record(record)
+{}
+
+void CCassSI2CSITaskUpdate::Wait1()
 {
-    bool restarted;
+    bool restarted{false};
     do {
         restarted = false;
         switch (m_State) {
@@ -122,7 +131,7 @@ void CCassSI2CSITaskUpdate::Wait1(void)
 
             default: {
                 stringstream msg;
-                msg << "Failed to update si2csi record (key=" << m_Keyspace << "." << m_Record->GetSecSeqId() << "."
+                msg << "Failed to update si2csi record (key=" << GetKeySpace() << "." << m_Record->GetSecSeqId() << "."
                     << m_Record->GetSecSeqIdType() << ") unexpected state (" << static_cast<int>(m_State) << ")";
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg.str());
             }

@@ -59,7 +59,7 @@ class CCassNAnnotTaskFetch
     };
 
  public:
-    CCassNAnnotTaskFetch(
+    NCBI_DEPRECATED CCassNAnnotTaskFetch(
         unsigned int timeout_ms,
         unsigned int max_retries,
         shared_ptr<CCassConnection> connection,
@@ -72,7 +72,7 @@ class CCassNAnnotTaskFetch
         TDataErrorCallback data_error_cb
     );
 
-    CCassNAnnotTaskFetch(
+    NCBI_DEPRECATED CCassNAnnotTaskFetch(
         unsigned int timeout_ms,
         unsigned int max_retries,
         shared_ptr<CCassConnection> connection,
@@ -85,9 +85,41 @@ class CCassNAnnotTaskFetch
         TDataErrorCallback data_error_cb
     );
 
-    CCassNAnnotTaskFetch(
+    NCBI_DEPRECATED CCassNAnnotTaskFetch(
         unsigned int timeout_ms,
         unsigned int max_retries,
+        shared_ptr<CCassConnection> connection,
+        const string & keyspace,
+        string accession,
+        int16_t version,
+        int16_t seq_id_type,
+        TNAnnotConsumeCallback consume_callback,
+        TDataErrorCallback data_error_cb
+    );
+
+    CCassNAnnotTaskFetch(
+        shared_ptr<CCassConnection> connection,
+        const string & keyspace,
+        string accession,
+        int16_t version,
+        int16_t seq_id_type,
+        const vector<string> & annot_names,
+        TNAnnotConsumeCallback consume_callback,
+        TDataErrorCallback data_error_cb
+    );
+
+    CCassNAnnotTaskFetch(
+        shared_ptr<CCassConnection> connection,
+        const string & keyspace,
+        string accession,
+        int16_t version,
+        int16_t seq_id_type,
+        const vector<CTempString> & annot_names,
+        TNAnnotConsumeCallback consume_callback,
+        TDataErrorCallback data_error_cb
+    );
+
+    CCassNAnnotTaskFetch(
         shared_ptr<CCassConnection> connection,
         const string & keyspace,
         string accession,
@@ -100,9 +132,10 @@ class CCassNAnnotTaskFetch
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(TNAnnotConsumeCallback callback);
 
-    string GetKeyspace() const
+    /// Use GetKeySpace()
+    NCBI_DEPRECATED string GetKeyspace() const
     {
-        return m_Keyspace;
+        return GetKeySpace();
     }
 
     string GetAccession() const
@@ -134,7 +167,7 @@ class CCassNAnnotTaskFetch
     }
 
  protected:
-    virtual void Wait1(void) override;
+    virtual void Wait1() override;
 
  private:
     size_t x_AnnotNamesSize() const;
@@ -142,15 +175,15 @@ class CCassNAnnotTaskFetch
     void x_AnnotNamesBind(shared_ptr<CCassQuery>& query, string const & more, unsigned int first) const;
 
     string m_Accession;
-    int16_t m_Version;
-    int16_t m_SeqIdType;
+    int16_t m_Version{-1};
+    int16_t m_SeqIdType{-1};
     vector<string> m_AnnotNames;
     vector<CTempString> m_AnnotNamesTemp;
-    TNAnnotConsumeCallback m_Consume;
+    TNAnnotConsumeCallback m_Consume{nullptr};
     string m_LastConsumedAnnot;
  protected:
-    unsigned int m_PageSize;
-    unsigned int m_RestartCounter;
+    unsigned int m_PageSize{CCassQuery::DEFAULT_PAGE_SIZE};
+    unsigned int m_RestartCounter{0};
 };
 
 END_IDBLOB_SCOPE

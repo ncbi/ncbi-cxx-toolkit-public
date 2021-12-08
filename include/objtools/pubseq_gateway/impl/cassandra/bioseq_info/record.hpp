@@ -84,7 +84,7 @@ class CBioseqInfoRecord
         , m_Writetime(-1)
     {}
 
-    void Reset(void);
+    void Reset();
 
     CBioseqInfoRecord(CBioseqInfoRecord const &) = default;
     CBioseqInfoRecord & operator=(CBioseqInfoRecord const &) = default;
@@ -195,92 +195,92 @@ class CBioseqInfoRecord
 
 
     // Getters
-    TAccession const & GetAccession(void) const
+    TAccession const & GetAccession() const
     {
         return m_Accession;
     }
 
-    TVersion  GetVersion(void) const
+    TVersion  GetVersion() const
     {
         return m_Version;
     }
 
-    TSeqIdType GetSeqIdType(void) const
+    TSeqIdType GetSeqIdType() const
     {
         return m_SeqIdType;
     }
 
-    TDateChanged GetDateChanged(void) const
+    TDateChanged GetDateChanged() const
     {
         return m_DateChanged;
     }
 
-    THash GetHash(void) const
+    THash GetHash() const
     {
         return m_Hash;
     }
 
-    TGI GetGI(void) const
+    TGI GetGI() const
     {
         return m_GI;
     }
 
-    TLength GetLength(void) const
+    TLength GetLength() const
     {
         return m_Length;
     }
 
-    TMol GetMol(void) const
+    TMol GetMol() const
     {
         return m_Mol;
     }
 
-    TSat GetSat(void) const
+    TSat GetSat() const
     {
         return m_Sat;
     }
 
-    TSatKey GetSatKey(void) const
+    TSatKey GetSatKey() const
     {
         return m_SatKey;
     }
 
-    TSeqIds & GetSeqIds(void)
+    TSeqIds & GetSeqIds()
     {
         return m_SeqIds;
     }
 
-    TSeqIds const & GetSeqIds(void) const
+    TSeqIds const & GetSeqIds() const
     {
         return m_SeqIds;
     }
 
-    TSeqState GetSeqState(void) const
+    TSeqState GetSeqState() const
     {
         return m_SeqState;
     }
 
-    TState GetState(void) const
+    TState GetState() const
     {
         return m_State;
     }
 
-    TTaxId GetTaxId(void) const
+    TTaxId GetTaxId() const
     {
         return m_TaxId;
     }
 
-    TName GetName(void) const
+    TName GetName() const
     {
         return m_Name;
     }
 
-    TWritetime GetWritetime(void) const
+    TWritetime GetWritetime() const
     {
         return m_Writetime;
     }
 
-    string ToString(void) const;
+    string ToString() const;
 
  private:
     TAccession m_Accession;

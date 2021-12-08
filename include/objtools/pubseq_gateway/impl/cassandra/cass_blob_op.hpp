@@ -83,7 +83,8 @@ class CCassBlobWaiter
     CCassBlobWaiter(CCassBlobWaiter&&) = default;
     CCassBlobWaiter& operator=(CCassBlobWaiter&&) = default;
 
-    CCassBlobWaiter(
+    /// Use constructor without op_timeout_ms parameter
+    /*NCBI_DEPRECATED*/ CCassBlobWaiter(
         unsigned int /*op_timeout_ms deprecated*/,
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -93,17 +94,43 @@ class CCassBlobWaiter
         TDataErrorCallback error_cb
     )
       : m_ErrorCb(move(error_cb))
-      ,  m_Conn(conn)
-      ,  m_Keyspace(keyspace)
-      ,  m_Key(key)
-      ,  m_State(eInit)
-      ,  m_MaxRetries(max_retries)  // 0 means no limit in auto-restart count,
-                                    // any other positive value is the limit,
-                                    // 1 means no 2nd start -> no re-starts at all
-      ,  m_Async(async)
-      ,  m_Cancelled(false)
+      , m_Conn(conn)
+      , m_Async(async)
+      , m_Keyspace(keyspace)
+      , m_Key(key)
     {
+        if (max_retries > numeric_limits<int>::max()) {
+            m_MaxRetries = 0;
+        } else {
+            m_MaxRetries = static_cast<int>(max_retries);
+        }
     }
+
+    CCassBlobWaiter(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        int32_t key,
+        bool async,
+        TDataErrorCallback error_cb
+    )
+      : m_ErrorCb(move(error_cb))
+      , m_Conn(move(conn))
+      , m_Async(async)
+      , m_Keyspace(keyspace)
+      , m_Key(key)
+    {}
+
+    CCassBlobWaiter(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        bool async,
+        TDataErrorCallback error_cb
+    )
+      : m_ErrorCb(move(error_cb))
+      , m_Conn(move(conn))
+      , m_Async(async)
+      , m_Keyspace(keyspace)
+    {}
 
     virtual ~CCassBlobWaiter()
     {
@@ -145,22 +172,22 @@ class CCassBlobWaiter
         return (m_State == eDone || m_State == eError || m_Cancelled);
     }
 
-    bool HasError(void) const
+    bool HasError() const
     {
         return !m_LastError.empty();
     }
 
-    string LastError(void) const
+    string LastError() const
     {
         return m_LastError;
     }
 
-    void ClearError(void)
+    void ClearError()
     {
         m_LastError.clear();
     }
 
-    string GetKeySpace(void) const
+    string GetKeySpace() const
     {
         return m_Keyspace;
     }
@@ -172,7 +199,13 @@ class CCassBlobWaiter
         m_Keyspace = keyspace;
     }
 
-    int32_t key(void) const
+    /// Use GetKey()
+    NCBI_DEPRECATED int32_t key() const
+    {
+        return m_Key;
+    }
+
+    int32_t GetKey() const
     {
         return m_Key;
     }
@@ -180,6 +213,24 @@ class CCassBlobWaiter
     void SetErrorCB(TDataErrorCallback error_cb)
     {
         m_ErrorCb = std::move(error_cb);
+    }
+
+    /// Set connection point parameters.
+    ///
+    /// @param value
+    ///   Max number of query retries operation allows.
+    ///   < 0 means not configured. Will use value provided by CCassConnection
+    ///   0 means no limit in auto-restart count,
+    ///   1 means no 2nd start -> no re-starts at all
+    ///   n > 1 means n-1 restart allowed
+    void SetMaxRetries(int value)
+    {
+        m_MaxRetries = value < 0 ? -1 : value;
+    }
+
+    int GetMaxRetries() const
+    {
+        return m_MaxRetries < 0 ? m_Conn->GetMaxRetries() : m_MaxRetries;
     }
 
     void SetDataReadyCB3(shared_ptr<CCassDataCallbackReceiver> datareadycb3)
@@ -238,8 +289,9 @@ class CCassBlobWaiter
 
     bool CanRestart(shared_ptr<CCassQuery> query, unsigned int restart_count) const
     {
-        bool is_out_of_retries = (m_MaxRetries > 0) &&
-                                 (restart_count >= m_MaxRetries - 1);
+        int max_retries = GetMaxRetries();
+        bool is_out_of_retries = (max_retries > 0) &&
+                                 (restart_count >= static_cast<unsigned int>(max_retries) - 1);
         ERR_POST(Info << "CanRestartQ?" <<
                  " out_of_retries=" << is_out_of_retries <<
                  ", time=" << gettime() / 1000L <<
@@ -303,15 +355,16 @@ class CCassBlobWaiter
     TDataErrorCallback              m_ErrorCb;
     weak_ptr<CCassDataCallbackReceiver> m_DataReadyCb3;
     shared_ptr<CCassConnection>     m_Conn;
-    string                          m_Keyspace;
-    int32_t                         m_Key;
-    atomic<int32_t>                 m_State;
+    atomic<int32_t>                 m_State{eInit};
     string                          m_LastError;
-    unsigned int                    m_MaxRetries;
     bool                            m_Async;
-    atomic_bool                     m_Cancelled;
+    atomic_bool                     m_Cancelled{false};
+    vector<SQueryRec>               m_QueryArr;
 
-    vector<SQueryRec>  m_QueryArr;
+ private:
+    string                          m_Keyspace;
+    int32_t                         m_Key{0};
+    int                             m_MaxRetries{-1};
 };
 
 class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
@@ -352,20 +405,20 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         return m_Keyspace;
     }
 
-    void InsertBlobExtended(unsigned int  op_timeout_ms, unsigned int  max_retries,
+    NCBI_DEPRECATED void InsertBlobExtended(unsigned int  op_timeout_ms, unsigned int  max_retries,
                          CBlobRecord *  blob_rslt, TDataErrorCallback  error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
-    void InsertNAnnot(unsigned int  op_timeout_ms,
+    NCBI_DEPRECATED void InsertNAnnot(unsigned int  op_timeout_ms,
                      int32_t  key, unsigned int  max_retries,
                      CBlobRecord * blob, CNAnnotRecord * annot,
                      TDataErrorCallback error_cb,
                      unique_ptr<CCassBlobWaiter> & waiter);
-    void DeleteNAnnot(unsigned int op_timeout_ms,
+    NCBI_DEPRECATED void DeleteNAnnot(unsigned int op_timeout_ms,
                      unsigned int max_retries,
                      CNAnnotRecord * annot,
                      TDataErrorCallback error_cb,
                      unique_ptr<CCassBlobWaiter> & waiter);
-    void FetchNAnnot(unsigned int op_timeout_ms,
+    NCBI_DEPRECATED void FetchNAnnot(unsigned int op_timeout_ms,
         unsigned int max_retries,
         const string & accession,
         int16_t version,
@@ -375,7 +428,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         TDataErrorCallback error_cb,
         unique_ptr<CCassBlobWaiter> & waiter
     );
-    void FetchNAnnot(unsigned int op_timeout_ms,
+    NCBI_DEPRECATED void FetchNAnnot(unsigned int op_timeout_ms,
         unsigned int max_retries,
         const string & accession,
         int16_t version,
@@ -385,7 +438,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         TDataErrorCallback error_cb,
         unique_ptr<CCassBlobWaiter> & waiter
     );
-    void FetchNAnnot(unsigned int op_timeout_ms,
+    NCBI_DEPRECATED void FetchNAnnot(unsigned int op_timeout_ms,
         unsigned int max_retries,
         const string & accession,
         int16_t version,
@@ -395,7 +448,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         unique_ptr<CCassBlobWaiter> & waiter
     );
 
-    void FetchAccVerHistory(
+    NCBI_DEPRECATED void FetchAccVerHistory(
         unsigned int op_timeout_ms,
         unsigned int max_retries,
         const string & accession,
@@ -407,18 +460,18 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
     );
 
 
-    void DeleteBlobExtended(unsigned int  op_timeout_ms,
+    NCBI_DEPRECATED void DeleteBlobExtended(unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,
                          TDataErrorCallback error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
-    void DeleteExpiredBlobVersion(unsigned int op_timeout_ms,
+    NCBI_DEPRECATED void DeleteExpiredBlobVersion(unsigned int op_timeout_ms,
                              int32_t key, CBlobRecord::TTimestamp last_modified,
                              CBlobRecord::TTimestamp expiration,
                              unsigned int  max_retries,
                              TDataErrorCallback error_cb,
                              unique_ptr<CCassBlobWaiter> & waiter);
 
-    unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
+    NCBI_DEPRECATED unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
         unsigned int op_timeout_ms,
         unsigned int max_retries,
         CBlobRecord::TSatKey sat_key,
@@ -426,7 +479,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         TDataErrorCallback error_cb
     );
 
-    unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
+    NCBI_DEPRECATED unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
         unsigned int op_timeout_ms,
         unsigned int max_retries,
         CBlobRecord::TSatKey sat_key,
@@ -435,7 +488,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         TDataErrorCallback error_cb
     );
 
-    unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
+    NCBI_DEPRECATED unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
         unsigned int timeout_ms,
         unsigned int max_retries,
         unique_ptr<CBlobRecord> blob_record,

@@ -192,6 +192,16 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     unsigned int QryTimeoutMs() const;
     unsigned int QryTimeoutMks() const;
 
+    int GetMaxRetries() const
+    {
+        return m_maxretries;
+    }
+
+    void SetMaxRetries(int value)
+    {
+        m_maxretries = value < 0 ? 1 : value;
+    }
+
     // This function is deprecated and will be removed after Jan-1 2022
     // Use 2 parameters version
     NCBI_DEPRECATED void SetRtLimits(unsigned int numThreadsIo, unsigned int numConnPerHost, unsigned int /*maxConnPerHost*/);
@@ -238,6 +248,7 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     unsigned int                    m_ctimeoutms;
     unsigned int                    m_qtimeoutms;
     unsigned int                    m_qtimeout_retry_ms{0};
+    int                             m_maxretries{1};
     unsigned int                    m_last_query_cnt;
     loadbalancing_policy_t          m_loadbalancing;
     bool                            m_tokenaware;

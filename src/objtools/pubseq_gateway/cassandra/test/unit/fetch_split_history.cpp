@@ -56,10 +56,7 @@ class CFetchSplitHistoryTest
     : public testing::Test
 {
  public:
-    CFetchSplitHistoryTest()
-     : m_KeyspaceName("psg_test_sat_4")
-     , m_Timeout(10000)
-    {}
+    CFetchSplitHistoryTest() = default;
 
  protected:
     static void SetUpTestCase() {
@@ -82,8 +79,7 @@ class CFetchSplitHistoryTest
     static shared_ptr<CCassConnectionFactory> m_Factory;
     static shared_ptr<CCassConnection> m_Connection;
 
-    string m_KeyspaceName;
-    unsigned int m_Timeout;
+    string m_KeyspaceName{"psg_test_sat_4"};
 };
 
 const char* CFetchSplitHistoryTest::m_TestClusterName = "ID_CASS_TEST";
@@ -94,7 +90,7 @@ TEST_F(CFetchSplitHistoryTest, EmptyHistory) {
     size_t call_count{0};
     vector<SSplitHistoryRecord> actual_result;
     CCassBlobTaskFetchSplitHistory fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, 1,
+        m_Connection, m_KeyspaceName, 1,
         [&call_count, &actual_result](vector<SSplitHistoryRecord> && result) {
             ++call_count;
             swap(actual_result, result);
@@ -118,7 +114,7 @@ TEST_F(CFetchSplitHistoryTest, FetchAllVersions) {
     CBlobRecord::TSatKey sat_key = 340865818;
     vector<SSplitHistoryRecord> actual_result;
     CCassBlobTaskFetchSplitHistory fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, sat_key,
+        m_Connection, m_KeyspaceName, sat_key,
         [&call_count, &actual_result](vector<SSplitHistoryRecord> && result) {
             ++call_count;
             swap(actual_result, result);
@@ -147,7 +143,7 @@ TEST_F(CFetchSplitHistoryTest, FetchOneVersion) {
     CBlobRecord::TSatKey sat_key = 340865818;
     vector<SSplitHistoryRecord> actual_result;
     CCassBlobTaskFetchSplitHistory fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, sat_key, 1565300000,
+        m_Connection, m_KeyspaceName, sat_key, 1565300000,
         [&call_count, &actual_result](vector<SSplitHistoryRecord> && result) {
             ++call_count;
             swap(actual_result, result);

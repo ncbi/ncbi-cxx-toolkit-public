@@ -39,11 +39,6 @@
 #include <utility>
 #include <vector>
 
-//#include <objtools/pubseq_gateway/impl/cassandra/acc_ver_hist/record.hpp>
-//#include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
-//#include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
-//#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
-
 #include <objtools/pubseq_gateway/impl/cassandra/acc_ver_hist/tasks.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 
@@ -67,12 +62,30 @@ CCassAccVerHistoryTaskFetch::CCassAccVerHistoryTaskFetch(
         true, // false, // m_Async
         max_retries, move(data_error_cb)
     )
-    , m_Accession( move( accession))
-    , m_Version( version)
-    , m_SeqIdType( seq_id_type)
-    , m_Consume( move( consume_callback))
-    , m_PageSize( CCassQuery::DEFAULT_PAGE_SIZE)
-    , m_RestartCounter( 0)
+    , m_Accession(move( accession))
+    , m_Version(version)
+    , m_SeqIdType(seq_id_type)
+    , m_Consume(move( consume_callback))
+{}
+
+CCassAccVerHistoryTaskFetch::CCassAccVerHistoryTaskFetch(
+    shared_ptr<CCassConnection> connection,
+    const string & keyspace,
+    string accession,
+    TAccVerHistConsumeCallback consume_callback,
+    TDataErrorCallback data_error_cb,
+    int16_t version,
+    int16_t seq_id_type
+)
+    : CCassBlobWaiter(
+        move(connection), keyspace,
+        true, // false, // m_Async
+        move(data_error_cb)
+    )
+    , m_Accession(move( accession))
+    , m_Version(version)
+    , m_SeqIdType(seq_id_type)
+    , m_Consume(move( consume_callback))
 {}
 
 void CCassAccVerHistoryTaskFetch::SetConsumeCallback( TAccVerHistConsumeCallback callback)
@@ -197,10 +210,11 @@ void CCassAccVerHistoryTaskFetch::Wait1()
         default:
         {
             char msg[1024];
+            string keyspace = GetKeySpace();
             snprintf(msg, sizeof(msg),
                 "Failed to fetch accession history (key=%s.%s|%hd|%hd) unexpected state (%d)",
-                     m_Keyspace.c_str(), m_Accession.c_str(), m_Version, m_SeqIdType,
-                     static_cast<int>(m_State));
+                keyspace.c_str(), m_Accession.c_str(), m_Version, m_SeqIdType,
+                static_cast<int>(m_State));
             Error( CRequestStatus::e502_BadGateway,
                    CCassandraException::eQueryFailed, eDiag_Error, msg);
         }

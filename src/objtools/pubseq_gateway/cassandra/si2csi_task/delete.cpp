@@ -63,10 +63,21 @@ CCassSI2CSITaskDelete::CCassSI2CSITaskDelete(
     , m_SecSeqIdType(sec_seq_id_type)
 {}
 
+CCassSI2CSITaskDelete::CCassSI2CSITaskDelete(
+    shared_ptr<CCassConnection> connection,
+    const string & keyspace,
+    CSI2CSIRecord::TSecSeqId sec_seq_id,
+    CSI2CSIRecord::TSecSeqIdType sec_seq_id_type,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(connection), keyspace, true, move(data_error_cb))
+    , m_SecSeqId(move(sec_seq_id))
+    , m_SecSeqIdType(sec_seq_id_type)
+{}
 
-void CCassSI2CSITaskDelete::Wait1(void)
+void CCassSI2CSITaskDelete::Wait1()
 {
-    bool restarted;
+    bool restarted{false};
     do {
         restarted = false;
         switch (m_State) {
@@ -111,9 +122,10 @@ void CCassSI2CSITaskDelete::Wait1(void)
 
             default: {
                 char msg[1024];
+                string keyspace = GetKeySpace();
                 snprintf(msg, sizeof(msg),
                     "Failed to erase si2csi (key=%s.%s.%d) unexpected state (%d)",
-                    m_Keyspace.c_str(), m_SecSeqId.c_str(), m_SecSeqIdType, static_cast<int>(m_State));
+                    keyspace.c_str(), m_SecSeqId.c_str(), m_SecSeqIdType, static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
             }
         }

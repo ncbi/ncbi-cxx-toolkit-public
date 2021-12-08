@@ -63,6 +63,17 @@ CCassStatusHistoryTaskDelete::CCassStatusHistoryTaskDelete(
     , m_DoneWhen(done_when)
 {}
 
+CCassStatusHistoryTaskDelete::CCassStatusHistoryTaskDelete(
+    shared_ptr<CCassConnection> conn,
+    const string & keyspace,
+    int32_t sat_key,
+    int64_t done_when,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(conn), keyspace, sat_key, true, move(data_error_cb))
+    , m_DoneWhen(done_when)
+{}
+
 void CCassStatusHistoryTaskDelete::Wait1()
 {
     bool b_need_repeat;
@@ -82,14 +93,14 @@ void CCassStatusHistoryTaskDelete::Wait1()
 
                 qry->NewBatch();
                 qry->SetSQL(sql, 2);
-                qry->BindInt32(0, m_Key);
+                qry->BindInt32(0, GetKey());
                 qry->BindInt64(1, m_DoneWhen);
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 CBlobChangelogWriter().WriteChangelogEvent(
                     qry.get(),
                     GetKeySpace(),
-                    CBlobChangelogRecord(m_Key, m_DoneWhen, TChangelogOperation::eStatusHistoryDeleted)
+                    CBlobChangelogRecord(GetKey(), m_DoneWhen, TChangelogOperation::eStatusHistoryDeleted)
                 );
                 SetupQueryCB3(qry);
                 qry->RunBatch();
@@ -109,8 +120,9 @@ void CCassStatusHistoryTaskDelete::Wait1()
 
             default: {
                 char msg[1024];
+                string keyspace = GetKeySpace();
                 snprintf(msg, sizeof(msg), "Failed to delete blob status history record (key=%s.%d.%ld) unexpected state (%d)",
-                    m_Keyspace.c_str(), m_Key, m_DoneWhen, static_cast<int>(m_State));
+                    keyspace.c_str(), GetKey(), m_DoneWhen, static_cast<int>(m_State));
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
             }
         }
