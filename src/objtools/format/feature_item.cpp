@@ -537,7 +537,12 @@ static bool s_SkipFeature(const CMappedFeat& feat,
         }
     }
 
-    if ( ( cfg.HideExonFeatures() || cfg.IsPolicyGenomes() )  &&  subtype == CSeqFeatData::eSubtype_exon ) {
+    if ( cfg.HideExonFeatures()  &&  subtype == CSeqFeatData::eSubtype_exon ) {
+        return true;
+    }
+
+    if ( cfg.IsPolicyGenomes()  &&  subtype == CSeqFeatData::eSubtype_exon &&
+         (ctx.GetBiomol() == CMolInfo::eBiomol_mRNA || ctx.GetBiomol() == CMolInfo::eBiomol_transcribed_RNA) ) {
         return true;
     }
 
