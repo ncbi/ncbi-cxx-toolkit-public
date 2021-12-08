@@ -126,7 +126,7 @@ public:
     void SetUserArgs(SPSG_UserArgs user_args) { m_UserArgs = move(user_args); }
 
 protected:
-    template <class T> T GetCtx(T c) { return c ? c->Clone() : CDiagContext::GetRequestContext().Clone(); }
+    template <class T> T GetCtx(T c) { return c ? c : CDiagContext::GetRequestContext().Clone(); }
 
     CPSG_Request(shared_ptr<void> user_context = {},
                  CRef<CRequestContext> request_context = {})
