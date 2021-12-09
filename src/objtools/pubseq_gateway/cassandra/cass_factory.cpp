@@ -270,6 +270,7 @@ shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance(void)
 
     rv->SetTimeouts(m_CassConnTimeoutMs, m_CassQueryTimeoutMs);
     rv->SetQueryTimeoutRetry(m_CassQueryRetryTimeoutMs);
+    rv->SetMaxRetries(m_MaxRetries);
     rv->SetFallBackRdConsistency(m_CassFallbackRdConsistency);
     rv->SetBlackList(m_CassBlackList);
 
