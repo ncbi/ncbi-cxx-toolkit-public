@@ -108,5 +108,6 @@ sra$
 sra/data_loaders/csra$
 sra/data_loaders/csra/impl$
 sra/readers
+misc/jsonwrapp
 misc/third_party
 misc/third_party_static
