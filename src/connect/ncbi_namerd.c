@@ -976,7 +976,7 @@ static int/*bool*/ x_UpdateDtabInArgs(SConnNetInfo* net_info,
     assert(dtablen);
 
     /* Find any existing dtab in the args */
-    verify(arg = ConnNetInfo_GetArgs(net_info));
+    verify((arg = ConnNetInfo_GetArgs(net_info)));
     for ( ;  *arg  &&  *arg != '#';  arg += arglen + !(arg[arglen] != '&')) {
         arglen = strcspn(arg, "&#");
         if (arglen < sizeof(NAMERD_DTAB_ARG))
