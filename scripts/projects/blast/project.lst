@@ -107,7 +107,6 @@ objtools/simple$
 sra$
 sra/data_loaders/csra$
 sra/data_loaders/csra/impl$
-misc$
-misc/jsonwrapp
+sra/readers
 misc/third_party
 misc/third_party_static
