@@ -184,6 +184,7 @@ TEST_F(CCassConnectionTest, LoadBlobRetryTimeout)
     // Too small value here prevents prepare operation
     r.Set(config_section, "qtimeout", "1", IRegistry::fPersistent);
     r.Set(config_section, "qtimeout_retry", "1000", IRegistry::fPersistent);
+    r.Set(config_section, "maxretries", "1", IRegistry::fPersistent);
     factory->LoadConfig(r, config_section);
 
     auto connection = factory->CreateInstance();
@@ -202,11 +203,8 @@ TEST_F(CCassConnectionTest, LoadBlobRetryTimeout)
     // Failing task without retries
     {
         CCassBlobTaskLoadBlob task(
-            connection, "satold01", sat_key1,
-            true, // chunks for timeout
-            timeout_error
+            connection, "satold01", sat_key1, true, timeout_error
         );
-        task.SetMaxRetries(1);
         task.SetUsePrepared(false);
         while(!task.Wait()) {
             this_thread::sleep_for(chrono::milliseconds(2));
@@ -219,9 +217,7 @@ TEST_F(CCassConnectionTest, LoadBlobRetryTimeout)
     {
         call_count = 0;
         CCassBlobTaskLoadBlob task(
-            connection, "satold01", sat_key2,
-            true, // no chunks
-            timeout_error
+            connection, "satold01", sat_key2, true, timeout_error
         );
         task.SetMaxRetries(2);
         task.SetUsePrepared(false);
@@ -233,6 +229,27 @@ TEST_F(CCassConnectionTest, LoadBlobRetryTimeout)
         EXPECT_EQ(0, call_count);
         EXPECT_FALSE(task.HasError());
     }
+}
+
+TEST_F(CCassConnectionTest, MaxRetriesPropagation)
+{
+    const string config_section = "TEST";
+    auto factory = CCassConnectionFactory::s_Create();
+    CNcbiRegistry r;
+    r.Set(config_section, "service", "ID_CASS_TEST", IRegistry::fPersistent);
+    // Too small value here prevents prepare operation
+    r.Set(config_section, "maxretries", "7", IRegistry::fPersistent);
+    factory->LoadConfig(r, config_section);
+
+    auto connection = factory->CreateInstance();
+    EXPECT_EQ(7, connection->GetMaxRetries());
+    CCassBlobTaskLoadBlob task(connection, "stub", 0, true, nullptr);
+    EXPECT_EQ(7, task.GetMaxRetries());
+    task.SetMaxRetries(11);
+    EXPECT_EQ(11, task.GetMaxRetries());
+    EXPECT_EQ(7, connection->GetMaxRetries());
+    task.SetMaxRetries(-1);
+    EXPECT_EQ(7, task.GetMaxRetries());
 }
 
 }  // namespace

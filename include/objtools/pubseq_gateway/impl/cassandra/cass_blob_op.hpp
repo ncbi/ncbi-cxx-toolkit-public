@@ -56,14 +56,7 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-class CCassBlobWaiter;
 class CCassBlobTaskLoadBlob;
-
-enum ECassTristate {
-    eUnknown,
-    eTrue,
-    eFalse
-};
 
 using TBlobChunkCallback = function<void(const unsigned char * data, unsigned int size, int chunk_no)>;
 using TPropsCallback     = function<void(const SBlobStat& stat, bool isFound)>;
@@ -393,8 +386,10 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         m_Conn = nullptr;
     }
 
-    NCBI_DEPRECATED void GetBlobChunkSize(unsigned int timeout_ms, int64_t * chunk_size);
     void GetBlobChunkSize(unsigned int timeout_ms, const string & keyspace, int64_t * chunk_size);
+
+    /// It is unsafe to use this function.
+    /// Call should be protected in multi-threaded environment.
     void SetKeyspace(const string &  keyspace)
     {
         m_Keyspace = keyspace;
@@ -404,97 +399,6 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
     {
         return m_Keyspace;
     }
-
-    NCBI_DEPRECATED void InsertBlobExtended(unsigned int  op_timeout_ms, unsigned int  max_retries,
-                         CBlobRecord *  blob_rslt, TDataErrorCallback  error_cb,
-                         unique_ptr<CCassBlobWaiter> &  waiter);
-    NCBI_DEPRECATED void InsertNAnnot(unsigned int  op_timeout_ms,
-                     int32_t  key, unsigned int  max_retries,
-                     CBlobRecord * blob, CNAnnotRecord * annot,
-                     TDataErrorCallback error_cb,
-                     unique_ptr<CCassBlobWaiter> & waiter);
-    NCBI_DEPRECATED void DeleteNAnnot(unsigned int op_timeout_ms,
-                     unsigned int max_retries,
-                     CNAnnotRecord * annot,
-                     TDataErrorCallback error_cb,
-                     unique_ptr<CCassBlobWaiter> & waiter);
-    NCBI_DEPRECATED void FetchNAnnot(unsigned int op_timeout_ms,
-        unsigned int max_retries,
-        const string & accession,
-        int16_t version,
-        int16_t seq_id_type,
-        const vector<string>& annot_names,
-        TNAnnotConsumeCallback consume_callback,
-        TDataErrorCallback error_cb,
-        unique_ptr<CCassBlobWaiter> & waiter
-    );
-    NCBI_DEPRECATED void FetchNAnnot(unsigned int op_timeout_ms,
-        unsigned int max_retries,
-        const string & accession,
-        int16_t version,
-        int16_t seq_id_type,
-        const vector<CTempString>& annot_names,
-        TNAnnotConsumeCallback consume_callback,
-        TDataErrorCallback error_cb,
-        unique_ptr<CCassBlobWaiter> & waiter
-    );
-    NCBI_DEPRECATED void FetchNAnnot(unsigned int op_timeout_ms,
-        unsigned int max_retries,
-        const string & accession,
-        int16_t version,
-        int16_t seq_id_type,
-        TNAnnotConsumeCallback consume_callback,
-        TDataErrorCallback error_cb,
-        unique_ptr<CCassBlobWaiter> & waiter
-    );
-
-    NCBI_DEPRECATED void FetchAccVerHistory(
-        unsigned int op_timeout_ms,
-        unsigned int max_retries,
-        const string & accession,
-        TAccVerHistConsumeCallback consume_callback,
-        TDataErrorCallback error_cb,
-        unique_ptr<CCassBlobWaiter> & waiter,
-        int16_t version = 0,
-        int16_t seq_id_type = 0
-    );
-
-
-    NCBI_DEPRECATED void DeleteBlobExtended(unsigned int  op_timeout_ms,
-                         int32_t  key, unsigned int  max_retries,
-                         TDataErrorCallback error_cb,
-                         unique_ptr<CCassBlobWaiter> &  waiter);
-    NCBI_DEPRECATED void DeleteExpiredBlobVersion(unsigned int op_timeout_ms,
-                             int32_t key, CBlobRecord::TTimestamp last_modified,
-                             CBlobRecord::TTimestamp expiration,
-                             unsigned int  max_retries,
-                             TDataErrorCallback error_cb,
-                             unique_ptr<CCassBlobWaiter> & waiter);
-
-    NCBI_DEPRECATED unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
-        unsigned int op_timeout_ms,
-        unsigned int max_retries,
-        CBlobRecord::TSatKey sat_key,
-        bool load_chunks,
-        TDataErrorCallback error_cb
-    );
-
-    NCBI_DEPRECATED unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
-        unsigned int op_timeout_ms,
-        unsigned int max_retries,
-        CBlobRecord::TSatKey sat_key,
-        CBlobRecord::TTimestamp modified,
-        bool load_chunks,
-        TDataErrorCallback error_cb
-    );
-
-    NCBI_DEPRECATED unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
-        unsigned int timeout_ms,
-        unsigned int max_retries,
-        unique_ptr<CBlobRecord> blob_record,
-        bool load_chunks,
-        TDataErrorCallback error_cb
-    );
 
     void UpdateBlobFlagsExtended(
         unsigned int op_timeout_ms,
@@ -509,12 +413,6 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         CBlobRecord * blob, CID2SplitRecord* id2_split,
         TDataErrorCallback error_cb,
         unique_ptr<CCassBlobWaiter> & waiter);
-
-    // @deprecated Use GetSetting with explicit domain parameter
-    NCBI_DEPRECATED bool GetSetting(unsigned int op_timeout_ms, const string & name, string & value);
-
-    // @deprecated Use UpdateSetting with explicit domain parameter
-    NCBI_DEPRECATED void UpdateSetting(unsigned int op_timeout_ms, const string & name, const string & value);
 
     bool GetSetting(unsigned int op_timeout_ms, const string & domain, const string & name, string & value);
     void UpdateSetting(unsigned int op_timeout_ms, const string & domain, const string & name, const string & value);
