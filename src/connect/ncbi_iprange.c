@@ -46,16 +46,15 @@ extern int/*bool*/ NcbiIsInIPRange(const SIPRange*       range,
     if (range  &&  addr) {
         unsigned int a, b, ip;
 
-        if (range->type == eIPRange_Host) {
+        switch (range->type) {
+        case eIPRange_Host:
             assert(!range->b);
             assert(sizeof(range->a) == sizeof(*addr));
             return !memcmp(&range->a, addr, sizeof(range->a));
-        }
-        switch (range->type) {
         case eIPRange_Range:
             assert(NcbiIsIPv4(&range->a));
             if (!NcbiIsIPv4(addr))
-                return 0/*false*/;
+                break;
             /* all host byte order */
             a  = SOCK_NetToHostLong(NcbiIPv6ToIPv4(&range->a, 0));
             b  = SOCK_NetToHostLong(                range->b    );
@@ -63,13 +62,12 @@ extern int/*bool*/ NcbiIsInIPRange(const SIPRange*       range,
             assert(a < b);
             return a <= ip  &&  ip <= b;
         case eIPRange_Network:
-            a = (unsigned int) NcbiIsIPv4(&range->a);
-            b = (unsigned int) NcbiIsIPv4(addr);
-            if (!(a & b)) {
-                return a ^ b
-                    ? 0/*false*/
-                    : NcbiIsInIPv6Network(&range->a, range->b, addr);
-            }
+            a = !NcbiIsIPv4(&range->a);
+            b = !NcbiIsIPv4(addr);
+            if (a ^ b)
+                break;
+            if (a & b)
+                return NcbiIsInIPv6Network(&range->a, range->b, addr);
             /* all network byte order */
             a  = NcbiIPv6ToIPv4(&range->a, 0);
             b  =                 range->b;

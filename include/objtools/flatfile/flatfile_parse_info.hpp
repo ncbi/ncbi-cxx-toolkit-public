@@ -45,10 +45,10 @@ struct FileBuf {
     const char* start=nullptr;
     const char* current=nullptr;
 };
-struct indexblk_struct;
+struct Indexblk;
 struct protein_block;
 
-typedef struct indexblk_struct* IndexblkPtr;
+using IndexblkPtr = Indexblk*;
 typedef struct protein_block* ProtBlkPtr;
 
 using TEntryList = list<CRef<objects::CSeq_entry>>;

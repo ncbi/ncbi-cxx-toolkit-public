@@ -2165,6 +2165,4 @@ BOOST_AUTO_TEST_CASE(TestRW1172)
 
     auto pSeqAnnot = s_ReadOneTableFromString(
             sc_Table22, expected_errors);
-
-    const auto& ftable = pSeqAnnot->GetData().GetFtable();
 }

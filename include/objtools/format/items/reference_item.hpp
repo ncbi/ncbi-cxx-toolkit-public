@@ -221,8 +221,6 @@ private:
     void x_CleanData(void);
     void x_CapitalizeTitleIfNecessary(void);
 
-    static bool x_StringIsJustCapitalLetters( const string & str );
-
     // data
     TPubType              m_PubType;
     TCategory             m_Category;

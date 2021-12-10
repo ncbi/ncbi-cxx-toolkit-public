@@ -1561,14 +1561,14 @@ BOOST_AUTO_TEST_CASE(MaskRestrictToInterval)
 void setupQueryInfoForOffsetTranslation(CBlastQueryInfo &query_info)
 {
     const int kNumQueries = 3;
-    const TIntId kQueryGis[kNumQueries] = { 215041, 441158, 214981 };
+    const TGi kQueryGis[kNumQueries] = { GI_CONST(215041), GI_CONST(441158), GI_CONST(214981) };
     const int kQueryLengths[kNumQueries] = { 1639, 1151, 1164 };
 
     TSeqLocVector query_v;
 
     for (int index = 0; index < kNumQueries; ++index) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, kQueryGis[index]));
+        loc->SetWhole().SetGi(kQueryGis[index]);
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
         query_v.push_back(SSeqLoc(loc, scope));

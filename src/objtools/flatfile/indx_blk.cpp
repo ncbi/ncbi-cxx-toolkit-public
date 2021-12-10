@@ -729,58 +729,14 @@ static bool fta_check_embl_moltype(char* str)
 }
 
 /*********************************************************
-indexblk_struct constructor
+Indexblk constructor
 **********************************************************/
-indexblk_struct::indexblk_struct() :
-    vernum(0),
-    offset(0),
-    bases(0),
-    segnum(0),
-    segtotal(0),
-    linenum(0),
-    drop(0),
-    len(0),
-    EST(false),
-    STS(false),
-    GSS(false),
-    HTC(false),
-    htg(0),
-    is_contig(false),
-    is_mga(false),
-    origin(false),
-    is_pat(false),
-    is_wgs(false),
-    is_tpa(false),
-    is_tsa(false),
-    is_tls(false),
-    is_tpa_wgs_con(false),
-    tsa_allowed(false),
-    gaps(NULL),
-    secaccs(NULL),
-    xip(NULL),
-    embl_new_ID(false),
-    env_sample_qual(false),
-    is_prot(false),
-    taxid(0),
-    no_gc_warning(false),
-    qsoffset(0),
-    qslength(0),
-    wgs_and_gi(0),
-    got_plastid(false),
-    gc_genomic(0),
-    gc_mito(0),
-    specialist_db(false),
-    inferential(false),
-    experimental(false),
-    ppp(NULL)
+Indexblk::Indexblk() 
 {
     acnum[0] = 0;
     locusname[0] = 0;
     division[0] = 0;
     blocusname[0] = 0;
-
-    MemSet(&lc, 0, sizeof(lc));
-
     wgssec[0] = 0;
 }
 

@@ -149,8 +149,8 @@ void CDBPoolBalancer::x_Discard(const void* params_in, IBalanceable* conn_in)
     auto conn = static_cast<const CDB_Connection*>(conn_in);
     _ASSERT(conn != nullptr);
     _TRACE("Proceeding to request turnover");
-    const string&  server_name   = conn->ServerName();
-    bool           was_reusable  = conn->IsReusable();
+    string  server_name   = conn->ServerName();
+    bool    was_reusable  = conn->IsReusable();
     delete conn;
     if (was_reusable) {
         // This call might not close the exact connection we

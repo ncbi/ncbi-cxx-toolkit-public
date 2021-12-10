@@ -1325,6 +1325,7 @@ static EIO_Status x_ReadChunkHead(SHttpConnector* uuu, int/*bool*/ first)
                 break;
             verify(BUF_Peek(buf, str, size) == size);
             if (!first  &&  (str[0] != '\r'  ||  str[1] != '\n')) {
+                status = eIO_NotSupported/*protocol error*/;
                 free(str);
                 str = 0;
                 break;
@@ -1338,14 +1339,33 @@ static EIO_Status x_ReadChunkHead(SHttpConnector* uuu, int/*bool*/ first)
     if (!str
         ||  sscanf(str, "%" NCBI_BIGCOUNT_FORMAT_SPEC_HEX "%n", &chunk, &n) < 1
         ||  (!isspace((unsigned char) str[n])  &&  str[n] != ';')) {
+        int error = errno/*iff memory allocation failure*/;
         char* url = ConnNetInfo_URL(uuu->net_info);
+        const char* err;
+        char errbuf[256];
+        if (!str) {
+            if (status == eIO_Success) {
+                if (BUF_Size(buf) != size) {
+                    sprintf(errbuf, "Partial read %lu out of %lu",
+                            (unsigned long) BUF_Size(buf),
+                            (unsigned long) size);
+                    err = errbuf;
+                } else
+                    err = strerror(error);
+            } else {
+                err = status != eIO_NotSupported
+                    ? IO_StatusStr(status)
+                    : "Protocol error";
+            }
+        } /* else "err" is unused */
         CORE_LOGF_X(23, eLOG_Error,
-                    ("[HTTP%s%s]  Cannot read chunk size%s%.*s",
+                    ("[HTTP%s%s]  Cannot read chunk size: %s%.*s%s",
                      url ? "; " : "",
                      url ? url  : "",
-                     str ? ": " : "",
-                     str ? (int)(size - (first ? 2 : 4)) : 0,
-                     str ?       str  + (first ? 0 : 2)  : ""));
+                     &"\""[!str],
+                     !str ? (int) strlen(err) : (int)(size - (first ? 2 : 4)),
+                     !str ?              err  :       str  + (first ? 0 : 2),
+                     &"\""[!str]));
         if (url)
             free(url);
         if (str)

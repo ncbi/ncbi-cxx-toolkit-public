@@ -232,8 +232,12 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result,
         conn_listener->OnError(result, m_Server);
         result = multiline_output ? string(END_OF_MULTILINE_OUTPUT) : kEmptyStr;
 
-    } else if (!multiline_output && TServConn_WarnOnUnexpectedReply::GetDefault()) {
-        conn_listener->OnWarning("Unexpected reply: " + result, m_Server);
+    } else if (!multiline_output) {
+        if (TServConn_ErrorOnUnexpectedReply::GetDefault()) {
+            conn_listener->OnError("Unexpected reply: " + result, m_Server);
+        } else if (TServConn_WarnOnUnexpectedReply::GetDefault()) {
+            conn_listener->OnWarning("Unexpected reply: " + result, m_Server);
+        }
     }
 }
 

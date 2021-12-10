@@ -13792,7 +13792,7 @@ $as_echo "$ncbi_cv_func_gethostbyname_r" >&6; }
 if test "$ncbi_cv_func_gethostbyname_r" != "no" ; then
 
 cat >>confdefs.h <<_ACEOF
-#define HAVE_GETHOSTBYNAME_R $ncbi_cv_func_gethostbyname_r
+#define NCBI_HAVE_GETHOSTBYNAME_R $ncbi_cv_func_gethostbyname_r
 _ACEOF
 
 fi
@@ -13875,7 +13875,7 @@ $as_echo "$ncbi_cv_func_gethostbyaddr_r" >&6; }
 if test "$ncbi_cv_func_gethostbyaddr_r" != "no" ; then
 
 cat >>confdefs.h <<_ACEOF
-#define HAVE_GETHOSTBYADDR_R $ncbi_cv_func_gethostbyaddr_r
+#define NCBI_HAVE_GETHOSTBYADDR_R $ncbi_cv_func_gethostbyaddr_r
 _ACEOF
 
 fi
@@ -13946,7 +13946,7 @@ $as_echo "$ncbi_cv_func_getservbyname_r" >&6; }
 if test "$ncbi_cv_func_getservbyname_r" != "no" ; then
 
 cat >>confdefs.h <<_ACEOF
-#define HAVE_GETSERVBYNAME_R $ncbi_cv_func_getservbyname_r
+#define NCBI_HAVE_GETSERVBYNAME_R $ncbi_cv_func_getservbyname_r
 _ACEOF
 
 fi

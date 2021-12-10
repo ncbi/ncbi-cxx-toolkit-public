@@ -43,6 +43,23 @@
 
 BEGIN_NCBI_SCOPE
 
+struct SExceptionMessage
+{
+    SExceptionMessage(CNcbiRegistry* registry = nullptr) : m_Registry(registry) {}
+
+    string operator()(const string& what)
+    {
+        _ASSERT(m_Registry);
+        // Must correspond to TExceptionMessage
+        auto message = m_Registry->GetString("CGI", "Exception_Message", "Some exception was thrown (not shown for safety reasons)");
+        return message.empty() ? what : message;
+    }
+
+private:
+    CNcbiRegistry* m_Registry;
+};
+
+
 CGridCgiContext::CGridCgiContext(CHTMLPage& page, CCgiContext& ctx)
     : m_Page(page), m_CgiContext(ctx), m_NeedRenderPage(true)
 {
@@ -177,6 +194,13 @@ bool CGridCgiApplication::IsCachingNeeded(const CCgiRequest& request) const
 
 void CGridCgiApplication::InitGridClient()
 {
+    auto& config = GetConfig();
+
+    // Must correspond to TServConn_ErrorOnUnexpectedReply
+    if (!config.HasEntry("netservice_api", "error_on_unexpected_reply")) {
+        config.Set("netservice_api", "error_on_unexpected_reply", "true");
+    }
+
     m_RefreshDelay = 
         GetConfig().GetInt("grid_cgi", "refresh_delay", 5, IRegistry::eReturn);
     m_FirstDelay = 
@@ -217,6 +241,8 @@ const string kGridCgiForm = "<FORM METHOD=\"GET\" ACTION=\"<@SELF_URL@>\">\n"
 
 int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
 {
+    SExceptionMessage exception_message = &GetRWConfig();
+
     // Given "CGI context", get access to its "HTTP request" and
     // "HTTP response" sub-objects
     //const CCgiRequest& request  = ctx.GetRequest();
@@ -284,11 +310,11 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                         CNetScheduleException::eTooManyPendingJobs)
                         OnQueueIsBusy(grid_ctx);
                     else
-                        OnJobFailed(ex.what(), grid_ctx);
+                        OnJobFailed(exception_message(ex.what()), grid_ctx);
                     finished = true;
                 }
                 catch (exception& ex) {
-                    OnJobFailed(ex.what(), grid_ctx);
+                    OnJobFailed(exception_message(ex.what()), grid_ctx);
                     finished = true;
                 }
                 if (finished)
@@ -301,7 +327,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         }
         } // try
         catch (/*CNetServiceException*/ exception& ex) {
-            OnJobFailed(ex.what(), grid_ctx);
+            OnJobFailed(exception_message(ex.what()), grid_ctx);
         }       
         CHTMLPlainText* self_url =
             new CHTMLPlainText(grid_ctx.GetSelfURL(),true);

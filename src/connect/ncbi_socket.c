@@ -45,7 +45,7 @@
 /* #define HAVE_GETADDRINFO 1 */
 /* #define HAVE_GETNAMEINFO 1 */
 
-/* Uncomment this (or specify "-DHAVE_GETHOSTBY***_R=") only if:
+/* Uncomment this (or specify "-DNCBI_HAVE_GETHOSTBY***_R=") only if:
  * 0) you are compiling this outside of the NCBI C or C++ Toolkits
  *    (USE_NCBICONF is not #define'd), and
  * 1) your platform has "gethostbyname_r()" but not "getnameinfo()", and
@@ -54,12 +54,12 @@
  */
 
 /*   Solaris: */
-/* #define HAVE_GETHOSTBYNAME_R 5 */
-/* #define HAVE_GETHOSTBYADDR_R 7 */
+/* #define NCBI_HAVE_GETHOSTBYNAME_R 5 */
+/* #define NCBI_HAVE_GETHOSTBYADDR_R 7 */
 
 /*   Linux, IRIX: */
-/* #define HAVE_GETHOSTBYNAME_R 6 */
-/* #define HAVE_GETHOSTBYADDR_R 8 */
+/* #define NCBI_HAVE_GETHOSTBYNAME_R 6 */
+/* #define NCBI_HAVE_GETHOSTBYADDR_R 8 */
 
 /* Uncomment this (or specify "-DHAVE_SIN_LEN") only if:
  * 0) you are compiling this outside of the NCBI C or C++ Toolkits
@@ -1215,15 +1215,15 @@ static unsigned int s_gethostbyname_(const char* hostname,
             freeaddrinfo(out);
 #else /* use some variant of gethostbyname */
         struct hostent* he;
-#  ifdef HAVE_GETHOSTBYNAME_R
+#  ifdef NCBI_HAVE_GETHOSTBYNAME_R
         static const char suffix[] = "_r";
         struct hostent x_he;
         char x_buf[1024];
 
         error = 0;
-#    if   HAVE_GETHOSTBYNAME_R == 5
+#    if   NCBI_HAVE_GETHOSTBYNAME_R == 5
         he = gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf), &error);
-#    elif HAVE_GETHOSTBYNAME_R == 6
+#    elif NCBI_HAVE_GETHOSTBYNAME_R == 6
         if (gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf),
                             &he, &error) != 0) {
             /*NB: retval == errno on error*/
@@ -1231,8 +1231,8 @@ static unsigned int s_gethostbyname_(const char* hostname,
             he = 0;
         }
 #    else
-#      error "Unknown HAVE_GETHOSTBYNAME_R value"
-#    endif /*HAVE_GETHOSTNBYNAME_R == N*/
+#      error "Unknown NCBI_HAVE_GETHOSTBYNAME_R value"
+#    endif /*NCBI_HAVE_GETHOSTNBYNAME_R == N*/
         if (!he) {
             if (!error)
                 error = SOCK_ERRNO;
@@ -1248,7 +1248,7 @@ static unsigned int s_gethostbyname_(const char* hostname,
 
         he = gethostbyname(hostname);
         error = he ? 0 : h_errno + DNS_BASE;
-#  endif /*HAVE_GETHOSTBYNAME_R*/
+#  endif /*NCBI_HAVE_GETHOSTBYNAME_R*/
 
         if (!he || he->h_addrtype != AF_INET || he->h_length != sizeof(host)) {
             if (he)
@@ -1260,11 +1260,11 @@ static unsigned int s_gethostbyname_(const char* hostname,
                    sizeof(host));
         }
 
-#  ifndef HAVE_GETHOSTBYNAME_R
+#  ifndef NCBI_HAVE_GETHOSTBYNAME_R
 #    ifndef SOCK_GHBX_MT_SAFE
         CORE_UNLOCK;
 #    endif /*!SOCK_GHBX_MT_SAFE*/
-#  endif /*!HAVE_GETHOSTBYNAME_R*/
+#  endif /*!NCBI_HAVE_GETHOSTBYNAME_R*/
 
         if (!host) {
 #  ifdef NETDB_INTERNAL
@@ -1409,16 +1409,16 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
         }
 #else /* use some variant of gethostbyaddr */
         struct hostent* he;
-#  ifdef HAVE_GETHOSTBYADDR_R
+#  ifdef NCBI_HAVE_GETHOSTBYADDR_R
         static const char suffix[] = "_r";
         struct hostent x_he;
         char x_buf[1024];
 
         error = 0;
-#    if   HAVE_GETHOSTBYADDR_R == 7
+#    if   NCBI_HAVE_GETHOSTBYADDR_R == 7
         he = gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
                              x_buf, sizeof(x_buf), &error);
-#    elif HAVE_GETHOSTBYADDR_R == 8
+#    elif NCBI_HAVE_GETHOSTBYADDR_R == 8
         if (gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
                             x_buf, sizeof(x_buf), &he, &error) != 0) {
             /*NB: retval == errno on error*/
@@ -1426,15 +1426,15 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
             he = 0;
         }
 #    else
-#      error "Unknown HAVE_GETHOSTBYADDR_R value"
-#    endif /*HAVE_GETHOSTBYADDR_R == N*/
+#      error "Unknown NCBI_HAVE_GETHOSTBYADDR_R value"
+#    endif /*NCBI_HAVE_GETHOSTBYADDR_R == N*/
         if (!he) {
             if (!error)
                 error = SOCK_ERRNO;
             else
                 error += DNS_BASE;
         }
-#  else /*HAVE_GETHOSTBYADDR_R*/
+#  else /*NCBI_HAVE_GETHOSTBYADDR_R*/
         static const char suffix[] = "";
 
 #    ifndef SOCK_GHBX_MT_SAFE
@@ -1443,7 +1443,7 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
 
         he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
         error = he ? 0 : h_errno + DNS_BASE;
-#  endif /*HAVE_GETHOSTBYADDR_R*/
+#  endif /*NCBI_HAVE_GETHOSTBYADDR_R*/
 
         if (!he  ||  strlen(he->h_name) >= namesize) {
             if (he  ||  SOCK_ntoa(host, name, namesize) != 0) {
@@ -1459,11 +1459,11 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
         } else
             strcpy(name, he->h_name);
 
-#  ifndef HAVE_GETHOSTBYADDR_R
+#  ifndef NCBI_HAVE_GETHOSTBYADDR_R
 #    ifndef SOCK_GHBX_MT_SAFE
         CORE_UNLOCK;
 #    endif /*!SOCK_GHBX_MT_SAFE*/
-#  endif /*!HAVE_GETHOSTBYADDR_R*/
+#  endif /*!NCBI_HAVE_GETHOSTBYADDR_R*/
 
         if (!name) {
 #  ifdef NETDB_INTERNAL

@@ -677,13 +677,13 @@ static void s_AppendProtRefInfo(CProt_ref& current_ref, const CProt_ref& other_r
     }
 
     if (other_ref.IsSetDb()) {
-        for (const auto pDBtag : other_ref.GetDb()) {
+        for (const auto& pDBtag : other_ref.GetDb()) {
             current_ref.SetDb().push_back(pDBtag);
         }
     }
 
     if (current_ref.GetProcessed() == CProt_ref::eProcessed_not_set) {
-        const auto processed = other_ref.GetProcessed();
+        const auto& processed = other_ref.GetProcessed();
         if (processed != CProt_ref::eProcessed_not_set) {
             current_ref.SetProcessed(processed);
         }

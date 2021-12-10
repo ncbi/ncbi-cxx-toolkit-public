@@ -818,7 +818,9 @@ void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
         CSeq_loc loc;
         x_GetLocation(seh, args, loc);
         try {
-            m_FFGenerator->Generate(loc, seh.GetScope(), *m_Os);
+            if (m_Os) {
+                m_FFGenerator->Generate(loc, seh.GetScope(), *m_Os);
+            }
         }
         catch (CException& e) {
             ERR_POST(Error << e);
@@ -826,7 +828,9 @@ void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
         }
     } else {
         try {
-            m_FFGenerator->Generate(sub, *scope, *m_Os);
+            if (m_Os) {
+                m_FFGenerator->Generate(sub, *scope, *m_Os);
+            }
         }
         catch (CException& e) {
             ERR_POST(Error << e);

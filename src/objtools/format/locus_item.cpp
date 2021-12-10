@@ -527,16 +527,10 @@ static CTempString x_GetDivisionProcIdx(const CBioseqContext& ctx, const CBioseq
         is_transgenic ) {
         division = "SYN";
     } else if (is_env_sample) {
-        if (tech == CMolInfo::eTech_unknown          ||
-            tech == CMolInfo::eTech_standard         ||
-            tech == CMolInfo::eTech_htgs_3           ||
-            tech == CMolInfo::eTech_wgs              ||
-            tech == CMolInfo::eTech_concept_trans    ||
-            tech == CMolInfo::eTech_seq_pept         ||
-            tech == CMolInfo::eTech_both             ||
-            tech == CMolInfo::eTech_seq_pept_overlap ||
-            tech == CMolInfo::eTech_seq_pept_homol   ||
-            tech == CMolInfo::eTech_concept_trans_a  ||
+        if (tech == CMolInfo::eTech_unknown  ||
+            tech == CMolInfo::eTech_standard ||
+            tech == CMolInfo::eTech_htgs_3   ||
+            tech == CMolInfo::eTech_wgs      ||
             tech == CMolInfo::eTech_other) {
             division = "ENV";
         }
@@ -709,16 +703,10 @@ static CTempString x_GetDivisionProc(const CBioseq_Handle& bsh, bool is_prot,
         is_transgenic ) {
         division = "SYN";
     } else if (is_env_sample) {
-        if (tech == CMolInfo::eTech_unknown          ||
-            tech == CMolInfo::eTech_standard         ||
-            tech == CMolInfo::eTech_htgs_3           ||
-            tech == CMolInfo::eTech_wgs              ||
-            tech == CMolInfo::eTech_concept_trans    ||
-            tech == CMolInfo::eTech_seq_pept         ||
-            tech == CMolInfo::eTech_both             ||
-            tech == CMolInfo::eTech_seq_pept_overlap ||
-            tech == CMolInfo::eTech_seq_pept_homol   ||
-            tech == CMolInfo::eTech_concept_trans_a  ||
+        if (tech == CMolInfo::eTech_unknown  ||
+            tech == CMolInfo::eTech_standard ||
+            tech == CMolInfo::eTech_htgs_3   ||
+            tech == CMolInfo::eTech_wgs      ||
             tech == CMolInfo::eTech_other) {
             division = "ENV";
         }

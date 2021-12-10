@@ -315,7 +315,7 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
             was = true;
     }
 
-    entry->mpData = CreateEntryBlk();
+    entry->mpData = new EntryBlk();
     Entry* pEntry = new Entry(pp, entry->mOffset);
     return pEntry;
 }
@@ -435,9 +435,9 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
             was = true;
     }
 
-    entry->mpData = CreateEntryBlk();
+    entry->mpData = new EntryBlk();
 
-    return(entry);
+    return entry;
 }
 
 END_NCBI_SCOPE

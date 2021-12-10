@@ -450,6 +450,34 @@ static bool s_HasWGSTech(const CBioseq& bioseq) {
     return false;
 }
 
+static const CBioseq* s_GetNucSeqFromContext(const CSeq_entry* ctx)
+{
+    if (!ctx) {
+        return nullptr;
+    }
+
+    if (ctx->IsSeq()) {
+        return &(ctx->GetSeq());
+    }
+
+    if (ctx->IsSet() &&
+        ctx->GetSet().IsSetClass() &&
+        ctx->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
+        const auto& bioseq_set = ctx->GetSet();
+        if (bioseq_set.IsSetSeq_set()) {
+            for (const auto& pEntry : bioseq_set.GetSeq_set()) {
+                if (pEntry->IsSeq()) {
+                    const auto& bioseq = pEntry->GetSeq();
+                    if (bioseq.IsSetInst() &&
+                        bioseq.GetInst().IsNa()) {
+                        return &bioseq;
+                    }
+                }
+            }
+        }
+    }
+    return nullptr;
+}
 
 void CValidError_imp::ValidateBioSource
 (const CBioSource&    bsrc,
@@ -1001,10 +1029,12 @@ const CSeq_entry *ctx)
     }
 
     m_biosource_kind = bsrc;
+
+    const CBioseq* pBioseq=nullptr;
     const bool checkForUndefinedSpecies =  hasTaxname &&
         (IsGenomeSubmission() ||
-         ((ctx && ctx->IsSeq() && s_ReportUndefinedSpeciesId(ctx->GetSeq())) &&
-          (s_IsChromosome(bsrc) || s_HasWGSTech(ctx->GetSeq())) &&
+         (((pBioseq = s_GetNucSeqFromContext(ctx)) && s_ReportUndefinedSpeciesId(*pBioseq)) &&
+          (s_IsChromosome(bsrc) || s_HasWGSTech(*pBioseq)) &&
           s_IsEukaryoteOrProkaryote(m_biosource_kind)));
 
     ValidateOrgRef(orgref, obj, ctx, checkForUndefinedSpecies);

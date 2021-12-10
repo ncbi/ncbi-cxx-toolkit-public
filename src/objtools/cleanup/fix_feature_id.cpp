@@ -128,7 +128,7 @@ bool CFixFeatureId::UpdateFeatureIds(CSeq_feat& feat,
             }
         }
     }
-    return true;
+    return feature_changed;
 }
 
 

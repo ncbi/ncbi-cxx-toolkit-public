@@ -43,9 +43,6 @@
 #ifdef HAVE_FSTAT
 #  undef HAVE_FSTAT
 #endif
-#ifdef HAVE_GETHOSTBYNAME_R
-#  undef HAVE_GETHOSTBYNAME_R
-#endif
 
 #ifdef __SunOS
 #  define __MATHERR_RENAME_EXCEPTION 1
@@ -61,9 +58,6 @@
 
 #ifdef HAVE_FSTAT
 #  undef HAVE_FSTAT
-#endif
-#ifdef HAVE_GETHOSTBYNAME_R
-#  undef HAVE_GETHOSTBYNAME_R
 #endif
 
 #endif // PYTHONPP_CONFIG_H

@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include "ncbi_server_infop.h"
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_service.hpp>
 #include <connect/ncbi_socket.hpp>
@@ -39,6 +40,26 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+static string x_HostOfInfo(const SSERV_Info*     info,
+                           const TNCBI_IPv6Addr* addr)
+{
+    const char* x_host = SERV_HostOfInfo(info);
+    if (x_host) {
+        _ASSERT(*x_host);
+        return x_host;
+    }
+
+    char xx_host[CONN_HOST_LEN + 1];
+    if (NcbiAddrToString(xx_host, sizeof(xx_host), addr)) {
+        _ASSERT(*xx_host);
+        return xx_host;
+    }
+
+    _ASSERT(0);
+    return kEmptyStr;
+}
 
 
 template<>
@@ -74,7 +95,8 @@ vector<CSERV_Info> SERV_GetServers(const string&  service,
     if (iter != 0) {
         const SSERV_Info* info;
         while ((info = SERV_GetNextInfo(iter)) != 0) {
-            if (info->host == 0) {
+            TNCBI_IPv6Addr addr = SERV_AddrOfInfo(info);
+            if (NcbiIsEmptyIPv6(&addr)) {
                 string msg
                     = "SERV_GetServers('" + service
                     + "'): Service not operational";
@@ -83,14 +105,17 @@ vector<CSERV_Info> SERV_GetServers(const string&  service,
 
             if (types == fSERV_Any  ||  (types & info->type)) {
                 servers.push_back(CSERV_Info
-                                  (CSocketAPI::ntoa(info->host), info->port,
+                                  (x_HostOfInfo(info, &addr), info->port,
                                    info->rate, info->type));
             } else {
                 _TRACE("SERV_GetServers('" << service << "'): Skipping "
-                       << (CSocketAPI::ntoa(info->host)
-                           + (info->port
-                              ? ':' + NStr::NumericToString(info->port)
-                              : kEmptyStr)) << " due to incompatible type "
+                       << ((NcbiIsIPv4(&addr) ? "" : "[")
+                           + x_HostOfInfo(info, &addr) +
+                           (NcbiIsIPv4(&addr) ? "" : "]"))
+                       << (info->port
+                           ? ':' + NStr::NumericToString(info->port)
+                           : kEmptyStr)
+                       << " due to incompatible type "
                        << SERV_TypeStr(info->type)
                        << hex << setiosflags(IOS_BASE::uppercase)
                        << "(0x" << info->type << ") vs. mask=0x" << types);

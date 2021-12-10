@@ -42,6 +42,7 @@ if [ "$platform" = IntelMAC ]; then
 else
     archflag=
 fi
+unset CFLAGS CPPFLAGS LDFLAGS
 ./configure --prefix=$root/$name --build-prefix=$root/build/$name $archflag \
     ${LIBXML_LIBPATH:+"LDFLAGS=$LIBXML_LIBPATH"}
 make NO_VDB3=1

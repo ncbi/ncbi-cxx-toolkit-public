@@ -292,9 +292,9 @@ version  1 # of file format
 6+9   C?????  embl_wgs_nuc *
 6+10  C?????  embl_wgs_nuc
 6+11  C?????  embl_wgs_nuc
-6+9   D?????  gb_tpa_nuc
-6+10  D?????  gb_tpa_nuc
-6+11  D?????  gb_tpa_nuc
+6+9   D?????  gb_tpa_wgs_nuc
+6+10  D?????  gb_tpa_wgs_nuc
+6+11  D?????  gb_tpa_wgs_nuc
 6+9   J?????  gb_wgs_nuc
 6+10  J?????  gb_wgs_nuc
 6+11  J?????  gb_wgs_nuc
@@ -1389,7 +1389,7 @@ version  1 # of file format
 2+6  OL  gb_dirsub
 2+8  OL  gb_other_nuc
 2+10 OL  gb_other_nuc
-2+6  OM  gb_other_nuc
+2+6  OM  gb_dirsub
 2+8  OM  gb_other_nuc
 2+10 OM  gb_other_nuc
 2+6  ON  gb_other_nuc

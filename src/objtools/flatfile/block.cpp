@@ -119,32 +119,25 @@ void DataBlk::operator delete(void* p)
 
 void xFreeEntry(DataBlkPtr entry)
 {
-    FreeEntryBlk(reinterpret_cast<EntryBlkPtr>(entry->mpData));
+    if (entry->mpData) {
+        delete entry->mpData;
+        entry->mpData = nullptr;
+    }
 
-    entry->mpData = NULL;
     s_FreeDataBlk(entry);
-    //delete entry;
 }
 
 /**********************************************************/
-void FreeEntryBlk(EntryBlkPtr ebp)
+
+EntryBlk::~EntryBlk()
 {
-    if (ebp == NULL)
-        return;
-
-    //delete ebp->chain;
-    s_FreeDataBlk(ebp->chain);
-    ebp->chain = NULL;
-
-    delete ebp;
+    if (chain) {
+        s_FreeDataBlk(chain);
+        chain = nullptr;
+    }
 }
 
 /**********************************************************/
-EntryBlkPtr CreateEntryBlk()
-{
-    return new EntryBlk;
-}
-
 DataBlkPtr CreateDataBlk(DataBlk* parent, int type, char* offset, size_t len)
 {
     auto result = reinterpret_cast<DataBlkPtr>(MemNew(sizeof(DataBlk)));

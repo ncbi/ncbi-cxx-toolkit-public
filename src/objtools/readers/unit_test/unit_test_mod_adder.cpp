@@ -148,19 +148,6 @@ private:
 };
 
 
-static CRef<CBioseq> sCreateSkeletonBioseq(void)
-{
-    auto pBioseq = Ref(new CBioseq());
-    auto pSeqId = Ref(new CSeq_id());
-    pSeqId->SetLocal().SetStr("dummy");
-    pBioseq->SetId().push_back(pSeqId);
-
-    pBioseq->SetInst().SetRepr(CSeq_inst::eRepr_not_set);
-    pBioseq->SetInst().SetMol(CSeq_inst::eMol_dna);
-
-    return pBioseq;
-}
-
 
 struct SModInfo {
     string name;

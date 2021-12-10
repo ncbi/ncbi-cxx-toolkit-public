@@ -922,7 +922,7 @@ static EIO_Status x_FTPPasv(SFTPConnector*  xxx,
     }
     if (!(i = (unsigned int)((((((o[0]<<8) | o[1])<<8) | o[2])<<8) | o[3])))
         return eIO_Unknown;
-    if (i == (unsigned int)(-1L))
+    if (i == (unsigned int)(-1))
         return eIO_Unknown;
     *host = SOCK_HostToNetLong(i);
     if (!(i = (unsigned int)((o[4]<<8) | o[5])))
@@ -1166,6 +1166,7 @@ static EIO_Status x_FTPXfer(SFTPConnector*  xxx,
                 xxx->sync = 0/*false*/;
                 return eIO_Success;
             }
+            assert(code == 2/*full abort*/);
         } else if (code == 450  ||  code == 550) {
             /* file processing errors: not a file, not a dir, etc */
             status = eIO_Closed;

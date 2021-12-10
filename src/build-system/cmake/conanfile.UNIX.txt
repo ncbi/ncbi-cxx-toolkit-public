@@ -4,7 +4,10 @@
 [requires]
 backward-cpp/1.6
 libdb/5.3.28
-boost/1.76.0
+# boost/1.72.0 because of https://github.com/boostorg/test/issues/272
+# the problem first showed up in 1.73.0
+# tested 1.77.0  - does not fix it
+boost/1.72.0
 bzip2/1.0.8
 cassandra-cpp-driver/2.15.3
 giflib/5.2.1
@@ -52,12 +55,12 @@ boost:without_fiber = True
 boost:without_graph = True
 boost:without_graph_parallel = True
 #boost:without_iostreams = True
-boost:without_json = True
+##boost:without_json = True
 boost:without_locale = True
 boost:without_log = True
-boost:without_math = True
+##boost:without_math = True
 boost:without_mpi = True
-boost:without_nowide = True
+##boost:without_nowide = True
 boost:without_program_options = True
 boost:without_python = True
 #boost:without_random = True

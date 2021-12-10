@@ -224,6 +224,23 @@ void SInputValidator::CheckAffinity(const string& value)
 }
 
 
+struct SExceptionMessage
+{
+    SExceptionMessage(CNcbiRegistry* registry = nullptr) : m_Registry(registry) {}
+
+    string operator()(const string& what)
+    {
+        _ASSERT(m_Registry);
+        // Must correspond to TExceptionMessage
+        auto message = m_Registry->GetString("CGI", "Exception_Message", "Some exception was thrown (not shown for safety reasons)");
+        return message.empty() ? what : message;
+    }
+
+private:
+    CNcbiRegistry* m_Registry;
+};
+
+
 /** @addtogroup NetScheduleClient
  *
  * @{
@@ -526,6 +543,7 @@ private:
     bool m_HTMLPassThrough;
     bool m_PortAdded;
     SInputValidator m_InputValidator;
+    SExceptionMessage m_ExceptionMessage;
 };
 
 void CCgi2RCgiApp::Init()
@@ -539,6 +557,11 @@ void CCgi2RCgiApp::Init()
 
     // Must correspond to TEnableVersionRequest
     config.Set("CGI", "EnableVersionRequest", "false");
+
+    // Must correspond to TServConn_ErrorOnUnexpectedReply
+    if (!config.HasEntry("netservice_api", "error_on_unexpected_reply")) {
+        config.Set("netservice_api", "error_on_unexpected_reply", "true");
+    }
 
     // Default value must correspond to SRCgiWait value
     m_RefreshDelay = config.GetInt(grid_cgi_section,
@@ -687,6 +710,8 @@ void CCgi2RCgiApp::Init()
 
     m_DisplayDonePage = config.GetValue(cgi2rcgi_section, "display_done_page", false);
     m_PortAdded = false;
+
+    m_ExceptionMessage = &config;
 }
 
 CCgiContext* CCgi2RCgiApp::CreateContextWithFlags(CNcbiArguments* args,
@@ -862,7 +887,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
         }
         catch (exception& ex) {
             ERR_POST("Job's reported as failed: " << ex.what());
-            OnJobFailed(ex.what(), grid_ctx);
+            OnJobFailed(m_ExceptionMessage(ex.what()), grid_ctx);
         }
 
         if (grid_ctx.NeedRenderPage()) PopulatePage(grid_ctx);
@@ -1130,7 +1155,7 @@ void CCgi2RCgiApp::SubmitJob(CCgiRequest& request,
         ERR_POST("Failed to submit a job: " << ex.what());
         OnJobFailed(ex.GetErrCode() ==
                 CNetScheduleException::eTooManyPendingJobs ?
-            "NetSchedule Queue is busy" : ex.what(), grid_ctx);
+            "NetSchedule Queue is busy" : m_ExceptionMessage(ex.what()), grid_ctx);
         done = true;
     }
     catch (CCgiRequestException&) {
@@ -1139,7 +1164,7 @@ void CCgi2RCgiApp::SubmitJob(CCgiRequest& request,
     }
     catch (exception& ex) {
         ERR_POST("Failed to submit a job: " << ex.what());
-        OnJobFailed(ex.what(), grid_ctx);
+        OnJobFailed(m_ExceptionMessage(ex.what()), grid_ctx);
         done = true;
     }
 
@@ -1508,13 +1533,13 @@ void CCgi2RCgiApp::ReadJob(istream& is, CGridCgiContext& ctx)
 
     if (!is) {
         ERR_POST("Failed to read job output: " << err_msg);
-        OnJobFailed("Failed to read job output: " + err_msg, ctx);
+        OnJobFailed("Failed to read job output: " + m_ExceptionMessage(err_msg), ctx);
     } else if (!out) {
         ERR_POST(Warning << "Failed to write job output to client: " << err_msg);
         ctx.NeedRenderPage(false); // Client will not get the message anyway
     } else {
         ERR_POST("Failed while relaying job output: " << err_msg);
-        OnJobFailed("Failed while relaying job output: " + err_msg, ctx);
+        OnJobFailed("Failed while relaying job output: " + m_ExceptionMessage(err_msg), ctx);
     }
 }
 
