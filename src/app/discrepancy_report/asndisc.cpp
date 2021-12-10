@@ -150,7 +150,8 @@ void CDiscRepApp::Init()
 
     //arg_desc->AddOptionalKey("P", "ReportType", "Report type: g - Genome, b - Big Sequence, m - MegaReport, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("P", "ReportType", "Report type: q - SMART genomes, u - Genome Submitter, b - Big Sequence, f - FATAL, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("R", "SevCount", "Severity for Error in Return Code\n\tinfo(0)\n\twarning(1)\n\terror(2)\n\tcritical(3)\n\tfatal(4)\n\ttrace(5)", CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("R", "SevCount", "0: always fail, 1: fail if severity is WARNING or above, 2 and higher: fail  if severity is ERROR or above", CArgDescriptions::eInteger);
+    //"Severity for Error in Return Code\n\tinfo(0)\n\twarning(1)\n\terror(2)\n\tcritical(3)\n\tfatal(4)\n\ttrace(5)", CArgDescriptions::eInteger);
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, CDataLoadersUtil::fDefault | CDataLoadersUtil::fGenbankOffByDefault);
 
