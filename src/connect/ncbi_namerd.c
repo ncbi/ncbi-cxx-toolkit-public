@@ -322,7 +322,7 @@ static TNCBI_Time x_ParseExpires(const char* expires, time_t utc,
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
                     ("[%s]  Unable to get JSON {\"addrs[" FMT_SIZE_T
                      "].meta.expires\"} value", name, i));
-        return 0;
+        return 0/*failure*/;
     }
 
     memset(&tm_exp, 0, sizeof(tm_exp));
