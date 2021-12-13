@@ -63,7 +63,7 @@ do_build() {
     build=$1
     proj=$2
     echo "Building $build $proj..."
-    echo "\n\n\n\n\n\n\n" | import_project -noswitch $proj $NCBI/c++.$build/ReleaseDLL64MT
+    yes | import_project -noswitch $proj $NCBI/c++.$build/ReleaseDLL64MT
     error=$?
     if [ $error -ne 0 ]; then
         echo "Error: import_project $proj failed, error $error"
@@ -97,7 +97,7 @@ do_check() {
             echo "Testing $build / $service..."
             export PSG_LOADER_SERVICE_NAME=$service
             rm -f check.sh.log
-            echo "\n\n" | make check_r
+            yes | make check_r
             cat check.sh.log >> $res_dir/perf_view.$bld$srv
             grep '^ERR\|^TO' check.sh.log >& /dev/null
             if [ $? -eq 0 ]; then
