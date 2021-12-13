@@ -164,7 +164,7 @@ SJsonOut::~SJsonOut()
 }
 
 template <class TItem>
-CJsonResponse::CJsonResponse(EPSG_Status status, TItem item, EExceptionHandling ex_handling) :
+CJsonResponse::CJsonResponse(EPSG_Status status, TItem item) :
     m_JsonObj(SetObject())
 {
     if (auto request_id = s_GetReply(item)->GetRequest()->template GetUserContext<string>()) {
@@ -175,10 +175,6 @@ CJsonResponse::CJsonResponse(EPSG_Status status, TItem item, EExceptionHandling 
         Fill(status, item);
     }
     catch (exception& e) {
-        if (ex_handling == eRethrow) {
-            throw;
-        }
-
         CJson_Document new_doc;
         new_doc.ResetObject()["data"].AssignCopy(*this);
         AssignCopy(new_doc);
@@ -1024,143 +1020,6 @@ int CProcessing::Performance(const SPerformanceParams params)
 
     if (SParams::verbose) cerr << '\n';
     return 0;
-}
-
-struct STestingContext : string
-{
-    enum EExpected { eSuccess, eFailure };
-
-    EExpected expected;
-
-    STestingContext(string id, EExpected e) : string(move(id)), expected(e) {}
-
-    static shared_ptr<STestingContext> CreateContext(string id, CJson_ConstObject params_obj);
-};
-
-shared_ptr<STestingContext> STestingContext::CreateContext(string id, CJson_ConstObject params_obj)
-{
-    string error;
-
-    try {
-        if (params_obj.has("expected_result")) {
-            auto expected = params_obj["expected_result"].GetValue().GetString();
-            auto result = expected == "success" ? eSuccess : eFailure;
-            return make_shared<STestingContext>(move(id), result);
-        } else {
-            error = "no 'expected_result' found";
-        }
-    }
-    catch (exception& e) {
-        error = e.what();
-    }
-
-    cerr << "Error in request '" << id << "': " << error << endl;
-    return {};
-}
-
-struct SExitCode
-{
-    enum { eSuccess = 0, eRunError = -1, eTestFail = -2, };
-
-    // eRunError has the highest priority and eSuccess - the lowest
-    void operator =(int rv) { if ((m_RV != eRunError) && (rv != eSuccess)) m_RV = rv; }
-
-    operator int() const { return m_RV; }
-
-private:
-    int m_RV = eSuccess;
-};
-
-int s_CheckItems(bool expect_errors, const string& request_id, shared_ptr<CPSG_Reply> reply)
-{
-    bool no_errors = true;
-
-    for (;;) {
-        auto reply_item = reply->GetNextItem(CDeadline::eInfinite);
-        _ASSERT(reply_item);
-
-        if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
-
-        const auto status = reply_item->GetStatus(CDeadline::eInfinite);
-
-        if (status == EPSG_Status::eSuccess) {
-            try {
-                CJsonResponse check(status, reply_item, CJsonResponse::eRethrow);
-            }
-            catch (exception& e) {
-                cerr << "Error on reading reply item for request '" << request_id << "': " << e.what() << endl;
-                return SExitCode::eRunError;
-            }
-
-        } else if (!expect_errors) {
-            stringstream ss;
-            ss << "Fail for request '" << request_id << "' expected to succeed: ";
-            s_ReportErrors(ss, status, reply_item, "", ", ");
-            cerr << ss.rdbuf();
-            return SExitCode::eTestFail;
-
-        } else {
-            no_errors = false;
-        }
-    }
-
-    if (expect_errors && no_errors) {
-        cerr << "Success on getting all items for request '" << request_id << "' expected to fail" << endl;
-        return SExitCode::eTestFail;
-    }
-
-    return SExitCode::eSuccess;
-}
-
-int CProcessing::Testing(const SParams params)
-{
-    const TPSG_RequestTimeout kDefaultTimeout(TPSG_RequestTimeout::eGetDefault);
-    CPSG_Queue queue(params.service);
-    queue.SetUserArgs(params.user_args);
-    ifstream input_file("psg_client_test.json");
-    SIoRedirector ior(cin, input_file);
-
-    if (!input_file) {
-        cerr << "Failed to read 'psg_client_test.json'" << endl;
-        return SExitCode::eRunError;
-    }
-
-    auto requests = ReadCommands(&STestingContext::CreateContext);
-
-    if (requests.empty()) return SExitCode::eRunError;
-
-    SExitCode rv;
-
-    for (const auto& request : requests) {
-        const CDeadline deadline(kDefaultTimeout);
-        auto expected_result = request->GetUserContext<STestingContext>();
-        const auto& request_id = *expected_result;
-
-        auto reply = queue.SendRequestAndGetReply(request, deadline);
-        _ASSERT(reply);
-
-        const bool expect_errors = expected_result->expected == STestingContext::eFailure;
-        auto reply_status = reply->GetStatus(deadline);
-
-        if (reply_status == EPSG_Status::eInProgress) {
-            rv = SExitCode::eTestFail;
-            cerr << "Timeout for request '" << request_id << "' expected to " << (expect_errors ? "fail" : "succeed") << '\n';
-
-        } else if (reply_status != EPSG_Status::eSuccess) {
-            if (!expect_errors) {
-                rv = SExitCode::eTestFail;
-                string prefix("Fail for request '" + request_id + "' expected to succeed: ");
-                stringstream ss;
-                s_ReportErrors(ss, reply_status, reply, prefix, ", ");
-                cerr << ss.rdbuf();
-            }
-
-        } else {
-            rv = s_CheckItems(expect_errors, request_id, reply);
-        }
-    }
-
-    return rv;
 }
 
 bool CProcessing::ReadLine(string& line, istream& is)
