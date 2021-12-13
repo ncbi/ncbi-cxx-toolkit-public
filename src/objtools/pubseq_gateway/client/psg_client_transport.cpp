@@ -97,7 +97,6 @@ NCBI_PARAM_ENUM_DEF(EPSG_UseCache, PSG, use_cache, EPSG_UseCache::eDefault);
 NCBI_PARAM_ENUM_ARRAY(EPSG_PsgClientMode, PSG, internal_psg_client_mode)
 {
     { "off",         EPSG_PsgClientMode::eOff         },
-    { "interactive", EPSG_PsgClientMode::eInteractive },
     { "performance", EPSG_PsgClientMode::ePerformance },
     { "io",          EPSG_PsgClientMode::eIo          }
 };
