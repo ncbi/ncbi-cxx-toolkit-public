@@ -8,6 +8,6 @@ LIB = psg_client id2 seqsplit seqset $(SEQ_LIBS) pub medline biblio general xser
 LIBS = $(PSG_CLIENT_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
 WATCHERS = sadyrovr
-CHECK_REQUIRES = in-house-resources
-CHECK_CMD = psg_client test
-CHECK_COPY = psg_client_test.json
+CHECK_REQUIRES = in-house-resources PYTHON3
+CHECK_CMD = psg_client.py test
+CHECK_COPY = psg_client.py
