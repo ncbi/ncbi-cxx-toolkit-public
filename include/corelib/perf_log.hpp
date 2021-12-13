@@ -464,7 +464,7 @@ double CPerfLogger::GetElapsedTime(void) const
         return m_StopWatch->Elapsed() + m_Adjustment;
     }
     double ret = m_Elapsed + m_Adjustment;
-    if ( m_TimerState == eStart ) {
+    if ( m_TimerState == CStopWatch::eStart ) {
         ret += (GetFastLocalTime() - m_LastStartTime).GetAsDouble();
     }
     return ret;
