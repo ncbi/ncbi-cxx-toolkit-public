@@ -1092,16 +1092,22 @@ public:
         eSyntax_Sybase
     };
 
-    CDB_BigDateTime(CTime::EInitMode mode = CTime::eEmpty,
-                    ESQLType sql_type = eDateTime);
-    CDB_BigDateTime(const CTime& t, ESQLType sql_type = eDateTime);
+    typedef CNullable<short> TOffset; ///< offset in minutes from GMT, if known
 
-    CDB_BigDateTime& Assign(const CTime& t, ESQLType sql_type = eDateTime);
+    CDB_BigDateTime(CTime::EInitMode mode = CTime::eEmpty,
+                    ESQLType sql_type = eDateTime, TOffset offset = null);
+    CDB_BigDateTime(const CTime& t, ESQLType sql_type = eDateTime,
+                    TOffset offset = null);
+
+    CDB_BigDateTime& Assign(const CTime& t, ESQLType sql_type = eDateTime,
+                            TOffset offset = null);
     CDB_BigDateTime& operator= (const CTime& t)
         { return Assign(t); }
 
     const CTime& GetCTime(void) const
         { return m_Time; }
+    const TOffset& GetOffset(void) const
+        { return m_Offset; }
     ESQLType     GetSQLType(void) const
         { return m_SQLType; }
     const char*  GetSQLTypeName(ESyntax syntax);
@@ -1111,12 +1117,14 @@ public:
     virtual void AssignValue(const CDB_Object& v);
 
     static CTimeFormat GetTimeFormat(ESyntax syntax,
-                                     ESQLType sql_type = eDateTime);
+                                     ESQLType sql_type = eDateTime,
+                                     TOffset offset = null);
     static pair<ESyntax, ESQLType> Identify(const CTempString& s);
 
 protected:
     CTime    m_Time;
     ESQLType m_SQLType;
+    TOffset  m_Offset;
 };
 
 

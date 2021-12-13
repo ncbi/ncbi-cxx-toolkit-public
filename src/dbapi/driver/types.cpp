@@ -2543,24 +2543,28 @@ void CDB_DateTime::AssignValue(const CDB_Object& v)
 //
 
 
-CDB_BigDateTime::CDB_BigDateTime(CTime::EInitMode mode, ESQLType sql_type)
-    : m_Time(mode), m_SQLType(sql_type)
+CDB_BigDateTime::CDB_BigDateTime(CTime::EInitMode mode, ESQLType sql_type,
+                                 TOffset offset)
+    : m_Time(mode), m_SQLType(sql_type), m_Offset(offset)
 {
     SetNULL(mode == CTime::eEmpty);
 }
 
 
-CDB_BigDateTime::CDB_BigDateTime(const CTime& t, ESQLType sql_type)
-    : m_Time(t), m_SQLType(sql_type)
+CDB_BigDateTime::CDB_BigDateTime(const CTime& t, ESQLType sql_type,
+                                 TOffset offset)
+    : m_Time(t), m_SQLType(sql_type), m_Offset(offset)
 {
     SetNULL(t.IsEmpty());
 }
 
 
-CDB_BigDateTime& CDB_BigDateTime::Assign(const CTime& t, ESQLType sql_type)
+CDB_BigDateTime& CDB_BigDateTime::Assign(const CTime& t, ESQLType sql_type,
+                                         TOffset offset)
 {
     m_Time    = t;
     m_SQLType = sql_type;
+    m_Offset  = offset;
     SetNULL(t.IsEmpty());
     return *this;
 }
@@ -2616,7 +2620,8 @@ void CDB_BigDateTime::AssignValue(const CDB_Object& v)
     }
 }
 
-CTimeFormat CDB_BigDateTime::GetTimeFormat(ESyntax syntax, ESQLType sql_type)
+CTimeFormat CDB_BigDateTime::GetTimeFormat(ESyntax syntax, ESQLType sql_type,
+                                           TOffset offset)
 {
     const char* s = kEmptyCStr;
     switch (syntax) {
@@ -2644,6 +2649,25 @@ CTimeFormat CDB_BigDateTime::GetTimeFormat(ESyntax syntax, ESQLType sql_type)
         case eDateTimeOffset: s = "b D Y  H:m:s.rPo";  break;
         }
         break;
+    }
+    if (sql_type == eDateTimeOffset  &&  !offset.IsNull() ) {
+        char offset_str[6];
+        auto o = offset.GetValue();
+        if (o < 0) {
+            offset_str[0] = '-';
+            o = -o;
+        } else {
+            offset_str[0] = '+';
+        }
+        offset_str[1] = '0' + o / 600;
+        offset_str[2] = '0' + ((o / 60) % 10);
+        offset_str[3] = ':';
+        offset_str[4] = '0' + ((o / 10) % 10);
+        offset_str[5] = '0' + (o % 10);
+        string s2(s);
+        _ASSERT(NStr::EndsWith(s2, "o"));
+        s2.replace(s2.size() - 1, 1, offset_str, 6);
+        return CTimeFormat(s2);
     }
     return CTimeFormat(s);
 }
