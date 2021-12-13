@@ -106,6 +106,11 @@ static const string kName = "Name";
 static const string kAccAbbr = "Acc.";
 static const string kLenAbbr = "Len";
 static const string kTaxid = "Taxid";
+static const string kClusterTitle = "Cluster Title";
+static const string kMember = "Mem.";
+static const string kTaxa = "Taxa";
+static const string kNumOf = "#";
+     
 
 //psiblast related
 static const string kPsiblastNewSeqGif = "<IMG SRC=\"images/new.gif\" \
@@ -131,6 +136,14 @@ ecked_GI\" VALUE=\"%d\">  ";
 
 //Max length of title string for the the link
 static const int kMaxDescrLength = 4096;
+
+static const int kMaxPercentIdentityLen = kIdentLine2.size() + 1;
+static const int kMaxAccLength = 16;
+static const int kMaxTaxonomyNameLength = 15;
+static const int kMaxTaxonomyNameLengthExt = 30;
+static const int kMaxDispNumberLength = 10;
+
+
 
 string
 CShowBlastDefline::GetSeqIdListString(const list<CRef<objects::CSeq_id> >& id,
@@ -1544,6 +1557,8 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<string> &use_thi
     sdl = new SDeflineInfo;
     sdl->id = id;
     sdl->defline = "Unknown";
+    sdl->clustMemberNum = 0;
+    sdl->clustTaxaNum = 0;
 
     try{
         const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(*id);
@@ -1640,7 +1655,7 @@ static void s_GetTaxonomyInfoForTaxID(TTaxId sdlTaxid, SSeqDBTaxInfo &taxInfo)
 }          
 
 
-string CShowBlastDefline::x_FormatClusterData(SDeflineInfo* sdl, string defLine)
+string CShowBlastDefline::x_FormatClusterMemData(SDeflineInfo* sdl, string defLine)
 {
     if(!sdl->clustMemList.empty()) {                    
         string allClustRows;         
@@ -1666,27 +1681,23 @@ string CShowBlastDefline::x_FormatClusterData(SDeflineInfo* sdl, string defLine)
     return defLine;
 }
     
-string CShowBlastDefline::x_FormatClusterDataTxt(SDeflineInfo* sdl, string defLine)
+string CShowBlastDefline::x_FormatClusterMemDataTxt(SDeflineInfo* sdl, string defLine)
 {
     if(!sdl->clustMemList.empty()) {                    
         string allClustRows;         
         for (size_t i =0; i < sdl->clustMemList.size(); i++) {            
-            if( i == 0) { //Format header
-                    m_MaxAccLength = 16;
-                    m_MaxTaxonomyNameLength = 30;
-                    m_MaxTaxidLength = 10;                       
-                    //string descrHeader = CAlignFormatUtil::MapSpaceTemplate(m_DeflineTemplates->deflineTxtHeader,"descr_hd1"," ",m_LineLen); //empty string
-                    string descrHeader = CAlignFormatUtil::MapSpaceTemplate(m_DeflineTemplates->deflineTxtHeader,"acc_hd",kAccession,m_MaxAccLength);                
-                    descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"sciname_hd",kScientific,m_MaxTaxonomyNameLength);        
-                    descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"comname_hd",kCommon,m_MaxTaxonomyNameLength);        
-                    descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"taxid_hd",kTaxid,m_MaxTaxidLength);         
+            if( i == 0) { //Format header                                        
+                    string descrHeader = CAlignFormatUtil::MapSpaceTemplate(m_DeflineTemplates->deflineTxtHeader,"acc_hd",kAccession,kMaxAccLength);                
+                    descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"sciname_hd",kScientific,kMaxTaxonomyNameLengthExt);        
+                    descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"comname_hd",kCommon,kMaxTaxonomyNameLengthExt);        
+                    descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"taxid_hd",kTaxid,kMaxDispNumberLength);         
                     allClustRows += descrHeader;
             }
         
-            string clustRow = CAlignFormatUtil::MapSpaceTemplate(m_DeflineTemplates->clusterMemTmpl,"clust_mem",sdl->clustMemList[i].memAcc,m_MaxAccLength);    
-            clustRow = CAlignFormatUtil::MapSpaceTemplate(clustRow,"clust_mem_cmn_name",sdl->clustMemList[i].commonName,m_MaxTaxonomyNameLength);
-            clustRow = CAlignFormatUtil::MapSpaceTemplate(clustRow,"clust_mem_sci_name",sdl->clustMemList[i].sciName,m_MaxTaxonomyNameLength);        
-            clustRow = CAlignFormatUtil::MapSpaceTemplate(clustRow,"clust_mem_taxid",NStr::IntToString(sdl->clustMemList[i].taxid),m_MaxTaxidLength);
+            string clustRow = CAlignFormatUtil::MapSpaceTemplate(m_DeflineTemplates->clusterMemTmpl,"clust_mem",sdl->clustMemList[i].memAcc,kMaxAccLength);    
+            clustRow = CAlignFormatUtil::MapSpaceTemplate(clustRow,"clust_mem_cmn_name",sdl->clustMemList[i].commonName,kMaxTaxonomyNameLengthExt);
+            clustRow = CAlignFormatUtil::MapSpaceTemplate(clustRow,"clust_mem_sci_name",sdl->clustMemList[i].sciName,kMaxTaxonomyNameLengthExt);        
+            clustRow = CAlignFormatUtil::MapSpaceTemplate(clustRow,"clust_mem_taxid",NStr::IntToString(sdl->clustMemList[i].taxid),kMaxDispNumberLength);
             allClustRows += clustRow;
         }        
         defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_mem_rows",allClustRows);                                    
@@ -1699,75 +1710,93 @@ void CShowBlastDefline::DisplayOneDefline(CNcbiOstream & out, SDeflineInfo* sdl,
 {
     bool first_new = true;
     string defLine;
-    defLine = x_FormatDeflineTableLine(sdl,iter,first_new);                    
+    
 
-    if(!sdl->clustMemList.empty()) {                    
-        if(m_Option & eHtml) {        
-            defLine = x_FormatClusterData(sdl, defLine);
+    if(m_Option & eHtml) {        
+        defLine = x_FormatDeflineTableLine(sdl,iter,first_new);
+        if(!sdl->clustMemList.empty()) {                    
+            defLine = x_FormatClusterMemData(sdl, defLine);
         }
-        else { //Text
-            if(!m_DeflineTemplates->clusterMemTmpl.empty()) { // Include cluster members
-                defLine = x_FormatClusterDataTxt(sdl, defLine);
-            }
-            else {
-                defLine = x_FormatDeflineTableLineText(sdl,iter);
-            }
-        }        
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_member_num",sdl->clustMemberNum);                    
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_taxa_num",sdl->clustTaxaNum);  
+        string firstSeq = (is_first) ? "firstSeq" : "";
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"firstSeq",firstSeq);    
+    }
+    else if(m_Option & eShowCSVDescr) {        
+        defLine = x_FormatDeflineTableLineCSV(sdl,iter);
+    }
+    else { // text            
+        if(!sdl->clustMemList.empty()) {  // Show cluster member infor
+            defLine = x_FormatDeflineTableLine(sdl,iter,first_new);
+            defLine = x_FormatClusterMemDataTxt(sdl, defLine);
+        }
+        else {//Format just deline table row
+            defLine = x_FormatDeflineTableLineText(sdl,iter);
+            //And header
+            if(is_first) {
+                string descrHeader = x_FormatDeflineTableHeaderText();
+                defLine = descrHeader + defLine;
+            }           
+        }
     }
 
-    string firstSeq = (is_first) ? "firstSeq" : "";
-    defLine = CAlignFormatUtil::MapTemplate(defLine,"firstSeq",firstSeq);    
     is_first = false;
     out << defLine;
     delete sdl;    
 }
 
+
+string CShowBlastDefline::x_FormatDeflineTableLineCSV(SDeflineInfo* sdl,SScoreInfo* iter)
+{
+
+    string defLine = m_DeflineTemplates->defLineTmpl;
+    string seqid;
+    if(!sdl->id.Empty()){
+        if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos ||sdl->id->AsFastaString().find("lcl|Subject_") != string::npos)) {
+            sdl->id->GetLabel(&seqid, CSeq_id::eContent);
+        }
+    }
+
+    if(sdl->id_url != NcbiEmptyString) {
+        string seqInfo  = CAlignFormatUtil::MapTemplate(m_DeflineTemplates->seqInfoTmpl,"dfln_url",sdl->id_url);        
+        seqInfo = CAlignFormatUtil::MapTemplate(seqInfo,"dfln_seqid",seqid);            
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",seqInfo);                 
+    }
+    else {
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",seqid);
+    }
+
+    string descr = (!sdl->defline.empty()) ? sdl->defline : "None provided";
+    s_LimitDescrLength(descr);
+    if(NStr::Find(descr,",") != NPOS) {
+        descr = "\"" + descr + "\"";    
+    }
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_defline",descr);
+
+    SSeqDBTaxInfo taxInfo;
+    s_GetTaxonomyInfoForTaxID(sdl->taxid, taxInfo);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"common_name",taxInfo.common_name);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"scientific_name",taxInfo.scientific_name);        
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"taxid",NStr::IntToString(sdl->taxid));            
+              
+            
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",iter->bit_string);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"total_bit_string",iter->total_bit_string);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_coverage",NStr::IntToString(iter->percent_coverage) + "%");
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"evalue_string",iter->evalue_string);    
+       
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_identity",NStr::DoubleToString(iter->percent_identity,2));
+    int len = sequence::GetLength(*sdl->id, m_ScopeRef);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"acclen",NStr::IntToString(len));        
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_member_num",sdl->clustMemberNum);                    
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_taxa_num",sdl->clustTaxaNum);          
+    return defLine;            
+}
+
+
 void CShowBlastDefline::x_DisplayDeflineTableTemplateCSV(CNcbiOstream & out)
 {
     ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
-        SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_seqid, (*iter)->blast_rank);        
-        string defLine = m_DeflineTemplates->defLineTmpl;
-        string seqid;
-        if(!sdl->id.Empty()){
-            if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos ||sdl->id->AsFastaString().find("lcl|Subject_") != string::npos)) {
-                sdl->id->GetLabel(&seqid, CSeq_id::eContent);
-            }
-        }
-
-        if(sdl->id_url != NcbiEmptyString) {
-	        string seqInfo  = CAlignFormatUtil::MapTemplate(m_DeflineTemplates->seqInfoTmpl,"dfln_url",sdl->id_url);        
-            seqInfo = CAlignFormatUtil::MapTemplate(seqInfo,"dfln_seqid",seqid);            
-            defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",seqInfo);                 
-        }
-        else {
-            defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",seqid);
-        }
-
-	    string descr = (!sdl->defline.empty()) ? sdl->defline : "None provided";
-	    s_LimitDescrLength(descr);
-        if(NStr::Find(descr,",") != NPOS) {
-            descr = "\"" + descr + "\"";    
-        }
-	    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_defline",descr);
-
-        SSeqDBTaxInfo taxInfo;
-        s_GetTaxonomyInfoForTaxID(sdl->taxid, taxInfo);
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"common_name",taxInfo.common_name);
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"scientific_name",taxInfo.scientific_name);        
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"taxid",NStr::IntToString(sdl->taxid));            
-              
-            
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",(*iter)->bit_string);
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"total_bit_string",(*iter)->total_bit_string);
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_coverage",NStr::IntToString((*iter)->percent_coverage) + "%");
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"evalue_string",(*iter)->evalue_string);    
-        
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_identity",NStr::DoubleToString((*iter)->percent_identity,2));
-        int len = sequence::GetLength(*sdl->id, m_ScopeRef);
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"acclen",NStr::IntToString(len));        
-        //defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",seqid);    
+        SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_seqid, (*iter)->blast_rank);       
+        string defLine = x_FormatDeflineTableLineCSV(sdl,*iter);
 
         out << defLine;
         delete sdl;
@@ -1789,58 +1818,69 @@ string CShowBlastDefline::x_FormatDeflineTableLineText(SDeflineInfo* sdl,SScoreI
         string descr = (!sdl->defline.empty()) ? sdl->defline : "None provided";
 	    s_LimitDescrLength(descr,m_LineLen);
 	    defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"dfln_defline",descr, m_LineLen);
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"clust_member_num",NStr::IntToString(sdl->clustMemberNum),kMaxDispNumberLength);
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"clust_taxa_num",NStr::IntToString(sdl->clustTaxaNum),kMaxDispNumberLength);        
         SSeqDBTaxInfo taxInfo;
         s_GetTaxonomyInfoForTaxID(sdl->taxid, taxInfo);
-        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"common_name",taxInfo.common_name,m_MaxTaxonomyNameLength);
-        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"scientific_name",taxInfo.scientific_name,m_MaxTaxonomyNameLength);        
-        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"taxid",NStr::IntToString(sdl->taxid),m_MaxTaxidLength);
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"common_name",taxInfo.common_name,kMaxTaxonomyNameLength);
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"scientific_name",taxInfo.scientific_name,kMaxTaxonomyNameLength);        
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"taxid",NStr::IntToString(sdl->taxid),kMaxDispNumberLength);
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"score_info",iter->bit_string,m_MaxScoreLen);
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"total_bit_string",iter->total_bit_string,m_MaxTotalScoreLen);
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"percent_coverage",NStr::IntToString(iter->percent_coverage) + "%",m_MaxQueryCoverLen);
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"evalue_string",iter->evalue_string,m_MaxEvalueLen);    
-        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"percent_identity",NStr::DoubleToString(iter->percent_identity,2),m_MaxPercentIdentityLen);
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"percent_identity",NStr::DoubleToString(iter->percent_identity,2),kMaxPercentIdentityLen);
         
         int len = sequence::GetLength(*sdl->id, m_ScopeRef);
-        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"acclen",NStr::IntToString(len),m_AccLenLength);        
-        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"seq_info",seqid,m_MaxAccLength);            
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"acclen",NStr::IntToString(len),kMaxDispNumberLength);        
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"seq_info",seqid,kMaxAccLength);            
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_member_num",sdl->clustMemberNum);                    
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_taxa_num",sdl->clustTaxaNum);  
         return defLine;
+}
+
+
+string CShowBlastDefline::x_FormatDeflineTableHeaderText(void)
+{
+        string descrHeader = CAlignFormatUtil::MapSpaceTemplate(m_DeflineTemplates->deflineTxtHeader,"descr_hd1"," ",m_LineLen); //empty string
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"clust_hd1"," ",m_LineLen); //only for cluster db        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"clustmemnum_hd1",kNumOf,kMaxDispNumberLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"clusttaxanum_hd1",kNumOf,kMaxDispNumberLength);                
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"sciname_hd1",kScientific,kMaxTaxonomyNameLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"comname_hd1",kCommon,kMaxTaxonomyNameLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"taxid_hd1"," ",kMaxDispNumberLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd1",kMax,m_MaxScoreLen);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd1",kTotal,m_MaxTotalScoreLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"querycov_hd1",kQueryCov,m_MaxQueryCoverLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd1","  " + kE + "  ",m_MaxEvalueLen);    
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"percident_hd1",kPerc,kMaxPercentIdentityLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acclen_hd1",kAccAbbr,kMaxDispNumberLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acc_hd1"," ",kMaxAccLength);        
+        //kBits 	kTotalLine2 kQueryCovLine2 kValue kIdentLine2 
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"descr_hd2",kDescription,m_LineLen);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"clust_hd2",kClusterTitle,m_LineLen); //only for cluster db        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"clustmemnum_hd2",kMember,kMaxDispNumberLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"clusttaxanum_hd2",kTaxa,kMaxDispNumberLength); 
+
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"sciname_hd2",kName,kMaxTaxonomyNameLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"comname_hd2",kName,kMaxTaxonomyNameLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"taxid_hd2",kTaxid,kMaxDispNumberLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd2",kScoreLine2,m_MaxScoreLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd2",kScoreLine2,m_MaxTotalScoreLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"querycov_hd2",kQueryCovLine2,m_MaxQueryCoverLen);
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd2",kValue,m_MaxEvalueLen);    
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"percident_hd2",kIdentLine2,kMaxPercentIdentityLen);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acclen_hd2",kLenAbbr,kMaxDispNumberLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acc_hd2",kAccession,kMaxAccLength); 
+        return descrHeader;
 }
 
 
 
 void CShowBlastDefline::x_DisplayDeflineTableTemplateText(CNcbiOstream & out)
 {
-        m_MaxPercentIdentityLen = kIdentLine2.size() + 1;
-        m_MaxAccLength = 16;
-        m_MaxTaxonomyNameLength = 15;
-        m_MaxTaxidLength = 10;
-        m_AccLenLength = 10;
-                
-        string descrHeader = CAlignFormatUtil::MapSpaceTemplate(m_DeflineTemplates->deflineTxtHeader,"descr_hd1"," ",m_LineLen); //empty string
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"sciname_hd1",kScientific,m_MaxTaxonomyNameLength);        
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"comname_hd1",kCommon,m_MaxTaxonomyNameLength);        
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"taxid_hd1"," ",m_MaxTaxidLength);        
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd1",kMax,m_MaxScoreLen);        
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd1",kTotal,m_MaxTotalScoreLen);
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"querycov_hd1",kQueryCov,m_MaxQueryCoverLen);
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd1","  " + kE + "  ",m_MaxEvalueLen);    
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"percident_hd1",kPerc,m_MaxPercentIdentityLen);
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acclen_hd1",kAccAbbr,m_AccLenLength);        
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acc_hd1"," ",m_MaxAccLength);        
-        //kBits 	kTotalLine2 kQueryCovLine2 kValue kIdentLine2 
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"descr_hd2",kDescription,m_LineLen);
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"sciname_hd2",kName,m_MaxTaxonomyNameLength);        
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"comname_hd2",kName,m_MaxTaxonomyNameLength);        
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"taxid_hd2",kTaxid,m_MaxTaxidLength);        
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd2",kScoreLine2,m_MaxScoreLen);
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd2",kScoreLine2,m_MaxTotalScoreLen);
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"querycov_hd2",kQueryCovLine2,m_MaxQueryCoverLen);
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd2",kValue,m_MaxEvalueLen);    
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"percident_hd2",kIdentLine2,m_MaxPercentIdentityLen);        
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acclen_hd2",kLenAbbr,m_AccLenLength);        
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acc_hd2",kAccession,m_MaxAccLength);
-   
-        out << descrHeader;
+    string descrHeader = x_FormatDeflineTableHeaderText();
+    out << descrHeader;
     
     ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
         SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_seqid, (*iter)->blast_rank);        
@@ -1907,7 +1947,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     else {
         defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",iter->bit_string);
     }
-    /*****************This block of code is for future use with AJAX begin***************************/
+    
     string deflId,deflFrmID,deflFastaSeq,deflAccs;
     if(sdl->gi == ZERO_GI) {
         sdl->id->GetLabel(& deflId, CSeq_id::eContent);
@@ -1951,8 +1991,10 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_hspnum",iter->hspNum);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_alnLen",iter->totalLen);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_blast_rank",m_StartIndex + iter->blast_rank);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_member_num",sdl->clustMemberNum);                    
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_taxa_num",sdl->clustTaxaNum);  
 
-	/*****************This block of code is for future use with AJAX end***************************/
+	
 
     defLine = CAlignFormatUtil::MapTemplate(defLine,"total_bit_string",iter->total_bit_string);
 
