@@ -1434,6 +1434,11 @@ static char* s_LBOS_Replace0000WithIP(const char* healthcheck_url)
 
 static int s_TurnOn()
 {
+    CORE_LOG(eLOG_Critical,
+             "LBOS has been retired (CXX-11974)!"
+             " Please consider using other named service mappers instead.");
+    assert(0);
+
     if (s_LBOS_Init == 0) {
         s_LBOS_funcs.Initialize();
     }
@@ -1869,8 +1874,6 @@ const SSERV_VTable* SERV_LBOS_Open(SERV_ITER           iter,
         return 0;
     assert(iter->name  &&  *iter->name);
     serv_name = iter->name; /* we may modify name with dbaf */
-
-    CORE_LOG(eLOG_Critical, "LBOS is deprecated, consider using LBSMD instead.");
 
     if (!s_TurnOn()) {
         return NULL;
