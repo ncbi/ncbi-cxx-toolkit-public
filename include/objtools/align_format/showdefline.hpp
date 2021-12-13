@@ -630,14 +630,17 @@ protected:
     string x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo* iter,bool &first_new);    
     ///Format PSI blat related data
     string x_FormatPsi(SDeflineInfo* sdl, bool &first_new);
-    string x_FormatClusterData(SDeflineInfo* sdl, string defline);
-    string x_FormatClusterDataTxt(SDeflineInfo* sdl, string defline);
+    string x_FormatClusterMemData(SDeflineInfo* sdl, string defline);
+    string x_FormatClusterMemDataTxt(SDeflineInfo* sdl, string defline);
+    
     ///Display defline for table output using templates
     ///
     void x_DisplayDeflineTableTemplate(CNcbiOstream & out);
     void x_DisplayDeflineTableTemplateText(CNcbiOstream & out);
     void x_DisplayDeflineTableTemplateCSV(CNcbiOstream & out);
-    string x_FormatDeflineTableLineText(SDeflineInfo* sdl,SScoreInfo* iter);    
+    string x_FormatDeflineTableLineText(SDeflineInfo* sdl,SScoreInfo* iter);
+    string x_FormatDeflineTableLineCSV(SDeflineInfo* sdl,SScoreInfo* iter);    
+    string x_FormatDeflineTableHeaderText(void);
 
     void x_InitFormattingInfo(SScoreInfo* sci);    
     //For internal test
