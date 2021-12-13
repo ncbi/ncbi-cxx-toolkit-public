@@ -80,10 +80,8 @@ private:
 class CJsonResponse : public CJson_Document
 {
 public:
-    enum EExceptionHandling { eReport, eRethrow };
-
     template <class TItem>
-    CJsonResponse(EPSG_Status status, TItem item, EExceptionHandling ex_handling = eReport);
+    CJsonResponse(EPSG_Status status, TItem item);
 
     CJsonResponse(const string& id, bool result);
     CJsonResponse(const string& id, const CJsonResponse& result);
@@ -256,7 +254,6 @@ public:
     static int OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Request> request);
     static int ParallelProcessing(const SParallelProcessingParams params);
     static int Performance(const SPerformanceParams params);
-    static int Testing(const SParams params);
     static int Io(const SIoParams params);
     static int JsonCheck(istream* schema_is, istream& doc_is);
 
