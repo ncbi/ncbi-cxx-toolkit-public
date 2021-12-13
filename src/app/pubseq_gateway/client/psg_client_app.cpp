@@ -339,8 +339,6 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const CArgs& args)
 template<>
 int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args)
 {
-    TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::eInteractive);
-
     const auto echo = args["echo"].HasValue();
     return CProcessing::ParallelProcessing({ args, false, echo });
 }

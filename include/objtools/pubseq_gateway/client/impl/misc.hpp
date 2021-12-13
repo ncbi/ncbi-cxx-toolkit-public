@@ -384,7 +384,7 @@ NCBI_PARAM_ENUM_DECL(EPSG_UseCache, PSG, use_cache);
 using TPSG_UseCache = PSG_PARAM_VALUE_TYPE(PSG, use_cache);
 
 // Performance reporting/request IDs for psg_client app
-enum class EPSG_PsgClientMode { eOff, eInteractive, ePerformance, eIo };
+enum class EPSG_PsgClientMode { eOff, ePerformance, eIo };
 NCBI_PARAM_ENUM_DECL(EPSG_PsgClientMode, PSG, internal_psg_client_mode);
 using TPSG_PsgClientMode = PSG_PARAM_VALUE_TYPE(PSG, internal_psg_client_mode);
 
