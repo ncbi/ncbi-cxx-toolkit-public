@@ -88,6 +88,10 @@ public:
     /// Constructor. Starts the timer by default.
     CPerfLogger(EStart state = eStart);
 
+    /// Constructor. Use start time and elapsed time values from a previous
+    /// logger to continue measuring an operation.
+    CPerfLogger(const CTime& start_time, double elapsed_time, EStart state = eStart);
+
     /// Constructor. Use the provided stopwatch to track time.
     /// Start or stop the stopwatch according to the 'state'.
     /// The same stopwatch object can be used multiple times
@@ -95,6 +99,10 @@ public:
     /// @note
     ///   The stopwatch is not copied, so the original object must not be
     ///   destroyed while the logger is running.
+    /// @note
+    ///   When using a user-provided stopwatch the accumulated elapsed time may be
+    ///   approximate. A better approach is to initialize every new logger with the
+    ///   start time and elapsed time accumulated by the previous one.
     CPerfLogger(CStopWatch& stopwatch, EStart state = eStart);
 
     /// Activate and start (or, restart after Suspend()) the timer.
@@ -151,8 +159,14 @@ public:
     ///   Multiple adjustments are accumulated.
     /// @note
     ///   The adjustment does not affect the actual elapsed time counted by
-    ///   the stopwatch, only the printed value is adjusted.
+    ///   the stopwatch (if used), only the printed value is adjusted.
     void Adjust(CTimeSpan timespan);
+
+    /// Get the logger's start time.
+    const CTime& GetLoggerStartTime(void) const { return m_FirstStartTime; }
+
+    /// Get total elapsed time (including any adjustments) in seconds.
+    double GetElapsedTime(void) const;
 
 private:
     bool x_CheckValidity(const CTempString& err_msg) const;
@@ -243,6 +257,21 @@ public:
     /// @param state
     ///   Whether to start the timer by default.
     CPerfLogGuard(CTempString resource,
+                  CPerfLogger::EStart state = CPerfLogger::eStart);
+
+    /// Constructor. Use the provided start and elapsed times to initialize the logger
+    /// and continue to measure an operation.
+    /// @param resource
+    ///   Name of the resource (must be non-empty, else throws an exception).
+    /// @param start_time
+    ///   Start time, usually obtained from a previous logger to continue measuring an operation.
+    /// @param elapsed_time
+    ///   Elapsed time in seconds obtained from a previous logger.
+    /// @param state
+    ///   Whether to start the timer by default.
+    CPerfLogGuard(CTempString resource,
+                  const CTime& start_time,
+                  double elapsed_time,
                   CPerfLogger::EStart state = CPerfLogger::eStart);
 
     /// Constructor.
@@ -336,6 +365,21 @@ CPerfLogger::CPerfLogger(EStart state)
 
 
 inline
+CPerfLogger::CPerfLogger(const CTime& start_time, double elapsed_time, EStart state)
+{
+    m_StopWatch = nullptr;
+    m_FirstStartTime = start_time;
+    m_IsDiscarded = false;
+    m_Adjustment = 0.0;
+    m_Elapsed = elapsed_time;
+    m_TimerState = CStopWatch::eStop;
+    if (state == eStart) {
+        Start();
+    }
+}
+
+
+inline
 CPerfLogger::CPerfLogger(CStopWatch& stopwatch, EStart state)
 {
     m_StopWatch = &stopwatch;
@@ -363,11 +407,9 @@ void CPerfLogger::Start()
         if ( m_StopWatch ) {
             m_StopWatch->Start();
         }
-        else {
-            m_LastStartTime = GetFastLocalTime();
-            if ( m_FirstStartTime.IsEmpty() ) {
-                m_FirstStartTime = m_LastStartTime;
-            }
+        m_LastStartTime = GetFastLocalTime();
+        if ( m_FirstStartTime.IsEmpty() ) {
+            m_FirstStartTime = m_LastStartTime;
         }
     }
     m_TimerState = CStopWatch::eStart;
@@ -384,9 +426,7 @@ void CPerfLogger::Suspend()
         if ( m_StopWatch ) {
             m_StopWatch->Stop();
         }
-        else {
-            m_Elapsed += GetFastLocalTime().DiffTimeSpan(m_LastStartTime).GetAsDouble();
-        }
+        m_Elapsed += GetFastLocalTime().DiffTimeSpan(m_LastStartTime).GetAsDouble();
     }
     m_TimerState = CStopWatch::eStop;
 }
@@ -418,6 +458,20 @@ void CPerfLogger::Adjust(CTimeSpan timespan)
 
 
 inline
+double CPerfLogger::GetElapsedTime(void) const
+{
+    if ( m_StopWatch ) {
+        return m_StopWatch->Elapsed() + m_Adjustment;
+    }
+    double ret = m_Elapsed + m_Adjustment;
+    if ( m_TimerState == eStart ) {
+        ret += (GetFastLocalTime() - m_LastStartTime).GetAsDouble();
+    }
+    return ret;
+}
+
+
+inline
 CPerfLogger::~CPerfLogger()
 {
     if (IsON()  &&  !m_IsDiscarded  &&  m_TimerState != CStopWatch::eStop ) {
@@ -445,6 +499,20 @@ bool CPerfLogger::x_CheckValidity(const CTempString& err_msg) const
 inline
 CPerfLogGuard::CPerfLogGuard(CTempString resource, CPerfLogger::EStart state)
     : m_Logger(state), m_Resource(resource)   
+{
+    if ( resource.empty() ) {
+        NCBI_THROW(CCoreException, eInvalidArg,
+            "CPerfLogGuard:: resource name is not specified");
+    }
+}
+
+
+inline
+CPerfLogGuard::CPerfLogGuard(CTempString resource,
+                             const CTime& start_time,
+                             double elapsed_time,
+                             CPerfLogger::EStart state)
+    : m_Logger(start_time, elapsed_time, state), m_Resource(resource)
 {
     if ( resource.empty() ) {
         NCBI_THROW(CCoreException, eInvalidArg,
