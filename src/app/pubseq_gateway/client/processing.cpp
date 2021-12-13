@@ -164,11 +164,13 @@ SJsonOut::~SJsonOut()
 }
 
 template <class TItem>
-CJsonResponse::CJsonResponse(EPSG_Status status, TItem item) :
+CJsonResponse::CJsonResponse(EPSG_Status status, TItem item, EIfAddRequestID if_add_request_id) :
     m_JsonObj(SetObject())
 {
-    if (auto request_id = s_GetReply(item)->GetRequest()->template GetUserContext<string>()) {
-        Set("request_id", *request_id);
+    if (if_add_request_id == eAddRequestID) {
+        if (auto request_id = s_GetReply(item)->GetRequest()->template GetUserContext<string>()) {
+            Set("request_id", *request_id);
+        }
     }
 
     try {
@@ -781,7 +783,7 @@ void CParallelProcessing::Interactive::ReplyComplete::All(SJsonOut& output, EPSG
 
     const auto& request_id = *request->GetUserContext<string>();
 
-    CJsonResponse result_doc(status, reply);
+    CJsonResponse result_doc(status, reply, CJsonResponse::eDoNotAddRequestID);
     output << CJsonResponse(request_id, result_doc);
 }
 
@@ -790,7 +792,7 @@ void CParallelProcessing::Interactive::ItemComplete(SJsonOut& output, EPSG_Statu
     const auto request = item->GetReply()->GetRequest();
     const auto& request_id = *request->GetUserContext<string>();
 
-    CJsonResponse result_doc(status, item);
+    CJsonResponse result_doc(status, item, CJsonResponse::eDoNotAddRequestID);
     output << CJsonResponse(request_id, result_doc);
 }
 

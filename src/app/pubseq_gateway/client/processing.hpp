@@ -80,8 +80,10 @@ private:
 class CJsonResponse : public CJson_Document
 {
 public:
+    enum EIfAddRequestID { eAddRequestID, eDoNotAddRequestID };
+
     template <class TItem>
-    CJsonResponse(EPSG_Status status, TItem item);
+    CJsonResponse(EPSG_Status status, TItem item, EIfAddRequestID if_add_request_id = eAddRequestID);
 
     CJsonResponse(const string& id, bool result);
     CJsonResponse(const string& id, const CJsonResponse& result);
