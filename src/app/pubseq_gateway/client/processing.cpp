@@ -141,7 +141,7 @@ const char* s_StrStatus(EPSG_Status status)
 SJsonOut& SJsonOut::operator<<(const CJson_Document& doc)
 {
     stringstream ss;
-    ss << doc;
+    doc.Write(ss, m_Flags);
 
     unique_lock<mutex> lock(m_Mutex);
 
@@ -434,6 +434,7 @@ SParallelProcessingParams::SParallelProcessingParams(const CArgs& a, bool br, bo
     batch_resolve(br),
     echo(e),
     pipe(args[batch_resolve ? "id-file" : "input-file"].AsString() == "-"),
+    server(args["server-mode"].AsBoolean()),
     is(pipe ? cin : args[batch_resolve ? "id-file" : "input-file"].AsInputFile())
 {
 }
@@ -689,11 +690,12 @@ int CProcessing::OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Requ
 }
 
 CParallelProcessing::CParallelProcessing(const SParallelProcessingParams& params) :
-    m_JsonOut(params.pipe)
+    m_JsonOut(params.pipe, params.server)
 {
     using namespace placeholders;
     auto item_complete = bind(params.batch_resolve ? &CProcessing::ItemComplete : &Interactive::ItemComplete, ref(m_JsonOut), _1, _2);
-    auto reply_complete = bind(params.batch_resolve ? &CProcessing::ReplyComplete : &Interactive::ReplyComplete, ref(m_JsonOut), _1, _2);
+    auto f = params.batch_resolve ? &CProcessing::ReplyComplete : params.server ? &Interactive::ReplyComplete::All : &Interactive::ReplyComplete::ErrorsOnly;
+    auto reply_complete = bind(f, ref(m_JsonOut), _1, _2);
 
     for (int n = params.worker_threads; n > 0; --n) {
         m_PsgQueues.emplace_back(params.service, item_complete, reply_complete);
@@ -775,18 +777,16 @@ void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue&
     output.Stop();
 }
 
-void CParallelProcessing::Interactive::ReplyComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+void CParallelProcessing::Interactive::ReplyComplete::All(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
-    if (status != EPSG_Status::eSuccess) {
-        const auto request = reply->GetRequest();
-        CRequestContextGuard_Base guard(request->GetRequestContext());
-        guard.SetStatus(s_PsgStatusToRequestStatus(status));
+    const auto request = reply->GetRequest();
+    CRequestContextGuard_Base guard(request->GetRequestContext());
+    guard.SetStatus(s_PsgStatusToRequestStatus(status));
 
-        const auto& request_id = *request->GetUserContext<string>();
+    const auto& request_id = *request->GetUserContext<string>();
 
-        CJsonResponse result_doc(status, reply);
-        output << CJsonResponse(request_id, result_doc);
-    }
+    CJsonResponse result_doc(status, reply);
+    output << CJsonResponse(request_id, result_doc);
 }
 
 void CParallelProcessing::Interactive::ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)

@@ -62,7 +62,11 @@ struct SInfoFlag
 
 struct SJsonOut
 {
-    SJsonOut(bool pipe = false) : m_Pipe(pipe) {}
+    SJsonOut(bool pipe = false, bool server = false) :
+        m_Pipe(pipe),
+        m_Flags(server ? fJson_Write_NoIndentation | fJson_Write_NoEol : fJson_Write_IndentWithSpace)
+    {}
+
     ~SJsonOut();
     SJsonOut& operator<<(const CJson_Document& doc);
 
@@ -70,6 +74,7 @@ private:
     mutex m_Mutex;
     char m_Separator = '[';
     const bool m_Pipe;
+    const TJson_Write_Flags m_Flags;
 };
 
 class CJsonResponse : public CJson_Document
@@ -171,6 +176,7 @@ struct SParallelProcessingParams : SParams
     const bool batch_resolve;
     const bool echo;
     const bool pipe;
+    const bool server;
     istream& is;
 
     SParallelProcessingParams(const CArgs& a, bool br, bool e);
@@ -217,7 +223,15 @@ private:
     {
         static void Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, bool echo);
         static void ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
-        static void ReplyComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
+
+        struct ReplyComplete
+        {
+            static void All(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
+            static void ErrorsOnly(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+            {
+                if (status != EPSG_Status::eSuccess) All(output, status, reply);
+            }
+        };
     };
 
     struct SThread
