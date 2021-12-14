@@ -325,6 +325,12 @@ void CJsonResponse::Fill(shared_ptr<CPSG_SkippedBlob> skipped_blob)
 {
     Set("id",     skipped_blob->GetId());
     Set("reason", s_ReasonToString(skipped_blob->GetReason()));
+
+    const auto& sent_seconds_ago = skipped_blob->GetSentSecondsAgo();
+
+    if (!sent_seconds_ago.IsNull()) {
+        Set("sent_seconds_ago", sent_seconds_ago.GetValue());
+    }
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info)

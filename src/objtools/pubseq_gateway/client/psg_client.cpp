@@ -282,6 +282,8 @@ private:
     SItemTypeAndReason(CPSG_ReplyItem::EType type) : TBase(type, CPSG_SkippedBlob::eUnknown) {}
 };
 
+// Item type cannot be determined by "item_type" alone, for blobs "reason" has to be used as well.
+// That's why there are two switch-like groups of 'if' statements in two different methods below.
 SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
 {
     const auto item_type = args.GetValue("item_type");
@@ -335,6 +337,15 @@ SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
     }
 }
 
+CPSG_SkippedBlob::TSentSecondsAgo s_GetSentSecondsAgo(const SPSG_Args& args)
+{
+    const auto& value = args.GetValue("sent_seconds_ago");
+
+    // Do not use ternary operator below, 'null' will be become '0.0' otherwise
+    if (value.empty()) return null;
+    return NStr::StringToNumeric<double>(value);
+}
+
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS& item_ts)
 {
     auto user_reply_locked = user_reply.lock();
@@ -367,7 +378,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS& ite
     } else if (itar.first == CPSG_ReplyItem::eSkippedBlob) {
         auto data_id = s_GetDataId(args);
         auto blob_id = move(dynamic_cast<CPSG_BlobId&>(*data_id));
-        rv.reset(new CPSG_SkippedBlob(move(blob_id), itar.second));
+        rv.reset(new CPSG_SkippedBlob(move(blob_id), itar.second, s_GetSentSecondsAgo(args)));
 
     } else if (itar.first == CPSG_ReplyItem::eBioseqInfo) {
         rv.reset(CreateImpl(new CPSG_BioseqInfo, chunks));
@@ -917,10 +928,11 @@ Uint8 CPSG_BlobInfo::GetNChunks() const
 }
 
 
-CPSG_SkippedBlob::CPSG_SkippedBlob(CPSG_BlobId id, EReason reason) :
+CPSG_SkippedBlob::CPSG_SkippedBlob(CPSG_BlobId id, EReason reason, TSentSecondsAgo sent_seconds_ago) :
     CPSG_ReplyItem(eSkippedBlob),
     m_Id(id),
-    m_Reason(reason)
+    m_Reason(reason),
+    m_SentSecondsAgo(sent_seconds_ago)
 {
 }
 
