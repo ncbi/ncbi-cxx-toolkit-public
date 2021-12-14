@@ -681,11 +681,16 @@ public:
     // Get reason for blob skipping
     EReason GetReason() const { return m_Reason; }
 
+    /// Seconds passed since the blob was last sent to the client.
+    using TSentSecondsAgo = CNullable<double>;
+    const TSentSecondsAgo& GetSentSecondsAgo() const { return m_SentSecondsAgo; }
+
 private:
-    CPSG_SkippedBlob(CPSG_BlobId id, EReason reason);
+    CPSG_SkippedBlob(CPSG_BlobId id, EReason reason, TSentSecondsAgo sent_seconds_ago);
 
     CPSG_BlobId m_Id;
     EReason     m_Reason;
+    TSentSecondsAgo m_SentSecondsAgo;
 
     friend class CPSG_Reply;
 };

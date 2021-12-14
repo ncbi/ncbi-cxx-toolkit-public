@@ -132,6 +132,7 @@ private:
     static void Set(CJson_Value value, Int8 v)          { value.SetInt8(v);   }
     static void Set(CJson_Value value, Uint4 v)         { value.SetUint4(v);  }
     static void Set(CJson_Value value, Uint8 v)         { value.SetUint8(v);  }
+    static void Set(CJson_Value value, double v)        { value.SetDouble(v); }
     static void Set(CJson_Value value, bool v)          { value.SetBool(v);   }
 
     CJson_Object m_JsonObj;
