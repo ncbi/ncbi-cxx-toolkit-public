@@ -36,11 +36,12 @@
 #include <string>
 #include <set>
 #include <list>
-#include <chrono>
 #include <atomic>
 #include <map>
 #include <vector>
 using namespace std;
+
+#include "pubseq_gateway_types.hpp"
 
 
 enum EPSGS_CacheAddResult {
@@ -51,9 +52,10 @@ enum EPSGS_CacheAddResult {
 
 struct SExcludeBlobId
 {
-    int     m_Sat;
-    int     m_SatKey;
-    bool    m_Completed;
+    int                 m_Sat;
+    int                 m_SatKey;
+    bool                m_Completed;
+    psg_time_point_t    m_CompletedTime;
 
     SExcludeBlobId(int  sat, int  sat_key):
         m_Sat(sat), m_SatKey(sat_key), m_Completed(false)
@@ -78,16 +80,21 @@ class CUserExcludeBlobs
 {
     public:
         CUserExcludeBlobs() :
-            m_Lock(false), m_LastTouch(std::chrono::steady_clock::now())
+            m_Lock(false), m_LastTouch(psg_clock_t::now())
         {}
 
         ~CUserExcludeBlobs()
         {}
 
     public:
-        // The 'completed' value is filled only if the blob is in the cache
-        bool IsInCache(int  sat, int  sat_key, bool &  completed);
-        EPSGS_CacheAddResult AddBlobId(int  sat, int  sat_key, bool &  completed);
+        // The 'completed' and 'completed_time' values are filled
+        // only if the blob is in the cache
+        bool IsInCache(int  sat, int  sat_key,
+                       bool &  completed,
+                       psg_time_point_t &  completed_time);
+        EPSGS_CacheAddResult AddBlobId(int  sat, int  sat_key,
+                                       bool &  completed,
+                                       psg_time_point_t &  completed_time);
 
         // Return true if the required blob id was found
         bool SetCompleted(int  sat, int  sat_key, bool  new_val);
@@ -101,12 +108,12 @@ class CUserExcludeBlobs
         // the upper lock is released. An alternative would be to store the
         // lock in the upper level but it seems better to store it here because
         // it goes into the cathegory of the user associated data
-        atomic<bool>                                        m_Lock;
-        std::chrono::time_point<std::chrono::steady_clock>  m_LastTouch;
+        atomic<bool>                m_Lock;
+        psg_time_point_t            m_LastTouch;
 
     private:
-        set<SExcludeBlobId>                                 m_ExcludeBlobs;
-        list<SExcludeBlobId>                                m_LRU;
+        set<SExcludeBlobId>         m_ExcludeBlobs;
+        list<SExcludeBlobId>        m_LRU;
 };
 
 
@@ -199,11 +206,16 @@ class CExcludeBlobCache
         }
 
     public:
-        // The 'completed' value is filled only if the blob is in the cache
+        // The 'completed' and 'completed_time' values are filled only
+        // if the blob is in the cache
         EPSGS_CacheAddResult AddBlobId(const string &  user,
-                                       int  sat, int  sat_key, bool &  completed);
+                                       int  sat, int  sat_key,
+                                       bool &  completed,
+                                       psg_time_point_t &  completed_time);
         bool IsInCache(const string &  user,
-                       int  sat, int  sat_key, bool &  completed);
+                       int  sat, int  sat_key,
+                       bool &  completed,
+                       psg_time_point_t &  completed_time);
 
         // Return true if the required blob id was found
         bool SetCompleted(const string &  user,
@@ -226,7 +238,7 @@ class CExcludeBlobCache
         atomic<bool>                        m_Lock;
         CUserExcludeBlobsPool               m_Pool;
 
-        std::chrono::seconds                m_InactivityTimeout;
+        chrono::seconds                     m_InactivityTimeout;
         size_t                              m_MaxCacheSize;
         size_t                              m_PurgedSize;
 

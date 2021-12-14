@@ -33,12 +33,23 @@
  */
 
 #include <string>
+#include <chrono>
 using namespace std;
 
 // Processor priority
 // The higher the value the higher the priority is
 typedef int     TProcessorPriority;
 const int       kUnknownPriority = -1;
+
+// steady_clock is guaranteed not to go back so it is most useful to measure
+// the intervals.
+// high_resolution_clock could be steady or not depending on platform or
+// options
+// system_clock is not steady, i.e. can go back
+// Mostly PSG needs to calculate intervals so this type is used throughout the
+// server code
+using psg_clock_t = chrono::steady_clock;
+using psg_time_point_t = psg_clock_t::time_point;
 
 
 // For the future extensions

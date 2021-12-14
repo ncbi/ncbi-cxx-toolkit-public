@@ -176,7 +176,7 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
 int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
                              shared_ptr<CPSGS_Reply>  reply)
 {
-    auto                    now = chrono::high_resolution_clock::now();
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -262,6 +262,12 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
             auto_blob_skipping = auto_blob_skipping_param.m_Value == "yes";
         }
 
+        double              resend_timeout;
+        if (!x_GetResendTimeout(req, reply, resend_timeout)) {
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+
         vector<string>      enabled_processors;
         vector<string>      disabled_processors;
         if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
@@ -279,6 +285,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
                         seq_id_type, exclude_blobs,
                         tse_option, use_cache, subst_option,
                         auto_blob_skipping,
+                        resend_timeout,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
                         send_blob_if_small, hops, trace,
@@ -309,7 +316,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
 int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
                                  shared_ptr<CPSGS_Reply>  reply)
 {
-    auto                    now = chrono::high_resolution_clock::now();
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -429,7 +436,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
 int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
                                  shared_ptr<CPSGS_Reply>  reply)
 {
-    auto                    now = chrono::high_resolution_clock::now();
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -566,7 +573,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
 int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
                                      shared_ptr<CPSGS_Reply>  reply)
 {
-    auto                    now = chrono::high_resolution_clock::now();
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -668,7 +675,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
 int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                                shared_ptr<CPSGS_Reply>  reply)
 {
-    auto                    now = chrono::high_resolution_clock::now();
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -818,7 +825,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
 int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
                                                  shared_ptr<CPSGS_Reply>  reply)
 {
-    auto                    now = chrono::high_resolution_clock::now();
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -900,7 +907,7 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
 
     m_Counters.Increment(CPSGSCounters::ePSGS_HealthRequest);
 
-    auto                    now = chrono::high_resolution_clock::now();
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -1304,8 +1311,8 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  req,
             g_ShutdownData.m_ShutdownRequested);
 
         if (g_ShutdownData.m_ShutdownRequested) {
-            auto        now = chrono::steady_clock::now();
-            uint64_t    sec = std::chrono::duration_cast<std::chrono::seconds>
+            auto        now = psg_clock_t::now();
+            uint64_t    sec = chrono::duration_cast<chrono::seconds>
                                 (g_ShutdownData.m_Expired - now).count();
             m_Counters.AppendValueNode(
                 status, CPSGSCounters::ePSGS_GracefulShutdownExpiredInSec, sec);
@@ -1436,7 +1443,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
         else
             msg += "user " + username;
 
-        auto        now = chrono::steady_clock::now();
+        auto        now = psg_clock_t::now();
         auto        expiration = now;
         if (timeout > 0)
            expiration += chrono::seconds(timeout);

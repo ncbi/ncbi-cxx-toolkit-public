@@ -980,10 +980,10 @@ ssize_t COperationTiming::x_GetBlobRetrievalBinIndex(unsigned long  blob_size)
 
 void COperationTiming::Register(EPSGOperation  operation,
                                 EPSGOperationStatus  status,
-                                const TPSGS_HighResolutionTimePoint &  op_begin_ts,
+                                const psg_time_point_t &  op_begin_ts,
                                 unsigned long  blob_size)
 {
-    auto            now = chrono::high_resolution_clock::now();
+    auto            now = psg_clock_t::now();
     uint64_t        mks = chrono::duration_cast<chrono::microseconds>(now - op_begin_ts).count();
 
     size_t          index = 0;

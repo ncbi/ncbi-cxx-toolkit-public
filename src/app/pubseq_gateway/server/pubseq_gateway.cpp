@@ -93,6 +93,7 @@ const string            kDefaultAuthToken = "";
 const bool              kDefaultAllowIOTest = false;
 const unsigned long     kDefaultSendBlobIfSmall = 10 * 1024;
 const unsigned int      kDefaultMaxHops = 2;
+const double            kDefaultResendTimeoutSec = 0.2;
 const unsigned long     kDefaultSmallBlobSize = 16;
 const bool              kDefaultCassandraProcessorsEnabled = true;
 const bool              kDefaultOSGProcessorsEnabled = false;
@@ -150,6 +151,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_AllowIOTest(kDefaultAllowIOTest),
     m_SendBlobIfSmall(kDefaultSendBlobIfSmall),
     m_MaxHops(kDefaultMaxHops),
+    m_ResendTimeoutSec(kDefaultResendTimeoutSec),
     m_CassandraProcessorsEnabled(kDefaultCassandraProcessorsEnabled),
     m_TestSeqId(kDefaultTestSeqId),
     m_TestSeqIdIgnoreError(kDefaultTestSeqIdIgnoreError),
@@ -242,6 +244,9 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_SendBlobIfSmall = x_GetDataSize(registry, "SERVER", "send_blob_if_small",
                                       kDefaultSendBlobIfSmall);
     m_MaxHops = registry.GetInt("SERVER", "max_hops", kDefaultMaxHops);
+
+    m_ResendTimeoutSec = registry.GetDouble("SERVER", "resend_timeout",
+                                            kDefaultResendTimeoutSec);
 
     try {
         m_AuthToken = registry.GetEncryptedString("ADMIN", "auth_token",
@@ -862,6 +867,15 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
         m_MaxHops = kDefaultMaxHops;
     }
 
+    if (m_ResendTimeoutSec <= 0.0) {
+        PSG_WARNING("Invalid [SERVER]/resend_timeout value (" +
+                    to_string(m_ResendTimeoutSec) + "). "
+                    "The resend timeout must be greater than 0. The resend "
+                    "timeout is reset to the default value (" +
+                    to_string(kDefaultResendTimeoutSec) + ").");
+        m_ResendTimeoutSec = kDefaultResendTimeoutSec;
+    }
+
     if (m_SSLEnable) {
         if (m_SSLCertFile.empty()) {
             NCBI_THROW(CPubseqGatewayException, eConfigurationError,
@@ -1143,6 +1157,46 @@ CPubseqGatewayApp::x_GetTraceParameter(CHttpRequest &  req,
 
 
 bool
+CPubseqGatewayApp::x_GetResendTimeout(CHttpRequest &  req,
+                                      shared_ptr<CPSGS_Reply>  reply,
+                                      double &  resend_timeout)
+{
+    static string  kResendTimeoutParam = "resend_timeout";
+
+    resend_timeout = m_ResendTimeoutSec;
+    SRequestParameter   resend_timeout_param = x_GetParam(req, kResendTimeoutParam);
+
+    if (resend_timeout_param.m_Found) {
+        string      err_msg;
+        if (!x_ConvertDoubleParameter(kResendTimeoutParam,
+                                      resend_timeout_param.m_Value,
+                                      resend_timeout, err_msg)) {
+            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
+            x_SendMessageAndCompletionChunks(reply, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             ePSGS_MalformedParameter,
+                                             eDiag_Error);
+            PSG_ERROR(err_msg);
+            return false;
+        }
+
+        if (resend_timeout <= 0.0) {
+            err_msg = "Invalid '" + kResendTimeoutParam + "' value " +
+                      to_string(resend_timeout) + ". It must be > 0.0";
+            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
+            x_SendMessageAndCompletionChunks(reply, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             ePSGS_MalformedParameter,
+                                             eDiag_Error);
+            PSG_ERROR(err_msg);
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool
 CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
                              shared_ptr<CPSGS_Reply>  reply,
                              int &  hops)
@@ -1275,6 +1329,22 @@ bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
     } catch (...) {
         err_msg = "Error converting '" + param_name + "' parameter "
                   "to integer (received value: '" + string(param_value) + "')";
+        return false;
+    }
+    return true;
+}
+
+
+bool CPubseqGatewayApp::x_ConvertDoubleParameter(const string &  param_name,
+                                                 const CTempString &  param_value,
+                                                 double &  converted,
+                                                 string &  err_msg) const
+{
+    try {
+        converted = NStr::StringToDouble(param_value);
+    } catch (...) {
+        err_msg = "Error converting '" + param_name + "' parameter "
+                  "to double (received value: '" + string(param_value) + "')";
         return false;
     }
     return true;

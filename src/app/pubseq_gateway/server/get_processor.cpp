@@ -252,19 +252,45 @@ void CPSGS_GetProcessor::x_GetBlob(void)
     // CPSGS_CassBlobBase::x_CheckExcludeBlobCache)
     if (!m_BlobRequest->m_ClientId.empty()) {
         if (m_BlobRequest->m_AutoBlobSkipping) {
-            bool        completed = true;
+            bool                completed = true;
+            psg_time_point_t    completed_time;
             if (app->GetExcludeBlobCache()->IsInCache(
                         m_BlobRequest->m_ClientId,
-                        m_BlobId.m_Sat, m_BlobId.m_SatKey, completed)) {
-                if (completed)
-                    IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                            m_BlobId.ToString(), GetName(), ePSGS_BlobSent);
-                else
+                        m_BlobId.m_Sat, m_BlobId.m_SatKey,
+                        completed, completed_time)) {
+
+                bool    finish_processing = true;
+
+                if (completed) {
+                    // It depends how long ago it was sent; if too long then
+                    // send anyway; otherwise send a reply specifying how long
+                    // ago it was sent
+                    unsigned long  sent_mks_ago = GetTimespanToNowMks(completed_time);
+                    if (sent_mks_ago < m_BlobRequest->m_ResendTimeoutMks) {
+                        // No sending; the blob was send recent enough
+                        IPSGS_Processor::m_Reply->PrepareBlobExcluded(
+                                m_BlobId.ToString(), GetName(), sent_mks_ago);
+                    } else {
+                        // Sending anyway; it was longer than the resend
+                        // timeout
+                        // The easiest way to achieve that is to remove the
+                        // blob from the exclude cache. So the code in the base
+                        // class will add this blob to the cache again as new
+                        app->GetExcludeBlobCache()->Remove(
+                                                m_BlobRequest->m_ClientId,
+                                                m_BlobId.m_Sat, m_BlobId.m_SatKey);
+                        finish_processing = false;
+                    }
+                } else {
                     IPSGS_Processor::m_Reply->PrepareBlobExcluded(
                             m_BlobId.ToString(), GetName(), ePSGS_BlobInProgress);
-                m_Completed = true;
-                CPSGS_CassProcessorBase::SignalFinishProcessing();
-                return;
+                }
+
+                if (finish_processing) {
+                    m_Completed = true;
+                    CPSGS_CassProcessorBase::SignalFinishProcessing();
+                    return;
+                }
             }
         }
     }

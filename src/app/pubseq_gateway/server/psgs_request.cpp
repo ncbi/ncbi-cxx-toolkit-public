@@ -209,7 +209,7 @@ void CPSGS_Request::SetRequestContext(void)
 }
 
 
-TPSGS_HighResolutionTimePoint CPSGS_Request::GetStartTimestamp(void) const
+psg_time_point_t CPSGS_Request::GetStartTimestamp(void) const
 {
     if (m_Request)
         return m_Request->GetStartTimestamp();

@@ -120,7 +120,7 @@ CPSGS_AsyncBioseqInfoBase::x_MakeRequest(void)
     fetch_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
 
 
-    m_BioseqRequestStart = chrono::high_resolution_clock::now();
+    m_BioseqRequestStart = psg_clock_t::now();
     if (m_WithSeqIdType) {
         m_Fetch = details.release();
         m_FetchDetails.push_back(unique_ptr<CCassFetch>(m_Fetch));

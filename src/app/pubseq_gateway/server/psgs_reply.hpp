@@ -265,6 +265,9 @@ public:
                              const string &  processor_id,
                              const string &  blob_id,
                              EPSGS_BlobSkipReason  skip_reason);
+    void PrepareBlobExcluded(const string &  blob_id,
+                             const string &  processor_id,
+                             unsigned long  sent_mks_ago);
     void PrepareBlobCompletion(CCassBlobFetch *  fetch_details,
                                const string &  processor_id);
     void PrepareProcessorMessage(size_t  item_id, const string &  processor_id,
@@ -289,7 +292,7 @@ public:
                                   const string &  content);
     void PrepareReplyCompletion(void);
     void SendTrace(const string &  msg,
-                   const TPSGS_HighResolutionTimePoint &  create_timestamp);
+                   const psg_time_point_t &  create_timestamp);
 
 private:
     void x_PrepareTSEBlobPropCompletion(size_t          item_id,

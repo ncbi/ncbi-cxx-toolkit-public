@@ -61,7 +61,7 @@ class CBlobChunkCallback
             m_BlobChunkCB(blob_chunk_cb),
             m_FetchDetails(fetch_details),
             m_BlobSize(0),
-            m_BlobRetrieveTiming(chrono::high_resolution_clock::now())
+            m_BlobRetrieveTiming(psg_clock_t::now())
         {}
 
         void operator()(CBlobRecord const & blob, const unsigned char *  data,
@@ -81,8 +81,8 @@ class CBlobChunkCallback
         TBlobChunkCB            m_BlobChunkCB;
         CCassBlobFetch *        m_FetchDetails;
 
-        unsigned long                                   m_BlobSize;
-        chrono::high_resolution_clock::time_point       m_BlobRetrieveTiming;
+        unsigned long           m_BlobSize;
+        psg_time_point_t        m_BlobRetrieveTiming;
 };
 
 
@@ -103,7 +103,7 @@ class CBlobPropCallback
             m_NeedTiming(need_timing)
         {
             if (need_timing)
-                m_BlobPropTiming = chrono::high_resolution_clock::now();
+                m_BlobPropTiming = psg_clock_t::now();
         }
 
         void operator()(CBlobRecord const &  blob, bool is_found)
@@ -148,8 +148,8 @@ class CBlobPropCallback
         bool                            m_InProcess;
 
         // Timing
-        bool                                            m_NeedTiming;
-        chrono::high_resolution_clock::time_point       m_BlobPropTiming;
+        bool                            m_NeedTiming;
+        psg_time_point_t                m_BlobPropTiming;
 };
 
 
@@ -160,7 +160,7 @@ class CGetBlobErrorCallback
                               CCassBlobFetch *  fetch_details) :
             m_BlobErrorCB(blob_error_cb),
             m_FetchDetails(fetch_details),
-            m_BlobRetrieveTiming(chrono::high_resolution_clock::now())
+            m_BlobRetrieveTiming(psg_clock_t::now())
         {}
 
         void operator()(CRequestStatus::ECode  status,
@@ -179,7 +179,7 @@ class CGetBlobErrorCallback
         TBlobErrorCB        m_BlobErrorCB;
         CCassBlobFetch *    m_FetchDetails;
 
-        chrono::high_resolution_clock::time_point       m_BlobRetrieveTiming;
+        psg_time_point_t    m_BlobRetrieveTiming;
 };
 
 #endif

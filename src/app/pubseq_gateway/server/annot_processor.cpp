@@ -523,10 +523,13 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
     // properties have already been sent for sure.
     if (!m_AnnotRequest->m_ClientId.empty()) {
         if (m_AnnotRequest->m_AutoBlobSkipping) {
-            bool        completed = true;
+            bool                completed = true;
+            psg_time_point_t    completed_time;  // no need to check for the
+                                                 // annotation processor
             if (app->GetExcludeBlobCache()->IsInCache(
                         m_AnnotRequest->m_ClientId,
-                        blob_id.m_Sat, blob_id.m_SatKey, completed)) {
+                        blob_id.m_Sat, blob_id.m_SatKey,
+                        completed, completed_time)) {
                 if (completed)
                     IPSGS_Processor::m_Reply->PrepareBlobExcluded(
                             blob_id.ToString(), GetName(), ePSGS_BlobSent);

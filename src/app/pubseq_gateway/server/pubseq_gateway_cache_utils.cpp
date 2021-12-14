@@ -64,7 +64,7 @@ CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
     if (gi > 0)
         fetch_request.SetGI(gi);
 
-    auto        start = chrono::high_resolution_clock::now();
+    auto        start = psg_clock_t::now();
     bool        cache_hit = false;
 
     COperationTiming &      timing = app->GetTiming();
@@ -171,7 +171,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution)
     if (gi > 0)
         fetch_request.SetGI(gi);
 
-    auto        start = chrono::high_resolution_clock::now();
+    auto        start = psg_clock_t::now();
     bool        cache_hit = false;
 
     COperationTiming &      timing = app->GetTiming();
@@ -270,7 +270,7 @@ CPSGCache::x_LookupSi2csi(SBioseqResolution &  bioseq_resolution)
     if (seq_id_type >= 0)
         fetch_request.SetSecSeqIdType(seq_id_type);
 
-    auto    start = chrono::high_resolution_clock::now();
+    auto    start = psg_clock_t::now();
     bool    cache_hit = false;
 
     try {
@@ -374,7 +374,7 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
     if (last_modified != INT64_MIN)
         fetch_request.SetLastModified(last_modified);
 
-    auto    start = chrono::high_resolution_clock::now();
+    auto    start = psg_clock_t::now();
     bool    cache_hit = false;
 
     try {

@@ -107,12 +107,12 @@ protected:
     EPSGS_AccessionAdjustmentResult
                 AdjustBioseqAccession(SBioseqResolution &  bioseq_resolution);
 protected:
-    TPSGS_HighResolutionTimePoint GetAsyncResolutionStartTimestamp(void) const
+    psg_time_point_t GetAsyncResolutionStartTimestamp(void) const
     {
         return m_AsyncCassResolutionStart;
     }
 
-    void SetAsyncResolutionStartTimestamp(const TPSGS_HighResolutionTimePoint &  ts)
+    void SetAsyncResolutionStartTimestamp(const psg_time_point_t &  ts)
     {
         m_AsyncCassResolutionStart = ts;
     }
@@ -168,9 +168,9 @@ protected:
     CBioseqInfoRecord::TSeqIdType       m_BioseqInfoRequestedSeqIdType;
     CBioseqInfoRecord::TGI              m_BioseqInfoRequestedGI;
 
-    TPSGS_HighResolutionTimePoint       m_BioseqInfoStart;
-    TPSGS_HighResolutionTimePoint       m_Si2csiStart;
-    TPSGS_HighResolutionTimePoint       m_AsyncCassResolutionStart;
+    psg_time_point_t                    m_BioseqInfoStart;
+    psg_time_point_t                    m_Si2csiStart;
+    psg_time_point_t                    m_AsyncCassResolutionStart;
 
     bool                                m_StartProcessingCalled;
 };

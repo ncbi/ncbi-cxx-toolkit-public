@@ -694,8 +694,7 @@ void CPSGS_ResolveBase::x_OnSeqIdResolveFinished(
                     if (bioseq_resolution.m_CassQueryCount == 0) {
                         // It now became cassandra based so need to memorize
                         // the start timestamp
-                        SetAsyncResolutionStartTimestamp(
-                                        chrono::high_resolution_clock::now());
+                        SetAsyncResolutionStartTimestamp(psg_clock_t::now());
                     }
 
                     CPSGS_AsyncBioseqInfoBase::MakeRequest(

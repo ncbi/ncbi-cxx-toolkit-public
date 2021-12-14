@@ -343,7 +343,7 @@ class COperationTiming
         // operation == eBlobRetrieve
         void Register(EPSGOperation  operation,
                       EPSGOperationStatus  status,
-                      const TPSGS_HighResolutionTimePoint &  op_begin_ts,
+                      const psg_time_point_t &  op_begin_ts,
                       size_t  blob_size=0);
 
     public:

@@ -128,7 +128,8 @@ public:
     { return m_ClientId; }
 
     void RemoveFromExcludeBlobCache(void);
-    EPSGS_CacheAddResult AddToExcludeBlobCache(bool &  completed);
+    EPSGS_CacheAddResult AddToExcludeBlobCache(bool &  completed,
+                                               psg_time_point_t &  completed_time);
 
     void SetExcludeBlobCacheUpdated(bool  value)
     { m_ExcludeBlobCacheUpdated = value; }

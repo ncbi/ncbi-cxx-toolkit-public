@@ -58,7 +58,7 @@ class CPublicCommentConsumeCallback
                 CCassPublicCommentFetch *  fetch_details) :
             m_ConsumeCB(consume_cb),
             m_FetchDetails(fetch_details),
-            m_PublicCommentRetrieveTiming(chrono::high_resolution_clock::now())
+            m_PublicCommentRetrieveTiming(psg_clock_t::now())
         {}
 
         void operator()(string  comment, bool  is_found)
@@ -75,9 +75,9 @@ class CPublicCommentConsumeCallback
         }
 
     private:
-        TPublicCommentConsumeCB                         m_ConsumeCB;
-        CCassPublicCommentFetch *                       m_FetchDetails;
-        chrono::high_resolution_clock::time_point       m_PublicCommentRetrieveTiming;
+        TPublicCommentConsumeCB         m_ConsumeCB;
+        CCassPublicCommentFetch *       m_FetchDetails;
+        psg_time_point_t                m_PublicCommentRetrieveTiming;
 };
 
 
@@ -89,7 +89,7 @@ class CPublicCommentErrorCallback
                 CCassPublicCommentFetch *  fetch_details) :
             m_ErrorCB(error_cb),
             m_FetchDetails(fetch_details),
-            m_PublicCommentRetrieveTiming(chrono::high_resolution_clock::now())
+            m_PublicCommentRetrieveTiming(psg_clock_t::now())
         {}
 
         void operator()(CRequestStatus::ECode  status,
@@ -105,9 +105,9 @@ class CPublicCommentErrorCallback
         }
 
     private:
-        TPublicCommentErrorCB                           m_ErrorCB;
-        CCassPublicCommentFetch *                       m_FetchDetails;
-        chrono::high_resolution_clock::time_point       m_PublicCommentRetrieveTiming;
+        TPublicCommentErrorCB           m_ErrorCB;
+        CCassPublicCommentFetch *       m_FetchDetails;
+        psg_time_point_t                m_PublicCommentRetrieveTiming;
 };
 
 

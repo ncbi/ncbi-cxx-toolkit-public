@@ -310,7 +310,7 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
                               fetch_details->GetClientId(),
                               0, 0, trace_flag,
                               vector<string>(), vector<string>(),
-                              chrono::high_resolution_clock::now());
+                              psg_clock_t::now());
 
     // Create the cass async loader
     unique_ptr<CBlobRecord>             blob_record(new CBlobRecord(blob));
@@ -395,7 +395,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                           SPSGS_RequestBase::ePSGS_UnknownUseCache,
                           fetch_details->GetClientId(), 0, 0, trace_flag,
                           vector<string>(), vector<string>(),
-                          chrono::high_resolution_clock::now());
+                          psg_clock_t::now());
 
     // Prepare Id2Info retrieval
     unique_ptr<CCassBlobFetch>  cass_blob_fetch;
@@ -530,7 +530,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
                           SPSGS_RequestBase::ePSGS_UnknownUseCache,
                           fetch_details->GetClientId(), 0, 0, trace_flag,
                           vector<string>(), vector<string>(),
-                          chrono::high_resolution_clock::now());
+                          psg_clock_t::now());
 
         unique_ptr<CCassBlobFetch>   details;
         details.reset(new CCassBlobFetch(chunk_request, chunks_blob_id));
@@ -777,7 +777,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
                           SPSGS_RequestBase::ePSGS_UnknownUseCache,
                           fetch_details->GetClientId(), 0, 0, trace_flag,
                           vector<string>(), vector<string>(),
-                          chrono::high_resolution_clock::now());
+                          psg_clock_t::now());
 
         unique_ptr<CCassBlobFetch>   details;
         details.reset(new CCassBlobFetch(chunk_request, chunks_blob_id));
@@ -882,8 +882,10 @@ CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details)
     if (fetch_details->GetClientId().empty())
         return ePSGS_NotInCache;
 
-    bool        completed = true;
-    auto        cache_result = fetch_details->AddToExcludeBlobCache(completed);
+    bool                completed = true;
+    psg_time_point_t    completed_time;
+    auto        cache_result = fetch_details->AddToExcludeBlobCache(completed,
+                                                                    completed_time);
     if (cache_result == ePSGS_AlreadyInCache && fetch_details->GetAutoBlobSkipping()) {
         auto    request_type = m_Request->GetRequestType();
         if (request_type == CPSGS_Request::ePSGS_BlobBySeqIdRequest ||

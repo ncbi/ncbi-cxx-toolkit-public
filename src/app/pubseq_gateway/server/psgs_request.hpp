@@ -36,7 +36,6 @@
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/fetch_split_history.hpp>
 #include <connect/services/json_over_uttp.hpp>
-#include <chrono>
 #include <string>
 #include <vector>
 #include <mutex>
@@ -47,10 +46,6 @@
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
-
-
-// Mostly for timing collection
-typedef chrono::high_resolution_clock::time_point  TPSGS_HighResolutionTimePoint;
 
 
 // Blob identifier consists of two integers: sat and sat key.
@@ -173,7 +168,7 @@ public:
 
     CRef<CRequestContext>  GetRequestContext(void);
     void SetRequestContext(void);
-    TPSGS_HighResolutionTimePoint GetStartTimestamp(void) const;
+    psg_time_point_t GetStartTimestamp(void) const;
     bool NeedTrace(void);
     virtual string GetName(void) const;
     virtual CJsonNode Serialize(void) const;
@@ -277,21 +272,21 @@ struct SPSGS_RequestBase
 
     int                             m_Hops;
     EPSGS_Trace                     m_Trace;
-    TPSGS_HighResolutionTimePoint   m_StartTimestamp;
+    psg_time_point_t                m_StartTimestamp;
     vector<string>                  m_EnabledProcessors;
     vector<string>                  m_DisabledProcessors;
 
     SPSGS_RequestBase() :
         m_Hops(0),
         m_Trace(ePSGS_NoTracing),
-        m_StartTimestamp(chrono::high_resolution_clock::now())
+        m_StartTimestamp(psg_clock_t::now())
     {}
 
     SPSGS_RequestBase(int  hops,
                       EPSGS_Trace  trace,
                       const vector<string> &  enabled_processors,
                       const vector<string> &  disabled_processors,
-                      const TPSGS_HighResolutionTimePoint &  start) :
+                      const psg_time_point_t &  start) :
         m_Hops(hops), m_Trace(trace), m_StartTimestamp(start),
         m_EnabledProcessors(enabled_processors),
         m_DisabledProcessors(disabled_processors)
@@ -308,7 +303,7 @@ struct SPSGS_RequestBase
         return m_Trace;
     }
 
-    virtual TPSGS_HighResolutionTimePoint GetStartTimestamp(void) const
+    virtual psg_time_point_t GetStartTimestamp(void) const
     {
         return m_StartTimestamp;
     }
@@ -392,7 +387,7 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
                          EPSGS_Trace  trace,
                          const vector<string> &  enabled_processors,
                          const vector<string> &  disabled_processors,
-                         const TPSGS_HighResolutionTimePoint &  start_timestamp) :
+                         const psg_time_point_t &  start_timestamp) :
         SPSGS_RequestBase(hops, trace,
                           enabled_processors, disabled_processors,
                           start_timestamp),
@@ -478,7 +473,7 @@ struct SPSGS_BlobRequestBase : public SPSGS_RequestBase
                           EPSGS_Trace  trace,
                           const vector<string> &  enabled_processors,
                           const vector<string> &  disabled_processors,
-                          const TPSGS_HighResolutionTimePoint &  start_timestamp) :
+                          const psg_time_point_t &  start_timestamp) :
         SPSGS_RequestBase(hops, trace,
                           enabled_processors, disabled_processors,
                           start_timestamp),
@@ -509,6 +504,7 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
     vector<string>                  m_ExcludeBlobs;
     EPSGS_AccSubstitutioOption      m_AccSubstOption;
     bool                            m_AutoBlobSkipping;
+    unsigned long                   m_ResendTimeoutMks;
 
     SPSGS_BlobBySeqIdRequest(const string &  seq_id,
                              int  seq_id_type,
@@ -517,13 +513,14 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
                              EPSGS_CacheAndDbUse  use_cache,
                              EPSGS_AccSubstitutioOption  subst_option,
                              bool  auto_blob_skipping,
+                             double  resend_timeout,
                              const string &  client_id,
                              int  send_blob_if_small,
                              int  hops,
                              EPSGS_Trace  trace,
                              const vector<string> &  enabled_processors,
                              const vector<string> &  disabled_processors,
-                             const TPSGS_HighResolutionTimePoint &  start_timestamp) :
+                             const psg_time_point_t &  start_timestamp) :
         SPSGS_BlobRequestBase(tse_option, use_cache, client_id, send_blob_if_small,
                               hops, trace,
                               enabled_processors, disabled_processors,
@@ -532,13 +529,15 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
         m_SeqIdType(seq_id_type),
         m_ExcludeBlobs(move(exclude_blobs)),
         m_AccSubstOption(subst_option),
-        m_AutoBlobSkipping(auto_blob_skipping)
+        m_AutoBlobSkipping(auto_blob_skipping),
+        m_ResendTimeoutMks((unsigned long)(resend_timeout * 1000000))
     {}
 
     SPSGS_BlobBySeqIdRequest() :
         m_SeqIdType(-1),
         m_AccSubstOption(ePSGS_UnknownAccSubstitution),
-        m_AutoBlobSkipping(true)
+        m_AutoBlobSkipping(true),
+        m_ResendTimeoutMks(0)
     {}
 
     virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
@@ -575,7 +574,7 @@ struct SPSGS_BlobBySatSatKeyRequest : public SPSGS_BlobRequestBase
                                  EPSGS_Trace  trace,
                                  const vector<string> &  enabled_processors,
                                  const vector<string> &  disabled_processors,
-                                 const TPSGS_HighResolutionTimePoint &  start_timestamp) :
+                                 const psg_time_point_t &  start_timestamp) :
         SPSGS_BlobRequestBase(tse_option, use_cache, client_id, send_blob_if_small,
                               hops, trace,
                               enabled_processors, disabled_processors,
@@ -622,7 +621,7 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
                        EPSGS_Trace  trace,
                        const vector<string> &  enabled_processors,
                        const vector<string> &  disabled_processors,
-                       const TPSGS_HighResolutionTimePoint &  start_timestamp) :
+                       const psg_time_point_t &  start_timestamp) :
         SPSGS_BlobRequestBase(tse_option, use_cache, client_id, send_blob_if_small,
                               hops, trace,
                               enabled_processors, disabled_processors,
@@ -708,7 +707,7 @@ struct SPSGS_TSEChunkRequest : public SPSGS_RequestBase
                           EPSGS_Trace  trace,
                           const vector<string> &  enabled_processors,
                           const vector<string> &  disabled_processors,
-                          const TPSGS_HighResolutionTimePoint &  start_timestamp) :
+                          const psg_time_point_t &  start_timestamp) :
         SPSGS_RequestBase(hops, trace,
                           enabled_processors, disabled_processors,
                           start_timestamp),
@@ -755,7 +754,7 @@ struct SPSGS_AccessionVersionHistoryRequest : public SPSGS_RequestBase
                          EPSGS_Trace  trace,
                          const vector<string> &  enabled_processors,
                          const vector<string> &  disabled_processors,
-                         const TPSGS_HighResolutionTimePoint &  start_timestamp) :
+                         const psg_time_point_t &  start_timestamp) :
         SPSGS_RequestBase(hops, trace,
                           enabled_processors, disabled_processors,
                           start_timestamp),

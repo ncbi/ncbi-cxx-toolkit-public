@@ -57,7 +57,7 @@ class CSplitHistoryConsumeCallback
                 CCassSplitHistoryFetch *  fetch_details) :
             m_ConsumeCB(consume_cb),
             m_FetchDetails(fetch_details),
-            m_SplitHistoryRetrieveTiming(chrono::high_resolution_clock::now())
+            m_SplitHistoryRetrieveTiming(psg_clock_t::now())
         {}
 
         void operator()(vector<SSplitHistoryRecord> && result)
@@ -74,9 +74,9 @@ class CSplitHistoryConsumeCallback
         }
 
     private:
-        TSplitHistoryConsumeCB                          m_ConsumeCB;
-        CCassSplitHistoryFetch *                        m_FetchDetails;
-        chrono::high_resolution_clock::time_point       m_SplitHistoryRetrieveTiming;
+        TSplitHistoryConsumeCB          m_ConsumeCB;
+        CCassSplitHistoryFetch *        m_FetchDetails;
+        psg_time_point_t                m_SplitHistoryRetrieveTiming;
 };
 
 
@@ -88,7 +88,7 @@ class CSplitHistoryErrorCallback
                 CCassSplitHistoryFetch *  fetch_details) :
             m_ErrorCB(error_cb),
             m_FetchDetails(fetch_details),
-            m_SplitHistoryRetrieveTiming(chrono::high_resolution_clock::now())
+            m_SplitHistoryRetrieveTiming(psg_clock_t::now())
         {}
 
         void operator()(CRequestStatus::ECode  status,
@@ -104,9 +104,9 @@ class CSplitHistoryErrorCallback
         }
 
     private:
-        TSplitHistoryErrorCB                            m_ErrorCB;
-        CCassSplitHistoryFetch *                        m_FetchDetails;
-        chrono::high_resolution_clock::time_point       m_SplitHistoryRetrieveTiming;
+        TSplitHistoryErrorCB            m_ErrorCB;
+        CCassSplitHistoryFetch *        m_FetchDetails;
+        psg_time_point_t                m_SplitHistoryRetrieveTiming;
 };
 
 

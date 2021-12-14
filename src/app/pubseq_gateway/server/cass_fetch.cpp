@@ -59,11 +59,13 @@ void CCassFetch::RemoveFromExcludeBlobCache(void)
 }
 
 
-EPSGS_CacheAddResult CCassFetch::AddToExcludeBlobCache(bool &  completed)
+EPSGS_CacheAddResult CCassFetch::AddToExcludeBlobCache(bool &  completed,
+                                                       psg_time_point_t &  completed_time)
 {
     auto *      app = CPubseqGatewayApp::GetInstance();
     auto        cache_result = app->GetExcludeBlobCache()->AddBlobId(
-                    m_ClientId, m_BlobId.m_Sat, m_BlobId.m_SatKey, completed);
+                    m_ClientId, m_BlobId.m_Sat, m_BlobId.m_SatKey,
+                    completed, completed_time);
     if (cache_result == ePSGS_Added)
         m_ExcludeBlobCacheUpdated = true;
     return cache_result;
