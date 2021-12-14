@@ -837,6 +837,24 @@ void CPSGS_Reply::PrepareBlobExcluded(const string &           blob_id,
 }
 
 
+void CPSGS_Reply::PrepareBlobExcluded(const string &  blob_id,
+                                      const string &  processor_id,
+                                      unsigned long  sent_mks_ago)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    string  exclude = GetBlobExcludeHeader(GetItemId(), processor_id,
+                                           blob_id, sent_mks_ago);
+    while (m_ChunksLock.exchange(true)) {}
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                    (const unsigned char *)(exclude.data()),
+                    exclude.size()));
+    ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
+}
+
+
 void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
                                       const string &        processor_id,
                                       const string &        blob_id,
@@ -1053,12 +1071,12 @@ void CPSGS_Reply::PrepareReplyCompletion(void)
 
 
 void CPSGS_Reply::SendTrace(const string &  msg,
-                            const TPSGS_HighResolutionTimePoint &  create_timestamp)
+                            const psg_time_point_t &  create_timestamp)
 {
     if (m_ConnectionCanceled || IsFinished())
         return;
 
-    auto            now = chrono::high_resolution_clock::now();
+    auto            now = psg_clock_t::now();
     uint64_t        mks = chrono::duration_cast<chrono::microseconds>
                                             (now - create_timestamp).count();
     string          timestamp = "Timestamp (mks): " + to_string(mks) + "\n";

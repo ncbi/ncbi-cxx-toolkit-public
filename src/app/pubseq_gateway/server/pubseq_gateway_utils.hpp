@@ -45,7 +45,6 @@ USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
 #include <string>
-#include <chrono>
 using namespace std;
 
 class CPSGS_Request;
@@ -231,6 +230,10 @@ string  GetBlobExcludeHeader(size_t  item_id,
                              const string &  blob_id,
                              EPSGS_BlobSkipReason  skip_reason,
                              CBlobRecord::TTimestamp  last_modified=-1);
+string GetBlobExcludeHeader(size_t  item_id,
+                            const string &  processor_id,
+                            const string &  blob_id,
+                            unsigned long  sent_mks_ago);
 string  GetTSEBlobChunkHeader(size_t  item_id,
                               const string &  processor_id,
                               size_t  chunk_size,
@@ -321,6 +324,7 @@ private:
 
 
 string FormatPreciseTime(const chrono::system_clock::time_point &  t_point);
+unsigned long GetTimespanToNowMks(const psg_time_point_t &  t_point);
 string GetCassStartupDataStateMessage(EPSGS_StartupDataState  state);
 
 #endif

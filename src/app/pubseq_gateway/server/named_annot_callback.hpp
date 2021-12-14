@@ -62,7 +62,7 @@ class CNamedAnnotationCallback
             m_FetchDetails(fetch_details),
             m_Sat(sat),
             m_AnnotCount(0),
-            m_RetrieveTiming(chrono::high_resolution_clock::now())
+            m_RetrieveTiming(psg_clock_t::now())
         {}
 
         bool operator()(CNAnnotRecord &&  annot_record, bool  last)
@@ -83,12 +83,12 @@ class CNamedAnnotationCallback
         }
 
     private:
-        TNamedAnnotationCB                      m_NamedAnnotationCB;
-        CCassNamedAnnotFetch *                  m_FetchDetails;
-        int32_t                                 m_Sat;
+        TNamedAnnotationCB          m_NamedAnnotationCB;
+        CCassNamedAnnotFetch *      m_FetchDetails;
+        int32_t                     m_Sat;
 
-        size_t                                      m_AnnotCount;
-        chrono::high_resolution_clock::time_point   m_RetrieveTiming;
+        size_t                      m_AnnotCount;
+        psg_time_point_t            m_RetrieveTiming;
 };
 
 

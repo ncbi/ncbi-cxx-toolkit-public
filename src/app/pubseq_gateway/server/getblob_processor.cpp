@@ -139,10 +139,12 @@ void CPSGS_GetBlobProcessor::Process(void)
     if (!m_BlobRequest->m_ClientId.empty()) {
         // Adding to exclude blob cache is unconditional;
         // Skipping is only for the blobs identified by seq_id/seq_id_type
-        bool        completed = true;
+        bool                completed = true;
+        psg_time_point_t    completed_time;
         auto        cache_result = app->GetExcludeBlobCache()->AddBlobId(
                     m_BlobRequest->m_ClientId,
-                    m_BlobId.m_Sat, m_BlobId.m_SatKey, completed);
+                    m_BlobId.m_Sat, m_BlobId.m_SatKey,
+                    completed, completed_time);
         if (cache_result == ePSGS_Added)
             added_to_exclude_cache = true;
     }

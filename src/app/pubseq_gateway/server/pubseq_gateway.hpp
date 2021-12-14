@@ -334,6 +334,10 @@ private:
                                const CTempString &  param_value,
                                int &  converted,
                                string &  err_msg) const;
+    bool x_ConvertDoubleParameter(const string &  param_name,
+                                  const CTempString &  param_value,
+                                  double &  converted,
+                                  string &  err_msg) const;
     bool x_IsResolutionParamValid(const string &  param_name,
                                   const CTempString &  param_value,
                                   string &  err_msg) const;
@@ -361,6 +365,9 @@ private:
                              string &  err_msg);
     bool x_GetHops(CHttpRequest &  req,
                    shared_ptr<CPSGS_Reply>  reply, int &  hops);
+    bool x_GetResendTimeout(CHttpRequest &  req,
+                            shared_ptr<CPSGS_Reply>  reply,
+                            double &  resend_timeout);
     bool x_GetEnabledAndDisabledProcessors(CHttpRequest &  req,
                                            shared_ptr<CPSGS_Reply>  reply,
                                            vector<string> &  enabled_processors,
@@ -424,6 +431,7 @@ private:
 
     unsigned long                       m_SendBlobIfSmall;
     int                                 m_MaxHops;
+    double                              m_ResendTimeoutSec;
 
     bool                                m_CassandraProcessorsEnabled;
     string                              m_TestSeqId;

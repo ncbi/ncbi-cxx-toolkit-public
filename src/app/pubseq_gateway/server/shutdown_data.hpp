@@ -33,17 +33,18 @@
  */
 
 
-#include <chrono>
 #include <atomic>
 using namespace std;
+
+#include "pubseq_gateway_types.hpp"
 
 
 struct SShutdownData
 {
-    atomic_int_fast64_t                         m_ActiveRequestCount;
-    atomic_bool                                 m_ShutdownRequested;
-    atomic_bool                                 m_CancelSent;
-    chrono::time_point<chrono::steady_clock>    m_Expired;
+    atomic_int_fast64_t         m_ActiveRequestCount;
+    atomic_bool                 m_ShutdownRequested;
+    atomic_bool                 m_CancelSent;
+    psg_time_point_t            m_Expired;
 
     SShutdownData() :
         m_ActiveRequestCount(0),

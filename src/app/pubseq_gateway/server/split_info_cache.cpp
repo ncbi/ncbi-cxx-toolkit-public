@@ -38,7 +38,7 @@
 pair<bool, CRef<CID2S_Split_Info>>
 CSplitInfoCache::GetBlob(const SCass_BlobId &  info_blob_id)
 {
-    auto    last_touch = std::chrono::steady_clock::now();
+    auto    last_touch = psg_clock_t::now();
 
     while (m_Lock.exchange(true)) {}    // acquire top level lock
 

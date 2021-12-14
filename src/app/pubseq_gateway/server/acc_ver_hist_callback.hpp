@@ -59,7 +59,7 @@ class CAccVerHistCallback
             m_AccVerHistCB(acc_ver_hist_cb),
             m_FetchDetails(fetch_details),
             m_Count(0),
-            m_RetrieveTiming(chrono::high_resolution_clock::now())
+            m_RetrieveTiming(psg_clock_t::now())
         {}
 
         bool operator()(SAccVerHistRec &&  acc_ver_hist_record, bool  last)
@@ -79,11 +79,11 @@ class CAccVerHistCallback
         }
 
     private:
-        TAccVerHistCB                               m_AccVerHistCB;
-        CCassAccVerHistoryFetch *                   m_FetchDetails;
+        TAccVerHistCB                   m_AccVerHistCB;
+        CCassAccVerHistoryFetch *       m_FetchDetails;
 
-        size_t                                      m_Count;
-        chrono::high_resolution_clock::time_point   m_RetrieveTiming;
+        size_t                          m_Count;
+        psg_time_point_t                m_RetrieveTiming;
 };
 
 

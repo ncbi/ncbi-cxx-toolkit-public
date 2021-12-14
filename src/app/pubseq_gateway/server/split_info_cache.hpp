@@ -33,12 +33,12 @@
  */
 
 
-#include <chrono>
 #include <atomic>
 #include <map>
 #include <vector>
 using namespace std;
 
+#include "pubseq_gateway_types.hpp"
 #include "cass_blob_id.hpp"
 #include "split_info_utils.hpp"
 #include <objects/seqsplit/seqsplit__.hpp>
@@ -51,7 +51,7 @@ struct SSplitInfoCacheItem
 {
     public:
         SSplitInfoCacheItem(CRef<CID2S_Split_Info> blob) :
-            m_LastTouch(std::chrono::steady_clock::now()),
+            m_LastTouch(psg_clock_t::now()),
             m_SplitInfoBlob(blob)
         {}
 
@@ -63,8 +63,8 @@ struct SSplitInfoCacheItem
 
     public:
         // For the future - if the cache needs to be purged
-        std::chrono::time_point<std::chrono::steady_clock>  m_LastTouch;
-        CRef<CID2S_Split_Info>                              m_SplitInfoBlob;
+        psg_time_point_t            m_LastTouch;
+        CRef<CID2S_Split_Info>      m_SplitInfoBlob;
 };
 
 

@@ -164,7 +164,7 @@ public:
             if (g_ShutdownData.m_ActiveRequestCount == 0) {
                 self->m_daemon->StopDaemonLoop();
             } else {
-                if (chrono::steady_clock::now() >= g_ShutdownData.m_Expired) {
+                if (psg_clock_t::now() >= g_ShutdownData.m_Expired) {
                     if (g_ShutdownData.m_CancelSent) {
                         PSG_MESSAGE("Shutdown timeout is over when there are "
                                     "unfinished requests. Exiting immediately.");
@@ -172,7 +172,7 @@ public:
                     } else {
                         // Extend the expiration for 2 second;
                         // Send cancel to all processors;
-                        g_ShutdownData.m_Expired = chrono::steady_clock::now() + chrono::seconds(2);
+                        g_ShutdownData.m_Expired = psg_clock_t::now() + chrono::seconds(2);
                         g_ShutdownData.m_CancelSent = true;
 
                         // Canceling processors prevents from the tries to
@@ -576,7 +576,7 @@ private:
         // This is also for Ctrl+C
         // Note: exit(0) instead of the shutdown request may hang.
         PSG_MESSAGE("SIGINT received. Immediate shutdown performed.");
-        g_ShutdownData.m_Expired = chrono::steady_clock::now();
+        g_ShutdownData.m_Expired = psg_clock_t::now();
         g_ShutdownData.m_ShutdownRequested = true;
 
         // The uv_stop() may hang if some syncronous long operation is in
@@ -587,7 +587,7 @@ private:
 
     static void s_OnMainSigTerm(uv_signal_t *  /* req */, int  /* signum */)
     {
-        auto        now = chrono::steady_clock::now();
+        auto        now = psg_clock_t::now();
         auto        expiration = now + chrono::hours(24);
 
         if (g_ShutdownData.m_ShutdownRequested) {

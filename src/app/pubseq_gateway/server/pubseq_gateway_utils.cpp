@@ -138,6 +138,7 @@ static string   s_BlobId = "blob_id=";
 static string   s_Fmt = "fmt=";
 static string   s_NA = "na=";
 static string   s_Reason = "reason=";
+static string   s_SentSecondsAgo = "sent_seconds_ago=";
 static string   s_NChunksOne = "n_chunks=1";
 static string   s_ProcessorId = "processor_id=";
 static string   s_Id2Chunk = "id2_chunk=";
@@ -172,6 +173,7 @@ static string   s_AndBlobId = "&" + s_BlobId;
 static string   s_AndBlobChunk = "&" + s_BlobChunk;
 static string   s_AndNChunksOne = "&" + s_NChunksOne;
 static string   s_AndReason = "&" + s_Reason;
+static string   s_AndSentSecondsAgo = "&" + s_SentSecondsAgo;
 static string   s_AndNA = "&" + s_NA;
 static string   s_BioseqInfoItem = s_ItemType + s_BioseqInfo;
 static string   s_AndBioseqInfoItem = "&" + s_BioseqInfoItem;
@@ -525,6 +527,35 @@ string  GetBlobExcludeHeader(size_t  item_id,
                 .append(s_AndNChunksOne)
                 .append(s_AndReason)
                 .append(SkipReasonToString(skip_reason))
+                .append(1, '\n');
+}
+
+
+// Used only for the case 'already sent'
+string GetBlobExcludeHeader(size_t  item_id,
+                            const string &  processor_id,
+                            const string &  blob_id,
+                            unsigned long  sent_mks_ago)
+{
+    string      reply(s_ReplyBegin);
+
+    unsigned long   sec = sent_mks_ago / 1000000;
+    string          mks = to_string(sent_mks_ago - sec * 1000000);
+    while (mks.size() < 6)
+        mks = "0" + mks;
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndBlobItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndBlobId)
+                .append(blob_id)
+                .append(s_AndNChunksOne)
+                .append(s_AndReason)
+                .append(SkipReasonToString(ePSGS_BlobSent))
+                .append(s_AndSentSecondsAgo)
+                .append(to_string(sec) + "." + mks)
                 .append(1, '\n');
 }
 
@@ -929,6 +960,11 @@ string FormatPreciseTime(const chrono::system_clock::time_point &  t_point)
     return buffer;
 }
 
+
+unsigned long GetTimespanToNowMks(const psg_time_point_t &  t_point)
+{
+    return chrono::duration_cast<chrono::microseconds>(psg_clock_t::now() - t_point).count();
+}
 
 
 static map<EPSGS_StartupDataState, string> s_CassStartupDataStateMsg =
