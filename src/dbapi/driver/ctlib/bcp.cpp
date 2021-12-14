@@ -513,7 +513,8 @@ bool CTL_BCPInCmd::x_AssignParams()
                 if (param_fmt.datatype == CS_CHAR_TYPE) {
                     string s = (t.GetLocalTime()
                                 .AsString(CDB_BigDateTime::GetTimeFormat
-                                          (syntax, par.GetSQLType())));
+                                          (syntax, par.GetSQLType(),
+                                           par.GetOffset())));
                     if (syntax == CDB_BigDateTime::eSyntax_Microsoft
                         &&  GetConnection().m_TDSVersion > CS_TDS_50
 #ifdef CS_TDS_73
