@@ -572,7 +572,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
             lt.SetNanoSecond(lt.NanoSecond() / 100 * 100);
             string s = lt.AsString(CDB_BigDateTime::GetTimeFormat
                                    (GetConnection().GetDateTimeSyntax(),
-                                    par.GetSQLType()));
+                                    par.GetSQLType(), par.GetOffset()));
             ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt,
                                       (CS_VOID*) s.data(), (CS_INT) s.size(),
                                       indicator));
