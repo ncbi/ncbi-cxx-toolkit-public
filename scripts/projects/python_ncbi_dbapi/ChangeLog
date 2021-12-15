@@ -1,3 +1,12 @@
+Version 1.23.2 (2021-12-15):
+* Support datetimeoffset more fully, albeit with results always coming
+  back as corresponding "aware" UTC.
+* Compensate for some Sybase ctlib quirks in UTF-8 locales.
+* Handle SYBUINTN, as notably returned from Sybase IQ COUNT(...).
+* Drop the build for Python 3.7 (no longer supported), leaving just
+  3.8 and 3.9.
+* Belatedly note connect's optional argument in its docstring.
+
 Version 1.23.1 (2021-06-22):
 * Fix crashes in release_global_lock mode when (automatically) logging.
 
