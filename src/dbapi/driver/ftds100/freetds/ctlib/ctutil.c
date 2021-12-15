@@ -176,7 +176,7 @@ _ct_handle_server_message(const TDSCONTEXT * ctx_tds, TDSSOCKET * tds, TDSMESSAG
 		strlcpy((char *) errmsg.sqlstate, msg->sql_state, sizeof(errmsg.sqlstate));
         errmsg.sqlstatelen = (CS_INT) strlen((char *) errmsg.sqlstate);
 	errmsg.state = msg->state;
-        errmsg.severity = _ct_translate_severity(msg->severity);
+	errmsg.severity = msg->severity;
 	errmsg.line = msg->line_number;
 	if (msg->server) {
                 errmsg.svrnlen = (CS_INT) strlen(msg->server);

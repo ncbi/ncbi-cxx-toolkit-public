@@ -39,6 +39,9 @@ elseif(NCBI_PTBCFG_USECONAN)
 
 #    set(_cmd install . --build missing --build b2)
     set(_cmd install . --build missing --build b2 -s compiler.cppstd=17 -s grpc:compiler.cppstd=14 -s abseil:compiler.cppstd=14)
+    if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "Intel")
+        set(_cmd ${_cmd} -s compiler.libcxx=libstdc++11)
+    endif()
 
     execute_process(
         COMMAND ${NCBI_CONAN_APP} ${_cmd}

@@ -254,7 +254,7 @@ int CVDBTblastnApp::Run(void)
                                             !m_CmdLineArgs->ExecuteRemotely());
             iconfig.SetQueryLocalIdMode();
             CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
-            CBlastInput input(&fasta);
+            CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
 
             for (; !input.End(); formatter.ResetScopeHistory()) {
             	CRef<CBlastQueryVector> query_batch(input.GetNextSeqBatch(*scope));
@@ -271,8 +271,8 @@ int CVDBTblastnApp::Run(void)
             		formatter.WriteArchive(*queries, *optsHandle, *results);
             	}
             	else {
-            		CScope::TBioseqHandles handles;
-            		SortAndFetchSeqData(*results, scope, handles);
+            		//CScope::TBioseqHandles handles;
+            		//SortAndFetchSeqData(*results, scope, handles);
             		// Output the results
             		ITERATE(CSearchResultSet, result, *results) {
             			formatter.PrintOneResultSet(**result, query_batch);

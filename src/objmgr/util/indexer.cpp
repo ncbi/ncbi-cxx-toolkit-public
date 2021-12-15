@@ -1897,17 +1897,21 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
     } else if (policy == CSeqEntryIndex::eGenomes) {
 
         // for public ftp releases
-        if (m_IsRefSeq) {
+
+        // Original comment was:
             // For genomes FTP, we're running with a local ASN cache. Fetching from ID has already
             // happened, and we specifically want to restrict to using annotation from the cache.
-            sel.SetResolveDepth(0);
-            sel.SetExcludeExternal(true);
+        // but later advice was to always use adaptive depth.
+
+        if (m_IsRefSeq) {
+            sel.SetResolveAll();
+            sel.SetAdaptiveDepth(true);
         } else if (m_IsDeltaLitOnly) {
-            sel.SetResolveDepth(0);
-            sel.SetExcludeExternal(true);
+            sel.SetResolveAll();
+            sel.SetAdaptiveDepth(true);
         } else {
-            sel.SetResolveDepth(0);
-            sel.SetExcludeExternal(true);
+            sel.SetResolveAll();
+            sel.SetAdaptiveDepth(true);
         }
 
     } else if (policy == CSeqEntryIndex::eWeb) {

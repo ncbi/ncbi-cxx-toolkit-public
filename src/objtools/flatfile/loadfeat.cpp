@@ -2025,7 +2025,7 @@ static int get_first_codon_from_trna(const objects::CTrna_ext& trna)
 static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
                       Parser::ESource source, bool accver)
 {
-    char*    qval;
+    char*    qval = nullptr;
     char*    p;
 
     Uint1      remove;

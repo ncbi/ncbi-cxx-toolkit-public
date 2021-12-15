@@ -225,7 +225,7 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         }
         GATHER_ANCHOR(Contig, "contig");
         GATHER_BLOCK(Contig, CContigItem);
-        if ( cfg.ShowContigAndSeq() || ( ( cfg.IsPolicyFtp() || cfg.IsPolicyGenomes() ) && ctx.IsRefSeq() && ctx.IsProt() ) ) {
+        if ( cfg.ShowContigAndSeq() || cfg.IsPolicyGenomes() || ( cfg.IsPolicyFtp() && ctx.IsRefSeq() && ctx.IsProt() ) ) {
             if ( ctx.IsNuc() && ! bIsMap && s_ShowBaseCount(cfg) )
             {
                 GATHER_BLOCK(Basecount, CBaseCountItem);
@@ -237,7 +237,7 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         }
     } else {
         GATHER_VIA_FUNC(FeatAndGap, x_GatherFeatures);
-        if ( ( cfg.ShowContigAndSeq() || ( ( cfg.IsPolicyFtp() || cfg.IsPolicyGenomes() ) && ctx.IsRefSeq() && ctx.IsProt() ) )  &&  s_ShowContig(ctx) ) {
+        if ( ( cfg.ShowContigAndSeq() || cfg.IsPolicyGenomes() || ( cfg.IsPolicyFtp() && ctx.IsRefSeq() && ctx.IsProt() ) )  &&  s_ShowContig(ctx) ) {
             GATHER_ANCHOR(Contig, "contig");
             GATHER_BLOCK(Contig, CContigItem);
         }
