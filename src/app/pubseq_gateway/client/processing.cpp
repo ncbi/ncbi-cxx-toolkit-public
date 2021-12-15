@@ -331,6 +331,12 @@ void CJsonResponse::Fill(shared_ptr<CPSG_SkippedBlob> skipped_blob)
     if (!sent_seconds_ago.IsNull()) {
         Set("sent_seconds_ago", sent_seconds_ago.GetValue());
     }
+
+    const auto& time_until_resend = skipped_blob->GetTimeUntilResend();
+
+    if (!time_until_resend.IsNull()) {
+        Set("time_until_resend", time_until_resend.GetValue());
+    }
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info)

@@ -337,9 +337,9 @@ SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
     }
 }
 
-CPSG_SkippedBlob::TSentSecondsAgo s_GetSentSecondsAgo(const SPSG_Args& args)
+CPSG_SkippedBlob::TSeconds s_GetSeconds(const SPSG_Args& args, const string& name)
 {
-    const auto& value = args.GetValue("sent_seconds_ago");
+    const auto& value = args.GetValue(name);
 
     // Do not use ternary operator below, 'null' will be become '0.0' otherwise
     if (value.empty()) return null;
@@ -378,7 +378,9 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS& ite
     } else if (itar.first == CPSG_ReplyItem::eSkippedBlob) {
         auto data_id = s_GetDataId(args);
         auto blob_id = move(dynamic_cast<CPSG_BlobId&>(*data_id));
-        rv.reset(new CPSG_SkippedBlob(move(blob_id), itar.second, s_GetSentSecondsAgo(args)));
+        auto sent_seconds_ago = s_GetSeconds(args, "sent_seconds_ago");
+        auto time_until_resend = s_GetSeconds(args, "time_until_resend");
+        rv.reset(new CPSG_SkippedBlob(move(blob_id), itar.second, move(sent_seconds_ago), move(time_until_resend)));
 
     } else if (itar.first == CPSG_ReplyItem::eBioseqInfo) {
         rv.reset(CreateImpl(new CPSG_BioseqInfo, chunks));
@@ -928,11 +930,12 @@ Uint8 CPSG_BlobInfo::GetNChunks() const
 }
 
 
-CPSG_SkippedBlob::CPSG_SkippedBlob(CPSG_BlobId id, EReason reason, TSentSecondsAgo sent_seconds_ago) :
+CPSG_SkippedBlob::CPSG_SkippedBlob(CPSG_BlobId id, EReason reason, TSeconds sent_seconds_ago, TSeconds time_until_resend) :
     CPSG_ReplyItem(eSkippedBlob),
     m_Id(id),
     m_Reason(reason),
-    m_SentSecondsAgo(sent_seconds_ago)
+    m_SentSecondsAgo(move(sent_seconds_ago)),
+    m_TimeUntilResend(move(time_until_resend))
 {
 }
 
