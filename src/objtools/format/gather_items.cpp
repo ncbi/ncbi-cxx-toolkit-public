@@ -3124,12 +3124,17 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
                 feat_start -= loc_len;
             }
 
+// cout << "Feat start: " << NStr::IntToString(feat_start) << ", feat end: " << NStr::IntToString(feat_end) << endl;
+
             bool has_gap = gap_data.has_gap;
             int gap_start = gap_data.gap_start;
-            int gap_end = gap_data.gap_end;
-            while (has_gap && gap_start <= feat_start) {
+            int gap_end = gap_data.gap_end - 1;
+
+// cout << "Gap start: " << NStr::IntToString(gap_start) << ", gap end: " << NStr::IntToString(gap_end) << endl;
+
+            while (has_gap && gap_start < feat_start) {
                 const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_start <= gap_end) );
-                const bool gapMatch = ( subtype == CSeqFeatData::eSubtype_gap && feat_start == gap_start && feat_end == gap_end - 1 );
+                const bool gapMatch = ( subtype == CSeqFeatData::eSubtype_gap && feat_start == gap_start && feat_end == gap_end );
                 if ( noGapSizeProblem && ! gapMatch ) {
                     item.Reset( s_NewGapItem(gap_data.gap_start, gap_data.gap_end, gap_data.gap_length, gap_data.gap_type,
                                 gap_data.gap_evidence, gap_data.is_unknown_length, gap_data.is_assembly_gap, ctx) );
@@ -3319,9 +3324,14 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
             if( feat_start > feat_end ) {
                 feat_start -= loc_len;
             }
+
+// cout << "Feat start: " << NStr::IntToString(feat_start) << ", feat end: " << NStr::IntToString(feat_end) << endl;
+
             while (gap_it) {
                 const int gap_start = gap_it.GetPosition();
                 const int gap_end   = (gap_it.GetEndPosition() - 1);
+
+// cout << "Gap start: " << NStr::IntToString(gap_start) << ", gap end: " << NStr::IntToString(gap_end) << endl;
 
                 // if feature after gap first output the gap 
                 if ( feat_start >= gap_start ) {
