@@ -106,7 +106,8 @@ objtools/simple$
 -objects/.*/unit_test
 sra$
 sra/data_loaders
-sra/readers
+-sra/readers/bam/test
+-sra/readers/sra/test
 misc/jsonwrapp
 misc/third_party
 misc/third_party_static
