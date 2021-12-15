@@ -668,6 +668,8 @@ private:
 class CPSG_SkippedBlob : public CPSG_ReplyItem
 {
 public:
+    using TSeconds = CNullable<double>;
+
     enum EReason {
         eExcluded,   // Explicitly excluded by the client
         eInProgress, // Is being sent to the client
@@ -682,15 +684,18 @@ public:
     EReason GetReason() const { return m_Reason; }
 
     /// Seconds passed since the blob was last sent to the client.
-    using TSentSecondsAgo = CNullable<double>;
-    const TSentSecondsAgo& GetSentSecondsAgo() const { return m_SentSecondsAgo; }
+    const TSeconds& GetSentSecondsAgo() const { return m_SentSecondsAgo; }
+
+    /// Seconds before the blob will be sent to the client.
+    const TSeconds& GetTimeUntilResend() const { return m_TimeUntilResend; }
 
 private:
-    CPSG_SkippedBlob(CPSG_BlobId id, EReason reason, TSentSecondsAgo sent_seconds_ago);
+    CPSG_SkippedBlob(CPSG_BlobId id, EReason reason, TSeconds sent_seconds_ago, TSeconds time_until_resend);
 
     CPSG_BlobId m_Id;
     EReason     m_Reason;
-    TSentSecondsAgo m_SentSecondsAgo;
+    TSeconds    m_SentSecondsAgo;
+    TSeconds    m_TimeUntilResend;
 
     friend class CPSG_Reply;
 };
