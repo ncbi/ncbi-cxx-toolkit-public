@@ -2902,8 +2902,14 @@ CNullable<short> x_GetUTCOffset(const pythonpp::CDateTime& dt)
     pythonpp::CTuple args(1);
     args.SetItem(0, dt);
     pythonpp::CObject delta(utcoffset.Apply(args));
-    return PyDateTime_DELTA_GET_DAYS(delta.Get()) * 24 * 60
-        + PyDateTime_DELTA_GET_SECONDS(delta.Get()) / 60;
+#if PY_VERSION_HEX >= 0x03030000
+    auto days    = PyDateTime_DELTA_GET_DAYS(delta.Get()),
+         seconds = PyDateTime_DELTA_GET_SECONDS(delta.Get());
+#else
+    long days    = pythonpp::CInt(delta.GetAttr("days")),
+         seconds = pythonpp::CInt(delta.GetAttr("seconds"));
+#endif
+    return days * 24 * 60 + seconds / 60;
 }
 
 CVariant
