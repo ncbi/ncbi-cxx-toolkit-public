@@ -1721,7 +1721,7 @@ CJson_Document CProcessing::RequestSchema()
                         "include_data": { "$ref": "#/definitions/include_data" },
                         "exclude_blobs": { "$ref": "#/definitions/exclude_blobs" },
                         "acc_substitution": { "$ref": "#/definitions/acc_substitution" },
-                        "auto_blob_skipping": { "type": "boolean" },
+                        "resend_timeout": { "type": "number" },
                         "context": { "$ref": "#/definitions/context" },
                         "user_args": { "$ref": "#/definitions/user_args" }
                     },

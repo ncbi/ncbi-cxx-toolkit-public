@@ -319,7 +319,12 @@ public:
     void SetAccSubstitution(EPSG_AccSubstitution acc_substitution) { m_AccSubstitution = acc_substitution; }
 
     /// Enable/disable auto blob skipping on server for this request
+    /// @deprecated use SetResendTimeout instead
+    NCBI_DEPRECATED
     void SetAutoBlobSkipping(bool auto_blob_skipping) { m_AutoBlobSkipping = auto_blob_skipping ? eOn : eOff; }
+
+    /// Set resend timeout
+    void SetResendTimeout(CTimeout resend_timeout) { m_ResendTimeout = move(resend_timeout); }
 
 private:
     string x_GetType() const override { return "biodata"; }
@@ -331,6 +336,7 @@ private:
     TExcludeTSEs  m_ExcludeTSEs;
     EPSG_AccSubstitution m_AccSubstitution = EPSG_AccSubstitution::Default;
     ESwitch m_AutoBlobSkipping = ESwitch::eDefault;
+    CTimeout m_ResendTimeout = CTimeout::eDefault;
 };
 
 

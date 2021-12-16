@@ -313,8 +313,8 @@ private:
     static string GetAccSubstitution(const CArgs& input) { return input["acc-substitution"].HasValue() ? input["acc-substitution"].AsString() : ""; }
     static string GetAccSubstitution(const CJson_ConstObject& input) { return input.has("acc_substitution") ? input["acc_substitution"].GetValue().GetString() : ""; }
 
-    static ESwitch GetAutoBlobSkipping(const CArgs&) { return eDefault; }
-    static ESwitch GetAutoBlobSkipping(const CJson_ConstObject& input) { return !input.has("auto_blob_skipping") ? eDefault : input["auto_blob_skipping"].GetValue().GetBool() ? eOn : eOff; }
+    static CTimeout GetResendTimeout(const CArgs&) { return CTimeout::eDefault; }
+    static CTimeout GetResendTimeout(const CJson_ConstObject& input) { return !input.has("resend_timeout") ? CTimeout::eDefault : CTimeout(input["resend_timeout"].GetValue().GetDouble()); }
 
     template <class TRequest>
     static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
@@ -414,10 +414,10 @@ SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Biodata>()
     IncludeData(request, specified);
     ExcludeTSEs(request, input);
     SetAccSubstitution(request, input);
-    const auto auto_blob_skipping = GetAutoBlobSkipping(input);
+    const auto resend_timeout = GetResendTimeout(input);
 
-    if (auto_blob_skipping != eDefault) {
-        request->SetAutoBlobSkipping(auto_blob_skipping == eOn);
+    if (!resend_timeout.IsDefault()) {
+        request->SetResendTimeout(resend_timeout);
     }
 
     return request;
