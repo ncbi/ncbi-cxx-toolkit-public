@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import enum
 import itertools
 import json
 import queue
@@ -12,13 +13,15 @@ import sys
 import threading
 
 class PsgClient:
+    VerboseLevel = enum.IntEnum('VerboseLevel', 'REQUEST RESPONSE DEBUG')
+
     def __init__(self, binary, /, timeout=10, verbose=0):
         self._cmd = [binary, 'interactive', '-server-mode']
         self._timeout = timeout
         self._verbose = verbose
         self._request_no = 0
 
-        if self._verbose > 1:
+        if self._verbose >= PsgClient.VerboseLevel.DEBUG:
             self._cmd += ['-debug-printout', 'some']
 
     def __enter__(self):
@@ -48,7 +51,7 @@ class PsgClient:
         request = json.dumps({ 'jsonrpc': '2.0', 'method': method, 'params': params, 'id': f'{method}_{self._request_no}' })
         print(request, file=self._pipe.stdin)
 
-        if self._verbose:
+        if self._verbose >= PsgClient.VerboseLevel.REQUEST:
             print(request)
 
         return request
@@ -57,7 +60,7 @@ class PsgClient:
         while True:
             line = self._queue.get(timeout=self._timeout).rstrip()
 
-            if self._verbose:
+            if self._verbose >= PsgClient.VerboseLevel.RESPONSE:
                 print(line)
 
             data = json.loads(line)
@@ -84,7 +87,7 @@ def powerset(iterable):
 
 def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
     param_values = {
-            'include_info': powerset((
+            'include_info': [None] + list(powerset((
                 'all-info-except',
                 'canonical-id',
                 'name',
@@ -98,29 +101,42 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
                 'hash',
                 'date-changed',
                 'gi'
-            )),
-            'include_data': (
+            ))),
+            'include_data': [
+                None,
                 'no-tse',
                 'slim-tse',
                 'smart-tse',
                 'whole-tse',
                 'orig-tse'
-            ),
-            'acc_substitution': (
+            ],
+            'acc_substitution': [
+                None,
                 'default',
                 'limited',
                 'never'
-            ),
-            'user_args': (
+            ],
+            'resend_timeout': [
+                None,
+                0,
+                100
+            ],
+            'user_args': [
+                None,
                 'mock',
                 'bogus=fake'
-            ) * 7,
+            ] * 7,
         }
+
+    def this_plus_random(param, value):
+        """Yield this (param, value) pair plus pairs with random values for all other params."""
+        for other in param_names:
+            yield (other, value if other == param else random.choice(param_values[other]))
 
     # Used user_args to increase number of some requests
     requests = {
             'resolve':      [bio_ids,       ['include_info', 'acc_substitution']],
-            'biodata':      [bio_ids,       ['include_data', 'acc_substitution']],
+            'biodata':      [bio_ids,       ['include_data', 'acc_substitution', 'resend_timeout']],
             'blob':         [blob_ids,      ['include_data', 'user_args']],
             'named_annot':  [named_annots,  ['include_data', 'acc_substitution']],
             'chunk':        [chunk_ids,     ['user_args',    'user_args']]
@@ -130,9 +146,8 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
     summary = {}
 
     for method, (ids, param_names) in requests.items():
-        named_values = (itertools.product((param,), param_values[param]) for param in param_names)
         n = 0
-        for combination in itertools.product(*named_values):
+        for combination in (this_plus_random(param, value) for param in param_names for value in param_values[param]):
             try:
                 random_ids={k: random.choice(v) for k, v in ids.items()}
             except IndexError:
@@ -140,7 +155,7 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
                 rv = False
                 break
             n += 1
-            request = psg_client.send(method, **random_ids, **dict(combination))
+            request = psg_client.send(method, **random_ids, **{p: v for p, v in combination if v is not None})
             for reply in psg_client.receive():
                 status = reply.get('status', None)
                 reply_type = reply.get('reply', None)
