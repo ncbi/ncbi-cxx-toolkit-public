@@ -333,6 +333,9 @@
    standard libraries. */
 #undef HAVE_LIBDL
 
+/* Define to 1 if libdrmaa2 is available. */
+#undef HAVE_LIBDRMAA2
+
 /* Define to 1 if libdw is available. */
 #undef HAVE_LIBDW
 
