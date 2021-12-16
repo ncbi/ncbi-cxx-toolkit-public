@@ -1,0 +1,17 @@
+#! /bin/sh
+
+#############################################################################
+# $Id$
+#   Compiler: XCODE
+#   Wrapper for xcodebuild.
+#   See: https://jira.ncbi.nlm.nih.gov/browse/SYS-397163
+#
+#############################################################################
+
+
+if [ "$USER" = tomcat  -a  ! -d /Users/tomcat  -a  -d /Users/buildAgent ]; then
+    mkdir -p /Users/buildAgent/XcodeTemp
+    set _ -derivedDataPath /Users/buildAgent/XcodeTemp "$@"
+    shift
+fi
+exec /usr/bin/xcodebuild "$@"
