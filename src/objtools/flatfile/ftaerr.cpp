@@ -785,7 +785,7 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char *fmt, ...)
         textStream << bmp->prefix_accession << ": ";
     }
     if (bmp->prefix_feature) {
-        textStream << bmp->prefix_feature << "   ";
+        textStream << bmp->prefix_feature << " ";
     }
     textStream << fpi.buffer;
 
