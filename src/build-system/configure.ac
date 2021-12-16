@@ -80,7 +80,8 @@ case "$with_3psw" in
                      sybase, ftds, mysql, opengl, mesa, glut, glew, gl2ps,
                      wxwidgets, freetype, ftgl, fastcgi, fastcgipp,
                      bdb, orbacus, odbc,
-                     python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
+                     python, perl, jni, sqlite3, mimetic,
+                     sge, drmaa2, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm, magic,
                      curl, gsoap, avro, cereal, sasl2,
@@ -474,6 +475,10 @@ AC_ARG_WITH(sge,
    [ --with-sge=DIR          use Sun/Univa Grid Engine installation in DIR])
 AC_ARG_WITH(sge,
    [ --without-sge           do not use Sun/Univa Grid Engine])
+AC_ARG_WITH(drmaa2,
+   [ --with-drmaa2=DIR       use DRMAA2 grid API installation in DIR])
+AC_ARG_WITH(drmaa2,
+   [ --without-drmaa2        do not use DRMAA2 grid API])
 AC_ARG_WITH(muparser,
    [ --with-muparser=DIR     use muParser installation in DIR])
 AC_ARG_WITH(muparser,
@@ -698,7 +703,7 @@ sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx gl2ps \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
-oechem sge muparser hdf5 \
+oechem sge drmaa2 muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 \
 mongodb mongodb3 leveldb gmock lapack lmdb \
@@ -774,7 +779,8 @@ for x_arg in "$@" ; do
       | --with-boost=* | --with-sqlite3=* | --with-icu=* | --with-expat=* \
       | --with-sablot=* | --with-libxml=* | --with-libxslt=* | --with-exslt=* \
       | --with-xerces=* | --with-xalan=* | --with-zorba=* | --with-oechem=* \
-      | --with-sge=* | --with-muparser=* | --with-hdf5=* | --with-gif=* \
+      | --with-sge=* | --with-drmaa2=* | --with-muparser=* \
+      | --with-hdf5=* | --with-gif=* \
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2=* \
@@ -7704,21 +7710,22 @@ fi
 
 
 ### Sun/Univa Grid Engine
+case "$host:$NCBI_PLATFORM_BITS" in
+   i?86-*-darwin*      ) SGE_PLATFORMS='darwin-x86'          ;;
+   i?86-*-linux*       ) SGE_PLATFORMS='lx24-x86 lx-x86'     ;;
+   i?86-*-solaris*:32  ) SGE_PLATFORMS='sol-x86'             ;;
+   i?86-*-solaris*:64  ) SGE_PLATFORMS='sol-amd64'           ;;
+   powerpc-*-darwin*   ) SGE_PLATFORMS='darwin-ppc'          ;;
+   sparc-*-solaris*:32 ) SGE_PLATFORMS='sol-sparc'           ;;
+   sparc-*-solaris*:64 ) SGE_PLATFORMS='sol-sparc64'         ;;
+   x86_64-*-linux*     ) SGE_PLATFORMS='lx24-amd64 lx-amd64' ;;
+esac
+
 case "$with_sge" in
    yes | "" ) ;;
    *        ) SGE_PATH=$with_sge ;;
 esac
 if test -d "$SGE_PATH" -a -z "$SGE_LIBPATH"; then
-   case "$host:$NCBI_PLATFORM_BITS" in
-      i?86-*-darwin*      ) SGE_PLATFORMS='darwin-x86'          ;;
-      i?86-*-linux*       ) SGE_PLATFORMS='lx24-x86 lx-x86'     ;;
-      i?86-*-solaris*:32  ) SGE_PLATFORMS='sol-x86'             ;;
-      i?86-*-solaris*:64  ) SGE_PLATFORMS='sol-amd64'           ;;
-      powerpc-*-darwin*   ) SGE_PLATFORMS='darwin-ppc'          ;;
-      sparc-*-solaris*:32 ) SGE_PLATFORMS='sol-sparc'           ;;
-      sparc-*-solaris*:64 ) SGE_PLATFORMS='sol-sparc64'         ;;
-      x86_64-*-linux*     ) SGE_PLATFORMS='lx24-amd64 lx-amd64' ;;
-   esac
    for x in $SGE_PLATFORMS; do
       if test -d "$SGE_PATH/lib/$x"; then
          SGE_LIBPATH="$SGE_PATH/lib/$x"
@@ -7738,6 +7745,35 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(sge, SGE, drmaa,
   [AC_LANG_PROGRAM([[@%:@include <sys/types.h>
                      @%:@include <drmaa.h>]],
      [[char buf[1024]; drmaa_init("SGE", buf, sizeof(buf));]])])
+
+
+### DRMAA2
+: ${DRMAA2_PATH=$SGE_PATH}
+case "$with_drmaa2" in
+   yes | "" ) ;;
+   *        ) DRMAA2_PATH=$with_drmaa2 ;;
+esac
+if test -d "$DRMAA2_PATH" -a -z "$DRMAA2_LIBPATH"; then
+   for x in $SGE_PLATFORMS; do
+      if test -d "$DRMAA2_PATH/lib/$x"; then
+         DRMAA2_LIBPATH="$DRMAA2_PATH/lib/$x"
+         break
+      fi
+   done
+   BASE_DRMAA2_LIBPATH=$DRMAA2_LIBPATH
+   NCBI_RPATHIFY(DRMAA2_LIBPATH, $DRMAA2_LIBPATH)
+   # Try to use a dedicated directory without alternate versions of
+   # system libraries such as OpenSSL.
+   if test -d "$BASE_DRMAA2_LIBPATH" -a -d "$DRMAA2_PATH/lib/drmaa"; then
+      DRMAA2_LIBPATH=`echo $DRMAA2_LIBPATH \
+          | sed -e "s,-L$BASE_DRMAA2_LIBPATH,-L$DRMAA2_PATH/lib/drmaa,g"`
+   fi
+fi
+AC_LANG_PUSH(C)
+NCBI_CHECK_THIRD_PARTY_LIB(drmaa2,
+  [AC_LANG_PROGRAM([[@%:@include <drmaa2.h>]],
+     [[drmaa2_create_rsession("foo", "bar");]])])
+AC_LANG_POP(C)
 
 
 ### muParser

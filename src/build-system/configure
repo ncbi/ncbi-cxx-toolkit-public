@@ -1003,6 +1003,8 @@ HDF5_LIBS
 HDF5_INCLUDE
 MUPARSER_LIBS
 MUPARSER_INCLUDE
+DRMAA2_LIBS
+DRMAA2_INCLUDE
 SGE_LIBS
 SGE_INCLUDE
 OECHEM_LIBS
@@ -1312,6 +1314,7 @@ with_xalan
 with_zorba
 with_oechem
 with_sge
+with_drmaa2
 with_muparser
 with_hdf5
 with_gif
@@ -1926,7 +1929,7 @@ sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx gl2ps \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
-oechem sge muparser hdf5 \
+oechem sge drmaa2 muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 \
 mongodb mongodb3 leveldb gmock lapack lmdb \
@@ -2000,7 +2003,8 @@ for x_arg in "$@" ; do
       | --with-boost=* | --with-sqlite3=* | --with-icu=* | --with-expat=* \
       | --with-sablot=* | --with-libxml=* | --with-libxslt=* | --with-exslt=* \
       | --with-xerces=* | --with-xalan=* | --with-zorba=* | --with-oechem=* \
-      | --with-sge=* | --with-muparser=* | --with-hdf5=* | --with-gif=* \
+      | --with-sge=* | --with-drmaa2=* | --with-muparser=* \
+      | --with-hdf5=* | --with-gif=* \
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2=* \
@@ -2308,6 +2312,8 @@ Optional Packages:
  --without-oechem        do not use OEChem
  --with-sge=DIR          use Sun/Univa Grid Engine installation in DIR
  --without-sge           do not use Sun/Univa Grid Engine
+ --with-drmaa2=DIR       use DRMAA2 grid API installation in DIR
+ --without-drmaa2        do not use DRMAA2 grid API
  --with-muparser=DIR     use muParser installation in DIR
  --without-muparser      do not use muParser
  --with-hdf5=DIR         use HDF5 installation in DIR
@@ -3821,6 +3827,11 @@ case "$with_3psw" in
             as_fn_error $? "incompatible options: --with-sge but --without-3psw"
          else
             with_sge=no
+         fi
+        if test "${with_drmaa2-no}" != "no"; then
+            as_fn_error $? "incompatible options: --with-drmaa2 but --without-3psw"
+         else
+            with_drmaa2=no
          fi
         if test "${with_icu-no}" != "no"; then
             as_fn_error $? "incompatible options: --with-icu but --without-3psw"
@@ -5439,6 +5450,18 @@ fi
 # Check whether --with-sge was given.
 if test "${with_sge+set}" = set; then :
   withval=$with_sge;
+fi
+
+
+# Check whether --with-drmaa2 was given.
+if test "${with_drmaa2+set}" = set; then :
+  withval=$with_drmaa2;
+fi
+
+
+# Check whether --with-drmaa2 was given.
+if test "${with_drmaa2+set}" = set; then :
+  withval=$with_drmaa2;
 fi
 
 
@@ -27652,21 +27675,22 @@ fi
 
 
 ### Sun/Univa Grid Engine
+case "$host:$NCBI_PLATFORM_BITS" in
+   i?86-*-darwin*      ) SGE_PLATFORMS='darwin-x86'          ;;
+   i?86-*-linux*       ) SGE_PLATFORMS='lx24-x86 lx-x86'     ;;
+   i?86-*-solaris*:32  ) SGE_PLATFORMS='sol-x86'             ;;
+   i?86-*-solaris*:64  ) SGE_PLATFORMS='sol-amd64'           ;;
+   powerpc-*-darwin*   ) SGE_PLATFORMS='darwin-ppc'          ;;
+   sparc-*-solaris*:32 ) SGE_PLATFORMS='sol-sparc'           ;;
+   sparc-*-solaris*:64 ) SGE_PLATFORMS='sol-sparc64'         ;;
+   x86_64-*-linux*     ) SGE_PLATFORMS='lx24-amd64 lx-amd64' ;;
+esac
+
 case "$with_sge" in
    yes | "" ) ;;
    *        ) SGE_PATH=$with_sge ;;
 esac
 if test -d "$SGE_PATH" -a -z "$SGE_LIBPATH"; then
-   case "$host:$NCBI_PLATFORM_BITS" in
-      i?86-*-darwin*      ) SGE_PLATFORMS='darwin-x86'          ;;
-      i?86-*-linux*       ) SGE_PLATFORMS='lx24-x86 lx-x86'     ;;
-      i?86-*-solaris*:32  ) SGE_PLATFORMS='sol-x86'             ;;
-      i?86-*-solaris*:64  ) SGE_PLATFORMS='sol-amd64'           ;;
-      powerpc-*-darwin*   ) SGE_PLATFORMS='darwin-ppc'          ;;
-      sparc-*-solaris*:32 ) SGE_PLATFORMS='sol-sparc'           ;;
-      sparc-*-solaris*:64 ) SGE_PLATFORMS='sol-sparc64'         ;;
-      x86_64-*-linux*     ) SGE_PLATFORMS='lx24-amd64 lx-amd64' ;;
-   esac
    for x in $SGE_PLATFORMS; do
       if test -d "$SGE_PATH/lib/$x"; then
          SGE_LIBPATH="$SGE_PATH/lib/$x"
@@ -27840,6 +27864,200 @@ $as_echo "#define HAVE_LIBSGE 1" >>confdefs.h
  fi
 
 
+
+
+
+### DRMAA2
+: ${DRMAA2_PATH=$SGE_PATH}
+case "$with_drmaa2" in
+   yes | "" ) ;;
+   *        ) DRMAA2_PATH=$with_drmaa2 ;;
+esac
+if test -d "$DRMAA2_PATH" -a -z "$DRMAA2_LIBPATH"; then
+   for x in $SGE_PLATFORMS; do
+      if test -d "$DRMAA2_PATH/lib/$x"; then
+         DRMAA2_LIBPATH="$DRMAA2_PATH/lib/$x"
+         break
+      fi
+   done
+   BASE_DRMAA2_LIBPATH=$DRMAA2_LIBPATH
+   ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $DRMAA2_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    DRMAA2_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $DRMAA2_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    DRMAA2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+   # Try to use a dedicated directory without alternate versions of
+   # system libraries such as OpenSSL.
+   if test -d "$BASE_DRMAA2_LIBPATH" -a -d "$DRMAA2_PATH/lib/drmaa"; then
+      DRMAA2_LIBPATH=`echo $DRMAA2_LIBPATH \
+          | sed -e "s,-L$BASE_DRMAA2_LIBPATH,-L$DRMAA2_PATH/lib/drmaa,g"`
+   fi
+fi
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+if test "$with_drmaa2" != "no"; then
+    case "$DRMAA2_PATH:$with_drmaa2" in
+       *:yes | *: | $with_drmaa2* ) ;;
+       * ) DRMAA2_PATH=$with_drmaa2 ;;
+    esac
+    if test "$DRMAA2_PATH" != /usr -a -d "$DRMAA2_PATH"; then
+       in_path=" in $DRMAA2_PATH"
+       if test -z "$DRMAA2_INCLUDE" -a -d "$DRMAA2_PATH/include"; then
+          DRMAA2_INCLUDE="-I$DRMAA2_PATH/include"
+       fi
+       if test -n "$DRMAA2_LIBPATH"; then
+          :
+       elif test -d "$DRMAA2_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $DRMAA2_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    DRMAA2_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $DRMAA2_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    DRMAA2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$DRMAA2_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $DRMAA2_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    DRMAA2_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $DRMAA2_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    DRMAA2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       DRMAA2_LIBS="$DRMAA2_LIBPATH -ldrmaa2 "
+    else
+       DRMAA2_INCLUDE=""
+       DRMAA2_LIBS="-ldrmaa2 "
+       in_path=
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libdrmaa2$in_path" >&5
+$as_echo_n "checking for libdrmaa2$in_path... " >&6; }
+if ${ncbi_cv_lib_drmaa2+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS=" $DRMAA2_INCLUDE $orig_CPPFLAGS"
+       LIBS="$DRMAA2_LIBS  $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <drmaa2.h>
+int
+main ()
+{
+drmaa2_create_rsession("foo", "bar");
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ncbi_cv_lib_drmaa2=yes
+else
+  ncbi_cv_lib_drmaa2=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_drmaa2" >&5
+$as_echo "$ncbi_cv_lib_drmaa2" >&6; }
+    if test "$ncbi_cv_lib_drmaa2" = "no"; then
+       if test "${with_drmaa2:=no}" != no; then
+       as_fn_error $? "--with-drmaa2 explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+    fi
+ fi
+ if test "$with_drmaa2" = "no"; then
+    DRMAA2_PATH="No_DRMAA2"
+    DRMAA2_INCLUDE=
+    DRMAA2_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}DRMAA2"; WithPackagesSep=" "
+    DRMAA2_INCLUDE=" $DRMAA2_INCLUDE"
+
+$as_echo "#define HAVE_LIBDRMAA2 1" >>confdefs.h
+
+ fi
+
+
+
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 
@@ -35484,7 +35702,7 @@ for x in ChaosMonkey Int4GI Int8GI StrictGI PSGLoader BM64 GCC KCC ICC AppleClan
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE DRMAA2 MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
