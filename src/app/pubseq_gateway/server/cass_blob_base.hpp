@@ -150,6 +150,9 @@ private:
                               EDiagSev  severity);
     void x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
                                EPSGS_BlobSkipReason  skip_reason);
+    void x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
+                               unsigned long  sent_mks_ago,
+                               unsigned long  until_resend_mks);
 
     void x_DecideToRequestMoreChunksForSmartTSE(
                                     CCassBlobFetch *  fetch_details,
