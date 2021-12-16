@@ -1180,9 +1180,9 @@ CPubseqGatewayApp::x_GetResendTimeout(CHttpRequest &  req,
             return false;
         }
 
-        if (resend_timeout <= 0.0) {
+        if (resend_timeout < 0.0) {
             err_msg = "Invalid '" + kResendTimeoutParam + "' value " +
-                      to_string(resend_timeout) + ". It must be > 0.0";
+                      to_string(resend_timeout) + ". It must be >= 0.0";
             m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
             x_SendMessageAndCompletionChunks(reply, err_msg,
                                              CRequestStatus::e400_BadRequest,

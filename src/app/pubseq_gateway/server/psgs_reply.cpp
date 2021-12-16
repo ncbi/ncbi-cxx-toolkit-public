@@ -839,13 +839,17 @@ void CPSGS_Reply::PrepareBlobExcluded(const string &           blob_id,
 
 void CPSGS_Reply::PrepareBlobExcluded(const string &  blob_id,
                                       const string &  processor_id,
-                                      unsigned long  sent_mks_ago)
+                                      unsigned long  sent_mks_ago,
+                                      unsigned long  until_resend_mks,
+                                      CBlobRecord::TTimestamp  last_modified)
 {
     if (m_ConnectionCanceled || IsFinished())
         return;
 
-    string  exclude = GetBlobExcludeHeader(GetItemId(), processor_id,
-                                           blob_id, sent_mks_ago);
+    string  exclude = GetBlobExcludeHeader(GetItemId(), processor_id, blob_id,
+                                           sent_mks_ago,
+                                           until_resend_mks,
+                                           last_modified);
     while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(exclude.data()),

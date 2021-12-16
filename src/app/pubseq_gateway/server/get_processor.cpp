@@ -265,11 +265,16 @@ void CPSGS_GetProcessor::x_GetBlob(void)
                     // It depends how long ago it was sent; if too long then
                     // send anyway; otherwise send a reply specifying how long
                     // ago it was sent
+                    // Special case: if the effective resend timeout == 0.0
+                    // then the blob needs to be sent right away
                     unsigned long  sent_mks_ago = GetTimespanToNowMks(completed_time);
-                    if (sent_mks_ago < m_BlobRequest->m_ResendTimeoutMks) {
+                    if (m_BlobRequest->m_ResendTimeoutMks > 0 &&
+                        sent_mks_ago < m_BlobRequest->m_ResendTimeoutMks) {
                         // No sending; the blob was send recent enough
                         IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                                m_BlobId.ToString(), GetName(), sent_mks_ago);
+                                m_BlobId.ToString(), GetName(),
+                                sent_mks_ago,
+                                m_BlobRequest->m_ResendTimeoutMks - sent_mks_ago);
                     } else {
                         // Sending anyway; it was longer than the resend
                         // timeout

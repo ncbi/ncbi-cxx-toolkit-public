@@ -138,6 +138,7 @@ static string   s_BlobId = "blob_id=";
 static string   s_Fmt = "fmt=";
 static string   s_NA = "na=";
 static string   s_Reason = "reason=";
+static string   s_TimeUntilResend = "time_until_resend=";
 static string   s_SentSecondsAgo = "sent_seconds_ago=";
 static string   s_NChunksOne = "n_chunks=1";
 static string   s_ProcessorId = "processor_id=";
@@ -173,6 +174,7 @@ static string   s_AndBlobId = "&" + s_BlobId;
 static string   s_AndBlobChunk = "&" + s_BlobChunk;
 static string   s_AndNChunksOne = "&" + s_NChunksOne;
 static string   s_AndReason = "&" + s_Reason;
+static string   s_AndTimeUntilResend = "&" + s_TimeUntilResend;
 static string   s_AndSentSecondsAgo = "&" + s_SentSecondsAgo;
 static string   s_AndNA = "&" + s_NA;
 static string   s_BioseqInfoItem = s_ItemType + s_BioseqInfo;
@@ -535,14 +537,26 @@ string  GetBlobExcludeHeader(size_t  item_id,
 string GetBlobExcludeHeader(size_t  item_id,
                             const string &  processor_id,
                             const string &  blob_id,
-                            unsigned long  sent_mks_ago)
+                            unsigned long  sent_mks_ago,
+                            unsigned long  until_resend_mks,
+                            CBlobRecord::TTimestamp  last_modified)
 {
     string      reply(s_ReplyBegin);
 
-    unsigned long   sec = sent_mks_ago / 1000000;
-    string          mks = to_string(sent_mks_ago - sec * 1000000);
-    while (mks.size() < 6)
-        mks = "0" + mks;
+    string      last_modified_part;
+    if (last_modified != -1)
+        last_modified_part.append(s_AndLastModified)
+                          .append(to_string(last_modified));
+
+    unsigned long   ago_sec = sent_mks_ago / 1000000;
+    string          ago_mks = to_string(sent_mks_ago - ago_sec * 1000000);
+    while (ago_mks.size() < 6)
+        ago_mks = "0" + ago_mks;
+
+    unsigned long   until_sec = until_resend_mks / 1000000;
+    string          until_mks = to_string(until_resend_mks - until_sec * 1000000);
+    while (until_mks.size() < 6)
+        until_mks = "0" + until_mks;
 
     return reply.append(to_string(item_id))
                 .append(s_AndProcessorId)
@@ -551,11 +565,14 @@ string GetBlobExcludeHeader(size_t  item_id,
                 .append(s_AndMetaChunk)
                 .append(s_AndBlobId)
                 .append(blob_id)
+                .append(last_modified_part)
                 .append(s_AndNChunksOne)
                 .append(s_AndReason)
                 .append(SkipReasonToString(ePSGS_BlobSent))
                 .append(s_AndSentSecondsAgo)
-                .append(to_string(sec) + "." + mks)
+                .append(to_string(ago_sec) + "." + ago_mks)
+                .append(s_AndTimeUntilResend)
+                .append(to_string(until_sec) + "." + until_mks)
                 .append(1, '\n');
 }
 

@@ -233,7 +233,9 @@ string  GetBlobExcludeHeader(size_t  item_id,
 string GetBlobExcludeHeader(size_t  item_id,
                             const string &  processor_id,
                             const string &  blob_id,
-                            unsigned long  sent_mks_ago);
+                            unsigned long  sent_mks_ago,
+                            unsigned long  until_resend_mks,
+                            CBlobRecord::TTimestamp  last_modified=-1);
 string  GetTSEBlobChunkHeader(size_t  item_id,
                               const string &  processor_id,
                               size_t  chunk_size,
