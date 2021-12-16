@@ -106,6 +106,7 @@ objtools/simple$
 -objects/.*/unit_test
 sra$
 sra/data_loaders
+-sra/data_loaders/wgs/test
 sra/readers$
 sra/readers/sra/impl$
 sra/readers/bam$
