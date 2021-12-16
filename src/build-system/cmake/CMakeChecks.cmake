@@ -82,7 +82,9 @@ if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
 endif()
 
 #set(CMAKE_MODULE_PATH "${NCBI_SRC_ROOT}/build-system/cmake/" ${CMAKE_MODULE_PATH})
-list(APPEND CMAKE_MODULE_PATH "${NCBI_TREE_CMAKECFG}")
+if(EXISTS "${NCBI_TREE_CMAKECFG}/modules")
+    list(APPEND CMAKE_MODULE_PATH "${NCBI_TREE_CMAKECFG}/modules")
+endif()
 
 if(NOT NCBI_PTBCFG_COLLECT_REQUIRES)
 #############################################################################
