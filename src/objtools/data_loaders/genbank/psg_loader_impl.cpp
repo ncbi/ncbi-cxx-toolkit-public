@@ -584,6 +584,11 @@ bool CPSG_Task::CheckReplyStatus(void)
     EPSG_Status status = m_Reply->GetStatus(CDeadline::eInfinite);
     if (status != EPSG_Status::eSuccess) {
         ReportStatus(m_Reply, status);
+        if ( status == EPSG_Status::eNotFound ) {
+            m_GotNotFound = true;
+            m_Status = eCompleted;
+            return false;
+        }
         m_Status = eFailed;
         return false;
     }
@@ -620,6 +625,11 @@ void CPSG_Task::ReadReply(void)
     }
     if (IsCancelled()) return;
     status = m_Reply->GetStatus(CDeadline::eInfinite);
+    if (status == EPSG_Status::eNotFound) {
+        m_GotNotFound = true;
+        ReportStatus(m_Reply, status);
+        return;
+    }
     if (status != EPSG_Status::eSuccess) {
         ReportStatus(m_Reply, status);
         m_Status = eFailed;
@@ -1730,13 +1740,24 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TTSE_LockSets& 
     auto context = make_shared<CPsgClientContext_Bulk>();
     CPSG_TaskGroup group(*m_ThreadPool);
     ITERATE(TTSE_LockSets, tse_set, tse_sets) {
-        const CSeq_id_Handle& id = tse_set->first;
-        CPSG_BioId bio_id = x_GetBioId(id);
+        const CSeq_id_Handle& idh = tse_set->first;
+        CPSG_BioId bio_id = x_GetBioId(idh);
         auto request = make_shared<CPSG_Request_Biodata>(move(bio_id), context);
-        request->IncludeData(m_TSERequestModeBulk);
+        CPSG_Request_Biodata::EIncludeData inc_data = CPSG_Request_Biodata::eNoTSE;
+        if (data_source) {
+            inc_data = m_TSERequestModeBulk;
+            CDataSource::TLoadedBlob_ids loaded_blob_ids;
+            data_source->GetLoadedBlob_ids(idh, CDataSource::fLoaded_bioseqs, loaded_blob_ids);
+            ITERATE(CDataSource::TLoadedBlob_ids, loaded_blob_id, loaded_blob_ids) {
+                const CPsgBlobId* pbid = dynamic_cast<const CPsgBlobId*>(&**loaded_blob_id);
+                if (!pbid) continue;
+                request->ExcludeTSE(CPSG_BlobId(pbid->ToPsgId()));
+            }
+        }
+        request->IncludeData(inc_data);
         auto reply = x_ProcessRequest(request);
         CRef<CPSG_Blob_Task> task(
-            new CPSG_Blob_Task(reply, group, id, data_source, *this, true));
+            new CPSG_Blob_Task(reply, group, idh, data_source, *this, true));
         group.AddTask(task);
     }
     // Waiting for skipped blobs can block all pool threads. To prevent this postpone
