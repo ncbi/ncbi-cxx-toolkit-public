@@ -229,8 +229,7 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
     pp->ffbuf.current = pp->ffbuf.start + offset;
     i = 0;
 
-    entry = CreateDataBlk();
-    entry->mType = ParFlat_ENTRYNODE;
+    entry = new DataBlk(nullptr, ParFlat_ENTRYNODE);
     entry->mpNext = NULL;                 /* assume no segment at this time */
     entry->mOffset = (char*)MemNew(len + 1); /* plus 1 for null byte */
     entry->len = FileReadBuf(entry->mOffset, len, pp->ffbuf);
@@ -330,12 +329,15 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
     pp->ffbuf.current = pp->ffbuf.start + offset;
     i = 0;
 
-    entry = CreateDataBlk();
-    entry->mType = ParFlat_ENTRYNODE;
-    entry->mpNext = NULL;                 /* assume no segment at this time */
+    entry = new DataBlk(
+        nullptr, 
+        ParFlat_ENTRYNODE);
+    entry->len = len;
+    entry->mpNext = nullptr;                 /* assume no segment at this time */
     entry->mOffset = (char*)MemNew(len + 1); /* plus 1 for null byte */
-
     entry->len = FileReadBuf(entry->mOffset, len, pp->ffbuf);
+    entry->mpData = new EntryBlk();
+
 
     if ((size_t)entry->len != len)  /* hardware problem */
     {
@@ -434,9 +436,6 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
         else
             was = true;
     }
-
-    entry->mpData = new EntryBlk();
-
     return entry;
 }
 

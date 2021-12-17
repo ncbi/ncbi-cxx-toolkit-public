@@ -332,19 +332,9 @@ public:
         }
     };
 
-    static void operator delete(void* p);
-/*
-    ~DataBlk()
-    {
-        delete[] mpQscore;
-        //delete (char*) mpData;
-        delete reinterpret_cast<char*>(mpData);
-        if (mType == ParFlat_ENTRYNODE) {
-            delete mOffset;
-        }
-        delete mpNext;
-    }
-    */
+    //static void operator delete(void* p);
+     ~DataBlk();
+
 public:
 
     int mType;  // which keyword block or node type
@@ -369,7 +359,6 @@ struct EntryBlk : public CFlatFileData
 
     ~EntryBlk();
 };
-
 using EntryBlkPtr = EntryBlk*;
 
 
@@ -384,7 +373,6 @@ void xFreeEntry(DataBlkPtr entry);
 void FreeIndexblk(IndexblkPtr ibp);
 void GapFeatsFree(GapFeatsPtr gfp);
 void XMLIndexFree(XmlIndexPtr xip);
-DataBlkPtr CreateDataBlk(DataBlk* parent=nullptr, int type=0, char* offset=nullptr, size_t len=0);
 
 
 END_NCBI_SCOPE

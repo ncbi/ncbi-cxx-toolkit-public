@@ -1432,7 +1432,7 @@ bool XMLAscii(ParserPtr pp)
         ebp->seq_entry->SetSeq(*bioseq);
         GetScope().AddBioseq(*bioseq);
 
-        dbp = CreateDataBlk();
+        dbp = new DataBlk();
         dbp->mpData = ebp;
         dbp->mOffset = entry;
         dbp->len = StringLen(entry);

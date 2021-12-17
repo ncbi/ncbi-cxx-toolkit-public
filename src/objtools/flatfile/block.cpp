@@ -98,13 +98,24 @@ void s_FreeDataBlk(DataBlkPtr dbp)
     }
 }
 
-void DataBlk::operator delete(void* p)
+/*void DataBlk::operator delete(void* p)
 {
     if (!p) {
         return;
     }
     s_FreeDataBlk(static_cast<DataBlkPtr>(p));
+}*/
+
+DataBlk::~DataBlk()
+{
+    delete[] mpQscore;
+    delete mpData;
+    if (mType == ParFlat_ENTRYNODE) {
+        delete mOffset;
+    }
+    delete mpNext;
 }
+
 /**********************************************************
  *
  *   void FreeEntry(entry):
@@ -135,23 +146,6 @@ EntryBlk::~EntryBlk()
         s_FreeDataBlk(chain);
         chain = nullptr;
     }
-}
-
-/**********************************************************/
-DataBlkPtr CreateDataBlk(DataBlk* parent, int type, char* offset, size_t len)
-{
-    auto result = reinterpret_cast<DataBlkPtr>(MemNew(sizeof(DataBlk)));
-    result->mType = type;
-    result->mOffset = offset;
-    result->len = len;
-    
-    if (parent) {
-        while (parent->mpNext) {
-            parent = parent->mpNext;
-        }
-        parent->mpNext = result;
-    }
-    return result;
 }
 
 /**********************************************************/
