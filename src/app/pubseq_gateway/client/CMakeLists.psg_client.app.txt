@@ -6,7 +6,7 @@ NCBI_begin_app(psg_client)
 
   NCBI_set_test_requires(in-house-resources PYTHON)
   NCBI_set_test_assets(psg_client.py)
-  NCBI_add_test(psg_client.py test)
+  NCBI_add_test(python3 psg_client.py test)
 
   NCBI_project_watchers(sadyrovr)
 
