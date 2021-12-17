@@ -50,6 +50,7 @@ set(NCBI_ThirdParty_VDB_ARCH x86_64)
 set(NCBI_ThirdParty_FTGL      ${NCBI_TOOLS_ROOT}/ftgl-2.1.3-rc5 CACHE PATH "FTGL root")
 set(NCBI_ThirdParty_GLEW      ${NCBI_TOOLS_ROOT}/glew-1.5.8 CACHE PATH "GLEW root")
 set(NCBI_ThirdParty_GRPC      ${NCBI_TOOLS_ROOT}/grpc-1.36.4-ncbi1 CACHE PATH "GRPC root")
+set(NCBI_ThirdParty_Boring    ${NCBI_ThirdParty_GRPC})
 set(NCBI_ThirdParty_PROTOBUF  ${NCBI_TOOLS_ROOT}/grpc-1.36.4-ncbi1 CACHE PATH "PROTOBUF root")
 set(NCBI_ThirdParty_wxWidgets ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.4-ncbi2 CACHE PATH "wxWidgets root")
 set(NCBI_ThirdParty_UV        ${NCBI_TOOLS_ROOT}/libuv-1.35.0 CACHE PATH "UV root")
@@ -451,11 +452,23 @@ endif()
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     NCBI_define_Xcomponent(NAME PROTOBUF LIB protobufd)
-else()
+endif()
+if(NOT NCBI_COMPONENT_PROTOBUF_FOUND)
     NCBI_define_Xcomponent(NAME PROTOBUF MODULE protobuf PACKAGE Protobuf LIB protobuf)
 endif()
-NCBI_define_Xcomponent(NAME GRPC MODULE grpc++)
+NCBI_define_Xcomponent(NAME Boring LIB boringssl boringcrypto)
+NCBI_define_Xcomponent(NAME GRPC MODULE grpc++ LIB
+    grpc++ grpc address_sorting upb cares gpr re2
+    absl_raw_hash_set absl_hashtablez_sampler absl_exponential_biased absl_hash 
+    absl_city absl_statusor absl_bad_variant_access absl_status absl_cord 
+    absl_str_format_internal absl_synchronization absl_graphcycles_internal 
+    absl_symbolize absl_demangle_internal absl_stacktrace absl_debugging_internal 
+    absl_malloc_internal absl_time absl_time_zone absl_civil_time absl_strings 
+    absl_strings_internal absl_throw_delegate absl_int128 absl_base absl_spinlock_wait 
+    absl_bad_optional_access absl_raw_logging_internal absl_log_severity
+    )
 if(NCBI_COMPONENT_GRPC_FOUND)
+    set(NCBI_COMPONENT_GRPC_LIBS ${NCBI_COMPONENT_GRPC_LIBS} ${NCBI_COMPONENT_Boring_LIBS})
     set(NCBI_COMPONENT_GRPC_LIBS ${NCBI_COMPONENT_GRPC_LIBS} ${COREFOUNDATION_LIBS})
 endif()
 
