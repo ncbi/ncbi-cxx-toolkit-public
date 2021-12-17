@@ -221,6 +221,7 @@ private:
     friend class CCacheBioseq;
     
 private: // data 
+    string m_CachePath;
     CChunkFile m_MainChunk;
     CSeqIdChunkFile m_SeqIdChunk;
     CAsnIndex  m_MainIndex;
@@ -585,6 +586,7 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
         blob.SetTimestamp(timestamp);
         blob.Pack(*entry);
 
+        m_MainChunk.OpenForWrite(m_CachePath);
         size_t offset = m_MainChunk.GetOffset();
         m_MainChunk.Write(blob);
         size_t size = m_MainChunk.GetOffset() - offset;
@@ -659,6 +661,7 @@ void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
             blob.SetTimestamp(timestamp);
             blob.Pack(*entry);
 
+            m_MainChunk.OpenForWrite(m_CachePath);
             size_t offset = m_MainChunk.GetOffset();
             m_MainChunk.Write(blob);
             size_t size = m_MainChunk.GetOffset() - offset;
@@ -759,6 +762,7 @@ void CPrimeCacheApplication::x_CacheSeqEntry(CNcbiIstream& istr,
         blob.SetTimestamp(timestamp);
         blob.Pack(*entry);
 
+        m_MainChunk.OpenForWrite(m_CachePath);
         size_t offset = m_MainChunk.GetOffset();
         m_MainChunk.Write(blob);
         size_t size = m_MainChunk.GetOffset() - offset;
@@ -842,6 +846,7 @@ void CPrimeCacheApplication::x_Process_Ids(const set<CSeq_id_Handle> &ids,
         blob.SetTimestamp(timestamp);
         blob.Pack(*entry);
 
+        m_MainChunk.OpenForWrite(m_CachePath);
         size_t offset = m_MainChunk.GetOffset();
         m_MainChunk.Write(blob);
         size_t size = m_MainChunk.GetOffset() - offset;
@@ -945,6 +950,7 @@ void CPrimeCacheApplication::CCacheBioseq::operator () (CBioseq & bioseq)
     blob.SetTimestamp(timestamp_);
     blob.Pack(*entry);
 
+    parent_->m_MainChunk.OpenForWrite(parent_->m_CachePath);
     size_t offset = parent_->m_MainChunk.GetOffset();
     parent_->m_MainChunk.Write(blob);
     size_t size = parent_->m_MainChunk.GetOffset() - offset;
@@ -1067,18 +1073,17 @@ int CPrimeCacheApplication::Run(void)
     CRef<CObjectManager> om(CObjectManager::GetInstance());
 
     {{
-         string outpath = args["cache"].AsString();
-         CDir dir(outpath);
+         m_CachePath = args["cache"].AsString();
+         CDir dir(m_CachePath);
          if ( !dir.Exists() ) {
              dir.CreatePath();
          }
-         m_MainChunk.OpenForWrite(outpath);
-         m_SeqIdChunk.OpenForWrite(outpath);
+         m_SeqIdChunk.OpenForWrite(m_CachePath);
 
          m_MainIndex.SetCacheSize(1 * 1024 * 1024 * 1024);
-         m_MainIndex.Open(NASNCacheFileName::GetBDBIndex(outpath, CAsnIndex::e_main), CBDB_RawFile::eReadWriteCreate);
+         m_MainIndex.Open(NASNCacheFileName::GetBDBIndex(m_CachePath, CAsnIndex::e_main), CBDB_RawFile::eReadWriteCreate);
          m_SeqIdIndex.SetCacheSize(1 * 1024 * 1024 * 1024);
-         m_SeqIdIndex.Open(NASNCacheFileName::GetBDBIndex(outpath, CAsnIndex::e_seq_id), CBDB_RawFile::eReadWriteCreate);
+         m_SeqIdIndex.Open(NASNCacheFileName::GetBDBIndex(m_CachePath, CAsnIndex::e_seq_id), CBDB_RawFile::eReadWriteCreate);
      }}
 
     if (args["resume"]) {
