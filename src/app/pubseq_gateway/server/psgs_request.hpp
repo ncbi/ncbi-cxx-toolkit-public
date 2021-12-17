@@ -609,11 +609,18 @@ struct SPSGS_BlobBySatSatKeyRequest : public SPSGS_BlobRequestBase
 
 struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
 {
+    string                          m_SeqId;
+    int                             m_SeqIdType;
+    vector<string>                  m_Names;
+    bool                            m_AutoBlobSkipping;
+    unsigned long                   m_ResendTimeoutMks;
+
     SPSGS_AnnotRequest(const string &  seq_id,
                        int  seq_id_type,
                        vector<string> &  names,
                        EPSGS_CacheAndDbUse  use_cache,
                        bool  auto_blob_skipping,
+                       double  resend_timeout,
                        const string &  client_id,
                        SPSGS_BlobRequestBase::EPSGS_TSEOption  tse_option,
                        int  send_blob_if_small,
@@ -630,6 +637,7 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
         m_SeqIdType(seq_id_type),
         m_Names(move(names)),
         m_AutoBlobSkipping(auto_blob_skipping),
+        m_ResendTimeoutMks((unsigned long)(resend_timeout * 1000000)),
         m_Lock(false),
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}
@@ -637,6 +645,7 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
     SPSGS_AnnotRequest() :
         m_SeqIdType(-1),
         m_AutoBlobSkipping(true),
+        m_ResendTimeoutMks(0),
         m_Lock(false),
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}
@@ -679,12 +688,6 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
     vector<string> GetNotProcessedName(TProcessorPriority  priority);
 
     vector<pair<TProcessorPriority, string>>  GetProcessedNames(void) const;
-
-public:
-    string                                      m_SeqId;
-    int                                         m_SeqIdType;
-    vector<string>                              m_Names;
-    bool                                        m_AutoBlobSkipping;
 
 private:
     // A list of names which have been already processed by some processors
