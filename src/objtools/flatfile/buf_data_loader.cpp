@@ -366,10 +366,9 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
 
 static DataBlkPtr make_entry(char* entry_str)
 {
-    DataBlkPtr entry = CreateDataBlk();
+    DataBlkPtr entry = new DataBlk(nullptr, ParFlat_ENTRYNODE);
 
     if (entry != NULL) {
-        entry->mType = ParFlat_ENTRYNODE;
         entry->mpNext = NULL;         /* assume no segment at this time */
         entry->mOffset = entry_str;
         entry->len = StringLen(entry->mOffset);

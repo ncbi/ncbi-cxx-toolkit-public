@@ -186,8 +186,7 @@ void ShrinkSpaces(char* line)
 static void InsertDatablkVal(DataBlkPtr* dbp, Int2 type,
                                 char* offset, size_t len)
 {
-    //DataBlk* ldp = new DataBlk(*dbp, type, offset, len);
-    DataBlk* ldp = CreateDataBlk(*dbp, type, offset, len);
+    DataBlk* ldp = new DataBlk(*dbp, type, offset, len);
     if (!*dbp) {
         *dbp = ldp;
     }
