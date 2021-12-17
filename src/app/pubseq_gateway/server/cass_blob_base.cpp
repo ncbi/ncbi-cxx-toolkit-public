@@ -886,51 +886,63 @@ CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details)
     psg_time_point_t    completed_time;
     auto                cache_result = fetch_details->AddToExcludeBlobCache(
                                             completed, completed_time);
-    if (cache_result == ePSGS_AlreadyInCache && fetch_details->GetAutoBlobSkipping()) {
-        auto    request_type = m_Request->GetRequestType();
-        if (request_type == CPSGS_Request::ePSGS_AnnotationRequest) {
-            if (completed)
-                x_PrepareBlobExcluded(fetch_details, ePSGS_BlobSent);
-            else
-                x_PrepareBlobExcluded(fetch_details, ePSGS_BlobInProgress);
-            return ePSGS_InCache;
-        }
-        if (request_type == CPSGS_Request::ePSGS_BlobBySeqIdRequest) {
-            if (completed) {
-                // May be the blob needs to be sent anyway
-                auto &          blob_request = m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>();
-                unsigned long   sent_mks_ago = GetTimespanToNowMks(completed_time);
-                if (blob_request.m_ResendTimeoutMks > 0 &&
-                    sent_mks_ago < blob_request.m_ResendTimeoutMks) {
-                    // No sending the blob; it was sent recent enough
-                    x_PrepareBlobExcluded(fetch_details, sent_mks_ago,
-                                          blob_request.m_ResendTimeoutMks - sent_mks_ago);
-                    return ePSGS_InCache;
-                }
 
-                // Sending the blob anyway; it was longer than the resend
-                // timeout
-                // Also need to do two more things:
-                // - mark the blob in cache as in-progress again
-                // - make a note in the fetch details that it needs to update
-                //   the cache as completed once blob is finished
-                auto *      app = CPubseqGatewayApp::GetInstance();
-
-                // 'false' means not-completed, i.e. in-progress
-                app->GetExcludeBlobCache()->SetCompleted(
-                                                fetch_details->GetClientId(),
-                                                fetch_details->GetBlobId().m_Sat,
-                                                fetch_details->GetBlobId().m_SatKey,
-                                                false);
-                fetch_details->SetExcludeBlobCacheUpdated(true);
-                return ePSGS_NotInCache;
-            } else {
-                x_PrepareBlobExcluded(fetch_details, ePSGS_BlobInProgress);
-                return ePSGS_InCache;
-            }
-        }
+    auto    request_type = m_Request->GetRequestType();
+    if (request_type != CPSGS_Request::ePSGS_AnnotationRequest &&
+        request_type != CPSGS_Request::ePSGS_BlobBySeqIdRequest) {
+        // Only ID/get and ID/get_na may need to skip a blob
+        return ePSGS_NotInCache;
     }
 
+    if (cache_result != ePSGS_AlreadyInCache)
+        return ePSGS_NotInCache;
+    if (!fetch_details->GetAutoBlobSkipping())
+        return ePSGS_NotInCache;
+
+    // In case the blob is in process of sending the reply is the same for
+    // ID/get and ID/get_na requests
+    if (!completed) {
+        x_PrepareBlobExcluded(fetch_details, ePSGS_BlobInProgress);
+        return ePSGS_InCache;
+    }
+
+    // Here: the blob is in case and has already bben sent so the
+    // resend_timeout needs to be respected when a decision send it or not is
+    // made
+    unsigned long       sent_mks_ago = GetTimespanToNowMks(completed_time);
+    unsigned long       resend_timeout_mks;
+    if (request_type == CPSGS_Request::ePSGS_AnnotationRequest) {
+        auto &  blob_request = m_Request->GetRequest<SPSGS_AnnotRequest>();
+        resend_timeout_mks = blob_request.m_ResendTimeoutMks;
+    } else {
+        // This is CPSGS_Request::ePSGS_BlobBySeqIdRequest request
+        auto &  blob_request = m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>();
+        resend_timeout_mks = blob_request.m_ResendTimeoutMks;
+    }
+
+    if (resend_timeout_mks > 0 &&
+        sent_mks_ago < resend_timeout_mks) {
+        // No sending the blob; it was sent recent enough
+        x_PrepareBlobExcluded(fetch_details, sent_mks_ago,
+                              resend_timeout_mks - sent_mks_ago);
+        return ePSGS_InCache;
+    }
+
+    // Sending the blob anyway; it was longer than the resend
+    // timeout or resend_timeout is 0.
+    // Also need to do two more things:
+    // - mark the blob in cache as in-progress again
+    // - make a note in the fetch details that it needs to update
+    //   the cache as completed once blob is finished
+    auto *      app = CPubseqGatewayApp::GetInstance();
+
+    // 'false' means not-completed, i.e. in-progress
+    app->GetExcludeBlobCache()->SetCompleted(
+                                    fetch_details->GetClientId(),
+                                    fetch_details->GetBlobId().m_Sat,
+                                    fetch_details->GetBlobId().m_SatKey,
+                                    false);
+    fetch_details->SetExcludeBlobCacheUpdated(true);
     return ePSGS_NotInCache;
 }
 

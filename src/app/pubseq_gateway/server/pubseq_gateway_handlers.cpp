@@ -787,6 +787,12 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
             auto_blob_skipping = auto_blob_skipping_param.m_Value == "yes";
         }
 
+        double              resend_timeout;
+        if (!x_GetResendTimeout(req, reply, resend_timeout)) {
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+
         // Parameters processing has finished
         m_Counters.Increment(CPSGSCounters::ePSGS_GetNamedAnnotations);
         unique_ptr<SPSGS_RequestBase>
@@ -794,6 +800,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, names, use_cache,
                         auto_blob_skipping,
+                        resend_timeout,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
                         tse_option, send_blob_if_small,
