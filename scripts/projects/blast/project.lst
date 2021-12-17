@@ -93,6 +93,7 @@ objtools/data_loaders/genbank
 -objtools/data_loaders/genbank/test
 objtools/data_loaders$
 objtools/data_loaders/blastdb$
+objtools/data_loaders/genbank/pubseq2$
 app$
 app/blast
 app/blastdb
