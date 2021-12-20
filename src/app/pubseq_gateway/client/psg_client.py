@@ -86,6 +86,7 @@ def powerset(iterable):
     return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s) + 1))
 
 def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
+    blob_ids_only = list(blob_id[0] for blob_id in blob_ids['blob_id'])
     param_values = {
             'include_info': [None] + list(powerset((
                 'all-info-except',
@@ -110,6 +111,7 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
                 'whole-tse',
                 'orig-tse'
             ],
+            'exclude_blobs': [None] + list(random.choices(blob_ids_only, k=i) for i in range(4)),
             'acc_substitution': [
                 None,
                 'default',
@@ -136,7 +138,7 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
     # Used user_args to increase number of some requests
     requests = {
             'resolve':      [bio_ids,       ['include_info', 'acc_substitution']],
-            'biodata':      [bio_ids,       ['include_data', 'acc_substitution', 'resend_timeout']],
+            'biodata':      [bio_ids,       ['include_data', 'exclude_blobs', 'acc_substitution', 'resend_timeout']],
             'blob':         [blob_ids,      ['include_data', 'user_args']],
             'named_annot':  [named_annots,  ['include_data', 'acc_substitution']],
             'chunk':        [chunk_ids,     ['user_args',    'user_args']]
