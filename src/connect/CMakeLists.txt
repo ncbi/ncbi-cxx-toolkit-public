@@ -20,24 +20,32 @@ set(SRC_TLS
     mbedtls/asn1parse mbedtls/asn1write mbedtls/base64 mbedtls/bignum
     mbedtls/blowfish mbedtls/camellia mbedtls/ccm mbedtls/chacha20
     mbedtls/chachapoly mbedtls/cipher mbedtls/cipher_wrap
-    mbedtls/cmac mbedtls/ctr_drbg mbedtls/des mbedtls/dhm mbedtls/ecdh
-    mbedtls/ecdsa mbedtls/ecjpake mbedtls/ecp mbedtls/ecp_curves
-    mbedtls/entropy mbedtls/entropy_poll mbedtls/error mbedtls/gcm
-    mbedtls/havege mbedtls/hkdf mbedtls/hmac_drbg mbedtls/md
-    mbedtls/md2 mbedtls/md4 mbedtls/mbedtls_md5 mbedtls/md_wrap
-    mbedtls/memory_buffer_alloc mbedtls/nist_kw mbedtls/oid
-    mbedtls/padlock mbedtls/pem mbedtls/pk mbedtls/pk_wrap
-    mbedtls/pkcs12 mbedtls/pkcs5 mbedtls/pkparse mbedtls/pkwrite
-    mbedtls/platform mbedtls/platform_util mbedtls/poly1305
-    mbedtls/ripemd160 mbedtls/rsa mbedtls/rsa_internal mbedtls/sha1
-    mbedtls/sha256 mbedtls/sha512 mbedtls/threading mbedtls/timing
+    mbedtls/cmac mbedtls/constant_time mbedtls/ctr_drbg mbedtls/des
+    mbedtls/dhm mbedtls/ecdh mbedtls/ecdsa mbedtls/ecjpake mbedtls/ecp
+    mbedtls/ecp_curves mbedtls/entropy mbedtls/entropy_poll
+    mbedtls/error mbedtls/gcm mbedtls/havege mbedtls/hkdf
+    mbedtls/hmac_drbg mbedtls/md mbedtls/md2 mbedtls/md4
+    mbedtls/mbedtls_md5 mbedtls/memory_buffer_alloc mbedtls/mps_reader
+    mbedtls/mps_trace mbedtls/nist_kw mbedtls/oid mbedtls/padlock
+    mbedtls/pem mbedtls/pk mbedtls/pk_wrap mbedtls/pkcs12
+    mbedtls/pkcs5 mbedtls/pkparse mbedtls/pkwrite mbedtls/platform
+    mbedtls/platform_util mbedtls/poly1305 mbedtls/psa_crypto
+    mbedtls/psa_crypto_aead mbedtls/psa_crypto_cipher
+    mbedtls/psa_crypto_client mbedtls/psa_crypto_driver_wrappers
+    mbedtls/psa_crypto_ecp mbedtls/psa_crypto_hash
+    mbedtls/psa_crypto_mac mbedtls/psa_crypto_rsa
+    mbedtls/psa_crypto_se mbedtls/psa_crypto_slot_management
+    mbedtls/psa_crypto_storage mbedtls/psa_its_file mbedtls/ripemd160
+    mbedtls/rsa mbedtls/rsa_internal mbedtls/sha1 mbedtls/sha256
+    mbedtls/sha512 mbedtls/threading mbedtls/timing
     mbedtls/mbedtls_version mbedtls/version_features mbedtls/xtea
     mbedtls/certs mbedtls/pkcs11 mbedtls/x509 mbedtls/x509_create
     mbedtls/x509_crl mbedtls/x509_crt mbedtls/x509_csr
     mbedtls/x509write_crt mbedtls/x509write_csr
     mbedtls/debug mbedtls/net_sockets mbedtls/ssl_cache
     mbedtls/ssl_ciphersuites mbedtls/ssl_cli mbedtls/ssl_cookie
-    mbedtls/ssl_srv mbedtls/ssl_ticket mbedtls/ssl_tls
+    mbedtls/ssl_msg mbedtls/ssl_srv mbedtls/ssl_ticket mbedtls/ssl_tls
+    mbedtls/ssl_tls13_keys
     )
 
 set(SRC_C

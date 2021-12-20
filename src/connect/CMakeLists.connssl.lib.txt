@@ -3,6 +3,7 @@
 NCBI_begin_lib(connssl)
   NCBI_sources(${SRC_TLS})
   NCBI_headers(*.hpp)
+  NCBI_add_include_directories(${CMAKE_CURRENT_LIST_DIR}/mbedtls)
   NCBI_optional_components(GNUTLS)
   NCBI_uses_toolkit_libraries(connect)
   NCBI_project_watchers(lavr)
