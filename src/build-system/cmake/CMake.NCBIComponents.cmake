@@ -80,7 +80,6 @@ include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsCheck.cmake)
 # ORIG_LIBS
 if(UNIX)
     include(CheckLibraryExists)
-    include(${NCBI_TREE_CMAKECFG}/FindExternalLibrary.cmake)
 
     find_library(DL_LIBS dl)
     if(DL_LIBS)

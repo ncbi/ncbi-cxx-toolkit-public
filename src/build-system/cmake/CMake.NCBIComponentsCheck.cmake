@@ -21,7 +21,6 @@
 
 if(UNIX OR APPLE)
     include(CheckLibraryExists)
-    include(${NCBI_TREE_CMAKECFG}/FindExternalLibrary.cmake)
     find_package(PkgConfig)
 endif()
 

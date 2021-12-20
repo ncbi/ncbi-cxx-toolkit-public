@@ -2433,6 +2433,24 @@ ConvertCVariant2PCObject(const CVariant& value)
     case eDB_BigDateTime :
         {
         const CTime& cur_time = value.GetCTime();
+#if PY_VERSION_HEX >= 0x03070000
+        if (value.GetType() == eDB_BigDateTime) {
+            auto offset
+                = (static_cast<const CDB_BigDateTime*>(value.GetData())
+                   ->GetOffset());
+            if ( !offset.IsNull() ) {
+                pythonpp::CFloat timestamp
+                    (cur_time.GetTimeT() + cur_time.TimeZoneOffset()
+                     + cur_time.NanoSecond() * 1e-9);
+                pythonpp::CTimeDelta delta(0, offset.GetValue() * 60, 0);
+                pythonpp::CTuple args(2);
+                args.SetItem(0, timestamp);
+                args.SetItemFast(1, PyTimeZone_FromOffset(delta.Get()));
+                return pythonpp::CDateTime
+                    (PyDateTime_FromTimestamp(args.Get()));
+            }
+        }
+#endif
         return pythonpp::CDateTime(
             cur_time.Year(),
             cur_time.Month(),
@@ -2868,6 +2886,26 @@ CCursor::SetupParameters(const pythonpp::CSequence& seq,
     }
 }
 
+static
+CNullable<short> x_GetUTCOffset(const pythonpp::CDateTime& dt)
+{
+    pythonpp::CObject tzinfo;
+#if PY_VERSION_HEX >= 0x030a0000
+    tzinfo = PyDateTime_DATE_GET_TZINFO(obj.Get());
+#else
+    tzinfo = dt.GetAttr("tzinfo");
+#endif
+    if ( !PyTZInfo_Check(tzinfo.Get()) ) {
+        return null;
+    }
+    pythonpp::CCalable utcoffset(tzinfo.GetAttr("utcoffset"));
+    pythonpp::CTuple args(1);
+    args.SetItem(0, dt);
+    pythonpp::CObject delta(utcoffset.Apply(args));
+    return PyDateTime_DELTA_GET_DAYS(delta.Get()) * 24 * 60
+        + PyDateTime_DELTA_GET_SECONDS(delta.Get()) / 60;
+}
+
 CVariant
 CCursor::GetCVariant(const pythonpp::CObject& obj) const
 {
@@ -2895,6 +2933,12 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
                              python_date.GetMinute(),
                              python_date.GetSecond(),
                              python_date.GetMicroSecond() * 1000);
+        auto offset = x_GetUTCOffset(python_date);
+        if ( !offset.IsNull() ) {
+            return CVariant(
+                new CDB_BigDateTime(std_date, CDB_BigDateTime::eDateTimeOffset,
+                                    offset));
+        }
         return CVariant( std_date, eLong );
     } else if ( pythonpp::CDate::HasSameType(obj) ) {
         const pythonpp::CDate python_date(obj);

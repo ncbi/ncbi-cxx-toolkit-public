@@ -731,8 +731,8 @@ CDB_Object* CTL_RowResult::GetItemInternal(
         ENSURE_ITEM();
         CDB_BigDateTime* bdt = static_cast<CDB_BigDateTime*>(item_buf);
 
+        CS_DATEREC dr = { 0 };
         if ( !is_null ) {
-            CS_DATEREC dr = { 0 };
             CS_CONTEXT* ctx = m_Connect->GetCTLibContext().CTLIB_GetContext();
             CHECK_DRIVER_ERROR(cs_dt_crack(ctx, datatype, buffer, &dr)
                                != CS_SUCCEED,
@@ -748,10 +748,11 @@ CDB_Object* CTL_RowResult::GetItemInternal(
             }
             t = CTime(dr.dateyear, dr.datemonth + 1, dr.datedmonth,
                       dr.datehour, dr.dateminute, dr.datesecond, ns);
-            // TODO - honor dr.datetzone?  It's always 0 in practice, and
-            // there's no good way to pass it to CTime anyway.
         }
         *bdt = t;
+        if (dr.datetzone != 0  ||  fmt.usertype == 43) {
+            bdt->Assign(bdt->GetCTime(), bdt->GetSQLType(), dr.datetzone);
+        }
         break;
     }
 #endif

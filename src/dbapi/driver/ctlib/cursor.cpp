@@ -959,7 +959,7 @@ bool CTL_CursorCmdExpl::x_AssignParams()
                 lt.SetNanoSecond(lt.NanoSecond() / 100 * 100);
                 string t = lt.AsString(CDB_BigDateTime::GetTimeFormat
                                        (GetConnection().GetDateTimeSyntax(),
-                                        val.GetSQLType()));
+                                        val.GetSQLType(), val.GetOffset()));
                 sprintf(val_buffer, "'%s'", t.c_str());
                 break;
             }
