@@ -3,6 +3,7 @@
 NCBI_begin_lib(xconnect)
   NCBI_sources(${SRC_C} ${SRC_CXX})
   NCBI_headers(*.hpp)
+  NCBI_add_include_directories(${CMAKE_CURRENT_LIST_DIR}/mbedtls)
   NCBI_optional_components(GNUTLS)
   NCBI_uses_toolkit_libraries(xncbi)
   NCBI_uses_external_libraries(${NETWORK_LIBS})

@@ -3,6 +3,7 @@
 NCBI_begin_lib(xxconnect2 SHARED)
   NCBI_sources(ncbi_uv_nghttp2 ncbi_http2_session)
   NCBI_add_definitions(NCBI_XXCONNECT2_EXPORTS)
+  NCBI_add_include_directories(${CMAKE_CURRENT_LIST_DIR}/mbedtls)
   NCBI_uses_toolkit_libraries(xconnect)
   NCBI_requires(UV NGHTTP2)
   NCBI_project_watchers(sadyrovr)
