@@ -1277,14 +1277,19 @@ static const char* s_GetToolkitRCLogLocation()
 }
 
 
-/** Close log files.
+/** Close log files for a current destination. 
+    Files can be fully cleaned for setting a new destination or just
+    closed to be reopened later with the same destination.
  */
-static void s_CloseLogFiles(int/*bool*/ cleanup)
+static void s_CloseLogFiles(int/*bool*/ cleanup /* CLOSE_CLEANUP / CLOSE_FOR_REOPEN */) 
 {
+    /* Current destination */
+    
     switch (sx_Info->destination) {
         case eNcbiLog_Default:
         case eNcbiLog_Stdlog:
         case eNcbiLog_Cwd:
+        case eNcbiLog_File:
             /* Close files, see below */
             break;
         case eNcbiLog_Stdout:
@@ -1298,6 +1303,8 @@ static void s_CloseLogFiles(int/*bool*/ cleanup)
         default:
             TROUBLE_MSG("unknown destination");
     }
+
+    /* Close files, if any are open */
 
     if (sx_Info->file_log != kInvalidFileHandle) {
 #if NCBILOG_USE_FILE_DESCRIPTORS
@@ -1459,7 +1466,7 @@ static int /*bool*/ s_SetLogFiles(const char* path_with_base_name, int/*bool*/ i
     /* Open files */
     sx_Info->is_applog = is_applog;
     if (!s_OpenLogFiles()) {
-        s_CloseLogFiles(1);
+        s_CloseLogFiles(CLOSE_CLEANUP);
         return 0 /*false*/;
     }
     sx_Info->reuse_file_names = 1;
@@ -1537,7 +1544,18 @@ static void s_InitDestination(const char* logfile_path)
     }
 #endif
 
-    /* Reopen files every 1 minute */
+#if 0
+    -- use regular behavior with reopening user files as well
+
+    /* We already have logging set to user defined file(s) -- don't need to reopen it */
+    if (sx_Info->destination == eNcbiLog_File  &&  
+        sx_Info->file_log != kInvalidFileHandle) {
+        return;
+    }
+#endif    
+
+    /* Reopen all files every 1 minute */
+    
     time(&now);
     if (now - sx_Info->last_reopen_time < 60) {
         return;
@@ -1546,19 +1564,23 @@ static void s_InitDestination(const char* logfile_path)
 
     /* Try to open files */
 
-    if (sx_Info->destination == eNcbiLog_Default  &&  logfile_path) {
+    if ((sx_Info->destination == eNcbiLog_Default  ||
+         sx_Info->destination == eNcbiLog_File)  &&  logfile_path) {
         /* special case to redirect all logging to specified files */
-        s_CloseLogFiles(1);
-        if (s_SetLogFiles(logfile_path, 0 /*no applog*/)) {
+        s_CloseLogFiles(CLOSE_CLEANUP);
+        if (s_SetLogFiles(logfile_path, NO_APPLOG)) {
             return;
         }
-        TROUBLE_MSG("error opening logging location");
+        /* Error: disable logging.
+           The error reporting should be done on an upper level(s) outside of the CLog.
+        */
+        sx_Info->destination = eNcbiLog_Disable;
         return;
     }
 
     /* Close */
-    s_CloseLogFiles(0);
-
+    s_CloseLogFiles(CLOSE_FOR_REOPEN);
+    
     if (sx_Info->destination == eNcbiLog_Default  ||
         sx_Info->destination == eNcbiLog_Stdlog   ||
         sx_Info->destination == eNcbiLog_Cwd) {
@@ -1568,8 +1590,9 @@ static void s_InitDestination(const char* logfile_path)
             if (s_OpenLogFiles()) {
                 return;
             }
-            /* Failed to reopen, try again from scratch */
-            s_CloseLogFiles(1);
+            /* Error: failed to reopen */
+            s_CloseLogFiles(CLOSE_CLEANUP);
+            /* Will try again from scratch (below), can lead to change the logging location */
         }
 
         /* Try default log location */
@@ -1582,14 +1605,14 @@ static void s_InitDestination(const char* logfile_path)
                 /* toolkitrc file */
                 dir = s_GetToolkitRCLogLocation();
                 if (dir) {
-                    if (s_SetLogFilesDir(dir, 1)) {
+                    if (s_SetLogFilesDir(dir, IS_APPLOG)) {
                         return;
                     }
                 }
                 /* server port */
                 if (sx_Info->server_port) {
                     sprintf(xdir, "%s%d", kBaseLogDir, sx_Info->server_port);
-                    if (s_SetLogFilesDir(xdir, 1)) {
+                    if (s_SetLogFilesDir(xdir, IS_APPLOG)) {
                         return;
                     }
                 }
@@ -1597,14 +1620,14 @@ static void s_InitDestination(const char* logfile_path)
                 /* /log/srv */ 
                 dir = s_ConcatPath(kBaseLogDir, "srv", xdir, FILENAME_MAX + 1);
                 if (dir) {
-                    if (s_SetLogFilesDir(dir, 1)) {
+                    if (s_SetLogFilesDir(dir, IS_APPLOG)) {
                         return;
                     }
                 }
                 /* /log/fallback */
                 dir = s_ConcatPath(kBaseLogDir, "fallback", xdir, FILENAME_MAX + 1);
                 if (dir) {
-                    if (s_SetLogFilesDir(dir, 1)) {
+                    if (s_SetLogFilesDir(dir, IS_APPLOG)) {
                         return;
                     }
                 }
@@ -1612,7 +1635,7 @@ static void s_InitDestination(const char* logfile_path)
                 if (sx_Info->logsite  &&  sx_Info->logsite[0] != '\0') {
                     dir = s_ConcatPath(kBaseLogDir, sx_Info->logsite, xdir, FILENAME_MAX + 1);
                     if (dir) {
-                        if (s_SetLogFilesDir(dir, 1)) {
+                        if (s_SetLogFilesDir(dir, IS_APPLOG)) {
                             return;
                         }
                     }
@@ -1626,7 +1649,7 @@ static void s_InitDestination(const char* logfile_path)
                 #elif defined(NCBI_OS_MSWIN)
                     cwd = _getcwd(NULL, 0);
                 #endif
-                if (cwd  &&  s_SetLogFilesDir(cwd, 0)) {
+                if (cwd  &&  s_SetLogFilesDir(cwd, NO_APPLOG)) {
                     sx_Info->destination = eNcbiLog_Cwd;
                     free(cwd);
                     return;
@@ -2399,7 +2422,7 @@ extern void NcbiLog_Destroy(void)
     sx_IsInit    = 2; /* still TRUE to prevent recurring initialization, but not default 1 */
 
     /* Close files */
-    s_CloseLogFiles(1 /*force cleanup*/);
+    s_CloseLogFiles(CLOSE_CLEANUP);
 
     /* Free memory */
     if (sx_Info->message) {
@@ -2542,13 +2565,14 @@ static void s_SetState(TNcbiLog_Context ctx, ENcbiLog_AppState state)
 }
 
 
-extern ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds)
+extern ENcbiLog_Destination 
+NcbiLog_SetDestination(ENcbiLog_Destination ds)
 {
     char* logfile = NULL;
 
     MT_LOCK_API;
-    /* Close current destination */
-    s_CloseLogFiles(1 /*force cleanup*/);
+    /* Close current destination files, if any */
+    s_CloseLogFiles(CLOSE_CLEANUP);
 
     /* Server port */
     if (!sx_Info->server_port) {
@@ -2581,8 +2605,42 @@ extern ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds)
             }
         }
         s_InitDestination(logfile);
+        /* Read destination back, it can change */
+        ds = sx_Info->destination;
     }
+    MT_UNLOCK;
+    return ds;
+}
+
+
+extern ENcbiLog_Destination 
+NcbiLog_SetDestinationFile(const char* logfile_base)
+{
+    const char* logfile = logfile_base;
+    ENcbiLog_Destination ds = eNcbiLog_File;
+    
+    MT_LOCK_API;
+    /* Close current destination */
+    s_CloseLogFiles(CLOSE_CLEANUP);
+   
+    if (!logfile  &&  !*logfile ) {
+        sx_Info->destination = eNcbiLog_Disable; /* error */
+        MT_UNLOCK;
+        return sx_Info->destination;
+    }
+    /* Special case to redirect file logging output to stderr */
+    if (strcmp(logfile, "-") == 0) {
+        ds = eNcbiLog_Stderr;
+        logfile = NULL;
+    }
+    /* Set new destination */
+    sx_Info->destination = ds;
+    sx_Info->last_reopen_time = 0;
+    s_InitDestination(logfile);
+
+    /* Read destination back, it can change */
     ds = sx_Info->destination;
+   
     MT_UNLOCK;
     return ds;
 }
@@ -2594,6 +2652,12 @@ NcbiLogP_SetDestination(ENcbiLog_Destination ds,
 {
     char* logfile = NULL;
     MT_LOCK_API;
+    
+    /* NOTE: 
+       this is an internal version especially for ncbi_applog, so no need
+       to close previous destination, befor setting new one.
+    */
+    
     /* Special case to redirect default logging output */
     if (ds == eNcbiLog_Default) {
         logfile = getenv("NCBI_CONFIG__LOG__FILE");
@@ -3623,6 +3687,7 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
         case eNcbiLog_Default:
         case eNcbiLog_Stdlog:
         case eNcbiLog_Cwd:
+        case eNcbiLog_File:
             /* Try to get type of the line to redirect output into correct log file */
             {
                 const char* start = line + NCBILOG_ENTRY_MIN;

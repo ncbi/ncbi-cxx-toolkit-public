@@ -84,15 +84,28 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 
     /* Set logging destination 
     */
-    NcbiLog_SetDestination(eNcbiLog_Stdout);
-    /* Or,
-       NcbiLog_SetDestination(eNcbiLog_Default); -- default, can be skipped
-       NcbiLog_SetDestination(eNcbiLog_Stdlog);
-       NcbiLog_SetDestination(eNcbiLog_Stdout);
-       NcbiLog_SetDestination(eNcbiLog_Stderr);
-       NcbiLog_SetDestination(eNcbiLog_Cwd);
-       NcbiLog_SetDestination(eNcbiLog_Disable);
-    */
+    {{
+        ENcbiLog_Destination ds;
+        ds = NcbiLog_SetDestination(eNcbiLog_Stdout);
+        /* Or,
+           ds = NcbiLog_SetDestination(eNcbiLog_Default); -- default, can be skipped
+           ds = NcbiLog_SetDestination(eNcbiLog_Stdlog);
+           ds = NcbiLog_SetDestination(eNcbiLog_Stdout);
+           ds = NcbiLog_SetDestination(eNcbiLog_Stderr);
+           ds = NcbiLog_SetDestination(eNcbiLog_Cwd);
+           ds = NcbiLog_SetDestination(eNcbiLog_Disable);
+           ds = NcbiLog_SetDestinationFile("logfile_path");
+        */
+        /* Check on error, especially if you use "file" destination. 
+           All other standard destination can fallback to stderr.
+           But you can check here that it sets really where you want.
+        */
+        if (ds == eNcbiLog_Disable) {
+            /* error */
+            perror("Error initialize destination");
+            return 1;
+        }
+    }}
         
     /* Set host name
        NcbiLog_SetHost("SOMEHOSTNAME");
