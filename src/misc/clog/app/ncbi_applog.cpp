@@ -33,19 +33,36 @@
  *     (on other machine). CGI can be specified in the .ini file.
  *     If not specified, use  default at
  *     https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi
- *  2) In case of an error ncbi_applog terminates with non-zero error code
+ *  2) In addition to (1). If local logging is not allowed, ncbi_applog does
+ *     logging via external CGI. But, because we have some web servers, 
+ *     logging can be made on any of them. Collecting and log processing
+ *     is not synced between servers. So, if you call ncbi_applog some times
+ *     pretty fast in a raw, you may have an situation that some records will
+ *     go to one server, and some to another, and later can be processed first.
+ *     And if an application stop record will be processed faster than some
+ *     other records before it, those records can be lost. 
+ *     There are some ways to avoid this:
+ *       - Log slower. If a script logs pretty slow, nothing need to be changed.
+ *       - Use requests to wrap every other record. Applog process requests
+ *         differently and wait for a request stop.
+ *       - Log locally to a file, and load whole file at once when your script
+ *         will finish working using a 'raw' command.
+ *         This method have some restrictions on a file size, because it should
+ *         be transfered to CGI as one piece or split before sending. 
+ *         See documentation for examples.
+ *  3) In case of an error ncbi_applog terminates with non-zero error code
  *     and print error message to stderr.
- *  3) Utility does not implement any checks for correct commands order,
+ *  4) Utility does not implement any checks for correct commands order,
  *     because it unable to save context between calls. Please control this
  *     yourself. But some arguments checks can be done inside the C Logging API.
- *  4) No MT support. This utility assume that it can be called from 
+ *  5) No MT support. This utility assume that it can be called from 
  *     single-thread scripts or application only. Please add MT-guards yourself.
- *  5) Utility returns tokens for 'start_app', 'start_request' and
+ *  6) Utility returns tokens for 'start_app', 'start_request' and
  *     'stop_request' commands, that should be used as parameter for any
  *     subsequent calls. You can use token from any previous 'start_request'
  *     command for new requests as well, but between requests only token
  *     from 'start_app' should be used.
- *  6) The -timestamp parameter allow to post messages happened in the past.
+ *  7) The -timestamp parameter allow to post messages happened in the past.
  *     But be aware, if you start to use -timestamp parameter, use it for all
  *     subsequent calls to ncbi_applog as well, at least with the same timestamp
  *     value. Because, if you forget to specify it, current system time will
@@ -89,17 +106,28 @@
                 NcbiApplogCGI = https://...
             Environment variable:
                 NCBI_CONFIG__NCBIAPPLOG_CGI
+
      2) Output destination ("default" if not specified) (see C Logging API for details)
         If this parameter is specified and not "default", CGI redirecting will be disabled.
             Registry file:
                 [NCBI]
-                NcbiApplogDestination = default|cwd|stdlog|stdout|stderr
+                NcbiApplogDestination = default|cwd|stdlog|stdout|stderr|file
             Environment variable:
                 NCBI_CONFIG__NCBIAPPLOG_DESTINATION
-     3) If environment variable $NCBI_CONFIG__LOG__FILE, CGI-redirecting will be disabled
-        and all logging will be done local, to the provided in this variable base name for
+
+     3) If the output destination is set to "file", this parameter will define a base name
+        for a log file. If splitting is disabled, there will be a single <file>.log file,
+        or several files with .err/.perf/.trace extentions otherwise.
+            Registry file:
+                [NCBI]
+                NcbiApplogDestinationFile = path_to_logfile
+            Environment variable:
+                NCBI_CONFIG__NCBIAPPLOG_DESTINATION_FILE
+                
+     4) If environment variable $NCBI_CONFIG__LOG__FILE, CGI-redirecting will be disabled
+        and all logging will be done locally, to the provided in this variable base name for
         logging files or to STDERR for special value "-".
-        This environment variable have a higher priority than output destination in (2).
+        This environment variable have a higher priority than any output destination in (2).
  */
 
 
@@ -129,7 +157,6 @@ const char* kErrorMessagePrefix = "NCBI_APPLOG: error: ";
 /// Can be redefined in the configuration file.
 const char* kDefaultCGI = "https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
 
-
 /// Regular expression to check lines of raw logs (checks all fields up to appname).
 /// NOTE: we need sub-pattern for application name only!
 const char* kApplogRegexp = 
@@ -154,6 +181,9 @@ NCBI_PARAM_DEF_EX(string, NCBI, NcbiApplogCGI, kDefaultCGI, eParam_NoThread, NCB
 /// Declare the parameter for logging output destination
 NCBI_PARAM_DECL(string,   NCBI, NcbiApplogDestination); 
 NCBI_PARAM_DEF_EX(string, NCBI, NcbiApplogDestination, "", eParam_NoThread, NCBI_CONFIG__NCBIAPPLOG_DESTINATION);
+/// Declare the parameter for a file logging output destination
+NCBI_PARAM_DECL(string,   NCBI, NcbiApplogDestinationFile); 
+NCBI_PARAM_DEF_EX(string, NCBI, NcbiApplogDestinationFile, "", eParam_NoThread, NCBI_CONFIG__NCBIAPPLOG_DESTINATION_FILE);
 
 
 /// Structure to store logging information
@@ -1671,6 +1701,9 @@ int CNcbiApplogApp::Run()
         // Special case: redirect all output to specified file.
         // This will be done automatically in the C Logging API,
         // so we should just set default logging here.
+        // Note:
+        //   This env variable is used by a C++ Toolkt logging API
+        //   to redirect all logging as well.
         ENcbiLog_Destination cur_dst = 
             NcbiLogP_SetDestination(eNcbiLog_Default, m_Info.server_port, m_Info.logsite.c_str());
         if (cur_dst != eNcbiLog_Default  &&  cur_dst != eNcbiLog_Stderr) {
@@ -1679,6 +1712,7 @@ int CNcbiApplogApp::Run()
     } else {
         // Get an output destination (from registry file, env.variable or default value)
         string dst_str = NCBI_PARAM_TYPE(NCBI, NcbiApplogDestination)::GetDefault();
+        NStr::ToLower(dst_str);
         if (dst_str.empty()  ||  dst_str == "default") {
             // Try to set default output destination
             ENcbiLog_Destination cur_dst = 
@@ -1693,9 +1727,18 @@ int CNcbiApplogApp::Run()
                 }
                 return Redirect();
             }
+        } else 
+        if (dst_str == "file") {
+            // Get file name for logging
+            string path = NCBI_PARAM_TYPE(NCBI, NcbiApplogDestinationFile)::GetDefault();
+            // Try to set output destination to file
+            ENcbiLog_Destination cur_dst = NcbiLog_SetDestinationFile(path.c_str());
+            // eNcbiLog_Stderr is for cases where file name has set to "-"
+            if (cur_dst != eNcbiLog_File  &&  cur_dst != eNcbiLog_Stderr) {
+                throw std::runtime_error("Failed to set output destination to file '" + path + "'");
+            }
         } else {
             ENcbiLog_Destination dst;
-            NStr::ToLower(dst_str);
             if (dst_str == "stdlog") {
                 dst = eNcbiLog_Stdlog;
             } else 
