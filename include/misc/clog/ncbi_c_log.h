@@ -47,21 +47,24 @@
  *   2) Second method should be used only in special cases, where impossible
  *      to call NcbiLog_Init/NcbiLog_Destroy. Any of these two methods still 
  *      can be used...  But, if you can call both of them, consider to use
- *      pattern (1) instead. Forgot about NcbiLog_Destroy_Thread(), don't
- *      use it at all. And aware, that default MT locking implementation
- *      will be used automatically in MT configurations if you didn't use
- *      NcbiLog_Init() with your own MT-handler explicitly.
+ *      method (1) instead. 
+ *      Do not use  NcbiLog_Destroy_Thread(), it is not safe to use it without
+ *      proper NcbiLog_Init/Destroy. Also, be aware, that default MT locking
+ *      implementation will be used automatically in MT configurations if you
+ *      didn't use NcbiLog_Init() with your own MT-handler explicitly.
  *      Usage:
  *      - First, if you didn't call NcbiLog_Init() yet, you can call
  *        NcbiLog_InitForAttachedContext(). It does the same initializations
  *        as NcbiLog_Init(), but have better MT protection, and can be called
  *        as many times as you want, even in any thread. And even this step
  *        can be skipped, and all initialization will be done in 
- *        NcbiLog_Context_Create(). But you still have a possibility to pass
- *        an application name into the logging API. Only first call of 
- *        NcbiLog_Init*() have effect. All subsequent calls will be ignored.
+ *        NcbiLog_Context_Create() (see next step). 
+ *        But you still have a possibility to pass an application name into
+ *        the logging API. Only first call of any NcbiLog_Init*() have effect.
+ *        All subsequent calls will be ignored.
  *      - Call NcbiLog_Context_Create() to create thread-specific contex.
- *      - Use NcbiLog_Context_Attach() to attach created context to the API.
+ *      - Use NcbiLog_Context_Attach() to attach created context to the API,
+ *        when you need to start logging.
  *      - Call any logging methods. Do not call them before attaching context,
  *        or you can get memory/resource leaks and unpredictable results.
  *      - Detach context with NcbiLog_Context_Detach().
@@ -89,7 +92,7 @@
  * be open, it fall back to logging to destination specified here:
  * http://ncbi.github.io/cxx-toolkit/pages/ch_log#ch_core.Where_Diagnostic_Messages_Go
  *
- * Thread-specific serial number is always 0. We cannot provide mechanism
+ * Thread-specific serial number (TSN) is always 0. We cannot provide mechanism
  * to maintain correct value for each thread.
  *
  */
@@ -246,6 +249,7 @@ typedef enum {
     eNcbiLog_Stdlog,          /**< Try /log/<*>/<appname>.log;  fallback
                                    to ./<appname>.log, then to STDERR */
     eNcbiLog_Cwd,             /**< Try ./<appname>.log, fallback to STDERR */
+    eNcbiLog_File,            /**< To specific file, see NcbiLog_SetDestinationFile() */
     eNcbiLog_Stdout,          /**< To standard output stream */
     eNcbiLog_Stderr,          /**< To standard error stream  */
     eNcbiLog_Disable          /**< Don't write it anywhere   */
@@ -493,23 +497,46 @@ extern const char* NcbiLog_GetHostLocation(void);
  *    It is not always possible to set up an destination for logging messages
  *    that specified in parameters and fallback can be used.
  *    See ENcbiLog_Destination description for details.
+ *    Sets to eNcbiLog_Disable in the case of critical errors.
  * @note
  *    By default, if SetDestination() is not called or set to eNcbiLog_Default,
  *    and environment variable $NCBI_CONFIG__LOG__FILE is defined and not empty,
  *    its value will be used as base name for logfiles.
  *    It can have special value "-" to redirect all output to STDERR.
+ * @note
+ *    If destination is eNcbiLog_File, an environment variable 
+ *    $NCBI_CONFIG__LOG__FILE ahould be defined and not empty. If you need
+ *    to log into some file, it is recommended to use NcbiLog_SetDestinationFile(),
+ *    that accept file name as parameter.
  *  @sa
- *    ENcbiLog_Destination, NcbiLog_Init, NcbiLog_SetSplitLogFile
+ *    ENcbiLog_Destination, NcbiLog_Init, NcbiLog_SetSplitLogFile, NcbiLog_SetDestinationFile
  */
 extern ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds);
 
 
+/** Variant of NcbiLog_SetDestination for logging to a specific file (eNcbiLog_File).
+ *  This is CLog/ncbi_applog specific, not a standard feature.
+ *
+ *  @param logfile_base
+ *    A base name for a log file(-es).
+ *    If splitting is disabled, there will be a single <logfile_base>.log file,
+ *    or some files with err/perf/trace extentions otherwise.
+ *  @return
+ *    The diagnostic destination that was really set.
+ *    Sets to eNcbiLog_Disable in the case of critical errors.
+ *  @sa 
+ *    NcbiLog_SetDestination, ENcbiLog_Destination, NcbiLog_Init
+ */
+extern ENcbiLog_Destination NcbiLog_SetDestinationFile(const char* logfile_base);
+
+
 /** Set split log files flag. If set, the output for log/err/trace/perf records
  *  sent to different log files. Splitting is OFF by default, all logging going
- *  to .log-file, if any.
+ *  to a single .log-file, if any.
  *
  *  @note
- *    For logging to /log .perf files are always split, regardless of this flag.
+ *    Applies for 'Cwd' and 'File' logging destinations.
+ *    When logging to /log the log files are always split, regardless of this setting.
  *  @sa
  *    NcbiLog_SetDestination
  */

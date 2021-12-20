@@ -93,6 +93,15 @@ typedef enum {
 } ENcbiLog_DiagFile;
 
 
+/* BOOL: /log usage flags */
+#define IS_APPLOG        1   /**< Logging going to /log */
+#define NO_APPLOG        0   /**< Logging going not to /log (local file, stderr, etc) */
+
+/* BOOL: Logfiles cleanup method */
+#define CLOSE_CLEANUP    1  /**< Force logfiles cleanup */
+#define CLOSE_FOR_REOPEN 0  /**< Regular file closure for later reopeng */
+
+
 /** Application access log and error postings info structure.
  */
 struct STime_tag {
@@ -205,35 +214,39 @@ typedef struct SNcbiLog_Context_tag TNcbiLog_Context_Data;
 
 /******************************************************************************
  *  Logging setup functions --- for internal use only
+ *  Mostly for ncbi_applog utility.
  */
 
+
 /* Reinitialize API.
- * Used for test purposes only, never use it in your applications! 
+ * Used for test purposes only, never use it in your real applications!
  */
 extern void NcbiLogP_ReInit(void);
 
 
-/* Can be used in ST mode only */
+/** Enable/disable internal checks (enabled by default) 
+ *  Used by ncbi_applog.
+ */
+extern int /*bool*/ NcbiLogP_DisableChecks(int /*bool*/ disable);
+
+
+/* Can be used in ST (single-threaded) mode only */
 extern TNcbiLog_Info*   NcbiLogP_GetInfoPtr(void);
 extern TNcbiLog_Context NcbiLogP_GetContextPtr(void);
 
 
-/* Enable/disable internal checks (enabled by default) */
-extern int /*bool*/ NcbiLogP_DisableChecks(int /*bool*/ disable);
-
-
 /** Variant of NcbiLog_SetDestination. 
+ *
  *  Try to force set new destination without additional checks.
  *  The 'port' parameter redefine value of $SERVER_PORT environment variable.
  *  Use 0 if undefined. Can be used only for redirect mode. 
  *  The 'logsite' parameter is used specifically by ncbi_applog utility, 
- *  to allow to check additionally /log/{{logsite}} destination.
+ *  to allow to check additionally /log/<logsite> destination.
  *  See for details:
  *  http://ncbi.github.io/cxx-toolkit/pages/ch_log#ch_core.Where_Diagnostic_Messages_Go
  *  @sa NcbiLog_SetDestination, ENcbiLog_Destination, NcbiLog_Init
  */
-extern ENcbiLog_Destination
-NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned int port, const char* logsite);
+extern ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned int port, const char* logsite);
 
 
 /** Redefine value of $SERVER_PORT environment variable.
@@ -250,32 +263,29 @@ extern unsigned int NcbiLogP_SetServerPort(unsigned int server_port);
  *  Allow to set the application runtime directly, not based on a start and end time,
  *  if execution_time >= 0.
  *
- *  Used in ncbi_applog.
+ *  Used by ncbi_applog.
  *
  *  @sa NcbiLog_AppStop, NcbiLog_AppStopSignal
  */
 extern void NcbiLogP_AppStop(int exit_status, int exit_signal, double execution_time);
 
 
-/** Variant of NcbiLog_ReqStart, that use already prepared string with
- *  parameters. Both, key and value in pairs 'key=value' should be 
- *  URL-encoded and separated with '&'.
+/** Variant of NcbiLog_ReqStart, that use already prepared string with parameters. 
+ *  Both, key and value in pairs 'key=value' should be URL-encoded and separated with '&'.
  *  @sa NcbiLog_ReqStart
  */
 extern void NcbiLogP_ReqStartStr(const char* params);
 
 
-/** Variant of NcbiLog_Perf, that use already prepared string with
- *  parameters. Both, key and value in pairs 'key=value' should be 
- *  URL-encoded and separated with '&'.
+/** Variant of NcbiLog_Perf, that use already prepared string with parameters.
+ *  Both, key and value in pairs 'key=value' should be URL-encoded and separated with '&'.
  *  @sa NcbiLog_Perf
  */
 extern void NcbiLogP_PerfStr(int status, double timespan, const char* params);
 
 
-/** Variant of NcbiLog_Extra, that use already prepared string with
- *  parameters. Both, key and value in pairs 'key=value' should be 
- *  URL-encoded and separated with '&'.
+/** Variant of NcbiLog_Extra, that use already prepared string with parameters. 
+ *  Both, key and value in pairs 'key=value' should be URL-encoded and separated with '&'.
  *  @sa NcbiLog_Extra
  */
 extern void NcbiLogP_ExtraStr(const char* params);
