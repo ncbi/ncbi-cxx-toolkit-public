@@ -25,8 +25,6 @@ import subprocess
 import signal
 import time
 import pwd
-import psutil
-import ncbi.grid.deployment_info.services as services
 
 
 # Order is important
@@ -440,6 +438,13 @@ def stability_test_check_args(commands, options, args):
         print_error('h2load executable is not in the PATH')
         return 1
 
+    try:
+        # Needs only for the 'stability_test' action
+        import psutil
+    except:
+        print_error("The 'stability_test' action requires the psutil module to be installed")
+        return 1
+
     if 'all' in commands:
         # Everything will be created on the previous stages
         return 0
@@ -480,6 +485,13 @@ def compare_check_args(commands, options, args):
     return checkVersionOptionAndDirectory(options)
 
 def perf_test_check_args(commands, options, args):
+    try:
+        # it is used only for the perf_test
+        import ncbi.grid.deployment_info.services as services
+    except:
+        print_error("The 'perf_test' action requires grid_deployment module to be installed.")
+        return 1
+
     if 'all' in commands:
         # Everything will be created on the previous stages
         return 0
