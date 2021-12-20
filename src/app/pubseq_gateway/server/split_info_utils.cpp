@@ -245,7 +245,8 @@ CRef<CID2S_Split_Info> CDataChunkStream::DeserializeSplitInfo()
     unique_ptr<CNcbiIstream> z_stream;
     if ( IsGzip() ) {
         z_stream.reset(new CCompressionIStream(*in,
-            new CZipStreamDecompressor(CZipCompression::fGZip), 0));
+                                               new CZipStreamDecompressor(CZipCompression::fGZip),
+                                               CCompressionIStream::fOwnProcessor));
         in = z_stream.get();
     }
     unique_ptr<CObjectIStream> obj_stream(CObjectIStream::Open(eSerial_AsnBinary, *in));
