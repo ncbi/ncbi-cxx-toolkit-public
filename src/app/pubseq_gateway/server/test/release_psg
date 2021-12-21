@@ -537,8 +537,6 @@ def archive_check_args(commands, options, args):
         return 1
     if getBuildResultsDir(options) is None:
         return 1
-    if getArchivedTestPath(options) is None:
-        return 1
     if getPerfTestResultsPath(options) is None:
         return 1
 
@@ -1150,9 +1148,6 @@ def archive(commands, options, args):
     buildResultsDir = getBuildResultsDir(options)
     if buildResultsDir is None:
         return 1
-    archivedTestsDir = getArchivedTestPath(options)
-    if archivedTestsDir is None:
-        return 1
     perfTestResultsDir = getPerfTestResultsPath(options)
     if perfTestResultsDir is None:
         return 1
@@ -1173,7 +1168,13 @@ def archive(commands, options, args):
 
     print_verbose('Archiving binary and source succeeded. Archive the perf_test results.')
 
-    cmdLine = f'cp -rf {perfTestResultsDir}* {archivedTestsDir}'
+    # Checking of the archive directory must be done only after the release is
+    # archived
+    archivedTestsDir = getArchivedTestPath(options)
+    if archivedTestsDir is None:
+        return 1
+
+    cmdLine = f'cp -rf {perfTestResultsDir} {archivedTestsDir}'
     print_verbose(f'Running perf test: {cmdLine}')
     ret = os.system(cmdLine)
     if ret != 0:
