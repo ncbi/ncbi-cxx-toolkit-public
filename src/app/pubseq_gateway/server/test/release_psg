@@ -244,6 +244,7 @@ def prepareO2Gsandbox(options):
     return 0
 
 def getCPUUsage(srv):
+    import psutil
     proc = psutil.Process(pid=srv.pid)
     # CPU percent (float) during the 3 seconds interval (blocking call)
     return proc.cpu_percent(interval=3)
@@ -272,6 +273,8 @@ def getArchivedBinaryPath(ver):
     return None
 
 def resolveService(name):
+    import ncbi.grid.deployment_info.services as services
+
     instances = []
     deploymentServices = services.get_services()
     for svc in deploymentServices[0]:
@@ -582,6 +585,7 @@ def functional_test(commands, options, args):
                '-logfile', artefactDir + 'pubseq_gateway-ut-http.log']
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
+    time.sleep(3)
 
     # Run the tests
     errors = []
@@ -616,6 +620,7 @@ def functional_test(commands, options, args):
                '-logfile', artefactDir + 'pubseq_gateway-ut-https.log']
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
+    time.sleep(3)
 
     # Run the tests
 
