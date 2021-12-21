@@ -1700,7 +1700,9 @@ CPSGDataLoader_Impl::SReplyResult CPSG_Blob_Task::WaitForSkipped(void)
         break;
     case CPSG_SkippedBlob::eSent:
         // Try to wait for the blob to be loaded.
-        load_lock = m_DataSource->GetLoadedTSE_Lock(dl_blob_id, CTimeout(.2));
+        load_lock = m_DataSource->GetLoadedTSE_Lock(dl_blob_id,
+            CTimeout(m_Skipped->GetTimeUntilResend().IsNull() ?
+                0.2 : m_Skipped->GetTimeUntilResend().GetValue()));
         if ( !load_lock && s_GetDebugLevel() >= 6 ) {
             LOG_POST("CPSGDataLoader: 'sent' blob is not loaded: "<<dl_blob_id.ToString());
         }
