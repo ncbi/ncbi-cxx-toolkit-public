@@ -96,7 +96,6 @@ private:
 
 class CPSGBioseqCache;
 class CPSGBlobMap;
-class CPsgClientContext_Bulk;
 class CPSG_Blob_Task;
 
 
@@ -186,9 +185,8 @@ public:
 private:
     friend class CPSG_Blob_Task;
 
-    void x_SendRequest(shared_ptr<CPSG_Request> request);
+    shared_ptr<CPSG_Reply> x_SendRequest(shared_ptr<CPSG_Request> request);
     CPSG_BioId x_GetBioId(const CSeq_id_Handle& idh);
-    shared_ptr<CPSG_Reply> x_ProcessRequest(shared_ptr<CPSG_Request> request);
     SReplyResult x_ProcessBlobReply(shared_ptr<CPSG_Reply> reply, CDataSource* data_source, CSeq_id_Handle req_idh, bool retry, bool lock_asap = false, CTSE_LoadLock* load_lock = nullptr);
     SReplyResult x_RetryBlobRequest(const string& blob_id, CDataSource* data_source, CSeq_id_Handle req_idh);
     shared_ptr<SPsgBioseqInfo> x_GetBioseqInfo(const CSeq_id_Handle& idh);
@@ -210,8 +208,6 @@ private:
         ESplitInfoType split_info_type);
     void x_SetLoaded(CTSE_LoadLock& load_lock, EMainChunkType main_chunk_type);
 
-    typedef map<void*, size_t> TIdxMap;
-
     // returns pair(number of loaded infos, number of failed infos)
     pair<size_t, size_t> x_GetBulkBioseqInfo(CPSG_Request_Resolve::EIncludeInfo info,
         const TIds& ids,
@@ -220,8 +216,7 @@ private:
 
     shared_ptr<CPSG_Request_Blob>
     x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
-                                   CDataLoader::TChunk chunk,
-                                   shared_ptr<CPsgClientContext_Bulk> context);
+                                   CDataLoader::TChunk chunk);
     bool x_ReadCDDChunk(CDataSource* data_source,
                         CDataLoader::TChunk chunk,
                         const CPSG_BlobInfo& blob_info,
