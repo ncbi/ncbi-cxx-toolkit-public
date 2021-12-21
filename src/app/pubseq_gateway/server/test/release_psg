@@ -290,9 +290,35 @@ def getDevProdServerPair():
     for devInstance in devInstances:
         for prodInstance in prodInstances:
             if devInstance[0] == prodInstance[0]:
-                return devInstance[0] + ':' + str(devInstance[1]), prodInstance[0] + ':' +str(prodInstance[1])
+                return devInstance[0] + ':' + str(devInstance[1]), prodInstance[0] + ':' + str(prodInstance[1])
     return None, None
 
+def getArchivedTestPath(options):
+    binPath = getArchivedBinaryPath(options.psg_ver)
+    if binPath is None:
+        return None
+
+    # strip '/bin/pubseq_gatewa'
+    testsPath = os.path.dirname(binPath)
+    testsPath = os.path.dirname(testsPath)
+    testsPath += os.path.sep + 'tests' + os.path.sep
+    if not os.path.exists(testsPath):
+        print_error(f'Cannot find the archived release tests directory. Expected here: {testsPath}')
+        return None
+    return testsPath
+
+def getPerfTestResultsPath(options):
+    # it is like results.20211221-09360
+    artefactDir = getArtefactDir(options)
+    for item in os.listdir(artefactDir):
+        if item.startswith('results.'):
+            candidate = artefactDir + item + os.path.sep
+            item = item.replace('results.', '')
+            if item[0].isdigit() and item[-1].isdigit() and '-' in item:
+                if os.path.isdir(candidate):
+                    return candidate
+    print_error(f"Cannot find the perf_test results directory. Expected at: {artefactDir} as 'results.dddddddd-ddddd'")
+    return None
 
 def main():
 
@@ -509,9 +535,13 @@ def archive_check_args(commands, options, args):
 
     if checkVersionOptionAndDirectory(options) != 0:
         return 1
-
     if getBuildResultsDir(options) is None:
         return 1
+    if getArchivedTestPath(options) is None:
+        return 1
+    if getPerfTestResultsPath(options) is None:
+        return 1
+
     return 0
 
 
@@ -1120,6 +1150,12 @@ def archive(commands, options, args):
     buildResultsDir = getBuildResultsDir(options)
     if buildResultsDir is None:
         return 1
+    archivedTestsDir = getArchivedTestPath(options)
+    if archivedTestsDir is None:
+        return 1
+    perfTestResultsDir = getPerfTestResultsPath(options)
+    if perfTestResultsDir is None:
+        return 1
 
     cmdLine = ['prepare_release', 'archive', buildResultsDir]
     print_verbose('Running release archiving: ' + ' '.join(cmdLine))
@@ -1128,13 +1164,22 @@ def archive(commands, options, args):
 
     out, err = proc.communicate(b'all\n')
     ret = proc.returncode
-    if ret == 0:
-        print_verbose('Archiving succeeded')
-        return 0
+    if ret != 0:
+        resultFile = artefactDir + 'archive-release.log'
+        saveProcessArtefacts(proc, resultFile)
+        print_error(f'Archiving error. Return code {ret}; results are in {resultFile}')
+        return ret
 
-    resultFile = artefactDir + 'archive-release.log'
-    saveProcessArtefacts(proc, resultFile)
-    print_error(f'Archiving error. Return code {ret}; results are in {resultFile}')
+
+    print_verbose('Archiving binary and source succeeded. Archive the perf_test results.')
+
+    cmdLine = f'cp -rf {perfTestResultsDir}* {archivedTestsDir}'
+    print_verbose(f'Running perf test: {cmdLine}')
+    ret = os.system(cmdLine)
+    if ret != 0:
+        print_error(f'Error archiving the perf_test results. Return code: {ret}')
+    else:
+        print_verbose('perf_test results have been archived successfully')
     return ret
 
 def perf_test(commands, options, args):
