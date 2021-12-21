@@ -74,44 +74,17 @@ void GapFeatsFree(GapFeatsPtr gfp)
 
 void s_FreeDataBlk(DataBlkPtr dbp)
 {
-    DataBlkPtr temp;
-
-    while(dbp != NULL)
-    {
-        if(dbp->mpData != NULL)
-        {
-            temp = (DataBlkPtr) dbp->mpData;
-            dbp->mpData = NULL;
-            s_FreeDataBlk(temp);
-        }
-
-        temp = dbp;
-        dbp = dbp->mpNext;
-        temp->mpNext = NULL;
-
-        if(temp->mType == ParFlat_ENTRYNODE && temp->mOffset != NULL)
-            MemFree(temp->mOffset);
-
-        if(temp->mpQscore != NULL)
-            MemFree(temp->mpQscore);
-        MemFree(temp);
-    }
+    delete dbp;
+    dbp = nullptr;
 }
-
-/*void DataBlk::operator delete(void* p)
-{
-    if (!p) {
-        return;
-    }
-    s_FreeDataBlk(static_cast<DataBlkPtr>(p));
-}*/
 
 DataBlk::~DataBlk()
 {
     delete[] mpQscore;
     delete mpData;
     if (mType == ParFlat_ENTRYNODE) {
-        delete mOffset;
+        delete[] mOffset;
+        //mOffset = nullptr;
     }
     delete mpNext;
 }
