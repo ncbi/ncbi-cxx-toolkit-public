@@ -587,7 +587,7 @@ static EIO_Status s_MbedTlsWrite(void* session, const void* data,
                                  size_t n_todo, size_t* n_done, int* error)
 {
     size_t max_size
-        = mbedtls_ssl_get_max_frag_len((mbedtls_ssl_context*) session);
+        = mbedtls_ssl_get_output_max_frag_len((mbedtls_ssl_context*) session);
     EIO_Status status;
 
     *n_done = 0;
