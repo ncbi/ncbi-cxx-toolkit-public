@@ -309,7 +309,9 @@ static map<ESerialDataFormat, string> SerialFormatNames = {
 static map<CCompressStream::EMethod, string> CompressMethodNames = {
     { CCompressStream::eNone, "none" },
     { CCompressStream::eBZip2, "bzip" },
+#ifdef HAVE_LZO
     { CCompressStream::eLZO, "lzo" },
+#endif
     { CCompressStream::eZip, "zip" },
     { CCompressStream::eGZipFile, "gzip" }
 };
@@ -393,7 +395,10 @@ static vector<ESerialDataFormat> SerialFormats = {
 };
 
 static vector<CCompressStream::EMethod> CompressMethods = {
-    CCompressStream::eNone, CCompressStream::eBZip2,  CCompressStream::eLZO,
+    CCompressStream::eNone, CCompressStream::eBZip2,
+#ifdef HAVE_LZO
+    CCompressStream::eLZO,
+#endif
     CCompressStream::eZip, CCompressStream::eGZipFile
 };
 
