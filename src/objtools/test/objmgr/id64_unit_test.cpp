@@ -1297,7 +1297,7 @@ BOOST_AUTO_TEST_CASE(CheckSplitNucProtSet)
     CRef<CScope> scope = s_InitScope();
     CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("CP071864"));
     auto core = bh.GetTopLevelEntry().GetObjectCore();
-    BOOST_CHECK_EQUAL(s_CountObjects<CSeqdesc>(*core), 350u);
+    BOOST_CHECK_LT(s_CountObjects<CSeqdesc>(*core), 527u);
     BOOST_CHECK_EQUAL(s_CountObjects<CSeq_feat>(*core), 0u);
     auto complete = bh.GetTopLevelEntry().GetCompleteObject();
     BOOST_CHECK_EQUAL(s_CountObjects<CSeqdesc>(*complete), 527u);
