@@ -82,80 +82,6 @@ static unsigned int s_GetDebugLevel()
     return value;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-// CPsgClientContext
-/////////////////////////////////////////////////////////////////////////////
-
-class CPsgClientContext
-{
-public:
-    CPsgClientContext(void);
-    virtual ~CPsgClientContext(void) {}
-
-    virtual void SetReply(shared_ptr<CPSG_Reply> reply);
-    virtual shared_ptr<CPSG_Reply> GetReply(void);
-
-protected:
-    CSemaphore m_Sema;
-private:
-    shared_ptr<CPSG_Reply> m_Reply;
-};
-
-
-CPsgClientContext::CPsgClientContext(void)
-    : m_Sema(0, kMax_UInt)
-{
-}
-
-
-void CPsgClientContext::SetReply(shared_ptr<CPSG_Reply> reply)
-{
-    m_Reply = reply;
-    m_Sema.Post();
-}
-
-
-shared_ptr<CPSG_Reply> CPsgClientContext::GetReply(void)
-{
-    m_Sema.Wait();
-    return m_Reply;
-}
-
-
-class CPsgClientContext_Bulk : public CPsgClientContext
-{
-public:
-    CPsgClientContext_Bulk(void) {}
-    virtual ~CPsgClientContext_Bulk(void) {}
-
-    void SetReply(shared_ptr<CPSG_Reply> reply) override;
-    shared_ptr<CPSG_Reply> GetReply(void) override;
-
-private:
-    deque<shared_ptr<CPSG_Reply>> m_Replies;
-    CFastMutex m_Lock;
-};
-
-
-void CPsgClientContext_Bulk::SetReply(shared_ptr<CPSG_Reply> reply)
-{
-    CFastMutexGuard guard(m_Lock);
-    m_Replies.push_front(reply);
-    m_Sema.Post();
-}
-
-
-shared_ptr<CPSG_Reply> CPsgClientContext_Bulk::GetReply(void)
-{
-    m_Sema.Wait();
-    shared_ptr<CPSG_Reply> ret;
-    CFastMutexGuard guard(m_Lock);
-    _ASSERT(!m_Replies.empty());
-    ret = m_Replies.back();
-    m_Replies.pop_back();
-    return ret;
-}
-
 
 const unsigned int kMaxWaitSeconds = 3;
 const unsigned int kMaxWaitMillisec = 0;
@@ -1073,8 +999,7 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
     }
 
     CPSG_BioId bio_id = x_GetBioId(idh);
-    auto context = make_shared<CPsgClientContext>();
-    auto request = make_shared<CPSG_Request_Biodata>(move(bio_id), context);
+    auto request = make_shared<CPSG_Request_Biodata>(move(bio_id));
     
     CPSG_Request_Biodata::EIncludeData inc_data = CPSG_Request_Biodata::eNoTSE;
     if (data_source) {
@@ -1088,7 +1013,7 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
         }
     }
     request->IncludeData(inc_data);
-    auto reply = x_ProcessRequest(request);
+    auto reply = x_SendRequest(request);
     CTSE_Lock tse_lock = x_ProcessBlobReply(reply, data_source, idh, true, true).lock;
 
     if (!tse_lock) {
@@ -1127,10 +1052,9 @@ CRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& idh)
     }
     else {
         CPSG_BioId bio_id = x_GetBioId(idh);
-        auto context = make_shared<CPsgClientContext>();
-        auto request = make_shared<CPSG_Request_Biodata>(move(bio_id), context);
+        auto request = make_shared<CPSG_Request_Biodata>(move(bio_id));
         request->IncludeData(CPSG_Request_Biodata::eNoTSE);
-        auto reply = x_ProcessRequest(request);
+        auto reply = x_SendRequest(request);
         blob_id = x_ProcessBlobReply(reply, nullptr, idh, true).blob_id;
     }
     CRef<CPsgBlobId> ret;
@@ -1211,10 +1135,9 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const C
     }
     else {
         CPSG_BlobId bid(blob_id.ToPsgId());
-        auto context = make_shared<CPsgClientContext>();
-        auto request = make_shared<CPSG_Request_Blob>(bid, context);
+        auto request = make_shared<CPSG_Request_Blob>(bid);
         request->IncludeData(m_TSERequestMode);
-        auto reply = x_ProcessRequest(request);
+        auto reply = x_SendRequest(request);
         ret = x_ProcessBlobReply(reply, data_source, CSeq_id_Handle(), true, false, &load_lock).lock;
     }
     if (!ret) {
@@ -1739,12 +1662,11 @@ void CPSGDataLoader_Impl::GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_
 void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TTSE_LockSets& tse_sets)
 {
     if (!data_source) return;
-    auto context = make_shared<CPsgClientContext_Bulk>();
     CPSG_TaskGroup group(*m_ThreadPool);
     ITERATE(TTSE_LockSets, tse_set, tse_sets) {
         const CSeq_id_Handle& idh = tse_set->first;
         CPSG_BioId bio_id = x_GetBioId(idh);
-        auto request = make_shared<CPSG_Request_Biodata>(move(bio_id), context);
+        auto request = make_shared<CPSG_Request_Biodata>(move(bio_id));
         CPSG_Request_Biodata::EIncludeData inc_data = CPSG_Request_Biodata::eNoTSE;
         if (data_source) {
             inc_data = m_TSERequestModeBulk;
@@ -1757,7 +1679,7 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TTSE_LockSets& 
             }
         }
         request->IncludeData(inc_data);
-        auto reply = x_ProcessRequest(request);
+        auto reply = x_SendRequest(request);
         CRef<CPSG_Blob_Task> task(
             new CPSG_Blob_Task(reply, group, idh, data_source, *this, true));
         group.AddTask(task);
@@ -2045,8 +1967,7 @@ bool CPSGDataLoader_Impl::x_ReadCDDChunk(CDataSource* data_source,
 
 shared_ptr<CPSG_Request_Blob>
 CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
-                                                    CDataLoader::TChunk chunk,
-                                                    shared_ptr<CPsgClientContext_Bulk> context)
+                                                    CDataLoader::TChunk chunk)
 {
     _ASSERT(chunk->GetChunkId() == kDelayedMain_ChunkId);
     const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*chunk->GetBlobId());
@@ -2061,9 +1982,9 @@ CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
         CPSG_BioId bio_id = x_LocalCDDEntryIdToBioId(blob_id);
         CPSG_Request_NamedAnnotInfo::TAnnotNames names = { kCDDAnnotName };
         _ASSERT(bio_id.GetId().find('|') == NPOS);
-        auto request = make_shared<CPSG_Request_NamedAnnotInfo>(bio_id, names, context);
+        auto request = make_shared<CPSG_Request_NamedAnnotInfo>(bio_id, names);
         request->IncludeData(m_TSERequestMode);
-        auto reply = x_ProcessRequest(request);
+        auto reply = x_SendRequest(request);
         shared_ptr<CPSG_BioseqInfo> bioseq_info;
         shared_ptr<CPSG_BlobInfo> blob_info;
         shared_ptr<CPSG_BlobData> blob_data;
@@ -2116,7 +2037,7 @@ CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
     }}
     
     // load CDD blob request
-    return make_shared<CPSG_Request_Blob>(cdd_info->GetBlobId(), context);
+    return make_shared<CPSG_Request_Blob>(cdd_info->GetBlobId());
 }
 
 
@@ -2134,9 +2055,8 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
 {
     if (chunks.empty()) return;
 
-    typedef map<void*, CDataLoader::TChunk> TChunkMap;
-    TChunkMap chunk_map;
-    auto context = make_shared<CPsgClientContext_Bulk>();
+    CPSG_TaskGroup group(*m_ThreadPool);
+    list<shared_ptr<CPSG_Task_Guard>> guards;
     ITERATE(CDataLoader::TChunkSet, it, chunks) {
         const CTSE_Chunk_Info& chunk = **it;
         if ( chunk.IsLoaded() ) {
@@ -2150,46 +2070,28 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
             const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*chunk.GetBlobId());
             shared_ptr<CPSG_Request_Blob> request;
             if ( x_IsLocalCDDEntryId(blob_id) ) {
-                request = x_MakeLoadLocalCDDEntryRequest(data_source, *it, context);
+                request = x_MakeLoadLocalCDDEntryRequest(data_source, *it);
                 if ( !request ) {
                     continue;
                 }
             }
             else {
-                request = make_shared<CPSG_Request_Blob>(blob_id.ToPsgId(), context);
+                request = make_shared<CPSG_Request_Blob>(blob_id.ToPsgId());
             }
             request->IncludeData(m_TSERequestMode);
-            chunk_map[request.get()] = *it;
-            x_SendRequest(request);
-        }
-        else {
-            const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*chunk.GetBlobId());
-            auto request = make_shared<CPSG_Request_Chunk>(CPSG_ChunkId(chunk.GetChunkId(),
-                                                                        blob_id.GetId2Info()),
-                                                           context);
-            chunk_map[request.get()] = *it;
-            x_SendRequest(request);
-        }
-    }
-
-    CPSG_TaskGroup group(*m_ThreadPool);
-    list<shared_ptr<CPSG_Task_Guard>> guards;
-    while (!chunk_map.empty()) {
-        auto reply = context->GetReply();
-        if (!reply) continue;
-        TChunkMap::iterator chunk_it = chunk_map.find((void*)reply->GetRequest().get());
-        _ASSERT(chunk_it != chunk_map.end());
-        CDataLoader::TChunk chunk = chunk_it->second;
-        chunk_map.erase(chunk_it);
-        if ( chunk->GetChunkId() == kDelayedMain_ChunkId ) {
+            auto reply = x_SendRequest(request);
             CRef<CPSG_Blob_Task> task(new CPSG_Blob_Task(reply, group, CSeq_id_Handle(), data_source, *this, true));
             task->SetDLBlobId(dynamic_cast<const CPSG_Request_Blob&>(*reply->GetRequest()).GetBlobId().GetId(),
-                              chunk->GetBlobId());
+                              chunk.GetBlobId());
             guards.push_back(make_shared<CPSG_Task_Guard>(*task));
             group.AddTask(task);
         }
         else {
-            CRef<CPSG_LoadChunk_Task> task(new CPSG_LoadChunk_Task(reply, group, chunk));
+            const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*chunk.GetBlobId());
+            auto request = make_shared<CPSG_Request_Chunk>(CPSG_ChunkId(chunk.GetChunkId(),
+                                                                        blob_id.GetId2Info()));
+            auto reply = x_SendRequest(request);
+            CRef<CPSG_LoadChunk_Task> task(new CPSG_LoadChunk_Task(reply, group, *it));
             guards.push_back(make_shared<CPSG_Task_Guard>(*task));
             group.AddTask(task);
         }
@@ -2370,47 +2272,45 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
             }
             annot_names.push_back(it->first);
         }
-        auto context = make_shared<CPsgClientContext>();
         //_ASSERT(PsgIdToHandle(bio_id));
-        auto request = make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), annot_names, context);
-        if ( auto reply = x_ProcessRequest(request) ) {
-            CPSG_TaskGroup group(*m_ThreadPool);
-            CRef<CPSG_AnnotRecordsNA_Task> task(new CPSG_AnnotRecordsNA_Task(reply, group));
-            CPSG_Task_Guard guard(*task);
-            group.AddTask(task);
-            group.WaitAll();
+        auto request = make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), annot_names);
+        auto reply = x_SendRequest(request);
+        CPSG_TaskGroup group(*m_ThreadPool);
+        CRef<CPSG_AnnotRecordsNA_Task> task(new CPSG_AnnotRecordsNA_Task(reply, group));
+        CPSG_Task_Guard guard(*task);
+        group.AddTask(task);
+        group.WaitAll();
 
-            if (task->GetStatus() == CThreadPool_Task::eCompleted) {
-                for ( auto& info : task->m_AnnotInfo ) {
-                    CDataLoader::SetProcessedNA(info->GetName(), processed_nas);
-                    CRef<CPsgBlobId> blob_id(new CPsgBlobId(info->GetBlobId().GetId()));
-                    auto chunk_info = s_CreateNAChunk(*info, task->m_BioseqInfo.get());
-                    if ( chunk_info.first ) {
-                        CDataLoader::TBlobId dl_blob_id = CDataLoader::TBlobId(blob_id);
-                        CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
-                        if ( load_lock ) {
-                            if ( !load_lock.IsLoaded() ) {
-                                if ( !chunk_info.second.empty() ) {
-                                    load_lock->SetName(chunk_info.second);
-                                }
-                                load_lock->GetSplitInfo().AddChunk(*chunk_info.first);
-                                _ASSERT(load_lock->x_NeedsDelayedMainChunk());
-                                load_lock.SetLoaded();
+        if (task->GetStatus() == CThreadPool_Task::eCompleted) {
+            for ( auto& info : task->m_AnnotInfo ) {
+                CDataLoader::SetProcessedNA(info->GetName(), processed_nas);
+                CRef<CPsgBlobId> blob_id(new CPsgBlobId(info->GetBlobId().GetId()));
+                auto chunk_info = s_CreateNAChunk(*info, task->m_BioseqInfo.get());
+                if ( chunk_info.first ) {
+                    CDataLoader::TBlobId dl_blob_id = CDataLoader::TBlobId(blob_id);
+                    CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
+                    if ( load_lock ) {
+                        if ( !load_lock.IsLoaded() ) {
+                            if ( !chunk_info.second.empty() ) {
+                                load_lock->SetName(chunk_info.second);
                             }
-                            locks.insert(load_lock);
+                            load_lock->GetSplitInfo().AddChunk(*chunk_info.first);
+                            _ASSERT(load_lock->x_NeedsDelayedMainChunk());
+                            load_lock.SetLoaded();
                         }
+                        locks.insert(load_lock);
                     }
-                    else {
-                        // no annot info
-                        if ( auto tse_lock = GetBlobById(data_source, *blob_id) ) {
-                            locks.insert(tse_lock);
-                        }
+                }
+                else {
+                    // no annot info
+                    if ( auto tse_lock = GetBlobById(data_source, *blob_id) ) {
+                        locks.insert(tse_lock);
                     }
                 }
             }
-            else {
-                _TRACE("Failed to load annotations for " << idh.AsString());
-            }
+        }
+        else {
+            _TRACE("Failed to load annotations for " << idh.AsString());
         }
     }
     if ( kCreateLocalCDDEntries ) {
@@ -2528,20 +2428,9 @@ CPSG_BioId CPSGDataLoader_Impl::x_GetBioId(const CSeq_id_Handle& idh)
 }
 
 
-void CPSGDataLoader_Impl::x_SendRequest(shared_ptr<CPSG_Request> request)
+shared_ptr<CPSG_Reply> CPSGDataLoader_Impl::x_SendRequest(shared_ptr<CPSG_Request> request)
 {
-    auto context = request->GetUserContext<CPsgClientContext>();
-    auto reply = m_Queue->SendRequestAndGetReply(request, DEFAULT_DEADLINE);
-    context->SetReply(reply);
-}
-
-
-shared_ptr<CPSG_Reply> CPSGDataLoader_Impl::x_ProcessRequest(shared_ptr<CPSG_Request> request)
-{
-    x_SendRequest(request);
-    auto context = request->GetUserContext<CPsgClientContext>();
-    _ASSERT(context);
-    return context->GetReply();
+    return m_Queue->SendRequestAndGetReply(request, DEFAULT_DEADLINE);
 }
 
 
@@ -2574,10 +2463,9 @@ CPSGDataLoader_Impl::x_RetryBlobRequest(const string& blob_id, CDataSource* data
 #endif
     
     CPSG_BlobId req_blob_id(blob_id);
-    auto context = make_shared<CPsgClientContext>();
-    auto blob_request = make_shared<CPSG_Request_Blob>(req_blob_id, context);
+    auto blob_request = make_shared<CPSG_Request_Blob>(req_blob_id);
     blob_request->IncludeData(m_TSERequestMode);
-    auto blob_reply = x_ProcessRequest(blob_request);
+    auto blob_reply = x_SendRequest(blob_request);
     return x_ProcessBlobReply(blob_reply, data_source, req_idh, false, false, &load_lock);
 }
 
@@ -2695,11 +2583,9 @@ shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Ha
     }
 
     CPSG_BioId bio_id = x_GetBioId(idh);
-    auto context = make_shared<CPsgClientContext>();
-    shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(move(bio_id), context);
+    shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(move(bio_id));
     request->IncludeInfo(CPSG_Request_Resolve::fAllInfo);
-    x_SendRequest(request);
-    auto reply = context->GetReply();
+    auto reply = x_SendRequest(request);
     if (!reply) {
         _TRACE("Request failed: null reply");
         NCBI_THROW(CLoaderException, eLoaderFailed, "null reply for "+idh.AsString());
@@ -2791,7 +2677,8 @@ CObjectIStream* CPSGDataLoader_Impl::GetBlobDataStream(
 
     if (blob_info.GetCompression() == "gzip") {
         z_stream.reset(new CCompressionIStream(data_stream,
-            new CZipStreamDecompressor(CZipCompression::fGZip), 0));
+                                               new CZipStreamDecompressor(CZipCompression::fGZip),
+                                               CCompressionIStream::fOwnProcessor));
         in = z_stream.get();
     }
     else if (!blob_info.GetCompression().empty()) {
@@ -2829,8 +2716,10 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
     TBioseqInfos& ret)
 {
     pair<size_t, size_t> counts(0, 0);
-    TIdxMap idx_map;
-    auto context = make_shared<CPsgClientContext_Bulk>();
+    CPSG_TaskGroup group(*m_ThreadPool);
+    typedef  map<CRef<CPSG_BioseqInfo_Task>, size_t> TTasks;
+    TTasks tasks;
+    list<shared_ptr<CPSG_Task_Guard>> guards;
     for (size_t i = 0; i < ids.size(); ++i) {
         if (loaded[i]) continue;
         if ( CannotProcess(ids[i]) ) {
@@ -2842,29 +2731,12 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
             continue;
         }
         CPSG_BioId bio_id = x_GetBioId(ids[i]);
-        shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(move(bio_id), context);
-        idx_map[request.get()] = i;
+        shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(move(bio_id));
         request->IncludeInfo(info);
-        x_SendRequest(request);
-    }
-
-    CPSG_TaskGroup group(*m_ThreadPool);
-    typedef  map<CRef<CPSG_BioseqInfo_Task>, size_t> TTasks;
-    TTasks tasks;
-    list<shared_ptr<CPSG_Task_Guard>> guards;
-    while (!idx_map.empty()) {
-        auto reply = context->GetReply();
-        if (!reply) continue;
-        TIdxMap::iterator idx_it = idx_map.find((void*)reply->GetRequest().get());
-        size_t idx = ret.size();
-        if (idx_it != idx_map.end()) {
-            idx = idx_it->second;
-            idx_map.erase(idx_it);
-        }
-
+        auto reply = x_SendRequest(request);
         CRef<CPSG_BioseqInfo_Task> task(new CPSG_BioseqInfo_Task(reply, group));
         guards.push_back(make_shared<CPSG_Task_Guard>(*task));
-        tasks[task] = idx;
+        tasks[task] = i;
         group.AddTask(task);
     }
     while (group.HasTasks()) {
