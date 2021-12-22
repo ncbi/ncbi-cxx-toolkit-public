@@ -1297,7 +1297,7 @@ void TestFindThisNotStrain(COrgMod::ESubtype subtype, const string& prefix)
     cleanup.SetScope(scope);
     changes = cleanup.BasicCleanup(*entry);
 
-    ITERATE(objects::CSeq_descr::Tdata, it, entry->GetSeq().GetDescr().Get()) {
+    ITERATE(CSeq_descr::Tdata, it, entry->GetSeq().GetDescr().Get()) {
         if ((*it)->IsSource()) {
             if ((*it)->GetSource().IsSetOrg() &&
                 (*it)->GetSource().GetOrg().IsSetOrgname() &&
@@ -1385,14 +1385,14 @@ BOOST_AUTO_TEST_CASE(Test_AddPartialToProteinTitle)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
     CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
-    CRef<CBioSource> src(NULL);
+    CRef<CBioSource> src;
     NON_CONST_ITERATE(CBioseq_set::TDescr::Tdata, d, entry->SetSet().SetDescr().Set()) {
         if ((*d)->IsSource()) {
             src.Reset(&((*d)->SetSource()));
         }
     }
-    CRef<CSeqdesc> title(NULL);
-    CRef<CSeqdesc> molinfo(NULL);
+    CRef<CSeqdesc> title;
+    CRef<CSeqdesc> molinfo;
     NON_CONST_ITERATE(CBioseq::TDescr::Tdata, d, prot->SetSeq().SetDescr().Set()) {
         if ((*d)->IsTitle()) {
             title = *d;

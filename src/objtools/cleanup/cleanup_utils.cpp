@@ -428,20 +428,20 @@ bool Asn2gnbkCompressSpaces(string& val)
             ch = *ptr;
         }
         *dst = '\0';
-        dst = NULL;
+        dst = nullptr;
         ptr = str;
         ch = *ptr;
         while (ch != '\0') {
             if (ch != ' ') {
-                dst = NULL;
+                dst = nullptr;
             }
-            else if (dst == NULL) {
+            else if (!dst) {
                 dst = ptr;
             }
             ptr++;
             ch = *ptr;
         }
-        if (dst != NULL) {
+        if (dst) {
             *dst = '\0';
         }
     }
@@ -491,39 +491,39 @@ bool TrimSpacesSemicolonsAndCommas(string& val)
         }
         *dst = '\0';
     }
-    amp = NULL;
-    dst = NULL;
+    amp = nullptr;
+    dst = nullptr;
     ptr = str;
     ch = *ptr;
     while (ch != '\0') {
         if (ch == '&') {
             amp = ptr;
-            dst = NULL;
+            dst = nullptr;
         }
         else if (ch <= ' ') {
-            if (dst == NULL) {
+            if (!dst) {
                 dst = ptr;
             }
-            amp = NULL;
+            amp = nullptr;
         }
         else if (ch == ';') {
-            if (dst == NULL && amp == NULL) {
+            if (!dst && !amp) {
                 dst = ptr;
             }
         }
         else if (ch == ',') {
-            if (dst == NULL) {
+            if (!dst) {
                 dst = ptr;
             }
-            amp = NULL;
+            amp = nullptr;
         }
         else {
-            dst = NULL;
+            dst = nullptr;
         }
         ptr++;
         ch = *ptr;
     }
-    if (dst != NULL) {
+    if (dst) {
         *dst = '\0';
     }
 

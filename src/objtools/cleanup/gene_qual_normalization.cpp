@@ -103,7 +103,7 @@ bool CCleanup::NormalizeGeneQuals(CSeq_feat& cds, CSeq_feat& gene)
     }
     CTempString locus;
     CTempString locus_tag;
-    CRef<CSeqFeatXref> gene_xref(NULL);
+    CRef<CSeqFeatXref> gene_xref;
     for (auto it : cds.SetXref()) {
         if (it->IsSetData() && it->GetData().IsGene()) {
             if (it->GetData().GetGene().IsSetLocus()) {
