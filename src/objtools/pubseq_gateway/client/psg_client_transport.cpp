@@ -98,7 +98,6 @@ NCBI_PARAM_ENUM_ARRAY(EPSG_PsgClientMode, PSG, internal_psg_client_mode)
 {
     { "off",         EPSG_PsgClientMode::eOff         },
     { "performance", EPSG_PsgClientMode::ePerformance },
-    { "io",          EPSG_PsgClientMode::eIo          }
 };
 NCBI_PARAM_ENUM_DEF(EPSG_PsgClientMode, PSG, internal_psg_client_mode, EPSG_PsgClientMode::eOff);
 
@@ -242,13 +241,10 @@ SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestCont
     full_path(move(p)),
     reply(r),
     context(c),
-    m_State(params.client_mode == EPSG_PsgClientMode::eIo ?
-            &SPSG_Request::StateIo : &SPSG_Request::StatePrefix),
+    m_State(&SPSG_Request::StatePrefix),
     m_Retries(params.request_retries)
 {
     _ASSERT(reply);
-
-    if (params.client_mode == EPSG_PsgClientMode::eIo) AddIo();
 }
 
 bool SPSG_Request::StatePrefix(const char*& data, size_t& len)
@@ -326,38 +322,6 @@ bool SPSG_Request::StateData(const char*& data, size_t& len)
     }
 
     return true;
-}
-
-void SPSG_Request::AddIo()
-{
-    SPSG_Chunk chunk(1, ' ');
-
-    SPSG_Reply::SItem::TTS* item_ts = nullptr;
-    auto reply_item_ts = &reply->reply_item;
-
-    if (auto items_locked = reply->items.GetLock()) {
-        auto& items = *items_locked;
-        items.emplace_back();
-        item_ts = &items.back();
-    }
-
-    if (auto item_locked = item_ts->GetLock()) {
-        auto& item = *item_locked;
-        item.chunks.push_back(move(chunk));
-        item.args = SPSG_Args("item_id=1&item_type=blob&chunk_type=meta&blob_id=0&n_chunks=2");
-        item.received = item.expected = 2;
-        item.state.SetNotEmpty();
-    }
-
-    if (auto item_locked = reply_item_ts->GetLock()) {
-        auto& item = *item_locked;
-        item.args = SPSG_Args("item_id=0&item_type=reply&chunk_type=meta&n_chunks=3");
-        item.received = item.expected = 3;
-    }
-
-    reply_item_ts->NotifyOne();
-    item_ts->NotifyOne();
-    reply->queue->CV().NotifyOne();
 }
 
 void SPSG_Request::Add()

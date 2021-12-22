@@ -83,7 +83,6 @@ private:
 
 struct SInteractive {};
 struct SPerformance {};
-struct SIo {};
 struct SJsonCheck {};
 
 void s_InitPsgOptions(CArgDescriptions& arg_desc);
@@ -98,7 +97,6 @@ CPsgClientApp::CPsgClientApp() :
             s_GetCommand<CPSG_Request_Chunk>         ("chunk",       "Request blob data chunk by chunk ID"),
             s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode", SCommand::fParallel),
             s_GetCommand<SPerformance>               ("performance", "Performance testing", SCommand::fHidden),
-            s_GetCommand<SIo>                        ("io",          "IO mode", SCommand::fHidden),
             s_GetCommand<SJsonCheck>                 ("json_check",  "JSON document validate", SCommand::fHidden),
         })
 {
@@ -255,15 +253,6 @@ void CPsgClientApp::s_InitRequest<SPerformance>(CArgDescriptions& arg_desc)
 }
 
 template <>
-void CPsgClientApp::s_InitRequest<SIo>(CArgDescriptions& arg_desc)
-{
-    arg_desc.AddPositional("START_TIME", "Start time (time_t)", CArgDescriptions::eInteger);
-    arg_desc.AddPositional("DURATION", "Duration (seconds)", CArgDescriptions::eInteger);
-    arg_desc.AddPositional("USER_THREADS", "Number of user threads", CArgDescriptions::eInteger);
-    arg_desc.AddPositional("DOWNLOAD_SIZE", "Download size", CArgDescriptions::eInteger);
-}
-
-template <>
 void CPsgClientApp::s_InitRequest<SJsonCheck>(CArgDescriptions& arg_desc)
 {
     arg_desc.AddOptionalKey("schema-file", "FILENAME", "JSON-RPC schema file (built-in by default)", CArgDescriptions::eInputFile);
@@ -348,12 +337,6 @@ int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args)
 {
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::ePerformance);
     return CProcessing::Performance(args);
-}
-
-template <>
-int CPsgClientApp::RunRequest<SIo>(const CArgs& args)
-{
-    return CProcessing::Io(args);
 }
 
 template <>

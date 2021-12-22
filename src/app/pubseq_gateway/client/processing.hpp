@@ -194,16 +194,6 @@ struct SPerformanceParams : SParams
     SPerformanceParams(const CArgs& args);
 };
 
-struct SIoParams : SParams
-{
-    const time_t start_time;
-    const int duration;
-    const int user_threads;
-    const int download_size;
-
-    SIoParams(const CArgs& args);
-};
-
 class CParallelProcessing
 {
 public:
@@ -257,7 +247,6 @@ public:
     static int OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Request> request);
     static int ParallelProcessing(const SParallelProcessingParams params);
     static int Performance(const SPerformanceParams params);
-    static int Io(const SIoParams params);
     static int JsonCheck(istream* schema_is, istream& doc_is);
 
     static void ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
