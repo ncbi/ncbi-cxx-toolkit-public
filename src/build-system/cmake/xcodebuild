@@ -8,10 +8,40 @@
 #
 #############################################################################
 
+if [ "x$1" = x-version ]; then
+    exec /usr/bin/xcodebuild "$@"
+fi
 
 if [ "$USER" = tomcat  -a  ! -d /Users/tomcat  -a  -d /Users/buildAgent ]; then
-    mkdir -p /Users/buildAgent/XcodeTemp
-    set _ -derivedDataPath /Users/buildAgent/XcodeTemp "$@"
-    shift
+    scheme=$(/usr/bin/xcodebuild "$@" -list |
+                 awk '/^ *Schemes:$/ { s=1; next } (s) { print $1; exit }')
+
+    xcud=$scheme.xcodeproj/project.xcworkspace/xcuserdata/$USER.xcuserdatad
+    xcs=$xcud/WorkspaceSettings.xcsettings
+
+    if [ ! -f "$xcs" ]; then
+        mkdir -p "$xcud"
+        # Cribbed from https://gitlab.kitware.com/cmake/cmake/-/issues/20160.
+        cat >"$xcs" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BuildLocationStyle</key>
+	<string>UseTargetSettings</string>
+	<key>CustomBuildLocationType</key>
+	<string>RelativeToDerivedData</string>
+	<key>DerivedDataCustomLocation</key>
+	<string>DerivedData</string>
+	<key>DerivedDataLocationStyle</key>
+	<string>WorkspaceRelativePath</string>
+	<key>IssueFilterStyle</key>
+	<string>ShowActiveSchemeOnly</string>
+	<key>LiveSourceIssuesEnabled</key>
+	<true/>
+</dict>
+</plist>
+EOF
+    fi
 fi
 exec /usr/bin/xcodebuild "$@"
