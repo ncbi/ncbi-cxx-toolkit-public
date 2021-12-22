@@ -161,10 +161,10 @@ public:
     CNewCleanup_imp & newCleanup ) :
     m_Scope(scope),
     m_NewCleanup(newCleanup),
-    m_LastArg_BasicCleanupBioseq(NULL),
-    m_pCurrentSeqFeat(NULL),
+    m_LastArg_BasicCleanupBioseq(nullptr),
+    m_pCurrentSeqFeat(nullptr),
     m_pCurrentBioSource(nullptr),
-    m_LastArg_x_BasicCleanupBioseq_inst_inst(NULL),
+    m_LastArg_x_BasicCleanupBioseq_inst_inst(nullptr),
     m_Dummy(0)
   {}
 

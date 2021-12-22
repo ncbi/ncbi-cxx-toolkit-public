@@ -615,7 +615,7 @@ const string& GetValidCountryCode(unsigned int i)
 };
 
 
-void FixCapitalizationInString (objects::CSeq_entry_Handle seh, string& str, ECapChange capchange_opt)
+void FixCapitalizationInString (CSeq_entry_Handle seh, string& str, ECapChange capchange_opt)
 {
     if (NStr::IsBlank(str) || capchange_opt == eCapChange_none) {
         return;
@@ -722,7 +722,7 @@ static bool s_ReplaceInPlaceWholeWordNoCase(string& str, const string& search, c
     return modified;
 }
 
-void FixOrgNames(objects::CSeq_entry_Handle seh, string& result)
+void FixOrgNames(CSeq_entry_Handle seh, string& result)
 {
     vector<string> taxnames;
     FindOrgNames(seh, taxnames);
@@ -737,12 +737,12 @@ void FixOrgNames(objects::CSeq_entry_Handle seh, string& result)
     }
 }
 
-void FindOrgNames(objects::CSeq_entry_Handle seh, vector<string>& taxnames)
+void FindOrgNames(CSeq_entry_Handle seh, vector<string>& taxnames)
 {
     if (!seh) return;
-    objects::CBioseq_CI b_iter(seh, objects::CSeq_inst::eMol_na);
+    CBioseq_CI b_iter(seh, CSeq_inst::eMol_na);
     for ( ; b_iter ; ++b_iter ) {
-        objects::CSeqdesc_CI it (*b_iter, objects::CSeqdesc::e_Source);
+        CSeqdesc_CI it (*b_iter, CSeqdesc::e_Source);
         if (it) {
             if (it->GetSource().IsSetTaxname()) {
                 taxnames.push_back(it->GetSource().GetTaxname());

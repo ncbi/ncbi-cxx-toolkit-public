@@ -463,7 +463,7 @@ struct SAuthorEmpty
 
         const CAuthor::TName& name = auth.GetName();
 
-        const string* str = NULL;
+        const string* str = nullptr;
         switch (name.Which()) {
         case CAuthor::TName::e_not_set:
             return true;
@@ -491,7 +491,7 @@ struct SAuthorEmpty
         default:
             break;
         };
-        if (str != NULL && NStr::IsBlank(*str)) {
+        if (str && NStr::IsBlank(*str)) {
             return true;
         }
         return false;

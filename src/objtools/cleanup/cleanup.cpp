@@ -1084,7 +1084,7 @@ bool CCleanup::SeqLocExtend(CSeq_loc& loc, size_t pos_, CScope& scope)
     bool partial_start = loc.IsPartialStart(eExtreme_Positional);
     bool partial_stop = loc.IsPartialStop(eExtreme_Positional);
     ENa_strand strand = loc.GetStrand();
-    CRef<CSeq_loc> new_loc(NULL);
+    CRef<CSeq_loc> new_loc;
     bool changed = false;
 
     if (pos < loc_start) {
@@ -1156,7 +1156,7 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
     const CSeq_loc& loc = f.GetLocation();
 
     CCdregion::TFrame frame = CCdregion::eFrame_not_set;
-    const CGenetic_code* code = NULL;
+    const CGenetic_code* code = nullptr;
     // we need to extract frame and cd_region from linked cd_region
     if (f.IsSetData() && f.GetData().IsCdregion())
     {
@@ -1801,7 +1801,7 @@ bool CCleanup::SetGenePartialByLongestContainedFeature(CSeq_feat& gene, CScope& 
     }
     CFeat_CI under(scope, gene.GetLocation());
     size_t longest = 0;
-    CConstRef<CSeq_feat> longest_feat(NULL);
+    CConstRef<CSeq_feat> longest_feat;
 
     while (under) {
         // ignore genes
@@ -2090,16 +2090,16 @@ CRef<CSeq_entry> CCleanup::AddProtein(const CSeq_feat& cds, CScope& scope)
 {
     CBioseq_Handle cds_bsh = scope.GetBioseqHandle(cds.GetLocation());
     if (!cds_bsh) {
-        return CRef<CSeq_entry>(NULL);
+        return CRef<CSeq_entry>();
     }
     CSeq_entry_Handle seh = cds_bsh.GetSeq_entry_Handle();
     if (!seh) {
-        return CRef<CSeq_entry>(NULL);
+        return CRef<CSeq_entry>();
     }
 
     CRef<CBioseq> new_product = CSeqTranslator::TranslateToProtein(cds, scope);
     if (new_product.Empty()) {
-        return CRef<CSeq_entry>(NULL);
+        return CRef<CSeq_entry>();
     }
 
     CRef<CSeqdesc> molinfo(new CSeqdesc());
@@ -2118,7 +2118,7 @@ CRef<CSeq_entry> CCleanup::AddProtein(const CSeq_feat& cds, CScope& scope)
     CSeq_entry_EditHandle eh = seh.GetEditHandle();
     if (!eh.IsSet()) {
         CBioseq_set_Handle nuc_parent = eh.GetParentBioseq_set();
-        if (nuc_parent && nuc_parent.IsSetClass() && nuc_parent.GetClass() == objects::CBioseq_set::eClass_nuc_prot) {
+        if (nuc_parent && nuc_parent.IsSetClass() && nuc_parent.GetClass() == CBioseq_set::eClass_nuc_prot) {
             eh = nuc_parent.GetParentEntry().GetEditHandle();
         }
     }
@@ -2423,8 +2423,8 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
     bool bPartial = false;
     string organelle;
 
-    CConstRef<CSeqdesc> molinfo_desc(NULL);
-    CConstRef<CSeqdesc> src_desc(NULL);
+    CConstRef<CSeqdesc> molinfo_desc;
+    CConstRef<CSeqdesc> src_desc;
     FOR_EACH_SEQDESC_ON_BIOSEQ(descr_iter, bioseq) {
         if (!molinfo_desc && (*descr_iter)->IsMolinfo()) {
             molinfo_desc = *descr_iter;
@@ -2470,7 +2470,7 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
         }
     }
 
-    CConstRef<COrg_ref> org(NULL);
+    CConstRef<COrg_ref> org;
     if (src_desc) {
         const TBIOSOURCE_GENOME genome = (src_desc->GetSource().IsSetGenome() ?
             src_desc->GetSource().GetGenome() : CBioSource::eGenome_unknown);
@@ -2502,7 +2502,7 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
     if (!bioseq.IsSetDescr()) {
         return false;
     }
-    CRef<CSeqdesc> title_desc(NULL);
+    CRef<CSeqdesc> title_desc;
     NON_CONST_ITERATE(CBioseq::TDescr::Tdata, d, bioseq.SetDescr().Set()) {
         if ((*d)->IsTitle()) {
             title_desc = *d;
@@ -2691,7 +2691,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
     bool any_changes = false;
 
     int protein_id_counter = 1;
-    bool create_general_only = objects::edit::IsGeneralIdProtPresent(entry.GetTopLevelEntry());
+    bool create_general_only = edit::IsGeneralIdProtPresent(entry.GetTopLevelEntry());
     SAnnotSelector sel(CSeqFeatData::e_Cdregion);
     for (CFeat_CI cds_it(entry, sel); cds_it; ++cds_it) {
         bool change_this_cds = false;
@@ -2713,7 +2713,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
                 // need to set product if not set
                 if (!new_cds->IsSetProduct() && !sequence::IsPseudo(*new_cds, entry.GetScope())) {
                     string id_label;
-                    CRef<CSeq_id> new_id = objects::edit::GetNewProtId(entry.GetScope().GetBioseqHandle(new_cds->GetLocation()), protein_id_counter, id_label, create_general_only);
+                    CRef<CSeq_id> new_id = edit::GetNewProtId(entry.GetScope().GetBioseqHandle(new_cds->GetLocation()), protein_id_counter, id_label, create_general_only);
                     if (new_id) {
                         new_cds->SetProduct().SetWhole().Assign(*new_id);
                         change_this_cds = true;
@@ -3064,7 +3064,7 @@ bool CCleanup::RemoveUnseenTitles(CSeq_entry_EditHandle::TSeq seq)
 {
     bool removed = false;
     if (seq.IsSetDescr()) {
-        CConstRef<CSeqdesc> last_title(NULL);
+        CConstRef<CSeqdesc> last_title;
         ITERATE(CBioseq::TDescr::Tdata, d, seq.GetDescr().Get()) {
             if ((*d)->IsTitle()) {
                 if (last_title) {
@@ -3083,7 +3083,7 @@ bool CCleanup::RemoveUnseenTitles(CSeq_entry_EditHandle::TSet set)
 {
     bool removed = false;
     if (set.IsSetDescr()) {
-        CConstRef<CSeqdesc> last_title(NULL);
+        CConstRef<CSeqdesc> last_title;
         ITERATE(CBioseq::TDescr::Tdata, d, set.GetDescr().Get()) {
             if ((*d)->IsTitle()) {
                 if (last_title) {
@@ -3860,7 +3860,7 @@ bool CCleanup::RemoveDupBioSource(CSeq_descr& descr)
 CRef<CBioSource> CCleanup::BioSrcFromFeat(const CSeq_feat& f)
 {
     if (!f.IsSetData() || !f.GetData().IsBiosrc()) {
-        return CRef<CBioSource>(NULL);
+        return CRef<CBioSource>();
     }
     CRef<CBioSource> src(new CBioSource());
     src->Assign(f.GetData().GetBiosrc());
@@ -3999,7 +3999,7 @@ bool CCleanup::FixGeneXrefSkew(CSeq_entry_Handle seh)
         if (num_gene_xref_locus > 0 && num_gene_xref_locus_tag == 0) {
             fi.Rewind();
             while (fi) {
-                if (!fi->GetData().IsGene() && fi->GetGeneXref() != NULL) {
+                if (!fi->GetData().IsGene() && fi->GetGeneXref()) {
                     bool this_change = false;
                     CRef<CSeq_feat> new_f(new CSeq_feat());
                     new_f->Assign(*(fi->GetSeq_feat()));
@@ -4023,7 +4023,7 @@ bool CCleanup::FixGeneXrefSkew(CSeq_entry_Handle seh)
         if (num_gene_xref_locus == 0 && num_gene_xref_locus_tag > 0) {
             fi.Rewind();
             while (fi) {
-                if (!fi->GetData().IsGene() && fi->GetGeneXref() != NULL) {
+                if (!fi->GetData().IsGene() && fi->GetGeneXref()) {
                     bool this_change = false;
                     CRef<CSeq_feat> new_f(new CSeq_feat());
                     new_f->Assign(*(fi->GetSeq_feat()));
@@ -4328,7 +4328,7 @@ CRef<CSeq_loc> CCleanup::GetProteinLocationFromNucleotideLocation(const CSeq_loc
                 break;
         }
         if (!is_ok) {
-            return CRef<CSeq_loc>(NULL);
+            return CRef<CSeq_loc>();
         }
     }
     CRef<CSeq_loc> new_loc;
@@ -4336,25 +4336,25 @@ CRef<CSeq_loc> CCleanup::GetProteinLocationFromNucleotideLocation(const CSeq_loc
         new CSeq_loc_Mapper(cds, CSeq_loc_Mapper::eLocationToProduct, &scope));
     new_loc = nuc2prot_mapper->Map(nuc_loc);
     if (!new_loc) {
-        return CRef<CSeq_loc>(NULL);
+        return CRef<CSeq_loc>();
     }
 
     const CSeq_id* sid = new_loc->GetId();
     const CSeq_id* orig_id = nuc_loc.GetId();
     if (!sid || (orig_id && sid->Equals(*orig_id))) {
         // unable to map to protein location
-        return CRef<CSeq_loc>(NULL);
+        return CRef<CSeq_loc>();
     }
 
     new_loc->ResetStrand();
 
     // if location includes stop codon, remove it
     CBioseq_Handle prot = scope.GetBioseqHandle(*sid);
-    if (prot && new_loc->GetStop(objects::eExtreme_Positional) >= prot.GetBioseqLength())
+    if (prot && new_loc->GetStop(eExtreme_Positional) >= prot.GetBioseqLength())
     {
         CRef<CSeq_id> sub_id(new CSeq_id());
         sub_id->Assign(*sid);
-        CSeq_loc sub(*sub_id, prot.GetBioseqLength(), new_loc->GetStop(objects::eExtreme_Positional), new_loc->GetStrand());
+        CSeq_loc sub(*sub_id, prot.GetBioseqLength(), new_loc->GetStop(eExtreme_Positional), new_loc->GetStrand());
         new_loc = sequence::Seq_loc_Subtract(*new_loc, sub, CSeq_loc::fMerge_All | CSeq_loc::fSort, &scope);
         if (nuc_loc.IsPartialStop(eExtreme_Biological)) {
             new_loc->SetPartialStop(true, eExtreme_Biological);
@@ -4390,7 +4390,7 @@ CRef<CSeq_loc> CCleanup::GetProteinLocationFromNucleotideLocation(const CSeq_loc
     if (!cds || !cds->IsSetProduct()) {
         // there is no overlapping coding region feature, so there is no appropriate
         // protein sequence to move to
-        return CRef<CSeq_loc>(NULL);
+        return CRef<CSeq_loc>();
     }
 
     return GetProteinLocationFromNucleotideLocation(nuc_loc, *cds, scope);
@@ -4544,7 +4544,7 @@ bool CCleanup::ParseCodeBreak(const CSeq_feat& feat,
 
     break_loc = ReadLocFromText(pos, feat_loc_seq_id, &scope);
 
-    if (break_loc == NULL) {
+    if (!break_loc) {
         if (pMessageListener) {
             string msg = "Unable to extract code-break location from '" + str + "'";
             postMessage(msg, TSubcode::eParseError);
@@ -4987,7 +4987,7 @@ CConstRef<CCode_break> CCleanup::GetCodeBreakForLocation(size_t pos, const CSeq_
     if (!cds.IsSetData() || !cds.GetData().IsCdregion() ||
         !cds.IsSetLocation() ||
         !cds.GetData().GetCdregion().IsSetCode_break()) {
-        return CConstRef<CCode_break>(NULL);
+        return CConstRef<CCode_break>();
     }
 
     TSeqPos frame = 0;
@@ -5013,7 +5013,7 @@ CConstRef<CCode_break> CCleanup::GetCodeBreakForLocation(size_t pos, const CSeq_
             }
         }
     }
-    return CConstRef<CCode_break>(NULL);
+    return CConstRef<CCode_break>();
 }
 //LCOV_EXCL_STOP
 

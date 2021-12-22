@@ -72,7 +72,7 @@ public:
     CNewCleanup_imp & newCleanup ) :
     m_Scope(scope),
     m_NewCleanup(newCleanup),
-    m_LastArg_ExtendedCleanupSeqFeat(NULL),
+    m_LastArg_ExtendedCleanupSeqFeat(nullptr),
     m_Dummy(0)
   {}
 

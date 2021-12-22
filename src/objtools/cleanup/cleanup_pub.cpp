@@ -345,7 +345,7 @@ CRef<CPubCleaner> PubCleanerFactory(CPub& pub)
         return CRef<CPubCleaner>(new CMedlineEntryCleaner(pub.SetMedline()));
         break;
     default:
-        return CRef<CPubCleaner>(NULL);
+        return CRef<CPubCleaner>();
     }
 }
 
