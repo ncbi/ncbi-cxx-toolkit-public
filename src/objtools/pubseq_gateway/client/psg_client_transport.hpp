@@ -177,8 +177,7 @@ private:
 
     bool IsPerf() const
     {
-        return (m_Params.client_mode == EPSG_PsgClientMode::ePerformance) ||
-            (m_Params.client_mode == EPSG_PsgClientMode::eIo);
+        return m_Params.client_mode == EPSG_PsgClientMode::ePerformance;
     }
 
     SPSG_Params m_Params;
@@ -337,14 +336,12 @@ private:
     bool StatePrefix(const char*& data, size_t& len);
     bool StateArgs(const char*& data, size_t& len);
     bool StateData(const char*& data, size_t& len);
-    bool StateIo(const char*& data, size_t& len) { data += len; len = 0; return true; }
 
     void SetStatePrefix()  { Add(); m_State = &SPSG_Request::StatePrefix; }
     void SetStateArgs()           { m_State = &SPSG_Request::StateArgs;   }
     void SetStateData(size_t dtr) { m_State = &SPSG_Request::StateData;   m_Buffer.data_to_read = dtr; }
 
     void Add();
-    void AddIo();
 
     using TState = bool (SPSG_Request::*)(const char*& data, size_t& len);
     TState m_State;

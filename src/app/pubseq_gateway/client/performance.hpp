@@ -110,60 +110,6 @@ private:
     }
 };
 
-struct SMessage
-{
-    double milliseconds;
-    SMetricType::EType type = SMetricType::eError;
-    string thread_id;
-    string rest;
-
-    bool operator<(const SMessage& rhs) const
-    {
-        return milliseconds < rhs.milliseconds;
-    }
-
-    template <SMetricType::EType type>
-    static bool IsSameType(const SMessage& message) { return type == message.type; }
-
-    friend istream& operator>>(istream& is, SMessage& message)
-    {
-        size_t type;
-        is >> message.milliseconds >> type >> message.thread_id;
-
-        if (!is) return is;
-
-        switch (type) {
-            case SMetricType::eStart:
-            case SMetricType::eSubmit:
-            case SMetricType::eReply:
-            case SMetricType::eDone:
-            case SMetricType::eSend:
-            case SMetricType::eReceive:
-            case SMetricType::eClose:
-            case SMetricType::eRetry:
-            case SMetricType::eFail:
-                message.type = static_cast<SMetricType::EType>(type);
-                break;
-
-            default:
-                message.type = SMetricType::eError;
-                break;
-        }
-
-        // Read the rest of the line if the converion above has failed
-        is.clear();
-        return getline(is, message.rest);
-    }
-
-    friend ostream& operator<<(ostream& os, const SMessage& message)
-    {
-        return os << message.milliseconds << '\t' <<
-            SMetricType::Name(message.type) << '\t' <<
-            message.thread_id <<
-            message.rest;
-    }
-};
-
 struct SIoRedirector
 {
     SIoRedirector(ios& what, ios& to) :
