@@ -52,7 +52,7 @@ class CSeq_entry_Handle;
 class CGather_Iter : public CObject {
 public:
 
-    CGather_Iter( const CSeq_entry_Handle& top_seq_entry, 
+    CGather_Iter( const CSeq_entry_Handle& top_seq_entry,
         const CFlatFileConfig& config );
 
     // standard methods needed to act like an iterator.

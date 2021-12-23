@@ -121,8 +121,8 @@ private:
 
     // HTML
     void   x_LocusHtmlPrefix( std::string &first_line,      CBioseqContext& ctx );
-    void x_GetFeatureSpanAndScriptStart(IFlatTextOStream& os, const CTempString& strKey, 
-        const CSeq_loc &feat_loc, 
+    void x_GetFeatureSpanAndScriptStart(IFlatTextOStream& os, const CTempString& strKey,
+        const CSeq_loc &feat_loc,
         CBioseqContext& ctx );
 
     void x_SmartWrapQuals(const class CFeatureItemBase& f, const class CFlatFeature& feat, IFlatTextOStream& text_os);
@@ -136,7 +136,7 @@ private:
     typedef std::map< std::string, int > TFeatureKeyCountMap;
     TFeatureKeyCountMap m_FeatureKeyToLocMap;
 
-    // used 
+    // used
     bool m_bHavePrintedSourceFeatureJavascript;
 };
 

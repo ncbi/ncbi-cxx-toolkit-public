@@ -61,7 +61,7 @@ public:
     // TODO: for SC-9, make this pure virtual
     /** This adds a list of strings to the stream one at a time, unconditionally adding a newline to each one. */
     virtual void AddParagraph(const list<string>&  text,
-                              const CSerialObject* obj = 0) 
+                              const CSerialObject* obj = 0)
     {
         // must be overridden
         _TROUBLE;

@@ -79,14 +79,14 @@ public:
 
     // constructor
     CBioseqContext(
-        const CBioseq_Handle& seq, 
+        const CBioseq_Handle& seq,
         CFlatFileContext& ffctx,
         CMasterContext* mctx = 0,
         CTopLevelSeqEntryContext *tlsec = 0);
 
     CBioseqContext(
-        const CBioseq_Handle& prev_seq, 
-        const CBioseq_Handle& seq, 
+        const CBioseq_Handle& prev_seq,
+        const CBioseq_Handle& seq,
         const CBioseq_Handle& next_seq,
         CFlatFileContext& ffctx,
         CMasterContext* mctx = 0,
@@ -109,7 +109,7 @@ public:
     CSeq_id_Handle GetPreferredSynonym(const CSeq_id& id) const;
     const string& GetAccession(void) const { return m_Accession; }
     TGi  GetGI(void) const { return m_Gi; }
-    
+
     // molecular type (nucleotide / protein)
     bool IsProt(void) const { return m_IsProt;  }
     bool IsNuc (void) const { return !m_IsProt; }
@@ -124,7 +124,7 @@ public:
     // segmented bioseq
     bool IsSegmented(void) const { return m_Repr == CSeq_inst::eRepr_seg; }
     bool HasParts(void) const { return m_HasParts; }
-    
+
     // part of a segmented bioseq
     bool IsPart(void) const { return m_IsPart; }
     SIZE_TYPE GetPartNumber   (void) const { return m_PartNumber; }
@@ -149,7 +149,7 @@ public:
     const string& GetWGSMasterAccn(void) const { return m_WGSMasterAccn; }
     const string& GetWGSMasterName(void) const { return m_WGSMasterName; }
 
-    // Transcriptome Shotgun Assembly 
+    // Transcriptome Shotgun Assembly
     bool IsTSA      (void) const { return m_IsTSA;       }
     bool IsTSAMaster(void) const { return m_IsTSAMaster; }
     const string& GetTSAMasterAccn(void) const { return m_TSAMasterAccn; }
@@ -189,7 +189,7 @@ public:
     bool IsGbGenomeProject(void) const { return m_IsGbGenomeProject; } // AE
     bool IsNcbiCONDiv     (void) const { return m_IsNcbiCONDiv; }      // CH
     bool IsNcbiGenomes    (void) const { return m_IsNcbiGenomes; } // db NCBI_GENOMES
-    
+
     // RefSeq ID queries
     bool IsRefSeq(void) const { return m_IsRefSeq; }
     bool IsRSCompleteGenomic  (void) const;  // NC_
@@ -205,7 +205,7 @@ public:
     bool IsRSWGSNuc           (void) const;  // NZ_
     bool IsRSWGSProt          (void) const;  // ZP_
     bool IsRSUniqueProt       (void) const;  // WP_
-    
+
     bool IsEncode             (void) const;  // provided by the ENCODE project
     const CUser_object& GetEncode(void) const;
 
@@ -224,7 +224,7 @@ public:
         fUnverified_SequenceOrAnnotation  = 1 << 1,
         fUnverified_Misassembled          = 1 << 2,
         fUnverified_Contaminant           = 1 << 3
-        // if you add more here, make sure 
+        // if you add more here, make sure
         // to update CFlatGatherer::x_UnverifiedComment
     };
     typedef Int8 TUnverified;
@@ -266,7 +266,7 @@ public:
     const string & GetAuthorizedAccess(void) const { return m_AuthorizedAccess; }
 
     /// Empty or NULL if no points or if this bioseq isn't an optical map.
-    const CPacked_seqpnt * GetOpticalMapPoints(void) const { 
+    const CPacked_seqpnt * GetOpticalMapPoints(void) const {
         return m_pOpticalMapPoints; }
 
    vector<string>* GetRefCache (void) const { return m_RefCache;   }
@@ -320,11 +320,10 @@ private:
     // used to destroy m_pOpticalMapPoints if it was manually
     // created.
     unique_ptr<CPacked_seqpnt> m_pOpticalMapPointsDestroyer;
-    
 
     CSeq_inst::TRepr      m_Repr;
     CSeq_inst::TMol       m_Mol;
-    CConstRef<CMolInfo>   m_Molinfo; 
+    CConstRef<CMolInfo>   m_Molinfo;
 
     // segmented bioseq
     bool        m_HasParts;
@@ -373,7 +372,7 @@ private:
     mutable bool m_ShowAnnotCommentAsCOMMENT_checked;
 
     CConstRef<CUser_object> m_Encode;
-    
+
     TReferences             m_References;
     CConstRef<CSeq_loc>     m_Location;
     CRef<CSeq_loc_Mapper>   m_Mapper;
@@ -457,7 +456,7 @@ public:
     const feature::CFeatTree* GetFeatTree(void) const { return m_FeatTree; }
     feature::CFeatTree* GetFeatTree(void) { return m_FeatTree; }
     void SetFeatTree(feature::CFeatTree* tree) { m_FeatTree.Reset(tree); }
-    
+
     bool UsingSeqEntryIndex(void) const { return (m_Idx != 0); }
     const CRef<CSeqEntryIndex> GetSeqEntryIndex(void) const { return m_Idx; }
     void SetSeqEntryIndex(CRef<CSeqEntryIndex> idx) { m_Idx = idx; }

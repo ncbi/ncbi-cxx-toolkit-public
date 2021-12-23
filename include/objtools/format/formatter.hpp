@@ -30,7 +30,7 @@
 *          Mati Shomrat
 *
 * File Description:
-*           
+*
 *
 */
 #include <corelib/ncbistd.hpp>
@@ -77,7 +77,7 @@ class CHtmlAnchorItem;
 class IFormatter : public CObject
 {
 public:
-    
+
     // control methods
     virtual void Start       (IFlatTextOStream& text_os) = 0;
     virtual void StartSection(const CStartSectionItem& ssec, IFlatTextOStream& text_os) = 0;
@@ -113,7 +113,7 @@ public:
     virtual void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os) = 0;
     virtual void FormatGenomeProject(const CGenomeProjectItem&, IFlatTextOStream&) {}
     virtual void FormatHtmlAnchor(const CHtmlAnchorItem&, IFlatTextOStream&) {}
-    
+
     virtual ~IFormatter(void) {}
 };
 

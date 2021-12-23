@@ -54,7 +54,7 @@ public:
     COStreamTextOStream(void);
     COStreamTextOStream(CNcbiOstream& os);
 
-    virtual void AddParagraph(const list<string>& text, 
+    virtual void AddParagraph(const list<string>& text,
                               const CSerialObject* obj = 0);
 
     virtual void AddLine( const CTempString& line,

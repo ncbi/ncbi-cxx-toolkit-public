@@ -58,7 +58,7 @@ class CFlatItemOStream;
 class NCBI_FORMAT_EXPORT CFlatGatherer : public CObject
 {
 public:
-    
+
     // virtual constructor
     static CFlatGatherer* New(CFlatFileConfig::TFormat format);
 
@@ -94,7 +94,7 @@ protected:
         bool doNuc = true, bool doProt = true ) const;
 
     virtual void x_GatherBioseq(
-        const CBioseq_Handle& prev_seq, const CBioseq_Handle& this_seq, const CBioseq_Handle& next_seq, 
+        const CBioseq_Handle& prev_seq, const CBioseq_Handle& this_seq, const CBioseq_Handle& next_seq,
         CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>() ) const;
 
     virtual void x_DoMultipleSections(const CBioseq_Handle& seq) const;
@@ -182,7 +182,7 @@ protected:
     void x_BasemodComment(CBioseqContext& ctx) const;
     void x_IdComments(CBioseqContext& ctx,
         EGenomeAnnotComment eGenomeAnnotComment) const;
-    void x_RefSeqComments(CBioseqContext& ctx, 
+    void x_RefSeqComments(CBioseqContext& ctx,
         EGenomeAnnotComment eGenomeAnnotComment) const;
     void x_HistoryComments(CBioseqContext& ctx) const;
     void x_RefSeqGenomeComments(CBioseqContext& ctx) const;
@@ -203,9 +203,9 @@ protected:
     void x_StructuredComments(CBioseqContext& ctx) const;
     void x_UnorderedComments(CBioseqContext& ctx) const;
 
-    // sequence 
+    // sequence
     void x_GatherSequence  (void) const;
-    
+
     // types
     typedef vector< CRef<CCommentItem> > TCommentVec;
 
