@@ -22,34 +22,34 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-typedef struct fta_err_context {
+struct FtaErrCode {
     const char *module;
     const char *fname;
     int  line;
-} FtaErrCode;
+};
 
-typedef struct bsv_msg_mod_tag_ctx {
+struct FtaMsgModTagCtx {
     char                       *strsubtag;
     int                        intsubtag;
     int                        intseverity;
-    struct bsv_msg_mod_tag_ctx *next;
-} FtaMsgModTagCtx;
+    FtaMsgModTagCtx*           next;
+};
 
-typedef struct bsv_msg_mod_tag {
+struct FtaMsgModTag {
     char                   *strtag;
     int                    inttag;
     FtaMsgModTagCtx        *bmctx;
-    struct bsv_msg_mod_tag *next;
-} FtaMsgModTag;
+    FtaMsgModTag*          next;
+};
 
-typedef struct bsv_msg_mod_files {
+struct FtaMsgModFiles {
     char                     *modname;      /* NCBI_MODULE or THIS_MODULE
                                                value */
     char                     *filename;     /* Name with full path of .msg
                                                file */
     FtaMsgModTag             *bmmt;
-    struct bsv_msg_mod_files *next;
-} FtaMsgModFiles;
+    FtaMsgModFiles*          next;
+};
 
 //typedef struct bsv_msg_post {
 struct FtaMsgPost {
@@ -108,9 +108,8 @@ struct FtaMsgPost {
         }
     };
 };
-//} FtaMsgPost;
 
-typedef struct fta_post_info {
+struct FtaPostInfo {
     const char *module;
     char *severity;
     char *strcode;
@@ -121,7 +120,7 @@ typedef struct fta_post_info {
     int  intcode;
     int  intsubcode;
     int  line;
-} FtaPostInfo;
+};
 
 const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
