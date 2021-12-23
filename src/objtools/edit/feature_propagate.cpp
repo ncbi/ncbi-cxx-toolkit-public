@@ -530,7 +530,7 @@ CRef<CSeq_loc> CFeaturePropagator::x_MapLocation(const CSeq_loc& sourceLoc, cons
         if (sourceLoc.IsSetStrand()) // Intersect eats up the strand information for some reason
             new_loc->SetStrand(sourceLoc.GetStrand());
     }
-    TSignedSeqPos seq_start = m_Src.GetRangeSeq_loc(0,0)->GetStart(objects::eExtreme_Positional);
+    TSignedSeqPos seq_start = m_Src.GetRangeSeq_loc(0,0)->GetStart(eExtreme_Positional);
     new_loc->SetId(targetId);
     CSeq_loc_I loc_it(*new_loc);
     while(loc_it)

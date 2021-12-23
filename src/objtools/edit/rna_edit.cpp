@@ -309,7 +309,7 @@ CRef <CSeq_feat> CFindITSParser :: x_CreateRRna(const string &comment, CBioseq_H
     return new_rrna;
 }
 
-CBioseq_Handle CFindITSParser :: x_GetBioseqHandleFromIdGuesser(const string &id_str, objects::CSeq_entry_Handle tse)
+CBioseq_Handle CFindITSParser :: x_GetBioseqHandleFromIdGuesser(const string &id_str, CSeq_entry_Handle tse)
 {
     CRef<edit::CStringConstraint> constraint(new edit::CStringConstraint(id_str, edit::CStringConstraint::eMatchType_Equals));
     CBioseq_CI bi(tse, CSeq_inst::eMol_na);
