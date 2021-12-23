@@ -62,8 +62,8 @@ public:
     ~CAffil(void);
 
 protected:
-    bool GetLabelV1(string* label, TLabelFlags flags) const;
-    bool GetLabelV2(string* label, TLabelFlags flags) const;
+    bool GetLabelV1(string* label, TLabelFlags flags) const override;
+    bool GetLabelV2(string* label, TLabelFlags flags) const override;
 
 private:
     // Prohibit copy constructor and assignment operator
