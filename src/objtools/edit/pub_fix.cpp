@@ -658,6 +658,11 @@ bool IsFromBook(const CCit_art& art)
     return art.IsSetFrom() && art.GetFrom().IsBook();
 }
 
+static void MoveAuthors(CCit_art& to, CCit_art& from)
+{
+    to.SetAuthors(from.SetAuthors());
+    from.ResetAuthors();
+}
 
 static const size_t MAX_MATCH_COEFF = 3;
 
@@ -691,8 +696,7 @@ bool TenAuthorsCompare(CCit_art& cit_old, CCit_art& cit_new)
 
     static const size_t MAX_AUTHORS = 10;
     if (min_num_of_authors > MAX_AUTHORS) {
-        cit_new.SetAuthors(cit_old.SetAuthors());
-        cit_old.ResetAuthors();
+        MoveAuthors(cit_new, cit_old);
     }
 
     return true;
@@ -743,8 +747,7 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
 {
     if (!new_cit.IsSetAuthors() || !new_cit.GetAuthors().IsSetNames()) {
         if (cit.IsSetAuthors()) {
-            new_cit.SetAuthors(cit.SetAuthors());
-            cit.ResetAuthors();
+            MoveAuthors(new_cit, cit);
         }
         return true;
     }
@@ -864,8 +867,7 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
     }
 
     if (replace_authors) {
-        new_cit.SetAuthors(cit.SetAuthors());
-        cit.ResetAuthors();
+        MoveAuthors(new_cit, cit);
     }
 
     return true;
@@ -1117,8 +1119,7 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
                             new_cit_is_valid = true;
                             break;
                         case CAuthListValidator::eKeep_genbank:
-                            new_cit_art->SetAuthors(cit_art->SetAuthors());
-                            cit_art->ResetAuthors();
+                            MoveAuthors(*new_cit_art, *cit_art);
                             new_cit_is_valid = true;
                             break;
                         case CAuthListValidator::eFailed_validation:
