@@ -84,8 +84,8 @@ static bool s_StringIsJustQuotes(const string& str)
 }
 
 static string s_GetGOText(
-    const CUser_field& field, 
-    const bool is_ftable, 
+    const CUser_field& field,
+    const bool is_ftable,
     const bool is_html)
 {
     const string* text_string = NULL,
@@ -94,17 +94,15 @@ static string s_GetGOText(
                 * go_ref = NULL;
     string temp;
     int pmid = 0;
-    
-    
 
     ITERATE (CUser_field::C_Data::TFields, it, field.GetData().GetFields()) {
         if ( !(*it)->IsSetLabel()  ||  !(*it)->GetLabel().IsStr() ) {
             continue;
         }
-        
+
         const string& label = (*it)->GetLabel().GetStr();
         const CUser_field::C_Data& data = (*it)->GetData();
-        
+
         if (data.IsStr()) {
             if (label == "text string") {
                 text_string = &data.GetStr();
@@ -124,7 +122,7 @@ static string s_GetGOText(
             }
         }
     }
-    
+
     string go_text;
     if (text_string != NULL) {
         go_text = *text_string;
@@ -142,7 +140,7 @@ static string s_GetGOText(
             go_text += '|';
             go_text += *evidence;
         }
-    } else { 
+    } else {
         bool add_dash = false;
         // RW-922 only make one link from GO:id - text.
         go_text.clear();
@@ -214,7 +212,7 @@ static void s_ReplaceUforT(string& codon)
 static char s_MakeDegenerateBase(const string &str1, const string& str2)
 {
     static const char kIdxToSymbol[] = "?ACMGRSVUWYHKDBN";
-    
+
     vector<char> symbol_to_idx(256, '\0');
     for (size_t i = 0; i < sizeof(kIdxToSymbol) - 1; ++i) {
         symbol_to_idx[kIdxToSymbol[i]] = i;
@@ -234,7 +232,7 @@ static size_t s_ComposeCodonRecognizedStr(const CTrna_ext& trna, string& recogni
     }
 
     list<string> codons;
-    
+
     ITERATE (CTrna_ext::TCodon, it, trna.GetCodon()) {
         string codon = CGen_code_table::IndexToCodon(*it);
         s_ReplaceUforT(codon);
@@ -278,7 +276,7 @@ static bool s_AltitudeIsValid(const string & str )
     // we use c-style strings so we don't have to worry about constantly
     // checking if we're out of bounds: we get a '\0' which lets us be cleaner
     const char *pch = str.c_str();
-    
+
     // optional sign at start
     if( *pch == '+' || *pch == '-' ) {
         ++pch;
@@ -310,14 +308,14 @@ static bool s_AltitudeIsValid(const string & str )
 
 CFormatQual::CFormatQual
 (const CTempString& name,
- const CTempString& value, 
+ const CTempString& value,
  const CTempString& prefix,
  const CTempString& suffix,
  TStyle style,
  TFlags flags,
  ETrim trim ) :
-  m_Name(name), 
-  m_Prefix(prefix), 
+  m_Name(name),
+  m_Prefix(prefix),
   m_Suffix(suffix),
   m_Style(style), m_Flags(flags), m_Trim(trim), m_AddPeriod(false)
 {
@@ -326,7 +324,7 @@ CFormatQual::CFormatQual
 
 
 CFormatQual::CFormatQual(const CTempString& name, const CTempString& value, TStyle style, TFlags flags, ETrim trim) :
-    m_Name(name), 
+    m_Name(name),
     m_Prefix(" "), m_Suffix(kEmptyStr),
     m_Style(style), m_Flags(flags), m_Trim(trim), m_AddPeriod(false)
 {
@@ -378,7 +376,7 @@ DEFINE_STATIC_ARRAY_MAP(TNameTildeStyleMap, sc_NameTildeStyleMap, kNameTildeStyl
 // a few kinds don't use the default tilde style
 ETildeStyle s_TildeStyleFromName( const string &name )
 {
-    TNameTildeStyleMap::const_iterator result = sc_NameTildeStyleMap.find( name.c_str() ); 
+    TNameTildeStyleMap::const_iterator result = sc_NameTildeStyleMap.find( name.c_str() );
     if( sc_NameTildeStyleMap.end() == result ) {
         return eTilde_space;
     } else {
@@ -404,7 +402,7 @@ void CFlatStringQVal::Format(TFlatQuals& q, const CTempString& name,
 
     ETildeStyle tilde_style = s_TildeStyleFromName( name );
     ExpandTildes(m_Value, tilde_style);
-                
+
     const bool is_note = s_IsNote(flags, ctx);
 
     // e.g. CP001398
@@ -419,18 +417,18 @@ void CFlatStringQVal::Format(TFlatQuals& q, const CTempString& name,
     // or something, but this is fine while we're only checking for
     // one type.
     // This prevents quals like /metagenomic="metagenomic" (e.g. EP508672)
-    const bool forceNoValue = ( 
+    const bool forceNoValue = (
         ! ctx.Config().SrcQualsToNote() &&
-        name == m_Value && 
+        name == m_Value &&
         name == "metagenomic" );
 
     const bool prependNewline = (flags & fPrependNewline) && ! q.empty();
     TFlatQual qual = x_AddFQ(
-        q, (is_note ? "note" : name), 
-        (  prependNewline ? CTempString("\n" + m_Value) : CTempString(m_Value) ), 
+        q, (is_note ? "note" : name),
+        (  prependNewline ? CTempString("\n" + m_Value) : CTempString(m_Value) ),
         ( forceNoValue ? CFormatQual::eEmpty : m_Style ),
         0, m_Trim );
-    
+
     if ((flags & fAddPeriod)  &&  qual) {
         qual->SetAddPeriod();
     }
@@ -511,7 +509,7 @@ void CFlatSiteQVal::Format
         m_Value = "transit peptide";
     }
     if (m_Value != "transit peptide" && m_Value != "signal peptide" &&
-        m_Value != "transmembrane region" && s_IsNote(flags, ctx)) 
+        m_Value != "transmembrane region" && s_IsNote(flags, ctx))
     {
         const static char *pchSiteSuffix = " site";
         if( ! NStr::EndsWith(m_Value, pchSiteSuffix) ) {
@@ -539,7 +537,7 @@ void CFlatStringListQVal::Format
         m_Suffix = &kSemicolon;
     }
 
-    x_AddFQ(q, 
+    x_AddFQ(q,
             (s_IsNote(flags, ctx) ? "note" : name),
             JoinString(m_Value, "; "),
             m_Style);
@@ -620,7 +618,7 @@ void CFlatCodeBreakQVal::Format(TFlatQuals& q, const CTempString& name,
         }
 
         string pos = CFlatSeqLoc( (*it)->GetLoc(), ctx).GetString();
-        x_AddFQ(q, name, "(pos:" + pos + ",aa:" + aa + ')', 
+        x_AddFQ(q, name, "(pos:" + pos + ",aa:" + aa + ')',
             CFormatQual::eUnquoted);
     }
 }
@@ -637,7 +635,7 @@ void CFlatNomenclatureQVal::Format(TFlatQuals& q, const CTempString& name,
     }
 
     // we build up the final result in this variable
-    string nomenclature; 
+    string nomenclature;
 
     // add the status part
     switch( m_Value->GetStatus() ) {
@@ -664,7 +662,7 @@ void CFlatNomenclatureQVal::Format(TFlatQuals& q, const CTempString& name,
     // add the source part, if any
     if( m_Value->CanGetSource() ) {
         const CGene_nomenclature_Base::TSource& source = m_Value->GetSource();
-        
+
         if( source.CanGetDb() && ! source.GetDb().empty() && source.CanGetTag() ) {
             if( source.GetTag().IsId() || ( source.GetTag().IsStr() && ! source.GetTag().GetStr().empty() ) ) {
                 nomenclature += " | Provided by: " + source.GetDb() + ":";
@@ -699,7 +697,7 @@ void CFlatCodonQVal::Format(TFlatQuals& q, const CTempString& name, CBioseqConte
 
 CFlatExperimentQVal::CFlatExperimentQVal(
     const string& value )
-    : m_str( value ) 
+    : m_str( value )
 {
     if ( m_str.empty() ) {
         m_str = "experimental evidence, no additional details recorded";
@@ -722,7 +720,7 @@ CFlatInferenceQVal::CFlatInferenceQVal( const string& gbValue ) :
     //  However, it can't be overriden to be just anything, only certain strings
     //  are allowed.
     //  The following code will change m_str from its default if gbValue is a
-    //  legal replacement for "non-experimental ...", and leave it alone 
+    //  legal replacement for "non-experimental ...", and leave it alone
     //  otherwise.
     //
     string prefix;
@@ -748,12 +746,12 @@ void CFlatIllegalQVal::Format(TFlatQuals& q, const CTempString& name, CBioseqCon
 
     // special case: in sequin mode, orig_protein_id and orig_transcript_id removed,
     // even though we usually keep illegal quals in sequin mode
-    if( m_Value->GetQual() == "orig_protein_id" || 
+    if( m_Value->GetQual() == "orig_protein_id" ||
         m_Value->GetQual() == "orig_transcript_id" )
     {
         return;
     }
-        
+
     x_AddFQ(q, m_Value->GetQual(), m_Value->GetVal());
 }
 
@@ -769,68 +767,68 @@ void CFlatMolTypeQVal::Format(TFlatQuals& q, const CTempString& name,
 
     case CMolInfo::eBiomol_unknown:
         switch ( m_Mol ) {
-        case CSeq_inst::eMol_dna:  
-            s = "unassigned DNA"; 
+        case CSeq_inst::eMol_dna:
+            s = "unassigned DNA";
             break;
-        case CSeq_inst::eMol_rna:  
-            s = "unassigned RNA"; 
+        case CSeq_inst::eMol_rna:
+            s = "unassigned RNA";
             break;
-        default:                   
+        default:
             break;
         }
         break;
 
     case CMolInfo::eBiomol_genomic:
         switch ( m_Mol ) {
-        case CSeq_inst::eMol_dna:  
-            s = "genomic DNA";  
+        case CSeq_inst::eMol_dna:
+            s = "genomic DNA";
             break;
-        case CSeq_inst::eMol_rna:  
-            s = "genomic RNA";  
+        case CSeq_inst::eMol_rna:
+            s = "genomic RNA";
             break;
-        default:                   
+        default:
             break;
         }
         break;
 
-    case CMolInfo::eBiomol_mRNA:     
-        s = "mRNA";      
+    case CMolInfo::eBiomol_mRNA:
+        s = "mRNA";
         break;
 
-    case CMolInfo::eBiomol_rRNA:     
-        s = "rRNA";      
-        break;
-    
-    case CMolInfo::eBiomol_tRNA:     
-        s = "tRNA";      
+    case CMolInfo::eBiomol_rRNA:
+        s = "rRNA";
         break;
 
-    case CMolInfo::eBiomol_pre_RNA:  
-    case CMolInfo::eBiomol_snRNA:    
-    case CMolInfo::eBiomol_scRNA:    
+    case CMolInfo::eBiomol_tRNA:
+        s = "tRNA";
+        break;
+
+    case CMolInfo::eBiomol_pre_RNA:
+    case CMolInfo::eBiomol_snRNA:
+    case CMolInfo::eBiomol_scRNA:
     case CMolInfo::eBiomol_snoRNA:
     case CMolInfo::eBiomol_ncRNA:
     case CMolInfo::eBiomol_tmRNA:
     case CMolInfo::eBiomol_transcribed_RNA:
-        s = "transcribed RNA";     
+        s = "transcribed RNA";
         break;
 
     case CMolInfo::eBiomol_other_genetic:
     case CMolInfo::eBiomol_other:
         switch ( m_Mol ) {
-        case CSeq_inst::eMol_dna:  
-            s = "other DNA";  
+        case CSeq_inst::eMol_dna:
+            s = "other DNA";
             break;
-        case CSeq_inst::eMol_rna:  
-            s = "other RNA";  
+        case CSeq_inst::eMol_rna:
+            s = "other RNA";
             break;
-        default:                   
+        default:
             break;
         }
         break;
 
     case CMolInfo::eBiomol_cRNA:
-        s = "viral cRNA";     
+        s = "viral cRNA";
         break;
 
     }
@@ -922,11 +920,11 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const CTempString& name,
     CleanAndCompress(subname, subname.c_str());
     NStr::TruncateSpacesInPlace(subname);
     ExpandTildes(subname, ( (flags & IFlatQVal::fIsNote) != 0  ? eTilde_tilde : eTilde_space ) );
-    
+
     if (s_IsNote(flags, ctx)) {
         bool add_period = RemovePeriodFromEnd(subname, true);
         if (!subname.empty() || add_period ) {
-            bool is_src_orgmod_note = 
+            bool is_src_orgmod_note =
                 (flags & IFlatQVal::fIsSource)  &&  (name == "orgmod_note");
             if (is_src_orgmod_note) {
                 if (add_period) {
@@ -936,7 +934,7 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const CTempString& name,
                 m_Suffix = ( add_period ? &kEOL : &kSemicolonEOL );
                 qual = x_AddFQ(q, "note", subname);
             } else {
-                qual = x_AddFQ(q, "note", string(name) + ": " + subname, 
+                qual = x_AddFQ(q, "note", string(name) + ": " + subname,
                     CFormatQual::eQuoted, CFormatQual::fFlags_showEvenIfRedund );
             }
             if (add_period  &&  qual) {
@@ -958,11 +956,11 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const CTempString& name,
         = CBioSource::GetTypeInfo_enum_EGenome()->FindName(m_Value, true);
 
     switch (m_Value) {
-    case CBioSource::eGenome_chloroplast: 
+    case CBioSource::eGenome_chloroplast:
     case CBioSource::eGenome_chromoplast:
-    case CBioSource::eGenome_cyanelle:    
+    case CBioSource::eGenome_cyanelle:
     case CBioSource::eGenome_apicoplast:
-    case CBioSource::eGenome_leucoplast:  
+    case CBioSource::eGenome_leucoplast:
     case CBioSource::eGenome_proplastid:
         x_AddFQ(q, name, "plastid:" + organelle);
         break;
@@ -971,7 +969,7 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const CTempString& name,
         x_AddFQ(q, name, "mitochondrion:kinetoplast");
         break;
 
-    case CBioSource::eGenome_mitochondrion: 
+    case CBioSource::eGenome_mitochondrion:
     case CBioSource::eGenome_plastid:
     case CBioSource::eGenome_nucleomorph:
     case CBioSource::eGenome_hydrogenosome:
@@ -979,7 +977,7 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const CTempString& name,
         x_AddFQ(q, name, organelle);
         break;
 
-    case CBioSource::eGenome_macronuclear: 
+    case CBioSource::eGenome_macronuclear:
     case CBioSource::eGenome_proviral:
         x_AddFQ(q, organelle, kEmptyStr, CFormatQual::eEmpty);
         break;
@@ -987,7 +985,7 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const CTempString& name,
 //        x_AddFQ(q, organelle, kEmptyStr, CFormatQual::eEmpty);
         break;
 
-    case CBioSource::eGenome_plasmid: 
+    case CBioSource::eGenome_plasmid:
     case CBioSource::eGenome_transposon:
         x_AddFQ(q, organelle, kEmptyStr);
         break;
@@ -999,7 +997,6 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const CTempString& name,
     default:
         break;
     }
-    
 }
 
 
@@ -1048,14 +1045,14 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const CTempString& name,
                     value = '[' + pub_id_str + ']';
                 }
                 x_AddFQ(q, name, value, CFormatQual::eUnquoted);
-                
+
                 pub_iter = unusedPubs.erase( pub_iter ); // only one citation should be created per reference
                 break; // break so we don't show the same ref more than once
             }
         }
     }
 
-    // out of the pubs which are still unused, we may still be able to salvage some 
+    // out of the pubs which are still unused, we may still be able to salvage some
     // under certain conditions.
     string pubmed;
     if (ctx.IsRefSeq() && !ctx.Config().IsModeRelease()) {
@@ -1083,9 +1080,9 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const CTempString& name,
     }
 }
 
-void CFlatIntQVal::Format(TFlatQuals& q, const CTempString& name, 
+void CFlatIntQVal::Format(TFlatQuals& q, const CTempString& name,
                           CBioseqContext& ctx, TFlags) const
-{ 
+{
     bool bHtml = ctx.Config().DoHTML();
 
     string value = NStr::IntToString(m_Value);
@@ -1098,7 +1095,7 @@ void CFlatIntQVal::Format(TFlatQuals& q, const CTempString& name,
         link += "</a>";
         value = link;
     }
-    x_AddFQ( q, name, value, CFormatQual::eUnquoted); 
+    x_AddFQ( q, name, value, CFormatQual::eUnquoted);
 }
 
 
@@ -1225,26 +1222,26 @@ void s_HtmlizeLatLon( string &subname ) {
     // now we can form the HTML
     CNcbiOstrstream result;
     /*
-    result << "<a href=\"" << strLinkBaseLatLon << "?lat=" 
-        << lat 
-        << "&amp;lon=" 
-        << lon 
+    result << "<a href=\"" << strLinkBaseLatLon << "?lat="
+        << lat
+        << "&amp;lon="
+        << lon
         << "\">"
         << subname << "</a>";
     */
     result << "<a href=\"" << "https://www.google.com/maps/place/"
-        << lat 
-        << "+" 
-        << lon 
+        << lat
+        << "+"
+        << lon
         << "\">"
         << subname << "</a>";
     subname = CNcbiOstrstreamToString(result);
 }
 
 void CFlatSubSourcePrimer::Format(
-    TFlatQuals& q, 
+    TFlatQuals& q,
     const CTempString& name,
-    CBioseqContext& ctx, 
+    CBioseqContext& ctx,
     IFlatQVal::TFlags flags) const
 {
     vector< string > fwd_names;
@@ -1255,7 +1252,7 @@ void CFlatSubSourcePrimer::Format(
         }
         NStr::Split( fwd_name, ",", fwd_names );
     }
-    
+
     vector< string > rev_names;
     if ( ! m_rev_name.empty() ) {
         string rev_name = m_rev_name;
@@ -1388,7 +1385,7 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const CTempString& name,
                 m_Suffix = ( add_period ? &kEOL : &kSemicolonEOL );
                 qual = x_AddFQ(q, "note", subname);
             } else {
-                qual = x_AddFQ(q, "note", string(name) + ": " + subname);        
+                qual = x_AddFQ(q, "note", string(name) + ": " + subname);
             }
             if (add_period  &&  qual) {
                 qual->SetAddPeriod();
@@ -1422,8 +1419,8 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const CTempString& name,
 
         case CSubSource::eSubtype_altitude:
             // skip invalid /altitudes
-            if( s_AltitudeIsValid(subname) || 
-                ( ! ctx.Config().IsModeRelease() && ! ctx.Config().IsModeEntrez() ) ) 
+            if( s_AltitudeIsValid(subname) ||
+                ( ! ctx.Config().IsModeRelease() && ! ctx.Config().IsModeEntrez() ) )
             {
                 x_AddFQ(q, name, subname);
             }
@@ -1441,10 +1438,10 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const CTempString& name,
 
 struct SSortReferenceByName
 {
-   bool operator()(const CDbtag* dbt1,  const CDbtag* dbt2) 
-   {
-      return (dbt1->Compare(*dbt2)<0);
-   }
+    bool operator()(const CDbtag* dbt1,  const CDbtag* dbt2)
+    {
+        return (dbt1->Compare(*dbt2)<0);
+    }
 };
 
 
@@ -1502,7 +1499,7 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const CTempString& name,
         id.clear();
         if (tag.IsId()) {
             id = NStr::IntToString(tag.GetId());
-        } else if (tag.IsStr()) {        
+        } else if (tag.IsStr()) {
             id = tag.GetStr();
             if (NStr::EqualNocase(db, "MGI")  ||  NStr::EqualNocase(db, "MGD")) {
                 if (NStr::StartsWith(id, "MGI:", NStr::eNocase)  ||
@@ -1607,7 +1604,7 @@ static size_t s_CountAccessions(const CUser_field& field)
     if (!field.IsSetData()  ||  !field.GetData().IsFields()) {
         return 0;
     }
-    
+
     //
     //  Each accession consists of yet another block of "Fields" one of which carries
     //  a label named "accession":
@@ -1615,7 +1612,7 @@ static size_t s_CountAccessions(const CUser_field& field)
     ITERATE (CUser_field::TData::TFields, it, field.GetData().GetFields()) {
         const CUser_field& uf = **it;
         if ( uf.CanGetData()  &&  uf.GetData().IsFields() ) {
-        
+
             ITERATE( CUser_field::TData::TFields, it2, uf.GetData().GetFields() ) {
                 const CUser_field& inner = **it2;
                 if ( inner.IsSetLabel() && inner.GetLabel().IsStr() ) {
@@ -1694,7 +1691,7 @@ void CFlatModelEvQVal::Format
     text << ".";
 
     if (num_mrna > 0  ||  num_est > 0  ||  num_prot > 0 || num_long_sra > 0 ||
-        rnaseq_base_coverage > 0 ) 
+        rnaseq_base_coverage > 0 )
     {
         text << " Supporting evidence includes similarity to:";
     }
@@ -1815,7 +1812,7 @@ int CFlatGoQVal::GetPubmedId(void) const
     if( ! pmidData.IsInt() ) {
         return 0;
     }
-    
+
     return pmidData.GetInt();
 }
 
@@ -1905,7 +1902,7 @@ void CFlatProductNamesQVal::Format
         return;
     }
     bool note = s_IsNote(flags, ctx);
-    
+
     CProt_ref::TName::const_iterator it = m_Value.begin();
     ++it;  // first is used for /product
     while (it != m_Value.end()  &&  !NStr::IsBlank(*it)) {

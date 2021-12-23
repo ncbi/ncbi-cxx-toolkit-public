@@ -27,7 +27,7 @@
 *          Mati Shomrat
 *
 * File Description:
-*           
+*
 *
 */
 #include <ncbi_pch.hpp>
@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CFlatItemOStream::CFlatItemOStream(IFormatter* formatter) 
+CFlatItemOStream::CFlatItemOStream(IFormatter* formatter)
     : m_Formatter(formatter)
 {
 }

@@ -198,7 +198,7 @@ CFlatSeqLoc::CFlatSeqLoc
             for( unsigned int id_idx = 0; id_idx < handles_vec.size(); ++id_idx ) {
                 CSeq_id_Handle acc_handle = results[id_idx];
                 if( acc_handle ) {
-                    m_ToAccessionMap.Insert( 
+                    m_ToAccessionMap.Insert(
                         handles_vec[id_idx], acc_handle );
                 }
             }
@@ -272,7 +272,7 @@ bool CFlatSeqLoc::x_Add
         if (gap == 0) {
             oss << "gap()";
             break;
-        } 
+        }
         size_t uLength = gap->GetLength();
         const CInt_fuzz* fuzz = gap->GetFuzz();
         oss << "gap(";
@@ -315,7 +315,7 @@ bool CFlatSeqLoc::x_Add
     }}
     case CSeq_loc::e_Packed_int:
     {{
-        // Note: At some point, we should add the "join inside order" logic here (like for the e_Mix case), but since I didn't immediately find a 
+        // Note: At some point, we should add the "join inside order" logic here (like for the e_Mix case), but since I didn't immediately find a
         // test case in the repository, I'm taking the conservative approach and leaving it alone for now.
         oss << prefix;
         const char* delim = "";
@@ -387,7 +387,7 @@ bool CFlatSeqLoc::x_Add
 
              // save some work by using what was done on the last loop iteration
              // (this is set before the loop on the first iteration)
-             const bool this_is_virtual = next_is_virtual; 
+             const bool this_is_virtual = next_is_virtual;
 
              // get iterator to next one
              CSeq_loc_CI next = it;
@@ -396,7 +396,7 @@ bool CFlatSeqLoc::x_Add
              // begin join in order, if necessary
              next_is_virtual = ( ! next || next.GetEmbeddingSeq_loc().IsNull() || s_IsVirtualLocation( next.GetEmbeddingSeq_loc(), seq ) );
              if( is_flat_order ) {
-                 if( ( this_loc.IsInt() || this_loc.IsPnt() ) && 
+                 if( ( this_loc.IsInt() || this_loc.IsPnt() ) &&
                      ! join_inside_order && ! this_is_virtual && ! next_is_virtual ) {
                      oss << "join(";
                      join_inside_order = true;
@@ -483,7 +483,7 @@ bool CFlatSeqLoc::x_FuzzToDisplayed(const CSeq_interval& si) const
         return false;
     }
 
-    const CInt_fuzz& to_fuzz = si.GetFuzz_to(); 
+    const CInt_fuzz& to_fuzz = si.GetFuzz_to();
 /* Range fuzziness is not displayed
     if (to_fuzz.IsRange()) {
         return true;
@@ -534,8 +534,8 @@ bool CFlatSeqLoc::x_Add
 
     x_Add(from, from_fuzz, oss, ( do_html ? eHTML_Yes : eHTML_None ));
 
-    if ( (type == eType_assembly) || 
-         ((from != to || x_FuzzToDisplayed(si)) ) ) 
+    if ( (type == eType_assembly) ||
+         ((from != to || x_FuzzToDisplayed(si)) ) )
     {
         oss << "..";
 
@@ -565,7 +565,7 @@ bool CFlatSeqLoc::x_Add
     }
 
     const bool do_html = ctx.Config().DoHTML();
-    const bool is_comp = 
+    const bool is_comp =
         pnt.IsSetStrand()  &&  IsReverse(pnt.GetStrand())  &&  show_comp;
 
     TSeqPos pos = pnt.GetPoint();
@@ -573,8 +573,8 @@ bool CFlatSeqLoc::x_Add
     if( is_comp ) {
         oss << "complement(";
     }
-    x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, 
-        oss, ( do_html ? eHTML_Yes : eHTML_None ), 
+    x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0,
+        oss, ( do_html ? eHTML_Yes : eHTML_None ),
         ( (eType_assembly == type) ? eForce_ToRange : eForce_None ),
         eSource_Point );
     if( is_comp ) {
@@ -708,7 +708,7 @@ void CFlatSeqLoc::x_AddID
 
     CConstRef<CSeq_id> idp;
     try {
-        CSeq_id_Handle handle = 
+        CSeq_id_Handle handle =
             m_ToAccessionMap.Get( CSeq_id_Handle::GetHandle(id) );
         if( handle ) {
             idp = handle.GetSeqId();
@@ -744,8 +744,8 @@ bool CFlatSeqLoc::x_IsAccessionVersion( CSeq_id_Handle id )
     return ( seq_id->GetTextseq_Id() != NULL );
 }
 
-void 
-CFlatSeqLoc::CGuardedToAccessionMap::Insert( 
+void
+CFlatSeqLoc::CGuardedToAccessionMap::Insert(
     CSeq_id_Handle from, CSeq_id_Handle to )
 {
     CFastMutexGuard guard(m_MutexForTheMap);

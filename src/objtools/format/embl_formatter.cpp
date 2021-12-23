@@ -27,7 +27,7 @@
 *          Mati Shomrat
 *
 * File Description:
-*           
+*
 *
 */
 #include <ncbi_pch.hpp>
@@ -49,11 +49,11 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-// NB: For more complete documentation on the EMBL format see EMBL's user 
+// NB: For more complete documentation on the EMBL format see EMBL's user
 // manual (http://www.ebi.ac.uk/embl/Documentation/User_manual/usrman.html)
 
 
-CEmblFormatter::CEmblFormatter(void) 
+CEmblFormatter::CEmblFormatter(void)
 {
     SetIndent(string(5, ' '));
     //SetFeatIndent(string(21, ' '));
@@ -90,7 +90,7 @@ void CEmblFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_o
 // Sequence length: The last item on the ID line is the length of the sequence.
 
 void CEmblFormatter::FormatLocus
-(const CLocusItem& locus, 
+(const CLocusItem& locus,
  IFlatTextOStream& text_os)
 {
     static string embl_mol [14] = {
@@ -107,11 +107,11 @@ void CEmblFormatter::FormatLocus
 
     string topology = (locus.GetTopology() == CSeq_inst::eTopology_circular) ?
                 "circular" : kEmptyStr;
-    const string& mol = ctx.Config().UseEmblMolType() ? 
+    const string& mol = ctx.Config().UseEmblMolType() ?
         s_EmblMol[locus.GetBiomol()] : s_GenbankMol[locus.GetBiomol()];
-            
+
     id_line.setf(IOS_BASE::left, IOS_BASE::adjustfield);
-    id_line 
+    id_line
         << setw(9) << locus.GetName()
         << hup << "; "
         << topology << mol << "; "
@@ -128,7 +128,7 @@ void CEmblFormatter::FormatLocus
 // AC
 
 void CEmblFormatter::FormatAccession
-(const CAccessionItem& acc, 
+(const CAccessionItem& acc,
  IFlatTextOStream& text_os)
 {
     string acc_line = x_FormatAccession(acc, ';');
@@ -185,7 +185,7 @@ void CEmblFormatter::FormatDate
     if ( dp != 0 ) {
         DateToString(*dp, date_str);
     }
-    
+
     if ( date_str.empty() ) {
         date_str = "01-JAN-1900";
     }
@@ -281,7 +281,7 @@ void CEmblFormatter::FormatSource
     x_OrganismSource(l, source);
     x_OrganisClassification(l, source);
     x_Organelle(l, source);
-    text_os.AddParagraph(l); 
+    text_os.AddParagraph(l);
 }
 
 
@@ -291,14 +291,14 @@ void CEmblFormatter::x_OrganismSource
 {
     /*
     CNcbiOstrstream source_line;
-    
+
     string prefix = source.IsUsingAnamorph() ? " (anamorph: " : " (";
-    
+
     source_line << source.GetTaxname();
     if ( !source.GetCommon().empty() ) {
         source_line << prefix << source.GetCommon() << ")";
     }
-    
+
     Wrap(l, GetWidth(), "SOURCE", CNcbiOstrstreamToString(source_line));
     */
 }
@@ -495,7 +495,7 @@ void CEmblFormatter::FormatFeatHeader
 void CEmblFormatter::FormatFeature
 (const CFeatureItemBase& f,
  IFlatTextOStream& text_os)
-{ 
+{
     /*
     const CFlatFeature& feat = *f.Format();
     list<string>        l;
@@ -531,7 +531,7 @@ void CEmblFormatter::FormatBasecount
 
     CNcbiOstrstream bc_line;
 
-    bc_line 
+    bc_line
         << right << setw(7) << bc.GetA() << " a"
         << right << setw(7) << bc.GetC() << " c"
         << right << setw(7) << bc.GetG() << " g"

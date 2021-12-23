@@ -80,7 +80,7 @@ const CGenomeProjectItem::TDBLinkLineVec & CGenomeProjectItem::GetDBLinkLines() 
 /***************************************************************************/
 
 static string
-s_JoinLinkableStrs(const CUser_field_Base::C_Data::TStrs &strs, 
+s_JoinLinkableStrs(const CUser_field_Base::C_Data::TStrs &strs,
                    const string &url_prefix, const string &alt_prefix, const bool is_html )
 {
     const char * pchPrefix = "";
@@ -107,7 +107,7 @@ s_JoinLinkableStrs(const CUser_field_Base::C_Data::TStrs &strs,
         }
         pchPrefix = ", ";
     }
-    
+
     return CNcbiOstrstreamToString( result );
 }
 
@@ -177,7 +177,7 @@ namespace {
                 // unknown prefix type
                 return kDefaultPrefixOrder;
             }
-            
+
             return find_iter->second;
         }
     };
@@ -264,7 +264,7 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
                 typedef CUser_field::C_Data TFieldData;
                 const TFieldData & field_data = field.GetData();
 
-                if( dbLinkLabelInfo.allow_text && 
+                if( dbLinkLabelInfo.allow_text &&
                     (field_data.IsStrs() || field_data.IsStr()) )
                 {
                     const TFieldData::TStrs * pStrs = NULL;
@@ -286,17 +286,17 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
                     if (NStr::Equal (label, "Sequence Read Archive")) {
                         alt_url = "https://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?analysis=";
                     }
-                    string dblinkValue = s_JoinLinkableStrs( 
+                    string dblinkValue = s_JoinLinkableStrs(
                         *pStrs, dbLinkLabelInfo.url, alt_url, bHtml );
                     if( ! dblinkValue.empty() ) {
-                        dblinkLines.push_back( 
+                        dblinkLines.push_back(
                             pchNormalizedDbLinkLabel + string(": ") + dblinkValue );
                         if( bHtml ) {
                             TryToSanitizeHtml( dblinkLines.back() );
                         }
                     }
 
-                } else if( dbLinkLabelInfo.allow_numeric && 
+                } else if( dbLinkLabelInfo.allow_numeric &&
                     (field_data.IsInts() || field_data.IsInt()) )
                 {
 
@@ -314,8 +314,8 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
 
                     string dblinkValue = s_JoinNumbers( *pInts, ", " );
                     if( ! dblinkValue.empty() ) {
-                        dblinkLines.push_back( 
-                            pchNormalizedDbLinkLabel + string(": ") + 
+                        dblinkLines.push_back(
+                            pchNormalizedDbLinkLabel + string(": ") +
                             dblinkValue );
                         // No need to sanitize; it's just numbers, commas, and spaces
                     }

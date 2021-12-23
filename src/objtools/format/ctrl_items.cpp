@@ -93,8 +93,8 @@ IFlatItem::EItem CEndSectionItem::GetItemType(void) const
 
 
 //  ----------------------------------------------------------------------------
-void 
-CStartItem::x_SetDate( 
+void
+CStartItem::x_SetDate(
     CSeq_entry_Handle seh )
 //  ----------------------------------------------------------------------------
 {
@@ -107,24 +107,21 @@ CStartItem::x_SetDate(
         m_Date = CurrentTime().AsString("Y-M-D");
         return;
     }
-    
-    for ( list< CRef< CSeqdesc > >::const_iterator cit = lsd.begin(); 
-        cit != lsd.end(); ++cit ) 
+
+    for ( list< CRef< CSeqdesc > >::const_iterator cit = lsd.begin();
+        cit != lsd.end(); ++cit )
     {
         const CSeqdesc& sd = **cit;
         switch( sd.Which() ) {
-        
             default:
                 break;
-                
             case CSeqdesc::e_Create_date:
                 sd.GetCreate_date().GetDate( &m_Date, "%Y-%2M-%2D" );
                 break;
-                
             case CSeqdesc::e_Update_date:
                 sd.GetUpdate_date().GetDate( &m_Date, "%Y-%2M-%2D" );
-                return; 
-        }        
+                return;
+        }
     }
     if ( m_Date.empty() ) {
         m_Date = CurrentTime().AsString("Y-M-D");

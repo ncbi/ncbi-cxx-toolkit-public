@@ -27,7 +27,7 @@
 *
 * File Description:
 *   Configuration class for flat-file generator
-*   
+*
 */
 #include <ncbi_pch.hpp>
 #include <objtools/format/flat_file_config.hpp>
@@ -65,20 +65,20 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip
-CFlatFileConfig::CGenbankBlockCallback::notify_bioseq( 
+CFlatFileConfig::CGenbankBlockCallback::notify_bioseq(
     CBioseqContext& ctx )
 {
     // default is to do nothing; feel free to override it
     return eBioseqSkip_No;
 }
 
-CFlatFileConfig::CGenbankBlockCallback::EAction 
-CFlatFileConfig::CGenbankBlockCallback::notify( 
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CStartSectionItem & head_item ) 
-{ 
-    return unified_notify(block_text, ctx, head_item, fGenbankBlocks_Head); 
+    const CStartSectionItem & head_item )
+{
+    return unified_notify(block_text, ctx, head_item, fGenbankBlocks_Head);
 }
 
 CFlatFileConfig::CGenbankBlockCallback::EAction
@@ -87,14 +87,14 @@ CFlatFileConfig::CGenbankBlockCallback::notify(
     const CBioseqContext& ctx,
     const CHtmlAnchorItem & anchor_item )
 {
-    return unified_notify(block_text, ctx, anchor_item, fGenbankBlocks_None); 
+    return unified_notify(block_text, ctx, anchor_item, fGenbankBlocks_None);
 }
 
 CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
-    string & block_text, 
+    string & block_text,
     const CBioseqContext& ctx,
-    const CLocusItem &locus_item ) 
+    const CLocusItem &locus_item )
 {
     return unified_notify(block_text, ctx, locus_item, fGenbankBlocks_Locus);
 }
@@ -103,7 +103,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CDeflineItem & defline_item ) 
+    const CDeflineItem & defline_item )
 {
     return unified_notify(block_text, ctx,  defline_item, fGenbankBlocks_Defline);
 }
@@ -112,7 +112,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CAccessionItem & accession_item ) 
+    const CAccessionItem & accession_item )
 {
     return unified_notify(block_text, ctx,  accession_item, fGenbankBlocks_Accession);
 }
@@ -121,7 +121,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CVersionItem & version_item ) 
+    const CVersionItem & version_item )
 {
     return unified_notify(block_text, ctx,  version_item, fGenbankBlocks_Version);
 }
@@ -130,7 +130,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CGenomeProjectItem & project_item ) 
+    const CGenomeProjectItem & project_item )
 {
     return unified_notify(block_text, ctx,  project_item, fGenbankBlocks_Project);
 }
@@ -139,7 +139,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CDBSourceItem & dbsource_item ) 
+    const CDBSourceItem & dbsource_item )
 {
     return unified_notify(block_text, ctx,  dbsource_item, fGenbankBlocks_Dbsource);
 }
@@ -148,7 +148,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CKeywordsItem & keywords_item ) 
+    const CKeywordsItem & keywords_item )
 {
     return unified_notify(block_text, ctx,  keywords_item, fGenbankBlocks_Keywords);
 }
@@ -157,7 +157,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CSegmentItem & segment_item ) 
+    const CSegmentItem & segment_item )
 {
     return unified_notify(block_text, ctx,  segment_item, fGenbankBlocks_Segment);
 }
@@ -166,7 +166,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CSourceItem & source_item ) 
+    const CSourceItem & source_item )
 {
     return unified_notify(block_text, ctx,  source_item, fGenbankBlocks_Source);
 }
@@ -175,7 +175,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CReferenceItem & ref_item ) 
+    const CReferenceItem & ref_item )
 {
     return unified_notify(block_text, ctx,  ref_item, fGenbankBlocks_Reference);
 }
@@ -193,7 +193,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CCommentItem & comment_item ) 
+    const CCommentItem & comment_item )
 {
     return unified_notify(block_text, ctx,  comment_item, fGenbankBlocks_Comment);
 }
@@ -202,7 +202,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CPrimaryItem & primary_item ) 
+    const CPrimaryItem & primary_item )
 {
     return unified_notify(block_text, ctx,  primary_item, fGenbankBlocks_Primary);
 }
@@ -211,7 +211,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CFeatHeaderItem & featheader_item ) 
+    const CFeatHeaderItem & featheader_item )
 {
     return unified_notify(block_text, ctx,  featheader_item, fGenbankBlocks_Featheader);
 }
@@ -220,7 +220,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CSourceFeatureItem & sourcefeat_item ) 
+    const CSourceFeatureItem & sourcefeat_item )
 {
     return unified_notify(block_text, ctx,  sourcefeat_item, fGenbankBlocks_Sourcefeat);
 }
@@ -229,7 +229,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CFeatureItem & feature_item ) 
+    const CFeatureItem & feature_item )
 {
     return unified_notify(block_text, ctx,  feature_item, fGenbankBlocks_FeatAndGap);
 }
@@ -238,7 +238,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CGapItem & feature_item ) 
+    const CGapItem & feature_item )
 {
     return unified_notify(block_text, ctx,  feature_item, fGenbankBlocks_FeatAndGap);
 }
@@ -247,7 +247,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CBaseCountItem & basecount_item ) 
+    const CBaseCountItem & basecount_item )
 {
     return unified_notify(block_text, ctx,  basecount_item, fGenbankBlocks_Basecount);
 }
@@ -256,7 +256,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const COriginItem & origin_item ) 
+    const COriginItem & origin_item )
 {
     return unified_notify(block_text, ctx,  origin_item, fGenbankBlocks_Origin);
 }
@@ -265,7 +265,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CSequenceItem & sequence_chunk_item ) 
+    const CSequenceItem & sequence_chunk_item )
 {
     return unified_notify(block_text, ctx,  sequence_chunk_item, fGenbankBlocks_Sequence);
 }
@@ -274,7 +274,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CContigItem & contig_item ) 
+    const CContigItem & contig_item )
 {
     return unified_notify(block_text, ctx,  contig_item, fGenbankBlocks_Contig);
 }
@@ -283,7 +283,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CWGSItem & wgs_item ) 
+    const CWGSItem & wgs_item )
 {
     return unified_notify(block_text, ctx,  wgs_item, fGenbankBlocks_Wgs);
 }
@@ -292,7 +292,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CTSAItem & tsa_item ) 
+    const CTSAItem & tsa_item )
 {
     return unified_notify(block_text, ctx,  tsa_item, fGenbankBlocks_Tsa);
 }
@@ -301,7 +301,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction
 CFlatFileConfig::CGenbankBlockCallback::notify(
     string & block_text,
     const CBioseqContext& ctx,
-    const CEndSectionItem & slash_item ) 
+    const CEndSectionItem & slash_item )
 {
     return unified_notify(block_text, ctx,  slash_item, fGenbankBlocks_Slash);
 }
@@ -345,10 +345,10 @@ CFlatFileConfig::~CFlatFileConfig(void)
 // mode flags initialization
 const bool CFlatFileConfig::sm_ModeFlags[4][32] = {
     // Release
-    { 
+    {
         true, true, true, true, true, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true,
-        true, true, true, true, true, true, true, false, false, true, 
+        true, true, true, true, true, true, true, false, false, true,
         false, false
     },
     // Entrez
@@ -356,21 +356,21 @@ const bool CFlatFileConfig::sm_ModeFlags[4][32] = {
     {
         false, true, true, true, true, false, true, true, false, true,
         true, true, true, true, true, true, true, false, true, true,
-        true, true, true, true, false, true, true, true, false, true, 
+        true, true, true, true, false, true, true, true, false, true,
         false, false
     },
     // GBench
     {
         false, false, false, false, false, false, false, true, false, false,
         false, false, false, false, false, false, false, false, false, false,
-        false, false, false, false, false, false, false, false, true, false, 
+        false, false, false, false, false, false, false, false, true, false,
         false, false
     },
     // Dump
     {
         false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false,
-        false, false, false, false, false, false, true, false, true, false, 
+        false, false, false, false, false, false, true, false, true, false,
         false, false
     }
 };
@@ -381,7 +381,7 @@ bool CFlatFileConfig::x(void) const \
 { \
     return sm_ModeFlags[static_cast<size_t>(m_Mode)][y]; \
 } \
-    
+
 MODE_FLAG_GET(SuppressLocalId, 0);
 MODE_FLAG_GET(ValidateFeatures, 1);
 MODE_FLAG_GET(IgnorePatPubs, 2);
@@ -414,7 +414,7 @@ MODE_FLAG_GET(HideSpecificGeneMaps, 29);
 
 #undef MODE_FLAG_GET
 
-bool CFlatFileConfig::SrcQualsToNote(void) const 
+bool CFlatFileConfig::SrcQualsToNote(void) const
 {
     return m_RefSeqConventions ? false : sm_ModeFlags[static_cast<size_t>(m_Mode)][19];
 }
@@ -424,7 +424,7 @@ bool CFlatFileConfig::GoQualsToNote(void) const
     return m_RefSeqConventions ? false : sm_ModeFlags[static_cast<size_t>(m_Mode)][21];
 }
 
-bool CFlatFileConfig::SelenocysteineToNote(void) const 
+bool CFlatFileConfig::SelenocysteineToNote(void) const
 {
     return m_RefSeqConventions ? false : sm_ModeFlags[static_cast<size_t>(m_Mode)][23];
 }
@@ -474,8 +474,8 @@ CFlatFileConfig::FGenbankBlocks CFlatFileConfig::StringToGenbankBlock(const stri
     return find_iter->second;
 }
 
-// static 
-const vector<string> & 
+// static
+const vector<string>&
 CFlatFileConfig::GetAllGenbankStrings(void)
 {
     static vector<string> s_vecOfGenbankStrings;
@@ -489,7 +489,7 @@ CFlatFileConfig::GetAllGenbankStrings(void)
             setOfGenbankStrings.insert(map_iter->first);
         }
         copy( setOfGenbankStrings.begin(),
-            setOfGenbankStrings.end(), 
+            setOfGenbankStrings.end(),
             back_inserter(s_vecOfGenbankStrings) );
     }
 
@@ -596,11 +596,11 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
                                  CArgDescriptions::eString, "");
 #undef DENT
 
-         arg_desc->AddOptionalKey("showblocks", "COMMA_SEPARATED_BLOCK_LIST", 
+         arg_desc->AddOptionalKey("showblocks", "COMMA_SEPARATED_BLOCK_LIST",
              "Use this to only show certain parts of the flatfile (e.g. '-showblocks locus,defline').  "
              "These are all possible values for block names: " + NStr::Join(CFlatFileConfig::GetAllGenbankStrings(), ", "),
              CArgDescriptions::eString );
-         arg_desc->AddOptionalKey("skipblocks", "COMMA_SEPARATED_BLOCK_LIST", 
+         arg_desc->AddOptionalKey("skipblocks", "COMMA_SEPARATED_BLOCK_LIST",
              "Use this to skip certain parts of the flatfile (e.g. '-skipblocks sequence,origin').  "
              "These are all possible values for block names: " + NStr::Join(CFlatFileConfig::GetAllGenbankStrings(), ", "),
              CArgDescriptions::eString );
@@ -702,7 +702,7 @@ CFlatFileConfig::EFormat x_GetFormat(const CArgs& args)
         return CFlatFileConfig::eFormat_Lite;
     }
     if (format == "gff"  ||  format == "gff3") {
-        string msg = 
+        string msg =
             "Asn2flat no longer supports GFF and GFF3 generation. "
             "For state-of-the-art GFF output, use annotwriter.";
         NCBI_THROW(CException, eInvalid, msg);
@@ -998,12 +998,12 @@ CFlatFileConfig::EView x_GetView(const CArgs& args)
 
 CFlatFileConfig::TGenbankBlocks x_GetGenbankBlocks(const CArgs& args)
 {
-    const static CFlatFileConfig::TGenbankBlocks kDefault = 
+    const static CFlatFileConfig::TGenbankBlocks kDefault =
         CFlatFileConfig::fGenbankBlocks_All;
 
     string blocks_arg;
     // set to true if we're hiding the blocks given instead of showing them
-    bool bInvertFlags = false; 
+    bool bInvertFlags = false;
     if( args["showblocks"] ) {
         blocks_arg = args["showblocks"].AsString();
     } else if( args["skipblocks"] ) {

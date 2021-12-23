@@ -26,7 +26,7 @@
 * Author:  Aaron Ucko, NCBI
 *
 * File Description:
-*   
+*
 *
 * ===========================================================================
 */
@@ -78,7 +78,7 @@ CGenbankGatherer::CGenbankGatherer(void)
 
 
 bool s_ShowBaseCount(const CFlatFileConfig& cfg)
-{ 
+{
     return (cfg.IsModeDump()  ||  cfg.IsModeGBench());
 }
 
@@ -205,12 +205,12 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         GATHER_VIA_FUNC(Wgs, x_GatherWGS);
     } else if( /* ctx.IsTSAMaster()  && */
                ctx.GetTech() == CMolInfo::eTech_tsa  &&  ctx.GetRepr() == CSeq_inst::eRepr_virtual &&
-               (ctx.GetBiomol() == CMolInfo::eBiomol_mRNA || ctx.GetBiomol() == CMolInfo::eBiomol_transcribed_RNA) ) 
+               (ctx.GetBiomol() == CMolInfo::eBiomol_mRNA || ctx.GetBiomol() == CMolInfo::eBiomol_transcribed_RNA) )
     {
         // Yes, the TSA info is considered a kind of PRIMARY block
         GATHER_VIA_FUNC(Tsa, x_GatherTSA);
     } else if( /* ctx.IsTLSMaster()  && */
-               ctx.GetTech() == CMolInfo::eTech_targeted  &&  ctx.GetRepr() == CSeq_inst::eRepr_virtual ) 
+               ctx.GetTech() == CMolInfo::eTech_targeted  &&  ctx.GetRepr() == CSeq_inst::eRepr_virtual )
     {
         GATHER_VIA_FUNC(Tsa, x_GatherTLS);
     } else if ( ctx.DoContigStyle() ) {
@@ -241,7 +241,7 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
             GATHER_ANCHOR(Contig, "contig");
             GATHER_BLOCK(Contig, CContigItem);
         }
-        if ( ctx.IsNuc()  && ! bIsMap && s_ShowBaseCount(cfg) ) 
+        if ( ctx.IsNuc()  && ! bIsMap && s_ShowBaseCount(cfg) )
         {
             GATHER_BLOCK(Basecount, CBaseCountItem);
         }
@@ -299,13 +299,13 @@ void CGenbankGatherer::x_GatherWGS(void) const
         if ( (first != 0)  &&  (last != 0) ) {
             if( bFirstWgsItem ) {
                 CConstRef<IFlatItem> anchor_item( new CHtmlAnchorItem(ctx, "wgs" ) );
-                ItemOS() << anchor_item; 
+                ItemOS() << anchor_item;
                 bFirstWgsItem = false;
             }
-            CConstRef<IFlatItem> item( new CWGSItem(wgs_type, *first, *last, uo, ctx) );  
+            CConstRef<IFlatItem> item( new CWGSItem(wgs_type, *first, *last, uo, ctx) );
             ItemOS() << item;
         }
-    }    
+    }
 }
 
 void CGenbankGatherer::x_GatherTSA(void) const
@@ -348,10 +348,10 @@ void CGenbankGatherer::x_GatherTSA(void) const
         }
 
         if ( (first != 0)  &&  (last != 0) ) {
-            CConstRef<IFlatItem> item( new CTSAItem(tsa_type, *first, *last, uo, ctx) );  
+            CConstRef<IFlatItem> item( new CTSAItem(tsa_type, *first, *last, uo, ctx) );
             ItemOS() << item;
         }
-    }    
+    }
 }
 
 void CGenbankGatherer::x_GatherTLS(void) const
@@ -389,7 +389,7 @@ void CGenbankGatherer::x_GatherTLS(void) const
             CConstRef<IFlatItem> item( new CTSAItem(CTSAItem::eTLS_Projects, *first, *last, uo, ctx) );
             ItemOS() << item;
         }
-    }    
+    }
 }
 
 END_SCOPE(objects)

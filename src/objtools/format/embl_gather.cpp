@@ -26,7 +26,7 @@
 * Author:  Aaron Ucko, NCBI
 *
 * File Description:
-*   
+*
 *
 * ===========================================================================
 */
@@ -112,7 +112,7 @@ void CEmblGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     }
     // Sequenece
     x_GatherSequence();
-    
+
     item.Reset( new CEndSectionItem(ctx) );
     ItemOS() << item
 ;

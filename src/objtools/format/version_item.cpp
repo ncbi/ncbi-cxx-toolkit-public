@@ -102,11 +102,11 @@ void CVersionItem::x_GatherInfo(CBioseqContext& ctx)
             break;
         default:
             break;
-        }        
+        }
     }
 
     ITERATE (CBioseq::TId, id, ctx.GetBioseqIds()) {
-        if ( (*id)->IsGi() ) { 
+        if ( (*id)->IsGi() ) {
             m_Gi = (*id)->GetGi();
             break;
         }

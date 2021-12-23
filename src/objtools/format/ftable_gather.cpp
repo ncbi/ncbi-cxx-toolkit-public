@@ -26,7 +26,7 @@
 * Author:  Aaron Ucko, NCBI
 *
 * File Description:
-*   5-Column feature table data gathering  
+*   5-Column feature table data gathering
 *
 * ===========================================================================
 */
@@ -68,7 +68,7 @@ void CFtableGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         x_GatherSourceFeatures();
     }
     x_GatherFeatures();
-    
+
     item.Reset( new CEndSectionItem(ctx) );
     ItemOS() << item;
 }

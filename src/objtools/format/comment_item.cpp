@@ -81,7 +81,7 @@ static const string kRefSeqInformationLink = "<a href=\"https://www.ncbi.nlm.nih
 //  CCommentItem
 
 CCommentItem::CCommentItem(CBioseqContext& ctx, bool need_period) :
-    CFlatItem(&ctx), 
+    CFlatItem(&ctx),
     m_CommentInternalIndent(0),
     m_First(false),
     m_NeedPeriod(need_period)
@@ -101,7 +101,7 @@ CCommentItem::CCommentItem
  const CSerialObject* obj) :
     CFlatItem(&ctx),
     m_CommentInternalIndent(0),
-    m_First(false), 
+    m_First(false),
     m_NeedPeriod(true)
 {
     m_Comment.push_back( comment );
@@ -114,11 +114,11 @@ CCommentItem::CCommentItem
     }
 }
 
-    
+
 CCommentItem::CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx) :
-    CFlatItem(&ctx), 
+    CFlatItem(&ctx),
     m_CommentInternalIndent(0),
-    m_First(false), 
+    m_First(false),
     m_NeedPeriod(true)
 {
     swap(m_First, sm_FirstComment);
@@ -131,9 +131,9 @@ CCommentItem::CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx) :
 
 
 CCommentItem::CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx) :
-    CFlatItem(&ctx), 
+    CFlatItem(&ctx),
     m_CommentInternalIndent(0),
-    m_First(false), 
+    m_First(false),
     m_NeedPeriod(true)
 {
     swap(m_First, sm_FirstComment);
@@ -144,13 +144,13 @@ CCommentItem::CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx) :
     }
     if ( x_IsCommentEmpty() ) {
         x_SetSkip();
-    }       
+    }
 }
 
 CCommentItem::CCommentItem(const CUser_object & userObject, CBioseqContext& ctx) :
-    CFlatItem(&ctx), 
+    CFlatItem(&ctx),
     m_CommentInternalIndent(0),
-    m_First(false), 
+    m_First(false),
     m_NeedPeriod(true)
 {
     swap(m_First, sm_FirstComment);
@@ -216,7 +216,7 @@ void CCommentItem::RemoveExcessNewlines(
 
     string::size_type pos = (last_str_of_comment.length() - 1);
     if( last_str_of_comment[pos] == '\n' ) {
-        // skip final newlines because lines without newline will get 
+        // skip final newlines because lines without newline will get
         // a newline added, so we would assume it's there anyway
         --pos;
     }
@@ -258,17 +258,17 @@ string CCommentItem::GetStringForTPA
 (const CUser_object& uo,
  CBioseqContext& ctx)
 {
-    static const string tpa_string = 
+    static const string tpa_string =
         "THIRD PARTY ANNOTATION DATABASE: This TPA record uses data from DDBJ/EMBL/GenBank ";
 
-    if ( !ctx.IsTPA()  ||  ctx.IsRefSeq() ) {
+    if ( !ctx.IsTPA() || ctx.IsRefSeq() ) {
         return kEmptyStr;
     }
-    if ( !uo.CanGetType()  ||  !uo.GetType().IsStr()  ||  
+    if ( !uo.CanGetType() || !uo.GetType().IsStr() ||
          uo.GetType().GetStr() != "TpaAssembly" ) {
         return kEmptyStr;
     }
-    
+
     CBioseq_Handle& seq = ctx.GetHandle();
     if (seq.IsSetInst_Hist()  &&  seq.GetInst_Hist().IsSetAssembly()) {
         return kEmptyStr;
@@ -288,7 +288,7 @@ string CCommentItem::GetStringForTPA
                 continue;
             }
             const CObject_id& oid = (*ufi)->GetLabel();
-            if ( oid.IsStr()  &&  
+            if ( oid.IsStr() &&
                  (NStr::CompareNocase(oid.GetStr(), "accession") == 0) ) {
                 string acc = (*ufi)->GetData().GetStr();
                 if ( !acc.empty() ) {
@@ -332,19 +332,19 @@ string CCommentItem::GetStringForBankIt(const CUser_object& uo, bool dump_mode)
         const CUser_field& uf = uo.GetField("UniVecComment");
         if ( uf.CanGetData()  &&  uf.GetData().IsStr() ) {
             uvc = &(uf.GetData().GetStr());
-        } 
+        }
     }
     if ( uo.HasField("AdditionalComment") ) {
         const CUser_field& uf = uo.GetField("AdditionalComment");
         if ( uf.CanGetData()  &&  uf.GetData().IsStr() ) {
             bic = &(uf.GetData().GetStr());
-        } 
+        }
     }
     if ( uo.HasField("SmartComment") && dump_mode ) {
         const CUser_field& uf = uo.GetField("SmartComment");
         if ( uf.CanGetData()  &&  uf.GetData().IsStr() ) {
             smc = &(uf.GetData().GetStr());
-        } 
+        }
     }
 
     CNcbiOstrstream text;
@@ -366,7 +366,7 @@ string CCommentItem::GetStringForBankIt(const CUser_object& uo, bool dump_mode)
 }
 
 
-static 
+static
 void s_GetAssemblyInfo(const CBioseqContext& ctx, string& s, const CUser_object& uo)
 {
     s.clear();
@@ -381,7 +381,7 @@ void s_GetAssemblyInfo(const CBioseqContext& ctx, string& s, const CUser_object&
         }
 
         ITERATE (CUser_field::C_Data::TFields, fit,
-            field.GetData().GetFields()) 
+            field.GetData().GetFields())
         {
             if ( !(*fit)->GetData().IsFields() ) {
                 continue;
@@ -397,7 +397,7 @@ void s_GetAssemblyInfo(const CBioseqContext& ctx, string& s, const CUser_object&
             int to = 0;
 
             ITERATE (CUser_field::C_Data::TFields, it,
-                (*fit)->GetData().GetFields()) 
+                (*fit)->GetData().GetFields())
             {
                 const CUser_field& uf = **it;
                 if ( !uf.CanGetLabel()  ||  !uf.GetLabel().IsStr() || ! uf.IsSetData() ) {
@@ -443,13 +443,13 @@ void s_GetAssemblyInfo(const CBioseqContext& ctx, string& s, const CUser_object&
                 if (IsValidAccession(accession)) {
                     ctx.Config().GetHTMLFormatter().FormatGeneralId(oss, accession);
                 } else {
-                    oss << accession;                    
+                    oss << accession;
                 }
 #else
                 if( IsValidAccession(accession) ) {
                     NcbiId(oss, accession, is_html);
                 } else {
-                    oss << accession;                    
+                    oss << accession;
                 }
 #endif
 
@@ -498,7 +498,7 @@ CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
     const CUser_field& field = uo.GetField("Status");
     if ( field.GetData().IsStr() ) {
         string status = field.GetData().GetStr();
-        if (NStr::EqualNocase(status, "Inferred")) { 
+        if (NStr::EqualNocase(status, "Inferred")) {
             retval = eRefTrackStatus_Inferred;
         } else if (NStr::EqualNocase(status, "Provisional")) {
             retval = eRefTrackStatus_Provisional;
@@ -611,7 +611,7 @@ string CCommentItem::GetStringForRefTrack(const CBioseqContext& ctx, const CUser
     if (status == eRefTrackStatus_Pipeline) {
         oss << (is_html ? kRefSeqInformationLink : kRefSeqInformation) << ":";
     } else {
-        oss << status_str << ' ' 
+        oss << status_str << ' '
             << (is_html ? kRefSeqLink : kRefSeq) << ":";
     }
     switch ( status ) {
@@ -655,7 +655,7 @@ string CCommentItem::GetStringForRefTrack(const CBioseqContext& ctx, const CUser
         oss << " This record has undergone validation or preliminary review.";
         break;
     case eRefTrackStatus_Reviewed:
-        oss << " This record has been curated by " 
+        oss << " This record has been curated by "
             << (collaborator.empty() ? "NCBI staff" : collaborator) << '.';
         break;
     case eRefTrackStatus_Model:
@@ -699,7 +699,7 @@ string CCommentItem::GetStringForRefTrack(const CBioseqContext& ctx, const CUser
 #endif
 
         if( ! identical_to_start.empty() && ! identical_to_end.empty() ) {
-            oss << " (range: " << identical_to_start << "-" << 
+            oss << " (range: " << identical_to_start << "-" <<
                 identical_to_end << ")";
         }
         oss << ".";
@@ -725,7 +725,7 @@ string CCommentItem::GetStringForRefTrack(const CBioseqContext& ctx, const CUser
             if (f  &&  f->GetData().IsStr()) {
                 const string& status = f->GetData().GetStr();
                 if (status == "Reference Standard") {
-                    oss << "~This sequence is a reference standard in the " 
+                    oss << "~This sequence is a reference standard in the "
                         << (is_html ? kRefSeqGeneLink : kRefSeqGene)
                         << " project.";
                 }
@@ -739,7 +739,7 @@ string CCommentItem::GetStringForRefTrack(const CBioseqContext& ctx, const CUser
 string CCommentItem::GetStringForRefSeqGenome(const CUser_object& uo)
 {
     if ( ! FIELD_IS_SET_AND_IS(uo, Type, Str)  ||
-         uo.GetType().GetStr() != "RefSeqGenome") 
+         uo.GetType().GetStr() != "RefSeqGenome")
     {
         return kEmptyStr;
     }
@@ -753,7 +753,7 @@ string CCommentItem::GetStringForRefSeqGenome(const CUser_object& uo)
     result_oss << kRefSeqCat << ": ";
     CConstRef<CUser_field> pCategoryField = uo.GetFieldRef(kRefSeqCat);
     if( pCategoryField &&
-        FIELD_IS_SET_AND_IS(*pCategoryField, Data, Str) ) 
+        FIELD_IS_SET_AND_IS(*pCategoryField, Data, Str) )
     {
         const string & sCategory = pCategoryField->GetData().GetStr();
         result_oss << sCategory << '\n';
@@ -859,9 +859,9 @@ string CCommentItem::GetStringForWGS(CBioseqContext& ctx)
     */
 
     CNcbiOstrstream text;
-    text << "The " << *taxname 
-         << " whole genome shotgun (WGS) project has the project accession " 
-         << wgsaccn << ".  This version of the project (" << version 
+    text << "The " << *taxname
+         << " whole genome shotgun (WGS) project has the project accession "
+         << wgsaccn << ".  This version of the project (" << version
          << ") has the accession number " << wgsname << ",";
     if (*first != *last) {
         text << " and consists of sequences " << *first << "-" << *last << ".";
@@ -901,7 +901,7 @@ string CCommentItem::GetStringForTSA(CBioseqContext& ctx)
         const CUser_object& uo = it->GetUser();
         if (uo.IsSetType()  &&  uo.GetType().IsStr()  &&
             ( NStr::EqualNocase(uo.GetType().GetStr(), "TSA-mRNA-List") ||
-              NStr::EqualNocase(uo.GetType().GetStr(), "TSA-RNA-List") ) ) 
+              NStr::EqualNocase(uo.GetType().GetStr(), "TSA-RNA-List") ) )
         {
             if (uo.HasField("Accession_first")) {
                 const CUser_field& uf = uo.GetField("Accession_first");
@@ -932,13 +932,13 @@ string CCommentItem::GetStringForTSA(CBioseqContext& ctx)
         }
     }
 
-    string version = (tsaname.length() == 15) ? 
+    string version = (tsaname.length() == 15) ?
         tsaname.substr(7, 2) : tsaname.substr(4, 2);
 
     CNcbiOstrstream text;
-    text << "The " << *taxname 
-         << " transcriptome shotgun assembly (TSA) project has the project accession " 
-         << tsaaccn << ".  This version of the project (" << version 
+    text << "The " << *taxname
+         << " transcriptome shotgun assembly (TSA) project has the project accession "
+         << tsaaccn << ".  This version of the project (" << version
          << ") has the accession number " << tsaname << ",";
     if (*first != *last) {
         text << " and consists of sequences " << *first << "-" << *last << ".";
@@ -977,7 +977,7 @@ string CCommentItem::GetStringForTLS(CBioseqContext& ctx)
     for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_User); it; ++it) {
         const CUser_object& uo = it->GetUser();
         if (uo.IsSetType()  &&  uo.GetType().IsStr()  &&
-            ( NStr::EqualNocase(uo.GetType().GetStr(), "TLSProjects") ) ) 
+            ( NStr::EqualNocase(uo.GetType().GetStr(), "TLSProjects") ) )
         {
             if (uo.HasField("TLS_accession_first")) {
                 const CUser_field& uf = uo.GetField("TLS_accession_first");
@@ -996,13 +996,13 @@ string CCommentItem::GetStringForTLS(CBioseqContext& ctx)
         }
     }
 
-    string version = (tlsname.length() == 15) ? 
+    string version = (tlsname.length() == 15) ?
         tlsname.substr(7, 2) : tlsname.substr(4, 2);
 
     CNcbiOstrstream text;
-    text << "The " << *taxname 
-         << " targeted locus study (TLS) project has the project accession " 
-         << tlsaccn << ".  This version of the project (" << version 
+    text << "The " << *taxname
+         << " targeted locus study (TLS) project has the project accession "
+         << tlsaccn << ".  This version of the project (" << version
          << ") has the accession number " << tlsname << ",";
     if (*first != *last) {
         text << " and consists of sequences " << *first << "-" << *last << ".";
@@ -1123,7 +1123,7 @@ string CCommentItem::GetStringForHTGS(CBioseqContext& ctx)
     } else if ( tech == CMolInfo::eTech_htgs_2 ) {
         text << "* NOTE: This is a \"working draft\" sequence.";
         if ( summary.num_segs > 0 ) {
-            text << " It currently~* consists of " << (summary.num_gaps + 1) 
+            text << " It currently~* consists of " << (summary.num_gaps + 1)
                  << " contigs. Gaps between the contigs~"
                  << "* are represented as runs of N. The order of the pieces~"
                  << "* is believed to be correct as given, however the sizes~"
@@ -1161,7 +1161,7 @@ string s_HtmlWrapModelEvidenceName( const SModelEvidance& me )
     if( (me.span.first >= 0) && (me.span.second >= me.span.first) ) {
         const Int8 kPadAmount = 500;
         // The "+1" is because we display 1-based to user and in URL
-        strm << "&v=" << max<Int8>(me.span.first + 1 - kPadAmount, 1) 
+        strm << "&v=" << max<Int8>(me.span.first + 1 - kPadAmount, 1)
              << ":" << (me.span.second + 1 + kPadAmount); // okay if second number goes over end of sequence
     }
     strm << "\">" << me.name << "</a>";
@@ -1239,8 +1239,8 @@ string CCommentItem::GetStringForModelEvidance(const CBioseqContext& ctx, const 
         text << "evidence";
     }
 
-    const char *documentation_str = ( bHtml ? 
-        "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/process/\">Documentation</a>" : 
+    const char *documentation_str = ( bHtml ?
+        "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/process/\">Documentation</a>" :
         "Documentation" );
 
     text << ".~Also see:~"
@@ -1349,13 +1349,13 @@ string CCommentItem::GetStringForAuthorizedAccess(CBioseqContext& ctx)
 
     str << "These data are available through the dbGaP authorized access system. ";
     if( bHtml ) {
-        str << "<a href=\""  
+        str << "<a href=\""
             << "https://dbgap.ncbi.nlm.nih.gov/aa/wga.cgi?adddataset="
             << sAuthorizedAccess << "&page=login\">";
         str << "Request access";
         str << "</a>";
         str << " to Study ";
-        str << "<a href=\""  
+        str << "<a href=\""
             << "https://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id="
             << sAuthorizedAccess << "\">";
         str << sAuthorizedAccess;
@@ -1374,7 +1374,7 @@ string CCommentItem::GetStringForOpticalMap(CBioseqContext& ctx)
     const bool bHtml = ctx.Config().DoHTML();
 
     const CPacked_seqpnt* pOpticalMapPoints = ctx.GetOpticalMapPoints();
-    if( ! pOpticalMapPoints || 
+    if( ! pOpticalMapPoints ||
         RAW_FIELD_IS_EMPTY_OR_UNSET(*pOpticalMapPoints, Points) )
     {
         return kEmptyStr;
@@ -1382,7 +1382,7 @@ string CCommentItem::GetStringForOpticalMap(CBioseqContext& ctx)
 
     const string & sFiletrackURL = ctx.GetFiletrackURL();
 
-    const bool bIsCircular = FIELD_EQUALS( ctx.GetHandle(), Inst_Topology, 
+    const bool bIsCircular = FIELD_EQUALS( ctx.GetHandle(), Inst_Topology,
         CSeq_inst::eTopology_circular );
     const TSeqPos uBioseqLength =
         GET_FIELD_OR_DEFAULT(ctx.GetHandle(), Inst_Length, 0);
@@ -1572,7 +1572,7 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
 
     CNcbiOstrstream result;
     if( label_str == "GOLD Stamp ID" && NStr::StartsWith(data_str, "Gi") ) {
-        result << "<a href=\"http://genomesonline.org/cgi-bin/GOLD/bin/GOLDCards.cgi?goldstamp=" << data_str 
+        result << "<a href=\"http://genomesonline.org/cgi-bin/GOLD/bin/GOLDCards.cgi?goldstamp=" << data_str
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
     }
@@ -1649,9 +1649,9 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
 // turns data into comment lines (not line-wrapped)
 // result in out_lines
 // out_prefix_len holds the length of the part up to the space after the double-colon
-static 
-void s_GetStrForStructuredComment( 
-    const CUser_object::TData &data, 
+static
+void s_GetStrForStructuredComment(
+    const CUser_object::TData &data,
     list<string> &out_lines,
     int &out_prefix_len,
     const bool is_first,
@@ -1675,7 +1675,7 @@ void s_GetStrForStructuredComment(
     // (and set the prefix and suffix while we're at it)
     string::size_type longest_label_len = 1;
     ITERATE( CUser_object::TData, it_for_len, data ) {
-        if( (*it_for_len)->GetLabel().IsStr() && 
+        if( (*it_for_len)->GetLabel().IsStr() &&
                 (*it_for_len)->GetData().IsStr() && ! (*it_for_len)->GetData().GetStr().empty() ) {
             const string &label = (*it_for_len)->GetLabel().GetStr();
 
@@ -1722,7 +1722,7 @@ void s_GetStrForStructuredComment(
     out_lines.back().append( "\n" );
 
     ITERATE( CUser_object::TData, it, data ) {
-        
+
         // skip if no label
         if( ! (*it)->GetLabel().IsStr() || (*it)->GetLabel().GetStr().empty() ) {
             continue;
@@ -1734,8 +1734,8 @@ void s_GetStrForStructuredComment(
         }
 
         // special fields are skipped
-        if( (*it)->GetLabel().GetStr() == "StructuredCommentPrefix" || 
-                (*it)->GetLabel().GetStr() == "StructuredCommentSuffix" || 
+        if( (*it)->GetLabel().GetStr() == "StructuredCommentPrefix" ||
+                (*it)->GetLabel().GetStr() == "StructuredCommentSuffix" ||
                 (*it)->GetLabel().GetStr() == "Annotation Freeze" ) {
             continue;
         }
@@ -1746,7 +1746,7 @@ void s_GetStrForStructuredComment(
 
         // TODO: remove this if-statement once we move to C++ completely.  it just makes
         // formatting look like C even though C++'s formatting is superior
-        // (example: JF320002).  We might even be able to remove the variable fieldOverThreshold 
+        // (example: JF320002).  We might even be able to remove the variable fieldOverThreshold
         // completely.
         if( ! fieldOverThreshold ) {
             next_line.resize( max( next_line.size(), longest_label_len), ' ' );
@@ -1825,7 +1825,7 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc, CBioseqContext& ctx)
             // make sure the user object is really of type StructuredComment
             const CUser_object::TType &type = userObject.GetType();
             if( type.IsStr() && type.GetStr() == "StructuredComment" ) {
-                s_GetStrForStructuredComment( userObject.GetData(),  
+                s_GetStrForStructuredComment( userObject.GetData(),
                     m_Comment, m_CommentInternalIndent, IsFirst(), GetContext()->Config().DoHTML() );
                 SetNeedPeriod( false );
                 can_add_period = ePeriod_NoAdd;
@@ -1842,7 +1842,6 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc, CBioseqContext& ctx)
         return;
     }
     x_SetCommentWithURLlinks(prefix, str, suffix, ctx, can_add_period);
-    
 }
 
 
@@ -1862,7 +1861,7 @@ void CCommentItem::x_GatherUserObjInfo(const CUser_object& userObject )
     // make sure the user object is really of type StructuredComment
     const CUser_object::TType &type = userObject.GetType();
     if( type.IsStr() && type.GetStr() == "StructuredComment" ) {
-        s_GetStrForStructuredComment( userObject.GetData(),  
+        s_GetStrForStructuredComment( userObject.GetData(),
             m_Comment, m_CommentInternalIndent, IsFirst(), GetContext()->Config().DoHTML() );
         SetNeedPeriod( false );
     }
@@ -1923,7 +1922,7 @@ void CCommentItem::x_SetCommentWithURLlinks
             }
         }
     }
-    
+
     ConvertQuotes( comment );
 
     m_Comment.clear();
@@ -1942,31 +1941,31 @@ bool CCommentItem::x_IsCommentEmpty(void) const
 
 // static
 void CCommentItem::x_GetStringForOpticalMap_WriteFragmentLine(
-    ostream & str, TSeqPos prevEndPos, TSeqPos thisEndPos, 
+    ostream & str, TSeqPos prevEndPos, TSeqPos thisEndPos,
     TSeqPos uBioseqLength, EFragmentType eFragmentType)
 {
     str << '\n';
-    str << "*  " 
-        << setw(7) << (prevEndPos) 
-        << ' ' 
+    str << "*  "
+        << setw(7) << (prevEndPos)
+        << ' '
         << setw(7) << (thisEndPos)
         << ": fragment of ";
 
     bool bLengthIsOkay = true; // until proven otherwise
     if( (eFragmentType == eFragmentType_Normal) &&
-        (thisEndPos <= prevEndPos) ) 
+        (thisEndPos <= prevEndPos) )
     {
         bLengthIsOkay = false;
     } else if( (eFragmentType == eFragmentType_WrapAround) &&
-        (thisEndPos >= prevEndPos) ) 
+        (thisEndPos >= prevEndPos) )
     {
         bLengthIsOkay = false;
     }
 
     if( ! bLengthIsOkay ) {
         str << "(ERROR: CANNOT CALCULATE LENGTH)";
-    } else if( (thisEndPos > uBioseqLength) || 
-        (prevEndPos > uBioseqLength) ) 
+    } else if( (thisEndPos > uBioseqLength) ||
+        (prevEndPos > uBioseqLength) )
     {
         str << "(ERROR: FRAGMENT IS OUTSIDE BIOSEQ BOUNDS)";
     } else {
@@ -2096,7 +2095,7 @@ void CGenomeAnnotComment::x_GatherInfo(CBioseqContext& ctx)
 CHistComment::CHistComment
 (EType type,
  const CSeq_hist& hist,
- CBioseqContext& ctx) : 
+ CBioseqContext& ctx) :
     CCommentItem(ctx), m_Type(type), m_Hist(&hist)
 {
     x_GatherInfo(ctx);
@@ -2128,7 +2127,7 @@ string s_CreateHistCommentString
 
     CNcbiOstrstream text;
 
-    text << prefix << ((gis.size() > 1) ? " or before " : " ") << date 
+    text << prefix << ((gis.size() > 1) ? " or before " : " ") << date
          << ' ' << suffix;
 
     if ( gis.empty() ) {
@@ -2267,7 +2266,7 @@ void CLocalIdComment::x_GatherInfo(CBioseqContext& ctx)
     } else {
         switch ( m_Oid->Which() ) {
         case CObject_id::e_Id:
-            msg << "LocalID: " << m_Oid->GetId();    
+            msg << "LocalID: " << m_Oid->GetId();
             break;
         case CObject_id::e_Str:
             if ( m_Oid->GetStr().length() < 1000 ) {
@@ -2299,7 +2298,7 @@ void CFileIdComment::x_GatherInfo(CBioseqContext&)
 
     switch ( m_Oid->Which() ) {
     case CObject_id::e_Id:
-        msg << "FileID: " << m_Oid->GetId();    
+        msg << "FileID: " << m_Oid->GetId();
         break;
     case CObject_id::e_Str:
         if ( m_Oid->GetStr().length() < 1000 ) {

@@ -27,7 +27,7 @@
 *          Mati Shomrat
 *
 * File Description:
-*           
+*
 *
 */
 #include <ncbi_pch.hpp>

@@ -222,7 +222,7 @@ void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
         TRange tgt_piece = m_AlnMap->GetRange(m_TargetRow, seg);
         CAlnMap::TSegTypeFlags ref_flags = m_AlnMap->GetSegType(m_RefRow, seg);
         CAlnMap::TSegTypeFlags tgt_flags = m_AlnMap->GetSegType(m_TargetRow, seg);
-        //The type and count are guaranteed set by one of the if/else cases below.  
+        //The type and count are guaranteed set by one of the if/else cases below.
         char type = 'X'; // Guaranteed set. Pacify compiler.
         TSeqPos count = 0;  // Guaranteed set. Pacify compiler.
         TSignedSeqPos frameshift = 0;

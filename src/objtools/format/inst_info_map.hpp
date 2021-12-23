@@ -27,7 +27,7 @@
  *
  * File Description:
  *   This just wraps a hash-table that converts institution abbrev to
- *   institution name and other info.  It's in its own file because 
+ *   institution name and other info.  It's in its own file because
  *   the data itself is so large.
  *
  * ===========================================================================
@@ -43,7 +43,7 @@ BEGIN_SCOPE(objects)
 class CInstInfoMap {
 public:
     struct SVoucherInfo : public CObject {
-        SVoucherInfo( 
+        SVoucherInfo(
             const string *links,
             bool          prependInstitute,
             bool          prependCollection,
@@ -52,7 +52,7 @@ public:
             const string *trim,
             const string *prefix,
             const string *suffix,
-            const char   *inst_full_name ): 
+            const char   *inst_full_name ):
             m_Links(links),
             m_PrependInstitute(prependInstitute),
             m_PrependCollection(prependCollection),

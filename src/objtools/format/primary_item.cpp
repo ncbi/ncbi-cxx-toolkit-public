@@ -175,7 +175,7 @@ void CPrimaryItem::x_GatherInfo(CBioseqContext& ctx)
         return;
     }
     if ( seq.IsSetInst_Hist()  &&  !seq.GetInst_Hist().GetAssembly().empty() ) {
-        x_GetStrForPrimary(ctx);   
+        x_GetStrForPrimary(ctx);
     }
 }
 
@@ -188,7 +188,7 @@ static const char* s_PrimaryHeader( CBioseqContext &ctx )
         return "TSA_SPAN            PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP";
     } else {
         return "TPA_SPAN            PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP";
-    }        
+    }
 }
 
 
@@ -197,10 +197,9 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
 {
     CBioseq_Handle& seq = ctx.GetHandle();
 
-
     TAlnConstList seglist;
     x_CollectSegments(seglist, seq.GetInst_Hist().GetAssembly());
-    
+
     string str;
     string s;
     string r;

@@ -50,7 +50,7 @@ BEGIN_SCOPE(objects)
 CSequenceItem::CSequenceItem
 (TSeqPos from,
  TSeqPos to,
- bool first, 
+ bool first,
  CBioseqContext& ctx) :
     CFlatItem(&ctx),
     m_From(from), m_To(to), m_First(first)
