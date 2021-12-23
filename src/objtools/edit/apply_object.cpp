@@ -51,7 +51,7 @@ CApplyObject::CApplyObject(CBioseq_Handle bsh, const CSeqdesc& desc) : m_Delete(
     m_SEH = bsh.GetParentEntry();
     if (!desc.IsMolinfo() && !desc.IsTitle()) {
         CBioseq_set_Handle bssh = bsh.GetParentBioseq_set();
-        if (bssh && bssh.IsSetClass() && bssh.GetClass() == objects::CBioseq_set::eClass_nuc_prot) {
+        if (bssh && bssh.IsSetClass() && bssh.GetClass() == CBioseq_set::eClass_nuc_prot) {
             m_SEH = bssh.GetParentEntry();
         }
     }
@@ -68,7 +68,7 @@ CApplyObject::CApplyObject(CBioseq_Handle bsh, CSeqdesc::E_Choice subtype): m_De
     m_SEH = bsh.GetParentEntry();
     if (subtype != CSeqdesc::e_Molinfo && subtype != CSeqdesc::e_Title) {
         CBioseq_set_Handle bssh = bsh.GetParentBioseq_set();
-        if (bssh && bssh.IsSetClass() && bssh.GetClass() == objects::CBioseq_set::eClass_nuc_prot) {
+        if (bssh && bssh.IsSetClass() && bssh.GetClass() == CBioseq_set::eClass_nuc_prot) {
             m_SEH = bssh.GetParentEntry();
         }
     }
@@ -84,7 +84,7 @@ CApplyObject::CApplyObject(CBioseq_Handle bsh, const string& user_label) : m_Del
 {
     m_SEH = bsh.GetParentEntry();
     CBioseq_set_Handle bssh = bsh.GetParentBioseq_set();
-    if (bssh && bssh.IsSetClass() && bssh.GetClass() == objects::CBioseq_set::eClass_nuc_prot) {
+    if (bssh && bssh.IsSetClass() && bssh.GetClass() == CBioseq_set::eClass_nuc_prot) {
         m_SEH = bssh.GetParentEntry();
     }
 
@@ -257,9 +257,6 @@ CSeq_entry_Handle GetSeqEntryForSeqdesc (CRef<CScope> scope, const CSeqdesc& seq
     }
     return seh;
 }
-
-
-
 
 END_SCOPE(edit)
 END_SCOPE(objects)

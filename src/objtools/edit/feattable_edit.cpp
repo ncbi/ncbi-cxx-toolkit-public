@@ -1954,7 +1954,7 @@ static void s_SetProtRef(const CSeq_feat& cds,
     } // prot_ref.IsSetName()
 }
 
-static bool AssignLocalIdIfEmpty(ncbi::objects::CSeq_feat& feature, unsigned& id)
+static bool AssignLocalIdIfEmpty(CSeq_feat& feature, unsigned& id)
 {
     if (feature.IsSetId())
         return true;

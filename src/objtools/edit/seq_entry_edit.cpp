@@ -3280,7 +3280,7 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
         // new scope with the trimmed sequence data.
 
         // Keep track of original seqinst
-        CRef<objects::CSeq_inst> orig_inst(new objects::CSeq_inst());
+        CRef<CSeq_inst> orig_inst(new CSeq_inst());
         orig_inst->Assign(nuc_bsh.GetInst());
 
         // Update the seqinst to the trimmed version, set the scope

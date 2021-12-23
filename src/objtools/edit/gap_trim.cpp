@@ -71,11 +71,11 @@ void CFeatGapInfo::CollectGaps(const CSeq_loc& feat_loc, CScope& scope)
     m_Known = false;
     m_Ns = false;
 
-    m_Start = feat_loc.GetStart(objects::eExtreme_Positional);
-    m_Stop = feat_loc.GetStop(objects::eExtreme_Positional);
+    m_Start = feat_loc.GetStart(eExtreme_Positional);
+    m_Stop = feat_loc.GetStop(eExtreme_Positional);
     CRef<CSeq_loc> total_loc = sequence::Seq_loc_Merge(feat_loc, CSeq_loc::fMerge_SingleRange, &scope);
     if (total_loc->IsSetStrand()) total_loc->ResetStrand();
-    CConstRef<objects::CSeqMap> seq_map = CSeqMap::GetSeqMapForSeq_loc(*total_loc, &scope);
+    CConstRef<CSeqMap> seq_map = CSeqMap::GetSeqMapForSeq_loc(*total_loc, &scope);
 
     // use CSeqVector for finding Ns
     CSeqVector vec(*seq_map, scope, CBioseq_Handle::eCoding_Iupac);
@@ -85,12 +85,12 @@ void CFeatGapInfo::CollectGaps(const CSeq_loc& feat_loc, CScope& scope)
         m_Stop - m_Start + 1,
         eNa_strand_plus, //feat_loc.GetStrand(),
         size_t(-1),
-        objects::CSeqMap::fFindGap | objects::CSeqMap::fFindData);
+        CSeqMap::fFindGap | CSeqMap::fFindData);
 
     for (; seq_map_ci; ++seq_map_ci)
     {
 
-        if (seq_map_ci.GetType() == objects::CSeqMap::eSeqGap)
+        if (seq_map_ci.GetType() == CSeqMap::eSeqGap)
         {
             TSeqPos gap_start = m_Start + seq_map_ci.GetPosition();
             TSeqPos gap_stop = gap_start + seq_map_ci.GetLength() - 1;
@@ -290,10 +290,10 @@ CFeatGapInfo::TLocList CFeatGapInfo::Split(const CSeq_loc& orig, bool in_intron,
         {
             if (make_partial)
             {
-                loc2->SetPartialStart(true, objects::eExtreme_Positional);
+                loc2->SetPartialStart(true, eExtreme_Positional);
                 if (left_loc->Which() != CSeq_loc::e_not_set)
                 {
-                    left_loc->SetPartialStop(true, objects::eExtreme_Positional);
+                    left_loc->SetPartialStop(true, eExtreme_Positional);
                 }
             }
             locs.push_back(loc2);
@@ -347,10 +347,10 @@ CRef<CBioseq> CFeatGapInfo::AdjustProteinSeq(const CBioseq& seq, const CSeq_feat
     CRef<CBioseq> prot_seq(new CBioseq);
     prot_seq->Assign(seq);
     prot_seq->SetInst().ResetExt();
-    prot_seq->SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
+    prot_seq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
     prot_seq->SetInst().SetSeq_data().SetIupacaa().Set(prot);
     prot_seq->SetInst().SetLength(TSeqPos(prot.length()));
-    prot_seq->SetInst().SetMol(objects::CSeq_inst::eMol_aa);
+    prot_seq->SetInst().SetMol(CSeq_inst::eMol_aa);
     // fix sequence ID
     const CSeq_id& feat_prod = feat.GetProduct().GetWhole();
     if (!feat_prod.Equals(orig_cds.GetProduct().GetWhole())) {
@@ -492,7 +492,7 @@ void s_FixPartial(CSeq_feat& feat)
 // coding regions should be retranslated after split
 vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_partial, bool trim, bool split, bool in_intron, bool create_general_only)
 {
-    CRef<objects::CSeq_feat> new_feat(new CSeq_feat);
+    CRef<CSeq_feat> new_feat(new CSeq_feat);
     new_feat->Assign(*m_Feature.GetOriginalSeq_feat());
     vector<CRef<CSeq_feat> > rval;
 
@@ -505,7 +505,7 @@ vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_p
 
     if (trim && Trimmable()) {
         Trim(new_feat->SetLocation(), make_partial, m_Feature.GetScope());
-        new_feat->SetPartial(new_feat->GetLocation().IsPartialStart(objects::eExtreme_Positional) || new_feat->GetLocation().IsPartialStop(objects::eExtreme_Positional));
+        new_feat->SetPartial(new_feat->GetLocation().IsPartialStart(eExtreme_Positional) || new_feat->GetLocation().IsPartialStop(eExtreme_Positional));
         if (new_feat->GetData().IsCdregion()) {
             // adjust frame
             TSeqPos frame_adjust = sequence::LocationOffset(m_Feature.GetLocation(), new_feat->GetLocation(),
@@ -556,17 +556,17 @@ vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_p
                     x_AdjustFrame(split_feat->SetData().SetCdregion(), frame_adjust);
                     // adjust product ID
                     if (split_feat->IsSetProduct() && split_feat->GetProduct().IsWhole() && protein_seqid_offset > 0) {
-                        objects::CBioseq_Handle product = m_Feature.GetScope().GetBioseqHandle(split_feat->GetProduct());
+                        CBioseq_Handle product = m_Feature.GetScope().GetBioseqHandle(split_feat->GetProduct());
                         CRef<CSeq_id> new_id;
                         if (product)
                         {
-                            vector<CRef<objects::CSeq_id> > new_ids = objects::edit::GetNewProtIdFromExistingProt(product, protein_seqid_offset, protein_seqid_label);
+                            vector<CRef<CSeq_id> > new_ids = GetNewProtIdFromExistingProt(product, protein_seqid_offset, protein_seqid_label);
                             new_id = FindBestChoice(new_ids, CSeq_id::Score);
                         }
                         else
                         {
-                            objects::CBioseq_Handle bsh = m_Feature.GetScope().GetBioseqHandle(split_feat->GetLocation());
-                            new_id = objects::edit::GetNewProtId(bsh, protein_seqid_offset, protein_seqid_label, create_general_only);
+                            CBioseq_Handle bsh = m_Feature.GetScope().GetBioseqHandle(split_feat->GetLocation());
+                            new_id = GetNewProtId(bsh, protein_seqid_offset, protein_seqid_label, create_general_only);
                         }
                         split_feat->SetProduct().SetWhole().Assign(*new_id);
                     }

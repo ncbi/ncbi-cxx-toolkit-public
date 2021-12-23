@@ -282,7 +282,7 @@ vector<CConstRef<CObject> > CStructuredCommentField::GetObjects(CSeq_entry_Handl
     vector<CConstRef<CObject> > objs;
     CRef<CScope> scope(&seh.GetScope());
 
-    CBioseq_CI bi (seh, objects::CSeq_inst::eMol_na);
+    CBioseq_CI bi (seh, CSeq_inst::eMol_na);
     while (bi) {
         if (NStr::EqualNocase(constraint_field, kFieldTypeSeqId)) {
             if (CSeqIdGuesser::DoesSeqMatchConstraint(*bi, string_constraint)) {

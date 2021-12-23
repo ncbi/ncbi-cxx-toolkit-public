@@ -91,13 +91,13 @@ unsigned char GetCodeBreakCharacter(const CCode_break& cbr)
 }
 
 
-bool DoesCodingRegionHaveTerminalCodeBreak(const objects::CCdregion& cdr)
+bool DoesCodingRegionHaveTerminalCodeBreak(const CCdregion& cdr)
 {
     if (!cdr.IsSetCode_break()) {
         return false;
     }
     bool rval = false;
-    ITERATE(objects::CCdregion::TCode_break, it, cdr.GetCode_break()) {
+    ITERATE(CCdregion::TCode_break, it, cdr.GetCode_break()) {
         if (GetCodeBreakCharacter(**it) == '*') {
             rval = true;
             break;
@@ -107,21 +107,21 @@ bool DoesCodingRegionHaveTerminalCodeBreak(const objects::CCdregion& cdr)
 }
 
 
-TSeqPos GetLastPartialCodonLength(const objects::CSeq_feat& cds, objects::CScope& scope)
+TSeqPos GetLastPartialCodonLength(const CSeq_feat& cds, CScope& scope)
 {
     if (!cds.IsSetData() || !cds.GetData().IsCdregion()) {
         return 0;
     }
     // find the length of the last partial codon.
-    const objects::CCdregion& cdr = cds.GetData().GetCdregion();
+    const CCdregion& cdr = cds.GetData().GetCdregion();
     int dna_len = sequence::GetLength(cds.GetLocation(), &scope);
     TSeqPos except_len = 0;
     if (cds.GetLocation().IsPartialStart(eExtreme_Biological) && cdr.IsSetFrame()) {
         switch (cdr.GetFrame()) {
-            case objects::CCdregion::eFrame_two:
+            case CCdregion::eFrame_two:
                 except_len = (dna_len - 1) % 3;
                 break;
-            case objects::CCdregion::eFrame_three:
+            case CCdregion::eFrame_three:
                 except_len = (dna_len - 2) % 3;
                 break;
             default:
@@ -166,7 +166,7 @@ bool AddTerminalCodeBreak(CSeq_feat& cds, CScope& scope)
         return false;
     }
 
-    CRef<objects::CCode_break> cbr(new objects::CCode_break());
+    CRef<CCode_break> cbr(new CCode_break());
     cbr->SetAa().SetNcbieaa('*');
     cbr->SetLoc().Assign(*codon_loc);
     cds.SetData().SetCdregion().SetCode_break().push_back(cbr);
@@ -174,7 +174,7 @@ bool AddTerminalCodeBreak(CSeq_feat& cds, CScope& scope)
 }
 
 
-bool DoesCodingRegionEndWithStopCodon(const objects::CSeq_feat& cds, objects::CScope& scope)
+bool DoesCodingRegionEndWithStopCodon(const CSeq_feat& cds, CScope& scope)
 {
     string transl_prot;
     bool alt_start = false;
@@ -215,7 +215,7 @@ void ExtendStop(CSeq_loc& loc, TSeqPos len, CScope& scope)
 }
 
 
-TSeqPos ExtendLocationForTranslExcept(objects::CSeq_loc& loc, objects::CScope& scope)
+TSeqPos ExtendLocationForTranslExcept(CSeq_loc& loc, CScope& scope)
 {
     CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
     TSeqPos stop = loc.GetStop(eExtreme_Biological);
@@ -301,7 +301,7 @@ bool IsOverhangOkForTerminalCodeBreak(const CSeq_feat& cds, CScope& scope, bool 
 ///                 If strict is false, add code break if first NT of last partial codon
 ///                 is T or N.
 /// @param extend   If true, extend coding region to cover partial stop codon
-bool SetTranslExcept(objects::CSeq_feat& cds, const string& comment, bool strict, bool extend, objects::CScope& scope)
+bool SetTranslExcept(CSeq_feat& cds, const string& comment, bool strict, bool extend, CScope& scope)
 {
     // do nothing if this isn't a coding region
     if (!cds.IsSetData() || !cds.GetData().IsCdregion()) {
@@ -312,7 +312,7 @@ bool SetTranslExcept(objects::CSeq_feat& cds, const string& comment, bool strict
         return false;
     }
 
-    objects::CCdregion& cdr = cds.SetData().SetCdregion();
+    CCdregion& cdr = cds.SetData().SetCdregion();
     // do nothing if coding region already has terminal code break
     if (DoesCodingRegionHaveTerminalCodeBreak(cdr)) {
         return false;
@@ -459,7 +459,7 @@ bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh)
         }
     }
     if (!found) {
-        CRef<objects::CSeqdesc> new_molinfo_desc( new CSeqdesc );
+        CRef<CSeqdesc> new_molinfo_desc( new CSeqdesc );
         AdjustProteinMolInfoToMatchCDS(new_molinfo_desc->SetMolinfo(), cds);
         beh.SetDescr().Set().push_back(new_molinfo_desc);
         any_change = true;
@@ -974,7 +974,7 @@ void AdjustCDSFrameForStartChange(CCdregion& cds, int change)
 }
 
 
-bool DemoteCDSToNucSeq(objects::CSeq_feat_Handle& orig_feat)
+bool DemoteCDSToNucSeq(CSeq_feat_Handle& orig_feat)
 {
     CSeq_feat_EditHandle feh(orig_feat);
     CSeq_entry_Handle parent_entry = feh.GetAnnot().GetParentEntry();
@@ -1143,21 +1143,21 @@ string GetIdHashOrValue(const string &base, int offset)
     return new_hash;
 }
 
-CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CScope &scope, int &offset)
+CRef<CSeq_id> GetNewLocalProtId(const string &id_base, CScope &scope, int &offset)
 {
     string id_base_hash = GetIdHash(id_base);
-    CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
+    CRef<CSeq_id> new_id(new CSeq_id());
     string new_str = id_base;
     if (offset > 0)
         new_str += "_" + NStr::NumericToString(offset);
     new_id->SetLocal().SetStr(new_str);
-    CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
+    CRef<CSeq_id> new_id_hash(new CSeq_id());
     string new_hash = id_base_hash;
     if (offset > 0)
         new_hash += "_" + NStr::NumericToString(offset);
     new_id_hash->SetLocal().SetStr(new_hash);
-    objects::CBioseq_Handle b_found = scope.GetBioseqHandle(*new_id);
-    objects::CBioseq_Handle b_found_hash = scope.GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time
+    CBioseq_Handle b_found = scope.GetBioseqHandle(*new_id);
+    CBioseq_Handle b_found_hash = scope.GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time
     // to avoid a situation where ID_1 and HASH_1 are both created
     while (b_found || b_found_hash)
     {
@@ -1172,23 +1172,23 @@ CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CScope &scope, i
     return new_id_hash;
 }
 
-static CRef<objects::CSeq_id> GetNewGeneralProtId(const string &id_base, const string &db, CScope &scope, int &offset)
+static CRef<CSeq_id> GetNewGeneralProtId(const string &id_base, const string &db, CScope &scope, int &offset)
 {
     string id_base_hash = GetIdHash(id_base);
-    CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
+    CRef<CSeq_id> new_id(new CSeq_id());
     new_id->SetGeneral().SetDb(db);
     string new_str = id_base;
     if (offset > 0)
         new_str += "_" + NStr::NumericToString(offset);
     new_id->SetGeneral().SetTag().SetStr(new_str);
-    CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
+    CRef<CSeq_id> new_id_hash(new CSeq_id());
     new_id_hash->SetGeneral().SetDb(db);
     string new_hash = id_base_hash;
     if (offset > 0)
         new_hash += "_" + NStr::NumericToString(offset);
     new_id_hash->SetGeneral().SetTag().SetStr(new_hash);
-    objects::CBioseq_Handle b_found = scope.GetBioseqHandle(*new_id);
-    objects::CBioseq_Handle b_found_hash = scope.GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time
+    CBioseq_Handle b_found = scope.GetBioseqHandle(*new_id);
+    CBioseq_Handle b_found_hash = scope.GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time
     // to avoid a situation where ID_1 and HASH_1 are both created
     while (b_found || b_found_hash)
     {
@@ -1203,9 +1203,9 @@ static CRef<objects::CSeq_id> GetNewGeneralProtId(const string &id_base, const s
     return new_id_hash;
 }
 
-static CRef<objects::CSeq_id> GetGeneralOrLocal(objects::CSeq_id_Handle hid, CScope &scope, int &offset, bool fall_through)
+static CRef<CSeq_id> GetGeneralOrLocal(CSeq_id_Handle hid, CScope &scope, int &offset, bool fall_through)
 {
-    CRef<objects::CSeq_id> new_id;
+    CRef<CSeq_id> new_id;
     if (hid.GetSeqId()->IsLocal())
     {
         string id_base;
@@ -1236,21 +1236,21 @@ static CRef<objects::CSeq_id> GetGeneralOrLocal(objects::CSeq_id_Handle hid, CSc
     else if (fall_through) // if we don't care for the incoming seq-id to be specifically local or general take any input and create a local seq-id output
     {
         string id_base;
-        hid.GetSeqId()->GetLabel(&id_base, objects::CSeq_id::eContent);
+        hid.GetSeqId()->GetLabel(&id_base, CSeq_id::eContent);
         new_id = GetNewLocalProtId(id_base, scope, offset);
     }
     return new_id;
 }
 
-vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Handle bsh, int &offset, string& id_label)
+vector<CRef<CSeq_id> > GetNewProtIdFromExistingProt(CBioseq_Handle bsh, int &offset, string& id_label)
 {
-    vector<CRef<objects::CSeq_id> > ids;
+    vector<CRef<CSeq_id> > ids;
     for(auto it : bsh.GetId())
     {
         if (it.GetSeqIdOrNull())
         {
-            objects::CSeq_id_Handle hid = it;
-            CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(hid, bsh.GetScope(), offset, false);
+            CSeq_id_Handle hid = it;
+            CRef<CSeq_id> new_id = GetGeneralOrLocal(hid, bsh.GetScope(), offset, false);
             if (new_id)
                 ids.push_back(new_id);
         }
@@ -1258,21 +1258,21 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
 
     if (ids.empty() && !bsh.GetId().empty())
     {
-        CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(bsh.GetId().front(), bsh.GetScope(), offset, true);
+        CRef<CSeq_id> new_id = GetGeneralOrLocal(bsh.GetId().front(), bsh.GetScope(), offset, true);
         ids.push_back(new_id);
     }
 
     if (ids.empty())
         NCBI_THROW(CException, eUnknown, "Seq-id not found");
 
-    ids.front()->GetLabel(&id_label, objects::CSeq_id::eBoth);
+    ids.front()->GetLabel(&id_label, CSeq_id::eBoth);
     return ids;
 }
 
-CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label, bool general_only)
+CRef<CSeq_id> GetNewProtId(CBioseq_Handle bsh, int &offset, string& id_label, bool general_only)
 {
-    objects::CSeq_id_Handle hid = sequence::GetId(bsh, sequence::eGetId_Best);
-    objects::CSeq_id_Handle gen_id;
+    CSeq_id_Handle hid = sequence::GetId(bsh, sequence::eGetId_Best);
+    CSeq_id_Handle gen_id;
 
     for (auto it : bsh.GetId())
     {
@@ -1290,12 +1290,12 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
     if (!hid)
         NCBI_THROW(CException, eUnknown, "Seq-id of the requested type not found");
 
-    CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(hid, bsh.GetScope(), offset, true);
-    new_id->GetLabel(&id_label, objects::CSeq_id::eBoth);
+    CRef<CSeq_id> new_id = GetGeneralOrLocal(hid, bsh.GetScope(), offset, true);
+    new_id->GetLabel(&id_label, CSeq_id::eBoth);
     return new_id;
 }
 
-bool IsGeneralIdProtPresent(objects::CSeq_entry_Handle tse)
+bool IsGeneralIdProtPresent(CSeq_entry_Handle tse)
 {
     bool found = false;
     for (CBioseq_CI b_iter(tse, CSeq_inst::eMol_aa); b_iter; ++b_iter)

@@ -400,7 +400,7 @@ void CGapsEditor::x_SetGapParameters(CDelta_seq& lit, bool length_unknown)
     }
 }
 
-void CGapsEditor::ConvertNs2Gaps(objects::CSeq_entry& entry)
+void CGapsEditor::ConvertNs2Gaps(CSeq_entry& entry)
 {
     if (m_gapNmin == 0 && m_gap_Unknown_length > 0)
         return;

@@ -48,7 +48,7 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
 
-bool CleanupForTaxnameChange( objects::CBioSource& src )
+bool CleanupForTaxnameChange( CBioSource& src )
 {
     bool rval = RemoveOldName(src);
     rval |= RemoveMod(src, COrgMod::eSubtype_type_material);
@@ -64,12 +64,12 @@ bool CleanupForTaxnameChange( objects::CBioSource& src )
     return rval;
 }
 
-bool RemoveOldName( objects::CBioSource& src )
+bool RemoveOldName( CBioSource& src )
 {
     return RemoveMod(src, COrgMod::eSubtype_old_name);
 }
 
-bool RemoveMod( objects::CBioSource& src, objects::COrgMod::ESubtype subtype )
+bool RemoveMod( CBioSource& src, COrgMod::ESubtype subtype )
 {
     bool erased = false;
     if (src.IsSetOrg() && src.GetOrg().IsSetOrgname()
@@ -90,7 +90,7 @@ bool RemoveMod( objects::CBioSource& src, objects::COrgMod::ESubtype subtype )
     return erased;
 }
 
-bool RemoveTaxId( objects::CBioSource& src )
+bool RemoveTaxId( CBioSource& src )
 {
     bool erased = false;
     if (src.IsSetOrg() && src.GetOrg().IsSetDb()) {
@@ -159,7 +159,7 @@ void AddMissingCommonOrgMods(const COrg_ref& o1, const COrg_ref& o2, COrg_ref& c
 }
 
 
-CRef<CBioSource> MakeCommonBioSource(const objects::CBioSource& src1, const objects::CBioSource& src2)
+CRef<CBioSource> MakeCommonBioSource(const CBioSource& src1, const CBioSource& src2)
 {
     CRef<CBioSource> common;
 

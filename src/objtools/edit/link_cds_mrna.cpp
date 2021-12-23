@@ -217,7 +217,7 @@ void CCDStomRNALinkBuilder::LinkCDSmRNAbyLabelAndLocation(CSeq_entry& entry)
     }
 }
 
-void CCDStomRNALinkBuilder::LinkCDSmRNAbyLabelAndLocation(objects::CBioseq_set& bioseq)
+void CCDStomRNALinkBuilder::LinkCDSmRNAbyLabelAndLocation(CBioseq_set& bioseq)
 {
     if (!bioseq.IsSetAnnot())
         return;
