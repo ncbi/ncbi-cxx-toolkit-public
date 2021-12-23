@@ -70,8 +70,8 @@ public:
     static CRef<CAuthor> ConvertMlToStandard(const string& ml_name,
                                     bool normalize_suffix=false);
 protected:
-    bool GetLabelV1(string* label, TLabelFlags flags) const;
-    bool GetLabelV2(string* label, TLabelFlags flags) const;
+    bool GetLabelV1(string* label, TLabelFlags flags) const override;
+    bool GetLabelV2(string* label, TLabelFlags flags) const override;
 
 private:
     // Prohibit copy constructor and assignment operator
