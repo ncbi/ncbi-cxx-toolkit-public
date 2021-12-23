@@ -30,7 +30,7 @@
 *
 * File Description:
 *   User interface for generating flat file reports from ASN.1
-*   
+*
 */
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
@@ -71,7 +71,7 @@ public:
         CFlatFileConfig::TView     view   = CFlatFileConfig::fViewNucleotides,
         CFlatFileConfig::TCustom   custom = 0,
         CFlatFileConfig::TPolicy   policy = CFlatFileConfig::ePolicy_Adaptive);
-    
+
     // destructor
     ~CFlatFileGenerator(void);
 
@@ -88,7 +88,7 @@ public:
     void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os);
     void Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os);
     void Generate(const CBioseq_Handle& bsh, CNcbiOstream& os);
-    void Generate(const CSeq_id& id, const TRange& range, 
+    void Generate(const CSeq_id& id, const TRange& range,
         ENa_strand strand, CScope& scope, CNcbiOstream& os);
 
     // NB: the item ostream should be allocated on the heap!
@@ -139,8 +139,8 @@ protected:
     class CCancelableFlatItemOStreamWrapper : public CFlatItemOStream
     {
     public:
-        CCancelableFlatItemOStreamWrapper( 
-            CFlatItemOStream & underlying, 
+        CCancelableFlatItemOStreamWrapper(
+            CFlatItemOStream & underlying,
             const ICanceled* pCanceledCallback )
             : m_pUnderlying(&underlying),
               m_pCanceledCallback(pCanceledCallback)

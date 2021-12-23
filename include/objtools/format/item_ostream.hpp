@@ -30,7 +30,7 @@
 *          Mati Shomrat
 *
 * File Description:
-*         
+*
 *
 */
 #include <corelib/ncbistd.hpp>

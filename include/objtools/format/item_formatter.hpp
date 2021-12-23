@@ -30,7 +30,7 @@
 *          Mati Shomrat
 *
 * File Description:
-*           
+*
 *
 */
 #include <corelib/ncbistd.hpp>
@@ -74,10 +74,10 @@ class COriginItem;
 class NCBI_FORMAT_EXPORT CFlatItemFormatter : public IFormatter
 {
 public:
-    
+
     // virtual constructor
     static CFlatItemFormatter* New(CFlatFileConfig::TFormat format);
-    
+
     virtual ~CFlatItemFormatter(void);
 
 
@@ -142,7 +142,7 @@ protected:
     static  string& x_Pad(const string& s, string& out, SIZE_TYPE width,
                         const string& indent = kEmptyStr);
     virtual string& Pad(const string& s, string& out, EPadContext where) const;
-    virtual list<string>& Wrap(list<string>& l, SIZE_TYPE width, 
+    virtual list<string>& Wrap(list<string>& l, SIZE_TYPE width,
         const string& tag, const string& body, EPadContext where = ePara, bool htmlaware = false) const;
     virtual list<string>& Wrap(list<string>& l, const string& tag,
         const string& body, EPadContext where = ePara, bool htmlaware = false, int internalIndent = 0 ) const;

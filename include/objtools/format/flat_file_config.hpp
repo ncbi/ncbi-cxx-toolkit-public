@@ -84,7 +84,7 @@ class NCBI_FORMAT_EXPORT IHTMLFormatter: public CObject
 {
 public:
     virtual ~IHTMLFormatter() {};
-    
+
     virtual void FormatProteinId(string& str, const CSeq_id& seq_id, const string& prot_id) const = 0;
     virtual void FormatTranscriptId(string& str, const CSeq_id& seq_id, const string& nuc_id) const = 0;
     virtual void FormatNucSearch(CNcbiOstream& os, const string& id) const = 0;
@@ -119,9 +119,9 @@ public:
 class NCBI_FORMAT_EXPORT CFlatFileConfig
 {
 public:
-    
+
     enum EFormat {
-        // formatting styles    
+        // formatting styles
         eFormat_GenBank,
         eFormat_EMBL,
         eFormat_DDBJ,
@@ -251,7 +251,7 @@ public:
         fGenbankBlocks_Source     = (1u <<  9),
         fGenbankBlocks_Reference  = (1u << 10),
         fGenbankBlocks_Comment    = (1u << 11),
-        fGenbankBlocks_Primary    = (1u << 12), 
+        fGenbankBlocks_Primary    = (1u << 12),
         fGenbankBlocks_Featheader = (1u << 13),
         fGenbankBlocks_Sourcefeat = (1u << 14),
         fGenbankBlocks_FeatAndGap = (1u << 15),
@@ -274,7 +274,7 @@ public:
     typedef unsigned int    TView;
     typedef unsigned int    TGenbankBlocks;
     typedef unsigned int    TCustom; // binary OR of "ECustom"
-    
+
     class NCBI_FORMAT_EXPORT CGenbankBlockCallback : public CObject {
     public:
         enum EAction {
@@ -282,7 +282,7 @@ public:
             eAction_Default,
             /// skip this block (i.e. don't print it)
             eAction_Skip,
-            /// If for some reason you don't want the rest of the flatfile generated, 
+            /// If for some reason you don't want the rest of the flatfile generated,
             /// this will trigger a CFlatException of type eHaltRequested
             eAction_HaltFlatfileGeneration
         };
@@ -294,7 +294,7 @@ public:
 
         virtual ~CGenbankBlockCallback(void) { }
 
-        // It is intentional that CBioseqContext is non-const here, 
+        // It is intentional that CBioseqContext is non-const here,
         // but const in the other notify functions.
         virtual EBioseqSkip notify_bioseq( CBioseqContext& ctx );
 
@@ -305,7 +305,7 @@ public:
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CHtmlAnchorItem & anchor_item );
-        virtual EAction notify( string & block_text, 
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CLocusItem &locus_item );
         virtual EAction notify( string & block_text,
@@ -384,10 +384,10 @@ public:
         // ...or override
         // this if you want only a single entry-point for
         // notifications.
-        virtual EAction unified_notify( 
+        virtual EAction unified_notify(
             string & /*block_text*/,
-            const CBioseqContext& /*ctx*/, 
-            const IFlatItem & /*flat_item*/, 
+            const CBioseqContext& /*ctx*/,
+            const IFlatItem & /*flat_item*/,
             FGenbankBlocks /*which_block*/ ) { return eAction_Default; }
     };
 
@@ -580,7 +580,7 @@ public:
     bool GoQualsEachMerge    (void) const;
     bool ShowOutOfBoundsFeats(void) const;
     bool HideSpecificGeneMaps(void) const;
-    
+
     // setters (for customization flags)
     void SetFlags(const TFlags& flags) { m_Flags = flags; }
     CFlatFileConfig& SetDoHTML               (bool val = true);
@@ -666,7 +666,7 @@ public:
   void SetGapDepth(const int gapDepth) { m_GapDepth = gapDepth; }
 
 
-    void SetGenbankBlocks(const TGenbankBlocks& genbank_blocks) 
+    void SetGenbankBlocks(const TGenbankBlocks& genbank_blocks)
     {
         m_fGenbankBlocks = genbank_blocks;
     };
@@ -697,7 +697,7 @@ public:
     static const vector<string> & GetAllGenbankStrings(void);
 
     // return non-const callback even if the CFlatFileConfig is const
-    CRef<CGenbankBlockCallback> GetGenbankBlockCallback(void) const { 
+    CRef<CGenbankBlockCallback> GetGenbankBlockCallback(void) const {
         return m_GenbankBlockCallback; }
     void SetGenbankBlockCallback(CGenbankBlockCallback* pGenbankBlockCallback) {
         m_GenbankBlockCallback = pGenbankBlockCallback;
@@ -716,7 +716,7 @@ public:
     // setters
     void BasicCleanup(bool clean) { m_BasicCleanup = clean; }
 
-    /// This throws a CFlatException if 
+    /// This throws a CFlatException if
     /// flatfile generation cancellation has been requested via ICanceled.
     void ThrowIfCanceled(void) const {
         if( m_pCanceledCallback && m_pCanceledCallback->IsCanceled() ) {
