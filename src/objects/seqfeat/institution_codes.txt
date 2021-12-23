@@ -8002,6 +8002,7 @@ VTMH	s	Virginia Tech Massey Herbarium
 VTT	c	VTT Biotechnology, Culture Collection			
 VU	s	Voronezh State University			
 VU<NLD>	s	Vrije Universiteit Amsterdam			
+VURV	c	Culture collection of microorganisms of Crop Research Institute			
 VUT	c	School of Veterinary Medicine, Faculty of Agriculture			
 VUW	s	Victoria University	VUWE		
 VUWE	s	Victoria University			
