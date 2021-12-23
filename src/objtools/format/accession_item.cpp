@@ -124,7 +124,7 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
         }
     }
 
-    // extra accessions not done if we're taking a slice 
+    // extra accessions not done if we're taking a slice
     // (i.e. command-line args "-from" and "-to" )
     if( ctx.GetLocation().IsWhole() ) {
 
@@ -150,7 +150,7 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
             const int kAccessionValidationCutoff = 20;
             ITERATE (list<string>, it, *xtra) {
                 if( xtra->size() >= kAccessionValidationCutoff ) {
-                    if ( ! IsValidAccession(*it) ) { 
+                    if ( ! IsValidAccession(*it) ) {
                         continue;
                     }
                 }

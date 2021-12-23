@@ -87,7 +87,7 @@ void CLocusItem::Format
 (IFormatter& formatter,
  IFlatTextOStream& text_os) const
 {
-    formatter.FormatLocus(*this, text_os); 
+    formatter.FormatLocus(*this, text_os);
 }
 
 
@@ -349,7 +349,7 @@ void CLocusItem::x_SetLength(CBioseqContext& ctx)
 void CLocusItem::x_SetStrand(CBioseqContext& ctx)
 {
     const CBioseq_Handle& bsh = ctx.GetHandle();
-    
+
     CSeq_inst::TMol bmol = bsh.IsSetInst_Mol() ?
         bsh.GetInst_Mol() : CSeq_inst::eMol_not_set;
 
@@ -365,12 +365,12 @@ void CLocusItem::x_SetStrand(CBioseqContext& ctx)
         if ( bmol == CSeq_inst::eMol_dna  &&  m_Strand == CSeq_inst::eStrand_ds ) {
             m_Strand = CSeq_inst::eStrand_not_set;
         }
-        
+
         // ss-any RNA don't show ss
         const bool is_nucleic_acid = bmol <= CSeq_inst::eMol_rna;
-        const bool is_in_set_1 = (m_Biomol >= CMolInfo::eBiomol_mRNA && 
+        const bool is_in_set_1 = (m_Biomol >= CMolInfo::eBiomol_mRNA &&
             m_Biomol <= CMolInfo::eBiomol_peptide);
-        const bool is_in_set_2 = (m_Biomol >= CMolInfo::eBiomol_cRNA && 
+        const bool is_in_set_2 = (m_Biomol >= CMolInfo::eBiomol_cRNA &&
             m_Biomol <= CMolInfo::eBiomol_tmRNA);
         if ( (! is_nucleic_acid  || is_in_set_1 || is_in_set_2)  &&
             m_Strand == CSeq_inst::eStrand_ss ) {
@@ -389,7 +389,7 @@ void CLocusItem::x_SetBiomol(CBioseqContext& ctx)
     }
 
     CSeq_inst::TMol bmol = ctx.GetHandle().GetBioseqMolType();
-    
+
     if ( bmol > CSeq_inst::eMol_aa ) {
         bmol = CSeq_inst::eMol_not_set;
     }
@@ -422,7 +422,7 @@ void CLocusItem::x_SetBiomol(CBioseqContext& ctx)
 void CLocusItem::x_SetTopology(CBioseqContext& ctx)
 {
     const CBioseq_Handle& bsh = ctx.GetHandle();
-    
+
     m_Topology = bsh.GetInst_Topology();
     const CSeq_loc& loc = ctx.GetLocation();
     if ( loc.IsWhole() ) {
@@ -592,7 +592,7 @@ static CTempString x_GetDivisionProcIdx(const CBioseqContext& ctx, const CBioseq
             }
         }
     }
-    
+
     // more complicated code for division, if necessary, goes here
 
     for (CSeqdesc_CI gb_desc(bsh, CSeqdesc::e_Genbank); gb_desc; ++gb_desc) {
@@ -631,7 +631,7 @@ static CTempString x_GetDivisionProc(const CBioseq_Handle& bsh, bool is_prot,
         if ( feat ) {
             bsrc = &(feat->GetData().GetBiosrc());
         } else if ( is_prot ) {
-            // if protein with no sources, get sources applicable to 
+            // if protein with no sources, get sources applicable to
             // DNA location of CDS
             const CSeq_feat* cds = GetCDSForProduct(bsh);
             if ( cds ) {
@@ -643,7 +643,7 @@ static CTempString x_GetDivisionProc(const CBioseq_Handle& bsh, bool is_prot,
                 if ( nuc_fsrc ) {
                     bsrc = &(nuc_fsrc->GetData().GetBiosrc());
                 } else {
-                    CBioseq_Handle nuc = 
+                    CBioseq_Handle nuc =
                         bsh.GetScope().GetBioseqHandle(cds->GetLocation());
                     CSeqdesc_CI nuc_dsrc(nuc, CSeqdesc::e_Source);
                     if ( nuc_dsrc ) {
@@ -771,7 +771,7 @@ static CTempString x_GetDivisionProc(const CBioseq_Handle& bsh, bool is_prot,
             }
         }
     }
-    
+
     // more complicated code for division, if necessary, goes here
 
     for (CSeqdesc_CI gb_desc(bsh, CSeqdesc::e_Genbank); gb_desc; ++gb_desc) {
@@ -852,8 +852,8 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
 
     const CMolInfo* molinfo = dynamic_cast<const CMolInfo*>(GetObject());
     if ( ctx.Config().IsFormatEMBL() ) {
-        for ( CSeqdesc_CI embl_desc(bsh, CSeqdesc::e_Embl); 
-            embl_desc; 
+        for ( CSeqdesc_CI embl_desc(bsh, CSeqdesc::e_Embl);
+            embl_desc;
             ++embl_desc ) {
                 const CEMBL_block& embl = embl_desc->GetEmbl();
                 if ( embl.CanGetDiv() ) {
@@ -882,7 +882,7 @@ void CLocusItem::x_SetDate(CBioseqContext& ctx)
 
     const CDate* date = x_GetDateForBioseq(bsh);
     if ( date == 0 ) {
-        // if bioseq is product of CDS or mRNA feature, get 
+        // if bioseq is product of CDS or mRNA feature, get
         // date from parent bioseq.
         CBioseq_Handle parent = GetNucleotideParent(bsh);
         if ( parent ) {
@@ -909,7 +909,7 @@ const CDate* CLocusItem::x_GetDateForBioseq(const CBioseq_Handle& bsh) const
     }}
 
     {{
-        // temporarily (???) also look at genbank block entry date 
+        // temporarily (???) also look at genbank block entry date
         CSeqdesc_CI desc(bsh, CSeqdesc::e_Genbank);
         if ( desc ) {
             const CGB_block& gb = desc->GetGenbank();

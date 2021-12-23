@@ -26,7 +26,7 @@
 * Author:  Aaron Ucko, NCBI
 *          Mati Shomrat
 * Maintainer: Frank Ludwig, Michael Kornbluh
-*                        
+*
 * File Description:
 *   Public API for finding the gene(s) on a given feature using the same
 *   criteria as the flatfile generator.
@@ -47,10 +47,10 @@ BEGIN_SCOPE(objects)
 
 using namespace sequence;
 
-CGeneFinder::CGeneSearchPlugin::CGeneSearchPlugin( 
-    const CSeq_loc &location, 
+CGeneFinder::CGeneSearchPlugin::CGeneSearchPlugin(
+    const CSeq_loc &location,
     CScope & scope,
-    const CGene_ref* filtering_gene_xref ) 
+    const CGene_ref* filtering_gene_xref )
     : m_Loc_original_strand(eNa_strand_other),
     m_Filtering_gene_xref(filtering_gene_xref),
     m_Scope(&scope)
@@ -66,14 +66,14 @@ CGeneFinder::CGeneSearchPlugin::CGeneSearchPlugin(
     }
 }
 
-void CGeneFinder::CGeneSearchPlugin::processSAnnotSelector( 
-    SAnnotSelector &sel ) 
+void CGeneFinder::CGeneSearchPlugin::processSAnnotSelector(
+    SAnnotSelector &sel )
 {
     sel.SetIgnoreStrand();
     sel.SetIgnoreFarLocationsForSorting( m_BioseqHandle );
 }
 
-void CGeneFinder::CGeneSearchPlugin::setUpFeatureIterator ( 
+void CGeneFinder::CGeneSearchPlugin::setUpFeatureIterator (
     CBioseq_Handle &ignored_bioseq_handle,
     unique_ptr<CFeat_CI> &feat_ci,
     TSeqPos circular_length,
@@ -86,7 +86,7 @@ void CGeneFinder::CGeneSearchPlugin::setUpFeatureIterator (
     if ( m_BioseqHandle ) {
         // if we're circular, we may need to split our range into two pieces
         if( ( circular_length != kInvalidSeqPos ) &&
-            ( range.GetFrom() > range.GetTo() )) 
+            ( range.GetFrom() > range.GetTo() ))
         {
             // For circular locations, the "from" is greater than the "to", which
             // would not work properly if given to CFeat_CI.
@@ -107,7 +107,7 @@ void CGeneFinder::CGeneSearchPlugin::setUpFeatureIterator (
             new_loc->SetId( *loc.GetId() );
 
             feat_ci.reset( new CFeat_CI(scope, *new_loc, sel) );
-        } else {            
+        } else {
             // remove far parts, if necessary
             bool loc_change_needed = false;
             ITERATE( CSeq_loc, loc_iter, loc ) {
@@ -133,7 +133,7 @@ void CGeneFinder::CGeneSearchPlugin::setUpFeatureIterator (
     }
 }
 
-void CGeneFinder::CGeneSearchPlugin::processLoc( 
+void CGeneFinder::CGeneSearchPlugin::processLoc(
     CBioseq_Handle &ignored_bioseq_handle,
     CRef<CSeq_loc> &loc,
     TSeqPos circular_length )
@@ -141,9 +141,9 @@ void CGeneFinder::CGeneSearchPlugin::processLoc(
     m_Loc_original_strand = GeneSearchNormalizeLoc( m_BioseqHandle, loc, circular_length );
 }
 
-void CGeneFinder::CGeneSearchPlugin::processMainLoop( 
+void CGeneFinder::CGeneSearchPlugin::processMainLoop(
     bool &shouldContinueToNextIteration,
-    CRef<CSeq_loc> &cleaned_loc_this_iteration, 
+    CRef<CSeq_loc> &cleaned_loc_this_iteration,
     CRef<CSeq_loc> &candidate_feat_loc,
     sequence::EOverlapType &overlap_type_this_iteration,
     bool &revert_locations_this_iteration,
@@ -153,9 +153,9 @@ void CGeneFinder::CGeneSearchPlugin::processMainLoop(
     SAnnotSelector::EOverlapType annot_overlap_type )
 {
     // check if given candidate feat matches the filter
-    if( m_Filtering_gene_xref != NULL && 
+    if( m_Filtering_gene_xref != NULL &&
         feat.GetOriginalFeature().IsSetData() &&
-        feat.GetOriginalFeature().GetData().IsGene() ) 
+        feat.GetOriginalFeature().GetData().IsGene() )
     {
         if( ! GeneMatchesXref( &feat.GetOriginalFeature().GetData().GetGene(), &*m_Filtering_gene_xref ) ) {
             shouldContinueToNextIteration = true;
@@ -174,15 +174,15 @@ void CGeneFinder::CGeneSearchPlugin::processMainLoop(
     const TGeneSearchLocOpt norm_opt = ( (overlap_type_this_iteration == eOverlap_Contained) ?
 fGeneSearchLocOpt_RemoveFar :
     0 );
-    candidate_feat_original_strand = GeneSearchNormalizeLoc( m_BioseqHandle, candidate_feat_loc, 
+    candidate_feat_original_strand = GeneSearchNormalizeLoc( m_BioseqHandle, candidate_feat_loc,
         circular_length, norm_opt ) ;
 
     if( (norm_opt & fGeneSearchLocOpt_RemoveFar) != 0 ) {
-        GeneSearchNormalizeLoc( m_BioseqHandle, 
+        GeneSearchNormalizeLoc( m_BioseqHandle,
             cleaned_loc_this_iteration, circular_length, norm_opt );
     }
 
-    if( ( candidate_feat_bad_order || candidate_feat_is_mixed ) && 
+    if( ( candidate_feat_bad_order || candidate_feat_is_mixed ) &&
         annot_overlap_type == SAnnotSelector::eOverlap_TotalRange )
     {
         if( overlap_type_this_iteration == eOverlap_Contained ) {
@@ -191,7 +191,7 @@ fGeneSearchLocOpt_RemoveFar :
         }
     }
 
-    if( (candidate_feat_bad_order || candidate_feat_is_mixed) && 
+    if( (candidate_feat_bad_order || candidate_feat_is_mixed) &&
         feat.IsSetExcept_text() && feat.GetExcept_text() == "trans-splicing" )
     {
         // strand matching is done piecewise if we're trans-spliced
@@ -204,7 +204,7 @@ fGeneSearchLocOpt_RemoveFar :
                 *candidate_feat_loc_iter.GetRangeAsSeq_loc(),
                 *cleaned_loc_this_iteration,
                 &*m_Scope, sequence::fCompareOverlapping);
-            if( piece_comparison != sequence::eNoOverlap ) 
+            if( piece_comparison != sequence::eNoOverlap )
             {
                 if( x_StrandsMatch( m_Loc_original_strand, candidate_feat_loc_iter.GetStrand() ) ) {
                     // matching strands; don't skip this feature
@@ -226,13 +226,13 @@ fGeneSearchLocOpt_RemoveFar :
     }
 }
 
-void CGeneFinder::CGeneSearchPlugin::postProcessDiffAmount( 
-    Int8 &cur_diff, 
-    CRef<CSeq_loc> &cleaned_loc, 
-    CRef<CSeq_loc> &candidate_feat_loc, 
-    CScope &scope, 
-    SAnnotSelector &sel, 
-    TSeqPos circular_length ) 
+void CGeneFinder::CGeneSearchPlugin::postProcessDiffAmount(
+    Int8 &cur_diff,
+    CRef<CSeq_loc> &cleaned_loc,
+    CRef<CSeq_loc> &candidate_feat_loc,
+    CScope &scope,
+    SAnnotSelector &sel,
+    TSeqPos circular_length )
 {
     if( cur_diff < 0 ) {
         return;
@@ -245,7 +245,7 @@ void CGeneFinder::CGeneSearchPlugin::postProcessDiffAmount(
         const int start = (int)sequence::GetStart(*candidate_feat_loc, &scope, eExtreme_Positional);
         const int stop  = (int)sequence::GetStop(*candidate_feat_loc, &scope, eExtreme_Positional);
         if( (start > stop) && (circular_length > 0) &&
-            (circular_length != kInvalidSeqPos) ) 
+            (circular_length != kInvalidSeqPos) )
         {
             cur_diff = circular_length - abs( start - stop );
         } else {
@@ -254,7 +254,7 @@ void CGeneFinder::CGeneSearchPlugin::postProcessDiffAmount(
     }
 }
 
-bool CGeneFinder::CGeneSearchPlugin::x_StrandsMatch( 
+bool CGeneFinder::CGeneSearchPlugin::x_StrandsMatch(
     ENa_strand feat_strand, ENa_strand candidate_feat_original_strand )
 {
     return ( candidate_feat_original_strand == feat_strand
@@ -288,14 +288,14 @@ void CGeneFinder::GetAssociatedGeneInfo(
 
     // guard against suppressed gene xrefs
     out_suppression_check_gene_ref = GetSuppressionCheckGeneRef(in_feat);
-    if( out_suppression_check_gene_ref && 
-        out_suppression_check_gene_ref->IsSuppressed() ) 
+    if( out_suppression_check_gene_ref &&
+        out_suppression_check_gene_ref->IsSuppressed() )
     {
         return;
     }
 
     // Try to resolve the gene directly
-    CConstRef<CSeq_feat> resolved_feat = 
+    CConstRef<CSeq_feat> resolved_feat =
         CGeneFinder::ResolveGeneObjectId( ctx, in_feat );
     if( resolved_feat ) {
         out_s_feat = resolved_feat;
@@ -359,14 +359,14 @@ void CGeneFinder::GetAssociatedGeneInfo(
             &ctx.GetScope());
 
         if (sequence::IsSameBioseq(id1, id2, &ctx.GetScope())) {
-            out_s_feat = GetFeatViaSubsetThenExtremesIfPossible( 
+            out_s_feat = GetFeatViaSubsetThenExtremesIfPossible(
                 ctx, in_feat.GetFeatType(), in_feat.GetFeatSubtype(), in_feat.GetLocation(), CSeqFeatData::e_Gene, xref_g_ref );
         }
         else if (ctx.IsProt()  &&  in_feat.GetData().IsCdregion()) {
             /// genpept report; we need to do something different
             CMappedFeat cds = GetMappedCDSForProduct(ctx.GetHandle());
             if (cds) {
-                out_s_feat = GetFeatViaSubsetThenExtremesIfPossible( 
+                out_s_feat = GetFeatViaSubsetThenExtremesIfPossible(
                     ctx, cds.GetFeatType(), cds.GetFeatSubtype(), cds.GetLocation(), CSeqFeatData::e_Gene, xref_g_ref );
             }
         }
@@ -389,7 +389,7 @@ void CGeneFinder::GetAssociatedGeneInfo(
 
             // Priority order for finding the peptide's gene
             // 1. Use parent CDS's gene xref (from the .asn)
-            // 2. Use the feature's own gene but only 
+            // 2. Use the feature's own gene but only
             //    if it *exactly* overlaps it.
             // 3. Use the parent CDS's gene (found via overlap)
             if( pParentDecidingGeneRef ) {
@@ -404,17 +404,17 @@ void CGeneFinder::GetAssociatedGeneInfo(
             } else {
                 if( in_parent_feat ) {
                     CConstRef<CSeq_loc> pParentLocation( &in_parent_feat.GetLocation() );
-                    out_s_feat = GetFeatViaSubsetThenExtremesIfPossible( 
-                        ctx, CSeqFeatData::e_Cdregion, CSeqFeatData::eSubtype_cdregion, 
+                    out_s_feat = GetFeatViaSubsetThenExtremesIfPossible(
+                        ctx, CSeqFeatData::e_Cdregion, CSeqFeatData::eSubtype_cdregion,
                         *pParentLocation, CSeqFeatData::e_Gene, xref_g_ref );
                 } else {
                     CConstRef<CSeq_feat> cds_feat = GetFeatViaSubsetThenExtremesIfPossible(
                         ctx, in_feat.GetFeatType(), in_feat.GetFeatSubtype(), *feat_loc, CSeqFeatData::e_Cdregion, xref_g_ref );
                     if( cds_feat ) {
-                        out_s_feat  = GetFeatViaSubsetThenExtremesIfPossible( 
-                            ctx, CSeqFeatData::e_Cdregion, CSeqFeatData::eSubtype_cdregion, 
+                        out_s_feat  = GetFeatViaSubsetThenExtremesIfPossible(
+                            ctx, CSeqFeatData::e_Cdregion, CSeqFeatData::eSubtype_cdregion,
                             cds_feat->GetLocation(), CSeqFeatData::e_Gene, xref_g_ref );
-                    } 
+                    }
                 }
             }
         } // end: if( also_look_at_parent_CDS )
@@ -459,8 +459,8 @@ void CGeneFinder::GetAssociatedGeneInfo(
 }
 
 // static
-CSeq_feat_Handle CGeneFinder::ResolveGeneXref( 
-    const CGene_ref *xref_g_ref, 
+CSeq_feat_Handle CGeneFinder::ResolveGeneXref(
+    const CGene_ref *xref_g_ref,
     const CSeq_entry_Handle &top_level_seq_entry )
 {
     // Allow locus to match locus-tag or vice versa, but favor proper
@@ -494,7 +494,7 @@ CSeq_feat_Handle CGeneFinder::ResolveGeneXref(
                 tried.insert(tse_handle);
 
                 ERGX_MatchQuality new_quality = eRGX_NoMatch;
-                
+
                 CTSE_Handle::TSeq_feat_Handles new_possibilities
                     = tse_handle.GetGenesByRef(*xref_g_ref);
                 if ( !new_possibilities.empty() ) {
@@ -556,7 +556,7 @@ CSeq_feat_Handle CGeneFinder::ResolveGeneXref(
 
 
 // static
-CConstRef<CGene_ref> 
+CConstRef<CGene_ref>
 CGeneFinder::GetSuppressionCheckGeneRef(const CSeq_feat_Handle & feat)
 {
     CConstRef<CGene_ref> answer;
@@ -575,7 +575,7 @@ CGeneFinder::GetSuppressionCheckGeneRef(const CSeq_feat_Handle & feat)
             }
         }
     }
-    
+
     return answer;
 }
 
@@ -620,8 +620,8 @@ bool CGeneFinder::CanUseExtremesToFindGene( CBioseqContext& ctx, const CSeq_loc 
 }
 
 // static
-CConstRef<CSeq_feat> 
-CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible( 
+CConstRef<CSeq_feat>
+CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible(
     CBioseqContext& ctx, CSeqFeatData::E_Choice feat_type,
     CSeqFeatData::ESubtype feat_subtype,
     const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
@@ -633,12 +633,12 @@ CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible(
     CScope *scope = &ctx.GetScope();
 
     // special case for variation
-    if( feat_type == CSeqFeatData::e_Variation || 
-        ( feat_type == CSeqFeatData::e_Imp && 
+    if( feat_type == CSeqFeatData::e_Variation ||
+        ( feat_type == CSeqFeatData::e_Imp &&
             ( feat_subtype == CSeqFeatData::eSubtype_variation ||
-              feat_subtype == CSeqFeatData::eSubtype_variation_ref ))) 
+              feat_subtype == CSeqFeatData::eSubtype_variation_ref )))
     {
-        const ENa_strand first_strand_to_try = ( 
+        const ENa_strand first_strand_to_try = (
             location.GetStrand() == eNa_strand_minus ?
                 eNa_strand_minus :
                 eNa_strand_plus );
@@ -681,7 +681,7 @@ CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible(
 SAFE_CONST_STATIC_STRING(kGbLoader, "GBLOADER");
 
 // static
-CConstRef<CSeq_feat> 
+CConstRef<CSeq_feat>
 CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible_Helper(
     CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
     const CGene_ref* filtering_gene_xref)
@@ -690,8 +690,8 @@ CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible_Helper(
     CRef<CScope> temp_scope;
 
     bool needToAddGbLoaderBack = false;
-    if( scope && ( ctx.IsEMBL() || ctx.IsDDBJ() ) && 
-        scope->GetObjectManager().FindDataLoader(*kGbLoader) ) 
+    if( scope && ( ctx.IsEMBL() || ctx.IsDDBJ() ) &&
+        scope->GetObjectManager().FindDataLoader(*kGbLoader) )
     {
         // try to remove the GBLOADER temporarily
         try {
@@ -710,7 +710,7 @@ CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible_Helper(
         temp_scope->RemoveDataLoader(*kGbLoader);
         scope = temp_scope.GetPointer();
     }
-    
+
     CConstRef<CSeq_feat> feat;
     feat = GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
         ctx, scope, location, sought_type,
@@ -729,7 +729,7 @@ CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible_Helper(
 }
 
 // static
-CConstRef<CSeq_feat> 
+CConstRef<CSeq_feat>
 CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
     CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
     const CGene_ref* filtering_gene_xref )
@@ -745,7 +745,7 @@ CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
 }
 
 // static
-CConstRef<CSeq_feat> 
+CConstRef<CSeq_feat>
 CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible_Helper_extremes(
     CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
     const CGene_ref* filtering_gene_xref )
@@ -761,8 +761,8 @@ CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible_Helper_extremes(
 }
 
 // static
-CConstRef<CSeq_feat> 
-CGeneFinder::ResolveGeneObjectId( CBioseqContext& ctx, 
+CConstRef<CSeq_feat>
+CGeneFinder::ResolveGeneObjectId( CBioseqContext& ctx,
                        const CSeq_feat_Handle &feat,
                        int recursion_depth )
 {
@@ -806,9 +806,9 @@ CGeneFinder::ResolveGeneObjectId( CBioseqContext& ctx,
 }
 
 //  ----------------------------------------------------------------------------
-// static 
-bool CGeneFinder::GeneMatchesXref( 
-    const CGene_ref * other_ref, 
+// static
+bool CGeneFinder::GeneMatchesXref(
+    const CGene_ref * other_ref,
     const CGene_ref * xref )
 {
     if( NULL == other_ref || NULL == xref ) {
@@ -822,7 +822,7 @@ bool CGeneFinder::GeneMatchesXref(
 
     if( xref->IsSetLocus() ) {
         if( (! other_ref->IsSetLocus() || other_ref->GetLocus() != xref->GetLocus()) &&
-            (! other_ref->IsSetLocus_tag() || other_ref->GetLocus_tag() != xref->GetLocus()) ) 
+            (! other_ref->IsSetLocus_tag() || other_ref->GetLocus_tag() != xref->GetLocus()) )
         {
             return false;
         }
@@ -888,7 +888,7 @@ bool CGeneFinder::BadSeqLocSortOrderCStyle( CBioseq_Handle &bioseq_handle, const
 }
 
 // static
-ENa_strand CGeneFinder::GeneSearchNormalizeLoc( 
+ENa_strand CGeneFinder::GeneSearchNormalizeLoc(
     CBioseq_Handle top_bioseq_handle, 
     CRef<CSeq_loc> &loc, const TSeqPos circular_length,
     TGeneSearchLocOpt opt )
@@ -905,7 +905,7 @@ ENa_strand CGeneFinder::GeneSearchNormalizeLoc(
                 CRef<CSeq_loc> new_part( new CSeq_loc );
                 new_part->Assign( *loc_iter.GetRangeAsSeq_loc() );
                 new_loc_parts.push_back( new_part );
-            } 
+            }
         }
         loc = new_loc;
     }
@@ -918,9 +918,9 @@ ENa_strand CGeneFinder::GeneSearchNormalizeLoc(
     CSeq_loc_CI loc_iter( *loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Positional );
     for( ; loc_iter; ++loc_iter ) {
         // parts that are on far bioseqs don't count as part of strandedness (e.g. as in X17229)
-        // ( CR956646 is another good test case since its near parts 
+        // ( CR956646 is another good test case since its near parts
         //   are minus strand and far are plus on the "GNAS" gene )
-        if( top_bioseq_handle && (opt & fGeneSearchLocOpt_RemoveFar) == 0 ) { 
+        if( top_bioseq_handle && (opt & fGeneSearchLocOpt_RemoveFar) == 0 ) {
             const CSeq_id& loc_id = loc_iter.GetSeq_id();
             if( top_bioseq_handle.IsSynonym(loc_id) ) {
                 if( original_strand == eNa_strand_other) {
@@ -952,7 +952,7 @@ ENa_strand CGeneFinder::GeneSearchNormalizeLoc(
 }
 
 // static
-bool CGeneFinder::IsMixedStrand( 
+bool CGeneFinder::IsMixedStrand(
     CBioseq_Handle bioseq_handle, const CSeq_loc &loc )
 {
     bool plus_seen = false;
@@ -965,7 +965,7 @@ bool CGeneFinder::IsMixedStrand(
         // far parts don't count as part of strandedness
         if( bioseq_handle ) {
             const CSeq_id& loc_id = loc_iter.GetSeq_id();
-            if( ! bioseq_handle.IsSynonym(loc_id) ) { 
+            if( ! bioseq_handle.IsSynonym(loc_id) ) {
                 continue;
             }
         }
@@ -981,7 +981,7 @@ bool CGeneFinder::IsMixedStrand(
                     break;
         }
     }
-    
+
     return ( plus_seen && minus_seen );
 }
 

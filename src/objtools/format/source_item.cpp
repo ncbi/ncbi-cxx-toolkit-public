@@ -230,14 +230,14 @@ void CSourceItem::x_GatherInfo(CBioseqContext& ctx)
     if ( dsrc_it ) {
         x_SetSource(dsrc_it->GetSource(), *dsrc_it);
         return;
-    } 
-    
+    }
+
     // if no descriptor was found, try a source feature
     CFeat_CI fsrc_it(ctx.GetHandle(), CSeqFeatData::e_Biosrc);
     if ( fsrc_it ) {
         const CSeq_feat& src_feat = fsrc_it->GetOriginalFeature();
         x_SetSource(src_feat.GetData().GetBiosrc(), src_feat);
-    }   
+    }
 }
 
 void CSourceItem::x_GatherInfo(CBioseqContext& ctx, const CBioSource& bsrc, const CSerialObject& obj)
@@ -284,14 +284,14 @@ void CSourceItem::x_GatherInfo(CBioseqContext& ctx, const CBioSource& bsrc, cons
     if ( dsrc_it ) {
         x_SetSource(dsrc_it->GetSource(), *dsrc_it);
         return;
-    } 
-    
+    }
+
     // if no descriptor was found, try a source feature
     CFeat_CI fsrc_it(ctx.GetHandle(), CSeqFeatData::e_Biosrc);
     if ( fsrc_it ) {
         const CSeq_feat& src_feat = fsrc_it->GetOriginalFeature();
         x_SetSource(src_feat.GetData().GetBiosrc(), src_feat);
-    }   
+    }
 }
 
 // for old-style
@@ -373,7 +373,7 @@ void CSourceItem::x_SetSource
     }
 
     const COrg_ref& org = bsrc.GetOrg();
-    
+
     // Taxname
     {{
         if ( org.CanGetTaxname() ) {
@@ -383,7 +383,7 @@ void CSourceItem::x_SetSource
 
     // Organelle
     {{
-        CBioSource::TGenome genome = bsrc.CanGetGenome() ? bsrc.GetGenome() 
+        CBioSource::TGenome genome = bsrc.CanGetGenome() ? bsrc.GetGenome()
             : CBioSource::eGenome_unknown;
         if ( genome >= s_organelle_prefix_size ) {
             m_Organelle = &(kEmptyStr);
@@ -391,7 +391,7 @@ void CSourceItem::x_SetSource
         else {
             m_Organelle = &(s_organelle_prefix[genome]);
         }
-        
+
         // If the organelle prefix is already on the  name, don't add it.
         if ( NStr::StartsWith(*m_Taxname, *m_Organelle, NStr::eNocase) ) {
             m_Organelle = &(kEmptyStr);
@@ -409,13 +409,13 @@ void CSourceItem::x_SetSource
         if ( org.CanGetCommon() ) {
             common = &(org.GetCommon());
         }
-        
+
         if ( org.CanGetOrgname() ) {
             const COrgName& org_name = org.GetOrgname();
-            
+
             const string *com = 0, *acr = 0, *syn = 0, *ana = 0,
                 *gbacr = 0, *gbana = 0, *gbsyn = 0, *met = 0;
-            int numcom = 0, numacr = 0, numsyn = 0, numana = 0, numgbacr = 0, 
+            int numcom = 0, numacr = 0, numsyn = 0, numana = 0, numgbacr = 0,
                 numgbana = 0, numgbsyn = 0, nummet = 0;
             ITERATE( COrgName::TMod, mod, org_name.GetMod() ) {
                 if ( (*mod)->CanGetSubtype()  &&  (*mod)->CanGetSubname() ) {
@@ -456,7 +456,7 @@ void CSourceItem::x_SetSource
                     }
                 }
             }
-            
+
             if (numacr > 1) {
                acr = NULL;
             }

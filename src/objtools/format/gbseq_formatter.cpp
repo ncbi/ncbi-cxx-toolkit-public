@@ -27,7 +27,7 @@
 *          Mati Shomrat
 *
 * File Description:
-*   GBseq formatting        
+*   GBseq formatting
 */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
@@ -127,7 +127,7 @@ CGBSeqFormatter::CGBSeqFormatter(bool isInsd)
 }
 
 // detructor
-CGBSeqFormatter::~CGBSeqFormatter(void) 
+CGBSeqFormatter::~CGBSeqFormatter(void)
 {
 }
 
@@ -175,7 +175,6 @@ static string s_CloseTag (const string& spaces, const string& tag)
 void CGBSeqFormatter::Start(IFlatTextOStream& text_os)
 {
     // x_WriteFileHeader(text_os);
-        
     // x_StartWriteGBSet(text_os);
     text_os.Flush();
 }
@@ -326,7 +325,7 @@ CGBSeq::TStrandedness s_GBSeqStrandedness(
         // we're not sure about the enum type, so we check if
         // it's text name gives us something to work with
 
-        const CEnumeratedTypeValues * pBiomolEnumInfo = 
+        const CEnumeratedTypeValues * pBiomolEnumInfo =
             CMolInfo::GetTypeInfo_enum_EBiomol();
         if( pBiomolEnumInfo ) {
             CEnumeratedTypeValues::TValueToName::const_iterator find_iter =
@@ -346,7 +345,6 @@ CGBSeq::TStrandedness s_GBSeqStrandedness(
     }
 
     return kEmptyStr;  // eStrandedness_not_set;
-    
 }
 
 
@@ -417,7 +415,7 @@ string s_GetDate(const CBioseq_Handle& bsh, CSeqdesc::E_Choice choice)
 }
 
 void CGBSeqFormatter::FormatLocus
-(const CLocusItem& locus, 
+(const CLocusItem& locus,
  IFlatTextOStream& text_os)
 {
     CBioseqContext& ctx = *locus.GetContext();
@@ -440,7 +438,7 @@ void CGBSeqFormatter::FormatLocus
     } else if (ctx.IsProt()) {
         str.append( s_CombineStrings("    ", "GBSeq_moltype", "AA"));
     }
- 
+
     str.append( s_CombineStrings("    ", "GBSeq_topology", s_GBSeqTopology(locus.GetTopology())));
 
     str.append( s_CombineStrings("    ", "GBSeq_division", locus.GetDivision()));
@@ -493,7 +491,7 @@ void CGBSeqFormatter::FormatDefline
 // Accession
 
 void CGBSeqFormatter::FormatAccession
-(const CAccessionItem& acc, 
+(const CAccessionItem& acc,
  IFlatTextOStream& text_os)
 {
     CBioseqContext& ctx = *acc.GetContext();
@@ -1112,8 +1110,8 @@ void CGBSeqFormatter::FormatContig
 
     // ID-4736 : pass a flag (argument 4) to CFlatSeqLoc to prescribe adding a
     // join(...) wrapper even to a whole location.
-    string assembly = 
-        CFlatSeqLoc(contig.GetLoc(), *contig.GetContext(), 
+    string assembly =
+        CFlatSeqLoc(contig.GetLoc(), *contig.GetContext(),
                     CFlatSeqLoc::eType_assembly, false, true).GetString();
     s_GBSeqStringCleanup(assembly, true);
 
@@ -1290,11 +1288,11 @@ void CGBSeqFormatter::FormatTSA(const CTSAItem& tsa, IFlatTextOStream& text_os)
         name = "TLS"; break;
     default: return;
     }
- 
+
     x_FormatAltSeq(tsa, name, text_os);
 }
 
-template <typename T> void 
+template <typename T> void
 CGBSeqFormatter::x_FormatAltSeq(const T& item, const string& name,
                                 IFlatTextOStream& text_os)
 {

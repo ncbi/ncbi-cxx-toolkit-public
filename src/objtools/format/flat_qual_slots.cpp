@@ -24,7 +24,7 @@
 * ===========================================================================
 *
 * Author:  Michael Kornbluh
-*                        
+*
 * File Description:
 *   Simple function(s) to support flat file qual slots, such as
 *   enum-to-string function(s).
@@ -325,12 +325,12 @@ CTempString GetStringOfSourceQual(ESourceQualifier eSourceQualifier)
     return "UNKNOWN_SOURCE_QUAL";
 }
 
-ESourceQualifier 
+ESourceQualifier
 GetSourceQualOfOrgMod(COrgMod::ESubtype eOrgModSubtype)
 {
     switch( eOrgModSubtype )
     {
-        // In most (but not all) cases, the orgmod subtype 
+        // In most (but not all) cases, the orgmod subtype
         // corresponds directly to the sourcequal.  For those
         // easy cases, we use this CASE_ORGMOD macro
 #ifdef CASE_ORGMOD
@@ -383,7 +383,7 @@ GetSourceQualOfOrgMod(COrgMod::ESubtype eOrgModSubtype)
     }
 }
 
-ESourceQualifier 
+ESourceQualifier
 GetSourceQualOfSubSource(CSubSource::ESubtype eSubSourceSubtype)
 {
     switch( eSubSourceSubtype ) {

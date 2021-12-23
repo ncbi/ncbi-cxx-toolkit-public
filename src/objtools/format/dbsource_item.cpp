@@ -124,7 +124,7 @@ static bool s_HasLocalBioseq(const CSeq_loc& loc, const CSeq_entry_Handle& tse)
 {
     CScope& scope = tse.GetScope();
     for (CSeq_loc_CI li(loc); li; ++li) {
-        CBioseq_Handle local = 
+        CBioseq_Handle local =
             scope.GetBioseqHandleFromTSE(li.GetSeq_id(), tse);
         if (local) {
             return true;
@@ -201,7 +201,7 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
                 if( NULL != cds_seq_id && cds_seq_id->IsGi() ) {
                     CSeq_id_Base::TGi cds_gi = cds_seq_id->GetGi();
                     s_AddToUniqueIdList( CSeq_id_Handle::GetHandle(cds_gi), unique_ids);
-                } 
+                }
             } */
         }
 
@@ -226,7 +226,7 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
                 CSeq_id_Base::TGi cds_gi = cds_seq_id->GetGi();
                 // s_AddToUniqueIdList( CSeq_id_Handle::GetHandle(cds_gi), unique_ids);
                 m_DBSource.push_back( x_FormatDBSourceID( CSeq_id_Handle::GetHandle(cds_gi) ) );
-            } 
+            }
         }
 
         if (m_DBSource.empty()) {
@@ -238,7 +238,7 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
         m_DBSource.push_back("UNKNOWN");
     }
 
-    // turn double-quotes to single-quotes in all m_DBSources, 
+    // turn double-quotes to single-quotes in all m_DBSources,
     // except inside HTML tags
     NON_CONST_ITERATE( list<string>, it, m_DBSource ) {
         if( bHtml ) {
@@ -251,8 +251,8 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
 
 void CDBSourceItem::x_AddPIRBlock(CBioseqContext& ctx)
 {
-    // In this function, the newlines seem weird because the C toolkit 
-    // outputs this way.  Hopefully in the future we can do something 
+    // In this function, the newlines seem weird because the C toolkit
+    // outputs this way.  Hopefully in the future we can do something
     // more consistent.
 
 
@@ -456,7 +456,7 @@ void CDBSourceItem::x_AddSPBlock(CBioseqContext& ctx)
                     xrefs.push_back("MIM:" + id);
                 }
             } else {
-                // For exmaple, HGNC has HGNC as part of its identifier, so we may need to eliminate 
+                // For exmaple, HGNC has HGNC as part of its identifier, so we may need to eliminate
                 // such redundancies (example accession: Q02094.1)
                 if( id.substr(0, db.length() + 1) == (db + ":") ) {
                     xrefs.push_back(id); // in this case, id already has db at beginning
@@ -706,7 +706,7 @@ bool CDBSourceItem::x_ExtractLinkableSource(
     };
 
     const static size_t numPotentialPrefixes = sizeof(potentialPrefixes)/sizeof(potentialPrefixes[0]);
-    
+
     for( size_t idx = 0; idx < numPotentialPrefixes; ++idx ) {
         const string & prefix = potentialPrefixes[idx].m_prefix;
         const string & url = potentialPrefixes[idx].m_url;

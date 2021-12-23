@@ -77,7 +77,7 @@ void CBaseCountItem::x_GatherInfo(CBioseqContext& ctx)
         x_SetSkip();
         return;
     }
-    
+
     CSeqVector v(ctx.GetLocation(), ctx.GetHandle().GetScope(),
                  CBioseq_Handle::eCoding_Iupac);
     const size_t COUNT = kMax_UChar+1;

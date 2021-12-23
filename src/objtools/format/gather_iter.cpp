@@ -44,8 +44,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CGather_Iter::CGather_Iter( 
-    const CSeq_entry_Handle& top_seq_entry, 
+CGather_Iter::CGather_Iter(
+    const CSeq_entry_Handle& top_seq_entry,
     const CFlatFileConfig& config )
     : m_Config(config)
 {
@@ -99,10 +99,10 @@ const CBioseq_Handle &CGather_Iter::operator*(void) const
     return **m_BioseqIter;
 }
 
-bool CGather_Iter::x_AddSeqEntryToStack( 
+bool CGather_Iter::x_AddSeqEntryToStack(
     const CSeq_entry_Handle& entry )
 {
-    _ASSERT( m_SeqEntryIterStack.empty() || 
+    _ASSERT( m_SeqEntryIterStack.empty() ||
         *m_SeqEntryIterStack.back() == entry );
 
     if ( entry.IsSet()  &&  entry.GetSet().IsSetClass() ) {
@@ -113,7 +113,7 @@ bool CGather_Iter::x_AddSeqEntryToStack(
             clss == CBioseq_set::eClass_phy_set  ||
             clss == CBioseq_set::eClass_eco_set  ||
             clss == CBioseq_set::eClass_wgs_set  ||
-            clss == CBioseq_set::eClass_gen_prod_set ) 
+            clss == CBioseq_set::eClass_gen_prod_set )
         {
             CSeq_entry_CI it(entry);
             if( it ) {

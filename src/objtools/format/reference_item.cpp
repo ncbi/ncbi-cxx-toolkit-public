@@ -139,7 +139,6 @@ void CReferenceItem::FormatAffil(const CAffil& affil, string& result, bool gen_s
                 }
                 result += std.GetAffil();
             }
-            
         } else {
             if (std.IsSetAffil()) {
                 result = std.GetAffil();
@@ -149,7 +148,7 @@ void CReferenceItem::FormatAffil(const CAffil& affil, string& result, bool gen_s
                     result += ", ";
                 }
                 result = std.GetDiv();
-            } 
+            }
         }
         if (std.IsSetStreet()) {
             if (!result.empty()) {
@@ -196,7 +195,7 @@ CReferenceItem::CReferenceItem(const CSeqdesc& desc, CBioseqContext& ctx) :
     m_JustUids(true), m_Elect(false)
 {
     _ASSERT(desc.IsPub());
-    
+
     x_SetObject(desc);
     m_Pubdesc.Reset(&(desc.GetPub()));
 
@@ -223,7 +222,7 @@ CReferenceItem::CReferenceItem
     x_SetObject(feat);
 
     m_Pubdesc.Reset(&(feat.GetData().GetPub()));
-    
+
     if (loc != NULL) {
         m_Loc.Reset(loc);
     } else if ( ctx.GetMapper() != 0 ) {
@@ -275,7 +274,7 @@ void CReferenceItem::SetLoc(const CConstRef<CSeq_loc>& loc)
 
 void CReferenceItem::SetRemark( const CPubdesc::TFig* new_fig,
     const CPubdesc::TMaploc *new_maploc,
-    const CPubdesc::TPoly_a *new_poly_a ) 
+    const CPubdesc::TPoly_a *new_poly_a )
 {
     _ASSERT( m_Pubdesc.NotEmpty() && GetContext() );
 
@@ -325,7 +324,7 @@ static bool s_ShouldRemoveRef
     if( curr_ref.GetPMID() != ZERO_ENTREZ_ID && prev_ref.GetPMID() != ZERO_ENTREZ_ID) {
         return ( curr_ref.GetPMID() == prev_ref.GetPMID() );
     }
-        
+
     // same MUID ( and overlap )
     if( curr_ref.GetMUID() != ZERO_ENTREZ_ID && prev_ref.GetMUID() != ZERO_ENTREZ_ID) {
         return ( curr_ref.GetMUID() == prev_ref.GetMUID() );
@@ -366,7 +365,7 @@ static void s_CombineRefs
         CConstRef<CSeq_id> prev_id( prev_loc->GetId() );
         CConstRef<CSeq_id> curr_id( curr_loc->GetId() );
 
-        const bool is_circular = 
+        const bool is_circular =
             ( ctx.GetHandle().CanGetInst_Topology() && ctx.GetHandle().GetInst_Topology() == CSeq_inst_Base::eTopology_circular );
 
         CRef<CSeq_loc> new_loc = Seq_loc_Add( *prev_loc, *curr_loc,
@@ -386,7 +385,7 @@ static void s_CombineRefs
     const bool same_muid = ( curr_ref.GetMUID() != ZERO_ENTREZ_ID && (prev_ref.GetMUID() == curr_ref.GetMUID()) );
     const bool same_pmid = ( curr_ref.GetPMID() != ZERO_ENTREZ_ID && (prev_ref.GetPMID() == curr_ref.GetPMID()) );
     if( (same_muid || same_pmid) &&
-        ( prev_ref.GetRemark() != curr_ref.GetRemark() )  ) 
+        ( prev_ref.GetRemark() != curr_ref.GetRemark() ) )
     {
         const CPubdesc& prev_pubdesc = prev_ref.GetPubdesc();
         const CPubdesc& curr_pubdesc = curr_ref.GetPubdesc();
@@ -410,7 +409,7 @@ static void s_MergeDuplicates
  CBioseqContext& ctx)
 {
     /**
-    static const CSeq_loc::TOpFlags kMergeFlags = 
+    static const CSeq_loc::TOpFlags kMergeFlags =
         CSeq_loc::fSort | CSeq_loc::fStrand_Ignore | CSeq_loc::fMerge_All;
         **/
 
@@ -424,7 +423,7 @@ static void s_MergeDuplicates
     }
 
     // see if merging is allowed
-    if( ! ctx.CanGetTLSeqEntryCtx() || 
+    if( ! ctx.CanGetTLSeqEntryCtx() ||
         ! ctx.GetTLSeqEntryCtx().GetCanSourcePubsBeFused() )
     {
       return;
@@ -469,7 +468,7 @@ static void s_MergeDuplicates
         if( curr != refs.begin() ) {
             CReferenceItem& prev_ref = **(curr-1);
 
-            if( prev_ref.GetReftype() == CPubdesc::eReftype_seq && 
+            if( prev_ref.GetReftype() == CPubdesc::eReftype_seq &&
                     curr_ref.GetReftype() != CPubdesc::eReftype_seq ) {
                 combine_allowed = false;
             }
@@ -494,7 +493,7 @@ static void s_MergeDuplicates
 void CReferenceItem::Rearrange(TReferences& refs, CBioseqContext& ctx)
 {
     {{
-        stable_sort(refs.begin(), refs.end(), 
+        stable_sort(refs.begin(), refs.end(),
             LessThan(LessThan::eSerialFirst_No, ctx.IsRefSeq()));
     }}
 
@@ -511,10 +510,10 @@ void CReferenceItem::Rearrange(TReferences& refs, CBioseqContext& ctx)
 
     {{
         // re-sort, take serial number into consideration.
-        stable_sort(refs.begin(), refs.end(), 
+        stable_sort(refs.begin(), refs.end(),
             LessThan(LessThan::eSerialFirst_Yes, ctx.IsRefSeq()));
     }}
-    
+
     // assign final serial numbers
     size_t size = refs.size();
     int current_serial = 1;
@@ -560,7 +559,7 @@ static bool s_IsOnlySerial(const CPub& pub)
 
     const CCit_gen& gen = pub.GetGen();
 
-    if ( !gen.IsSetCit() ) 
+    if ( !gen.IsSetCit() )
     {
         if (!gen.IsSetJournal()  &&  !gen.IsSetDate()  &&
             gen.IsSetSerial_number()  &&  gen.GetSerial_number() > 0) {
@@ -571,7 +570,7 @@ static bool s_IsOnlySerial(const CPub& pub)
     return false;
 }
 
-    
+
 void CReferenceItem::x_CreateUniqueStr(void) const
 {
     if (!NStr::IsBlank(m_UniqueStr)) {  // already created
@@ -662,12 +661,12 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
     }
 
     // if just pmid or just muid, we look it up, assuming the user has
-    // somehow given permission for remote lookups 
+    // somehow given permission for remote lookups
     const static string kGbLoader = "GBLOADER";
-    if( IsJustUids() && 
-        ctx.GetScope().GetObjectManager().FindDataLoader(kGbLoader) ) 
+    if( IsJustUids() &&
+        ctx.GetScope().GetObjectManager().FindDataLoader(kGbLoader) )
     {
-        // TODO: To avoid repeated connections, in the future we should have 
+        // TODO: To avoid repeated connections, in the future we should have
         // one CMLAClient shared by the whole program
         CMLAClient mlaClient;
 
@@ -719,7 +718,7 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
             }
 
             // we have to add the new_pubs to m_Pubdesc->GetPub() but m_Pubdesc
-            // is const.  The solution is to copy it, modify the copy, and 
+            // is const.  The solution is to copy it, modify the copy, and
             // set the copy to have CConstRef
             CRef<CPubdesc> new_pubdesc( new CPubdesc );
             new_pubdesc->Assign(*m_Pubdesc);
@@ -737,7 +736,7 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
 
     x_CleanData();
 }
- 
+
 
 void CReferenceItem::x_Init(const CPub& pub, CBioseqContext& ctx)
 {
@@ -853,7 +852,7 @@ void CReferenceItem::x_Init(const CCit_gen& gen, CBioseqContext& ctx)
             gen.IsSetSerial_number()  &&  gen.GetSerial_number() == 0) {
             x_SetSkip();
             return;
-        } 
+        }
     } else if ((!gen.IsSetJournal()  ||  !m_Date)  &&  m_Serial == 0) {
         x_SetSkip();
         return;
@@ -877,7 +876,7 @@ void CReferenceItem::x_Init(const CCit_gen& gen, CBioseqContext& ctx)
     if (!NStr::IsBlank(m_Title)  &&  NStr::StartsWith(m_Title, "(er)")) {
         m_Elect = true;
     }
-    
+
     // Authors
     if (gen.CanGetAuthors()) {
         x_AddAuthors(gen.GetAuthors());
@@ -887,7 +886,7 @@ void CReferenceItem::x_Init(const CCit_gen& gen, CBioseqContext& ctx)
     if (gen.CanGetMuid()  &&  m_MUID == ZERO_ENTREZ_ID) {
         m_MUID = gen.GetMuid();
     }
-    
+
     // PMID
     if (gen.CanGetPmid()  &&  m_PMID == ZERO_ENTREZ_ID) {
         m_PMID = gen.GetPmid().Get();
@@ -911,7 +910,7 @@ void CReferenceItem::x_Init(const CCit_sub& sub, CBioseqContext& ctx)
     // Date
     if (sub.CanGetDate()) {
         m_Date.Reset(&sub.GetDate());
-    } 
+    }
     if (sub.CanGetImp()) {
         x_AddImprint(sub.GetImp(), ctx);
     }
@@ -1124,7 +1123,7 @@ void CReferenceItem::x_InitProc(const CCit_book& proc, CBioseqContext& ctx)
     m_Book.Reset();
     if (!m_Authors  &&  proc.IsSetAuthors()) {
         x_AddAuthors(proc.GetAuthors());
-    } 
+    }
     if (proc.IsSetTitle()) {
         m_Title = proc.GetTitle().GetTitle();
     }
@@ -1141,11 +1140,10 @@ void CReferenceItem::x_Init
     m_Book.Reset(&book);
     if (!m_Authors  &&  book.IsSetAuthors()) {
         x_AddAuthors(book.GetAuthors());
-    } 
+    }
     if (book.CanGetImp()) {
         x_AddImprint(book.GetImp(), ctx);
     }
-
 }
 
 
@@ -1179,7 +1177,7 @@ void CReferenceItem::x_Init(const CCit_let& man, CBioseqContext& ctx)
     }
 
     m_PubType = ePub_thesis;
-  
+
     if (man.IsSetCit()) {
         const CCit_book& book = man.GetCit();
         x_Init(book, ctx);
@@ -1197,7 +1195,7 @@ void CReferenceItem::x_AddAuthors(const CAuth_list& auth_list)
     if (!auth_list.CanGetNames()) {
         return;
     }
-    
+
     // also populate the consortium (if available).
     // note: there may be more than one, and they all want to be listed.
     if (!NStr::IsBlank(m_Consortium)) {
@@ -1205,7 +1203,7 @@ void CReferenceItem::x_AddAuthors(const CAuth_list& auth_list)
     }
 
     const CAuth_list::TNames& names = auth_list.GetNames();
-    
+
     if (names.IsStd()) {
         ITERATE (CAuth_list::TNames::TStd, it, names.GetStd()) {
             const CAuthor& auth = **it;
@@ -1239,7 +1237,7 @@ void CReferenceItem::x_AddImprint(const CImprint& imp, CBioseqContext& ctx)
     if (imp.IsSetPrepub()) {
         CImprint::TPrepub prepub = imp.GetPrepub();
         //m_Prepub = imp.GetPrepub();
-        m_Category = 
+        m_Category =
             prepub != CImprint::ePrepub_in_press ? eUnpublished : ePublished;
     } else {
         m_Category = ePublished;
@@ -1248,7 +1246,7 @@ void CReferenceItem::x_AddImprint(const CImprint& imp, CBioseqContext& ctx)
 
 
 void CReferenceItem::GetAuthNames(const CAuth_list& alp, TStrList& authors)
-{   
+{
     authors.clear();
 
     const CAuth_list::TNames& names = alp.GetNames();
@@ -1260,21 +1258,21 @@ void CReferenceItem::GetAuthNames(const CAuth_list& alp, TStrList& authors)
             }
             const CPerson_id& pid = (*it)->GetName();
             if (pid.IsName()  ||  pid.IsMl()  ||  pid.IsStr()) {
-                authors.push_back(kEmptyStr);               
+                authors.push_back(kEmptyStr);
                 string& name = authors.back();
                 pid.GetLabel(&name, CPerson_id::eGenbank);
             }
         }
         break;
-        
+
     case CAuth_list::TNames::e_Ml:
         authors.insert(authors.end(), names.GetMl().begin(), names.GetMl().end());
         break;
-        
+
     case CAuth_list::TNames::e_Str:
         authors.insert(authors.end(), names.GetStr().begin(), names.GetStr().end());
         break;
-        
+
     default:
         break;
     }
@@ -1359,7 +1357,7 @@ public:
 };
 
 static
-bool s_ContainsNoLowercase( const string &str ) 
+bool s_ContainsNoLowercase( const string &str )
 {
     return ( find_if( str.begin(), str.end(), CIsLowercase() ) == str.end() );
 }
@@ -1443,7 +1441,7 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
 
     if ( m_Pubdesc->IsSetComment()  &&  !m_Pubdesc->GetComment().empty() ) {
         const string& comment = m_Pubdesc->GetComment();
-        
+
         if ( sc_Remarks.find(comment.c_str()) == sc_Remarks.end() ) {
             l.push_back(comment);
         }
@@ -1466,7 +1464,7 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
         }
     }
     if ( gibbsq > 0 ) {
-        static const string str1 = 
+        static const string str1 =
             "GenBank staff at the National Library of Medicine created this entry [NCBI gibbsq ";
         static const string str2 = "] from the original journal article.";
         l.push_back(str1 + NStr::IntToString(gibbsq) + str2);
@@ -1493,12 +1491,12 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
             }
         }
     }
-    
+
     if ( m_Pubdesc->CanGetPub() ) {
         ITERATE (CPubdesc::TPub::Tdata, it, m_Pubdesc->GetPub().Get()) {
             if ( (*it)->IsArticle() ) {
                 if ( (*it)->GetArticle().GetFrom().IsJournal() ) {
-                    const CCit_jour& jour = 
+                    const CCit_jour& jour =
                         (*it)->GetArticle().GetFrom().GetJournal();
                     if ( jour.IsSetImp() ) {
                         const CCit_jour::TImp& imp = jour.GetImp();
@@ -1707,7 +1705,7 @@ bool LessThan::operator()
     } else if (!ref1->IsSetDate()  &&  ref2->IsSetDate()) {
         return ! m_IsRefSeq;
     }
-    
+
     if (ref1->IsSetDate()  &&  ref2->IsSetDate()) {
         CDate::ECompare status = s_CompareDates(ref1->GetDate(), ref2->GetDate());
         _ASSERT( status != CDate::eCompare_unknown ); // unknown would produce invalid ordering
@@ -1718,7 +1716,7 @@ bool LessThan::operator()
     }
     //}
     // after: dates are the same, or both missing.
-    
+
     // distinguish by uids (swap order for RefSeq)
     if ( ref1->GetPMID() != ZERO_ENTREZ_ID &&  ref2->GetPMID() != ZERO_ENTREZ_ID &&
          !(ref1->GetPMID() == ref2->GetPMID()) ) {

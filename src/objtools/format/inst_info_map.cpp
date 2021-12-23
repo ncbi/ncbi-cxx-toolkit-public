@@ -27,8 +27,8 @@
  *
  * File Description:
  *   This just wraps a hash-table that converts institution abbrev to
- *   institution name and other info.  It's in its own file because 
- *   the data itself is so large.  This file should consist almost 
+ *   institution name and other info.  It's in its own file because
+ *   the data itself is so large.  This file should consist almost
  *   entirely of data.
  *
  * ===========================================================================
@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CInstInfoMap::TVoucherInfoRef
-CInstInfoMap::GetInstitutionVoucherInfo( 
+CInstInfoMap::GetInstitutionVoucherInfo(
         const string &inst_abbrev )
 {
     // the map that maps name to lots of information

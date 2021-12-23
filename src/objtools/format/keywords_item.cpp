@@ -112,7 +112,7 @@ DEFINE_STATIC_ARRAY_MAP(TStaticKeywordSet, sc_GSS_kw, sc_GSS);
 
 // STS keywords
 static const char* const sc_STS[] = {
-  "STS", "STS (sequence tagged site)", "STS sequence", 
+  "STS", "STS (sequence tagged site)", "STS sequence",
   "STS(sequence tagged site)", "sequence tagged site"
 };
 DEFINE_STATIC_ARRAY_MAP(TStaticKeywordSet, sc_STS_kw, sc_STS);
@@ -128,7 +128,7 @@ static bool s_CheckSpecialKeyword(const string& keyword, ETechFlags tech)
             return false;
         }
     }
-    
+
     if (tech == eSTS) {
         if (sc_EST_kw.find(keyword.c_str()) != sc_EST_kw.end()) {
             return false;
@@ -137,7 +137,7 @@ static bool s_CheckSpecialKeyword(const string& keyword, ETechFlags tech)
             return false;
         }
     }
-    
+
     if (tech == eGSS) {
         if (sc_EST_kw.find(keyword.c_str()) != sc_EST_kw.end()) {
             return false;
@@ -292,7 +292,7 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
                     CSeqdesc_CI desc_ci( nuc, CSeqdesc::e_Molinfo );
                     for( ; desc_ci; ++desc_ci ) {
                         if( desc_ci->GetMolinfo().CanGetTech() &&
-                            desc_ci->GetMolinfo().GetTech() == CMolInfo::eTech_tsa ) 
+                            desc_ci->GetMolinfo().GetTech() == CMolInfo::eTech_tsa )
                         {
                             x_AddKeyword("TSA");
                             x_AddKeyword("Transcriptome Shotgun Assembly");
@@ -392,34 +392,28 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
 
     for (CSeqdesc_CI it(ctx.GetHandle());  it;  ++it) {
         const list<string>* keywords = NULL;
-        
+
         switch (it->Which()) {
-            
         case CSeqdesc::e_Pir:
             keywords = &(it->GetPir().GetKeywords());
             break;
-            
         case CSeqdesc::e_Genbank:
             keywords = &(it->GetGenbank().GetKeywords());
             break;
-            
         case CSeqdesc::e_Sp:
             keywords = &(it->GetSp().GetKeywords());
             break;
-            
         case CSeqdesc::e_Embl:
             keywords = &(it->GetEmbl().GetKeywords());
             break;
-            
         case CSeqdesc::e_Prf:
             keywords = &(it->GetPrf().GetKeywords());
             break;
-        
         default:
             keywords = NULL;
             break;
         }
-        
+
         if (keywords != NULL) {
             if (!IsSetObject()) {
                 x_SetObject(*it);

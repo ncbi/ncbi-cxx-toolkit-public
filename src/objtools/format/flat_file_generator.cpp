@@ -27,7 +27,7 @@
 *
 * File Description:
 *   User interface for generating flat file reports from ASN.1
-*   
+*
 */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
@@ -254,10 +254,10 @@ void CFlatFileGenerator::Generate
     CRef<CFlatItemOStream> pItemOS( & item_os );
     // If there is a ICancel callback, wrap the item_os so
     // that every call checks it.
-    const ICanceled * pCanceled = 
+    const ICanceled * pCanceled =
         m_Ctx->GetConfig().GetCanceledCallback();
     if( pCanceled ) {
-        pItemOS.Reset( 
+        pItemOS.Reset(
             new CCancelableFlatItemOStreamWrapper(
             item_os, pCanceled) );
     }
@@ -359,7 +359,7 @@ void CFlatFileGenerator::Generate
 
     for (CBioseq_CI bi(entry); bi; ++bi) {
         const CBioseq_Handle& bh = *bi;
-  
+
         const CBioseq& bsp = *(bi->GetCompleteBioseq());
 
         FOR_EACH_SEQID_ON_BIOSEQ (it, bsp) {
@@ -975,7 +975,7 @@ void CFlatFileGenerator::Generate
  CScope& scope,
  CNcbiOstream& os)
 {
-    CRef<CFlatItemOStream> 
+    CRef<CFlatItemOStream>
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
     Generate(submit, scope, *item_os);
@@ -987,7 +987,7 @@ void CFlatFileGenerator::Generate
  CScope& scope,
  CNcbiOstream& os)
 {
-    CRef<CFlatItemOStream> 
+    CRef<CFlatItemOStream>
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
     const CBioseq_Handle bsh = scope.GetBioseqHandle(bioseq);
@@ -1000,7 +1000,7 @@ void CFlatFileGenerator::Generate
 (const CSeq_entry_Handle& entry,
  CNcbiOstream& os)
 {
-    CRef<CFlatItemOStream> 
+    CRef<CFlatItemOStream>
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
     Generate(entry, *item_os);
@@ -1011,7 +1011,7 @@ void CFlatFileGenerator::Generate
 (const CBioseq_Handle& bsh,
  CNcbiOstream& os)
 {
-    CRef<CFlatItemOStream> 
+    CRef<CFlatItemOStream>
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
     const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
@@ -1024,7 +1024,7 @@ void CFlatFileGenerator::Generate
  CScope& scope,
  CNcbiOstream& os)
 {
-    CRef<CFlatItemOStream> 
+    CRef<CFlatItemOStream>
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
     Generate(loc, scope, *item_os);
@@ -1033,12 +1033,12 @@ void CFlatFileGenerator::Generate
 
 void CFlatFileGenerator::Generate
 (const CSeq_id& id,
- const TRange& range, 
+ const TRange& range,
  ENa_strand strand,
  CScope& scope,
  CNcbiOstream& os)
 {
-    CRef<CFlatItemOStream> 
+    CRef<CFlatItemOStream>
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
     Generate(id, range, strand, scope, *item_os);
@@ -1057,7 +1057,7 @@ void CFlatFileGenerator::Generate
  CNcbiOstream* m_Ou
  )
 {
-    CRef<CFlatItemOStream> 
+    CRef<CFlatItemOStream>
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
     Generate(entry, *item_os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
@@ -1232,7 +1232,7 @@ CBioseq_Handle CFlatFileGenerator::x_DeduceTarget(const CSeq_entry_Handle& entry
             "Cannot deduce target bioseq.");
 }
 
-void 
+void
 CFlatFileGenerator::CCancelableFlatItemOStreamWrapper::SetFormatter(
     IFormatter* formatter)
 {
@@ -1242,10 +1242,10 @@ CFlatFileGenerator::CCancelableFlatItemOStreamWrapper::SetFormatter(
 
 void
 CFlatFileGenerator::CCancelableFlatItemOStreamWrapper::AddItem(
-    CConstRef<IFlatItem> item) 
+    CConstRef<IFlatItem> item)
 {
     if( m_pCanceledCallback && m_pCanceledCallback->IsCanceled() ) {
-        NCBI_THROW(CFlatException, eHaltRequested, 
+        NCBI_THROW(CFlatException, eHaltRequested,
             "FlatFileGeneration canceled by ICancel callback");
     }
     m_pUnderlying->AddItem(item);

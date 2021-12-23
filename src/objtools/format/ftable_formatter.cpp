@@ -27,7 +27,7 @@
 *          Mati Shomrat
 *
 * File Description:
-*           
+*
 *
 */
 #include <ncbi_pch.hpp>
@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CFtableFormatter::CFtableFormatter(void) 
+CFtableFormatter::CFtableFormatter(void)
 {
 }
 
@@ -119,7 +119,7 @@ void CFtableFormatter::x_FormatLocation
         CConstRef<CSeq_loc> curr_it = it.GetRangeAsSeq_loc();
 
         bool is_between = s_IsBetween(curr);
-     
+
         const bool minus_strand  = it.GetStrand() == eNa_strand_minus;
         CSeq_loc_CI::TRange range = it.GetRange();
         TSeqPos start, stop;
@@ -134,7 +134,7 @@ void CFtableFormatter::x_FormatLocation
             ++stop;
         }
         string left, right;
-       
+
         if ( curr_it->IsPartialStart(eExtreme_Positional) ) {
             left = minus_strand ? '>' : '<';
         }

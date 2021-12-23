@@ -27,7 +27,7 @@
 *          Mati Shomrat
 *
 * File Description:
-*           
+*
 *
 */
 #include <ncbi_pch.hpp>
@@ -85,7 +85,7 @@ CFlatItemFormatter* CFlatItemFormatter::New(CFlatFileConfig::TFormat format)
     case CFlatFileConfig::eFormat_FeaturesOnly:
     case CFlatFileConfig::eFormat_Lite:
         return new CGenbankFormatter;
-        
+
     case CFlatFileConfig::eFormat_EMBL:
         return new CEmblFormatter;
 
@@ -100,7 +100,7 @@ CFlatItemFormatter* CFlatItemFormatter::New(CFlatFileConfig::TFormat format)
 
     case CFlatFileConfig::eFormat_DDBJ:
     default:
-        NCBI_THROW(CFlatException, eNotSupported, 
+        NCBI_THROW(CFlatException, eNotSupported,
             "This format is currently not supported");
     }
 
@@ -186,7 +186,7 @@ static void s_FormatSecondaryAccessions
         curr_bin->push_back(*it);
         prev = it;
     }
-    
+
     ITERATE (TAccBins, bin_it, bins) {
         if (bin_it->size() <= kBinCutoff) {
             s_PrintAccessions(os, *bin_it, separator);
@@ -206,7 +206,7 @@ string  CFlatItemFormatter::x_FormatAccession
     CBioseqContext& ctx = *acc.GetContext();
 
     const string& primary = ctx.IsHup() ? ";" : acc.GetAccession();
-    
+
     acc_line << primary;
 
     if ( ctx.IsWGS() && ! acc.GetWGSAccession().empty() ) {
@@ -216,7 +216,7 @@ string  CFlatItemFormatter::x_FormatAccession
 #else
         const bool is_html = ctx.Config().DoHTML();
         if( is_html ) {
-            acc_line << separator << "<a href=\"" << strLinkBaseNucSearch << acc.GetWGSAccession() << 
+            acc_line << separator << "<a href=\"" << strLinkBaseNucSearch << acc.GetWGSAccession() <<
                 "\">" << acc.GetWGSAccession() << "</a>";
         } else {
             acc_line << separator << acc.GetWGSAccession();
@@ -231,7 +231,7 @@ string  CFlatItemFormatter::x_FormatAccession
 #else
         const bool is_html = ctx.Config().DoHTML();
         if( is_html ) {
-            acc_line << separator << "<a href=\"" << strLinkBaseNucSearch << acc.GetTSAAccession() << 
+            acc_line << separator << "<a href=\"" << strLinkBaseNucSearch << acc.GetTSAAccession() <<
                 "\">" << acc.GetTSAAccession() << "</a>";
         } else {
             acc_line << separator << acc.GetTSAAccession();
@@ -337,7 +337,7 @@ void
 CFlatItemFormatter::Start(
     IFlatTextOStream& Out )
 {
-    static const char* strHtmlHead = 
+    static const char* strHtmlHead =
         "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n"
         "    \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
         "<html lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n"
@@ -394,7 +394,7 @@ void CFlatItemFormatter::x_FormatRefLocation
         if ( range.IsWhole() ) {
             range.SetTo(sequence::GetLength(it.GetSeq_id(), &scope) - 1);
         }
-        
+
         os << *delim_p << range.GetFrom() + 1 << to << range.GetTo() + 1;
         delim_p = &delim;
     }
@@ -468,7 +468,7 @@ static string s_DoSup(const string& issue, const string& part_sup, const string&
 static void s_FixPages( string& pages )
 //
 //  Note: The following code is written to be mostly feature for feature and
-//  bug for bug compatible with the C toolkit version. 
+//  bug for bug compatible with the C toolkit version.
 //
 {
     const char* digits = "0123456789";
@@ -575,7 +575,7 @@ static void s_FixPages( string& pages )
         const bool firstTextEmpty = firstText.empty();
         const bool lastNumberEmpty = lastNumber.empty();
         const bool lastTextEmpty = lastText.empty();
-        
+
         if( (lastNumberEmpty  && firstTextEmpty) ||
             (firstNumberEmpty && lastTextEmpty) ) {
             return;
@@ -594,7 +594,7 @@ static void s_FixPages( string& pages )
     }
 
     //
-    //  Otherwise, try to parse input into 
+    //  Otherwise, try to parse input into
     //  firstText firstNumber [ dash lastText lastNumber ] :
     //
     else {
@@ -675,13 +675,13 @@ static void s_FixPages( string& pages )
     //  we are ready to produce the final output:
     //
     if ( lastText.empty() && lastNumber.empty() ) {
-        pages = ( (0 == firstDigit) ? 
+        pages = ( (0 == firstDigit) ?
             (firstNumber + firstText) : (firstText + firstNumber) );
         return;
     }
 
     //
-    //  In test ranges, the first page has a numeric part if and only if 
+    //  In test ranges, the first page has a numeric part if and only if
     //  the the last page has.
     //
     if ( firstNumber.empty() && ! lastNumber.empty() ) {
@@ -697,7 +697,7 @@ static void s_FixPages( string& pages )
     //  text.
     //
     if ( lastNumber.length() < firstNumber.length() ) {
-        lastNumber = firstNumber.substr( 0, 
+        lastNumber = firstNumber.substr( 0,
             firstNumber.length() - lastNumber.length() ) + lastNumber;
     }
     if ( lastText.empty() ) {
@@ -786,7 +786,7 @@ static void s_FormatCitBookArt(const CReferenceItem& ref, string& journal, bool 
         jour << ", Vol. " << volume;
         jour << s_DoSup(issue, part_sup, part_supi);
     }
-    
+
     if (imp.IsSetPages()) {
         string pages = imp.GetPages();
         s_FixPages(pages);
@@ -921,7 +921,7 @@ static void s_FormatCitGen
         pages = gen.GetPages();
         s_FixPages(pages);
     }
-    
+
     if (gen.IsSetJournal()) {
         journal = gen.GetJournal().GetTitle();
     }
@@ -1095,7 +1095,7 @@ static void s_FormatPatent
     //  already...
     //
     bool use_pre_grant_formatting = ! pat.CanGetNumber();
-    use_pre_grant_formatting &= ( 
+    use_pre_grant_formatting &= (
         pat.CanGetApp_number() &&
         pat.CanGetCountry() && pat.GetCountry() == "US" );
     //
@@ -1112,11 +1112,11 @@ static void s_FormatPatent
         bool any_good_patents = false;
         ITERATE( CBioseq::TId, id_iter, ctx.GetBioseqIds() ) {
             const CSeq_id &id = **id_iter;
-            if( id.IsPatent() && 
+            if( id.IsPatent() &&
                 id.GetPatent().IsSetCit() &&
                 id.GetPatent().GetCit().IsSetId() &&
                 id.GetPatent().GetCit().GetId().IsApp_number() &&
-                !NStr::IsBlank(id.GetPatent().GetCit().GetId().GetApp_number()) ) 
+                !NStr::IsBlank(id.GetPatent().GetCit().GetId().GetApp_number()) )
             {
                 any_good_patents = true;
                 break;
@@ -1126,7 +1126,7 @@ static void s_FormatPatent
             use_pre_grant_formatting = false;
         }
     }
-        
+
     if (genbank) {
         if ( use_pre_grant_formatting ) {
             header = "Pre-Grant Patent: ";
@@ -1147,7 +1147,7 @@ static void s_FormatPatent
         jour << pat.GetCountry() << suffix;
     }
     if (pat.IsSetNumber()  &&  !NStr::IsBlank(pat.GetNumber())) {
-        const bool do_us_patent_html = 
+        const bool do_us_patent_html =
             is_html && pat.IsSetCountry() && pat.GetCountry() == "US";
         if( do_us_patent_html ) {
             jour << "<a href=\"" << strLinkBaseUSPTO << pat.GetNumber() << "\">";
@@ -1177,12 +1177,11 @@ static void s_FormatPatent
     } else {
         jour << ' ';
     }
-    
-    
-    // Date 
+
+    // Date
     string date;
     if (pat.IsSetDate_issue()) {
-        DateToString(pat.GetDate_issue(), date, eDateToString_patent );        
+        DateToString(pat.GetDate_issue(), date, eDateToString_patent );
     } else if (pat.IsSetApp_date()) {
         DateToString(pat.GetApp_date(), date, eDateToString_patent);
     }
@@ -1241,7 +1240,7 @@ static void s_FormatPatent
             }
         }
     }
- 
+
     if (pat.IsSetAssignees()  &&  pat.GetAssignees().IsSetAffil()) {
         const CCit_pat::TAssignees& assignees = pat.GetAssignees();
         const CAffil& affil = assignees.GetAffil();
@@ -1274,7 +1273,6 @@ static void s_FormatPatent
             }
 
             // !!! add consortium
-            
             if (std.IsSetAffil()  &&  !NStr::IsBlank(std.GetAffil())) {
                 // prefix not printed in order to match C toolkit's behavior
                 jour << std.GetAffil() << ';';
@@ -1447,12 +1445,12 @@ static void s_FormatJournal
         if (prepub == CImprint::ePrepub_in_press  || NStr::IsBlank(volume)) {
             jour << " 0:0-0";
         }
-    }   
-    
+    }
+
     if (!NStr::IsBlank(year)) {
         jour << ' ' << year;
     }
-    
+
     if (cfg.IsFormatGenbank() || cfg.IsFormatGBSeq() || cfg.IsFormatINSDSeq()) {
         if (prepub == CImprint::ePrepub_in_press) {
             jour << " In press";
@@ -1473,7 +1471,7 @@ void CFlatItemFormatter::x_FormatRefJournal
     const CFlatFileConfig& cfg = ctx.Config();
 
     journal.erase();
-    
+
     switch (ref.GetPubType()) {
         case CReferenceItem::ePub_sub:
             if (ref.IsSetSub()) {

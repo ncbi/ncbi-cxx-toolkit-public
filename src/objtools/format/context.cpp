@@ -134,7 +134,7 @@ CBioseqContext::CBioseqContext
 
 
 CBioseqContext::CBioseqContext
-(const CBioseq_Handle& prev_seq, 
+(const CBioseq_Handle& prev_seq,
  const CBioseq_Handle& seq,
  const CBioseq_Handle& next_seq,
  CFlatFileContext& ffctx,
@@ -249,12 +249,11 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     m_IsInNucProt = x_IsInNucProt();
 
     x_SetLocation(user_loc);
-    
     x_SetDataFromUserObjects();
 
     m_ShowAnnotCommentAsCOMMENT = false;
     m_ShowAnnotCommentAsCOMMENT_checked = false;
-    
+
     // m_HasOperon = x_HasOperon();
 
     if (IsRefSeq()) {
@@ -292,7 +291,7 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
             if (loc->IsWhole()) {
                 loc.Reset();
             } else if (loc->IsInt()) {
-                CSeq_loc::TRange range = loc->GetTotalRange();               
+                CSeq_loc::TRange range = loc->GetTotalRange();
                 if (!IsReverse(loc->GetStrand()) && range.GetFrom() == 0 && range.GetTo() == m_Handle.GetInst_Length() - 1) {
                     loc.Reset();
                 }
@@ -495,8 +494,8 @@ void CBioseqContext::SetPDBCompoundForComment(bool value)
 
 void CBioseqContext::x_SetFiletrackURL(const CUser_object& uo)
 {
-    if ( ! FIELD_IS_SET_AND_IS(uo, Type, Str) || 
-        ! NStr::EqualNocase(uo.GetType().GetStr(), "FileTrack")) 
+    if ( ! FIELD_IS_SET_AND_IS(uo, Type, Str) ||
+        ! NStr::EqualNocase(uo.GetType().GetStr(), "FileTrack"))
     {
         return;
     }
@@ -535,14 +534,14 @@ void CBioseqContext::x_SetFiletrackURL(const CUser_object& uo)
 
 void CBioseqContext::x_SetAuthorizedAccess(const CUser_object& uo)
 {
-    if ( ! FIELD_IS_SET_AND_IS(uo, Type, Str) || 
-        ! NStr::EqualNocase(uo.GetType().GetStr(), "AuthorizedAccess")) 
+    if ( ! FIELD_IS_SET_AND_IS(uo, Type, Str) ||
+        ! NStr::EqualNocase(uo.GetType().GetStr(), "AuthorizedAccess"))
     {
         return;
     }
     CConstRef<CUser_field> pAuthorizedAccessField =
         uo.GetFieldRef("Study");
-    if( ! pAuthorizedAccessField || 
+    if( ! pAuthorizedAccessField ||
         ! FIELD_IS_SET_AND_IS(*pAuthorizedAccessField, Data, Str) ||
         pAuthorizedAccessField->GetData().GetStr().empty() )
     {
@@ -552,8 +551,8 @@ void CBioseqContext::x_SetAuthorizedAccess(const CUser_object& uo)
 }
 
 void CBioseqContext::x_SetOpticalMapPoints(void)
-{  
-    if( GetRepr() != CSeq_inst::eRepr_map || 
+{
+    if( GetRepr() != CSeq_inst::eRepr_map ||
         ! FIELD_IS_SET_AND_IS(m_Handle, Inst_Ext, Map) )
     {
        return;
@@ -562,7 +561,7 @@ void CBioseqContext::x_SetOpticalMapPoints(void)
     const CMap_ext & map_ext = m_Handle.GetInst_Ext().GetMap();
     FOR_EACH_SEQFEAT_ON_MAPEXT(feat_it, map_ext ) {
         const CSeq_feat & feat = **feat_it;
-        if( ! FIELD_IS_SET_AND_IS(feat, Data, Rsite) || 
+        if( ! FIELD_IS_SET_AND_IS(feat, Data, Rsite) ||
             ! feat.IsSetLocation() )
         {
             continue;
@@ -574,7 +573,7 @@ void CBioseqContext::x_SetOpticalMapPoints(void)
 
             if( seq_point.IsSetPoint() ) {
                 m_pOpticalMapPointsDestroyer.reset( new CPacked_seqpnt );
-                CLONE_IF_SET_ELSE_RESET(*m_pOpticalMapPointsDestroyer, Fuzz, 
+                CLONE_IF_SET_ELSE_RESET(*m_pOpticalMapPointsDestroyer, Fuzz,
                     seq_point, Fuzz);
                 CLONE_IF_SET_ELSE_RESET(*m_pOpticalMapPointsDestroyer, Id,
                     seq_point, Id);
@@ -589,7 +588,7 @@ void CBioseqContext::x_SetOpticalMapPoints(void)
         case CSeq_loc::e_Packed_pnt:
             m_pOpticalMapPoints = & feat_loc.GetPacked_pnt();
             // in case a previous iteration set this
-            m_pOpticalMapPointsDestroyer.reset(); 
+            m_pOpticalMapPointsDestroyer.reset();
             break;
         default:
             // ignore other types
@@ -624,15 +623,15 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
                             ! field.IsSetLabel() || ! field.GetLabel().IsStr() ) {
                             continue;
                         }
-                        if( field.GetLabel().GetStr() == "StructuredCommentPrefix" && 
-                            field.GetData().GetStr() == "##Genome-Assembly-Data-START##" ) 
+                        if( field.GetLabel().GetStr() == "StructuredCommentPrefix" &&
+                            field.GetData().GetStr() == "##Genome-Assembly-Data-START##" )
                         {
                             m_IsGenomeAssembly = true;
                         }
                         if( field.GetLabel().GetStr() == "Current Finishing Status" )
                         {
                             string asn_fin_stat = field.GetData().GetStr();
-                            replace( asn_fin_stat.begin(), asn_fin_stat.end(), ' ', '-' ); 
+                            replace( asn_fin_stat.begin(), asn_fin_stat.end(), ' ', '-' );
                             TFinStatMap::const_iterator new_fin_stat_iter = sc_FinStatMap.find(asn_fin_stat.c_str());
                             if( new_fin_stat_iter != sc_FinStatMap.end() ) {
                                 m_FinishingStatus = new_fin_stat_iter->second;
@@ -707,7 +706,7 @@ void CBioseqContext::x_CheckForShowComments() const
             // we finally got down to an annot desc user object.  See if it indicates any
             // relevant information
             const CUser_object & user_obj = one_desc.GetUser();
-            if( ! user_obj.IsSetType() || ! user_obj.GetType().IsStr() || 
+            if( ! user_obj.IsSetType() || ! user_obj.GetType().IsStr() ||
                 ! user_obj.IsSetData() ||
                 user_obj.GetType().GetStr() != "AnnotDescCommentPolicy" )
             {
@@ -724,7 +723,7 @@ void CBioseqContext::x_CheckForShowComments() const
                     continue;
                 }
 
-                if( policy_field.GetData().IsStr() ) { 
+                if( policy_field.GetData().IsStr() ) {
                     const string & policy_str = policy_field.GetData().GetStr();
                     if( policy_str == "ShowInComment" ) {
                         m_ShowAnnotCommentAsCOMMENT = true;
@@ -779,11 +778,11 @@ void CBioseqContext::x_SetId(void)
         }
         if ( obj.GetType().GetStr() == "TpaAssembly" ) {
             bTpaAssemblyPresent = true;
-            continue; 
+            continue;
         }
         if ( obj.GetType().GetStr() == "GenomeProjectsDB" ) {
             m_IsGbGenomeProject = true;
-            continue; 
+            continue;
         }
     }
 
@@ -880,11 +879,11 @@ void CBioseqContext::x_SetId(void)
 
         // WGS
         m_IsWGS = m_IsWGS  ||  (acc_div == CSeq_id::eAcc_wgs);
-        
+
         if ( m_IsWGS  &&  !acc.empty() ) {
             /*
             size_t len = acc.length();
-            m_IsWGSMaster = 
+            m_IsWGSMaster =
                 ((len == 12  ||  len == 15)  &&  NStr::EndsWith(acc, "000000"))  ||
                 ((len == 14)  &&  NStr::EndsWith(acc, "00000000")) ||
                 ((len == 13 || len == 16 || len == 17)  &&  NStr::EndsWith(acc, "0000000"));
@@ -894,11 +893,11 @@ void CBioseqContext::x_SetId(void)
                 m_WGSMasterAccn = acc;
                 m_WGSMasterName = tsip->CanGetName() ? tsip->GetName() : kEmptyStr;
             }
-        } 
+        }
 
         // TSA
         m_IsTSA = m_IsTSA  ||  ( GetTech() == CMolInfo::eTech_tsa );
-        
+
         if ( m_IsTSA  &&  !acc.empty() ) {
             if ( m_Repr == CSeq_inst::eRepr_virtual) {
                 m_IsTSAMaster = true;
@@ -907,7 +906,7 @@ void CBioseqContext::x_SetId(void)
                 m_TSAMasterAccn = acc;
                 m_TSAMasterName = tsip->CanGetName() ? tsip->GetName() : kEmptyStr;
             }
-        } 
+        }
 
         // TLS
         m_IsTLS = m_IsTLS  ||  ( GetTech() == CMolInfo::eTech_targeted );
@@ -989,7 +988,7 @@ bool CBioseqContext::x_HasParts(void) const
     if ( !h ) {
         return false;
     }
-    
+
     // make sure the segmented set contains our bioseq
     {{
         bool has_seq = false;
@@ -1046,7 +1045,7 @@ SIZE_TYPE CBioseqContext::x_GetPartNumber(void)
 
 bool CBioseqContext::x_IsInSGS(void) const
 {
-    CSeq_entry_Handle e = 
+    CSeq_entry_Handle e =
         m_Handle.GetExactComplexityLevel(CBioseq_set::eClass_small_genome_set);
     return e;
 }
@@ -1054,7 +1053,7 @@ bool CBioseqContext::x_IsInSGS(void) const
 
 bool CBioseqContext::x_IsInGPS(void) const
 {
-    CSeq_entry_Handle e = 
+    CSeq_entry_Handle e =
         m_Handle.GetExactComplexityLevel(CBioseq_set::eClass_gen_prod_set);
     return e;
 }
@@ -1062,7 +1061,7 @@ bool CBioseqContext::x_IsInGPS(void) const
 
 bool CBioseqContext::x_IsInNucProt(void) const
 {
-    CSeq_entry_Handle e = 
+    CSeq_entry_Handle e =
         m_Handle.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
     return e;
 }
@@ -1160,7 +1159,7 @@ void CMasterContext::x_SetNumParts(void)
         if (part  &&
             part.IsSetInst_Repr()  &&
             part.GetInst_Repr() != CSeq_inst::eRepr_virtual) {
-            ++count;    
+            ++count;
         }
     }
     m_NumParts = count;
@@ -1245,7 +1244,7 @@ void CMasterContext::x_SetBaseName(void)
 //
 // CTopLevelSeqEntryContext
 
-void CTopLevelSeqEntryContext::x_InitSeqs (const CSeq_entry& sep)
+void CTopLevelSeqEntryContext::x_InitSeqs(const CSeq_entry& sep)
 {
     if (sep.IsSeq()) {
         // Is Bioseq
@@ -1277,7 +1276,7 @@ void CTopLevelSeqEntryContext::x_InitSeqs (const CSeq_entry& sep)
                 case CSeq_id_Base::e_Gibbmt:
                     // with some types, it's okay to merge
                     m_CanSourcePubsBeFused = true;
-                    break;                        
+                    break;
                 default:
                     break;
             }
@@ -1319,7 +1318,7 @@ CTopLevelSeqEntryContext::CTopLevelSeqEntryContext( const CSeq_entry_Handle &ent
                         case CSeq_id_Base::e_Embl:
                         case CSeq_id_Base::e_Pir:
                         case CSeq_id_Base::e_Swissprot:
-                        case CSeq_id_Base::e_Patent:        
+                        case CSeq_id_Base::e_Patent:
                         case CSeq_id_Base::e_Ddbj:
                         case CSeq_id_Base::e_Prf:
                         case CSeq_id_Base::e_Pdb:
@@ -1328,7 +1327,7 @@ CTopLevelSeqEntryContext::CTopLevelSeqEntryContext( const CSeq_entry_Handle &ent
                         case CSeq_id_Base::e_Gpipe:
                             // with some types, it's okay to merge
                             m_CanSourcePubsBeFused = true;
-                            break;                        
+                            break;
                         case CSeq_id_Base::e_Genbank:
                         case CSeq_id_Base::e_Tpg:
                             // Genbank allows merging only if it's the old-style 1 + 5 accessions
@@ -1342,7 +1341,7 @@ CTopLevelSeqEntryContext::CTopLevelSeqEntryContext( const CSeq_entry_Handle &ent
                         case CSeq_id_Base::e_Local:
                         case CSeq_id_Base::e_Other:
                         case CSeq_id_Base::e_General:
-                        case CSeq_id_Base::e_Giim:                        
+                        case CSeq_id_Base::e_Giim:
                         case CSeq_id_Base::e_Gi:
                             break;
                         default:
@@ -1355,14 +1354,14 @@ CTopLevelSeqEntryContext::CTopLevelSeqEntryContext( const CSeq_entry_Handle &ent
     // check all Bioseq-sets, if any
     if( entry_handle.IsSet() ) {
         if( entry_handle.GetSet().CanGetClass() &&
-            entry_handle.GetSet().GetClass() == CBioseq_set::eClass_small_genome_set ) 
+            entry_handle.GetSet().GetClass() == CBioseq_set::eClass_small_genome_set )
         {
             m_HasSmallGenomeSet = true;
         } else {
             CSeq_entry_CI seq_entry_ci( entry_handle, CSeq_entry_CI::eRecursive );
             for( ; seq_entry_ci && ! m_HasSmallGenomeSet; ++seq_entry_ci ) {
                 if( seq_entry_ci->IsSet() && seq_entry_ci->GetSet().CanGetClass() &&
-                    seq_entry_ci->GetSet().GetClass() == CBioseq_set::eClass_small_genome_set ) 
+                    seq_entry_ci->GetSet().GetClass() == CBioseq_set::eClass_small_genome_set )
                 {
                     m_HasSmallGenomeSet = true;
                     break;
