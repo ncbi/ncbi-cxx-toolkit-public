@@ -36,17 +36,15 @@ struct FtaMsgModTagCtx {
 };
 
 struct FtaMsgModTag {
-    char                   *strtag;
+    char*                  strtag;
     int                    inttag;
     FtaMsgModTagCtx        *bmctx;
     FtaMsgModTag*          next;
 };
 
 struct FtaMsgModFiles {
-    char                     *modname;      /* NCBI_MODULE or THIS_MODULE
-                                               value */
-    char                     *filename;     /* Name with full path of .msg
-                                               file */
+    string modname;      /* NCBI_MODULE or THIS_MODULE value */
+    string filename;     /* Name with full path of .msg file */
     FtaMsgModTag             *bmmt;
     FtaMsgModFiles*          next;
 };
@@ -87,7 +85,7 @@ struct FtaMsgPost {
         hook_only(false),
         msglevel(SEV_NONE),
         loglevel(SEV_NONE),
-        bmmf(NULL)
+        bmmf(nullptr)
     {}
 
     virtual ~FtaMsgPost() {
@@ -106,13 +104,14 @@ struct FtaMsgPost {
         if (prefix_feature) {
             MemFree(prefix_feature);    
         }
+        delete bmmf;
     };
 };
 
 struct FtaPostInfo {
     const char *module;
     char *severity;
-    char *strcode;
+    char* strcode;
     char *strsubcode;
     char *buffer;
     const char *fname;
@@ -157,9 +156,8 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
     FtaMsgModFiles  *bmmfp;
     FtaMsgModTag    *bmmtp;
     FILE            *fd;
-    char            *val1;
+    char*           val1;
     char            *val3;
-    char            *buf;
     char            *p;
     char            *q;
     char            s[2048];
@@ -172,8 +170,9 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
 
     for(got_mod = false, bmmfp = bmp->bmmf; bmmfp; bmmfp = bmmfp->next)
     {
-        if(strcmp(bmmfp->modname, module))
+        if (bmmfp->modname != module) {
             continue;
+        }
 
         got_mod = true;
         for(bmmtp = bmmfp->bmmt; bmmtp; bmmtp = bmmtp->next)
@@ -200,31 +199,20 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
         return;
 
     string curdir = CDir::GetCwd();
-
-    buf = (char *)MemNew(curdir.size() + strlen(module) + 6);
-    sprintf(buf, "%s/%s.msg", curdir.c_str(), module);
-
-    fd = fopen(buf, "r");
+    string buf = curdir + "/" + module + ".msg";
+    fd = fopen(buf.c_str(), "r");
     if(!fd)
     {
-        MemFree(buf);
-        buf = (char *)MemNew(strlen(MESSAGE_DIR) + strlen(module) + 6);
-        sprintf(buf, "%s/%s.msg", MESSAGE_DIR, module);
-
-        fd = fopen(buf, "r");
-        if (!fd)
-        {
-            MemFree(buf);
+        buf = string(MESSAGE_DIR) + "/" + module + ".msg";
+        fd = fopen(buf.c_str(), "r");
+        if (!fd) {
             return;
         }
     }
 
-    bmmfp = (FtaMsgModFiles *) calloc(1, sizeof(FtaMsgModFiles));
-    bmmfp->modname = (char *)MemNew(strlen(module) + 1);
-    strcpy(bmmfp->modname, module);
-    bmmfp->filename = (char *)MemNew(strlen(buf) + 1);
-    strcpy(bmmfp->filename, buf);
-    MemFree(buf);
+    bmmfp = new FtaMsgModFiles;
+    bmmfp->modname = module;
+    bmmfp->filename = buf;
 
     if(bmp->bmmf)
         bmmfp->next = bmp->bmmf;
@@ -366,72 +354,6 @@ static const char *FtaIntSevToStrSev(int sevcode)
     if(sevcode == 4)
         return("REJECT");
     return("FATAL ERROR");
-}
-
-/**********************************************************/
-static void FtaPostMessage(void)
-{
-    if(bmp->lfd && fpi.sevcode >= bmp->loglevel)
-    {
-        fprintf(bmp->lfd, "%s: ", fpi.severity);
-        if(bmp->show_log_codes)
-        {
-            if(fpi.module)
-                fprintf(bmp->lfd, "%s ", fpi.module);
-            if(fpi.strcode)
-            {
-                fprintf(bmp->lfd, "[%s", fpi.strcode);
-                if(fpi.strsubcode)
-                    fprintf(bmp->lfd, ".%s] ", fpi.strsubcode);
-                else
-                    fprintf(bmp->lfd, "] ");
-            }
-            else
-                fprintf(bmp->lfd, "[%03d.%03d] ", fpi.intcode, fpi.intsubcode);
-        }
-
-        if(bmp->show_log_codeline)
-            fprintf(bmp->lfd, "{%s, line %d} ", fpi.fname, fpi.line);
-        if(bmp->prefix_locus != NULL)
-            fprintf(bmp->lfd, "%s: ", bmp->prefix_locus);
-        if(bmp->prefix_accession != NULL)
-            fprintf(bmp->lfd, "%s: ", bmp->prefix_accession);
-        if(bmp->prefix_feature != NULL)
-            fprintf(bmp->lfd, "%s ", bmp->prefix_feature);
-        fprintf(bmp->lfd, "%s\n", fpi.buffer);
-    }
-
-    if(bmp->to_stderr && fpi.sevcode >= bmp->msglevel)
-    {
-        fprintf(stderr, "[%s] %s: ", bmp->appname.c_str(), fpi.severity);
-        if(bmp->show_msg_codes)
-        {
-            if(fpi.module)
-                fprintf(stderr, "%s ", fpi.module);
-            if(fpi.strcode)
-            {
-                fprintf(stderr, "[%s", fpi.strcode);
-                if(fpi.strsubcode)
-                    fprintf(stderr, ".%s] ", fpi.strsubcode);
-                else
-                    fprintf(stderr, "] ");
-            }
-            else
-                fprintf(stderr, "[%03d.%03d] ", fpi.intcode, fpi.intsubcode);
-        }
-
-        if(bmp->show_msg_codeline)
-            fprintf(stderr, "{%s, line %d} ", fpi.fname, fpi.line);
-        else                            // Bug, just to match C Toolkit output:
-            fprintf(stderr, " ");
-        if(bmp->prefix_locus != NULL)
-            fprintf(stderr, "%s: ", bmp->prefix_locus);
-        if(bmp->prefix_accession != NULL)
-            fprintf(stderr, "%s: ", bmp->prefix_accession);
-        if(bmp->prefix_feature != NULL)
-            fprintf(stderr, "%s ", bmp->prefix_feature);
-        fprintf(stderr, "%s\n", fpi.buffer);
-    }
 }
 
 /**********************************************************/
@@ -657,61 +579,6 @@ EDiagSev ErrCToCxxSeverity(int c_severity)
         break;
     }
     return(cxx_severity);
-}
-
-/**********************************************************/
-static void FtaErrHandler(void)
-{
-    try
-    {
-        CNcbiDiag diag(ErrCToCxxSeverity(fpi.sevcode));
-
-        if(fpi.fname)
-            diag.SetFile(fpi.fname);
-        if(fpi.line)
-            diag.SetLine(fpi.line);
-        if(fpi.module)
-            diag.SetModule(fpi.module);
-        diag.SetErrorCode(fpi.intcode, fpi.intsubcode);
-
-        if(fpi.strcode)
-        {
-            diag << fpi.strcode;
-            if(fpi.strsubcode)
-            {
-                diag << '.';
-                diag << fpi.strsubcode;
-            }
-        }
-
-        if(bmp->prefix_accession)
-        {
-            diag << ' ';
-            diag << bmp->prefix_accession;
-        }
-        if(bmp->prefix_locus)
-        {
-            diag << ' ';
-            diag << bmp->prefix_locus;
-        }
-        if(bmp->prefix_feature)
-        {
-            diag << ' ';
-            diag << bmp->prefix_feature;
-        }
-
-        if(fpi.buffer)
-        {
-            diag << ' ';
-            diag << fpi.buffer;
-        }
-
-        diag << Endm;
-    }
-    catch(...)
-    {
-        _ASSERT(0);
-    }
 }
 
 /**********************************************************/
