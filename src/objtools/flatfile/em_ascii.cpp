@@ -2871,7 +2871,7 @@ bool EmblAscii(ParserPtr pp)
 }
 
 /**********************************************************/
-char* GetEmblDiv(Uint1 num)
+const char* GetEmblDiv(Uint1 num)
 {
     if(num > 15)
         return(NULL);

@@ -2147,13 +2147,7 @@ bool GenBankAscii(ParserPtr pp)
     int total_long = 0;
     int total_dropped = 0;
     const char*     ptr;
-    char*     eptr;
-    char*     div;
     unique_ptr<Entry>  pEntry;
-    EntryBlkPtr ebp;
-
-//    unsigned char*    dnaconv;
-//    unsigned char*    protconv;
     unsigned char*    conv;
 
     TEntryList seq_entries;
@@ -2163,7 +2157,6 @@ bool GenBankAscii(ParserPtr pp)
     bool     seq_long = false;
 
     IndexblkPtr ibp;
-    IndexblkPtr tibp;
 
     auto dnaconv = GetDNAConv();             /* set up sequence alphabets */
     auto protconv = GetProteinConv();        /* set up sequence alphabets */
