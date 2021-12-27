@@ -706,10 +706,12 @@ static inline bool s_EndsWith(const string& str1, const char* p)
     string::const_reverse_iterator iter1(str1.end());
     string::const_reverse_iterator end1 (str1.begin());
     const char* iter2 = p + strlen(p) - 1;
-    const char* end2  = p - 1;
-    for ( ;  iter1 != end1  &&  iter2 != end2;  ++iter1, --iter2) {
+    for ( ;  iter1 != end1;  ++iter1, --iter2) {
         if (*iter1 != *iter2) {
             return false;
+        }
+        if (iter2 == p) {
+            break;
         }
     }
     return true;
