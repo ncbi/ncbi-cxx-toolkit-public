@@ -601,7 +601,7 @@ void CRemoteUpdater::ConvertToStandardAuthors(CAuth_list& auth_list)
         return;
     }
 
-    auth_list.ConvertMlToISO(false);
+    auth_list.ConvertMlToStd(false);
 
     if (auth_list.GetNames().IsStd()) {
         list<CRef<CAuthor>> authors_with_affil;
