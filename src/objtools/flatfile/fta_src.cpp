@@ -711,7 +711,7 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
                 }
                 else
                     sfbp->submitter_seqid = StringSave(val_ptr);
-                if(ibp->submitter_seqid == NULL)
+                if(ibp->submitter_seqid.empty())
                     ibp->submitter_seqid = StringSave(val_ptr);
                 continue;
             }

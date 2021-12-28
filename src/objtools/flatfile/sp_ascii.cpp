@@ -3632,7 +3632,7 @@ static CRef<objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip,
 
     IndexblkPtr ibp;
 
-    const Char* ptr;
+    const char* ptr;
 
     bool        fuzzfrom = false;
     bool        fuzzto = false;
@@ -3642,7 +3642,7 @@ static CRef<objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip,
     Int4        from;
     Int4        to;
 
-    if(spfip == NULL || spfip->from == NULL || spfip->to == NULL)
+    if(!spfip  ||  spfip->from.empty()  ||  spfip->to.empty())
         return loc;
 
     ibp = pp->entrylist[pp->curindx];
@@ -5045,7 +5045,7 @@ static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip,
         return;
     }
 
-    if(temp->descrip != NULL)
+    if(!temp->descrip.empty())
     {
         ErrPostEx(SEV_WARNING, ERR_FEATURE_ExpectEmptyComment,
                   "%s:%d-%d has description: %s",
