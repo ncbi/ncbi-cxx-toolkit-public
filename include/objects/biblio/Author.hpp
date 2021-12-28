@@ -60,10 +60,9 @@ class NCBI_BIBLIO_EXPORT CAuthor : public CAuthor_Base, public ICitationBase
     typedef CAuthor_Base Tparent;
 public:
     // constructor
-	CAuthor(void) {};
+    CAuthor() {}
     // destructor
-    ~CAuthor(void);
-
+    ~CAuthor();
 
     static CRef<CAuthor> ConvertMlToStandard(const CAuthor& author,
                                     bool normalize_suffix=false);

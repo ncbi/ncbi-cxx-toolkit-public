@@ -58,11 +58,11 @@ class NCBI_BIBLIO_EXPORT CAuth_list
     typedef CAuth_list_Base Tparent;
 public:
     // constructor
-	CAuth_list(void) {};
+    CAuth_list() {}
     // destructor
-    ~CAuth_list(void);
+    ~CAuth_list();
 
-    size_t GetNameCount(void) const;
+    size_t GetNameCount() const;
 
     void ConvertMlToStandard(bool normalize_suffix=false);
     void ConvertMlToStd(bool normalize_suffix);

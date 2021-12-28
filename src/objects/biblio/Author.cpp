@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // destructor
-CAuthor::~CAuthor(void)
+CAuthor::~CAuthor()
 {
 }
 
@@ -82,7 +82,7 @@ bool CAuthor::GetLabelV2(string* label, TLabelFlags flags) const
     case CPerson_id::e_Ml:
         return x_GetLabelV2(label, flags, pid.GetMl());
     case CPerson_id::e_Str:
-        return x_GetLabelV2(label, flags, pid.GetStr()); 
+        return x_GetLabelV2(label, flags, pid.GetStr());
     case CPerson_id::e_Consortium:
         return x_GetLabelV2(label, flags, pid.GetConsortium());
     default:
@@ -131,9 +131,9 @@ static string s_NormalizeInitials(const string& raw_initials)
     //  legal in the "initials" part.
     //
     string normal_initials;
-    for (auto cur_char: raw_initials) {
-        normal_initials += cur_char;
-        if (isupper(cur_char)) {
+    for (char ch : raw_initials) {
+        normal_initials += ch;
+        if (isupper(ch)) {
             normal_initials += '.';
         }
     }
@@ -185,9 +185,7 @@ void s_SplitMLAuthorName(string name, string& last, string& initials, string& su
         return;
     }
 
-
     const string& last_part = parts[parts.size() - 1];
-    const string& second_to_last_part = parts[parts.size() - 2];
 
     if (parts.size() == 2) {
         //
@@ -206,6 +204,8 @@ void s_SplitMLAuthorName(string name, string& last, string& initials, string& su
     //  last part is the suffix, and everything up to the initials is the last 
     //  name.
     //
+    const string& second_to_last_part = parts[parts.size() - 2];
+
     if (NStr::IsUpper(second_to_last_part)) {
         last = NStr::Join(vector<string>(parts.begin(), parts.end() - 2), " ");
         initials = s_NormalizeInitials(second_to_last_part);
@@ -233,7 +233,7 @@ void s_SplitMLAuthorName(string name, string& last, string& initials, string& su
     //  ------------------------------------------------------------------------
 }
 
-CRef<CPerson_id> CAuthor::x_ConvertMlToStandard(const string& name, const bool normalize_suffix) 
+CRef<CPerson_id> CAuthor::x_ConvertMlToStandard(const string& name, bool normalize_suffix)
 {
     string last, initials, suffix;
     s_SplitMLAuthorName(name, last, initials, suffix, normalize_suffix);
@@ -254,10 +254,11 @@ CRef<CPerson_id> CAuthor::x_ConvertMlToStandard(const string& name, const bool n
 }
 
 
-CRef<CAuthor> CAuthor::ConvertMlToStandard(const string& ml_name, const bool normalize_suffix)
+CRef<CAuthor> CAuthor::ConvertMlToStandard(const string& ml_name, bool normalize_suffix)
 {
-    CRef<CAuthor> new_author(new CAuthor());
+    CRef<CAuthor> new_author;
     if (!NStr::IsBlank(ml_name)) {
+        new_author.Reset(new CAuthor());
         CRef<CPerson_id> std_name = x_ConvertMlToStandard(ml_name, normalize_suffix);
         new_author->SetName(*std_name);
     }
@@ -265,7 +266,7 @@ CRef<CAuthor> CAuthor::ConvertMlToStandard(const string& ml_name, const bool nor
 }
 
 
-CRef<CAuthor> CAuthor::ConvertMlToStandard(const CAuthor& author, const bool normalize_suffix) 
+CRef<CAuthor> CAuthor::ConvertMlToStandard(const CAuthor& author, bool normalize_suffix)
 {
     CRef<CAuthor> new_author(new CAuthor());
     new_author->Assign(author);
