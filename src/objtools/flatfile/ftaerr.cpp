@@ -23,33 +23,39 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 struct FtaErrCode {
-    const char *module;
-    const char *fname;
-    int  line;
+    const char* module=nullptr;
+    const char* fname=nullptr;
+    int line=0;
 };
 
 struct FtaMsgModTagCtx {
-    char                       *strsubtag;
-    int                        intsubtag;
-    int                        intseverity;
-    FtaMsgModTagCtx*           next;
+    string strsubtag;
+    int intsubtag=-1;
+    int intseverity=-1;
+    FtaMsgModTagCtx* next=nullptr;
+
+    ~FtaMsgModTagCtx() { delete next; };
 };
 
 struct FtaMsgModTag {
-    char*                  strtag;
-    int                    inttag;
-    FtaMsgModTagCtx        *bmctx;
-    FtaMsgModTag*          next;
+    string strtag;
+    int inttag=0;
+    FtaMsgModTagCtx* bmctx=nullptr;
+    FtaMsgModTag* next=nullptr;
+
+    ~FtaMsgModTag() { delete bmctx; delete next; };
 };
 
 struct FtaMsgModFiles {
     string modname;      /* NCBI_MODULE or THIS_MODULE value */
     string filename;     /* Name with full path of .msg file */
-    FtaMsgModTag             *bmmt;
-    FtaMsgModFiles*          next;
+    FtaMsgModTag* bmmt=nullptr;
+    FtaMsgModFiles* next=nullptr;
+
+    ~FtaMsgModFiles() { delete bmmt; delete next; };
 };
 
-//typedef struct bsv_msg_post {
+
 struct FtaMsgPost {
     FILE               *lfd;            /* Opened logfile */
     char               *logfile;        /* Logfile full name */
@@ -69,7 +75,7 @@ struct FtaMsgPost {
     ErrSev             loglevel;        /* Filter out messages displaying in
                                            logfile only: ignode those with
                                            severity lower than msglevel */
-    FtaMsgModFiles     *bmmf;
+    FtaMsgModFiles* bmmf=nullptr;
 
     FtaMsgPost() :
         lfd(NULL),
@@ -84,8 +90,7 @@ struct FtaMsgPost {
         show_log_codes(false),
         hook_only(false),
         msglevel(SEV_NONE),
-        loglevel(SEV_NONE),
-        bmmf(nullptr)
+        loglevel(SEV_NONE)
     {}
 
     virtual ~FtaMsgPost() {
@@ -108,23 +113,9 @@ struct FtaMsgPost {
     };
 };
 
-struct FtaPostInfo {
-    const char *module;
-    char *severity;
-    char* strcode;
-    char *strsubcode;
-    char *buffer;
-    const char *fname;
-    int  sevcode;
-    int  intcode;
-    int  intsubcode;
-    int  line;
-};
-
 const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
-FtaPostInfo fpi;
 thread_local unique_ptr<FtaMsgPost>  bmp;
 FtaErrCode  fec;
 
@@ -148,16 +139,16 @@ static int FtaStrSevToIntSev(const char *strsevcode)
 }
 
 /**********************************************************/
-void FtaErrGetMsgCodes(const char *module, int code, int subcode,
-                       char **strcode, char **strsubcode,
-                       int *sevcode)
+void FtaErrGetMsgCodes(
+    const char *module, int code, int subcode,
+    string& strcode, string& strsubcode, int& sevcode)
 {
     FtaMsgModTagCtx *bmctxp;
     FtaMsgModFiles  *bmmfp;
     FtaMsgModTag    *bmmtp;
     FILE            *fd;
-    char*           val1;
-    char            *val3;
+    string val1;
+    string val3;
     char            *p;
     char            *q;
     char            s[2048];
@@ -180,14 +171,14 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
             if(bmmtp->inttag != code)
                 continue;
 
-            *strcode = bmmtp->strtag;
+            strcode = bmmtp->strtag;
             for(bmctxp = bmmtp->bmctx; bmctxp; bmctxp = bmctxp->next)
             {
                 if(bmctxp->intsubtag != subcode)
                     continue;
 
-                *strsubcode = bmctxp->strsubtag;
-                *sevcode = bmctxp->intseverity;
+                strsubcode = bmctxp->strsubtag;
+                sevcode = bmctxp->intseverity;
                 break;
             }
             break;
@@ -219,8 +210,6 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
     bmp->bmmf = bmmfp;
     
     val2 = 0;
-    val1 = NULL;
-    val3 = NULL;
     bmmtp = NULL;
     while(fgets(s, 2047, fd))
     {
@@ -228,8 +217,6 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
             continue;
 
         val2 = 0;
-        val1 = NULL;
-        val3 = NULL;
 
         for(p = s + 2; *p == ' ' || *p == '\t'; p++);
         for(q = p; *p && *p != ','; p++);
@@ -237,15 +224,12 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
             continue;
 
         *p = '\0';
-        val1 = (char *)MemNew(strlen(q) + 1);
-        strcpy(val1, q);
+        val1 = q;
 
         for(*p++ = ','; *p == ' ' || *p == '\t'; p++);
         for(q = p; *p >= '0' && *p <= '9'; p++);
 
-        if(q == p)
-        {
-            MemFree(val1);
+        if(q == p) {
             continue;
         }
 
@@ -254,9 +238,7 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
         val2 = atoi(q);
         *p = ch;
 
-        if(val2 < 1)
-        {
-            MemFree(val1);
+        if(val2 < 1) {
             continue;
         }
 
@@ -273,8 +255,7 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
                    !strcmp(q, "SEV_ERROR") || !strcmp(q, "SEV_REJECT") ||
                    !strcmp(q, "SEV_FATAL"))
                 {
-                    val3 = (char *)MemNew(strlen(q) + 1);
-                    strcpy(val3, q);
+                    val3 = q;
                 }
                 *p = ch;
             }
@@ -282,78 +263,43 @@ void FtaErrGetMsgCodes(const char *module, int code, int subcode,
 
         if(s[1] == '$')
         {
-            bmmtp = (FtaMsgModTag *) calloc(1, sizeof(FtaMsgModTag));
-
+            bmmtp = new FtaMsgModTag;
             if(bmmfp->bmmt)
                 bmmtp->next = bmmfp->bmmt;
             bmmfp->bmmt = bmmtp;
 
             bmmtp->strtag = val1;
             bmmtp->inttag = val2;
-            if(val2 == code && *strcode == NULL)
-                *strcode = val1;
-
-            if(val3)
-            {
-                MemFree(val3);
-                val3 = NULL;
-            }
+            if(val2 == code && strcode.empty())
+                strcode = val1;
 
             continue;
         }
 
         if(!bmmfp->bmmt || !bmmtp)
         {
-            if(val1)
-                MemFree(val1);
-            if(val3)
-                MemFree(val3);
             val2 = 0;
             continue;
         }
 
-        bmctxp = (FtaMsgModTagCtx *) calloc(1, sizeof(FtaMsgModTagCtx));
-
+        bmctxp = new FtaMsgModTagCtx;
         if(bmmtp->bmctx)
             bmctxp->next = bmmtp->bmctx;
         bmmtp->bmctx = bmctxp;
 
         bmctxp->strsubtag = val1;
         bmctxp->intsubtag = val2;
-        bmctxp->intseverity = FtaStrSevToIntSev(val3);
+        bmctxp->intseverity = FtaStrSevToIntSev(val3.c_str());
 
-        if(val3)
+        if(val2 == subcode && strsubcode.empty() && !strcode.empty())
         {
-            MemFree(val3);
-            val3 = NULL;
-        }
-
-        if(val2 == subcode && *strsubcode == NULL && *strcode != NULL)
-        {
-            *strsubcode = val1;
-            if(*sevcode < 0)
-                *sevcode = bmctxp->intseverity;
+            strsubcode = val1;
+            if(sevcode < 0)
+                sevcode = bmctxp->intseverity;
         }
     }
 
     fclose(fd);
-}
-
-/**********************************************************/
-static const char *FtaIntSevToStrSev(int sevcode)
-{
-    if(sevcode < 1 || sevcode > 5)
-        return(NULL);
-
-    if(sevcode == 1)
-        return("NOTE");
-    if(sevcode == 2)
-        return("WARNING");
-    if(sevcode == 3)
-        return("ERROR");
-    if(sevcode == 4)
-        return("REJECT");
-    return("FATAL ERROR");
 }
 
 /**********************************************************/
@@ -598,51 +544,49 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char *fmt, ...)
     }
 
     va_list args;
-    char    buffer[1024];
+    char fpiBuffer[1024];
     va_start(args, fmt);
-    vsnprintf(buffer, 1024, fmt, args);
+    vsnprintf(fpiBuffer, 1024, fmt, args);
     va_end(args);
 
-    fpi.buffer = buffer;
-    fpi.sevcode = -1;
-    fpi.strcode = NULL;
-    fpi.strsubcode = NULL;
+    int fpiSevcode = -1;
+    int fpiIntcode = lev1;
+    int fpiIntsubcode = lev2;
 
-    fpi.intcode = lev1;
-    fpi.intsubcode = lev2;
+    string fpiStrcode;
+    string fpiStrsubcode;
 
-    fpi.line = fec.line;
-    fpi.fname = fec.fname;
-    fpi.module = fec.module;
+    int fpiLine = fec.line;
+    const char* fpiFname = fec.fname;
+    const char* fpiModule = fec.module;
 
     fec.module = NULL;
     fec.fname = NULL;
     fec.line = -1;
 
-    if(fpi.module && *fpi.module)
-        FtaErrGetMsgCodes(fpi.module, fpi.intcode, fpi.intsubcode,
-                          &fpi.strcode, &fpi.strsubcode, &fpi.sevcode);
+    if(fpiModule && *fpiModule)
+        FtaErrGetMsgCodes(fpiModule, fpiIntcode, fpiIntsubcode,
+                          fpiStrcode, fpiStrsubcode, fpiSevcode);
     else
-        fpi.module = NULL;
+        fpiModule = NULL;
 
-    if(fpi.sevcode < 0)
-        fpi.sevcode = (int) sev;
-    fpi.severity = (char *) FtaIntSevToStrSev(fpi.sevcode);
+    if(fpiSevcode < 0)
+        fpiSevcode = (int) sev;
 
     if(bmp->appname.empty())
         bmp->appname = CNcbiApplication::GetAppName();
 
     stringstream textStream;
-    if (fpi.strcode) {
-        textStream << "[" << fpi.strcode; 
-        if (fpi.strsubcode) {
-            textStream << "." << fpi.strsubcode;
+    if (!fpiStrcode.empty()) {
+        textStream << "[" << fpiStrcode.c_str(); 
+        if (!fpiStrsubcode.empty()) {
+            textStream << "." << fpiStrsubcode.c_str();
         }
         textStream << "]  ";
     }
 
     if (bmp->show_log_codeline) {
-        textStream << "{" << fpi.fname << ", line  " << fpi.line;
+        textStream << "{" << fpiFname << ", line  " << fpiLine;
     }
     if (bmp->prefix_locus) {
         textStream << bmp->prefix_locus << ": ";
@@ -653,7 +597,7 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char *fmt, ...)
     if (bmp->prefix_feature) {
         textStream << bmp->prefix_feature << " ";
     }
-    textStream << fpi.buffer;
+    textStream << fpiBuffer;
 
     static const map<ErrSev, EDiagSev> sSeverityMap
        =  {{SEV_NONE , eDiag_Trace},
@@ -664,8 +608,8 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char *fmt, ...)
           {SEV_FATAL , eDiag_Fatal}}; 
 
     CFlatFileMessageReporter::GetInstance()
-        .Report(fpi.module ? fpi.module : "", 
-                sSeverityMap.at(static_cast<ErrSev>(fpi.sevcode)), 
+        .Report(fpiModule ? fpiModule : "", 
+                sSeverityMap.at(static_cast<ErrSev>(fpiSevcode)), 
                 lev1, lev2, textStream.str());
 }
 
