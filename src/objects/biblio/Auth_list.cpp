@@ -50,18 +50,22 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // destructor
-CAuth_list::~CAuth_list(void)
+CAuth_list::~CAuth_list()
 {
 }
 
 
-size_t CAuth_list::GetNameCount(void) const
+size_t CAuth_list::GetNameCount() const
 {
     switch (GetNames().Which()) {
-    case TNames::e_not_set:  return 0;
-    case TNames::e_Std:      return GetNames().GetStd().size();
-    case TNames::e_Ml:       return GetNames().GetMl().size();
-    case TNames::e_Str:      return GetNames().GetStr().size();
+    case TNames::e_not_set:
+        return 0;
+    case TNames::e_Std:
+        return GetNames().GetStd().size();
+    case TNames::e_Ml:
+        return GetNames().GetMl().size();
+    case TNames::e_Str:
+        return GetNames().GetStr().size();
     }
     return 0;
 }
@@ -74,18 +78,18 @@ bool CAuth_list::GetLabelV1(string* label, TLabelFlags flags) const
     case C_Names::e_not_set:
         break;
     case C_Names::e_Std:
-        if (names.GetStd().size() > 0) {
+        if (!names.GetStd().empty()) {
             return names.GetStd().front()->GetLabel(label, flags, eLabel_V1);
         }
         break;
     case C_Names::e_Ml:
-        if (names.GetMl().size() > 0) {
+        if (!names.GetMl().empty()) {
             *label += names.GetMl().front();
             return true;
         }
         break;
     case C_Names::e_Str:
-        if (names.GetStr().size() > 0) {
+        if (!names.GetStr().empty()) {
             *label += names.GetStr().front();
             return true;
         }
@@ -109,18 +113,18 @@ bool CAuth_list::GetLabelV2(string* label, TLabelFlags flags) const
     case C_Names::e_Std:
     {
         C_Names::TStd individuals;
-        ITERATE (C_Names::TStd, it, names.GetStd()) {
-            switch ((*it)->GetName().Which()) {
+        for (const CRef<CAuthor>& it : names.GetStd()) {
+            switch (it->GetName().Which()) {
             case CPerson_id::e_Name:
             case CPerson_id::e_Ml:
             case CPerson_id::e_Str:
                 if ((flags & fLabel_Consortia) == 0) {
-                    individuals.push_back(*it);
+                    individuals.push_back(it);
                 }
                 break;
             case CPerson_id::e_Consortium:
                 if ((flags & fLabel_Consortia) != 0) {
-                    if ((*it)->GetLabel(label, flags, eLabel_V2)) {
+                    if (it->GetLabel(label, flags, eLabel_V2)) {
                         ++count;
                     }
                     prefix = "; ";
@@ -130,7 +134,7 @@ bool CAuth_list::GetLabelV2(string* label, TLabelFlags flags) const
                 break;
             }
         }
-        
+
         if ((flags & fLabel_Consortia) == 0) {
             ITERATE (C_Names::TStd, it, individuals) {
                 if (count > 0) {
@@ -185,16 +189,16 @@ void CAuth_list::ConvertMlToStandard(bool normalize_suffix)
     if (!IsSetNames() || !GetNames().IsMl()) {
         return;
     }
-    list< CRef< CAuthor > > standard_names;
 
-    for (auto& author_ml_str: GetNames().GetMl()) {
+    list<CRef<CAuthor>> standard_names;
+    for (const string& author_ml_str : GetNames().GetMl()) {
         if (!NStr::IsBlank(author_ml_str)) {
             CRef<CAuthor> new_auth = CAuthor::ConvertMlToStandard(author_ml_str, normalize_suffix);
             standard_names.push_back(new_auth);
         }
     }
     SetNames().Reset();
-    SetNames().SetStd().insert(SetNames().SetStd().begin(), standard_names.begin(), standard_names.end());
+    SetNames().SetStd().insert(SetNames().SetStd().begin(), standard_names.cbegin(), standard_names.cend());
 }
 
 void CAuth_list::ConvertMlToStd(bool normalize_suffix)
@@ -214,7 +218,7 @@ void CAuth_list::ConvertMlToStd(bool normalize_suffix)
 
 string s_GetAuthorMatchString(const CAuthor& auth)
 {
-    string comp = "";
+    string comp;
     if (!auth.IsSetName()) {
         return comp;
     }
@@ -245,12 +249,12 @@ vector<string> GetAuthorMatchStrings(const CAuth_list::TNames& names)
     vector<string> list;
 
     if (names.IsStd()) {
-        ITERATE(CAuth_list::TNames::TStd, it, names.GetStd()) {
-            list.push_back(s_GetAuthorMatchString(**it));
+        for (const CRef<CAuthor>& it : names.GetStd()) {
+            list.push_back(s_GetAuthorMatchString(*it));
         }
     } else if (names.IsStr()) {
-        ITERATE(CAuth_list::TNames::TStr, it, names.GetStr()) {
-            list.push_back(*it);
+        for (const string& it : names.GetStr()) {
+            list.push_back(it);
         }
     }
     return list;
@@ -263,23 +267,23 @@ bool CAuth_list::SameCitation(const CAuth_list& other) const
         return true;
     } else if (!IsSetNames() || !other.IsSetNames()) {
         return false;
-    } else if (GetNames().Which() == CAuth_list::TNames::e_not_set &&
-               other.GetNames().Which() == CAuth_list::TNames::e_not_set) {
+    } else if (GetNames().Which() == TNames::e_not_set &&
+               other.GetNames().Which() == TNames::e_not_set) {
         return true;
-    } else if (GetNames().Which() != CAuth_list::TNames::e_Std && 
-               GetNames().Which() != CAuth_list::TNames::e_Str) {
+    } else if (GetNames().Which() != TNames::e_Std && 
+               GetNames().Which() != TNames::e_Str) {
         return false;
-    } else if (other.GetNames().Which() != CAuth_list::TNames::e_Std &&
-               other.GetNames().Which() != CAuth_list::TNames::e_Str) {
+    } else if (other.GetNames().Which() != TNames::e_Std &&
+               other.GetNames().Which() != TNames::e_Str) {
         return false;
-    }              
+    }
 
     bool match = true;
-    vector<string> match_str1 = GetAuthorMatchStrings(GetNames());
-    vector<string> match_str2 = GetAuthorMatchStrings(other.GetNames());
+    const vector<string> match_str1 = GetAuthorMatchStrings(GetNames());
+    const vector<string> match_str2 = GetAuthorMatchStrings(other.GetNames());
 
-    vector<string>::iterator it1 = match_str1.begin();
-    vector<string>::iterator it2 = match_str2.begin();
+    vector<string>::const_iterator it1 = match_str1.begin();
+    vector<string>::const_iterator it2 = match_str2.begin();
     while (it1 != match_str1.end() && it2 != match_str2.end()) {
         if (!NStr::EqualNocase(*it1, *it2)) {
             match = false;
