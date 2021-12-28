@@ -665,8 +665,10 @@ static void GetProtRefAnnot(InfoBioseqPtr ibp, objects::CSeq_feat& feat,
             prot_ref->SetDesc(qval);
     }
 
-    while ((qval = GetTheQualValue(feat.SetQual(), "EC_number")) != NULL) {
+    while ((qval = GetTheQualValue(feat.SetQual(), "EC_number")) != nullptr) {
+            // qval may hold newly allocated memory!!!
         prot_ref->SetEc().push_back(qval);
+        delete[] qval;
     }
 
     while ((qval = GetTheQualValue(feat.SetQual(), "function")) != NULL) {

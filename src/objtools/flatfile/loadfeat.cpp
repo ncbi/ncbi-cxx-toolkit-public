@@ -2086,7 +2086,7 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
 
     if (type != objects::CRNA_ref::eType_premsg && type != objects::CRNA_ref::eType_tRNA)    /* mRNA, snRNA, scRNA or other */
     {
-        qval = GetTheQualValue(feat.SetQual(), "product");
+        qval = GetTheQualValue(feat.SetQual(), "product");  //may return newly allocated memory!!!
         if(qval != NULL)
         {
             p = GetTheQualValue(feat.SetQual(), "product");
@@ -2101,6 +2101,7 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
                     comment += p;
                 }
             }
+            delete[] p;
         }
 
         if (qval == NULL && type == objects::CRNA_ref::eType_mRNA &&
@@ -2171,6 +2172,7 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
                 rna_ref->SetExt().SetName(qval);
             }
         }
+        delete[] qval;
     }
 
     if (feat.GetQual().empty())
