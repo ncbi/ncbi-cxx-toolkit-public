@@ -916,9 +916,9 @@ static bool GetCitBook(ParRefBlkPtr prbp, objects::CCit_art& article)
     char*      ptr;
     char*      p;
     char*      q;
-    Char         ch;
+    char         ch;
 
-    if(prbp == NULL || prbp->journal == NULL)
+    if(!prbp  ||  prbp->journal.empty())
         return false;
 
     std::vector<Char> bptr(prbp->journal.begin(), prbp->journal.end());
@@ -1104,10 +1104,10 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, objects::CCi
     char*    num;
     char*    p;
     char*    q;
-    Char       ch;
-    Char       country[3];
+    char       ch;
+    char       country[3];
 
-    if(prbp == NULL || prbp->journal == NULL)
+    if(!prbp  ||  prbp->journal.empty())
         return(false);
 
     p = (char *) prbp->journal.c_str() + StringLen((char *) "PATENT NUMBER");

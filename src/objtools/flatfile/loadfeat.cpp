@@ -6004,7 +6004,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
         return;
     }
 
-    if(ibp->submitter_seqid != NULL)
+    if(!ibp->submitter_seqid.empty())
         fta_create_wgs_seqid(bioseq, ibp, pp->source);
 
     objects::CSeq_descr::Tdata& descr_list = bioseq.SetDescr().Set();
@@ -6230,7 +6230,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 {
     Int4        genomic;
     char*     offset;
-    Char        c;
+    char        c;
     DataBlkPtr  dbp;
 
     Int2        count;
@@ -6274,7 +6274,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
     r = NULL;
     c = '\0';
-    if(ibp->moltype != NULL)
+    if(!ibp->moltype.empty())
     {
         if(pp->source == Parser::ESource::DDBJ && StringNICmp(molstr, "PRT", 3) == 0)
             return;

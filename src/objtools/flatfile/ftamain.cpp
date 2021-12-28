@@ -379,7 +379,7 @@ static CRef<CSerialObject> MakeBioseqSet(ParserPtr pp)
     else
         bio_set->SetClass(objects::CBioseq_set::eClass_genbank);
 
-    if(pp->release_str != NULL)
+    if(!pp->release_str.empty())
         bio_set->SetRelease(pp->release_str);
 
     bio_set->SetSeq_set().splice(bio_set->SetSeq_set().end(), pp->entries);
