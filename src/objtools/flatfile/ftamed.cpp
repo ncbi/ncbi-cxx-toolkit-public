@@ -171,7 +171,7 @@ static void MedlineToISO(objects::CCit_art& cit_art)
 {
     bool     is_iso;
 
-    cit_art.SetAuthors().ConvertMlToISO(true);
+    cit_art.SetAuthors().ConvertMlToStd(true);
 
     if (!cit_art.IsSetFrom() || !cit_art.GetFrom().IsJournal())
         return;

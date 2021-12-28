@@ -197,15 +197,16 @@ void CAuth_list::ConvertMlToStandard(bool normalize_suffix)
     SetNames().SetStd().insert(SetNames().SetStd().begin(), standard_names.begin(), standard_names.end());
 }
 
-void CAuth_list::ConvertMlToISO(bool normalize_suffix)
+void CAuth_list::ConvertMlToStd(bool normalize_suffix)
 {
     if (IsSetNames()) {
         if (GetNames().IsMl()) {
             ConvertMlToStandard(normalize_suffix);
         } else if (GetNames().IsStd()) {
             for (CRef<CAuthor>& auth : SetNames().SetStd()) {
-                if (auth->IsSetName() && auth->GetName().IsMl())
+                if (auth->IsSetName() && auth->GetName().IsMl()) {
                     auth = CAuthor::ConvertMlToStandard(*auth, normalize_suffix);
+                }
             }
         }
     }
