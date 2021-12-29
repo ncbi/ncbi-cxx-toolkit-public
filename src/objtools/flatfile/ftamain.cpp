@@ -1081,15 +1081,13 @@ bool fta_set_format_source(Parser& pp, const std::string& format, const std::str
         pp.format = Parser::EFormat::GenBank;
     else if (format == "sprot")
         pp.format = Parser::EFormat::SPROT;
-    else if (format == "pir")
-        pp.format = Parser::EFormat::PIR;
     else if (format == "prf")
         pp.format = Parser::EFormat::PRF;
     else if (format == "xml")
         pp.format = Parser::EFormat::XML;
     else {
         ErrPostEx(SEV_FATAL, 0, 0,
-                  "Sorry, the format is not available yet ==> available format embl, genbank, pir, prf, sprot, xml.");
+                  "Sorry, the format is not available yet ==> available format embl, genbank, prf, sprot, xml.");
         return false;
     }
 
