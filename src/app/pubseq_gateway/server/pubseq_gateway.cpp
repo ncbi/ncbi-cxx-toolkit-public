@@ -607,7 +607,7 @@ int CPubseqGatewayApp::Run(void)
     }
 
     http_handler.emplace_back(
-            "",
+            "/",
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {
                 return OnBadURL(req, reply);
