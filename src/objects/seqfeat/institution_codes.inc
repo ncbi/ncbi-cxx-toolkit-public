@@ -6323,6 +6323,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SARAT\ts\tDepartment of Morphology and Systematic Botany\t\t\t",
 "SARBG\ts\tSaratov State University Botanical Garden\t\t\t",
 "SARC\ts\tRoanoke College, Biology Department\t\t\t",
+"SARCC\tc\tSouth African Rhizobium Culture Collection\t\t\t",
 "SARDI\ts\tSouth Australian Research and Development Institute\t\t\t",
 "SARGU\ts\tUniversity of Sargodha\t\t\t",
 "SARI\ts\tSakarya Agricultural Research Institute\t\t\t",
