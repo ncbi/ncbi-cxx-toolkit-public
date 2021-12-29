@@ -6290,6 +6290,7 @@ SARA	s	Zemaljski Muzej Bosne I. Herzegovine
 SARAT	s	Department of Morphology and Systematic Botany			
 SARBG	s	Saratov State University Botanical Garden			
 SARC	s	Roanoke College, Biology Department			
+SARCC	c	South African Rhizobium Culture Collection			
 SARDI	s	South Australian Research and Development Institute			
 SARGU	s	University of Sargodha			
 SARI	s	Sakarya Agricultural Research Institute			
