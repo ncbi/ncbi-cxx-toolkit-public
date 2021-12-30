@@ -373,10 +373,7 @@ static CRef<CSerialObject> MakeBioseqSet(ParserPtr pp)
 {
     CRef<objects::CBioseq_set> bio_set(new objects::CBioseq_set);
 
-    if (pp->source == Parser::ESource::PIR)
-        bio_set->SetClass(objects::CBioseq_set::eClass_pir);
-    else
-        bio_set->SetClass(objects::CBioseq_set::eClass_genbank);
+    bio_set->SetClass(objects::CBioseq_set::eClass_genbank);
 
     if(!pp->release_str.empty())
         bio_set->SetRelease(pp->release_str);
@@ -624,13 +621,7 @@ Int2 fta_main(ParserPtr pp, bool already)
 /**********************************************************/
 static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
 {
-    if (NStr::EqualNocase(source, "PIR"))
-    {
-        pp.acprefix = ParFlat_PIR_AC;
-        pp.seqtype = objects::CSeq_id::e_Pir;
-        pp.source = Parser::ESource::PIR;
-    }
-    else if (NStr::EqualNocase(source, "PRF"))
+    if (NStr::EqualNocase(source, "PRF"))
     {
         pp.acprefix = ParFlat_PRF_AC;
         pp.seqtype = objects::CSeq_id::e_Prf;

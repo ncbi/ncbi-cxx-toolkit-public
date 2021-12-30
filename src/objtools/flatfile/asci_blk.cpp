@@ -1902,11 +1902,7 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq,
     size_t seqlen = 0;
     for (numns = 0; seqptr < endptr;)
     {
-        if (pp->format == Parser::EFormat::PIR)
-            len = ScanSequence(false, &seqptr, buf, seqconv, replacechar, NULL);
-        else
-            len = ScanSequence(true, &seqptr, buf, seqconv, replacechar, &numns);
-
+        len = ScanSequence(true, &seqptr, buf, seqconv, replacechar, &numns);
         if (len == 0)
         {
             if (str != NULL)
