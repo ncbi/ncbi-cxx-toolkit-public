@@ -389,7 +389,7 @@ enum ETar_Format {
 
 
 /// POSIX "ustar" tar archive member header
-typedef struct STarHeader {   // byte offset
+struct STarHeader {           // byte offset
     char name[100];           //   0
     char mode[8];             // 100
     char uid[8];              // 108
@@ -422,19 +422,19 @@ typedef struct STarHeader {   // byte offset
         } star;
     };                        // 500
     // NCBI in last 4 bytes   // 508
-} SHeader;
-
-
-/// Block as a header.
-union TBlock {
-    char    buffer[BLOCK_SIZE];
-    SHeader header;
 };
 
 
-static bool s_TarChecksum(TBlock* block, bool isgnu)
+/// Block as a header.
+union TTarBlock {
+    char       buffer[BLOCK_SIZE];
+    STarHeader header;
+};
+
+
+static bool s_TarChecksum(TTarBlock* block, bool isgnu)
 {
-    SHeader* h = &block->header;
+    STarHeader* h = &block->header;
     size_t len = sizeof(h->checksum) - (isgnu ? 2 : 1);
 
     // Compute the checksum
@@ -738,7 +738,7 @@ static string s_Printable(const char* field, size_t maxsize, bool text)
 #define _STR(s)  #s
 
 #define TAR_PRINTABLE_EX(field, text, size)                             \
-    "@" + s_OffsetAsString((size_t) offsetof(SHeader, field)) +         \
+    "@" + s_OffsetAsString((size_t) offsetof(STarHeader, field)) +      \
     "[" _STR(field) "]:" + string(14 - sizeof(_STR(field)), ' ') +      \
     '"' + s_Printable(h->field, size, text  ||  ecxpt) + '"'
 
@@ -749,7 +749,7 @@ static string s_Printable(const char* field, size_t maxsize, bool text)
 #define TAR_GNU_REGION   "[gnu.region]:   "
 #define TAR_GNU_CONTIND  "[gnu.contind]:  "
 
-static string s_DumpSparseMap(const SHeader* h, const char* sparse,
+static string s_DumpSparseMap(const STarHeader* h, const char* sparse,
                               const char* contind, bool ecxpt = false)
 {
     string dump;
@@ -826,7 +826,7 @@ static string s_DumpSparseMap(const vector< pair<Uint8, Uint8> >& bmap)
 }
 
 
-static string s_DumpHeader(const SHeader* h, ETar_Format fmt,
+static string s_DumpHeader(const STarHeader* h, ETar_Format fmt,
                            bool ecxpt = false)
 {
     string dump;
@@ -1830,7 +1830,7 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
 // PAX (Portable Archive Interchange) extraction support
 
 // Define bitmasks for extended numeric information (must fit in perm mask)
-typedef enum {
+enum EPAXBit {
     fPAXNone          = 0,
     fPAXSparseGNU_1_0 = 1 << 0,
     fPAXSparse        = 1 << 1,
@@ -1840,7 +1840,7 @@ typedef enum {
     fPAXSize          = 1 << 5,
     fPAXUid           = 1 << 6,
     fPAXGid           = 1 << 7
-} EPAXBit;
+};
 typedef unsigned int TPAXBits;  // Bitwise-OR of EPAXBit(s)
 
 
@@ -2073,7 +2073,7 @@ CTar::EStatus CTar::x_ParsePAXData(const string& data)
 
 
 static void s_Dump(const string& file, Uint8 pos, size_t recsize,
-                   const string& entryname, const SHeader* h,
+                   const string& entryname, const STarHeader* h,
                    ETar_Format fmt, Uint8 datasize)
 {
     _ASSERT(!OFFSET_OF(pos));
@@ -2092,7 +2092,7 @@ static void s_Dump(const string& file, Uint8 pos, size_t recsize,
 
 
 static void s_DumpSparse(const string& file, Uint8 pos, size_t recsize,
-                         const string& entryname, const SHeader* h,
+                         const string& entryname, const STarHeader* h,
                          const char* contind, Uint8 datasize)
 {
     _ASSERT(!OFFSET_OF(pos));
@@ -2143,17 +2143,17 @@ static inline bool s_IsOctal(char c)
 CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
 {
     // Read block
-    const TBlock* block;
+    const TTarBlock* block;
     size_t nread = sizeof(block->buffer);
     _ASSERT(sizeof(*block) == BLOCK_SIZE/*== sizeof(block->buffer)*/);
-    if (!(block = (const TBlock*) x_ReadArchive(nread))) {
+    if (!(block = (const TTarBlock*) x_ReadArchive(nread))) {
         return eEOF;
     }
     if (nread != BLOCK_SIZE) {
         TAR_THROW(this, eRead,
                   "Unexpected EOF in archive");
     }
-    const SHeader* h = &block->header;
+    const STarHeader* h = &block->header;
 
     // Check header format
     ETar_Format fmt = eTar_Unknown;
@@ -2482,7 +2482,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                 const char* contind = h->gnu.contind;
                 while (*contind) {
                     _ASSERT(nread == BLOCK_SIZE);
-                    if (!(block = (const TBlock*) x_ReadArchive(nread))
+                    if (!(block = (const TTarBlock*) x_ReadArchive(nread))
                         ||  nread != BLOCK_SIZE) {
                         TAR_THROW(this, eRead,
                                   "Unexpected EOF in GNU sparse file map"
@@ -2599,7 +2599,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
 }
 
 
-static inline void sx_Signature(TBlock* block)
+static inline void sx_Signature(TTarBlock* block)
 {
     _ASSERT(sizeof(block->header) + 4 < sizeof(block->buffer));
     memcpy(block->buffer + sizeof(*block) - 4, "NCBI", 4);
@@ -2609,10 +2609,10 @@ static inline void sx_Signature(TBlock* block)
 void CTar::x_WriteEntryInfo(const string& name)
 {
     // Prepare block info
-    TBlock block;
+    TTarBlock block;
     _ASSERT(sizeof(block) == BLOCK_SIZE/*== sizeof(block.buffer)*/);
     memset(block.buffer, 0, sizeof(block.buffer));
-    SHeader* h = &block.header;
+    STarHeader* h = &block.header;
 
     // Name(s) ('\0'-terminated if fit entirely, otherwise not)
     if (!x_PackCurrentName(h, false)) {
@@ -2818,7 +2818,7 @@ bool CTar::x_PackCurrentName(STarHeader* h, bool link)
 
     // Prepare extended block header with the long name info (old GNU style)
     _ASSERT(!OFFSET_OF(m_BufferPos)  &&  m_BufferPos < m_BufferSize);
-    TBlock* block = (TBlock*)(m_Buffer + m_BufferPos);
+    TTarBlock* block = (TTarBlock*)(m_Buffer + m_BufferPos);
     memset(block->buffer, 0, sizeof(block->buffer));
     h = &block->header;
 
@@ -4538,7 +4538,7 @@ Uint8 CTar::EstimateArchiveSize(const TFiles& files,
         string path    = s_ToFilesystemPath(prefix, f->first);
         string name    = s_ToArchiveName   (prefix, path);
         size_t namelen = name.size() + 1;
-        if (namelen > sizeof(((SHeader*) 0)->name)) {
+        if (namelen > sizeof(STarHeader::name)) {
             result += BLOCK_SIZE/*long name header*/ + ALIGN_SIZE(namelen);
         }
     }
