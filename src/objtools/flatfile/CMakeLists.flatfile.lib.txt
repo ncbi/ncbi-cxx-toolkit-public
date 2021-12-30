@@ -13,7 +13,6 @@ NCBI_begin_lib(xflatfile)
     entry
     gb_index
     indx_blk
-    pir_index
     prf_index
     sp_index
     utilfun

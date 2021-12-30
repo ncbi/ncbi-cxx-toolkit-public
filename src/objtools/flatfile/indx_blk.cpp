@@ -244,7 +244,6 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 bool GenBankIndex(ParserPtr pp);
 bool SprotIndex(ParserPtr pp, void(*fun)(IndexblkPtr entry, char* offset, Int4 len));
 bool PrfIndex(ParserPtr pp, void(*fun)(IndexblkPtr entry, char* offset, Int4 len));
-bool PirIndex(ParserPtr pp, void(*fun)(IndexblkPtr entry, char* offset, Int4 len));
 bool XMLIndex(ParserPtr pp);
 
 /**********************************************************
@@ -2471,9 +2470,6 @@ bool FlatFileIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, In
             break;
         case Parser::EFormat::PRF:
             index = PrfIndex(pp, fun);
-            break;
-        case Parser::EFormat::PIR:
-            index = PirIndex(pp, fun);
             break;
         case Parser::EFormat::XML:
             index = XMLIndex(pp);
