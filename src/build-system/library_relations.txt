@@ -671,11 +671,11 @@ gpipe_minhash needs xncbi
 gpipe_names needs gpipe_xmlutil
 gpipe_object_edit needs xalgoalignutil
 gpipe_objutil needs $(DATA_LOADERS_UTIL_LIB)
-gpipe_objutil needs $(OBJEDIT_LIBS)
 gpipe_objutil needs $(OBJMGR_LIBS)
 gpipe_objutil needs gpipe_attr
 gpipe_objutil needs local_taxon
 gpipe_objutil needs writedb
+gpipe_objutil needs xcleanup
 gpipe_objutil needs xid_wgsdb
 gpipe_objutil needs3party $(DATA_LOADERS_UTIL_LIBS)
 gpipe_objutil needs3party $(GENBANK_THIRD_PARTY_LIBS)
