@@ -903,7 +903,7 @@ CPSGDataLoader_Impl::GetSequenceHashOnce(const CSeq_id_Handle& idh)
     auto seq_info = x_GetBioseqInfo(idh);
     if (seq_info) {
         ret.sequence_found = true;
-        if ( ret.hash ) {
+        if ( seq_info->hash ) {
             ret.hash_known = true;
             ret.hash = seq_info->hash;
         }
