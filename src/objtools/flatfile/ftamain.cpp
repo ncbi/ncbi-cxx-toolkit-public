@@ -79,7 +79,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-extern bool    PrfAscii(ParserPtr pp);
 extern bool    XMLAscii(ParserPtr pp);
 extern void    fta_init_gbdataloader();
 
@@ -530,14 +529,12 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already=
     fta_init_gbdataloader();
     GetScope().AddDefaults();
 
-    if(pp->format == Parser::EFormat::SPROT || pp->format == Parser::EFormat::PRF)
+    if(pp->format == Parser::EFormat::SPROT)
     {
         FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
 
-        if(pp->format == Parser::EFormat::SPROT)
-            good = SprotAscii(pp);
-        else
-            good = PrfAscii(pp);
+        good = SprotAscii(pp);
+
         if(!already)
             fta_fini_servers(pp);
 
@@ -948,13 +945,10 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 
     GetScope().AddDefaults();
 
-    if (pp.format == Parser::EFormat::SPROT || pp.format == Parser::EFormat::PRF) {
+    if (pp.format == Parser::EFormat::SPROT) {
         FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
 
-        if (pp.format == Parser::EFormat::SPROT)
-            good = SprotAscii(&pp);
-        else
-            good = PrfAscii(&pp);
+        good = SprotAscii(&pp);
 
         FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
