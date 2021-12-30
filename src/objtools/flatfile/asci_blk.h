@@ -58,10 +58,6 @@ void        GetGenBankSubBlock(const DataBlk& entry, size_t bases);
 void xGetGenBankSubBlocks(Entry& entry, size_t bases);
 char*     GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw, Parser::EFormat format, char* eptr);
 void        GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry);
-// LCOV_EXCL_START
-// Excluded per Mark's request on 12/14/2016
-char*     GetPrfBlock(DataBlkPtr* chain, char* ptr, short* retkw, char* eptr);
-// LCOV_EXCL_STOP
 void        BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char *subkw);
 SectionPtr xBuildSubBlock(Section&, int subtype, const char* subKw);
 void        GetLenSubNode(DataBlkPtr dbp);

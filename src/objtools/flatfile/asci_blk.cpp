@@ -114,7 +114,6 @@ const char *magic_phrases[] = {
 extern vector<string> genbankKeywords;
 extern vector<string> emblKeywords;
 extern vector<string> swissProtKeywords;
-extern vector<string> prfKeywords;
 
 /**********************************************************/
 void ShrinkSpaces(char* line)
@@ -277,49 +276,6 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
     return(ptr);
 }
 
-// LCOV_EXCL_START
-// Excluded per Mark's request on 12/14/2016
-/**********************************************************/
-char* GetPrfBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
-                    char* eptr)
-{
-    char* offset;
-    Int2    curkw;
-    Int2    nextkw;
-
-    size_t len = 0;
-    offset = ptr;
-    curkw = *retkw;
-    nextkw = ParFlat_UNKW;
-    nextkw = curkw;
-
-    do                          /* repeat loop until it finds next key-word */
-    {
-        for (; ptr < eptr && *ptr != '\n'; ptr++)
-            len++;
-        if (ptr >= eptr)
-            return(ptr);
-
-        ++ptr;                          /* newline character */
-        ++len;
-
-        nextkw = SrchKeyword(ptr, prfKeywords);
-        if (nextkw == ParFlat_UNKW)      /* it can be "XX" line,
-                                            treat as same line */
-                                            nextkw = curkw;
-
-        if (StringNCmp(ptr, "JOURNAL", 7) == 0)
-            break;
-    } while (nextkw == curkw);
-
-    nextkw = SrchKeyword(ptr, prfKeywords);
-
-    InsertDatablkVal(chain, curkw, offset, len);
-
-    *retkw = nextkw;
-    return(ptr);
-}
-// LCOV_EXCL_STOP
 
 /**********************************************************
 *

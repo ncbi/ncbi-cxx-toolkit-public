@@ -9,7 +9,6 @@ SRC     = \
     entry \
     gb_index \
     indx_blk \
-    prf_index \
     sp_index \
     utilfun \
     xm_index \
