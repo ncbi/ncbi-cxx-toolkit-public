@@ -1125,9 +1125,6 @@ static CRef<objects::CCit_art> get_book(char* bptr, CRef<objects::CAuth_list>& a
         case Parser::EFormat::GenBank:
             ref_fmt = GB_REF;
             break;
-        case Parser::EFormat::PIR:
-            ref_fmt = PIR_REF;
-            break;
         case Parser::EFormat::SPROT:
             ref_fmt = SP_REF;
             break;

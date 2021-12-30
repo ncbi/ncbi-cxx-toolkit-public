@@ -334,7 +334,7 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
                 {
                     objects::CName_std &namestd = (*it)->SetName().SetName();
 /* bsv: commented out single letter first name population*/
-                    if(source != Parser::ESource::SPROT && source != Parser::ESource::PIR &&
+                    if(source != Parser::ESource::SPROT &&
                        !got_pmid)
                     {
                         if(!namestd.IsSetFirst() && namestd.IsSetInitials()) {
@@ -1171,7 +1171,7 @@ void fta_fix_orgref(ParserPtr pp, objects::COrg_ref& org_ref, unsigned char* dro
     }
     else
     {
-        merge = (pp->format == Parser::EFormat::PIR) ? 0 : 1;
+        merge = 1;
 
         CRef<objects::COrg_ref> new_org_ref = fta_replace_org(pp, drop, org_ref, taxname.c_str(), merge, attempt);
         if (new_org_ref.Empty() && attempt == 1)
@@ -1185,8 +1185,6 @@ void fta_fix_orgref(ParserPtr pp, objects::COrg_ref& org_ref, unsigned char* dro
         {
             ErrPostEx(SEV_INFO, ERR_SERVER_TaxNameWasFound,
                       "Taxon Id _was_ found for [%s]", taxname.c_str());
-            if(pp->format == Parser::EFormat::PIR)
-                new_synonym(org_ref, *new_org_ref);
 
             org_ref.Assign(*new_org_ref);
         }

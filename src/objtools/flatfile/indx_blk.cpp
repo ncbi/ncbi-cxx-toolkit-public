@@ -202,7 +202,6 @@ static const map<Parser::ESource, string> sourceNames =  {
     {Parser::ESource::unknown, "unknown"},
     {Parser::ESource::EMBL, "EMBL"},
     {Parser::ESource::GenBank, "GENBANK"},
-    {Parser::ESource::PIR, "PIR"},
     {Parser::ESource::SPROT, "Swiss-Prot"},
     {Parser::ESource::NCBI, "NCBI"},
     {Parser::ESource::LANL, "GSDB"},
@@ -934,7 +933,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
 
         StringCpy(entry->locusname, ptr->str);
         StringCpy(entry->blocusname, entry->locusname);
-        if(pp->format == Parser::EFormat::PIR || pp->format == Parser::EFormat::PRF)
+        if(pp->format == Parser::EFormat::PRF)
             StringCpy(entry->acnum, entry->locusname);
 
         if(entry->embl_new_ID == false)
@@ -954,7 +953,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
                 else
                     badlocus = false;
             }
-            else if(pp->format == Parser::EFormat::PIR || pp->format == Parser::EFormat::PRF)
+            else if(pp->format == Parser::EFormat::PRF)
                 badlocus = false;
             else 
                 badlocus = CheckLocus(entry->locusname, pp->source);
@@ -981,7 +980,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
         return(NULL);
     }
 
-    if(pp->format == Parser::EFormat::PIR || pp->format == Parser::EFormat::PRF)
+    if(pp->format == Parser::EFormat::PRF)
     {
         FreeTokenstatblk(stoken);
         return(entry);
@@ -2487,8 +2486,6 @@ const char **GetAccArray(Parser::ESource source)
 {
     if(source == Parser::ESource::EMBL)
         return(embl_accpref);
-    if(source == Parser::ESource::PIR)
-        return(pir_accpref);
     if(source == Parser::ESource::PRF)
         return(prf_accpref);
     if(source == Parser::ESource::SPROT)

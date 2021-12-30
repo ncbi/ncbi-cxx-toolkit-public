@@ -2045,8 +2045,6 @@ static CRef<objects::CDbtag> GetSourceDbtag(CRef<objects::CGb_qual>& qual, Parse
         q = "DDBJ";
     else if(source == Parser::ESource::SPROT)
         q = "SwissProt";
-    else if(source == Parser::ESource::PIR)
-        q = "PIR";
     else if(source == Parser::ESource::LANL)
         q = "LANL";
     else if(source == Parser::ESource::Refseq)

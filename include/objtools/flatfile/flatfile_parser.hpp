@@ -40,7 +40,6 @@
 
 #define ParFlat_EMBL_AC             "AFVXYZ"    /* patent is "A" */
 #define ParFlat_LANL_AC             "JKLM"
-#define ParFlat_PIR_AC               NULL
 #define ParFlat_PRF_AC               NULL
 #define ParFlat_SPROT_AC             NULL
 #define ParFlat_DDBJ_AC              "CDE"
