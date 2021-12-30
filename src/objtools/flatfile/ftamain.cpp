@@ -453,8 +453,6 @@ static void SetReleaseStr(ParserPtr pp)
         }
         else if(pp->source == Parser::ESource::SPROT)
             pp->release_str = "source:swissprot, format:swissprot";
-        else if(pp->source == Parser::ESource::PRF)
-            pp->release_str = "source:prf, format:prf";
         else if(pp->source == Parser::ESource::USPTO)
             pp->release_str = "source:uspto, format:xml";
         else
@@ -474,8 +472,6 @@ static void GetAuthorsStr(ParserPtr pp)
         pp->authors_str = "National Center for Biotechnology Information";
     else if(pp->source == Parser::ESource::SPROT)
         pp->authors_str = "UniProt KnowledgeBase";
-    else if(pp->source == Parser::ESource::PRF)
-        pp->authors_str = "PRF";
     else
         pp->authors_str = "FlyBase";
 }
@@ -618,13 +614,7 @@ Int2 fta_main(ParserPtr pp, bool already)
 /**********************************************************/
 static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
 {
-    if (NStr::EqualNocase(source, "PRF"))
-    {
-        pp.acprefix = ParFlat_PRF_AC;
-        pp.seqtype = objects::CSeq_id::e_Prf;
-        pp.source = Parser::ESource::PRF;
-    }
-    else if (NStr::EqualNocase(source, "SPROT"))
+    if (NStr::EqualNocase(source, "SPROT"))
     {
         pp.acprefix = ParFlat_SPROT_AC;
         pp.seqtype = objects::CSeq_id::e_Swissprot;
@@ -1055,8 +1045,6 @@ bool fta_set_format_source(Parser& pp, const std::string& format, const std::str
         pp.format = Parser::EFormat::GenBank;
     else if (format == "sprot")
         pp.format = Parser::EFormat::SPROT;
-    else if (format == "prf")
-        pp.format = Parser::EFormat::PRF;
     else if (format == "xml")
         pp.format = Parser::EFormat::XML;
     else {

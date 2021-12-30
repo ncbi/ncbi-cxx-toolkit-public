@@ -75,7 +75,6 @@ struct Parser {
         DDBJ,
         LANL,
         SPROT,
-        PRF,
         Refseq,
         Flybase,
         USPTO,
@@ -88,7 +87,6 @@ struct Parser {
         GenBank,
         SPROT,
         DDBJ,
-        PRF,
         XML,
         ALL 
     };
