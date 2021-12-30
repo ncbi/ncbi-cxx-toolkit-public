@@ -2577,7 +2577,7 @@ static void fta_fix_seq_id(objects::CSeq_loc& loc, objects::CSeq_id& id, Indexbl
     }
     else if(id.IsPrf())
     {
-        if(source != Parser::ESource::PRF && source != Parser::ESource::All &&
+        if(source != Parser::ESource::All &&
            slip->badslp == nullptr)
            slip->badslp = &loc;
         slip->prf = 1;

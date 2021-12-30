@@ -793,7 +793,7 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
 
     CRef<objects::CCit_art> cit_art;
 
-    if(pp->format == Parser::EFormat::GenBank || pp->format == Parser::EFormat::PRF)
+    if(pp->format == Parser::EFormat::GenBank)
         symbol = ',';
     else if(pp->format == Parser::EFormat::EMBL)
         symbol = ':';
@@ -825,21 +825,6 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
     if(*s != '(')
     {
         return cit_art;
-    }
-
-    if(pp->format == Parser::EFormat::PRF && s > buf &&
-       (StringLen(s) != 6 || s[1] < '1' || s[1] > '2' || s[2] < '0' ||
-        s[2] > '9' || s[3] < '0' || s[3] > '9' || s[4] < '0' || s[4] > '9'))
-    {
-        for(p = s - 1; p > buf && *p != '(';)
-            p--;
-        if(*p == '(' && p[5] == ')' && p[1] > '0' && p[1] < '3' &&
-           p[2] >= '0' && p[2] <= '9' && p[3] >= '0' && p[3] <= '9' &&
-           p[4] >= '0' && p[4] <= '9')
-        {
-            *s = '\0';
-            s = p;
-        }
     }
 
     year = s + 1;

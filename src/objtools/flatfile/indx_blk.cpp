@@ -187,7 +187,6 @@ static const char *source[11] = {
     "unknown",
     "EMBL",
     "GENBANK",
-    "PIR",
     "Swiss-Prot",
     "NCBI",
     "GSDB",
@@ -206,8 +205,7 @@ static const map<Parser::ESource, string> sourceNames =  {
     {Parser::ESource::NCBI, "NCBI"},
     {Parser::ESource::LANL, "GSDB"},
     {Parser::ESource::Flybase, "FlyBase"},
-    {Parser::ESource::Refseq, "RefSeq"},
-    {Parser::ESource::PRF, "unknown"}};
+    {Parser::ESource::Refseq, "RefSeq"}};
 
 static const char *month_name[] = {
     "Ill", "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
@@ -870,13 +868,10 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
     entry->is_tls = false;
     entry->is_pat = false;
 
-    if(pp->source == Parser::ESource::PRF)
-        stoken = TokenString(finfo->str, ';');
-    else
-        stoken = TokenString(finfo->str, ' ');
+    stoken = TokenString(finfo->str, ' ');
 
     bool badlocus = false;
-    if(stoken->num > 2 || (pp->format == Parser::EFormat::PRF && stoken->num > 1))
+    if(stoken->num > 2)
     {
         p = finfo->str;
         if (pp->mode == Parser::EMode::Relaxed) {
@@ -932,8 +927,6 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
 
         StringCpy(entry->locusname, ptr->str);
         StringCpy(entry->blocusname, entry->locusname);
-        if(pp->format == Parser::EFormat::PRF)
-            StringCpy(entry->acnum, entry->locusname);
 
         if(entry->embl_new_ID == false)
         {
@@ -952,8 +945,6 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
                 else
                     badlocus = false;
             }
-            else if(pp->format == Parser::EFormat::PRF)
-                badlocus = false;
             else 
                 badlocus = CheckLocus(entry->locusname, pp->source);
         }
@@ -977,12 +968,6 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
         MemFree(entry);
         FreeTokenstatblk(stoken);
         return(NULL);
-    }
-
-    if(pp->format == Parser::EFormat::PRF)
-    {
-        FreeTokenstatblk(stoken);
-        return(entry);
     }
 
     bases = GetResidue(stoken);
@@ -2482,8 +2467,6 @@ const char **GetAccArray(Parser::ESource source)
 {
     if(source == Parser::ESource::EMBL)
         return(embl_accpref);
-    if(source == Parser::ESource::PRF)
-        return(prf_accpref);
     if(source == Parser::ESource::SPROT)
         return(sprot_accpref);
     if(source == Parser::ESource::LANL)

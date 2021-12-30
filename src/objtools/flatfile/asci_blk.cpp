@@ -1871,9 +1871,7 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq,
             seqptr++;
     }
 
-    if (pp->format == Parser::EFormat::PRF)
-        bioseq.SetInst().SetLength(static_cast<TSeqPos>(seqlen));
-    else if (seqlen != bioseq.GetLength())
+    if (seqlen != bioseq.GetLength())
     {
         ErrPostEx(SEV_WARNING, ERR_SEQUENCE_SeqLenNotEq,
                     "Measured seqlen [%ld] != given [%ld]",
