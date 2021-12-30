@@ -65,7 +65,6 @@
 #include "loadfeat.h"
 #include "gb_ascii.h"
 #include "sp_ascii.h"
-#include "pir_ascii.h"
 #include "em_ascii.h"
 #include "utilfeat.h"
 #include "buf_data_loader.h"
@@ -458,8 +457,6 @@ static void SetReleaseStr(ParserPtr pp)
         }
         else if(pp->source == Parser::ESource::SPROT)
             pp->release_str = "source:swissprot, format:swissprot";
-        else if(pp->source == Parser::ESource::PIR)
-            pp->release_str = "source:pir, format:pir";
         else if(pp->source == Parser::ESource::PRF)
             pp->release_str = "source:prf, format:prf";
         else if(pp->source == Parser::ESource::USPTO)
@@ -481,8 +478,6 @@ static void GetAuthorsStr(ParserPtr pp)
         pp->authors_str = "National Center for Biotechnology Information";
     else if(pp->source == Parser::ESource::SPROT)
         pp->authors_str = "UniProt KnowledgeBase";
-    else if(pp->source == Parser::ESource::PIR)
-        pp->authors_str = "PIR";
     else if(pp->source == Parser::ESource::PRF)
         pp->authors_str = "PRF";
     else
@@ -538,15 +533,12 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already=
     fta_init_gbdataloader();
     GetScope().AddDefaults();
 
-    if(pp->format == Parser::EFormat::SPROT || pp->format == Parser::EFormat::PIR ||
-       pp->format == Parser::EFormat::PRF)
+    if(pp->format == Parser::EFormat::SPROT || pp->format == Parser::EFormat::PRF)
     {
         FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
 
         if(pp->format == Parser::EFormat::SPROT)
             good = SprotAscii(pp);
-        else if(pp->format == Parser::EFormat::PIR)
-            good = PirAscii(pp);
         else
             good = PrfAscii(pp);
         if(!already)
@@ -965,14 +957,11 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 
     GetScope().AddDefaults();
 
-    if (pp.format == Parser::EFormat::SPROT || pp.format == Parser::EFormat::PIR ||
-        pp.format == Parser::EFormat::PRF) {
+    if (pp.format == Parser::EFormat::SPROT || pp.format == Parser::EFormat::PRF) {
         FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
 
         if (pp.format == Parser::EFormat::SPROT)
             good = SprotAscii(&pp);
-        else if (pp.format == Parser::EFormat::PIR)
-            good = PirAscii(&pp);
         else
             good = PrfAscii(&pp);
 
