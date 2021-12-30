@@ -33,7 +33,6 @@ NCBI_begin_lib(xflatfile)
     ind
     loadfeat
     nucprot
-    prf_ascii
     ref
     sp_ascii
     sp_ref

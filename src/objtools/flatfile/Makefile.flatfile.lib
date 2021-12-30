@@ -28,7 +28,6 @@ SRC     = \
     ind \
     loadfeat \
     nucprot \
-    prf_ascii \
     ref \
     sp_ascii \
     sp_ref \
