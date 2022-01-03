@@ -61,6 +61,10 @@
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/comment_item.hpp>
 #include <objtools/format/context.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objtools/alnmgr/alnmap.hpp>
 #include <objmgr/util/objutil.hpp>
 
 
@@ -253,13 +257,44 @@ const string& CCommentItem::GetNsAreGapsStr(void)
     return kNsAreGaps;
 }
 
+typedef CConstRef<CSeq_align>            TAln;
+typedef list< CRef< CSeq_align > >       TAlnList;
+typedef list< CConstRef< CSeq_align > >  TAlnConstList;
+typedef multimap<CAlnMap::TRange,  TAln> TAlnMap;
+
+void x_CollectSegments
+(TAlnConstList& seglist,
+ const TAlnList& aln_list);
+
+void x_CollectSegments
+(TAlnConstList& seglist, const CSeq_align& aln)
+{
+    if ( !aln.CanGetSegs() ) {
+        return;
+    }
+
+    if ( aln.GetSegs().IsDenseg() ) {
+        seglist.push_back( TAln(&aln) );
+    } else if ( aln.GetSegs().IsDisc() ) {
+        x_CollectSegments(seglist, aln.GetSegs().GetDisc().Get());
+    }
+}
+
+void x_CollectSegments
+(TAlnConstList& seglist,
+ const TAlnList& aln_list)
+{
+    ITERATE (TAlnList, it, aln_list) {
+        x_CollectSegments(seglist, **it);
+    }
+}
 
 string CCommentItem::GetStringForTPA
 (const CUser_object& uo,
  CBioseqContext& ctx)
 {
     static const string tpa_string =
-        "THIRD PARTY ANNOTATION DATABASE: This TPA record uses data from DDBJ/EMBL/GenBank ";
+        "THIRD PARTY DATABASE: This TPA record uses data from DDBJ/EMBL/GenBank ";
 
     if ( !ctx.IsTPA() || ctx.IsRefSeq() ) {
         return kEmptyStr;
@@ -270,8 +305,68 @@ string CCommentItem::GetStringForTPA
     }
 
     CBioseq_Handle& seq = ctx.GetHandle();
-    if (seq.IsSetInst_Hist()  &&  seq.GetInst_Hist().IsSetAssembly()) {
-        return kEmptyStr;
+    if (seq.IsSetInst_Hist()  &&  seq.GetInst_Hist().IsSetAssembly() && ctx.Config().NewTpaDisplay()) {
+        // return kEmptyStr;
+        TAlnConstList seglist;
+        x_CollectSegments(seglist, seq.GetInst_Hist().GetAssembly());
+
+        vector<string> histaccns;
+
+        CConstRef<CSeq_id> other_id;
+
+        ITERATE( TAlnConstList, it, seglist ) {
+            const CSeq_align& align = **it;
+
+            other_id.Reset(&align.GetSeq_id(1));
+            if (!other_id) {
+                continue;
+            }
+            if (other_id->IsGi()) {
+
+                // don't show PRIMARY line if network access unavailable (and hence can't translate gi)
+              CSeq_id_Handle idh = GetId(*other_id, ctx.GetScope(), sequence::eGetId_Best);
+                if( ! idh ) {
+                    continue;
+                }
+
+                other_id = idh.GetSeqId();
+                if (other_id->IsGi()) {
+                    continue;
+                }
+            }
+            string tid = other_id->GetSeqIdString(true);
+            if (other_id->IsGeneral()) {
+                const CDbtag& dbt = other_id->GetGeneral();
+                if (dbt.IsSetDb()  &&  NStr::EqualNocase(dbt.GetDb(), "TI")) {
+                    NStr::ReplaceInPlace (tid, "ti:", "TI");
+                 }
+            }
+            if ( !tid.empty() ) {
+                histaccns.push_back(NStr::ToUpper(tid));
+            }
+        }
+        if ( histaccns.empty() ) {
+            return kEmptyStr;
+        }
+
+        sort( histaccns.begin(), histaccns.end() );
+        histaccns.erase( unique( histaccns.begin(), histaccns.end() ), histaccns.end() );
+
+        CNcbiOstrstream text;
+        text << tpa_string << ((histaccns.size() > 1) ? "entries " : "entry ");
+
+        size_t size = histaccns.size();
+        size_t last = size - 1;
+
+        for ( size_t i = 0; i < size; ) {
+            text << histaccns[i];
+            ++i;
+            if ( i < size ) {
+                text << ((i == last) ? " and " : ", ");
+            }
+        }
+
+        return CNcbiOstrstreamToString(text);
     }
 
     string id;

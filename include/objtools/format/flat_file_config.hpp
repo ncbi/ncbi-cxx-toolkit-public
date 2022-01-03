@@ -204,7 +204,8 @@ public:
         fShowFtablePeptides    = 1 << 15,
         fDisableReferenceCache = 1 << 16,
         fShowDeflineModifiers  = 1 << 17,
-        fDoNotUseAutoDef       = 1 << 18
+        fDoNotUseAutoDef       = 1 << 18,
+        fNewTpaDisplay         = 1 << 19
     };
 
     enum EView {
@@ -635,6 +636,7 @@ public:
     bool DisableReferenceCache (void) const;
     bool ShowDeflineModifiers  (void) const;
     bool DoNotUseAutoDef       (void) const;
+    bool NewTpaDisplay         (void) const;
 
     // setters
     void SetCustom(const TCustom& custom) { m_Custom = custom; }
@@ -655,6 +657,7 @@ public:
     CFlatFileConfig& SetDisableReferenceCache (bool val = true);
     CFlatFileConfig& SetShowDeflineModifiers  (bool val = true);
     CFlatFileConfig& SetDoNotUseAutoDef       (bool val = true);
+    CFlatFileConfig& SetNewTpaDisplay         (bool val = true);
 
     // adjust mode dependant flags for RefSeq
     void SetRefSeqConventions(void);
@@ -857,6 +860,7 @@ CUSTOM_ARG_IMP(ShowFtablePeptides)
 CUSTOM_ARG_IMP(DisableReferenceCache)
 CUSTOM_ARG_IMP(ShowDeflineModifiers)
 CUSTOM_ARG_IMP(DoNotUseAutoDef)
+CUSTOM_ARG_IMP(NewTpaDisplay)
 
 #undef FLAG_ARG_IMP
 #undef FLAG_ARG_GET
