@@ -142,6 +142,72 @@ static bool s_IsTPA(CBioseqContext& ctx, bool has_tpa_assembly )
 }
 
 
+static bool s_HideTPAPrimary(CBioseqContext& ctx, bool has_tpa_assembly )
+{
+    bool has_bankit = false;
+    bool has_genbank = false;
+    bool has_gi = false;
+    bool has_local = false;
+    bool has_refseq = false;
+    bool has_smart = false;
+    bool has_tpa = false;
+    bool is_tsa = false;
+
+    ITERATE (CBioseq::TId, it, ctx.GetBioseqIds()) {
+        switch ( (*it)->Which() ) {
+      case CSeq_id::e_Local:
+          has_local = true;
+          break;
+      case CSeq_id::e_Genbank:
+      case CSeq_id::e_Embl:
+      case CSeq_id::e_Ddbj:
+          has_genbank = true;
+          break;
+      case CSeq_id::e_Other:
+          has_refseq = true;
+          break;
+      case CSeq_id::e_Gi:
+          has_gi = true;
+          break;
+      case CSeq_id::e_Tpg:
+      case CSeq_id::e_Tpe:
+      case CSeq_id::e_Tpd:
+          has_tpa = true;
+          break;
+      case CSeq_id::e_General:
+          if ( (*it)->GetGeneral().CanGetDb() ) {
+              const string& db = (*it)->GetGeneral().GetDb();
+              if ( NStr::EqualNocase(db, "BankIt") ) {
+                  has_bankit = true;
+              }
+              if ( NStr::EqualNocase(db, "TMSMART") ) {
+                  has_smart = true;
+              }
+          }
+          break;
+      default :
+          break;
+        }
+    }
+
+    if( ctx.GetTech() == CMolInfo::eTech_tsa ) {
+        is_tsa = true;
+    }
+
+    if (is_tsa) return false;
+    if (has_genbank) return true;
+    if (has_tpa && has_tpa_assembly) return true;
+    if (has_tpa) return false;
+    if (has_refseq) return false;
+    if (has_bankit && has_tpa_assembly) return true;
+    if (has_smart && has_tpa_assembly) return true;
+    if (has_gi) return true;
+    if (has_local && has_tpa_assembly) return false;
+
+    return true;
+}
+
+
 void CPrimaryItem::x_GatherInfo(CBioseqContext& ctx)
 {
     bool has_tpa_assembly = false;
@@ -171,11 +237,26 @@ void CPrimaryItem::x_GatherInfo(CBioseqContext& ctx)
     bool has_hist_assembly =
         seq.IsSetInst_Hist()  &&  !seq.GetInst_Hist().GetAssembly().empty();
 
-    if ( !s_IsTPA(ctx, has_tpa_assembly) || !has_hist_assembly ) {
-        return;
-    }
-    if ( seq.IsSetInst_Hist()  &&  !seq.GetInst_Hist().GetAssembly().empty() ) {
-        x_GetStrForPrimary(ctx);
+    if (ctx.Config().NewTpaDisplay()) {
+
+        if ( !has_hist_assembly ) {
+            return;
+        }
+
+        if ( s_HideTPAPrimary(ctx, has_tpa_assembly) ) {
+           return;
+        }
+
+        x_GetStrForPrimary(ctx); 
+
+    } else {
+
+        if ( !s_IsTPA(ctx, has_tpa_assembly) || !has_hist_assembly ) {
+            return;
+        }
+        if ( seq.IsSetInst_Hist()  &&  !seq.GetInst_Hist().GetAssembly().empty() ) {
+            x_GetStrForPrimary(ctx);
+        }
     }
 }
 
