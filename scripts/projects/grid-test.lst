@@ -25,5 +25,6 @@ app/netstorage
 sample/app/netschedule
 sample/app/netcache
 sample/app/cgi
+misc$
 misc/third_party
 misc/third_party_static

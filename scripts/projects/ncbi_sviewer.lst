@@ -2,6 +2,7 @@
 internal/gbench
 -internal/gbench/packages*
 internal/tmsmart/smartnetclient
+misc$
 misc/third_party
 -algo/blast/unit_tests
 -[^gi].*/app

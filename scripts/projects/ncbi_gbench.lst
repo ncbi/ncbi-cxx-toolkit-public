@@ -9,6 +9,7 @@ internal/aligndb
 internal/gbench
 internal/tmsmart/smartnetclient
 internal/blast/SplitDB/asn4smart
+misc$
 misc/hgvs$
 misc/third_party
 -algo/blast/unit_tests

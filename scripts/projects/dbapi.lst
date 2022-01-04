@@ -9,5 +9,6 @@ connect$
 connect/ext$
 connect/mbedtls
 dbapi
+misc$
 misc/third_party
 misc/third_party_static
