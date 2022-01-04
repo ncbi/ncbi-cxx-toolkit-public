@@ -58,10 +58,10 @@ public:
     CPub_equiv(void);
     // destructor
     ~CPub_equiv(void);
-    
+
     /// Append a label to "label" based on content
     bool GetLabel(string* label, TLabelFlags flags = 0,
-                  ELabelVersion version = eLabel_DefaultVersion) const;
+                  ELabelVersion version = eLabel_DefaultVersion) const override;
 
     bool SameCitation(const CPub_equiv& other) const;
     bool SameCitation(const CPub& pub) const;

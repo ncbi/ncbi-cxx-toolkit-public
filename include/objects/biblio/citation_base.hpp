@@ -98,7 +98,7 @@ class NCBI_BIBLIO_EXPORT ICitationBase : public IAbstractCitation
 {
 public:
     bool GetLabel(string* label, TLabelFlags flags = 0,
-                  ELabelVersion version = eLabel_DefaultVersion) const;
+                  ELabelVersion version = eLabel_DefaultVersion) const override;
     // Historic variant
     bool GetLabel(string* label, bool unique) const
         { return GetLabel(label, unique ? fLabel_Unique : 0); }

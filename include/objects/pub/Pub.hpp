@@ -69,7 +69,7 @@ public:
     /// Concatenate a label for this pub to label. If flags contains
     /// fCitLabel_Unique, add a unique tag to the end of the
     /// concatenated label.
-    bool GetLabel(string*          label, 
+    bool GetLabel(string*          label,
                   ELabelType       type    = eContent,
                   TLabelFlags      flags   = 0,
                   ELabelVersion    version = eLabel_DefaultVersion) const;
@@ -79,7 +79,7 @@ public:
                   bool             unique = false) const;
 
     bool GetLabel(string* label, TLabelFlags flags = 0,
-                  ELabelVersion version = eLabel_DefaultVersion) const;
+                  ELabelVersion version = eLabel_DefaultVersion) const override;
 
     // convenience functions to get author list from underlying pub
     bool IsSetAuthors(void) const;
@@ -105,8 +105,8 @@ public:
     bool SameCitation(const CPub& other) const;
 
 protected:
-  
-	private:
+
+private:
     // Prohibit copy constructor and assignment operator
     CPub(const CPub& value);
     CPub& operator=(const CPub& value);
