@@ -806,8 +806,9 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_usedin,
 } },
 
-//{ eSubtype_org, {
-//},
+{ eSubtype_org, {
+           eQual_SO_type,
+} },
 
 { eSubtype_cdregion, {
            eQual_EC_number,
@@ -1191,17 +1192,21 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_usedin,
 } },
 
-//{ eSubtype_pub, {
-//},
+{ eSubtype_pub, {
+           eQual_SO_type,
+} },
 
-//{ eSubtype_seq, {
-//},
+{ eSubtype_seq, {
+           eQual_SO_type,
+} },
 
-//{ eSubtype_imp, {
-//},
+{ eSubtype_imp, {
+           eQual_SO_type,
+} },
 
-//{ eSubtype_allele, {
-//},
+{ eSubtype_allele, {
+           eQual_SO_type,
+} },
 
 { eSubtype_attenuator, {
            eQual_allele,
@@ -1743,8 +1748,9 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_usedin,
 } },
 
-//{ eSubtype_mutation, {
-//},
+{ eSubtype_mutation, {
+           eQual_SO_type,
+} },
 
 { eSubtype_N_region, {
            eQual_allele,
@@ -2392,7 +2398,9 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_usedin,
 } },
 
-//{ eSubtype_virion, {
+{ eSubtype_virion, {
+           eQual_SO_type,
+} },
 
 { eSubtype_3clip, {
            eQual_allele,
@@ -2579,8 +2587,9 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_usedin,
 } },
 
-//{ eSubtype_site_ref, {
-//},
+{ eSubtype_site_ref, {
+           eQual_SO_type,
+} },
 
 { eSubtype_region, {
            eQual_allele,
@@ -2686,17 +2695,21 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_usedin,
 } },
 
-//{ eSubtype_rsite, {
-//},
+{ eSubtype_rsite, {
+           eQual_SO_type,
+} },
 
-//{ eSubtype_user, {
-//},
+{ eSubtype_user, {
+           eQual_SO_type,
+} },
 
-//{ eSubtype_txinit, {
-//},
+{ eSubtype_txinit, {
+           eQual_SO_type,
+} },
 
-//{ eSubtype_num, {
-//},
+{ eSubtype_num, {
+           eQual_SO_type,
+} },
 
 //sameasmisc_feature???
 { eSubtype_psec_str, {
@@ -2905,8 +2918,9 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_usedin,
 } },
 
-//{ eSubtype_clone, {
-//},
+{ eSubtype_clone, {
+           eQual_SO_type,
+} },
 
 { eSubtype_variation_ref, {
            eQual_allele,
