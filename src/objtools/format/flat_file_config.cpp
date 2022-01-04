@@ -585,13 +585,21 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
          DENT "HideProteinID             (1) - hide protein_id and transcript_id\n"
          DENT "HideGI                    (2) - hide GI number\n"
          DENT "LongLocusNames            (4) - allow long locus lines\n"
+         DENT "ExpandGaps                (8) - show Expand Ns link\n"
          DENT "ShowSNPFeatures          (64) - show SNP features\n"
          DENT "ShowCDDFeatures         (128) - show CDD features\n"
          DENT "ShowDebugTiming         (256) - show debug timing\n"
          DENT "FasterReleaseSets       (512) - faster release sets\n"
          DENT "DisableAnnotRefs       (1024) - disable annot references\n"
-         DENT "UseSeqEntryIndexer     (2048) - use SeqEntryIndexer\n"
-         DENT "GeneRNACDSFeatures    (16384) - only Gene, RNA, and CDS features",
+         DENT "UseSeqEntryIndexer     (2048) - use SeqEntry indexer\n"
+         DENT "UseAutoDef             (4096) - use automatic defline generator\n"
+         DENT "IgnoreExistingTitle    (8192) - ignore existing title\n"
+         DENT "GeneRNACDSFeatures    (16384) - only Gene, RNA, and CDS features\n"
+         DENT "ShowFtablePeptides    (32768) - show peptide qualifierss in feature table\n"
+         DENT "DisableReferenceCache (65536) - disable reference cache\n"
+         DENT "ShowDeflineModifiers (131072) - show definition line modifiers\n"
+         DENT "DoNotUseAutoDef      (262144) - suppress automatic defline generator\n"
+         DENT "NewTpaDisplay        (542288) - use new TPA display",
 
                                  CArgDescriptions::eString, "");
 #undef DENT
