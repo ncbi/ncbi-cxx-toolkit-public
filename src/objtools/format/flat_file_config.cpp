@@ -548,7 +548,7 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
          DENT "ShowContigFeatures        (2) - show contig features\n"
          DENT "ShowContigSources         (4) - show contig sources\n"
          DENT "ShowFarTranslations       (8) - show far translations\n"
-         DENT "TranslateIfNoProduct     (16) - show translations if there are no products\n"
+         DENT "TranslateIfNoProduct     (16) - show translations if no products\n"
          DENT "AlwaysTranslateCDS       (32) - always translate CDS\n"
          DENT "OnlyNearFeatures         (64) - show only near features\n"
          DENT "FavorFarFeatures        (128) - show far features on segs\n"
