@@ -438,6 +438,7 @@ public:
         eQual_serovar,
         eQual_sex,
         eQual_site_type,
+        eQual_SO_type,
         eQual_specimen_voucher,
         eQual_standard_name,
         eQual_strain,
