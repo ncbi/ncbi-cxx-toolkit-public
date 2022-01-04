@@ -300,6 +300,7 @@ CDataLoader* CObjectManager::FindDataLoader(const string& loader_name) const
 
 void CObjectManager::GetRegisteredNames(TRegisteredNames& names)
 {
+    TReadLockGuard guard(m_OM_Lock);
     ITERATE(TMapNameToLoader, it, m_mapNameToLoader) {
         names.push_back(it->first);
     }
