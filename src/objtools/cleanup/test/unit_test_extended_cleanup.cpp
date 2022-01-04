@@ -401,6 +401,7 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
     // look for expected change flags
     vector<string> changes_str = changes->GetAllDescriptions();
     vector<string> expected;
+    expected.push_back("Change Publication");
     expected.push_back("Change Subsource");
     expected.push_back("Move Descriptor");
     s_ReportUnexpected(changes_str, expected);

@@ -440,7 +440,7 @@ bool CCleanup::IsEmpty(const CAuth_list::TAffil& affil)
 // Helpers for cleaning authors
 struct SAuthorClean
 {
-    bool m_Changed;
+    bool& m_Changed;
     bool m_FixInitials;
     void operator()(CRef<CAuthor> author)
     {
@@ -529,7 +529,6 @@ bool CCleanup::CleanupAuthList(CAuth_list& al, bool fix_initials)
                 auto& std = alnames.SetStd();
                 SAuthorClean cleaner{ rval, fix_initials };
                 std::for_each(std.begin(), std.end(), cleaner);
-                rval |= cleaner.m_Changed;
                 size_t before = std.size();
                 SAuthorEmpty em;
                 std.erase(std::remove_if(std.begin(), std.end(), em), std.end());
