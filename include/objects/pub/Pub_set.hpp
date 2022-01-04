@@ -57,11 +57,11 @@ public:
     CPub_set(void);
     // destructor
     ~CPub_set(void);
-    
+
     /// Get a label that is the concatenation of the pub labels for
     /// the pubs in the set.
     bool GetLabel(string* label, TLabelFlags flags = 0,
-                  ELabelVersion version = eLabel_DefaultVersion) const;
+                  ELabelVersion version = eLabel_DefaultVersion) const override;
 
 private:
     // Prohibit copy constructor and assignment operator
