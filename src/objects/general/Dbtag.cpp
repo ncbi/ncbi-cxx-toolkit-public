@@ -191,6 +191,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
 };
 
 static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
+    { "AllianceGenome", CDbtag::eDbtagType_AllianceGenome },
     { "BioProject", CDbtag::eDbtagType_BioProject },
     { "BioSample", CDbtag::eDbtagType_BioSample },
     { "CCDS", CDbtag::eDbtagType_CCDS },
@@ -726,7 +727,8 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_Ensembl, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016  
     { CDbtag::eDbtagType_PseudoCAP, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_dbVar, "https://www.ncbi.nlm.nih.gov/dbvar/variants/" },
-    { CDbtag::eDbtagType_EnsemblRapid, "https://rapid.ensembl.org/id/" }
+    { CDbtag::eDbtagType_EnsemblRapid, "https://rapid.ensembl.org/id/" },
+    { CDbtag::eDbtagType_AllianceGenome, "https://www.alliancegenome.org/gene/" }
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
