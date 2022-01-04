@@ -865,6 +865,9 @@ public:
     CBulkInsert& operator<<(short val);
     CBulkInsert& operator<<(Int4 val);
     CBulkInsert& operator<<(Int8 val);
+#if !NCBI_INT8_IS_LONG
+    CBulkInsert& operator<<(long val);
+#endif
     CBulkInsert& operator<<(float val);
     CBulkInsert& operator<<(double val);
     CBulkInsert& operator<<(bool val);

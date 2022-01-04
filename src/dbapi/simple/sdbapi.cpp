@@ -2413,6 +2413,19 @@ CBulkInsert::operator<<(Int8 val)
     return *this;
 }
 
+#if !NCBI_INT8_IS_LONG
+CBulkInsert&
+CBulkInsert::operator<<(long val)
+{
+#if SIZEOF_LONG == 8
+    m_Impl->WriteVal(static_cast<Int8>(val));
+#else
+    m_Impl->WriteVal(static_cast<Int4>(val));
+#endif
+    return *this;
+}
+#endif
+
 CBulkInsert&
 CBulkInsert::operator<<(float val)
 {
