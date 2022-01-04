@@ -4842,7 +4842,7 @@ void CNewCleanup_imp::x_SplitDbtag( CDbtag &dbt, vector< CRef< CDbtag > > & out_
     // check if we're trying to split something we shouldn't
     if (dbt.IsSetDb()) {
         string db = dbt.GetDb();
-        if (NStr::Equal(db, "MGD") || NStr::Equal(db, "MGI") || NStr::Equal(db, "HGNC") || NStr::Equal(db, "VGNC")) {
+        if (NStr::Equal(db, "MGD") || NStr::Equal(db, "MGI") || NStr::Equal(db, "HGNC") || NStr::Equal(db, "VGNC") || NStr::Equal(db, "AllianceGenome")) {
             return;
         }
     }
