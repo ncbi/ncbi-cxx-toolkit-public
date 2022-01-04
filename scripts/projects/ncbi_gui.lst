@@ -1,5 +1,6 @@
 #include "ncbi_gui_base.lst"
 internal/gbench/app
+misc$
 misc/third_party_static
 -[^g].*/app
 -[^g].*/unit_test.*
