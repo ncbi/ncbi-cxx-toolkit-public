@@ -1385,10 +1385,14 @@ void CSingleFeatValidator::x_ValidateGbquals()
             }
         } else {
             if ( ftype != CSeqFeatData::eSubtype_bad && !CSeqFeatData::IsLegalQualifier(ftype, gbqual) ) {
-                PostErr(eDiag_Warning,
-                    is_imp ? eErr_SEQ_FEAT_WrongQualOnImpFeat : eErr_SEQ_FEAT_WrongQualOnFeature,
-                    "Wrong qualifier " + qual_str + " for feature " +
-                    key);
+                if (ftype != CSeqFeatData::eSubtype_misc_feature ||
+                    gbqual != CSeqFeatData::eQual_feat_class ||
+                    !m_Imp.IsRefSeq()) {
+                    PostErr(eDiag_Warning,
+                        is_imp ? eErr_SEQ_FEAT_WrongQualOnImpFeat : eErr_SEQ_FEAT_WrongQualOnFeature,
+                        "Wrong qualifier " + qual_str + " for feature " +
+                        key);
+                }
             }
 
             if (gbq->IsSetVal() && !NStr::IsBlank(gbq->GetVal())) {
