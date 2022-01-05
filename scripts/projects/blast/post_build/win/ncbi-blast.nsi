@@ -84,6 +84,10 @@ Section "DefaultSection" SecDflt
   File "blast_formatter.exe"
   File "deltablast.exe"
   File "nghttp2.dll"
+  File "ncbi-vdb-md.dll"
+  File "blastn_vdb.exe"
+  File "tblastn_vdb.exe"
+  File "blast_formatter_vdb.exe"
   
   SetOutPath "$INSTDIR\doc"
   File "README.txt"
