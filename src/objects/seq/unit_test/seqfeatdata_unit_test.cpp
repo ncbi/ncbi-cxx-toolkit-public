@@ -2334,7 +2334,7 @@ BOOST_AUTO_TEST_CASE(Test_Unverified)
 
 BOOST_AUTO_TEST_CASE(Test_LegalQualsAny)
 {
-    const size_t numExpectedQuals = 137;
+    const size_t numExpectedQuals = 138;
     size_t count = 0;
     auto all_quals = CSeqFeatData::GetLegalQualifiers(CSeqFeatData::eSubtype_any);
     BOOST_CHECK_EQUAL(all_quals.size(), numExpectedQuals);

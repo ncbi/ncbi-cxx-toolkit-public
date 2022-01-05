@@ -364,6 +364,7 @@ public:
         eQual_evidence,
         eQual_exception,
         eQual_experiment,
+        eQual_feat_class,
         eQual_focus,
         eQual_frequency,
         eQual_function,
