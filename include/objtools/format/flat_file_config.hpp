@@ -77,9 +77,6 @@ struct SModelEvidance;
 
 // --- Flat File configuration class
 
-// NEW_HTML_FMT define enables new interceptor interface for HTML links generation
-#define NEW_HTML_FMT
-
 class NCBI_FORMAT_EXPORT IHTMLFormatter: public CObject
 {
 public:
@@ -404,7 +401,6 @@ public:
     // destructor
     ~CFlatFileConfig(void);
 
-#ifdef NEW_HTML_FMT
     void SetHTMLFormatter(CRef<IHTMLFormatter> html_fmt)
     {
         m_html_formatter = html_fmt;
@@ -413,7 +409,6 @@ public:
     {
         return *m_html_formatter;
     }
-#endif
 
     // -- Format
     // getters
@@ -756,9 +751,7 @@ private:
     TCustom     m_Custom;
     int         m_FeatDepth;
     int         m_GapDepth;
-#ifdef NEW_HTML_FMT
     CRef<IHTMLFormatter> m_html_formatter;
-#endif
 };
 
 

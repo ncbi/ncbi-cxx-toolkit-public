@@ -1115,34 +1115,12 @@ void CFlatSeqIdQVal::Format(TFlatQuals& q, const CTempString& name,
         id_str = m_Value->GetSeqIdString(true);
     }
 
-#ifdef NEW_HTML_FMT
     if (name == "protein_id") {
        ctx.Config().GetHTMLFormatter().FormatProteinId(id_str, *m_Value, string(id_str));
     }
     if (name == "transcript_id") {
        ctx.Config().GetHTMLFormatter().FormatTranscriptId(id_str, *m_Value, string(id_str));
     }
-#else
-    if (bHtml && name == "protein_id") {
-        string raw_id_str = id_str;
-        string raw_link_str = id_str;
-        CBioseq_Handle bsh = ctx.GetScope().GetBioseqHandle( *m_Value );
-        vector< CSeq_id_Handle > ids = bsh.GetId();
-        ITERATE( vector< CSeq_id_Handle >, it, ids ) {
-            CSeq_id_Handle hid = *it;
-            if ( hid.IsGi() ) {
-                raw_link_str = NStr::NumericToString(hid.GetGi());
-                break;
-            }
-        }
-        id_str = "<a href=\"";
-        id_str += strLinkBaseProt;
-        id_str += raw_link_str;
-        id_str += "\">";
-        id_str += raw_id_str;
-        id_str += "</a>";
-    }
-#endif
     x_AddFQ(q, name, id_str);
 }
 
