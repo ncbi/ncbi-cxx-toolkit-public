@@ -64,7 +64,11 @@ def main():
              "legacy_blast.pl",
              "update_blastdb.pl",
              "cleanup-blastdb-volumes.py",
-             "get_species_taxids.sh"
+             "get_species_taxids.sh",
+             "blastn_vdb.exe",
+             "tblastn_vdb.exe",
+             "blast_formatter_vdb.exe",
+             "ncbi-vdb-md.dll"
              ]
     
     cwd = os.getcwd()
