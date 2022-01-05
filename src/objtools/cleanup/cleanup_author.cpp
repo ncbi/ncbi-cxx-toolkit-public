@@ -438,17 +438,6 @@ bool CCleanup::IsEmpty(const CAuth_list::TAffil& affil)
 
 
 // Helpers for cleaning authors
-struct SAuthorClean
-{
-    bool& m_Changed;
-    bool m_FixInitials;
-    void operator()(CRef<CAuthor> author)
-    {
-        m_Changed |= CCleanup::CleanupAuthor(*author, m_FixInitials);
-    }
-};
-
-
 struct SAuthorEmpty
 {
     bool operator()(CRef<CAuthor>& cauth)
@@ -469,14 +458,14 @@ struct SAuthorEmpty
             return true;
 
         case CAuthor::TName::e_Name:
-        { {
-                const CName_std& nstd = name.GetName();
-                // last name is required
-                if (!nstd.IsSetLast() || NStr::IsBlank(nstd.GetLast())) {
-                    return true;
-                }
-                break;
-            }}
+        {
+            const CName_std& nstd = name.GetName();
+            // last name is required
+            if (!nstd.IsSetLast() || NStr::IsBlank(nstd.GetLast())) {
+                return true;
+            }
+            break;
+        }
 
         case CAuthor::TName::e_Ml:
             str = &(name.GetMl());
@@ -504,7 +493,9 @@ bool CCleanup::CleanupAuthList(CAuth_list& al, bool fix_initials)
     bool rval = false;
 
     if (al.IsSetAffil()) {
-        rval |= CleanupAffil(al.SetAffil());
+        if (CleanupAffil(al.SetAffil())) {
+            rval = true;
+        }
         if (IsEmpty(al.GetAffil())) {
             al.ResetAffil();
             rval = true;
@@ -514,48 +505,51 @@ bool CCleanup::CleanupAuthList(CAuth_list& al, bool fix_initials)
         typedef CAuth_list::TNames TNames;
         switch (al.GetNames().Which()) {
         case TNames::e_Ml:
-        { {
-            al.ConvertMlToStandard();
+            al.ConvertMlToStandard(false);
             rval = true;
-        }}
-        // !!!!!!!!!!!!!!!!!!!!!!
-        // !!!!!FALL-THROUGH!!!!!
-        // !!!!!!!!!!!!!!!!!!!!!!
+            NCBI_FALLTHROUGH;
         // ( since we just converted the ml to an std, we need to do the
         //   std clean-up step )
         case TNames::e_Std:
-        { {
-                auto& alnames = al.SetNames();
-                auto& std = alnames.SetStd();
-                SAuthorClean cleaner{ rval, fix_initials };
-                std::for_each(std.begin(), std.end(), cleaner);
-                size_t before = std.size();
-                SAuthorEmpty em;
-                std.erase(std::remove_if(std.begin(), std.end(), em), std.end());
-                if (std.size() != before) {
+        {
+            auto& alnames = al.SetNames();
+            auto& std = alnames.SetStd();
+            auto cleaner = [&rval, fix_initials](CRef<CAuthor>& author) {
+                if (CCleanup::CleanupAuthor(*author, fix_initials)) {
                     rval = true;
                 }
+            };
+            std::for_each(std.begin(), std.end(), cleaner);
+            size_t before = std.size();
+            SAuthorEmpty em;
+            std.erase(std::remove_if(std.begin(), std.end(), em), std.end());
+            if (std.size() != before) {
+                rval = true;
+            }
 
-                if (std.empty()) {
-                    ResetAuthorNames(alnames);
-                    rval = true;
-                }
-                break;
-            }}
+            if (std.empty()) {
+                ResetAuthorNames(alnames);
+                rval = true;
+            }
+            break;
+        }
         case TNames::e_Str:
-        { {
-                TNames& names = al.SetNames();
-                for (auto& it : names.SetStr()) {
-                    rval |= Asn2gnbkCompressSpaces(it);
-                }
-
-                rval |= CleanVisStringContainer(names.SetStr());
-                if (names.GetStr().empty()) {
-                    ResetAuthorNames(names);
+        {
+            TNames& names = al.SetNames();
+            for (string& it : names.SetStr()) {
+                if (Asn2gnbkCompressSpaces(it)) {
                     rval = true;
                 }
-                break;
-            }}
+            }
+            if (CleanVisStringContainer(names.SetStr())) {
+                rval = true;
+            }
+            if (names.GetStr().empty()) {
+                ResetAuthorNames(names);
+                rval = true;
+            }
+            break;
+        }
         default:
             break;
         }
@@ -597,53 +591,53 @@ bool CCleanup::CleanupAffil(CAffil& af)
         rval |= CleanVisString(af.SetStr());
         break;
     case CAffil::e_Std:
-    { {
-            CAffil::TStd& std = af.SetStd();
+    {
+        CAffil::TStd& std = af.SetStd();
 #define CLEAN_AFFIL_MEMBER(x) \
-            if (std.IsSet##x()) { \
-                string& val = std.Set##x(); \
-                rval |= CleanAndCompressJunk(val); \
-                if (val.empty()) { \
-                    std.Reset##x(); \
-                    rval = true; \
-                } \
-            }
+        if (std.IsSet##x()) { \
+            string& val = std.Set##x(); \
+            rval |= CleanAndCompressJunk(val); \
+            if (val.empty()) { \
+                std.Reset##x(); \
+                rval = true; \
+            } \
+        }
 
-            CLEAN_AFFIL_MEMBER(Affil);
-            CLEAN_AFFIL_MEMBER(Div);
-            CLEAN_AFFIL_MEMBER(City);
-            CLEAN_AFFIL_MEMBER(Sub);
-            CLEAN_AFFIL_MEMBER(Country);
-            CLEAN_AFFIL_MEMBER(Street);
-            CLEAN_AFFIL_MEMBER(Email);
-            CLEAN_AFFIL_MEMBER(Fax);
-            CLEAN_AFFIL_MEMBER(Phone);
-            CLEAN_AFFIL_MEMBER(Postal_code);
+        CLEAN_AFFIL_MEMBER(Affil);
+        CLEAN_AFFIL_MEMBER(Div);
+        CLEAN_AFFIL_MEMBER(City);
+        CLEAN_AFFIL_MEMBER(Sub);
+        CLEAN_AFFIL_MEMBER(Country);
+        CLEAN_AFFIL_MEMBER(Street);
+        CLEAN_AFFIL_MEMBER(Email);
+        CLEAN_AFFIL_MEMBER(Fax);
+        CLEAN_AFFIL_MEMBER(Phone);
+        CLEAN_AFFIL_MEMBER(Postal_code);
 #undef CLEAN_AFFIL_MEMBER
 
-            if (std.IsSetCountry()) {
-                const string& country = std.GetCountry();
-                if (NStr::EqualNocase(country, "U.S.A.")) {
-                    std.SetCountry("USA");
-                    rval = true;
-                } else if (NStr::EqualNocase(country, "USA") && !NStr::EqualCase(country, "USA")) {
-                    std.SetCountry("USA");
-                    rval = true;
-                }
+        if (std.IsSetCountry()) {
+            const string& country = std.GetCountry();
+            if (NStr::EqualNocase(country, "U.S.A.")) {
+                std.SetCountry("USA");
+                rval = true;
+            } else if (NStr::EqualNocase(country, "USA") && !NStr::EqualCase(country, "USA")) {
+                std.SetCountry("USA");
+                rval = true;
             }
+        }
 
-            if (std.IsSetSub() && std.IsSetCountry()) {
-                if (NStr::EqualCase(std.GetCountry(), "USA")) {
-                    string oldsub = std.GetSub();
-                    string newsub = NStr::Replace(oldsub, ".", "");
-                    if (!NStr::EqualNocase(oldsub, newsub)) {
-                        std.SetSub(newsub);
-                        rval = true;
-                    }
+        if (std.IsSetSub() && std.IsSetCountry()) {
+            if (NStr::EqualCase(std.GetCountry(), "USA")) {
+                string oldsub = std.GetSub();
+                string newsub = NStr::Replace(oldsub, ".", "");
+                if (!NStr::EqualNocase(oldsub, newsub)) {
+                    std.SetSub(newsub);
+                    rval = true;
                 }
             }
-            break;
-        }}
+        }
+        break;
+    }
     default:
         break;
     }
