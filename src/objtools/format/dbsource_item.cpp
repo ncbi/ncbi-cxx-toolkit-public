@@ -545,10 +545,6 @@ void CDBSourceItem::x_AddPDBBlock(CBioseqContext& ctx)
 
 string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
 {
-#ifndef NEW_HTML_FMT
-    const bool is_html = ( GetContext()->Config().DoHTML() );
-#endif
-
     CConstRef<CSeq_id> id;
     if (idh) {
         id = idh.GetSeqId();
@@ -620,7 +616,6 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
                     choice != CSeq_id::e_Swissprot) {
                     acc += '.' + NStr::IntToString(tsid->GetVersion());
                 }
-#ifdef NEW_HTML_FMT
 #if 0
                 GetContext()->Config().GetHTMLFormatter().FormatNucId(ht, *idh.GetSeqId(), GetContext()->GetScope().GetGi(idh), acc);
 #else
@@ -632,15 +627,6 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
                 }
 #endif
                 s += comma + sep + "accession " + ht;
-#else
-                if (is_html) {
-                    const TIntId gi = GetContext()->GetScope().GetGi(idh);
-                    s += comma + sep + "accession <a href=\"" + strLinkBaseNuc +
-                        NStr::NumericToString(gi) + "\">" + acc + "</a>";
-                } else {
-                    s += comma + sep + "accession " + acc;
-                }
-#endif
                 sep = " ";
             }
             /**

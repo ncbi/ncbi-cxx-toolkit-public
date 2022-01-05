@@ -534,19 +534,11 @@ void s_GetAssemblyInfo(const CBioseqContext& ctx, string& s, const CUser_object&
                 // } catch(...) {
                 //     // do nothing, we know there's an error because new_gi is zero
                 // }
-#ifdef NEW_HTML_FMT
                 if (IsValidAccession(accession)) {
                     ctx.Config().GetHTMLFormatter().FormatGeneralId(oss, accession);
                 } else {
                     oss << accession;
                 }
-#else
-                if( IsValidAccession(accession) ) {
-                    NcbiId(oss, accession, is_html);
-                } else {
-                    oss << accession;
-                }
-#endif
 
                 if( from > 0 && to > 0 ) {
                     oss << " (range: " << from << "-" << to << ")";
@@ -782,16 +774,12 @@ string CCommentItem::GetStringForRefTrack(const CBioseqContext& ctx, const CUser
     if ( !identical_to.empty() ) {
         oss << " The reference sequence is identical to ";
         const bool add_link = (is_html && identical_to_priority != eIdenticalToPriority_Name);
-#ifdef NEW_HTML_FMT
         if (add_link) {
             ctx.Config().GetHTMLFormatter().FormatGeneralId(oss, identical_to);
         }
         else {
             oss << identical_to;
         }
-#else
-        NcbiId( oss, identical_to, add_link );
-#endif
 
         if( ! identical_to_start.empty() && ! identical_to_end.empty() ) {
             oss << " (range: " << identical_to_start << "-" <<
@@ -1241,36 +1229,6 @@ string CCommentItem::GetStringForHTGS(CBioseqContext& ctx)
     return comment;
 }
 
-#ifndef NEW_HTML_FMT
-static
-string s_HtmlWrapModelEvidenceName( const SModelEvidance& me )
-{
-    stringstream strm;
-    strm << "<a href=\"" << strLinkBaseNuc;
-    if( me.gi > ZERO_GI ) {
-        strm << me.gi;
-    } else {
-        strm << me.name;
-    }
-    strm << "?report=graph";
-    if( (me.span.first >= 0) && (me.span.second >= me.span.first) ) {
-        const Int8 kPadAmount = 500;
-        // The "+1" is because we display 1-based to user and in URL
-        strm << "&v=" << max<Int8>(me.span.first + 1 - kPadAmount, 1)
-             << ":" << (me.span.second + 1 + kPadAmount); // okay if second number goes over end of sequence
-    }
-    strm << "\">" << me.name << "</a>";
-
-    return strm.str();
-}
-
-static
-string s_HtmlWrapTranscriptName( const string& name )
-{
-    return "<a href=\"" + strLinkBaseNuc + name + "\">" + name + "</a>";
-}
-#endif
-
 string CCommentItem::GetStringForModelEvidance(const CBioseqContext& ctx, const SModelEvidance& me)
 {
     const bool bHtml = ctx.Config().DoHTML();
@@ -1279,12 +1237,8 @@ string CCommentItem::GetStringForModelEvidance(const CBioseqContext& ctx, const 
 
     CNcbiOstrstream text;
 
-#ifdef NEW_HTML_FMT
     string me_name;
     ctx.Config().GetHTMLFormatter().FormatModelEvidence(me_name, me);
-#else
-    const string me_name = ( bHtml ? s_HtmlWrapModelEvidenceName(me) : me.name );
-#endif
 
     text << "MODEL " << *refseq << ":  " << "This record is predicted by "
          << "automated computational analysis. This record is derived from "
@@ -1300,12 +1254,8 @@ string CCommentItem::GetStringForModelEvidance(const CBioseqContext& ctx, const 
         int count = 0;
         string prefix;
         FOR_EACH_STRING_IN_LIST (str, me.assembly) {
-#ifdef NEW_HTML_FMT
             string tr_name;
             ctx.Config().GetHTMLFormatter().FormatTranscript(tr_name, *str);
-#else
-            const string tr_name = ( bHtml ? s_HtmlWrapTranscriptName(*str) : *str);
-#endif
             text << prefix << tr_name;
             count++;
             if (num_assm == count + 1) {
@@ -2244,11 +2194,7 @@ string s_CreateHistCommentString
         }
         /* was
         text << " gi:";
-#ifdef NEW_HTML_FMT
         ctx.Config().GetHTMLFormatter().FormatGeneralId(text, NStr::NumericToString(gis[count]));
-#else
-        NcbiId(text, gis[count], ctx.Config().DoHTML());
-#endif
         */
     }
     text << '.' << '\n';

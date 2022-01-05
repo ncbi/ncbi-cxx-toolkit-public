@@ -1083,7 +1083,6 @@ void CFlatFileConfig::FromArguments(const CArgs& args)
     }
 }
 
-#ifdef NEW_HTML_FMT
 void CHTMLEmptyFormatter::FormatProteinId(string& str, const CSeq_id& seq_id, const string& prot_id) const
 {
     str = prot_id;
@@ -1138,7 +1137,6 @@ void CHTMLEmptyFormatter::FormatUniProtId(string& str, const string& prot_id) co
 {
     str = prot_id;
 }
-#endif
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -734,45 +734,12 @@ void CGenbankFormatter::x_FormatSourceLine
 }
 
 
-#ifndef NEW_HTML_FMT
-static string s_GetHtmlTaxname(const CSourceItem& source)
-{
-    CNcbiOstrstream link;
-
-    if ( ! NStr::StartsWith(source.GetTaxname(), "Unknown", NStr::eNocase ) ) {
-        if (source.GetTaxid() != CSourceItem::kInvalidTaxid) {
-            link << "<a href=\"" << strLinkBaseTaxonomy << "id=" << source.GetTaxid() << "\">";
-        } else {
-            string taxname = source.GetTaxname();
-            replace(taxname.begin(), taxname.end(), ' ', '+');
-            link << "<a href=\"" << strLinkBaseTaxonomy << "name=" << taxname << "\">";
-        }
-        link << source.GetTaxname() << "</a>";
-    } else {
-        return source.GetTaxname();
-    }
-
-    string link_str = CNcbiOstrstreamToString(link);
-    TryToSanitizeHtml(link_str);
-    return link_str;
-}
-#endif
-
-
 void CGenbankFormatter::x_FormatOrganismLine(list<string>& l, const CSourceItem& source) const
 {
     // taxname
-#ifdef NEW_HTML_FMT
     string s;
     GetContext().GetConfig().GetHTMLFormatter().FormatTaxid(s, source.GetTaxid(), source.GetTaxname());
     Wrap(l, "ORGANISM", s, eSubp);
-#else
-    if (source.GetContext()->Config().DoHTML()) {
-        Wrap(l, "ORGANISM", s_GetHtmlTaxname(source), eSubp);
-    } else {
-        Wrap(l, "ORGANISM", source.GetTaxname(), eSubp);
-    }
-#endif
     // lineage
     if (source.GetContext()->Config().DoHTML()) {
         string lineage = source.GetLineage();
@@ -1499,54 +1466,7 @@ bool s_GetLinkFeatureKey(
 
     // assembly of the actual string:
     strLink.reserve(100); // euristical URL length
-#ifdef NEW_HTML_FMT
     item.GetContext()->Config().GetHTMLFormatter().FormatLocation(strLink, item.GetFeat().GetLocation(), GI_TO(TIntId, iGi), strRawKey);
-#else
-    // check if this is a protein or nucleotide link
-    bool is_prot = false;
-    {{
-            CBioseq_Handle bioseq_h;
-            const CSeq_loc & loc = item.GetFeat().GetLocation();
-            ITERATE(CSeq_loc, loc_ci, loc) {
-                bioseq_h = item.GetContext()->GetScope().GetBioseqHandle(loc_ci.GetSeq_id());
-                if (bioseq_h) {
-                    break;
-                }
-            }
-            if (bioseq_h) {
-                is_prot = (bioseq_h.GetBioseqMolType() == CSeq_inst::eMol_aa);
-            }
-    }}
-
-    strLink = "<a href=\"";
-
-    // link base
-    if (is_prot) {
-        strLink += strLinkBaseProt;
-    }
-    else {
-        strLink += strLinkBaseNuc;
-    }
-    strLink += NStr::NumericToString(iGi);
-
-    // location
-    if (item.GetFeat().GetLocation().IsInt() || item.GetFeat().GetLocation().IsPnt()) {
-        strLink += "?from=";
-        strLink += NStr::IntToString(iFrom);
-        strLink += "&amp;to=";
-        strLink += NStr::IntToString(iTo);
-    }
-    else if (strRawKey != "Precursor") {
-        strLink += "?itemid=";
-        string tbd = CFlatSeqLoc(item.GetFeat().GetLocation(), *item.GetContext(),
-            CFlatSeqLoc::eType_assembly, true).GetString();
-        strLink += tbd;
-    }
-
-    strLink += "\">";
-    strLink += strRawKey;
-    strLink += "</a>";
-#endif
     return true;
 }
 
