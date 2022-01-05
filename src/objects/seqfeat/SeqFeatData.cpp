@@ -1581,6 +1581,7 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_evidence,
            eQual_exception,
            eQual_experiment,
+           eQual_feat_class,
            eQual_function,
            eQual_gene,
            eQual_gene_synonym,
