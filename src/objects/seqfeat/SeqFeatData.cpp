@@ -801,14 +801,12 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_trans_splicing,
            eQual_usedin,
 } },
 
-{ eSubtype_org, {
-           eQual_SO_type,
-} },
+//{ eSubtype_org, {
+//},
 
 { eSubtype_cdregion, {
            eQual_EC_number,
@@ -839,7 +837,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_ribosomal_slippage,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_trans_splicing,
            eQual_transl_except,
@@ -872,7 +869,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_protein_id,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -899,7 +895,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_protein_id,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -928,7 +923,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_protein_id,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -956,7 +950,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_protein_id,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -983,7 +976,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_protein_id,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1007,7 +999,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_trans_splicing,
            eQual_usedin,
@@ -1034,7 +1025,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_trans_splicing,
            eQual_transcript_id,
@@ -1061,7 +1051,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_trans_splicing,
            eQual_usedin,
@@ -1087,7 +1076,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1111,7 +1099,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1135,7 +1122,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1159,7 +1145,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1186,27 +1171,22 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_trans_splicing,
            eQual_usedin,
 } },
 
-{ eSubtype_pub, {
-           eQual_SO_type,
-} },
+//{ eSubtype_pub, {
+//},
 
-{ eSubtype_seq, {
-           eQual_SO_type,
-} },
+//{ eSubtype_seq, {
+//},
 
-{ eSubtype_imp, {
-           eQual_SO_type,
-} },
+//{ eSubtype_imp, {
+//},
 
-{ eSubtype_allele, {
-           eQual_SO_type,
-} },
+//{ eSubtype_allele, {
+//},
 
 { eSubtype_attenuator, {
            eQual_allele,
@@ -1228,7 +1208,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_regulatory_class,
-           eQual_SO_type,
            eQual_usedin,
 } },
 
@@ -1250,7 +1229,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1273,7 +1251,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_regulatory_class,
-           eQual_SO_type,
            eQual_usedin,
 } },
 
@@ -1303,7 +1280,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_protein_id,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_transl_except,
            eQual_transl_table,
@@ -1328,7 +1304,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_note,
            eQual_old_locus_tag,
            eQual_replace,
-           eQual_SO_type,
            eQual_usedin,
 } },
 
@@ -1347,7 +1322,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_map,
            eQual_note,
            eQual_old_locus_tag,
-           eQual_SO_type,
            eQual_usedin,
 } },
 
@@ -1369,7 +1343,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1393,7 +1366,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_regulatory_class,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1419,7 +1391,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_trans_splicing,
            eQual_usedin,
@@ -1443,7 +1414,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_regulatory_class,
-           eQual_SO_type,
            eQual_usedin,
 } },
 
@@ -1466,7 +1436,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_old_locus_tag,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1491,7 +1460,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_partial,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_trans_splicing,
            eQual_usedin,
@@ -1515,7 +1483,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1536,7 +1503,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_map,
            eQual_note,
            eQual_old_locus_tag,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1561,7 +1527,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1583,7 +1548,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_map,
            eQual_note,
            eQual_old_locus_tag,
-           eQual_SO_type,
            eQual_usedin,
 } },
 
@@ -1606,7 +1570,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_old_locus_tag,
            eQual_phenotype,
            eQual_replace,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1653,7 +1616,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_note,
            eQual_old_locus_tag,
            eQual_recombination_class,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1676,7 +1638,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_old_locus_tag,
            eQual_operon,
            eQual_product,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1702,7 +1663,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_regulatory_class,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1723,7 +1683,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_map,
            eQual_note,
            eQual_old_locus_tag,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1744,13 +1703,11 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_mod_base,
            eQual_note,
            eQual_old_locus_tag,
-           eQual_SO_type,
            eQual_usedin,
 } },
 
-{ eSubtype_mutation, {
-           eQual_SO_type,
-} },
+//{ eSubtype_mutation, {
+//},
 
 { eSubtype_N_region, {
            eQual_allele,
@@ -1770,7 +1727,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1791,7 +1747,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_map,
            eQual_note,
            eQual_old_locus_tag,
-           eQual_SO_type,
            eQual_replace,
            eQual_usedin,
 } },
@@ -1814,7 +1769,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_regulatory_class,
-           eQual_SO_type,
            eQual_usedin,
 } },
 
@@ -1833,7 +1787,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_map,
            eQual_note,
            eQual_old_locus_tag,
-           eQual_SO_type,
            eQual_usedin,
 } },
 
@@ -1856,7 +1809,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_old_locus_tag,
            eQual_operon,
            eQual_product,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_trans_splicing,
            eQual_usedin,
@@ -1879,7 +1831,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_note,
            eQual_old_locus_tag,
            eQual_operon,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1900,7 +1851,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_map,
            eQual_note,
            eQual_old_locus_tag,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1927,7 +1877,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_regulatory_class,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1950,7 +1899,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_note,
            eQual_old_locus_tag,
            eQual_operon,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -1973,7 +1921,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_regulatory_class,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2003,7 +1950,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_rpt_unit_range,
            eQual_rpt_unit_seq,
            eQual_satellite,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_transposon,
            eQual_usedin,
@@ -2030,7 +1976,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_rpt_unit,
            eQual_rpt_unit_range,
            eQual_rpt_unit_seq,
-           eQual_SO_type,
            eQual_usedin,
 } },
 
@@ -2051,7 +1996,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_map,
            eQual_note,
            eQual_old_locus_tag,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2074,7 +2018,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2099,7 +2042,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_rpt_unit,
            eQual_rpt_unit_range,
            eQual_rpt_unit_seq,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2123,7 +2065,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2184,7 +2125,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_serotype,
            eQual_serovar,
            eQual_sex,
-           eQual_SO_type,
            eQual_specimen_voucher,
            eQual_strain,
            eQual_submitter_seqid,
@@ -2218,7 +2158,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_note,
            eQual_old_locus_tag,
            eQual_operon,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2237,7 +2176,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_map,
            eQual_note,
            eQual_old_locus_tag,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2259,7 +2197,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_regulatory_class,
-           eQual_SO_type,
            eQual_usedin,
 } },
 
@@ -2282,7 +2219,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_regulatory_class,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2305,7 +2241,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2326,7 +2261,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_note,
            eQual_old_locus_tag,
            eQual_replace,
-           eQual_SO_type,
            eQual_usedin,
 } },
 
@@ -2347,7 +2281,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2369,7 +2302,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2393,14 +2325,11 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_phenotype,
            eQual_product,
            eQual_replace,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
 
-{ eSubtype_virion, {
-           eQual_SO_type,
-} },
+//{ eSubtype_virion, {
 
 { eSubtype_3clip, {
            eQual_allele,
@@ -2417,7 +2346,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_map,
            eQual_note,
            eQual_old_locus_tag,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_trans_splicing,
            eQual_usedin,
@@ -2438,7 +2366,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_map,
            eQual_note,
            eQual_old_locus_tag,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_trans_splicing,
            eQual_usedin,
@@ -2459,7 +2386,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_map,
            eQual_note,
            eQual_old_locus_tag,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_trans_splicing,
            eQual_usedin,
@@ -2480,7 +2406,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_map,
            eQual_note,
            eQual_old_locus_tag,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_trans_splicing,
            eQual_usedin,
@@ -2504,7 +2429,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_regulatory_class,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2527,7 +2451,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_regulatory_class,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2539,7 +2462,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_inference,
            eQual_map,
            eQual_note,
-           eQual_SO_type,
 } },
 
 { eSubtype_operon, {
@@ -2557,7 +2479,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_phenotype,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2582,14 +2503,12 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_rpt_unit,
            eQual_rpt_unit_range,
            eQual_rpt_unit_seq,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
 
-{ eSubtype_site_ref, {
-           eQual_SO_type,
-} },
+//{ eSubtype_site_ref, {
+//},
 
 { eSubtype_region, {
            eQual_allele,
@@ -2638,7 +2557,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2665,7 +2583,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2690,26 +2607,21 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_site_type,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
 
-{ eSubtype_rsite, {
-           eQual_SO_type,
-} },
+//{ eSubtype_rsite, {
+//},
 
-{ eSubtype_user, {
-           eQual_SO_type,
-} },
+//{ eSubtype_user, {
+//},
 
-{ eSubtype_txinit, {
-           eQual_SO_type,
-} },
+//{ eSubtype_txinit, {
+//},
 
-{ eSubtype_num, {
-           eQual_SO_type,
-} },
+//{ eSubtype_num, {
+//},
 
 //sameasmisc_feature???
 { eSubtype_psec_str, {
@@ -2733,7 +2645,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_sec_str_type,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2759,7 +2670,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2786,7 +2696,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2847,7 +2756,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_serotype,
            eQual_serovar,
            eQual_sex,
-           eQual_SO_type,
            eQual_specimen_voucher,
            eQual_strain,
            eQual_submitter_seqid,
@@ -2886,7 +2794,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_trans_splicing,
            eQual_usedin,
@@ -2912,15 +2819,13 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_product,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_tag_peptide,
            eQual_usedin,
 } },
 
-{ eSubtype_clone, {
-           eQual_SO_type,
-} },
+//{ eSubtype_clone, {
+//},
 
 { eSubtype_variation_ref, {
            eQual_allele,
@@ -2941,7 +2846,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_phenotype,
            eQual_product,
            eQual_replace,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -2966,7 +2870,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_old_locus_tag,
            eQual_rpt_family,
            eQual_rpt_type,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_transposon,
            eQual_usedin,
@@ -2979,7 +2882,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_experiment,
            eQual_inference,
            eQual_note,
-           eQual_SO_type,
            eQual_standard_name,
 } },
 
@@ -2993,7 +2895,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_rpt_type,
            eQual_rpt_unit_range,
            eQual_rpt_unit_seq,
-           eQual_SO_type,
            eQual_standard_name,
 } },
 
@@ -3002,7 +2903,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_exception,
            eQual_gap_type,
            eQual_linkage_evidence,
-           eQual_SO_type,
 } },
 
 { eSubtype_regulatory, {
@@ -3026,7 +2926,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_pseudo,
            eQual_pseudogene,
            eQual_regulatory_class,
-           eQual_SO_type,
            eQual_standard_name,
 } },
 
@@ -3054,7 +2953,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_protein_id,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -3083,7 +2981,6 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_protein_id,
            eQual_pseudo,
            eQual_pseudogene,
-           eQual_SO_type,
            eQual_standard_name,
            eQual_usedin,
 } },
@@ -3233,7 +3130,6 @@ MAKE_TWOWAY_CONST_MAP(sc_QualPairs, CSeqFeatData::EQualifier, ct::tagStrNocase,
     { CSeqFeatData::eQual_serovar, "serovar" },
     { CSeqFeatData::eQual_sex, "sex" },
     { CSeqFeatData::eQual_site_type, "site_type" },
-    { CSeqFeatData::eQual_SO_type, "SO_type" },
     { CSeqFeatData::eQual_specimen_voucher, "specimen_voucher" },
     { CSeqFeatData::eQual_standard_name, "standard_name" },
     { CSeqFeatData::eQual_strain, "strain" },
@@ -3277,7 +3173,7 @@ CSeqFeatData::EQualifier CSeqFeatData::GetQualifierType(CTempString qual)
     return CSeqFeatData::eQual_bad;
 }
 
-std::pair<CSeqFeatData::EQualifier, CTempString> CSeqFeatData::GetQualifierTypeAndValue(CTempString qual)
+ std::pair<CSeqFeatData::EQualifier, CTempString> CSeqFeatData::GetQualifierTypeAndValue(CTempString qual)
 {
     auto iter = sc_QualPairs.second.find(qual);
     if (iter != sc_QualPairs.second.end())
