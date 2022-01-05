@@ -2343,11 +2343,11 @@ BOOST_AUTO_TEST_CASE(Test_LegalQualsAny)
     BOOST_CHECK_EQUAL(count, numExpectedQuals);
 
     auto empty_quals = CSeqFeatData::GetLegalQualifiers(CSeqFeatData::eSubtype_clone);
-    BOOST_CHECK_EQUAL(empty_quals.size(), 1);
+    BOOST_CHECK_EQUAL(empty_quals.size(), 0);
     count = 0;
     for (auto b : empty_quals)
         ++count;
-    BOOST_CHECK_EQUAL(count, 1);
+    BOOST_CHECK_EQUAL(count, 0);
 
     auto mandatory = CSeqFeatData::GetMandatoryQualifiers(CSeqFeatData::eSubtype_assembly_gap);
 
