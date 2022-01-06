@@ -52,7 +52,7 @@ typedef union dataval {
     bool        boolvalue;
     int	(*funcvalue)();
     Int8    bigintvalue;
-}	DataVal, *DataValPtr;
+} DataVal;
 
 typedef struct valnode {
     unsigned char choice;          /* to pick a choice */
@@ -61,22 +61,6 @@ typedef struct valnode {
     bool    fatal;
     struct valnode *next;  /* next in linked list */
 } ValNode, *ValNodePtr;
-
-typedef union _IntPnt_ {
-    int intvalue;
-    void* ptrvalue;
-} IntPnt;
-
-typedef struct _Choice_ {
-    unsigned char choice;
-    IntPnt value;
-} Choice, *ChoicePtr;
-
-/* convenience structure for holding head and tail of ValNode list for efficient tail insertion */
-typedef struct valnodeblock {
-    ValNodePtr  head;
-    ValNodePtr  tail;
-} ValNodeBlock, *ValNodeBlockPtr;
 
 ValNodePtr ValNodeNew(ValNodePtr vnp);
 ValNodePtr ValNodeFree(ValNodePtr vnp);
