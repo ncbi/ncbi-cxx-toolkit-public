@@ -526,6 +526,8 @@ char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw,
     curkw = *retkw;
     nextkw = curkw;
 
+    string strPtr;
+    strPtr.reserve(8);
     do                          /* repeat loop until it finds next key-word */
     {
         for (; ptr < eptr && *ptr != '\n'; ptr++)
@@ -538,8 +540,9 @@ char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw,
         ++ptr;                          /* newline character */
         ++len;
 
+        strPtr.assign((const char*) ptr, 4);
         nextkw = SrchKeyword(
-            ptr, 
+            strPtr, 
             (format == Parser::EFormat::SPROT) ? swissProtKeywords : emblKeywords);
         if (nextkw == ParFlat_UNKW)      /* it can be "XX" line,
                                             treat as same line */
