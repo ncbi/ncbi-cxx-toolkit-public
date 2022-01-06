@@ -1,6 +1,7 @@
 # $Id$
 
 NCBI_begin_app(logs_replay)
+  NCBI_requires(Linux)
   NCBI_sources(logs_replay)
   NCBI_uses_toolkit_libraries(ncbi_xcache_netcache)
 NCBI_end_app()
@@ -16,6 +17,7 @@ NCBI_begin_app(test_nc_stress)
 NCBI_end_app()
 
 NCBI_begin_app(test_nc_stress_pubmed)
+  NCBI_requires(unix)
   NCBI_sources(test_nc_stress_pubmed)
   NCBI_uses_toolkit_libraries(xconnserv)
 NCBI_end_app()
