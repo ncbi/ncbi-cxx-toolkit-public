@@ -39,7 +39,7 @@ sol_static="ncbi_cpp.sln gui/ncbi_gui.sln"
 sol_dll="ncbi_cpp_dll.sln gui/ncbi_gui_dll.sln"
 timer="date +'%H:%M'"
 
-# TRUE if parallell project build system is enabled in Visual Studio
+# TRUE if parallell project build (PPB) mode is enabled in Visual Studio
 is_ppb=false
 need_ppb_check=true
 
@@ -172,10 +172,10 @@ for tree in $build_trees ; do
         echo
         echo Start time: $start
         echo "INFO: Configure \"$tree\\$alias\""
-        echo "Command line: " $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg_configure" "_CONFIGURE_" $out
-        $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg_configure" "_CONFIGURE_" $out >/dev/null
-        echo
+        echo "Command line: " $build_dir/build_exec.bat "$tree/build/$sol" build "$arch" "$cfg_configure" "_CONFIGURE_" $out
+        $build_dir/build_exec.bat "$tree/build/$sol" build "$arch" "$cfg_configure" "_CONFIGURE_" $out >/dev/null
         status=$?
+        echo
         # Wait a bit to allow compiler to exit and flush logfile
         sleep 20
         if $need_ppb_check; then
@@ -192,7 +192,7 @@ for tree in $build_trees ; do
         echo "Build time: $start - `eval $timer`"
         echo STATUS = $status
         if [ $status -ne 0 ] ; then
-            echo "FAILED: Configure $tree\\build\\$sol, $cfg_configure"
+            echo "FAILED: Configure $tree/build/$sol, $cfg_configure"
         fi
         rm -f $out >/dev/null 2>&1
         if [ $status -ne 0 ] ; then
@@ -228,9 +228,9 @@ for tree in $build_trees ; do
             echo Start time: $start
             echo "$tree,$sol,$cfg" >> $build_dir/cfgs.log
             echo "INFO: Building \"$tree\\$cfg\\$alias\""
-            echo "Command line: " $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg" "_BUILD_ALL_" $out
+            echo "Command line: " $build_dir/build_exec.bat "$tree/build/$sol" build "$arch" "$cfg" "_BUILD_ALL_" $out
             echo
-            $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg" "_BUILD_ALL_" $out >/dev/null
+            $build_dir/retry.sh  $build_dir/build_exec.bat "$tree/build/$sol" build "$arch" "$cfg" "_BUILD_ALL_" $out
             status=$?
             # Wait a bit to allow compiler to exit and flush logfile
             sleep 20
@@ -248,8 +248,8 @@ for tree in $build_trees ; do
                 failed="1"
                 awk -f $check_awk $out >$out.res 2>/dev/null  &&  test ! -s $out.res  &&  failed="0"
                 if [ "$failed" = "1" ]; then
-                    echo "FAILED: Build $tree\\build\\$sol, $cfg"
-                    echo "FAILED: Build $tree\\build\\$sol, $cfg" > failed.build.log
+                    echo "FAILED: Build $tree/build/$sol, $cfg"
+                    echo "FAILED: Build $tree/build/$sol, $cfg" > failed.build.log
                     echo     >> failed.build.log
                     cat $out >> failed.build.log
                     cat $tree/build/${sol}_watchers.txt > failed.watchers.log
