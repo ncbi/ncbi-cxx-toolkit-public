@@ -115,6 +115,12 @@ extern vector<string> genbankKeywords;
 extern vector<string> emblKeywords;
 extern vector<string> swissProtKeywords;
 
+size_t genbankKeywordsMaxSize = std::max_element(
+        genbankKeywords.begin(),
+        genbankKeywords.end(),
+        [](const string& a, const string& b) {return a.size() < b.size(); })
+    ->size();
+
 /**********************************************************/
 void ShrinkSpaces(char* line)
 {
@@ -250,6 +256,8 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
     nextkw = ParFlat_UNKW;
     nextkw = curkw;
 
+    string strPtr;
+    strPtr.reserve(genbankKeywordsMaxSize + 4);
     do                          /* repeat loop until it finds next key-word */
     {
         for (; ptr < eptr && *ptr != '\n'; ptr++)
@@ -260,7 +268,8 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
         ++ptr;                          /* newline character */
         ++len;
 
-        nextkw = SrchKeyword(ptr, genbankKeywords);
+        strPtr.assign((const char*)ptr, genbankKeywordsMaxSize+1);
+        nextkw = SrchKeyword(strPtr, genbankKeywords);
         if (nextkw == ParFlat_UNKW)      /* it can be "XX" line,
                                             treat as same line */
                                             nextkw = curkw;
