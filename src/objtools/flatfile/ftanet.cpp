@@ -1275,19 +1275,6 @@ Int4 fta_is_con_div(ParserPtr pp, const objects::CSeq_id& id, const Char* acc)
 }
 
 /**********************************************************/
-CRef<objects::CCit_art> fta_citart_by_pmid(Int4 pmid, bool& done)
-{
-    CRef<objects::CCit_art> cit_art;
-
-    done = true;
-    if (pmid < 0)
-        return cit_art;
-    
-    cit_art = FetchPubPmId(pmid);
-    return cit_art;
-}
-
-/**********************************************************/
 void fta_init_gbdataloader()
 {
     objects::CGBDataLoader::RegisterInObjectManager(*objects::CObjectManager::GetInstance());

@@ -65,7 +65,7 @@
 #include "embl.h"
 
 #include <objtools/flatfile/flatdefn.h>
-#include "ftanet.h"
+#include "ftamed.h"
 
 #include "ftaerr.hpp"
 #include "indx_blk.h"
@@ -770,7 +770,6 @@ static CRef<objects::CCit_art> get_art(ParserPtr pp, char* bptr, CRef<objects::C
     char*      eptr;
     char*      end_tit;
     char*      s;
-    char*      p;
     char*      ss;
     char*      end_volume;
     char*      end_pages;
@@ -2011,7 +2010,6 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
     char*           r;
     bool              is_online;
     Int4              pmid;
-    bool              retstat;
 
     XmlIndexPtr       xip;
 
@@ -2162,11 +2160,10 @@ static CRef<objects::CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_au
     er = fta_remark_is_er(desc->IsSetComment() ? desc->GetComment().c_str() : NULL);
 
     CRef<objects::CCit_art> cit_art;
-    if((StringNCmp(p, "(er)", 4) == 0 || er > 0) &&
-       pmid > 0 && pp->medserver == 1)
+    if (pp->medserver == 1 && pmid > 0 && (StringNCmp(p, "(er)", 4) == 0 || er > 0))
     {
-        cit_art = fta_citart_by_pmid(pmid, retstat);
-        if(retstat && cit_art.Empty())
+        cit_art = FetchPubPmId(pmid);
+        if (cit_art.Empty())
             pmid = 0;
     }
 
@@ -2228,7 +2225,6 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
     char*           r;
     bool              is_online;
     Int4              pmid;
-    bool              retstat;
     Int4              er;
 
     CRef<objects::CPubdesc> desc(new objects::CPubdesc);
@@ -2362,12 +2358,10 @@ CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_da
     er = fta_remark_is_er(desc->IsSetComment() ? desc->GetComment().c_str() : NULL);
 
     CRef<objects::CCit_art> cit_art;
-
-    if(pp->medserver == 1 && pmid > 0 &&
-       (StringNCmp(p, "(er)", 4) == 0 || er > 0))
+    if (pp->medserver == 1 && pmid > 0 && (StringNCmp(p, "(er)", 4) == 0 || er > 0))
     {
-        cit_art = fta_citart_by_pmid(pmid, retstat);
-        if(retstat && cit_art == NULL)
+        cit_art = FetchPubPmId(pmid);
+        if(!cit_art)
             pmid = 0;
     }
 
@@ -2415,7 +2409,6 @@ static CRef<objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_
     char*           q;
     Int4              pmid;
 
-    bool              retstat;
     Int4              er;
 
     CRef<objects::CPubdesc> desc(new objects::CPubdesc);
@@ -2539,11 +2532,10 @@ static CRef<objects::CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_
     }
 
     CRef<objects::CCit_art> cit_art;
-    if ((StringNCmp(p, "(er)", 4) == 0 || er > 0) &&
-        pmid > 0 && pp->medserver == 1)
+    if (pp->medserver == 1 && pmid > 0 && (StringNCmp(p, "(er)", 4) == 0 || er > 0))
     {
-        cit_art = fta_citart_by_pmid(pmid, retstat);
-        if(retstat && cit_art == NULL)
+        cit_art = FetchPubPmId(pmid);
+        if(!cit_art)
             pmid = 0;
     }
 
@@ -2647,7 +2639,7 @@ static void fta_check_long_name_in_article(const objects::CCit_art& cit_art, boo
                 book = &cit_art.GetFrom().GetProc().GetBook();
         }
 
-        if (book != nullptr && book->IsSetAuthors())
+        if (book && book->IsSetAuthors())
             fta_check_long_last_name(book->GetAuthors(), soft_report);
     }
 }
@@ -2700,7 +2692,7 @@ static void fta_check_long_names(const objects::CPub& pub, bool soft_report)
                 book = &pub.GetMan().GetCit();
         }
 
-        if (book != nullptr && book->IsSetAuthors())
+        if (book && book->IsSetAuthors())
             fta_check_long_last_name(book->GetAuthors(), soft_report);
     }
     else if (pub.IsPatent())                   /* CitPat */
