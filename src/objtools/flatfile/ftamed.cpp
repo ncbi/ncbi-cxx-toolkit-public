@@ -38,25 +38,10 @@
 
 #include "ftacpp.hpp"
 
-#include <objects/seq/Pubdesc.hpp>
-#include <objects/pub/Pub.hpp>
-#include <objects/pub/Pub_equiv.hpp>
 #include <objects/mla/mla_client.hpp>
-#include <objects/mla/Title_msg.hpp>
-#include <objects/mla/Title_msg_list.hpp>
 #include <objects/biblio/Cit_art.hpp>
-#include <objects/biblio/Cit_jour.hpp>
-#include <objects/biblio/Title.hpp>
-#include <objects/medline/Medline_entry.hpp>
-#include <objects/general/Person_id.hpp>
-#include <objects/biblio/Imprint.hpp>
-#include <objects/biblio/Cit_art.hpp>
-#include <objects/biblio/Cit_book.hpp>
-#include <objects/biblio/ArticleIdSet.hpp>
-#include <objects/biblio/ArticleId.hpp>
-#include <objects/general/Dbtag.hpp>
-#include <corelib/ncbi_url.hpp>
-#include <connect/ncbi_conn_stream.hpp>
+#include <objects/biblio/Auth_list.hpp>
+#include <objtools/edit/pub_fix.hpp>
 
 #include "index.h"
 
@@ -64,7 +49,6 @@
 #include "asci_blk.h"
 #include "utilref.h"
 #include "ftamed.h"
-#include "xmlmisc.h"
 #include "ref.h"
 
 #ifdef THIS_FILE
@@ -161,121 +145,10 @@ void MedArchFini()
     }
 }
 
-/**********************************************************
- *
- *   MedlineToISO(tmp)
- *       converts a MEDLINE citation to ISO/GenBank style
- *
- **********************************************************/
-static void MedlineToISO(objects::CCit_art& cit_art)
-{
-    bool     is_iso;
-
-    cit_art.SetAuthors().ConvertMlToStd(true);
-
-    if (!cit_art.IsSetFrom() || !cit_art.GetFrom().IsJournal())
-        return;
-
-    /* from a journal - get iso_jta
-     */
-    objects::CCit_jour& journal = cit_art.SetFrom().SetJournal();
-
-    is_iso = false;
-
-    if (journal.IsSetTitle())
-    {
-        ITERATE(objects::CTitle::Tdata, title, journal.GetTitle().Get())
-        {
-            if ((*title)->IsIso_jta())      /* have it */
-            {
-                is_iso = true;
-                break;
-            }
-        }
-    }
-
-    if (!is_iso)
-    {
-        if (journal.IsSetTitle())
-        {
-            objects::CTitle::C_E& first_title = *(*journal.SetTitle().Set().begin());
-            
-            const std::string& title_str = journal.GetTitle().GetTitle(first_title.Which());
-
-            CRef<CTitle> title_new(new CTitle);
-            CRef<CTitle::C_E> type_new(new CTitle::C_E);
-            type_new->SetIso_jta(title_str);
-            title_new->Set().push_back(type_new);
-            
-            CRef<CTitle_msg> msg_new(new CTitle_msg);
-            msg_new->SetType(eTitle_type_iso_jta);
-            msg_new->SetTitle(*title_new);
-
-            CRef<CTitle_msg_list> msg_list_new;
-            try
-            {
-                msg_list_new = mlaclient.AskGettitle(*msg_new);
-            }
-            catch(exception &)
-            {
-                msg_list_new = null;
-            }
-
-            if (msg_list_new != null && msg_list_new->IsSetTitles())
-            {
-                bool gotit = false;
-                ITERATE(CTitle_msg_list::TTitles, item3, msg_list_new->GetTitles())
-                {
-                    const CTitle &cur_title = (*item3)->GetTitle();
-                    ITERATE(CTitle::Tdata, item, cur_title.Get())
-                    {
-                        if((*item)->IsIso_jta())
-                        {
-                            gotit = true;
-                            first_title.SetIso_jta((*item)->GetIso_jta());
-                            break;
-                        }
-                    }
-                    if (gotit)
-                        break;
-                }
-            }
-        }
-    }
-
-    if (journal.IsSetImp())
-    {
-        /* remove Eng language */
-        if (journal.GetImp().IsSetLanguage() && journal.GetImp().GetLanguage() == "Eng")
-            journal.SetImp().ResetLanguage();
-    }
-}
-
 /**********************************************************/
-CRef<objects::CCit_art> FetchPubPmId(Int4 pmid)
+CRef<CCit_art> FetchPubPmId(Int4 pmid)
 {
-    CRef<objects::CCit_art> cit_art;
-    if (pmid < 0)
-        return cit_art;
-
-    CRef<objects::CPub> pub;
-    try
-    {
-        pub = mlaclient.AskGetpubpmid(CPubMedId(ENTREZ_ID_FROM(Int4, pmid)));
-    }
-    catch(exception &)
-    {
-        pub.Reset();
-    }
-
-    if (pub.Empty() || !pub->IsArticle())
-        return cit_art;
-
-    cit_art.Reset(new objects::CCit_art);
-    cit_art->Assign(pub->GetArticle());
-    MedlineToISO(*cit_art);
-
-    return cit_art;
+    return edit::CPubFix::FetchPubPmId(ENTREZ_ID_FROM(Int4, pmid));
 }
 
 END_NCBI_SCOPE
