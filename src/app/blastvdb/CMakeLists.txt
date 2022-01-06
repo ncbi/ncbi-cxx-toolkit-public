@@ -2,5 +2,4 @@
 # $Id$
 #############################################################################
 
-NCBI_add_app(blastn_vdb)
-
+NCBI_add_app(blastn_vdb tblastn_vdb blast_vdb_cmd blast_formatter_vdb)
