@@ -48,7 +48,7 @@
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
-#endif  
+#endif
 #define THIS_FILE "gb_index.cpp"
 
 
@@ -60,6 +60,12 @@ vector<string> genbankKeywords = {
     "GSDBID", "CONTIG", "VERSION", "USER", "WGS", "PRIMARY", "MGA", "PROJECT",
     "DBLINK",
 };
+
+size_t genbankKeywordsMaxSize = std::max_element(
+        genbankKeywords.begin(),
+        genbankKeywords.end(),
+        [](const string& a, const string& b) {return a.size() < b.size(); })
+    ->size();
 
 
 // LCOV_EXCL_START
@@ -180,7 +186,7 @@ static Uint1 gb_err_field(char* str)
 
 /**********************************************************/
 static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid,
-                                Parser::ESource source, 
+                                Parser::ESource source,
                                 Parser::EMode mode,
                                 bool ign_toks)
 {
@@ -790,10 +796,10 @@ bool GenBankIndex(ParserPtr pp)
                     entry->vernum = 1;
                 else
                     ParseGenBankVersion(
-                            entry, 
-                            line_ver, 
-                            line_nid, 
-                            pp->source,   
+                            entry,
+                            line_ver,
+                            line_nid,
+                            pp->source,
                             pp->mode,
                             pp->ign_toks);
             }

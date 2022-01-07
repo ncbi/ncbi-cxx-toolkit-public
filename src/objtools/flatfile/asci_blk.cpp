@@ -114,12 +114,7 @@ const char *magic_phrases[] = {
 extern vector<string> genbankKeywords;
 extern vector<string> emblKeywords;
 extern vector<string> swissProtKeywords;
-
-size_t genbankKeywordsMaxSize = std::max_element(
-        genbankKeywords.begin(),
-        genbankKeywords.end(),
-        [](const string& a, const string& b) {return a.size() < b.size(); })
-    ->size();
+extern size_t         genbankKeywordsMaxSize;
 
 /**********************************************************/
 void ShrinkSpaces(char* line)
@@ -218,7 +213,7 @@ void xGetGenBankBlocks(Entry& entry)
 {
     vector<string> lines;
     NStr::Split(entry.mBaseData, "\n", lines);
-    
+
     vector<string> sectionLines;
     int currentKw = ParFlat_LOCUS;
     int nextKw = currentKw;
@@ -236,7 +231,7 @@ void xGetGenBankBlocks(Entry& entry)
             sectionLines.clear();
             sectionLines.push_back(line);
             continue;
-        } 
+        }
         sectionLines.push_back(line);
     }
     entry.mSections.push_back(new Section(currentKw, sectionLines));
@@ -551,7 +546,7 @@ char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw,
 
         strPtr.assign((const char*) ptr, 4);
         nextkw = SrchKeyword(
-            strPtr, 
+            strPtr,
             (format == Parser::EFormat::SPROT) ? swissProtKeywords : emblKeywords);
         if (nextkw == ParFlat_UNKW)      /* it can be "XX" line,
                                             treat as same line */
@@ -1680,7 +1675,7 @@ void GetSequenceOfKeywords(const DataBlk& entry, Int2 type, Int2 col_data,
         StripECO(kwstr);
     if(type == ParFlat_KW)
         kwstr = FixEMBLKeywords(kwstr);
-    
+
 
 
     tsbp = TokenStringByDelimiter(kwstr, ';');
@@ -1953,7 +1948,7 @@ unique_ptr<unsigned char[]> GetDNAConv(void)
         const string& code = objects::CSeqportUtil::GetCode(objects::eSeq_code_type_iupacna, i);
 
         dnaconv[static_cast<int>(code[0])] = code[0];
-        dnaconv[(int)tolower(code[0])] = code[0];   
+        dnaconv[(int)tolower(code[0])] = code[0];
     }
 
     return dnaconv;
@@ -3774,7 +3769,7 @@ bool XMLCheckCDS(char* entry, XmlIndexPtr xip)
         if (fxip != NULL)
             break;
     }
-    
+
     if (txip == NULL)
         return(false);
     return(true);
