@@ -1198,14 +1198,17 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
         x_CreateCancelBenchmarkCallback();
     }
 
-    if (args["view"]) {
-        const string& view = args["view"].AsString();
-        if (view == "all") {
+    {
+        bool nuc = args["og"] || args["on"];
+        bool prot = args["op"];
+        if (nuc && prot) {
             cfg.SetViewAll();
-        } else if (view == "nuc") {
-            cfg.SetViewNuc();
-        } else if (view == "prot") {
-            cfg.SetViewProt();
+        } else {
+            if (nuc) {
+                cfg.SetViewNuc();
+            } else if (prot) {
+                cfg.SetViewProt();
+            }
         }
     }
 
