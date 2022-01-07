@@ -1198,6 +1198,17 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
         x_CreateCancelBenchmarkCallback();
     }
 
+    if (args["view"]) {
+        const string& view = args["view"].AsString();
+        if (view == "all") {
+            cfg.SetViewAll();
+        } else if (view == "nuc") {
+            cfg.SetViewNuc();
+        } else if (view == "prot") {
+            cfg.SetViewProt();
+        }
+    }
+
     //CFlatFileConfig cfg(
     //    format, mode, style, flags, view, gff_options, genbank_blocks,
     //    genbank_callback.GetPointerOrNull(), m_pCanceledCallback.get(),
