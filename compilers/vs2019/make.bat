@@ -144,6 +144,7 @@ goto ABORT
 
 rem --------------------------------------------------------------------------------
 rem Configure: always use ReleaseDLL
+
 :CONFIG
 
 rem --- Process options
@@ -156,15 +157,19 @@ if not "%with_openmp%" == "" (
 time /t
 echo INFO: Configure "%libdll%\%solution% [ReleaseDLL|%arch%]"
 set log=__%libdll%_%solution_name%.configure.log
-echo %DEVENV% %libdll%\build\%solution%.sln /build "ReleaseDLL|%archwc%" /project "_CONFIGURE_" /out %log%
-%DEVENV% %libdll%\build\%solution%.sln /build "ReleaseDLL|%archwc%" /project "_CONFIGURE_" /out %log%
+echo %DEVENV% %libdll%/build/%solution%.sln /build "ReleaseDLL|%archwc%" /project "_CONFIGURE_" /out %log%
+%DEVENV% %libdll%/build/%solution%.sln /build "ReleaseDLL|%archwc%" /project "_CONFIGURE_" /out %log%
+if errorlevel 1 {
+   type %log%
+   goto ABORT
+}
 type %log%
-if errorlevel 1 goto ABORT
 if not _%cmd% == _make goto COMPLETE
 
 
 rem --------------------------------------------------------------------------------
 rem Process all configurations
+
 :CFGLOOP
 
 for %%c in (%cfgs%) do (
@@ -191,9 +196,14 @@ rem Subroutines
 :build
    echo INFO: Building "%libdll%\%solution% [%1|%arch%]"
    set log=__%libdll%_%solution_name%.build.%1.log
-   %DEVENV% %libdll%\build\%solution%.sln /build "%1|%archw%" /project "_BUILD_ALL_" /out %log%
+   set err=0
+rem   echo %DEVENV% %libdll%/build/%solution%.sln /build "%1|%archw%" /project "_BUILD_ALL_" /out %log%
+rem        %DEVENV% %libdll%/build/%solution%.sln /build "%1|%archw%" /project "_BUILD_ALL_" /out %log%
+   echo ./retry.sh ./build_exec.bat %libdll%/build/%solution%.sln build %arch% %1 _BUILD_ALL_ %log%
+   bash -c "./retry.sh ./build_exec.bat %libdll%/build/%solution%.sln build %arch% %1 _BUILD_ALL_ %log%; exit $?"
+   if errorlevel 1 set err=1
    type %log%
-   exit /b %errorlevel%
+   exit /b %err%
 
 :check
    echo INFO: Checking init
