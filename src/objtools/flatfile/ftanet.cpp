@@ -146,7 +146,7 @@ static char* fta_strip_pub_comment(char* comment, KwordBlkPtr kbp)
 }
 
 /**********************************************************/
-static void fta_fix_last_initials(objects::CName_std &namestd,
+static void fta_fix_last_initials(CName_std &namestd,
                                   bool initials)
 {
     char *str;
@@ -237,7 +237,7 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
 {
     bool got_pmid = false;
 
-    NON_CONST_ITERATE(objects::CPub_equiv::Tdata, pub, pub_list)
+    NON_CONST_ITERATE(CPub_equiv::Tdata, pub, pub_list)
     {
         if(!(*pub)->IsPmid())
             continue;
@@ -245,12 +245,12 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
         break;
     }
 
-    NON_CONST_ITERATE(objects::CPub_equiv::Tdata, pub, pub_list)
+    NON_CONST_ITERATE(CPub_equiv::Tdata, pub, pub_list)
     {
-        objects::CAuth_list *authors;
+        CAuth_list* authors;
         if((*pub)->IsArticle())
         {
-            objects::CCit_art &art = (*pub)->SetArticle();
+            CCit_art &art = (*pub)->SetArticle();
             if(!art.IsSetAuthors() || !art.CanGetAuthors())
                 continue;
 
@@ -258,7 +258,7 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
         }
         else if((*pub)->IsSub())
         {
-            objects::CCit_sub &sub = (*pub)->SetSub();
+            CCit_sub& sub = (*pub)->SetSub();
             if(!sub.IsSetAuthors() || !sub.CanGetAuthors())
                 continue;
 
@@ -266,7 +266,7 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
         }
         else if((*pub)->IsGen())
         {
-            objects::CCit_gen &gen = (*pub)->SetGen();
+            CCit_gen& gen = (*pub)->SetGen();
             if(!gen.IsSetAuthors() || !gen.CanGetAuthors())
                 continue;
 
@@ -274,7 +274,7 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
         }
         else if((*pub)->IsBook())
         {
-            objects::CCit_book &book = (*pub)->SetBook();
+            CCit_book& book = (*pub)->SetBook();
             if(!book.IsSetAuthors() || !book.CanGetAuthors())
                 continue;
 
@@ -282,11 +282,11 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
         }
         else if((*pub)->IsMan())
         {
-            objects::CCit_let &man = (*pub)->SetMan();
+            CCit_let& man = (*pub)->SetMan();
             if(!man.IsSetCit() || !man.CanGetCit())
                 continue;
 
-            objects::CCit_book &book = man.SetCit();
+            CCit_book& book = man.SetCit();
             if(!book.IsSetAuthors() || !book.CanGetAuthors())
                 continue;
 
@@ -294,7 +294,7 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
         }
         else if((*pub)->IsPatent())
         {
-            objects::CCit_pat &pat = (*pub)->SetPatent();
+            CCit_pat& pat = (*pub)->SetPatent();
             if(!pat.IsSetAuthors() || !pat.CanGetAuthors())
                 continue;
 
@@ -305,26 +305,26 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
 
 
         if(authors->IsSetAffil() && authors->CanGetAffil() &&
-           authors->GetAffil().Which() == objects::CAffil::e_Str)
+           authors->GetAffil().Which() == CAffil::e_Str)
         {
-            objects::CAffil &affil = authors->SetAffil();
+            CAffil& affil = authors->SetAffil();
             char *aff = (char *) affil.GetStr().c_str();
             ShrinkSpaces(aff);
             affil.SetStr(aff);
         }
 
         if(authors->IsSetNames() && authors->CanGetNames() &&
-           authors->GetNames().Which() == objects::CAuth_list::TNames::e_Std)
+           authors->GetNames().Which() == CAuth_list::TNames::e_Std)
         {
-            objects::CAuth_list::TNames &names = authors->SetNames();
-            objects::CAuth_list::TNames::TStd::iterator it = (names.SetStd()).begin();
-            objects::CAuth_list::TNames::TStd::iterator it_end = (names.SetStd()).end();
+            CAuth_list::TNames& names = authors->SetNames();
+            CAuth_list::TNames::TStd::iterator it = (names.SetStd()).begin();
+            CAuth_list::TNames::TStd::iterator it_end = (names.SetStd()).end();
             for(; it != it_end; it++)
             {
                 if((*it)->IsSetAffil() && (*it)->CanGetAffil() &&
-                   (*it)->GetAffil().Which() == objects::CAffil::e_Str)
+                   (*it)->GetAffil().Which() == CAffil::e_Str)
                 {
-                    objects::CAffil &affil = (*it)->SetAffil();
+                    CAffil& affil = (*it)->SetAffil();
                     char *aff = (char *) affil.GetStr().c_str();
                     ShrinkSpaces(aff);
                     affil.SetStr(aff);
@@ -332,7 +332,7 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
                 if((*it)->IsSetName() && (*it)->CanGetName() &&
                    (*it)->GetName().IsName())
                 {
-                    objects::CName_std &namestd = (*it)->SetName().SetName();
+                    CName_std& namestd = (*it)->SetName().SetName();
 /* bsv: commented out single letter first name population*/
                     if(source != Parser::ESource::SPROT &&
                        !got_pmid)
@@ -345,25 +345,24 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
                         }
                         if((*pub)->IsArticle())
                         {
-                            objects::CCit_art &art1 = (*pub)->SetArticle();
+                            CCit_art& art1 = (*pub)->SetArticle();
                             if(art1.IsSetAuthors() && art1.CanGetAuthors())
                             {
-                                objects::CAuth_list *authors1;
-                                authors1 = &art1.SetAuthors();
+                                CAuth_list* authors1 = &art1.SetAuthors();
                                 if(authors1->IsSetNames() &&
                                    authors1->CanGetNames() &&
-                                   authors1->GetNames().Which() == objects::CAuth_list::TNames::e_Std)
+                                   authors1->GetNames().Which() == CAuth_list::TNames::e_Std)
                                 {
-                                    objects::CAuth_list::TNames &names1 = authors1->SetNames();
-                                    objects::CAuth_list::TNames::TStd::iterator it1 = (names1.SetStd()).begin();
-                                    objects::CAuth_list::TNames::TStd::iterator it1_end = (names1.SetStd()).end();
+                                    CAuth_list::TNames& names1 = authors1->SetNames();
+                                    CAuth_list::TNames::TStd::iterator it1 = (names1.SetStd()).begin();
+                                    CAuth_list::TNames::TStd::iterator it1_end = (names1.SetStd()).end();
                                     for(; it1 != it1_end; it1++)
                                     {
                                         if((*it1)->IsSetName() &&
                                            (*it1)->CanGetName() &&
                                            (*it1)->GetName().IsName())
                                         {
-                                            objects::CName_std &namestd1 = (*it1)->SetName().SetName();
+                                            CName_std& namestd1 = (*it1)->SetName().SetName();
                                             if(!namestd1.IsSetFirst()  &&  namestd1.IsSetInitials()) {
                                                 if (!namestd.IsSetFirst() && namestd.IsSetInitials()) {
                                                     auto initials = namestd.GetInitials();
@@ -394,16 +393,16 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
 /**********************************************************/
 static void fta_fix_imprint_language(TPubList &pub_list)
 {
-    NON_CONST_ITERATE(objects::CPub_equiv::Tdata, pub, pub_list)
+    NON_CONST_ITERATE(CPub_equiv::Tdata, pub, pub_list)
     {
         if(!(*pub)->IsArticle())
             continue;
 
-        objects::CCit_art &art = (*pub)->SetArticle();
+        CCit_art& art = (*pub)->SetArticle();
         if(!art.IsSetFrom() || !art.GetFrom().IsJournal())
             continue;
 
-        objects::CCit_jour &journal = art.SetFrom().SetJournal();
+        CCit_jour& journal = art.SetFrom().SetJournal();
 
         if(journal.IsSetImp() && journal.GetImp().IsSetLanguage())
         {
@@ -419,21 +418,21 @@ static void fta_fix_imprint_language(TPubList &pub_list)
 }
 
 /**********************************************************/
-static void fta_strip_er_remarks(objects::CPubdesc& pub_descr)
+static void fta_strip_er_remarks(CPubdesc& pub_descr)
 {
     if (!pub_descr.IsSetComment())
         return;
 
-    ITERATE(objects::CPub_equiv::Tdata, pub, pub_descr.GetPub().Get())
+    ITERATE(CPub_equiv::Tdata, pub, pub_descr.GetPub().Get())
     {
         if (!(*pub)->IsArticle())
             continue;
 
-        const objects::CCit_art& art = (*pub)->GetArticle();
+        const CCit_art& art = (*pub)->GetArticle();
         if (!art.IsSetFrom() || !art.GetFrom().IsJournal())
             continue;
 
-        const objects::CCit_jour& journal = art.GetFrom().GetJournal();
+        const CCit_jour& journal = art.GetFrom().GetJournal();
         
         int status = 0;
         if (journal.IsSetImp() && journal.GetImp().IsSetPubstatus())
@@ -467,7 +466,7 @@ static Uint1 fta_init_med_server(void)
 /**********************************************************/
 static Uint1 fta_init_tax_server(void)
 {
-    objects::CTaxon1 taxon_srv;
+    CTaxon1 taxon_srv;
     if (!taxon_srv.Init())
         return(2);
     return(1);
@@ -622,7 +621,7 @@ private:
 static void fta_check_pub_ids(TPubList& pub_list)
 {
     bool found = false;
-    ITERATE(objects::CPub_equiv::Tdata, pub, pub_list)
+    ITERATE(CPub_equiv::Tdata, pub, pub_list)
     {
         if ((*pub)->IsArticle())
         {
@@ -634,7 +633,7 @@ static void fta_check_pub_ids(TPubList& pub_list)
     if (found)
         return;
 
-    for (objects::CPub_equiv::Tdata::iterator pub = pub_list.begin(); pub != pub_list.end();)
+    for (CPub_equiv::Tdata::iterator pub = pub_list.begin(); pub != pub_list.end();)
     {
         if (!(*pub)->IsMuid() && !(*pub)->IsPmid())
         {
@@ -757,7 +756,7 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, ParserPtr pp, bool er)
     if (new_cit_art.NotEmpty() && !ibp->drop)
     {
         cit_arts.clear();
-        CRef<objects::CPub> new_pub(new objects::CPub);
+        CRef<CPub> new_pub(new CPub);
         new_pub->SetArticle(*new_cit_art);
         cit_arts.push_back(new_pub);
 
@@ -867,7 +866,7 @@ void CFindPub::Apply(list<CRef<CSeq_entry>>& seq_entries)
 {
     for (auto pEntry : seq_entries) 
     {
-        for (CTypeIterator<objects::CBioseq_set> bio_set(Begin(*pEntry)); bio_set; ++bio_set)
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*pEntry)); bio_set; ++bio_set)
         {
             find_pub(m_pParser, bio_set->SetAnnot(), bio_set->SetDescr());
 
@@ -878,7 +877,7 @@ void CFindPub::Apply(list<CRef<CSeq_entry>>& seq_entries)
                 bio_set->ResetAnnot();
         }
 
-        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*pEntry)); bioseq; ++bioseq)
+        for (CTypeIterator<CBioseq> bioseq(Begin(*pEntry)); bioseq; ++bioseq)
         {
             find_pub(m_pParser, bioseq->SetAnnot(), bioseq->SetDescr());
 
@@ -908,15 +907,15 @@ void fta_find_pub_explore(ParserPtr pp, TEntryList& seq_entries)
 }
 
 /**********************************************************/
-static void new_synonym(objects::COrg_ref& org_ref, objects::COrg_ref& tax_org_ref)
+static void new_synonym(COrg_ref& org_ref, COrg_ref& tax_org_ref)
 {
     if (!org_ref.CanGetSyn() || !tax_org_ref.CanGetSyn())
         return;
 
-    ITERATE(objects::COrg_ref::TSyn, org_syn, org_ref.GetSyn())
+    ITERATE(COrg_ref::TSyn, org_syn, org_ref.GetSyn())
     {
         bool found = false;
-        ITERATE(objects::COrg_ref::TSyn, tax_syn, tax_org_ref.GetSyn())
+        ITERATE(COrg_ref::TSyn, tax_syn, tax_org_ref.GetSyn())
         {
             if (*org_syn == *tax_syn)
             {
@@ -938,7 +937,7 @@ static void new_synonym(objects::COrg_ref& org_ref, objects::COrg_ref& tax_org_r
 #define TAX_SERVER_TIMEOUT 3
 static const STimeout s_timeout = { TAX_SERVER_TIMEOUT, 0 };
 
-static void fix_synonyms(objects::CTaxon1& taxon, objects::COrg_ref& org_ref)
+static void fix_synonyms(CTaxon1& taxon, COrg_ref& org_ref)
 {
     bool with_syns = taxon.SetSynonyms(false);
     if (!with_syns)
@@ -948,11 +947,11 @@ static void fix_synonyms(objects::CTaxon1& taxon, objects::COrg_ref& org_ref)
 }
 
 /**********************************************************/
-static CRef<objects::COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* drop, Int4 taxid, bool isoh)
+static CRef<COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* drop, Int4 taxid, bool isoh)
 {
-    CConstRef<objects::CTaxon2_data> taxdata;
+    CConstRef<CTaxon2_data> taxdata;
 
-    objects::CTaxon1 taxon;
+    CTaxon1 taxon;
 
     bool connection_failed = false;
     for (size_t i = 0; i < 3 && taxdata.Empty(); ++i)
@@ -968,7 +967,7 @@ static CRef<objects::COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* 
         }
     }
 
-    CRef<objects::COrg_ref> ret;
+    CRef<COrg_ref> ret;
     if (taxdata.Empty())
     {
         if (connection_failed)
@@ -992,7 +991,7 @@ static CRef<objects::COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* 
                   "Taxarch hit is not on species level: [taxid %d].", taxid);
     }
 
-    ret.Reset(new objects::COrg_ref);
+    ret.Reset(new COrg_ref);
     ret->Assign(taxdata->GetOrg());
     fix_synonyms(taxon, *ret);
 
@@ -1003,9 +1002,9 @@ static CRef<objects::COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* 
 }
 
 /**********************************************************/
-CRef<objects::COrg_ref> fta_fix_orgref_byid(ParserPtr pp, Int4 taxid, unsigned char* drop, bool isoh)
+CRef<COrg_ref> fta_fix_orgref_byid(ParserPtr pp, Int4 taxid, unsigned char* drop, bool isoh)
 {
-    CRef<objects::COrg_ref> ret;
+    CRef<COrg_ref> ret;
 
     if(taxid < 1 && pp->taxserver == 0)
         return ret;
@@ -1033,14 +1032,14 @@ CRef<objects::COrg_ref> fta_fix_orgref_byid(ParserPtr pp, Int4 taxid, unsigned c
 }
 
 /**********************************************************/
-static CRef<objects::COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop, objects::COrg_ref& org_ref,
-                                                           const Char* pn, int merge, Int4 attempt)
+static CRef<COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop, COrg_ref& org_ref,
+                                      const Char* pn, int merge, Int4 attempt)
 {
     IndexblkPtr ibp = pp->entrylist[pp->curindx];
 
-    CConstRef<objects::CTaxon2_data> taxdata;
+    CConstRef<CTaxon2_data> taxdata;
 
-    objects::CTaxon1 taxon;
+    CTaxon1 taxon;
 
     bool connection_failed = true;
     for (size_t i = 0; i < 3 && taxdata.Empty(); ++i)
@@ -1060,7 +1059,7 @@ static CRef<objects::COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop
             taxon.Fini();
     }
 
-    CRef<objects::COrg_ref> ret;
+    CRef<COrg_ref> ret;
 
     if (taxdata.Empty())
     {
@@ -1105,7 +1104,7 @@ static CRef<objects::COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop
                   "Taxarch hit is not on species level for [%s].", pn);
     }
 
-    ret.Reset(new objects::COrg_ref);
+    ret.Reset(new COrg_ref);
 
     if (merge)
         ret->Assign(org_ref);
@@ -1116,7 +1115,7 @@ static CRef<objects::COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop
 }
 
 /**********************************************************/
-void fta_fix_orgref(ParserPtr pp, objects::COrg_ref& org_ref, unsigned char* drop,
+void fta_fix_orgref(ParserPtr pp, COrg_ref& org_ref, unsigned char* drop,
                     char* organelle)
 {
     Int4      attempt;
@@ -1173,7 +1172,7 @@ void fta_fix_orgref(ParserPtr pp, objects::COrg_ref& org_ref, unsigned char* dro
     {
         merge = 1;
 
-        CRef<objects::COrg_ref> new_org_ref = fta_replace_org(pp, drop, org_ref, taxname.c_str(), merge, attempt);
+        CRef<COrg_ref> new_org_ref = fta_replace_org(pp, drop, org_ref, taxname.c_str(), merge, attempt);
         if (new_org_ref.Empty() && attempt == 1)
         {
             org_ref.SetTaxname(old_taxname);
@@ -1195,20 +1194,20 @@ void fta_fix_orgref(ParserPtr pp, objects::COrg_ref& org_ref, unsigned char* dro
 }
 
 /**********************************************************/
-static TGi fta_get_gi_for_seq_id(const objects::CSeq_id& id)
+static TGi fta_get_gi_for_seq_id(const CSeq_id& id)
 {
-    TGi gi = objects::sequence::GetGiForId(id, GetScope());
+    TGi gi = sequence::GetGiForId(id, GetScope());
     if(gi > ZERO_GI)
         return(gi);
 
 
-    objects::CSeq_id test_id;
+    CSeq_id test_id;
     test_id.SetGenbank().SetAccession(HEALTHY_ACC);
 
     int i = 0;
     for (; i < 5; i++)
     {
-        if (objects::sequence::GetGiForId(test_id, GetScope()) > ZERO_GI)
+        if (sequence::GetGiForId(test_id, GetScope()) > ZERO_GI)
             break;
         SleepSec(3);
     }
@@ -1216,7 +1215,7 @@ static TGi fta_get_gi_for_seq_id(const objects::CSeq_id& id)
     if(i == 5)
         return GI_CONST(-1);
 
-    gi = objects::sequence::GetGiForId(id, GetScope());
+    gi = sequence::GetGiForId(id, GetScope());
     if (gi > ZERO_GI)
         return(gi);
 
@@ -1228,7 +1227,7 @@ static TGi fta_get_gi_for_seq_id(const objects::CSeq_id& id)
  *          1 if it's CON;
  *          0 if it's not CON.
  */
-Int4 fta_is_con_div(ParserPtr pp, const objects::CSeq_id& id, const Char* acc)
+Int4 fta_is_con_div(ParserPtr pp, const CSeq_id& id, const Char* acc)
 {
     if(pp->entrez_fetch == 0)
         return(-1);
@@ -1277,7 +1276,7 @@ Int4 fta_is_con_div(ParserPtr pp, const objects::CSeq_id& id, const Char* acc)
 /**********************************************************/
 void fta_init_gbdataloader()
 {
-    objects::CGBDataLoader::RegisterInObjectManager(*objects::CObjectManager::GetInstance());
+    CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
 }
 
 END_NCBI_SCOPE
