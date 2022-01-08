@@ -282,7 +282,7 @@ CRef<COrg_ref> COrg_ref::MakeCommon(const COrg_ref& other) const
     TTaxId taxid1 = GetTaxId();
     TTaxId taxid2 = other.GetTaxId();
     if (taxid1 != taxid2) {
-        return CRef<COrg_ref>(NULL);
+        return CRef<COrg_ref>();
     }
 
     CRef<COrg_ref> common(new COrg_ref());
@@ -373,19 +373,19 @@ static void s_ProcessOrgRefMapLine(const CTempString& line)
         if (!NStr::IsBlank(tokens[2])) {
             try {
                 org->SetOrgname().SetGcode(NStr::StringToNonNegativeInt(tokens[2]));
-            } catch (CException& ex) {
+            } catch (CException&) {
             }
         }
         if (!NStr::IsBlank(tokens[3])) {
             try {
                 org->SetOrgname().SetMgcode(NStr::StringToNonNegativeInt(tokens[3]));
-            } catch (CException& ex) {
+            } catch (CException&) {
             }
         }
         if (!NStr::IsBlank(tokens[4])) {
             try {
                 org->SetOrgname().SetPgcode(NStr::StringToNonNegativeInt(tokens[4]));
-            } catch (CException& ex) {
+            } catch (CException&) {
             }
         }
 
@@ -395,7 +395,7 @@ static void s_ProcessOrgRefMapLine(const CTempString& line)
                 taxon->SetDb("taxon");
                 taxon->SetTag().SetId(NStr::StringToNonNegativeInt(tokens[5]));
                 org->SetDb().push_back(taxon);
-            } catch (CException& ex) {
+            } catch (CException&) {
             }
         }
 
@@ -452,7 +452,7 @@ CConstRef<COrg_ref> COrg_ref::TableLookup(const string& taxname)
     if (it != s_OrgRefMap.end()) {
         return CConstRef<COrg_ref>(it->second.GetPointer());
     }
-    return CConstRef<COrg_ref>(NULL);
+    return CConstRef<COrg_ref>();
 }
 
 

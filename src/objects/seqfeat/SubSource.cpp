@@ -291,7 +291,7 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
     if (!NStr::IsBlank(month)) {
         try {
             month_val = CTime::MonthNameToNum(month);
-        } catch (CTimeException& ex) {
+        } catch (CTimeException&) {
             NCBI_THROW (CException, eUnknown,
                             "collection-date string has invalid month");
         }
@@ -785,7 +785,7 @@ CRef<CDate> CSubSource::GetDateFromISODate(const string& orig_date)
         }
         return date;
     } catch (...) {
-        return CRef<CDate>(NULL);
+        return CRef<CDate>();
     }
 }
 
@@ -957,7 +957,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
                 int month_num = CTime::MonthNameToNum(one_token);
                 found = true;
                 month = CTime::MonthNumToName(month_num, CTime::eAbbr);
-            } catch (CTimeException& e) {
+            } catch (CTimeException&) {
             }
         } else {
             try {
@@ -1077,7 +1077,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
             if (!IsDayValueOkForMonth(day, month_num, year)) {
                 return kEmptyStr;
             }
-        } catch (CTimeException& ex) {
+        } catch (CTimeException&) {
             return kEmptyStr;
         }
     }
