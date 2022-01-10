@@ -112,21 +112,6 @@ CRef<CSeq_entry> CID1Client::FetchEntry(const string& id_string,
 }
 
 
-// temporary copy-hack until we use datatool 2.18 everywhere
-void CID1Client::x_Disconnect(void)
-{
-    typedef CRPCClient<CID1server_request, CID1server_back> TGrandparent;
-
-    try {
-        AskFini();
-    } catch (...) {
-        TGrandparent::x_Disconnect();
-        throw;
-    }
-    TGrandparent::x_Disconnect();
-}
-
-
 // destructor
 CID1Client::~CID1Client(void)
 {
