@@ -62,7 +62,8 @@ public:
     }
 
 public:
-    CPSGS_Dispatcher()
+    CPSGS_Dispatcher(double  request_timeout) :
+        m_RequestTimeout(request_timeout)
     {}
 
     // Low level can have the pending request removed e.g. due to a canceled
@@ -102,6 +103,10 @@ private:
 private:
     // Registered processors
     list<unique_ptr<IPSGS_Processor>>   m_RegisteredProcessors;
+
+private:
+    double                              m_RequestTimeout;
+    void x_CreateUVTimer(size_t  request_id);
 
 private:
     // From the dispatcher point of view each request corresponds to a group of

@@ -94,6 +94,7 @@ const bool              kDefaultAllowIOTest = false;
 const unsigned long     kDefaultSendBlobIfSmall = 10 * 1024;
 const unsigned int      kDefaultMaxHops = 2;
 const double            kDefaultResendTimeoutSec = 0.2;
+const double            kDefaultRequestTimeoutSec = 30.0;
 const unsigned long     kDefaultSmallBlobSize = 16;
 const bool              kDefaultCassandraProcessorsEnabled = true;
 const bool              kDefaultOSGProcessorsEnabled = false;
@@ -152,6 +153,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_SendBlobIfSmall(kDefaultSendBlobIfSmall),
     m_MaxHops(kDefaultMaxHops),
     m_ResendTimeoutSec(kDefaultResendTimeoutSec),
+    m_RequestTimeoutSec(kDefaultRequestTimeoutSec),
     m_CassandraProcessorsEnabled(kDefaultCassandraProcessorsEnabled),
     m_TestSeqId(kDefaultTestSeqId),
     m_TestSeqIdIgnoreError(kDefaultTestSeqIdIgnoreError),
@@ -166,8 +168,6 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
 {
     sm_PubseqApp = this;
     m_HelpMessage = GetIntrospectionNode().Repr(CJsonNode::fStandardJson);
-
-    x_RegisterProcessors();
 }
 
 
@@ -177,7 +177,7 @@ CPubseqGatewayApp::~CPubseqGatewayApp()
 
 void CPubseqGatewayApp::NotifyRequestFinished(size_t  request_id)
 {
-    m_RequestDispatcher.NotifyRequestFinished(request_id);
+    m_RequestDispatcher->NotifyRequestFinished(request_id);
 }
 
 void CPubseqGatewayApp::Init(void)
@@ -247,6 +247,8 @@ void CPubseqGatewayApp::ParseArgs(void)
 
     m_ResendTimeoutSec = registry.GetDouble("SERVER", "resend_timeout",
                                             kDefaultResendTimeoutSec);
+    m_RequestTimeoutSec = registry.GetDouble("SERVER", "request_timeout",
+                                             kDefaultRequestTimeoutSec);
 
     try {
         m_AuthToken = registry.GetEncryptedString("ADMIN", "auth_token",
@@ -463,6 +465,10 @@ int CPubseqGatewayApp::Run(void)
 
     if (populated)
         OpenCache();
+
+    m_RequestDispatcher.reset(new CPSGS_Dispatcher(m_RequestTimeoutSec));
+    x_RegisterProcessors();
+
 
     // m_IdToNameAndDescription was populated at the time of
     // dealing with arguments
@@ -867,13 +873,22 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
         m_MaxHops = kDefaultMaxHops;
     }
 
-    if (m_ResendTimeoutSec <= 0.0) {
+    if (m_ResendTimeoutSec < 0.0) {
         PSG_WARNING("Invalid [SERVER]/resend_timeout value (" +
                     to_string(m_ResendTimeoutSec) + "). "
-                    "The resend timeout must be greater than 0. The resend "
+                    "The resend timeout must be greater or equal to 0. The resend "
                     "timeout is reset to the default value (" +
                     to_string(kDefaultResendTimeoutSec) + ").");
         m_ResendTimeoutSec = kDefaultResendTimeoutSec;
+    }
+
+    if (m_RequestTimeoutSec <= 0.0) {
+        PSG_WARNING("Invalid [SERVER]/request_timeout value (" +
+                    to_string(m_RequestTimeoutSec) + "). "
+                    "The request timeout must be greater than 0. The request "
+                    "timeout is reset to the default value (" +
+                    to_string(kDefaultRequestTimeoutSec) + ").");
+        m_RequestTimeoutSec = kDefaultRequestTimeoutSec;
     }
 
     if (m_SSLEnable) {
@@ -1653,21 +1668,21 @@ void CPubseqGatewayApp::x_RegisterProcessors(void)
 {
     // Note: the order of adding defines the priority.
     //       Earleir added - higher priority
-    m_RequestDispatcher.AddProcessor(
+    m_RequestDispatcher->AddProcessor(
             unique_ptr<IPSGS_Processor>(new CPSGS_ResolveProcessor()));
-    m_RequestDispatcher.AddProcessor(
+    m_RequestDispatcher->AddProcessor(
             unique_ptr<IPSGS_Processor>(new CPSGS_GetProcessor()));
-    m_RequestDispatcher.AddProcessor(
+    m_RequestDispatcher->AddProcessor(
             unique_ptr<IPSGS_Processor>(new CPSGS_GetBlobProcessor()));
-    m_RequestDispatcher.AddProcessor(
+    m_RequestDispatcher->AddProcessor(
             unique_ptr<IPSGS_Processor>(new CPSGS_AnnotProcessor()));
-    m_RequestDispatcher.AddProcessor(
+    m_RequestDispatcher->AddProcessor(
             unique_ptr<IPSGS_Processor>(new CPSGS_TSEChunkProcessor()));
-    m_RequestDispatcher.AddProcessor(
+    m_RequestDispatcher->AddProcessor(
         unique_ptr<IPSGS_Processor>(new psg::osg::CPSGS_OSGProcessor()));
-    m_RequestDispatcher.AddProcessor(
+    m_RequestDispatcher->AddProcessor(
         unique_ptr<IPSGS_Processor>(new psg::cdd::CPSGS_CDDProcessor()));
-    m_RequestDispatcher.AddProcessor(
+    m_RequestDispatcher->AddProcessor(
         unique_ptr<IPSGS_Processor>(new CPSGS_AccessionVersionHistoryProcessor()));
 }
 
