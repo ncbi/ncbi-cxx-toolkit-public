@@ -31,6 +31,10 @@ for last; do true; done
 logfile=$last
 
 
+echo COMMAND = $cmdline
+#exit 3
+
+
 #---------------- Configuration ----------------
 
 # Maximum number of attempts to build toolkit
@@ -46,6 +50,8 @@ s=''
 
 while [ "$attempt" -le "$max_attempts" ]
 do
+    echo `date "+%m/%d/%y %H:%M:%S"` '   Command line: ' $cmdline
+    echo 
     eval $cmdline >/dev/null
     status=$?
     if [ $status -eq 0 ] ; then
@@ -61,7 +67,8 @@ do
     fi 
 
     # Check on a system errors (TRACKER, access denied)
-    grep "TRACKER : error TRK0002:.*Access is denied" $logfile > /dev/null 2>&1
+    grep "TRACKER : error TRK0002:.*Access is denied" $logfile
+# > /dev/null 2>&1
     if [ $? -ne 0 ] ; then
         # Some other error
         exit $status
@@ -76,6 +83,7 @@ done
 
 echo
 echo "$0: Exceeded limit of $max_attempts tries.";
+echo "$0: Build status = $status";
 echo
 
 exit $status
