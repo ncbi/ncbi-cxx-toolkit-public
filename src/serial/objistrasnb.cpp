@@ -1580,7 +1580,7 @@ void CObjectIStreamAsnBinary::SkipAnyContent(void)
 }
 
 set<TTypeInfo>
-CObjectIStreamAsnBinary::GuessDataType(set<TTypeInfo>& known_types,
+CObjectIStreamAsnBinary::GuessDataType(const set<TTypeInfo>& known_types,
                                        size_t max_length,
                                        size_t max_bytes)
 {

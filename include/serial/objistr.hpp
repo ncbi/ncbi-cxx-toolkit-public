@@ -538,7 +538,7 @@ public:
     ///   Maximum number of input bytes to use for the lookup.
     /// @return
     ///   Set of matching types.
-    virtual set<TTypeInfo> GuessDataType(set<TTypeInfo>& known_types,
+    virtual set<TTypeInfo> GuessDataType(const set<TTypeInfo>& known_types,
                                          size_t max_length = 16,
                                          size_t max_bytes  = 1024*1024);
     // root reader
