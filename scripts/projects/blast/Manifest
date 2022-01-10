@@ -27,6 +27,7 @@ COPY: $srcdir/src/app/blast/legacy_blast.pl $installdir/bin
 COPY: $srcdir/src/app/blast/update_blastdb.pl $installdir/bin
 COPY: $srcdir/src/app/blast/cleanup-blastdb-volumes.py $installdir/bin
 COPY: $srcdir/src/app/blast/get_species_taxids.sh $installdir/bin
+COPY: $libdir/ncbi-vdb-md.dll $installdir/bin
 
 POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $version $platform $installdir "$tarball" $bindir
 
