@@ -888,7 +888,7 @@ void CObjectIStream::EndOfRead(void)
         m_Objects->Clear();
 }
 
-set<TTypeInfo> CObjectIStream::GuessDataType(set<TTypeInfo>& known_types,
+set<TTypeInfo> CObjectIStream::GuessDataType(const set<TTypeInfo>& known_types,
                                              size_t /*max_length*/,
                                              size_t max_bytes)
 {
