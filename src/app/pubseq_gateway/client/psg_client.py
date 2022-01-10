@@ -195,10 +195,10 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
 
     return rv
 
-def get_ids(psg_client, bio_ids, /, max=1000):
+def get_ids(psg_client, bio_ids, /, max_blob_ids=1000, max_chunk_ids=1000):
     """Get corresponding blob and chunk IDs."""
-    blob_ids = []
-    chunk_ids = []
+    blob_ids = set()
+    chunk_ids = set()
 
     for bio_id in bio_ids:
         psg_client.send('biodata', bio_id=bio_id, include_data='no-tse')
@@ -208,20 +208,20 @@ def get_ids(psg_client, bio_ids, /, max=1000):
             if item == 'BlobInfo':
                 blob_id = reply.get('id', {}).values()
                 if blob_id:
-                    blob_ids.append(list(blob_id))
+                    blob_ids.add(tuple(blob_id))
 
                 id2_info = reply.get('id2_info', '')
                 if id2_info:
                     chunk = id2_info.split('.')[2]
                     if chunk:
                         for i in range(int(chunk)):
-                            chunk_ids.append([i + 1, id2_info])
-                        chunk_ids.append([999999999, id2_info])
+                            chunk_ids.add((i + 1, id2_info))
+                        chunk_ids.add((999999999, id2_info))
 
-        if len(blob_ids) >= max and len(chunk_ids) >= max:
+        if len(blob_ids) >= max_blob_ids and len(chunk_ids) >= max_chunk_ids:
             break
 
-    return {'blob_id': blob_ids}, {'chunk_id': chunk_ids}
+    return {'blob_id': list(blob_ids)}, {'chunk_id': list(chunk_ids)}
 
 
 def check_binary(args):
@@ -233,10 +233,10 @@ def check_binary(args):
             args.binary = found_binary
 
 def read_bio_ids(input_file):
-    return [[bio_id] + bio_type for (bio_id, *bio_type) in csv.reader(input_file)]
+    return ([bio_id] + bio_type for (bio_id, *bio_type) in csv.reader(input_file))
 
 def read_named_annots(input_file):
-    return [[bio_id, na_ids] for (bio_id, *na_ids) in csv.reader(input_file)]
+    return ([bio_id, na_ids] for (bio_id, *na_ids) in csv.reader(input_file))
 
 def prepare_named_annots(named_annots):
     # Powerset of named annotations (excluding empty set)
@@ -249,7 +249,7 @@ def test_cmd(args):
     check_binary(args)
 
     if args.bio_file:
-        bio_ids = read_bio_ids(args.bio_file)
+        bio_ids = list(read_bio_ids(args.bio_file))
     else:
         bio_ids = [
                 ['emb|CQD33614.1'], ['emb|CQD24742.1'], ['emb|CQD05473.1'], ['emb|CQD25256.1'], ['emb|CPW37052.1'],
@@ -261,7 +261,7 @@ def test_cmd(args):
             ]
 
     if args.na_file:
-        named_annots = read_named_annots(args.na_file)
+        named_annots = list(read_named_annots(args.na_file))
     else:
         named_annots = [
                 ['NC_000024', ['NA000000067.16', 'NA000134068.1']],
@@ -290,16 +290,22 @@ def generate_cmd(args):
         elif args.TYPE in ('blob', 'chunk'):
             check_binary(args)
 
+            max_blob_ids = args.NUMBER if args.TYPE == 'blob' else 0
+            max_chunk_ids = args.NUMBER if args.TYPE != 'blob' else 0
+
             with PsgClient(args.binary) as psg_client:
-                blob_ids, chunk_ids = get_ids(psg_client, bio_ids, max=args.NUMBER)
+                blob_ids, chunk_ids = get_ids(psg_client, bio_ids, max_blob_ids=max_blob_ids, max_chunk_ids=max_chunk_ids)
 
             ids = blob_ids if args.TYPE == 'blob' else chunk_ids
 
     ids = {k: itertools.cycle(v) for k, v in ids.items()}
     params = {} if args.params is None else ast.literal_eval(args.params)
 
-    for i in range(args.NUMBER):
-        print(request_generator(args.TYPE, **{k: next(v) for k, v in ids.items()}, **params))
+    try:
+        for i in range(args.NUMBER):
+            print(request_generator(args.TYPE, **{k: next(v) for k, v in ids.items()}, **params))
+    except StopIteration:
+        sys.exit(f'"{args.INPUT_FILE.name}" has no [appropriate] IDs to generate {args.TYPE} requests')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
