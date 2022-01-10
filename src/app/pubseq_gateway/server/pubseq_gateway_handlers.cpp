@@ -2001,7 +2001,7 @@ void CPubseqGatewayApp::x_DispatchRequest(shared_ptr<CPSGS_Request>  request,
     //       dispatcher (reply is sent to the client).
 
     list<unique_ptr<CPendingOperation>>     pending_ops;
-    for (auto processor: m_RequestDispatcher.DispatchRequest(request, reply)) {
+    for (auto processor: m_RequestDispatcher->DispatchRequest(request, reply)) {
         pending_ops.push_back(
             move(
                 unique_ptr<CPendingOperation>(

@@ -229,18 +229,18 @@ public:
     IPSGS_Processor::EPSGS_StartProcessing
     SignalStartProcessing(IPSGS_Processor *  processor)
     {
-        return m_RequestDispatcher.SignalStartProcessing(processor);
+        return m_RequestDispatcher->SignalStartProcessing(processor);
     }
 
     void SignalFinishProcessing(IPSGS_Processor *  processor,
                                 CPSGS_Dispatcher::EPSGS_SignalSource  signal_source)
     {
-        m_RequestDispatcher.SignalFinishProcessing(processor, signal_source);
+        m_RequestDispatcher->SignalFinishProcessing(processor, signal_source);
     }
 
     void SignalConnectionCanceled(size_t  request_id)
     {
-        m_RequestDispatcher.SignalConnectionCanceled(request_id);
+        m_RequestDispatcher->SignalConnectionCanceled(request_id);
     }
 
     bool GetSSLEnable(void) const
@@ -288,7 +288,7 @@ public:
 
     void CancelAllProcessors(void)
     {
-        m_RequestDispatcher.CancelAll();
+        m_RequestDispatcher->CancelAll();
     }
 
     CPSGS_UvLoopBinder &  GetUvLoopBinder(uv_thread_t  uv_thread_id);
@@ -432,6 +432,7 @@ private:
     unsigned long                       m_SendBlobIfSmall;
     int                                 m_MaxHops;
     double                              m_ResendTimeoutSec;
+    double                              m_RequestTimeoutSec;
 
     bool                                m_CassandraProcessorsEnabled;
     string                              m_TestSeqId;
@@ -463,7 +464,7 @@ private:
     bool                                m_CDDProcessorsEnabled;
 
     // Requests dispatcher
-    CPSGS_Dispatcher                    m_RequestDispatcher;
+    unique_ptr<CPSGS_Dispatcher>        m_RequestDispatcher;
 
     // https support
     bool                                m_SSLEnable;

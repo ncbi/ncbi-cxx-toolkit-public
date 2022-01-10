@@ -53,6 +53,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
     list<SProcessorData>            proc_group;
     TProcessorPriority              priority = m_RegisteredProcessors.size();
     auto                            request_id = request->GetRequestId();
+    list<SProcessorData>            procs;
 
     for (auto const &  proc : m_RegisteredProcessors) {
         if (request->NeedTrace()) {
@@ -63,22 +64,9 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         if (p) {
             ret.push_back(p);
 
-            m_GroupsLock.lock();
-
-            auto    it = m_ProcessorGroups.find(request_id);
             auto    new_proc = SProcessorData(p, ePSGS_Up,
                                               IPSGS_Processor::ePSGS_InProgress);
-            if (it == m_ProcessorGroups.end()) {
-                // First processor in the group so create the list
-                list<SProcessorData>    procs;
-                procs.emplace_back(new_proc);
-                m_ProcessorGroups[request_id] = move(procs);
-            } else {
-                // Additional processor in the group so use existing list
-                it->second.emplace_back(new_proc);
-            }
-
-            m_GroupsLock.unlock();
+            procs.emplace_back(new_proc);
 
             if (request->NeedTrace()) {
                 reply->SendTrace("Processor " + proc->GetName() +
@@ -106,9 +94,21 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
         reply->SetCompleted();
         x_PrintRequestStop(request, CRequestStatus::e404_NotFound);
+    } else {
+        m_GroupsLock.lock();
+        m_ProcessorGroups[request_id] = move(procs);
+        m_GroupsLock.unlock();
+        x_CreateUVTimer(request_id);
     }
 
     return ret;
+}
+
+
+void
+CPSGS_Dispatcher::x_CreateUVTimer(size_t  request_id)
+{
+    // TODO
 }
 
 
