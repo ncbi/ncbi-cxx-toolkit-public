@@ -364,7 +364,7 @@ CConstRef<CValidError> CAsnvalApp::ValidateInput()
     };
 
     // Determine ASN.1 content type
-    set<TTypeInfo> matching_types = m_In->GuessDataType(const_cast<set<TTypeInfo>&>(known_types));
+    set<TTypeInfo> matching_types = m_In->GuessDataType(known_types);
     if (matching_types.empty()) {
         NCBI_THROW(CException, eUnknown, "Unidentifiable object");
     } else if (matching_types.size() > 1) {

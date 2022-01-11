@@ -685,11 +685,11 @@ void CAsn2FastaApp::x_ProcessIStream(const string& asn_type, CObjectIStream& ist
     }
 
     if ( asn_type == "any" ) {
-        set<TTypeInfo> known_types, matching_types;
-        known_types.insert(CSeq_entry::GetTypeInfo());
-        known_types.insert(CSeq_submit::GetTypeInfo());
-        known_types.insert(CBioseq_set::GetTypeInfo());
-        known_types.insert(CBioseq::GetTypeInfo());
+        static const set<TTypeInfo> known_types{
+            CSeq_entry::GetTypeInfo(), CSeq_submit::GetTypeInfo(),
+            CBioseq_set::GetTypeInfo(), CBioseq::GetTypeInfo(),
+        };
+        set<TTypeInfo> matching_types;
 
         while (!istr.EndOfData()) {
             matching_types = istr.GuessDataType(known_types);
