@@ -52,7 +52,10 @@ while [ "$attempt" -le "$max_attempts" ]
 do
     echo `date "+%m/%d/%y %H:%M:%S"` '   Command line: ' $cmdline
     echo 
-    eval $cmdline >/dev/null
+    # Remove logfile between attemps, VS append new output if the file exists
+    rm $logfile
+    # Run build
+    eval $cmdline
     status=$?
     if [ $status -eq 0 ] ; then
         # Success
