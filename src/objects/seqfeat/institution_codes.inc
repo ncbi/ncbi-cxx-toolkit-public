@@ -2591,7 +2591,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HBDC\ts\tHebei Institute for Drug Control\t\t\t",
 "HBFC\ts\tHebei Forestry College, Basic Courses Department\t\t\t",
 "HBFH\ts\tHarbor Branch Oceanographic Institution, Marine Botany Department\t\t\t",
-"HBG\ts\tInstitut fuer Allgemeine Botanik\t\t\t",
+"HBG\ts\tInstitute for Plant Science and Microbiology\t\t\t",
 "HBG<JPN>\tb\tHiroshima Botanical Garden\t\t\t",
 "HBH\ts\tHacettepe University Biodiversity Advanced Research Center Herbarium\t\t\t",
 "HBI\ts\tInstitute of Hydrobiology, Chinese Academy of Sciences, Phycology Department\t\t\t",
