@@ -237,7 +237,7 @@ void CPrimaryItem::x_GatherInfo(CBioseqContext& ctx)
     bool has_hist_assembly =
         seq.IsSetInst_Hist()  &&  !seq.GetInst_Hist().GetAssembly().empty();
 
-    if (ctx.Config().NewTpaDisplay()) {
+    if (! ctx.Config().OldTpaDisplay()) {
 
         if ( !has_hist_assembly ) {
             return;
