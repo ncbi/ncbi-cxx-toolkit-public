@@ -599,7 +599,7 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
          DENT "DisableReferenceCache (65536) - disable reference cache\n"
          DENT "ShowDeflineModifiers (131072) - show definition line modifiers\n"
          DENT "DoNotUseAutoDef      (262144) - suppress automatic defline generator\n"
-         DENT "NewTpaDisplay        (542288) - use new TPA display",
+         DENT "OldTpaDisplay        (542288) - old TPA display with PRIMARY block",
 
                                  CArgDescriptions::eString, "");
 #undef DENT

@@ -305,7 +305,7 @@ string CCommentItem::GetStringForTPA
     }
 
     CBioseq_Handle& seq = ctx.GetHandle();
-    if (seq.IsSetInst_Hist()  &&  seq.GetInst_Hist().IsSetAssembly() && ctx.Config().NewTpaDisplay()) {
+    if (seq.IsSetInst_Hist()  &&  seq.GetInst_Hist().IsSetAssembly() && (! ctx.Config().OldTpaDisplay())) {
         // return kEmptyStr;
         TAlnConstList seglist;
         x_CollectSegments(seglist, seq.GetInst_Hist().GetAssembly());
