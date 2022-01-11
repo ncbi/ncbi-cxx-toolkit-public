@@ -236,6 +236,17 @@ string GetBlobExcludeHeader(size_t  item_id,
                             unsigned long  sent_mks_ago,
                             unsigned long  until_resend_mks,
                             CBlobRecord::TTimestamp  last_modified=-1);
+string  GetTSEBlobExcludeHeader(size_t  item_id,
+                                const string &  processor_id,
+                                EPSGS_BlobSkipReason  skip_reason,
+                                int64_t  id2_chunk,
+                                const string &  id2_info);
+string  GetTSEBlobExcludeHeader(size_t  item_id,
+                                const string &  processor_id,
+                                int64_t  id2_chunk,
+                                const string &  id2_info,
+                                unsigned long  sent_mks_ago,
+                                unsigned long  until_resend_mks);
 string  GetTSEBlobChunkHeader(size_t  item_id,
                               const string &  processor_id,
                               size_t  chunk_size,

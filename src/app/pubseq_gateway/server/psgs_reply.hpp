@@ -270,6 +270,15 @@ public:
                              unsigned long  sent_mks_ago,
                              unsigned long  until_resend_mks,
                              CBlobRecord::TTimestamp  last_modified=-1);
+    void PrepareTSEBlobExcluded(const string &  processor_id,
+                                EPSGS_BlobSkipReason  skip_reason,
+                                int64_t  id2_chunk,
+                                const string &  id2_info);
+    void PrepareTSEBlobExcluded(int64_t  id2_chunk,
+                                const string &  id2_info,
+                                const string &  processor_id,
+                                unsigned long  sent_mks_ago,
+                                unsigned long  until_resend_mks);
     void PrepareBlobCompletion(CCassBlobFetch *  fetch_details,
                                const string &  processor_id);
     void PrepareProcessorMessage(size_t  item_id, const string &  processor_id,

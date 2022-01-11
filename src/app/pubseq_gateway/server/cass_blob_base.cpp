@@ -1405,11 +1405,19 @@ void
 CPSGS_CassBlobBase::x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
                                           EPSGS_BlobSkipReason  skip_reason)
 {
-    // The skipped blobs must always have just the blob_id (no
-    // id2_chunk/id2_info) field in the reply chunk
-    m_Reply->PrepareBlobExcluded(fetch_details->GetBlobId().ToString(),
-                                 m_ProcessorId, skip_reason,
-                                 m_LastModified);
+    bool    need_to_add_id2_chunk_id2_info = NeedToAddId2CunkId2Info();
+
+    if (skip_reason == ePSGS_BlobExcluded || !need_to_add_id2_chunk_id2_info) {
+        m_Reply->PrepareBlobExcluded(fetch_details->GetBlobId().ToString(),
+                                     m_ProcessorId, skip_reason,
+                                     m_LastModified);
+        return;
+    }
+
+    // It is sent or in progress and need to add more info
+    m_Reply->PrepareTSEBlobExcluded(m_ProcessorId, skip_reason,
+                                    x_GetId2ChunkNumber(fetch_details),
+                                    m_Id2Info->Serialize());
 }
 
 
@@ -1418,14 +1426,19 @@ CPSGS_CassBlobBase::x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
                                           unsigned long  sent_mks_ago,
                                           unsigned long  until_resend_mks)
 {
-    // The skipped blobs must always have just the blob_id (no
-    // id2_chunk/id2_info) field in the reply chunk
-
     // Note: this version of the method is used only for the ID/get requests so
     // the additional resend related fields need to be supplied
-    m_Reply->PrepareBlobExcluded(fetch_details->GetBlobId().ToString(),
-                                 m_ProcessorId, sent_mks_ago, until_resend_mks,
-                                 m_LastModified);
+
+    if (NeedToAddId2CunkId2Info()) {
+        m_Reply->PrepareTSEBlobExcluded(x_GetId2ChunkNumber(fetch_details),
+                                        m_Id2Info->Serialize(),
+                                        m_ProcessorId, sent_mks_ago,
+                                        until_resend_mks);
+    } else {
+        m_Reply->PrepareBlobExcluded(fetch_details->GetBlobId().ToString(),
+                                     m_ProcessorId, sent_mks_ago, until_resend_mks,
+                                     m_LastModified);
+    }
 }
 
 
