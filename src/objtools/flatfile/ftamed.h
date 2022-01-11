@@ -6,18 +6,18 @@
 
 BEGIN_NCBI_SCOPE
 
-CRef<objects::CCit_art> FetchPubPmId(Int4 pmid);
+CRef<objects::CCit_art> FetchPubPmId(TEntrezId pmid);
 
 using TFindPubOptions = Parser::SFindPubOptions;
 
-class CPubFixMessageListener : public CMessageListener_Basic 
+class CPubFixMessageListener : public CMessageListener_Basic
 {
-public: 
+public:
     EPostResult PostMessage(const IMessage& message) override;
 };
 
-bool MedArchInit(void);
-void MedArchFini(void);
+bool MedArchInit();
+void MedArchFini();
 
 END_NCBI_SCOPE
 

@@ -708,7 +708,7 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, ParserPtr pp, bool er)
     CRef<CCit_art> new_cit_art;
     if(oldpmid > ZERO_ENTREZ_ID)
     {
-        new_cit_art = FetchPubPmId(ENTREZ_ID_TO(Int4, oldpmid));
+        new_cit_art = FetchPubPmId(oldpmid);
         if (new_cit_art.Empty())
         {
             ErrPostEx(SEV_REJECT, ERR_REFERENCE_InvalidPmid,
