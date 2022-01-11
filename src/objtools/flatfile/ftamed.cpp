@@ -125,7 +125,7 @@ bool MedArchInit()
     {
         mlaclient.AskInit(&i);
     }
-    catch(exception &)
+    catch(exception&)
     {
         return false;
     }
@@ -140,15 +140,15 @@ void MedArchFini()
     {
         mlaclient.AskFini();
     }
-    catch(exception &)
+    catch(exception&)
     {
     }
 }
 
 /**********************************************************/
-CRef<CCit_art> FetchPubPmId(Int4 pmid)
+CRef<CCit_art> FetchPubPmId(TEntrezId pmid)
 {
-    return edit::CPubFix::FetchPubPmId(ENTREZ_ID_FROM(Int4, pmid));
+    return edit::CPubFix::FetchPubPmId(pmid);
 }
 
 END_NCBI_SCOPE

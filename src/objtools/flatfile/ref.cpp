@@ -320,23 +320,23 @@ static char* get_embl_str_pub_id(char* str, const Char *tag)
 }
 
 /**********************************************************/
-static Int4 get_embl_pmid(char* str)
+static TEntrezId get_embl_pmid(char* str)
 {
     char* p;
-    Int4    i;
+    long    i;
 
     if(str == NULL)
-        return(0);
+        return ZERO_ENTREZ_ID;
 
     p = StringIStr(str, "PUBMED;");
     if(p == NULL)
-        return(0);
+        return ZERO_ENTREZ_ID;
     for(p += 7; *p == ' ';)
         p++;
-    i = (Int4) atol(p);
-    if(i < 1)
-        return(0);
-    return(i);
+    i = atol(p);
+    if (i <= 0)
+        return ZERO_ENTREZ_ID;
+    return ENTREZ_ID_FROM(long, i);
 }
 
 /**********************************************************
@@ -2010,7 +2010,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
     char*           q;
     char*           r;
     bool              is_online;
-    Int4              pmid;
+    TEntrezId       pmid;
 
     XmlIndexPtr       xip;
 
@@ -2048,12 +2048,12 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
         return desc;
     }
 
-    pmid = 0;
+    pmid = ZERO_ENTREZ_ID;
     p = XMLFindTagValue(dbp->mOffset, (XmlIndexPtr) dbp->mpData,
                         INSDREFERENCE_PUBMED);
     if(p != NULL)
     {
-        pmid = NStr::StringToInt(p, NStr::fAllowTrailingSymbols);
+        pmid = ENTREZ_ID_FROM(int, NStr::StringToInt(p, NStr::fAllowTrailingSymbols));
         MemFree(p);
     }
 
@@ -2161,17 +2161,17 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
     er = fta_remark_is_er(desc->IsSetComment() ? desc->GetComment().c_str() : NULL);
 
     CRef<CCit_art> cit_art;
-    if (pp->medserver == 1 && pmid > 0 && (StringNCmp(p, "(er)", 4) == 0 || er > 0))
+    if (pp->medserver == 1 && pmid > ZERO_ENTREZ_ID && (StringNCmp(p, "(er)", 4) == 0 || er > 0))
     {
         cit_art = FetchPubPmId(pmid);
         if (cit_art.Empty())
-            pmid = 0;
+            pmid = ZERO_ENTREZ_ID;
     }
 
-    if (pmid > 0)
+    if (pmid > ZERO_ENTREZ_ID)
     {
         CRef<CPub> pub(new CPub);
-        pub->SetPmid().Set(ENTREZ_ID_FROM(int, pmid));
+        pub->SetPmid().Set(pmid);
         desc->SetPub().Set().push_back(pub);
     }
 
@@ -2216,7 +2216,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
 
 /**********************************************************/
 CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data,
-                                                   bool bParser, DataBlkPtr** ppInd, bool& no_auth)
+                              bool bParser, DataBlkPtr** ppInd, bool& no_auth)
 {
     static DataBlkPtr ind[MAXKW+1];
 
@@ -2225,7 +2225,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data,
     char*           q;
     char*           r;
     bool              is_online;
-    Int4              pmid;
+    TEntrezId       pmid;
     Int4              er;
 
     CRef<CPubdesc> desc(new CPubdesc);
@@ -2271,12 +2271,12 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data,
         }
     }
 
-    pmid = 0;
+    pmid = ZERO_ENTREZ_ID;
     if(ind[ParFlat_PUBMED] != NULL)
     {
         p = ind[ParFlat_PUBMED]->mOffset;
         if(p != NULL)
-            pmid = NStr::StringToInt(p, NStr::fAllowTrailingSymbols);
+            pmid = ENTREZ_ID_FROM(int, NStr::StringToInt(p, NStr::fAllowTrailingSymbols));
     }
 
     CRef<CAuth_list> auth_list;
@@ -2359,22 +2359,22 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data,
     er = fta_remark_is_er(desc->IsSetComment() ? desc->GetComment().c_str() : NULL);
 
     CRef<CCit_art> cit_art;
-    if (pp->medserver == 1 && pmid > 0 && (StringNCmp(p, "(er)", 4) == 0 || er > 0))
+    if (pp->medserver == 1 && pmid > ZERO_ENTREZ_ID && (StringNCmp(p, "(er)", 4) == 0 || er > 0))
     {
         cit_art = FetchPubPmId(pmid);
         if(!cit_art)
-            pmid = 0;
+            pmid = ZERO_ENTREZ_ID;
     }
 
-    if (pmid > 0)
+    if (pmid > ZERO_ENTREZ_ID)
     {
         CRef<CPub> pub(new CPub);
-        pub->SetPmid().Set(ENTREZ_ID_FROM(int, pmid));
+        pub->SetPmid().Set(pmid);
         desc->SetPub().Set().push_back(pub);
     }
 
     CRef<CPub> pub_ref = journal(pp, p, p + ind[ParFlat_JOURNAL]->len,
-                                                      auth_list, title_art, has_muid, cit_art, er);
+                                 auth_list, title_art, has_muid, cit_art, er);
 
     if (pub_ref.Empty())
     {
@@ -2408,7 +2408,7 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, boo
     bool              has_muid;
     char*           p;
     char*           q;
-    Int4              pmid;
+    TEntrezId       pmid;
 
     Int4              er;
 
@@ -2426,7 +2426,7 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, boo
     ind_subdbp(dbp, ind, MAXKW, Parser::EFormat::EMBL);
 
     has_muid = false;
-    pmid = 0;
+    pmid = ZERO_ENTREZ_ID;
     
     std::string doi;
     std::string agricola;
@@ -2533,17 +2533,17 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, boo
     }
 
     CRef<CCit_art> cit_art;
-    if (pp->medserver == 1 && pmid > 0 && (StringNCmp(p, "(er)", 4) == 0 || er > 0))
+    if (pp->medserver == 1 && pmid > ZERO_ENTREZ_ID && (StringNCmp(p, "(er)", 4) == 0 || er > 0))
     {
         cit_art = FetchPubPmId(pmid);
         if(!cit_art)
-            pmid = 0;
+            pmid = ZERO_ENTREZ_ID;
     }
 
-    if (pmid > 0)
+    if (pmid > ZERO_ENTREZ_ID)
     {
         CRef<CPub> pub(new CPub);
-        pub->SetPmid().Set(ENTREZ_ID_FROM(int, pmid));
+        pub->SetPmid().Set(pmid);
         desc->SetPub().Set().push_back(pub);
     }
 
@@ -2721,37 +2721,34 @@ static void fta_check_long_names(const CPub& pub, bool soft_report)
 /**********************************************************/
 static void fta_propagate_pmid_muid(CPub_equiv& pub_equiv)
 {
-    Int4       pmid;
-    Int4       muid;
-
-    pmid = 0;
-    muid = 0;
+    TEntrezId pmid = ZERO_ENTREZ_ID;
+    TEntrezId muid = ZERO_ENTREZ_ID;
 
     CCit_art* cit_art = nullptr;
     NON_CONST_ITERATE(TPubList, pub, pub_equiv.Set())
     {
-        if ((*pub)->IsMuid() && muid == 0)
-            muid = ENTREZ_ID_TO(int, (*pub)->GetMuid());
-        else if ((*pub)->IsPmid() && pmid == 0)
-            pmid = ENTREZ_ID_TO(int, (*pub)->GetPmid().Get());
-        else if ((*pub)->IsArticle() && cit_art == nullptr)
+        if ((*pub)->IsMuid() && muid == ZERO_ENTREZ_ID)
+            muid = (*pub)->GetMuid();
+        else if ((*pub)->IsPmid() && pmid == ZERO_ENTREZ_ID)
+            pmid = (*pub)->GetPmid().Get();
+        else if ((*pub)->IsArticle() && !cit_art)
             cit_art = &(*pub)->SetArticle();
     }
 
-    if (cit_art == NULL || (muid == 0 && pmid == 0))
+    if (!cit_art || (muid == ZERO_ENTREZ_ID && pmid == ZERO_ENTREZ_ID))
         return;
 
-    if(muid != 0)
+    if (muid != ZERO_ENTREZ_ID)
     {
         CRef<CArticleId> id(new CArticleId);
-        id->SetMedline().Set(ENTREZ_ID_FROM(int, muid));
+        id->SetMedline().Set(muid);
         cit_art->SetIds().Set().push_front(id);
     }
 
-    if(pmid != 0)
+    if (pmid != ZERO_ENTREZ_ID)
     {
         CRef<CArticleId> id(new CArticleId);
-        id->SetPubmed().Set(ENTREZ_ID_FROM(int, pmid));
+        id->SetPubmed().Set(pmid);
         cit_art->SetIds().Set().push_front(id);
     }
 }
