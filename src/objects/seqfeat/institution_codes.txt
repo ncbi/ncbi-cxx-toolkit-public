@@ -2558,7 +2558,7 @@ HBC	s	Henry Brockhouse Collection
 HBDC	s	Hebei Institute for Drug Control			
 HBFC	s	Hebei Forestry College, Basic Courses Department			
 HBFH	s	Harbor Branch Oceanographic Institution, Marine Botany Department			
-HBG	s	Institut fuer Allgemeine Botanik			
+HBG	s	Institute for Plant Science and Microbiology			
 HBG<JPN>	b	Hiroshima Botanical Garden			
 HBH	s	Hacettepe University Biodiversity Advanced Research Center Herbarium			
 HBI	s	Institute of Hydrobiology, Chinese Academy of Sciences, Phycology Department			
