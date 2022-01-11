@@ -2288,9 +2288,11 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
         return;
     }
 
+    bool long_read = acc.find("SRA") != string::npos && acc.find("RNASEQ_COLLAPSE") == string::npos;
+
     //Capinfo from not capped long reads
     if(m_use_long_reads_tss) {
-        bool use_alignment = !(a.Status()&CGeneModel::eCap) && acc.find("SRA") != string::npos && acc.find("RNASEQ_COLLAPSE") == string::npos; // not capped long read 
+        bool use_alignment = !(a.Status()&CGeneModel::eCap) && long_read; // not capped long read 
         if(a.Status()&CGeneModel::eUnknownOrientation)
             use_alignment = false; // not oriented
         TSignedSeqRange tlim = a.TranscriptLimits();
@@ -2361,7 +2363,7 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
                 id.m_keep_anyway = true;
             }
 
-            if((align.Type()&CGeneModel::eSR) || 
+            if((align.Type()&CGeneModel::eSR) || long_read || 
                (align.Status()&CGeneModel::eGapFiller && sig == "GTAG" && 
                 e[l-1].Limits().GetLength() > 15 && e[l-1].m_ident > 0.99 && 
                 e[l].Limits().GetLength() > 15 && e[l].m_ident > 0.99)) {
