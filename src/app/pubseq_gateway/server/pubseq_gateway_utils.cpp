@@ -577,6 +577,71 @@ string GetBlobExcludeHeader(size_t  item_id,
 }
 
 
+string  GetTSEBlobExcludeHeader(size_t  item_id,
+                                const string &  processor_id,
+                                EPSGS_BlobSkipReason  skip_reason,
+                                int64_t  id2_chunk,
+                                const string &  id2_info)
+{
+    // E.g. PSG-Reply-Chunk: item_id=5&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=1&reason={excluded,inprogress,sent}
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndBlobItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndId2Chunk)
+                .append(to_string(id2_chunk))
+                .append(s_AndId2Info)
+                .append(id2_info)
+                .append(s_AndNChunksOne)
+                .append(s_AndReason)
+                .append(SkipReasonToString(skip_reason))
+                .append(1, '\n');
+}
+
+
+// Used only for the case 'already sent'
+string  GetTSEBlobExcludeHeader(size_t  item_id,
+                                const string &  processor_id,
+                                int64_t  id2_chunk,
+                                const string &  id2_info,
+                                unsigned long  sent_mks_ago,
+                                unsigned long  until_resend_mks)
+{
+    string      reply(s_ReplyBegin);
+
+    unsigned long   ago_sec = sent_mks_ago / 1000000;
+    string          ago_mks = to_string(sent_mks_ago - ago_sec * 1000000);
+    while (ago_mks.size() < 6)
+        ago_mks = "0" + ago_mks;
+
+    unsigned long   until_sec = until_resend_mks / 1000000;
+    string          until_mks = to_string(until_resend_mks - until_sec * 1000000);
+    while (until_mks.size() < 6)
+        until_mks = "0" + until_mks;
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndBlobItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndId2Chunk)
+                .append(to_string(id2_chunk))
+                .append(s_AndId2Info)
+                .append(id2_info)
+                .append(s_AndNChunksOne)
+                .append(s_AndReason)
+                .append(SkipReasonToString(ePSGS_BlobSent))
+                .append(s_AndSentSecondsAgo)
+                .append(to_string(ago_sec) + "." + ago_mks)
+                .append(s_AndTimeUntilResend)
+                .append(to_string(until_sec) + "." + until_mks)
+                .append(1, '\n');
+}
+
+
 string  GetBlobCompletionHeader(size_t  item_id,
                                 const string &  processor_id,
                                 size_t  chunk_count)

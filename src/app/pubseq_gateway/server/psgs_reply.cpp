@@ -878,6 +878,47 @@ void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
 }
 
 
+void CPSGS_Reply::PrepareTSEBlobExcluded(const string &        processor_id,
+                                         EPSGS_BlobSkipReason  skip_reason,
+                                         int64_t               id2_chunk,
+                                         const string &        id2_info)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    string  exclude = GetTSEBlobExcludeHeader(GetItemId(), processor_id,
+                                              skip_reason, id2_chunk, id2_info);
+    while (m_ChunksLock.exchange(true)) {}
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                    (const unsigned char *)(exclude.data()),
+                    exclude.size()));
+    ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
+}
+
+
+void CPSGS_Reply::PrepareTSEBlobExcluded(int64_t  id2_chunk,
+                                         const string &  id2_info,
+                                         const string &  processor_id,
+                                         unsigned long  sent_mks_ago,
+                                         unsigned long  until_resend_mks)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    string  exclude = GetTSEBlobExcludeHeader(GetItemId(), processor_id,
+                                              id2_chunk, id2_info,
+                                              sent_mks_ago,
+                                              until_resend_mks);
+    while (m_ChunksLock.exchange(true)) {}
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                    (const unsigned char *)(exclude.data()),
+                    exclude.size()));
+    ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
+}
+
+
 void CPSGS_Reply::PrepareBlobCompletion(CCassBlobFetch *  fetch_details,
                                         const string &    processor_id)
 {
