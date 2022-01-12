@@ -4511,6 +4511,54 @@ BOOST_AUTO_TEST_CASE(TestMemoryMapFile_MT)
 }
 #endif
 
+BOOST_AUTO_TEST_CASE(TestTaxIdsLookup)
+{
+    string db_name = "data/wp_nr_v5";
+    CSeqDB db(db_name, CSeqDB::eProtein);
+    {
+    	string acc = "WP_007051162.1";
+    	vector<TTaxId> tax_ids;
+    	db.GetTaxIdsForAccession(acc, tax_ids);
+    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 4);
+    	BOOST_REQUIRE_EQUAL(tax_ids[0], 1678);
+    	BOOST_REQUIRE_EQUAL(tax_ids[3], 1263059);
+    }
+    {
+    	CSeq_id seqid("CCK34598");
+    	vector<TTaxId> tax_ids;
+    	db.GetTaxIdsForSeqId(seqid, tax_ids);
+    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 1);
+    	BOOST_REQUIRE_EQUAL(tax_ids[0], 1205679);
+    }
+    {
+    	string acc = "junk";
+    	vector<TTaxId> tax_ids;
+    	db.GetTaxIdsForAccession(acc, tax_ids);
+    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 0);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(TestTaxIdsLookup_v4)
+{
+    string db_name = "data/test_v4";
+    CSeqDB db(db_name, CSeqDB::eProtein);
+    {
+    	string acc = "pir||T49736";
+    	vector<TTaxId> tax_ids;
+    	db.GetTaxIdsForAccession(acc, tax_ids);
+    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 1);
+    	BOOST_REQUIRE_EQUAL(tax_ids[0], 0);
+    }
+    {
+    	string acc = "junk";
+    	vector<TTaxId> tax_ids;
+    	db.GetTaxIdsForAccession(acc, tax_ids);
+    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 0);
+    }
+}
+
+
+
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
