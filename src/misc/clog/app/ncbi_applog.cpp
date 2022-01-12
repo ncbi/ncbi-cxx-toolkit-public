@@ -158,7 +158,7 @@ const char* kErrorMessagePrefix = "NCBI_APPLOG: error: ";
 const char* kDefaultCGI = "https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
 
 /// Regular expression to check lines of raw logs (checks all fields up to appname).
-/// NOTE: we need sub-pattern for application name only!
+/// NOTE: we need sub-pattern for an application name only!
 const char* kApplogRegexp = 
     "^\\d{5,}/\\d{3,}/\\d{4,}/[NSPRBE ]{3}[0-9A-Z]{16} "     // <pid>/<tid>/<rid>/<state> <guid>
     "\\d{4,}/\\d{4,} "                                       // <psn>/<tsn> 
@@ -760,6 +760,7 @@ int CNcbiApplogApp::Redirect()
 {
     // Get URL of logging CGI (from registry file, env.variable or default value)
     string url = NCBI_PARAM_TYPE(NCBI, NcbiApplogCGI)::GetDefault();
+
     string s_args;
     const char* ev;
 
@@ -2038,7 +2039,12 @@ int CNcbiApplogApp::Run()
                             string s = m_Raw_line.substr(0, namepos + 1 + m_Info.logsite.size())
                                        + "extra         " + orig_appname;
                             // Replace state: "PB" -> "P "
-                            s[16] = ' ';
+                            size_t pos = s.find("/PB ");
+                            if (pos == NPOS) {
+                                throw std::runtime_error("Error processing input raw log, starting line has a wrong format");
+                            }
+                            pos += 2;
+                            s[pos] = ' ';
                             NcbiLogP_Raw2(s.c_str(), s.length());
                         }
                         break;
