@@ -78,11 +78,18 @@ void CScoreBuilder::x_Initialize(CBlastOptionsHandle& options)
     // alignments are either protein-protein or nucl-nucl
 
     m_BlastType = opts.GetProgram();
-    if (m_BlastType == eBlastn || m_BlastType == eMegablast ||
-                                m_BlastType == eDiscMegablast) {
+    switch (m_BlastType) {
+    case eBlastn:
+    case eMegablast:
+    case eDiscMegablast:
+    case eVecScreen:
+    case ePHIBlastn:
         m_BlastType = eBlastn;
-    } else {
+        break;
+
+    default:
         m_BlastType = eBlastp;
+        break;
     }
 
     if (m_BlastType == eBlastn) {
