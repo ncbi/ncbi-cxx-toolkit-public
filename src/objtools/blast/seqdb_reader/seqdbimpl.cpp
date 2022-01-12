@@ -2665,5 +2665,46 @@ void CSeqDBImpl::GetLMDBFileNames(vector<string> & lmdb_list) const
 	m_LMDBSet.GetLMDBFileNames(lmdb_list);
 }
 
+
+void CSeqDBImpl::x_GetTaxIdsForSeqId(const CSeq_id & seq_id, int oid, CBlast_def_line::TTaxIds & taxid_set)
+{
+
+	CSeqDBLockHold locked(m_Atlas);
+    CRef<CBlast_def_line_set> defline_set = x_GetHdr(oid, locked);
+
+    if ((! defline_set.Empty()) && defline_set->CanGet()) {
+        ITERATE(list< CRef<CBlast_def_line> >, defline, defline_set->Get()) {
+            if (! (*defline)->CanGetSeqid()) {
+                continue;
+            }
+
+            ITERATE(list< CRef<CSeq_id> >, df_seqid, (*defline)->GetSeqid()) {
+            	if((*df_seqid)->Match(seq_id)) {
+            		CBlast_def_line::TTaxIds df_taxids = (*defline)->GetTaxIds();
+            		if(!df_taxids.empty()) {
+            			taxid_set.insert(df_taxids.begin(), df_taxids.end());
+            		}
+            		return;
+            	}
+	        }
+	    }
+    }
+}
+
+void CSeqDBImpl::GetTaxIdsForSeqId(const CSeq_id & seq_id, vector<TTaxId> & taxids)
+{
+	vector<int>  oids;
+	SeqidToOids(seq_id, oids, true);
+	taxids.clear();
+	CBlast_def_line::TTaxIds taxid_set;
+	for (unsigned int i=0; i < oids.size(); i++) {
+		x_GetTaxIdsForSeqId(seq_id, oids[i], taxid_set);
+	}
+
+	if (!taxid_set.empty()) {
+		taxids.insert(taxids.begin(), taxid_set.begin(), taxid_set.end());
+	}
+}
+
 END_NCBI_SCOPE
 
