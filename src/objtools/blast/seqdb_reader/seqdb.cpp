@@ -1712,5 +1712,17 @@ CRef<CBlast_db_metadata> CSeqDB::GetDBMetaData(string user_path)
 	return m;
 }
 
+void CSeqDB::GetTaxIdsForAccession(const string & accs, vector<TTaxId> & taxids)
+{
+	CSeq_id seqid(accs, CSeq_id::fParse_RawText | CSeq_id::fParse_ValidLocal);
+	m_Impl->GetTaxIdsForSeqId(seqid, taxids);
+}
+
+void CSeqDB::GetTaxIdsForSeqId(const CSeq_id & seq_id, vector<TTaxId> & taxids)
+{
+	m_Impl->GetTaxIdsForSeqId(seq_id, taxids);
+}
+
+
 END_NCBI_SCOPE
 

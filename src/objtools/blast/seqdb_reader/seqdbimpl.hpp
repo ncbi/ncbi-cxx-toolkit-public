@@ -1078,6 +1078,8 @@ public:
 
     void GetLMDBFileNames(vector<string> & lmdb_list) const;
 
+    void GetTaxIdsForSeqId(const CSeq_id & seq_id, vector<TTaxId> & taxids);
+
 private:
     CLASS_MARKER_FIELD("IMPL")
 
@@ -1266,6 +1268,8 @@ private:
     int x_GetCacheID(CSeqDBLockHold &locked) const;
 
     
+    void x_GetTaxIdsForSeqId(const CSeq_id & seq_id, int oid, CBlast_def_line::TTaxIds & taxid_set);
+
     /// Memory management layer guard (RIIA) object.
     CSeqDBAtlasHolder m_AtlasHolder;
 

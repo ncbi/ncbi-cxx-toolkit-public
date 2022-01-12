@@ -1510,6 +1510,18 @@ public:
 
     CRef<CBlast_db_metadata> GetDBMetaData(string user_path = kEmptyStr);
 
+
+    /// Get all tax ids for an accessions
+    /// @param accs input accession
+    /// @param taxids  taxids for accession
+    void GetTaxIdsForAccession(const string & accs, vector<TTaxId> & taxids);
+
+
+    /// Get all tax ids for a seq id
+    /// @param seq_id input seq id
+    /// @param taxids  taxids for accession
+    void GetTaxIdsForSeqId(const CSeq_id & seq_id, vector<TTaxId> & taxids);
+
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;
