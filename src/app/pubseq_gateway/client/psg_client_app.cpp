@@ -261,6 +261,8 @@ void CPsgClientApp::s_InitRequest<SJsonCheck>(CArgDescriptions& arg_desc)
 
 void s_SetPsgDefaults(const CArgs& args, bool parallel)
 {
+    TPSG_UserRequestIds::SetDefault(true);
+
     if (args["io-threads"].HasValue()) {
         auto io_threads = args["io-threads"].AsInteger();
         TPSG_NumIo::SetDefault(io_threads);
