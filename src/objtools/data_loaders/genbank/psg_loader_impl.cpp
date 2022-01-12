@@ -1385,7 +1385,7 @@ void CPSG_Blob_Task::DoExecute(void)
     if (m_ReplyResult.blob_id.empty()) {
         // If the source request was for blob rather than bioseq, there may be no bioseq info
         // and blob_id stays empty.
-        if (m_Reply->GetRequest()->GetType() == "blob") {
+        if (m_Reply->GetRequest()->GetType() == CPSG_Request::eBlob) {
             shared_ptr<const CPSG_Request_Blob> blob_request = static_pointer_cast<const CPSG_Request_Blob>(m_Reply->GetRequest());
             if (blob_request) {
                 m_ReplyResult.blob_id = blob_request->GetId();
