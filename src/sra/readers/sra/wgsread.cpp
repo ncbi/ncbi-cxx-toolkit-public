@@ -1848,12 +1848,11 @@ s_AddUserObjectType(const CSeqdesc& desc, set<string>& existing_uo_types)
     }
 }
 
-void CWGSDb_Impl::AddMasterDescr(CSeq_descr& descr, const CBioseq* main_seq) const
+void CWGSDb_Impl::AddMasterDescr(CSeq_descr& descr, const CBioseq* main_seq, TFlags flags) const
 {
-    set<string> existing_uo_types;
-
     if ( !GetMasterDescr().empty() ) {
         unsigned type_mask = 0;
+        set<string> existing_uo_types;
         
         ITERATE ( CSeq_descr::Tdata, it, descr.Get() ) {
             const CSeqdesc& desc = **it;
@@ -1868,19 +1867,29 @@ void CWGSDb_Impl::AddMasterDescr(CSeq_descr& descr, const CBioseq* main_seq) con
             }
         }
 
-        ITERATE ( TMasterDescr, it, GetMasterDescr() ) {
-            const CSeqdesc& desc = **it;
-            if ( CWGSDb::GetMasterDescrType(desc) == CWGSDb::eDescr_default &&
-                 (type_mask & (1 << desc.Which())) ) {
-                bool skip = true;
-                string uo_type = s_GetUserObjectType(desc);
-                if (!uo_type.empty() && existing_uo_types.count(uo_type) == 0)
-                    skip = false;
-                // omit master descr if contig already has one of that type
-                if (skip)
-                    continue;
+        string kMasterDescrMark = "WithMasterDescr";
+        if ( existing_uo_types.find(kMasterDescrMark) == existing_uo_types.end() ) {
+            ITERATE ( TMasterDescr, it, GetMasterDescr() ) {
+                const CSeqdesc& desc = **it;
+                if ( CWGSDb::GetMasterDescrType(desc) == CWGSDb::eDescr_default &&
+                     (type_mask & (1 << desc.Which())) ) {
+                    bool skip = true;
+                    string uo_type = s_GetUserObjectType(desc);
+                    if (!uo_type.empty() && existing_uo_types.count(uo_type) == 0)
+                        skip = false;
+                    // omit master descr if contig already has one of that type
+                    if (skip)
+                        continue;
+                }
+                descr.Set().push_back(*it);
             }
-            descr.Set().push_back(*it);
+            if ( flags & fMasterDescrMark ) {
+                CRef<CSeqdesc> desc(new CSeqdesc);
+                auto& user_object = desc->SetUser();
+                user_object.SetType().SetStr(kMasterDescrMark);
+                user_object.SetData();
+                descr.Set().push_back(desc);
+            }
         }
     }
 }
@@ -3196,7 +3205,7 @@ CRef<CSeq_descr> CWGSSeqIterator::GetSeq_descr(TFlags flags) const
         sx_AddDescrBytes(*ret, *m_Cur->NUC_PROT_DESCR(m_CurrId));
     }
     if ( flags & fMasterDescr ) {
-        GetDb().AddMasterDescr(*ret);
+        GetDb().AddMasterDescr(*ret, nullptr, flags);
     }
     if ( ret->Get().empty() ) {
         ret.Reset();
@@ -4745,10 +4754,10 @@ void SWGSCreateInfo::x_CreateProtSet(TVDBRowIdRange range)
 
 
 static
-void sx_AddMasterDescr(const CWGSDb& db, SWGSCreateInfo& info)
+void sx_AddMasterDescr(const CWGSDb& db, SWGSCreateInfo& info, SWGSDb_Defs::TFlags flags)
 {
     if ( !db->GetMasterDescr().empty() ) {
-        db->AddMasterDescr(info.entry->SetDescr(), info.main_seq);
+        db->AddMasterDescr(info.entry->SetDescr(), info.main_seq, flags);
     }
 }
 
@@ -4774,7 +4783,7 @@ void CWGSSeqIterator::x_CreateEntry(SWGSCreateInfo& info) const
                 }
             }
             if ( flags & fMasterDescr ) {
-                sx_AddMasterDescr(m_Db, info);
+                sx_AddMasterDescr(m_Db, info, flags);
             }
         }
     }
@@ -5302,7 +5311,7 @@ CRef<CSeq_descr> CWGSScaffoldIterator::GetSeq_descr(TFlags flags) const
 
     CRef<CSeq_descr> ret(new CSeq_descr);
     if ( flags & fMasterDescr ) {
-        GetDb().AddMasterDescr(*ret);
+        GetDb().AddMasterDescr(*ret, nullptr, flags);
     }
     if ( ret->Get().empty() ) {
         ret.Reset();
@@ -5482,7 +5491,7 @@ void CWGSScaffoldIterator::x_CreateEntry(SWGSCreateInfo& info) const
         info.flags = flags;
         info.x_CreateProtSet(GetLocFeatRowIdRange());
         if ( flags & fMasterDescr ) {
-            sx_AddMasterDescr(m_Db, info);
+            sx_AddMasterDescr(m_Db, info, flags);
         }
     }
 }
@@ -6149,7 +6158,7 @@ CRef<CSeq_descr> CWGSProteinIterator::GetSeq_descr(TFlags flags) const
         }
     }
     if ( flags & fMasterDescr ) {
-        GetDb().AddMasterDescr(*ret);
+        GetDb().AddMasterDescr(*ret, nullptr, flags);
     }
     if ( ret->Get().empty() ) {
         ret.Reset();
