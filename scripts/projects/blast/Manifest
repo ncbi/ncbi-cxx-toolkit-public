@@ -8,7 +8,9 @@
 # Purpose: This file holds all the supported configurations of a package
 #          It is used by release configurator.
 #
-
+# Documentatio:
+# https://confluence.ncbi.nlm.nih.gov/display/CT/General+guidelines+and+supporting+framework+for+product+releases
+#
 # The APP: statement describes binaries
 # The LIB: statement describes libraries
 # The DLL: statement describes shared objects
@@ -27,7 +29,10 @@ COPY: $srcdir/src/app/blast/legacy_blast.pl $installdir/bin
 COPY: $srcdir/src/app/blast/update_blastdb.pl $installdir/bin
 COPY: $srcdir/src/app/blast/cleanup-blastdb-volumes.py $installdir/bin
 COPY: $srcdir/src/app/blast/get_species_taxids.sh $installdir/bin
-COPY: $bindir/ncbi-vdb-md.dll $installdir/bin
+
+# removed as only needed for Win64 platform
+#COPY: $bindir/ncbi-vdb-md.dll $installdir/bin
+DLL: ncbi-vdb-md.dll
 
 POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $version $platform $installdir "$tarball" $bindir
 
