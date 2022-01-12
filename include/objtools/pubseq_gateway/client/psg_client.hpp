@@ -97,6 +97,14 @@ struct SPSG_UserArgs : unordered_map<string, set<string>>
 class CPSG_Request
 {
 public:
+    enum EType {
+        eBiodata,
+        eResolve,
+        eBlob,
+        eNamedAnnotInfo,
+        eChunk,
+    };
+
     /// Get the user-provided context
     template<typename TUserContext>
     shared_ptr<TUserContext> GetUserContext() const
@@ -109,7 +117,20 @@ public:
     void SetRequestContext(CRef<CRequestContext> request_context);
 
     /// Get request type
-    string GetType() const { return x_GetType(); }
+    /// @{
+    /// A temporary struct to migrate from a string type to an enum one (EType)
+    struct SType
+    {
+        operator EType() const { return m_Type; }
+        NCBI_DEPRECATED operator string() const; ///< @deprecated use EType instead
+        NCBI_DEPRECATED friend ostream& operator<<(ostream& os, const SType& type); ///< @warning Output will be changed after migration
+    private:
+        SType(EType type) : m_Type(type) {}
+        EType m_Type;
+        friend class CPSG_Request;
+    };
+    SType GetType() const { return x_GetType(); }
+    /// @}
 
     // Get request ID
     string GetId() const { return x_GetId(); }
@@ -137,7 +158,7 @@ protected:
     virtual ~CPSG_Request() = default;
 
 private:
-    virtual string x_GetType() const = 0;
+    virtual EType x_GetType() const = 0;
     virtual string x_GetId() const = 0;
     virtual void x_GetAbsPathRef(ostream&) const = 0;
 
@@ -327,7 +348,7 @@ public:
     void SetResendTimeout(CTimeout resend_timeout) { m_ResendTimeout = move(resend_timeout); }
 
 private:
-    string x_GetType() const override { return "biodata"; }
+    EType x_GetType() const override { return eBiodata; }
     string x_GetId() const override { return GetBioId().Repr(); }
     void x_GetAbsPathRef(ostream&) const override;
 
@@ -383,7 +404,7 @@ public:
     void SetAccSubstitution(EPSG_AccSubstitution acc_substitution) { m_AccSubstitution = acc_substitution; }
 
 private:
-    string x_GetType() const override { return "resolve"; }
+    EType x_GetType() const override { return eResolve; }
     string x_GetId() const override { return GetBioId().Repr(); }
     void x_GetAbsPathRef(ostream&) const override;
 
@@ -417,7 +438,7 @@ public:
     EIncludeData GetIncludeData() const { return m_IncludeData; }
 
 private:
-    string x_GetType() const override { return "blob"; }
+    EType x_GetType() const override { return eBlob; }
     string x_GetId() const override { return GetBlobId().Repr(); }
     void x_GetAbsPathRef(ostream&) const override;
 
@@ -463,7 +484,7 @@ public:
     EIncludeData GetIncludeData() const { return m_IncludeData; }
 
 private:
-    string x_GetType() const override { return "annot"; }
+    EType x_GetType() const override { return eNamedAnnotInfo; }
     string x_GetId() const override { return GetBioId().Repr(); }
     void x_GetAbsPathRef(ostream&) const override;
 
@@ -491,7 +512,7 @@ public:
     const CPSG_ChunkId& GetChunkId() const { return m_ChunkId; }
 
 private:
-    string x_GetType() const override { return "chunk"; }
+    EType x_GetType() const override { return eChunk; }
     string x_GetId() const override { return GetChunkId().Repr(); }
     void x_GetAbsPathRef(ostream&) const override;
 

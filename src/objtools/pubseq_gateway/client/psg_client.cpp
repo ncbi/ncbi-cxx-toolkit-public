@@ -168,6 +168,32 @@ void SPSG_BlobReader::CheckForNewChunks()
 }
 
 
+const char* s_GetRequestTypeName(CPSG_Request::EType type)
+{
+    switch (type) {
+        case CPSG_Request::eBiodata:        return "biodata";
+        case CPSG_Request::eResolve:        return "resolve";
+        case CPSG_Request::eBlob:           return "blob";
+        case CPSG_Request::eNamedAnnotInfo: return "annot";
+        case CPSG_Request::eChunk:          return "chunk";
+    }
+
+    // Should not happen
+    _TROUBLE;
+    return "unknown";
+}
+
+CPSG_Request::SType::operator string() const
+{
+    return s_GetRequestTypeName(m_Type);
+}
+
+ostream& operator<<(ostream& os, const CPSG_Request::SType& type)
+{
+    return os << s_GetRequestTypeName(type.m_Type);
+}
+
+
 static_assert(is_nothrow_move_constructible<CPSG_BioId>::value, "CPSG_BioId move constructor must be noexcept");
 
 string CPSG_BioId::Repr() const
@@ -981,7 +1007,7 @@ vector<CPSG_BioId> CPSG_BioseqInfo::GetOtherIds() const
         _ASSERT(request);
 
         NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong seq_ids format: '" << seq_ids.Repr() <<
-                "' for " << request->GetType() << " request '" << request->GetId() << '\'');
+                "' for " << s_GetRequestTypeName(request->GetType()) << " request '" << request->GetId() << '\'');
     }
 
     return rv;
