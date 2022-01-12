@@ -961,7 +961,8 @@ int CNcbiApplicationAPI::AppMain
                 conf = conf_arg;
             }
             else {
-                ERR_POST_X(23, Critical << "Registry file \"" << conf_arg << "\" not found");
+                ERR_POST_X(23, Critical << "Registry file \"" << conf_arg << "\" not found, aborting.");
+                Abort();
             }
         }
     }
