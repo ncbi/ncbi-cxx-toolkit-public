@@ -744,8 +744,7 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
     auto& ioc = m_Service.ioc;
     auto& params = ioc.params;
 
-    auto user_context = params.client_mode == EPSG_PsgClientMode::eOff ?
-        nullptr : user_request->GetUserContext<string>();
+    auto user_context = params.user_request_ids ? user_request->GetUserContext<string>() : nullptr;
     const auto request_id = user_context ? *user_context : ioc.GetNewRequestId();
     auto reply = make_shared<SPSG_Reply>(move(request_id), params, queue);
     auto abs_path_ref = x_GetAbsPathRef(user_request);

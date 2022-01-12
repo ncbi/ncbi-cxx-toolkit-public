@@ -113,12 +113,14 @@ struct SPSG_Params
     TPSG_DebugPrintout debug_printout;
     TPSG_RequestsPerIo requests_per_io;
     TPSG_RequestRetries request_retries;
+    TPSG_UserRequestIds user_request_ids;
     TPSG_PsgClientMode client_mode;
 
     SPSG_Params() :
         debug_printout(TPSG_DebugPrintout::eGetDefault),
         requests_per_io(TPSG_RequestsPerIo::eGetDefault),
         request_retries(TPSG_RequestRetries::eGetDefault),
+        user_request_ids(TPSG_UserRequestIds::eGetDefault),
         client_mode(TPSG_PsgClientMode::eGetDefault)
     {}
 };

@@ -351,6 +351,9 @@ using TPSG_RequestRetries = PSG_PARAM_VALUE_TYPE(PSG, request_retries);
 NCBI_PARAM_DECL(string, PSG, request_user_args);
 typedef NCBI_PARAM_TYPE(PSG, request_user_args) TPSG_RequestUserArgs;
 
+NCBI_PARAM_DECL(bool, PSG, user_request_ids);
+using TPSG_UserRequestIds = PSG_PARAM_VALUE_TYPE(PSG, user_request_ids);
+
 NCBI_PARAM_DECL(unsigned, PSG, localhost_preference);
 typedef NCBI_PARAM_TYPE(PSG, localhost_preference) TPSG_LocalhostPreference;
 
