@@ -152,7 +152,8 @@ struct SWGSDb_Defs
         fSeqDescr     = 1<<4,
         fNucProtDescr = 1<<12,
         fMasterDescr  = 1<<5,
-        fMaskDescr    = fSeqDescr|fNucProtDescr|fMasterDescr,
+        fMasterDescrMark = 1<<13,
+        fMaskDescr    = fSeqDescr|fNucProtDescr|fMasterDescr|fMasterDescrMark,
         fDefaultDescr = fSeqDescr|fNucProtDescr|fMasterDescr,
 
         fSeqAnnot     = 1<<6,
@@ -301,7 +302,7 @@ public:
     size_t GetMasterDescrBytes(TMasterDescrBytes& buffer);
     // return entry or null if absent
     CRef<CSeq_entry> GetMasterDescrEntry(void);
-    void AddMasterDescr(CSeq_descr& descr, const CBioseq* main_seq = 0) const;
+    void AddMasterDescr(CSeq_descr& descr, const CBioseq* main_seq = 0, TFlags flags = fDefaultFlags) const;
 
     void ResetMasterDescr(void);
     void SetMasterDescr(const TMasterDescr& descr, int filter);
