@@ -878,15 +878,18 @@ void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
 }
 
 
+// NOTE: the blob id argument is temporary to satisfy the older clients
 void CPSGS_Reply::PrepareTSEBlobExcluded(const string &        processor_id,
                                          EPSGS_BlobSkipReason  skip_reason,
+                                         const string &        blob_id,
                                          int64_t               id2_chunk,
                                          const string &        id2_info)
 {
     if (m_ConnectionCanceled || IsFinished())
         return;
 
-    string  exclude = GetTSEBlobExcludeHeader(GetItemId(), processor_id,
+    // NOTE: the blob id argument is temporary to satisfy the older clients
+    string  exclude = GetTSEBlobExcludeHeader(GetItemId(), processor_id, blob_id,
                                               skip_reason, id2_chunk, id2_info);
     while (m_ChunksLock.exchange(true)) {}
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -897,7 +900,9 @@ void CPSGS_Reply::PrepareTSEBlobExcluded(const string &        processor_id,
 }
 
 
-void CPSGS_Reply::PrepareTSEBlobExcluded(int64_t  id2_chunk,
+// NOTE: the blob id argument is temporary to satisfy the older clients
+void CPSGS_Reply::PrepareTSEBlobExcluded(const string &  blob_id,
+                                         int64_t  id2_chunk,
                                          const string &  id2_info,
                                          const string &  processor_id,
                                          unsigned long  sent_mks_ago,
@@ -906,7 +911,9 @@ void CPSGS_Reply::PrepareTSEBlobExcluded(int64_t  id2_chunk,
     if (m_ConnectionCanceled || IsFinished())
         return;
 
+    // NOTE: the blob id argument is temporary to satisfy the older clients
     string  exclude = GetTSEBlobExcludeHeader(GetItemId(), processor_id,
+                                              blob_id,
                                               id2_chunk, id2_info,
                                               sent_mks_ago,
                                               until_resend_mks);
