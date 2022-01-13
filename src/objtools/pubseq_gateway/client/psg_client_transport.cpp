@@ -170,6 +170,21 @@ SDebugPrintout::~SDebugPrintout()
     }
 }
 
+EPSG_Status SPSG_Reply::SState::GetStatus() const volatile
+{
+    switch (m_State) {
+        case eNotFound:     return EPSG_Status::eNotFound;
+        case eForbidden:    return EPSG_Status::eForbidden;
+        case eError:        return EPSG_Status::eError;
+        case eSuccess:      return EPSG_Status::eSuccess;
+        case eInProgress:   return EPSG_Status::eInProgress;
+    }
+
+    // Should not happen
+    _TROUBLE;
+    return EPSG_Status::eError;
+}
+
 string SPSG_Reply::SState::GetError()
 {
     if (m_Messages.empty()) return {};
@@ -325,6 +340,20 @@ bool SPSG_Request::StateData(const char*& data, size_t& len)
     return true;
 }
 
+EDiagSev s_GetSeverity(const string& severity)
+{
+    if (severity == "error")        return eDiag_Error;
+    if (severity == "warning")      return eDiag_Warning;
+    if (severity == "info")         return eDiag_Info;
+    if (severity == "trace")        return eDiag_Trace;
+    if (severity == "fatal")        return eDiag_Fatal;
+    if (severity == "critical")     return eDiag_Critical;
+
+    // Should not happen
+    _TROUBLE;
+    return eDiag_Error;
+}
+
 void SPSG_Request::Add()
 {
     SContextSetter setter(context);
@@ -395,13 +424,13 @@ void SPSG_Request::Add()
             }
 
         } else if (chunk_type == "message") {
-            auto severity = args->GetValue("severity");
+            auto severity = s_GetSeverity(args->GetValue("severity"));
 
-            if (severity == "warning") {
+            if (severity == eDiag_Warning) {
                 ERR_POST(Warning << chunk);
-            } else if (severity == "info") {
+            } else if (severity == eDiag_Info) {
                 ERR_POST(Info << chunk);
-            } else if (severity == "trace") {
+            } else if (severity == eDiag_Trace) {
                 ERR_POST(Trace << chunk);
             } else {
                 item.state.AddError(move(chunk));
@@ -689,13 +718,8 @@ SPSG_ThrottleParams::SThreshold::SThreshold(string error_rate)
     }
 }
 
-uint64_t s_SecondsToMs(double seconds)
-{
-    return seconds > 0.0 ? static_cast<uint64_t>(seconds * milli::den) : 0;
-}
-
 SPSG_ThrottleParams::SPSG_ThrottleParams() :
-    period(s_SecondsToMs(TPSG_ThrottlePeriod::GetDefault())),
+    period(SecondsToMs(TPSG_ThrottlePeriod::GetDefault())),
     max_failures(TPSG_ThrottleMaxFailures::eGetDefault),
     until_discovery(TPSG_ThrottleUntilDiscovery::eGetDefault),
     threshold(TPSG_ThrottleThreshold::GetDefault())
@@ -1112,8 +1136,8 @@ void SPSG_IoImpl::AfterExecute()
 }
 
 SPSG_DiscoveryImpl::SNoServers::SNoServers(SPSG_Servers::TTS& servers) :
-    m_RetryDelay(s_SecondsToMs(TPSG_NoServersRetryDelay::GetDefault())),
-    m_Timeout(s_SecondsToMs(TPSG_RequestTimeout::GetDefault() * (1 + TPSG_RequestRetries::GetDefault()))),
+    m_RetryDelay(SecondsToMs(TPSG_NoServersRetryDelay::GetDefault())),
+    m_Timeout(SecondsToMs(TPSG_RequestTimeout::GetDefault() * (1 + TPSG_RequestRetries::GetDefault()))),
     m_FailRequests(const_cast<atomic_bool&>(servers->fail_requests))
 {
 }
@@ -1150,7 +1174,7 @@ bool SPSG_DiscoveryImpl::SNoServers::operator()(bool discovered, SUv_Timer* time
 
 uint64_t s_GetDiscoveryRepeat(const CServiceDiscovery& service)
 {
-    return service.IsSingleServer() ? 0 : s_SecondsToMs(TPSG_RebalanceTime::GetDefault());
+    return service.IsSingleServer() ? 0 : SecondsToMs(TPSG_RebalanceTime::GetDefault());
 }
 
 SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :

@@ -73,6 +73,11 @@ BEGIN_NCBI_SCOPE
 #define PSG_IO_TRACE(message)              _TRACE(message)
 #define PSG_DISCOVERY_TRACE(message)       _TRACE(message)
 
+inline uint64_t SecondsToMs(double seconds)
+{
+    return seconds > 0.0 ? static_cast<uint64_t>(seconds * milli::den) : 0;
+}
+
 struct SPSG_Args : CUrlArgs
 {
     using CUrlArgs::CUrlArgs;
@@ -260,6 +265,7 @@ struct SPSG_Reply
         SState() : m_State(eInProgress), m_Returned(false), m_Empty(true) {}
 
         const volatile atomic<EState>& GetState() const volatile { return m_State; }
+        EPSG_Status GetStatus() const volatile;
         string GetError();
 
         bool InProgress() const volatile { return m_State == eInProgress; }
@@ -688,6 +694,10 @@ private:
 
 struct SPSG_IoCoordinator
 {
+private:
+    SPSG_Servers::TTS m_Servers;
+
+public:
     SPSG_Params params;
 
     SPSG_IoCoordinator(CServiceDiscovery service);
@@ -697,7 +707,6 @@ struct SPSG_IoCoordinator
 
 private:
     SUv_Barrier m_Barrier;
-    SPSG_Servers::TTS m_Servers;
     SPSG_Thread<SPSG_DiscoveryImpl> m_Discovery;
     vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;
     atomic<size_t> m_RequestCounter;
