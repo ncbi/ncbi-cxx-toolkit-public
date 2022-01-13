@@ -88,6 +88,9 @@ struct CPSG_Reply::SImpl
 private:
     template <class TReplyItem>
     CPSG_ReplyItem* CreateImpl(TReplyItem* item, const vector<SPSG_Chunk>& chunks);
+    CPSG_ReplyItem* CreateImpl(SPSG_Reply::SItem::TTS& item_ts, const SPSG_Args& args);
+    CPSG_ReplyItem* CreateImpl(CPSG_SkippedBlob::EReason reason, const SPSG_Args& args);
+    CPSG_ReplyItem* CreateImpl(SPSG_Reply::SItem::TTS& item_ts, SPSG_Reply::SItem& item, CPSG_ReplyItem::EType type, CPSG_SkippedBlob::EReason reason);
 };
 
 struct SPSG_UserArgsBuilder

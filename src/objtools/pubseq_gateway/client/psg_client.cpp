@@ -346,6 +346,14 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, const vector<SPS
     return rv.release();
 }
 
+CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, const SPSG_Args& args)
+{
+    SDataId data_id(args);
+    unique_ptr<CPSG_BlobData> blob_data(new CPSG_BlobData(SDataId::Get(data_id)));
+    blob_data->m_Stream.reset(new SPSG_RStream(item_ts));
+    return blob_data.release();
+}
+
 CPSG_SkippedBlob::TSeconds s_GetSeconds(const SPSG_Args& args, const string& name)
 {
     const auto& value = args.GetValue(name);
@@ -353,6 +361,42 @@ CPSG_SkippedBlob::TSeconds s_GetSeconds(const SPSG_Args& args, const string& nam
     // Do not use ternary operator below, 'null' will be become '0.0' otherwise
     if (value.empty()) return null;
     return NStr::StringToNumeric<double>(value);
+}
+
+CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(CPSG_SkippedBlob::EReason reason, const SPSG_Args& args)
+{
+    auto blob_id = SDataId::Get<CPSG_BlobId>(args);
+    auto sent_seconds_ago = s_GetSeconds(args, "sent_seconds_ago");
+    auto time_until_resend = s_GetSeconds(args, "time_until_resend");
+    return new CPSG_SkippedBlob(move(*blob_id), reason, move(sent_seconds_ago), move(time_until_resend));
+}
+
+CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, SPSG_Reply::SItem& item, CPSG_ReplyItem::EType type, CPSG_SkippedBlob::EReason reason)
+{
+    auto status = item.state.GetStatus();
+    auto& args = item.args;
+    auto& chunks = item.chunks;
+
+    if ((status == EPSG_Status::eSuccess) || (status == EPSG_Status::eInProgress)) {
+        switch (type) {
+            case CPSG_ReplyItem::eBlobData:         return CreateImpl(item_ts, args);
+            case CPSG_ReplyItem::eSkippedBlob:      return CreateImpl(reason, args);
+            case CPSG_ReplyItem::eBioseqInfo:       return CreateImpl(new CPSG_BioseqInfo, chunks);
+            case CPSG_ReplyItem::eBlobInfo:         return CreateImpl(new CPSG_BlobInfo(SDataId::Get(args)), chunks);
+            case CPSG_ReplyItem::eNamedAnnotInfo:   return CreateImpl(new CPSG_NamedAnnotInfo(args.GetValue("na")), chunks);
+            case CPSG_ReplyItem::ePublicComment:    return new CPSG_PublicComment(SDataId::Get(args), chunks.empty() ? string() : chunks.front());
+            case CPSG_ReplyItem::eProcessor:        return new CPSG_ReplyItem(CPSG_ReplyItem::eProcessor);
+            case CPSG_ReplyItem::eEndOfReply:       return nullptr;
+        }
+
+        // Should not happen
+        _TROUBLE;
+
+    } else if (type != CPSG_ReplyItem::eEndOfReply) {
+        return new CPSG_ReplyItem(type);
+    }
+
+    return nullptr;
 }
 
 struct SItemTypeAndReason : pair<CPSG_ReplyItem::EType, CPSG_SkippedBlob::EReason>
@@ -422,62 +466,21 @@ SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
 
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS& item_ts)
 {
-    auto user_reply_locked = user_reply.lock();
-
-    assert(user_reply_locked);
-
     auto item_locked = item_ts.GetLock();
-
     item_locked->state.SetReturned();
 
-    auto impl = make_unique<CPSG_ReplyItem::SImpl>(item_ts);
-
-    shared_ptr<CPSG_ReplyItem> rv;
-
-    auto& chunks = item_locked->chunks;
-    auto& args = item_locked->args;
-    auto processor_id = args.GetValue("processor_id");
-
-    const auto& state = item_locked->state.GetState();
+    const auto& args = item_locked->args;
     const auto itar = SItemTypeAndReason::Get(args);
 
-    if ((state != SPSG_Reply::SState::eSuccess) && (state != SPSG_Reply::SState::eInProgress)) {
-        rv.reset(new CPSG_ReplyItem(itar.first));
+    shared_ptr<CPSG_ReplyItem> rv(CreateImpl(item_ts, *item_locked, itar.first, itar.second));
 
-    } else if (itar.first == CPSG_ReplyItem::eBlobData) {
-        SDataId data_id(args);
-        unique_ptr<CPSG_BlobData> blob_data(new CPSG_BlobData(SDataId::Get(data_id)));
-        blob_data->m_Stream.reset(new SPSG_RStream(item_ts));
-        rv.reset(blob_data.release());
-
-    } else if (itar.first == CPSG_ReplyItem::eSkippedBlob) {
-        auto blob_id = SDataId::Get<CPSG_BlobId>(args);
-        auto sent_seconds_ago = s_GetSeconds(args, "sent_seconds_ago");
-        auto time_until_resend = s_GetSeconds(args, "time_until_resend");
-        rv.reset(new CPSG_SkippedBlob(move(*blob_id), itar.second, move(sent_seconds_ago), move(time_until_resend)));
-
-    } else if (itar.first == CPSG_ReplyItem::eBioseqInfo) {
-        rv.reset(CreateImpl(new CPSG_BioseqInfo, chunks));
-
-    } else if (itar.first == CPSG_ReplyItem::eBlobInfo) {
-        rv.reset(CreateImpl(new CPSG_BlobInfo(SDataId::Get(args)), chunks));
-
-    } else if (itar.first == CPSG_ReplyItem::eNamedAnnotInfo) {
-        rv.reset(CreateImpl(new CPSG_NamedAnnotInfo(args.GetValue("na")), chunks));
-
-    } else if (itar.first == CPSG_ReplyItem::ePublicComment) {
-        rv.reset(new CPSG_PublicComment(SDataId::Get(args), chunks.empty() ? string() : chunks.front()));
-
-    } else if (itar.first == CPSG_ReplyItem::eProcessor) {
-        rv.reset(new CPSG_ReplyItem(CPSG_ReplyItem::eProcessor));
-
-    } else {
-        return rv;
+    if (rv) {
+        rv->m_Impl.reset(new CPSG_ReplyItem::SImpl(item_ts));
+        rv->m_Reply = user_reply.lock();
+        rv->m_ProcessorId = args.GetValue("processor_id");
+        _ASSERT(rv->m_Reply);
     }
 
-    rv->m_Impl.reset(impl.release());
-    rv->m_Reply = user_reply_locked;
-    rv->m_ProcessorId = move(processor_id);
     return rv;
 }
 
