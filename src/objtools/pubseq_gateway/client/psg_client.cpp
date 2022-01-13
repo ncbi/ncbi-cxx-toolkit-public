@@ -225,33 +225,6 @@ string CPSG_BlobId::Repr() const
     return m_LastModified.IsNull() ? m_Id : m_Id + '~' + to_string(m_LastModified.GetValue());
 }
 
-unique_ptr<CPSG_DataId> s_GetDataId(const SPSG_Args& args)
-{
-    try {
-        const auto& blob_id = args.GetValue("blob_id");
-
-        if (blob_id.empty()) {
-            auto id2_chunk = NStr::StringToNumeric<int>(args.GetValue("id2_chunk"));
-            return unique_ptr<CPSG_DataId>(new CPSG_ChunkId(id2_chunk, args.GetValue("id2_info")));
-        }
-
-        CPSG_BlobId::TLastModified last_modified;
-        const auto& last_modified_str = args.GetValue("last_modified");
-
-        if (last_modified_str.empty()) {
-            return unique_ptr<CPSG_DataId>(new CPSG_BlobId(blob_id));
-        }
-
-        last_modified = NStr::StringToNumeric<Int8>(last_modified_str);
-        return unique_ptr<CPSG_DataId>(new CPSG_BlobId(blob_id, move(last_modified)));
-    }
-    catch (...) {
-        NCBI_THROW_FMT(CPSG_Exception, eServerError,
-                "Both blob_id[+last_modified] and id2_chunk+id2_info pairs are missing/corrupted in server response: " <<
-                args.GetQueryString(CUrlArgs::eAmp_Char));
-    }
-}
-
 CPSG_BlobId s_GetBlobId(const CJsonNode& data)
 {
     CPSG_BlobId::TLastModified last_modified;
@@ -286,6 +259,81 @@ ostream& operator<<(ostream& os, const CPSG_ChunkId& chunk_id)
     return os << "id2_chunk=" << chunk_id.GetId2Chunk() << "&id2_info=" << chunk_id.GetId2Info();
 }
 
+
+struct SDataId
+{
+    SDataId(const SPSG_Args& args) : m_Args(args), m_BlobId(m_Args.GetValue("blob_id")) {}
+
+    bool HasBlobId() const { return !m_BlobId.empty(); }
+
+    template <class TRequestedId, class TAllowedId>
+    unique_ptr<TRequestedId> Get() const;
+
+    template <class TRequestedId = CPSG_DataId>
+    static unique_ptr<TRequestedId> Get(SDataId data_id);
+
+private:
+    template <class TRequestedId> unique_ptr<TRequestedId> x_Get() const;
+
+    const SPSG_Args& m_Args;
+    const string& m_BlobId;
+};
+
+template <>
+unique_ptr<CPSG_BlobId> SDataId::x_Get<CPSG_BlobId>() const
+{
+    CPSG_BlobId::TLastModified last_modified;
+    const auto& last_modified_str = m_Args.GetValue("last_modified");
+
+    if (last_modified_str.empty()) {
+        return make_unique<CPSG_BlobId>(m_BlobId);
+    }
+
+    last_modified = NStr::StringToNumeric<Int8>(last_modified_str);
+    return make_unique<CPSG_BlobId>(m_BlobId, move(last_modified));
+}
+
+template <>
+unique_ptr<CPSG_ChunkId> SDataId::x_Get<CPSG_ChunkId>() const
+{
+    auto id2_chunk = NStr::StringToNumeric<int>(m_Args.GetValue("id2_chunk"));
+    return make_unique<CPSG_ChunkId>(id2_chunk, m_Args.GetValue("id2_info"));
+}
+
+#define PSG_THROW_MISSING_DATA_ID(prefix) \
+    NCBI_THROW_FMT(CPSG_Exception, eServerError, prefix " missing/corrupted in server response: " << \
+            m_Args.GetQueryString(CUrlArgs::eAmp_Char))
+
+template <class TRequestedId, class TAllowedId>
+unique_ptr<TRequestedId> SDataId::Get() const
+{
+    try {
+        return x_Get<TAllowedId>();
+    }
+    catch (...) {
+        PSG_THROW_MISSING_DATA_ID("Both blob_id[+last_modified] and id2_chunk+id2_info pairs are");
+    }
+}
+
+template <>
+unique_ptr<CPSG_ChunkId> SDataId::Get<CPSG_ChunkId, CPSG_BlobId>() const
+{
+    PSG_THROW_MISSING_DATA_ID("id2_chunk+id2_info pair is");
+}
+
+template <>
+unique_ptr<CPSG_BlobId> SDataId::Get<CPSG_BlobId, CPSG_ChunkId>() const
+{
+    PSG_THROW_MISSING_DATA_ID("blob_id[+last_modified] pair is");
+}
+
+#undef PSG_THROW_MISSING_DATA_ID
+
+template <class TRequestedId>
+unique_ptr<TRequestedId> SDataId::Get(SDataId data_id)
+{
+    return data_id.HasBlobId() ? data_id.Get<TRequestedId, CPSG_BlobId>() : data_id.Get<TRequestedId, CPSG_ChunkId>();
+}
 
 template <class TReplyItem>
 CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, const vector<SPSG_Chunk>& chunks)
@@ -397,28 +445,28 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS& ite
         rv.reset(new CPSG_ReplyItem(itar.first));
 
     } else if (itar.first == CPSG_ReplyItem::eBlobData) {
-        unique_ptr<CPSG_BlobData> blob_data(new CPSG_BlobData(s_GetDataId(args)));
+        SDataId data_id(args);
+        unique_ptr<CPSG_BlobData> blob_data(new CPSG_BlobData(SDataId::Get(data_id)));
         blob_data->m_Stream.reset(new SPSG_RStream(item_ts));
         rv.reset(blob_data.release());
 
     } else if (itar.first == CPSG_ReplyItem::eSkippedBlob) {
-        auto data_id = s_GetDataId(args);
-        auto blob_id = move(dynamic_cast<CPSG_BlobId&>(*data_id));
+        auto blob_id = SDataId::Get<CPSG_BlobId>(args);
         auto sent_seconds_ago = s_GetSeconds(args, "sent_seconds_ago");
         auto time_until_resend = s_GetSeconds(args, "time_until_resend");
-        rv.reset(new CPSG_SkippedBlob(move(blob_id), itar.second, move(sent_seconds_ago), move(time_until_resend)));
+        rv.reset(new CPSG_SkippedBlob(move(*blob_id), itar.second, move(sent_seconds_ago), move(time_until_resend)));
 
     } else if (itar.first == CPSG_ReplyItem::eBioseqInfo) {
         rv.reset(CreateImpl(new CPSG_BioseqInfo, chunks));
 
     } else if (itar.first == CPSG_ReplyItem::eBlobInfo) {
-        rv.reset(CreateImpl(new CPSG_BlobInfo(s_GetDataId(args)), chunks));
+        rv.reset(CreateImpl(new CPSG_BlobInfo(SDataId::Get(args)), chunks));
 
     } else if (itar.first == CPSG_ReplyItem::eNamedAnnotInfo) {
         rv.reset(CreateImpl(new CPSG_NamedAnnotInfo(args.GetValue("na")), chunks));
 
     } else if (itar.first == CPSG_ReplyItem::ePublicComment) {
-        rv.reset(new CPSG_PublicComment(s_GetDataId(args), chunks.empty() ? string() : chunks.front()));
+        rv.reset(new CPSG_PublicComment(SDataId::Get(args), chunks.empty() ? string() : chunks.front()));
 
     } else if (itar.first == CPSG_ReplyItem::eProcessor) {
         rv.reset(new CPSG_ReplyItem(CPSG_ReplyItem::eProcessor));
