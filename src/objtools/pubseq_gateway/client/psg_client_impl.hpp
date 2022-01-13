@@ -45,7 +45,8 @@
 
 BEGIN_NCBI_SCOPE
 
-struct SPSG_BlobReader : IReader
+// ICC does not like this array to be a direct base of SPSG_RStream
+struct SPSG_BlobReader : IReader, protected array<char, 64 * 1024>
 {
     SPSG_BlobReader(SPSG_Reply::SItem::TTS& src);
 
@@ -62,10 +63,11 @@ private:
     size_t m_Index = 0;
 };
 
-struct SPSG_RStream : private SPSG_BlobReader, private array<char, 64 * 1024>, public CRStream
+struct SPSG_RStream : private SPSG_BlobReader, public CRStream
 {
-    SPSG_RStream(SPSG_Reply::SItem::TTS& src) :
-        SPSG_BlobReader(src),
+    template <class... TArgs>
+    SPSG_RStream(TArgs&&... args) :
+        SPSG_BlobReader(forward<TArgs>(args)...),
         CRStream(this, size(), data())
     {}
 };
@@ -85,7 +87,7 @@ struct CPSG_Reply::SImpl
 
 private:
     template <class TReplyItem>
-    TReplyItem* CreateImpl(TReplyItem* item, const vector<SPSG_Chunk>& chunks);
+    CPSG_ReplyItem* CreateImpl(TReplyItem* item, const vector<SPSG_Chunk>& chunks);
 };
 
 struct SPSG_UserArgsBuilder

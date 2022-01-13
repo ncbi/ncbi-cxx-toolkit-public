@@ -288,7 +288,7 @@ ostream& operator<<(ostream& os, const CPSG_ChunkId& chunk_id)
 
 
 template <class TReplyItem>
-TReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, const vector<SPSG_Chunk>& chunks)
+CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, const vector<SPSG_Chunk>& chunks)
 {
     if (chunks.empty()) return item;
 
@@ -296,6 +296,15 @@ TReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, const vector<SPSG_Ch
     rv->m_Data = CJsonNode::ParseJSON(chunks.front(), CJsonNode::fStandardJson);
 
     return rv.release();
+}
+
+CPSG_SkippedBlob::TSeconds s_GetSeconds(const SPSG_Args& args, const string& name)
+{
+    const auto& value = args.GetValue(name);
+
+    // Do not use ternary operator below, 'null' will be become '0.0' otherwise
+    if (value.empty()) return null;
+    return NStr::StringToNumeric<double>(value);
 }
 
 struct SItemTypeAndReason : pair<CPSG_ReplyItem::EType, CPSG_SkippedBlob::EReason>
@@ -363,15 +372,6 @@ SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
     }
 }
 
-CPSG_SkippedBlob::TSeconds s_GetSeconds(const SPSG_Args& args, const string& name)
-{
-    const auto& value = args.GetValue(name);
-
-    // Do not use ternary operator below, 'null' will be become '0.0' otherwise
-    if (value.empty()) return null;
-    return NStr::StringToNumeric<double>(value);
-}
-
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS& item_ts)
 {
     auto user_reply_locked = user_reply.lock();
@@ -415,12 +415,10 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS& ite
         rv.reset(CreateImpl(new CPSG_BlobInfo(s_GetDataId(args)), chunks));
 
     } else if (itar.first == CPSG_ReplyItem::eNamedAnnotInfo) {
-        auto name = args.GetValue("na");
-        rv.reset(CreateImpl(new CPSG_NamedAnnotInfo(name), chunks));
+        rv.reset(CreateImpl(new CPSG_NamedAnnotInfo(args.GetValue("na")), chunks));
 
     } else if (itar.first == CPSG_ReplyItem::ePublicComment) {
-        auto text = chunks.empty() ? string() : chunks.front();
-        rv.reset(new CPSG_PublicComment(s_GetDataId(args), text));
+        rv.reset(new CPSG_PublicComment(s_GetDataId(args), chunks.empty() ? string() : chunks.front()));
 
     } else if (itar.first == CPSG_ReplyItem::eProcessor) {
         rv.reset(new CPSG_ReplyItem(CPSG_ReplyItem::eProcessor));
@@ -820,12 +818,10 @@ EPSG_Status s_GetStatus(SPSG_Reply::SItem::TTS& ts, const CDeadline& deadline)
     auto& state = ts->state;
 
     do {
-        switch (state.GetState()) {
-            case SPSG_Reply::SState::eNotFound:   return EPSG_Status::eNotFound;
-            case SPSG_Reply::SState::eForbidden:  return EPSG_Status::eForbidden;
-            case SPSG_Reply::SState::eError:      return EPSG_Status::eError;
-            case SPSG_Reply::SState::eSuccess:    return EPSG_Status::eSuccess;
-            case SPSG_Reply::SState::eInProgress: break;
+        auto status = state.GetStatus();
+
+        if (status != EPSG_Status::eInProgress) {
+            return status;
         }
     }
     while (state.change.WaitUntil(deadline));
