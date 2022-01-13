@@ -1415,7 +1415,9 @@ CPSGS_CassBlobBase::x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
     }
 
     // It is sent or in progress and need to add more info
+    // NOTE: the blob id argument is temporary to satisfy the older clients
     m_Reply->PrepareTSEBlobExcluded(m_ProcessorId, skip_reason,
+                                    fetch_details->GetBlobId().ToString(),
                                     x_GetId2ChunkNumber(fetch_details),
                                     m_Id2Info->Serialize());
 }
@@ -1430,7 +1432,9 @@ CPSGS_CassBlobBase::x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
     // the additional resend related fields need to be supplied
 
     if (NeedToAddId2CunkId2Info()) {
-        m_Reply->PrepareTSEBlobExcluded(x_GetId2ChunkNumber(fetch_details),
+        // NOTE: the blob id argument is temporary to satisfy the older clients
+        m_Reply->PrepareTSEBlobExcluded(fetch_details->GetBlobId().ToString(),
+                                        x_GetId2ChunkNumber(fetch_details),
                                         m_Id2Info->Serialize(),
                                         m_ProcessorId, sent_mks_ago,
                                         until_resend_mks);

@@ -577,8 +577,10 @@ string GetBlobExcludeHeader(size_t  item_id,
 }
 
 
+// NOTE: the blob id argument is temporary to satisfy the older clients
 string  GetTSEBlobExcludeHeader(size_t  item_id,
                                 const string &  processor_id,
+                                const string &  blob_id,
                                 EPSGS_BlobSkipReason  skip_reason,
                                 int64_t  id2_chunk,
                                 const string &  id2_info)
@@ -591,6 +593,11 @@ string  GetTSEBlobExcludeHeader(size_t  item_id,
                 .append(NStr::URLEncode(processor_id))
                 .append(s_AndBlobItem)
                 .append(s_AndMetaChunk)
+
+                // NOTE: the blob id argument is temporary to satisfy the older clients
+                .append(s_AndBlobId)
+                .append(blob_id)
+
                 .append(s_AndId2Chunk)
                 .append(to_string(id2_chunk))
                 .append(s_AndId2Info)
@@ -603,8 +610,10 @@ string  GetTSEBlobExcludeHeader(size_t  item_id,
 
 
 // Used only for the case 'already sent'
+// NOTE: the blob id argument is temporary to satisfy the older clients
 string  GetTSEBlobExcludeHeader(size_t  item_id,
                                 const string &  processor_id,
+                                const string &  blob_id,
                                 int64_t  id2_chunk,
                                 const string &  id2_info,
                                 unsigned long  sent_mks_ago,
@@ -627,6 +636,11 @@ string  GetTSEBlobExcludeHeader(size_t  item_id,
                 .append(NStr::URLEncode(processor_id))
                 .append(s_AndBlobItem)
                 .append(s_AndMetaChunk)
+
+                // NOTE: the blob id argument is temporary to satisfy the older clients
+                .append(s_AndBlobId)
+                .append(blob_id)
+
                 .append(s_AndId2Chunk)
                 .append(to_string(id2_chunk))
                 .append(s_AndId2Info)

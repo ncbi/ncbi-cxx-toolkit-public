@@ -236,13 +236,17 @@ string GetBlobExcludeHeader(size_t  item_id,
                             unsigned long  sent_mks_ago,
                             unsigned long  until_resend_mks,
                             CBlobRecord::TTimestamp  last_modified=-1);
+// NOTE: the blob id argument is temporary to satisfy the older clients
 string  GetTSEBlobExcludeHeader(size_t  item_id,
                                 const string &  processor_id,
+                                const string &  blob_id,
                                 EPSGS_BlobSkipReason  skip_reason,
                                 int64_t  id2_chunk,
                                 const string &  id2_info);
+// NOTE: the blob id argument is temporary to satisfy the older clients
 string  GetTSEBlobExcludeHeader(size_t  item_id,
                                 const string &  processor_id,
+                                const string &  blob_id,
                                 int64_t  id2_chunk,
                                 const string &  id2_info,
                                 unsigned long  sent_mks_ago,
