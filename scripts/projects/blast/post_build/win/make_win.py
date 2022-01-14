@@ -77,10 +77,17 @@ def main():
         if VERBOSE: 
             print("Copying", app, "to", cwd)
         shutil.copy(app, cwd)
-
+   
+    # TODO: remove next copy, nghttp2.dll expected to be in a same place as exe files
     dll = os.path.join('\\\\', 'snowman', 'win-coremake', 'Lib', 'ThirdParty', 'nghttp2', 'vs2017.64', '1.33.0', 'bin', 'ReleaseDLL', 'nghttp2.dll')
     shutil.copy(dll, cwd)
-    
+
+    # pick up library after DLL: ncbi-vdb-md.dll in Manifest
+    # expected to be in tarBin\lib 
+    ncbi_vdb_nd_dll = os.path.join(installdir, "lib", "ncbi-vdb-md.dll")
+    if VERBOSE: 
+       print("Copying", app, "to", cwd)
+    shutil.copy(ncbi_vdb_nd_dll, cwd)
     
     update_blast_version(NSIS_CONFIG, blast_version)
     # Copy necessary files to the current working directory
