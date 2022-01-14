@@ -45,6 +45,7 @@ BEGIN_SCOPE(objects)
 class CPub;
 class CPub_equiv;
 class CCit_art;
+class CMLAClient;
 
 BEGIN_SCOPE(edit)
 
@@ -133,12 +134,13 @@ class NCBI_XOBJEDIT_EXPORT CPubFix
 {
 public:
 
-    CPubFix(bool always_lookup, bool replace_cit, bool merge_ids, IMessageListener* err_log) :
+    CPubFix(bool always_lookup, bool replace_cit, bool merge_ids, IMessageListener* err_log, CMLAClient* mla) :
         m_always_lookup(always_lookup),
         m_replace_cit(replace_cit),
         m_merge_ids(merge_ids),
         m_err_log(err_log),
-        m_authlist_validator(err_log)
+        m_authlist_validator(err_log),
+        m_mla(mla)
     {
     }
 
@@ -146,7 +148,7 @@ public:
     void FixPubEquiv(CPub_equiv& pub_equiv);
     const CAuthListValidator& GetValidator() const { return m_authlist_validator; };
 
-    static CRef<CCit_art> FetchPubPmId(TEntrezId pmid);
+    static CRef<CCit_art> FetchPubPmId(TEntrezId pmid, CMLAClient*);
     static string GetErrorId(int code, int subcode);
 
 private:
@@ -156,6 +158,7 @@ private:
 
     IMessageListener* m_err_log;
     CAuthListValidator m_authlist_validator;
+    CMLAClient* m_mla = nullptr;
 };
 
 END_SCOPE(edit)
