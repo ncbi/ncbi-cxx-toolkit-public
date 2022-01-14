@@ -210,6 +210,12 @@ void CBioseq_set_Info::x_AddBioseqChunkId(TChunkId id)
 }
 
 
+const CBioseq_set_Info::TChunkIds& CBioseq_set_Info::x_GetBioseqChunkIds() const
+{
+    return m_BioseqChunks;
+}
+
+
 void CBioseq_set_Info::x_DoUpdate(TNeedUpdateFlags flags)
 {
     if (flags & (fNeedUpdate_bioseq|fNeedUpdate_core|fNeedUpdate_children)) {

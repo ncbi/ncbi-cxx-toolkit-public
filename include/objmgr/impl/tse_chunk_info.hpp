@@ -65,6 +65,12 @@ class ITSE_Assigner;
 class CTSE_Default_Assigner;
 
 
+class CTSEChunkLoadListener : public CObject {
+public:
+    virtual void Loaded(CTSE_Chunk_Info& chunk) = 0;
+};
+
+
 class NCBI_XOBJMGR_EXPORT CTSE_Chunk_Info : public CObject
 {
 public:
@@ -201,6 +207,7 @@ public:
             return m_LoadLock;
         }
     void SetLoaded(CObject* obj = 0);
+    void SetLoadListener(CRef<CTSEChunkLoadListener> listener);
 
     // data attachment
     void x_LoadDescr(const TPlace& place, const CSeq_descr& descr);
@@ -224,19 +231,19 @@ public:
         {
             return m_DescInfos;
         }
-    const TPlaces GetAnnotPlaces(void) const
+    const TPlaces& GetAnnotPlaces(void) const
         {
             return m_AnnotPlaces;
         }
-    const TBioseqPlaces GetBioseqPlaces(void) const
+    const TBioseqPlaces& GetBioseqPlaces(void) const
         {
             return m_BioseqPlaces;
         }
-    const TBioseqIds GetBioseqIds(void) const
+    const TBioseqIds& GetBioseqIds(void) const
         {
             return m_BioseqIds;
         }
-    const TAnnotContents GetAnnotContents(void) const
+    const TAnnotContents& GetAnnotContents(void) const
         {
             return m_AnnotContents;
         }
@@ -325,6 +332,8 @@ private:
 
     CInitMutex<CObject> m_LoadLock;
     TObjectIndexList m_ObjectIndexList;
+    CMutex           m_ListenerMutex;
+    CRef<CTSEChunkLoadListener> m_LoadListener;
 };
 
 

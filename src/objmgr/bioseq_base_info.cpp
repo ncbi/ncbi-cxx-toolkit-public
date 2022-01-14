@@ -199,6 +199,12 @@ void CBioseq_Base_Info::x_AddAnnotChunkId(TChunkId id)
 }
 
 
+const CBioseq_Base_Info::TChunkIds& CBioseq_Base_Info::x_GetDescrChunkIds() const
+{
+    return m_DescrChunks;
+}
+
+
 void CBioseq_Base_Info::x_DoUpdate(TNeedUpdateFlags flags)
 {
     if ( flags & fNeedUpdate_descr ) {
