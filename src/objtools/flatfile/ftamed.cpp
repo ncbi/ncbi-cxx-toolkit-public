@@ -146,9 +146,15 @@ void MedArchFini()
 }
 
 /**********************************************************/
+CMLAClient* GetMlaClient()
+{
+    return &mlaclient;
+}
+
+/**********************************************************/
 CRef<CCit_art> FetchPubPmId(TEntrezId pmid)
 {
-    return edit::CPubFix::FetchPubPmId(pmid);
+    return edit::CPubFix::FetchPubPmId(pmid, GetMlaClient());
 }
 
 END_NCBI_SCOPE

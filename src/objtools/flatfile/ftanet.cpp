@@ -590,7 +590,7 @@ void fta_fill_find_pub_option(ParserPtr pp, bool htag, bool rtag)
 class CFindPub {
 
 public:
-    CFindPub(Parser* pp) : 
+    CFindPub(Parser* pp) :
         m_pParser(pp),
         m_pPubFixListener(new CPubFixMessageListener()) {
             if (m_pParser) {
@@ -599,7 +599,8 @@ public:
                             findPubOptions.always_look,
                             findPubOptions.replace_cit,
                             findPubOptions.merge_ids,
-                            m_pPubFixListener.get()));
+                            m_pPubFixListener.get(),
+                            GetMlaClient()));
             }
         }
 
@@ -612,7 +613,7 @@ private:
 
     Parser* m_pParser;
     unique_ptr<CPubFixMessageListener> m_pPubFixListener;
-    unique_ptr<edit::CPubFix> m_pPubFix = nullptr;
+    unique_ptr<edit::CPubFix> m_pPubFix;
 };
 
 

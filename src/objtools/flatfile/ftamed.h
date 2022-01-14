@@ -3,12 +3,12 @@
 
 #include <objtools/flatfile/flatfile_parse_info.hpp>
 #include <corelib/ncbi_message.hpp>
+#include <objects/mla/mla_client.hpp>
 
 BEGIN_NCBI_SCOPE
 
+objects::CMLAClient* GetMlaClient();
 CRef<objects::CCit_art> FetchPubPmId(TEntrezId pmid);
-
-using TFindPubOptions = Parser::SFindPubOptions;
 
 class CPubFixMessageListener : public CMessageListener_Basic
 {

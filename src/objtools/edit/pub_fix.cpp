@@ -153,7 +153,7 @@ namespace fix_pub
 //   MedlineToISO(tmp)
 //       converts a MEDLINE citation to ISO/GenBank style
 
-void MedlineToISO(CCit_art& cit_art)
+void MedlineToISO(CCit_art& cit_art, CMLAClient* mla)
 {
     if (cit_art.IsSetAuthors()) {
         cit_art.SetAuthors().ConvertMlToStd(true);
@@ -188,10 +188,13 @@ void MedlineToISO(CCit_art& cit_art)
 
             CRef<CTitle_msg_list> msg_list_new;
             try {
-                CMLAClient mla;
-                msg_list_new = mla.AskGettitle(*msg_new);
-            }
-            catch (exception &) {
+                if (mla) {
+                    msg_list_new = mla->AskGettitle(*msg_new);
+                } else {
+                    CMLAClient mla_;
+                    msg_list_new = mla_.AskGettitle(*msg_new);
+                }
+            } catch (exception&) {
                 // msg_list_new stays empty
             }
 
@@ -229,7 +232,7 @@ void MedlineToISO(CCit_art& cit_art)
 //      splits a medline entry into 2 pubs (1 muid, 1 Cit-art)
 //      converts Cit-art to ISO/GenBank style
 //      deletes original medline entry
-void SplitMedlineEntry(CPub_equiv::Tdata& medlines)
+void SplitMedlineEntry(CPub_equiv::Tdata& medlines, CMLAClient* mla)
 {
     if (medlines.size() != 1) {
         return;
@@ -251,7 +254,7 @@ void SplitMedlineEntry(CPub_equiv::Tdata& medlines)
     if (medline.IsSetCit()) {
         cit_art.Reset(new CPub);
         cit_art->SetArticle(medline.SetCit());
-        MedlineToISO(cit_art->SetArticle());
+        MedlineToISO(cit_art->SetArticle(), mla);
     }
 
     medlines.clear();
@@ -1038,7 +1041,7 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
             medlines.resize(1);
         }
 
-        SplitMedlineEntry(medlines);
+        SplitMedlineEntry(medlines, m_mla);
         pub_list.splice(pub_list.end(), medlines);
     }
 
@@ -1087,10 +1090,13 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
 
         TEntrezId pmid = ZERO_ENTREZ_ID;
         try {
-            CMLAClient mla;
-            pmid = ENTREZ_ID_FROM(int, mla.AskCitmatchpmid(*new_pub));
-        }
-        catch (exception &) {
+            if (m_mla) {
+                pmid = ENTREZ_ID_FROM(int, m_mla->AskCitmatchpmid(*new_pub));
+            } else {
+                CMLAClient mla;
+                pmid = ENTREZ_ID_FROM(int, mla.AskCitmatchpmid(*new_pub));
+            }
+        } catch (exception&) {
             // pmid == 0
         }
 
@@ -1107,7 +1113,7 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
             bool set_pmid = true;
             if (m_replace_cit) {
 
-                CRef<CCit_art> new_cit_art = FetchPubPmId(pmid);
+                CRef<CCit_art> new_cit_art = FetchPubPmId(pmid, m_mla);
 
                 if (new_cit_art.NotEmpty()) {
 
@@ -1178,7 +1184,7 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
                 pmids.front()->SetPmid().Set(pmid);
                 pub_list.splice(pub_list.end(), pmids);
 
-                MedlineToISO(*cit_art);
+                MedlineToISO(*cit_art, m_mla);
 
                 pub_list.splice(pub_list.end(), cit_arts);
             }
@@ -1197,14 +1203,14 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
     if (oldpmid != ZERO_ENTREZ_ID) {
         // have a pmid but no cit-art
 
-        CRef<CCit_art> new_cit_art = FetchPubPmId(oldpmid);
+        CRef<CCit_art> new_cit_art = FetchPubPmId(oldpmid, m_mla);
 
         if (new_cit_art.NotEmpty()) {
 
             pub_list.splice(pub_list.end(), pmids);
 
             if (m_replace_cit) {
-                MedlineToISO(*new_cit_art);
+                MedlineToISO(*new_cit_art, m_mla);
                 CRef<CPub> cit_pub(new CPub);
                 cit_pub->SetArticle(*new_cit_art);
                 pub_list.push_back(cit_pub);
@@ -1236,7 +1242,7 @@ void CPubFix::FixPub(CPub& pub)
         pub_equiv->Set().push_back(CRef<CPub>(new CPub));
         pub_equiv->Set().front()->Assign(pub);
 
-        SplitMedlineEntry(pub_equiv->Set());
+        SplitMedlineEntry(pub_equiv->Set(), m_mla);
         pub.SetEquiv().Assign(*pub_equiv);
     }
     break;
@@ -1250,17 +1256,20 @@ void CPubFix::FixPub(CPub& pub)
 
         TEntrezId pmid = ZERO_ENTREZ_ID;
         try {
-            CMLAClient mla;
-            pmid = ENTREZ_ID_FROM(int, mla.AskCitmatchpmid(pub));
-        }
-        catch (exception &) {
+            if (m_mla) {
+                pmid = ENTREZ_ID_FROM(int, m_mla->AskCitmatchpmid(pub));
+            } else {
+                CMLAClient mla;
+                pmid = ENTREZ_ID_FROM(int, mla.AskCitmatchpmid(pub));
+            }
+        } catch (exception&) {
             // pmid == 0;
         }
 
         if (pmid > ZERO_ENTREZ_ID) {
             PrintPub(cit_art, true, false, ENTREZ_ID_TO(long, pmid), m_err_log);
             if (m_replace_cit) {
-                CRef<CCit_art> new_cit_art = FetchPubPmId(pmid);
+                CRef<CCit_art> new_cit_art = FetchPubPmId(pmid, m_mla);
 
                 if (new_cit_art.NotEmpty()) {
                     if (TenAuthorsProcess(cit_art, *new_cit_art, m_err_log)) {
@@ -1279,13 +1288,13 @@ void CPubFix::FixPub(CPub& pub)
                     }
                     else {
                         PrintPub(cit_art, false, true, ENTREZ_ID_TO(long, pmid), m_err_log);
-                        MedlineToISO(cit_art);
+                        MedlineToISO(cit_art, m_mla);
                     }
                 }
             }
             else {
                 PrintPub(cit_art, false, false, ENTREZ_ID_TO(long, pmid), m_err_log);
-                MedlineToISO(cit_art);
+                MedlineToISO(cit_art, m_mla);
             }
         }
     }
@@ -1299,7 +1308,7 @@ void CPubFix::FixPub(CPub& pub)
     }
 }
 
-CRef<CCit_art> CPubFix::FetchPubPmId(TEntrezId pmid)
+CRef<CCit_art> CPubFix::FetchPubPmId(TEntrezId pmid, CMLAClient* mla)
 {
     CRef<CCit_art> cit_art;
     if (pmid < ZERO_ENTREZ_ID)
@@ -1307,10 +1316,13 @@ CRef<CCit_art> CPubFix::FetchPubPmId(TEntrezId pmid)
 
     CRef<CPub> pub;
     try {
-        CMLAClient mla;
-        pub = mla.AskGetpubpmid(CPubMedId(pmid));
-    }
-    catch (exception &) {
+        if (mla) {
+            pub = mla->AskGetpubpmid(CPubMedId(pmid));
+        } else {
+            CMLAClient mla_;
+            pub = mla_.AskGetpubpmid(CPubMedId(pmid));
+        }
+    } catch (exception&) {
         pub.Reset();
     }
 
@@ -1318,7 +1330,7 @@ CRef<CCit_art> CPubFix::FetchPubPmId(TEntrezId pmid)
         cit_art.Reset(new CCit_art);
         cit_art->Assign(pub->GetArticle());
 
-        MedlineToISO(*cit_art);
+        MedlineToISO(*cit_art, mla);
     }
 
     return cit_art;
