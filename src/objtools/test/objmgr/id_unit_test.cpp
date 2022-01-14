@@ -1217,7 +1217,13 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
     map<string, int> user_count;
     int comment_count = 0;
     int pub_count = 0;
+    int total_count = 0;
     for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
         desc_mask |= 1<<it->Which();
         switch ( it->Which() ) {
         case CSeqdesc::e_Comment:
@@ -1245,6 +1251,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
     BOOST_CHECK_EQUAL(user_count.size(), 2u);
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(total_count, 11);
 }
 
 
@@ -1258,7 +1265,13 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr2)
     map<string, int> user_count;
     int comment_count = 0;
     int pub_count = 0;
+    int total_count = 0;
     for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
         desc_mask |= 1<<it->Which();
         switch ( it->Which() ) {
         case CSeqdesc::e_Comment:
@@ -1290,6 +1303,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr2)
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
     BOOST_CHECK_EQUAL(user_count["RefGeneTracking"], 1);
     BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
+    BOOST_CHECK_EQUAL(total_count, 12);
 }
 
 
@@ -1303,7 +1317,13 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr3)
     map<string, int> user_count;
     int comment_count = 0;
     int pub_count = 0;
+    int total_count = 0;
     for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
         desc_mask |= 1<<it->Which();
         switch ( it->Which() ) {
         case CSeqdesc::e_Comment:
@@ -1335,6 +1355,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr3)
     if ( !s_HaveID1() ) { // TODO: ID1 returns 2 FeatureFetchPolicy
         BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
     }
+    BOOST_CHECK_EQUAL(total_count, 12);
 }
 
 
@@ -1348,7 +1369,13 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr4)
     map<string, int> user_count;
     int comment_count = 0;
     int pub_count = 0;
+    int total_count = 0;
     for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
         desc_mask |= 1<<it->Which();
         switch ( it->Which() ) {
         case CSeqdesc::e_Comment:
@@ -1375,6 +1402,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr4)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
     BOOST_CHECK_EQUAL(user_count.size(), 1u);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(total_count, 9);
 }
 
 
@@ -1388,7 +1416,13 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr5)
     map<string, int> user_count;
     int comment_count = 0;
     int pub_count = 0;
+    int total_count = 0;
     for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
         desc_mask |= 1<<it->Which();
         switch ( it->Which() ) {
         case CSeqdesc::e_Comment:
@@ -1418,6 +1452,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr5)
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
     BOOST_CHECK_EQUAL(user_count["RefGeneTracking"], 1);
     BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
+    BOOST_CHECK_EQUAL(total_count, 14);
 }
 
 
@@ -1431,7 +1466,13 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr6)
     map<string, int> user_count;
     int comment_count = 0;
     int pub_count = 0;
+    int total_count = 0;
     for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
         desc_mask |= 1<<it->Which();
         switch ( it->Which() ) {
         case CSeqdesc::e_Comment:
@@ -1461,6 +1502,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr6)
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
     BOOST_CHECK_EQUAL(user_count["RefGeneTracking"], 1);
     BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
+    BOOST_CHECK_EQUAL(total_count, 11);
 }
 
 
@@ -1474,7 +1516,13 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr7)
     map<string, int> user_count;
     int comment_count = 0;
     int pub_count = 0;
+    int total_count = 0;
     for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
         desc_mask |= 1<<it->Which();
         switch ( it->Which() ) {
         case CSeqdesc::e_Comment:
@@ -1502,6 +1550,206 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr7)
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
     BOOST_CHECK_EQUAL(user_count["Unverified"], 1);
+    BOOST_CHECK_EQUAL(total_count, 9);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr8)
+{
+    if ( !s_HaveVDBWGS() ) {
+        LOG_POST("Skipping test for WGS descriptors of detached protein without VDB");
+        return;
+    }
+    LOG_POST("Checking WGS master sequence descriptors on a detached protein");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("MBA2057862.1"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    int total_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Title));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
+    BOOST_CHECK_EQUAL(total_count, 12);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr9)
+{
+    if ( !s_HaveVDBWGS() ) {
+        LOG_POST("Skipping test for WGS descriptors of VDB scaffolds without VDB");
+        return;
+    }
+    LOG_POST("Checking WGS master sequence descriptors on VDB scaffolds");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("ALWZ04S0000001"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    int total_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Title)));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 4);
+    BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(total_count, 10);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr10)
+{
+    LOG_POST("Checking WGS master sequence descriptors with split main seqence");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("KGB65708"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    int total_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Title));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(total_count, 9);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr11)
+{
+    LOG_POST("Checking WGS master sequence descriptors with split main seqence");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("JRAV01000001"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    int total_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(total_count, 8);
 }
 
 
