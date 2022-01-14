@@ -1800,7 +1800,7 @@ tds_deinit_bcpinfo(TDSBCPINFO *bcpinfo)
          * Historically done for all TDS 5.0 transfers, but the protocol
          * version isn't available here, or even in blk_done anymore.
          */
-        if (bcpinfo->direction == TDS_BCP_IN
+        if (bcpinfo->direction == TDS_BCP_IN  &&  bcpinfo->bindinfo != NULL
             &&  bcpinfo->bindinfo->current_row != NULL) {
                 TDS_ZERO_FREE(bcpinfo->bindinfo->current_row);
         }
