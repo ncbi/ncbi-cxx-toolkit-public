@@ -37,6 +37,7 @@
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
 #include <objmgr/impl/bioseq_set_info.hpp>
+#include <objmgr/impl/tse_assigner.hpp> // for kTSE_Place_id
 #include <objmgr/objmgr_exception.hpp>
 #include <objects/general/general__.hpp>
 
@@ -47,8 +48,17 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-const bool kAddMasterDescrToTSE = true;
+static const bool kAddMasterDescrToTSE = true;
+static const char kMasterDescrMark[] = "WithMasterDescr";
 
+/////////////////////////////////////////////////////////////////////////////
+// Master descriptors are added in two modes, depending on kAddMasterDescrToTSE:
+// false - master descriptors are added to each CBioseq in TSE.
+//    The descriptors are filtered by existing descriptors on each CBioseq individually.
+// true - master descriptors are added to TSE CBioseq_set only.
+//    The descriptors are filtered by existing descriptors on the TSE CBioseq_set
+//    and by existing descriptors on the first CBioseq within the CBioseq_set
+//    (usually nucleotide).
 
 BEGIN_LOCAL_NAMESPACE;
 
@@ -136,12 +146,7 @@ bool s_IsGoodDescr(const CSeqdesc& desc, int mask, const TUserObjectTypesSet& uo
 }
 
 
-
-
-END_LOCAL_NAMESPACE;
-
-
-CSeq_id_Handle CWGSMasterSupport::GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
+CSeq_id_Handle GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
 {
     CSeq_id_Handle master_idh;
 
@@ -247,14 +252,18 @@ CSeq_id_Handle CWGSMasterSupport::GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
 }
 
 
-CWGSMasterSupport::EDescrType
-CWGSMasterSupport::GetDescrType(const CSeq_id_Handle& master_seq_idh)
+enum EDescrType {
+    eDescrTypeDefault,
+    eDescrTypeRefSeq
+};
+
+inline EDescrType GetDescrType(const CSeq_id_Handle& master_seq_idh)
 {
     return master_seq_idh.Which() == CSeq_id::e_Other? eDescrTypeRefSeq: eDescrTypeDefault;
 }
 
 
-int CWGSMasterSupport::GetForceDescrMask(EDescrType type)
+int GetForceDescrMask(EDescrType type)
 {
     int force_mask = kForceDescrMask;
     if ( type != eDescrTypeRefSeq ) {
@@ -264,9 +273,9 @@ int CWGSMasterSupport::GetForceDescrMask(EDescrType type)
 }
 
 
-int CWGSMasterSupport::GetOptionalDescrMask(EDescrType type)
+int GetOptionalDescrMask(EDescrType type)
 {
-    int optional_mask = kForceDescrMask;
+    int optional_mask = kOptionalDescrMask;
     if ( type == eDescrTypeRefSeq ) {
         optional_mask |= kRefSeqOptionalDescrMask;
     }
@@ -274,9 +283,9 @@ int CWGSMasterSupport::GetOptionalDescrMask(EDescrType type)
 }
 
 
-void CWGSMasterSupport::AddMasterDescr(CBioseq_Info& seq,
-                                       const CSeq_descr& src,
-                                       EDescrType type)
+void AddMasterDescr(CBioseq_Info& seq,
+                    const CSeq_descr& src,
+                    EDescrType type)
 {
     int existing_mask = 0;
     CSeq_descr::Tdata& dst = seq.x_SetDescr().Set();
@@ -286,22 +295,22 @@ void CWGSMasterSupport::AddMasterDescr(CBioseq_Info& seq,
     }
     int force_mask = GetForceDescrMask(type);
     int optional_mask = GetOptionalDescrMask(type);
+    int mask = force_mask | (optional_mask & !existing_mask);
+    TUserObjectTypesSet uo_types;
+    seq.x_AddExistingUserObjectTypes(uo_types);
+    if ( uo_types.find(kMasterDescrMark) != uo_types.end() ) {
+        // master descriptors are already attached
+        return;
+    }
     ITERATE ( CSeq_descr::Tdata, it, src.Get() ) {
-        int mask = 1 << (*it)->Which();
-        if ( mask & optional_mask ) {
-            if ( mask & existing_mask ) {
-                continue;
-            }
+        if ( s_IsGoodDescr(**it, mask, uo_types) ) {
+            dst.push_back(*it);
         }
-        else if ( !(mask & force_mask) ) {
-            continue;
-        }
-        dst.push_back(*it);
     }
 }
 
 
-bool CWGSMasterSupport::HasMasterId(const CBioseq_Info& seq, const CSeq_id_Handle& master_idh)
+bool s_HasMasterId(const CBioseq_Info& seq, const CSeq_id_Handle& master_idh)
 {
     if ( master_idh ) {
         const CBioseq_Info::TId& ids = seq.GetId();
@@ -315,51 +324,213 @@ bool CWGSMasterSupport::HasMasterId(const CBioseq_Info& seq, const CSeq_id_Handl
 }
 
 
-CRef<CSeq_descr> CWGSMasterSupport::GetWGSMasterDescr(CDataLoader* loader,
-                                                      const CSeq_id_Handle& master_idh,
-                                                      int mask, TUserObjectTypesSet& uo_types)
+CConstRef<CSeq_descr> GetWGSMasterDescr(CDataLoader* loader,
+                                        const CSeq_id_Handle& master_idh)
 {
-    CRef<CSeq_descr> ret;
     CDataLoader::TTSE_LockSet locks =
         loader->GetRecordsNoBlobState(master_idh, CDataLoader::eBioseqCore);
     ITERATE ( CDataLoader::TTSE_LockSet, it, locks ) {
-        CConstRef<CBioseq_Info> bs_info =
-            (*it)->FindMatchingBioseq(master_idh);
-        if ( !bs_info ) {
-            continue;
+        if ( CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(master_idh) ) {
+            if ( bs_info->IsSetDescr() ) {
+                return ConstRef(&bs_info->GetDescr());
+            }
+            break;
         }
-        if ( bs_info->IsSetDescr() ) {
-            const CSeq_descr::Tdata& descr = bs_info->GetDescr().Get();
-            ITERATE ( CSeq_descr::Tdata, it, descr ) {
-                if ( s_IsGoodDescr(**it, mask, uo_types) ) {
-                    if ( !ret ) {
-                        ret = new CSeq_descr;
-                    }
-                    ret->Set().push_back(*it);
-                }
+    }
+    return null;
+}
+
+
+class CWGSBioseqUpdater_Base : public CBioseqUpdater,
+                               public CWGSMasterSupport
+{
+public:
+    CWGSBioseqUpdater_Base(const CSeq_id_Handle& master_idh)
+        : m_MasterId(master_idh)
+        {
+        }
+    
+    const CSeq_id_Handle& GetMasterId() const {
+        return m_MasterId;
+    }
+    bool HasMasterId(const CBioseq_Info& seq) const {
+        return s_HasMasterId(seq, GetMasterId());
+    }
+    
+private:
+    CSeq_id_Handle m_MasterId;
+};
+
+
+class CWGSBioseqUpdaterChunk : public CWGSBioseqUpdater_Base
+{
+public:
+    CWGSBioseqUpdaterChunk(const CSeq_id_Handle& master_idh)
+        : CWGSBioseqUpdater_Base(master_idh)
+        {
+        }
+
+    virtual void Update(CBioseq_Info& seq) override
+        {
+            if ( HasMasterId(seq) ) {
+                // register master descr chunk
+                //ERR_POST("Adding descr chunk id to "<<seq.GetId().front());
+                seq.x_AddDescrChunkId(kGoodDescrMask, kMasterWGS_ChunkId);
             }
         }
-        break;
-    }
-    return ret;
-}
+};
+
+
+class CWGSBioseqUpdaterDescr : public CWGSBioseqUpdater_Base
+{
+public:
+    CWGSBioseqUpdaterDescr(const CSeq_id_Handle& master_idh,
+                           CConstRef<CSeq_descr> descr)
+        : CWGSBioseqUpdater_Base(master_idh),
+          m_Descr(descr)
+        {
+        }
+    
+    virtual void Update(CBioseq_Info& seq) override
+        {
+            if ( m_Descr &&
+                 seq.x_NeedUpdate(seq.fNeedUpdate_descr) &&
+                 HasMasterId(seq) ) {
+                AddMasterDescr(seq, *m_Descr, GetDescrType(GetMasterId()));
+            }
+        }
+    
+private:
+    CConstRef<CSeq_descr> m_Descr;
+};
+
+
+class CWGSMasterChunkInfo : public CTSE_Chunk_Info
+{
+public:
+    CWGSMasterChunkInfo(const CSeq_id_Handle& master_idh)
+        : CTSE_Chunk_Info(kMasterWGS_ChunkId),
+          m_MasterId(master_idh),
+          m_AddToTSE(false)
+        {
+        }
+
+    CSeq_id_Handle m_MasterId;
+    CConstRef<CSeq_descr> m_OriginalMasterDescr;
+    bool m_AddToTSE;
+};
+
+
+class CWGSMasterDescrSetter : public CTSEChunkLoadListener
+{
+public: 
+    typedef CTSE_Chunk_Info::TChunkId TChunkId;
+    
+    CWGSMasterDescrSetter(CRef<CWGSMasterChunkInfo> master_chunk_info,
+                          const CBioseq_set_Info& bset,
+                          CTSE_Split_Info& split_info,
+                          int mask)
+        : m_MasterChunkInfo(master_chunk_info),
+          m_BioseqSet(&bset)
+        {
+            AddChunkToWait(master_chunk_info->GetChunkId(), split_info, mask);
+        }
+
+    void AddChunkToWait(TChunkId chunk_id, CTSE_Split_Info& split_info, int mask)
+        {
+            m_ChunksToWait.insert(chunk_id);
+            if ( mask ) {
+                split_info.GetChunk(chunk_id).x_AddDescInfo(mask, kTSE_Place_id);
+            }
+        }
+
+    void AddChunksToWait(const CBioseq_Base_Info& info, CTSE_Split_Info& split_info, int mask)
+        {
+            for ( auto chunk_id : info.x_GetDescrChunkIds() ) {
+                AddChunkToWait(chunk_id, split_info, mask);
+            }
+        }
+
+    void RegisterCallbacks(CTSE_Split_Info& split_info)
+        {
+            vector<TChunkId> ids(m_ChunksToWait.begin(), m_ChunksToWait.end());
+            for ( auto chunk_id : ids ) {
+                //ERR_POST("CWGSMasterDescrSetter: waiting for "<<chunk_id<<" to be loaded");
+                split_info.GetChunk(chunk_id).SetLoadListener(Ref(this));
+            }
+        }
+
+    virtual void Loaded(CTSE_Chunk_Info& chunk) override
+        {
+            //ERR_POST("CWGSMasterDescrSetter::Loaded("<<chunk.GetChunkId()<<")");
+            m_ChunksToWait.erase(chunk.GetChunkId());
+            if ( !m_ChunksToWait.empty() ) {
+                // still needs more chunks to be loaded
+                return;
+            }
+            // all chunks are loaded, filter and add descriptors
+            //ERR_POST("CWGSMasterDescrSetter: setting descriptors");
+            if ( !m_MasterChunkInfo->m_OriginalMasterDescr ) {
+                // no master descriptors found
+                return;
+            }
+            // collect filters
+            int mask = kGoodDescrMask;
+            TUserObjectTypesSet existing_uo_types;
+            int force_descr = GetForceDescrMask(GetDescrType(m_MasterChunkInfo->m_MasterId));
+            mask &= ~m_BioseqSet->x_GetExistingDescrMask() | force_descr;
+            m_BioseqSet->x_AddExistingUserObjectTypes(existing_uo_types);
+            if ( existing_uo_types.find(kMasterDescrMark) != existing_uo_types.end() ) {
+                // master descriptors are already attached
+                return;
+            }
+            if ( auto first_entry = m_BioseqSet->GetFirstEntry() ) {
+                mask &= ~first_entry->x_GetBaseInfo().x_GetExistingDescrMask() | force_descr;
+                first_entry->x_GetBaseInfo().x_AddExistingUserObjectTypes(existing_uo_types);
+            }
+            if ( existing_uo_types.find(kMasterDescrMark) != existing_uo_types.end() ) {
+                // master descriptors are already attached
+                return;
+            }
+            CRef<CSeq_descr> descr;
+            for ( auto& ref : m_MasterChunkInfo->m_OriginalMasterDescr->Get() ) {
+                if ( s_IsGoodDescr(*ref, mask, existing_uo_types) ) {
+                    if ( !descr ) {
+                        descr = new CSeq_descr;
+                    }
+                    descr->Set().push_back(ref);
+                }
+            }
+            chunk.x_LoadDescr(CTSE_Chunk_Info::TPlace(), *descr);
+        }
+    
+private:
+    CRef<CWGSMasterChunkInfo> m_MasterChunkInfo;
+    CConstRef<CBioseq_set_Info> m_BioseqSet;
+    set<TChunkId> m_ChunksToWait;
+};
+
+
+END_LOCAL_NAMESPACE;
 
 
 void CWGSMasterSupport::LoadWGSMaster(CDataLoader* loader,
                                       CRef<CTSE_Chunk_Info> chunk)
 {
-    CWGSMasterChunkInfo& chunk_info =
-        dynamic_cast<CWGSMasterChunkInfo&>(*chunk);
-    CSeq_id_Handle id = chunk_info.m_MasterId;
-    int mask = chunk_info.m_DescrMask;
-    CRef<CSeq_descr> descr =
-        GetWGSMasterDescr(loader, id, mask, chunk_info.m_UserObjectTypes);
-    if ( descr ) {
-        if ( kAddMasterDescrToTSE ) {
-            chunk->x_LoadDescr(CTSE_Chunk_Info::TPlace(), *descr);
+    CWGSMasterChunkInfo& chunk_info = dynamic_cast<CWGSMasterChunkInfo&>(*chunk);
+    //ERR_POST("LoadWGSMaster: loading master descr "<<chunk_info.m_MasterId);
+    if ( auto descr0 = GetWGSMasterDescr(loader, chunk_info.m_MasterId) ) {
+        //ERR_POST("LoadWGSMaster: loaded master descr "<<chunk_info.m_MasterId);
+        // save loaded descriptors for future extra filtering
+        chunk_info.m_OriginalMasterDescr = descr0;
+        if ( chunk_info.m_AddToTSE ) {
+            // the descriptors will be added by chunk load listener CWGSMasterDescrSetter
+            //ERR_POST("LoadWGSMaster: waiting for all descr chunks for master id "<<chunk_info.m_MasterId);
         }
         else {
-            CRef<CBioseqUpdater> upd(new CWGSBioseqUpdaterDescr(id, descr));
+            // add descriptors to each bioseq, already loaded or future
+            //ERR_POST("LoadWGSMaster: individual seqs with master id "<<chunk_info.m_MasterId);
+            CRef<CBioseqUpdater> upd(new CWGSBioseqUpdaterDescr(chunk_info.m_MasterId, descr0));
             const_cast<CTSE_Split_Info&>(chunk->GetSplitInfo()).x_SetBioseqUpdater(upd);
         }
     }
@@ -372,101 +543,49 @@ void CWGSMasterSupport::AddWGSMaster(CTSE_LoadLock& lock)
     CTSE_Info::TSeqIds ids;
     lock->GetBioseqsIds(ids);
     ITERATE ( CTSE_Info::TSeqIds, it, ids ) {
-        if ( CSeq_id_Handle id = GetWGSMasterSeq_id(*it) ) {
+        if ( CSeq_id_Handle master_id = GetWGSMasterSeq_id(*it) ) {
+            auto& split_info = lock->GetSplitInfo();
             int mask = kGoodDescrMask;
-            TUserObjectTypesSet existing_uo_types;
-            if ( kAddMasterDescrToTSE ) {
-                // exclude existing descr types except forced ones (User, Pub, Comment)
-                int force_descr = GetForceDescrMask(GetDescrType(id));
+            
+            // add chunk with master sequence
+            CRef<CWGSMasterChunkInfo> chunk(new CWGSMasterChunkInfo(master_id));
+            split_info.AddChunk(*chunk);
+            
+            if ( kAddMasterDescrToTSE && lock->IsSet() ) {
+                //ERR_POST("AddWGSMaster: nuc-prot set with master id "<<master_id);
+                // master descriptors are added to the top-level Bioseq-set only
+                // but they need to be filtered by the first sequence in the set
+                chunk->m_AddToTSE = true;
+
+                // register master chunk for descriptors on top-level object
+                int force_descr = GetForceDescrMask(GetDescrType(master_id));
                 mask &= ~lock->x_GetBaseInfo().x_GetExistingDescrMask() | force_descr;
-                lock->x_GetBaseInfo().x_AddExistingUserObjectTypes(existing_uo_types);
-                if ( lock->IsSet() ) {
-                    if ( auto first_entry = lock->GetSet().GetFirstEntry() ) {
-                        mask &= ~first_entry->x_GetBaseInfo().x_GetExistingDescrMask() | force_descr;
-                        first_entry->x_GetBaseInfo().x_AddExistingUserObjectTypes(existing_uo_types);
-                    }
+                
+                // collect all chunks that needs to be loaded
+                const CBioseq_set_Info& bset = lock->GetSet();
+                CRef<CWGSMasterDescrSetter> setter(new CWGSMasterDescrSetter(chunk, bset, split_info, mask));
+                // first exclude existing descr types except forced ones (User, Pub, Comment)
+                setter->AddChunksToWait(lock->x_GetBaseInfo(), split_info, 0);
+                if ( auto first_entry = bset.GetFirstEntry() ) {
+                    // first sequence is loaded so simply apply the filter
+                    setter->AddChunksToWait(first_entry->x_GetBaseInfo(), split_info, mask);
                 }
-            }
-            CRef<CTSE_Chunk_Info> chunk(new CWGSMasterChunkInfo(id, mask, existing_uo_types));
-            lock->GetSplitInfo().AddChunk(*chunk);
-            if ( kAddMasterDescrToTSE ) {
-                chunk->x_AddDescInfo(mask, 0);
+                else if ( !bset.x_GetBioseqChunkIds().empty() ) {
+                    // first sequence is split out, we need to update filter when the sequence is loaded
+                    // request loading of the chunk with the first sequence for applying the filter
+                    auto& seq_chunk = lock->GetSplitInfo().GetChunk(bset.x_GetBioseqChunkIds().front());
+                    setter->AddChunkToWait(seq_chunk.GetChunkId(), split_info, mask);
+                }
+                setter->RegisterCallbacks(lock->GetSplitInfo()); // wait for all chunks to be loaded
             }
             else {
-                CRef<CBioseqUpdater> upd(new CWGSBioseqUpdaterChunk(id));
+                //ERR_POST("AddWGSMaster: individual seqs with master id "<<master_id);
+                // add descr chunk to each bioseq, already loaded or future
+                CRef<CBioseqUpdater> upd(new CWGSBioseqUpdaterChunk(master_id));
                 lock->SetBioseqUpdater(upd);
             }
             break;
         }
-    }
-}
-
-
-CWGSBioseqUpdater_Base::CWGSBioseqUpdater_Base(const CSeq_id_Handle& master_idh)
-    : m_MasterId(master_idh)
-{
-}
-
-
-CWGSBioseqUpdater_Base::~CWGSBioseqUpdater_Base()
-{
-}
-
-
-CWGSMasterChunkInfo::CWGSMasterChunkInfo(const CSeq_id_Handle& master_idh,
-                                         int mask, TUserObjectTypesSet& uo_types)
-    : CTSE_Chunk_Info(kMasterWGS_ChunkId),
-      m_MasterId(master_idh),
-      m_DescrMask(mask),
-      m_UserObjectTypes(move(uo_types))
-{
-}
-
-
-CWGSMasterChunkInfo::~CWGSMasterChunkInfo()
-{
-}
-
-
-CWGSBioseqUpdaterChunk::CWGSBioseqUpdaterChunk(const CSeq_id_Handle& master_idh)
-    : CWGSBioseqUpdater_Base(master_idh)
-{
-}
-
-
-CWGSBioseqUpdaterChunk::~CWGSBioseqUpdaterChunk()
-{
-}
-
-
-void CWGSBioseqUpdaterChunk::Update(CBioseq_Info& seq)
-{
-    if ( HasMasterId(seq) ) {
-        // register master descr chunk
-        seq.x_AddDescrChunkId(kGoodDescrMask, kMasterWGS_ChunkId);
-    }
-}
-
-
-CWGSBioseqUpdaterDescr::CWGSBioseqUpdaterDescr(const CSeq_id_Handle& master_idh,
-                                               CRef<CSeq_descr> descr)
-    : CWGSBioseqUpdater_Base(master_idh),
-      m_Descr(descr)
-{
-}
-
-
-CWGSBioseqUpdaterDescr::~CWGSBioseqUpdaterDescr()
-{
-}
-
-
-void CWGSBioseqUpdaterDescr::Update(CBioseq_Info& seq)
-{
-    if ( m_Descr &&
-         seq.x_NeedUpdate(seq.fNeedUpdate_descr) &&
-         HasMasterId(seq) ) {
-        AddMasterDescr(seq, *m_Descr, GetDescrType(GetMasterId()));
     }
 }
 

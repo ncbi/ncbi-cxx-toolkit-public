@@ -30,17 +30,14 @@
 *
 */
 
-#include <objmgr/impl/tse_info.hpp>
-#include <objmgr/impl/tse_chunk_info.hpp>
-#include <objects/seq/Seqdesc.hpp>
+#include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CSeq_entry;
-class CBioseq_Info;
+class CDataLoader;
+class CTSE_LoadLock;
 class CTSE_Chunk_Info;
-
 
 // API for WGS descriptors propagation
 
@@ -62,79 +59,6 @@ public:
     static void LoadWGSMaster(CDataLoader* loader,
                               CRef<CTSE_Chunk_Info> chunk);
 
-protected:
-    // Implementation methods, not to be called by API users
-    enum EDescrType {
-        eDescrTypeDefault,
-        eDescrTypeRefSeq
-    };
-    
-    static CSeq_id_Handle GetWGSMasterSeq_id(const CSeq_id_Handle& idh);
-    static bool HasMasterId(const CBioseq_Info& seq, const CSeq_id_Handle& master_idh);
-    
-    static EDescrType GetDescrType(const CSeq_id_Handle& master_seq_idh);
-    static int GetForceDescrMask(EDescrType type);
-    static int GetOptionalDescrMask(EDescrType type);
-    static void AddMasterDescr(CBioseq_Info& seq, const CSeq_descr& src, EDescrType descr_type);
-    static CRef<CSeq_descr> GetWGSMasterDescr(CDataLoader* loader,
-                                              const CSeq_id_Handle& master_idh,
-                                              int mask, TUserObjectTypesSet& uo_types);
-};
-
-
-class CWGSBioseqUpdater_Base : public CBioseqUpdater,
-                               public CWGSMasterSupport
-{
-public:
-    CWGSBioseqUpdater_Base(const CSeq_id_Handle& master_idh);
-    virtual ~CWGSBioseqUpdater_Base();
-
-    const CSeq_id_Handle& GetMasterId() const {
-        return m_MasterId;
-    }
-    bool HasMasterId(const CBioseq_Info& seq) const {
-        return CWGSMasterSupport::HasMasterId(seq, GetMasterId());
-    }
-    
-private:
-    CSeq_id_Handle m_MasterId;
-};
-
-
-class NCBI_XREADER_EXPORT CWGSBioseqUpdaterChunk : public CWGSBioseqUpdater_Base
-{
-public:
-    CWGSBioseqUpdaterChunk(const CSeq_id_Handle& master_idh);
-    virtual ~CWGSBioseqUpdaterChunk();
-
-    virtual void Update(CBioseq_Info& seq);
-};
-
-
-class NCBI_XREADER_EXPORT CWGSBioseqUpdaterDescr : public CWGSBioseqUpdater_Base
-{
-public:
-    CWGSBioseqUpdaterDescr(const CSeq_id_Handle& master_idh,
-                           CRef<CSeq_descr> descr);
-    virtual ~CWGSBioseqUpdaterDescr();
-
-    virtual void Update(CBioseq_Info& seq);
-
-private:
-    CRef<CSeq_descr> m_Descr;
-};
-
-
-class NCBI_XREADER_EXPORT CWGSMasterChunkInfo : public CTSE_Chunk_Info
-{
-public:
-    CWGSMasterChunkInfo(const CSeq_id_Handle& master_idh,
-                        int mask, TUserObjectTypesSet& uo_types);
-    virtual ~CWGSMasterChunkInfo();
-
-    CSeq_id_Handle m_MasterId;
-    int m_DescrMask;
-    TUserObjectTypesSet m_UserObjectTypes;
 };
 
 
