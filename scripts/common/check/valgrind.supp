@@ -371,57 +371,6 @@
 }
 
 {
-   Sybase DBLIB 15.7-SP122-64bit (Case 2)
-   Memcheck:Param
-   socketcall.sendto(msg)
-   fun:send
-   fun:sybsoc_write
-   fun:sybnet_write
-   fun:write_buffer
-   fun:sendflush
-   fun:sendeom
-   fun:bcp__endbatch
-   fun:bcp_done
-}
-
-{
-   Sybase DBLIB 12.5.1.10-ESD26-64bit (case 1)
-   Memcheck:Param
-   write(buf)
-   fun:__write_nocancel
-   fun:syb_tcp_write
-   fun:sendflush
-   fun:sendeom
-   fun:bcp__endbatch
-   fun:bcp_done
-}
-
-{
-   Sybase DBLIB 12.5.1.10-ESD26-64bit (case 2)
-   Memcheck:Param
-   write(buf)
-   fun:__write_nocancel
-   fun:syb_tcp_write
-   fun:sendflush
-   fun:sendserver
-   fun:bcp__send_text
-   fun:bcp_moretext
-}
-
-
-{
-   Sybase DBLIB 12.5.1.10-ESD26-64bit (case 3)
-   Memcheck:Param
-   write(buf)
-   fun:__write_nocancel
-   fun:syb_tcp_write
-   fun:sendflush
-   fun:sendserver
-   fun:bcp__buildrow
-   fun:bcp_sendrow
-}
-
-{
    BerkeleyDB 4.6.21.1 glitch -- both alloc and use happen inside the same call
    Memcheck:Param
    pwrite64(buf)
@@ -791,6 +740,12 @@
     Memcheck:Value8
     fun:do_compress
     fun:lzo1x_1_compress
+}
+{
+   mbedtls/self-memcpy
+   Memcheck:Overlap
+   fun:memcpy@@GLIBC_2.14
+   fun:mbedtls_mpi_sub_abs_ncbicxx_2_28_0
 }
 {
     STL/locale
