@@ -1,5 +1,5 @@
 # $Id$
-#  NCBI C++ Toolkit requirements for Conan/UNIX
+#  NCBI C++ Toolkit requirements for Conan/MacOS
 
 [requires]
 libdb/5.3.28@#355aa134e9ee1bda60fa224f8b54c913
@@ -52,12 +52,12 @@ boost:without_fiber = True
 boost:without_graph = True
 boost:without_graph_parallel = True
 #boost:without_iostreams = True
-boost:without_json = True
+##boost:without_json = True
 boost:without_locale = True
 boost:without_log = True
-boost:without_math = True
+##boost:without_math = True
 boost:without_mpi = True
-boost:without_nowide = True
+##boost:without_nowide = True
 boost:without_program_options = True
 boost:without_python = True
 #boost:without_random = True
