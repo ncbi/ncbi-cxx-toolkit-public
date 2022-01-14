@@ -154,6 +154,7 @@ public:
 
     void x_AddDescrChunkId(const TDescTypeMask& types, TChunkId chunk_id);
     void x_AddAnnotChunkId(TChunkId chunk_id);
+    const TChunkIds& x_GetDescrChunkIds() const;
 
     virtual TObjAnnot& x_SetObjAnnot(void) = 0;
     virtual void x_ResetObjAnnot(void) = 0;

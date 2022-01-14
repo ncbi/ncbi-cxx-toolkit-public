@@ -106,6 +106,7 @@ CTSE_Chunk_Info::TBlobVersion CTSE_Chunk_Info::GetBlobVersion(void) const
 void CTSE_Chunk_Info::x_SplitAttach(CTSE_Split_Info& split_info)
 {
     _ASSERT(!x_Attached());
+    _ASSERT(!IsLoaded());
     m_SplitInfo = &split_info;
 
     TChunkId chunk_id = GetChunkId();
@@ -279,6 +280,7 @@ void CTSE_Chunk_Info::Load(void) const
     CInitGuard init(chunk->m_LoadLock, m_SplitInfo->GetMutexPool());
     if ( init ) {
         m_SplitInfo->GetDataLoader().GetChunk(Ref(chunk));
+        _ASSERT(IsLoaded());
         chunk->x_DisableAnnotIndexWhenLoaded();
     }
 }
@@ -289,8 +291,32 @@ void CTSE_Chunk_Info::SetLoaded(CObject* obj)
     if ( !obj ) {
         obj = new CObject;
     }
-    m_LoadLock.Reset(obj);
+    {{
+        CMutexGuard guard(m_ListenerMutex);
+        if ( m_LoadListener ) {
+            m_LoadListener->Loaded(*this);
+            m_LoadListener = null;
+        }
+        m_LoadLock.Reset(obj);
+    }}
     x_DisableAnnotIndexWhenLoaded();
+}
+
+
+void CTSE_Chunk_Info::SetLoadListener(CRef<CTSEChunkLoadListener> listener)
+{
+    CMutexGuard guard(m_ListenerMutex);
+    if ( listener ) {
+        if ( IsLoaded() ) {
+            listener->Loaded(*this);
+        }
+        else {
+            m_LoadListener = listener;
+        }
+    }
+    else {
+        m_LoadListener = null;
+    }
 }
 
 
@@ -724,6 +750,7 @@ void CTSE_Chunk_Info::x_LoadDescr(const TPlace& place,
                                   const CSeq_descr& descr)
 {
     _ASSERT(x_Attached());
+    _ASSERT(!IsLoaded());
     m_SplitInfo->x_LoadDescr(place, descr);
 }
 
@@ -732,6 +759,7 @@ void CTSE_Chunk_Info::x_LoadAnnot(const TPlace& place,
                                   const CSeq_annot& annot)
 {
     _ASSERT(x_Attached());
+    _ASSERT(!IsLoaded());
     m_SplitInfo->x_LoadAnnot(place, annot, GetChunkId());
 }
 
@@ -739,6 +767,8 @@ void CTSE_Chunk_Info::x_LoadAnnot(const TPlace& place,
 void CTSE_Chunk_Info::x_LoadBioseq(const TPlace& place,
                                    const CBioseq& bioseq)
 {
+    _ASSERT(x_Attached());
+    _ASSERT(!IsLoaded());
     list< CRef<CBioseq> > bioseqs;
     bioseqs.push_back(Ref(const_cast<CBioseq*>(&bioseq)));
     x_LoadBioseqs(place, bioseqs);
@@ -749,6 +779,7 @@ void CTSE_Chunk_Info::x_LoadBioseqs(const TPlace& place,
                                     const list< CRef<CBioseq> >& bioseqs)
 {
     _ASSERT(x_Attached());
+    _ASSERT(!IsLoaded());
     m_SplitInfo->x_LoadBioseqs(place, bioseqs, GetChunkId());
 }
 
@@ -757,6 +788,7 @@ void CTSE_Chunk_Info::x_LoadSequence(const TPlace& place, TSeqPos pos,
                                      const TSequence& sequence)
 {
     _ASSERT(x_Attached());
+    _ASSERT(!IsLoaded());
     m_SplitInfo->x_LoadSequence(place, pos, sequence);
 }
 
@@ -765,6 +797,7 @@ void CTSE_Chunk_Info::x_LoadAssembly(const TBioseqId& seq_id,
                                      const TAssembly& assembly)
 {
     _ASSERT(x_Attached());
+    _ASSERT(!IsLoaded());
     m_SplitInfo->x_LoadAssembly(seq_id, assembly);
 }
 
@@ -773,6 +806,7 @@ void CTSE_Chunk_Info::x_LoadSeq_entry(CSeq_entry& entry,
                                       CTSE_SetObjectInfo* set_info)
 {
     _ASSERT(x_Attached());
+    _ASSERT(!IsLoaded());
     m_SplitInfo->x_LoadSeq_entry(entry, set_info);
 }
 

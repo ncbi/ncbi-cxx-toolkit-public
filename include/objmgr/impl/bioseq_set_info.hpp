@@ -147,6 +147,7 @@ public:
     virtual void x_DSDetachContents(CDataSource& ds);
 
     void x_AddBioseqChunkId(TChunkId chunk_id);
+    const TChunkIds& x_GetBioseqChunkIds() const;
 
     // attaching/detaching to CTSE_Info
     virtual void x_TSEAttachContents(CTSE_Info& tse);
