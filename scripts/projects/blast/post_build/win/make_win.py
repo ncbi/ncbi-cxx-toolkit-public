@@ -67,8 +67,7 @@ def main():
              "get_species_taxids.sh",
              "blastn_vdb.exe",
              "tblastn_vdb.exe",
-             "blast_formatter_vdb.exe",
-             "ncbi-vdb-md.dll"
+             "blast_formatter_vdb.exe"
              ]
     
     cwd = os.getcwd()
