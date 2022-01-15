@@ -1561,7 +1561,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     }
     if (!*val) {
         domain = s_SysGetDomainName(val, sizeof(val));
-        if (!x_CheckDomain(domain)) {
+        if (!domain  ||  !x_CheckDomain(domain)) {
             CORE_LOG(eLOG_Critical,
                      "LBDNS cannot figure out system domain name");
             goto out;
