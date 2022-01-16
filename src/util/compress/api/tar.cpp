@@ -740,7 +740,7 @@ static string s_Printable(const char* field, size_t maxsize, bool text)
 #define TAR_PRINTABLE_EX(field, text, size)                             \
     "@" + s_OffsetAsString((size_t) offsetof(STarHeader, field)) +      \
     "[" _STR(field) "]:" + string(14 - sizeof(_STR(field)), ' ') +      \
-    '"' + s_Printable(h->field, size, text  ||  ecxpt) + '"'
+    '"' + s_Printable(h->field, size, text  ||  excpt) + '"'
 
 #define TAR_PRINTABLE(field, text)                                      \
     TAR_PRINTABLE_EX(field, text, sizeof(h->field))
@@ -750,7 +750,7 @@ static string s_Printable(const char* field, size_t maxsize, bool text)
 #define TAR_GNU_CONTIND  "[gnu.contind]:  "
 
 static string s_DumpSparseMap(const STarHeader* h, const char* sparse,
-                              const char* contind, bool ecxpt = false)
+                              const char* contind, bool excpt = false)
 {
     string dump;
     size_t offset;
@@ -772,7 +772,7 @@ static string s_DumpSparseMap(const STarHeader* h, const char* sparse,
                     region = ':' + string(sizeof(TAR_GNU_REGION) - 2, ' ');
                     if (ok_off > 0) {
                         dump += '"';
-                        dump += s_Printable(sparse, 12, ecxpt);
+                        dump += s_Printable(sparse, 12, excpt);
                         dump += "\" ";
                     } else {
                         dump += string(14, ' ');
@@ -780,7 +780,7 @@ static string s_DumpSparseMap(const STarHeader* h, const char* sparse,
                     sparse += 12;
                     if (ok_len > 0) {
                         dump += '"';
-                        dump += s_Printable(sparse, 12, ecxpt);
+                        dump += s_Printable(sparse, 12, excpt);
                         dump += "\" ";
                     } else {
                         dump += string(14, ' ');
@@ -827,7 +827,7 @@ static string s_DumpSparseMap(const vector< pair<Uint8, Uint8> >& bmap)
 
 
 static string s_DumpHeader(const STarHeader* h, ETar_Format fmt,
-                           bool ecxpt = false)
+                           bool excpt = false)
 {
     string dump;
     Uint8 val;
@@ -1125,7 +1125,7 @@ static string s_DumpHeader(const STarHeader* h, ETar_Format fmt,
                 dump += "@"
                     + s_OffsetAsString((size_t)(realsize - (const char*) h))
                     + "[star.realsize]:\""
-                    + s_Printable(realsize, 12, !ok  ||  ecxpt) + '"';
+                    + s_Printable(realsize, 12, !ok  ||  excpt) + '"';
                 if (ok  &&  (ok < 0  ||  val > 7)) {
                     dump += " [" + NStr::NumericToString(val) + ']';
                     if (ok < 0) {
@@ -1208,7 +1208,7 @@ static string s_DumpHeader(const STarHeader* h, ETar_Format fmt,
                     dump += TAR_PRINTABLE(gnu.unused, true);
                 }
                 dump += '\n' + s_DumpSparseMap(h, h->gnu.sparse,
-                                               h->gnu.contind, ecxpt);
+                                               h->gnu.contind, excpt);
                 if (memcchr(h->gnu.realsize, '\0', sizeof(h->gnu.realsize))) {
                     ok = s_DecodeUint8(val, h->gnu.realsize,
                                        sizeof(h->gnu.realsize));
@@ -1368,10 +1368,10 @@ CTar::~CTar()
                                   who->m_BufferSize,                    \
                                   who->m_Current.GetName()) + (message))
 
-#define TAR_THROW_EX(who, errcode, message, h, fmt)                     \
+#define TAR_THROW_EX(who, errcode, message, hdr, fmt)                   \
     TAR_THROW(who, errcode,                                             \
               who->m_Flags & fDumpEntryHeaders                          \
-              ? string(message) + ":\n" + s_DumpHeader(h, fmt, true)    \
+              ? string(message) + ":\n" + s_DumpHeader(hdr, fmt, true)  \
               : string(message))
 
 #define TAR_POST(subcode, severity, message)                            \
