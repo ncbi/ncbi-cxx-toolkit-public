@@ -323,7 +323,7 @@ string s_ReasonToString(CPSG_SkippedBlob::EReason reason)
 
 void CJsonResponse::Fill(shared_ptr<CPSG_SkippedBlob> skipped_blob)
 {
-    Set("id",     skipped_blob->GetId());
+    Set("id",     skipped_blob);
     Set("reason", s_ReasonToString(skipped_blob->GetReason()));
 
     const auto& sent_seconds_ago = skipped_blob->GetSentSecondsAgo();

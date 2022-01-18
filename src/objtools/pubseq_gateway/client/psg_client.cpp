@@ -262,22 +262,31 @@ ostream& operator<<(ostream& os, const CPSG_ChunkId& chunk_id)
 
 struct SDataId
 {
+    enum ETypePriority { eBlobIdPriority, eChunkIdPriority };
+
     SDataId(const SPSG_Args& args) : m_Args(args), m_BlobId(m_Args.GetValue("blob_id")) {}
 
+    template <ETypePriority = eBlobIdPriority>
     bool HasBlobId() const { return !m_BlobId.empty(); }
 
-    template <class TRequestedId, class TAllowedId>
-    unique_ptr<TRequestedId> Get() const;
-
-    template <class TRequestedId = CPSG_DataId>
-    static unique_ptr<TRequestedId> Get(SDataId data_id);
+    template <ETypePriority type_priority = eBlobIdPriority>
+    static unique_ptr<CPSG_DataId> Get(SDataId data_id);
 
 private:
     template <class TRequestedId> unique_ptr<TRequestedId> x_Get() const;
 
+    template <class TRequestedId, class TAllowedId>
+    unique_ptr<TRequestedId> Get() const;
+
     const SPSG_Args& m_Args;
     const string& m_BlobId;
 };
+
+template <>
+bool SDataId::HasBlobId<SDataId::eChunkIdPriority>() const
+{
+    return m_Args.GetValue("id2_chunk").empty();
+}
 
 template <>
 unique_ptr<CPSG_BlobId> SDataId::x_Get<CPSG_BlobId>() const
@@ -300,10 +309,6 @@ unique_ptr<CPSG_ChunkId> SDataId::x_Get<CPSG_ChunkId>() const
     return make_unique<CPSG_ChunkId>(id2_chunk, m_Args.GetValue("id2_info"));
 }
 
-#define PSG_THROW_MISSING_DATA_ID(prefix) \
-    NCBI_THROW_FMT(CPSG_Exception, eServerError, prefix " missing/corrupted in server response: " << \
-            m_Args.GetQueryString(CUrlArgs::eAmp_Char))
-
 template <class TRequestedId, class TAllowedId>
 unique_ptr<TRequestedId> SDataId::Get() const
 {
@@ -311,28 +316,16 @@ unique_ptr<TRequestedId> SDataId::Get() const
         return x_Get<TAllowedId>();
     }
     catch (...) {
-        PSG_THROW_MISSING_DATA_ID("Both blob_id[+last_modified] and id2_chunk+id2_info pairs are");
+        NCBI_THROW_FMT(CPSG_Exception, eServerError,
+                "Both blob_id[+last_modified] and id2_chunk+id2_info pairs are missing/corrupted in server response: " <<
+                m_Args.GetQueryString(CUrlArgs::eAmp_Char));
     }
 }
 
-template <>
-unique_ptr<CPSG_ChunkId> SDataId::Get<CPSG_ChunkId, CPSG_BlobId>() const
+template <SDataId::ETypePriority type_priority>
+unique_ptr<CPSG_DataId> SDataId::Get(SDataId data_id)
 {
-    PSG_THROW_MISSING_DATA_ID("id2_chunk+id2_info pair is");
-}
-
-template <>
-unique_ptr<CPSG_BlobId> SDataId::Get<CPSG_BlobId, CPSG_ChunkId>() const
-{
-    PSG_THROW_MISSING_DATA_ID("blob_id[+last_modified] pair is");
-}
-
-#undef PSG_THROW_MISSING_DATA_ID
-
-template <class TRequestedId>
-unique_ptr<TRequestedId> SDataId::Get(SDataId data_id)
-{
-    return data_id.HasBlobId() ? data_id.Get<TRequestedId, CPSG_BlobId>() : data_id.Get<TRequestedId, CPSG_ChunkId>();
+    return data_id.HasBlobId<type_priority>() ? data_id.Get<CPSG_DataId, CPSG_BlobId>() : data_id.Get<CPSG_DataId, CPSG_ChunkId>();
 }
 
 template <class TReplyItem>
@@ -365,10 +358,10 @@ CPSG_SkippedBlob::TSeconds s_GetSeconds(const SPSG_Args& args, const string& nam
 
 CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(CPSG_SkippedBlob::EReason reason, const SPSG_Args& args)
 {
-    auto blob_id = SDataId::Get<CPSG_BlobId>(args);
+    auto id = SDataId::Get<SDataId::eChunkIdPriority>(args);
     auto sent_seconds_ago = s_GetSeconds(args, "sent_seconds_ago");
     auto time_until_resend = s_GetSeconds(args, "time_until_resend");
-    return new CPSG_SkippedBlob(move(*blob_id), reason, move(sent_seconds_ago), move(time_until_resend));
+    return new CPSG_SkippedBlob(move(id), reason, move(sent_seconds_ago), move(time_until_resend));
 }
 
 CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, SPSG_Reply::SItem& item, CPSG_ReplyItem::EType type, CPSG_SkippedBlob::EReason reason)
@@ -1008,9 +1001,9 @@ Uint8 CPSG_BlobInfo::GetNChunks() const
 }
 
 
-CPSG_SkippedBlob::CPSG_SkippedBlob(CPSG_BlobId id, EReason reason, TSeconds sent_seconds_ago, TSeconds time_until_resend) :
+CPSG_SkippedBlob::CPSG_SkippedBlob(unique_ptr<CPSG_DataId> id, EReason reason, TSeconds sent_seconds_ago, TSeconds time_until_resend) :
     CPSG_ReplyItem(eSkippedBlob),
-    m_Id(id),
+    m_Id(move(id)),
     m_Reason(reason),
     m_SentSecondsAgo(move(sent_seconds_ago)),
     m_TimeUntilResend(move(time_until_resend))
