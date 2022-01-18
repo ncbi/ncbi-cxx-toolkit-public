@@ -445,6 +445,7 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_GpipeMode = (flags & fGpipeMode) != 0;
     m_OmitTaxonomicName = (flags & fOmitTaxonomicName) != 0;
     m_DevMode = (flags & fDevMode) != 0;
+    m_FastaFormat = (flags & fFastaFormat) != 0;
 
     // reset member variables to cleared state
     m_IsNA = bsx->IsNA();
@@ -2748,7 +2749,9 @@ void CDeflineGenerator::x_SetPrefix (
 void CDeflineGenerator::x_SetSuffix (
     string& suffix,
     const CBioseq_Handle& bsh,
-    bool appendComplete
+    bool appendComplete,
+    bool completeSequence,
+    bool completeGenome
 )
 
 {
@@ -2887,23 +2890,35 @@ void CDeflineGenerator::x_SetSuffix (
             break;
     }
 
-    if (appendComplete && m_MainTitle.find ("complete") == NPOS && m_MainTitle.find ("partial") == NPOS) {
-        if (m_MICompleteness == NCBI_COMPLETENESS(complete)) {
-            if (m_IsPlasmid) {
+    if (appendComplete || completeSequence || completeGenome) {
+        if (m_MainTitle.find ("complete") == NPOS && m_MainTitle.find ("partial") == NPOS) {
+            if (completeSequence || completeGenome) {
+               size_t pos = m_MainTitle.find (", complete");
+               if (pos != NPOS) {
+                   m_MainTitle.erase (pos);
+               }
+            }
+            if (completeSequence) {
                 comp = ", complete sequence";
-            } else if (m_Genome == NCBI_GENOME(mitochondrion) ||
-                       m_Genome == NCBI_GENOME(chloroplast) ||
-                       m_Genome == NCBI_GENOME(kinetoplast) ||
-                       m_Genome == NCBI_GENOME(plastid) ||
-                       m_Genome == NCBI_GENOME(apicoplast)) {
+             } else if (completeGenome) {
                 comp = ", complete genome";
-            } else if (m_IsChromosome) {
-                if (! m_Chromosome.empty()) {
+            } else if (m_MICompleteness == NCBI_COMPLETENESS(complete)) {
+                if (m_IsPlasmid) {
                     comp = ", complete sequence";
-                } else if (! m_LinkageGroup.empty()) {
-                    comp = ", complete sequence";
-                } else {
+                } else if (m_Genome == NCBI_GENOME(mitochondrion) ||
+                           m_Genome == NCBI_GENOME(chloroplast) ||
+                           m_Genome == NCBI_GENOME(kinetoplast) ||
+                           m_Genome == NCBI_GENOME(plastid) ||
+                           m_Genome == NCBI_GENOME(apicoplast)) {
                     comp = ", complete genome";
+                } else if (m_IsChromosome) {
+                    if (! m_Chromosome.empty()) {
+                        comp = ", complete sequence";
+                    } else if (! m_LinkageGroup.empty()) {
+                        comp = ", complete sequence";
+                    } else {
+                        comp = ", complete genome";
+                    }
                 }
             }
         }
@@ -3805,6 +3820,8 @@ string CDeflineGenerator::GenerateDefline (
 {
     bool capitalize = true;
     bool appendComplete = false;
+    bool completeSequence = false;
+    bool completeGenome = false;
 
     string prefix; // from a small set of compile-time constants
     string suffix;
@@ -3851,8 +3868,30 @@ string CDeflineGenerator::GenerateDefline (
         }
         bool ok = true;
         bool limitAutoDef = true;
+
+        if (desc) {
+            const CUser_object& uo = desc->GetUser();
+            if( uo.IsSetData() ) {
+                ITERATE( CUser_object::TData, field_iter, uo.GetData() ) {
+                    const CUser_field &field = **field_iter;
+                    if( ! field.IsSetData() || ! field.GetData().IsStr() ||
+                        ! field.IsSetLabel() || ! field.GetLabel().IsStr() ) {
+                        continue;
+                    }
+                    if ( field.GetLabel().GetStr() == "FeatureListType" ) {
+                        string featlisttype = field.GetData().GetStr();
+                        if ( featlisttype == "Complete Sequence" ) {
+                            completeSequence = true;
+                        }
+                        if ( featlisttype == "Complete Genome" ) {
+                            completeGenome = true;
+                        }
+                    }
+                }
+            }
+        }
+
         /*
-        bool limitAutoDef = false;
         if (desc) {
             const CUser_object& uo = desc->GetUser();
             if( uo.IsSetData() ) {
@@ -3995,7 +4034,7 @@ string CDeflineGenerator::GenerateDefline (
     x_SetPrefix(prefix);
 
     // calculate suffix
-    x_SetSuffix (suffix, bsh, appendComplete);
+    x_SetSuffix (suffix, bsh, appendComplete, completeSequence, completeGenome);
 
     string mag;
     if (! m_MetaGenomeSource.empty()) {

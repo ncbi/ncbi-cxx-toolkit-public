@@ -216,7 +216,9 @@ private:
     void x_SetSuffix (
         string& suffix,
         const CBioseq_Handle& bsh,
-        bool appendComplete
+        bool appendComplete,
+        bool completeSequence,
+        bool completeGenome
     );
 
     void x_AdjustProteinTitleSuffix (
