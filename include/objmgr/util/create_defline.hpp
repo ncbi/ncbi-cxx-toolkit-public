@@ -217,8 +217,7 @@ private:
         string& suffix,
         const CBioseq_Handle& bsh,
         bool appendComplete,
-        bool completeSequence,
-        bool completeGenome
+        string preferredSuffix
     );
 
     void x_AdjustProteinTitleSuffix (
