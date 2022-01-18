@@ -704,8 +704,9 @@ public:
         eUnknown,    // Skipped for unknown reason
     };
 
-    /// Get blob ID
-    const CPSG_BlobId& GetId() const { return m_Id; }
+    /// Get data ID
+    template <class TDataId = CPSG_DataId>
+    const TDataId* GetId() const { return dynamic_cast<const TDataId*>(m_Id.get()); }
 
     // Get reason for blob skipping
     EReason GetReason() const { return m_Reason; }
@@ -717,9 +718,9 @@ public:
     const TSeconds& GetTimeUntilResend() const { return m_TimeUntilResend; }
 
 private:
-    CPSG_SkippedBlob(CPSG_BlobId id, EReason reason, TSeconds sent_seconds_ago, TSeconds time_until_resend);
+    CPSG_SkippedBlob(unique_ptr<CPSG_DataId> id, EReason reason, TSeconds sent_seconds_ago, TSeconds time_until_resend);
 
-    CPSG_BlobId m_Id;
+    unique_ptr<CPSG_DataId> m_Id;
     EReason     m_Reason;
     TSeconds    m_SentSecondsAgo;
     TSeconds    m_TimeUntilResend;
