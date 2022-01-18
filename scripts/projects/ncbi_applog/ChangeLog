@@ -1,3 +1,13 @@
+1.4.1 (01/18/2022)
+    - Increase maximum length of each log entry line to 128Kb. Fixed bug with rewriting message buffer
+      on an overflow during 'extra' overflow. Improve 'extra' parameters processing to cutoff extra arguments
+      if it overflow a message buffer.. CXX-12241 	
+    - Fix state changing for an logline with "orig_appname" on RAW logging for CGI (using logsite). CXX-12232
+    - Add 'file' destination to log into a local file. CXX-12229
+
+applogging (clog) truncates "extra" line 
+    - Add '-note' flag for 'post' command CXX-11741
+
 1.4.0 (02/16/2021)
     - Add "Note[X]" notation for the severity of posted messages. CXX-11741
     - Add '-note' flag for 'post' command CXX-11741
