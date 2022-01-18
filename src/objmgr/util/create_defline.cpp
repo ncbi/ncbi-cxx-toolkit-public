@@ -2750,8 +2750,7 @@ void CDeflineGenerator::x_SetSuffix (
     string& suffix,
     const CBioseq_Handle& bsh,
     bool appendComplete,
-    bool completeSequence,
-    bool completeGenome
+    string preferredSuffix
 )
 
 {
@@ -2890,18 +2889,24 @@ void CDeflineGenerator::x_SetSuffix (
             break;
     }
 
-    if (appendComplete || completeSequence || completeGenome) {
+    if (appendComplete || ! preferredSuffix.empty()) {
         if (m_MainTitle.find ("complete") == NPOS && m_MainTitle.find ("partial") == NPOS) {
-            if (completeSequence || completeGenome) {
-               size_t pos = m_MainTitle.find (", complete");
-               if (pos != NPOS) {
-                   m_MainTitle.erase (pos);
-               }
-            }
-            if (completeSequence) {
-                comp = ", complete sequence";
-             } else if (completeGenome) {
-                comp = ", complete genome";
+            if (! preferredSuffix.empty()) {
+                size_t pos = m_MainTitle.find (", complete");
+                if (pos == NPOS) {
+                    pos = m_MainTitle.find (", partial");
+                }
+                if (pos == NPOS) {
+                    pos = m_MainTitle.find (", sequence");
+                }
+                if (pos == NPOS) {
+                    pos = m_MainTitle.find (", whole genome shotgun sequence");
+                }
+                if (pos != NPOS) {
+                    m_MainTitle.erase (pos);
+                }
+                NStr::ToLower( preferredSuffix );
+                comp = ", " + preferredSuffix;
             } else if (m_MICompleteness == NCBI_COMPLETENESS(complete)) {
                 if (m_IsPlasmid) {
                     comp = ", complete sequence";
@@ -3820,8 +3825,7 @@ string CDeflineGenerator::GenerateDefline (
 {
     bool capitalize = true;
     bool appendComplete = false;
-    bool completeSequence = false;
-    bool completeGenome = false;
+    string preferredSuffix = "";
 
     string prefix; // from a small set of compile-time constants
     string suffix;
@@ -3880,11 +3884,8 @@ string CDeflineGenerator::GenerateDefline (
                     }
                     if ( field.GetLabel().GetStr() == "FeatureListType" ) {
                         string featlisttype = field.GetData().GetStr();
-                        if ( featlisttype == "Complete Sequence" ) {
-                            completeSequence = true;
-                        }
-                        if ( featlisttype == "Complete Genome" ) {
-                            completeGenome = true;
+                        if ( featlisttype != "List All Features" ) {
+                            preferredSuffix = featlisttype;
                         }
                     }
                 }
@@ -4034,7 +4035,7 @@ string CDeflineGenerator::GenerateDefline (
     x_SetPrefix(prefix);
 
     // calculate suffix
-    x_SetSuffix (suffix, bsh, appendComplete, completeSequence, completeGenome);
+    x_SetSuffix (suffix, bsh, appendComplete, preferredSuffix);
 
     string mag;
     if (! m_MetaGenomeSource.empty()) {
