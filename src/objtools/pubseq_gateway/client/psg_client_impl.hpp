@@ -48,7 +48,8 @@ BEGIN_NCBI_SCOPE
 // ICC does not like this array to be a direct base of SPSG_RStream
 struct SPSG_BlobReader : IReader, protected array<char, 64 * 1024>
 {
-    SPSG_BlobReader(SPSG_Reply::SItem::TTS& src);
+    using TStats = pair<bool, weak_ptr<SPSG_Stats>>;
+    SPSG_BlobReader(SPSG_Reply::SItem::TTS& src, TStats stats = TStats());
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
     ERW_Result PendingCount(size_t* count);
@@ -58,6 +59,7 @@ private:
     ERW_Result x_Read(void* buf, size_t count, size_t* bytes_read);
 
     SPSG_Reply::SItem::TTS& m_Src;
+    TStats m_Stats;
     vector<SPSG_Chunk> m_Data;
     size_t m_Chunk = 0;
     size_t m_Index = 0;
@@ -88,8 +90,8 @@ struct CPSG_Reply::SImpl
 private:
     template <class TReplyItem>
     CPSG_ReplyItem* CreateImpl(TReplyItem* item, const vector<SPSG_Chunk>& chunks);
-    CPSG_ReplyItem* CreateImpl(SPSG_Reply::SItem::TTS& item_ts, const SPSG_Args& args);
-    CPSG_ReplyItem* CreateImpl(CPSG_SkippedBlob::EReason reason, const SPSG_Args& args);
+    CPSG_ReplyItem* CreateImpl(SPSG_Reply::SItem::TTS& item_ts, const SPSG_Args& args, shared_ptr<SPSG_Stats>& stats);
+    CPSG_ReplyItem* CreateImpl(CPSG_SkippedBlob::EReason reason, const SPSG_Args& args, shared_ptr<SPSG_Stats>& stats);
     CPSG_ReplyItem* CreateImpl(SPSG_Reply::SItem::TTS& item_ts, SPSG_Reply::SItem& item, CPSG_ReplyItem::EType type, CPSG_SkippedBlob::EReason reason);
 };
 

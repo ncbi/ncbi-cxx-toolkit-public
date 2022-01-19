@@ -70,8 +70,9 @@ const char* CPSG_Exception::GetErrCodeString(void) const
 }
 
 
-SPSG_BlobReader::SPSG_BlobReader(SPSG_Reply::SItem::TTS& src)
-    : m_Src(src)
+SPSG_BlobReader::SPSG_BlobReader(SPSG_Reply::SItem::TTS& src, TStats stats)
+    : m_Src(src),
+      m_Stats(stats)
 {
 }
 
@@ -161,8 +162,9 @@ void SPSG_BlobReader::CheckForNewChunks()
     if (m_Data.size() < chunks.size()) m_Data.resize(chunks.size());
 
     for (size_t i = 0; i < chunks.size(); ++i) {
-        if (!chunks[i].empty()) {
+        if (auto size = chunks[i].size()) {
             m_Data[i].swap(chunks[i]);
+            if (auto stats = m_Stats.second.lock()) stats->AddData(m_Stats.first, SPSG_Stats::eRead, size);
         }
     }
 }
@@ -272,6 +274,9 @@ struct SDataId
     template <ETypePriority type_priority = eBlobIdPriority>
     static unique_ptr<CPSG_DataId> Get(SDataId data_id);
 
+    template <class TRequestedId = CPSG_DataId>
+    unique_ptr<CPSG_DataId> Get(shared_ptr<SPSG_Stats>& stats);
+
 private:
     template <class TRequestedId> unique_ptr<TRequestedId> x_Get() const;
 
@@ -328,6 +333,20 @@ unique_ptr<CPSG_DataId> SDataId::Get(SDataId data_id)
     return data_id.HasBlobId<type_priority>() ? data_id.Get<CPSG_DataId, CPSG_BlobId>() : data_id.Get<CPSG_DataId, CPSG_ChunkId>();
 }
 
+template <class TRequestedId>
+unique_ptr<CPSG_DataId> SDataId::Get(shared_ptr<SPSG_Stats>& stats)
+{
+    auto id = Get<TRequestedId, TRequestedId>();
+    if (stats) stats->AddId(*id);
+    return id;
+}
+
+template <>
+unique_ptr<CPSG_DataId> SDataId::Get<CPSG_DataId>(shared_ptr<SPSG_Stats>& stats)
+{
+    return HasBlobId() ? Get<CPSG_BlobId>(stats) : Get<CPSG_ChunkId>(stats);
+}
+
 template <class TReplyItem>
 CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, const vector<SPSG_Chunk>& chunks)
 {
@@ -339,11 +358,11 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, const vector<SPS
     return rv.release();
 }
 
-CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, const SPSG_Args& args)
+CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, const SPSG_Args& args, shared_ptr<SPSG_Stats>& stats)
 {
     SDataId data_id(args);
-    unique_ptr<CPSG_BlobData> blob_data(new CPSG_BlobData(SDataId::Get(data_id)));
-    blob_data->m_Stream.reset(new SPSG_RStream(item_ts));
+    unique_ptr<CPSG_BlobData> blob_data(new CPSG_BlobData(data_id.Get(stats)));
+    blob_data->m_Stream.reset(new SPSG_RStream(item_ts, make_pair(data_id.HasBlobId(), reply->stats)));
     return blob_data.release();
 }
 
@@ -356,24 +375,35 @@ CPSG_SkippedBlob::TSeconds s_GetSeconds(const SPSG_Args& args, const string& nam
     return NStr::StringToNumeric<double>(value);
 }
 
-CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(CPSG_SkippedBlob::EReason reason, const SPSG_Args& args)
+CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(CPSG_SkippedBlob::EReason reason, const SPSG_Args& args, shared_ptr<SPSG_Stats>& stats)
 {
     auto id = SDataId::Get<SDataId::eChunkIdPriority>(args);
     auto sent_seconds_ago = s_GetSeconds(args, "sent_seconds_ago");
     auto time_until_resend = s_GetSeconds(args, "time_until_resend");
+
+    if (stats) {
+        stats->IncCounter(SPSG_Stats::eSkippedBlob, reason);
+
+        if (!sent_seconds_ago.IsNull()) stats->AddTime(SPSG_Stats::eSentSecondsAgo, sent_seconds_ago);
+        if (!time_until_resend.IsNull()) stats->AddTime(SPSG_Stats::eTimeUntilResend, time_until_resend);
+    }
+
     return new CPSG_SkippedBlob(move(id), reason, move(sent_seconds_ago), move(time_until_resend));
 }
 
 CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, SPSG_Reply::SItem& item, CPSG_ReplyItem::EType type, CPSG_SkippedBlob::EReason reason)
 {
+    auto stats = reply->stats.lock();
+    if (stats) stats->IncCounter(SPSG_Stats::eReplyItem, type);
+
     auto status = item.state.GetStatus();
     auto& args = item.args;
     auto& chunks = item.chunks;
 
     if ((status == EPSG_Status::eSuccess) || (status == EPSG_Status::eInProgress)) {
         switch (type) {
-            case CPSG_ReplyItem::eBlobData:         return CreateImpl(item_ts, args);
-            case CPSG_ReplyItem::eSkippedBlob:      return CreateImpl(reason, args);
+            case CPSG_ReplyItem::eBlobData:         return CreateImpl(item_ts, args, stats);
+            case CPSG_ReplyItem::eSkippedBlob:      return CreateImpl(reason, args, stats);
             case CPSG_ReplyItem::eBioseqInfo:       return CreateImpl(new CPSG_BioseqInfo, chunks);
             case CPSG_ReplyItem::eBlobInfo:         return CreateImpl(new CPSG_BlobInfo(SDataId::Get(args)), chunks);
             case CPSG_ReplyItem::eNamedAnnotInfo:   return CreateImpl(new CPSG_NamedAnnotInfo(args.GetValue("na")), chunks);
@@ -386,6 +416,7 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, S
         _TROUBLE;
 
     } else if (type != CPSG_ReplyItem::eEndOfReply) {
+        if (stats) stats->IncCounter(SPSG_Stats::eReplyItemStatus, static_cast<size_t>(status));
         return new CPSG_ReplyItem(type);
     }
 
@@ -811,10 +842,11 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
     auto user_request = const_pointer_cast<const CPSG_Request>(r);
     auto& ioc = m_Service.ioc;
     auto& params = ioc.params;
+    auto& stats = ioc.stats;
 
     auto user_context = params.user_request_ids ? user_request->GetUserContext<string>() : nullptr;
     const auto request_id = user_context ? *user_context : ioc.GetNewRequestId();
-    auto reply = make_shared<SPSG_Reply>(move(request_id), params, queue);
+    auto reply = make_shared<SPSG_Reply>(move(request_id), params, queue, stats);
     auto abs_path_ref = x_GetAbsPathRef(user_request);
     const auto& request_context = user_request->m_RequestContext;
 
@@ -823,6 +855,7 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
     auto request = make_shared<SPSG_Request>(move(abs_path_ref), reply, request_context->Clone(), params);
 
     if (ioc.AddRequest(request, queue->Stopped(), deadline)) {
+        if (stats) stats->IncCounter(SPSG_Stats::eRequest, user_request->GetType());
         shared_ptr<CPSG_Reply> user_reply(new CPSG_Reply);
         user_reply->m_Impl->reply = move(reply);
         user_reply->m_Impl->user_reply = user_reply;

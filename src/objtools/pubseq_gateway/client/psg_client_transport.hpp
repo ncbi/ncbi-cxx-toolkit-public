@@ -57,6 +57,7 @@
 #include <sstream>
 #include <random>
 #include <type_traits>
+#include <unordered_set>
 
 #include "mpmc_nw.hpp"
 #include <connect/impl/ncbi_uv_nghttp2.hpp>
@@ -246,6 +247,8 @@ private:
     const TArg* m_Arg;
 };
 
+struct SPSG_Stats;
+
 using TPSG_Queue = CPSG_WaitingStack<shared_ptr<CPSG_Reply>>;
 
 struct SPSG_Reply
@@ -310,8 +313,14 @@ struct SPSG_Reply
     SItem::TTS reply_item;
     SDebugPrintout debug_printout;
     shared_ptr<TPSG_Queue> queue;
+    weak_ptr<SPSG_Stats> stats;
 
-    SPSG_Reply(string id, const SPSG_Params& params, shared_ptr<TPSG_Queue> q) : debug_printout(move(id), params), queue(move(q)) {}
+    SPSG_Reply(string id, const SPSG_Params& params, shared_ptr<TPSG_Queue> q, weak_ptr<SPSG_Stats> s = weak_ptr<SPSG_Stats>()) :
+        debug_printout(move(id), params),
+        queue(move(q)),
+        stats(move(s))
+    {}
+
     void SetComplete();
     void SetFailed(string message, SState::EState state = SState::eError);
 };
@@ -491,11 +500,13 @@ struct SPSG_Server
 {
     const SSocketAddress address;
     atomic<double> rate;
+    atomic_uint stats;
     SPSG_Throttling throttling;
 
     SPSG_Server(SSocketAddress a, double r, SPSG_ThrottleParams p, uv_loop_t* l) :
         address(move(a)),
         rate(r),
+        stats(0),
         throttling(address, move(p), l)
     {}
 };
@@ -615,6 +626,139 @@ private:
     atomic_size_t m_Size;
 };
 
+struct SPSG_StatsCounters
+{
+    enum EGroup : size_t { eRequest, eReplyItem, eSkippedBlob, eReplyItemStatus, eMessage };
+
+    void IncCounter(EGroup group, unsigned counter)
+    {
+        _ASSERT(m_Data.size() > group);
+        _ASSERT(m_Data[group].size() > counter);
+        ++m_Data[group][counter];
+    }
+
+protected:
+    SPSG_StatsCounters();
+
+    template <class... TArgs>
+    void Report(TArgs&&... args);
+
+private:
+    using TData = vector<vector<atomic_uint>>;
+
+    template <EGroup group>
+    struct SGroup;
+
+    struct SInit   { template <EGroup group> static void Func(TData& data);                                            };
+    struct SReport { template <EGroup group> static void Func(const TData& data, const char* prefix, unsigned report); };
+
+    template <class TWhat, class... TArgs>
+    void Apply(EGroup start_with, TArgs&&... args);
+
+    TData m_Data;
+};
+
+struct SPSG_StatsAvgTime
+{
+    enum EAvgTime : size_t { eSentSecondsAgo, eTimeUntilResend };
+
+    void AddTime(EAvgTime avg_time, double value)
+    {
+        _ASSERT(m_Data.size() > avg_time);
+        m_Data[avg_time].first += SecondsToMs(value);
+        ++m_Data[avg_time].second;
+    }
+
+protected:
+    SPSG_StatsAvgTime();
+
+    void Report(const char* prefix, unsigned report);
+
+private:
+    static const char* GetName(EAvgTime avg_time);
+
+    vector<pair<atomic_uint64_t, atomic_uint>> m_Data;
+};
+
+struct SPSG_StatsData
+{
+    enum EDataType { eReceived, eRead };
+
+    void AddId(const CPSG_BlobId& blob_id)
+    {
+        m_Blobs.AddId(blob_id);
+    }
+
+    void AddId(const CPSG_ChunkId& chunk_id)
+    {
+        m_Chunks.AddId(chunk_id);
+        m_TSEs.GetLock()->emplace(chunk_id.GetId2Info());
+    }
+
+    void AddData(bool has_blob_id, EDataType type, size_t size)
+    {
+        if (has_blob_id) {
+            m_Blobs.AddData(type, size);
+        } else {
+            m_Chunks.AddData(type, size);
+        }
+    }
+
+protected:
+    void Report(const char* prefix, unsigned report);
+
+private:
+    template <class TDataId>
+    struct SData
+    {
+        SData() : m_Received(0), m_Read(0) {}
+
+        void AddId(const TDataId& data_id)
+        {
+            m_Ids.GetLock()->emplace_back(data_id);
+        }
+
+        void AddData(EDataType type, size_t size)
+        {
+            auto& data = type == eReceived ? m_Received : m_Read;
+            data += size;
+        }
+
+        void Report(const char* prefix, unsigned report, const char* name);
+
+    private:
+        atomic_uint64_t m_Received;
+        atomic_uint64_t m_Read;
+        SThreadSafe<deque<TDataId>> m_Ids;
+    };
+
+    SData<CPSG_BlobId> m_Blobs;
+    SData<CPSG_ChunkId> m_Chunks;
+    SThreadSafe<unordered_set<string>> m_TSEs;
+};
+
+struct SPSG_Stats : SPSG_StatsCounters, SPSG_StatsAvgTime, SPSG_StatsData
+{
+    SPSG_Stats(SPSG_Servers::TTS& servers);
+    ~SPSG_Stats() { Report(); }
+
+    void Init(uv_loop_t* loop) { m_Timer.Init(loop); m_Timer.Start(); }
+    void Stop() { m_Timer.Close(); }
+
+private:
+    void Report();
+
+    static void s_OnTimer(uv_timer_t* handle)
+    {
+        auto that = static_cast<SPSG_Stats*>(handle->data);
+        that->Report();
+    }
+
+    SUv_Timer m_Timer;
+    atomic_uint m_Report;
+    SPSG_Servers::TTS& m_Servers;
+};
+
 struct SPSG_IoImpl
 {
     SPSG_AsyncQueue queue;
@@ -660,16 +804,17 @@ private:
 
 struct SPSG_DiscoveryImpl
 {
-    SPSG_DiscoveryImpl(CServiceDiscovery service, SPSG_Servers::TTS& servers) :
+    SPSG_DiscoveryImpl(CServiceDiscovery service, shared_ptr<SPSG_Stats> stats, SPSG_Servers::TTS& servers) :
         m_NoServers(servers),
         m_Service(move(service)),
+        m_Stats(move(stats)),
         m_Servers(servers)
     {}
 
 protected:
     void OnShutdown(uv_async_t*);
     void OnTimer(uv_timer_t* handle);
-    void OnExecute(uv_loop_t&) {}
+    void OnExecute(uv_loop_t& loop) { if (m_Stats) m_Stats->Init(&loop); }
     void AfterExecute() {}
 
 private:
@@ -688,6 +833,7 @@ private:
 
     SNoServers m_NoServers;
     CServiceDiscovery m_Service;
+    shared_ptr<SPSG_Stats> m_Stats;
     SPSG_Servers::TTS& m_Servers;
     SPSG_ThrottleParams m_ThrottleParams;
 };
@@ -699,6 +845,7 @@ private:
 
 public:
     SPSG_Params params;
+    shared_ptr<SPSG_Stats> stats;
 
     SPSG_IoCoordinator(CServiceDiscovery service);
     bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
