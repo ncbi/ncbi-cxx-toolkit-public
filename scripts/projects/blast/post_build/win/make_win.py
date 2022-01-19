@@ -29,14 +29,12 @@ def extract_installer():
 
 def show_dir_tree( start_path ):
     dir_list = []    
-    print("#STARTED: ", start_path,"\n")
     dir_list = os.listdir( start_path )
     for fn in dir_list:
         if os.path.isfile( os.path.join( start_path,fn )):
-            print("F ",os.path.join( start_path,fn ) )
+            print(os.path.join( start_path,fn ),"\n" )
         else:
             show_dir_tree( os.path.join( start_path,fn ) )
-        print("#DONE:    ", start_path,"\n")
     return
 
 def main():
@@ -84,7 +82,9 @@ def main():
     
     cwd = os.getcwd()
     # DEBUG: print current tree content
+    print "#DEBUG:START: DIRLIST\n";
     show_dir_tree( cwd )
+    print "#DEBUG:END: DIRLIST\n";
 
     for app in apps:
         app = os.path.join(installdir, "bin", app)
@@ -97,8 +97,8 @@ def main():
     shutil.copy(dll, cwd)
 
     # pick up library after DLL: ncbi-vdb-md.dll in Manifest
-    # expected to be in tarBin\lib 
-    ncbi_vdb_nd_dll = os.path.join(installdir, "lib", "ncbi-vdb-md.dll")
+    # expected to be in CWD + c++\compilers\vs2019\static\bin\ReleaseDLL\ncbi-vdb-md.dll
+    ncbi_vdb_nd_dll = os.path.join(cwd, "c++","compilers","vs2019","static","bin","ReleaseDLL","ncbi-vdb-md.dll")
     if VERBOSE: 
        print("Copying", app, "to", cwd)
     shutil.copy(ncbi_vdb_nd_dll, cwd)
