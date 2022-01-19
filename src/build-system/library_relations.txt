@@ -904,7 +904,6 @@ idgen needs dbassist
 idload needs3party ctutils
 idload_utils needs gpipe_objutil
 idload_utils needs gpipe_sqlite
-idload_utils needs xid_utils_load
 igblast needs $(BLAST_LIBS)
 igblast needs3party $(BLAST_THIRD_PARTY_LIBS)
 insdseq needs xser
@@ -1977,6 +1976,7 @@ xstruct_util needs $(BLAST_LIBS)
 xstruct_util needs xstruct_dp
 xstruct_util needs3party $(BLAST_THIRD_PARTY_LIBS)
 xsubmit2id needs idload_utils
+xsubmit2id needs xid_utils_load
 xthrserv needs xconnect
 xthrserv needs xutil
 xunittestutil needs xobjutil
