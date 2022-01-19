@@ -72,6 +72,8 @@ NCBI_PARAM_DEF(unsigned, PSG, localhost_preference,   1);
 NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_items,  false);
 NCBI_PARAM_DEF(bool,     PSG, https,                  false);
 NCBI_PARAM_DEF(double,   PSG, no_servers_retry_delay, 1.0);
+NCBI_PARAM_DEF(bool,     PSG, stats,                  false);
+NCBI_PARAM_DEF(double,   PSG, stats_period,           0.0);
 
 NCBI_PARAM_DEF(double,   PSG, throttle_relaxation_period,                  0.0);
 NCBI_PARAM_DEF(unsigned, PSG, throttle_by_consecutive_connection_failures, 0);
@@ -167,6 +169,324 @@ SDebugPrintout::~SDebugPrintout()
         lock_guard<mutex> lock(cout_mutex);
         cout << os.str();
         cout.flush();
+    }
+}
+
+template <>
+struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eRequest>
+{
+    using type = CPSG_Request::EType;
+    static constexpr size_t size = CPSG_Request::eChunk + 1;
+    static constexpr auto prefix = "\trequest\ttype=";
+
+    static constexpr array<type, size> values = {
+        CPSG_Request::eBiodata,
+        CPSG_Request::eResolve,
+        CPSG_Request::eBlob,
+        CPSG_Request::eNamedAnnotInfo,
+        CPSG_Request::eChunk,
+    };
+
+    static const char* ValueName(type value)
+    {
+        switch (value) {
+            case CPSG_Request::eBiodata:            return "biodata";
+            case CPSG_Request::eResolve:            return "resolve";
+            case CPSG_Request::eBlob:               return "blob";
+            case CPSG_Request::eNamedAnnotInfo:     return "named_annot_info";
+            case CPSG_Request::eChunk:              return "chunk";
+        }
+
+        // Should not happen
+        _TROUBLE;
+        return "unknown";
+    }
+};
+
+template <>
+struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eReplyItem>
+{
+    using type = CPSG_ReplyItem::EType;
+    static constexpr size_t size = CPSG_ReplyItem::eEndOfReply + 1;
+    static constexpr auto prefix = "\treply_item\ttype=";
+
+    static constexpr array<type, size> values = {
+        CPSG_ReplyItem::eBlobData,
+        CPSG_ReplyItem::eBlobInfo,
+        CPSG_ReplyItem::eSkippedBlob,
+        CPSG_ReplyItem::eBioseqInfo,
+        CPSG_ReplyItem::eNamedAnnotInfo,
+        CPSG_ReplyItem::ePublicComment,
+        CPSG_ReplyItem::eProcessor,
+        CPSG_ReplyItem::eEndOfReply,
+    };
+
+    static const char* ValueName(type value)
+    {
+        switch (value) {
+            case CPSG_ReplyItem::eBlobData:             return "blob_data";
+            case CPSG_ReplyItem::eBlobInfo:             return "blob_info";
+            case CPSG_ReplyItem::eSkippedBlob:          return "skipped_blob";
+            case CPSG_ReplyItem::eBioseqInfo:           return "bioseq_info";
+            case CPSG_ReplyItem::eNamedAnnotInfo:       return "named_annot_info";
+            case CPSG_ReplyItem::ePublicComment:        return "public_comment";
+            case CPSG_ReplyItem::eProcessor:            return "processor";
+            case CPSG_ReplyItem::eEndOfReply:           return "end_of_reply";
+        }
+
+        // Should not happen
+        _TROUBLE;
+        return "unknown";
+    }
+};
+
+template <>
+struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eSkippedBlob>
+{
+    using type = CPSG_SkippedBlob::EReason;
+    static constexpr size_t size = CPSG_SkippedBlob::eUnknown + 1;
+    static constexpr auto prefix = "\tskipped_blob\treason=";
+
+    static constexpr array<type, size> values = {
+        CPSG_SkippedBlob::eExcluded,
+        CPSG_SkippedBlob::eInProgress,
+        CPSG_SkippedBlob::eSent,
+        CPSG_SkippedBlob::eUnknown,
+    };
+
+    static const char* ValueName(type value)
+    {
+        switch (value) {
+            case CPSG_SkippedBlob::eExcluded:       return "excluded";
+            case CPSG_SkippedBlob::eInProgress:     return "in_progress";
+            case CPSG_SkippedBlob::eSent:           return "sent";
+            case CPSG_SkippedBlob::eUnknown:        return "unknown";
+        }
+
+        // Should not happen
+        _TROUBLE;
+        return "unknown";
+    }
+};
+
+template <>
+struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eReplyItemStatus>
+{
+    using type = EPSG_Status;
+    static constexpr size_t size = static_cast<size_t>(EPSG_Status::eError) + 1;
+    static constexpr auto prefix = "\treply_item_status\tstatus=";
+
+    static constexpr array<type, size> values = {
+        EPSG_Status::eSuccess,
+        EPSG_Status::eInProgress,
+        EPSG_Status::eNotFound,
+        EPSG_Status::eCanceled,
+        EPSG_Status::eForbidden,
+        EPSG_Status::eError,
+    };
+
+    static const char* ValueName(type value)
+    {
+        switch (value) {
+            case EPSG_Status::eSuccess:         return "success";
+            case EPSG_Status::eInProgress:      return "in_progress";
+            case EPSG_Status::eNotFound:        return "not_found";
+            case EPSG_Status::eCanceled:        return "canceled";
+            case EPSG_Status::eForbidden:       return "forbidden";
+            case EPSG_Status::eError:           return "error";
+        }
+
+        // Should not happen
+        _TROUBLE;
+        return "unknown";
+    }
+};
+
+template <>
+struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eMessage>
+{
+    using type = EDiagSev;
+    static constexpr size_t size = EDiagSev::eDiag_Trace + 1;
+    static constexpr auto prefix = "\tmessage\tseverity=";
+
+    static constexpr array<type, size> values = {
+        EDiagSev::eDiag_Info,
+        EDiagSev::eDiag_Warning,
+        EDiagSev::eDiag_Error,
+        EDiagSev::eDiag_Critical,
+        EDiagSev::eDiag_Fatal,
+        EDiagSev::eDiag_Trace,
+    };
+
+    static const char* ValueName(type value)
+    {
+        switch (value) {
+            case EDiagSev::eDiag_Info:          return "info";
+            case EDiagSev::eDiag_Warning:       return "warning";
+            case EDiagSev::eDiag_Error:         return "error";
+            case EDiagSev::eDiag_Critical:      return "critical";
+            case EDiagSev::eDiag_Fatal:         return "fatal";
+            case EDiagSev::eDiag_Trace:         return "trace";
+        }
+
+        // Should not happen
+        _TROUBLE;
+        return "unknown";
+    }
+};
+
+template <SPSG_Stats::EGroup group>
+void SPSG_StatsCounters::SInit::Func(TData& data)
+{
+    data.emplace_back(SGroup<group>::size);
+
+    for (auto& counter : data.back()) {
+        counter = 0;
+    }
+};
+
+template <SPSG_Stats::EGroup group>
+void SPSG_StatsCounters::SReport::Func(const TData& data, const char* prefix, unsigned report)
+{
+    using TGroup = SGroup<group>;
+
+    _ASSERT(data.size() > group);
+    const auto& g = data[group];
+    _ASSERT(g.size() == TGroup::size);
+
+    for (auto i : TGroup::values) {
+        auto n = g[static_cast<size_t>(i)].load();
+        if (n) ERR_POST(Note << prefix << report << TGroup::prefix << TGroup::ValueName(i) << "&count=" << n);
+    }
+}
+
+SPSG_StatsCounters::SPSG_StatsCounters()
+{
+    Apply<SInit>(eRequest, m_Data);
+}
+
+template <class TWhat, class... TArgs>
+void SPSG_StatsCounters::Apply(EGroup start_with, TArgs&&... args)
+{
+    // This method is always called with start_with == eRequest (so, all cases are run with one call, one by one).
+    // This switch usage however makes compilers warn if any enum value is missing/not handled
+    switch (start_with) {
+        case eRequest:          TWhat::template Func<eRequest>          (forward<TArgs>(args)...);
+        case eReplyItem:        TWhat::template Func<eReplyItem>        (forward<TArgs>(args)...);
+        case eSkippedBlob:      TWhat::template Func<eSkippedBlob>      (forward<TArgs>(args)...);
+        case eReplyItemStatus:  TWhat::template Func<eReplyItemStatus>  (forward<TArgs>(args)...);
+        case eMessage:          TWhat::template Func<eMessage>          (forward<TArgs>(args)...);
+    }
+}
+
+template <class... TArgs>
+void SPSG_StatsCounters::Report(TArgs&&... args)
+{
+    Apply<SReport>(eRequest, m_Data, forward<TArgs>(args)...);
+}
+
+SPSG_StatsAvgTime::SPSG_StatsAvgTime() :
+    m_Data(eTimeUntilResend + 1)
+{
+}
+
+const char* SPSG_StatsAvgTime::GetName(EAvgTime avg_time)
+{
+    switch (avg_time) {
+        case SPSG_Stats::eSentSecondsAgo:   return "sent_seconds_ago";
+        case SPSG_Stats::eTimeUntilResend:  return "time_until_resend";
+    }
+
+    // Should not happen
+    _TROUBLE;
+    return "unknown";
+}
+
+void SPSG_StatsAvgTime::Report(const char* prefix, unsigned report)
+{
+    for (auto i : { eSentSecondsAgo, eTimeUntilResend }) {
+        _ASSERT(m_Data.size() > i);
+        const auto& data = m_Data[i];
+        auto v = data.first.load();
+        auto n = data.second.load();
+        if (n) ERR_POST(Note << prefix << report << '\t' << GetName(i) << "\taverage=" << double(v / n) / milli::den);
+    }
+}
+
+template <class TDataId>
+void SPSG_StatsData::SData<TDataId>::Report(const char* prefix, unsigned report, const char* data_prefix)
+{
+    struct SLess {
+        static auto Tuple(const CPSG_BlobId& id)  { return                       tie(id.GetId(),       id.GetLastModified()); }
+        static auto Tuple(const CPSG_ChunkId& id) { return tuple<int, const string&>(id.GetId2Chunk(), id.GetId2Info());      }
+        bool operator()(const TDataId& lhs, const TDataId& rhs) const { return Tuple(lhs) < Tuple(rhs); }
+    };
+
+    size_t total = 0;
+    map<TDataId, unsigned, SLess> unique_ids;
+
+    if (auto locked = m_Ids.GetLock()) {
+        total = locked->size();
+
+        if (!total) return;
+
+        for (const auto& data_id : *locked) {
+            auto created = unique_ids.emplace(data_id, 1);
+            if (!created.second) ++created.first->second;
+        }
+    }
+
+    ERR_POST(Note << prefix << report << data_prefix << "\ttotal=" << total << "&unique=" << unique_ids.size());
+
+    auto received = m_Received.load();
+    auto read = m_Read.load();
+    if (received) ERR_POST(Note << prefix << report << data_prefix << "_data\treceived=" << received << "&read=" << read);
+
+    map<unsigned, unsigned> group_by_count;
+
+    for (const auto& p : unique_ids) {
+        auto created = group_by_count.emplace(p.second, 1);
+        if (!created.second) ++created.first->second;
+    }
+
+    for (const auto& p : group_by_count) {
+        ERR_POST(Note << prefix << report << data_prefix << "_retrievals\tnumber=" << p.first << "&unique_ids=" << p.second);
+    }
+}
+
+void SPSG_StatsData::Report(const char* prefix, unsigned report)
+{
+    m_Blobs.Report(prefix, report, "\tblob");
+    m_Chunks.Report(prefix, report, "\tchunk");
+    if (auto n = m_TSEs.GetLock()->size()) ERR_POST(Note << prefix << report << "\tchunk_tse\tunique=" << n);
+}
+
+uint64_t s_GetStatsPeriod()
+{
+    return SecondsToMs(TPSG_StatsPeriod::GetDefault());
+}
+
+SPSG_Stats::SPSG_Stats(SPSG_Servers::TTS& servers) :
+    m_Timer(this, s_OnTimer, s_GetStatsPeriod(), s_GetStatsPeriod()),
+    m_Report(0),
+    m_Servers(servers)
+{
+}
+
+void SPSG_Stats::Report()
+{
+    const auto prefix = "PSG_STATS\t";
+    const auto report = ++m_Report;
+
+    SPSG_StatsCounters::Report(prefix, report);
+    SPSG_StatsAvgTime::Report(prefix, report);
+    SPSG_StatsData::Report(prefix, report);
+
+    auto servers_locked = m_Servers.GetLock();
+
+    for (const auto& server : *servers_locked) {
+        auto n = server.stats.load();
+        if (n) ERR_POST(Note << prefix << report << "\tserver\tname=" << server.address.AsString() << "&requests_sent=" << n);
     }
 }
 
@@ -447,7 +767,16 @@ void SPSG_Request::Add()
                 }
             }
 
+            if (auto stats = reply->stats.lock()) stats->IncCounter(SPSG_Stats::eMessage, severity);
+
         } else if (chunk_type == "data") {
+            if (auto stats = reply->stats.lock()) {
+                if (item_type == "blob") {
+                    auto has_blob_id = !args->GetValue("blob_id").empty();
+                    stats->AddData(has_blob_id, SPSG_Stats::eReceived, chunk.size());
+                }
+            }
+
             auto blob_chunk = args->GetValue("blob_chunk");
             auto index = blob_chunk.empty() ? 0 : stoul(blob_chunk);
 
@@ -823,6 +1152,8 @@ void SPSG_DiscoveryImpl::OnShutdown(uv_async_t*)
     for (auto& server : servers) {
         server.throttling.StartClose();
     }
+
+    if (m_Stats) m_Stats->Stop();
 }
 
 void SPSG_IoImpl::AddNewServers(size_t servers_size, size_t sessions_size, uv_async_t* handle)
@@ -926,6 +1257,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                     if (result) {
                         PSG_IO_TRACE("Server '" << server_name << "' will get request '" <<
                                 req_id << "' with rate = " << original_rate);
+                        ++server.stats;
                         break;
                     } else {
                         PSG_IO_TRACE("Server '" << server_name << "' failed to process request '" <<
@@ -1172,14 +1504,24 @@ bool SPSG_DiscoveryImpl::SNoServers::operator()(bool discovered, SUv_Timer* time
 
 /** SPSG_IoCoordinator */
 
+shared_ptr<SPSG_Stats> s_GetStats(SPSG_Servers::TTS& servers)
+{
+    if (TPSG_Stats::GetDefault()) {
+        return make_shared<SPSG_Stats>(servers);
+    } else {
+        return {};
+    }
+}
+
 uint64_t s_GetDiscoveryRepeat(const CServiceDiscovery& service)
 {
     return service.IsSingleServer() ? 0 : SecondsToMs(TPSG_RebalanceTime::GetDefault());
 }
 
 SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
+    stats(s_GetStats(m_Servers)),
     m_Barrier(TPSG_NumIo::GetDefault() + 2),
-    m_Discovery(m_Barrier, 0, s_GetDiscoveryRepeat(service), service, m_Servers),
+    m_Discovery(m_Barrier, 0, s_GetDiscoveryRepeat(service), service, stats, m_Servers),
     m_RequestCounter(0),
     m_RequestId(1)
 {

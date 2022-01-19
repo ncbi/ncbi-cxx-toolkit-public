@@ -366,6 +366,12 @@ typedef NCBI_PARAM_TYPE(PSG, https) TPSG_Https;
 NCBI_PARAM_DECL(double, PSG, no_servers_retry_delay);
 typedef NCBI_PARAM_TYPE(PSG, no_servers_retry_delay) TPSG_NoServersRetryDelay;
 
+NCBI_PARAM_DECL(bool, PSG, stats);
+typedef NCBI_PARAM_TYPE(PSG, stats) TPSG_Stats;
+
+NCBI_PARAM_DECL(double, PSG, stats_period);
+typedef NCBI_PARAM_TYPE(PSG, stats_period) TPSG_StatsPeriod;
+
 NCBI_PARAM_DECL(double, PSG, throttle_relaxation_period);
 using TPSG_ThrottlePeriod = NCBI_PARAM_TYPE(PSG, throttle_relaxation_period);
 
