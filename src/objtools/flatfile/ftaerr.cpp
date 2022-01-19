@@ -120,12 +120,26 @@ thread_local unique_ptr<FtaMsgPost>  bmp;
 FtaErrCode  fec;
 
 /**********************************************************/
-static int FtaStrSevToIntSev(const char *strsevcode)
+static int FtaStrSevToIntSev(const string& strsevcode)
 {
-    if(!strsevcode)
-        return(-1);
+    if(strsevcode.empty())
+        return -1;
 
-    if(!strcmp(strsevcode, "SEV_INFO"))
+    static const map<string, int> sStringToInt 
+        = {{"SEV_INFO", 1},
+           {"SEV_WARNING", 2},
+           {"SEV_ERROR", 3},
+           {"SEV_REJECT", 4},
+           {"SEV_FATAL", 5}};
+
+    if (auto it = sStringToInt.find(strsevcode); 
+            it != sStringToInt.end()) {
+        return  it->second;
+    }
+
+    return -1;
+/*
+    if(strsevcode == "SEV_INFO")
         return(1);
     if(!strcmp(strsevcode, "SEV_WARNING"))
         return(2);
@@ -136,6 +150,7 @@ static int FtaStrSevToIntSev(const char *strsevcode)
     if(!strcmp(strsevcode, "SEV_FATAL"))
         return(5);
     return(-1);
+    */
 }
 
 /**********************************************************/
@@ -147,14 +162,14 @@ void FtaErrGetMsgCodes(
     FtaMsgModFiles  *bmmfp;
     FtaMsgModTag    *bmmtp;
     FILE            *fd;
-    string val1;
-    string val3;
+    //string val1;
+    //string val3;
     char            *p;
     char            *q;
     char            s[2048];
     char            ch;
     bool            got_mod;
-    int             val2;
+    //int             val2;
 
     if(!bmp)
         FtaErrInit();
@@ -209,14 +224,15 @@ void FtaErrGetMsgCodes(
         bmmfp->next = bmp->bmmf;
     bmp->bmmf = bmmfp;
     
-    val2 = 0;
     bmmtp = NULL;
     while(fgets(s, 2047, fd))
     {
         if(s[0] != '$' || (s[1] != '^' && s[1] != '$'))
             continue;
 
-        val2 = 0;
+        string val1{};
+        string val3{};
+        int val2{0};
 
         for(p = s + 2; *p == ' ' || *p == '\t'; p++);
         for(q = p; *p && *p != ','; p++);
@@ -289,7 +305,7 @@ void FtaErrGetMsgCodes(
 
         bmctxp->strsubtag = val1;
         bmctxp->intsubtag = val2;
-        bmctxp->intseverity = FtaStrSevToIntSev(val3.c_str());
+        bmctxp->intseverity = FtaStrSevToIntSev(val3);
 
         if(val2 == subcode && strsubcode.empty() && !strcode.empty())
         {
