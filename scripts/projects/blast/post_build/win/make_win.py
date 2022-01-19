@@ -100,7 +100,7 @@ def main():
     # expected to be in CWD + c++\compilers\vs2019\static\bin\ReleaseDLL\ncbi-vdb-md.dll
     ncbi_vdb_nd_dll = os.path.join(cwd, "c++","compilers","vs2019","static","bin","ReleaseDLL","ncbi-vdb-md.dll")
     if VERBOSE: 
-       print("Copying", app, "to", cwd)
+       print("Copying", ncbi_vdb_nd_dll, "to", cwd)
     shutil.copy(ncbi_vdb_nd_dll, cwd)
     
     update_blast_version(NSIS_CONFIG, blast_version)
