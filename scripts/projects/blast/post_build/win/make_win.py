@@ -82,9 +82,9 @@ def main():
     
     cwd = os.getcwd()
     # DEBUG: print current tree content
-    print "#DEBUG:START: DIRLIST\n";
+    print("#DEBUG:START: DIRLIST");
     show_dir_tree( cwd )
-    print "#DEBUG:END: DIRLIST\n";
+    print("#DEBUG:END: DIRLIST");
 
     for app in apps:
         app = os.path.join(installdir, "bin", app)
