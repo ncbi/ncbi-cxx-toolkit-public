@@ -27,6 +27,18 @@ def extract_installer():
             retval = line.split()[1]
             return retval.strip('"')
 
+def show_dir_tree( start_path ):
+    dir_list = []    
+    print("#STARTED: ", start_path,"\n")
+    dir_list = os.listdir( start_path )
+    for fn in dir_list:
+        if os.path.isfile( os.path.join( start_path,fn )):
+            print("F ",os.path.join( start_path,fn ) )
+        else:
+            show_dir_tree( os.path.join( start_path,fn ) )
+        print("#DONE:    ", start_path,"\n")
+    return
+
 def main():
     """ Creates NSIS installer for BLAST command line binaries """
     global VERBOSE #IGNORE:W0603
@@ -71,6 +83,9 @@ def main():
              ]
     
     cwd = os.getcwd()
+    # DEBUG: print current tree content
+    show_dir_tree( cwd )
+
     for app in apps:
         app = os.path.join(installdir, "bin", app)
         if VERBOSE: 
