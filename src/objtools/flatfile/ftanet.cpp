@@ -333,52 +333,6 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
                    (*it)->GetName().IsName())
                 {
                     CName_std& namestd = (*it)->SetName().SetName();
-/* bsv: commented out single letter first name population*/
-                    if(source != Parser::ESource::SPROT &&
-                       !got_pmid)
-                    {
-                        if(!namestd.IsSetFirst() && namestd.IsSetInitials()) {
-                            auto initials = namestd.GetInitials();
-                            if (initials.size() == 1  ||  (initials.size() == 2  && initials[1] == '.')) {
-                                namestd.SetFirst(initials.substr(0, 1));
-                            }
-                        }
-                        if((*pub)->IsArticle())
-                        {
-                            CCit_art& art1 = (*pub)->SetArticle();
-                            if(art1.IsSetAuthors() && art1.CanGetAuthors())
-                            {
-                                CAuth_list* authors1 = &art1.SetAuthors();
-                                if(authors1->IsSetNames() &&
-                                   authors1->CanGetNames() &&
-                                   authors1->GetNames().Which() == CAuth_list::TNames::e_Std)
-                                {
-                                    CAuth_list::TNames& names1 = authors1->SetNames();
-                                    CAuth_list::TNames::TStd::iterator it1 = (names1.SetStd()).begin();
-                                    CAuth_list::TNames::TStd::iterator it1_end = (names1.SetStd()).end();
-                                    for(; it1 != it1_end; it1++)
-                                    {
-                                        if((*it1)->IsSetName() &&
-                                           (*it1)->CanGetName() &&
-                                           (*it1)->GetName().IsName())
-                                        {
-                                            CName_std& namestd1 = (*it1)->SetName().SetName();
-                                            if(!namestd1.IsSetFirst()  &&  namestd1.IsSetInitials()) {
-                                                if (!namestd.IsSetFirst() && namestd.IsSetInitials()) {
-                                                    auto initials = namestd.GetInitials();
-                                                    if (initials.size() == 1 || (initials.size() == 2 && initials[1] == '.')) {
-                                                        namestd1.SetFirst(initials.substr(0, 1));
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-/**/
-
                     if(namestd.IsSetSuffix())
                         continue;
                     fta_fix_last_initials(namestd, true);
