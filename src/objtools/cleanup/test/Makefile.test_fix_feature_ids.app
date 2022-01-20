@@ -14,4 +14,4 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD = test_fix_feature_ids
 CHECK_COPY = test_cases
 
-WATCHERS = kachalos
+WATCHERS = gotvyans

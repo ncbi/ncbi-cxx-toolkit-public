@@ -12,5 +12,5 @@ REQUIRES = Boost.Test.Included
 
 CHECK_CMD = test_table_printer
 
-WATCHERS = kachalos
+WATCHERS = gotvyans
 

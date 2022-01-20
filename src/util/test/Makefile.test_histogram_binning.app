@@ -10,5 +10,5 @@ REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
 
-WATCHERS = kachalos
+WATCHERS = gotvyans
 
