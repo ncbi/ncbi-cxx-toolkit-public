@@ -22,6 +22,6 @@ LDFLAGS = -L$(import_root)/../lib $(ORIG_LDFLAGS)
 
 REQUIRES = objects BerkeleyDB SQLITE3
 
-WATCHERS = kachalos
+WATCHERS = gotvyans
 
 POST_LINK = $(VDB_POST_LINK)

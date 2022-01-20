@@ -48,6 +48,6 @@ ASN_DEP = genome_collection mla submit taxon1
 
 USES_LIBRARIES = xlogging
 
-WATCHERS = kachalos foleyjp
+WATCHERS = gotvyans foleyjp
 
 

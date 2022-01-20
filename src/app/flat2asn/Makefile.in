@@ -11,4 +11,4 @@ include @builddir@/Makefile.meta
 
 REQUIRES = BerkeleyDB LIBXSLT 
 
-WATCHERS = kachalos foleyjp
+WATCHERS = gotvyans foleyjp
