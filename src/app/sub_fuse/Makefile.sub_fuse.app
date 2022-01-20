@@ -8,4 +8,4 @@ LIB = xcleanup $(OBJEDIT_LIBS) xconnect valid xobjutil xregexp $(PCRE_LIB) $(SOB
 
 LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
-WATCHERS = dobronad
+WATCHERS = stakhovv
