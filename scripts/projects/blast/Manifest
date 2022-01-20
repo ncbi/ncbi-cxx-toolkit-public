@@ -32,7 +32,6 @@ COPY: $srcdir/src/app/blast/get_species_taxids.sh $installdir/bin
 
 # removed as only needed for Win64 platform
 #COPY: $bindir/ncbi-vdb-md.dll $installdir/bin
-DLL: ncbi-vdb-md.dll
 
 POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $version $platform $installdir "$tarball" $bindir
 
