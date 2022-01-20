@@ -2504,6 +2504,11 @@ void CBlastFormat::LogBlastSearchInfo(CBlastUsageReport & report)
 			if (dir != kEmptyStr) {
 				db_name = m_DbName.substr(dir.length());
 			}
+
+			if (db_name.size() > 500) {
+				db_name.resize(500);
+				NStr::TruncateSpacesInPlace(db_name, NStr::eTrunc_End);
+			}
 			report.AddParam(CBlastUsageReport::eDBName, db_name);
 			report.AddParam(CBlastUsageReport::eDBLength, GetDbTotalLength());
 			report.AddParam(CBlastUsageReport::eDBNumSeqs, num_seqs);
