@@ -11,6 +11,6 @@ LIB = eutils_client hydra_client xmlwrapp xvalidate $(XFORMAT_LIBS) xalnmgr \
 
 LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(NETWORK_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
-WATCHERS = dobronad choi
+WATCHERS = stakhovv choi
 
 REQUIRES = objects LIBXML LIBXSLT
