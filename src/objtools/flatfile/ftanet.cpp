@@ -561,9 +561,9 @@ public:
     using TEntryList = list<CRef<CSeq_entry>>;
     void Apply(TEntryList& entries);
 private:
-    void fix_pub_equiv(CPub_equiv& pub_equiv, Parser* pp, bool er);
-    void fix_pub_annot(CPub& pub, Parser* pp, bool er);
-    void find_pub(Parser* pp, list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs);
+    void fix_pub_equiv(CPub_equiv& pub_equiv, bool er);
+    void fix_pub_annot(CPub& pub, bool er);
+    void find_pub(list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs);
 
     Parser* m_pParser;
     unique_ptr<CPubFixMessageListener> m_pPubFixListener;
@@ -606,16 +606,15 @@ static void fta_check_pub_ids(TPubList& pub_list)
 
 
 /**********************************************************/
-void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, ParserPtr pp, bool er)
+void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, bool er)
 {
-    if (!pp)
+    if (!m_pParser)
         return;
 
-    IndexblkPtr ibp = pp->entrylist[pp->curindx];
-
+    IndexblkPtr ibp = m_pParser->entrylist[m_pParser->curindx];
 
     list<CRef<CPub>> cit_arts;
-    for (auto pPub : pub_equiv.Set()) 
+    for (auto& pPub : pub_equiv.Set())
     {
         if (!pPub->IsGen()) {
             continue;
@@ -636,12 +635,12 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, ParserPtr pp, bool er)
         return;
     }
 
-    auto cit_gen = cit_arts.front();
+    auto& cit_gen = cit_arts.front();
 
     list<CRef<CPub>> others;
     CRef<CPub> pMuid, pPmid;
 
-    for (auto pPub : pub_equiv.Set())
+    for (auto& pPub : pub_equiv.Set())
     {
         if (cit_gen == pPub)
             continue;
@@ -740,17 +739,17 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, ParserPtr pp, bool er)
 }
 
 /**********************************************************/
-void CFindPub::fix_pub_annot(CPub& pub, ParserPtr pp, bool er)
+void CFindPub::fix_pub_annot(CPub& pub, bool er)
 {
-    if (pp == NULL)
+    if (!m_pParser)
         return;
 
     if (pub.IsEquiv())
     {
-        fix_pub_equiv(pub.SetEquiv(), pp, er);
-        if(pp->qamode)
+        fix_pub_equiv(pub.SetEquiv(), er);
+        if (m_pParser->qamode)
             fta_fix_imprint_language(pub.SetEquiv().Set());
-        fta_fix_affil(pub.SetEquiv().Set(), pp->source);
+        fta_fix_affil(pub.SetEquiv().Set(), m_pParser->source);
         return;
     }
 
@@ -759,7 +758,7 @@ void CFindPub::fix_pub_annot(CPub& pub, ParserPtr pp, bool er)
 
 
 /**********************************************************/
-void CFindPub::find_pub(ParserPtr pp, list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs)
+void CFindPub::find_pub(list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs)
 {
     bool er = any_of(begin(descrs.Get()), end(descrs.Get()),
             [](CRef<CSeqdesc> pDesc) {
@@ -772,33 +771,32 @@ void CFindPub::find_pub(ParserPtr pp, list<CRef<CSeq_annot>>& annots, CSeq_descr
             });
 
 
-    for (auto pDescr : descrs.Set())
+    for (auto& pDescr : descrs.Set())
     {
         if (!pDescr->IsPub())
             continue;
 
         CPubdesc& pub_descr = pDescr->SetPub();
-        fix_pub_equiv(pub_descr.SetPub(), pp, er);
-        if(pp->qamode)
+        fix_pub_equiv(pub_descr.SetPub(), er);
+        if (m_pParser->qamode)
             fta_fix_imprint_language(pub_descr.SetPub().Set());
-        fta_fix_affil(pub_descr.SetPub().Set(), pp->source);
+        fta_fix_affil(pub_descr.SetPub().Set(), m_pParser->source);
         fta_strip_er_remarks(pub_descr);
     }
 
-    for (auto pAnnot : annots)
+    for (auto& pAnnot : annots)
     {
         if (!pAnnot->IsSetData() || !pAnnot->GetData().IsFtable())              /* feature table */
             continue;
 
-
-        for (auto pFeat : pAnnot->SetData().SetFtable()) 
+        for (auto& pFeat : pAnnot->SetData().SetFtable())
         {
             if (pFeat->IsSetData() && pFeat->GetData().IsPub())   /* pub feature */
             {
-                fix_pub_equiv(pFeat->SetData().SetPub().SetPub(), pp, er);
-                if(pp->qamode)
+                fix_pub_equiv(pFeat->SetData().SetPub().SetPub(), er);
+                if (m_pParser->qamode)
                     fta_fix_imprint_language(pFeat->SetData().SetPub().SetPub().Set());
-                fta_fix_affil(pFeat->SetData().SetPub().SetPub().Set(), pp->source);
+                fta_fix_affil(pFeat->SetData().SetPub().SetPub().Set(), m_pParser->source);
                 fta_strip_er_remarks(pFeat->SetData().SetPub());
             }
 
@@ -806,9 +804,9 @@ void CFindPub::find_pub(ParserPtr pp, list<CRef<CSeq_annot>>& annots, CSeq_descr
                 continue;
             }
 
-            for (auto pPub : pFeat->SetCit().SetPub()) {
+            for (auto& pPub : pFeat->SetCit().SetPub()) {
                 if (pPub) {
-                    fix_pub_annot(*pPub, pp, er);
+                    fix_pub_annot(*pPub, er);
                 }
             }
         }
@@ -819,11 +817,11 @@ void CFindPub::find_pub(ParserPtr pp, list<CRef<CSeq_annot>>& annots, CSeq_descr
 //static void fta_find_pub(ParserPtr pp, TEntryList& seq_entries)
 void CFindPub::Apply(list<CRef<CSeq_entry>>& seq_entries)
 {
-    for (auto pEntry : seq_entries) 
+    for (auto& pEntry : seq_entries)
     {
         for (CTypeIterator<CBioseq_set> bio_set(Begin(*pEntry)); bio_set; ++bio_set)
         {
-            find_pub(m_pParser, bio_set->SetAnnot(), bio_set->SetDescr());
+            find_pub(bio_set->SetAnnot(), bio_set->SetDescr());
 
             if (bio_set->GetDescr().Get().empty())
                 bio_set->ResetDescr();
@@ -834,7 +832,7 @@ void CFindPub::Apply(list<CRef<CSeq_entry>>& seq_entries)
 
         for (CTypeIterator<CBioseq> bioseq(Begin(*pEntry)); bioseq; ++bioseq)
         {
-            find_pub(m_pParser, bioseq->SetAnnot(), bioseq->SetDescr());
+            find_pub(bioseq->SetAnnot(), bioseq->SetDescr());
 
             if (bioseq->GetDescr().Get().empty())
                 bioseq->ResetDescr();
