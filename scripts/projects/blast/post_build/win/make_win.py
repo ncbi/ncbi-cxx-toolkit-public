@@ -32,7 +32,7 @@ def show_dir_tree( start_path ):
     dir_list = os.listdir( start_path )
     for fn in dir_list:
         if os.path.isfile( os.path.join( start_path,fn )):
-            print(os.path.join( start_path,fn ),"\n" )
+            print(os.path.join( start_path,fn ) )
         else:
             show_dir_tree( os.path.join( start_path,fn ) )
     return
