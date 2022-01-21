@@ -527,9 +527,9 @@ TokenStatBlkPtr TokenString(char* str, Char delimiter)
     for(ptr = str; *ptr == delimiter;)
         ptr++;
 
-    for(num = 0; *ptr != '\0' && *ptr != '\n';)
+    for(num = 0; *ptr != '\0' && *ptr != '\r' && *ptr != '\n';)
     {
-        for(bptr = ptr; *ptr != delimiter && *ptr != '\n' &&
+        for(bptr = ptr; *ptr != delimiter && *ptr != '\r' && *ptr != '\n' &&
             *ptr != '\t' && *ptr != ' ' && *ptr != '\0';)
             ptr++;
 

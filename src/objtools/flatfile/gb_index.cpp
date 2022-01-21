@@ -498,7 +498,7 @@ bool GenBankIndex(ParserPtr pp)
                         p = finfo->str + ParFlat_COL_DATA;
                         while(*p == ' ' || *p == '\t')
                             p++;
-                        for(q = p; *q != '\0' && *q != '\n';)
+                        for(q = p; *q != '\0' && *q != '\r' && *q != '\n';)
                             q++;
                         while(q > p)
                         {
@@ -522,7 +522,7 @@ bool GenBankIndex(ParserPtr pp)
                         while(*p == ' ' || *p == '\t')
                             p++;
                         for(q = p; *q != '\0' && *q != ' ' && *q != '\t' &&
-                                   *q != '\n';)
+                                   *q != '\r' && *q != '\n';)
                             q++;
                         i = q - p;
                         line_nid = (char*) MemNew(i + 1);
