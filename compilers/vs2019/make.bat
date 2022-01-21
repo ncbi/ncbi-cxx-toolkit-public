@@ -159,11 +159,9 @@ echo INFO: Configure "%libdll%\%solution% [ReleaseDLL|%arch%]"
 set log=__%libdll%_%solution_name%.configure.log
 echo %DEVENV% %libdll%/build/%solution%.sln /build "ReleaseDLL|%archwc%" /project "_CONFIGURE_" /out %log%
 %DEVENV% %libdll%/build/%solution%.sln /build "ReleaseDLL|%archwc%" /project "_CONFIGURE_" /out %log%
-if errorlevel 1 {
-   type %log%
-   goto ABORT
-}
+if errorlevel 1 set err=1
 type %log%
+if not %err% == 0 goto ABORT
 if not _%cmd% == _make goto COMPLETE
 
 
