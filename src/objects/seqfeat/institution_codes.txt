@@ -8086,6 +8086,7 @@ WGC	s	State University of West Georgia, Biology Department
 WGCH	s	Wilton Garden Club			
 WGD	s	Washington Game Department			
 WGMM	s	Woodspring Museum			
+WGRB	sb	Wildlife Genetic Resources Bank			
 WGRC	b	Wheat Genetics Resource Center			
 WGRS	s	Western Ghat Regional Station of the Zoological Survey of India at Calicut			
 WH	s	Wuhan University			
@@ -8195,6 +8196,7 @@ WTU	s	University of Washington
 WTU:F	s	University of Washington, Fungal Collection		
 WTUH	s	University of Washington Botanic Gardens, College of Forest Resources			
 WU	s	Universitat Wien			
+WU:MYC	s	Universitat Wien, Mycological collection of Universitat Wien	
 WU<USA-TX>	s	Wayland University			
 WUD	s	Wayne State University, Biological Sciences Department			
 WUH	s	Wuhu School of Traditional Chinese Medicine			
@@ -8384,15 +8386,15 @@ ZMA:MOL	s	Universiteit van Amsterdam, Zoologisch Museum, Mollusc collection	http
 ZMA:POR	s	Universiteit van Amsterdam, Zoologisch Museum, Porifera collection		
 ZMAN	s	Instituut voor Taxonomische Zoologie, Zoologisch Museum			
 ZMAU	s	Zoological Museum Andhra University			
-ZMB	s	Museum Fur Naturkunde Berlin	ZMHU		
-ZMB:Bryozoa	s	Museum Fur Naturkunde Berlin, Bryozoa Collection		
-ZMB:Cnidaria	s	Museum Fur Naturkunde Berlin, Cnidaria Collection		
-ZMB:Crustacea	s	Museum Fur Naturkunde Berlin, Crustacea Collection		
-ZMB:Echinodermata	s	Museum Fur Naturkunde Berlin, Echinodermata Collection		
-ZMB:Hydrozoa	s	Museum Fur Naturkunde Berlin, Hydrozoa Collection		
-ZMB:Mammal	s	Museum Fur Naturkunde Berlin, Mammal collection		
-ZMB:Porifera	s	Museum Fur Naturkunde Berlin, Porifera Collection		
-ZMB:Vermes	s	Museum Fur Naturkunde Berlin, Vermes Collection		
+ZMB	s	Museum fur Naturkunde Berlin	MfN<DEU>,ZMHU		
+ZMB:Bryozoa	s	Museum fur Naturkunde Berlin, Bryozoa Collection		
+ZMB:Cnidaria	s	Museum fur Naturkunde Berlin, Cnidaria Collection		
+ZMB:Crustacea	s	Museum fur Naturkunde Berlin, Crustacea Collection		
+ZMB:Echinodermata	s	Museum fur Naturkunde Berlin, Echinodermata Collection		
+ZMB:Hydrozoa	s	Museum fur Naturkunde Berlin, Hydrozoa Collection		
+ZMB:Mam	s	Museum fur Naturkunde Berlin, Mammal collection	
+ZMB:Porifera	s	Museum fur Naturkunde Berlin, Porifera Collection		
+ZMB:Vermes	s	Museum fur Naturkunde Berlin, Vermes Collection		
 ZMBJ	s	Banding Zoological Museum			
 ZMBN	s	Museum of Zoology at the University of Bergen, Invertebrate Collection	BMBN		
 ZMC	s	Deptment of Biology, Zunyi Medical College			
