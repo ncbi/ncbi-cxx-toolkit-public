@@ -626,12 +626,13 @@ bool SPSG_Request::StateArgs(const char*& data, size_t& len)
 
     SPSG_Args args(m_Buffer.args_buffer);
 
-    auto size = args.GetValue("size");
+    const auto& size_str = args.GetValue("size");
+    const auto size = size_str.empty() ? 0ul : stoul(size_str);
 
     m_Buffer.args = move(args);
 
-    if (!size.empty()) {
-        SetStateData(stoul(size));
+    if (size) {
+        SetStateData(size);
     } else {
         SetStatePrefix();
     }
