@@ -138,19 +138,6 @@ static int FtaStrSevToIntSev(const string& strsevcode)
     }
 
     return -1;
-/*
-    if(strsevcode == "SEV_INFO")
-        return(1);
-    if(!strcmp(strsevcode, "SEV_WARNING"))
-        return(2);
-    if(!strcmp(strsevcode, "SEV_ERROR"))
-        return(3);
-    if(!strcmp(strsevcode, "SEV_REJECT"))
-        return(4);
-    if(!strcmp(strsevcode, "SEV_FATAL"))
-        return(5);
-    return(-1);
-    */
 }
 
 /**********************************************************/
