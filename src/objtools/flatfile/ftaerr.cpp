@@ -192,11 +192,11 @@ void FtaErrGetMsgCodes(
         return;
 
     string curdir = CDir::GetCwd();
-    string buf = curdir + "/" + module + ".msg";
+    string buf = curdir + CDir::GetPathSeparator() + module + ".msg";
     fd = fopen(buf.c_str(), "r");
     if(!fd)
     {
-        buf = string(MESSAGE_DIR) + "/" + module + ".msg";
+        buf = string(MESSAGE_DIR) + CDir::GetPathSeparator() + module + ".msg";
         fd = fopen(buf.c_str(), "r");
         if (!fd) {
             return;
