@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
@@ -156,6 +157,7 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     , m_Modified(m_Blob->GetModified())
     , m_LoadChunks(load_chunks)
     , m_PropsFound(true)
+    , m_ExplicitBlob(true)
 {
 }
 
@@ -458,8 +460,11 @@ void CCassBlobTaskLoadBlob::x_RequestChunksAhead()
 
 void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
 {
-    string sql = "SELECT data FROM " + GetKeySpace() +
-        ".blob_chunk WHERE sat_key = ? AND last_modified = ? AND chunk_no = ?";
+    const char* const chunk_table_name = m_Blob->GetFlag(EBlobFlags::eBigBlobSchema)
+         ? SBlobStorageConstants::kChunkTableBig
+         : SBlobStorageConstants::kChunkTableDefault;
+    string sql = "SELECT data FROM " + GetKeySpace() + "." + chunk_table_name
+        + " WHERE sat_key = ? AND last_modified = ? AND chunk_no = ?";
     qry.SetSQL(sql, 3);
     qry.BindInt32(0, GetKey());
     qry.BindInt64(1, m_Blob->GetModified());

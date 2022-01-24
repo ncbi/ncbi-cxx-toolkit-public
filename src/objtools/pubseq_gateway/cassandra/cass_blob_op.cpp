@@ -64,6 +64,7 @@ USING_NCBI_SCOPE;
 BEGIN_SCOPE()
 
 constexpr const char * kSettingLargeChunkSize = "LARGE_CHUNK_SZ";
+constexpr const char * kSettingBigBlobSize = "BIG_BLOB_SZ";
 constexpr int64_t kChunkSizeMin = 4 * 1024;
 constexpr int64_t kChunkSizeDefault = 512 * 1024;
 constexpr int64_t kActiveStatementsMax = 512;
@@ -92,6 +93,14 @@ void CCassBlobOp::GetBlobChunkSize(unsigned int timeout_ms, const string & keysp
     ) {
         *chunk_size = kChunkSizeDefault;
         UpdateSetting(timeout_ms, keyspace, kSettingLargeChunkSize, NStr::NumericToString(*chunk_size));
+    }
+}
+
+void CCassBlobOp::GetBigBlobSizeLimit(unsigned int timeout_ms, const string & keyspace, int64_t * value)
+{
+    string s;
+    if (!GetSetting(timeout_ms, keyspace, kSettingBigBlobSize, s) || !NStr::StringToNumeric(s, value)) {
+        *value = -1;
     }
 }
 

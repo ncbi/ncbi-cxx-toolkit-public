@@ -41,6 +41,7 @@
 
 #include <inttypes.h>
 
+#include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
@@ -97,7 +98,7 @@ void CCassBlobTaskDeleteExpired::Wait1()
                 CloseAll();
                 m_QueryArr.clear();
                 m_QueryArr.push_back({m_Conn->NewQuery(), 0});
-                string sql = "SELECT writetime(n_chunks) FROM " + GetKeySpace()
+                string sql = "SELECT flags, n_chunks, writetime(n_chunks) FROM " + GetKeySpace()
                     + ".blob_prop WHERE sat_key = ? and last_modified = ?";
                 auto qry = m_QueryArr[0].query;
                 qry->SetSQL(sql, 2);
@@ -105,11 +106,11 @@ void CCassBlobTaskDeleteExpired::Wait1()
                 qry->BindInt64(1, m_LastModified);
                 SetupQueryCB3(qry);
                 qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
-                m_State = eReadingWriteTime;
+                m_State = eReadingBlobProps;
                 break;
             }
 
-            case eReadingWriteTime: {
+            case eReadingBlobProps: {
                 string sql;
                 auto& it = m_QueryArr[0];
                 if (!CheckReady(it)) {
@@ -117,7 +118,9 @@ void CCassBlobTaskDeleteExpired::Wait1()
                 }
                 it.query->NextRow();
                 if (!it.query->IsEOF()) {
-                    CBlobRecord::TTimestamp write_timestamp = it.query->FieldGetInt64Value(0);
+                    m_BlobFlags = it.query->FieldGetInt64Value(0);
+                    m_BlobNChunks = it.query->FieldGetInt32Value(1);
+                    CBlobRecord::TTimestamp write_timestamp = it.query->FieldGetInt64Value(2);
                     CloseAll();
                     CTime expiration(CTime::eEmpty, CTime::eUTC);
                     expiration.SetTimeT(write_timestamp / 1000000);
@@ -142,11 +145,26 @@ void CCassBlobTaskDeleteExpired::Wait1()
             case eDeleteData: {
                 auto& qry = m_QueryArr[0].query;
                 qry->NewBatch();
-                string sql = "DELETE FROM " + GetKeySpace() + ".blob_chunk WHERE sat_key = ? and last_modified = ?";
+                string sql = "DELETE FROM " + GetKeySpace() + "." + SBlobStorageConstants::kChunkTableDefault
+                    + " WHERE sat_key = ? and last_modified = ?";
                 qry->SetSQL(sql, 2);
                 qry->BindInt32(0, GetKey());
                 qry->BindInt64(1, m_LastModified);
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+
+                // Need to delete data from big_blob_chunk table if blob marked
+                // Delete from ".blob_chunk" is executed in any case (it is cheap - one range tombstone)
+                if (m_BlobFlags & static_cast<TBlobFlagBase>(EBlobFlags::eBigBlobSchema)) {
+                    sql = "DELETE FROM " + GetKeySpace() + "." + SBlobStorageConstants::kChunkTableBig
+                        + " WHERE sat_key = ? and last_modified = ? and chunk_no = ?";
+                    for (int32_t i = 0; i < m_BlobNChunks; ++i) {
+                        qry->SetSQL(sql, 3);
+                        qry->BindInt32(0, GetKey());
+                        qry->BindInt64(1, m_LastModified);
+                        qry->BindInt32(2, i);
+                        qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+                    }
+                }
 
                 sql = "DELETE FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ? and last_modified = ?";
                 qry->SetSQL(sql, 2);

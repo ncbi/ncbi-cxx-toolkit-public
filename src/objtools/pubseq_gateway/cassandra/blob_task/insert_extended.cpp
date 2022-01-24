@@ -39,6 +39,7 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/insert_extended.hpp>
 
+#include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
@@ -113,11 +114,14 @@ void CCassBlobTaskInsertExtended::Wait1()
                 while (static_cast<size_t>(m_Blob->GetNChunks()) > m_QueryArr.size()) {
                     m_QueryArr.push_back({m_Conn->NewQuery(), 0});
                 }
+                const char* const chunk_table_name = m_Blob->GetFlag(EBlobFlags::eBigBlobSchema)
+                    ? SBlobStorageConstants::kChunkTableBig
+                    : SBlobStorageConstants::kChunkTableDefault;
                 for (int32_t i = 0; i < m_Blob->GetNChunks(); ++i) {
                     auto qry = m_QueryArr[i].query;
                     if (!qry->IsActive()) {
-                        sql = "INSERT INTO " + GetKeySpace() + ".blob_chunk "
-                              "(sat_key, last_modified, chunk_no, data) VALUES(?, ?, ?, ?)";
+                        sql = "INSERT INTO " + GetKeySpace() + "." + chunk_table_name
+                              + " (sat_key, last_modified, chunk_no, data) VALUES(?, ?, ?, ?)";
                         qry->SetSQL(sql, 4);
                         qry->BindInt32(0, m_Blob->GetKey());
                         qry->BindInt64(1, m_Blob->GetModified());

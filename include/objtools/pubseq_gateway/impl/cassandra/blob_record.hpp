@@ -40,12 +40,13 @@ USING_NCBI_SCOPE;
 
 using TBlobFlagBase = int64_t;
 enum class EBlobFlags : TBlobFlagBase {
-    eCheckFailed = 1,
-    eGzip        = 2,
-    eNot4Gbu     = 4,
-    eWithdrawn   = 8,
-    eSuppress    = 16,
-    eDead        = 32,
+    eCheckFailed   = 1 << 0,
+    eGzip          = 1 << 1,
+    eNot4Gbu       = 1 << 2,
+    eWithdrawn     = 1 << 3,
+    eSuppress      = 1 << 4,
+    eDead          = 1 << 5,
+    eBigBlobSchema = 1 << 6,
 };
 
 class CBlobRecord {
@@ -91,6 +92,7 @@ class CBlobRecord {
     CBlobRecord& SetSuppress(bool value);
     CBlobRecord& SetWithdrawn(bool value);
     CBlobRecord& SetDead(bool value);
+    CBlobRecord& SetBigBlobSchema(bool value);
 
     CBlobRecord& AppendBlobChunk(TBlobChunk&& chunk);
     CBlobRecord& InsertBlobChunk(size_t index, TBlobChunk&& chunk);

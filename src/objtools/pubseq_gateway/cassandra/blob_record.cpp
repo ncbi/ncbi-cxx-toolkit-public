@@ -197,6 +197,12 @@ CBlobRecord& CBlobRecord::SetDead(bool value)
     return *this;
 }
 
+CBlobRecord& CBlobRecord::SetBigBlobSchema(bool value)
+{
+    SetFlag(value, EBlobFlags::eBigBlobSchema);
+    return *this;
+}
+
 CBlobRecord& CBlobRecord::AppendBlobChunk(TBlobChunk&& chunk)
 {
     if (!chunk.empty()) {

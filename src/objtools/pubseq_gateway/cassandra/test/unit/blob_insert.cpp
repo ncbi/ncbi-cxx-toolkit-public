@@ -26,7 +26,7 @@
 * Author:  Dmitrii Saprykin, NCBI
 *
 * File Description:
-*   Unit test suite to check CCassBlobTaskLoadBlob
+*   Unit test for blob loading test
 *
 * ===========================================================================
 */
@@ -37,15 +37,9 @@
 
 #include <corelib/ncbireg.hpp>
 
-#include <algorithm>
-#include <memory>
-#include <set>
-#include <string>
-#include <tuple>
-#include <utility>
-#include <vector>
-
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/blob_task/insert_extended.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/blob_task/delete.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 
@@ -54,11 +48,12 @@ namespace {
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
-class CBlobTaskLoadBlobTest
+// @todo Migrate to CCM to prevent data races and blob data leftovers
+class CBlobInsertTest
     : public testing::Test
 {
  public:
-    CBlobTaskLoadBlobTest() = default;
+    CBlobInsertTest() = default;
 
  protected:
     static void SetUpTestCase() {
@@ -81,12 +76,10 @@ class CBlobTaskLoadBlobTest
     static shared_ptr<CCassConnectionFactory> m_Factory;
     static shared_ptr<CCassConnection> m_Connection;
 
-    string m_KeyspaceName{"satncbi_extended"};
+    int32_t m_SourceBlobId{9965740};
+    string m_SourceKeyspaceName{"psg_test_sat_4"};
+    string m_TargetKeyspaceName{"blob_repartition"};
 };
-
-const char* CBlobTaskLoadBlobTest::m_TestClusterName = "ID_CASS_TEST";
-shared_ptr<CCassConnectionFactory> CBlobTaskLoadBlobTest::m_Factory(nullptr);
-shared_ptr<CCassConnection> CBlobTaskLoadBlobTest::m_Connection(nullptr);
 
 static auto wait_function = [](CCassBlobTaskLoadBlob& task){
     bool done = task.Wait();
@@ -97,77 +90,60 @@ static auto wait_function = [](CCassBlobTaskLoadBlob& task){
     return done;
 };
 
+const char* CBlobInsertTest::m_TestClusterName = "ID_CASS_TEST";
+shared_ptr<CCassConnectionFactory> CBlobInsertTest::m_Factory(nullptr);
+shared_ptr<CCassConnection> CBlobInsertTest::m_Connection(nullptr);
+
 static auto error_function = [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
     EXPECT_TRUE(false) << "Error callback called during the test (status - "
         << status << ", code - " << code << ", message - '" << message << "')";
 };
 
-TEST_F(CBlobTaskLoadBlobTest, StaleBlobRecordFromCache) {
-    size_t call_count{0};
-    auto fn404 = [&call_count](
-        CRequestStatus::ECode status,
-        int code, EDiagSev severity,
-        const string & message
-    ) {
-        ++call_count;
-        EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
-        EXPECT_EQ(CCassandraException::eInconsistentData, code);
-    };
-    auto cache_blob = make_unique<CBlobRecord>();
-    cache_blob->SetKey(2155365);
-    cache_blob->SetModified(1342057137103);
-    cache_blob->SetSize(12509);
-    cache_blob->SetNChunks(1);
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, move(cache_blob), true, fn404);
-    wait_function(fetch);
-    EXPECT_EQ(1UL, call_count);
-}
-
-TEST_F(CBlobTaskLoadBlobTest, ExpiredLastModified) {
-    size_t call_count{0};
-    auto fn404 = [&call_count](
-        CRequestStatus::ECode status,
-        int code, EDiagSev severity,
-        const string & message
-    ) {
-        ++call_count;
-        EXPECT_EQ(CRequestStatus::e404_NotFound, status);
-        EXPECT_EQ(CCassandraException::eNotFound, code);
-    };
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, 2155365, 1342057137103, true, fn404);
-    wait_function(fetch);
-    EXPECT_EQ(1UL, call_count);
-}
-
-TEST_F(CBlobTaskLoadBlobTest, LatestBlobVersion) {
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, 2155365, true, error_function);
+TEST_F(CBlobInsertTest, CheckBigBlobLoading)
+{
+    CCassBlobTaskLoadBlob fetch(m_Connection, m_SourceKeyspaceName, m_SourceBlobId, true, error_function);
     wait_function(fetch);
     EXPECT_TRUE(fetch.IsBlobPropsFound());
     auto blob = fetch.ConsumeBlobRecord();
-    EXPECT_EQ(2155365, blob->GetKey());
-    EXPECT_EQ(12553LL, blob->GetSize());
-    EXPECT_GE(1598181382370LL, blob->GetModified());
-    EXPECT_EQ(1, blob->GetNChunks());
     blob->VerifyBlobSize();
-}
 
-TEST_F(CBlobTaskLoadBlobTest, ShouldFailOnWrongBigBlobFlag) {
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, 2155365, false, error_function);
-    wait_function(fetch);
-    EXPECT_TRUE(fetch.IsBlobPropsFound());
-    auto blob = fetch.ConsumeBlobRecord();
+    // Lets take 24 bits from time for fake_key
+    int64_t fake_modified = time(0);
+    int32_t fake_key = static_cast<int32_t>(fake_modified & 0xFFFFFF);
+    blob->SetKey(fake_key);
+    blob->SetModified(fake_modified);
     blob->SetBigBlobSchema(true);
 
-    size_t call_count{0};
-    static auto error_function =
-    [&call_count]
-    (CRequestStatus::ECode status, int, EDiagSev, const string &) {
-        ++call_count;
-        EXPECT_EQ(CRequestStatus::e500_InternalServerError, status);
-    };
-    CCassBlobTaskLoadBlob fetch1(m_Connection, m_KeyspaceName, move(blob), true, error_function);
-    wait_function(fetch1);
-    EXPECT_EQ(1UL, call_count);
+    CCassBlobTaskInsertExtended insert(m_Connection, m_TargetKeyspaceName, blob.get(), false, error_function);
+    insert.Wait();
+
+    CCassBlobTaskLoadBlob fetch_loaded(m_Connection, m_TargetKeyspaceName, fake_key, true, error_function);
+    wait_function(fetch_loaded);
+    EXPECT_TRUE(fetch_loaded.IsBlobPropsFound());
+    auto blob_loaded = fetch_loaded.ConsumeBlobRecord();
+    blob_loaded->VerifyBlobSize();
+    EXPECT_TRUE(blob_loaded->GetFlag(EBlobFlags::eBigBlobSchema));
+
+    auto query = m_Connection->NewQuery();
+    query->SetSQL("SELECT last_modified FROM " + m_TargetKeyspaceName + ".big_blob_chunk WHERE sat_key = ? AND last_modified = ? AND chunk_no = ?", 3);
+    query->BindInt32(0, fake_key);
+    query->BindInt64(1, fake_modified);
+    query->BindInt32(2, 0);
+    query->Query();
+    query->NextRow();
+    EXPECT_EQ(fake_modified, query->FieldGetInt64Value(0));
+
+    CCassBlobTaskDelete delete_loaded(m_Connection, m_TargetKeyspaceName, fake_key, false, error_function);
+    delete_loaded.Wait();
+
+    query = m_Connection->NewQuery();
+    query->SetSQL("SELECT last_modified FROM " + m_TargetKeyspaceName + ".big_blob_chunk WHERE sat_key = ? AND last_modified = ? AND chunk_no = ?", 3);
+    query->BindInt32(0, fake_key);
+    query->BindInt64(1, fake_modified);
+    query->BindInt32(2, 0);
+    query->Query();
+    query->NextRow();
+    EXPECT_TRUE(query->IsEOF());
 }
 
 }  // namespace

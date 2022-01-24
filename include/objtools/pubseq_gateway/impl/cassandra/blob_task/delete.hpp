@@ -78,7 +78,13 @@ private:
         eError = CCassBlobWaiter::eError
     };
 
-    vector<CBlobRecord::TTimestamp> m_ExtendedVersions;
+    struct SBlobVersionInfo {
+        TBlobFlagBase flags{0};
+        CBlobRecord::TTimestamp last_modified{-1};
+        int32_t n_chunks{-1};
+    };
+
+    vector<SBlobVersionInfo> m_ExtendedVersions;
 };
 
 END_IDBLOB_SCOPE

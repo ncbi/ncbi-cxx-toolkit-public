@@ -77,13 +77,15 @@ class CCassBlobTaskDeleteExpired: public CCassBlobWaiter
  private:
     enum EBlobDeleteState {
         eInit = 0,
-        eReadingWriteTime,
+        eReadingBlobProps,
         eDeleteData,
         eWaitDeleteData,
         eDone = CCassBlobWaiter::eDone,
         eError = CCassBlobWaiter::eError
     };
 
+    TBlobFlagBase m_BlobFlags{0};
+    int32_t m_BlobNChunks{-1};
     CBlobRecord::TTimestamp m_LastModified{0};
     CBlobRecord::TTimestamp m_Expiration{0};
     bool m_ExpiredVersionDeleted{false};
