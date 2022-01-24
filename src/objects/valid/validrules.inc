@@ -830,7 +830,7 @@ static const char* const s_Defaultvalidrules[] = {
     "        field-name \"Long Assembly Name\" } ,",
     "      { ",
     "        field-name \"Diploid\" ,",
-    "        match-expression \"^\\([Pp][Rr][Ii][Nn][Cc][Ii][Pp][Aa][Ll] [Pp][Ss][Ee][Uu][Dd][Oo][Hh][Aa][Pp][Ll][Oo][Tt][Yy][Pp][Ee]\\|[Aa][Ll][Tt][Ee][Rr][Nn][Aa][Tt][Ee] [Pp][Ss][Ee][Uu][Dd][Oo][Hh][Aa][Pp][Ll][Oo][Tt][Yy][Pp][Ee]\\|[Uu][Nn][Rr][Ee][Ss][Oo][Ll][Vv][Ee][Dd]\\)$\" } ,",
+    "        match-expression \"^\\([Pp][Rr][Ii][Nn][Cc][Ii][Pp][Aa][Ll] [Pp][Ss][Ee][Uu][Dd][Oo][Hh][Aa][Pp][Ll][Oo][Tt][Yy][Pp][Ee]\\|[Aa][Ll][Tt][Ee][Rr][Nn][Aa][Tt][Ee] [Pp][Ss][Ee][Uu][Dd][Oo][Hh][Aa][Pp][Ll][Oo][Tt][Yy][Pp][Ee]\\|[Uu][Nn][Rr][Ee][Ss][Oo][Ll][Vv][Ee][Dd]\\|[Uu][Nn][Rr][Ee][Ss][Oo][Ll][Vv][Ee][Dd] [Dd][Ii][Pp][Ll][Oo][Ii][Dd]\\|[Pp][Rr][Ii][Nn][Cc][Ii][Pp][Aa][Ll] [Hh][Aa][Pp][Ll][Oo][Tt][Yy][Pp][Ee]\\|[Aa][Ll][Tt][Ee][Rr][Nn][Aa][Tt][Ee] [Hh][Aa][Pp][Ll][Oo][Tt][Yy][Pp][Ee]\\|[Mm][Aa][Tt][Ee][Rr][Nn][Aa][Ll] [Hh][Aa][Pp][Ll][Oo][Tt][Yy][Pp][Ee]\\|[Pp][Aa][Tt][Ee][Rr][Nn][Aa][Ll] [Hh][Aa][Pp][Ll][Oo][Tt][Yy][Pp][Ee]\\|[Hh][Aa][Pp][Ll][Oo][Tt][Yy][Pp][Ee] 1\\|[Hh][Aa][Pp][Ll][Oo][Tt][Yy][Pp][Ee] 2\\|[Hh][Aa][Pp][Ll][Oo][Tt][Yy][Pp][Ee] 3\\|[Hh][Aa][Pp][Ll][Oo][Tt][Yy][Pp][Ee] 4\\)$\" } ,",
     "      {",
     "        field-name \"Genome Representation\" ,",
     "        match-expression \"^\\([Ff][Uu][Ll][Ll]\\|[Pp][Aa][Rr][Tt][Ii][Aa][Ll]\\)$\" ,",
