@@ -3149,8 +3149,11 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
                 }
             }
 
+            bool keep = true;
             if (has_gap && gap_start == feat_start && subtype == CSeqFeatData::eSubtype_gap && (feat_loc->IsInt() || feat_loc->IsPnt())) {
-                if (gap_data.next_gap < gap_data.num_gaps) {
+                if (gap_end > feat_end) {
+                    keep = false;
+                } else if (gap_data.next_gap < gap_data.num_gaps) {
                     s_SetGapIdxData (gap_data, gaps);
                     has_gap = gap_data.has_gap;
                     gap_start = gap_data.gap_start;
@@ -3162,8 +3165,10 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
                 // return; // continue;
             }
 
-            item.Reset( x_NewFeatureItem(mf, ctx, feat_loc, m_Feat_Tree) );
-            out << item;
+            if (keep) {
+                item.Reset( x_NewFeatureItem(mf, ctx, feat_loc, m_Feat_Tree) );
+                out << item;
+            }
 
             // Add more features depending on user preferences
 
