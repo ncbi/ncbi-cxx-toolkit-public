@@ -39,6 +39,8 @@
 
 BEGIN_IDBLOB_SCOPE
 
+const char* const SBlobStorageConstants::kChunkTableDefault = "blob_chunk";
+const char* const SBlobStorageConstants::kChunkTableBig = "big_blob_chunk";
 
 bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                                shared_ptr<CCassConnection>  conn,

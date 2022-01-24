@@ -387,6 +387,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
     }
 
     void GetBlobChunkSize(unsigned int timeout_ms, const string & keyspace, int64_t * chunk_size);
+    void GetBigBlobSizeLimit(unsigned int timeout_ms, const string & keyspace, int64_t * value);
 
     /// It is unsafe to use this function.
     /// Call should be protected in multi-threaded environment.

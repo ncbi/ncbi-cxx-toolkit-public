@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 
@@ -141,11 +142,9 @@ struct SBlobRequest
     {
         ASSERT_TRUE(isFound) << "Blob record is not found: " << request->GetKey();
         blob_size = blob.GetSize();
-        cout << "Props: " << request->GetKey() << " - " << blob_size << endl;
     }
     void ChunkCallback(CBlobRecord const &, const unsigned char *, unsigned int size, int chunk_no)
     {
-        // cout << "Chunk: " << request->GetKey() << ":" << chunk_no << endl;
         if (chunk_no == -1) {
             done = true;
             finished = steady_clock::now();
@@ -210,14 +209,29 @@ TEST_F(CBlobRetrievalPerformanceTest, DISABLED_LoadBlobs)
         }
     }
 
+    auto latency_percentile = [](auto &requests, float percentile)
+    {
+        auto item = requests.begin() + (percentile * requests.size()) / 100;
+        nth_element(requests.begin(), item, requests.end());
+        return duration_cast<seconds>((*item)->finished - (*item)->started).count();
+    };
+
     duration<double> diff = steady_clock::now() - started;
     cout << "Total time: " << duration_cast<seconds>(diff).count() << "s" << endl;
-    size_t total_size{0};
-    for (auto & request : requests) {
+    int64_t total_size{0};
+    for(auto& request : requests) {
         total_size += request->blob_size;
     }
-    double total_throughput = static_cast<float>(total_size) / duration_cast<seconds>(diff).count();
-    cout << "Total throughput: " << total_throughput << " bytes/second" << endl;
+    sort(requests.begin(), requests.end(),
+        [](auto const & a, auto const & b) -> bool {
+            return (a->finished - a->started) > (b->finished - b->started);
+        }
+    );
+    cout << "Total throughput: " << static_cast<float>(total_size) / duration_cast<seconds>(diff).count() << " bytes/second" << endl;
+    cout << "Latency 50perc: " << latency_percentile(requests, 0.5) << " seconds" << endl;
+    cout << "Latency 75perc: " << latency_percentile(requests, 0.75) << " seconds" << endl;
+    cout << "Latency 90perc: " << latency_percentile(requests, 0.9) << " seconds" << endl;
+    cout << "Latency 95perc: " << latency_percentile(requests, 0.95) << " seconds" << endl;
 }
 
 }  // namespace

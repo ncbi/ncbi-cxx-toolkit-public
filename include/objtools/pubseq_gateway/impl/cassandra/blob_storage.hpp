@@ -54,7 +54,12 @@ enum ECassSchemaType {
     eMaxSchema = eNamedAnnotationsSchema
 };
 
-
+struct SBlobStorageConstants
+{
+    SBlobStorageConstants() = delete;
+    static const char* const kChunkTableDefault;
+    static const char* const kChunkTableBig;
+};
 
 // Reads the sat2keyspace table from the given keyspace and builds the
 // mapping between the sat and the keyspace name selecting only suitable

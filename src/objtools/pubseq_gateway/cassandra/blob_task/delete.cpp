@@ -39,6 +39,7 @@
 #include <string>
 #include <utility>
 
+#include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
@@ -84,7 +85,7 @@ void CCassBlobTaskDelete::Wait1()
                 m_QueryArr.clear();
                 m_QueryArr.push_back({m_Conn->NewQuery(), 0});
                 auto qry = m_QueryArr[0].query;
-                string sql = "SELECT last_modified FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ?";
+                string sql = "SELECT flags, n_chunks, last_modified FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ?";
                 qry->SetSQL(sql, 1);
                 qry->BindInt32(0, GetKey());
                 SetupQueryCB3(qry);
@@ -102,7 +103,11 @@ void CCassBlobTaskDelete::Wait1()
                 async_rslt_t wr = static_cast<async_rslt_t>(-1);
                 if (!it.query->IsEOF()) {
                     while ((wr = it.query->NextRow()) == ar_dataready) {
-                        m_ExtendedVersions.push_back(it.query->FieldGetInt64Value(0));
+                        SBlobVersionInfo version_info;
+                        version_info.flags = it.query->FieldGetInt64Value(0);
+                        version_info.n_chunks = it.query->FieldGetInt32Value(1);
+                        version_info.last_modified = it.query->FieldGetInt64Value(2);
+                        m_ExtendedVersions.push_back(version_info);
                     }
                     if (wr == ar_wait) {
                         break;
@@ -125,16 +130,31 @@ void CCassBlobTaskDelete::Wait1()
                 qry->NewBatch();
                 CBlobChangelogWriter changelog;
                 for (auto version : m_ExtendedVersions) {
-                    string sql = "DELETE FROM " + GetKeySpace()
-                        + ".blob_chunk WHERE sat_key = ? and last_modified = ?";
+                    string sql = "DELETE FROM " + GetKeySpace() + "." + SBlobStorageConstants::kChunkTableDefault
+                        + " WHERE sat_key = ? and last_modified = ?";
                     qry->SetSQL(sql, 2);
                     qry->BindInt32(0, GetKey());
-                    qry->BindInt64(1, version);
+                    qry->BindInt64(1, version.last_modified);
                     qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+
+                    // Need to delete data from big_blob_chunk table if blob marked
+                    // Delete from ".blob_chunk" is executed in any case (it is cheap - one range tombstone)
+                    if (version.flags & static_cast<TBlobFlagBase>(EBlobFlags::eBigBlobSchema)) {
+                        sql = "DELETE FROM " + GetKeySpace() + "." + SBlobStorageConstants::kChunkTableBig
+                            + " WHERE sat_key = ? and last_modified = ? and chunk_no = ?";
+                        for (int32_t i = 0; i < version.n_chunks; ++i) {
+                            qry->SetSQL(sql, 3);
+                            qry->BindInt32(0, GetKey());
+                            qry->BindInt64(1, version.last_modified);
+                            qry->BindInt32(2, i);
+                            qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+                        }
+                    }
+
                     changelog.WriteChangelogEvent(
                         qry.get(),
                         GetKeySpace(),
-                        CBlobChangelogRecord(GetKey(), version, TChangelogOperation::eDeleted)
+                        CBlobChangelogRecord(GetKey(), version.last_modified, TChangelogOperation::eDeleted)
                     );
                 }
                 string sql = "DELETE FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ?";
