@@ -157,6 +157,7 @@ if not "%with_openmp%" == "" (
 time /t
 echo INFO: Configure "%libdll%\%solution% [ReleaseDLL|%arch%]"
 set log=__%libdll%_%solution_name%.configure.log
+set err=0
 echo %DEVENV% %libdll%/build/%solution%.sln /build "ReleaseDLL|%archwc%" /project "_CONFIGURE_" /out %log%
 %DEVENV% %libdll%/build/%solution%.sln /build "ReleaseDLL|%archwc%" /project "_CONFIGURE_" /out %log%
 if errorlevel 1 set err=1
