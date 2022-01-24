@@ -101,20 +101,40 @@ static char s_Complement(char c)
         retval = 'T';
         break;
 
+    case 'a':
+        retval = 't';
+        break;
+
     case 'C':
         retval = 'G';
+        break;
+
+    case 'c':
+        retval = 'g';
         break;
 
     case 'G':
         retval = 'C';
         break;
 
+    case 'g':
+        retval = 'c';
+        break;
+
     case 'T':
         retval = 'A';
         break;
 
+    case 't':
+        retval = 'a';
+        break;
+
     case 'N':
         retval = 'N';
+        break;
+
+    case 'n':
+        retval = 'n';
         break;
 
     case '-':
@@ -489,6 +509,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
         // reverse btop string
         string new_btop;
         int i = btop_string.length() - 1;
+        bool intron = false;
         while (i >= 0) {
             int to = i;
             while (i >= 0 && (isdigit(btop_string[i]) ||
@@ -498,11 +519,23 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
 
             new_btop += btop_string.substr(i + 1, to - i);
 
+            if (new_btop[new_btop.length() - 1] == '^') {
+                intron = !intron;
+            }
+
             if (i > 0) {
                 if (isalpha(btop_string[i]) || btop_string[i] == '-') {
-                    // complement bases in place
-                    new_btop += s_Complement(btop_string[i - 1]);
-                    new_btop += s_Complement(btop_string[i]);
+
+                    if (intron) {
+                        // if intron, reverse complement splice signals
+                        new_btop += s_Complement(btop_string[i]);
+                        new_btop += s_Complement(btop_string[i - 1]);
+                    }
+                    else {
+                        // otherwise, complement bases in place
+                        new_btop += s_Complement(btop_string[i - 1]);
+                        new_btop += s_Complement(btop_string[i]);
+                    }
                     i--;
                 }
                 else {

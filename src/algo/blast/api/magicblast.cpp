@@ -225,7 +225,25 @@ static void s_ComputeBtopAndIdentity(const HSPChain* chain,
                 (hsp->map_info->left_edge & MAPPER_SPLICE_SIGNAL)) {
 
                 // intron
-                btop += (string)"^" + NStr::IntToString(subject_gap) + "^";
+                btop += (string)"^";
+                
+                string acceptor(2u, ' ');
+                acceptor[0] = (char)tolower(BLASTNA_TO_IUPACNA[
+                             (int)((prev->map_info->right_edge >> 2) & 3)]);
+                acceptor[1] = (char)tolower(BLASTNA_TO_IUPACNA[
+                             (int)(prev->map_info->right_edge & 3)]);
+                btop += acceptor;
+
+                btop += NStr::IntToString(subject_gap - 4);
+
+                string donor(2u, ' ');
+                donor[0] = (char)tolower(BLASTNA_TO_IUPACNA[
+                             (int)((hsp->map_info->left_edge >> 2) & 3)]);
+                donor[1] = (char)tolower(BLASTNA_TO_IUPACNA[
+                             (int)(hsp->map_info->left_edge & 3)]);
+                btop += donor;
+
+                btop += "^";
             }
             else if (subject_gap > 0) {
                 // gap in subject/reference
