@@ -1238,6 +1238,7 @@ protected:
     void DoExecute(void) override;
     void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) override;
     void CreateLoadedChunks(CTSE_LoadLock& load_lock);
+    static bool IsChunk(const CPSG_SkippedBlob& skipped);
     
 private:
     CDataSource* m_DataSource;
@@ -1555,6 +1556,17 @@ void CPSG_Blob_Task::CreateLoadedChunks(CTSE_LoadLock& load_lock)
 }
 
 
+bool CPSG_Blob_Task::IsChunk(const CPSG_SkippedBlob& skipped)
+{
+    if ( auto id = skipped.GetId() ) {
+        if ( auto chunk_id = dynamic_cast<const CPSG_ChunkId*>(id) ) {
+            return chunk_id->GetId2Chunk() != kSplitInfoChunkId;
+        }
+    }
+    return false;
+}
+
+
 void CPSG_Blob_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
 {
     switch (item->GetType()) {
@@ -1590,7 +1602,7 @@ void CPSG_Blob_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
     case CPSG_ReplyItem::eSkippedBlob:
     {
         // Only main blob can be skipped.
-        if ( !m_Skipped ) {
+        if ( !m_Skipped && !IsChunk(*static_pointer_cast<CPSG_SkippedBlob>(item)) ) {
             m_Skipped = static_pointer_cast<CPSG_SkippedBlob>(item);
         }
         break;
