@@ -108,7 +108,7 @@
 #if defined(NDEBUG)
 #  define VERIFY(expr)  do { if ( !(expr) ) s_ReportError(__LINE__, #expr); }  while ( 0 )
 #else
-#  define VERIFY(expr)  do { if ( !(expr) ) s_Abort(__LINE__, #expr); }  while ( 0 )
+#  define VERIFY(expr)  do { if ( !(expr) ) s_Abort(__LINE__, #expr); s_ReportError(__LINE__, #expr); }  while ( 0 )
 #endif
 
 #if defined(NDEBUG)
