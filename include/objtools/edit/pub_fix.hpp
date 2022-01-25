@@ -46,6 +46,8 @@ class CPub;
 class CPub_equiv;
 class CCit_art;
 class CMLAClient;
+class CTitle_msg;
+class CTitle_msg_list;
 
 BEGIN_SCOPE(edit)
 
@@ -130,6 +132,20 @@ private:
     static double cfg_removed_to_gb;
 };
 
+class NCBI_XOBJEDIT_EXPORT CMLAUpdater
+{
+public:
+    CMLAUpdater(CMLAClient* mla = nullptr);
+    operator bool() const { return m_mla != nullptr; }
+
+    TEntrezId GetPmId(const CPub&);
+    CRef<CPub> GetPub(TEntrezId pmid);
+    CRef<CTitle_msg_list> GetTitle(const CTitle_msg&);
+private:
+    CMLAClient* m_mla = nullptr;
+    unique_ptr<CMLAClient> m_own_mla;
+};
+
 class NCBI_XOBJEDIT_EXPORT CPubFix
 {
 public:
@@ -140,7 +156,7 @@ public:
         m_merge_ids(merge_ids),
         m_err_log(err_log),
         m_authlist_validator(err_log),
-        m_mla(mla)
+        m_upd(mla)
     {
     }
 
@@ -148,7 +164,7 @@ public:
     void FixPubEquiv(CPub_equiv& pub_equiv);
     const CAuthListValidator& GetValidator() const { return m_authlist_validator; };
 
-    static CRef<CCit_art> FetchPubPmId(TEntrezId pmid, CMLAClient*);
+    static CRef<CCit_art> FetchPubPmId(TEntrezId pmid, CMLAUpdater*);
     static string GetErrorId(int code, int subcode);
 
 private:
@@ -158,7 +174,7 @@ private:
 
     IMessageListener* m_err_log;
     CAuthListValidator m_authlist_validator;
-    CMLAClient* m_mla = nullptr;
+    CMLAUpdater m_upd;
 };
 
 END_SCOPE(edit)

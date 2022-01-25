@@ -94,6 +94,7 @@ static char *this_module = (char *) "medarch";
 #define THIS_MODULE this_module
 
 static CMLAClient mlaclient;
+static edit::CMLAUpdater mlaupdater(&mlaclient);
 
 USING_SCOPE(objects);
 
@@ -154,7 +155,7 @@ CMLAClient* GetMlaClient()
 /**********************************************************/
 CRef<CCit_art> FetchPubPmId(TEntrezId pmid)
 {
-    return edit::CPubFix::FetchPubPmId(pmid, GetMlaClient());
+    return edit::CPubFix::FetchPubPmId(pmid, &mlaupdater);
 }
 
 END_NCBI_SCOPE
