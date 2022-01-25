@@ -64,6 +64,7 @@
 
 #include "../pub_fix_aux.hpp"
 #include <objtools/edit/pub_fix.hpp>
+#include <objects/mla/mla_client.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
