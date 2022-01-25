@@ -61,12 +61,12 @@ public:
     }
     void Reset(void)
     {
-        GetCurrentProcessTimes(&m_User_time, &m_System_time);
+        CCurrentProcess::GetTimes(nullptr, &m_User_time, &m_System_time);
     }
     double Elapsed(void)
     {
         double user, system;
-        GetCurrentProcessTimes(&user, &system);
+        CCurrentProcess::GetTimes(nullptr, &user, &system);
         return (user  - m_User_time) + (system - m_System_time);
     }
 private:
