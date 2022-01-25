@@ -57,7 +57,7 @@ inline TTypeInfoGetter GetTypeInfoGetter(const Class* object);
 // define type info getter for pointers
 template<typename T>
 inline
-CTypeRef GetPtrTypeRef(const T* const* object)
+CTypeRef GetPtrTypeRef(const T* const* /*object*/)
 {
     const T* p = 0;
     return CTypeRef(&CPointerTypeInfoGetTypeInfo, GetTypeInfoGetter(p));
