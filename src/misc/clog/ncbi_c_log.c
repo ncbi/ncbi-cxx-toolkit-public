@@ -114,7 +114,7 @@
 #if defined(NDEBUG)
 #  define VERIFY_CATCH(expr)  do { if ( !(expr) ) { s_ReportError(__LINE__, #expr); goto __catch_error; } }  while ( 0 )
 #else
-#  define VERIFY(expr)        do { if ( !(expr) ) { s_Abort(__LINE__, #expr); goto __catch_error; } }  while ( 0 )
+#  define VERIFY_CATCH(expr)  do { if ( !(expr) ) { s_Abort(__LINE__, #expr); goto __catch_error; } }  while ( 0 )
 #endif
 
 /* Catch errors from VERIFY_CATCH.
