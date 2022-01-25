@@ -1153,7 +1153,7 @@ CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Parser::ESour
  *                                              3-25-93
  *
  **********************************************************/
-int SrchKeyword(const string& ptr, const vector<string>& keywordList)
+int SrchKeyword(const CTempString& ptr, const vector<string>& keywordList)
 {
     int keywordCount = keywordList.size();
 

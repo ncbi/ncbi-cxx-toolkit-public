@@ -251,8 +251,6 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
     nextkw = ParFlat_UNKW;
     nextkw = curkw;
 
-    string strPtr;
-    strPtr.reserve(genbankKeywordsMaxSize + 4);
     do                          /* repeat loop until it finds next key-word */
     {
         for (; ptr < eptr && *ptr != '\n'; ptr++)
@@ -263,8 +261,7 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
         ++ptr;                          /* newline character */
         ++len;
 
-        strPtr.assign((const char*)ptr, genbankKeywordsMaxSize+1);
-        nextkw = SrchKeyword(strPtr, genbankKeywords);
+        nextkw = SrchKeyword(CTempString(ptr,eptr-ptr), genbankKeywords);
         if (nextkw == ParFlat_UNKW)      /* it can be "XX" line,
                                             treat as same line */
                                             nextkw = curkw;
@@ -530,8 +527,6 @@ char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw,
     curkw = *retkw;
     nextkw = curkw;
 
-    string strPtr;
-    strPtr.reserve(8);
     do                          /* repeat loop until it finds next key-word */
     {
         for (; ptr < eptr && *ptr != '\n'; ptr++)
@@ -544,9 +539,8 @@ char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw,
         ++ptr;                          /* newline character */
         ++len;
 
-        strPtr.assign((const char*) ptr, 4);
         nextkw = SrchKeyword(
-            strPtr,
+            CTempString(ptr, eptr-ptr),
             (format == Parser::EFormat::SPROT) ? swissProtKeywords : emblKeywords);
         if (nextkw == ParFlat_UNKW)      /* it can be "XX" line,
                                             treat as same line */
