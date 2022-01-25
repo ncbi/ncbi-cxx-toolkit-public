@@ -236,7 +236,7 @@ static void s_ReportError(long line, const char* msg)
     }
     /* Report error */
     const char* m = (msg && *msg) ? msg : "unknown";
-    fprintf(stderr, "\nCLog error: %s, %s, line %ld\n", msg, __FILE__, line);
+    fprintf(stderr, "\nCLog error: %s, %s, line %ld\n", m, __FILE__, line);
 }
 
 
