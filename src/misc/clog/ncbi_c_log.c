@@ -80,30 +80,55 @@
 
 #include <assert.h>
 
-/* Macro to catch a minor errors on a debug stage. See VERIFY() */
-#if defined(NDEBUG)
-#  define verify(expr)  while ( expr ) break
-#else
-#  define verify(expr)  assert(expr)
-#endif
-
-/* Critical error. Should never happen */ 
+/* Critical error, unrecoverable. Should never happen */
 #ifdef TROUBLE
 #  undef TROUBLE
 #endif
 #define TROUBLE           s_Abort(__LINE__, 0)
 #define TROUBLE_MSG(msg)  s_Abort(__LINE__, msg)
 
-/* Verify an expression and abort on error */
+/* Macro to catch a minor errors on a debugging stage. 
+ * The code it checks can fails theoretically in release mode, but should not be fatal.
+ * See also VERIFY for verifying fatal errors.
+ */
+#if defined(NDEBUG)
+#  define verify(expr)  while ( expr ) break
+#else
+#  define verify(expr)  assert(expr)
+#endif
+
+/* Verify an expression.
+ * Debug modes - abort on error.
+ * Release modes - report an error if specified (to stderr), continue execution.
+ */
 #ifdef VERIFY
 #  undef VERIFY
 #endif
 
 #if defined(NDEBUG)
-#  define VERIFY(expr)  while ( expr ) break
+#  define VERIFY(expr)  do { if ( !(expr) ) s_ReportError(__LINE__, #expr); }  while ( 0 )
 #else
-#  define VERIFY(expr)  do  { if ( !(expr) )  s_Abort(__LINE__, #expr); }  while ( 0 )
+#  define VERIFY(expr)  do { if ( !(expr) ) s_Abort(__LINE__, #expr); }  while ( 0 )
 #endif
+
+#if defined(NDEBUG)
+#  define VERIFY_CATCH(expr)  do { if ( !(expr) ) { s_ReportError(__LINE__, #expr); goto __catch_error; } }  while ( 0 )
+#else
+#  define VERIFY(expr)        do { if ( !(expr) ) { s_Abort(__LINE__, #expr); goto __catch_error; } }  while ( 0 )
+#endif
+
+/* Catch errors from VERIFY_CATCH.
+ * @example
+ *         // some yours code with verifying errors
+ *         VERIFY(non-critical expression);
+ *         VERIFY_CATCH(critical expression);
+ *         // and normal return
+ *         return;
+ *     CATCH:
+ *         // recovery code
+ *         return;
+ */
+#define CATCH  __catch_error
 
 #if defined(__GNUC__)
 #  define UNUSED_ARG(x)  x##_UNUSED __attribute__((unused))
@@ -166,7 +191,7 @@ static volatile TNcbiLog_PID      sx_PID = 0;
 
 
 /******************************************************************************
- *  Abort  (for the locally defined ASSERT, VERIFY and TROUBLE macros)
+ *  Abort  (for the locally defined VERIFY and TROUBLE macros)
  */
 
 static void s_Abort(long line, const char* msg)
@@ -194,6 +219,26 @@ static void s_Abort(long line, const char* msg)
 }
 
 
+/******************************************************************************
+ *  CLog error reporting  (for the locally defined VERIFY)
+ *  Used for debugging release binaries only. 
+ *  Do nothing if CLog reporting destination is set to eNcbiLog_Stderr.
+*/
+
+static void s_ReportError(long line, const char* msg)
+{
+    if (sx_Info && sx_Info->destination != eNcbiLog_Stderr) {
+        return;
+    }
+    char* v = getenv("NCBI_CLOG_REPORT_ERRORS");
+    if (!v || !(*v == 'Y' || *v == 'y' || *v == '1')) {
+        return;
+    }
+    /* Report error */
+    const char* m = (msg && *msg) ? msg : "unknown";
+    fprintf(stderr, "\nCLog error: %s, %s, line %ld\n", msg, __FILE__, line);
+}
+
 
 /******************************************************************************
  *  MT locking
@@ -220,7 +265,6 @@ int/*bool*/ NcbiLog_Default_MTLock_Handler
             break;
         case eNcbiLog_MT_Destroy:
             /* Mutex should be unlocked before destroying */
-            assert(pthread_mutex_unlock(&sx_MT_handle) == 0);
             verify(pthread_mutex_destroy(&sx_MT_handle) == 0);
             break;
         case eNcbiLog_MT_Lock:
@@ -1153,13 +1197,11 @@ static TNcbiLog_Context s_GetContext(void)
     }
     /* Create new context if not created/attached yet */
     if ( !ctx ) {
-        int is_attached;
         /* Special case, context for current thread was already destroyed */
         assert(sx_IsInit != 2);
         /* Create context */
         ctx = s_CreateContext();
-        is_attached = s_AttachContext(ctx);
-        verify(is_attached);
+        VERIFY(s_AttachContext(ctx));
     }
     assert(ctx);
     return ctx;
@@ -1929,8 +1971,8 @@ static size_t s_Write(int fd, const void *buf, size_t count)
 static void s_Post(TNcbiLog_Context ctx, ENcbiLog_DiagFile diag)
 {
     TFileHandle f = kInvalidFileHandle;
-#if NCBILOG_USE_FILE_DESCRIPTORS
     size_t n_write;
+#if NCBILOG_USE_FILE_DESCRIPTORS
     size_t n;
 #else    
     int n;
@@ -1961,9 +2003,10 @@ static void s_Post(TNcbiLog_Context ctx, ENcbiLog_DiagFile diag)
     /* Write */
     assert(f != kInvalidFileHandle);
 
-#if NCBILOG_USE_FILE_DESCRIPTORS
     n_write = strlen(sx_Info->message);
-    VERIFY(n_write <= NCBILOG_ENTRY_MAX);
+    VERIFY_CATCH(n_write <= NCBILOG_ENTRY_MAX);
+
+#if NCBILOG_USE_FILE_DESCRIPTORS
     sx_Info->message[n_write] = '\n';
     n_write++;
     sx_Info->message[n_write] = '\0';
@@ -1972,7 +2015,7 @@ static void s_Post(TNcbiLog_Context ctx, ENcbiLog_DiagFile diag)
     /* fdatasync(f); */
 #else
     n = fprintf(f, "%s\n", sx_Info->message);
-    VERIFY(n > 0);
+    VERIFY(n == n_write + 1);
     fflush(f);
 #endif
 
@@ -1985,6 +2028,9 @@ static void s_Post(TNcbiLog_Context ctx, ENcbiLog_DiagFile diag)
         sx_Info->post_time.sec = 0;
         sx_Info->post_time.ns  = 0;
     }
+
+CATCH:
+    return;
 }
 
 
@@ -2164,14 +2210,15 @@ static size_t s_PrintParams(char* dst, size_t pos, const SNcbiLog_Param* params)
                 }
                 /* Write 'whole' pair or ignore */
                 new_pos = s_PrintParamsPair(dst, pos, params->key, params->value);
-                if (new_pos >= NCBILOG_ENTRY_MAX) {
-                    break;  /* overflow */
-                }
+                /* Check on overflow */
+                VERIFY_CATCH(new_pos <= NCBILOG_ENTRY_MAX);  
                 pos = new_pos;
             }
             params++;
         }
     }
+
+CATCH:
     dst[pos] = '\0';
     return pos;
 }
@@ -2188,13 +2235,14 @@ static size_t s_PrintParamsStr(char* dst, size_t pos, const char* params)
     if (!params) {
         return pos;
     }
-    if (pos >= NCBILOG_ENTRY_MAX) {
-        return pos; /* overflow */
-    }
+    /* Check on overflow */
+    VERIFY_CATCH(pos < NCBILOG_ENTRY_MAX);
     len = min_value(strlen(params), NCBILOG_ENTRY_MAX-pos);
     memcpy(dst + pos, params, len);
     pos += len;
     dst[pos] = '\0';
+
+CATCH:
     return pos;
 }
 
@@ -2239,7 +2287,7 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg, int/*boo
     /* Prefix */
     buf = sx_Info->message;
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos);
+    VERIFY_CATCH(pos);
 
     /* Severity */
     if (print_as_note) {
@@ -2256,12 +2304,13 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg, int/*boo
     /* Post a message */
     s_Post(ctx, diag);
 
+CATCH:
     MT_UNLOCK;
-
     if (severity == eNcbiLog_Fatal) {
         s_Abort(0,0); /* no additional error reporting */
     }
-}
+    return;
+ }
 
 
 
@@ -2340,7 +2389,7 @@ extern void NcbiLog_Init(const char*               appname,
     if (sx_IsInit) {
         /* NcbiLog_Init() is already in progress or done */
         /* This function can be called only once         */
-        assert(!sx_IsInit);
+        VERIFY(!sx_IsInit);
         /* error */
         return;
     }
@@ -2977,15 +3026,12 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment, co
     size_t         prefix_len = 0;
     int n;
 
-    VERIFY(sx_Info->phid[0]);
+    VERIFY_CATCH(sx_Info->phid[0]);
 
     // Check prefix length 
     if (prefix) {
         prefix_len = strlen(prefix);
-        assert(prefix_len <= NCBILOG_HITID_MAX);
-        if (prefix_len > NCBILOG_HITID_MAX) {
-            return NULL;  /* error */
-        }
+        VERIFY_CATCH(prefix_len < NCBILOG_HITID_MAX);
     }
 
     /* Select PHID to use */
@@ -2995,7 +3041,7 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment, co
             sub_id = &ctx->phid_sub_id;
         } else {
             /* No request-specific PHID, inherit app-wide value */
-            VERIFY(sx_Info->phid_inherit);
+            VERIFY_CATCH(sx_Info->phid_inherit);
             hit_id = (char*)sx_Info->phid;
             sub_id = (unsigned int*)&sx_Info->phid_sub_id;
         }
@@ -3017,10 +3063,11 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment, co
 
     /* Generate sub hit ID string representation */
     n = sprintf(buf, "%s%s.%d", prefix ? prefix : "", hit_id, *sub_id);
-    if (n <= 0  ||  n > NCBILOG_HITID_MAX) {
-        return NULL;  /* error */
-    }
+    VERIFY_CATCH(n > 0 && n <= NCBILOG_HITID_MAX);
     return s_StrDup(buf);
+
+CATCH:
+    return NULL;  /* error */
 }
 
 
@@ -3144,11 +3191,12 @@ static void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
     /* Prefix */
     buf = sx_Info->message;
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos > 0);
     /* We already have current time in sx_Info->post_time */
     /* Save it into app_start_time. */
     sx_Info->app_start_time.sec = sx_Info->post_time.sec;
     sx_Info->app_start_time.ns  = sx_Info->post_time.ns;
+
+    VERIFY_CATCH(pos);
 
     /* Event name */
     pos += (size_t) sprintf(buf + pos, "%-13s", "start");
@@ -3162,6 +3210,9 @@ static void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
     }
     /* Post a message */
     s_Post(ctx, eDiag_Log);
+
+CATCH:
+    return;
 }
 
 
@@ -3232,7 +3283,7 @@ extern void NcbiLogP_AppStop(int exit_status, int exit_signal, double execution_
     s_SetState(ctx, eNcbiLog_AppEnd);
     /* Prefix */
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos);
+    VERIFY_CATCH(pos);
 
     if (execution_time < 0) {
         /* We already have current time in sx_Info->post_time */
@@ -3248,6 +3299,7 @@ extern void NcbiLogP_AppStop(int exit_status, int exit_signal, double execution_
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 
+CATCH:
     MT_UNLOCK;
 }
 
@@ -3290,9 +3342,8 @@ static size_t s_ReqStart(TNcbiLog_Context ctx)
     
     /* Prefix */
     pos = s_PrintCommonPrefix(ctx);
-    if (pos <= 0) {
-        return 0;
-    }
+    VERIFY_CATCH(pos);
+
     /* We already have current time in sx_Info->post_time */
     /* Save it into sx_RequestStartTime. */
     ctx->req_start_time.sec = sx_Info->post_time.sec;
@@ -3304,13 +3355,15 @@ static size_t s_ReqStart(TNcbiLog_Context ctx)
 
     /* Event name */
     n = sprintf(sx_Info->message + pos, "%-13s ", "request-start");
-    if (n <= 0) {
-        return 0;
-    }
+    VERIFY_CATCH(n > 0);
     pos += (size_t)n;
 
     /* Return position in the message buffer */
     return pos;
+
+CATCH:
+    /* error */
+    return 0;
 }
 
 
@@ -3362,7 +3415,7 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
     ctx = s_GetContext();
     /* Common request info */
     pos = s_ReqStart(ctx);
-    VERIFY(pos);
+    VERIFY_CATCH(pos);
 
     /* Print host role/location -- add it before users parameters */
     prev = pos;
@@ -3375,6 +3428,7 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 
+CATCH:
     MT_UNLOCK;
 }
 
@@ -3389,7 +3443,7 @@ extern void NcbiLogP_ReqStartStr(const char* params)
     ctx = s_GetContext();
     /* Common request info */
     pos = s_ReqStart(ctx);
-    VERIFY(pos);
+    VERIFY_CATCH(pos);
 
     /* Print host role/location */
     prev = pos;
@@ -3402,6 +3456,7 @@ extern void NcbiLogP_ReqStartStr(const char* params)
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 
+CATCH:
     MT_UNLOCK;
 }
 
@@ -3455,7 +3510,8 @@ extern void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
 
     /* Prefix */
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos);
+    VERIFY_CATCH(pos);
+
     /* We already have current time in sx_Info->post_time */
     timespan = s_DiffTime(ctx->req_start_time, sx_Info->post_time);
     sprintf(sx_Info->message + pos, "%-13s %d %.3f %lu %lu",
@@ -3472,6 +3528,7 @@ extern void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
     ctx->session[0] = '\0';  ctx->is_session_set = 0;
     ctx->phid[0]    = '\0';  ctx->phid_sub_id = 0;
 
+CATCH:
     MT_UNLOCK;
 }
 
@@ -3484,13 +3541,16 @@ static void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
     /* Prefix */
     buf = sx_Info->message;
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos);
+    VERIFY_CATCH(pos);
     /* Event name */
     pos += (size_t) sprintf(buf + pos, "%-13s ", "extra");
     /* Parameters */
     pos = s_PrintParams(buf, pos, params);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
+
+CATCH:
+    return;
 }
 
 
@@ -3502,13 +3562,16 @@ static void s_ExtraStr(TNcbiLog_Context ctx, const char* params)
     /* Prefix */
     buf = sx_Info->message;
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos);
+    VERIFY_CATCH(pos);
     /* Event name */
     pos += (size_t) sprintf(buf + pos, "%-13s ", "extra");
     /* Parameters */
     pos = s_PrintParamsStr(buf, pos, params);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
+
+CATCH:
+    return;
 }
 
 
@@ -3548,7 +3611,7 @@ extern void NcbiLog_Perf(int status, double timespan, const SNcbiLog_Param* para
     /* Prefix */
     buf = sx_Info->message;
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos);
+    VERIFY_CATCH(pos);
 
     /* Print event name, status and timespan */
     pos += (size_t) sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
@@ -3573,6 +3636,7 @@ extern void NcbiLog_Perf(int status, double timespan, const SNcbiLog_Param* para
     /* Post a message */
     s_Post(ctx, eDiag_Perf);
 
+CATCH:
     MT_UNLOCK;
 }
 
@@ -3591,7 +3655,7 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
     /* Prefix */
     buf = sx_Info->message;
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos);
+    VERIFY_CATCH(pos);
 
     /* Print event name, status and timespan */
     pos += (size_t) sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
@@ -3616,6 +3680,7 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
     /* Post a message */
     s_Post(ctx, eDiag_Perf);
 
+CATCH:
     MT_UNLOCK;
 }
 
@@ -3671,9 +3736,9 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
     int n;
 #endif
 
-    assert(line);
-    assert(line[len] == '\0');
-    assert(len > NCBILOG_ENTRY_MIN);
+    VERIFY(line);
+    VERIFY(line[len] == '\0');
+    VERIFY(len > NCBILOG_ENTRY_MIN);
 
     MT_LOCK_API;
     if (sx_Info->destination == eNcbiLog_Disable) {
@@ -3721,10 +3786,10 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
             break;
     }
     
-    assert(f != kInvalidFileHandle);
+    VERIFY_CATCH(f != kInvalidFileHandle);
     
 #if NCBILOG_USE_FILE_DESCRIPTORS
-    VERIFY(len <= NCBILOG_ENTRY_MAX);
+    VERIFY_CATCH(len <= NCBILOG_ENTRY_MAX);
     n = s_Write(f, line, len);
     VERIFY(n == len);
     n = s_Write(f, "\n", 1);
@@ -3736,6 +3801,7 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
     fflush(f);
 #endif
 
+CATCH:
     MT_UNLOCK;
 }
 
@@ -3743,7 +3809,8 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
 extern void NcbiLog_UpdateOnFork(TNcbiLog_OnForkFlags flags)
 {
     int  n;
-    char buf[128];
+    #define kIdBufSize 128
+    char buf[kIdBufSize];
     int  old_guid_hi, old_guid_lo;
     TNcbiLog_Context ctx = NULL;
 
@@ -3788,8 +3855,7 @@ extern void NcbiLog_UpdateOnFork(TNcbiLog_OnForkFlags flags)
     n = sprintf(buf, 
         "action=fork&parent_guid=%08X%08X&parent_pid=%05" NCBILOG_UINT8_FORMAT_SPEC, 
         old_guid_hi, old_guid_lo, old_pid);
-
-    VERIFY(n < 128);
+    VERIFY(n > 0  &&  n < kIdBufSize);
     s_ExtraStr(ctx, buf);
 
     if (flags & fNcbiLog_OnFork_PrintStart) {
