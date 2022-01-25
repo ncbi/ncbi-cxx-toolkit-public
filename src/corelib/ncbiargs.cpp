@@ -2121,7 +2121,7 @@ static string s_CArgs_ReadFromConsole(const string& name, EEchoInput echo_input,
     int tty = open("/dev/tty", O_RDWR);
     if (tty >= 0) {
         if (!prompt.empty()) {
-            write( tty, prompt.data(), prompt.length());
+            if (write( tty, prompt.data(), prompt.length())) {}
         }
 
         struct termios mode, silent_mode;
@@ -2150,7 +2150,7 @@ static string s_CArgs_ReadFromConsole(const string& name, EEchoInput echo_input,
             tcsetattr( tty, TCSANOW, &mode );
         }
         if (!prompt.empty()) {
-            write( tty, thx.data(), thx.length());
+            if (write( tty, thx.data(), thx.length())) {}
         }
         close(tty);
     }
