@@ -265,6 +265,7 @@ int/*bool*/ NcbiLog_Default_MTLock_Handler
             break;
         case eNcbiLog_MT_Destroy:
             /* Mutex should be unlocked before destroying */
+            assert(pthread_mutex_unlock(&sx_MT_handle) == 0);
             verify(pthread_mutex_destroy(&sx_MT_handle) == 0);
             break;
         case eNcbiLog_MT_Lock:
