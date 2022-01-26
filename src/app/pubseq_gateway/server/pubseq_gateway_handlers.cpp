@@ -139,7 +139,8 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
             m_Counters.Increment(CPSGSCounters::ePSGS_BadUrlPath);
 
             string      bad_url = req.GetPath();
-            x_SendMessageAndCompletionChunks(reply, kBadUrlMessage + bad_url,
+            x_SendMessageAndCompletionChunks(reply,
+                                             kBadUrlMessage + NStr::HtmlEncode(bad_url),
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_BadURL,
                                              eDiag_Error);
