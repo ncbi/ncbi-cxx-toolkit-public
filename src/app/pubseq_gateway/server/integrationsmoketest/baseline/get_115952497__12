@@ -38,10 +38,14 @@
     "reply": "BioseqInfo",
     "reply": "BlobData",
     "reply": "BlobInfo",
+    "reply": "Processor",
+    "reply": "Processor",
     "reply": "PublicComment",
     "seq_state": 10,
     "size": 1274,
     "state": 10,
+    "status": "Success"
+    "status": "Success"
     "storage_size": 691,
     "tax_id": 7668,
     "text": "This record was removed as a result of standard genome annotation processing. See the genome build documentation at http://www.ncbi.nlm.nih.gov/genome/guide/build.shtml for further information, or contact info@ncbi.nlm.nih.gov."
@@ -58,7 +62,11 @@
 {
 {
 {
+{
+{
 }
+},
+},
 },
 },
 },

@@ -1,9 +1,17 @@
 [
 {
     "reply": "Processor",
+    "status": "Success"
+},
+{
+    "reply": "Processor",
     "status": "NotFound",
     "errors": [
         "Cassandra-getblob processor failed to map sat 999 to a Cassandra keyspace"
     ]
+},
+{
+    "reply": "Processor",
+    "status": "Success"
 }
 ]

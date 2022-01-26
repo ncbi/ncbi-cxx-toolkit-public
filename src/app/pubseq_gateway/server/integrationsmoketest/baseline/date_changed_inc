@@ -1,6 +1,14 @@
 [
 {
+    "reply": "Processor",
+    "status": "Success"
+},
+{
     "reply": "BioseqInfo",
     "date_changed": "03/06/2012 17:18:00"
+},
+{
+    "reply": "Processor",
+    "status": "Success"
 }
 ]

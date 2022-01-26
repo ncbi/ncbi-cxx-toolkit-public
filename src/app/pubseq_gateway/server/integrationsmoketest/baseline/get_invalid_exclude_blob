@@ -46,10 +46,14 @@
     "reply": "BioseqInfo",
     "reply": "BlobData",
     "reply": "BlobInfo",
+    "reply": "Processor",
+    "reply": "Processor",
     "reply": "PublicComment",
     "seq_state": 10,
     "size": 2101,
     "state": 10,
+    "status": "Success"
+    "status": "Success"
     "storage_size": 1114,
     "tax_id": 0,
     "text": "This record was removed from further distribution at the submitter's request. Contact info@ncbi.nlm.nih.gov for further information"
@@ -66,7 +70,11 @@
 {
 {
 {
+{
+{
 }
+},
+},
 },
 },
 },

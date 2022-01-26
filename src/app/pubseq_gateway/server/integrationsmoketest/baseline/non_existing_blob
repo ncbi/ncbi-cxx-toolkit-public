@@ -1,9 +1,17 @@
 [
 {
+    "reply": "Processor",
+    "status": "Success"
+},
+{
     "reply": "BlobInfo",
     "status": "NotFound",
     "errors": [
         "Blob 4.1 properties are not found (last modified: -1)"
     ]
+},
+{
+    "reply": "Processor",
+    "status": "Success"
 }
 ]

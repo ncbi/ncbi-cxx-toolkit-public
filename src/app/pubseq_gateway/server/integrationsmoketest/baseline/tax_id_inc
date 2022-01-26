@@ -1,6 +1,14 @@
 [
 {
+    "reply": "Processor",
+    "status": "Success"
+},
+{
     "reply": "BioseqInfo",
     "tax_id": 781
+},
+{
+    "reply": "Processor",
+    "status": "Success"
 }
 ]
