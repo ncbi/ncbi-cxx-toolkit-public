@@ -128,13 +128,10 @@ void CTSE_Chunk_Info::x_SplitAttach(CTSE_Split_Info& split_info)
 
     // register bioseq ids
     {{
-        set<CSeq_id_Handle> ids;
         TBioseqIds(m_BioseqIds).swap(m_BioseqIds);
         sort(m_BioseqIds.begin(), m_BioseqIds.end());
-        ITERATE ( TBioseqIds, it, m_BioseqIds ) {
-            split_info.x_SetContainedId(*it, chunk_id, true);
-            _VERIFY(ids.insert(*it).second);
-        }
+        split_info.x_SetContainedSeqIds(m_BioseqIds, chunk_id);
+        set<CSeq_id_Handle> ids(m_BioseqIds.begin(), m_BioseqIds.end());
         ITERATE ( TAnnotContents, it, m_AnnotContents ) {
             ITERATE ( TAnnotTypes, tit, it->second ) {
                 ITERATE ( TLocationSet, lit, tit->second ) {

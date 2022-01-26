@@ -115,7 +115,8 @@ CDataSource::CDataSource(void)
     : m_DefaultPriority(CObjectManager::kPriority_Entry),
       m_Blob_Cache_Size(0),
       m_Blob_Cache_Size_Limit(GetDefaultBlobCacheSizeLimit()),
-      m_StaticBlobCounter(0)
+      m_StaticBlobCounter(0),
+      m_TrackSplitSeq(false)
 {
 }
 
@@ -126,7 +127,8 @@ CDataSource::CDataSource(CDataLoader& loader)
       m_Blob_Cache_Size(0),
       m_Blob_Cache_Size_Limit(min(GetDefaultBlobCacheSizeLimit(),
                                   loader.GetDefaultBlobCacheSizeLimit())),
-      m_StaticBlobCounter(0)
+      m_StaticBlobCounter(0),
+      m_TrackSplitSeq(loader.GetTrackSplitSeq())
 {
     m_Loader->SetTargetDataSource(*this);
 }
@@ -137,7 +139,8 @@ CDataSource::CDataSource(const CObject& shared_object, const CSeq_entry& entry)
       m_DefaultPriority(CObjectManager::kPriority_Entry),
       m_Blob_Cache_Size(0),
       m_Blob_Cache_Size_Limit(GetDefaultBlobCacheSizeLimit()),
-      m_StaticBlobCounter(0)
+      m_StaticBlobCounter(0),
+      m_TrackSplitSeq(false)
 {
     CTSE_Lock tse_lock = AddTSE(const_cast<CSeq_entry&>(entry));
     m_StaticBlobs.PutLock(tse_lock);
@@ -173,8 +176,12 @@ void CDataSource::DropAllTSEs(void)
     // First clear all indices
     m_InfoMap.clear();
     
-    m_TSE_seq.clear();
-
+    {{
+        TSeqLock::TWriteLockGuard guard2(m_DSSeqLock);
+        m_TSE_seq.clear();
+        m_TSE_split_seq.clear();
+    }}
+    
     {{
         TAnnotLock::TWriteLockGuard guard2(m_DSAnnotLock);
         m_TSE_seq_annot.clear();
@@ -531,38 +538,52 @@ CDataSource::FindSeq_feat_Lock(const CSeq_id_Handle& loc_id,
 }
 
 
+void CDataSource::x_CollectBlob_ids(const CSeq_id_Handle& idh,
+                                    const TSeq_id2TSE_Set& index,
+                                    TLoadedBlob_ids_Set& blob_ids)
+{
+    TSeq_id2TSE_Set::const_iterator tse_set = index.find(idh);
+    if ( tse_set != index.end() ) {
+        for ( auto& tse : tse_set->second ) {
+            blob_ids.insert(tse->GetBlobId());
+        }
+    }
+}
+
+
+void CDataSource::x_CollectBlob_ids(const CSeq_id_Handle& idh,
+                                    const TSeq_id2SplitInfoSet& index,
+                                    TLoadedBlob_ids_Set& blob_ids)
+{
+    auto iter = index.find(idh);
+    if ( iter != index.end() ) {
+        for ( auto& split : iter->second ) {
+            blob_ids.insert(split->GetBlobId());
+        }
+    }
+}
+
+
 void CDataSource::x_GetLoadedBlob_ids(const CSeq_id_Handle& idh,
                                       TLoadedTypes types,
-                                      TLoadedBlob_ids_Set& ids) const
+                                      TLoadedBlob_ids_Set& blob_ids) const
 {
-    if ( types & fLoaded_bioseqs ) {
-        TMainLock::TReadLockGuard guard(m_DSMainLock);
-        TSeq_id2TSE_Set::const_iterator tse_set = m_TSE_seq.find(idh);
-        if (tse_set != m_TSE_seq.end()) {
-            ITERATE(TTSE_Set, tse, tse_set->second) {
-                ids.insert((*tse)->GetBlobId());
-            }
+    if ( types & (fLoaded_bioseqs|fSplit_bioseqs) ) {
+        TSeqLock::TReadLockGuard guard(m_DSSeqLock);
+        if ( types & fLoaded_bioseqs ) {
+            x_CollectBlob_ids(idh, m_TSE_seq, blob_ids);
+        }
+        if ( x_IsTrackingSplitSeq() && (types & fSplit_bioseqs) ) {
+            x_CollectBlob_ids(idh, m_TSE_split_seq, blob_ids);
         }
     }
     if ( types & fLoaded_annots ) {
         TAnnotLock::TReadLockGuard guard(m_DSAnnotLock);
         if ( types & fLoaded_bioseq_annots ) {
-            TSeq_id2TSE_Set::const_iterator tse_set =
-                m_TSE_seq_annot.find(idh);
-            if (tse_set != m_TSE_seq_annot.end()) {
-                ITERATE(TTSE_Set, tse, tse_set->second) {
-                    ids.insert((*tse)->GetBlobId());
-                }
-            }
+            x_CollectBlob_ids(idh, m_TSE_seq_annot, blob_ids);
         }
         if ( types & fLoaded_orphan_annots ) {
-            TSeq_id2TSE_Set::const_iterator tse_set =
-                m_TSE_orphan_annot.find(idh);
-            if (tse_set != m_TSE_orphan_annot.end()) {
-                ITERATE(TTSE_Set, tse, tse_set->second) {
-                    ids.insert((*tse)->GetBlobId());
-                }
-            }
+            x_CollectBlob_ids(idh, m_TSE_orphan_annot, blob_ids);
         }
     }
 }
@@ -1020,7 +1041,7 @@ void CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
 }
 
 
-void CDataSource::x_IndexTSE(TSeq_id2TSE_Set& tse_map,
+bool CDataSource::x_IndexTSE(TSeq_id2TSE_Set& tse_map,
                              const CSeq_id_Handle& id,
                              CTSE_Info* tse_info)
 {
@@ -1029,7 +1050,7 @@ void CDataSource::x_IndexTSE(TSeq_id2TSE_Set& tse_map,
         it = tse_map.insert(it, TSeq_id2TSE_Set::value_type(id, TTSE_Set()));
     }
     _ASSERT(it != tse_map.end() && it->first == id);
-    it->second.insert(Ref(tse_info));
+    return it->second.insert(Ref(tse_info)).second;
 }
 
 
@@ -1048,22 +1069,75 @@ void CDataSource::x_UnindexTSE(TSeq_id2TSE_Set& tse_map,
 }
 
 
+void CDataSource::x_IndexSplitInfo(TSeq_id2SplitInfoSet& split_map,
+                                   const CSeq_id_Handle& id,
+                                   CTSE_Split_Info* split_info)
+{
+    split_map[id].insert(Ref(split_info));
+}
+
+
+void CDataSource::x_UnindexSplitInfo(TSeq_id2SplitInfoSet& split_map,
+                                     const CSeq_id_Handle& id,
+                                     CTSE_Split_Info* split_info)
+{
+    auto it = split_map.find(id);
+    if ( it != split_map.end() ) {
+        it->second.erase(Ref(split_info));
+        if ( it->second.empty() ) {
+            split_map.erase(it);
+        }
+    }
+}
+
+
+void CDataSource::x_IndexSeqTSELocked(const CSeq_id_Handle& id,
+                                      CTSE_Info* tse_info)
+{
+    if ( x_IndexTSE(m_TSE_seq, id, tse_info) &&
+         x_IsTrackingSplitSeq() &&
+         tse_info->HasSplitInfo() ) {
+        x_UnindexSplitInfo(m_TSE_split_seq, id, &tse_info->GetSplitInfo());
+    }
+}
+
+
 void CDataSource::x_IndexSeqTSE(const CSeq_id_Handle& id,
                                 CTSE_Info* tse_info)
 {
-    // no need to lock as it's locked by callers
-    TMainLock::TWriteLockGuard guard(m_DSMainLock);
-    x_IndexTSE(m_TSE_seq, id, tse_info);
+    TSeqLock::TWriteLockGuard guard(m_DSSeqLock);
+    x_IndexSeqTSELocked(id, tse_info);
+}
+
+
+void CDataSource::x_IndexSplitInfo(const CSeq_id_Handle& id,
+                                   CTSE_Split_Info* split_info)
+{
+    if ( x_IsTrackingSplitSeq() ) {
+        TSeqLock::TWriteLockGuard guard(m_DSSeqLock);
+        x_IndexSplitInfo(m_TSE_split_seq, id, split_info);
+    }
+}
+
+
+void CDataSource::x_IndexSplitInfo(const vector<CSeq_id_Handle>& ids,
+                                   CTSE_Split_Info* split_info)
+{
+    if ( x_IsTrackingSplitSeq() ) {
+        TSeqLock::TWriteLockGuard guard(m_DSSeqLock);
+        for ( auto& id : ids ) {
+            x_IndexSplitInfo(m_TSE_split_seq, id, split_info);
+        }
+    }
 }
 
 
 void CDataSource::x_IndexSeqTSE(const vector<CSeq_id_Handle>& ids,
                                 CTSE_Info* tse_info)
 {
-    // no need to lock as it's locked by callers
     TMainLock::TWriteLockGuard guard(m_DSMainLock);
-    ITERATE ( vector<CSeq_id_Handle>, it, ids ) {
-        x_IndexTSE(m_TSE_seq, *it, tse_info);
+    for ( auto& id : ids ) {
+        x_IndexSeqTSELocked(id, tse_info);
     }
 }
 
@@ -1071,8 +1145,7 @@ void CDataSource::x_IndexSeqTSE(const vector<CSeq_id_Handle>& ids,
 void CDataSource::x_UnindexSeqTSE(const CSeq_id_Handle& id,
                                   CTSE_Info* tse_info)
 {
-    // no need to lock as it's locked by callers
-    TMainLock::TWriteLockGuard guard(m_DSMainLock);
+    TSeqLock::TWriteLockGuard guard(m_DSSeqLock);
     x_UnindexTSE(m_TSE_seq, id, tse_info);
 }
 
@@ -1130,7 +1203,7 @@ CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
 {
     TTSE_LockSet all_tse;
     {{
-        TMainLock::TReadLockGuard guard(m_DSMainLock);
+        TSeqLock::TReadLockGuard guard(m_DSSeqLock);
 #ifdef DEBUG_MAPS
         debug::CReadGuard<TSeq_id2TSE_Set> g1(m_TSE_seq);
 #endif
@@ -1236,7 +1309,7 @@ CDataSource::TSeqMatches CDataSource::GetMatches(const CSeq_id_Handle& idh,
     TSeqMatches ret;
 
     if ( !history.empty() ) {
-        TMainLock::TReadLockGuard guard(m_DSMainLock);
+        TSeqLock::TReadLockGuard guard(m_DSSeqLock);
         TSeq_id2TSE_Set::const_iterator tse_set = m_TSE_seq.find(idh);
         if ( tse_set != m_TSE_seq.end() ) {
             ITERATE ( TTSE_Set, it, tse_set->second ) {

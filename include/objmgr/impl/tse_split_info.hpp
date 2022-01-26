@@ -124,6 +124,7 @@ public:
     void x_UpdateCore(void);
     void x_SetBioseqChunkId(TChunkId chunk_id);
     void x_SetContainedId(const TBioseqId& id, TChunkId chunk_id, bool bioseq);
+    void x_SetContainedSeqIds(const vector<TBioseqId>& ids, TChunkId chunk_id);
 
     bool x_CanAddBioseq(const TBioseqId& id) const;
 
@@ -138,6 +139,7 @@ public:
     void GetBioseqsIds(TSeqIds& ids) const;
 
     // bioseq lookup
+    bool ContainsBioseqs() const { return m_ContainsBioseqs; }
     bool ContainsBioseq(const CSeq_id_Handle& id) const;
 
     // loading requests

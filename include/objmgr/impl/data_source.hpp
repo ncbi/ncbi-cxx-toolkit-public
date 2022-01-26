@@ -134,11 +134,13 @@ public:
     typedef set<CSeq_id_Handle>                     TSeq_idSet;
     typedef vector<pair<TTSE_Lock,CSeq_id_Handle> > TTSE_LockMatchSet;
     typedef CRef<CTSE_Info>                         TTSE_Ref;
+    typedef CRef<CTSE_Split_Info>                   TSplitInfoRef;
     typedef CBlobIdKey                              TBlobId;
 
     typedef CDSAnnotLockReadGuard                   TAnnotLockReadGuard;
     typedef CDSAnnotLockWriteGuard                  TAnnotLockWriteGuard;
     typedef CRWLock TMainLock;
+    typedef CMutex TSeqLock;
     typedef CMutex TAnnotLock;
     typedef CMutex TCacheLock;
 
@@ -334,7 +336,9 @@ public:
         fLoaded_bioseq_annots = 1<<1,
         fLoaded_orphan_annots = 1<<2,
         fLoaded_annots        = fLoaded_bioseq_annots | fLoaded_orphan_annots,
-        fLoaded_all           = fLoaded_bioseqs | fLoaded_annots
+        fLoaded_all           = fLoaded_bioseqs | fLoaded_annots,
+        fSplit_bioseqs        = 1<<3,
+        fKnown_bioseqs        = fLoaded_bioseqs | fSplit_bioseqs
     };
     typedef int TLoadedTypes;
     void GetLoadedBlob_ids(const CSeq_id_Handle& idh,
@@ -356,9 +360,13 @@ private:
 #ifdef DEBUG_MAPS
     typedef debug::set<TTSE_Ref>                    TTSE_Set;
     typedef debug::map<CSeq_id_Handle, TTSE_Set>    TSeq_id2TSE_Set;
+    typedef debug::set<TSplitInfoRef>               TSplitInfoSet;
+    typedef debug::map<CSeq_id_Handle, TSplitInfoSet> TSeq_id2SplitInfoSet;
 #else
     typedef set<TTSE_Ref>                           TTSE_Set;
     typedef map<CSeq_id_Handle, TTSE_Set>           TSeq_id2TSE_Set;
+    typedef set<TSplitInfoRef>                      TSplitInfoSet;
+    typedef map<CSeq_id_Handle, TSplitInfoSet>      TSeq_id2SplitInfoSet;
 #endif
 
     // registered objects
@@ -428,13 +436,24 @@ private:
     void x_SetDirtyAnnotIndex(CTSE_Info& tse);
     void x_ResetDirtyAnnotIndex(CTSE_Info& tse);
 
-    void x_IndexTSE(TSeq_id2TSE_Set& tse_map,
+    bool x_IndexTSE(TSeq_id2TSE_Set& tse_map,
                     const CSeq_id_Handle& id, CTSE_Info* tse_info);
     void x_UnindexTSE(TSeq_id2TSE_Set& tse_map,
                       const CSeq_id_Handle& id, CTSE_Info* tse_info);
+    void x_IndexSeqTSELocked(const CSeq_id_Handle& id, CTSE_Info* tse_info);
     void x_IndexSeqTSE(const CSeq_id_Handle& idh, CTSE_Info* tse_info);
-    void x_IndexSeqTSE(const vector<CSeq_id_Handle>& idh, CTSE_Info* tse_info);
+    void x_IndexSeqTSE(const vector<CSeq_id_Handle>& ids, CTSE_Info* tse_info);
     void x_UnindexSeqTSE(const CSeq_id_Handle& ids, CTSE_Info* tse_info);
+    void x_IndexSplitInfo(TSeq_id2SplitInfoSet& split_map,
+                          const CSeq_id_Handle& id,
+                          CTSE_Split_Info* split_info);
+    void x_UnindexSplitInfo(TSeq_id2SplitInfoSet& split_map,
+                            const CSeq_id_Handle& id,
+                            CTSE_Split_Info* split_info);
+    void x_IndexSplitInfo(const CSeq_id_Handle& id,
+                          CTSE_Split_Info* split_info);
+    void x_IndexSplitInfo(const vector<CSeq_id_Handle>& ids,
+                          CTSE_Split_Info* split_info);
     void x_IndexAnnotTSE(const CSeq_id_Handle& idh,
                          CTSE_Info* tse_info,
                          bool orphan);
@@ -471,10 +490,20 @@ private:
     void x_GetLoadedBlob_ids(const CSeq_id_Handle& idh,
                              TLoadedTypes types,
                              TLoadedBlob_ids_Set& ids) const;
+    static void x_CollectBlob_ids(const CSeq_id_Handle& idh,
+                                  const TSeq_id2TSE_Set& index,
+                                  TLoadedBlob_ids_Set& blob_ids);
+    static void x_CollectBlob_ids(const CSeq_id_Handle& idh,
+                                  const TSeq_id2SplitInfoSet& index,
+                                  TLoadedBlob_ids_Set& blob_ids);
+    bool x_IsTrackingSplitSeq() const { return m_TrackSplitSeq; }
     
-    // Used to lock: m_*_InfoMap, m_TSE_seq
+    // Used to lock: m_*_InfoMap
     // Is locked before locks in CTSE_Info
     mutable TMainLock     m_DSMainLock;
+    // Used to lock: m_TSE_seq, m_TSE_split_seq
+    // Is locked after locks in CTSE_Info
+    mutable TSeqLock      m_DSSeqLock;
     // Used to lock: m_TSE_annot, m_TSE_annot_is_dirty
     // Is locked after locks in CTSE_Info
     mutable TAnnotLock    m_DSAnnotLock;
@@ -488,9 +517,10 @@ private:
     TInfoMap              m_InfoMap;            // All known TSE objects
 
     TSeq_id2TSE_Set       m_TSE_seq;            // id -> TSE with bioseq
+    TSeq_id2SplitInfoSet  m_TSE_split_seq;      // id -> TSE with bioseq not loaded yet
     TSeq_id2TSE_Set       m_TSE_seq_annot;      // id -> TSE with bioseq annots
     TSeq_id2TSE_Set       m_TSE_orphan_annot;   // id -> TSE with orphan annots
-    TTSE_Set              m_DirtyAnnot_TSEs;    // TSE with uninexed annots
+    TTSE_Set              m_DirtyAnnot_TSEs;    // TSEs with unindexed annots
 
     // Default priority for the datasource
     TPriority             m_DefaultPriority;
@@ -504,6 +534,7 @@ private:
     CRef<CPrefetchThreadOld> m_PrefetchThread;
     CFastMutex            m_PrefetchLock;
     unsigned              m_StaticBlobCounter;
+    bool                  m_TrackSplitSeq;
 
     // hide copy constructor
     CDataSource(const CDataSource&);

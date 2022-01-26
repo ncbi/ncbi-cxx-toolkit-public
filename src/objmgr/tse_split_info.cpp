@@ -120,6 +120,13 @@ void CTSE_Split_Info::x_DSAttach(CDataSource& ds)
     if ( !m_DataLoader && ds.GetDataLoader() ) {
         m_DataLoader = &ds;
         _ASSERT(m_DataLoader);
+        if ( m_ContainsBioseqs ) {
+            vector<CSeq_id_Handle> ids;
+            for ( auto& chunk : m_Chunks ) {
+                chunk.second->GetBioseqsIds(ids);
+            }
+            ds.x_IndexSplitInfo(ids, this);
+        }
     }
 }
 
@@ -319,6 +326,29 @@ void CTSE_Split_Info::x_SetContainedId(const TBioseqId& id,
         m_ContainsBioseqs = true;
     }
     m_SeqIdToChunks.push_back(pair<CSeq_id_Handle, TChunkId>(id, chunk_id));
+    if ( bioseq && m_DataLoader ) {
+        m_DataLoader->x_IndexSplitInfo(id, this);
+    }
+}
+
+
+void CTSE_Split_Info::x_SetContainedSeqIds(const vector<TBioseqId>& ids,
+                                           TChunkId chunk_id)
+{
+    if ( ids.empty() ) {
+        return;
+    }
+    m_SeqIdToChunksSorted = false;
+    if ( !m_ContainsBioseqs ) {
+        m_ContainsBioseqs = true;
+    }
+    m_SeqIdToChunks.reserve(m_SeqIdToChunks.size()+ids.size());
+    for ( auto& id : ids ) {
+        m_SeqIdToChunks.push_back(pair<CSeq_id_Handle, TChunkId>(id, chunk_id));
+    }
+    if ( m_DataLoader ) {
+        m_DataLoader->x_IndexSplitInfo(ids, this);
+    }
 }
 
 

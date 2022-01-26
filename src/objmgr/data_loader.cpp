@@ -941,6 +941,11 @@ unsigned CDataLoader::GetDefaultBlobCacheSizeLimit(void) const
     return kMax_UInt;
 }
 
+bool CDataLoader::GetTrackSplitSeq() const
+{
+    return false;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CBlobId
