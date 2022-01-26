@@ -266,10 +266,10 @@ struct SDataId
 {
     enum ETypePriority { eBlobIdPriority, eChunkIdPriority };
 
-    SDataId(const SPSG_Args& args) : m_Args(args), m_BlobId(m_Args.GetValue("blob_id")) {}
+    SDataId(const SPSG_Args& args) : m_Args(args) {}
 
     template <ETypePriority = eBlobIdPriority>
-    bool HasBlobId() const { return !m_BlobId.empty(); }
+    bool HasBlobId() const { return !m_Args.GetValue<SPSG_Args::eBlobId>().get().empty(); }
 
     template <ETypePriority type_priority = eBlobIdPriority>
     static unique_ptr<CPSG_DataId> Get(SDataId data_id);
@@ -284,33 +284,33 @@ private:
     unique_ptr<TRequestedId> Get() const;
 
     const SPSG_Args& m_Args;
-    const string& m_BlobId;
 };
 
 template <>
 bool SDataId::HasBlobId<SDataId::eChunkIdPriority>() const
 {
-    return m_Args.GetValue("id2_chunk").empty();
+    return m_Args.GetValue<SPSG_Args::eId2Chunk>().get().empty();
 }
 
 template <>
 unique_ptr<CPSG_BlobId> SDataId::x_Get<CPSG_BlobId>() const
 {
     CPSG_BlobId::TLastModified last_modified;
+    const auto& blob_id = m_Args.GetValue<SPSG_Args::eBlobId>();
     const auto& last_modified_str = m_Args.GetValue("last_modified");
 
     if (last_modified_str.empty()) {
-        return make_unique<CPSG_BlobId>(m_BlobId);
+        return make_unique<CPSG_BlobId>(blob_id);
     }
 
     last_modified = NStr::StringToNumeric<Int8>(last_modified_str);
-    return make_unique<CPSG_BlobId>(m_BlobId, move(last_modified));
+    return make_unique<CPSG_BlobId>(blob_id, move(last_modified));
 }
 
 template <>
 unique_ptr<CPSG_ChunkId> SDataId::x_Get<CPSG_ChunkId>() const
 {
-    auto id2_chunk = NStr::StringToNumeric<int>(m_Args.GetValue("id2_chunk"));
+    auto id2_chunk = NStr::StringToNumeric<int>(m_Args.GetValue<SPSG_Args::eId2Chunk>().get());
     return make_unique<CPSG_ChunkId>(id2_chunk, m_Args.GetValue("id2_info"));
 }
 
@@ -437,7 +437,7 @@ private:
 // That's why there are two switch-like groups of 'if' statements in two different methods below.
 SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
 {
-    const auto item_type = args.GetValue("item_type");
+    const auto item_type = args.GetValue<SPSG_Args::eItemType>();
 
     if (item_type == "blob") {
         const auto reason = args.GetValue("reason");
