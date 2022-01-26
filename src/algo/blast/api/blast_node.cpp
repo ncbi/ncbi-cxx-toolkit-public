@@ -312,7 +312,6 @@ CBlastNodeInputReader::GetQueryBatch(string & queries, int & query_no)
 	    }
      	ss << line << endl;
     }
-    ss << std::ends;
     ss.flush();
     if (q_count > 0){
     	queries = ss.str();
