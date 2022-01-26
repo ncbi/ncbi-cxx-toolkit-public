@@ -697,15 +697,19 @@ void SPSG_Request::Add()
 {
     SContextSetter setter(context);
 
-    auto* args = &m_Buffer.args;
-    reply->debug_printout << *args << m_Buffer.chunk << endl;
+    auto& args = m_Buffer.args;
+    reply->debug_printout << args << m_Buffer.chunk << endl;
 
-    const auto item_type = args->GetValue<SPSG_Args::eItemType>().first;
+    const auto item_type = args.GetValue<SPSG_Args::eItemType>().first;
     auto& reply_item_ts = reply->reply_item;
-    SPSG_Reply::SItem::TTS* item_ts = nullptr;
 
     if (item_type == SPSG_Args::eReply) {
-        item_ts = &reply_item_ts;
+        if (auto item_locked = reply_item_ts.GetLock()) {
+            UpdateItem(item_type, *item_locked, args);
+        }
+
+        // Item must be unlocked before notifying
+        reply_item_ts.NotifyOne();
 
     } else {
         if (auto reply_item_locked = reply_item_ts.GetLock()) {
@@ -717,32 +721,30 @@ void SPSG_Request::Add()
             }
         }
 
-        auto item_id = args->GetValue("item_id");
+        auto item_id = args.GetValue("item_id");
         auto& item_by_id = m_ItemsByID[item_id];
 
-        if (!item_by_id) {
+        if (item_by_id) {
+            auto item_locked = item_by_id->GetLock();
+            UpdateItem(item_type, *item_locked, args);
+
+        } else {
             if (auto items_locked = reply->items.GetLock()) {
                 items_locked->emplace_back();
                 item_by_id = &items_locked->back();
             }
 
             if (auto item_locked = item_by_id->GetLock()) {
-                item_locked->args = move(*args);
-                args = &item_locked->args;
+                item_locked->args = move(args);
+                UpdateItem(item_type, *item_locked, item_locked->args);
             }
 
             reply_item_ts.NotifyOne();
         }
 
-        item_ts = item_by_id;
+        // Item must be unlocked before notifying
+        item_by_id->NotifyOne();
     }
-
-    if (auto item_locked = item_ts->GetLock()) {
-        UpdateItem(item_type, *item_locked, *args);
-    }
-
-    // Item must be unlocked before notifying
-    item_ts->NotifyOne();
 
     reply->queue->CV().NotifyOne();
     m_Buffer = SBuffer();
