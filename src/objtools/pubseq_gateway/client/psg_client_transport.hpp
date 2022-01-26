@@ -58,6 +58,7 @@
 #include <random>
 #include <type_traits>
 #include <unordered_set>
+#include <optional>
 
 #include "mpmc_nw.hpp"
 #include <connect/impl/ncbi_uv_nghttp2.hpp>
@@ -79,16 +80,78 @@ inline uint64_t SecondsToMs(double seconds)
     return seconds > 0.0 ? static_cast<uint64_t>(seconds * milli::den) : 0;
 }
 
-struct SPSG_Args : CUrlArgs
+struct SPSG_ArgsBase : CUrlArgs
 {
+    enum EValue {
+        eItemType,
+        eChunkType,
+        eBlobId,
+        eId2Chunk,
+    };
+
     using CUrlArgs::CUrlArgs;
-    using CUrlArgs::operator=;
 
     const string& GetValue(const string& name) const
     {
         bool not_used;
         return CUrlArgs::GetValue(name, &not_used);
     }
+
+protected:
+    template <EValue value> struct SArg;
+};
+
+template <>
+struct SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>
+{
+    using TType = string;
+    static constexpr auto name = "item_type";
+    static TType Get(const string& value);
+};
+
+template <>
+struct SPSG_ArgsBase::SArg<SPSG_ArgsBase::eChunkType>
+{
+    using TType = string;
+    static constexpr auto name = "chunk_type";
+    static TType Get(const string& value);
+};
+
+template <>
+struct SPSG_ArgsBase::SArg<SPSG_ArgsBase::eBlobId>
+{
+    using TType = reference_wrapper<const string>;
+    static constexpr auto name = "blob_id";
+    static TType Get(const string& value) { return value; }
+};
+
+template <>
+struct SPSG_ArgsBase::SArg<SPSG_ArgsBase::eId2Chunk>
+{
+    using TType = reference_wrapper<const string>;
+    static constexpr auto name = "id2_chunk";
+    static TType Get(const string& value) { return value; }
+};
+
+struct SPSG_Args : SPSG_ArgsBase
+{
+    using SPSG_ArgsBase::SPSG_ArgsBase;
+    using SPSG_ArgsBase::GetValue;
+
+    template <EValue value>
+    auto GetValue() const
+    {
+        using TArg = SArg<value>;
+        auto& cached = get<SValue<value>>(m_Cached);
+        return cached.has_value() ? cached.value() : cached.emplace(TArg::Get(GetValue(TArg::name)));
+    }
+
+private:
+    // Cannot use optional template directly;
+    // Otherwise, different values would have same types and get<type>(tuple) above would not work
+    template <EValue value> struct SValue : optional<typename SArg<value>::TType> {};
+
+    mutable tuple<SValue<eItemType>, SValue<eChunkType>, SValue<eBlobId>, SValue<eId2Chunk>> m_Cached;
 };
 
 template <typename TValue>
