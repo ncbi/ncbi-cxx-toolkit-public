@@ -1,7 +1,6 @@
 #ifndef FTAMED_H
 #define FTAMED_H
 
-#include <objtools/flatfile/flatfile_parse_info.hpp>
 #include <corelib/ncbi_message.hpp>
 #include <objects/mla/mla_client.hpp>
 

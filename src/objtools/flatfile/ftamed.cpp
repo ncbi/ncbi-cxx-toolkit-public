@@ -31,72 +31,30 @@
  * File Description:
  * -----------------
  *      MedArch lookup and post-processing utilities.
- * Mostly the same as medutil.c written by James Ostell.
  *
  */
 #include <ncbi_pch.hpp>
-
-#include "ftacpp.hpp"
 
 #include <objects/mla/mla_client.hpp>
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objtools/edit/pub_fix.hpp>
 
-#include "index.h"
-
 #include "ftaerr.hpp"
-#include "asci_blk.h"
-#include "utilref.h"
 #include "ftamed.h"
-#include "ref.h"
-
-#ifdef THIS_FILE
-#    undef THIS_FILE
-#endif
-#define THIS_FILE "ftamed.cpp"
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
-// error definitions from C-toolkit (mdrcherr.h)
-#define ERR_REFERENCE  1,0
-#define ERR_REFERENCE_MuidNotFound  1,1
-#define ERR_REFERENCE_SuccessfulMuidLookup  1,2
-#define ERR_REFERENCE_OldInPress  1,3
-#define ERR_REFERENCE_No_reference  1,4
-#define ERR_REFERENCE_Multiple_ref  1,5
-#define ERR_REFERENCE_Multiple_muid  1,6
-#define ERR_REFERENCE_MedlineMatchIgnored  1,7
-#define ERR_REFERENCE_MuidMissmatch  1,8
-#define ERR_REFERENCE_NoConsortAuthors  1,9
-#define ERR_REFERENCE_DiffConsortAuthors  1,10
-#define ERR_REFERENCE_PmidMissmatch  1,11
-#define ERR_REFERENCE_Multiple_pmid  1,12
-#define ERR_REFERENCE_FailedToGetPub  1,13
-#define ERR_REFERENCE_MedArchMatchIgnored  1,14
-#define ERR_REFERENCE_SuccessfulPmidLookup  1,15
-#define ERR_REFERENCE_PmidNotFound  1,16
-#define ERR_REFERENCE_NoPmidJournalNotInPubMed  1,17
-#define ERR_REFERENCE_PmidNotFoundInPress  1,18
-#define ERR_REFERENCE_NoPmidJournalNotInPubMedInPress  1,19
-#define ERR_PRINT  2,0
-#define ERR_PRINT_Failed  2,1
-
-
-using namespace ncbi;
-using namespace objects;
-
-static char *this_module = (char *) "medarch";
+static const char* this_module = "medarch";
 #ifdef THIS_MODULE
 #undef THIS_MODULE
 #endif
-
 #define THIS_MODULE this_module
 
 static CMLAClient mlaclient;
 static edit::CMLAUpdater mlaupdater(&mlaclient);
 
-USING_SCOPE(objects);
 
 IMessageListener::EPostResult 
 CPubFixMessageListener::PostMessage(const IMessage& message) 
@@ -110,8 +68,8 @@ CPubFixMessageListener::PostMessage(const IMessage& message)
                   {eDiag_Fatal, SEV_FATAL}};
 
     ErrPostEx(sSeverityMap.at(message.GetSeverity()),
-            message.GetCode(),
-            message.GetSubCode(),
+            message.GetCode(),      // fix_pub::EFixPubErrorCategory
+            message.GetSubCode(),   // fix_pub::EFixPubReferenceError
             message.GetText().c_str());
 
     return eHandled;
