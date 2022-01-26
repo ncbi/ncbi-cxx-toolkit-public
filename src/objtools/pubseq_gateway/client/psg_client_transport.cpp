@@ -70,6 +70,7 @@ NCBI_PARAM_DEF(string,   PSG, request_user_args,      "");
 NCBI_PARAM_DEF(bool,     PSG, user_request_ids,       false);
 NCBI_PARAM_DEF(unsigned, PSG, localhost_preference,   1);
 NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_items,  false);
+NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_chunks, false);
 NCBI_PARAM_DEF(bool,     PSG, https,                  false);
 NCBI_PARAM_DEF(double,   PSG, no_servers_retry_delay, 1.0);
 NCBI_PARAM_DEF(bool,     PSG, stats,                  false);
@@ -119,7 +120,12 @@ SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>::TType SPSG_ArgsBase::SArg<SPSG_Ar
 
 SPSG_ArgsBase::SArg<SPSG_ArgsBase::eChunkType>::TType SPSG_ArgsBase::SArg<SPSG_ArgsBase::eChunkType>::Get(const string& value)
 {
-    return value;
+    if (value == "meta")              return { SPSG_ArgsBase::eMeta,            cref(value) };
+    if (value == "data")              return { SPSG_ArgsBase::eData,            cref(value) };
+    if (value == "message")           return { SPSG_ArgsBase::eMessage,         cref(value) };
+    if (value == "data_and_meta")     return { SPSG_ArgsBase::eDataAndMeta,     cref(value) };
+    if (value == "message_and_meta")  return { SPSG_ArgsBase::eMessageAndMeta,  cref(value) };
+    return { SPSG_ArgsBase::eUnknownChunk, cref(value) };
 };
 
 struct SContextSetter
@@ -147,7 +153,7 @@ void SDebugPrintout::Print(const SPSG_Args& args, const SPSG_Chunk& chunk)
     os << args.GetQueryString(CUrlArgs::eAmp_Char) << '\n';
 
     if ((m_Params.debug_printout == EPSG_DebugPrintout::eAll) ||
-            (args.GetValue<SPSG_Args::eItemType>().first != SPSG_Args::eBlob) || (args.GetValue<SPSG_Args::eChunkType>() != "data")) {
+            (args.GetValue<SPSG_Args::eItemType>().first != SPSG_Args::eBlob) || (args.GetValue<SPSG_Args::eChunkType>().first != SPSG_Args::eData)) {
         os << chunk;
     } else {
         os << "<BINARY DATA OF " << chunk.size() << " BYTES>";
@@ -757,7 +763,7 @@ void SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
     auto chunk_type = args.GetValue<SPSG_Args::eChunkType>();
     auto& chunk = m_Buffer.chunk;
 
-    if (chunk_type == "meta") {
+    if (chunk_type.first & SPSG_Args::eMeta) {
         auto n_chunks = args.GetValue("n_chunks");
 
         if (!n_chunks.empty()) {
@@ -770,7 +776,19 @@ void SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
             }
         }
 
-    } else if (chunk_type == "message") {
+    } else if (chunk_type.first == SPSG_Args::eUnknownChunk) {
+        static atomic_bool reported(false);
+
+        if (!reported.exchange(true)) {
+            ERR_POST("Received unknown chunk type: " << chunk_type.second.get());
+        }
+
+        if (TPSG_FailOnUnknownChunks::GetDefault()) {
+            item.state.AddError("Protocol error: unknown chunk type '" + chunk_type.second + '\'');
+        }
+    }
+
+    if (chunk_type.first & SPSG_Args::eMessage) {
         auto severity = s_GetSeverity(args.GetValue("severity"));
 
         if (severity == eDiag_Warning) {
@@ -796,7 +814,7 @@ void SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
 
         if (auto stats = reply->stats.lock()) stats->IncCounter(SPSG_Stats::eMessage, severity);
 
-    } else if (chunk_type == "data") {
+    } else if (chunk_type.first & SPSG_Args::eData) {
         if (auto stats = reply->stats.lock()) {
             if (item_type == SPSG_Args::eBlob) {
                 auto has_blob_id = !args.GetValue<SPSG_Args::eBlobId>().get().empty();
@@ -811,9 +829,6 @@ void SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
 
         item.chunks[index] = move(chunk);
         item.state.SetNotEmpty();
-
-    } else {
-        item.state.AddError("Protocol error: unknown chunk type");
     }
 
     const bool is_not_reply = item_type != SPSG_Args::eReply;
