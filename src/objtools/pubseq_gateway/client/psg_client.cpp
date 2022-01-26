@@ -431,32 +431,37 @@ private:
     using TBase = pair<CPSG_ReplyItem::EType, CPSG_SkippedBlob::EReason>;
     using TBase::TBase;
     SItemTypeAndReason(CPSG_ReplyItem::EType type) : TBase(type, CPSG_SkippedBlob::eUnknown) {}
+    static SItemTypeAndReason GetIfBlob(const SPSG_Args& args);
 };
 
 // Item type cannot be determined by "item_type" alone, for blobs "reason" has to be used as well.
-// That's why there are two switch-like groups of 'if' statements in two different methods below.
+SItemTypeAndReason SItemTypeAndReason::GetIfBlob(const SPSG_Args& args)
+{
+    const auto reason = args.GetValue("reason");
+
+    if (reason.empty()) {
+        return CPSG_ReplyItem::eBlobData;
+
+    } else if (reason == "excluded") {
+        return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eExcluded };
+
+    } else if (reason == "inprogress") {
+        return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eInProgress };
+
+    } else if (reason == "sent") {
+        return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eSent };
+
+    } else {
+        return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eUnknown };
+    }
+}
+
 SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
 {
     const auto item_type = args.GetValue<SPSG_Args::eItemType>();
 
     if (item_type == "blob") {
-        const auto reason = args.GetValue("reason");
-
-        if (reason.empty()) {
-            return CPSG_ReplyItem::eBlobData;
-
-        } else if (reason == "excluded") {
-            return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eExcluded };
-
-        } else if (reason == "inprogress") {
-            return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eInProgress };
-
-        } else if (reason == "sent") {
-            return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eSent };
-
-        } else {
-            return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eUnknown };
-        }
+        return GetIfBlob(args);
 
     } else if (item_type == "bioseq_info") {
         return CPSG_ReplyItem::eBioseqInfo;
@@ -472,20 +477,19 @@ SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
 
     } else if (item_type == "processor") {
         return CPSG_ReplyItem::eProcessor;
-
-    } else {
-        if (TPSG_FailOnUnknownItems::GetDefault()) {
-            NCBI_THROW_FMT(CPSG_Exception, eServerError, "Received unknown item type: " << item_type);
-        }
-
-        static atomic_bool reported(false);
-
-        if (!reported.exchange(true)) {
-            ERR_POST("Received unknown item type: " << item_type);
-        }
-
-        return CPSG_ReplyItem::eEndOfReply;
     }
+
+    if (TPSG_FailOnUnknownItems::GetDefault()) {
+        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Received unknown item type: " << item_type);
+    }
+
+    static atomic_bool reported(false);
+
+    if (!reported.exchange(true)) {
+        ERR_POST("Received unknown item type: " << item_type);
+    }
+
+    return CPSG_ReplyItem::eEndOfReply;
 }
 
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS& item_ts)
