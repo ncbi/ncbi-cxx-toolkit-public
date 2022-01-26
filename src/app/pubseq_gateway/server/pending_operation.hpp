@@ -63,6 +63,7 @@ public:
 
     void Clear(void);
     void Start(void);
+    void SendProcessorStartMessage(void);
     void Peek(bool  need_wait);
     void ConnectionCancel(void);
 

@@ -601,7 +601,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
     } else {
         // Not found; it is the user error, not the data inconsistency
         auto *  app = CPubseqGatewayApp::GetInstance();
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_BlobPropsNotFoundError);
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_BlobPropsNotFound);
 
         auto    blob_id = fetch_details->GetBlobId();
         string  message = "Blob " + blob_id.ToString() + " properties are not found";
@@ -639,11 +639,11 @@ void CPSGS_TSEChunkProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
-
     // It could be a message or an error
     bool    is_error = CountError(status, code, severity, message);
+
+    // To avoid sending an error in Peek()
+    fetch_details->GetLoader()->ClearError();
 
     if (is_error) {
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
@@ -839,7 +839,7 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistory(
     auto *      app = CPubseqGatewayApp::GetInstance();
     if (result.empty()) {
         // Split history is not found
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_SplitHistoryNotFoundError);
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_SplitHistoryNotFound);
 
         string      message = "Split history version " +
                               to_string(fetch_details->GetSplitVersion()) +
@@ -1078,7 +1078,7 @@ IPSGS_Processor::EPSGS_Status CPSGS_TSEChunkProcessor::GetStatus(void)
         return status;
 
     if (m_Cancelled)
-        return IPSGS_Processor::ePSGS_Cancelled;
+        return IPSGS_Processor::ePSGS_Canceled;
 
     return status;
 }

@@ -1737,6 +1737,13 @@ void RegisterUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop)
 }
 
 
+void RegisterDaemonUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop)
+{
+    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+    app->RegisterDaemonUVLoop(uv_thread, uv_loop);
+}
+
+
 void UnregisterUVLoop(uv_thread_t  uv_thread)
 {
     CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();

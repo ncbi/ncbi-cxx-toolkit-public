@@ -106,7 +106,7 @@ public:
     IPSGS_Processor::EPSGS_Status GetStatus() const;
     bool IsCanceled() const
         {
-            return GetStatus() == IPSGS_Processor::ePSGS_Cancelled;
+            return GetStatus() == IPSGS_Processor::ePSGS_Canceled;
         }
 
     void Detach();
@@ -159,7 +159,7 @@ public:
     
     bool IsCanceled() const
         {
-            return m_Status == ePSGS_Cancelled;
+            return m_Status == ePSGS_Canceled;
         }
 
     TEnabledFlags GetEnabledFlags() const

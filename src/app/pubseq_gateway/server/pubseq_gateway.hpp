@@ -276,6 +276,8 @@ public:
     void RegisterUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop)
     {
         lock_guard<mutex>   guard(m_ThreadToBinderGuard);
+
+        m_ThreadToUVLoop[uv_thread] = uv_loop;
         m_ThreadToBinder[uv_thread] =
                 unique_ptr<CPSGS_UvLoopBinder>(new CPSGS_UvLoopBinder(uv_loop));
     }
@@ -286,9 +288,30 @@ public:
         m_ThreadToBinder[uv_thread]->x_Unregister();
     }
 
+    void RegisterDaemonUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop)
+    {
+        lock_guard<mutex>   guard(m_ThreadToBinderGuard);
+
+        m_ThreadToUVLoop[uv_thread] = uv_loop;
+    }
+
+    uv_loop_t *  GetUVLoop(void)
+    {
+        auto    it = m_ThreadToUVLoop.find(uv_thread_self());
+        if (it == m_ThreadToUVLoop.end()) {
+            return nullptr;
+        }
+        return it->second;
+    }
+
     void CancelAllProcessors(void)
     {
         m_RequestDispatcher->CancelAll();
+    }
+
+    CPSGS_Dispatcher *  GetProcessorDispatcher(void)
+    {
+        return m_RequestDispatcher.get();
     }
 
     CPSGS_UvLoopBinder &  GetUvLoopBinder(uv_thread_t  uv_thread_id);
@@ -477,6 +500,7 @@ private:
     map<uv_thread_t,
         unique_ptr<CPSGS_UvLoopBinder>> m_ThreadToBinder;
     mutex                               m_ThreadToBinderGuard;
+    map<uv_thread_t, uv_loop_t *>       m_ThreadToUVLoop;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

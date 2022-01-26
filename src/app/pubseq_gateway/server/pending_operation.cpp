@@ -113,6 +113,12 @@ void CPendingOperation::Start(void)
 }
 
 
+void CPendingOperation::SendProcessorStartMessage(void)
+{
+    m_Reply->PrepareProcessorProgressMessage(m_Processor->GetName(), "start");
+}
+
+
 void CPendingOperation::Peek(bool  need_wait)
 {
     if (m_InProcess) {

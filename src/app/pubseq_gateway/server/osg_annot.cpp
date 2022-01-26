@@ -226,7 +226,7 @@ void CPSGS_OSGAnnot::ProcessReplies()
             case CID2_Reply::TReply::e_Get_blob_id:
                 if ( AddBlobId(r->GetReply().GetGet_blob_id()) ) {
                     if ( SignalStartProcessing() == ePSGS_Cancel ) {
-                        FinalizeResult(ePSGS_Cancelled);
+                        FinalizeResult(ePSGS_Canceled);
                         return;
                     }
                 }
@@ -242,11 +242,11 @@ void CPSGS_OSGAnnot::ProcessReplies()
         return;
     }
     if ( SignalStartProcessing() == ePSGS_Cancel ) {
-        FinalizeResult(ePSGS_Cancelled);
+        FinalizeResult(ePSGS_Canceled);
         return;
     }
     SendReplies();
-    FinalizeResult(ePSGS_Found);
+    FinalizeResult(ePSGS_Done);
 }
 
 

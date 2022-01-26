@@ -81,9 +81,9 @@ CPSGSCounters::CPSGSCounters()
             "Server data sat to sat name mapping error counter",
             "Number of times a server data sat could not be mapped to a sat name",
             true, true, false);
-    m_Counters[ePSGS_BlobPropsNotFoundError] =
+    m_Counters[ePSGS_BlobPropsNotFound] =
         new SCounterInfo(
-            "BlobPropsNotFoundErrorCount", "Blob properties not found counter",
+            "BlobPropsNotFoundCount", "Blob properties not found counter",
             "Number of times blob properties were not found",
             true, true, false);
     m_Counters[ePSGS_LMDBError] =
@@ -101,9 +101,9 @@ CPSGSCounters::CPSGSCounters()
             "InvalidId2InfoErrorCount", "Invalid bioseq info ID2 field error counter",
             "Number of times a malformed bioseq info ID2 field was detected",
             true, true, false);
-    m_Counters[ePSGS_SplitHistoryNotFoundError] =
+    m_Counters[ePSGS_SplitHistoryNotFound] =
         new SCounterInfo(
-            "SplitHistoryNotFoundErrorCount", "Split history not found error count",
+            "SplitHistoryNotFoundCount", "Split history not found error count",
             "Number of times a split history was not found",
             true, true, false);
     m_Counters[ePSGS_MaxHopsExceededError] =

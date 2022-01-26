@@ -205,7 +205,7 @@ IPSGS_Processor::EPSGS_Status CPSGS_ResolveProcessor::GetStatus(void)
     }
 
     if (m_Cancelled) {
-        return IPSGS_Processor::ePSGS_Cancelled;
+        return IPSGS_Processor::ePSGS_Canceled;
     }
 
     return status;

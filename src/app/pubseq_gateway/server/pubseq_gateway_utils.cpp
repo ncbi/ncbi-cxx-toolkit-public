@@ -145,6 +145,7 @@ static string   s_ProcessorId = "processor_id=";
 static string   s_Id2Chunk = "id2_chunk=";
 static string   s_Id2Info = "id2_info=";
 static string   s_LastModified = "last_modified=";
+static string   s_Progress = "progress=";
 
 // Fixed values
 static string   s_BioseqInfo = "bioseq_info";
@@ -197,6 +198,7 @@ static string   s_AndProcessorId = "&" + s_ProcessorId;
 static string   s_AndId2Chunk = "&" + s_Id2Chunk;
 static string   s_AndId2Info = "&" + s_Id2Info;
 static string   s_AndLastModified = "&" + s_LastModified;
+static string   s_AndProgress = "&" + s_Progress;
 
 static string   s_DataChunk = s_ChunkType + s_Data;
 static string   s_AndDataChunk = "&" + s_DataChunk;
@@ -792,6 +794,26 @@ string  GetReplyMessageHeader(size_t  msg_size,
                 .append(to_string(code))
                 .append(s_AndSeverity)
                 .append(SeverityToLowerString(severity))
+                .append(1, '\n');
+}
+
+
+string  GetProcessorProgressMessageHeader(size_t  item_id,
+                                          const string &  processor_id,
+                                          const string &  progress_status)
+{
+    // E.g. PSG-Reply-Chunk: item_id=...&processor_id=...&item_type=processor&chunk_type=meta&n_chunks=1&progress=...
+    string      reply(s_ReplyBegin);
+
+    return reply.append(to_string(item_id))
+                .append(s_AndProcessorId)
+                .append(NStr::URLEncode(processor_id))
+                .append(s_AndProcessorItem)
+                .append(s_AndMetaChunk)
+                .append(s_AndNChunks)
+                .append(1, '1')
+                .append(s_AndProgress)
+                .append(progress_status)
                 .append(1, '\n');
 }
 
