@@ -1,9 +1,17 @@
 [
 {
     "reply": "Processor",
+    "status": "Success"
+},
+{
+    "reply": "Processor",
     "status": "Error",
     "errors": [
         "Invalid chunk requested. The number of available chunks: 5, requested number: 96"
     ]
+},
+{
+    "reply": "Processor",
+    "status": "Success"
 }
 ]

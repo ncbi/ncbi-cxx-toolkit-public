@@ -1,5 +1,9 @@
 [
 {
+    "reply": "Processor",
+    "status": "Success"
+},
+{
     "reply": "BioseqInfo",
     "canonical_id": {
         "id": "gb|AAA05806.1|",
@@ -37,5 +41,9 @@
         "id": "4.8091"
     },
     "reason": "Excluded"
+},
+{
+    "reply": "Processor",
+    "status": "Success"
 }
 ]

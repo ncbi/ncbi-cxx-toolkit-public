@@ -1,5 +1,9 @@
 [
 {
+    "reply": "Processor",
+    "status": "Success"
+},
+{
     "reply": "BioseqInfo",
     "canonical_id": {
         "id": "gb|AAA13519.1|",
@@ -52,5 +56,9 @@
     "username": "cavanaug",
     "id2_info": "",
     "n_chunks": 1
+},
+{
+    "reply": "Processor",
+    "status": "Success"
 }
 ]

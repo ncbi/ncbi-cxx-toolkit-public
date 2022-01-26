@@ -1,9 +1,17 @@
 [
 {
+    "reply": "Processor",
+    "status": "Success"
+},
+{
     "reply": "BioseqInfo",
     "status": "NotFound",
     "errors": [
         "Could not resolve seq_id 1VU9_AA"
     ]
+},
+{
+    "reply": "Processor",
+    "status": "Success"
 }
 ]

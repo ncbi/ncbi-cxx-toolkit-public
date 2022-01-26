@@ -1,5 +1,9 @@
 [
 {
+    "reply": "Processor",
+    "status": "Success"
+},
+{
     "reply": "BioseqInfo",
     "canonical_id": {
         "id": "gb|AAA05806.1|",
@@ -30,5 +34,9 @@
     "hash": -1400003729,
     "date_changed": "09/13/2001 20:26:41",
     "gi": 238806
+},
+{
+    "reply": "Processor",
+    "status": "Success"
 }
 ]

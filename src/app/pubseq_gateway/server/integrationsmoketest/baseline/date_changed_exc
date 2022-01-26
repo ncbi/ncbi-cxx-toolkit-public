@@ -1,5 +1,9 @@
 [
 {
+    "reply": "Processor",
+    "status": "Success"
+},
+{
     "reply": "BioseqInfo",
     "canonical_id": {
         "id": "gb|U83448.1|RCU83448",
@@ -21,5 +25,9 @@
     "tax_id": 781,
     "hash": -773122180,
     "gi": 1778878
+},
+{
+    "reply": "Processor",
+    "status": "Success"
 }
 ]

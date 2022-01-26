@@ -1,5 +1,9 @@
 [
 {
+    "reply": "Processor",
+    "status": "Success"
+},
+{
     "reply": "BioseqInfo",
     "canonical_id": {
         "id": "ref|NW_017890465.1|",
@@ -38,5 +42,9 @@
         "last_modified": 1487707080566
     },
     "id2_annot_info": "MICggBoNTkEwMDAxMjIyMDIuMQAAo4AxgDCAoIACAQ0AAAAAAAAAAKSAo4AwgKCAAgREIFuKAAChgAICfFMAAKKAAgIdFgAAAAAAAAAAAAAwgKCAGhFOQTAwMDEyMjIwMi4xQEAxMAAAooAFAAAApICjgDCAoIACBEQgW4oAAKGAAgJ8TAAAooACAh0kAAAAAAAAAAAAAA=="
+},
+{
+    "reply": "Processor",
+    "status": "Success"
 }
 ]
