@@ -272,7 +272,7 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
             return Fill(static_pointer_cast<CPSG_PublicComment>(reply_item));
 
         case CPSG_ReplyItem::eProcessor:
-            return Fill(reply_item, reply_item_status);
+            return Fill(static_pointer_cast<CPSG_Processor>(reply_item));
 
         case CPSG_ReplyItem::eEndOfReply:
             _TROUBLE;
@@ -366,6 +366,35 @@ void CJsonResponse::Fill(shared_ptr<CPSG_PublicComment> public_comment)
 {
     Set("id",   public_comment);
     Set("text", public_comment->GetText());
+}
+
+string s_ProgressStatusToString(CPSG_Processor::EProgressStatus progress_status)
+{
+    switch (progress_status) {
+        case CPSG_Processor::eStart:     return "start";      
+        case CPSG_Processor::eDone:      return "done";       
+        case CPSG_Processor::eNotFound:  return "not_found";  
+        case CPSG_Processor::eCanceled:  return "canceled";   
+        case CPSG_Processor::eTimeout:   return "timeout";    
+        case CPSG_Processor::eError:     return "error";      
+        case CPSG_Processor::eUnknown:   return "unknown";    
+    }
+
+    _TROUBLE;
+    return "";
+}
+
+void CJsonResponse::Fill(shared_ptr<CPSG_Processor> processor)
+{
+    const auto progress_status = processor->GetProgressStatus();
+
+    // Progress status does not make sense without processor ID,
+    // the latter is reported in the verbose mode elsewhere
+    if (!SParams::verbose) {
+        Set("processor_id", processor->GetProcessorId());
+    }
+
+    Set("progress_status", s_ProgressStatusToString(progress_status));
 }
 
 template <class TItem>

@@ -866,6 +866,34 @@ private:
 
 
 
+/// Processor event
+
+class CPSG_Processor : public CPSG_ReplyItem
+{
+public:
+    enum EProgressStatus {
+        eStart,
+        eDone,
+        eNotFound,
+        eCanceled,
+        eTimeout,
+        eError,
+        eUnknown,
+    };
+
+    /// Get progress status
+    EProgressStatus GetProgressStatus() const { return m_ProgressStatus; }
+
+private:
+    CPSG_Processor(EProgressStatus progress_status);
+
+    EProgressStatus m_ProgressStatus;
+
+    friend class CPSG_Reply;
+};
+
+
+
 /// PSG reply -- corresponds to a PSG request. It is used to retrieve data 
 /// (accession resolution; bio-sequence; annotation blobs) from the storage.
 /// 
