@@ -1117,7 +1117,7 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
     // Not found, report 502 because it is data inconsistency
     // or 404 if it was requested via sat.sat_key
     auto *  app = CPubseqGatewayApp::GetInstance();
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_BlobPropsNotFoundError);
+    app->GetCounters().Increment(CPSGSCounters::ePSGS_BlobPropsNotFound);
 
     auto    blob_id = fetch_details->GetBlobId();
     string  message = "Blob " + blob_id.ToString() +

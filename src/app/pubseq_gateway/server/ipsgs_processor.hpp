@@ -75,16 +75,20 @@ public:
     /// The GetStatus() method returns a processor current status.
     enum EPSGS_Status {
         ePSGS_InProgress,   //< Processor is still working.
-        ePSGS_Found,        //< Processor finished and found what needed.
+        ePSGS_Done,         //< Processor finished and found what needed.
         ePSGS_NotFound,     //< Processor finished and did not find anything.
         ePSGS_Error,        //< Processor finished and there was an error.
-        ePSGS_Cancelled     //< Processor finished because earlier it received
+        ePSGS_Canceled,     //< Processor finished because earlier it received
                             //< the Cancel() call.
+        ePSGS_Timeout       //< Processor finished because of a backend timeout.
     };
 
     /// Converts the processor status to a string for tracing and logging
     /// purposes.
     static string  StatusToString(EPSGS_Status  status);
+
+    /// Converts the processor status to a string for protocol message.
+    static string  StatusToProgressMessage(EPSGS_Status  status);
 
 public:
     IPSGS_Processor() :

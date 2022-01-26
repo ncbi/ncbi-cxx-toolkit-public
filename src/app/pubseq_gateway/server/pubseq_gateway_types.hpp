@@ -102,7 +102,9 @@ enum EPSGS_PubseqGatewayErrorCode {
     ePSGS_TooManyRequests                    = 333,
     ePSGS_RequestCancelled                   = 334,
 
-    ePSGS_BlobRetrievalIsNotAuthorized       = 335
+    ePSGS_BlobRetrievalIsNotAuthorized       = 335,
+
+    ePSGS_RequestTimeout                     = 336
 };
 
 

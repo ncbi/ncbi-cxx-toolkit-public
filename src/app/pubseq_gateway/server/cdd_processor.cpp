@@ -381,7 +381,7 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
     }
     x_SendAnnotInfo(*m_CDDBlob.info);
     x_SendAnnot(m_CDDBlob.info->GetBlob_id(), m_CDDBlob.data);
-    x_Finish(ePSGS_Found);
+    x_Finish(ePSGS_Done);
 }
 
 
@@ -414,7 +414,7 @@ void CPSGS_CDDProcessor::OnGotBlobId(void)
         return;
     }
     x_SendAnnotInfo(*m_CDDBlob.info);
-    x_Finish(ePSGS_Found);
+    x_Finish(ePSGS_Done);
 }
 
 
@@ -447,7 +447,7 @@ void CPSGS_CDDProcessor::OnGotBlobByBlobId(void)
         return;
     }
     x_SendAnnot(*m_BlobId, m_CDDBlob.data);
-    x_Finish(ePSGS_Found);
+    x_Finish(ePSGS_Done);
 }
 
 
@@ -526,7 +526,7 @@ void CPSGS_CDDProcessor::x_SendAnnot(const CID2_Blob_Id& id2_blob_id, CRef<CSeq_
 void CPSGS_CDDProcessor::Cancel()
 {
     m_Canceled = true;
-    x_Finish(ePSGS_Cancelled);
+    x_Finish(ePSGS_Canceled);
     if ( m_ProcessorRef ) {
         m_ProcessorRef->Detach();
     }
@@ -542,7 +542,7 @@ IPSGS_Processor::EPSGS_Status CPSGS_CDDProcessor::GetStatus()
 bool CPSGS_CDDProcessor::x_IsCanceled()
 {
     if ( m_Canceled ) {
-        x_Finish(ePSGS_Cancelled);
+        x_Finish(ePSGS_Canceled);
         return true;
     }
     return false;
@@ -552,7 +552,7 @@ bool CPSGS_CDDProcessor::x_IsCanceled()
 bool CPSGS_CDDProcessor::x_SignalStartProcessing()
 {
     if ( SignalStartProcessing() == ePSGS_Cancel ) {
-        x_Finish(ePSGS_Cancelled);
+        x_Finish(ePSGS_Canceled);
         return false;
     }
     return true;

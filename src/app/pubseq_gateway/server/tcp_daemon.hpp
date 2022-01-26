@@ -55,6 +55,7 @@ extern SShutdownData       g_ShutdownData;
 void CollectGarbage(void);
 void UnregisterUVLoop(uv_thread_t  uv_thread);
 void RegisterUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop);
+void RegisterDaemonUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop);
 void CancelAllProcessors(void);
 
 namespace TSL {
@@ -753,6 +754,8 @@ public:
             uv_timer_init(loop.Handle(), &watch_dog);
             watch_dog.data = &workers;
             uv_timer_start(&watch_dog, workers.s_OnWatchDog, 1000, 1000);
+
+            RegisterDaemonUVLoop(uv_thread_self(), loop.Handle());
 
             uv_run(loop.Handle(), UV_RUN_DEFAULT);
 

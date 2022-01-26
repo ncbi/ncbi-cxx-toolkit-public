@@ -293,6 +293,9 @@ string  GetReplyCompletionHeader(size_t  chunk_count);
 string  GetReplyMessageHeader(size_t  msg_size,
                               CRequestStatus::ECode  status, int  code,
                               EDiagSev  severity);
+string  GetProcessorProgressMessageHeader(size_t  item_id,
+                                          const string &  processor_id,
+                                          const string &  progress_status);
 
 // Processor messages
 string GetProcessorMessageHeader(size_t  item_id,

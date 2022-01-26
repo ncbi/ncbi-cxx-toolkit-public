@@ -154,8 +154,11 @@ void CPSGS_CassProcessorBase::CancelLoaders(void)
 IPSGS_Processor::EPSGS_Status
 CPSGS_CassProcessorBase::x_GetProcessorStatus(void) const
 {
+    if (m_Status == CRequestStatus::e504_GatewayTimeout)
+        return IPSGS_Processor::ePSGS_Timeout;
+
     if (m_Status < 300)
-        return IPSGS_Processor::ePSGS_Found;
+        return IPSGS_Processor::ePSGS_Done;
     if (m_Status < 500)
         return IPSGS_Processor::ePSGS_NotFound; // 300 never actually happens
     return IPSGS_Processor::ePSGS_Error;
@@ -242,4 +245,99 @@ CPSGS_CassProcessorBase::TranslateSatToKeyspace(CBioseqInfoRecord::TSat  sat,
     // Return invalid blob id
     return SCass_BlobId();
 }
+
+
+bool CPSGS_CassProcessorBase::IsTimeoutError(const string &  msg) const
+{
+    string      msg_lower = msg;
+    NStr::ToLower(msg_lower);
+
+    return msg_lower.find("timeout") != string::npos;
+}
+
+
+bool CPSGS_CassProcessorBase::IsTimeoutError(int  code) const
+{
+    return code == CCassandraException::eQueryTimeout;
+}
+
+/*
+bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
+                                         CRequestStatus::ECode  status,
+                                         int  code,
+                                         EDiagSev  severity,
+                                         const string &  message)
+{
+    // Note: the code may come from cassandra error handlers and from the PSG
+    // internal logic code. It is safe to compare the codes against particular
+    // values because they range quite different. The Cassandra codes start
+    // from 2000 and the PSG codes start from 300
+
+    // It could be a message or an error
+    bool    is_error = (severity == eDiag_Error ||
+                        severity == eDiag_Critical ||
+                        severity == eDiag_Fatal);
+
+    if (is_error) {
+        PSG_ERROR(message);
+    } else {
+        PSG_WARNING(message);
+    }
+
+    if (m_Request->NeedTrace()) {
+        m_Reply->SendTrace("Eror detected. Status: " + to_string(status) +
+                           " Code: " + to_string(code) +
+                           " Severity: " + string(CNcbiDiag::SeverityName(severity)) +
+                           " Message: " + message,
+                           m_Request->GetStartTimestamp());
+    }
+
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    if (code == CCassandraException::eQueryTimeout) {
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
+        UpdateOverallStatus(CRequestStatus::e504_GatewayTimeout);
+        return true;
+    }
+
+    if (status == CRequestStatus::e404_NotFound) {
+        switch (fetch_type) {
+            case ePSGS_BlobBySeqIdFetch:
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_GetBlobNotFound);
+                break;
+            case ePSGS_BlobBySatSatKeyFetch:
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_GetBlobNotFound);
+                break;
+            case ePSGS_AnnotationFetch:
+                break;
+            case ePSGS_AnnotationBlobFetch:
+                break;
+            case ePSGS_TSEChunkFetch:
+                break;
+            case ePSGS_BioseqInfoFetch:
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoNotFound);
+                break;
+            case ePSGS_Si2csiFetch:
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_Si2csiNotFound);
+                break;
+            case ePSGS_SplitHistoryFetch:
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_SplitHistoryNotFoundError);
+                break;
+            case ePSGS_PublicCommentFetch:
+                break;
+            case ePSGS_AccVerHistoryFetch:
+                break;
+            case ePSGS_UnknownFetch:
+                break;
+        }
+
+        UpdateOverallStatus(CRequestStatus::e404_NotFound);
+        return true;
+    }
+
+    if (is_error)
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
+
+    return is_error;
+}
+*/
 

@@ -56,6 +56,8 @@ void CPSGS_Reply::ConnectionCancel(void)
 
 void CPSGS_Reply::Flush(EPSGS_ReplyFlush  how)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -84,6 +86,7 @@ void CPSGS_Reply::Flush(EPSGS_ReplyFlush  how)
 
 void CPSGS_Reply::SetCompleted(void)
 {
+    x_UpdateLastActivity();
     m_Reply->SetCompleted();
 }
 
@@ -108,6 +111,8 @@ bool CPSGS_Reply::IsOutputReady(void) const
 
 void CPSGS_Reply::Clear(void)
 {
+    x_UpdateLastActivity();
+
     while (m_ChunksLock.exchange(true)) {}
     m_Chunks.clear();
     m_Reply = nullptr;
@@ -141,6 +146,8 @@ void CPSGS_Reply::SetContentLength(uint64_t  content_length)
 
 void CPSGS_Reply::SendOk(const char *  payload, size_t  payload_len, bool  is_persist)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -157,6 +164,8 @@ void CPSGS_Reply::SendOk(const char *  payload, size_t  payload_len, bool  is_pe
 
 void CPSGS_Reply::Send202(const char *  payload, size_t  payload_len)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -173,6 +182,8 @@ void CPSGS_Reply::Send202(const char *  payload, size_t  payload_len)
 
 void CPSGS_Reply::Send400(const char *  payload)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -189,6 +200,8 @@ void CPSGS_Reply::Send400(const char *  payload)
 
 void CPSGS_Reply::Send401(const char *  payload)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -205,6 +218,8 @@ void CPSGS_Reply::Send401(const char *  payload)
 
 void CPSGS_Reply::Send404(const char *  payload)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -221,6 +236,8 @@ void CPSGS_Reply::Send404(const char *  payload)
 
 void CPSGS_Reply::Send409(const char *  payload)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -237,6 +254,8 @@ void CPSGS_Reply::Send409(const char *  payload)
 
 void CPSGS_Reply::Send500(const char *  payload)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -253,6 +272,8 @@ void CPSGS_Reply::Send500(const char *  payload)
 
 void CPSGS_Reply::Send502(const char *  payload)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -269,6 +290,8 @@ void CPSGS_Reply::Send502(const char *  payload)
 
 void CPSGS_Reply::Send503(const char *  payload)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -290,6 +313,8 @@ void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
                                        int  err_code,
                                        EDiagSev  severity)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -313,6 +338,8 @@ void CPSGS_Reply::PrepareBioseqData(
                     const string &  content,
                     SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -332,6 +359,8 @@ void CPSGS_Reply::PrepareBioseqCompletion(size_t  item_id,
                                           const string &  processor_id,
                                           size_t  chunk_count)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -354,6 +383,8 @@ void CPSGS_Reply::PrepareBlobPropMessage(size_t                 item_id,
                                          int                    err_code,
                                          EDiagSev               severity)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -379,6 +410,8 @@ void CPSGS_Reply::x_PrepareTSEBlobPropMessage(size_t                 item_id,
                                               int                    err_code,
                                               EDiagSev               severity)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -402,6 +435,8 @@ void CPSGS_Reply::PrepareBlobPropMessage(CCassBlobFetch *       fetch_details,
                                          int                    err_code,
                                          EDiagSev               severity)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -420,6 +455,8 @@ void CPSGS_Reply::PrepareTSEBlobPropMessage(CCassBlobFetch *       fetch_details
                                             int                    err_code,
                                             EDiagSev               severity)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -436,6 +473,8 @@ void CPSGS_Reply::PrepareBlobPropData(size_t                   item_id,
                                       const string &           content,
                                       CBlobRecord::TTimestamp  last_modified)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -460,6 +499,8 @@ void CPSGS_Reply::PrepareBlobPropData(CCassBlobFetch *         fetch_details,
                                       const string &           content,
                                       CBlobRecord::TTimestamp  last_modified)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -478,6 +519,8 @@ void CPSGS_Reply::PrepareTSEBlobPropData(CCassBlobFetch *  fetch_details,
                                          const string &    id2_info,
                                          const string &    content)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -493,6 +536,8 @@ void CPSGS_Reply::PrepareTSEBlobPropData(size_t  item_id,
                                          const string &    id2_info,
                                          const string &    content)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -519,6 +564,8 @@ void CPSGS_Reply::PrepareBlobData(size_t                   item_id,
                                   int                      chunk_no,
                                   CBlobRecord::TTimestamp  last_modified)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -548,6 +595,8 @@ void CPSGS_Reply::PrepareBlobData(CCassBlobFetch *         fetch_details,
                                   int                      chunk_no,
                                   CBlobRecord::TTimestamp  last_modified)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -568,6 +617,8 @@ void CPSGS_Reply::PrepareTSEBlobData(size_t                 item_id,
                                      int64_t                id2_chunk,
                                      const string &         id2_info)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -597,6 +648,8 @@ void CPSGS_Reply::PrepareTSEBlobData(CCassBlobFetch *  fetch_details,
                                      int64_t  id2_chunk,
                                      const string &  id2_info)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -612,6 +665,8 @@ void CPSGS_Reply::PrepareBlobPropCompletion(size_t  item_id,
                                             const string &  processor_id,
                                             size_t  chunk_count)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -649,6 +704,8 @@ void CPSGS_Reply::x_PrepareTSEBlobPropCompletion(size_t          item_id,
 void CPSGS_Reply::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details,
                                             const string &  processor_id)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -666,6 +723,8 @@ void CPSGS_Reply::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details,
 void CPSGS_Reply::PrepareTSEBlobPropCompletion(CCassBlobFetch *  fetch_details,
                                                const string &  processor_id)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -689,6 +748,8 @@ void CPSGS_Reply::PrepareBlobMessage(size_t                   item_id,
                                      EDiagSev                 severity,
                                      CBlobRecord::TTimestamp  last_modified)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -714,6 +775,8 @@ void CPSGS_Reply::PrepareBlobMessage(CCassBlobFetch *         fetch_details,
                                      EDiagSev                 severity,
                                      CBlobRecord::TTimestamp  last_modified)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -758,6 +821,8 @@ void CPSGS_Reply::PrepareTSEBlobMessage(CCassBlobFetch *  fetch_details,
                                         CRequestStatus::ECode  status, int  err_code,
                                         EDiagSev  severity)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -772,6 +837,8 @@ void CPSGS_Reply::PrepareBlobCompletion(size_t                   item_id,
                                         const string &           processor_id,
                                         size_t                   chunk_count)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -789,6 +856,8 @@ void CPSGS_Reply::PrepareBlobCompletion(size_t                   item_id,
 void CPSGS_Reply::PrepareTSEBlobCompletion(CCassBlobFetch *  fetch_details,
                                            const string &  processor_id)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -804,6 +873,8 @@ void CPSGS_Reply::PrepareTSEBlobCompletion(size_t  item_id,
                                            const string &  processor_id,
                                            size_t  chunk_count)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -823,6 +894,8 @@ void CPSGS_Reply::PrepareBlobExcluded(const string &           blob_id,
                                       EPSGS_BlobSkipReason     skip_reason,
                                       CBlobRecord::TTimestamp  last_modified)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -843,6 +916,8 @@ void CPSGS_Reply::PrepareBlobExcluded(const string &  blob_id,
                                       unsigned long  until_resend_mks,
                                       CBlobRecord::TTimestamp  last_modified)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -864,6 +939,8 @@ void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
                                       const string &        blob_id,
                                       EPSGS_BlobSkipReason  skip_reason)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -885,6 +962,8 @@ void CPSGS_Reply::PrepareTSEBlobExcluded(const string &        processor_id,
                                          int64_t               id2_chunk,
                                          const string &        id2_info)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -908,6 +987,8 @@ void CPSGS_Reply::PrepareTSEBlobExcluded(const string &  blob_id,
                                          unsigned long  sent_mks_ago,
                                          unsigned long  until_resend_mks)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -929,6 +1010,8 @@ void CPSGS_Reply::PrepareTSEBlobExcluded(const string &  blob_id,
 void CPSGS_Reply::PrepareBlobCompletion(CCassBlobFetch *  fetch_details,
                                         const string &    processor_id)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -945,6 +1028,8 @@ void CPSGS_Reply::PrepareReplyMessage(const string &         msg,
                                       int                    err_code,
                                       EDiagSev               severity)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -967,6 +1052,8 @@ void CPSGS_Reply::PrepareProcessorMessage(size_t                 item_id,
                                           int                    err_code,
                                           EDiagSev               severity)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -995,6 +1082,8 @@ void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
                                        const string &  blob_id,
                                        CBlobRecord::TTimestamp  last_modified)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -1023,6 +1112,8 @@ void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
                                        int64_t  id2_chunk,
                                        const string &  id2_info)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -1050,6 +1141,8 @@ void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
                                              const string &  processor_id,
                                              const string &  content)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -1078,6 +1171,8 @@ void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
 void CPSGS_Reply::PrepareAccVerHistoryData(const string &  processor_id,
                                            const string &  content)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -1104,8 +1199,53 @@ void CPSGS_Reply::PrepareAccVerHistoryData(const string &  processor_id,
 }
 
 
+void CPSGS_Reply::PrepareRequestTimeoutMessage(const string &  msg)
+{
+    // NOTE: no need to update the last activity
+    //       - it is used by the dispatcher
+    //       - it is when the request timer is over
+
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    string      header = GetReplyMessageHeader(msg.size(),
+                                               CRequestStatus::e504_GatewayTimeout,
+                                               ePSGS_RequestTimeout, eDiag_Error);
+    while (m_ChunksLock.exchange(true)) {}
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(msg.data()), msg.size()));
+    ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
+}
+
+
+void CPSGS_Reply::PrepareProcessorProgressMessage(const string &  processor_id,
+                                                  const string &  progress_status)
+{
+    // NOTE: no need to update the last activity because it is used by the dispatcher
+
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    size_t      item_id = GetItemId();
+    string      header = GetProcessorProgressMessageHeader(item_id,
+                                                           processor_id,
+                                                           progress_status);
+
+    while (m_ChunksLock.exchange(true)) {}
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+    ++m_TotalSentReplyChunks;
+    m_ChunksLock = false;
+}
+
+
 void CPSGS_Reply::PrepareReplyCompletion(void)
 {
+    x_UpdateLastActivity();
+
     if (m_ConnectionCanceled || IsFinished())
         return;
     if (m_Reply->IsClosed())
@@ -1122,9 +1262,17 @@ void CPSGS_Reply::PrepareReplyCompletion(void)
 }
 
 
+// The last activity timestamp needs to be updated if it was a processor
+// initiated activity with the reply. If it was a trace from the processor
+// dispatcher then the activity timestamp does not need to be updated
 void CPSGS_Reply::SendTrace(const string &  msg,
-                            const psg_time_point_t &  create_timestamp)
+                            const psg_time_point_t &  create_timestamp,
+                            bool  need_update_last_activity)
 {
+    if (need_update_last_activity) {
+        x_UpdateLastActivity();
+    }
+
     if (m_ConnectionCanceled || IsFinished())
         return;
 

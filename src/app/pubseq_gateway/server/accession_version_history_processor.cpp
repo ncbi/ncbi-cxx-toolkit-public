@@ -296,9 +296,6 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistError(
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
-
     // It could be a message or an error
     bool    is_error = (severity == eDiag_Error ||
                         severity == eDiag_Critical ||
@@ -308,10 +305,15 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistError(
     PSG_ERROR(message);
 
     if (is_error) {
-        if (code == CCassandraException::eQueryTimeout)
+        if (IsTimeoutError(code)) {
             app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
-        else
+            UpdateOverallStatus(CRequestStatus::e504_GatewayTimeout);
+            status = CRequestStatus::e504_GatewayTimeout;
+        } else {
             app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
+            UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+            status = CRequestStatus::e500_InternalServerError;
+        }
     }
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {
@@ -322,11 +324,13 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistError(
 
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(),
-            GetName(), message, CRequestStatus::e500_InternalServerError,
+            GetName(), message, status,
             code, severity);
-    if (is_error) {
-        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
 
+    // To avoid sending an error in Peek()
+    fetch_details->GetLoader()->ClearError();
+
+    if (is_error) {
         // There will be no more activity
         fetch_details->SetReadFinished();
         m_Completed = true;
@@ -344,7 +348,7 @@ IPSGS_Processor::EPSGS_Status CPSGS_AccessionVersionHistoryProcessor::GetStatus(
         return status;
 
     if (m_Cancelled)
-        return IPSGS_Processor::ePSGS_Cancelled;
+        return IPSGS_Processor::ePSGS_Canceled;
 
     return status;
 }
@@ -404,7 +408,7 @@ void CPSGS_AccessionVersionHistoryProcessor::x_Peek(bool  need_wait)
 
 
 bool CPSGS_AccessionVersionHistoryProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
-                                                 bool  need_wait)
+                                                    bool  need_wait)
 {
     if (!fetch_details->GetLoader())
         return true;
@@ -422,17 +426,27 @@ bool CPSGS_AccessionVersionHistoryProcessor::x_Peek(unique_ptr<CCassFetch> &  fe
         string      error = fetch_details->GetLoader()->LastError();
         auto *      app = CPubseqGatewayApp::GetInstance();
 
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
         PSG_ERROR(error);
+
+        // Last resort to detect if it was a timeout
+        CRequestStatus::ECode       status;
+        if (IsTimeoutError(error)) {
+            status = CRequestStatus::e500_InternalServerError;
+            app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
+        } else {
+            status = CRequestStatus::e504_GatewayTimeout;
+            app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
+        }
 
         IPSGS_Processor::m_Reply->PrepareProcessorMessage(
                 IPSGS_Processor::m_Reply->GetItemId(),
-                GetName(), error, CRequestStatus::e500_InternalServerError,
+                GetName(), error, status,
                 ePSGS_UnknownError, eDiag_Error);
 
         // Mark finished
-        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        UpdateOverallStatus(status);
         fetch_details->SetReadFinished();
+        fetch_details->GetLoader()->ClearError();
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 

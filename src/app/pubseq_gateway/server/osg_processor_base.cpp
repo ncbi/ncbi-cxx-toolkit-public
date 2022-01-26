@@ -149,7 +149,7 @@ void COSGProcessorRef::Cancel()
         m_ProcessorPtr->Cancel();
     }
     else {
-        m_FinalStatus = IPSGS_Processor::ePSGS_Cancelled;
+        m_FinalStatus = IPSGS_Processor::ePSGS_Canceled;
     }
 }
 
@@ -527,7 +527,7 @@ void CPSGS_OSGProcessorBase::s_ProcessReplies(void* proc)
 void CPSGS_OSGProcessorBase::Cancel()
 {
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Cancel()");
-    SetFinalStatus(ePSGS_Cancelled);
+    SetFinalStatus(ePSGS_Canceled);
     FinalizeResult();
 }
 
@@ -578,7 +578,7 @@ void CPSGS_OSGProcessorBase::SetFinalStatus(EPSGS_Status status)
 {
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SetFinalStatus(): "<<m_Status<<" -> "<<status);
     _ASSERT(m_Status == ePSGS_InProgress || status == m_Status ||
-            m_Status == ePSGS_Cancelled || status == ePSGS_Cancelled);
+            m_Status == ePSGS_Canceled || status == ePSGS_Canceled);
     m_Status = status;
 }
 

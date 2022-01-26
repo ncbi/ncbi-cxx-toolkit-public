@@ -428,6 +428,16 @@ void CHttpConnection<P>::PostponedStart(shared_ptr<CPSGS_Reply>  reply)
     if (IsClosed())
         NCBI_THROW(CPubseqGatewayException, eConnectionClosed,
                    "Request handling can not be started after connection was closed");
+
+    // To avoid a possibility to have cancel->start in progress messages in the
+    // reply in case of multiple processors due to the first one may do things
+    // synchronously and call Cancel() for the other processors right away: the
+    // sending of the start message will be done for all of them before the
+    // actual Start() call
+    for (auto req: http_reply->GetPendingReqs())
+        req->SendProcessorStartMessage();
+
+    // Now start the processors
     for (auto req: http_reply->GetPendingReqs())
         req->Start();
 }

@@ -308,7 +308,7 @@ void CPSGS_OSGGetBlobBase::SendBlob()
                         x_GetBlobState(*m_SplitInfo),
                         m_SplitInfo->GetSplit_version(),
                         m_SplitInfo->GetData());
-        SetFinalStatus(ePSGS_Found);
+        SetFinalStatus(ePSGS_Done);
     }
     else if ( m_Blob && !m_SplitInfo && m_Blob->IsSetData() &&
               m_Blob->GetData().GetData_type() == CID2_Reply_Data::eData_type_id2s_split_info ) {
@@ -318,14 +318,14 @@ void CPSGS_OSGGetBlobBase::SendBlob()
                         x_GetBlobState(*m_Blob),
                         0,
                         m_Blob->GetData());
-        SetFinalStatus(ePSGS_Found);
+        SetFinalStatus(ePSGS_Done);
     }
     else if ( m_Blob && !m_SplitInfo && m_Blob->IsSetData() ) {
         // blob only
         x_SendMainEntry(m_Blob->GetBlob_id(),
                         x_GetBlobState(*m_Blob),
                         m_Blob->GetData());
-        SetFinalStatus(ePSGS_Found);
+        SetFinalStatus(ePSGS_Done);
     }
     else if ( m_Blob && !m_SplitInfo && !m_Blob->IsSetData() ) {
         // no blob reply TODO
@@ -339,7 +339,7 @@ void CPSGS_OSGGetBlobBase::SendBlob()
         x_SendChunk(m_Chunk->GetBlob_id(),
                     m_Chunk->GetChunk_id(),
                     m_Chunk->GetData());
-        SetFinalStatus(ePSGS_Found);
+        SetFinalStatus(ePSGS_Done);
     }
     else {
         // nothing TODO

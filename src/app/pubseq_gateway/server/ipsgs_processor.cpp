@@ -41,14 +41,40 @@ IPSGS_Processor::StatusToString(IPSGS_Processor::EPSGS_Status  status)
     switch (status) {
         case IPSGS_Processor::ePSGS_InProgress:
             return "ePSGS_InProgress";
-        case IPSGS_Processor::ePSGS_Found:
-            return "ePSGS_Found";
+        case IPSGS_Processor::ePSGS_Done:
+            return "ePSGS_Done";
         case IPSGS_Processor::ePSGS_NotFound:
             return "ePSGS_NotFound";
         case IPSGS_Processor::ePSGS_Error:
             return "ePSGS_Error";
-        case IPSGS_Processor::ePSGS_Cancelled:
-            return "ePSGS_Cancelled";
+        case IPSGS_Processor::ePSGS_Canceled:
+            return "ePSGS_Canceled";
+        case IPSGS_Processor::ePSGS_Timeout:
+            return "ePSGS_Timeout";
+        default:
+            break;
+    }
+    return "unknown (" + to_string(status) + ")";
+}
+
+
+string
+IPSGS_Processor::StatusToProgressMessage(IPSGS_Processor::EPSGS_Status  status)
+{
+    switch (status) {
+        case IPSGS_Processor::ePSGS_InProgress:
+            // Note: must not really be called while a processor in this status
+            return "inprogress";
+        case IPSGS_Processor::ePSGS_Done:
+            return "done";
+        case IPSGS_Processor::ePSGS_NotFound:
+            return "not_found";
+        case IPSGS_Processor::ePSGS_Error:
+            return "error";
+        case IPSGS_Processor::ePSGS_Canceled:
+            return "canceled";
+        case IPSGS_Processor::ePSGS_Timeout:
+            return "timeout";
         default:
             break;
     }

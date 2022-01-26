@@ -35,7 +35,12 @@
 #include <list>
 #include <mutex>
 #include "ipsgs_processor.hpp"
+#include "pubseq_gateway_logging.hpp"
 
+
+// libuv request timer callback
+void request_timer_cb(uv_timer_t *  handle);
+void request_timer_close_cb(uv_handle_t *  handle);
 
 
 /// Based on various attributes of the request: {{seq_id}}; NA name;
@@ -62,9 +67,10 @@ public:
     }
 
 public:
-    CPSGS_Dispatcher(double  request_timeout) :
-        m_RequestTimeout(request_timeout)
-    {}
+    CPSGS_Dispatcher(double  request_timeout)
+    {
+        m_RequestTimeoutMillisec = static_cast<uint64_t>(request_timeout * 1000);
+    }
 
     // Low level can have the pending request removed e.g. due to a canceled
     // connection. This method is used to notify the dispatcher that the
@@ -94,6 +100,8 @@ public:
 
     void CancelAll(void);
 
+    void OnRequestTimer(size_t  request_id);
+
 private:
     void x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
                             CRequestStatus::ECode  status);
@@ -103,10 +111,6 @@ private:
 private:
     // Registered processors
     list<unique_ptr<IPSGS_Processor>>   m_RegisteredProcessors;
-
-private:
-    double                              m_RequestTimeout;
-    void x_CreateUVTimer(size_t  request_id);
 
 private:
     // From the dispatcher point of view each request corresponds to a group of
@@ -137,12 +141,85 @@ private:
         {}
     };
 
+    // Auxiliary structure to store the group of processors data
+    struct SProcessorGroup
+    {
+        list<SProcessorData>        m_Processors;
+        uv_timer_t *                m_RequestTimer;
+        bool                        m_TimerActive;
+
+        SProcessorGroup() :
+            m_TimerActive(false)
+        {}
+
+        ~SProcessorGroup()
+        {
+            StopRequestTimer();
+        }
+
+        void StartRequestTimer(uv_loop_t *  uv_loop,
+                               uint64_t  timer_millisec,
+                               size_t  request_id)
+        {
+            // NOTE: deallocation of memory is done in request_timer_close_cb()
+            m_RequestTimer = new uv_timer_t;
+
+            int     ret = uv_timer_init(uv_loop, m_RequestTimer);
+            if (ret < 0) {
+                delete m_RequestTimer;
+                NCBI_THROW(CPubseqGatewayException, eInvalidTimerInit,
+                           uv_strerror(ret));
+            }
+            m_RequestTimer->data = (void *)(request_id);
+
+            ret = uv_timer_start(m_RequestTimer, request_timer_cb,
+                                 timer_millisec, 0);
+            if (ret < 0) {
+                delete m_RequestTimer;
+                NCBI_THROW(CPubseqGatewayException, eInvalidTimerStart,
+                           uv_strerror(ret));
+            }
+            m_TimerActive = true;
+        }
+
+        void StopRequestTimer(void)
+        {
+            if (m_TimerActive) {
+                m_TimerActive = false;
+
+                int     ret = uv_timer_stop(m_RequestTimer);
+                if (ret < 0) {
+                    PSG_ERROR("Stop request timer error: " +
+                              string(uv_strerror(ret)));
+                }
+
+                uv_close(reinterpret_cast<uv_handle_t*>(m_RequestTimer),
+                         request_timer_close_cb);
+            }
+        }
+
+        void RestartTimer(uint64_t  timer_millisec)
+        {
+            if (m_TimerActive) {
+                // Consequent call just updates the timer
+                int     ret = uv_timer_start(m_RequestTimer, request_timer_cb,
+                                             timer_millisec, 0);
+                if (ret < 0) {
+                    delete m_RequestTimer;
+                    NCBI_THROW(CPubseqGatewayException, eInvalidTimerStart,
+                               uv_strerror(ret));
+                }
+            }
+        }
+    };
+
     // The dispatcher owns the created processors. The map below makes a
     // correspondance between the request id (size_t; generated in the request
     // constructor) and a list of processors with their properties.
-    map<size_t,
-        list<SProcessorData>>       m_ProcessorGroups;
-    mutex                           m_GroupsLock;
+    map<size_t, unique_ptr<SProcessorGroup>>    m_ProcessorGroups;
+    mutex                                       m_GroupsLock;
+
+    uint64_t                                    m_RequestTimeoutMillisec;
 };
 
 

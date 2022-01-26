@@ -37,6 +37,7 @@
 
 #include "pubseq_gateway_types.hpp"
 #include "psgs_request.hpp"
+#include "pubseq_gateway_utils.hpp"
 
 
 class CPendingOperation;
@@ -64,7 +65,8 @@ public:
         m_TotalSentReplyChunks(0),
         m_ChunksLock(false),
         m_ConnectionCanceled(false),
-        m_RequestId(0)
+        m_RequestId(0),
+        m_LastActivityTimestamp(psg_clock_t::now())
     {
         SetContentType(ePSGS_PSGMime);
     }
@@ -79,7 +81,8 @@ public:
         m_TotalSentReplyChunks(0),
         m_ChunksLock(false),
         m_ConnectionCanceled(false),
-        m_RequestId(0)
+        m_RequestId(0),
+        m_LastActivityTimestamp(psg_clock_t::now())
     {
         SetContentType(ePSGS_PSGMime);
     }
@@ -139,6 +142,16 @@ public:
     size_t GetRequestId(void) const
     {
         return m_RequestId;
+    }
+
+    psg_time_point_t  GetLastActivityTimestamp(void) const
+    {
+        return m_LastActivityTimestamp;
+    }
+
+    unsigned long  GetTimespanFromLastActivityToNowMks(void) const
+    {
+        return GetTimespanToNowMks(m_LastActivityTimestamp);
     }
 
 public:
@@ -305,9 +318,18 @@ public:
                                     const string &  content);
     void PrepareAccVerHistoryData(const string &  processor_id,
                                   const string &  content);
+    void PrepareRequestTimeoutMessage(const string &  msg);
+    void PrepareProcessorProgressMessage(const string &  processor_id,
+                                         const string &  progress_status);
+
     void PrepareReplyCompletion(void);
+
+    // The last activity timestamp needs to be updated if it was a processor
+    // initiated activity with the reply. If it was a trace from the processor
+    // dispatcher then the activity timestamp does not need to be updated
     void SendTrace(const string &  msg,
-                   const psg_time_point_t &  create_timestamp);
+                   const psg_time_point_t &  create_timestamp,
+                   bool  need_update_last_activity=true);
 
 private:
     void x_PrepareTSEBlobPropCompletion(size_t          item_id,
@@ -330,6 +352,11 @@ private:
                                  int  err_code,
                                  EDiagSev  severity);
 
+    void x_UpdateLastActivity(void)
+    {
+        m_LastActivityTimestamp = psg_clock_t::now();
+    }
+
 private:
     CHttpReply<CPendingOperation> *     m_Reply;
     bool                                m_ReplyOwned;
@@ -340,6 +367,7 @@ private:
     vector<h2o_iovec_t>                 m_Chunks;
     volatile bool                       m_ConnectionCanceled;
     size_t                              m_RequestId;
+    psg_time_point_t                    m_LastActivityTimestamp;
 };
 
 
