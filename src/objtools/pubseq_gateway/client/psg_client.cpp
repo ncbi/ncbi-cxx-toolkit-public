@@ -391,6 +391,21 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(CPSG_SkippedBlob::EReason reason, 
     return new CPSG_SkippedBlob(move(id), reason, move(sent_seconds_ago), move(time_until_resend));
 }
 
+CPSG_Processor::EProgressStatus s_GetProgressStatus(const SPSG_Args& args)
+{
+    const auto& progress = args.GetValue("progress");
+
+    if (progress == "start")      return CPSG_Processor::eStart;
+    if (progress == "done")       return CPSG_Processor::eDone;
+    if (progress == "not_found")  return CPSG_Processor::eNotFound;
+    if (progress == "canceled")   return CPSG_Processor::eCanceled;
+    if (progress == "timeout")    return CPSG_Processor::eTimeout;
+    if (progress == "error")      return CPSG_Processor::eError;
+
+    // Should not happen, new server?
+    return CPSG_Processor::eUnknown;
+}
+
 CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, SPSG_Reply::SItem& item, CPSG_ReplyItem::EType type, CPSG_SkippedBlob::EReason reason)
 {
     auto stats = reply->stats.lock();
@@ -408,7 +423,7 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, S
             case CPSG_ReplyItem::eBlobInfo:         return CreateImpl(new CPSG_BlobInfo(SDataId::Get(args)), chunks);
             case CPSG_ReplyItem::eNamedAnnotInfo:   return CreateImpl(new CPSG_NamedAnnotInfo(args.GetValue("na")), chunks);
             case CPSG_ReplyItem::ePublicComment:    return new CPSG_PublicComment(SDataId::Get(args), chunks.empty() ? string() : chunks.front());
-            case CPSG_ReplyItem::eProcessor:        return new CPSG_ReplyItem(CPSG_ReplyItem::eProcessor);
+            case CPSG_ReplyItem::eProcessor:        return new CPSG_Processor(s_GetProgressStatus(args));
             case CPSG_ReplyItem::eEndOfReply:       return nullptr;
         }
 
@@ -1191,6 +1206,13 @@ CPSG_PublicComment::CPSG_PublicComment(unique_ptr<CPSG_DataId> id, string text) 
     CPSG_ReplyItem(ePublicComment),
     m_Id(move(id)),
     m_Text(move(text))
+{
+}
+
+
+CPSG_Processor::CPSG_Processor(EProgressStatus progress_status) :
+    CPSG_ReplyItem(eProcessor),
+    m_ProgressStatus(progress_status)
 {
 }
 
