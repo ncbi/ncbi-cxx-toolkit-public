@@ -360,6 +360,9 @@ typedef NCBI_PARAM_TYPE(PSG, localhost_preference) TPSG_LocalhostPreference;
 NCBI_PARAM_DECL(bool, PSG, fail_on_unknown_items);
 typedef NCBI_PARAM_TYPE(PSG, fail_on_unknown_items) TPSG_FailOnUnknownItems;
 
+NCBI_PARAM_DECL(bool, PSG, fail_on_unknown_chunks);
+typedef NCBI_PARAM_TYPE(PSG, fail_on_unknown_chunks) TPSG_FailOnUnknownChunks;
+
 NCBI_PARAM_DECL(bool, PSG, https);
 typedef NCBI_PARAM_TYPE(PSG, https) TPSG_Https;
 

@@ -100,6 +100,15 @@ struct SPSG_ArgsBase : CUrlArgs
         eUnknownItem,
     };
 
+    enum EChunkType : unsigned {
+        eUnknownChunk    = 0x00,
+        eMeta            = 0x01,
+        eData            = 0x02,
+        eMessage         = 0x04,
+        eDataAndMeta     = eData     | eMeta,
+        eMessageAndMeta  = eMessage  | eMeta,
+    };
+
     using CUrlArgs::CUrlArgs;
 
     const string& GetValue(const string& name) const
@@ -123,7 +132,7 @@ struct SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>
 template <>
 struct SPSG_ArgsBase::SArg<SPSG_ArgsBase::eChunkType>
 {
-    using TType = string;
+    using TType = pair<SPSG_ArgsBase::EChunkType, reference_wrapper<const string>>;
     static constexpr auto name = "chunk_type";
     static TType Get(const string& value);
 };
