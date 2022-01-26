@@ -272,8 +272,6 @@ public:
                     time_t                access_timeout = 0) override;
     void CloseCache(void) override;
 
-    virtual CObjectManager::TPriority GetDefaultPriority(void) const override;
-
 protected:
     friend class CGBReaderRequestResult;
 

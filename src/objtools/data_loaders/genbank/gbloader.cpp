@@ -402,6 +402,23 @@ CGBDataLoader::~CGBDataLoader(void)
 }
 
 
+CObjectManager::TPriority CGBDataLoader::GetDefaultPriority(void) const
+{
+    CObjectManager::TPriority priority = CDataLoader::GetDefaultPriority();
+    if ( HasHUPIncluded() ) {
+        // HUP data loader has lower priority by default
+        priority += 1;
+    }
+    return priority;
+}
+
+
+bool CGBDataLoader::GetTrackSplitSeq() const
+{
+    return true;
+}
+
+
 namespace {
     typedef CGBDataLoader::TParamTree TParams;
 
@@ -533,6 +550,13 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobIdFromSatSatKey(int sat,
     int sat_key,
     int sub_sat) const
 {
+    if (TGenbankLoaderPsg::GetDefault()) {
+        string str = NStr::NumericToString(sat)+'.'+NStr::NumericToString(sat_key);
+        if ( sub_sat != CSeqref::eSubSat_main ) {
+            str += '.'+NStr::NumericToString(sub_sat);
+        }
+        return TBlobId(new CPsgBlobId(str));
+    }
     CRef<CBlob_id> blob_id(new CBlob_id);
     blob_id->SetSat(sat);
     blob_id->SetSatKey(sat_key);

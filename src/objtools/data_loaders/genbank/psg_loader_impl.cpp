@@ -1005,7 +1005,7 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
     if (data_source) {
         inc_data = m_TSERequestMode;
         CDataSource::TLoadedBlob_ids loaded_blob_ids;
-        data_source->GetLoadedBlob_ids(idh, CDataSource::fLoaded_bioseqs, loaded_blob_ids);
+        data_source->GetLoadedBlob_ids(idh, CDataSource::fKnown_bioseqs, loaded_blob_ids);
         ITERATE(CDataSource::TLoadedBlob_ids, loaded_blob_id, loaded_blob_ids) {
             const CPsgBlobId* pbid = dynamic_cast<const CPsgBlobId*>(&**loaded_blob_id);
             if (!pbid) continue;
@@ -1558,10 +1558,8 @@ void CPSG_Blob_Task::CreateLoadedChunks(CTSE_LoadLock& load_lock)
 
 bool CPSG_Blob_Task::IsChunk(const CPSG_SkippedBlob& skipped)
 {
-    if ( auto id = skipped.GetId() ) {
-        if ( auto chunk_id = dynamic_cast<const CPSG_ChunkId*>(id) ) {
-            return chunk_id->GetId2Chunk() != kSplitInfoChunkId;
-        }
+    if ( auto chunk_id = skipped.GetId<CPSG_ChunkId>() ) {
+        return chunk_id->GetId2Chunk() != kSplitInfoChunkId;
     }
     return false;
 }
@@ -1683,7 +1681,7 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TTSE_LockSets& 
         if (data_source) {
             inc_data = m_TSERequestModeBulk;
             CDataSource::TLoadedBlob_ids loaded_blob_ids;
-            data_source->GetLoadedBlob_ids(idh, CDataSource::fLoaded_bioseqs, loaded_blob_ids);
+            data_source->GetLoadedBlob_ids(idh, CDataSource::fKnown_bioseqs, loaded_blob_ids);
             ITERATE(CDataSource::TLoadedBlob_ids, loaded_blob_id, loaded_blob_ids) {
                 const CPsgBlobId* pbid = dynamic_cast<const CPsgBlobId*>(&**loaded_blob_id);
                 if (!pbid) continue;
