@@ -460,33 +460,25 @@ SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
 {
     const auto item_type = args.GetValue<SPSG_Args::eItemType>();
 
-    if (item_type == "blob") {
-        return GetIfBlob(args);
-
-    } else if (item_type == "bioseq_info") {
-        return CPSG_ReplyItem::eBioseqInfo;
-
-    } else if (item_type == "blob_prop") {
-        return CPSG_ReplyItem::eBlobInfo;
-
-    } else if (item_type == "bioseq_na") {
-        return CPSG_ReplyItem::eNamedAnnotInfo;
-
-    } else if (item_type == "public_comment") {
-        return CPSG_ReplyItem::ePublicComment;
-
-    } else if (item_type == "processor") {
-        return CPSG_ReplyItem::eProcessor;
+    switch (item_type.first) {
+        case SPSG_Args::eBioseqInfo:     return CPSG_ReplyItem::eBioseqInfo;
+        case SPSG_Args::eBlobProp:       return CPSG_ReplyItem::eBlobInfo;
+        case SPSG_Args::eBlob:           return GetIfBlob(args);
+        case SPSG_Args::eReply:          break;
+        case SPSG_Args::eBioseqNa:       return CPSG_ReplyItem::eNamedAnnotInfo;
+        case SPSG_Args::ePublicComment:  return CPSG_ReplyItem::ePublicComment;
+        case SPSG_Args::eProcessor:      return CPSG_ReplyItem::eProcessor;
+        case SPSG_Args::eUnknownItem:    break;
     }
 
     if (TPSG_FailOnUnknownItems::GetDefault()) {
-        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Received unknown item type: " << item_type);
+        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Received unknown item type: " << item_type.second.get());
     }
 
     static atomic_bool reported(false);
 
     if (!reported.exchange(true)) {
-        ERR_POST("Received unknown item type: " << item_type);
+        ERR_POST("Received unknown item type: " << item_type.second.get());
     }
 
     return CPSG_ReplyItem::eEndOfReply;
