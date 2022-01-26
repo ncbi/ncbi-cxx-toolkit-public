@@ -106,7 +106,15 @@ NCBI_PARAM_ENUM_DEF(EPSG_PsgClientMode, PSG, internal_psg_client_mode, EPSG_PsgC
 
 SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>::TType SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>::Get(const string& value)
 {
-    return value;
+    if (value == "bioseq_info")     return { SPSG_ArgsBase::eBioseqInfo,     cref(value) };
+    if (value == "blob_prop")       return { SPSG_ArgsBase::eBlobProp,       cref(value) };
+    if (value == "blob")            return { SPSG_ArgsBase::eBlob,           cref(value) };
+    if (value == "reply")           return { SPSG_ArgsBase::eReply,          cref(value) };
+    if (value == "bioseq_na")       return { SPSG_ArgsBase::eBioseqNa,       cref(value) };
+    if (value == "public_comment")  return { SPSG_ArgsBase::ePublicComment,  cref(value) };
+    if (value == "processor")       return { SPSG_ArgsBase::eProcessor,      cref(value) };
+    if (value.empty())              return { SPSG_ArgsBase::eReply,          cref(value) };
+    return { SPSG_ArgsBase::eUnknownItem, cref(value) };
 };
 
 SPSG_ArgsBase::SArg<SPSG_ArgsBase::eChunkType>::TType SPSG_ArgsBase::SArg<SPSG_ArgsBase::eChunkType>::Get(const string& value)
@@ -139,7 +147,7 @@ void SDebugPrintout::Print(const SPSG_Args& args, const SPSG_Chunk& chunk)
     os << args.GetQueryString(CUrlArgs::eAmp_Char) << '\n';
 
     if ((m_Params.debug_printout == EPSG_DebugPrintout::eAll) ||
-            (args.GetValue<SPSG_Args::eItemType>() != "blob") || (args.GetValue<SPSG_Args::eChunkType>() != "data")) {
+            (args.GetValue<SPSG_Args::eItemType>().first != SPSG_Args::eBlob) || (args.GetValue<SPSG_Args::eChunkType>() != "data")) {
         os << chunk;
     } else {
         os << "<BINARY DATA OF " << chunk.size() << " BYTES>";
@@ -694,10 +702,10 @@ void SPSG_Request::Add()
     auto& chunk = m_Buffer.chunk;
     auto* args = &m_Buffer.args;
 
-    auto item_type = args->GetValue<SPSG_Args::eItemType>();
+    auto item_type = args->GetValue<SPSG_Args::eItemType>().first;
     SPSG_Reply::SItem::TTS* item_ts = nullptr;
 
-    const bool is_reply = item_type.empty() || (item_type == "reply");
+    const bool is_reply = item_type == SPSG_Args::eReply;
 
     if (is_reply) {
         item_ts = &reply->reply_item;
@@ -782,7 +790,7 @@ void SPSG_Request::Add()
 
         } else if (chunk_type == "data") {
             if (auto stats = reply->stats.lock()) {
-                if (item_type == "blob") {
+                if (item_type == SPSG_Args::eBlob) {
                     auto has_blob_id = !args->GetValue<SPSG_Args::eBlobId>().get().empty();
                     stats->AddData(has_blob_id, SPSG_Stats::eReceived, chunk.size());
                 }

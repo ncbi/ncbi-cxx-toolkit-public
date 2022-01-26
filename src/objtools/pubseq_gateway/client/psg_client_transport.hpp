@@ -89,6 +89,17 @@ struct SPSG_ArgsBase : CUrlArgs
         eId2Chunk,
     };
 
+    enum EItemType {
+        eBioseqInfo,
+        eBlobProp,
+        eBlob,
+        eReply,
+        eBioseqNa,
+        ePublicComment,
+        eProcessor,
+        eUnknownItem,
+    };
+
     using CUrlArgs::CUrlArgs;
 
     const string& GetValue(const string& name) const
@@ -104,7 +115,7 @@ protected:
 template <>
 struct SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>
 {
-    using TType = string;
+    using TType = pair<SPSG_ArgsBase::EItemType, reference_wrapper<const string>>;
     static constexpr auto name = "item_type";
     static TType Get(const string& value);
 };
