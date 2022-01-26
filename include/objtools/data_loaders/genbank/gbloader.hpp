@@ -379,6 +379,9 @@ public:
             m_PTISErrorAction = action;
         }
 
+    virtual CObjectManager::TPriority GetDefaultPriority(void) const override;
+    virtual bool GetTrackSplitSeq() const override;
+
 protected:
     CGBDataLoader(const string&     loader_name,
                   const CGBLoaderParams& params);

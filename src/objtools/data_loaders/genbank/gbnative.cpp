@@ -121,24 +121,24 @@ public:
         {
             return *m_Loader;
         }
-    virtual CGBDataLoader_Native* GetLoaderPtr(void);
+    virtual CGBDataLoader_Native* GetLoaderPtr(void) override;
 
     //virtual TConn GetConn(void);
     //virtual void ReleaseConn(void);
-    virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id);
-    virtual CTSE_LoadLock GetTSE_LoadLockIfLoaded(const TKeyBlob& blob_id);
+    virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id) override;
+    virtual CTSE_LoadLock GetTSE_LoadLockIfLoaded(const TKeyBlob& blob_id) override;
     virtual void GetLoadedBlob_ids(const CSeq_id_Handle& idh,
-                                   TLoadedBlob_ids& blob_ids) const;
+                                   TLoadedBlob_ids& blob_ids) const override;
 
     virtual operator CInitMutexPool&(void) { return GetMutexPool(); }
 
     CInitMutexPool& GetMutexPool(void) { return m_Loader->m_MutexPool; }
 
-    virtual TExpirationTime GetIdExpirationTimeout(GBL::EExpirationType type) const;
+    virtual TExpirationTime GetIdExpirationTimeout(GBL::EExpirationType type) const override;
 
-    virtual bool GetAddWGSMasterDescr(void) const;
+    virtual bool GetAddWGSMasterDescr(void) const override;
 
-    virtual EGBErrorAction GetPTISErrorAction(void) const;
+    virtual EGBErrorAction GetPTISErrorAction(void) const override;
     
     friend class CGBDataLoader_Native;
 
@@ -272,17 +272,6 @@ CGBDataLoader_Native::~CGBDataLoader_Native(void)
 {
     GBLOG_POST_X(2, "~CGBDataLoader_Native");
     CloseCache();
-}
-
-
-CObjectManager::TPriority CGBDataLoader_Native::GetDefaultPriority(void) const
-{
-    CObjectManager::TPriority priority = CDataLoader::GetDefaultPriority();
-    if ( HasHUPIncluded() ) {
-        // HUP data loader has lower priority by default
-        priority += 1;
-    }
-    return priority;
 }
 
 
@@ -1646,7 +1635,7 @@ void CGBReaderRequestResult::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
 {
     CDataSource::TLoadedBlob_ids blob_ids2;
     m_Loader->GetDataSource()->GetLoadedBlob_ids(idh,
-                                                 CDataSource::fLoaded_bioseqs,
+                                                 CDataSource::fKnown_bioseqs,
                                                  blob_ids2);
     ITERATE(CDataSource::TLoadedBlob_ids, id, blob_ids2) {
         blob_ids.push_back(m_Loader->GetRealBlobId(*id));
