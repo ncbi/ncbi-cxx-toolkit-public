@@ -77,7 +77,8 @@ def main():
              "get_species_taxids.sh",
              "blastn_vdb.exe",
              "tblastn_vdb.exe",
-             "blast_formatter_vdb.exe"
+             "blast_formatter_vdb.exe",
+	     "nghttp2.dll"
              ]
     
     cwd = os.getcwd()
@@ -93,8 +94,8 @@ def main():
         shutil.copy(app, cwd)
    
     # TODO: remove next copy, nghttp2.dll expected to be in a same place as exe files
-    dll = os.path.join('\\\\', 'snowman', 'win-coremake', 'Lib', 'ThirdParty', 'nghttp2', 'vs2017.64', '1.33.0', 'bin', 'ReleaseDLL', 'nghttp2.dll')
-    shutil.copy(dll, cwd)
+    ##dll = os.path.join('\\\\', 'snowman', 'win-coremake', 'Lib', 'ThirdParty', 'nghttp2', 'vs2017.64', '1.33.0', 'bin', 'ReleaseDLL', 'nghttp2.dll')
+    ##shutil.copy(dll, cwd)
 
     # pick up library after DLL: ncbi-vdb-md.dll in Manifest
     # expected to be in CWD + c++\compilers\vs2019\static\bin\ReleaseDLL\ncbi-vdb-md.dll
