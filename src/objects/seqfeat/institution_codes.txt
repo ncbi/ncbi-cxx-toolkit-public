@@ -5207,7 +5207,7 @@ NJSM	s	New Jersey State Museum
 NKA	c	Nationales Konsiliarlabor fur Adenoviren			
 NKMC	s	National Kweiyang Medical College			
 NKME	s	Naturkundemuseum Erfurt			
-NKMU	s	Nankai University Museum			
+NKMU<CHN>	s	Nankai University Museum			
 NKU	s	Nankai University, Biology Department			
 NKUM	s	Nankai University			
 NLEC	s	Neal L. Evenhuis			

@@ -5240,7 +5240,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NKA\tc\tNationales Konsiliarlabor fur Adenoviren\t\t\t",
 "NKMC\ts\tNational Kweiyang Medical College\t\t\t",
 "NKME\ts\tNaturkundemuseum Erfurt\t\t\t",
-"NKMU\ts\tNankai University Museum\t\t\t",
+"NKMU<CHN>\ts\tNankai University Museum\t\t\t",
 "NKU\ts\tNankai University, Biology Department\t\t\t",
 "NKUM\ts\tNankai University\t\t\t",
 "NLEC\ts\tNeal L. Evenhuis\t\t\t",
