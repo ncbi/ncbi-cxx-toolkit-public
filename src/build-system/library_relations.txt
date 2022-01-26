@@ -1291,6 +1291,7 @@ psg_diag needs xncbi
 psg_protobuf needs3party $(ORIG_LIBS)
 psloader includes psloader-internal
 psloader needs $(CONNEXT)
+psloader needs xncbi
 psloader needs3party ctutils
 psloader needs3party ncbitool
 psloader-internal needs $(Z_LIB)
