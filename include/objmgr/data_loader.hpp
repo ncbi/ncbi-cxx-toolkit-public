@@ -460,6 +460,7 @@ public:
     virtual double EstimateLoadSeconds(const CTSE_Chunk_Info& chunk, Uint4 bytes) const;
 
     virtual unsigned GetDefaultBlobCacheSizeLimit() const;
+    virtual bool GetTrackSplitSeq() const;
 
 protected:
     /// Register the loader only if the name is not yet
@@ -491,7 +492,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 6, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 7, 0, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>
