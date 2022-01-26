@@ -697,21 +697,18 @@ void SPSG_Request::Add()
 {
     SContextSetter setter(context);
 
-    reply->debug_printout << m_Buffer.args << m_Buffer.chunk << endl;
-
-    auto& chunk = m_Buffer.chunk;
     auto* args = &m_Buffer.args;
+    reply->debug_printout << *args << m_Buffer.chunk << endl;
 
-    auto item_type = args->GetValue<SPSG_Args::eItemType>().first;
+    const auto item_type = args->GetValue<SPSG_Args::eItemType>().first;
+    auto& reply_item_ts = reply->reply_item;
     SPSG_Reply::SItem::TTS* item_ts = nullptr;
 
-    const bool is_reply = item_type == SPSG_Args::eReply;
-
-    if (is_reply) {
-        item_ts = &reply->reply_item;
+    if (item_type == SPSG_Args::eReply) {
+        item_ts = &reply_item_ts;
 
     } else {
-        if (auto reply_item_locked = reply->reply_item.GetLock()) {
+        if (auto reply_item_locked = reply_item_ts.GetLock()) {
             auto& reply_item = *reply_item_locked;
             ++reply_item.received;
 
@@ -725,101 +722,23 @@ void SPSG_Request::Add()
 
         if (!item_by_id) {
             if (auto items_locked = reply->items.GetLock()) {
-                auto& items = *items_locked;
-                items.emplace_back();
-                item_by_id = &items.back();
+                items_locked->emplace_back();
+                item_by_id = &items_locked->back();
             }
 
             if (auto item_locked = item_by_id->GetLock()) {
-                auto& item = *item_locked;
-                item.args = move(*args);
-                args = &item.args;
+                item_locked->args = move(*args);
+                args = &item_locked->args;
             }
 
-            auto reply_item_ts = &reply->reply_item;
-            reply_item_ts->NotifyOne();
+            reply_item_ts.NotifyOne();
         }
 
         item_ts = item_by_id;
     }
 
     if (auto item_locked = item_ts->GetLock()) {
-        auto& item = *item_locked;
-        ++item.received;
-
-        auto chunk_type = args->GetValue<SPSG_Args::eChunkType>();
-
-        if (chunk_type == "meta") {
-            auto n_chunks = args->GetValue("n_chunks");
-
-            if (!n_chunks.empty()) {
-                auto expected = stoul(n_chunks);
-
-                if (item.expected.Cmp<not_equal_to>(expected)) {
-                    item.state.AddError("Protocol error: contradicting n_chunks");
-                } else {
-                    item.expected = expected;
-                }
-            }
-
-        } else if (chunk_type == "message") {
-            auto severity = s_GetSeverity(args->GetValue("severity"));
-
-            if (severity == eDiag_Warning) {
-                ERR_POST(Warning << chunk);
-            } else if (severity == eDiag_Info) {
-                ERR_POST(Info << chunk);
-            } else if (severity == eDiag_Trace) {
-                ERR_POST(Trace << chunk);
-            } else {
-                item.state.AddError(move(chunk));
-                const auto status = NStr::StringToInt(args->GetValue("status"));
-                const auto state = SPSG_Reply::SState::FromRequestStatus(status);
-
-                switch (state) {
-                    case SPSG_Reply::SState::eSuccess:
-                    case SPSG_Reply::SState::eError:
-                        break;
-                    default:
-                        // Any message leads to eError when item completes, so need to set other states early
-                        item.state.SetState(state);
-                }
-            }
-
-            if (auto stats = reply->stats.lock()) stats->IncCounter(SPSG_Stats::eMessage, severity);
-
-        } else if (chunk_type == "data") {
-            if (auto stats = reply->stats.lock()) {
-                if (item_type == SPSG_Args::eBlob) {
-                    auto has_blob_id = !args->GetValue<SPSG_Args::eBlobId>().get().empty();
-                    stats->AddData(has_blob_id, SPSG_Stats::eReceived, chunk.size());
-                }
-            }
-
-            auto blob_chunk = args->GetValue("blob_chunk");
-            auto index = blob_chunk.empty() ? 0 : stoul(blob_chunk);
-
-            if (item.chunks.size() <= index) item.chunks.resize(index + 1);
-
-            item.chunks[index] = move(chunk);
-            item.state.SetNotEmpty();
-
-        } else {
-            item.state.AddError("Protocol error: unknown chunk type");
-        }
-
-        if (item.expected.Cmp<less>(item.received)) {
-            item.state.AddError("Protocol error: received more than expected");
-
-            // If item is not a reply itself, add the error to its reply as well
-            if (!is_reply) {
-                reply->reply_item.GetLock()->state.AddError("Protocol error: received more than expected");
-            }
-
-        // Set item complete if received everything. Reply is set complete when stream closes
-        } else if (!is_reply && item.expected.Cmp<equal_to>(item.received)) {
-            item.state.SetComplete();
-        }
+        UpdateItem(item_type, *item_locked, *args);
     }
 
     // Item must be unlocked before notifying
@@ -827,6 +746,88 @@ void SPSG_Request::Add()
 
     reply->queue->CV().NotifyOne();
     m_Buffer = SBuffer();
+}
+
+void SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args)
+{
+    ++item.received;
+
+    auto chunk_type = args.GetValue<SPSG_Args::eChunkType>();
+    auto& chunk = m_Buffer.chunk;
+
+    if (chunk_type == "meta") {
+        auto n_chunks = args.GetValue("n_chunks");
+
+        if (!n_chunks.empty()) {
+            auto expected = stoul(n_chunks);
+
+            if (item.expected.Cmp<not_equal_to>(expected)) {
+                item.state.AddError("Protocol error: contradicting n_chunks");
+            } else {
+                item.expected = expected;
+            }
+        }
+
+    } else if (chunk_type == "message") {
+        auto severity = s_GetSeverity(args.GetValue("severity"));
+
+        if (severity == eDiag_Warning) {
+            ERR_POST(Warning << chunk);
+        } else if (severity == eDiag_Info) {
+            ERR_POST(Info << chunk);
+        } else if (severity == eDiag_Trace) {
+            ERR_POST(Trace << chunk);
+        } else {
+            item.state.AddError(move(chunk));
+            const auto status = NStr::StringToInt(args.GetValue("status"));
+            const auto state = SPSG_Reply::SState::FromRequestStatus(status);
+
+            switch (state) {
+                case SPSG_Reply::SState::eSuccess:
+                case SPSG_Reply::SState::eError:
+                    break;
+                default:
+                    // Any message leads to eError when item completes, so need to set other states early
+                    item.state.SetState(state);
+            }
+        }
+
+        if (auto stats = reply->stats.lock()) stats->IncCounter(SPSG_Stats::eMessage, severity);
+
+    } else if (chunk_type == "data") {
+        if (auto stats = reply->stats.lock()) {
+            if (item_type == SPSG_Args::eBlob) {
+                auto has_blob_id = !args.GetValue<SPSG_Args::eBlobId>().get().empty();
+                stats->AddData(has_blob_id, SPSG_Stats::eReceived, chunk.size());
+            }
+        }
+
+        auto blob_chunk = args.GetValue("blob_chunk");
+        auto index = blob_chunk.empty() ? 0 : stoul(blob_chunk);
+
+        if (item.chunks.size() <= index) item.chunks.resize(index + 1);
+
+        item.chunks[index] = move(chunk);
+        item.state.SetNotEmpty();
+
+    } else {
+        item.state.AddError("Protocol error: unknown chunk type");
+    }
+
+    const bool is_not_reply = item_type != SPSG_Args::eReply;
+
+    if (item.expected.Cmp<less>(item.received)) {
+        item.state.AddError("Protocol error: received more than expected");
+
+        // If item is not a reply itself, add the error to its reply as well
+        if (is_not_reply) {
+            reply->reply_item.GetLock()->state.AddError("Protocol error: received more than expected");
+        }
+
+    // Set item complete if received everything. Reply is set complete when stream closes
+    } else if (is_not_reply && item.expected.Cmp<equal_to>(item.received)) {
+        item.state.SetComplete();
+    }
 }
 
 

@@ -433,6 +433,7 @@ private:
     void SetStateData(size_t dtr) { m_State = &SPSG_Request::StateData;   m_Buffer.data_to_read = dtr; }
 
     void Add();
+    void UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args);
 
     using TState = bool (SPSG_Request::*)(const char*& data, size_t& len);
     TState m_State;
