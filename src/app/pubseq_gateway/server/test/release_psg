@@ -37,6 +37,9 @@ PORT2 = 10888
 SRV1 = None
 SRV2 = None
 
+# Sometimes, especially under valgrind, it takes longer to start.
+# So, wait a bit before running a test suite
+AFTER_START_DELAY=5
 
 def timestamp():
     now = datetime.datetime.now()
@@ -613,7 +616,7 @@ def functional_test(commands, options, args):
                '-logfile', artefactDir + 'pubseq_gateway-ut-http.log']
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
-    time.sleep(3)
+    time.sleep(AFTER_START_DELAY)
 
     # Run the tests
     errors = []
@@ -648,7 +651,7 @@ def functional_test(commands, options, args):
                '-logfile', artefactDir + 'pubseq_gateway-ut-https.log']
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
-    time.sleep(3)
+    time.sleep(AFTER_START_DELAY)
 
     # Run the tests
 
@@ -692,6 +695,7 @@ def functional_test(commands, options, args):
                        '-logfile', artefactDir + 'pubseq_gateway-integration-test.log']
             print_verbose('Running PSG server: ' + ' '.join(cmdLine))
             SRV1 = subprocess.Popen(cmdLine)
+            time.sleep(AFTER_START_DELAY)
 
             # Run the tests
             integrationTestDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/integrationsmoketest/'
@@ -749,6 +753,7 @@ def stability_test(commands, options, args):
                    artefactDir + 'pubseq_gateway-drop-client-http.log']
         print_verbose('Running PSG server: ' + ' '.join(cmdLine))
         SRV1 = subprocess.Popen(cmdLine)
+        time.sleep(AFTER_START_DELAY)
 
         # Run the clients
         clients = []
@@ -855,6 +860,7 @@ def memcheck(commands, options, args):
                '-logfile', artefactDir + 'pubseq_gateway-memcheck-ut-http.log']
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    time.sleep(AFTER_START_DELAY)
 
     # Run the tests
     errors = []
@@ -890,6 +896,7 @@ def memcheck(commands, options, args):
                '-logfile', artefactDir + 'pubseq_gateway-memcheck-ut-https.log']
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    time.sleep(AFTER_START_DELAY)
 
     # Run the tests
 
@@ -935,6 +942,7 @@ def memcheck(commands, options, args):
                        '-logfile', artefactDir + 'pubseq_gateway-memcheck-integration-test.log']
             print_verbose('Running PSG server: ' + ' '.join(cmdLine))
             SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            time.sleep(AFTER_START_DELAY)
 
             # Run the tests
             integrationTestDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/integrationsmoketest/'
@@ -984,7 +992,7 @@ def stress_test(commands, options, args):
                '-logfile', artefactDir + 'pubseq_gateway-stress-http.log']
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
-    time.sleep(2)
+    time.sleep(AFTER_START_DELAY)
 
     # Run the tests
     errors = []
@@ -1019,7 +1027,7 @@ def stress_test(commands, options, args):
                '-logfile', artefactDir + 'pubseq_gateway-stress-https.log']
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
-    time.sleep(2)
+    time.sleep(AFTER_START_DELAY)
 
     # Run the tests
 
@@ -1108,7 +1116,7 @@ def compare(commands, options, args):
                '-logfile', f'{artefactDir}pubseq_gateway-compare-{oldVersion}.log']
     print_verbose('Running old PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
-    time.sleep(2)
+    time.sleep(AFTER_START_DELAY)
 
     # Prepare the currently built server
     prepareConfigFile(f'{artefactDir}pubseq_gateway.ini.baseline',
@@ -1127,7 +1135,7 @@ def compare(commands, options, args):
                '-logfile', f'{artefactDir}pubseq_gateway-compare.log']
     print_verbose('Running current PSG server: ' + ' '.join(cmdLine))
     SRV2 = subprocess.Popen(cmdLine)
-    time.sleep(2)
+    time.sleep(AFTER_START_DELAY)
 
     # Run the comparison script
     cmdLine = f'cd {artefactDir} && ./psg_perf.py localhost:{PORT1} localhost:{PORT2} > perf-v{oldVersion}-vs-v{options.psg_ver}.txt'
@@ -1155,7 +1163,7 @@ def archive(commands, options, args):
     cmdLine = ['prepare_release', 'archive', buildResultsDir]
     print_verbose('Running release archiving: ' + ' '.join(cmdLine))
     proc = subprocess.Popen(cmdLine, stdin=subprocess.PIPE)
-    time.sleep(2)
+    time.sleep(5)
 
     out, err = proc.communicate(b'all\n')
     ret = proc.returncode
