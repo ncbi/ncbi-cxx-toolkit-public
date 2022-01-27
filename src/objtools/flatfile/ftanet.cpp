@@ -411,8 +411,8 @@ static void fta_strip_er_remarks(CPubdesc& pub_descr)
 /**********************************************************/
 static Uint1 fta_init_med_server(void)
 {
-    if(!MedArchInit())
-        return(2);
+    if (!GetPubmedClient()->Init())
+        return (2);
     return(1);
 
 }
@@ -464,7 +464,7 @@ void fta_init_servers(ParserPtr pp)
 void fta_fini_servers(ParserPtr pp)
 {
     if (pp->medserver == 1)
-        MedArchFini();
+        GetPubmedClient()->Fini();
     /*    if(pp->taxserver == 1)
             tax1_fini();*/
 }
@@ -554,7 +554,7 @@ public:
                             findPubOptions.replace_cit,
                             findPubOptions.merge_ids,
                             m_pPubFixListener.get(),
-                            GetMlaClient()));
+                            GetPubmedClient()));
             }
         }
 
@@ -859,6 +859,7 @@ void fta_find_pub_explore(ParserPtr pp, TEntryList& seq_entries)
     }
 }
 
+#if 0
 /**********************************************************/
 static void new_synonym(COrg_ref& org_ref, COrg_ref& tax_org_ref)
 {
@@ -885,7 +886,7 @@ static void new_synonym(COrg_ref& org_ref, COrg_ref& tax_org_ref)
         }
     }
 }
-
+#endif
 
 #define TAX_SERVER_TIMEOUT 3
 static const STimeout s_timeout = { TAX_SERVER_TIMEOUT, 0 };

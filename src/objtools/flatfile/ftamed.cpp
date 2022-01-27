@@ -24,20 +24,23 @@
  *
  * ===========================================================================
  *
- * File Name:  ftamed.c
+ * File Name:  ftamed.cpp
  *
- * Author: Sergey Bazhin
+ * Author:
  *
  * File Description:
  * -----------------
- *      MedArch lookup and post-processing utilities.
+ *      Pubmed lookup and post-processing utilities.
  *
  */
 #include <ncbi_pch.hpp>
 
+#include <objects/mla/Title_msg.hpp>
+#include <objects/mla/Title_msg_list.hpp>
 #include <objects/mla/mla_client.hpp>
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Auth_list.hpp>
+#include <objects/pub/Pub.hpp>
 #include <objtools/edit/pub_fix.hpp>
 
 #include "ftaerr.hpp"
@@ -52,12 +55,8 @@ static const char* this_module = "medarch";
 #endif
 #define THIS_MODULE this_module
 
-static CMLAClient mlaclient;
-static edit::CMLAUpdater mlaupdater(&mlaclient);
-
-
-IMessageListener::EPostResult 
-CPubFixMessageListener::PostMessage(const IMessage& message) 
+IMessageListener::EPostResult
+CPubFixMessageListener::PostMessage(const IMessage& message)
 {
     static const map<EDiagSev, ErrSev> sSeverityMap
                = {{eDiag_Trace, SEV_NONE},
@@ -76,44 +75,58 @@ CPubFixMessageListener::PostMessage(const IMessage& message)
 }
 
 /**********************************************************/
-bool MedArchInit()
+class CMLAUpdater : public edit::IPubmedUpdater
 {
-    CMla_back i;
+    CMLAClient m_mla;
 
-    try
+public:
+    bool Init() override
     {
-        mlaclient.AskInit(&i);
-    }
-    catch(exception&)
-    {
-        return false;
+        CMla_back resp;
+        try {
+            m_mla.AskInit(&resp);
+        } catch (...) {
+            return false;
+        }
+        return resp.IsInit();
     }
 
-    return i.IsInit();
-}
+    void Fini() override
+    {
+        try {
+            m_mla.AskFini();
+        } catch (...) {
+        }
+    }
+
+    TEntrezId GetPmId(const CPub& pub) override
+    {
+        return ENTREZ_ID_FROM(int, m_mla.AskCitmatchpmid(pub));
+    }
+
+    CRef<CPub> GetPub(TEntrezId pmid) override
+    {
+        return m_mla.AskGetpubpmid(CPubMedId(pmid));
+    }
+
+    CRef<CTitle_msg_list> GetTitle(const CTitle_msg& msg) override
+    {
+        return m_mla.AskGettitle(msg);
+    }
+};
+
+static CMLAUpdater mlaupdater;
 
 /**********************************************************/
-void MedArchFini()
+edit::IPubmedUpdater* GetPubmedClient()
 {
-    try
-    {
-        mlaclient.AskFini();
-    }
-    catch(exception&)
-    {
-    }
-}
-
-/**********************************************************/
-CMLAClient* GetMlaClient()
-{
-    return &mlaclient;
+    return &mlaupdater;
 }
 
 /**********************************************************/
 CRef<CCit_art> FetchPubPmId(TEntrezId pmid)
 {
-    return edit::CPubFix::FetchPubPmId(pmid, &mlaupdater);
+    return edit::CPubFix::FetchPubPmId(pmid, GetPubmedClient());
 }
 
 END_NCBI_SCOPE
