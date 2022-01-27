@@ -63,6 +63,7 @@
 #include <objtools/eutils/esearch/IdList.hpp>
 #include <objtools/eutils/api/esummary.hpp>
 
+#include <cmath>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
