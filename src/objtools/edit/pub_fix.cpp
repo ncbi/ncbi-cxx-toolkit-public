@@ -156,7 +156,7 @@ namespace fix_pub
 void MedlineToISO(CCit_art& cit_art, IPubmedUpdater* upd)
 {
     if (cit_art.IsSetAuthors()) {
-        cit_art.SetAuthors().ConvertMlToStd(false);
+        cit_art.SetAuthors().ConvertMlToStd(true);
     }
 
     if (!cit_art.IsSetFrom() || !cit_art.GetFrom().IsJournal())
