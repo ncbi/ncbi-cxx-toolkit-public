@@ -33,7 +33,7 @@ if(NCBI_PTBCFG_ENABLE_TOOLS)
     include(${_listdir}/CMakeMacros.cmake)
     include(${_listdir}/CMake.NCBIptb.cmake)
     include(${_listdir}/CMake.NCBIComponents.cmake)
-    include_directories(${NCBI_INC_ROOT})
+    include_directories(${CONAN_NCBI-CXX-TOOLKIT-PUBLIC_ROOT}/${NCBI_DIRNAME_INCLUDE} ${NCBI_INC_ROOT})
 
     include(${_listdir}/CMake.NCBIptb.datatool.cmake)
     include(${_listdir}/CMake.NCBIptb.grpc.cmake)
