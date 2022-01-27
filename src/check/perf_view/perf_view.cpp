@@ -293,6 +293,7 @@ where "C" is:
 *  'T' - contemporary TRUNK
 *  'S' - latest SC in SVN
 *  'P' - contemporary full production build
+*  'O' - previous full production build
 )delimiter";
         }
         else {
@@ -301,6 +302,7 @@ where "C" is:
 *    '{color:blue}{{T}}{color}' - contemporary TRUNK
 *    '{color:blue}{{S}}{color}' - latest SC in SVN
 *    '{color:blue}{{P}}{color}' - contemporary full production build
+*    '{color:blue}{{O}}{color}' - previous full production build
 )delimiter";
         }
 
