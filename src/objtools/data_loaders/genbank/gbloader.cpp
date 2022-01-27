@@ -550,6 +550,7 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobIdFromSatSatKey(int sat,
     int sat_key,
     int sub_sat) const
 {
+#if defined(HAVE_PSG_LOADER)
     if (TGenbankLoaderPsg::GetDefault()) {
         string str = NStr::NumericToString(sat)+'.'+NStr::NumericToString(sat_key);
         if ( sub_sat != CSeqref::eSubSat_main ) {
@@ -557,6 +558,7 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobIdFromSatSatKey(int sat,
         }
         return TBlobId(new CPsgBlobId(str));
     }
+#endif
     CRef<CBlob_id> blob_id(new CBlob_id);
     blob_id->SetSat(sat);
     blob_id->SetSatKey(sat_key);
