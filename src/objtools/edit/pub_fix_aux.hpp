@@ -47,11 +47,10 @@ BEGIN_SCOPE(objects)
 
 class CPub;
 class CCit_art;
-class CMLAClient;
 
 BEGIN_SCOPE(edit)
 
-class CMLAUpdater;
+class IPubmedUpdater;
 
 namespace fix_pub
 {
@@ -100,8 +99,8 @@ enum EFixPubAuthListError
 };
 
 
-NCBI_XOBJEDIT_EXPORT void MedlineToISO(CCit_art& cit_art, CMLAUpdater* = nullptr);
-NCBI_XOBJEDIT_EXPORT void SplitMedlineEntry(CPub_equiv::Tdata& medlines, CMLAUpdater* = nullptr);
+NCBI_XOBJEDIT_EXPORT void MedlineToISO(CCit_art& cit_art, IPubmedUpdater* = nullptr);
+NCBI_XOBJEDIT_EXPORT void SplitMedlineEntry(CPub_equiv::Tdata& medlines, IPubmedUpdater* = nullptr);
 NCBI_XOBJEDIT_EXPORT bool IsInpress(const CCit_art& cit_art);
 NCBI_XOBJEDIT_EXPORT bool NeedToPropagateInJournal(const CCit_art& cit_art);
 NCBI_XOBJEDIT_EXPORT bool MULooksLikeISSN(const string& str);
