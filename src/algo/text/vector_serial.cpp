@@ -194,7 +194,7 @@ void Decode<Uint4, float>(const void* data, size_t size,
     vec_data.reserve((size - sizeof(Uint4)) /
                      sizeof(CRawScoreVector<Uint4, float>::TIdxScore));
 
-    CNcbiIstrstream istr((const char*)data, size);
+    CNcbiIstrstream istr(string((const char*)data, size));
 
     /// data strip while valid
     while (istr) {
@@ -368,7 +368,7 @@ template<>
 void Decode<string, float>(const void* data, size_t size,
                            CScoreVector<string, float>& vec)
 {
-    CNcbiIstrstream istr((const char*)data, size);
+    CNcbiIstrstream istr(string((const char*)data, size));
     Deserialize(istr, vec);
 }
 
