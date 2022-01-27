@@ -1,5 +1,6 @@
 			
 # $Id$
+9604	s	Universiti Malaysia Sarawak			
 A	s	Arnold Arboretum, Harvard University			
 AA	s	Ministry of Science, Academy of Sciences			
 AAC	c	Arignar Anna College			
@@ -7615,7 +7616,6 @@ UNEX:FECRGA	c	Universidad de Extremadura, Departamento de Botanica, Fungal Endop
 UNGGVH	s	University of North Georgia			
 UNH	s	University of New Hampshire			
 UNI	s	University of Northern Iowa			
-UNIMAS<MYS>	s	Universiti Malaysia Sarawak			
 UNIN	s	University of the North, Botany Department			
 UNIP	s	Universidade Paulista, Laboratorio de Botanica			
 UNIPAR	s	Mycological Herbarium University of Parakou			
