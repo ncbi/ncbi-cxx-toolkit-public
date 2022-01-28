@@ -2,9 +2,11 @@
 #$Id$
 
 src_services=$@
-builds="P S T"
+
+# You can add or remove variants in the following two lists in your local
+# version of this script to reduce or to extend the test sets
+builds="O P S T"
 projects="objtools/test/objmgr app/objmgr/test app/pubseq_gateway/client"
-parsed_services=
 
 # Input: host:port[/suffix]
 # Output:
@@ -12,6 +14,7 @@ parsed_services=
 #   srv=host_port[_suffix]
 #   ver=version[suffix]
 #   parsed_services collects all services as host:port,host_port[_suffix],version[suffix]
+parsed_services=
 parse_service() {
     src_srv=$1
     sfx=`echo $src_srv | sed 's/^.*\///'`
@@ -82,8 +85,9 @@ do_build() {
 do_check() {
     bld=$1
     case $bld in
+    "O") build="prev-production";;
     "P") build="production";;
-    "S") build="trial-25";;
+    "S") build="trial";;
     "T") build="metastable";;
     esac
     for proj in $projects; do
@@ -126,7 +130,7 @@ run_perf_view() {
 if [ "$src_services" = "" ]; then
     echo Missing service argument.
     echo Usage:
-    echo "$0 <service-1:port-1>[/suffix-1] [<service-2:port-2>[suffix-2] ...]"
+    echo "$0 <service-1:port-1>[/suffix-1] [<service-2:port-2>[/suffix-2] ...]"
     exit 0
 fi
 for s in $src_services; do
