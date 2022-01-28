@@ -34,6 +34,7 @@
  *
  */
 #include <ncbi_pch.hpp>
+#include <corelib/ncbitime.hpp>
 
 #include "ftacpp.hpp"
 
@@ -1056,88 +1057,67 @@ void CpSeqId(InfoBioseqPtr ibp, const objects::CSeq_id& id)
     *      Get year, month, day and return CRef<objects::CDate_std>.
     *
     **********************************************************/
-CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Parser::ESource source)
+CRef<objects::CDate_std> get_full_date(const char* s, bool is_ref, Parser::ESource source)
 {
-    static const char *months[] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-        "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
-
-    int               day = 0;
-    int               month = 0;
-    int               year;
-    int               cal;
-    Char           msg[11];
-    const Char*        p;
-
     CRef<objects::CDate_std> date;
 
     if (s == NULL || *s == '\0')
         return date;
 
+    int parse_day = 0;
     if (isdigit(*s) != 0)
     {
-        day = atoi(s);
+        parse_day = atoi(s);
         s += 3;
+        // should we make at least a token effort of validation (like <32)?
     }
 
-    int num_of_months = sizeof(months) / sizeof(months[0]);
-    for (cal = 0; cal < num_of_months; cal++)
-    {
-        if (StringNICmp(s, months[cal], 3) != 0)
-            continue;
-        month = cal + 1;
-        break;
-    }
-
-    if (cal == num_of_months)
-    {
+    static const vector<string> months{
+        "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
+    CTempString maybe_month(s, 3);
+    auto it = find(months.begin(), months.end(), maybe_month);
+    if (it == months.end()) {
+        char msg[11];
         StringNCpy(msg, s, 10);
         msg[10] = '\0';
-        if (is_ref)
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalDate,
-            "Unrecognized month: %s", msg);
-        else
-            ErrPostEx(SEV_WARNING, ERR_DATE_IllegalDate,
-            "Unrecognized month: %s", msg);
+        is_ref ?
+            ErrPostEx(
+                SEV_WARNING, ERR_REFERENCE_IllegalDate, "Unrecognized month: %s", msg) :
+            ErrPostEx(
+                SEV_WARNING, ERR_DATE_IllegalDate, "Unrecognized month: %s", msg);
         return date;
     }
-    p = s + 4;
+    int parse_month = int(it - months.begin()) + 1;
 
-    date = new objects::CDate_std;
-    year = atoi(p);
-    if ((StringNCmp(p, "19", 2) == 0 || StringNCmp(p, "20", 2) == 0 ||
-         StringNCmp(p, "20", 2) == 0) &&
-        p[2] >= '0' && p[2] <= '9' && p[3] >= '0' && p[3] <= '9')
-    {
-        CTime cur_time(CTime::eCurrent);
-        objects::CDate_std cur(cur_time);
-        objects::CDate_std::TYear cur_year = cur.GetYear();
+    s += 4;
 
-        if (year < 1900 || year > cur_year)
-        {
-            if (is_ref)
-                ErrPostEx(SEV_ERROR, ERR_REFERENCE_IllegalDate,
-                "Illegal year: %d, current year: %d", year, cur_year);
-            else
-            {
-                if (source != Parser::ESource::SPROT || year - cur_year > 1)
-                    ErrPostEx(SEV_WARNING, ERR_DATE_IllegalDate,
-                    "Illegal year: %d, current year: %d", year, cur_year);
-            }
+    int parse_year = atoi(s);
+    int cur_year = CCurrentTime().Year();
+    if (1900 <= parse_year && parse_year <= cur_year) {
+        // all set
+    }
+    else if (0 <= parse_year && parse_year <= 99  &&  '0' <= s[1]  &&  s[1] <= '9') {
+            // insist that short form year has exactly two digits
+        (parse_year < 70) ? (parse_year += 2000) : (parse_year += 1900);
+    }
+    else {
+        if (is_ref) {
+            ErrPostEx(
+                SEV_ERROR, ERR_REFERENCE_IllegalDate,
+                "Illegal year: %d, current year: %d", parse_year, cur_year);
         }
-
-        date->SetYear(year);
+        else if (source != Parser::ESource::SPROT || parse_year - cur_year > 1) {
+            ErrPostEx(
+                SEV_WARNING, ERR_DATE_IllegalDate,
+                "Illegal year: %d, current year: %d", parse_year, cur_year);
+        }
+        // treat bad year like bad month above:
+        return date;
     }
-    else
-    {
-        if (year < 70)
-            year += 2000;
-        else
-            year += 1900;
-        date->SetYear(year);
-    }
-
-    date->SetMonth(month);
-    date->SetDay(day);
+    date.Reset(new CDate_std);
+    date->SetYear(parse_year);
+    date->SetMonth(parse_month);
+    date->SetDay(parse_day);
 
     return date;
 }

@@ -1426,8 +1426,10 @@ static CRef<CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     else
     {
         CRef<CDate_std> std_date = get_full_date(s + 1, true, pp->source);
-        date.Reset(new CDate);
-        date->SetStd(*std_date);
+        if (std_date) {
+            date.Reset(new CDate);
+            date->SetStd(*std_date);
+        }
     }
 
     if (date.Empty())
