@@ -36,6 +36,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
+#include <objtools/edit/pubmed_updater.hpp>
+
 BEGIN_NCBI_SCOPE
 
 class IMessageListener;
@@ -45,8 +47,6 @@ BEGIN_SCOPE(objects)
 class CPub;
 class CPub_equiv;
 class CCit_art;
-class CTitle_msg;
-class CTitle_msg_list;
 
 BEGIN_SCOPE(edit)
 
@@ -131,16 +131,6 @@ private:
     static double cfg_removed_to_gb;
 };
 
-class NCBI_XOBJEDIT_EXPORT IPubmedUpdater
-{
-public:
-    virtual bool Init() { return true; }
-    virtual void Fini() {}
-    virtual TEntrezId GetPmId(const CPub&) = 0;
-    virtual CRef<CPub> GetPub(TEntrezId pmid) = 0;
-    virtual CRef<CTitle_msg_list> GetTitle(const CTitle_msg&) = 0;
-};
-
 class NCBI_XOBJEDIT_EXPORT CPubFix
 {
 public:
@@ -176,4 +166,4 @@ END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif  // MISC_FIX_PUB__HPP
+#endif  // _PUB_FIX_HPP_
