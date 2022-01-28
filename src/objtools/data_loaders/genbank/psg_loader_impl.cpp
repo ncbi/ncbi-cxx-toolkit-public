@@ -584,13 +584,13 @@ NCBI_PARAM_DEF_EX(bool, PSG_LOADER, NO_SPLIT, false,
     eParam_NoThread, PSG_LOADER_NO_SPLIT);
 typedef NCBI_PARAM_TYPE(PSG_LOADER, NO_SPLIT) TPSG_NoSplit;
 
-NCBI_PARAM_DECL(unsigned int, PSG_LOADER, WHOLE_TSE);
-NCBI_PARAM_DEF_EX(unsigned int, PSG_LOADER, WHOLE_TSE, false,
+NCBI_PARAM_DECL(bool, PSG_LOADER, WHOLE_TSE);
+NCBI_PARAM_DEF_EX(bool, PSG_LOADER, WHOLE_TSE, false,
     eParam_NoThread, PSG_LOADER_WHOLE_TSE);
 typedef NCBI_PARAM_TYPE(PSG_LOADER, WHOLE_TSE) TPSG_WholeTSE;
 
-NCBI_PARAM_DECL(unsigned int, PSG_LOADER, WHOLE_TSE_BULK);
-NCBI_PARAM_DEF_EX(unsigned int, PSG_LOADER, WHOLE_TSE_BULK, true,
+NCBI_PARAM_DECL(bool, PSG_LOADER, WHOLE_TSE_BULK);
+NCBI_PARAM_DEF_EX(bool, PSG_LOADER, WHOLE_TSE_BULK, true,
     eParam_NoThread, PSG_LOADER_WHOLE_TSE_BULK);
 typedef NCBI_PARAM_TYPE(PSG_LOADER, WHOLE_TSE_BULK) TPSG_WholeTSEBulk;
 
@@ -598,6 +598,57 @@ NCBI_PARAM_DECL(unsigned int, PSG_LOADER, MAX_POOL_THREADS);
 NCBI_PARAM_DEF_EX(unsigned int, PSG_LOADER, MAX_POOL_THREADS, 10,
     eParam_NoThread, PSG_LOADER_MAX_POOL_THREADS);
 typedef NCBI_PARAM_TYPE(PSG_LOADER, MAX_POOL_THREADS) TPSG_MaxPoolThreads;
+
+
+template<class TParamType>
+static void s_ConvertParamValue(TParamType& value, const string& str);
+
+
+template<>
+void s_ConvertParamValue<bool>(bool& value, const string& str)
+{
+    if ( !str.empty() ) {
+        try {
+            value = NStr::StringToBool(str);
+        }
+        catch (CException&) {
+            // TODO: should we ignora bad values?
+        }
+    }
+}
+
+
+static const TPluginManagerParamTree* s_FindSubNode(const TPluginManagerParamTree* params,
+                                                    const string& name)
+{
+    if ( params ) {
+        for ( auto it = params->SubNodeBegin(); it != params->SubNodeEnd(); ++it ) {
+            if ( NStr::EqualNocase((*it)->GetKey(), name) ) {
+                return static_cast<const TPluginManagerParamTree*>(*it);
+            }
+        }
+    }
+    return 0;
+}
+
+
+template<class TParamDescription>
+static typename TParamDescription::TValueType s_GetParamValue(const TPluginManagerParamTree* config)
+{
+    typedef CParam<TParamDescription> TParam;
+    typename TParam::TValueType value = TParam::GetDefault();
+    CParamBase::EParamSource source = CParamBase::eSource_NotSet;
+    TParam::GetState(0, &source);
+    if ( config && (source == CParamBase::eSource_NotSet ||
+                    source == CParamBase::eSource_Default ||
+                    source == CParamBase::eSource_Config) ) {
+        if ( const TPluginManagerParamTree* node = s_FindSubNode(config, TParamDescription::sm_ParamDescription.name) ) {
+            s_ConvertParamValue<typename TParam::TValueType>(value, node->GetValue().value);
+        }
+    }
+    return value;
+}
+
 
 CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
     : m_BlobMap(new CPSGBlobMap()),
@@ -640,47 +691,16 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
         }
     }
     if ( no_split ) {
-        m_TSERequestModeBulk = m_TSERequestMode = CPSG_Request_Biodata::eOrigTSE;
+        m_TSERequestMode = CPSG_Request_Biodata::eOrigTSE;
+        m_TSERequestModeBulk = CPSG_Request_Biodata::eOrigTSE;
     }
     else {
-        {{
-            bool whole_tse = TPSG_WholeTSE::GetDefault();
-            if ( psg_params ) {
-                try {
-                    string value = CPSGDataLoader::GetParam(psg_params, NCBI_PSGLOADER_WHOLE_TSE);
-                    if (!value.empty()) {
-                        whole_tse = NStr::StringToBool(value);
-                    }
-                }
-                catch (CException&) {
-                }
-            }
-            if ( whole_tse ) {
-                m_TSERequestMode = CPSG_Request_Biodata::eWholeTSE;
-            }
-            else {
-                m_TSERequestMode = CPSG_Request_Biodata::eSmartTSE;
-            }
-        }}
-        {{
-            bool whole_tse = TPSG_WholeTSEBulk::GetDefault();
-            if ( psg_params ) {
-                try {
-                    string value = CPSGDataLoader::GetParam(psg_params, NCBI_PSGLOADER_WHOLE_TSE_BULK);
-                    if (!value.empty()) {
-                        whole_tse = NStr::StringToBool(value);
-                    }
-                }
-                catch (CException&) {
-                }
-            }
-            if ( whole_tse ) {
-                m_TSERequestModeBulk = CPSG_Request_Biodata::eWholeTSE;
-            }
-            else {
-                m_TSERequestModeBulk = CPSG_Request_Biodata::eSmartTSE;
-            }
-        }}
+        m_TSERequestMode = (s_GetParamValue<X_NCBI_PARAM_DECLNAME(PSG_LOADER, WHOLE_TSE)>(psg_params)?
+                            CPSG_Request_Biodata::eWholeTSE:
+                            CPSG_Request_Biodata::eSmartTSE);
+        m_TSERequestModeBulk = (s_GetParamValue<X_NCBI_PARAM_DECLNAME(PSG_LOADER, WHOLE_TSE_BULK)>(psg_params)?
+                                CPSG_Request_Biodata::eWholeTSE:
+                                CPSG_Request_Biodata::eSmartTSE);
     }
     
     m_AddWGSMasterDescr = true;
