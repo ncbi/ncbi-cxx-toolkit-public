@@ -1,6 +1,6 @@
 			
+	s	Universiti Malaysia Sarawak			
 # $Id$
-9604	s	Universiti Malaysia Sarawak			
 A	s	Arnold Arboretum, Harvard University			
 AA	s	Ministry of Science, Academy of Sciences			
 AAC	c	Arignar Anna College			
