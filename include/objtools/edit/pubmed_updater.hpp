@@ -47,6 +47,7 @@ BEGIN_SCOPE(edit)
 class NCBI_XOBJEDIT_EXPORT IPubmedUpdater
 {
 public:
+    virtual ~IPubmedUpdater() {}
     virtual bool Init() { return true; }
     virtual void Fini() {}
     virtual TEntrezId GetPmId(const CPub&) = 0;
