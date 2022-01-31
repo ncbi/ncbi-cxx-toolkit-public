@@ -146,16 +146,22 @@ private:
 class NCBI_XCONNECT_EXPORT CLogLatencies
 {
 public:
-    template <size_t SIZE1, size_t SIZE2>
-    CLogLatencies(const char (&s1)[SIZE1], const char (&s2)[SIZE2]) :
-        m_Start(s1, SIZE1 - 1),
-        m_Stop(s2, SIZE2 - 1)
+    struct SRegex : regex
+    {
+        template <size_t SIZE> SRegex(const char (&s)[SIZE]) : regex(s, SIZE - 1) {}
+    };
+
+    CLogLatencies(SRegex start, SRegex stop) :
+        m_Start(move(start)),
+        m_Stop(move(stop))
     {}
 
     void SetDebug(bool debug) { m_Debug = debug; }
 
     using TData = deque<SDiagMessage>;
-    using TResult = unordered_map<string, chrono::microseconds>;
+    using TLatency = chrono::microseconds;
+    using TServerResult = tuple<TLatency>;
+    using TResult = unordered_map<string, TServerResult>;
     TResult Parse(const TData& data);
 
 private:

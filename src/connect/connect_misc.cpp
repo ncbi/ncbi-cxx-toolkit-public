@@ -195,22 +195,23 @@ CLogLatencies::TResult CLogLatencies::Parse(const TData& data)
 {
     using namespace chrono;
 
-    enum : size_t { eServer = 1 };
-    enum : size_t { fNothing = 0, fStart, fStop, eBoth };
-    array<const char*, eBoth> prefixes{ "         ", "Start -> ", "Stop ->  " };
+    enum ESubExpression : size_t { eServer = 1 };
+    enum EMatchedPattern : size_t { fNothing = 0, fStart, fStop, eNumberOfPatterns, eBoth = fStart | fStop };
+    array<const char*, eNumberOfPatterns> prefixes{ "          ", "Start ->  ", "Stop ->   " };
 
     cmatch m;
 
-    using TServer = pair<size_t, array<system_clock::time_point, eBoth>>;
-    unordered_map<string, TServer> servers;
-    TServer* current = nullptr;
-    TResult latencies;
+    using TMatched = size_t;
+    using TTimePoints = array<system_clock::time_point, eBoth>;
+    using TServerData = tuple<TMatched, TTimePoints>;
+    unordered_map<string, TServerData> servers;
+    TServerData* current = nullptr;
 
     for (const auto& msg : data) {
         const auto msg_start = msg.m_Buffer;
         const auto msg_len = min((size_t)1024, msg.m_BufferLen);
         const auto msg_end = msg_start + msg_len;
-        size_t matched = fNothing;
+        TMatched matched = fNothing;
 
         if (regex_match(msg_start, msg_end, m, m_Start)) {
             matched = fStart;
@@ -225,27 +226,34 @@ CLogLatencies::TResult CLogLatencies::Parse(const TData& data)
             }
         }
 
-        if (matched && current) {
-            auto t = msg.GetTime();
-            auto tp = system_clock::from_time_t(t.GetTimeT()) + microseconds(t.MicroSecond());
-            current->first |= matched;
-            current->second[matched] = tp;
-        }
-
         if (m_Debug) {
             cerr << prefixes[matched];
             msg.Write(cerr);
         }
+
+        if (matched) {
+            if (!current) {
+                cerr << "Cannot use matched data without a server\n";
+
+            } else {
+                auto t = msg.GetTime();
+                auto tp = system_clock::from_time_t(t.GetTimeT()) + microseconds(t.MicroSecond());
+                get<TMatched>(*current) |= matched;
+                get<TTimePoints>(*current)[matched] = tp;
+            }
+        }
     }
+
+    TResult latencies;
 
     for (const auto& server : servers) {
         const auto& server_name = server.first;
         const auto& server_data = server.second;
 
-        if (server_data.first == eBoth) {
-            const auto& start = server_data.second[fStart];
-            const auto& stop = server_data.second[fStop];
-            latencies.emplace(server_name, duration_cast<microseconds>(stop - start));
+        if (get<TMatched>(server_data) == eBoth) {
+            const auto& start = get<TTimePoints>(server_data)[fStart];
+            const auto& stop = get<TTimePoints>(server_data)[fStop];
+            latencies.try_emplace(server_name, duration_cast<microseconds>(stop - start));
         }
     }
 
@@ -265,8 +273,10 @@ CLogLatencyReport::~CLogLatencyReport()
 
         for (const auto& server : latencies) {
             const auto& server_name = server.first;
-            const auto& server_latency = server.second;
-            cerr << "server=" << server_name << "&latency=" << server_latency.count() << endl;
+            ostringstream os;
+            os << "server=" << server_name << "&latency=" << get<TLatency>(server.second).count();
+            os << '\n';
+            cerr << os.str();
         }
     }
     catch (exception& ex) {
