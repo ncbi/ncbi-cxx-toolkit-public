@@ -39,6 +39,7 @@
 #include <deque>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <regex>
 #include <sstream>
 #include <string>
@@ -151,22 +152,25 @@ public:
         template <size_t SIZE> SRegex(const char (&s)[SIZE]) : regex(s, SIZE - 1) {}
     };
 
-    CLogLatencies(SRegex start, SRegex stop) :
+    CLogLatencies(SRegex start, SRegex stop, optional<SRegex> server_side = nullopt) :
         m_Start(move(start)),
-        m_Stop(move(stop))
+        m_Stop(move(stop)),
+        m_ServerSide(move(server_side))
     {}
 
     void SetDebug(bool debug) { m_Debug = debug; }
 
     using TData = deque<SDiagMessage>;
     using TLatency = chrono::microseconds;
-    using TServerResult = tuple<TLatency>;
+    using TServerSide = string;
+    using TServerResult = tuple<TLatency, TServerSide>;
     using TResult = unordered_map<string, TServerResult>;
     TResult Parse(const TData& data);
 
 private:
     regex m_Start;
     regex m_Stop;
+    optional<regex> m_ServerSide;
     bool m_Debug = false;
 };
 
