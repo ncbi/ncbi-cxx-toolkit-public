@@ -157,17 +157,17 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
             string      msg = "Exception when handling a bad URL event: " +
                               string(exc.what());
             x_SendMessageAndCompletionChunks(reply, msg,
-                                             CRequestStatus::e500_InternalServerError,
+                                             CRequestStatus::e400_BadRequest,
                                              ePSGS_BadURL, eDiag_Error);
-            PSG_ERROR(msg);
-            x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+            PSG_WARNING(msg);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         } catch (...) {
             string  msg = "Unknown exception when handling a bad URL event";
             x_SendMessageAndCompletionChunks(reply, msg,
-                                             CRequestStatus::e500_InternalServerError,
+                                             CRequestStatus::e400_BadRequest,
                                              ePSGS_BadURL, eDiag_Error);
-            PSG_ERROR(msg);
-            x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+            PSG_WARNING(msg);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         }
     }
     return 0;
