@@ -690,6 +690,8 @@ int CProcessing::OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Requ
         R"(\S+: Closed with status \S+)"
     };
 
+    auto user_args = params.user_args;
+
     if (params.latency.enabled) {
         latency_report.Start();
         latency_report.SetDebug(params.latency.debug);
@@ -711,7 +713,7 @@ int CProcessing::OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Requ
         queue = CPSG_EventLoop(params.service, item_complete, reply_complete);
     }
 
-    queue.SetUserArgs(params.user_args);
+    queue.SetUserArgs(move(user_args));
 
     _VERIFY(queue.SendRequest(request, CDeadline::eInfinite));
     queue.Stop();
