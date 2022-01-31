@@ -130,6 +130,8 @@ int CTest::Run(void)
     Anomaly (upper): 1800170
     Sum            : 100018000000
 */
+
+#if 1
     // Compare results
 
     TCounters counters;
@@ -149,6 +151,7 @@ int CTest::Run(void)
 
     assert( starts == res_starts );
     assert( counters == res_counters );
+#endif    
 
 #endif
     return 0;
@@ -183,7 +186,6 @@ void CTest::ThreadHandler(int idx)
             m_H.AddCountersFrom(clone);
         }
     }
-
 }
 
 
