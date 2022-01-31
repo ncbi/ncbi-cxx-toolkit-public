@@ -62,10 +62,11 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr,
                        bool no_discordant,
                        E_StrandSpecificity strand_specific,
                        bool only_specific,
-                       bool print_md_tag);
+                       bool print_md_tag,
+                       const string& user_tag);
 
 CNcbiOstream& PrintTabularHeader(CNcbiOstream& ostr, const string& version,
-                                 const string& cmd_line_args);
+                                 const string& cmd_line_args, bool user_tag);
 
 CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
                            CNcbiOstream& unaligned_ostr,
@@ -75,7 +76,8 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
                            bool is_paired, int batch_number,
                            bool trim_read_id,
                            bool print_unaligned,
-                           bool no_discordant);
+                           bool no_discordant,
+                           const string& user_tag);
 
 CNcbiOstream& PrintASN1(CNcbiOstream& ostr, const CBioseq_set& query_batch,
                         CSeq_align_set& aligns);

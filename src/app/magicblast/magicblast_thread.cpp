@@ -192,7 +192,8 @@ void* CMagicBlastThread::Main(void)
                              /*thread_batch_number*/ 1,
                              kTrimReadIdForSAM,
                              kPrintUnaligned,
-                             kNoDiscordant);
+                             kNoDiscordant,
+                             m_FormattingArgs->GetUserTag());
             }
             else if (m_FormattingArgs->GetFormattedOutputChoice() ==
                      CFormattingArgs::eAsnText) {
@@ -218,7 +219,8 @@ void* CMagicBlastThread::Main(void)
                          kNoDiscordant,
                          kStrandSpecific,
                          only_specific,
-                         kPrintMdTag);
+                         kPrintMdTag,
+                         m_FormattingArgs->GetUserTag());
             }
 
 

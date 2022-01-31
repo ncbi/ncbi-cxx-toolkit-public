@@ -2937,6 +2937,10 @@ CMapperFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddFlag(kArgNoDiscordant,
             "Suppress discordant alignments for paired reads");
 
+    arg_desc.AddOptionalKey(kArgUserTag, "tag",
+                            "A user tag to add to each alignment",
+                            CArgDescriptions::eString);
+
     arg_desc.SetCurrentGroup("");
 }
 
@@ -3030,6 +3034,10 @@ void CMapperFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
         // but is currently done by HSP stream writer. This is an easy
         // switch until merging is implemented properly.
         CNcbiEnvironment().Set("MAPPER_NO_OVERLAPPED_HSP_MERGE", "1");
+    }
+
+    if (args.Exist(kArgUserTag) && args[kArgUserTag]) {
+        NStr::Replace(args[kArgUserTag].AsString(), "\\t", "\t", m_UserTag);
     }
 }
 

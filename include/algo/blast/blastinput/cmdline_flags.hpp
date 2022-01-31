@@ -475,6 +475,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgUnalignedOutput;
 NCBI_BLASTINPUT_EXPORT extern const string kArgUnalignedFormat;
 /// Argument to specify mt mode (split by db or split by queries)
 NCBI_BLASTINPUT_EXPORT extern const string kArgMTMode;
+/// Argument to specify user tag for alignments (magicblast)
+NCBI_BLASTINPUT_EXPORT extern const string kArgUserTag;
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

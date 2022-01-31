@@ -82,14 +82,16 @@ static
 CNcbiOstream& PrintTabularUnaligned(CNcbiOstream& ostr,
                                     const CMagicBlastResults& results,
                                     const TQueryMap& queries,
-                                    bool first_seg);
+                                    bool first_seg,
+                                    const string& user_tag);
 
 static
 CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
                                 const CMagicBlastResults& results,
                                 const TQueryMap& queries,
                                 bool first_seg,
-                                bool trim_read_ids);
+                                bool trim_read_ids,
+                                const string& user_tag);
 
 
 static char s_Complement(char c)
@@ -327,25 +329,27 @@ CNcbiOstream& PrintUnaligned(CNcbiOstream& ostr,
                              const CMagicBlastResults& results,
                              const TQueryMap& queries,
                              bool first_seg,
-                             bool trim_read_ids)
+                             bool trim_read_ids,
+                             const string& user_tag)
 {
 
 
     switch (fmt) {
 
     case CFormattingArgs::eTabular:
-        return PrintTabularUnaligned(ostr, results, queries, first_seg);
+        return PrintTabularUnaligned(ostr, results, queries, first_seg,
+                                     user_tag);
 
     case CFormattingArgs::eFasta:
         return PrintFastaUnaligned(ostr, results, queries, first_seg);
 
     default:
-        return PrintSAMUnaligned(ostr, results, queries, first_seg, trim_read_ids);
+        return PrintSAMUnaligned(ostr, results, queries, first_seg, trim_read_ids, user_tag);
     };
 }
 
 CNcbiOstream& PrintTabularHeader(CNcbiOstream& ostr, const string& version,
-                                 const string& cmd_line_args)
+                                 const string& cmd_line_args, bool user_tag)
 {
     string sep = "\t";
 
@@ -378,6 +382,9 @@ CNcbiOstream& PrintTabularHeader(CNcbiOstream& ostr, const string& version,
     ostr << "mate reference" << sep;
     ostr << "mate ref. start" << sep;
     ostr << "composite score";
+    if (user_tag) {
+        ostr << sep << "user tag";
+    }
 
     ostr << endl;
 
@@ -389,6 +396,7 @@ static
 CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
                            const TQueryMap& queries,
                            bool is_paired, int batch_number, int compartment,
+                           const string& user_tag,
                            const CSeq_align* mate = NULL)
 {
     // if paired alignment
@@ -404,11 +412,11 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
         _ASSERT(second != disc.Get().end());
 
         PrintTabular(ostr, **first, queries, is_paired, batch_number,
-                     compartment, second->GetNonNullPointer());
+                     compartment, user_tag, second->GetNonNullPointer());
         ostr << endl;
 
         PrintTabular(ostr, **second, queries, is_paired, batch_number,
-                     compartment, first->GetNonNullPointer());
+                     compartment, user_tag, first->GetNonNullPointer());
 
         return ostr;
     }
@@ -622,6 +630,10 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
 
     ostr << sep << fragment_score;
 
+    if (!user_tag.empty()) {
+        ostr << sep << user_tag;
+    }
+
     return ostr;
 }
 
@@ -629,7 +641,8 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
 CNcbiOstream& PrintTabularUnaligned(CNcbiOstream& ostr,
                                     const CMagicBlastResults& results,
                                     const TQueryMap& queries,
-                                    bool first_seg)
+                                    bool first_seg,
+                                    const string& user_tag)
 {
     string sep = "\t";
     CSeq_id id;
@@ -707,6 +720,10 @@ CNcbiOstream& PrintTabularUnaligned(CNcbiOstream& ostr,
     // composite score
     ostr << 0;
 
+    if (!user_tag.empty()) {
+        ostr << sep << user_tag;
+    }
+
     return ostr;
 }
 
@@ -720,14 +737,15 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
                            int& compartment,
                            bool trim_read_id,
                            bool print_unaligned,
-                           bool no_discordant)
+                           bool no_discordant,
+                           const string& user_tag)
 {
     bool is_concordant = results.IsConcordant();
 
     if (!no_discordant || (no_discordant && is_concordant)) {
         for (auto it: results.GetSeqAlign()->Get()) {
             PrintTabular(ostr, *it, queries, is_paired, batch_number,
-                         compartment++);
+                         compartment++, user_tag);
             ostr << endl;
         }
     }
@@ -740,7 +758,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
         (no_discordant && !is_concordant)) {
 
         PrintUnaligned(unaligned_ostr, unaligned_fmt, results, queries, true,
-                       trim_read_id);
+                       trim_read_id, user_tag);
         unaligned_ostr << endl;
     }
 
@@ -749,7 +767,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
          (no_discordant && !is_concordant))) {
 
         PrintUnaligned(unaligned_ostr, unaligned_fmt, results, queries, false,
-                       trim_read_id);
+                       trim_read_id, user_tag);
         unaligned_ostr << endl;
     }
 
@@ -765,7 +783,8 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
                            bool is_paired, int batch_number,
                            bool trim_read_id,
                            bool print_unaligned,
-                           bool no_discordant)
+                           bool no_discordant,
+                           const string& user_tag)
 {
     TQueryMap queries;
     s_CreateQueryMap(query_batch, queries);
@@ -774,7 +793,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr,
     for (auto it: results) {
         PrintTabular(ostr, unaligned_ostr, unaligned_fmt, *it, queries,
                      is_paired, batch_number, compartment, trim_read_id,
-                     print_unaligned, no_discordant);
+                     print_unaligned, no_discordant, user_tag);
     }
 
     return ostr;
@@ -951,6 +970,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
                        bool only_specific,
                        bool print_md_tag,
                        bool other = false,
+                       const string& user_tag = "",
                        const CSeq_align* mate = NULL)
 {
     string sep = "\t";
@@ -980,14 +1000,14 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         PrintSAM(ostr, **first, queries, query_info, is_spliced,
                  batch_number, first_secondary, last_secondary,
                  trim_read_ids, strand_specific, only_specific,
-                 print_md_tag, false,
+                 print_md_tag, false, user_tag,
                  second->GetNonNullPointer());
         ostr << endl;
 
         PrintSAM(ostr, **second, queries, query_info, is_spliced,
                  batch_number, first_secondary, last_secondary,
                  trim_read_ids, strand_specific, only_specific,
-                 print_md_tag, true,
+                 print_md_tag, true, user_tag,
                  first->GetNonNullPointer());
 
         return ostr;
@@ -1419,6 +1439,10 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         }
     }
 
+    if (!user_tag.empty()) {
+        ostr << sep << "XU:Z:" << user_tag;
+    }
+
     return ostr;
 }
 
@@ -1427,7 +1451,8 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
                                 const CMagicBlastResults& results,
                                 const TQueryMap& queries,
                                 bool first_seg,
-                                bool trim_read_ids)
+                                bool trim_read_ids,
+                                const string& user_tag)
 {
     string sep = "\t";
 
@@ -1511,6 +1536,10 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
         ostr << sep << "YF:Z:F";
     }
 
+    if (!user_tag.empty()) {
+        ostr << sep << "XU:Z:" << user_tag;
+    }
+
     return ostr;
 }
 
@@ -1525,7 +1554,8 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr,
                        bool trim_read_id, bool print_unaligned,
                        bool no_discordant, E_StrandSpecificity strand_specific,
                        bool only_specific,
-                       bool print_md_tag)
+                       bool print_md_tag,
+                       const string& user_tag)
 {
     bool first_secondary = false;
     bool last_secondary = false;
@@ -1544,7 +1574,8 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr,
         for (auto it: results.GetSeqAlign()->Get()) {
             PrintSAM(ostr, *it, queries, query_info, is_spliced, batch_number,
                      first_secondary, last_secondary, trim_read_id,
-                     strand_specific, only_specific, print_md_tag);
+                     strand_specific, only_specific, print_md_tag, false,
+                     user_tag);
             ostr << endl;
         }
     }
@@ -1557,7 +1588,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr,
         (no_discordant && !is_concordant)) {
 
         PrintUnaligned(unaligned_ostr, unaligned_fmt, results, queries, true,
-                       trim_read_id);
+                       trim_read_id, user_tag);
         unaligned_ostr << endl;
     }
 
@@ -1565,7 +1596,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr,
         ((results.GetLastInfo() & CMagicBlastResults::fUnaligned) != 0 ||
          (no_discordant && !is_concordant))) {
         PrintUnaligned(unaligned_ostr, unaligned_fmt, results, queries, false,
-                       trim_read_id);
+                       trim_read_id, user_tag);
         unaligned_ostr << endl;
     }
 
@@ -1586,7 +1617,8 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr,
                        bool no_discordant,
                        E_StrandSpecificity strand_specific,
                        bool only_specific,
-                       bool print_md_tag)
+                       bool print_md_tag,
+                       const string& user_tag)
 {
     TQueryMap bioseqs;
     s_CreateQueryMap(query_batch, bioseqs);
@@ -1594,7 +1626,8 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr,
     for (auto it: results) {
         PrintSAM(ostr, unaligned_ostr, unaligned_fmt, *it, bioseqs, query_info,
                  is_spliced, batch_number, trim_read_id, print_unaligned,
-                 no_discordant, strand_specific, only_specific, print_md_tag);
+                 no_discordant, strand_specific, only_specific, print_md_tag,
+                 user_tag);
     }
 
     return ostr;

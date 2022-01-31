@@ -1258,6 +1258,9 @@ public:
     EOutputFormat GetUnalignedOutputFormat(void) const
     {return m_UnalignedOutputFormat;}
 
+    /// Get a user tag added to each alignment
+    const string& GetUserTag(void) const {return m_UserTag;}
+
 private:
     bool m_TrimReadIds;
     bool m_PrintUnaligned;
@@ -1269,6 +1272,7 @@ private:
     bool m_OnlyStrandSpecific;
     bool m_PrintMdTag;
     EOutputFormat m_UnalignedOutputFormat;
+    string m_UserTag;
 };
 
 /// Argument class to collect multi-threaded arguments
