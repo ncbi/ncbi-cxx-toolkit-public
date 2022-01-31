@@ -662,7 +662,7 @@ bool s_GetDataOnly(const CArgs& args)
 
 SOneRequestParams::SOneRequestParams(const CArgs& args) :
     SParams(args),
-    latency({args["latency"].HasValue(), args["debug-printout"].HasValue()}),
+    latency({args["latency"].HasValue(), args["server-side"].HasValue(), args["debug-printout"].HasValue()}),
     data_only({s_GetDataOnly(args), s_GetOutputFormat(args)})
 {
 }
@@ -681,13 +681,19 @@ void CProcessing::ReplyComplete(SJsonOut& output, EPSG_Status status, const shar
     }
 }
 
+auto s_GetServerSideRegex()
+{
+    return optional<CLogLatencyReport::SRegex>(R"(\S+: \S+&severity=trace\\nTimestamp \(mks\): ([0-9]+)\\n.*)");
+}
+
 int CProcessing::OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Request> request)
 {
     SDataOnlyCopy data_only_copy(params.data_only);
     CLogLatencyReport latency_report{
         "/objtools/pubseq_gateway/client/",
         R"(\S+: (\S+:[0-9]+)/\S+?\S+&client_id=\S+)",
-        R"(\S+: Closed with status \S+)"
+        R"(\S+: Closed with status \S+)",
+        params.latency.server_side ? s_GetServerSideRegex() : nullopt
     };
 
     auto user_args = params.user_args;
@@ -696,6 +702,10 @@ int CProcessing::OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Requ
         latency_report.Start();
         latency_report.SetDebug(params.latency.debug);
         TPSG_DebugPrintout::SetDefault(TPSG_DebugPrintout::TValue::eSome);
+
+        if (params.latency.server_side) {
+            user_args.insert_or_assign("trace", set<string>{"yes"});
+        }
     }
 
     CPSG_EventLoop queue;

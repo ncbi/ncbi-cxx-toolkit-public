@@ -195,15 +195,15 @@ CLogLatencies::TResult CLogLatencies::Parse(const TData& data)
 {
     using namespace chrono;
 
-    enum ESubExpression : size_t { eServer = 1 };
-    enum EMatchedPattern : size_t { fNothing = 0, fStart, fStop, eNumberOfPatterns, eBoth = fStart | fStop };
-    array<const char*, eNumberOfPatterns> prefixes{ "          ", "Start ->  ", "Stop ->   " };
+    enum ESubExpression : size_t { eServer = 1, eTimestamp = 1 };
+    enum EMatchedPattern : size_t { fNothing = 0, fStart, fStop, eServerSide, eNumberOfPatterns, eBoth = fStart | fStop };
+    array<const char*, eNumberOfPatterns> prefixes{ "          ", "Start ->  ", "Stop ->   ", "Server -> " };
 
     cmatch m;
 
     using TMatched = size_t;
     using TTimePoints = array<system_clock::time_point, eBoth>;
-    using TServerData = tuple<TMatched, TTimePoints>;
+    using TServerData = tuple<TMatched, TTimePoints, TServerSide>;
     unordered_map<string, TServerData> servers;
     TServerData* current = nullptr;
 
@@ -224,6 +224,9 @@ CLogLatencies::TResult CLogLatencies::Parse(const TData& data)
             if (m.size() > eServer) {
                 current = &servers[m[eServer].str()];
             }
+
+        } else if (m_ServerSide && regex_match(msg_start, msg_end, m, *m_ServerSide)) {
+            matched = eServerSide;
         }
 
         if (m_Debug) {
@@ -234,6 +237,9 @@ CLogLatencies::TResult CLogLatencies::Parse(const TData& data)
         if (matched) {
             if (!current) {
                 cerr << "Cannot use matched data without a server\n";
+
+            } else if (matched == eServerSide) {
+                get<TServerSide>(*current) = m[eTimestamp].str();
 
             } else {
                 auto t = msg.GetTime();
@@ -253,7 +259,8 @@ CLogLatencies::TResult CLogLatencies::Parse(const TData& data)
         if (get<TMatched>(server_data) == eBoth) {
             const auto& start = get<TTimePoints>(server_data)[fStart];
             const auto& stop = get<TTimePoints>(server_data)[fStop];
-            latencies.try_emplace(server_name, duration_cast<microseconds>(stop - start));
+            const auto& server_side = get<TServerSide>(server_data);
+            latencies.try_emplace(server_name, duration_cast<microseconds>(stop - start), server_side);
         }
     }
 
@@ -273,8 +280,10 @@ CLogLatencyReport::~CLogLatencyReport()
 
         for (const auto& server : latencies) {
             const auto& server_name = server.first;
+            const auto& server_side = get<TServerSide>(server.second);
             ostringstream os;
             os << "server=" << server_name << "&latency=" << get<TLatency>(server.second).count();
+            if (!server_side.empty()) os << "&server_side=" << server_side;
             os << '\n';
             cerr << os.str();
         }
