@@ -114,7 +114,6 @@ const char *magic_phrases[] = {
 extern vector<string> genbankKeywords;
 extern vector<string> emblKeywords;
 extern vector<string> swissProtKeywords;
-extern size_t         genbankKeywordsMaxSize;
 
 /**********************************************************/
 void ShrinkSpaces(char* line)
