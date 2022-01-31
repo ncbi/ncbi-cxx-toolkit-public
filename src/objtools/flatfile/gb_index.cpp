@@ -61,12 +61,6 @@ vector<string> genbankKeywords = {
     "DBLINK",
 };
 
-size_t genbankKeywordsMaxSize = std::max_element(
-        genbankKeywords.begin(),
-        genbankKeywords.end(),
-        [](const string& a, const string& b) {return a.size() < b.size(); })
-    ->size();
-
 
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
