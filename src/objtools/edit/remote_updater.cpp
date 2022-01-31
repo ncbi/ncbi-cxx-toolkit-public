@@ -34,6 +34,8 @@
 #include <ncbi_pch.hpp>
 
 #include <objects/taxon3/taxon3.hpp>
+#include <objects/mla/Title_msg.hpp>
+#include <objects/mla/Title_msg_list.hpp>
 #include <objects/mla/mla_client.hpp>
 
 #include <objects/pub/Pub_equiv.hpp>
@@ -66,6 +68,45 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
+
+void CMLAUpdater::SetClient(CMLAClient* mla)
+{
+    m_mlaClient.reset(mla);
+}
+
+CRef<CPub> CMLAUpdater::GetPub(TEntrezId id, EPubmedError* perr)
+{
+    CPubMedId  request(id);
+    CMLAClient::TReply reply;
+
+    try {
+        return m_mlaClient->AskGetpubpmid(request, &reply);
+    } catch (CException&) {
+        EError_val mlaErrorVal = reply.GetError();
+        *perr = mlaErrorVal;
+    }
+
+    return {};
+}
+
+TEntrezId CMLAUpdater::GetPmId(const CPub& pub)
+{
+    CMLAClient::TReply reply;
+
+    try {
+        return ENTREZ_ID_FROM(int, m_mlaClient->AskCitmatchpmid(pub, &reply));
+    } catch (CException&) {
+    }
+
+    return ZERO_ENTREZ_ID;
+}
+
+CRef<CTitle_msg_list> CMLAUpdater::GetTitle(const CTitle_msg&)
+{
+    return {}; // not used
+}
+
+
 namespace
 {
 
@@ -93,21 +134,19 @@ static bool s_IsConnectionFailure(EError_val mlaErrorVal) {
 }
 
 
-CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts, IObjtoolsListener* pMessageListener)
+CRef<CPub> s_GetPubFrompmid(CMLAUpdater& upd, TEntrezId id, int maxAttempts, IObjtoolsListener* pMessageListener)
 {
     CRef<CPub> result;
-    CPubMedId  request(id);
-    CMLAClient::TReply reply;
 
     int maxCount = max(1, maxAttempts);
     for (int count=0; count<maxCount; ++count) {
-        try {
-            result = mlaClient.AskGetpubpmid(request, &reply);
+        EPubmedError errorVal;
+        result = upd.GetPub(id, &errorVal);
+        if (result) {
             return result;
-        }
-        catch(CException&) {
-            auto errorVal = reply.GetError();
-            auto isConnectionError = s_IsConnectionFailure(errorVal);
+        } else {
+            EError_val mlaErrorVal = static_cast<EError_val>(errorVal);
+            bool isConnectionError = s_IsConnectionFailure(mlaErrorVal);
             if (isConnectionError && count<maxCount-1) {
                 continue;
             }
@@ -120,10 +159,10 @@ CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts
                 oss << count+1 << " attempts made. ";
             }
             oss << "CMLAClient : "
-                << errorVal;
+                << mlaErrorVal;
             string msg = oss.str();
             if (pMessageListener) {
-                pMessageListener->PutMessage(CRemoteUpdaterMessage(msg, errorVal));
+                pMessageListener->PutMessage(CRemoteUpdaterMessage(msg, mlaErrorVal));
                 break;
             }
             else {
@@ -242,8 +281,7 @@ protected:
 bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
 {
     CMLAClient::TReply reply;
-    auto new_pub =
-        s_GetPubFrompmid(*m_mlaClient, id, m_MaxMlaAttempts, m_pMessageListener);
+    auto new_pub = s_GetPubFrompmid(m_mla, id, m_MaxMlaAttempts, m_pMessageListener);
     if (!new_pub) {
         return false;
     }
@@ -443,33 +481,25 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
 {
     std::lock_guard<std::mutex> guard(m_Mutex);
 
-    for (auto pDesc : seq_descr.Set()) {
+    for (auto& pDesc : seq_descr.Set()) {
         if (!pDesc->IsPub() || !pDesc->GetPub().IsSetPub()) {
             continue;
         }
 
         auto& arr = pDesc->SetPub().SetPub().Set();
-        if (m_mlaClient.Empty())
-            m_mlaClient.Reset(new CMLAClient());
+        if (!m_mla)
+            m_mla.SetClient(new CMLAClient());
 
-        auto id = FindPMID(arr);
+        TEntrezId id = FindPMID(arr);
         if (id>ZERO_ENTREZ_ID) {
             xUpdatePubPMID(arr, id);
             continue;
         }
 
-        for (auto pPubEquiv : arr) {
+        for (const auto& pPubEquiv : arr) {
             if (pPubEquiv->IsArticle()) {
-                CMLAClient::TReply reply;
-                try {
-                    id = ENTREZ_ID_FROM(int, m_mlaClient->AskCitmatchpmid(*pPubEquiv, &reply));
-                }
-                catch(CException&)
-                {
-                    continue;
-                }
-                if (id>ZERO_ENTREZ_ID &&
-                    xUpdatePubPMID(arr,id)) {
+                id = m_mla.GetPmId(*pPubEquiv);
+                if (id > ZERO_ENTREZ_ID && xUpdatePubPMID(arr,id)) {
                     break;
                 }
             }
@@ -673,7 +703,7 @@ void CRemoteUpdater::PostProcessPubs(CSeq_entry_EditHandle& obj)
 }
 
 void CRemoteUpdater::SetMLAClient(CMLAClient& mlaClient) {
-    m_mlaClient.Reset(&mlaClient);
+    m_mla.SetClient(&mlaClient);
 }
 
 CConstRef<CTaxon3_reply> CRemoteUpdater::SendOrgRefList(const vector<CRef<COrg_ref>>& list)
