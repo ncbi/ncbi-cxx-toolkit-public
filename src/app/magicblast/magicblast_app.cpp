@@ -391,7 +391,8 @@ int CMagicBlastApp::Run(void)
 
             PrintTabularHeader(m_CmdLineArgs->GetOutputStream(),
                                GetVersion().Print(),
-                               s_GetCmdlineArgs(GetArguments()));
+                               s_GetCmdlineArgs(GetArguments()),
+                               !fmt_args->GetUserTag().empty());
         }
 
         // print another SAM or tabular header if reporting unaligned reads
@@ -404,7 +405,8 @@ int CMagicBlastApp::Run(void)
             else if (fmt_args->GetUnalignedOutputFormat() == CFormattingArgs::eTabular) {
                 PrintTabularHeader(*m_CmdLineArgs->GetUnalignedOutputStream(),
                                    GetVersion().Print(),
-                                   s_GetCmdlineArgs(GetArguments()));
+                                   s_GetCmdlineArgs(GetArguments()),
+                                   !fmt_args->GetUserTag().empty());
             }
         }
 

@@ -269,6 +269,7 @@ const string kArgMaxDbWordCount("max_db_word_count");
 const string kArgPrintMdTag("md_tag");
 const string kArgUnalignedOutput("out_unaligned");
 const string kArgUnalignedFormat("unaligned_fmt");
+const string kArgUserTag("tag");
 
 const string kArgMTMode("mt_mode");
 
