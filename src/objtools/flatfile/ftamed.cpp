@@ -104,7 +104,7 @@ public:
         return ENTREZ_ID_FROM(int, m_mla.AskCitmatchpmid(pub));
     }
 
-    CRef<CPub> GetPub(TEntrezId pmid) override
+    CRef<CPub> GetPub(TEntrezId pmid, edit::EPubmedError* = nullptr) override
     {
         return m_mla.AskGetpubpmid(CPubMedId(pmid));
     }

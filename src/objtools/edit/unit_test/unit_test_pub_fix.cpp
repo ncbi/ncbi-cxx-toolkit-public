@@ -655,7 +655,7 @@ BOOST_AUTO_TEST_CASE(Test_TenAuthorsProcess)
     BOOST_CHECK_EQUAL(art_new.GetAuthors().Equals(expected.GetAuthors()), true);
 }
 
-class CMLAUpdater : public edit::IPubmedUpdater
+class CMLAUpdater : public IPubmedUpdater
 {
     CMLAClient m_mla;
 public:
@@ -663,7 +663,7 @@ public:
     {
         return ENTREZ_ID_FROM(int, m_mla.AskCitmatchpmid(pub));
     }
-    CRef<CPub> GetPub(TEntrezId pmid) override
+    CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override
     {
         return m_mla.AskGetpubpmid(CPubMedId(pmid));
     }
