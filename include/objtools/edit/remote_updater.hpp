@@ -39,6 +39,7 @@
 #include <functional>
 #include <objects/mla/Error_val.hpp>
 #include <objtools/edit/edit_error.hpp>
+#include <objtools/edit/pubmed_updater.hpp>
 #include <mutex>
 
 BEGIN_NCBI_SCOPE
@@ -80,6 +81,19 @@ class NCBI_XOBJEDIT_EXPORT CRemoteUpdaterException: public CException
 {
 public:
     using CException::CException;
+};
+
+class NCBI_XOBJEDIT_EXPORT CMLAUpdater : IPubmedUpdater
+{
+public:
+    CRef<CPub> GetPub(TEntrezId id, EPubmedError* perr) override;
+    TEntrezId GetPmId(const CPub&) override;
+    CRef<CTitle_msg_list> GetTitle(const CTitle_msg&) override;
+
+    operator bool() const { return m_mlaClient.operator bool(); }
+    void SetClient(CMLAClient*);
+private:
+    unique_ptr<CMLAClient> m_mlaClient;
 };
 
 class NCBI_XOBJEDIT_EXPORT CRemoteUpdater
@@ -130,7 +144,7 @@ private:
 
     IObjtoolsListener* m_pMessageListener = nullptr;
     FLogger m_logger = nullptr; // wrapper for compatibility between IObjtoolsListener and old FLogger
-    CRef<CMLAClient>  m_mlaClient;
+    CMLAUpdater m_mla;
     unique_ptr<CCachedTaxon3_impl>  m_taxClient;
 
     std::mutex m_Mutex;
