@@ -49,6 +49,8 @@ race:^ncbi::CHookData<ncbi::CWriteClassMemberHook
 #       that have limits tests that incompatible with sanitizer. 
 signal:corelib/test/test_ncbi_system.cpp
 
+# False positive deadlock detection in util/test/test_histogram_mt. CXX-12217
+deadlock:^CTest::ThreadHandler(int)
 
 ################################################################
 # vasilche CXX-10546
