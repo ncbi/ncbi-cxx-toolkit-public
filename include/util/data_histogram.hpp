@@ -97,14 +97,18 @@ constexpr bool g_HistogramValueTypeHavePlus()
 ///   - operator TScale() const        -- to convert to scale type TScale;
 ///   - bool operator >(const TValue&) -- for comparison.
 ///
-/// @note
+/// @warning
 ///   CHistogram is not MT safe by default, it is intended to be created 
 ///   and collect data withing the same thread. If you want to use the same 
-///   CHistogram class object across multiple threads, you need to provide
+///   CHistogram class object across multiple threads, you may need to provide
 ///   some sort of MT protection to guard access to the histogram object, 
 ///   or enable internal MT protection, and call CHistogram::EnableMT()
-///   immediately after creating a histogram object.
-
+///   immediately after creating a histogram object. It is turned OFF by default.
+///   But note, internal MT protection cannnot protect histogram's data if you
+///   use methods that affects 2 histograms at the same time, like 
+///   AddCountersFrom()/StealCountersFrom(). You still may need to add some 
+///   additional MT ptotections, if both histograms can be accessed from 
+///   a different threads simultaneously, or this can lead to a deadlock.
 
 template <typename TValue = int, typename TScale = TValue, typename TCounter = Uint8>
 class CHistogram
@@ -970,7 +974,7 @@ CHistogram<TValue, TScale, TCounter>::x_CalculateBinsLog
             _ASSERT(n > 1);
 
             // Median is located in the middle of the center bin.
-            // Too calculate starting point for this center bin end its ending point,
+            // To calculate starting point for this center bin end its ending point,
             // by the way also a starting point for the next bin, we double the number of bins
             // on each side of the median, and calculate values for each half-mark on a scale.
             // After that copy values for needed half-marks only.
@@ -1195,12 +1199,12 @@ CHistogram<TValue, TScale, TCounter>::AddCountersFrom(const CHistogram& other)
         x_AddCountersFrom(const_cast<CHistogram&>(other));
     }
     catch (...) {
-        MT_Unlock();
         other.MT_Unlock();
+        MT_Unlock();
         throw;
     }
-    MT_Unlock();
     other.MT_Unlock();
+    MT_Unlock();
 }
 
 
@@ -1217,12 +1221,12 @@ CHistogram<TValue, TScale, TCounter>::StealCountersFrom(CHistogram& other)
         other.x_Reset();
     }
     catch (...) {
-        MT_Unlock();
         other.MT_Unlock();
+        MT_Unlock();
         throw;
     }
-    MT_Unlock();
     other.MT_Unlock();
+    MT_Unlock();
 }
 
 
