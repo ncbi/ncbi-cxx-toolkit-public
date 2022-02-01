@@ -9,5 +9,5 @@ LIBS = $(PSG_CLIENT_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
 WATCHERS = sadyrovr
 CHECK_REQUIRES = in-house-resources PYTHON3
-CHECK_CMD = psg_client.py test /CHECK_NAME=psg_client.py
+CHECK_CMD = python3 psg_client.py test /CHECK_NAME=psg_client.py
 CHECK_COPY = psg_client.py
