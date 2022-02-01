@@ -683,7 +683,7 @@ void CProcessing::ReplyComplete(SJsonOut& output, EPSG_Status status, const shar
 
 auto s_GetServerSideRegex()
 {
-    return optional<CLogLatencyReport::SRegex>(R"(\S+: \S+&severity=trace\\nTimestamp \(mks\): ([0-9]+)\\n.*)");
+    return std::optional<CLogLatencyReport::SRegex>(R"(\S+: \S+&severity=trace\\nTimestamp \(mks\): ([0-9]+)\\n.*)");
 }
 
 int CProcessing::OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Request> request)
