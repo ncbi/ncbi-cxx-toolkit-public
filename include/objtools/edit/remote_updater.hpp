@@ -90,10 +90,10 @@ public:
     TEntrezId GetPmId(const CPub&) override;
     CRef<CTitle_msg_list> GetTitle(const CTitle_msg&) override;
 
-    operator bool() const { return m_mlaClient.operator bool(); }
+    operator bool() const { return m_mlaClient.NotEmpty(); }
     void SetClient(CMLAClient*);
 private:
-    unique_ptr<CMLAClient> m_mlaClient;
+    CRef<CMLAClient> m_mlaClient;
 };
 
 class NCBI_XOBJEDIT_EXPORT CRemoteUpdater
