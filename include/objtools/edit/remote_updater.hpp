@@ -83,14 +83,14 @@ public:
     using CException::CException;
 };
 
-class NCBI_XOBJEDIT_EXPORT CMLAUpdater : IPubmedUpdater
+class NCBI_XOBJEDIT_EXPORT CMLAUpdater : public IPubmedUpdater
 {
 public:
+    CMLAUpdater();
     CRef<CPub> GetPub(TEntrezId id, EPubmedError* perr) override;
     TEntrezId GetPmId(const CPub&) override;
     CRef<CTitle_msg_list> GetTitle(const CTitle_msg&) override;
 
-    operator bool() const { return m_mlaClient.NotEmpty(); }
     void SetClient(CMLAClient*);
 private:
     CRef<CMLAClient> m_mlaClient;
@@ -132,6 +132,7 @@ public:
     static void PostProcessPubs(CSeq_entry& obj);
     static void PostProcessPubs(CPubdesc& pubdesc);
 
+    void SetPubmedClient(IPubmedUpdater*);
     void SetMLAClient(CMLAClient& mlaClient);
     // Use either shared singleton or individual instances
     NCBI_DEPRECATED static CRemoteUpdater& GetInstance();
@@ -144,7 +145,7 @@ private:
 
     IObjtoolsListener* m_pMessageListener = nullptr;
     FLogger m_logger = nullptr; // wrapper for compatibility between IObjtoolsListener and old FLogger
-    CMLAUpdater m_mla;
+    unique_ptr<IPubmedUpdater> m_pubmed;
     unique_ptr<CCachedTaxon3_impl>  m_taxClient;
 
     std::mutex m_Mutex;
