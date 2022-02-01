@@ -71,7 +71,7 @@ BEGIN_SCOPE(edit)
 
 void CMLAUpdater::SetClient(CMLAClient* mla)
 {
-    m_mlaClient.reset(mla);
+    m_mlaClient.Reset(mla);
 }
 
 CRef<CPub> CMLAUpdater::GetPub(TEntrezId id, EPubmedError* perr)
