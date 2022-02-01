@@ -39,7 +39,7 @@
 #include <functional>
 #include <objects/mla/Error_val.hpp>
 #include <objtools/edit/edit_error.hpp>
-#include <objtools/edit/pubmed_updater.hpp>
+#include <objtools/edit/mla_updater.hpp>
 #include <mutex>
 
 BEGIN_NCBI_SCOPE
@@ -81,19 +81,6 @@ class NCBI_XOBJEDIT_EXPORT CRemoteUpdaterException: public CException
 {
 public:
     using CException::CException;
-};
-
-class NCBI_XOBJEDIT_EXPORT CMLAUpdater : public IPubmedUpdater
-{
-public:
-    CMLAUpdater();
-    CRef<CPub> GetPub(TEntrezId id, EPubmedError* perr) override;
-    TEntrezId GetPmId(const CPub&) override;
-    CRef<CTitle_msg_list> GetTitle(const CTitle_msg&) override;
-
-    void SetClient(CMLAClient*);
-private:
-    CRef<CMLAClient> m_mlaClient;
 };
 
 class NCBI_XOBJEDIT_EXPORT CRemoteUpdater

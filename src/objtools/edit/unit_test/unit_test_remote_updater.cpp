@@ -55,7 +55,7 @@
 #include <objtools/unit_test_util/unit_test_util.hpp>
 #include <objtools/edit/remote_updater.hpp>
 #include <objtools/logging/listener.hpp>
-#include <objects/mla/mla_client.hpp>
+#include <objtools/edit/mla_updater.hpp>
 #include <objects/seq/Seqdesc.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */

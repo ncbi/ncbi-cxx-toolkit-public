@@ -69,49 +69,6 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
 
-CMLAUpdater::CMLAUpdater()
-  : m_mlaClient(new CMLAClient())
-{
-}
-
-void CMLAUpdater::SetClient(CMLAClient* mla)
-{
-    m_mlaClient.Reset(mla);
-}
-
-CRef<CPub> CMLAUpdater::GetPub(TEntrezId id, EPubmedError* perr)
-{
-    CPubMedId  request(id);
-    CMLAClient::TReply reply;
-
-    try {
-        return m_mlaClient->AskGetpubpmid(request, &reply);
-    } catch (CException&) {
-        EError_val mlaErrorVal = reply.GetError();
-        *perr = mlaErrorVal;
-    }
-
-    return {};
-}
-
-TEntrezId CMLAUpdater::GetPmId(const CPub& pub)
-{
-    CMLAClient::TReply reply;
-
-    try {
-        return ENTREZ_ID_FROM(int, m_mlaClient->AskCitmatchpmid(pub, &reply));
-    } catch (CException&) {
-    }
-
-    return ZERO_ENTREZ_ID;
-}
-
-CRef<CTitle_msg_list> CMLAUpdater::GetTitle(const CTitle_msg&)
-{
-    return {}; // not used
-}
-
-
 namespace
 {
 
