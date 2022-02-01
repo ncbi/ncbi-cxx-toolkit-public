@@ -2149,7 +2149,12 @@ NCBITEST_INIT_TREE()
     if ( !CGBDataLoader::IsUsingPSGLoader() &&
          (!s_HaveID2(eExcludePubseqos2) || s_HaveCache()) ) {
         NCBITEST_DISABLE(TestGetBlobById);
-    }    
+    }
+    if ( !s_HaveVDBWGS() ) {
+        NCBITEST_DISABLE(CheckWGSMasterDescr8);
+        NCBITEST_DISABLE(CheckWGSMasterDescr9);
+        NCBITEST_DISABLE(CheckWGSMasterDescr12);
+    }
 #if defined(NCBI_THREADS) && !defined(RUN_SLOW_MT_TESTS)
     NCBITEST_DISABLE(MTCrash1);
 #endif
