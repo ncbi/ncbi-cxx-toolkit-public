@@ -226,8 +226,22 @@ bool s_HaveMongoDBCDD()
 
 bool s_HaveVDBWGS()
 {
-    // WGS VDB plugin is available in PSG and OSG
-    return CGBDataLoader::IsUsingPSGLoader() || s_HaveID2(eExcludePubseqos2);
+    // WGS VDB plugin is available in PSG
+    if ( CGBDataLoader::IsUsingPSGLoader() ) {
+        return true;
+    }
+    // WGS VDB plugin is available in OSG
+    if ( s_HaveID2(eExcludePubseqos2) ) {
+        return true;
+    }
+    // WGS VDB plugin may be set in GB loader on client side
+    if ( s_HaveID2() ) {
+        const char* env = getenv("GENBANK_ID2_PROCESSOR");
+        if ( env && NStr::Equal(env, "wgs") ) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -1297,13 +1311,18 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr2)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
     BOOST_CHECK_EQUAL(user_count.size(), 4u);
+    int extra = 0;
     if ( !s_HaveID1() ) { // TODO: ID1 returns 1 StructuredComment
         BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
+    }
+    else {
+        BOOST_CHECK_GE(user_count["StructuredComment"], 1);
+        extra = user_count["StructuredComment"]-2;
     }
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
     BOOST_CHECK_EQUAL(user_count["RefGeneTracking"], 1);
     BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
-    BOOST_CHECK_EQUAL(total_count, 12);
+    BOOST_CHECK_EQUAL(total_count, 12+extra);
 }
 
 
@@ -1352,10 +1371,15 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr3)
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
     BOOST_CHECK_EQUAL(user_count["RefGeneTracking"], 1);
+    int extra = 0;
     if ( !s_HaveID1() ) { // TODO: ID1 returns 2 FeatureFetchPolicy
         BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
     }
-    BOOST_CHECK_EQUAL(total_count, 12);
+    else {
+        BOOST_CHECK_GE(user_count["FeatureFetchPolicy"], 1);
+        extra = user_count["FeatureFetchPolicy"]-1;
+    }
+    BOOST_CHECK_EQUAL(total_count, 12+extra);
 }
 
 
@@ -1443,6 +1467,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr5)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 3);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
+    BOOST_CHECK_EQUAL(comment_count, 1);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Embl));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
@@ -1493,6 +1518,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr6)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 1);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
+    BOOST_CHECK_EQUAL(comment_count, 1);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Embl));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
@@ -1543,6 +1569,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr7)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 1);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
+    BOOST_CHECK_EQUAL(comment_count, 1);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
@@ -1560,7 +1587,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr8)
         LOG_POST("Skipping test for WGS descriptors of detached protein without VDB");
         return;
     }
-    LOG_POST("Checking WGS master sequence descriptors on a detached protein");
+    LOG_POST("Checking VDB WGS master sequence descriptors on a detached protein");
     CRef<CScope> scope = s_InitScope();
     CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("MBA2057862.1"));
     BOOST_REQUIRE(bh);
@@ -1596,6 +1623,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr8)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 2);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
+    BOOST_CHECK_EQUAL(comment_count, 2);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
@@ -1612,7 +1640,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr9)
         LOG_POST("Skipping test for WGS descriptors of VDB scaffolds without VDB");
         return;
     }
-    LOG_POST("Checking WGS master sequence descriptors on VDB scaffolds");
+    LOG_POST("Checking VDB WGS master sequence descriptors on scaffolds");
     CRef<CScope> scope = s_InitScope();
     CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("ALWZ04S0000001"));
     BOOST_REQUIRE(bh);
@@ -1750,6 +1778,59 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr11)
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
     BOOST_CHECK_EQUAL(total_count, 8);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr12)
+{
+    if ( !s_HaveVDBWGS() ) {
+        LOG_POST("Skipping test for WGS descriptors of VDB contig without VDB");
+        return;
+    }
+    LOG_POST("Checking VDB WGS master sequence descriptors with split main seqence");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("AAHIBN010000001"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    int total_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Genbank));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 1);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
+    BOOST_CHECK_EQUAL(comment_count, 2);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
+    BOOST_CHECK_EQUAL(total_count, 11);
 }
 
 
