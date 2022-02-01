@@ -302,6 +302,7 @@ int CHttpSessionApp::Run(void)
         for (const auto& url : urls) {
             cout << "GET " << url << endl;
             CHttpRequest req = session.NewRequest(url, CHttpSession::eGet, param);
+            cout << "-------------------------------------" << endl;
             if (!PrintResponse(&session, req.Execute())) m_Errors++;
             cout << "-------------------------------------" << endl << endl;
         }
