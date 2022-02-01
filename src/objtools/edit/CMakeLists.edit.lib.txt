@@ -7,7 +7,7 @@ NCBI_begin_lib(xobjedit)
     struc_comm_field text_desc_field gb_block_field
     link_cds_mrna cds_fix loc_edit mail_report
     feattable_edit gaps_edit source_edit rna_edit
-    remote_updater parse_text_options publication_edit gap_trim
+    remote_updater mla_updater parse_text_options publication_edit gap_trim
     external_annots feature_propagate text_object_description
     seq_edit pub_fix
   )

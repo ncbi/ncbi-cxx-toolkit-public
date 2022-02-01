@@ -37,7 +37,7 @@
 
 #include <objects/mla/Title_msg.hpp>
 #include <objects/mla/Title_msg_list.hpp>
-#include <objects/mla/mla_client.hpp>
+#include <objtools/edit/mla_updater.hpp>
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/pub/Pub.hpp>
@@ -75,47 +75,8 @@ CPubFixMessageListener::PostMessage(const IMessage& message)
 }
 
 /**********************************************************/
-class CMLAUpdater : public edit::IPubmedUpdater
-{
-    CMLAClient m_mla;
 
-public:
-    bool Init() override
-    {
-        CMla_back resp;
-        try {
-            m_mla.AskInit(&resp);
-        } catch (...) {
-            return false;
-        }
-        return resp.IsInit();
-    }
-
-    void Fini() override
-    {
-        try {
-            m_mla.AskFini();
-        } catch (...) {
-        }
-    }
-
-    TEntrezId GetPmId(const CPub& pub) override
-    {
-        return ENTREZ_ID_FROM(int, m_mla.AskCitmatchpmid(pub));
-    }
-
-    CRef<CPub> GetPub(TEntrezId pmid, edit::EPubmedError* = nullptr) override
-    {
-        return m_mla.AskGetpubpmid(CPubMedId(pmid));
-    }
-
-    CRef<CTitle_msg_list> GetTitle(const CTitle_msg& msg) override
-    {
-        return m_mla.AskGettitle(msg);
-    }
-};
-
-static CMLAUpdater mlaupdater;
+static edit::CMLAUpdater mlaupdater;
 
 /**********************************************************/
 edit::IPubmedUpdater* GetPubmedClient()
