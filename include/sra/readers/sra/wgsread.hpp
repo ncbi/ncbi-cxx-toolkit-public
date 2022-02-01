@@ -153,7 +153,8 @@ struct SWGSDb_Defs
         fNucProtDescr = 1<<12,
         fMasterDescr  = 1<<5,
         fMasterDescrMark = 1<<13,
-        fMaskDescr    = fSeqDescr|fNucProtDescr|fMasterDescr|fMasterDescrMark,
+        fSeqDescrObj  = 1<<14,
+        fMaskDescr    = fSeqDescr|fNucProtDescr|fMasterDescr,
         fDefaultDescr = fSeqDescr|fNucProtDescr|fMasterDescr,
 
         fSeqAnnot     = 1<<6,
