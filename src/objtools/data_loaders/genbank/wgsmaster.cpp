@@ -146,6 +146,17 @@ bool s_IsGoodDescr(const CSeqdesc& desc, int mask, const TUserObjectTypesSet& uo
 }
 
 
+bool HasWGSMasterMark(const CTSE_Info& info)
+{
+    if ( info.HasNoSeq_entry() ) {
+        return false;
+    }
+    TUserObjectTypesSet uo_types;
+    info.x_GetBaseInfo().x_AddExistingUserObjectTypes(uo_types);
+    return uo_types.find(kMasterDescrMark) != uo_types.end();
+}
+
+
 CSeq_id_Handle GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
 {
     CSeq_id_Handle master_idh;
@@ -460,6 +471,19 @@ public:
             }
         }
 
+    static int x_GetActualExistingDescrMask(const CBioseq_Base_Info& info)
+        {
+            //return info.x_GetExistingDescrMask();
+            int mask = 0;
+            if ( info.x_IsSetDescr() ) {
+                // collect already set descr bits
+                for ( auto& i : info.x_GetDescr().Get() ) {
+                    mask |= 1 << i->Which();
+                }
+            }
+            return mask;
+        }
+
     virtual void Loaded(CTSE_Chunk_Info& chunk) override
         {
             //ERR_POST("CWGSMasterDescrSetter::Loaded("<<chunk.GetChunkId()<<")");
@@ -478,14 +502,14 @@ public:
             int mask = kGoodDescrMask;
             TUserObjectTypesSet existing_uo_types;
             int force_descr = GetForceDescrMask(GetDescrType(m_MasterChunkInfo->m_MasterId));
-            mask &= ~m_BioseqSet->x_GetExistingDescrMask() | force_descr;
+            mask &= ~x_GetActualExistingDescrMask(*m_BioseqSet) | force_descr;
             m_BioseqSet->x_AddExistingUserObjectTypes(existing_uo_types);
             if ( existing_uo_types.find(kMasterDescrMark) != existing_uo_types.end() ) {
                 // master descriptors are already attached
                 return;
             }
             if ( auto first_entry = m_BioseqSet->GetFirstEntry() ) {
-                mask &= ~first_entry->x_GetBaseInfo().x_GetExistingDescrMask() | force_descr;
+                mask &= ~x_GetActualExistingDescrMask(first_entry->x_GetBaseInfo()) | force_descr;
                 first_entry->x_GetBaseInfo().x_AddExistingUserObjectTypes(existing_uo_types);
             }
             if ( existing_uo_types.find(kMasterDescrMark) != existing_uo_types.end() ) {
@@ -544,6 +568,11 @@ void CWGSMasterSupport::AddWGSMaster(CTSE_LoadLock& lock)
     lock->GetBioseqsIds(ids);
     ITERATE ( CTSE_Info::TSeqIds, it, ids ) {
         if ( CSeq_id_Handle master_id = GetWGSMasterSeq_id(*it) ) {
+            // first check if WGS master descriptors are added already (WithMasterDescr mark)
+            if ( HasWGSMasterMark(*lock) ) {
+                return;
+            }
+            
             auto& split_info = lock->GetSplitInfo();
             int mask = kGoodDescrMask;
             
