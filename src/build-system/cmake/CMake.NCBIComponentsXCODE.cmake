@@ -326,7 +326,7 @@ endif()
 #############################################################################
 # wxWidgets
 set(_wx_ver 3.1)
-NCBI_define_component(NAME wxWidgets LIB
+NCBI_define_Xcomponent(NAME wxWidgets LIB
     wx_osx_cocoa_gl-${_wx_ver}
     wx_osx_cocoa_richtext-${_wx_ver}
     wx_osx_cocoa_aui-${_wx_ver}
