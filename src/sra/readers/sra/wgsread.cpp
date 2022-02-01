@@ -4599,7 +4599,7 @@ void CWGSSeqIterator::x_CreateBioseq(SWGSCreateInfo& info) const
     GetIds(info.main_seq->SetId(), info.flags);
     if ( info.flags & fMaskDescr ) {
         PROFILE(sw___GetContigDescr);
-        if ( (info.flags & fMaskDescr) == fSeqDescr  ) {
+        if ( (info.flags & fMaskDescr) == fSeqDescr && !(info.flags & fSeqDescrObj)  ) {
             // only own descriptors
             if ( m_Cur->m_DESCR ) {
                 CVDBStringValue descr = m_Cur->DESCR(m_CurrId);
@@ -4772,6 +4772,10 @@ void CWGSSeqIterator::x_CreateEntry(SWGSCreateInfo& info) const
     else {
         TFlags flags = info.flags;
         info.flags = flags & ~(fMasterDescr | fNucProtDescr);
+        if ( flags & fMasterDescr ) {
+            // we need main sequence descriptors deserialized
+            info.flags |= fSeqDescrObj;
+        }
         x_CreateBioseq(info);
         info.flags = flags;
         info.x_CreateProtSet(GetLocFeatRowIdRange());
