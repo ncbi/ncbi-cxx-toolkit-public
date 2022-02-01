@@ -152,7 +152,7 @@ public:
         template <size_t SIZE> SRegex(const char (&s)[SIZE]) : regex(s, SIZE - 1) {}
     };
 
-    CLogLatencies(SRegex start, SRegex stop, optional<SRegex> server_side = nullopt) :
+    CLogLatencies(SRegex start, SRegex stop, std::optional<SRegex> server_side = nullopt) :
         m_Start(move(start)),
         m_Stop(move(stop)),
         m_ServerSide(move(server_side))
@@ -170,7 +170,7 @@ public:
 private:
     regex m_Start;
     regex m_Stop;
-    optional<regex> m_ServerSide;
+    std::optional<regex> m_ServerSide;
     bool m_Debug = false;
 };
 

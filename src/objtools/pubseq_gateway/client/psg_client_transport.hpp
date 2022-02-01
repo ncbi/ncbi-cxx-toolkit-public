@@ -167,9 +167,9 @@ struct SPSG_Args : SPSG_ArgsBase
     }
 
 private:
-    // Cannot use optional template directly;
+    // Cannot use std::optional template directly;
     // Otherwise, different values would have same types and get<type>(tuple) above would not work
-    template <EValue value> struct SValue : optional<typename SArg<value>::TType> {};
+    template <EValue value> struct SValue : std::optional<typename SArg<value>::TType> {};
 
     mutable tuple<SValue<eItemType>, SValue<eChunkType>, SValue<eBlobId>, SValue<eId2Chunk>> m_Cached;
 };
