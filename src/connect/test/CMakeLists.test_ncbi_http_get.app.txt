@@ -4,7 +4,6 @@ NCBI_begin_app(test_ncbi_http_get)
 
   NCBI_sources(test_ncbi_http_get)
   NCBI_uses_toolkit_libraries(connssl)
-  NCBI_optional_components(GNUTLS)
 
   NCBI_begin_test(test_ncbi_http_get)
     NCBI_set_test_command(test_ncbi_http_get.sh)
@@ -14,4 +13,3 @@ NCBI_begin_app(test_ncbi_http_get)
   NCBI_project_watchers(lavr)
 
 NCBI_end_app()
-
