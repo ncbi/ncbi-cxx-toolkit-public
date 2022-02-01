@@ -69,6 +69,11 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
 
+CMLAUpdater::CMLAUpdater()
+  : m_mlaClient(new CMLAClient())
+{
+}
+
 void CMLAUpdater::SetClient(CMLAClient* mla)
 {
     m_mlaClient.Reset(mla);
@@ -134,14 +139,14 @@ static bool s_IsConnectionFailure(EError_val mlaErrorVal) {
 }
 
 
-CRef<CPub> s_GetPubFrompmid(CMLAUpdater& upd, TEntrezId id, int maxAttempts, IObjtoolsListener* pMessageListener)
+CRef<CPub> s_GetPubFrompmid(IPubmedUpdater* upd, TEntrezId id, int maxAttempts, IObjtoolsListener* pMessageListener)
 {
     CRef<CPub> result;
 
     int maxCount = max(1, maxAttempts);
     for (int count=0; count<maxCount; ++count) {
         EPubmedError errorVal;
-        result = upd.GetPub(id, &errorVal);
+        result = upd->GetPub(id, &errorVal);
         if (result) {
             return result;
         } else {
@@ -281,7 +286,7 @@ protected:
 bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
 {
     CMLAClient::TReply reply;
-    auto new_pub = s_GetPubFrompmid(m_mla, id, m_MaxMlaAttempts, m_pMessageListener);
+    auto new_pub = s_GetPubFrompmid(m_pubmed.get(), id, m_MaxMlaAttempts, m_pMessageListener);
     if (!new_pub) {
         return false;
     }
@@ -487,8 +492,10 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
         }
 
         auto& arr = pDesc->SetPub().SetPub().Set();
-        if (!m_mla)
-            m_mla.SetClient(new CMLAClient());
+        if (!m_pubmed) {
+            // use MLA by default
+            m_pubmed.reset(new CMLAUpdater());
+        }
 
         TEntrezId id = FindPMID(arr);
         if (id>ZERO_ENTREZ_ID) {
@@ -498,7 +505,7 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
 
         for (const auto& pPubEquiv : arr) {
             if (pPubEquiv->IsArticle()) {
-                id = m_mla.GetPmId(*pPubEquiv);
+                id = m_pubmed->GetPmId(*pPubEquiv);
                 if (id > ZERO_ENTREZ_ID && xUpdatePubPMID(arr,id)) {
                     break;
                 }
@@ -702,8 +709,14 @@ void CRemoteUpdater::PostProcessPubs(CSeq_entry_EditHandle& obj)
     }
 }
 
+void CRemoteUpdater::SetPubmedClient(IPubmedUpdater* pubmedUpdater) {
+    m_pubmed.reset(pubmedUpdater);
+}
+
 void CRemoteUpdater::SetMLAClient(CMLAClient& mlaClient) {
-    m_mla.SetClient(&mlaClient);
+    CMLAUpdater* mlau = new CMLAUpdater();
+    mlau->SetClient(&mlaClient);
+    m_pubmed.reset(mlau);
 }
 
 CConstRef<CTaxon3_reply> CRemoteUpdater::SendOrgRefList(const vector<CRef<COrg_ref>>& list)

@@ -120,6 +120,15 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
     CRef<CMLAClient> pMLAClient(new CMLAClient_THROW<eError_val_cannot_connect_pmdb>());
     auto pDesc = s_CreateDescriptor();
     CRemoteUpdater updater(nullptr);
+
+    BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
+
+    {
+        CRemoteUpdater updater(nullptr);
+        updater.SetPubmedClient(new CMLAUpdater());
+        BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
+    }
+
     {
         updater.SetMLAClient(*pMLAClient);
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
@@ -130,6 +139,19 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
                 CCheckMsg(expectedMsg));
     }
 
+    {
+        CRemoteUpdater updater(nullptr);
+        CMLAUpdater* mlau = new CMLAUpdater();
+        mlau->SetClient(pMLAClient);
+        updater.SetPubmedClient(mlau);
+
+        string expectedMsg = "Failed to retrieve publication for PMID 1234. "
+            "3 attempts made. "
+            "CMLAClient : cannot-connect-pmdb";
+        BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc),
+                CException,
+                CCheckMsg(expectedMsg));
+    }
 
     updater.SetMaxMlaAttempts(4);
     pMLAClient.Reset(new CMLAClient_THROW<eError_val_cannot_connect_searchbackend_pmdb>());
