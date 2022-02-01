@@ -1,3 +1,5 @@
+# $Id$
+
 WATCHERS = camacho madden fongah2
 
 APP = blast_formatter_vdb
