@@ -49,13 +49,13 @@ DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --
 # ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
 # that. The build-root is needed so that rpmbuild can find the proper directories
 # to copy the binaries from
-Linux64-Centos     : icc : ICC.sh 1900 --with-static --without-dll --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --without-gnutls --without-gcrypt --with-vdb=/panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb  <ENV>OPENMP_FLAGS='-qopenmp -qopenmp-link=static';LDFLAGS=-Wl,--as-needed</ENV>
+#Linux64-Centos     : icc : ICC.sh 1900 --with-static --without-dll --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --without-gnutls --without-gcrypt --with-vdb=/panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb  <ENV>OPENMP_FLAGS='-qopenmp -qopenmp-link=static';LDFLAGS=-Wl,--as-needed</ENV>
 
 Linux64-Centos     : gcc : GCC.sh       --with-static --without-dll --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI  --without-gnutls --without-gcrypt --with-vdb=/panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb 
 #
 
-DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
-#DEFAULT_CONFIGURATIONS: Linux64-Centos:gcc
+#DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
+DEFAULT_CONFIGURATIONS: Linux64-Centos:gcc
 
 # FIXME: how to specify without VDB?
 Win64         : plain : static 64 ReleaseDLL <ENV>NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-INT8-GI=1;NCBI_CONFIG__CONFIGURE__PROVIDEDREQUESTS=CXX_Toolkit,LocalBZ2,LocalPCRE,LocalZ,LocalLMDB,MT</ENV>
