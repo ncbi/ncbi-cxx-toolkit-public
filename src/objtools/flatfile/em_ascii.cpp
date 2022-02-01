@@ -1922,6 +1922,16 @@ static void fta_create_imgt_misc_feat(objects::CBioseq& bioseq, objects::CEMBL_b
     }
 }
 
+static bool s_HasTPAPrefix(const CTempString& line)
+{
+        return NStr::StartsWith(line, "TPA:") ||
+               NStr::StartsWith(line, "TPA_exp:") ||
+               NStr::StartsWith(line, "TPA_inf:") ||
+               NStr::StartsWith(line, "TPA_asm:") ||
+               NStr::StartsWith(line, "TPA_reasm:") ||
+               NStr::StartsWith(line, "TPA_specdb:");
+}
+
 /**********************************************************/
 static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
 {
@@ -2036,13 +2046,8 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
         fta_get_project_user_object(bioseq.SetDescr().Set(), offset,
                                     Parser::EFormat::EMBL, &ibp->drop, pp->source);
 
-    if(ibp->is_tpa &&
-       (title.empty() || (StringNCmp(title.c_str(), "TPA:", 4) != 0 &&
-                          StringNCmp(title.c_str(), "TPA_exp:", 8) != 0 &&
-                          StringNCmp(title.c_str(), "TPA_inf:", 8) != 0 &&
-                          StringNCmp(title.c_str(), "TPA_asm:", 8) != 0 &&
-                          StringNCmp(title.c_str(), "TPA_reasm:", 10) != 0)))
-    {
+    if(ibp->is_tpa && 
+       (title.empty() || !s_HasTPAPrefix(title))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTPA,
                   "This is apparently a TPA record, but it lacks the required \"TPA:\" prefix on its definition line. Entry dropped.");
         ibp->drop = 1;
