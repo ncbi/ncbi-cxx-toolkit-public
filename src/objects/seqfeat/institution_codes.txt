@@ -1,5 +1,4 @@
 			
-	s	Universiti Malaysia Sarawak			
 # $Id$
 A	s	Arnold Arboretum, Harvard University			
 AA	s	Ministry of Science, Academy of Sciences			
@@ -4912,6 +4911,7 @@ MZ<POL>	s	Museum of the Earth, Polish Academy of Sciences
 MZAF	s	Museo Zoologico dell'Accademia dei Fisiocritici			
 MZB	s	Museum Zoologicum Bogoriense			
 MZB:Amp	s	Museum Zoologicum Bogoriense, Amphibian Collection		
+MZB:Lace	s	Museum Zoologicum Bogoriense, Lizard Collection	
 MZB:Ornith	s	Museum Zoologicum Bogoriense, Ornithology Collection		
 MZBL	s	Museo de Zoologica			
 MZBS	s	Museo Zoologia			
@@ -7616,6 +7616,7 @@ UNEX:FECRGA	c	Universidad de Extremadura, Departamento de Botanica, Fungal Endop
 UNGGVH	s	University of North Georgia			
 UNH	s	University of New Hampshire			
 UNI	s	University of Northern Iowa			
+UNIMAS	s	Universiti Malaysia Sarawak			
 UNIN	s	University of the North, Botany Department			
 UNIP	s	Universidade Paulista, Laboratorio de Botanica			
 UNIPAR	s	Mycological Herbarium University of Parakou			

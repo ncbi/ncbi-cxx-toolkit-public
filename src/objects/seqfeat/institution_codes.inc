@@ -32,7 +32,6 @@
 
 static const char* const kInstitutionCollectionCodeList[] = {
 "\t\t\t",
-"\ts\tUniversiti Malaysia Sarawak\t\t\t",
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
 "AA\ts\tMinistry of Science, Academy of Sciences\t\t\t",
@@ -4945,6 +4944,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MZAF\ts\tMuseo Zoologico dell'Accademia dei Fisiocritici\t\t\t",
 "MZB\ts\tMuseum Zoologicum Bogoriense\t\t\t",
 "MZB:Amp\ts\tMuseum Zoologicum Bogoriense, Amphibian Collection\t\t",
+"MZB:Lace\ts\tMuseum Zoologicum Bogoriense, Lizard Collection\t",
 "MZB:Ornith\ts\tMuseum Zoologicum Bogoriense, Ornithology Collection\t\t",
 "MZBL\ts\tMuseo de Zoologica\t\t\t",
 "MZBS\ts\tMuseo Zoologia\t\t\t",
@@ -7649,6 +7649,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UNGGVH\ts\tUniversity of North Georgia\t\t\t",
 "UNH\ts\tUniversity of New Hampshire\t\t\t",
 "UNI\ts\tUniversity of Northern Iowa\t\t\t",
+"UNIMAS\ts\tUniversiti Malaysia Sarawak\t\t\t",
 "UNIN\ts\tUniversity of the North, Botany Department\t\t\t",
 "UNIP\ts\tUniversidade Paulista, Laboratorio de Botanica\t\t\t",
 "UNIPAR\ts\tMycological Herbarium University of Parakou\t\t\t",
