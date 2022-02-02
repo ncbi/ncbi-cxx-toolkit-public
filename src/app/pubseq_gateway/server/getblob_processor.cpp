@@ -181,14 +181,14 @@ void CPSGS_GetBlobProcessor::Process(void)
                 IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
                     item_id, GetName(),
                     "Blob properties are not found",
-                    ret_status, ePSGS_BlobPropsNotFound,
+                    ret_status, ePSGS_NoBlobPropsError,
                     eDiag_Error);
             } else {
                 ret_status = CRequestStatus::e500_InternalServerError;
                 IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
                     item_id, GetName(),
                     "Blob properties are not found due to a cache lookup error",
-                    ret_status, ePSGS_BlobPropsNotFound,
+                    ret_status, ePSGS_NoBlobPropsError,
                     eDiag_Error);
             }
             IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id,

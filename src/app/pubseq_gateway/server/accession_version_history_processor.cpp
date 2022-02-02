@@ -123,24 +123,21 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveError(
                                             EDiagSev  severity,
                                             const string &  message)
 {
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    UpdateOverallStatus(status);
-    PSG_WARNING(message);
+    CountError(ePSGS_UnknownFetch, status, code, severity, message);
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
-    if (status == CRequestStatus::e404_NotFound) {
-        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
-                                                       message, status,
-                                                       ePSGS_NoBioseqInfo,
-                                                       eDiag_Error);
-    } else {
-        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
-                                                       message, status,
-                                                       ePSGS_BioseqInfoError,
-                                                       severity);
-    }
+
+    IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
+                                                   message, status, code,
+                                                   severity);
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 
     m_Completed = true;
@@ -297,35 +294,12 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistError(
     IPSGS_Processor::m_Request->SetRequestContext();
 
     // It could be a message or an error
-    bool    is_error = (severity == eDiag_Error ||
-                        severity == eDiag_Critical ||
-                        severity == eDiag_Fatal);
-
-    auto *  app = CPubseqGatewayApp::GetInstance();
-    PSG_ERROR(message);
-
-    if (is_error) {
-        if (IsTimeoutError(code)) {
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
-            UpdateOverallStatus(CRequestStatus::e504_GatewayTimeout);
-            status = CRequestStatus::e504_GatewayTimeout;
-        } else {
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
-            UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-            status = CRequestStatus::e500_InternalServerError;
-        }
-    }
-
-    if (IPSGS_Processor::m_Request->NeedTrace()) {
-        IPSGS_Processor::m_Reply->SendTrace(
-            "Accession version history error callback",
-            IPSGS_Processor::m_Request->GetStartTimestamp());
-    }
+    bool    is_error = CountError(fetch_details->GetFetchType(),
+                                  status, code, severity, message);
 
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(),
-            GetName(), message, status,
-            code, severity);
+            GetName(), message, status, code, severity);
 
     // To avoid sending an error in Peek()
     fetch_details->GetLoader()->ClearError();

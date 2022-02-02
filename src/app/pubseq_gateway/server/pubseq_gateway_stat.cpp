@@ -103,8 +103,33 @@ CPSGSCounters::CPSGSCounters()
             true, true, false);
     m_Counters[ePSGS_SplitHistoryNotFound] =
         new SCounterInfo(
-            "SplitHistoryNotFoundCount", "Split history not found error count",
+            "SplitHistoryNotFoundCount", "Split history not found counter",
             "Number of times a split history was not found",
+            true, true, false);
+    m_Counters[ePSGS_AnnotationNotFound] =
+        new SCounterInfo(
+            "AnnotationNotFoundCount", "Annotation not found counter",
+            "Number of times an annotation was not found",
+            true, true, false);
+    m_Counters[ePSGS_AnnotationBlobNotFound] =
+        new SCounterInfo(
+            "AnnotationBlobNotFoundCount", "Annotation blob not found counter",
+            "Number of times an annotation blob was not found",
+            true, true, false);
+    m_Counters[ePSGS_TSEChunkNotFound] =
+        new SCounterInfo(
+            "TSEChunkNotFoundCount", "TSE chunk not found counter",
+            "Number of times a TSE chunk was not found",
+            true, true, false);
+    m_Counters[ePSGS_PublicCommentNotFound] =
+        new SCounterInfo(
+            "PublicCommentNotFoundCount", "Public comment not found counter",
+            "Number of times a public comment was not found",
+            true, true, false);
+    m_Counters[ePSGS_AccVerHistoryNotFound] =
+        new SCounterInfo(
+            "AccessionVersionHistoryNotFoundCount", "Accession version history not found counter",
+            "Number of times an accession version history was not found",
             true, true, false);
     m_Counters[ePSGS_MaxHopsExceededError] =
         new SCounterInfo(

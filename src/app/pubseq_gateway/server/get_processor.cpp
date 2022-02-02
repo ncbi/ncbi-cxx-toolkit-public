@@ -139,21 +139,12 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    UpdateOverallStatus(status);
-    PSG_WARNING(message);
+    CountError(ePSGS_UnknownFetch, status, code, severity, message);
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
-    if (status == CRequestStatus::e404_NotFound) {
-        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
-                                                       message, status,
-                                                       ePSGS_NoBioseqInfo,
-                                                       eDiag_Error);
-    } else {
-        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
-                                                       message, status,
-                                                       ePSGS_BioseqInfoError,
-                                                       severity);
-    }
+    IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
+                                                   message, status,
+                                                   code, severity);
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 
     m_Completed = true;
@@ -332,14 +323,14 @@ void CPSGS_GetProcessor::x_GetBlob(void)
                 IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
                     item_id, GetName(),
                     "Blob properties are not found",
-                    ret_status, ePSGS_BlobPropsNotFound,
+                    ret_status, ePSGS_NoBlobPropsError,
                     eDiag_Error);
             } else {
                 ret_status = CRequestStatus::e500_InternalServerError;
                 IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
                     item_id, GetName(),
                     "Blob properties are not found due to a cache lookup error",
-                    ret_status, ePSGS_BlobPropsNotFound,
+                    ret_status, ePSGS_NoBlobPropsError,
                     eDiag_Error);
             }
             IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id,

@@ -71,13 +71,11 @@ protected:
                                         const string &  seq_id);
     bool IsTimeoutError(const string &  msg) const;
     bool IsTimeoutError(int  code) const;
-    /*
     bool CountError(EPSGS_DbFetchType  fetch_type,
                     CRequestStatus::ECode  status,
                     int  code,
                     EDiagSev  severity,
                     const string &  message);
-    */
 
 private:
     IPSGS_Processor::EPSGS_Status x_GetProcessorStatus(void) const;
