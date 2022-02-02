@@ -59,6 +59,7 @@
 #include <objects/general/Name_std.hpp>
 
 #include <objtools/edit/remote_updater.hpp>
+#include <objtools/edit/mla_updater.hpp>
 #include <objtools/edit/edit_error.hpp>
 #include <objtools/logging/listener.hpp>
 

@@ -64,9 +64,7 @@
 
 #include "../pub_fix_aux.hpp"
 #include <objtools/edit/pub_fix.hpp>
-#include <objects/mla/Title_msg.hpp>
-#include <objects/mla/Title_msg_list.hpp>
-#include <objects/mla/mla_client.hpp>
+#include <objtools/edit/mla_updater.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -654,24 +652,6 @@ BOOST_AUTO_TEST_CASE(Test_TenAuthorsProcess)
     BOOST_CHECK_EQUAL(art_old.IsSetAuthors(), false);
     BOOST_CHECK_EQUAL(art_new.GetAuthors().Equals(expected.GetAuthors()), true);
 }
-
-class CMLAUpdater : public IPubmedUpdater
-{
-    CMLAClient m_mla;
-public:
-    TEntrezId GetPmId(const CPub& pub) override
-    {
-        return ENTREZ_ID_FROM(int, m_mla.AskCitmatchpmid(pub));
-    }
-    CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override
-    {
-        return m_mla.AskGetpubpmid(CPubMedId(pmid));
-    }
-    CRef<CTitle_msg_list> GetTitle(const CTitle_msg& msg) override
-    {
-        return m_mla.AskGettitle(msg);
-    }
-};
 
 BOOST_AUTO_TEST_CASE(Test_FixPub)
 {
