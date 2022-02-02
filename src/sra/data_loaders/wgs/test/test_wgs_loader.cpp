@@ -1029,6 +1029,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq14)
 BOOST_AUTO_TEST_CASE(FetchSeq15)
 {
     CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    sx_InitGBLoader(*om);
 
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
@@ -2687,6 +2688,7 @@ BOOST_AUTO_TEST_CASE(TestReplaced)
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("ABAJ01000001"));
     BOOST_CHECK(!bh);
 
+    sx_InitGBLoader(*om);
     scope.AddDataLoader("GBLOADER");
     
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("ABAJ01000001"));
@@ -2706,6 +2708,7 @@ BOOST_AUTO_TEST_CASE(TestReplacedProtein1)
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("CAP20437"));
     BOOST_CHECK(!bh);
 
+    sx_InitGBLoader(*om);
     scope.AddDataLoader("GBLOADER");
     
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("CAP20437"));
@@ -2725,6 +2728,7 @@ BOOST_AUTO_TEST_CASE(TestReplacedProtein2)
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("CAP20511"));
     BOOST_CHECK(!bh);
 
+    sx_InitGBLoader(*om);
     scope.AddDataLoader("GBLOADER");
     
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("CAP20511"));
@@ -2758,6 +2762,7 @@ BOOST_AUTO_TEST_CASE(TestReplacedProtein4)
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("309367003"));
     BOOST_CHECK(!bh);
 
+    sx_InitGBLoader(*om);
     scope.AddDataLoader("GBLOADER");
     
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("309367003"));
@@ -2777,6 +2782,7 @@ BOOST_AUTO_TEST_CASE(TestReplacedProtein5)
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("309366966"));
     BOOST_CHECK(!bh);
 
+    sx_InitGBLoader(*om);
     scope.AddDataLoader("GBLOADER");
     
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("309366966"));
