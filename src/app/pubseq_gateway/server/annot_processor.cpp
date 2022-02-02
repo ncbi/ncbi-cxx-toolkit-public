@@ -162,24 +162,21 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveError(
                         EDiagSev  severity,
                         const string &  message)
 {
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    UpdateOverallStatus(status);
-    PSG_WARNING(message);
+    CountError(ePSGS_UnknownFetch, status, code, severity, message);
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
-    if (status == CRequestStatus::e404_NotFound) {
-        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
-                                                       message, status,
-                                                       ePSGS_NoBioseqInfo,
-                                                       eDiag_Error);
-    } else {
-        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
-                                                       message, status,
-                                                       ePSGS_BioseqInfoError,
-                                                       severity);
-    }
+
+    IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
+                                                   message, status, code,
+                                                   severity);
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 
     m_Completed = true;
@@ -418,37 +415,18 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
-
     // It could be a message or an error
-    bool    is_error = (severity == eDiag_Error ||
-                        severity == eDiag_Critical ||
-                        severity == eDiag_Fatal);
-
-    auto *  app = CPubseqGatewayApp::GetInstance();
-    PSG_ERROR(message);
-
-    if (is_error) {
-        if (code == CCassandraException::eQueryTimeout)
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
-        else
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
-    }
-
-    if (IPSGS_Processor::m_Request->NeedTrace()) {
-        IPSGS_Processor::m_Reply->SendTrace(
-            "Named annotation error callback",
-            IPSGS_Processor::m_Request->GetStartTimestamp());
-    }
+    bool    is_error = CountError(fetch_details->GetFetchType(),
+                                  status, code, severity, message);
 
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(),
-            GetName(), message, CRequestStatus::e500_InternalServerError,
-            code, severity);
-    if (is_error) {
-        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+            GetName(), message, status, code, severity);
 
+    // To avoid sending an error in Peek()
+    fetch_details->GetLoader()->ClearError();
+
+    if (is_error) {
         // There will be no more activity
         fetch_details->SetReadFinished();
         m_Completed = true;

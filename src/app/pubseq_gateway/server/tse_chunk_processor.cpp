@@ -611,7 +611,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                 fetch_details, GetName(),
                 m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info,
                 message, CRequestStatus::e404_NotFound,
-                ePSGS_BlobPropsNotFound, eDiag_Error);
+                ePSGS_NoBlobPropsError, eDiag_Error);
         IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
                 fetch_details, GetName());
         fetch_details->SetReadFinished();
@@ -640,47 +640,33 @@ void CPSGS_TSEChunkProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
     IPSGS_Processor::m_Request->SetRequestContext();
 
     // It could be a message or an error
-    bool    is_error = CountError(status, code, severity, message);
+    bool    is_error = CountError(fetch_details->GetFetchType(),
+                                  status, code, severity, message);
 
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
+    if (fetch_details->IsBlobPropStage()) {
+        IPSGS_Processor::m_Reply->PrepareTSEBlobPropMessage(
+            fetch_details, GetName(),
+            m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info,
+            message, status, code, severity);
+        IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
+            fetch_details, GetName());
+    } else {
+        IPSGS_Processor::m_Reply->PrepareTSEBlobMessage(
+            fetch_details, GetName(),
+            m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info,
+            message, status, code, severity);
+        IPSGS_Processor::m_Reply->PrepareTSEBlobCompletion(
+            fetch_details, GetName());
+    }
 
     if (is_error) {
-        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-
-        if (fetch_details->IsBlobPropStage()) {
-            IPSGS_Processor::m_Reply->PrepareTSEBlobPropMessage(
-                fetch_details, GetName(),
-                m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info,
-                message, CRequestStatus::e500_InternalServerError, code, severity);
-            IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
-                fetch_details, GetName());
-        } else {
-            IPSGS_Processor::m_Reply->PrepareTSEBlobMessage(
-                fetch_details, GetName(),
-                m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info,
-                message, CRequestStatus::e500_InternalServerError, code, severity);
-            IPSGS_Processor::m_Reply->PrepareTSEBlobCompletion(
-                fetch_details, GetName());
-        }
-
         // If it is an error then regardless what stage it was, props or
         // chunks, there will be no more activity
         fetch_details->SetReadFinished();
-    } else {
-        if (fetch_details->IsBlobPropStage())
-            IPSGS_Processor::m_Reply->PrepareTSEBlobPropMessage(
-                fetch_details, GetName(),
-                m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info,
-                message, status, code, severity);
-        else
-            IPSGS_Processor::m_Reply->PrepareTSEBlobMessage(
-                fetch_details, GetName(),
-                m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info,
-                message, status, code, severity);
     }
 
-    fetch_details->SetReadFinished();
+    // To avoid sending an error in Peek()
+    fetch_details->GetLoader()->ClearError();
 
     if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);
@@ -765,38 +751,18 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistoryError(
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
-
     // It could be a message or an error
-    bool    is_error = (severity == eDiag_Error ||
-                        severity == eDiag_Critical ||
-                        severity == eDiag_Fatal);
-
-    auto *  app = CPubseqGatewayApp::GetInstance();
-    if (status >= CRequestStatus::e400_BadRequest &&
-        status < CRequestStatus::e500_InternalServerError) {
-        PSG_WARNING(message);
-    } else {
-        PSG_ERROR(message);
-    }
-
-    if (IPSGS_Processor::m_Request->NeedTrace()) {
-        IPSGS_Processor::m_Reply->SendTrace(
-                "Split history error callback; status: " + to_string(status),
-                IPSGS_Processor::m_Request->GetStartTimestamp());
-    }
+    bool    is_error = CountError(fetch_details->GetFetchType(),
+                                  status, code, severity, message);
 
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(),
             GetName(), message, status, code, severity);
 
-    if (is_error) {
-        if (code == CCassandraException::eQueryTimeout)
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
-        else
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
+    // To avoid sending an error in Peek()
+    fetch_details->GetLoader()->ClearError();
 
+    if (is_error) {
         // If it is an error then there will be no more activity
         fetch_details->SetReadFinished();
     }
@@ -850,7 +816,7 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistory(
         IPSGS_Processor::m_Reply->PrepareProcessorMessage(
                 IPSGS_Processor::m_Reply->GetItemId(),
                 GetName(), message, CRequestStatus::e404_NotFound,
-                ePSGS_SplitHistoryNotFound, eDiag_Error);
+                ePSGS_NoSplitHistoryError, eDiag_Error);
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     } else {
         // Split history found.
@@ -915,7 +881,7 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
         if (blob_prop_cache_lookup_result == ePSGS_CacheFailure)
             err_msg += " due to LMDB error";
         x_SendProcessorError(err_msg, CRequestStatus::e404_NotFound,
-                             ePSGS_BlobPropsNotFound);
+                             ePSGS_NoBlobPropsError);
         UpdateOverallStatus(CRequestStatus::e404_NotFound);
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;

@@ -577,13 +577,13 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
             if (record_count > 1) {
                 m_ErrorCB(
                     CRequestStatus::e502_BadGateway,
-                    ePSGS_BioseqInfoNotFoundForGi, eDiag_Error,
+                    ePSGS_NoBioseqInfoForGiError, eDiag_Error,
                     "Data inconsistency. More than one BIOSEQ_INFO table record is found for "
                     "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession());
             } else {
                 m_ErrorCB(
                     CRequestStatus::e502_BadGateway,
-                    ePSGS_BioseqInfoNotFoundForGi, eDiag_Error,
+                    ePSGS_NoBioseqInfoForGiError, eDiag_Error,
                     "Data inconsistency. A BIOSEQ_INFO table record is not found for "
                     "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession());
             }
@@ -675,7 +675,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
             if (m_ResolveStage == ePostSi2Csi) {
                 m_ErrorCB(
                     CRequestStatus::e502_BadGateway,
-                    ePSGS_BioseqInfoNotFoundForGi, eDiag_Error,
+                    ePSGS_NoBioseqInfoForGiError, eDiag_Error,
                     "Data inconsistency. A BIOSEQ_INFO table record is not found for "
                     "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession());
             } else {
@@ -690,7 +690,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
             if (m_ResolveStage == ePostSi2Csi) {
                 m_ErrorCB(
                     CRequestStatus::e502_BadGateway,
-                    ePSGS_BioseqInfoNotFoundForGi, eDiag_Error,
+                    ePSGS_NoBioseqInfoForGiError, eDiag_Error,
                     "Data inconsistency. More than one BIOSEQ_INFO table record is found for "
                     "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession());
 
@@ -712,17 +712,15 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
 void CPSGS_AsyncResolveBase::x_OnBioseqInfoError(CRequestStatus::ECode  status, int  code,
                                               EDiagSev  severity, const string &  message)
 {
-    if (m_Request->NeedTrace())
-        m_Reply->SendTrace("Cassandra error: " + message,
-                           m_Request->GetStartTimestamp());
-
     if (m_CurrentFetch)
         m_CurrentFetch->SetReadFinished();
     if (m_NoSeqIdTypeFetch)
         m_NoSeqIdTypeFetch->SetReadFinished();
 
-    CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
-                                CPSGSCounters::ePSGS_BioseqInfoError);
+    if (!IsTimeoutError(code)) {
+        CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
+                                    CPSGSCounters::ePSGS_BioseqInfoError);
+    }
 
     m_ErrorCB(status, code, severity, message);
 }
@@ -791,14 +789,12 @@ void CPSGS_AsyncResolveBase::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
 void CPSGS_AsyncResolveBase::x_OnSi2csiError(CRequestStatus::ECode  status, int  code,
                                           EDiagSev  severity, const string &  message)
 {
-    if (m_Request->NeedTrace())
-        m_Reply->SendTrace("Cassandra error: " + message,
-                           m_Request->GetStartTimestamp());
-
-    auto    app = CPubseqGatewayApp::GetInstance();
-
     m_CurrentFetch->SetReadFinished();
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_Si2csiError);
+
+    if (!IsTimeoutError(code)) {
+        CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
+                                            CPSGSCounters::ePSGS_Si2csiError);
+    }
 
     m_ErrorCB(status, code, severity, message);
 }

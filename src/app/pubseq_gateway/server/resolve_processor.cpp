@@ -125,21 +125,12 @@ CPSGS_ResolveProcessor::x_OnSeqIdResolveError(
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    UpdateOverallStatus(status);
+    CountError(ePSGS_UnknownFetch, status, code, severity, message);
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
-    if (status == CRequestStatus::e404_NotFound) {
-        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
-                                                       message, status,
-                                                       ePSGS_NoBioseqInfo,
-                                                       eDiag_Error);
-    } else {
-        PSG_WARNING(message);
-        IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
-                                                       message, status,
-                                                       ePSGS_BioseqInfoError,
-                                                       severity);
-    }
+    IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
+                                                   message, status, code,
+                                                   severity);
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
 
     m_Completed = true;

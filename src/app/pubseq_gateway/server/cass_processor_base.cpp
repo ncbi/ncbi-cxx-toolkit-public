@@ -261,7 +261,7 @@ bool CPSGS_CassProcessorBase::IsTimeoutError(int  code) const
     return code == CCassandraException::eQueryTimeout;
 }
 
-/*
+
 bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
                                          CRequestStatus::ECode  status,
                                          int  code,
@@ -285,7 +285,7 @@ bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
     }
 
     if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace("Eror detected. Status: " + to_string(status) +
+        m_Reply->SendTrace("Error detected. Status: " + to_string(status) +
                            " Code: " + to_string(code) +
                            " Severity: " + string(CNcbiDiag::SeverityName(severity)) +
                            " Message: " + message,
@@ -293,7 +293,7 @@ bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
     }
 
     auto *  app = CPubseqGatewayApp::GetInstance();
-    if (code == CCassandraException::eQueryTimeout) {
+    if (IsTimeoutError(code)) {
         app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
         UpdateOverallStatus(CRequestStatus::e504_GatewayTimeout);
         return true;
@@ -308,10 +308,13 @@ bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
                 app->GetCounters().Increment(CPSGSCounters::ePSGS_GetBlobNotFound);
                 break;
             case ePSGS_AnnotationFetch:
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_AnnotationNotFound);
                 break;
             case ePSGS_AnnotationBlobFetch:
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_AnnotationBlobNotFound);
                 break;
             case ePSGS_TSEChunkFetch:
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_TSEChunkNotFound);
                 break;
             case ePSGS_BioseqInfoFetch:
                 app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoNotFound);
@@ -320,11 +323,13 @@ bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
                 app->GetCounters().Increment(CPSGSCounters::ePSGS_Si2csiNotFound);
                 break;
             case ePSGS_SplitHistoryFetch:
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_SplitHistoryNotFoundError);
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_SplitHistoryNotFound);
                 break;
             case ePSGS_PublicCommentFetch:
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_PublicCommentNotFound);
                 break;
             case ePSGS_AccVerHistoryFetch:
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_AccVerHistoryNotFound);
                 break;
             case ePSGS_UnknownFetch:
                 break;
@@ -334,10 +339,13 @@ bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
         return true;
     }
 
-    if (is_error)
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
+    if (is_error) {
+        if (fetch_type != ePSGS_UnknownFetch) {
+            app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
+        }
+        UpdateOverallStatus(status);
+    }
 
     return is_error;
 }
-*/
 

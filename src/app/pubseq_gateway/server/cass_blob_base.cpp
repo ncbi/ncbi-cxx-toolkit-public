@@ -441,13 +441,13 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                     UpdateOverallStatus(CRequestStatus::e404_NotFound);
                     x_PrepareBlobPropMessage(fetch_details, message,
                                              CRequestStatus::e404_NotFound,
-                                             ePSGS_BlobPropsNotFound, eDiag_Error);
+                                             ePSGS_NoBlobPropsError, eDiag_Error);
                 } else {
                     message = "Blob properties are not found due to LMDB cache error";
                     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
                     x_PrepareBlobPropMessage(fetch_details, message,
                                              CRequestStatus::e500_InternalServerError,
-                                             ePSGS_BlobPropsNotFound, eDiag_Error);
+                                             ePSGS_NoBlobPropsError, eDiag_Error);
                 }
 
                 PSG_WARNING(message);
@@ -579,14 +579,14 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
                     UpdateOverallStatus(CRequestStatus::e404_NotFound);
                     x_PrepareBlobPropMessage(details.get(), message,
                                              CRequestStatus::e404_NotFound,
-                                             ePSGS_BlobPropsNotFound, eDiag_Error);
+                                             ePSGS_NoBlobPropsError, eDiag_Error);
                 } else {
                     message = "Blob properties are not found "
                               "due to a blob proc cache lookup error";
                     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
                     x_PrepareBlobPropMessage(details.get(), message,
                                              CRequestStatus::e500_InternalServerError,
-                                             ePSGS_BlobPropsNotFound, eDiag_Error);
+                                             ePSGS_NoBlobPropsError, eDiag_Error);
                 }
                 PSG_WARNING(message);
                 continue;
@@ -824,14 +824,14 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
                     UpdateOverallStatus(CRequestStatus::e404_NotFound);
                     x_PrepareBlobPropMessage(details.get(), message,
                                              CRequestStatus::e404_NotFound,
-                                             ePSGS_BlobPropsNotFound, eDiag_Error);
+                                             ePSGS_NoBlobPropsError, eDiag_Error);
                 } else {
                     message = "Blob properties are not found "
                               "due to a blob proc cache lookup error";
                     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
                     x_PrepareBlobPropMessage(details.get(), message,
                                              CRequestStatus::e500_InternalServerError,
-                                             ePSGS_BlobPropsNotFound, eDiag_Error);
+                                             ePSGS_NoBlobPropsError, eDiag_Error);
                 }
                 PSG_WARNING(message);
                 continue;
@@ -975,14 +975,11 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
     CRequestContextResetter     context_resetter;
     m_Request->SetRequestContext();
 
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
-
     // It could be a message or an error
-    bool    is_error = CountError(status, code, severity, message);
+    bool    is_error = CountError(fetch_details->GetFetchType(),
+                                  status, code, severity, message);
 
     if (is_error) {
-        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         PrepareServerErrorMessage(fetch_details, code, severity, message);
 
         // Remove from the already-sent cache if necessary
@@ -1000,46 +997,8 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                  code, severity);
     }
 
-    fetch_details->SetReadFinished();
-}
-
-
-bool
-CPSGS_CassBlobBase::CountError(CRequestStatus::ECode  status,
-                               int  code,
-                               EDiagSev  severity,
-                               const string &  message)
-{
-    // It could be a message or an error
-    bool    is_error = (severity == eDiag_Error ||
-                        severity == eDiag_Critical ||
-                        severity == eDiag_Fatal);
-
-    auto *  app = CPubseqGatewayApp::GetInstance();
-    if (status >= CRequestStatus::e400_BadRequest &&
-        status < CRequestStatus::e500_InternalServerError) {
-        PSG_WARNING(message);
-    } else {
-        PSG_ERROR(message);
-    }
-
-    if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace("Blob error callback; status " + to_string(status),
-                           m_Request->GetStartTimestamp());
-    }
-
-    if (status == CRequestStatus::e404_NotFound) {
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_GetBlobNotFound);
-    } else {
-        if (is_error) {
-            if (code == CCassandraException::eQueryTimeout)
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
-            else
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
-        }
-    }
-
-    return is_error;
+    // To avoid sending an error in Peek()
+    fetch_details->GetLoader()->ClearError();
 }
 
 
@@ -1128,14 +1087,14 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
         UpdateOverallStatus(CRequestStatus::e404_NotFound);
         x_PrepareBlobPropMessage(fetch_details, message,
                                  CRequestStatus::e404_NotFound,
-                                 ePSGS_BlobPropsNotFound, eDiag_Error);
+                                 ePSGS_NoBlobPropsError, eDiag_Error);
     } else {
         // Server error, data inconsistency
         PSG_ERROR(message);
         UpdateOverallStatus(CRequestStatus::e502_BadGateway);
         x_PrepareBlobPropMessage(fetch_details, message,
                                  CRequestStatus::e502_BadGateway,
-                                 ePSGS_BlobPropsNotFound, eDiag_Error);
+                                 ePSGS_NoBlobPropsError, eDiag_Error);
     }
 
     // Remove from the already-sent cache if necessary
@@ -1454,47 +1413,27 @@ CPSGS_CassBlobBase::OnPublicCommentError(
                             EDiagSev  severity,
                             const string &  message)
 {
-    CRequestContextResetter     context_resetter;
-    m_Request->SetRequestContext();
-
     if (m_Cancelled) {
         fetch_details->GetLoader()->Cancel();
         fetch_details->SetReadFinished();
         return;
     }
 
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
+    CRequestContextResetter     context_resetter;
+    m_Request->SetRequestContext();
 
     // It could be a message or an error
-    bool    is_error = (severity == eDiag_Error ||
-                        severity == eDiag_Critical ||
-                        severity == eDiag_Fatal);
-
-    auto *  app = CPubseqGatewayApp::GetInstance();
-    if (status >= CRequestStatus::e400_BadRequest &&
-        status < CRequestStatus::e500_InternalServerError) {
-        PSG_WARNING(message);
-    } else {
-        PSG_ERROR(message);
-    }
-
-    if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace(
-            "Public comment error callback; status: " + to_string(status),
-            m_Request->GetStartTimestamp());
-    }
+    bool    is_error = CountError(fetch_details->GetFetchType(),
+                                  status, code, severity, message);
 
     m_Reply->PrepareProcessorMessage(
         m_Reply->GetItemId(),
         m_ProcessorId, message, status, code, severity);
 
-    if (is_error) {
-        if (code == CCassandraException::eQueryTimeout)
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
-        else
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
+    // To avoid sending an error in Peek()
+    fetch_details->GetLoader()->ClearError();
 
+    if (is_error) {
         // If it is an error then there will be no more activity
         fetch_details->SetReadFinished();
     }

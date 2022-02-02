@@ -71,10 +71,6 @@ protected:
                         CCassBlobFetch *  fetch_details,
                         const unsigned char *  chunk_data,
                         unsigned int  data_size, int  chunk_no);
-    bool CountError(CRequestStatus::ECode  status,
-                    int  code,
-                    EDiagSev  severity,
-                    const string &  message);
     bool NeedToAddId2CunkId2Info(void) const;
     void PrepareServerErrorMessage(CCassBlobFetch *  fetch_details,
                                    int  code,

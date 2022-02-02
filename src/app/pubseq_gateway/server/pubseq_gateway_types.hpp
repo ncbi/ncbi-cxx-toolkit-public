@@ -69,18 +69,15 @@ enum EPSGS_PubseqGatewayErrorCode {
     ePSGS_BadID2Info                         = 308,
     ePSGS_UnpackingError                     = 309,
     ePSGS_UnknownError                       = 310,
-    ePSGS_BlobPropsNotFound                  = 311,
+    ePSGS_NoBlobPropsError                   = 311,
     ePSGS_UnresolvedSeqId                    = 312,
     ePSGS_InsufficientArguments              = 313,
     ePSGS_InvalidId2Info                     = 314,
-    ePSGS_SplitHistoryNotFound               = 315,
+    ePSGS_NoSplitHistoryError                = 315,
 
     // whole bioseq_info record not found
-    ePSGS_BioseqInfoNotFoundForGi            = 316,
+    ePSGS_NoBioseqInfoForGiError             = 316,
 
-    // gi is not found in in the seq_ids field
-    // in the bioseq_info record
-    ePSGS_BioseqInfoGiNotFoundForGi          = 317,
     ePSGS_BioseqInfoMultipleRecords          = 318,
     ePSGS_ServerLogicError                   = 319,
     ePSGS_BioseqInfoAccessionAdjustmentError = 320,
