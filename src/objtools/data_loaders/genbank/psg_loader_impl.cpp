@@ -1258,6 +1258,8 @@ protected:
     void DoExecute(void) override;
     void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) override;
     void CreateLoadedChunks(CTSE_LoadLock& load_lock);
+    static bool IsChunk(const CPSG_DataId* id);
+    static bool IsChunk(const CPSG_DataId& id);
     static bool IsChunk(const CPSG_SkippedBlob& skipped);
     
 private:
@@ -1576,12 +1578,24 @@ void CPSG_Blob_Task::CreateLoadedChunks(CTSE_LoadLock& load_lock)
 }
 
 
-bool CPSG_Blob_Task::IsChunk(const CPSG_SkippedBlob& skipped)
+bool CPSG_Blob_Task::IsChunk(const CPSG_DataId* id)
 {
-    if ( auto chunk_id = skipped.GetId<CPSG_ChunkId>() ) {
+    if ( auto chunk_id = dynamic_cast<const CPSG_ChunkId*>(id) ) {
         return chunk_id->GetId2Chunk() != kSplitInfoChunkId;
     }
     return false;
+}
+
+
+bool CPSG_Blob_Task::IsChunk(const CPSG_DataId& id)
+{
+    return IsChunk(&id);
+}
+
+
+bool CPSG_Blob_Task::IsChunk(const CPSG_SkippedBlob& skipped)
+{
+    return IsChunk(skipped.GetId());
 }
 
 
