@@ -1795,7 +1795,10 @@ int CNcbiApplogApp::Run()
         NcbiLog_AppStart(NULL);
         // Add original appname as extra after 'start_app' command
         if (!m_Info.logsite.empty()) {
-            string extra = "orig_appname=" + NStr::URLEncode(m_Info.appname);
+            string extra;
+            extra = "orig_appname=" + NStr::URLEncode(m_Info.appname);
+            NcbiLogP_ExtraStr(extra.c_str());
+            extra = "ncbi_applog_version=" + GetVersion().Print() + "&ncbi_applog_path=" + GetProgramExecutablePath();
             NcbiLogP_ExtraStr(extra.c_str());
         }
         NcbiLog_AppRun();
