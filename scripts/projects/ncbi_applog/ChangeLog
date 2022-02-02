@@ -1,3 +1,6 @@
+1.4.2 (mext release)
+    - Report ncbi_applog version and path as extra record after an start_app. CXX-12337
+
 1.4.1 (01/18/2022)
     - Increase maximum length of each log entry line to 128Kb. Fixed bug with rewriting message buffer
       on an overflow during 'extra' overflow. Improve 'extra' parameters processing to cutoff extra arguments
