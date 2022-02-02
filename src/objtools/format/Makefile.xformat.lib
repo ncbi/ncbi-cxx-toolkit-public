@@ -24,4 +24,4 @@ WATCHERS = ludwigf dicuccio
 
 
 USES_LIBRARIES =  \
-    gbseq mlacli xalnmgr xcleanup
+    gbseq xalnmgr xcleanup

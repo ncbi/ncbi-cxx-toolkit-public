@@ -44,7 +44,6 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/medline/Medline_entry.hpp>
-#include <objects/mla/mla_client.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub_set.hpp>
@@ -658,75 +657,6 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
     //CPub_equiv::Tdata::const_iterator last = m_Pubdesc->GetPub().Get().end()--;
     ITERATE (CPub_equiv::Tdata, it, pub.Get()) {
         x_Init(**it, ctx);
-    }
-
-    // if just pmid or just muid, we look it up, assuming the user has
-    // somehow given permission for remote lookups
-    const static string kGbLoader = "GBLOADER";
-    if( IsJustUids() &&
-        ctx.GetScope().GetObjectManager().FindDataLoader(kGbLoader) )
-    {
-        // TODO: To avoid repeated connections, in the future we should have
-        // one CMLAClient shared by the whole program
-        CMLAClient mlaClient;
-
-        vector< CRef<CPub> > new_pubs;
-
-        ITERATE( CPub_equiv::Tdata, it, pub.Get() ) {
-            const CPub & pub = **it;
-            CRef<CPub> new_pub;
-
-            try {
-                switch(pub.Which()) {
-                case CPub::e_Pmid:
-                    {
-                        const TEntrezId pmid = pub.GetPmid().Get();
-
-                        CPubMedId req(pmid);
-                        CMLAClient::TReply reply;
-                        new_pub = mlaClient.AskGetpubpmid(req, &reply);
-                    }
-                    break;
-                case CPub::e_Muid:
-                    {
-                        pub.GetMuid();
-                        // RW-1040: removed mlaClient.AskUidtopmid and AskGetpubpmid
-                    }
-                    break;
-                default:
-                    // ignore if type unknown
-                    break;
-                }
-            } catch(...) {
-                // don't worry if we can't look it up
-            }
-
-            if( new_pub ) {
-                // authors come back in a weird format that we need
-                // to convert to ISO
-                if (new_pub->IsArticle() && new_pub->IsSetAuthors()) {
-                    new_pub->SetArticle().SetAuthors().ConvertMlToStandard(true);
-                }
-
-                new_pubs.push_back(new_pub);
-            }
-        }
-
-        if( ! new_pubs.empty() ) {
-            ITERATE( vector< CRef<CPub> >, new_pub_iter, new_pubs ) {
-                x_Init( **new_pub_iter, ctx );
-            }
-
-            // we have to add the new_pubs to m_Pubdesc->GetPub() but m_Pubdesc
-            // is const.  The solution is to copy it, modify the copy, and
-            // set the copy to have CConstRef
-            CRef<CPubdesc> new_pubdesc( new CPubdesc );
-            new_pubdesc->Assign(*m_Pubdesc);
-            CPub_equiv::Tdata & new_pub_list = new_pubdesc->SetPub().Set();
-            copy( new_pubs.begin(), new_pubs.end(),
-                back_inserter(new_pub_list) );
-            m_Pubdesc = new_pubdesc;
-        }
     }
 
     // gather Genbank specific fields (formats: Genbank, GBSeq, DDBJ)
