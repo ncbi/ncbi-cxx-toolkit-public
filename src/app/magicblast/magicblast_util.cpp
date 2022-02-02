@@ -527,7 +527,7 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
 
             new_btop += btop_string.substr(i + 1, to - i);
 
-            if (new_btop[new_btop.length() - 1] == '^') {
+            if (i >= 0 && btop_string[i] == '^') {
                 intron = !intron;
             }
 
