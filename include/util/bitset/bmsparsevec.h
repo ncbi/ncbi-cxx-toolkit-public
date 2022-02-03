@@ -1239,7 +1239,7 @@ void sparse_vector<Val, BV>::import_back(const value_type* arr,
                                          size_type         arr_size,
                                          bool              set_not_null)
 {
-    this->import_back_u((const unsigned_value_type)arr, arr_size, set_not_null);
+    this->import_back_u((const unsigned_value_type*)arr, arr_size, set_not_null);
 }
 
 
