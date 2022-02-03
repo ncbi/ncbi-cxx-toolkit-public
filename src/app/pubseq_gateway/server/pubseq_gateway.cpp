@@ -1172,6 +1172,28 @@ CPubseqGatewayApp::x_GetTraceParameter(CHttpRequest &  req,
 
 
 bool
+CPubseqGatewayApp::x_GetProcessorEventsParameter(CHttpRequest &  req,
+                                                 const string &  param_name,
+                                                 bool &  processor_events,
+                                                 string &  err_msg)
+{
+    processor_events = false;
+    SRequestParameter   processor_events_param = x_GetParam(req, param_name);
+
+    if (processor_events_param.m_Found) {
+        if (!x_IsBoolParamValid(param_name,
+                                processor_events_param.m_Value, err_msg)) {
+            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
+            PSG_WARNING(err_msg);
+            return false;
+        }
+        processor_events = processor_events_param.m_Value == "yes";
+    }
+    return true;
+}
+
+
+bool
 CPubseqGatewayApp::x_GetResendTimeout(CHttpRequest &  req,
                                       shared_ptr<CPSGS_Reply>  reply,
                                       double &  resend_timeout)

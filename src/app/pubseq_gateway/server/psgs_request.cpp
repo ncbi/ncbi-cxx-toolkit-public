@@ -229,6 +229,16 @@ bool CPSGS_Request::NeedTrace(void)
 }
 
 
+bool CPSGS_Request::NeedProcessorEvents(void)
+{
+    if (m_Request)
+        return m_Request->GetProcessorEvents();
+
+    NCBI_THROW(CPubseqGatewayException, eLogic,
+               "User request is not initialized");
+}
+
+
 string CPSGS_Request::GetName(void) const
 {
     if (m_Request)

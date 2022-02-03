@@ -309,6 +309,7 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
                               SPSGS_RequestBase::ePSGS_UnknownUseCache,
                               fetch_details->GetClientId(),
                               0, 0, trace_flag,
+                              m_Request->NeedProcessorEvents(),
                               vector<string>(), vector<string>(),
                               psg_clock_t::now());
 
@@ -394,6 +395,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                           SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                           SPSGS_RequestBase::ePSGS_UnknownUseCache,
                           fetch_details->GetClientId(), 0, 0, trace_flag,
+                          m_Request->NeedProcessorEvents(),
                           vector<string>(), vector<string>(),
                           psg_clock_t::now());
 
@@ -529,6 +531,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
                           SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                           SPSGS_RequestBase::ePSGS_UnknownUseCache,
                           fetch_details->GetClientId(), 0, 0, trace_flag,
+                          m_Request->NeedProcessorEvents(),
                           vector<string>(), vector<string>(),
                           psg_clock_t::now());
 
@@ -776,6 +779,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
                           SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                           SPSGS_RequestBase::ePSGS_UnknownUseCache,
                           fetch_details->GetClientId(), 0, 0, trace_flag,
+                          m_Request->NeedProcessorEvents(),
                           vector<string>(), vector<string>(),
                           psg_clock_t::now());
 

@@ -115,7 +115,9 @@ void CPendingOperation::Start(void)
 
 void CPendingOperation::SendProcessorStartMessage(void)
 {
-    m_Reply->PrepareProcessorProgressMessage(m_Processor->GetName(), "start");
+    if (m_UserRequest->NeedProcessorEvents())
+        m_Reply->PrepareProcessorProgressMessage(m_Processor->GetName(),
+                                                 "start");
 }
 
 

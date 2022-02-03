@@ -1,9 +1,5 @@
 [
 {
-    "reply": "Processor",
-    "status": "Success"
-},
-{
     "reply": "BioseqInfo",
     "other_ids": [
         {
@@ -22,9 +18,5 @@
     "hash": -773122180,
     "date_changed": "03/06/2012 17:18:00",
     "gi": 1778878
-},
-{
-    "reply": "Processor",
-    "status": "Success"
 }
 ]

@@ -71,6 +71,7 @@ static string  kId2InfoParam = "id2_info";
 static string  kAccSubstitutionParam = "acc_substitution";
 static string  kAutoBlobSkippingParam = "auto_blob_skipping";
 static string  kTraceParam = "trace";
+static string  kProcessorEventsParam = "processor_events";
 static string  kMostRecentTimeParam = "most_recent_time";
 static string  kMostAncientTimeParam = "most_ancient_time";
 static string  kHistogramNamesParam = "histogram_names";
@@ -246,6 +247,17 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
             return 0;
         }
 
+        bool    processor_events = false;
+        if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
+                                           processor_events, err_msg)) {
+            x_SendMessageAndCompletionChunks(reply, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             ePSGS_MalformedParameter,
+                                             eDiag_Error);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+
         bool                auto_blob_skipping = true;  // default
         SRequestParameter   auto_blob_skipping_param = x_GetParam(req, kAutoBlobSkippingParam);
         if (auto_blob_skipping_param.m_Found) {
@@ -290,6 +302,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
                         send_blob_if_small, hops, trace,
+                        processor_events,
                         enabled_processors, disabled_processors,
                         now));
         shared_ptr<CPSGS_Request>
@@ -374,6 +387,17 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
             return 0;
         }
 
+        bool    processor_events = false;
+        if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
+                                           processor_events, err_msg)) {
+            x_SendMessageAndCompletionChunks(reply, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             ePSGS_MalformedParameter,
+                                             eDiag_Error);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+
         SRequestParameter   blob_id_param = x_GetParam(req, kBlobIdParam);
         if (blob_id_param.m_Found)
         {
@@ -406,6 +430,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
                                 string(client_id_param.m_Value.data(),
                                        client_id_param.m_Value.size()),
                                 send_blob_if_small, hops, trace,
+                                processor_events,
                                 enabled_processors, disabled_processors, now));
             shared_ptr<CPSGS_Request>
                     request(new CPSGS_Request(move(req), context));
@@ -535,6 +560,17 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
             return 0;
         }
 
+        bool    processor_events = false;
+        if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
+                                           processor_events, err_msg)) {
+            x_SendMessageAndCompletionChunks(reply, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             ePSGS_MalformedParameter,
+                                             eDiag_Error);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+
         vector<string>      enabled_processors;
         vector<string>      disabled_processors;
         if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
@@ -548,6 +584,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, include_data_flags, output_format,
                         use_cache, subst_option, hops, trace,
+                        processor_events,
                         enabled_processors, disabled_processors, now));
         shared_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
@@ -638,6 +675,17 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
             return 0;
         }
 
+        bool    processor_events = false;
+        if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
+                                           processor_events, err_msg)) {
+            x_SendMessageAndCompletionChunks(reply, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             ePSGS_MalformedParameter,
+                                             eDiag_Error);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+
         vector<string>      enabled_processors;
         vector<string>      disabled_processors;
         if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
@@ -649,7 +697,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_TSEChunkRequest(
                         id2_chunk_value, id2_info_param.m_Value,
-                        use_cache, hops, trace,
+                        use_cache, hops, trace, processor_events,
                         enabled_processors, disabled_processors, now));
         shared_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
@@ -748,6 +796,17 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
             return 0;
         }
 
+        bool    processor_events = false;
+        if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
+                                           processor_events, err_msg)) {
+            x_SendMessageAndCompletionChunks(reply, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             ePSGS_MalformedParameter,
+                                             eDiag_Error);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+
         vector<string>      enabled_processors;
         vector<string>      disabled_processors;
         if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
@@ -805,7 +864,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
                         tse_option, send_blob_if_small,
-                        hops, trace,
+                        hops, trace, processor_events,
                         enabled_processors, disabled_processors,
                         now));
         shared_ptr<CPSGS_Request>
@@ -870,6 +929,17 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
             return 0;
         }
 
+        bool    processor_events = false;
+        if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
+                                           processor_events, err_msg)) {
+            x_SendMessageAndCompletionChunks(reply, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             ePSGS_MalformedParameter,
+                                             eDiag_Error);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+
         vector<string>      enabled_processors;
         vector<string>      disabled_processors;
         if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
@@ -881,7 +951,7 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_AccessionVersionHistoryRequest(
                         string(seq_id.data(), seq_id.size()),
-                        seq_id_type, use_cache, hops, trace,
+                        seq_id_type, use_cache, hops, trace, processor_events,
                         enabled_processors, disabled_processors,
                         now));
         shared_ptr<CPSGS_Request>
@@ -976,6 +1046,7 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
                                          SPSGS_RequestBase::ePSGS_CacheOnly,
                                          SPSGS_RequestBase::ePSGS_NeverAccSubstitute,
                                          0, SPSGS_RequestBase::ePSGS_NoTracing,
+                                         false,     // no processor messages
                                          enabled_processors, disabled_processors,
                                          now));
         shared_ptr<CPSGS_Request>
