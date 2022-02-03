@@ -217,14 +217,15 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     // If so then the best finish status is used, sent to the client and the
     // group is deleted
 
-    size_t                          request_id = processor->GetRequest()->GetRequestId();
+    auto                            reply = processor->GetReply();
+    auto                            request = processor->GetRequest();
+    size_t                          request_id = request->GetRequestId();
     IPSGS_Processor::EPSGS_Status   best_status = processor->GetStatus();
-    bool                            need_trace = processor->GetRequest()->NeedTrace();
+    bool                            need_trace = request->NeedTrace();
 
     size_t                          canceled_count = 0;
     size_t                          finished_count = 0;
     size_t                          total_count = 0;
-    auto                            reply = processor->GetReply();
 
     m_GroupsLock.lock();
 
@@ -249,7 +250,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                 ") finished while the reported status is " +
                 IPSGS_Processor::StatusToString(processor->GetStatus()) +
                 ". Ignore this call and continue.",
-                processor->GetRequest()->GetStartTimestamp(), false);
+                request->GetStartTimestamp(), false);
         }
 
         m_GroupsLock.unlock();
@@ -267,9 +268,13 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
 
                 ++finished_count;
 
-                reply->PrepareProcessorProgressMessage(
-                    processor->GetName(),
-                    IPSGS_Processor::StatusToProgressMessage(processor->GetStatus()));
+                if (proc.m_FinishStatus == IPSGS_Processor::ePSGS_Timeout ||
+                    proc.m_FinishStatus == IPSGS_Processor::ePSGS_Error ||
+                    request->NeedProcessorEvents()) {
+                    reply->PrepareProcessorProgressMessage(
+                        processor->GetName(),
+                        IPSGS_Processor::StatusToProgressMessage(proc.m_FinishStatus));
+                }
 
                 if (need_trace) {
                     // false: no need to update the last activity
@@ -279,8 +284,8 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                         ") that the processor " + processor->GetName() +
                         " (priority: " + to_string(processor->GetPriority()) +
                         ") finished with status status " +
-                        IPSGS_Processor::StatusToString(processor->GetStatus()),
-                        processor->GetRequest()->GetStartTimestamp(),
+                        IPSGS_Processor::StatusToString(proc.m_FinishStatus),
+                        request->GetStartTimestamp(),
                         false);
                 }
 
@@ -291,9 +296,13 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                 proc.m_DispatchStatus = ePSGS_Finished;
                 proc.m_FinishStatus = processor->GetStatus();
 
-                reply->PrepareProcessorProgressMessage(
-                    processor->GetName(),
-                    IPSGS_Processor::StatusToProgressMessage(processor->GetStatus()));
+                if (proc.m_FinishStatus == IPSGS_Processor::ePSGS_Timeout ||
+                    proc.m_FinishStatus == IPSGS_Processor::ePSGS_Error ||
+                    request->NeedProcessorEvents()) {
+                    reply->PrepareProcessorProgressMessage(
+                        processor->GetName(),
+                        IPSGS_Processor::StatusToProgressMessage(proc.m_FinishStatus));
+                }
 
                 ++finished_count;
 
@@ -306,8 +315,8 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                         processor->GetName() +
                         " (priority: " + to_string(processor->GetPriority()) +
                         ") finished with status status " +
-                        IPSGS_Processor::StatusToString(processor->GetStatus()),
-                        processor->GetRequest()->GetStartTimestamp(),
+                        IPSGS_Processor::StatusToString(proc.m_FinishStatus),
+                        request->GetStartTimestamp(),
                         false);
                 }
 
@@ -331,7 +340,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                     " when the dispatcher already knows that the "
                     "processor finished (registered status: " +
                     IPSGS_Processor::StatusToString(proc.m_FinishStatus) + ")",
-                    processor->GetRequest()->GetStartTimestamp(),
+                    request->GetStartTimestamp(),
                     false);
             }
         }
@@ -373,14 +382,14 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                     "Dispatcher: request processing finished; final status: " +
                     to_string(request_status) +
                     ". The processors group will be deleted.",
-                    processor->GetRequest()->GetStartTimestamp(), false);
+                    request->GetStartTimestamp(), false);
             }
 
             reply->PrepareReplyCompletion();
             // This will switch the stream to the finished state, i.e.
             // IsFinished() will return true
             reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
-            x_PrintRequestStop(processor->GetRequest(), request_status);
+            x_PrintRequestStop(request, request_status);
         }
     }
 

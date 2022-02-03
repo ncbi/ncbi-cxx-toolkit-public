@@ -1,9 +1,5 @@
 [
 {
-    "reply": "Processor",
-    "status": "Success"
-},
-{
     "reply": "BlobInfo",
     "id": {
         "id": "4.509567",
@@ -24,9 +20,5 @@
     "username": "cavanaug",
     "id2_info": "25.507134.14",
     "n_chunks": 1
-},
-{
-    "reply": "Processor",
-    "status": "Success"
 }
 ]

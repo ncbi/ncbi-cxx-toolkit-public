@@ -386,6 +386,10 @@ private:
                              const string &  param_name,
                              SPSGS_RequestBase::EPSGS_Trace &  trace,
                              string &  err_msg);
+    bool x_GetProcessorEventsParameter(CHttpRequest &  req,
+                                       const string &  param_name,
+                                       bool &  processor_events,
+                                       string &  err_msg);
     bool x_GetHops(CHttpRequest &  req,
                    shared_ptr<CPSGS_Reply>  reply, int &  hops);
     bool x_GetResendTimeout(CHttpRequest &  req,

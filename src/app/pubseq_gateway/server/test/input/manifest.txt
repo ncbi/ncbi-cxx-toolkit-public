@@ -296,3 +296,5 @@ get_resend_timeout_setup                | -url "ID/get?seq_id=AC052670&client_id
 get_resend_timeout_short                | -url "ID/get?seq_id=AC052670&client_id=222&resend_timeout=0.03&disable_processor=osg"                                                                                             | The blob should be provided anyway because the timeout is short               | get
 get_resend_timeout_long                 | -url "ID/get?seq_id=AC052670&client_id=222&resend_timeout=5.0&disable_processor=osg"                                                                                              | The blob will not be sent because the timeout is long                         | get
 
+psg_106779053_with_events               | -url "ID/resolve?seq_id=106779053&fmt=json&all_info=yes&processor_events=yes&disable_processor=osg"                                                                               | Resolution with processor events                                              | resolve
+

@@ -39,13 +39,9 @@
     "reply": "BioseqInfo",
     "reply": "BlobData",
     "reply": "BlobInfo",
-    "reply": "Processor",
-    "reply": "Processor",
     "seq_state": 10,
     "size": 2556,
     "state": 10,
-    "status": "Success"
-    "status": "Success"
     "storage_size": 1078,
     "tax_id": 184922,
     "username": "smartsvc",
@@ -59,10 +55,6 @@
 {
 {
 {
-{
-{
 }
-},
-},
 },
 },

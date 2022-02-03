@@ -1,14 +1,6 @@
 [
 {
-    "reply": "Processor",
-    "status": "Success"
-},
-{
     "reply": "BioseqInfo",
     "length": 3182
-},
-{
-    "reply": "Processor",
-    "status": "Success"
 }
 ]

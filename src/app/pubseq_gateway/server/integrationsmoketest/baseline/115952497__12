@@ -1,9 +1,5 @@
 [
 {
-    "reply": "Processor",
-    "status": "Success"
-},
-{
     "reply": "BioseqInfo",
     "canonical_id": {
         "id": "ref|NW_001364032.1|SPUUN_WGA87311_2",
@@ -26,9 +22,5 @@
     "hash": 1488528452,
     "date_changed": "07/30/2013 09:30:00",
     "gi": 115952497
-},
-{
-    "reply": "Processor",
-    "status": "Success"
 }
 ]

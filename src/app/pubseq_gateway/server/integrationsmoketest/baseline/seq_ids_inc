@@ -1,9 +1,5 @@
 [
 {
-    "reply": "Processor",
-    "status": "Success"
-},
-{
     "reply": "BioseqInfo",
     "other_ids": [
         {
@@ -11,9 +7,5 @@
             "type": 12
         }
     ]
-},
-{
-    "reply": "Processor",
-    "status": "Success"
 }
 ]
