@@ -80,13 +80,26 @@ void s_FreeDataBlk(DataBlkPtr dbp)
 
 DataBlk::~DataBlk()
 {
+    int MAX_HEAD_RECURSION(100);
+
     delete[] mpQscore;
     delete mpData;
     if (mType == ParFlat_ENTRYNODE) {
         delete[] mOffset;
-        //mOffset = nullptr;
     }
-    delete mpNext;
+    auto p = mpNext;
+    for (int i = 0; p && i < MAX_HEAD_RECURSION; ++i) {
+        p = p->mpNext;
+    }
+    if (!p) {
+        delete mpNext;
+    }
+    else {
+        auto pTail = p->mpNext;
+        p->mpNext = nullptr;
+        delete mpNext;
+        delete pTail;
+    }
 }
 
 /**********************************************************
