@@ -452,7 +452,7 @@ CUser_field& CUser_field::SetValue(const string& value, EParseField parse)
 {
     if ( parse == eParse_Number ) {
         try {
-            return SetValue(NStr::StringToNumeric<TData::TInt>(value));
+            return SetValue(NStr::StringToNumeric<Int8>(value));
         }
         catch (...) {
         }
@@ -483,9 +483,6 @@ CUser_field& CUser_field::SetInt8(Int8 value)
     if ( value == int(value) ) {
         // value fits in 'int' field
         return SetInt(int(value));
-    }
-    if ( value >= -kMaxAsReal && value <= kMaxAsReal ) {
-        return SetDouble(double(value));
     }
     // otherwise the value is stored into 'str' field
     return SetString(NStr::NumericToString(value));

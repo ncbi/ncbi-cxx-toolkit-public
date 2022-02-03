@@ -71,7 +71,7 @@ public:
     CUser_field& SetString(const string& value);
 
     /// set a data field to a given value
-    /// Int8 and TGi values can be stored into 'real' or 'str' fields if
+    /// Int8 and TGi values can be stored into 'str' field if
     /// the value doesn't fit into 'int' field
     CUser_field& SetValue(int           value);
     CUser_field& SetValue(Int8          value);
