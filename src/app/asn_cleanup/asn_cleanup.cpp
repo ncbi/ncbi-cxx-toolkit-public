@@ -512,7 +512,12 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
                 proceed = ObtainSeqEntryFromBioseq(is, se);
                 if (proceed) {
                     HandleSeqEntry(se);
-                    x_WriteToFile(se->GetSeq());
+                    if (se->IsSeq()) {
+                        x_WriteToFile(se->GetSeq());
+                    }
+                    else {
+                        x_WriteToFile(se->GetSet());
+                    }
                 }
             } else if (asn_type == EAsnType::eBioseqSet) {
                 //
@@ -522,7 +527,12 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
                 proceed = ObtainSeqEntryFromBioseqSet(is, se);
                 if (proceed) {
                     HandleSeqEntry(se);
-                    x_WriteToFile(se->GetSet());
+                    if (se->IsSet()) {
+                        x_WriteToFile(se->GetSet());
+                    }
+                    else {
+                        x_WriteToFile(se->GetSeq());
+                    }
                 }
             } else if (asn_type == EAsnType::eSeqSubmit) {
                 proceed = x_ProcessSeqSubmit(is);
