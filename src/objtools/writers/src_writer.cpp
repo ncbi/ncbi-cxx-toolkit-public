@@ -881,7 +881,11 @@ bool CSrcWriter::xGatherDefline(
     static const string displayName = colName;
     static const string defaultValue;
 
-    string label = sequence::CDeflineGenerator().GenerateDefline(bsh);
+
+    string label = 
+        sequence::CDeflineGenerator().GenerateDefline(
+                bsh,
+                sequence::CDeflineGenerator::fUseAutoDef);
     if (label.empty()) {
         return true;
     }
