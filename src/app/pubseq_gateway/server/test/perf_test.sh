@@ -150,7 +150,7 @@ d=`date +%Y%m%d-%H%M%S`
 res_dir=$base_dir/results.$d
 mkdir $res_dir
 error=$?
-if [ test $error -ne 0 ]; then
+if [ $error -ne 0 ]; then
     echo "Error: can not create output directory $res_dir"
     exit $error
 fi
