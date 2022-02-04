@@ -796,6 +796,21 @@ void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
     if (!sub.IsSetSub() || !sub.IsSetData() || !sub.GetData().IsEntrys()) {
         return;
     }
+
+    CNcbiOstream* flatfile_os = nullptr;
+    if (m_Os) {
+        flatfile_os = m_Os;
+    } else if (m_On) {
+        flatfile_os = m_On;
+    } else if (m_Og) {
+        flatfile_os = m_Og;
+    } else if (m_Op) {
+        flatfile_os = m_Op;
+    }
+    if (!flatfile_os) {
+        return;
+    }
+
     CRef<CScope> scope(new CScope(*m_Objmgr));
     scope->AddDefaults();
     if (m_do_cleanup) {
@@ -818,9 +833,7 @@ void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
         CSeq_loc loc;
         x_GetLocation(seh, args, loc);
         try {
-            if (m_Os) {
-                m_FFGenerator->Generate(loc, seh.GetScope(), *m_Os);
-            }
+            m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os);
         }
         catch (CException& e) {
             ERR_POST(Error << e);
@@ -828,9 +841,7 @@ void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
         }
     } else {
         try {
-            if (m_Os) {
-                m_FFGenerator->Generate(sub, *scope, *m_Os);
-            }
+            m_FFGenerator->Generate(sub, *scope, *flatfile_os);
         }
         catch (CException& e) {
             ERR_POST(Error << e);
