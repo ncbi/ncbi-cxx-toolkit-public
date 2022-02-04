@@ -56,8 +56,13 @@ CMagicBlast::CMagicBlast(CRef<IQueryFactory> query_factory,
                          CRef<CMagicBlastOptionsHandle> options)
     : m_Queries(query_factory),
       m_LocalDbAdapter(blastdb),
-      m_Options(&options->SetOptions())
+      m_Options(&options->SetOptions()),
+      m_BtopSpliceSignals(true)
 {
+    CNcbiEnvironment env;
+    if (!env.Get("BTOP_NO_SPLICE_SIGNALS").empty()) {
+        m_BtopSpliceSignals = false;
+    }
     x_Validate();
 }
 
@@ -203,7 +208,8 @@ void CMagicBlast::x_Validate(void)
 static void s_ComputeBtopAndIdentity(const HSPChain* chain,
                                      string& btop,
                                      string& md_tag,
-                                     double& perc_id)
+                                     double& perc_id,
+                                     bool btop_splice_signals)
 {
     _ASSERT(chain);
     _ASSERT(chain->hsps->hsp);
@@ -227,22 +233,26 @@ static void s_ComputeBtopAndIdentity(const HSPChain* chain,
                 // intron
                 btop += (string)"^";
                 
-                string acceptor(2u, ' ');
-                acceptor[0] = (char)tolower(BLASTNA_TO_IUPACNA[
+                if (btop_splice_signals) {
+                    string acceptor(2u, ' ');
+                    acceptor[0] = (char)tolower(BLASTNA_TO_IUPACNA[
                              (int)((prev->map_info->right_edge >> 2) & 3)]);
-                acceptor[1] = (char)tolower(BLASTNA_TO_IUPACNA[
+                    acceptor[1] = (char)tolower(BLASTNA_TO_IUPACNA[
                              (int)(prev->map_info->right_edge & 3)]);
-                btop += acceptor;
+                    btop += acceptor;
 
-                btop += NStr::IntToString(subject_gap - 4);
+                    btop += NStr::IntToString(subject_gap - 4);
 
-                string donor(2u, ' ');
-                donor[0] = (char)tolower(BLASTNA_TO_IUPACNA[
+                    string donor(2u, ' ');
+                    donor[0] = (char)tolower(BLASTNA_TO_IUPACNA[
                              (int)((hsp->map_info->left_edge >> 2) & 3)]);
-                donor[1] = (char)tolower(BLASTNA_TO_IUPACNA[
+                    donor[1] = (char)tolower(BLASTNA_TO_IUPACNA[
                              (int)(hsp->map_info->left_edge & 3)]);
-                btop += donor;
-
+                    btop += donor;
+                }
+                else {
+                    btop += NStr::IntToString(subject_gap);
+                }
                 btop += "^";
             }
             else if (subject_gap > 0) {
@@ -324,7 +334,8 @@ static void s_ComputeBtopAndIdentity(const HSPChain* chain,
 static CRef<CSeq_align> s_CreateSeqAlign(const HSPChain* chain,
                                          CRef<ILocalQueryData>& qdata,
                                          CRef<IBlastSeqInfoSrc>& seqinfo_src,
-                                         const BlastQueryInfo* query_info)
+                                         const BlastQueryInfo* query_info,
+                                         bool btop_splice_signals)
 {
     CRef<CSeq_align> align(new CSeq_align);
     align->SetType(CSeq_align::eType_partial);
@@ -364,7 +375,8 @@ static CRef<CSeq_align> s_CreateSeqAlign(const HSPChain* chain,
     string btop;
     string md_tag;
     double perc_id;
-    s_ComputeBtopAndIdentity(chain, btop, md_tag, perc_id);
+    s_ComputeBtopAndIdentity(chain, btop, md_tag, perc_id,
+                             btop_splice_signals);
     user_object->AddField("btop", btop);
     user_object->AddField("md_tag", md_tag);
     align->SetNamedScore(CSeq_align::eScore_PercentIdentity_Gapped,
@@ -382,7 +394,8 @@ CRef<CSeq_align_set> CMagicBlast::x_CreateSeqAlignSet(
                                            const HSPChain* chains,
                                            CRef<ILocalQueryData> qdata,
                                            CRef<IBlastSeqInfoSrc> seqinfo_src,
-                                           const BlastQueryInfo* query_info)
+                                           const BlastQueryInfo* query_info,
+                                           bool btop_splice_signals)
 {
     CRef<CSeq_align_set> seq_aligns = CreateEmptySeq_align_set();
 
@@ -406,12 +419,15 @@ CRef<CSeq_align_set> CMagicBlast::x_CreateSeqAlignSet(
 
             CSeq_align::TSegs::TDisc& disc = align->SetSegs().SetDisc();
             disc.Set().push_back(s_CreateSeqAlign(chain, qdata, seqinfo_src,
-                                                  query_info));
+                                                  query_info,
+                                                  btop_splice_signals));
             disc.Set().push_back(s_CreateSeqAlign(chain->pair, qdata,
-                                                  seqinfo_src, query_info));
+                                                  seqinfo_src, query_info,
+                                                  btop_splice_signals));
         }
         else {
-            align = s_CreateSeqAlign(chain, qdata, seqinfo_src, query_info);
+            align = s_CreateSeqAlign(chain, qdata, seqinfo_src, query_info,
+                                     btop_splice_signals);
         }
 
         seq_aligns->Set().push_back(align);
@@ -443,7 +459,8 @@ CRef<CSeq_align_set> CMagicBlast::x_BuildSeqAlignSet(
         HSPChain* chains = results->chain_array[index];
         CRef<CSeq_align_set> seq_aligns(x_CreateSeqAlignSet(chains, query_data,
                                                             seqinfo_src,
-                                                            query_info));
+                                                            query_info,
+                                                            m_BtopSpliceSignals));
 
         for (auto it: seq_aligns->Get()) {
             retval->Set().push_back(it);
@@ -482,7 +499,8 @@ CRef<CMagicBlastResultSet> CMagicBlast::x_BuildResultSet(
         CConstRef<CSeq_id> query_id(query_data->GetSeq_loc(index)->GetId());
         CRef<CSeq_align_set> aligns(x_CreateSeqAlignSet(chains, query_data,
                                                         seqinfo_src,
-                                                        query_info));
+                                                        query_info,
+                                                        m_BtopSpliceSignals));
 
         int query_length =
             query_info->contexts[index * NUM_STRANDS].query_length;
@@ -504,7 +522,8 @@ CRef<CMagicBlastResultSet> CMagicBlast::x_BuildResultSet(
             CRef<CSeq_align_set> mate_aligns(x_CreateSeqAlignSet(chains,
                                                                  query_data,
                                                                  seqinfo_src,
-                                                                 query_info));
+                                                                 query_info,
+                                                                 m_BtopSpliceSignals));
 
             for (auto it: mate_aligns->Get()) {
                 aligns->Set().push_back(it);

@@ -105,7 +105,8 @@ protected:
     static CRef<CSeq_align_set> x_CreateSeqAlignSet(const HSPChain* results,
                                            CRef<ILocalQueryData> qdata,
                                            CRef<IBlastSeqInfoSrc> seqinfo_src,
-                                           const BlastQueryInfo* query_info);
+                                           const BlastQueryInfo* query_info,
+                                           bool btop_splice_signals);
 
 private:
     /// Queries
@@ -125,6 +126,9 @@ private:
 
     /// Warning and error messages
     TSearchMessages m_Messages;
+
+    /// Should BTOP strings be formatted with splice signals
+    bool m_BtopSpliceSignals;
 };
 
 
