@@ -322,7 +322,7 @@ public:
     bool HandleSeqEntry(const CSeq_entry_Handle& seh);
 
 protected:
-    void HandleSeqSubmit(CObjectIStream& is );
+    void HandleSeqSubmit(CObjectIStream& is);
     void HandleSeqSubmit(CSeq_submit& sub);
     void HandleSeqId(const string& id);
 
@@ -793,7 +793,7 @@ int CAsn2FlatApp::Run()
 
 void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
 {
-    if (!sub.IsSetSub() || !sub.IsSetData() || !sub.GetData().IsEntrys()) {
+    if (!sub.IsSetSub() || !sub.IsSetData() || !sub.GetData().IsEntrys() || sub.GetData().GetEntrys().empty()) {
         return;
     }
 
@@ -818,35 +818,33 @@ void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
         cleanup.BasicCleanup(sub);
     }
     const CArgs& args = GetArgs();
-    if (args["from"] || args["to"] || args["strand"]) {
-        CRef<CSeq_entry> e(sub.SetData().SetEntrys().front());
-        CSeq_entry_Handle seh;
-        try {
-            seh = scope->GetSeq_entryHandle(*e);
-        } catch (CException&) {}
 
-        if (!seh) {  // add to scope if not already in it
-            seh = scope->AddTopLevelSeqEntry(*e);
-        }
-        // "remember" the submission block
-        m_FFGenerator->SetSubmit(sub.GetSub());
-        CSeq_loc loc;
-        x_GetLocation(seh, args, loc);
-        try {
+    // NB: though the spec specifies a submission may contain multiple entries
+    // this is not the case. A submission should only have a single Top-level
+    // Seq-entry
+    CConstRef<CSeq_entry> e(sub.GetData().GetEntrys().front());
+    CSeq_entry_Handle seh;
+    try {
+        seh = scope->GetSeq_entryHandle(*e);
+    } catch (CException&) {}
+
+    if (!seh) {  // add to scope if not already in it
+        seh = scope->AddTopLevelSeqEntry(*e);
+    }
+    // "remember" the submission block
+    m_FFGenerator->SetSubmit(sub.GetSub());
+
+    try {
+        if (args["from"] || args["to"] || args["strand"]) {
+            CSeq_loc loc;
+            x_GetLocation(seh, args, loc);
             m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os);
+        } else {
+            m_FFGenerator->Generate(seh, *flatfile_os);
         }
-        catch (CException& e) {
-            ERR_POST(Error << e);
-            m_Exception = true;
-        }
-    } else {
-        try {
-            m_FFGenerator->Generate(sub, *scope, *flatfile_os);
-        }
-        catch (CException& e) {
-            ERR_POST(Error << e);
-            m_Exception = true;
-        }
+    } catch (CException& e) {
+        ERR_POST(Error << e);
+        m_Exception = true;
     }
 }
 
@@ -928,23 +926,22 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
         }
     }
 
-    if ( args["faster"] || args["policy"].AsString() == "ftp" || args["policy"].AsString() == "web" ) {
+    if (args["faster"] || args["policy"].AsString() == "ftp" || args["policy"].AsString() == "web") {
 
-            try {
-                if ( args["from"] || args["to"] || args["strand"] ) {
-                    CSeq_loc loc;
-                    x_GetLocation( seh, args, loc );
-                    CNcbiOstream* flatfile_os = m_Os;
-                    m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true, m_Os);
-                } else {
-                    CNcbiOstream* flatfile_os = m_Os;
-                    m_FFGenerator->Generate( seh, *flatfile_os, true, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
-                }
+        try {
+            if (args["from"] || args["to"] || args["strand"]) {
+                CSeq_loc loc;
+                x_GetLocation(seh, args, loc);
+                CNcbiOstream* flatfile_os = m_Os;
+                m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true, m_Os);
+            } else {
+                CNcbiOstream* flatfile_os = m_Os;
+                m_FFGenerator->Generate(seh, *flatfile_os, true, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
             }
-            catch (CException& e) {
-                  ERR_POST(Error << e);
-                  m_Exception = true;
-            }
+        } catch (CException& e) {
+            ERR_POST(Error << e);
+            m_Exception = true;
+        }
 
         return true;
     }
