@@ -797,27 +797,12 @@ void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
         return;
     }
 
-    CNcbiOstream* flatfile_os = nullptr;
-    if (m_Os) {
-        flatfile_os = m_Os;
-    } else if (m_On) {
-        flatfile_os = m_On;
-    } else if (m_Og) {
-        flatfile_os = m_Og;
-    } else if (m_Op) {
-        flatfile_os = m_Op;
-    }
-    if (!flatfile_os) {
-        return;
-    }
-
     CRef<CScope> scope(new CScope(*m_Objmgr));
     scope->AddDefaults();
     if (m_do_cleanup) {
         CCleanup cleanup;
         cleanup.BasicCleanup(sub);
     }
-    const CArgs& args = GetArgs();
 
     // NB: though the spec specifies a submission may contain multiple entries
     // this is not the case. A submission should only have a single Top-level
@@ -834,13 +819,16 @@ void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
     // "remember" the submission block
     m_FFGenerator->SetSubmit(sub.GetSub());
 
+    const CArgs& args = GetArgs();
     try {
         if (args["from"] || args["to"] || args["strand"]) {
             CSeq_loc loc;
             x_GetLocation(seh, args, loc);
-            m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os);
+            CNcbiOstream* flatfile_os = m_Os;
+            m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true, m_Os);
         } else {
-            m_FFGenerator->Generate(seh, *flatfile_os);
+            CNcbiOstream* flatfile_os = m_Os;
+            m_FFGenerator->Generate(seh, *flatfile_os, true, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
         }
     } catch (CException& e) {
         ERR_POST(Error << e);
