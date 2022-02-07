@@ -842,9 +842,15 @@ CCgiRequestProcessor* CCgiApplication::x_GetProcessorOrNull(void) const
 }
 
 
+static void s_CleanupProcessor(CCgiRequestProcessor* processor, void* /* cleanup_data */)
+{
+    if (processor != nullptr) delete processor;
+}
+
+
 CCgiRequestProcessor& CCgiApplication::x_CreateProcessor(void)
 {
-    m_Processor->SetValue(CreateRequestProcessor());
+    m_Processor->SetValue(CreateRequestProcessor(), s_CleanupProcessor);
     return x_GetProcessor();
 }
 
