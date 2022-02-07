@@ -2270,6 +2270,7 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
         status = CGeneModel::eCap;
     else if(acc.find("POLYAINFO") != string::npos)
         status = CGeneModel::ePolyA;
+
     if(status != 0) {
         int pos;
         if(((status&CGeneModel::eCap) && a.Strand() == ePlus) || ((status&CGeneModel::ePolyA) && a.Strand() == eMinus)) {
@@ -2279,13 +2280,31 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
             status |= CGeneModel::eLeftFlexible;
             pos = a.Limits().GetTo();
         }
-        a.Status() |= status;
-        auto rslt = m_special_aligns.emplace(make_tuple(status, pos), a);
-        if(!rslt.second) { // same position exists
-            auto& stored = rslt.first->second;
-            stored.SetWeight(stored.Weight()+a.Weight());
+        if(a.Exons().size() == 1) {
+            a.Status() |= status;
+            auto rslt = m_special_aligns.emplace(make_tuple(status, pos), a);
+            if(!rslt.second) { // same position exists
+                auto& stored = rslt.first->second;
+                stored.SetWeight(stored.Weight()+a.Weight());
+            }
+            return;
+        } else {
+            int spec_extend = SPECIAL_ALIGN_LEN-1;
+            CGeneModel galign(a.Strand(), a.ID(), CGeneModel::eSR);
+            galign.SetWeight(a.Weight());
+            if(a.Strand() == ePlus)
+                galign.AddExon(TSignedSeqRange(pos, pos+spec_extend));
+            else
+                galign.AddExon(TSignedSeqRange(pos-spec_extend, pos));
+            if(galign.Limits().GetFrom() >= 0) { // can't check right end because we don't know the contig length yet (will check in chainer)   
+                galign.Status() |= status;
+                auto rslt = m_special_aligns.emplace(make_tuple(status, pos), CAlignModel(galign, galign.GetAlignMap()));
+                if(!rslt.second) { // same position exists  
+                    auto& stored = rslt.first->second;
+                    stored.SetWeight(stored.Weight()+a.Weight());
+                }
+            }
         }
-        return;
     }
 
     bool long_read = acc.find("SRA") != string::npos && acc.find("RNASEQ_COLLAPSE") == string::npos;

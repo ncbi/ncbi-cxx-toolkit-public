@@ -2659,7 +2659,6 @@ void CChainer::CChainerImpl::LeftRight(TContained& pointers)
     NON_CONST_ITERATE(TContained, i, pointers) {
         SChainMember& mi = **i;
         CGeneModel& ai = *mi.m_align;
-
         LRIinit(mi);
         TContained micontained = mi.CollectContainedForMemeber();
         sort(micontained.begin(),micontained.end(),LeftOrderD());
@@ -2671,6 +2670,10 @@ void CChainer::CChainerImpl::LeftRight(TContained& pointers)
         for(TContained::iterator j = jfirst; j < i; ++j) {
             SChainMember& mj = **j;
             CGeneModel& aj = *mj.m_align;
+
+            if(aj.Exons().back().m_fsplice_sig == "XX" || ai.Exons().front().m_ssplice_sig == "XX")  // don't extend first/last exon if gapfill
+                continue;            
+
             if(aj.Limits().GetTo() < ai.Limits().GetFrom())    // skip not overlapping (may exist because of flex_len)
                 continue;
 
@@ -2737,6 +2740,9 @@ void CChainer::CChainerImpl::RightLeft(TContained& pointers)
         for(TContained::iterator j = jfirst; j < i; ++j) {
             SChainMember& mj = **j;
             CGeneModel& aj = *mj.m_align;
+
+            if(aj.Exons().front().m_ssplice_sig == "XX" || ai.Exons().back().m_fsplice_sig == "XX")  // don't extend first/last exon if gapfill
+                continue;
 
             if(aj.Strand() != ai.Strand())
                 continue;
@@ -4485,6 +4491,7 @@ void CChain::CalculateSupportAndWeightFromMembers(bool keep_all_evidence) {
     }
 
     sort(linkers.begin(), linkers.end());
+
     for(int i = 0; i < (int)linkers.size(); ++i) {
         SLinker& sli = linkers[i];
         if(sli.m_range.GetFrom() == m_supported_range.GetFrom()) {
