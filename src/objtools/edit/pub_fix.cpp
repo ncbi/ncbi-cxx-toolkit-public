@@ -724,6 +724,118 @@ size_t ExtractConsortiums(const CAuth_list::C_Names::TStd& names, CAuth_list::C_
     return num_of_names;
 }
 
+static bool s_GetConsortia(const list<CRef<CAuthor>>& authors, list<string>& consortia)  {
+    
+    if (!consortia.empty()) {
+        consortia.clear();
+    }
+
+    for (const auto& pAuthor : authors) {
+        if (pAuthor && 
+            pAuthor->IsSetName() &&
+            pAuthor->GetName().IsConsortium()) {
+            consortia.push_back(pAuthor->GetName().GetConsortium());
+        }
+    }
+
+    if (!consortia.empty()) {
+        consortia.sort(PNocase());
+        return true;
+    }
+
+    return false;
+}
+
+
+static void s_TrimPrefixThe(CTempString& str)
+{
+    NStr::TrimPrefixInPlace(str, "The", NStr::eNocase);
+    NStr::TruncateSpacesInPlace(str, NStr::eTrunc_Begin);
+}
+
+static bool s_ConsortiaMatch(const list<string>& x, const list<string>& y)
+{
+    if (x.size() != y.size()) {
+        return false;
+    }
+
+
+    auto yit = begin(y);
+    for (auto xit = begin(x); xit != end(x); ++xit, ++yit) {
+        auto xval = NStr::TruncateSpaces_Unsafe(*xit);
+        auto yval = NStr::TruncateSpaces_Unsafe(*yit);
+
+        if (!NStr::EqualNocase(xval, yval)) {
+            const auto xval_starts_with_the = NStr::StartsWith(xval, "The", NStr::eNocase);
+            const auto yval_starts_with_the = NStr::StartsWith(yval, "The", NStr::eNocase);
+            if (xval_starts_with_the && !yval_starts_with_the) {
+                s_TrimPrefixThe(xval);
+                if (!NStr::EqualNocase(xval, yval)) {
+                    return false;
+                }
+            }
+            else if(yval_starts_with_the && !xval_starts_with_the) {
+                s_TrimPrefixThe(yval);
+                if (!NStr::EqualNocase(xval, yval)) {
+                    return false;
+                }
+            }
+            else {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+static void s_ProcessConsortia(const CCit_art& old_cit, CCit_art& new_cit, IMessageListener* pListener) 
+{
+    if (!old_cit.IsSetAuthors() || 
+        !old_cit.GetAuthors().IsSetNames() ||
+        !old_cit.GetAuthors().GetNames().IsStd()) {
+        return;
+    }
+
+    if (!new_cit.IsSetAuthors() ||
+        !new_cit.GetAuthors().IsSetNames() ||
+        !new_cit.GetAuthors().GetNames().IsStd()) {
+        return;
+    }
+
+    list<string> old_consortia;
+    if (!s_GetConsortia(old_cit.GetAuthors().GetNames().GetStd(), old_consortia)) {
+        return;
+    }
+
+    list<string> new_consortia;
+    if (!s_GetConsortia(new_cit.GetAuthors().GetNames().GetStd(), new_consortia)) {
+        auto old_consortia_string = NStr::Join(old_consortia, ";");
+        ERR_POST_TO_LISTENER(pListener, eDiag_Warning, err_Reference, err_Reference_NoConsortAuthors,
+                "Publication as returned by MedArch lacks consortium authors of the original publication : \"" 
+                << old_consortia_string << "\".");
+        
+        auto& std_list = new_cit.SetAuthors().SetNames().SetStd();
+        transform(begin(old_consortia), 
+                  end(old_consortia), 
+                  back_inserter(std_list),
+                  [](const string& consortium) { 
+                    auto pAuthor = Ref(new CAuthor());
+                    pAuthor->SetName().SetConsortium(consortium);
+                    return pAuthor; });
+    }
+    else if (!s_ConsortiaMatch(old_consortia, new_consortia)) {
+        auto old_consortia_string = NStr::Join(old_consortia, ";");
+        auto new_consortia_string = NStr::Join(new_consortia, ";");
+        ERR_POST_TO_LISTENER(pListener, eDiag_Warning, err_Reference, err_Reference_DiffConsortAuthors,
+                    "Consortium author names differ. Original is \"" 
+                    << old_consortia_string 
+                    << "\". MedArch's is \"" 
+                    << new_consortia_string << "\".");
+
+    }
+}
+
 
 void GetFirstTenNames(const CAuth_list::C_Names::TStd& names, list<CTempString>& res)
 {
@@ -1117,6 +1229,7 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
                         switch (outcome) {
                         case CAuthListValidator::eAccept_pubmed:
                             new_cit_is_valid = true;
+                            s_ProcessConsortia(*cit_art, *new_cit_art, m_err_log);
                             break;
                         case CAuthListValidator::eKeep_genbank:
                             MoveAuthors(*new_cit_art, *cit_art);
