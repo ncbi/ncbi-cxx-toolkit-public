@@ -83,6 +83,9 @@ void CFlatFileMessage::Dump(CNcbiOstream& out) const {
     case eDiag_Fatal:
         out << "FATAL ERROR: ";
         break;
+    case eDiag_Info:
+        out << "NOTE: ";
+        break;
     default: 
         {
         string sevName = CNcbiDiag::SeverityName(severity);
