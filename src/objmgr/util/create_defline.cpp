@@ -1192,6 +1192,7 @@ void CDeflineGenerator::x_SetBioSrcIdx (
     m_Substrain = bsx->GetSubstrain();
     m_MetaGenomeSource = bsx->GetMetaGenomeSource();
     m_Cultivar = bsx->GetCultivar();
+    m_SpecimenVoucher = bsx->GetSpecimenVoucher();
     m_Isolate = bsx->GetIsolate();
     m_Breed = bsx->GetBreed();
 
@@ -1329,6 +1330,11 @@ void CDeflineGenerator::x_SetBioSrc (
                         m_Cultivar = str;
                     }
                     break;
+                case NCBI_ORGMOD(specimen_voucher):
+                    if (m_SpecimenVoucher.empty()) {
+                        m_SpecimenVoucher = str;
+                    }
+                    break;
                 case NCBI_ORGMOD(isolate):
                     if (m_Isolate.empty()) {
                         m_Isolate = str;
@@ -1462,6 +1468,11 @@ static bool x_EndsWithStrain (
     return false;
 }
 
+static string s_RemoveColons(const string& isolate)
+{
+    return NStr::Replace(isolate, ":", "");    
+}
+
 void CDeflineGenerator::x_SetTitleFromBioSrc (void)
 
 {
@@ -1487,9 +1498,15 @@ void CDeflineGenerator::x_SetTitleFromBioSrc (void)
     if (! m_Cultivar.empty()) {
         joiner.Add("cultivar", m_Cultivar.substr (0, m_Cultivar.find(';')));
     }
-    if (! m_Isolate.empty()) {
+    
+    if (!m_SpecimenVoucher.empty()) {
+        joiner.Add("voucher", m_SpecimenVoucher);
+    }
+
+    if (! m_Isolate.empty() && (m_Isolate != m_SpecimenVoucher)) {
         // x_EndsWithStrain just checks for supplied pattern, using here for isolate
-        if (! x_EndsWithStrain (m_Taxname, m_Isolate)) {
+        if ((!x_EndsWithStrain (m_Taxname, m_Isolate)) &&
+             (s_RemoveColons(m_SpecimenVoucher) != m_Isolate)) {
             joiner.Add("isolate", m_Isolate);
         }
     }
