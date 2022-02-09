@@ -108,7 +108,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
 
         reply->PrepareReplyMessage(msg, CRequestStatus::e404_NotFound,
                                    ePSGS_NoProcessor, eDiag_Error);
-        reply->PrepareReplyCompletion();
+        reply->PrepareReplyCompletion(request->GetStartTimestamp());
         reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
         reply->SetCompleted();
         x_PrintRequestStop(request, CRequestStatus::e404_NotFound);
@@ -385,7 +385,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                     request->GetStartTimestamp(), false);
             }
 
-            reply->PrepareReplyCompletion();
+            reply->PrepareReplyCompletion(request->GetStartTimestamp());
             // This will switch the stream to the finished state, i.e.
             // IsFinished() will return true
             reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);

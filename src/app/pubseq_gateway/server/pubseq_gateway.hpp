@@ -328,12 +328,14 @@ private:
 
     void x_SendMessageAndCompletionChunks(
         shared_ptr<CPSGS_Reply>  reply,
+        const psg_time_point_t &  create_timestamp,
         const string &  message,
         CRequestStatus::ECode  status, int  code, EDiagSev  severity);
 
     bool x_ProcessCommonGetAndResolveParams(
         CHttpRequest &  req,
         shared_ptr<CPSGS_Reply>  reply,
+        const psg_time_point_t &  create_timestamp,
         CTempString &  seq_id, int &  seq_id_type,
         SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache);
 
@@ -349,7 +351,8 @@ private:
                                                 CHttpRequest &  req,
                                                 string &  err_msg);
     int  x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
-                                       shared_ptr<CPSGS_Reply>  reply);
+                                       shared_ptr<CPSGS_Reply>  reply,
+                                       const psg_time_point_t &  create_timestamp);
     bool x_IsBoolParamValid(const string &  param_name,
                             const CTempString &  param_value,
                             string &  err_msg) const;
@@ -391,23 +394,30 @@ private:
                                        bool &  processor_events,
                                        string &  err_msg);
     bool x_GetHops(CHttpRequest &  req,
-                   shared_ptr<CPSGS_Reply>  reply, int &  hops);
+                   shared_ptr<CPSGS_Reply>  reply,
+                   const psg_time_point_t &  create_timestamp,
+                   int &  hops);
     bool x_GetResendTimeout(CHttpRequest &  req,
                             shared_ptr<CPSGS_Reply>  reply,
+                            const psg_time_point_t &  create_timestamp,
                             double &  resend_timeout);
     bool x_GetEnabledAndDisabledProcessors(CHttpRequest &  req,
                                            shared_ptr<CPSGS_Reply>  reply,
+                                           const psg_time_point_t &  create_timestamp,
                                            vector<string> &  enabled_processors,
                                            vector<string> &  disabled_processors);
 
 private:
     void x_InsufficientArguments(shared_ptr<CPSGS_Reply>  reply,
+                                 const psg_time_point_t &  create_timestamp,
                                  CRef<CRequestContext> &  context,
                                  const string &  err_msg);
     void x_MalformedArguments(shared_ptr<CPSGS_Reply>  reply,
+                              const psg_time_point_t &  create_timestamp,
                               CRef<CRequestContext> &  context,
                               const string &  err_msg);
-    bool x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply);
+    bool x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply,
+                          const psg_time_point_t &  create_timestamp);
     void x_ReadIdToNameAndDescriptionConfiguration(const IRegistry &  reg,
                                                    const string &  section);
     void x_RegisterProcessors(void);
