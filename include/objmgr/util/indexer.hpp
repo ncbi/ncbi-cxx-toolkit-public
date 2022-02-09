@@ -554,6 +554,7 @@ public:
 
     CTempString GetBreed (void);
     CTempString GetCultivar (void);
+    CTempString GetSpecimenVoucher (void);
     CTempString GetIsolate (void);
     CTempString GetStrain (void);
     CTempString GetSubstrain (void);
@@ -739,6 +740,7 @@ private:
     // Orgmod fields
     CTempString m_Breed;
     CTempString m_Cultivar;
+    CTempString m_SpecimenVoucher;
     CTempString m_Isolate;
     CTempString m_Strain;
     CTempString m_Substrain;

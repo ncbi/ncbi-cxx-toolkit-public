@@ -1450,6 +1450,11 @@ void CBioseqIndex::x_InitSource (void)
                             m_Cultivar = str;
                         }
                         break;
+                    case NCBI_ORGMOD(specimen_voucher):
+                        if (m_SpecimenVoucher.empty()) {
+                            m_SpecimenVoucher = str;
+                        }
+                        break;
                     case NCBI_ORGMOD(isolate):
                         if (m_Isolate.empty()) {
                             m_Isolate = str;
@@ -2720,6 +2725,18 @@ CTempString CBioseqIndex::GetCultivar (void)
 
     return m_Cultivar;
 }
+
+
+CTempString CBioseqIndex::GetSpecimenVoucher (void)
+
+{
+    if (! m_SourcesInitialized) {
+        x_InitSource();
+    }
+
+    return m_SpecimenVoucher;
+}
+
 
 CTempString CBioseqIndex::GetIsolate (void)
 
