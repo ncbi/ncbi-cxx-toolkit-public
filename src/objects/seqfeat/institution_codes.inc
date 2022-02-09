@@ -471,6 +471,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BAYLU\ts\tBaylor University, Biology Department\t\t\t",
 "BB<ARG>\ts\tUniversidad Nacional del Sur, Departamento de Agronomia\t\t\t",
 "BB<USA-WY>\ts\tBuffalo Bill Museum\t\t\t",
+"BBAZ\ts\tBig Bear Alpine Zoo\t\t\t",
 "BBB\ts\tUniversidad Nacional del Sur, Departamento de Biologia, Bioquimica y Farmacia\t\t\t",
 "BBF\ts\tConservatoire Botanique National de Midi-Pyrenees, Conservatoire botanique pyreneen\t\t\t",
 "BBG\ts\tBirmingham Botanical Gardens\t\t\t",
