@@ -1614,7 +1614,7 @@ CRef<CSeq_loc> CFeatTableEdit::xGetGeneLocation(
             CRef<CSeq_interval> pTop(new CSeq_interval);
             pTop->SetId().Assign(baseId);
             pTop->SetFrom(baseStart);
-            pTop->SetTo(sequenceSize);
+            pTop->SetTo(sequenceSize-1);
             pTop->SetStrand(baseLoc.GetStrand());
             pEnvelope->SetPacked_int().AddInterval(*pTop);
             CRef<CSeq_interval> pBottom(new CSeq_interval);
@@ -1635,7 +1635,7 @@ CRef<CSeq_loc> CFeatTableEdit::xGetGeneLocation(
             CRef<CSeq_interval> pTop(new CSeq_interval);
             pTop->SetId().Assign(baseId);
             pTop->SetFrom(baseStart);
-            pTop->SetTo(sequenceSize);
+            pTop->SetTo(sequenceSize-1);
             pTop->SetStrand(baseLoc.GetStrand());
             pEnvelope->SetPacked_int().AddInterval(*pTop);
             pEnvelope->ChangeToMix();
@@ -1651,7 +1651,6 @@ CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForFeature(
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_feat> pGene;
-    //const CSeq_loc& loc = rna.GetOriginalFeature().GetLocation();
     CSeq_feat_Handle sfh = mpScope->GetSeq_featHandle(rna.GetOriginalFeature());
     CSeq_annot_Handle sah = sfh.GetAnnot();
     if (!sah) {
@@ -1701,7 +1700,6 @@ CFeatTableEdit::xPutErrorMissingLocustag(
         subName;
 
     string message = subName + " feature is missing locus tag.";
-
     xPutError(message);
 }
 
@@ -1723,7 +1721,6 @@ CFeatTableEdit::xPutErrorMissingTranscriptId(
         subName;
 
     string message = subName + " feature is missing transcript ID.";
-
     xPutError(message);
 }
 
@@ -1777,9 +1774,6 @@ CFeatTableEdit::xPutErrorDifferingProteinIds(
         return;
     }
     xPutError("Protein ID on mRNA feature differs from protein ID on child CDS.");
-
-    //    xPutError(ILineError::eProblem_InconsistentQualifiers,
-    //        "Protein ID on mRNA feature differs from protein ID on child CDS.");
 }
 
 void
