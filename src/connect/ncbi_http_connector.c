@@ -403,11 +403,12 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
-static int/*bool*/ x_SameDefaultPort(unsigned short port1, EBURLScheme scheme1,
-                                     unsigned short port2, EBURLScheme scheme2)
+static int/*bool*/ x_SameOrDefPort(unsigned short port1, EBURLScheme scheme1,
+                                   unsigned short port2, EBURLScheme scheme2)
 {
-    return (!port1  ||  port1 == x_PortForScheme(0, scheme1))
-        && (!port2  ||  port2 == x_PortForScheme(0, scheme2))
+    return port1 == port2
+        ||  ((!port1  ||  port1 == x_PortForScheme(0, scheme1))  &&
+             (!port2  ||  port2 == x_PortForScheme(0, scheme2)))
         ? 1/*true*/ : 0/*false*/;
 }
 
@@ -422,7 +423,7 @@ static int/*bool*/ x_RedirectOK(EBURLScheme    scheme_to,
 {
     char buf1[CONN_HOST_LEN+1], buf2[CONN_HOST_LEN+1];
     unsigned int ip1, ip2;
-    if (!x_SameDefaultPort(port_to, scheme_to, port_from, scheme_from))
+    if (!x_SameOrDefPort(port_to, scheme_to, port_from, scheme_from))
         return 0/*false*/;
     if (strcasecmp(host_to, host_from) == 0)
         return 1/*true*/;
