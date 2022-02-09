@@ -535,7 +535,14 @@ private:
         high_level_reply.PrepareReplyMessage(
             msg, CRequestStatus::e503_ServiceUnavailable,
             err_code, eDiag_Error);
-        high_level_reply.PrepareReplyCompletion();
+
+        psg_time_point_t    start_timestamp;
+        if (m_PendingReqs.empty())
+            start_timestamp = psg_clock_t::now();
+        else
+            start_timestamp = m_PendingReqs.front()->GetStartTimestamp();
+
+        high_level_reply.PrepareReplyCompletion(start_timestamp);
         high_level_reply.Flush(CPSGS_Reply::ePSGS_SendAndFinish);
         high_level_reply.SetCompleted();
     }
@@ -801,7 +808,7 @@ public:
             reply->PrepareReplyMessage("Too many pending requests",
                                        CRequestStatus::e503_ServiceUnavailable,
                                        ePSGS_TooManyRequests, eDiag_Error);
-            reply->PrepareReplyCompletion();
+            reply->PrepareReplyCompletion(psg_clock_t::now());
             reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
             reply->SetCompleted();
         }
@@ -1226,7 +1233,7 @@ public:
                 reply->PrepareReplyMessage(e.what(),
                                            CRequestStatus::e503_ServiceUnavailable,
                                            ePSGS_UnknownError, eDiag_Error);
-                reply->PrepareReplyCompletion();
+                reply->PrepareReplyCompletion(psg_clock_t::now());
                 reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
                 reply->SetCompleted();
                 return 0;
@@ -1238,7 +1245,7 @@ public:
                 reply->PrepareReplyMessage("Unexpected failure",
                                            CRequestStatus::e503_ServiceUnavailable,
                                            ePSGS_UnknownError, eDiag_Error);
-                reply->PrepareReplyCompletion();
+                reply->PrepareReplyCompletion(psg_clock_t::now());
                 reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
                 reply->SetCompleted();
                 return 0;

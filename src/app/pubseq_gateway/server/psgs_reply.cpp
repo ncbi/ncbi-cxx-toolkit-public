@@ -1242,7 +1242,7 @@ void CPSGS_Reply::PrepareProcessorProgressMessage(const string &  processor_id,
 }
 
 
-void CPSGS_Reply::PrepareReplyCompletion(void)
+void CPSGS_Reply::PrepareReplyCompletion(const psg_time_point_t &  create_timestamp)
 {
     x_UpdateLastActivity();
 
@@ -1254,7 +1254,8 @@ void CPSGS_Reply::PrepareReplyCompletion(void)
     while (m_ChunksLock.exchange(true)) {}
     ++m_TotalSentReplyChunks;
 
-    string  reply_completion = GetReplyCompletionHeader(m_TotalSentReplyChunks);
+    string  reply_completion = GetReplyCompletionHeader(m_TotalSentReplyChunks,
+                                                        create_timestamp);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(reply_completion.data()),
                 reply_completion.size()));

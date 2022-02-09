@@ -103,10 +103,11 @@ static string  kBadUrlMessage = "Unknown request, the provided URL "
 int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
                                 shared_ptr<CPSGS_Reply>  reply)
 {
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    if (x_IsShuttingDown(reply)) {
+    if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
         return 0;
     }
@@ -122,14 +123,14 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
         } catch (const exception &  exc) {
             string      msg = "Exception when handling no path URL event: " +
                               string(exc.what());
-            x_SendMessageAndCompletionChunks(reply, msg,
+            x_SendMessageAndCompletionChunks(reply, now, msg,
                                              CRequestStatus::e500_InternalServerError,
                                              ePSGS_BadURL, eDiag_Error);
             PSG_ERROR(msg);
             x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
         } catch (...) {
             string      msg = "Unknown exception when handling no path URL event";
-            x_SendMessageAndCompletionChunks(reply, msg,
+            x_SendMessageAndCompletionChunks(reply, now, msg,
                                              CRequestStatus::e500_InternalServerError,
                                              ePSGS_BadURL, eDiag_Error);
             PSG_ERROR(msg);
@@ -140,7 +141,7 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
             m_Counters.Increment(CPSGSCounters::ePSGS_BadUrlPath);
 
             string      bad_url = req.GetPath();
-            x_SendMessageAndCompletionChunks(reply,
+            x_SendMessageAndCompletionChunks(reply, now,
                                              kBadUrlMessage + NStr::HtmlEncode(bad_url),
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_BadURL,
@@ -157,14 +158,14 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
         } catch (const exception &  exc) {
             string      msg = "Exception when handling a bad URL event: " +
                               string(exc.what());
-            x_SendMessageAndCompletionChunks(reply, msg,
+            x_SendMessageAndCompletionChunks(reply, now, msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_BadURL, eDiag_Error);
             PSG_WARNING(msg);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         } catch (...) {
             string  msg = "Unknown exception when handling a bad URL event";
-            x_SendMessageAndCompletionChunks(reply, msg,
+            x_SendMessageAndCompletionChunks(reply, now, msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_BadURL, eDiag_Error);
             PSG_WARNING(msg);
@@ -182,13 +183,13 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    if (x_IsShuttingDown(reply)) {
+    if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
         return 0;
     }
 
     int     hops;
-    if (!x_GetHops(req, reply, hops)) {
+    if (!x_GetHops(req, reply, now, hops)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
@@ -198,7 +199,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         int                                     seq_id_type;
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
 
-        if (!x_ProcessCommonGetAndResolveParams(req, reply, seq_id,
+        if (!x_ProcessCommonGetAndResolveParams(req, reply, now, seq_id,
                                                 seq_id_type, use_cache)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
@@ -210,7 +211,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         if (tse_param.m_Found) {
             tse_option = x_GetTSEOption(kTSEParam, tse_param.m_Value, err_msg);
             if (tse_option == SPSGS_BlobRequestBase::ePSGS_UnknownTSE) {
-                x_MalformedArguments(reply, context, err_msg);
+                x_MalformedArguments(reply, now, context, err_msg);
                 return 0;
             }
         }
@@ -231,7 +232,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
                                                             subst_param.m_Value,
                                                             err_msg);
             if (subst_option == SPSGS_RequestBase::ePSGS_UnknownAccSubstitution) {
-                x_MalformedArguments(reply, context, err_msg);
+                x_MalformedArguments(reply, now, context, err_msg);
                 return 0;
             }
         }
@@ -240,7 +241,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
 
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
         if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter, eDiag_Error);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
@@ -250,7 +251,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         bool    processor_events = false;
         if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
                                            processor_events, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
@@ -265,7 +266,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
                                     auto_blob_skipping_param.m_Value,
                                     err_msg)) {
                 m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-                x_SendMessageAndCompletionChunks(reply, err_msg,
+                x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                                  CRequestStatus::e400_BadRequest,
                                                  ePSGS_MalformedParameter,
                                                  eDiag_Error);
@@ -276,18 +277,18 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         }
 
         double              resend_timeout;
-        if (!x_GetResendTimeout(req, reply, resend_timeout)) {
+        if (!x_GetResendTimeout(req, reply, now, resend_timeout)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         }
 
         vector<string>      enabled_processors;
         vector<string>      disabled_processors;
-        if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
+        if (!x_GetEnabledAndDisabledProcessors(req, reply, now, enabled_processors,
                                                disabled_processors))
             return 0;
 
-        int     send_blob_if_small = x_GetSendBlobIfSmallParameter(req, reply);
+        int     send_blob_if_small = x_GetSendBlobIfSmallParameter(req, reply, now);
         if (send_blob_if_small < 0)
             return 0;
 
@@ -312,13 +313,13 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get request: " +
                           string(exc.what());
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_UnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
         string      msg = "Unknown exception when handling a get request";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_UnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
@@ -334,13 +335,13 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    if (x_IsShuttingDown(reply)) {
+    if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
         return 0;
     }
 
     int     hops;
-    if (!x_GetHops(req, reply, hops)) {
+    if (!x_GetHops(req, reply, now, hops)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
@@ -353,7 +354,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
         if (tse_param.m_Found) {
             tse_option = x_GetTSEOption(kTSEParam, tse_param.m_Value, err_msg);
             if (tse_option == SPSGS_BlobRequestBase::ePSGS_UnknownTSE) {
-                x_MalformedArguments(reply, context, err_msg);
+                x_MalformedArguments(reply, now, context, err_msg);
                 return 0;
             }
         }
@@ -365,7 +366,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
                 last_modified_value = NStr::StringToLong(
                                                 last_modified_param.m_Value);
             } catch (...) {
-                x_MalformedArguments(reply, context,
+                x_MalformedArguments(reply, now, context,
                                      "Malformed '" + kLastModifiedParam +
                                      "' parameter. Expected an integer");
                 return 0;
@@ -374,13 +375,13 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
 
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = x_GetUseCacheParameter(req, err_msg);
         if (!err_msg.empty()) {
-            x_MalformedArguments(reply, context, err_msg);
+            x_MalformedArguments(reply, now, context, err_msg);
             return 0;
         }
 
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
         if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter, eDiag_Error);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
@@ -390,7 +391,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
         bool    processor_events = false;
         if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
                                            processor_events, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
@@ -404,7 +405,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
             SPSGS_BlobId    blob_id(blob_id_param.m_Value);
 
             if (blob_id.GetId().empty()) {
-                x_MalformedArguments(reply, context,
+                x_MalformedArguments(reply, now, context,
                                      "The '" + kBlobIdParam +
                                      "' parameter value has not been supplied");
                 return 0;
@@ -414,11 +415,11 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
 
             vector<string>      enabled_processors;
             vector<string>      disabled_processors;
-            if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
+            if (!x_GetEnabledAndDisabledProcessors(req, reply, now, enabled_processors,
                                                    disabled_processors))
                 return 0;
 
-            int     send_blob_if_small = x_GetSendBlobIfSmallParameter(req, reply);
+            int     send_blob_if_small = x_GetSendBlobIfSmallParameter(req, reply, now);
             if (send_blob_if_small < 0)
                 return 0;
 
@@ -439,18 +440,18 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
             return 0;
         }
 
-        x_InsufficientArguments(reply, context, "Mandatory parameter "
+        x_InsufficientArguments(reply, now, context, "Mandatory parameter "
                                 "'" + kBlobIdParam + "' is not found.");
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a getblob request: " +
                           string(exc.what());
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_UnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
         string      msg = "Unknown exception when handling a getblob request";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_UnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
@@ -466,13 +467,13 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    if (x_IsShuttingDown(reply)) {
+    if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
         return 0;
     }
 
     int     hops;
-    if (!x_GetHops(req, reply, hops)) {
+    if (!x_GetHops(req, reply, now, hops)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
@@ -482,7 +483,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
         int                                     seq_id_type;
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
 
-        if (!x_ProcessCommonGetAndResolveParams(req, reply, seq_id,
+        if (!x_ProcessCommonGetAndResolveParams(req, reply, now, seq_id,
                                                 seq_id_type, use_cache)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
@@ -496,7 +497,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
             output_format = x_GetOutputFormat(kFmtParam, fmt_param.m_Value, err_msg);
             if (output_format == SPSGS_ResolveRequest::ePSGS_UnknownFormat) {
                 m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-                x_SendMessageAndCompletionChunks(reply, err_msg,
+                x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                                  CRequestStatus::e400_BadRequest,
                                                  ePSGS_MalformedParameter,
                                                  eDiag_Error);
@@ -515,7 +516,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
                 if (!x_IsBoolParamValid(flag_param.first,
                                         request_param.m_Value, err_msg)) {
                     m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-                    x_SendMessageAndCompletionChunks(reply, err_msg,
+                    x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                                      CRequestStatus::e400_BadRequest,
                                                      ePSGS_MalformedParameter,
                                                      eDiag_Error);
@@ -540,7 +541,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
                                                             err_msg);
             if (subst_option == SPSGS_RequestBase::ePSGS_UnknownAccSubstitution) {
                 m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-                x_SendMessageAndCompletionChunks(reply, err_msg,
+                x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                                  CRequestStatus::e400_BadRequest,
                                                  ePSGS_MalformedParameter,
                                                  eDiag_Error);
@@ -552,7 +553,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
 
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
         if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
@@ -563,7 +564,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
         bool    processor_events = false;
         if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
                                            processor_events, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
@@ -573,7 +574,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
 
         vector<string>      enabled_processors;
         vector<string>      disabled_processors;
-        if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
+        if (!x_GetEnabledAndDisabledProcessors(req, reply, now, enabled_processors,
                                                disabled_processors))
             return 0;
 
@@ -593,13 +594,13 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a resolve request: " +
                           string(exc.what());
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_UnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
         string      msg = "Unknown exception when handling a resolve request";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_UnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
@@ -615,13 +616,13 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    if (x_IsShuttingDown(reply)) {
+    if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
         return 0;
     }
 
     int     hops;
-    if (!x_GetHops(req, reply, hops)) {
+    if (!x_GetHops(req, reply, now, hops)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
@@ -631,7 +632,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         SRequestParameter   id2_chunk_param = x_GetParam(req, kId2ChunkParam);
         int64_t             id2_chunk_value = INT64_MIN;
         if (!id2_chunk_param.m_Found) {
-            x_InsufficientArguments(reply, context, "Mandatory parameter "
+            x_InsufficientArguments(reply, now, context, "Mandatory parameter "
                                     "'" + kId2ChunkParam + "' is not found.");
             return 0;
         }
@@ -639,13 +640,13 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         try {
             id2_chunk_value = NStr::StringToLong(id2_chunk_param.m_Value);
             if (id2_chunk_value < 0) {
-                x_MalformedArguments(reply, context,
+                x_MalformedArguments(reply, now, context,
                                      "Invalid '" + kId2ChunkParam +
                                      "' parameter. Expected >= 0");
                 return 0;
             }
         } catch (...) {
-            x_MalformedArguments(reply, context,
+            x_MalformedArguments(reply, now, context,
                                  "Malformed '" + kId2ChunkParam + "' parameter. "
                                  "Expected an integer");
             return 0;
@@ -654,7 +655,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         SRequestParameter   id2_info_param = x_GetParam(req, kId2InfoParam);
         if (!id2_info_param.m_Found)
         {
-            x_InsufficientArguments(reply, context, "Mandatory parameter '" +
+            x_InsufficientArguments(reply, now, context, "Mandatory parameter '" +
                                     kId2InfoParam + "' is not found.");
             return 0;
         }
@@ -662,13 +663,13 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         string                                  err_msg;
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = x_GetUseCacheParameter(req, err_msg);
         if (!err_msg.empty()) {
-            x_MalformedArguments(reply, context, err_msg);
+            x_MalformedArguments(reply, now, context, err_msg);
             return 0;
         }
 
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
         if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter, eDiag_Error);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
@@ -678,7 +679,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         bool    processor_events = false;
         if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
                                            processor_events, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
@@ -688,7 +689,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
 
         vector<string>      enabled_processors;
         vector<string>      disabled_processors;
-        if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
+        if (!x_GetEnabledAndDisabledProcessors(req, reply, now, enabled_processors,
                                                disabled_processors))
             return 0;
 
@@ -706,13 +707,13 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get_tse_chunk request: " +
                           string(exc.what());
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_UnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
         string      msg = "Unknown exception when handling a get_tse_chunk request";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_UnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
@@ -728,13 +729,13 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    if (x_IsShuttingDown(reply)) {
+    if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
         return 0;
     }
 
     int     hops;
-    if (!x_GetHops(req, reply, hops)) {
+    if (!x_GetHops(req, reply, now, hops)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
@@ -744,7 +745,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         int                                     seq_id_type;
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
 
-        if (!x_ProcessCommonGetAndResolveParams(req, reply, seq_id,
+        if (!x_ProcessCommonGetAndResolveParams(req, reply, now, seq_id,
                                                 seq_id_type, use_cache)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
@@ -761,7 +762,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
             if (output_format == SPSGS_ResolveRequest::ePSGS_ProtobufFormat ||
                 output_format == SPSGS_ResolveRequest::ePSGS_UnknownFormat) {
                 x_MalformedArguments(
-                        reply, context,
+                        reply, now, context,
                         "Invalid '" + kFmtParam + "' parameter value. The 'get_na' "
                         "request supports 'json' and 'native' values");
                 return 0;
@@ -772,7 +773,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         // Get the annotation names
         SRequestParameter   names_param = x_GetParam(req, kNamesParam);
         if (!names_param.m_Found) {
-            x_MalformedArguments(reply, context,
+            x_MalformedArguments(reply, now, context,
                                  "The mandatory '" + kNamesParam +
                                  "' parameter is not found");
             return 0;
@@ -781,14 +782,14 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         vector<string>          names;
         NStr::Split(names_param.m_Value, ",", names);
         if (names.empty()) {
-            x_MalformedArguments(reply, context,
+            x_MalformedArguments(reply, now, context,
                                  "Named annotation names are not found in the request");
             return 0;
         }
 
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
         if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
@@ -799,7 +800,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         bool    processor_events = false;
         if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
                                            processor_events, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
@@ -809,7 +810,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
 
         vector<string>      enabled_processors;
         vector<string>      disabled_processors;
-        if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
+        if (!x_GetEnabledAndDisabledProcessors(req, reply, now, enabled_processors,
                                                disabled_processors))
             return 0;
 
@@ -819,14 +820,14 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         if (tse_param.m_Found) {
             tse_option = x_GetTSEOption(kTSEParam, tse_param.m_Value, err_msg);
             if (tse_option == SPSGS_BlobRequestBase::ePSGS_UnknownTSE) {
-                x_MalformedArguments(reply, context, err_msg);
+                x_MalformedArguments(reply, now, context, err_msg);
                 return 0;
             }
         }
 
         SRequestParameter   client_id_param = x_GetParam(req, kClientIdParam);
 
-        int     send_blob_if_small = x_GetSendBlobIfSmallParameter(req, reply);
+        int     send_blob_if_small = x_GetSendBlobIfSmallParameter(req, reply, now);
         if (send_blob_if_small < 0)
             return 0;
 
@@ -837,7 +838,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                                     auto_blob_skipping_param.m_Value,
                                     err_msg)) {
                 m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-                x_SendMessageAndCompletionChunks(reply, err_msg,
+                x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                                  CRequestStatus::e400_BadRequest,
                                                  ePSGS_MalformedParameter,
                                                  eDiag_Error);
@@ -848,7 +849,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         }
 
         double              resend_timeout;
-        if (!x_GetResendTimeout(req, reply, resend_timeout)) {
+        if (!x_GetResendTimeout(req, reply, now, resend_timeout)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         }
@@ -874,13 +875,13 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get_na request: " +
                           string(exc.what());
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_UnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
         string      msg = "Unknown exception when handling a get_na request";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_UnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
@@ -896,13 +897,13 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    if (x_IsShuttingDown(reply)) {
+    if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
         return 0;
     }
 
     int     hops;
-    if (!x_GetHops(req, reply, hops)) {
+    if (!x_GetHops(req, reply, now, hops)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
@@ -912,7 +913,7 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
         int                                     seq_id_type;
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
 
-        if (!x_ProcessCommonGetAndResolveParams(req, reply, seq_id,
+        if (!x_ProcessCommonGetAndResolveParams(req, reply, now, seq_id,
                                                 seq_id_type, use_cache)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
@@ -921,7 +922,7 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
         string                          err_msg;
         if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
@@ -932,7 +933,7 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
         bool    processor_events = false;
         if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
                                            processor_events, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
@@ -942,7 +943,7 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
 
         vector<string>      enabled_processors;
         vector<string>      disabled_processors;
-        if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
+        if (!x_GetEnabledAndDisabledProcessors(req, reply, now, enabled_processors,
                                                disabled_processors))
             return 0;
 
@@ -961,13 +962,13 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
     } catch (const exception &  exc) {
         string      msg = "Exception when handling an accession_version_history request: " +
                           string(exc.what());
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_UnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
         string      msg = "Unknown exception when handling an accession_version_history request";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_UnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
@@ -1119,6 +1120,7 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  req,
 
     // NOTE: expected to work regardless of the shutdown request
 
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -1143,14 +1145,14 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  req,
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a config request: " +
                           string(exc.what());
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_ConfigError, eDiag_Error);
         PSG_ERROR(msg);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
         string      msg = "Unknown exception when handling a config request";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_ConfigError, eDiag_Error);
         PSG_ERROR(msg);
@@ -1193,6 +1195,7 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  req,
 
     // NOTE: expected to work regardless of the shutdown request
 
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -1343,14 +1346,14 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  req,
     } catch (const exception &  exc) {
         string      msg = "Exception when handling an info request: " +
                           string(exc.what());
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_InfoError, eDiag_Error);
         PSG_ERROR(msg);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
         string      msg = "Unknown exception when handling an info request";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_InfoError, eDiag_Error);
         PSG_ERROR(msg);
@@ -1365,6 +1368,7 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  req,
 {
     // NOTE: expected to work regardless of the shutdown request
 
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -1412,14 +1416,14 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  req,
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a status request: " +
                           string(exc.what());
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_StatusError, eDiag_Error);
         PSG_ERROR(msg);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
         string      msg = "Unknown exception when handling a status request";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_StatusError, eDiag_Error);
         PSG_ERROR(msg);
@@ -1437,6 +1441,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
     static const char *     s_Shutdown = "Shutdown request accepted";
     static size_t           s_ShutdownSize = strlen(s_Shutdown);
 
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -1467,7 +1472,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
                 PSG_MESSAGE(msg);
 
                 x_SendMessageAndCompletionChunks(
-                        reply, "Invalid authorization token",
+                        reply, now, "Invalid authorization token",
                         CRequestStatus::e401_Unauthorized,
                         ePSGS_Unauthorised, eDiag_Error);
                 x_PrintRequestStop(context, CRequestStatus::e401_Unauthorized);
@@ -1490,7 +1495,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
                 PSG_MESSAGE(msg);
 
                 x_SendMessageAndCompletionChunks(
-                        reply, "Invalid timeout (must be a positive integer)",
+                        reply, now, "Invalid timeout (must be a positive integer)",
                         CRequestStatus::e400_BadRequest,
                         ePSGS_MalformedParameter, eDiag_Error);
                 x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
@@ -1506,7 +1511,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
                 PSG_MESSAGE(msg);
 
                 x_SendMessageAndCompletionChunks(
-                        reply, "Invalid timeout (must be a positive integer)",
+                        reply, now, "Invalid timeout (must be a positive integer)",
                         CRequestStatus::e400_BadRequest,
                         ePSGS_MalformedParameter, eDiag_Error);
                 x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
@@ -1551,14 +1556,14 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a shutdown request: " +
                           string(exc.what());
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_ShutdownError, eDiag_Error);
         PSG_ERROR(msg);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
         string      msg = "Unknown exception when handling a shutdown request";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_ShutdownError, eDiag_Error);
         PSG_ERROR(msg);
@@ -1573,6 +1578,7 @@ int CPubseqGatewayApp::OnGetAlerts(CHttpRequest &  req,
 {
     // NOTE: expected to work regardless of the shutdown request
 
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
@@ -1589,14 +1595,14 @@ int CPubseqGatewayApp::OnGetAlerts(CHttpRequest &  req,
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get alerts request: " +
                           string(exc.what());
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_GetAlertsError, eDiag_Error);
         PSG_ERROR(msg);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
         string      msg = "Unknown exception when handling a get alerts request";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_GetAlertsError, eDiag_Error);
         PSG_ERROR(msg);
@@ -1609,10 +1615,11 @@ int CPubseqGatewayApp::OnGetAlerts(CHttpRequest &  req,
 int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
                                   shared_ptr<CPSGS_Reply>  reply)
 {
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    if (x_IsShuttingDown(reply)) {
+    if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
         return 0;
     }
@@ -1624,7 +1631,7 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
         if (!alert_param.m_Found) {
             msg = "Missing " + kAlertParam + " parameter";
             x_SendMessageAndCompletionChunks(
-                    reply, msg, CRequestStatus::e400_BadRequest,
+                    reply, now, msg, CRequestStatus::e400_BadRequest,
                     ePSGS_InsufficientArguments, eDiag_Error);
             PSG_ERROR(msg);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
@@ -1635,7 +1642,7 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
         if (!username_param.m_Found) {
             msg = "Missing " + kUsernameParam + " parameter";
             x_SendMessageAndCompletionChunks(
-                    reply, msg, CRequestStatus::e400_BadRequest,
+                    reply, now, msg, CRequestStatus::e400_BadRequest,
                     ePSGS_InsufficientArguments, eDiag_Error);
             PSG_ERROR(msg);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
@@ -1649,7 +1656,7 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
             case ePSGS_AlertNotFound:
                 msg = "Alert " + alert + " is not found";
                 x_SendMessageAndCompletionChunks(
-                        reply, msg,
+                        reply, now, msg,
                         CRequestStatus::e404_NotFound,
                         ePSGS_MalformedParameter, eDiag_Error);
                 PSG_ERROR(msg);
@@ -1670,7 +1677,7 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
     } catch (const exception &  exc) {
         string      msg = "Exception when handling an acknowledge alert request: " +
                           string(exc.what());
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_AckAlertError,
                                          eDiag_Error);
@@ -1678,7 +1685,7 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
         string      msg = "Unknown exception when handling an acknowledge alert request";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_AckAlertError,
                                          eDiag_Error);
@@ -1691,10 +1698,11 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
 int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
                                     shared_ptr<CPSGS_Reply>  reply)
 {
+    auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    if (x_IsShuttingDown(reply)) {
+    if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
         return 0;
     }
@@ -1712,7 +1720,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
             string      err_msg;
             if (!x_IsBoolParamValid(kResetParam, reset_param.m_Value, err_msg)) {
                 x_SendMessageAndCompletionChunks(
-                        reply, err_msg, CRequestStatus::e400_BadRequest,
+                        reply, now, err_msg, CRequestStatus::e400_BadRequest,
                         ePSGS_MalformedParameter, eDiag_Error);
                 PSG_ERROR(err_msg);
                 x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
@@ -1747,7 +1755,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
 
             if (!err_msg.empty()) {
                 x_SendMessageAndCompletionChunks(
-                        reply, err_msg, CRequestStatus::e400_BadRequest,
+                        reply, now, err_msg, CRequestStatus::e400_BadRequest,
                         ePSGS_MalformedParameter, eDiag_Error);
                 PSG_ERROR(err_msg);
                 x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
@@ -1773,7 +1781,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
 
             if (!err_msg.empty()) {
                 x_SendMessageAndCompletionChunks(
-                        reply, err_msg, CRequestStatus::e400_BadRequest,
+                        reply, now, err_msg, CRequestStatus::e400_BadRequest,
                         ePSGS_MalformedParameter, eDiag_Error);
                 PSG_ERROR(err_msg);
                 x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
@@ -1809,7 +1817,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a statistics request: " +
                           string(exc.what());
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_StatisticsError,
                                          eDiag_Error);
@@ -1817,7 +1825,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
         string  msg = "Unknown exception when handling a statistics request";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_StatisticsError,
                                          eDiag_Error);
@@ -1831,11 +1839,12 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
 int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
                                 shared_ptr<CPSGS_Reply>  reply)
 {
+    auto                    now = psg_clock_t::now();
     bool                    need_log = false;   // default
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context;
 
-    if (x_IsShuttingDown(reply)) {
+    if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
         return 0;
     }
@@ -1847,7 +1856,7 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
         if (log_param.m_Found) {
             if (!x_IsBoolParamValid(kLogParam, log_param.m_Value, err_msg)) {
                 x_SendMessageAndCompletionChunks(
-                        reply, err_msg, CRequestStatus::e400_BadRequest,
+                        reply, now, err_msg, CRequestStatus::e400_BadRequest,
                         ePSGS_MalformedParameter, eDiag_Error);
                 PSG_ERROR(err_msg);
                 return 0;
@@ -1868,7 +1877,7 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
                           "' parameter. Accepted values are 0..." +
                           to_string(kMaxTestIOSize);
                 x_SendMessageAndCompletionChunks(
-                        reply, err_msg, CRequestStatus::e400_BadRequest,
+                        reply, now, err_msg, CRequestStatus::e400_BadRequest,
                         ePSGS_MalformedParameter, eDiag_Error);
                 if (need_log) {
                     PSG_WARNING(err_msg);
@@ -1880,7 +1889,7 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
         } else {
             err_msg = "The '" + kDataSizeParam + "' must be provided";
             x_SendMessageAndCompletionChunks(
-                    reply, err_msg, CRequestStatus::e400_BadRequest,
+                    reply, now, err_msg, CRequestStatus::e400_BadRequest,
                     ePSGS_InsufficientArguments, eDiag_Error);
             if (need_log) {
                 PSG_WARNING(err_msg);
@@ -1902,7 +1911,7 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a test io request: " +
                           string(exc.what());
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_TestIOError,
                                          eDiag_Error);
@@ -1911,7 +1920,7 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
             x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     } catch (...) {
         string  msg = "Unknown exception when handling a test io request";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, now, msg,
                                          CRequestStatus::e500_InternalServerError,
                                          ePSGS_TestIOError,
                                          eDiag_Error);
@@ -1926,6 +1935,7 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
 bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
         CHttpRequest &  req,
         shared_ptr<CPSGS_Reply>  reply,
+        const psg_time_point_t &  create_timestamp,
         CTempString &  seq_id,
         int &  seq_id_type,
         SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache)
@@ -1949,7 +1959,7 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
     }
 
     if (!err_msg.empty()) {
-        x_SendMessageAndCompletionChunks(reply, err_msg,
+        x_SendMessageAndCompletionChunks(reply, create_timestamp, err_msg,
                                          CRequestStatus::e400_BadRequest,
                                          ePSGS_MissingParameter, eDiag_Error);
         PSG_WARNING(err_msg);
@@ -1962,7 +1972,7 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
         if (!x_ConvertIntParameter(kSeqIdTypeParam, seq_id_type_param.m_Value,
                                    seq_id_type, err_msg)) {
             m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, create_timestamp, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
@@ -1975,7 +1985,7 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
                       "' value must be >= 0 and less than " +
                       to_string(CSeq_id::e_MaxChoice);
             m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, create_timestamp, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
@@ -2012,7 +2022,8 @@ CPubseqGatewayApp::x_GetUseCacheParameter(CHttpRequest &  req,
 
 int
 CPubseqGatewayApp::x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
-                                                 shared_ptr<CPSGS_Reply>  reply)
+                                                 shared_ptr<CPSGS_Reply>  reply,
+                                                 const psg_time_point_t &  create_timestamp)
 {
     int                 send_blob_if_small_value = 0;   // default
     SRequestParameter   send_blob_if_small_param = x_GetParam(req, kSendBlobIfSmallParam);
@@ -2023,7 +2034,7 @@ CPubseqGatewayApp::x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
                                    send_blob_if_small_param.m_Value,
                                    send_blob_if_small_value, err_msg)) {
             m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, create_timestamp, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
@@ -2035,7 +2046,7 @@ CPubseqGatewayApp::x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
             m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
             err_msg = "Invalid " + kSendBlobIfSmallParam +
                       " value. It must be an integer >= 0";
-            x_SendMessageAndCompletionChunks(reply, err_msg,
+            x_SendMessageAndCompletionChunks(reply, create_timestamp, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
@@ -2048,11 +2059,12 @@ CPubseqGatewayApp::x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
 }
 
 
-bool CPubseqGatewayApp::x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply)
+bool CPubseqGatewayApp::x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply,
+                                         const psg_time_point_t &  create_timestamp)
 {
     if (g_ShutdownData.m_ShutdownRequested) {
         string      msg = "The server is in process of shutting down";
-        x_SendMessageAndCompletionChunks(reply, msg,
+        x_SendMessageAndCompletionChunks(reply, create_timestamp, msg,
                                          CRequestStatus::e503_ServiceUnavailable,
                                          ePSGS_ShuttingDown,
                                          eDiag_Error);

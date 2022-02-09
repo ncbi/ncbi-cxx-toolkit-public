@@ -146,6 +146,7 @@ static string   s_Id2Chunk = "id2_chunk=";
 static string   s_Id2Info = "id2_info=";
 static string   s_LastModified = "last_modified=";
 static string   s_Progress = "progress=";
+static string   s_ExecTime = "exec_time=";
 
 // Fixed values
 static string   s_BioseqInfo = "bioseq_info";
@@ -210,6 +211,7 @@ static string   s_FmtJson = s_Fmt + s_Json;
 static string   s_AndFmtJson = "&" + s_FmtJson;
 static string   s_FmtProtobuf = s_Fmt + s_Protobuf;
 static string   s_AndFmtProtobuf = "&" + s_FmtProtobuf;
+static string   s_AndExecTime = "&" + s_ExecTime;
 
 static string   s_ReplyBegin = s_ProtocolPrefix + s_ItemId;
 static string   s_ReplyCompletionFixedPart = s_ReplyBegin + "0&" +
@@ -765,12 +767,18 @@ string  GetTSEBlobMessageHeader(size_t  item_id,
 }
 
 
-string  GetReplyCompletionHeader(size_t  chunk_count)
+string  GetReplyCompletionHeader(size_t  chunk_count,
+                                 const psg_time_point_t &  create_timestamp)
 {
     // E.g. PSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=meta&n_chunks=153
     string      reply(s_ReplyCompletionFixedPart);
+    auto        now = psg_clock_t::now();
+    uint64_t    mks = chrono::duration_cast<chrono::microseconds>
+                                        (now - create_timestamp).count();
 
     return reply.append(to_string(chunk_count))
+                .append(s_AndExecTime)
+                .append(to_string(mks))
                 .append(1, '\n');
 }
 

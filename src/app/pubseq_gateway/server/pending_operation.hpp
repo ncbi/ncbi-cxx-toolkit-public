@@ -73,6 +73,12 @@ public:
     CPendingOperation(CPendingOperation&&) = default;
     CPendingOperation& operator=(CPendingOperation&&) = default;
 
+public:
+    psg_time_point_t GetStartTimestamp(void) const
+    {
+        return m_UserRequest->GetStartTimestamp();
+    }
+
 private:
     // Incoming request
     shared_ptr<CPSGS_Request>               m_UserRequest;

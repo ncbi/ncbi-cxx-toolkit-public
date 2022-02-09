@@ -289,7 +289,8 @@ string GetNamedAnnotationCompletionHeader(size_t  item_id,
 
 
 // Reply messages
-string  GetReplyCompletionHeader(size_t  chunk_count);
+string  GetReplyCompletionHeader(size_t  chunk_count,
+                                 const psg_time_point_t &  create_timestamp);
 string  GetReplyMessageHeader(size_t  msg_size,
                               CRequestStatus::ECode  status, int  code,
                               EDiagSev  severity);
