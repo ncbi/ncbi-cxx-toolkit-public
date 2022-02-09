@@ -1434,7 +1434,7 @@ void CDeflineGenerator::x_DescribeClones (
     }
 }
 
-static bool x_EndsWithStrain (
+static bool s_EndsWithStrain (
     const CTempString& taxname,
     const CTempString& strain
 )
@@ -1473,6 +1473,26 @@ static string s_RemoveColons(const string& isolate)
     return NStr::Replace(isolate, ":", "");    
 }
 
+
+static void s_AddVoucherAndIsolate(const CTempString& taxname,
+        const CTempString& specimen_voucher,
+        const CTempString& isolate,
+        CDefLineJoiner& joiner)
+{
+    if (!specimen_voucher.empty()) {
+        joiner.Add("voucher", specimen_voucher);
+    }
+
+    if (!isolate.empty() && (isolate != specimen_voucher)) {
+        // s_EndsWithStrain just checks for supplied pattern, using here for isolate
+        if ((!s_EndsWithStrain(taxname, isolate)) &&
+             (s_RemoveColons(specimen_voucher) != isolate)) {
+            joiner.Add("isolate", isolate);
+        }
+    }
+} 
+
+
 void CDeflineGenerator::x_SetTitleFromBioSrc (void)
 
 {
@@ -1482,13 +1502,13 @@ void CDeflineGenerator::x_SetTitleFromBioSrc (void)
 
     if (! m_Strain.empty()) {
         CTempString add(m_Strain, 0, m_Strain.find(';'));
-        if (! x_EndsWithStrain (m_Taxname, add)) {
+        if (! s_EndsWithStrain (m_Taxname, add)) {
             joiner.Add("strain", add);
         }
     }
     if (! m_Substrain.empty()) {
         CTempString add(m_Substrain, 0, m_Substrain.find(';'));
-        if (! x_EndsWithStrain (m_Taxname, add)) {
+        if (! s_EndsWithStrain (m_Taxname, add)) {
             joiner.Add("substr.", add);
         }
     }
@@ -1498,18 +1518,8 @@ void CDeflineGenerator::x_SetTitleFromBioSrc (void)
     if (! m_Cultivar.empty()) {
         joiner.Add("cultivar", m_Cultivar.substr (0, m_Cultivar.find(';')));
     }
-    
-    if (!m_SpecimenVoucher.empty()) {
-        joiner.Add("voucher", m_SpecimenVoucher);
-    }
 
-    if (! m_Isolate.empty() && (m_Isolate != m_SpecimenVoucher)) {
-        // x_EndsWithStrain just checks for supplied pattern, using here for isolate
-        if ((!x_EndsWithStrain (m_Taxname, m_Isolate)) &&
-             (s_RemoveColons(m_SpecimenVoucher) != m_Isolate)) {
-            joiner.Add("isolate", m_Isolate);
-        }
-    }
+    s_AddVoucherAndIsolate(m_Taxname, m_SpecimenVoucher, m_Isolate, joiner);
 
     if (! m_Chromosome.empty()) {
         joiner.Add("location", "chromosome", eHideType);
@@ -1816,13 +1826,13 @@ void CDeflineGenerator::x_SetTitleFromGPipe (void)
 
     if (! m_Strain.empty()) {
         CTempString add(m_Strain, 0, m_Strain.find(';'));
-        if (! x_EndsWithStrain (m_Taxname, add)) {
+        if (! s_EndsWithStrain (m_Taxname, add)) {
             joiner.Add("strain", add);
         }
     }
     if (! m_Strain.empty()) {
         CTempString add(m_Substrain, 0, m_Substrain.find(';'));
-        if (! x_EndsWithStrain (m_Taxname, add)) {
+        if (! s_EndsWithStrain (m_Taxname, add)) {
             joiner.Add("substr.", add);
         }
     }
@@ -2592,7 +2602,7 @@ void CDeflineGenerator::x_SetTitleFromSegSeq  (
     }
     if ( !cds_found) {
         if (! m_Strain.empty()
-            &&  ! x_EndsWithStrain (m_Taxname, m_Strain) ) {
+            &&  ! s_EndsWithStrain (m_Taxname, m_Strain) ) {
             joiner.Add("strain", m_Strain);
         } else if (! m_Clone.empty()
                    /* && m_Clone.find(" clone ") != NPOS */) {
@@ -2628,10 +2638,10 @@ void CDeflineGenerator::x_SetTitleFromWGS (void)
     joiner.Add("organism", m_Taxname, eHideType);
 
     if (! m_Strain.empty()) {
-        if (! x_EndsWithStrain (m_Taxname, m_Strain)) {
+        if (! s_EndsWithStrain (m_Taxname, m_Strain)) {
             joiner.Add("strain", m_Strain.substr (0, m_Strain.find(';')));
         }
-        if (! m_Substrain.empty() && ! x_EndsWithStrain (m_Taxname, m_Substrain)) {
+        if (! m_Substrain.empty() && ! s_EndsWithStrain (m_Taxname, m_Substrain)) {
             joiner.Add("substr.", m_Substrain.substr (0, m_Substrain.find(';')));
         }
     } else if (! m_Breed.empty()) {
@@ -2639,12 +2649,9 @@ void CDeflineGenerator::x_SetTitleFromWGS (void)
     } else if (! m_Cultivar.empty()) {
         joiner.Add("cultivar", m_Cultivar.substr (0, m_Cultivar.find(';')));
     }
-    if (! m_Isolate.empty()) {
-        // x_EndsWithStrain just checks for supplied pattern, using here for isolate
-        if (! x_EndsWithStrain (m_Taxname, m_Isolate)) {
-            joiner.Add("isolate", m_Isolate);
-        }
-    }
+
+    s_AddVoucherAndIsolate(m_Taxname, m_SpecimenVoucher, m_Isolate, joiner);
+
     if (! m_Chromosome.empty()) {
         joiner.Add("chromosome", m_Chromosome);
     } else if ( !m_LinkageGroup.empty()) {
@@ -2696,12 +2703,12 @@ void CDeflineGenerator::x_SetTitleFromMap (void)
     joiner.Add("organism", m_Taxname, eHideType);
 
     if (! m_Strain.empty()) {
-        if (! x_EndsWithStrain (m_Taxname, m_Strain)) {
+        if (! s_EndsWithStrain (m_Taxname, m_Strain)) {
             joiner.Add("strain", m_Strain.substr (0, m_Strain.find(';')));
         }
     }
     if (! m_Substrain.empty()) {
-        if (! x_EndsWithStrain (m_Taxname, m_Substrain)) {
+        if (! s_EndsWithStrain (m_Taxname, m_Substrain)) {
             joiner.Add("substr.", m_Substrain.substr (0, m_Substrain.find(';')));
         }
     }
