@@ -183,5 +183,11 @@ enum EPSGS_StartupDataState {
     ePSGS_StartupDataOK
 };
 
+
+enum EPSGS_LoggingFlag {
+    ePSGS_NeedLogging,
+    ePSGS_SkipLogging
+};
+
 #endif
 

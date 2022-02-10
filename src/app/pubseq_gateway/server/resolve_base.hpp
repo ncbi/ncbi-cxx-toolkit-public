@@ -103,7 +103,8 @@ private:
                         CRequestStatus::ECode  status,
                         int  code,
                         EDiagSev  severity,
-                        const string &  message);
+                        const string &  message,
+                        EPSGS_LoggingFlag  loging_flag=ePSGS_NeedLogging);
     void x_OnSeqIdResolveFinished(
                         SBioseqResolution &&  bioseq_resolution);
     void x_RegisterSuccessTiming(const SBioseqResolution &  bioseq_resolution);

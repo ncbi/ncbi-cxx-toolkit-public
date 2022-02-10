@@ -183,7 +183,8 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
         m_ErrorCB(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
                   eDiag_Error, "Could not resolve seq_id " +
-                  m_BioseqResolution.GetBioseqInfo().GetAccession());
+                  m_BioseqResolution.GetBioseqInfo().GetAccession(),
+                  ePSGS_SkipLogging);
         return;
     }
 
@@ -277,7 +278,8 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
             // Data Callback
             m_ErrorCB(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
                       eDiag_Error, "Could not resolve seq_id " +
-                      m_BioseqResolution.GetBioseqInfo().GetAccession());
+                      m_BioseqResolution.GetBioseqInfo().GetAccession(),
+                      ePSGS_SkipLogging);
             break;
         case CRequestStatus::e500_InternalServerError:
             if (m_NeedTrace)
@@ -293,14 +295,15 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
             // Error callback
             m_ErrorCB(CRequestStatus::e500_InternalServerError,
                       ePSGS_BioseqInfoMultipleRecords, eDiag_Error,
-                      decision.message);
+                      decision.message, ePSGS_NeedLogging);
             break;
         default:
             // Impossible
             m_ErrorCB(
                 CRequestStatus::e500_InternalServerError, ePSGS_ServerLogicError,
                 eDiag_Error, "Unexpected decision code when a secondary INSCD "
-                "request results processed while retrieving bioseq info");
+                "request results processed while retrieving bioseq info",
+                ePSGS_NeedLogging);
     }
 }
 
@@ -311,10 +314,6 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoError(CRequestStatus::ECode  status,
                                                EDiagSev  severity,
                                                const string &  message)
 {
-    if (m_NeedTrace)
-        m_Reply->SendTrace("Cassandra error: " + message,
-                           m_Request->GetStartTimestamp());
-
     if (m_Fetch)
         m_Fetch->SetReadFinished();
     if (m_NoSeqIdTypeFetch)
@@ -322,6 +321,6 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoError(CRequestStatus::ECode  status,
 
     CPubseqGatewayApp::GetInstance()->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoError);
 
-    m_ErrorCB(status, code, severity, message);
+    m_ErrorCB(status, code, severity, message, ePSGS_NeedLogging);
 }
 

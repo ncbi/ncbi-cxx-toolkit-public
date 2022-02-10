@@ -66,14 +66,14 @@ CPSGS_ResolveBase::CPSGS_ResolveBase(shared_ptr<CPSGS_Request> request,
                            bind(&CPSGS_ResolveBase::x_OnSeqIdResolveFinished,
                                 this, _1),
                            bind(&CPSGS_ResolveBase::x_OnSeqIdResolveError,
-                                this, _1, _2, _3, _4),
+                                this, _1, _2, _3, _4, _5),
                            bind(&CPSGS_ResolveBase::x_OnResolutionGoodData,
                                 this)),
     CPSGS_AsyncBioseqInfoBase(request, reply,
                               bind(&CPSGS_ResolveBase::x_OnSeqIdResolveFinished,
                                    this, _1),
                               bind(&CPSGS_ResolveBase::x_OnSeqIdResolveError,
-                                   this, _1, _2, _3, _4)),
+                                   this, _1, _2, _3, _4, _5)),
     m_FinalFinishedCB(finished_cb),
     m_FinalErrorCB(error_cb),
     m_FinalStartProcessingCB(resolution_start_processing_cb),
@@ -580,20 +580,22 @@ CPSGS_ResolveBase::ResolveInputSeqId(void)
         x_OnSeqIdResolveError(bioseq_resolution.m_Error.m_ErrorCode,
                               ePSGS_UnresolvedSeqId,
                               eDiag_Error,
-                              bioseq_resolution.m_Error.m_ErrorMessage);
+                              bioseq_resolution.m_Error.m_ErrorMessage,
+                              ePSGS_SkipLogging);
         return;
     }
 
     if (!parse_err_msg.empty()) {
         x_OnSeqIdResolveError(CRequestStatus::e404_NotFound,
                               ePSGS_UnresolvedSeqId, eDiag_Error,
-                              parse_err_msg);
+                              parse_err_msg, ePSGS_SkipLogging);
         return;
     }
 
     x_OnSeqIdResolveError(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
                           eDiag_Error,
-                          "Could not resolve seq_id " + GetRequestSeqId());
+                          "Could not resolve seq_id " + GetRequestSeqId(),
+                          ePSGS_SkipLogging);
 }
 
 
@@ -644,7 +646,8 @@ CPSGS_ResolveBase::x_OnSeqIdResolveError(
                         CRequestStatus::ECode  status,
                         int  code,
                         EDiagSev  severity,
-                        const string &  message)
+                        const string &  message,
+                        EPSGS_LoggingFlag  loging_flag)
 {
     auto    app = CPubseqGatewayApp::GetInstance();
     if (status == CRequestStatus::e404_NotFound) {
@@ -662,7 +665,7 @@ CPSGS_ResolveBase::x_OnSeqIdResolveError(
                                   m_Request->GetStartTimestamp());
     }
 
-    m_FinalErrorCB(status, code, severity, message);
+    m_FinalErrorCB(status, code, severity, message, loging_flag);
 }
 
 

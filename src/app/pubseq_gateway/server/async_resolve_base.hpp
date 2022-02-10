@@ -55,7 +55,8 @@ using TSeqIdResolutionErrorCB =
                 function<void(CRequestStatus::ECode  status,
                               int  code,
                               EDiagSev  severity,
-                              const string &  message)>;
+                              const string &  message,
+                              EPSGS_LoggingFlag  logging_flag)>;
 using TSeqIdResolutionStartProcessingCB =
                 function<void(void)>;
 
