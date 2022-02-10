@@ -266,7 +266,8 @@ bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
                                          CRequestStatus::ECode  status,
                                          int  code,
                                          EDiagSev  severity,
-                                         const string &  message)
+                                         const string &  message,
+                                         EPSGS_LoggingFlag  logging_flag)
 {
     // Note: the code may come from cassandra error handlers and from the PSG
     // internal logic code. It is safe to compare the codes against particular
@@ -278,10 +279,12 @@ bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
                         severity == eDiag_Critical ||
                         severity == eDiag_Fatal);
 
-    if (is_error) {
-        PSG_ERROR(message);
-    } else {
-        PSG_WARNING(message);
+    if (logging_flag == ePSGS_NeedLogging) {
+        if (is_error) {
+            PSG_ERROR(message);
+        } else {
+            PSG_WARNING(message);
+        }
     }
 
     if (m_Request->NeedTrace()) {

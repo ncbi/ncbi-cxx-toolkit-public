@@ -75,7 +75,8 @@ protected:
                     CRequestStatus::ECode  status,
                     int  code,
                     EDiagSev  severity,
-                    const string &  message);
+                    const string &  message,
+                    EPSGS_LoggingFlag  logging_flag=ePSGS_NeedLogging);
 
 private:
     IPSGS_Processor::EPSGS_Status x_GetProcessorStatus(void) const;

@@ -579,13 +579,15 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
                     CRequestStatus::e502_BadGateway,
                     ePSGS_NoBioseqInfoForGiError, eDiag_Error,
                     "Data inconsistency. More than one BIOSEQ_INFO table record is found for "
-                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession());
+                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession(),
+                    ePSGS_NeedLogging);
             } else {
                 m_ErrorCB(
                     CRequestStatus::e502_BadGateway,
                     ePSGS_NoBioseqInfoForGiError, eDiag_Error,
                     "Data inconsistency. A BIOSEQ_INFO table record is not found for "
-                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession());
+                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession(),
+                    ePSGS_NeedLogging);
             }
             return;
         }
@@ -622,7 +624,8 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
         m_ErrorCB(
             CRequestStatus::e502_BadGateway,
             ePSGS_BioseqInfoAccessionAdjustmentError, eDiag_Error,
-            "BIOSEQ_INFO Cassandra error: " + m_BioseqResolution.m_AdjustmentError);
+            "BIOSEQ_INFO Cassandra error: " + m_BioseqResolution.m_AdjustmentError,
+            ePSGS_NeedLogging);
         return;
     }
 
@@ -677,7 +680,8 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
                     CRequestStatus::e502_BadGateway,
                     ePSGS_NoBioseqInfoForGiError, eDiag_Error,
                     "Data inconsistency. A BIOSEQ_INFO table record is not found for "
-                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession());
+                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession(),
+                    ePSGS_NeedLogging);
             } else {
                 // Move to the next stage
                 x_Process();
@@ -692,7 +696,8 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
                     CRequestStatus::e502_BadGateway,
                     ePSGS_NoBioseqInfoForGiError, eDiag_Error,
                     "Data inconsistency. More than one BIOSEQ_INFO table record is found for "
-                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession());
+                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession(),
+                    ePSGS_NeedLogging);
 
             } else {
                 // Move to the next stage
@@ -704,7 +709,8 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
             m_ErrorCB(
                 CRequestStatus::e500_InternalServerError, ePSGS_ServerLogicError,
                 eDiag_Error, "Unexpected decision code when a secondary INSCD "
-                "request results processed while resolving seq id asynchronously");
+                "request results processed while resolving seq id asynchronously",
+                ePSGS_NeedLogging);
     }
 }
 
@@ -722,7 +728,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoError(CRequestStatus::ECode  status, 
                                     CPSGSCounters::ePSGS_BioseqInfoError);
     }
 
-    m_ErrorCB(status, code, severity, message);
+    m_ErrorCB(status, code, severity, message, ePSGS_NeedLogging);
 }
 
 
@@ -796,7 +802,7 @@ void CPSGS_AsyncResolveBase::x_OnSi2csiError(CRequestStatus::ECode  status, int 
                                             CPSGSCounters::ePSGS_Si2csiError);
     }
 
-    m_ErrorCB(status, code, severity, message);
+    m_ErrorCB(status, code, severity, message, ePSGS_NeedLogging);
 }
 
 
@@ -818,11 +824,14 @@ CPSGS_AsyncResolveBase::x_OnSeqIdAsyncResolutionFinished(
             m_ErrorCB(
                     async_bioseq_resolution.m_Error.m_ErrorCode,
                     ePSGS_UnresolvedSeqId, eDiag_Error,
-                    async_bioseq_resolution.m_Error.m_ErrorMessage);
+                    async_bioseq_resolution.m_Error.m_ErrorMessage,
+                    ePSGS_SkipLogging);
         else
             m_ErrorCB(
                     CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
-                    eDiag_Error, "Could not resolve seq_id " + GetRequestSeqId());
+                    eDiag_Error,
+                    "Could not resolve seq_id " + GetRequestSeqId(),
+                    ePSGS_SkipLogging);
     }
 }
 
