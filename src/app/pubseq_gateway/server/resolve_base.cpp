@@ -579,20 +579,20 @@ CPSGS_ResolveBase::ResolveInputSeqId(void)
     if (bioseq_resolution.m_Error.HasError()) {
         x_OnSeqIdResolveError(bioseq_resolution.m_Error.m_ErrorCode,
                               ePSGS_UnresolvedSeqId,
-                              eDiag_Warning,
+                              eDiag_Error,
                               bioseq_resolution.m_Error.m_ErrorMessage);
         return;
     }
 
     if (!parse_err_msg.empty()) {
         x_OnSeqIdResolveError(CRequestStatus::e404_NotFound,
-                              ePSGS_UnresolvedSeqId, eDiag_Warning,
+                              ePSGS_UnresolvedSeqId, eDiag_Error,
                               parse_err_msg);
         return;
     }
 
     x_OnSeqIdResolveError(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
-                          eDiag_Warning,
+                          eDiag_Error,
                           "Could not resolve seq_id " + GetRequestSeqId());
 }
 

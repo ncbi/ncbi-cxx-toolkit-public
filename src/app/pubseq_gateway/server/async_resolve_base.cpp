@@ -817,12 +817,12 @@ CPSGS_AsyncResolveBase::x_OnSeqIdAsyncResolutionFinished(
         if (async_bioseq_resolution.m_Error.HasError())
             m_ErrorCB(
                     async_bioseq_resolution.m_Error.m_ErrorCode,
-                    ePSGS_UnresolvedSeqId, eDiag_Warning,
+                    ePSGS_UnresolvedSeqId, eDiag_Error,
                     async_bioseq_resolution.m_Error.m_ErrorMessage);
         else
             m_ErrorCB(
                     CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
-                    eDiag_Warning, "Could not resolve seq_id " + GetRequestSeqId());
+                    eDiag_Error, "Could not resolve seq_id " + GetRequestSeqId());
     }
 }
 
