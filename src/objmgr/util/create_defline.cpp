@@ -1468,9 +1468,19 @@ static bool s_EndsWithStrain (
     return false;
 }
 
-static string s_RemoveColons(const string& isolate)
+
+static string s_RemoveColons(string str)
 {
-    return NStr::Replace(isolate, ":", "");    
+    str.erase(remove(begin(str), end(str), ':'), end(str));
+    return str;
+}
+
+static string s_RemoveWhiteSpace(string str)
+{
+    str.erase(remove_if(begin(str), end(str), 
+                [](char c) { return c==' ' || c == '\t'; }), 
+            end(str));
+    return str;
 }
 
 
@@ -1486,7 +1496,7 @@ static void s_AddVoucherAndIsolate(const CTempString& taxname,
     if (!isolate.empty() && (isolate != specimen_voucher)) {
         // s_EndsWithStrain just checks for supplied pattern, using here for isolate
         if ((!s_EndsWithStrain(taxname, isolate)) &&
-             (s_RemoveColons(specimen_voucher) != isolate)) {
+             (s_RemoveColons(specimen_voucher) != s_RemoveWhiteSpace(isolate))) {
             joiner.Add("isolate", isolate);
         }
     }
