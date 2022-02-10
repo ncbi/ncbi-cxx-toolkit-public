@@ -56,6 +56,7 @@
 
 #include <objects/misc/sequence_macros.hpp>
 
+#include <util/utf8.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -70,6 +71,23 @@ CValidError_desc::CValidError_desc(CValidError_imp& imp) :
 
 CValidError_desc::~CValidError_desc()
 {
+}
+
+
+static string s_AsciiString(const string& src)
+{
+    string  dst;
+
+    for (char ch : src) {
+        unsigned char chu = ch;
+        if (chu > 31 && chu < 128) {
+            dst += chu;
+        } else {
+            dst += '#';
+        }
+    }
+
+    return dst;
 }
 
 
@@ -91,8 +109,9 @@ void CValidError_desc::ValidateSeqDesc
             const char& ch = *c_it;
             unsigned char chu = ch;
             if (ch > 127 || (ch < 32 && ch != '\t' && ch != '\r' && ch != '\n')) {
+                string txt = s_AsciiString(str);
                 PostErr(eDiag_Fatal, eErr_GENERIC_NonAsciiAsn,
-                    "Non-ASCII character '" + NStr::NumericToString(chu) + "' found (" + str + ")", ctx, desc);
+                    "Non-ASCII character '" + NStr::NumericToString(chu) + "' found (" + txt + ")", ctx, desc);
                 break;
             }
         }
