@@ -2512,6 +2512,23 @@ void CSingleFeatValidator::x_ValidateLocusTagGeneralMatch(CConstRef <CSeq_feat> 
 }
 
 
+static string s_AsciiString(const string& src)
+{
+    string  dst;
+
+    for (char ch : src) {
+        unsigned char chu = ch;
+        if (chu > 31 && chu < 128) {
+            dst += chu;
+        } else {
+            dst += '#';
+        }
+    }
+
+    return dst;
+}
+
+
 void CSingleFeatValidator::x_CheckForNonAsciiCharacters()
 {
     CStdTypeConstIterator<string> it(m_Feat);
@@ -2522,8 +2539,9 @@ void CSingleFeatValidator::x_CheckForNonAsciiCharacters()
             const char& ch = *c_it;
             unsigned char chu = ch;
             if (ch > 127 || (ch < 32 && ch != '\t' && ch != '\r' && ch != '\n')) {
+                string txt = s_AsciiString(str);
                 PostErr(eDiag_Fatal, eErr_GENERIC_NonAsciiAsn,
-                    "Non-ASCII character '" + NStr::NumericToString(chu) + "' found in feature (" + str + ")");
+                    "Non-ASCII character '" + NStr::NumericToString(chu) + "' found in feature (" + txt + ")");
                 break;
             }
         }
