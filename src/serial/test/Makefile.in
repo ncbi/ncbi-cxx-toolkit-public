@@ -4,8 +4,10 @@
 #################################
 
 ASN_PROJ = we_cpp
-APP_PROJ = test_serial test_serial_io
+APP_PROJ = test_serial
 PROJ_TAG = test
+SUB_PROJ = test_io
+
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
