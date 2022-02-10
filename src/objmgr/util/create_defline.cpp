@@ -1469,16 +1469,19 @@ static bool s_EndsWithStrain (
 }
 
 
-static string s_RemoveColons(string str)
+
+static string s_RemoveColonsAndWhiteSpace(string str)
 {
-    str.erase(remove(begin(str), end(str), ':'), end(str));
+    str.erase(remove_if(begin(str), end(str), 
+                [](char c) { return c == ':' || c == ' '|| c == '\t'; }), 
+            end(str));
     return str;
 }
 
 static string s_RemoveWhiteSpace(string str)
 {
     str.erase(remove_if(begin(str), end(str), 
-                [](char c) { return c==' ' || c == '\t'; }), 
+                [](char c) { return c == ' ' || c == '\t'; }), 
             end(str));
     return str;
 }
@@ -1496,7 +1499,7 @@ static void s_AddVoucherAndIsolate(const CTempString& taxname,
     if (!isolate.empty() && (isolate != specimen_voucher)) {
         // s_EndsWithStrain just checks for supplied pattern, using here for isolate
         if ((!s_EndsWithStrain(taxname, isolate)) &&
-             (s_RemoveColons(specimen_voucher) != s_RemoveWhiteSpace(isolate))) {
+             (s_RemoveColonsAndWhiteSpace(specimen_voucher) != s_RemoveWhiteSpace(isolate))) {
             joiner.Add("isolate", isolate);
         }
     }
