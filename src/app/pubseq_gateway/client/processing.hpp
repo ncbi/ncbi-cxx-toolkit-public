@@ -156,7 +156,6 @@ struct SOneRequestParams : SParams
     struct SLatency
     {
         const bool enabled;
-        const bool server_side;
         const bool debug;
     };
 
