@@ -164,7 +164,6 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("user-args", "USER_ARGS", "Arbitrary request URL arguments (queue-wide)", CArgDescriptions::eString);
     arg_desc.AddFlag("https", "Enable HTTPS");
     arg_desc.AddFlag("latency", "Latency output", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
-    arg_desc.AddFlag("server-side", "Add server side measurements to latency output", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_desc.AddFlag("verbose", "Verbose output");
 }
 
