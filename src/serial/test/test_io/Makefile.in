@@ -1,0 +1,6 @@
+# $Id$
+
+APP_PROJ = test_serial_io
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
