@@ -421,8 +421,8 @@ void CTestNcbiLinkerdProxyApp::TestCaseEnd(int id, int result)
 
 int CTestNcbiLinkerdProxyApp::Test(int id, bool pass_expected)
 {
-    static const char* url = "cxx-fast-cgi-sample";
-    static const char* post_data = "message=hi%20there%0A";
+    static const char* url = "cxx-monitor-fcgi";
+    static const char* post_data = "Message=hi%20there%0A";
     static const char* exp_data = "(^.*?C\\+\\+ GIT FastCGI Sample.*?<p>Your previous message: +'hi there\\n'.*$)";
 
     TestCaseStart(id);
