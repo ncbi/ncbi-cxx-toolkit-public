@@ -1738,7 +1738,7 @@ DMNH<USA-DE>	s	Delaware Museum of Natural History
 DMNH<USA-DE>:Bird	s	Delaware Museum of Natural History, Birds collection		
 DMNH<USA-OH>	s	Dayton Museum of Natural History, Biology Department			
 DMNS	s	Denver Museum of Nature and Science	DMNH<USA-CO>,DNHC		
-DMNS:Bird	s	Denver Museum of Nature and Science, Ornithology Collections		
+DMNS:Bird	s	Denver Museum of Nature and Science, Ornithology Collections	
 DMNS:Mamm	s	Denver Museum of Nature and Science, Mammology Collection	https://arctos.database.museum/guid/DMNS:Mamm:
 DMNS:Para	s	Denver Museum of Nature and Science, Parasite collection	https://arctos.database.museum/guid/DMNS:Para:
 DMPMC	c	Department of Microbiology, University of Western Australia			
