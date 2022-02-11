@@ -192,6 +192,7 @@ public:
     }
 
     void DropBlob(const CPsgBlobId& blob_id) {
+        //ERR_POST("DropBlob("<<blob_id.ToPsgId()<<")");
         CFastMutexGuard guard(m_Mutex);
         auto blob_it = m_Blobs.find(blob_id.ToPsgId());
         if (blob_it != m_Blobs.end()) {
@@ -1214,6 +1215,9 @@ public:
 
     CSeq_id_Handle m_Id;
     shared_ptr<CPSG_SkippedBlob> m_Skipped;
+    bool m_ProcessedSkipped;
+    CTSE_Lock m_SkippedTSE_Lock;
+    
     CPSGDataLoader_Impl::SReplyResult m_ReplyResult;
     shared_ptr<SPsgBlobInfo> m_PsgBlobInfo;
 
@@ -1401,6 +1405,7 @@ void CPSG_Blob_Task::DoExecute(void)
     ReadReply();
     if (m_Status == eFailed) return;
     if (m_Skipped) {
+        WaitForSkipped();
         m_Status = eCompleted;
         return;
     }
@@ -1651,7 +1656,8 @@ CPSGDataLoader_Impl::SReplyResult CPSG_Blob_Task::WaitForSkipped(void)
 {
     CPSGDataLoader_Impl::SReplyResult ret;
     ret.blob_id = m_ReplyResult.blob_id;
-    if (!m_DataSource) return ret;
+    ret.lock = m_SkippedTSE_Lock;
+    if (!m_DataSource || m_ProcessedSkipped) return ret;
 
     CDataLoader::TBlobId dl_blob_id = GetDLBlobId(ret.blob_id);
     CTSE_LoadLock load_lock;
@@ -1685,12 +1691,13 @@ CPSGDataLoader_Impl::SReplyResult CPSG_Blob_Task::WaitForSkipped(void)
         return ret;
     }
     if (load_lock && load_lock.IsLoaded()) {
-        m_Skipped.reset();
+        m_SkippedTSE_Lock = load_lock;
 #ifdef GLOBAL_CHUNKS
         CreateLoadedChunks(load_lock);
 #endif
         ret.lock = load_lock;
     }
+    m_ProcessedSkipped = true;
     return ret;
 }
 
