@@ -66,7 +66,7 @@ enum { eDispd, eLbsmd, eLinkerd, eLocal, eNamerd };
 
 // POST request data
 static const string s_kPostData_Def     = "hi there\n";
-static const string s_kPostData_Fcgi    = "message=hi%20there%0A";
+static const string s_kPostData_Fcgi    = "Message=hi%20there%0A";
 
 // POST expected response data
 static const string s_kExpData_GetTest      = R"(^.*?<title>NCBI Dispatcher Test Page</title>.*$)";
@@ -98,10 +98,11 @@ struct STest {
 //      full service-based URLs with scheme     http+ncbilb://foo/Service/bar.cgi
 
 // Simple service name URLs
+#define NAMERD_SERVICENAME "cxx-monitor-fcgi"
 static const string s_UrlServiceGet_test("test");
-static const string s_UrlServiceGet_fcgi("cxx-fast-cgi-sample");
+static const string s_UrlServiceGet_fcgi(NAMERD_SERVICENAME);
 static const string s_UrlServicePost_bounce("bouncehttp");
-static const string s_UrlServicePost_fcgi("cxx-fast-cgi-sample");
+static const string s_UrlServicePost_fcgi(NAMERD_SERVICENAME);
 
 // Host-based URLs - i.e. not load-balanced, therefore not using a service mapper,
 // but they should still be accessible via the service mappers (except Linkerd).
@@ -117,16 +118,16 @@ static const string s_UrlFrontendPost("https://test.ncbi.nlm.nih.gov/Service/bou
 // Full service-based URLs (as indicated by ncbilb in scheme)
 static const string s_UrlNcbilbGetTest("ncbilb://test");
 static const string s_UrlNcbilbGetTestFull("ncbilb://test/Service/test.cgi");
-static const string s_UrlNcbilbGetFcgi("ncbilb://cxx-fast-cgi-sample");
+static const string s_UrlNcbilbGetFcgi("ncbilb://" NAMERD_SERVICENAME);
 static const string s_UrlNcbilbPostBounce("ncbilb://bouncehttp");
 static const string s_UrlNcbilbPostBounceFull("ncbilb://bouncehttp/Service/bounce.cgi");
-static const string s_UrlNcbilbPostFcgi("ncbilb://cxx-fast-cgi-sample");
+static const string s_UrlNcbilbPostFcgi("ncbilb://" NAMERD_SERVICENAME);
 static const string s_UrlNcbilbHttpGetTest("http+ncbilb://test");
 static const string s_UrlNcbilbHttpGetTestFull("http+ncbilb://test/Service/test.cgi");
-static const string s_UrlNcbilbHttpGetFcgi("http+ncbilb://cxx-fast-cgi-sample");
+static const string s_UrlNcbilbHttpGetFcgi("http+ncbilb://" NAMERD_SERVICENAME);
 static const string s_UrlNcbilbHttpPostBounce("http+ncbilb://bouncehttp");
 static const string s_UrlNcbilbHttpPostBounceFull("http+ncbilb://bouncehttp/Service/bounce.cgi");
-static const string s_UrlNcbilbHttpPostFcgi("http+ncbilb://cxx-fast-cgi-sample");
+static const string s_UrlNcbilbHttpPostFcgi("http+ncbilb://" NAMERD_SERVICENAME);
 
 
 // Notes on why some combinations of test factors aren't run:
