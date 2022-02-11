@@ -11,7 +11,12 @@
 
 if(NCBI_PTBCFG_PACKAGING)
     set(CONAN_CMAKE_CXX_STANDARD 17)
-    include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+    foreach(_sub IN LISTS CMAKE_BINARY_DIR CMAKE_MODULE_PATH)
+        if (EXISTS "${_sub}/conanbuildinfo.cmake")
+            include(${_sub}/conanbuildinfo.cmake)
+            break()
+        endif()
+    endforeach()
     conan_basic_setup(KEEP_RPATHS)
 elseif(NCBI_PTBCFG_USECONAN)
     if(NOT EXISTS "${CMAKE_BINARY_DIR}/conanfile.txt")
