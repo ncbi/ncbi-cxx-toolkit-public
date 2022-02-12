@@ -7605,6 +7605,8 @@ UNCB	s	Universidad Nacional de Colombia, Insituto de Ciencias Naturales de la Un
 UNCC<COL>	s	Universidad Nacional de Caldas, Museo de Historia Natural			
 UNCC<USA-NC>	s	University of North Carolina, Biology Department			
 UNCG	c	University of North  Carolina at Greensboro			
+UNCG:Mamm	s	University of North  Carolina at Greensboro, Mammal collection	https://arctos.database.museum/SpecimenSearch.cfm?guid_prefix=UNCG%3AMamm
+UNCG:Para	s	University of North  Carolina at Greensboro, Parasite collection	https://arctos.database.museum/SpecimenSearch.cfm?guid_prefix=UNCG%3APara
 UNCM	s	Museo de Entomologia "Francisco Luis Gallego"			
 UNCOQ	s	Universidad Catolica Norte			
 UNCP	s	Universidad Nacional de Colombia			
