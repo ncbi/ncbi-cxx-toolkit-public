@@ -7638,6 +7638,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UNCC<COL>\ts\tUniversidad Nacional de Caldas, Museo de Historia Natural\t\t\t",
 "UNCC<USA-NC>\ts\tUniversity of North Carolina, Biology Department\t\t\t",
 "UNCG\tc\tUniversity of North  Carolina at Greensboro\t\t\t",
+"UNCG:Mamm\ts\tUniversity of North  Carolina at Greensboro, Mammal collection\thttps://arctos.database.museum/SpecimenSearch.cfm?guid_prefix=UNCG%3AMamm",
+"UNCG:Para\ts\tUniversity of North  Carolina at Greensboro, Parasite collection\thttps://arctos.database.museum/SpecimenSearch.cfm?guid_prefix=UNCG%3APara",
 "UNCM\ts\tMuseo de Entomologia \"Francisco Luis Gallego\"\t\t\t",
 "UNCOQ\ts\tUniversidad Catolica Norte\t\t\t",
 "UNCP\ts\tUniversidad Nacional de Colombia\t\t\t",
