@@ -53,9 +53,9 @@ class NCBI_ENTREZ2_EXPORT CEntrez2_id_list : public CEntrez2_id_list_Base
 {
     typedef CEntrez2_id_list_Base Tparent;
 public:
-    typedef CConstResizingIterator<TUids> TConstUidIterator;
-    typedef CResizingIterator<TUids>      TUidIterator;
     typedef TIntId TUid;
+    typedef CConstResizingIterator<TUids, TUid> TConstUidIterator;
+    typedef CResizingIterator<TUids, TUid>      TUidIterator;
 
     // constructor
     CEntrez2_id_list(void);
@@ -72,13 +72,22 @@ public:
     // set the container to a set of integer UIDs
     void AssignUids(const vector<TUid>& uids);
 
+
+    NCBI_DEPRECATED
     static const size_t sm_UidSize; // bytes
 
+    size_t GetUidSizeBits(void) const;
+    size_t GetUidSizeBytes(void) const;
+
+    // Compress UIDs to 32-bit integers if possible.
+    void PackUids(void);
+
 private:
+    void x_SetNativeUidSize(void);
+
     // Prohibit copy constructor and assignment operator
     CEntrez2_id_list(const CEntrez2_id_list& value);
     CEntrez2_id_list& operator=(const CEntrez2_id_list& value);
-
 };
 
 
