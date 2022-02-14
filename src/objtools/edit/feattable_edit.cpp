@@ -1626,18 +1626,18 @@ CRef<CSeq_loc> CFeatTableEdit::xGetGeneLocation(
             pEnvelope->ChangeToMix();
         }
         else {
-            CRef<CSeq_interval> pBottom(new CSeq_interval);
-            pBottom->SetId().Assign(baseId);
-            pBottom->SetFrom(0);
-            pBottom->SetTo(baseStop);
-            pBottom->SetStrand(baseLoc.GetStrand());
-            pEnvelope->SetPacked_int().AddInterval(*pBottom);
             CRef<CSeq_interval> pTop(new CSeq_interval);
             pTop->SetId().Assign(baseId);
             pTop->SetFrom(baseStart);
             pTop->SetTo(sequenceSize-1);
             pTop->SetStrand(baseLoc.GetStrand());
             pEnvelope->SetPacked_int().AddInterval(*pTop);
+            CRef<CSeq_interval> pBottom(new CSeq_interval);
+            pBottom->SetId().Assign(baseId);
+            pBottom->SetFrom(0);
+            pBottom->SetTo(baseStop);
+            pBottom->SetStrand(baseLoc.GetStrand());
+            pEnvelope->SetPacked_int().AddInterval(*pBottom);
             pEnvelope->ChangeToMix();
         }
     }
