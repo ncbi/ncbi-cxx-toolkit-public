@@ -163,7 +163,7 @@ TEST_F(CBlobTaskLoadBlobTest, ShouldFailOnWrongBigBlobFlag) {
     [&call_count]
     (CRequestStatus::ECode status, int, EDiagSev, const string &) {
         ++call_count;
-        EXPECT_EQ(CRequestStatus::e500_InternalServerError, status);
+        EXPECT_EQ(502, status);
     };
     CCassBlobTaskLoadBlob fetch1(m_Connection, m_KeyspaceName, move(blob), true, error_function);
     wait_function(fetch1);
