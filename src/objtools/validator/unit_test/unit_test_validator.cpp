@@ -97,7 +97,6 @@
 #include <objects/seqloc/Patent_seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
-#include <objects/macro/Suspect_rule_set.hpp>
 #include <objects/taxon3/taxon3.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
