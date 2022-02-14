@@ -30,14 +30,14 @@ fi
 #    'GC_GetAssembly_v3'
 #shift `expr $$ '%' $#`
 #svc="$1"
-svc=cxx-fast-cgi-sample
+svc=cxx-monitor-fcgi
 path="/"
 
 # Test the service using a pseudo-random number of threads (between 2 and 11).
 nthreads="`expr $$ % 10 + 2`"
 
 # Pick some arbitrary text for testing.
-test_text="message=hi%20there%0A"
+test_text="Message=hi%20there%0A"
 expected_regex='^.*?C\+\+ GIT FastCGI Sample.*?<p>Your previous message: +'\''hi there\n'\''.*$'
 
 : ${CHECK_TIMEOUT:=600}
