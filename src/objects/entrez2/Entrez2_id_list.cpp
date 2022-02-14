@@ -48,24 +48,27 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-static const size_t kUidSize = 32; // bits
-const size_t        CEntrez2_id_list::sm_UidSize = kUidSize / 8; // bytes
+const size_t CEntrez2_id_list::sm_UidSize = sizeof(CEntrez2_id_list::TUid); // bytes
 CSafeStatic<CEntrez2_id_list::TUids> s_EmptyList;
+
 
 CEntrez2_id_list::TUidIterator CEntrez2_id_list::GetUidIterator()
 {
-    return TUidIterator(SetUids(), kUidSize);
+    x_SetNativeUidSize();
+    return TUidIterator(SetUids(), GetUidSizeBits());
 }
+
 
 CEntrez2_id_list::TConstUidIterator
 CEntrez2_id_list::GetConstUidIterator() const
 {
     if (CanGetUids()) {
-        return TConstUidIterator(GetUids(), kUidSize);
+        return TConstUidIterator(GetUids(), GetUidSizeBits());
     } else {
-        return TConstUidIterator(s_EmptyList.Get(), kUidSize);
+        return TConstUidIterator(s_EmptyList.Get(), GetUidSizeBits());
     }
 }
+
 
 // destructor
 CEntrez2_id_list::~CEntrez2_id_list(void)
@@ -75,7 +78,8 @@ CEntrez2_id_list::~CEntrez2_id_list(void)
 
 void CEntrez2_id_list::Resize(size_t size)
 {
-    SetUids().resize(sm_UidSize * size);
+    x_SetNativeUidSize();
+    SetUids().resize(size * sizeof(TUid));
     SetNum(size);
 }
 
@@ -91,8 +95,52 @@ void CEntrez2_id_list::AssignUids(const vector<TUid>& uids)
 }
 
 
-// append an item to the list
-void push_back(int uid);
+size_t CEntrez2_id_list::GetUidSizeBits(void) const
+{
+    return GetUidSizeBytes() * 8;
+}
+
+
+size_t CEntrez2_id_list::GetUidSizeBytes(void) const
+{
+    // Max size - actual size of TUid
+    size_t ret = sizeof(TUid);
+    if ( !CanGetUids()  ||  !CanGetNum() ) return ret;
+    // Min size - 4 bytes (legacy int TUid)
+    while ( ret > 4  &&  ret * GetNum() > GetUids().size() ) ret /= 2;
+    return ret;
+}
+
+
+void CEntrez2_id_list::PackUids(void)
+{
+    if ( !CanGetNum()  ||  !CanGetUids() ) return;
+    size_t num = GetNum();
+    vector<TUid> uids;
+    uids.reserve(num);
+    for (TConstUidIterator it = GetConstUidIterator(); !it.AtEnd(); ++it) {
+        uids.push_back(*it);
+        if (uids.back() > kMax_UI4) return;
+    }
+    SetUids().resize(num * sizeof(Int4));
+    auto it = TUidIterator(SetUids(), sizeof(Int4)*8);
+    ITERATE (vector<TUid>, iter, uids) {
+        *it++ = *iter;
+    }
+}
+
+
+void CEntrez2_id_list::x_SetNativeUidSize(void)
+{
+    // If using non-native UID size, always switch to the native one on modification.
+    if ( GetUidSizeBytes() == sizeof(TUid) ) return;
+    vector<TUid> uids;
+    uids.reserve(GetNum());
+    for (TConstUidIterator it = GetConstUidIterator(); !it.AtEnd(); ++it) {
+        uids.push_back(*it);
+    }
+    AssignUids(uids);
+}
 
 
 END_objects_SCOPE // namespace ncbi::objects::
