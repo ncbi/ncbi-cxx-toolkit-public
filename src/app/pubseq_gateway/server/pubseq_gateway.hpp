@@ -216,6 +216,11 @@ public:
         return m_CDDProcessorsEnabled;
     }
 
+    bool GetWGSProcessorsEnabled() const
+    {
+        return m_WGSProcessorsEnabled;
+    }
+
     const CRef<psg::osg::COSGConnectionPool>& GetOSGConnectionPool() const
     {
         return m_OSGConnectionPool;
@@ -499,6 +504,8 @@ private:
     CRef<psg::osg::COSGConnectionPool>  m_OSGConnectionPool;
 
     bool                                m_CDDProcessorsEnabled;
+
+    bool                                m_WGSProcessorsEnabled;
 
     // Requests dispatcher
     unique_ptr<CPSGS_Dispatcher>        m_RequestDispatcher;
