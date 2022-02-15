@@ -3173,6 +3173,95 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr12)
 }
 
 
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr13)
+{
+    LOG_POST("Checking VDB WGS master sequence descriptors with partial optional desc");
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+    scope.AddDefaults();
+    CBioseq_Handle bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("ALWZ040100108.1"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    int total_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        ++total_count;
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Title));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 4);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(total_count, 11);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr14)
+{
+    LOG_POST("Checking VDB WGS master sequence descriptors with partial optional desc");
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+    scope.AddDefaults();
+    CBioseq_Handle bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("ALWZ050100108.1"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    int total_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        ++total_count;
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 4);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(total_count, 10);
+}
+
+
 NCBITEST_INIT_TREE()
 {
     NCBITEST_DISABLE(StateTest);
