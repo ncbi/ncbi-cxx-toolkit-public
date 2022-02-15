@@ -106,6 +106,7 @@ private:
     string  m_TaxId2OidsFile;
     string  m_TaxId2OffsetsFile;
     mutable bool m_LMDBFileOpened;
+    blastdb::TOid m_NumOids;
 };
 
 /// Build the canonical LMDB file name for BLAST databases
