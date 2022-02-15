@@ -71,7 +71,7 @@ std::random_device rand_dev;
 std::mt19937 gen(rand_dev()); // mersenne_twister_engine 
 std::uniform_int_distribution<> rand_dis(0, BSIZE); // generate uniform numebrs for [1, vector_max]
 
-bm::chrono_taker::duration_map_type  timing_map;
+bm::chrono_taker<>::duration_map_type  timing_map;
 
 typedef bm::bvector<> bvect64;
 typedef std::vector<bm::id64_t> ref_vect;
@@ -84,12 +84,12 @@ void bvector64_VerySparse_SetDestroyCycle()
     
     cout << "bvector64_VerySparse_SetDestroyCycle..." << endl;
     {
-        bm::chrono_taker tt("bvector64_VerySparse_SetDestroyCycle", 1, &timing_map);
+        bm::chrono_taker tt(std::cout, "bvector64_VerySparse_SetDestroyCycle", 1, &timing_map);
         const unsigned max_try = REPEATS;
         for (unsigned i = 0; i < max_try; ++i)
         {
             bvect64 bv0;
-            load_BV_set_ref(bv0, vect, false);
+            load_BV_set_ref(std::cout, bv0, vect, false);
             if ((i & 0xF) == 0)
                 cout << "\r" << i << "/" << max_try << flush;
         }
@@ -104,11 +104,11 @@ void bvector64_VerySparse_RefAccessCycle()
         bvect64 bv0;
         ref_vect vect;
         generate_vect_simpl0(vect);
-        load_BV_set_ref(bv0, vect, false);
+        load_BV_set_ref(std::cout, bv0, vect, false);
 
         cout << "bvector64_VerySparse_RefAccessCycle..." << endl;
         {
-            bm::chrono_taker tt("bvector64_VerySparse_RefAccessCycle", 1, &timing_map);
+            bm::chrono_taker tt(std::cout, "bvector64_VerySparse_RefAccessCycle", 1, &timing_map);
             const unsigned max_try = REPEATS;
             for (unsigned i = 0; i < max_try; ++i)
             {
@@ -120,7 +120,7 @@ void bvector64_VerySparse_RefAccessCycle()
         cout << "\r                       " << endl;
         cout << "bvector64_VerySparse_EnumAccessCycle..." << endl;
         {
-            bm::chrono_taker tt("bvector64_VerySparse_EnumAccessCycle", 1, &timing_map);
+            bm::chrono_taker tt(std::cout, "bvector64_VerySparse_EnumAccessCycle", 1, &timing_map);
             const unsigned max_try = REPEATS;
             for (unsigned i = 0; i < max_try; ++i)
             {
@@ -144,8 +144,8 @@ void bvector64_Serialization()
             generate_vect_simpl0(vect0);
             generate_vect48(vect1);
             
-            load_BV_set_ref(bv0, vect0, false);
-            load_BV_set_ref(bv1, vect1, false);
+            load_BV_set_ref(cout,bv0, vect0, false);
+            load_BV_set_ref(cout,bv1, vect1, false);
         }
 
         bm::serializer<bvect64> bv_ser;
@@ -206,7 +206,7 @@ void bvector64_Serialization()
         }
         cout << "bvector64_DeserializationCycle..." << endl;
         {
-            bm::chrono_taker tt("bvector64_DeserializationCycle", 1, &timing_map);
+            bm::chrono_taker tt(std::cout, "bvector64_DeserializationCycle", 1, &timing_map);
             const unsigned max_try = REPEATS;
             for (unsigned i = 0; i < max_try; ++i)
             {
@@ -228,7 +228,7 @@ int main(void)
     bvector64_Serialization();
     
     std::cout << std::endl << "Performance:" << std::endl;
-    bm::chrono_taker::print_duration_map(timing_map, bm::chrono_taker::ct_all);
+    bm::chrono_taker<>::print_duration_map(std::cout, timing_map, bm::chrono_taker<>::ct_all);
 
     return 0;
 }

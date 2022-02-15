@@ -19,11 +19,12 @@ For more information please visit:  http://bitmagic.io
 */
 
 /*! \file bmconst.h
-    \brief Constants, tables and typedefs
+    \brief Constants, lookup tables and typedefs
     @internal
 */
 
 #include <cstdint>
+#include <inttypes.h>
 
 namespace bm
 {
@@ -114,10 +115,12 @@ const unsigned bits_in_block = bm::set_block_size * unsigned((sizeof(bm::word_t)
 const unsigned bits_in_array = bm::bits_in_block * bm::set_array_size32;
 
 
-// Rank-Select parameters
+// Rank-Select parameters (linear address to split the searches
 const unsigned rs3_border0 = 21824; // 682 words by 32-bits
 const unsigned rs3_border1 = (rs3_border0 * 2); // 43648
 const unsigned rs3_half_span = rs3_border0 / 2;
+const unsigned rs3_border0_1 = rs3_border0 + rs3_half_span; // intermed pnt 1
+const unsigned rs3_border1_1 = rs3_border1 + rs3_half_span; // intermed pnt 2
 
 // misc parameters for sparse vec algorithms
 const unsigned sub_block3_size = bm::gap_max_bits / 4;
@@ -142,6 +145,17 @@ enum strategy
 {
     BM_BIT = 0, //!< No GAP compression strategy. All new blocks are bit blocks.
     BM_GAP = 1  //!< GAP compression is ON.
+};
+
+/*!
+   @brief copy strategy
+   @ingroup bvector
+*/
+enum finalization
+{
+    BM_UNDEFINED = 0,
+    BM_READONLY = 1,   //!<  immutable (read-only object)
+    BM_READWRITE = 2,  //!<  mutable (read-write object)
 };
 
 
@@ -227,10 +241,16 @@ template<bool T> struct _copyright
     static const unsigned _v[3]; ///< MAJOR.MINOR.PATCH version components
 };
 
-template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic C++ Library. v.7.7.7 (c) 2002-2021 Anatoliy Kuznetsov.";
-template<bool T> const unsigned _copyright<T>::_v[3] = {7, 7, 7};
+#define BM_VERSION_MAJOR 7
+#define BM_VERSION_MINOR 10
+#define BM_VERSION_PATCH 4
 
+template<bool T> const char _copyright<T>::_p[] = 
+    "BitMagic C++ Library. v.7.10.4 (c) 2002-2022 Anatoliy Kuznetsov.";
+template<bool T> const unsigned _copyright<T>::_v[3] =
+                    { BM_VERSION_MAJOR, BM_VERSION_MINOR, BM_VERSION_PATCH };
+
+#define BM_SCALAR_VERSION (((BM_VERSION_MAJOR) << 16) + ((BM_VERSION_MINOR) << 8) + (BM_VERSION_PATCH))
 
 
 /**
@@ -418,7 +438,8 @@ enum simd_codes
     simd_sse42 = 2,   ///!< Intel SSE4.2
     simd_avx2  = 5,   ///!< Intel AVX2
     simd_avx512  = 6,  ///!< Intel AVX512
-    simd_wasm128 = 7   ///! WASM SIMD 128
+    simd_wasm128 = 7,  ///! WASM SIMD 128
+    simd_neon = 8      ///!< ARM Neon
 };
 
 
@@ -465,6 +486,7 @@ template<bool T> struct globals
     static ByteOrder byte_order() { return _bo._byte_order; }
 };
 template<bool T> typename globals<T>::bo globals<T>::_bo;
+
 
 
 } // namespace

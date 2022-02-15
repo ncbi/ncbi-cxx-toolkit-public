@@ -27,6 +27,8 @@ For more information please visit:  http://bitmagic.io
 # error missing include (bm.h or bm64.h)
 #endif
 
+#include <limits>
+
 #include "bmdef.h"
 #include "bmsparsevec.h"
 #include "bmaggregator.h"
@@ -539,7 +541,8 @@ public:
         typename aggregator_type::template pipeline<Opt> aggregator_pipeline_type;
     public:
         pipeline(const SV& sv)
-        : sv_(sv)
+            : sv_(sv), bv_and_mask_(0),
+            eff_slices_(sv_.get_bmatrix().calc_effective_rows_not_null())
         {}
 
         /// Set pipeline run options
@@ -549,6 +552,23 @@ public:
         /// Get pipeline run options
         const run_options& get_options() const BMNOEXCEPT
             { return agg_pipe_.options(); }
+
+        /** Set pipeline mask bit-vector to restrict the search space
+            @param bv_mask - pointer to bit-vector restricting search to vector indexes marked
+            as 1s. Pointer ownership is not transferred, NULL value resets the mask.
+            bv_mask defines the mask for all added searches.
+
+        */
+        void set_search_mask(const bvector_type* bv_mask) BMNOEXCEPT;
+
+        /**
+          Set search limit for results. Requires that bit-counting to be enabled in the template parameters.
+          Warning: search limit is approximate (for performance reasons) so it can occasinally find more
+          than requested. It cannot find less. Search limit works for individual results (not ORed aggregate)
+          @param limit - search limit (target population count to search for)
+         */
+        void set_search_count_limit(size_type limit) BMNOEXCEPT
+            { agg_pipe_.set_search_count_limit(limit); }
 
         /**
             Attach OR (aggregator vector).
@@ -561,6 +581,10 @@ public:
         /*! @name pipeline fill-in methods */
         //@{
 
+        /**
+            Add new search string
+            @param str - zero terminated string pointer to configure a search for
+         */
         void add(const typename SV::value_type* str);
 
         /** Prepare pipeline for the execution (resize and init internal structures)
@@ -570,6 +594,9 @@ public:
         
         bool is_complete() const BMNOEXCEPT
             { return agg_pipe_.is_complete(); }
+
+        size_type size() const BMNOEXCEPT { return agg_pipe_.size(); }
+
         //@}
 
         /** Return results vector used for pipeline execution */
@@ -594,9 +621,11 @@ public:
         pipeline(const pipeline&) = delete;
         pipeline& operator=(const pipeline&) = delete;
     protected:
-        const SV&                    sv_; ///< target sparse vector ref
-        aggregator_pipeline_type     agg_pipe_; ///< traget aggregator pipeline
+        const SV&                    sv_;               ///< target sparse vector ref
+        aggregator_pipeline_type     agg_pipe_;         ///< traget aggregator pipeline
         remap_vector_type            remap_value_vect_; ///< remap buffer
+        const bvector_type*          bv_and_mask_;
+        size_t                       eff_slices_; ///< number of effectice NOT NULL value slices
     };
 
 public:
@@ -628,9 +657,7 @@ public:
         \param value - value to search for
         \param bv_out - search result bit-vector (search result  is a vector of 1s when sv[i] == value)
     */
-    void find_eq(const SV&                  sv,
-                 typename SV::value_type    value,
-                 typename SV::bvector_type& bv_out);
+    void find_eq(const SV&  sv, value_type  value, bvector_type& bv_out);
 
     /**
         \brief find first sparse vector element
@@ -644,9 +671,8 @@ public:
      
         \return true if found
     */
-    bool find_eq(const SV&                  sv,
-                 typename SV::value_type    value,
-                 typename SV::size_type&    pos);
+    bool find_eq(const SV&  sv, value_type value, size_type& pos);
+
     /**
         \brief binary search for position in the sorted sparse vector
 
@@ -660,9 +686,58 @@ public:
 
         \return true if value found
     */
-    bool bfind(const SV&                      sv,
-               const typename SV::value_type  val,
-               typename SV::size_type&        pos);
+    bool bfind(const SV&  sv, const value_type  val, size_type&  pos);
+
+    /**
+        \brief find all elements  sparse vector element greater (>) than value
+
+        \param sv - input sparse vector
+        \param value - value to search for
+        \param bv_out - search result bit-vector (search result  is a vector of 1s when sv[i] > value)
+    */
+    void find_gt(const SV& sv, value_type  val, bvector_type&  bv_out);
+
+    /**
+        \brief find all elements  sparse vector element greater or equal (>=) than value
+
+        \param sv - input sparse vector
+        \param value - value to search for
+        \param bv_out - search result bit-vector (search result  is a vector of 1s when sv[i] >= value)
+    */
+    void find_ge(const SV& sv, value_type  val, bvector_type&  bv_out);
+
+
+    /**
+        \brief find all elements  sparse vector element less  (<) than value
+
+        \param sv - input sparse vector
+        \param value - value to search for
+        \param bv_out - search result bit-vector (search result  is a vector of 1s when sv[i] < value)
+    */
+    void find_lt(const SV& sv, value_type  val, bvector_type&  bv_out);
+
+    /**
+        \brief find all elements  sparse vector element less  or equal (<=) than value
+
+        \param sv - input sparse vector
+        \param value - value to search for
+        \param bv_out - search result bit-vector (search result  is a vector of 1s when sv[i] <= value)
+    */
+    void find_le(const SV& sv, value_type  val, bvector_type&  bv_out);
+
+
+    /**
+        \brief find all elements  sparse vector element in closed range [left..right] interval
+
+        \param sv - input sparse vector
+        \param from - range from
+        \param to - range to
+        \param bv_out - search result bit-vector (search result  is a vector of 1s when sv[i] <= value)
+    */
+    void find_range(const SV&  sv,
+                    value_type from, value_type to,
+                    bvector_type&  bv_out);
+
 
     //@}
 
@@ -679,17 +754,14 @@ public:
         @param str - string to search for
         @param bv_out - search result bit-vector (search result masks 1 elements)
     */
-    bool find_eq_str(const SV&                      sv,
-                     const typename SV::value_type* str,
-                     typename SV::bvector_type& bv_out);
+    bool find_eq_str(const SV& sv, const value_type* str, bvector_type& bv_out);
 
     /**
         \brief find sparse vector elementa (string) in the attached SV
         @param str - string to search for
         @param bv_out - search result bit-vector (search result masks 1 elements)
     */
-    bool find_eq_str(const typename SV::value_type* str,
-                     typename SV::bvector_type& bv_out);
+    bool find_eq_str(const value_type* str, bvector_type& bv_out);
 
     /**
         \brief find first sparse vector element (string)
@@ -697,9 +769,7 @@ public:
         @param str - string to search for
         @param pos - [out] index of the first found
     */
-    bool find_eq_str(const SV&                      sv,
-                     const typename SV::value_type* str,
-                     typename SV::size_type&        pos);
+    bool find_eq_str(const SV& sv, const value_type* str, size_type&  pos);
 
     /**
         \brief binary find first sparse vector element (string)
@@ -708,8 +778,7 @@ public:
         @param pos - [out] index of the first found
         @sa bind
     */
-    bool find_eq_str(const typename SV::value_type* str,
-                     typename SV::size_type&        pos);
+    bool find_eq_str(const value_type* str, size_type& pos);
 
     /**
         \brief find sparse vector elements  with a given prefix (string)
@@ -718,9 +787,8 @@ public:
                      "123" is a prefix for "1234567"
         @param bv_out - search result bit-vector (search result masks 1 elements)
     */
-    bool find_eq_str_prefix(const SV&               sv,
-                     const typename SV::value_type* str,
-                     typename SV::bvector_type&     bv_out);
+    bool find_eq_str_prefix(const SV& sv, const value_type* str,
+                            bvector_type& bv_out);
 
     /**
         \brief find sparse vector elements using search pipeline
@@ -733,9 +801,8 @@ public:
         \brief binary find first sparse vector element (string)     
         Sparse vector must be sorted.
     */
-    bool bfind_eq_str(const SV&                      sv,
-                      const typename SV::value_type* str,
-                      typename SV::size_type&        pos);
+    bool bfind_eq_str(const SV& sv,
+                      const value_type* str, size_type& pos);
 
     /**
         \brief lower bound search for an array position
@@ -748,17 +815,16 @@ public:
 
         \return true if value found
     */
-    bool lower_bound_str(const SV&                      sv,
-                         const typename SV::value_type* str,
-                         typename SV::size_type&        pos);
+    bool lower_bound_str(const SV&            sv,
+                         const value_type*    str,
+                         size_type&           pos);
 
     /**
         \brief binary find first sparse vector element (string)
         Sparse vector must be sorted and attached
         @sa bind
     */
-    bool bfind_eq_str(const typename SV::value_type* str,
-                      typename SV::size_type&        pos);
+    bool bfind_eq_str(const value_type* str, size_type& pos);
 
     //@}
 
@@ -766,9 +832,9 @@ public:
         \brief find all sparse vector elements EQ to 0
         \param sv - input sparse vector
         \param bv_out - output bit-vector (search result masks 1 elements)
+        \param null_correct - flag to perform NULL correction
     */
-    void find_zero(const SV&                  sv,
-                   typename SV::bvector_type& bv_out);
+    void find_zero(const SV& sv, bvector_type& bv_out, bool null_correct = true);
 
     /*!
         \brief Find non-zero elements
@@ -777,7 +843,7 @@ public:
         \param  sv - input sparse vector
         \param  bv_out - output bit-bector of non-zero elements
     */
-    void find_nonzero(const SV& sv, typename SV::bvector_type& bv_out);
+    void find_nonzero(const SV& sv, bvector_type& bv_out);
 
     /*!
         \brief Find positive (greter than zero elements)
@@ -786,8 +852,7 @@ public:
         \param  sv - input sparse vector
         \param  bv_out - output bit-bector of non-zero elements
     */
-    void find_positive(const SV& sv,
-                      typename SV::bvector_type& bv_out);
+    void find_positive(const SV& sv, bvector_type& bv_out);
 
 
     /**
@@ -796,7 +861,7 @@ public:
         \param  sv - input sparse vector
         \param  bv_out - output bit-bector of non-zero elements
     */
-    void invert(const SV& sv, typename SV::bvector_type& bv_out);
+    void invert(const SV& sv, bvector_type& bv_out);
 
     /**
         \brief find all values A IN (C, D, E, F)
@@ -809,7 +874,7 @@ public:
     void find_eq(const SV&  sv,
                  It    start, 
                  It    end,
-                 typename SV::bvector_type& bv_out)
+                 bvector_type& bv_out)
     {
         typename bvector_type::mem_pool_guard mp_guard;
         mp_guard.assign_if_not_set(pool_, bv_out); // set algorithm-local memory pool to avoid heap contention
@@ -837,24 +902,23 @@ public:
     /// For testing purposes only
     ///
     /// @internal
-    void find_eq_with_nulls_horizontal(const SV&   sv,
-                 typename SV::value_type           value,
-                 typename SV::bvector_type&        bv_out);
+    void find_eq_with_nulls_horizontal(const SV& sv, value_type value,
+                                       bvector_type&  bv_out);
 
     /// For testing purposes only
     ///
     /// @internal
-    void find_gt_horizontal(const SV&   sv,
-                         typename SV::value_type     value,
-                         typename SV::bvector_type&  bv_out,
-                         bool null_correct = true);
+    void find_gt_horizontal(const SV&      sv,
+                            value_type     value,
+                            bvector_type&  bv_out,
+                            bool null_correct = true);
 
 
     /** Exclude possible NULL values from the result vector
         \param  sv - input sparse vector
         \param  bv_out - output bit-bector of non-zero elements
     */
-    void correct_nulls(const SV&   sv, typename SV::bvector_type& bv_out);
+    void correct_nulls(const SV& sv, bvector_type& bv_out);
 
     /// Return allocator pool for blocks
     ///  (Can be used to improve performance of repeated searches with the same scanner)
@@ -866,7 +930,7 @@ protected:
     /// Remap input value into SV char encodings
     static
     bool remap_tosv(remap_vector_type& remap_vect_target,
-                    const typename SV::value_type* str,
+                    const value_type* str,
                     const SV& sv);
 
     /// set search boundaries (hint for the aggregator)
@@ -877,39 +941,38 @@ protected:
 
     /// find value (may include NULL indexes)
     bool find_eq_with_nulls(const SV&   sv,
-                            typename SV::value_type         value,
-                            typename SV::bvector_type&      bv_out,
-                            typename SV::size_type          search_limit = 0);
+                            value_type         value,
+                            bvector_type&      bv_out,
+                            size_type          search_limit = 0);
 
     /// find first value (may include NULL indexes)
     bool find_first_eq(const SV&   sv,
-                       typename SV::value_type         value,
-                       size_type&                      idx);
+                       value_type  value,
+                       size_type&  idx);
     
     /// find first string value (may include NULL indexes)
-    bool find_first_eq(const SV&                       sv,
-                       const typename SV::value_type*  str,
-                       size_type&                      idx,
-                       bool                            remaped);
+    bool find_first_eq(const SV&          sv,
+                       const value_type*  str,
+                       size_type&         idx,
+                       bool               remaped);
 
     /// find EQ str / prefix impl
     bool find_eq_str_impl(const SV&                      sv,
-                     const typename SV::value_type* str,
-                     typename SV::bvector_type& bv_out,
+                     const value_type* str,
+                     bvector_type& bv_out,
                      bool prefix_sub);
 
     /// Prepare aggregator for AND-SUB (EQ) search
-    bool prepare_and_sub_aggregator(const SV&   sv,
-                                    typename SV::value_type   value);
+    bool prepare_and_sub_aggregator(const SV& sv, value_type value);
 
     /// Prepare aggregator for AND-SUB (EQ) search (string)
     bool prepare_and_sub_aggregator(const SV&  sv,
-                                    const typename SV::value_type*  str,
+                                    const value_type*  str,
                                     unsigned octet_start,
                                     bool prefix_sub);
 
     /// Rank-Select decompression for RSC vectors
-    void decompress(const SV&   sv, typename SV::bvector_type& bv_out);
+    void decompress(const SV&   sv, bvector_type& bv_out);
 
     /// compare sv[idx] with input str
     int compare_str(const SV& sv, size_type idx, const value_type* str);
@@ -975,9 +1038,9 @@ protected:
             BM_ASSERT(value & (value_type(1) << bit_idx));
             unsigned plane_idx = (unsigned(octet_idx) * 8) + bit_idx;
             const bvector_type* bv = sv.get_slice(plane_idx);
+            BM_ASSERT(bv != sv.get_null_bvector());
             agg.add(bv, 0); // add to the AND group
         } // for i
-
         unsigned vinv = unsigned(value);
         if constexpr (sizeof(value_type) == 1)
             vinv ^= 0xFF;
@@ -995,6 +1058,7 @@ protected:
             unsigned plane_idx = octet_plane + bit_idx;
             const bvector_type* bv = sv.get_slice(plane_idx);
             BM_ASSERT(bv);
+            BM_ASSERT(bv != sv.get_null_bvector());
             agg.add(bv, 1); // add to SUB group
         } // for
     }
@@ -1438,8 +1502,9 @@ void sparse_vector_scanner<SV>::reset_binding() BMNOEXCEPT
 //----------------------------------------------------------------------------
 
 template<typename SV>
-void sparse_vector_scanner<SV>::find_zero(const SV&                  sv,
-                                          typename SV::bvector_type& bv_out)
+void sparse_vector_scanner<SV>::find_zero(const SV&     sv,
+                                          bvector_type& bv_out,
+                                          bool null_correct)
 {
     if (sv.size() == 0)
     {
@@ -1447,7 +1512,7 @@ void sparse_vector_scanner<SV>::find_zero(const SV&                  sv,
         return;
     }
     find_nonzero(sv, bv_out);
-    if (sv.is_compressed())
+    if constexpr (SV::is_compressed())
     {
         bv_out.invert();
         bv_out.set_range(sv.effective_size(), bm::id_max - 1, false);
@@ -1457,13 +1522,14 @@ void sparse_vector_scanner<SV>::find_zero(const SV&                  sv,
     {
         invert(sv, bv_out);
     }
-    correct_nulls(sv, bv_out);
+    if (null_correct)
+        correct_nulls(sv, bv_out);
 }
 
 //----------------------------------------------------------------------------
 
 template<typename SV>
-void sparse_vector_scanner<SV>::invert(const SV& sv, typename SV::bvector_type& bv_out)
+void sparse_vector_scanner<SV>::invert(const SV& sv, bvector_type& bv_out)
 {
     if (sv.size() == 0)
     {
@@ -1493,7 +1559,7 @@ void sparse_vector_scanner<SV>::invert(const SV& sv, typename SV::bvector_type& 
 
 template<typename SV>
 void sparse_vector_scanner<SV>::correct_nulls(const SV&   sv,
-                           typename SV::bvector_type& bv_out)
+                                              bvector_type& bv_out)
 {
     const bvector_type* bv_null = sv.get_null_bvector();
     if (bv_null) // correct result to only use not NULL elements
@@ -1504,9 +1570,9 @@ void sparse_vector_scanner<SV>::correct_nulls(const SV&   sv,
 
 template<typename SV>
 bool sparse_vector_scanner<SV>::find_eq_with_nulls(const SV&    sv,
-                                    typename SV::value_type     value,
-                                    typename SV::bvector_type&  bv_out,
-                                    typename SV::size_type      search_limit)
+                                    value_type     value,
+                                    bvector_type&  bv_out,
+                                    size_type      search_limit)
 {
     if (sv.empty())
         return false; // nothing to do
@@ -1535,8 +1601,8 @@ bool sparse_vector_scanner<SV>::find_eq_with_nulls(const SV&    sv,
 
 template<typename SV>
 bool sparse_vector_scanner<SV>::find_first_eq(const SV&   sv,
-                               typename SV::value_type    value,
-                               size_type&                 idx)
+                                            value_type    value,
+                                            size_type&    idx)
 {
     if (sv.empty())
         return false; // nothing to do
@@ -1560,7 +1626,7 @@ bool sparse_vector_scanner<SV>::find_first_eq(const SV&   sv,
 template<typename SV>
 bool sparse_vector_scanner<SV>::find_first_eq(
                                 const SV&                       sv,
-                                const typename SV::value_type*  str,
+                                const value_type*               str,
                                 size_type&                      idx,
                                 bool                            remaped)
 {
@@ -1608,7 +1674,7 @@ bool sparse_vector_scanner<SV>::find_first_eq(
 
 template<typename SV>
 bool sparse_vector_scanner<SV>::prepare_and_sub_aggregator(const SV&  sv,
-                                      const typename SV::value_type*  str,
+                                      const value_type*  str,
                                       unsigned octet_start,
                                       bool prefix_sub)
 {
@@ -1643,7 +1709,7 @@ bool sparse_vector_scanner<SV>::prepare_and_sub_aggregator(const SV&  sv,
     if (prefix_sub)
     {
         unsigned plane_idx = unsigned(len * 8);
-        typename SV::size_type planes = sv.get_bmatrix().rows();
+        typename SV::size_type planes = sv.get_bmatrix().rows_not_null();
         for (; plane_idx < planes; ++plane_idx)
         {
             if (bvector_type_const_ptr bv = sv.get_slice(plane_idx))
@@ -1657,7 +1723,7 @@ bool sparse_vector_scanner<SV>::prepare_and_sub_aggregator(const SV&  sv,
 
 template<typename SV>
 bool sparse_vector_scanner<SV>::prepare_and_sub_aggregator(const SV&   sv,
-                                           typename SV::value_type   value)
+                                                           value_type   value)
 {
     using unsigned_value_type = typename SV::unsigned_value_type;
 
@@ -1696,9 +1762,10 @@ bool sparse_vector_scanner<SV>::prepare_and_sub_aggregator(const SV&   sv,
 //----------------------------------------------------------------------------
 
 template<typename SV>
-void sparse_vector_scanner<SV>::find_eq_with_nulls_horizontal(const SV&  sv,
-    typename SV::value_type    value,
-    typename SV::bvector_type& bv_out)
+void sparse_vector_scanner<SV>::find_eq_with_nulls_horizontal(
+                                  const SV&     sv,
+                                  value_type    value,
+                                  bvector_type& bv_out)
 {
     bv_out.clear();
     if (sv.empty())
@@ -1743,14 +1810,103 @@ void sparse_vector_scanner<SV>::find_eq_with_nulls_horizontal(const SV&  sv,
             bv_out -= *bv;
     } // for i
 }
+
+//----------------------------------------------------------------------------
+
+template<typename SV>
+void sparse_vector_scanner<SV>::find_gt(const SV&      sv,
+                                        value_type     val,
+                                        bvector_type&  bv_out)
+{
+    // this is not very optimal but should be good enough
+    find_gt_horizontal(sv, val, bv_out, true /*NULL correction */);
+}
+
+//----------------------------------------------------------------------------
+
+template<typename SV>
+void sparse_vector_scanner<SV>::find_ge(const SV&      sv,
+                                        value_type     val,
+                                        bvector_type&  bv_out)
+{
+    if constexpr (std::is_signed<value_type>::value)
+    {
+        if (val == std::numeric_limits<int>::min())
+        {
+            bvector_type bv_min;
+            find_eq(sv, val, bv_min);
+            find_gt_horizontal(sv, val, bv_out, true /*NULL correction */);
+            bv_out.merge(bv_min);
+        }
+        else
+        {
+            --val;
+            find_gt_horizontal(sv, val, bv_out, true /*NULL correction */);
+        }
+    }
+    else // unsigned
+    {
+        if (val)
+        {
+            --val;
+            find_gt_horizontal(sv, val, bv_out, true /*NULL correction */);
+        }
+        else // val == 0
+        {
+            // result set is ALL elements minus possible NULL values
+            bv_out.set_range(0, sv.size()-1);
+            correct_nulls(sv, bv_out);
+        }
+    }
+}
+
+//----------------------------------------------------------------------------
+
+template<typename SV>
+void sparse_vector_scanner<SV>::find_lt(const SV&      sv,
+                                        value_type     val,
+                                        bvector_type&  bv_out)
+{
+    find_ge(sv, val, bv_out);
+    invert(sv, bv_out);
+}
+
+//----------------------------------------------------------------------------
+
+template<typename SV>
+void sparse_vector_scanner<SV>::find_le(const SV& sv,
+                                        value_type val,
+                                        bvector_type&  bv_out)
+{
+    find_gt(sv, val, bv_out);
+    invert(sv, bv_out);
+}
+
+//----------------------------------------------------------------------------
+
+template<typename SV>
+void sparse_vector_scanner<SV>::find_range(const SV&  sv,
+                                           value_type from, value_type to,
+                                           bvector_type&  bv_out)
+{
+    if (to < from)
+        bm::xor_swap(from, to);
+
+    find_ge(sv, from, bv_out);
+
+    bvector_type bv_gt;
+    find_gt(sv, to, bv_gt);
+    bv_out.bit_sub(bv_gt);
+}
+
 //----------------------------------------------------------------------------
 
 
 template<typename SV>
 void sparse_vector_scanner<SV>::find_gt_horizontal(const SV&   sv,
-                                         typename SV::value_type     value,
-                                         typename SV::bvector_type&  bv_out,
-                                         bool null_correct)
+                                                   value_type     value,
+                                                   bvector_type&  bv_out,
+                                                   bool null_correct)
 {
     unsigned char blist[64];
     unsigned bit_count_v;
@@ -1846,6 +2002,8 @@ void sparse_vector_scanner<SV>::find_gt_horizontal(const SV&   sv,
     }
     agg_.reset();
 
+    bv_out.merge(top_or_bv);
+
     // TODO: optimize FULL blocks
 
     bvector_type and_eq_bv; // AND accum
@@ -1870,7 +2028,7 @@ void sparse_vector_scanner<SV>::find_gt_horizontal(const SV&   sv,
                 else // value > 0
                     and_eq_bv.bit_and(*bv_base_plane, gtz_bv);
             }
-            else
+            else // unsigned
                 and_eq_bv = *bv_base_plane; // initial assignment
         }
         else
@@ -1897,8 +2055,6 @@ void sparse_vector_scanner<SV>::find_gt_horizontal(const SV&   sv,
         } // for j
     } // for i
 
-    bv_out.merge(top_or_bv);
-
     if constexpr (std::is_signed<value_type>::value)
     {
         if (value < 0)
@@ -1916,8 +2072,18 @@ void sparse_vector_scanner<SV>::find_gt_horizontal(const SV&   sv,
         }
     }
 
+    decompress(sv, bv_out);
+
     if (null_correct)
-        correct_nulls(sv, bv_out);
+    {
+        if constexpr (!std::is_signed<value_type>::value) // unsigned
+            return; // NULL correction for positive values is not needed
+        else // signed
+        {
+            if (value < 0)
+                correct_nulls(sv, bv_out);
+        }
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -2012,7 +2178,7 @@ bool sparse_vector_scanner<SV>::find_eq_str(const SV&                      sv,
             pos = found_pos;
             if constexpr (SV::is_rsc_support::value) // test rank/select trait
             {
-                if (sv.is_compressed()) // if compressed vector - need rank translation
+                if constexpr (sv.is_compressed()) // if compressed vector - need rank translation
                     found = sv.find_rank(found_pos + 1, pos);
             }
         }
@@ -2117,7 +2283,16 @@ bool sparse_vector_scanner<SV>::find_eq_str_impl(const SV&  sv,
 template<typename SV> template<class TPipe>
 void sparse_vector_scanner<SV>::find_eq_str(TPipe& pipe)
 {
+    if (pipe.bv_and_mask_)
+    {
+        size_type first, last;
+        bool any = pipe.bv_and_mask_->find_range(first, last);
+        if (!any)
+            return;
+        agg_.set_range_hint(first, last);
+    }
     agg_.combine_and_sub(pipe.agg_pipe_);
+    agg_.reset_range_hint();
 }
 
 //----------------------------------------------------------------------------
@@ -2254,11 +2429,8 @@ bool sparse_vector_scanner<SV>::bfind_eq_str(
         if (found)
         {
             pos = found_pos;
-            if (bm::conditional<SV::is_rsc_support::value>::test()) // test rank/select trait
-            {
-                if (sv.is_compressed()) // if compressed vector - need rank translation
-                    found = sv.find_rank(found_pos + 1, pos);
-            }
+            if constexpr (SV::is_compressed()) // if compressed vector - need rank translation
+                found = sv.find_rank(found_pos + 1, pos);
         }
         reset_search_range();
     }
@@ -2642,7 +2814,7 @@ bool sparse_vector_scanner<SV>::find_eq(const SV&                  sv,
         pos = found_pos;
         if (bm::conditional<SV::is_rsc_support::value>::test()) // test rank/select trait
         {
-            if (sv.is_compressed()) // if compressed vector - need rank translation
+            if constexpr (SV::is_compressed()) // if compressed vector - need rank translation
                 found = sv.find_rank(found_pos + 1, pos);
         }
     }
@@ -2657,15 +2829,7 @@ void sparse_vector_scanner<SV>::find_nonzero(const SV& sv,
 {
     agg_.reset(); // in case if previous scan was interrupted
     auto sz = sv.effective_slices(); // sv.slices();
-    unsigned i;
-    if constexpr (SV::is_str()) // string vector
-        i = 0;
-    else // numeric vector: int, unsigned, etc
-        if constexpr (std::is_signed<value_type>::value)
-            i = 1; // do not process the sign plane
-        else
-            i = 0;
-    for (; i < sz; ++i)
+    for (unsigned i = 0; i < sz; ++i)
         agg_.add(sv.get_slice(i));
     agg_.combine_or(bv_out);
     agg_.reset();
@@ -2692,14 +2856,19 @@ template<typename SV>
 void sparse_vector_scanner<SV>::decompress(const SV&   sv,
                                            typename SV::bvector_type& bv_out)
 {
-    if (!sv.is_compressed())
-        return; // nothing to do
-    const bvector_type* bv_non_null = sv.get_null_bvector();
-    BM_ASSERT(bv_non_null);
+    if constexpr (SV::is_compressed())
+    {
+        const bvector_type* bv_non_null = sv.get_null_bvector();
+        BM_ASSERT(bv_non_null);
 
-    // TODO: implement faster decompressor for small result-sets
-    rank_compr_.decompress(bv_tmp_, *bv_non_null, bv_out);
-    bv_out.swap(bv_tmp_);
+        // TODO: implement faster decompressor for small result-sets
+        rank_compr_.decompress(bv_tmp_, *bv_non_null, bv_out);
+        bv_out.swap(bv_tmp_);
+    }
+    else
+    {
+        (void)sv; (void)bv_out;
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -2729,6 +2898,17 @@ void sparse_vector_scanner<SV>::reset_search_range()
 
 template<typename SV> template<class Opt>
 void
+sparse_vector_scanner<SV>::pipeline<Opt>::set_search_mask(const bvector_type* bv_mask) BMNOEXCEPT
+{
+    static_assert(Opt::is_masks(),
+                  "BM: Search masking needs to be enabled in template parameter options before function call. see bm::agg_run_options<> ");
+    bv_and_mask_ = bv_mask;
+}
+
+//----------------------------------------------------------------------------
+
+template<typename SV> template<class Opt>
+void
 sparse_vector_scanner<SV>::pipeline<Opt>::add(const typename SV::value_type* str)
 {
     BM_ASSERT(str);
@@ -2751,8 +2931,12 @@ sparse_vector_scanner<SV>::pipeline<Opt>::add(const typename SV::value_type* str
     {}
     BM_ASSERT(len);
 
+    if constexpr(Opt::is_masks())
+        arg->add(bv_and_mask_, 0);
+    arg->add(sv_.get_null_bvector(), 0);
 
     // use reverse order (faster for sorted arrays)
+
     for (int octet_idx = len-1; octet_idx >= 0; --octet_idx)
     {
         //if (unsigned(octet_idx) < octet_start) // common prefix
@@ -2762,34 +2946,37 @@ sparse_vector_scanner<SV>::pipeline<Opt>::add(const typename SV::value_type* str
         BM_ASSERT(value != 0);
 
         bm::id64_t planes_mask;
-        /*
+        #if (0)
         if (&sv == bound_sv_)
             planes_mask = vector_plane_masks_[unsigned(octet_idx)];
-        else */
+        else
+        #endif
         planes_mask = sv_.get_slice_mask(unsigned(octet_idx));
 
         if ((value & planes_mask) != value) // pre-screen for impossible values
-            return; // found non-existing plane
+        {
+            arg->reset(); // reset is necessary to disable single plane AND
+            return;       // found non-existing plane
+        }
 
         sparse_vector_scanner<SV>::add_agg_char(
             *arg, sv_, octet_idx, planes_mask, value); // AND-SUB aggregator
      } // for octet_idx
+
 
     // add all vectors above string len to the SUB aggregation group
     //
     //if (prefix_sub)
     {
         unsigned plane_idx = unsigned(len * 8);
-        typename SV::size_type planes = sv_.get_bmatrix().rows();
+        // SUB group should NOt include not NULL bvector
+        size_type planes = size_type(this->eff_slices_);
         for (; plane_idx < planes; ++plane_idx)
         {
             if (bvector_type_const_ptr bv = sv_.get_slice(plane_idx))
                 arg->add(bv, 1); // agg to SUB group
         } // for
     }
-
-
-    //return true;
 
 }
 
