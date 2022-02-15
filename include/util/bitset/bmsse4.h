@@ -34,8 +34,8 @@ For more information please visit:  http://bitmagic.io
 #include<immintrin.h>
 
 #include "bmdef.h"
-#include "bmsse_util.h"
 #include "bmutil.h"
+#include "bmsse_util.h"
 
 namespace bm
 {
@@ -99,8 +99,10 @@ bm::id_t sse4_bit_count(const __m128i* block, const __m128i* block_end) BMNOEXCE
     do
     {
         count += unsigned( _mm_popcnt_u64(b[0]) +
-                           _mm_popcnt_u64(b[1]));
-        b += 2;
+                           _mm_popcnt_u64(b[1]) +
+                           _mm_popcnt_u64(b[2]) +
+                           _mm_popcnt_u64(b[3]));
+        b += 4;
     } while (b < b_end);
 #else
     do
@@ -114,6 +116,8 @@ bm::id_t sse4_bit_count(const __m128i* block, const __m128i* block_end) BMNOEXCE
 #endif    
     return count;
 }
+
+
 
 /*!
 \internal
@@ -152,16 +156,17 @@ bm::id_t sse4_bit_count_op(const __m128i* BMRESTRICT block,
 {
     bm::id_t count = 0;
 #ifdef BM64_SSE4
+    bm::id64_t BM_ALIGN16 tcnt[2] BM_ALIGN16ATTR;
     do
     {
-        __m128i tmp0 = _mm_load_si128(block);
-        __m128i tmp1 = _mm_load_si128(mask_block);        
-        __m128i b = sse2_func(tmp0, tmp1);
+        __m128i b = sse2_func(_mm_load_si128(block), _mm_load_si128(mask_block));
+        _mm_store_si128((__m128i*)tcnt, b);
+        count += unsigned(_mm_popcnt_u64(tcnt[0]) + _mm_popcnt_u64(tcnt[1]));
 
-        count += (unsigned)_mm_popcnt_u64(_mm_extract_epi64(b, 0));
-        count += (unsigned)_mm_popcnt_u64(_mm_extract_epi64(b, 1));
-
-        ++block; ++mask_block;
+        b = sse2_func(_mm_load_si128(block+1), _mm_load_si128(mask_block+1));
+        _mm_store_si128((__m128i*)tcnt, b);
+        count += unsigned(_mm_popcnt_u64(tcnt[0]) + _mm_popcnt_u64(tcnt[1]));
+        block+=2; mask_block+=2;
     } while (block < block_end);
 #else    
     do
@@ -211,7 +216,7 @@ bool sse4_is_all_zero(const __m128i* BMRESTRICT block) BMNOEXCEPT
     @brief check if digest stride is all zero bits
     @ingroup SSE4
 */
-inline
+BMFORCEINLINE
 bool sse4_is_digest_zero(const __m128i* BMRESTRICT block) BMNOEXCEPT
 {
     __m128i wA = _mm_or_si128(_mm_load_si128(block+0), _mm_load_si128(block+1));
@@ -230,7 +235,7 @@ bool sse4_is_digest_zero(const __m128i* BMRESTRICT block) BMNOEXCEPT
     @brief set digest stride to 0xFF.. or 0x0 value
     @ingroup SSE4
 */
-inline
+BMFORCEINLINE
 void sse4_block_set_digest(__m128i* dst, unsigned value) BMNOEXCEPT
 {
     __m128i mV = _mm_set1_epi32(int(value));
@@ -295,7 +300,7 @@ unsigned sse4_and_block(__m128i* BMRESTRICT dst,
     @return true if stide is all zero
     @ingroup SSE4
 */
-inline
+BMFORCEINLINE
 bool sse4_and_digest(__m128i* BMRESTRICT dst,
                      const __m128i* BMRESTRICT src) BMNOEXCEPT
 {
@@ -343,7 +348,7 @@ bool sse4_and_digest(__m128i* BMRESTRICT dst,
     @return true if stide is all zero
     @ingroup SSE4
 */
-inline
+BMFORCEINLINE
 bool sse4_and_digest_2way(__m128i* BMRESTRICT dst,
                           const __m128i* BMRESTRICT src1,
                           const __m128i* BMRESTRICT src2) BMNOEXCEPT
@@ -529,7 +534,7 @@ bool sse4_and_digest_5way(__m128i* BMRESTRICT dst,
     @return true if stide is all zero
     @ingroup SSE4
 */
-inline
+BMFORCEINLINE
 bool sse4_sub_digest(__m128i* BMRESTRICT dst,
                      const __m128i* BMRESTRICT src) BMNOEXCEPT
 {
@@ -578,7 +583,7 @@ bool sse4_sub_digest(__m128i* BMRESTRICT dst,
     @return true if stide is all zero
     @ingroup SSE4
 */
-inline
+BMFORCEINLINE
 bool sse4_sub_digest_2way(__m128i* BMRESTRICT dst,
                           const __m128i* BMRESTRICT src1,
                           const __m128i* BMRESTRICT src2) BMNOEXCEPT
@@ -623,7 +628,7 @@ bool sse4_sub_digest_2way(__m128i* BMRESTRICT dst,
 
 
 /*!
-    @brief check if block is all zero bits
+    @brief check if block is all ONE bits
     @ingroup SSE4
 */
 inline
@@ -751,15 +756,6 @@ unsigned sse42_bit_block_calc_change(const __m128i* BMRESTRICT block,
         count += unsigned(_mm_popcnt_u64(tcnt[0]) + _mm_popcnt_u64(tcnt[1]));
        _mm_store_si128((__m128i*)tcnt, m2A);
         count += unsigned(_mm_popcnt_u64(tcnt[0]) + _mm_popcnt_u64(tcnt[1]));
-/*
-        bm::id64_t m0 = _mm_extract_epi64(m1A, 0);
-        bm::id64_t m1 = _mm_extract_epi64(m1A, 1);
-        count += unsigned(_mm_popcnt_u64(m0) + _mm_popcnt_u64(m1));
-
-        m0 = _mm_extract_epi64(m2A, 0);
-        m1 = _mm_extract_epi64(m2A, 1);
-        count += unsigned(_mm_popcnt_u64(m0) + _mm_popcnt_u64(m1));
-*/
 #else
         bm::id_t m0 = _mm_extract_epi32(m1A, 0);
         bm::id_t m1 = _mm_extract_epi32(m1A, 1);
@@ -794,9 +790,8 @@ void sse42_bit_block_calc_xor_change(const __m128i* BMRESTRICT block,
                                      unsigned* BMRESTRICT bc) BMNOEXCEPT
 {
 #ifdef BM64_SSE4
-    bm::id64_t BM_ALIGN32 simd_buf[2] BM_ALIGN32ATTR;
-#else
-    ///bm::id64_t BM_ALIGN32 simd_buf[4] BM_ALIGN32ATTR;
+    bm::id64_t BM_ALIGN32 simd_buf0[2] BM_ALIGN32ATTR;
+    bm::id64_t BM_ALIGN32 simd_buf1[2] BM_ALIGN32ATTR;
 #endif
 
     const __m128i* block_end =
@@ -820,11 +815,10 @@ void sse42_bit_block_calc_xor_change(const __m128i* BMRESTRICT block,
 
         {
 #ifdef BM64_SSE4
-        _mm_store_si128 ((__m128i*)simd_buf, m1A);
-        bit_count += unsigned(_mm_popcnt_u64(simd_buf[0]) + _mm_popcnt_u64(simd_buf[1]));
-
-        _mm_store_si128 ((__m128i*)simd_buf, m2A);
-        bit_count += unsigned(_mm_popcnt_u64(simd_buf[0]) + _mm_popcnt_u64(simd_buf[1]));
+        _mm_store_si128 ((__m128i*)simd_buf0, m1A);
+        _mm_store_si128 ((__m128i*)simd_buf1, m2A);
+        bit_count += unsigned(_mm_popcnt_u64(simd_buf0[0]) + _mm_popcnt_u64(simd_buf0[1]));
+        bit_count += unsigned(_mm_popcnt_u64(simd_buf1[0]) + _mm_popcnt_u64(simd_buf1[1]));
 #else
         bm::id_t m0 = _mm_extract_epi32(m1A, 0);
         bm::id_t m1 = _mm_extract_epi32(m1A, 1);
@@ -870,11 +864,10 @@ void sse42_bit_block_calc_xor_change(const __m128i* BMRESTRICT block,
         m2A = _mm_xor_si128(m2A, m2As);
 
 #ifdef BM64_SSE4
-        _mm_store_si128 ((__m128i*)simd_buf, m1A);
-        gap_count += unsigned(_mm_popcnt_u64(simd_buf[0]) + _mm_popcnt_u64(simd_buf[1]));
-
-        _mm_store_si128 ((__m128i*)simd_buf, m2A);
-        gap_count += unsigned(_mm_popcnt_u64(simd_buf[0]) + _mm_popcnt_u64(simd_buf[1]));
+        _mm_store_si128 ((__m128i*)simd_buf0, m1A);
+        _mm_store_si128 ((__m128i*)simd_buf1, m2A);
+        gap_count += unsigned(_mm_popcnt_u64(simd_buf0[0]) + _mm_popcnt_u64(simd_buf0[1]));
+        gap_count += unsigned(_mm_popcnt_u64(simd_buf1[0]) + _mm_popcnt_u64(simd_buf1[1]));
 #else
         bm::id_t m0 = _mm_extract_epi32(m1A, 0);
         bm::id_t m1 = _mm_extract_epi32(m1A, 1);
@@ -980,7 +973,7 @@ void sse42_bit_block_calc_change_bc(const __m128i* BMRESTRICT block,
 
 /*!
    \brief Find first bit which is different between two bit-blocks
-  @ingroup AVX2
+  @ingroup SSE4
 */
 inline
 bool sse42_bit_find_first_diff(const __m128i* BMRESTRICT block1,
@@ -991,7 +984,7 @@ bool sse42_bit_find_first_diff(const __m128i* BMRESTRICT block1,
 
     const __m128i* block1_end =
         (const __m128i*)((bm::word_t*)(block1) + bm::set_block_size);
-    __m128i maskZ = _mm_setzero_si128();
+    const __m128i maskZ = _mm_setzero_si128();
     __m128i mA, mB;
     unsigned simd_lane = 0;
     do
@@ -1036,7 +1029,7 @@ bool sse42_bit_find_first_diff(const __m128i* BMRESTRICT block1,
 
 /*!
    \brief Find first non-zero bit
-  @ingroup AVX2
+  @ingroup SSE4
 */
 inline
 bool sse42_bit_find_first(const __m128i* BMRESTRICT block,
@@ -1046,7 +1039,7 @@ bool sse42_bit_find_first(const __m128i* BMRESTRICT block,
 
     const __m128i* block_end =
         (const __m128i*)((bm::word_t*)(block) + bm::set_block_size);
-    __m128i maskZ = _mm_setzero_si128();
+    const __m128i maskZ = _mm_setzero_si128();
     __m128i mA, mB;
     unsigned simd_lane = 0;
     do
@@ -1138,12 +1131,8 @@ unsigned sse4_gap_find(const bm::gap_word_t* BMRESTRICT pbuf,
     __m128i  mge_mask = _mm_cmpeq_epi16(_mm_subs_epu16(mp, m1), mz); // unsigned m1 >= mp
     __m128i  c_mask = _mm_slli_epi16(mge_mask, 15); // clear not needed flag bits by shift
     int mi = _mm_movemask_epi8(c_mask);  // collect flag bits
-    if (mi)
-    {
-        // alternative: int bsr_i= bm::bit_scan_fwd(mi) >> 1;
-        unsigned bc = _mm_popcnt_u32(mi); // gives us number of elements >= pos
+    if (unsigned bc = _mm_popcnt_u32(mi)) // gives us number of elements >= pos
         return unroll_factor - bc;   // address of first one element (target)
-    }
     // inspect the next lane with possible step back (to avoid over-read the block boundaries)
     //   GCC gives a false warning for "- unroll_factor" here
     const bm::gap_word_t* BMRESTRICT pbuf2 = pbuf + size - unroll_factor;
@@ -1255,74 +1244,6 @@ int sse42_cmpge_u32(__m128i vect4, unsigned value) BMNOEXCEPT
         return bsf / 4;
     }
     return -1;
-}
-
-
-/**
-    lower bound (great or equal) linear scan in ascending order sorted array
-    @ingroup SSE4
-    \internal
-*/
-inline
-unsigned sse4_lower_bound_scan_u32(const unsigned* BMRESTRICT arr,
-                                   unsigned target,
-                                   unsigned from,
-                                   unsigned to) BMNOEXCEPT
-{
-    // a > b (unsigned, 32-bit) is the same as (a - 0x80000000) > (b - 0x80000000) (signed, 32-bit)
-    // see more at:
-    // https://fgiesen.wordpress.com/2016/04/03/sse-mind-the-gap/
-
-    const unsigned* BMRESTRICT arr_base = &arr[from]; // unrolled search base
-    
-    unsigned unroll_factor = 8;
-    unsigned len = to - from + 1;
-    unsigned len_unr = len - (len % unroll_factor);
-    
-    __m128i mask0x8 = _mm_set1_epi32(0x80000000);
-    __m128i vect_target = _mm_set1_epi32(target);
-    __m128i norm_target = _mm_sub_epi32(vect_target, mask0x8);  // (signed) target - 0x80000000
-
-    int mask;
-    __m128i vect40, vect41, norm_vect40, norm_vect41, cmp_mask_ge;
-
-    unsigned k = 0;
-    for (; k < len_unr; k+=unroll_factor)
-    {
-        vect40 = _mm_loadu_si128((__m128i*)(&arr_base[k])); // 4 u32s
-        norm_vect40 = _mm_sub_epi32(vect40, mask0x8); // (signed) vect4 - 0x80000000
-        
-        cmp_mask_ge = _mm_or_si128(                              // GT | EQ
-                        _mm_cmpgt_epi32 (norm_vect40, norm_target),
-                        _mm_cmpeq_epi32 (vect40, vect_target)
-                        );
-        mask = _mm_movemask_epi8(cmp_mask_ge);
-        if (mask)
-        {
-            int bsf = BM_BSF32(mask); //_bit_scan_forward(mask);
-            return from + k + (bsf / 4);
-        }
-        vect41 = _mm_loadu_si128((__m128i*)(&arr_base[k+4]));
-        norm_vect41 = _mm_sub_epi32(vect41, mask0x8);
-
-        cmp_mask_ge = _mm_or_si128(
-                        _mm_cmpgt_epi32 (norm_vect41, norm_target),
-                        _mm_cmpeq_epi32 (vect41, vect_target)
-                        );
-        mask = _mm_movemask_epi8(cmp_mask_ge);
-        if (mask)
-        {
-            int bsf = BM_BSF32(mask); //_bit_scan_forward(mask);
-            return 4 + from + k + (bsf / 4);
-        }
-    } // for
-    
-    for (; k < len; ++k)
-    {
-        if (arr_base[k] >= target)
-            return from + k;
-    }
-    return to + 1;
 }
 
 
@@ -1839,7 +1760,7 @@ void sse42_bit_block_xor_2way(bm::word_t* target_block,
     while (digest)
     {
         bm::id64_t t = bm::bmi_blsi_u64(digest); // d & -d;
-        unsigned wave = _mm_popcnt_u64(t - 1);
+        unsigned wave = unsigned(_mm_popcnt_u64(t - 1));
         unsigned off = wave * bm::set_block_digest_wave_size;
 
         const __m128i* sub_block = (const __m128i*) (xor_block + off);
@@ -1974,7 +1895,7 @@ void sse42_bit_block_xor_2way(bm::word_t* target_block,
     sse4_block_set_digest((__m128i*)dst, val)
 
 #define VECT_LOWER_BOUND_SCAN_U32(arr, target, from, to) \
-    sse4_lower_bound_scan_u32(arr, target, from, to)
+    sse2_lower_bound_scan_u32(arr, target, from, to)
 
 #define VECT_SHIFT_L1(b, acc, co) \
     sse42_shift_l1((__m128i*)b, acc, co)

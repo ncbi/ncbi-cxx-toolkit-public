@@ -989,8 +989,8 @@ void sparse_vector_serializer<SV>::serialize(const SV&  sv,
             bm::xor_sim_params xs_params;
             build_xor_ref_vector(sv);
             bvs_.set_ref_vectors(&bv_ref_);
-            bvs_.compute_sim_model(sim_model_, bv_ref_, xs_params);
-            bvs_.set_sim_model(&sim_model_);
+            if (bvs_.compute_sim_model(sim_model_, bv_ref_, xs_params))
+                bvs_.set_sim_model(&sim_model_);
         }
     }
 
@@ -1701,34 +1701,37 @@ void sparse_vector_deserializer<SV>::load_remap(SV& sv,
                 raise_invalid_format();
             }
             rmatr->resize(rows, cols, false);
-            rmatr->set_zero();
-
-            // read gamma encoded row lens
-            remap_rlen_vect_.resize(0);
+            if (rows)
             {
-                bm::bit_in<bm::decoder> bi(dec_m);
+                rmatr->set_zero();
+
+                // read gamma encoded row lens
+                remap_rlen_vect_.resize(0);
+                {
+                    bm::bit_in<bm::decoder> bi(dec_m);
+                    for (size_t r = 0; r < rows; ++r)
+                    {
+                        unsigned rl = bi.gamma();
+                        remap_rlen_vect_.push_back(rl);
+                    } // for r
+                }
+
                 for (size_t r = 0; r < rows; ++r)
                 {
-                    unsigned rl = bi.gamma();
-                    remap_rlen_vect_.push_back(rl);
+                    unsigned char* BMRESTRICT row = rmatr->row(r);
+                    size_t cnt = remap_rlen_vect_[r];
+                    if (!cnt || cnt > 256)
+                    {
+                        raise_invalid_format(); // format corruption!
+                    }
+                    for (size_t j = 0; j < cnt; ++j)
+                    {
+                        unsigned idx = dec_m.get_8();
+                        unsigned char v = dec_m.get_8();
+                        row[idx] = v;
+                    } // for j
                 } // for r
             }
-
-            for (size_t r = 0; r < rows; ++r)
-            {
-                unsigned char* BMRESTRICT row = rmatr->row(r);
-                size_t cnt = remap_rlen_vect_[r];
-                if (!cnt || cnt > 256)
-                {
-                    raise_invalid_format(); // format corruption!
-                }
-                for (size_t j = 0; j < cnt; ++j)
-                {
-                    unsigned idx = dec_m.get_8();
-                    unsigned char v = dec_m.get_8();
-                    row[idx] = v;
-                } // for j
-            } // for r
         }
         break;
     default:
