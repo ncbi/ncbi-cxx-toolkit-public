@@ -100,11 +100,12 @@ static void mbtls_user_mutex_init(MT_LOCK* lock)
 static void mbtls_user_mutex_deinit(MT_LOCK* lock)
 {
     if (*lock) {
-        *lock = MT_LOCK_Delete(*lock);
-        /* NB: Do not use CORE_SetLOCK() here! */
-        g_CORE_MT_Lock = *lock ? *lock : &g_CORE_MT_Lock_default;
+        if (!(*lock = MT_LOCK_Delete(*lock))) {
+            /* NB: Do not use CORE_SetLOCK() here! */
+            g_CORE_MT_Lock = &g_CORE_MT_Lock_default;
+        } else
+            *lock = 0;
         assert(g_CORE_MT_Lock);
-        *lock = 0;
     } else
         CORE_LOG_X(50, eLOG_Warning, "NULL MT_LOCK deinit in MBEDTLS");
 }
