@@ -574,7 +574,7 @@ int CCgiApplication::Run(void)
                     result = 0;
                 }
                 else {
-                    if (!processor.ValidateSynchronizationToken()) {
+                    if (!ValidateSynchronizationToken()) {
                         NCBI_CGI_THROW_WITH_STATUS(CCgiRequestException, eData,
                             "Invalid or missing CSRF token.", CCgiException::e403_Forbidden);
                     }
@@ -652,7 +652,7 @@ int CCgiApplication::Run(void)
         }
         else {
             // Call the exception handler and set the CGI exit code
-            result = processor.OnException(e, NcbiCout);
+            result = OnException(e, NcbiCout);
             x_OnEvent(eException, result);
 
             // Logging
