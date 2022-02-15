@@ -306,7 +306,7 @@ void AddMasterDescr(CBioseq_Info& seq,
     }
     int force_mask = GetForceDescrMask(type);
     int optional_mask = GetOptionalDescrMask(type);
-    int mask = force_mask | (optional_mask & !existing_mask);
+    int mask = force_mask | (optional_mask & ~existing_mask);
     TUserObjectTypesSet uo_types;
     seq.x_AddExistingUserObjectTypes(uo_types);
     if ( uo_types.find(kMasterDescrMark) != uo_types.end() ) {

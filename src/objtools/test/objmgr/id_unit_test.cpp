@@ -1834,6 +1834,107 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr12)
 }
 
 
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr13)
+{
+    if ( !s_HaveVDBWGS() ) {
+        LOG_POST("Skipping test for WGS descriptors of VDB contig without VDB");
+        return;
+    }
+    LOG_POST("Checking VDB WGS master sequence descriptors with partial optional desc");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("ALWZ040100108.1"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    int total_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Title));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 4);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(total_count, 11);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr14)
+{
+    if ( !s_HaveVDBWGS() ) {
+        LOG_POST("Skipping test for WGS descriptors of VDB contig without VDB");
+        return;
+    }
+    LOG_POST("Checking VDB WGS master sequence descriptors with partial optional desc");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("ALWZ050100108.1"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    int total_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 4);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(total_count, 10);
+}
+
+
 enum EInstType {
     eInst_ext, // inst.ext is set, inst.seq-data is not set
     eInst_data, // inst.ext is not set, inst.seq-data is set
@@ -2154,6 +2255,8 @@ NCBITEST_INIT_TREE()
         NCBITEST_DISABLE(CheckWGSMasterDescr8);
         NCBITEST_DISABLE(CheckWGSMasterDescr9);
         NCBITEST_DISABLE(CheckWGSMasterDescr12);
+        NCBITEST_DISABLE(CheckWGSMasterDescr13);
+        NCBITEST_DISABLE(CheckWGSMasterDescr14);
     }
 #if defined(NCBI_THREADS) && !defined(RUN_SLOW_MT_TESTS)
     NCBITEST_DISABLE(MTCrash1);
