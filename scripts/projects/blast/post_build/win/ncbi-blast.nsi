@@ -1,4 +1,8 @@
 ;NSIS Modern User Interface
+; $Id$
+Var hCtl_custom_page_v1
+Var hCtl_custom_page_v1_TextBox1
+Var data_collect_notice_text
 
 ;--------------------------------
 ;Include Modern UI
@@ -6,15 +10,50 @@
   !include "MUI.nsh"
   !include "EnvVarUpdate.nsh"
   !include "x64.nsh"
+  !include "nsDialogs.nsh"
   
 ;--------------------------------
 ; Initialization function to properly set the installation directory
 Function .onInit
   ${If} ${RunningX64}
     StrCpy $INSTDIR "$PROGRAMFILES64\NCBI\blast-BLAST_VERSION+"
+	StrCpy $data_collect_notice_text "\
+To help improve the quality of this product and ensure proper funding and$\r$\n\
+resource allocation, we collect usage data. For a listing of data collected$\r$\n\
+and how this is handled, please visit our$\r$\n\
+privacy policy <https://ncbi.nlm.nih.gov/books/NBK569851/>.$\r$\n$\r$\n\
+You may choose to opt out of this collection any time by setting the following$\r$\n\
+environment variable:$\r$\n  $\r$\n\
+                      BLAST_USAGE_REPORT=false$\r$\n"
   ${EndIf}
 FunctionEnd
 
+Function fnc_data_usage_page_Create
+
+  ; === custom_page_v1 (type: Dialog) ===
+  nsDialogs::Create 1018
+  Pop $hCtl_custom_page_v1
+  ${If} $hCtl_custom_page_v1 == error
+    Abort
+  ${EndIf}
+  !insertmacro MUI_HEADER_TEXT "Data Collection Notice" "Please review data collection notice before installing NCBI BLAST package"
+
+  ; === TextBox1 (type: TextMultiline) ===
+  nsDialogs::CreateControl EDIT ${DEFAULT_STYLES}|${ES_AUTOHSCROLL}|${ES_AUTOVSCROLL}|${ES_MULTILINE}|${ES_WANTRETURN}|${WS_HSCROLL}|${WS_VSCROLL} ${WS_EX_WINDOWEDGE}|${WS_EX_CLIENTEDGE} 8u 7u 277u 121u $data_collect_notice_text
+
+  
+  Pop $hCtl_custom_page_v1_TextBox1
+  SetCtlColors $hCtl_custom_page_v1_TextBox1 0x000000 0xFFFFFF
+  SendMessage $hCtl_custom_page_v1_TextBox1 ${EM_SETREADONLY} 1 0
+  SendMessage $hCtl_custom_page_v1_TextBox1 ${ES_MULTILINE} 0 0
+
+FunctionEnd
+
+; dialog show function
+Function fnc_data_usage_page_Show
+  Call fnc_data_usage_page_Create
+  nsDialogs::Show
+FunctionEnd
 ;--------------------------------
 ;General
 
@@ -40,10 +79,11 @@ FunctionEnd
 ;Pages
 
   !insertmacro MUI_PAGE_LICENSE "LICENSE"
+  Page custom fnc_data_usage_page_Show
   !insertmacro MUI_PAGE_DIRECTORY
   !insertmacro MUI_PAGE_INSTFILES
   ;!insertmacro MUI_PAGE_FINISH
-  
+    
   !insertmacro MUI_UNPAGE_CONFIRM
   !insertmacro MUI_UNPAGE_INSTFILES
   
