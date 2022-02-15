@@ -35,6 +35,7 @@
 #include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
+#include <cmath>
 
 BEGIN_NCBI_SCOPE
 
@@ -231,7 +232,8 @@ CSeqDBLMDB::CSeqDBLMDB(const string & fname)
       m_Oid2TaxIdsFile(GetFileNameFromExistingLMDBFile(fname, ELMDBFileType::eOid2TaxIds)),
       m_TaxId2OidsFile(GetFileNameFromExistingLMDBFile(fname, ELMDBFileType::eTaxId2Oids)),
       m_TaxId2OffsetsFile(GetFileNameFromExistingLMDBFile(fname, ELMDBFileType::eTaxId2Offsets)),
-      m_LMDBFileOpened(false)
+      m_LMDBFileOpened(false),
+      m_NumOids(0)
 {
 }
 
@@ -335,6 +337,10 @@ void CSeqDBLMDB::GetVolumesInfo(vector<string> & vol_names, vector<blastdb::TOid
     txn.reset();
 	}
     CBlastLMDBManager::GetInstance().CloseEnv(m_LMDBFile);
+
+    for(unsigned int j=0; j < vol_num_oids.size(); j++){
+    	m_NumOids += vol_num_oids[j];
+    }
 }
 
 void
@@ -571,7 +577,6 @@ void CSeqDBLMDB::GetDBTaxIds(vector<TTaxId> & tax_ids) const
 
 void CSeqDBLMDB::GetOidsForTaxIds(const set<TTaxId> & tax_ids, vector<blastdb::TOid>& oids, vector<TTaxId> & tax_ids_found) const
 {
-
     try {
     oids.clear();
     tax_ids_found.clear();
@@ -608,8 +613,7 @@ void CSeqDBLMDB::GetOidsForTaxIds(const set<TTaxId> & tax_ids, vector<blastdb::T
     txn.reset();
 	}
     CBlastLMDBManager::GetInstance().CloseEnv(m_TaxId2OffsetsFile);
-
-    blastdb::SortAndUnique <Uint8> (offsets);
+    vector<bool> oids_set(m_NumOids, false);
 
    	CMemoryFile oid_file(m_TaxId2OidsFile);
    	const char * start_ptr = (char *) oid_file.GetPtr();
@@ -619,13 +623,28 @@ void CSeqDBLMDB::GetOidsForTaxIds(const set<TTaxId> & tax_ids, vector<blastdb::T
    		Uint4 count = 0 ;
    		list_ptr ++;
    		while(count < num_of_oids) {
-   			oids.push_back(*list_ptr);
+   			if(!oids_set[*list_ptr]) {
+   				oids.push_back(*list_ptr);
+   				oids_set[*list_ptr] = true;
+   			}
    			count++;
    			list_ptr++;
    		}
    	}
 
-    blastdb::SortAndUnique <blastdb::TOid> (oids);
+   	int oids_sz = oids.size();
+   	if((oids_sz*log(oids_sz)) < m_NumOids) {
+   		sort(oids.begin(), oids.end());
+   	}
+   	else {
+   		oids.resize(0);
+   		oids.reserve(oids_sz);
+   		for (int i=0; i < oids_set.size(); i++) {
+   			if(oids_set[i]) {
+    			oids.push_back(i);
+    		}
+    	}
+   	}
 
     } catch (lmdb::error & e) {
    		string dbname;
@@ -679,9 +698,8 @@ CSeqDBLMDB::NegativeTaxIdsToOids(const set<TTaxId>& tax_ids, vector<blastdb::TOi
 	rv.clear();
 	vector<blastdb::TOid> oids;
 	GetOidsForTaxIds(tax_ids, oids, tax_ids_found);
-
 	CMemoryFile oid_file(m_Oid2TaxIdsFile);
-	set<TTaxId> tax_id_list(tax_ids.begin(), tax_ids.end());
+	set<TTaxId> tax_id_list(tax_ids_found.begin(), tax_ids_found.end());
 	CLookupTaxIds lookup(oid_file);
 	for(unsigned int i=0; i < oids.size(); i++) {
 		vector<TTaxId>  file_list;
