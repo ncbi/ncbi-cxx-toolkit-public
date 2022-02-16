@@ -345,7 +345,7 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
 
     if (m_Request->NeedTrace()) {
         m_Reply->SendTrace(
-            "Cassandra request: " + ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+            "Cassandra request: " + ToJsonString(*load_task),
             m_Request->GetStartTimestamp());
     }
 
@@ -478,7 +478,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 
         if (m_Request->NeedTrace()) {
             m_Reply->SendTrace("Cassandra request: " +
-                               ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+                               ToJsonString(*load_task),
                                m_Request->GetStartTimestamp());
         }
 
@@ -1245,7 +1245,7 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
         if (m_Request->NeedTrace()) {
             m_Reply->SendTrace(
                 "Cassandra request: " +
-                ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+                ToJsonString(*load_task),
                 m_Request->GetStartTimestamp());
         }
 
@@ -1258,13 +1258,13 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
         m_Reply->PrepareTSEBlobPropData(
             blob_fetch_details, m_ProcessorId,
             x_GetId2ChunkNumber(blob_fetch_details), m_Id2Info->Serialize(),
-            ToJson(blob).Repr(CJsonNode::fStandardJson));
+            ToJsonString(blob));
     } else {
         // There is no id2info in the originally requested blob
         // so just send blob props without id2_chunk/id2_info
         m_Reply->PrepareBlobPropData(
             blob_fetch_details, m_ProcessorId,
-            ToJson(blob).Repr(CJsonNode::fStandardJson), m_LastModified);
+            ToJsonString(blob), m_LastModified);
     }
 }
 

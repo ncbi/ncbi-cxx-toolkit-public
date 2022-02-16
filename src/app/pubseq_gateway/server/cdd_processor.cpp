@@ -510,7 +510,7 @@ void CPSGS_CDDProcessor::x_SendAnnot(const CID2_Blob_Id& id2_blob_id, CRef<CSeq_
         item_id,
         kCDDProcessorName,
         psg_blob_id,
-        ToJson(blob_props).Repr(CJsonNode::fStandardJson));
+        ToJsonString(blob_props));
     GetReply()->PrepareBlobPropCompletion(item_id, kCDDProcessorName, 2);
 
     item_id = GetReply()->GetItemId();

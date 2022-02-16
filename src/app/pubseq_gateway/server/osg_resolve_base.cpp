@@ -253,7 +253,7 @@ void CPSGS_OSGResolveBase::SendBioseqInfo(EOutputFormat output_format)
 
     string data_to_send;
     if ( output_format == SPSGS_ResolveRequest::ePSGS_JsonFormat ) {
-        data_to_send = ToJson(m_BioseqInfo, m_BioseqInfoFlags, m_BlobId).Repr(CJsonNode::fStandardJson);
+        data_to_send = ToJsonString(m_BioseqInfo, m_BioseqInfoFlags, m_BlobId);
         if ( GetDebugLevel() >= eDebug_exchange ) {
             LOG_POST(GetDiagSeverity() << "OSG: "
                      "Sending reply "<<data_to_send);

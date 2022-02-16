@@ -72,7 +72,7 @@ CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
         if (m_NeedTrace) {
             m_Reply->SendTrace(
                 "Cache request: " +
-                ToJson(fetch_request).Repr(CJsonNode::fStandardJson),
+                ToJsonString(fetch_request),
                 m_Request->GetStartTimestamp());
         }
 
@@ -82,8 +82,8 @@ CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
             string  msg = to_string(records.size()) + " hit(s)";
             for (const auto &  item : records) {
                 msg += "\n" +
-                       ToJson(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
-                            Repr(CJsonNode::fStandardJson);
+                       ToJsonString(item,
+                                    SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
             }
             m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
         }
@@ -109,9 +109,8 @@ CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
                         "Record with max version (and max date changed if "
                         "more than one with max version) selected "
                         "(SEQ_STATE_LIFE records are checked first)\n" +
-                        ToJson(records[index_to_pick],
-                               SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
-                            Repr(CJsonNode::fStandardJson),
+                        ToJsonString(records[index_to_pick],
+                                     SPSGS_ResolveRequest::fPSGS_AllBioseqFields),
                         m_Request->GetStartTimestamp());
                 }
 
@@ -179,7 +178,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution)
         if (m_NeedTrace) {
             m_Reply->SendTrace(
                     "Cache request for INSDC types: " +
-                    ToJson(fetch_request).Repr(CJsonNode::fStandardJson),
+                    ToJsonString(fetch_request),
                     m_Request->GetStartTimestamp());
         }
 
@@ -191,9 +190,8 @@ CPSGCache::x_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution)
                           " hit(s); decision status: " + to_string(decision.status);
             for (const auto &  item : records) {
                 msg += "\n" +
-                       ToJson(item,
-                              SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
-                                    Repr(CJsonNode::fStandardJson);
+                       ToJsonString(item,
+                                    SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
             }
             m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
         }
@@ -277,7 +275,7 @@ CPSGCache::x_LookupSi2csi(SBioseqResolution &  bioseq_resolution)
         if (m_NeedTrace) {
             m_Reply->SendTrace(
                 "Cache request: " +
-                ToJson(fetch_request).Repr(CJsonNode::fStandardJson),
+                ToJsonString(fetch_request),
                 m_Request->GetStartTimestamp());
         }
 
@@ -286,7 +284,7 @@ CPSGCache::x_LookupSi2csi(SBioseqResolution &  bioseq_resolution)
         if (m_NeedTrace) {
             string  msg = to_string(records.size()) + " hit(s)";
             for (const auto &  item : records) {
-                msg += "\n" + ToJson(item).Repr(CJsonNode::fStandardJson);
+                msg += "\n" + ToJsonString(item);
             }
             m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
         }
@@ -381,7 +379,7 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
         if (m_NeedTrace) {
             m_Reply->SendTrace(
                 "Cache request: " +
-                ToJson(fetch_request).Repr(CJsonNode::fStandardJson),
+                ToJsonString(fetch_request),
                 m_Request->GetStartTimestamp());
         }
 
@@ -390,7 +388,7 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
         if (m_NeedTrace) {
             string  msg = to_string(records.size()) + " hit(s)";
             for (const auto &  item : records) {
-                msg += "\n" + ToJson(item).Repr(CJsonNode::fStandardJson);
+                msg += "\n" + ToJsonString(item);
             }
             m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
         }
@@ -416,8 +414,7 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
                 if (m_NeedTrace) {
                     m_Reply->SendTrace(
                         "Record with max last_modified selected\n" +
-                        ToJson(records[max_last_modified_index]).
-                            Repr(CJsonNode::fStandardJson),
+                        ToJsonString(records[max_last_modified_index]),
                         m_Request->GetStartTimestamp());
                 }
 

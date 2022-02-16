@@ -421,12 +421,12 @@ CPSGS_AsyncResolveBase::x_PreparePrimaryBioseqInfoQuery(
         if (with_seq_id_type)
             m_Reply->SendTrace(
                 "Cassandra request: " +
-                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson),
+                ToJsonString(bioseq_info_request),
                 m_Request->GetStartTimestamp());
         else
             m_Reply->SendTrace(
                 "Cassandra request for INSDC types: " +
-                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson),
+                ToJsonString(bioseq_info_request),
                 m_Request->GetStartTimestamp());
     }
 
@@ -471,7 +471,7 @@ void CPSGS_AsyncResolveBase::x_PrepareSi2csiQuery(const string &  secondary_id,
     if (m_Request->NeedTrace())
         m_Reply->SendTrace(
             "Cassandra request: " +
-            ToJson(si2csi_request).Repr(CJsonNode::fStandardJson),
+            ToJsonString(si2csi_request),
             m_Request->GetStartTimestamp());
 
     fetch_task->Wait();
@@ -538,8 +538,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
     if (m_Request->NeedTrace()) {
         string  msg = to_string(records.size()) + " hit(s)";
         for (const auto &  item : records) {
-            msg += "\n" + ToJson(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
-                            Repr(CJsonNode::fStandardJson);
+            msg += "\n" + ToJsonString(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
         }
         m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
     }
@@ -609,8 +608,8 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
                      "(SEQ_STATE_LIFE records are checked first)\n";
         m_Reply->SendTrace(
             prefix +
-            ToJson(records[index_to_pick], SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
-                Repr(CJsonNode::fStandardJson),
+            ToJsonString(records[index_to_pick],
+                         SPSGS_ResolveRequest::fPSGS_AllBioseqFields),
             m_Request->GetStartTimestamp());
     }
 
@@ -650,8 +649,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
         string  msg = to_string(records.size()) +
                       " hit(s); decision status: " + to_string(decision.status);
         for (const auto &  item : records) {
-            msg += "\n" + ToJson(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
-                            Repr(CJsonNode::fStandardJson);
+            msg += "\n" + ToJsonString(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
         }
         m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
     }
@@ -741,7 +739,7 @@ void CPSGS_AsyncResolveBase::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
     if (m_Request->NeedTrace()) {
         string  msg = to_string(record_count) + " hit(s)";
         for (const auto &  item : records) {
-            msg += "\n" + ToJson(item).Repr(CJsonNode::fStandardJson);
+            msg += "\n" + ToJsonString(item);
         }
         if (record_count > 1)
             msg += "\nMore than one record => may be more tries";

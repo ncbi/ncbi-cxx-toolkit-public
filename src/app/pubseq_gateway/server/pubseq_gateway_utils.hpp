@@ -347,5 +347,6 @@ private:
 string FormatPreciseTime(const chrono::system_clock::time_point &  t_point);
 unsigned long GetTimespanToNowMks(const psg_time_point_t &  t_point);
 string GetCassStartupDataStateMessage(EPSGS_StartupDataState  state);
+long PSGToString(long  value, char *  buf);
 
 #endif

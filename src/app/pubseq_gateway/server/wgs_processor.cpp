@@ -583,10 +583,10 @@ void CPSGS_WGSProcessor::x_SendBioseqInfo(void)
     EOutputFormat output_format = x_GetOutputFormat();
     string data_to_send;
     if ( output_format == SPSGS_ResolveRequest::ePSGS_JsonFormat ) {
-        data_to_send = ToJson(
+        data_to_send = ToJsonString(
             *m_WGSData->m_BioseqInfo,
             m_WGSData->m_BioseqInfoFlags,
-            m_WGSData->m_BlobId).Repr(CJsonNode::fStandardJson);
+            m_WGSData->m_BlobId);
     } else {
         data_to_send = ToBioseqProtobuf(*m_WGSData->m_BioseqInfo);
     }
@@ -599,7 +599,7 @@ void CPSGS_WGSProcessor::x_SendBlobProps(const string& psg_blob_id, CBlobRecord&
 {
     auto& reply = *GetReply();
     size_t item_id = reply.GetItemId();
-    string data_to_send = ToJson(blob_props).Repr(CJsonNode::fStandardJson);
+    string data_to_send = ToJsonString(blob_props);
     reply.PrepareBlobPropData(item_id, GetName(), psg_blob_id, data_to_send);
     reply.PrepareBlobPropCompletion(item_id, GetName(), 2);
 }
@@ -623,7 +623,7 @@ void CPSGS_WGSProcessor::x_SendChunkBlobProps(
     CBlobRecord& blob_props)
 {
     size_t item_id = GetReply()->GetItemId();
-    string data_to_send = ToJson(blob_props).Repr(CJsonNode::fStandardJson);
+    string data_to_send = ToJsonString(blob_props);
     GetReply()->PrepareTSEBlobPropData(item_id, GetName(), chunk_id, id2_info, data_to_send);
     GetReply()->PrepareBlobPropCompletion(item_id, GetName(), 2);
 }

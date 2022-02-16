@@ -382,7 +382,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
             if (IPSGS_Processor::m_Request->NeedTrace()) {
                 IPSGS_Processor::m_Reply->SendTrace(
                     "Cassandra request: " +
-                    ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+                    ToJsonString(*load_task),
                     IPSGS_Processor::m_Request->GetStartTimestamp());
             }
 
@@ -446,7 +446,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(
             "Cassandra request: " +
-            ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+            ToJsonString(*load_task),
             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
@@ -554,7 +554,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(
                     "Cassandra request: " +
-                    ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+                    ToJsonString(*load_task),
                     IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
@@ -597,7 +597,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                 fetch_details, GetName(),
                 m_TSEChunkRequest->m_Id2Chunk,
                 m_TSEChunkRequest->m_Id2Info,
-                ToJson(blob).Repr(CJsonNode::fStandardJson));
+                ToJsonString(blob));
         IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
                 fetch_details, GetName());
     } else {
@@ -948,7 +948,7 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(
                     "Cassandra request: " +
-                    ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+                    ToJsonString(*load_task),
                     IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
@@ -1053,9 +1053,10 @@ IPSGS_Processor::EPSGS_Status CPSGS_TSEChunkProcessor::GetStatus(void)
 }
 
 
+static const string   kTSEChunkProcessorName = "Cassandra-gettsechunk";
 string CPSGS_TSEChunkProcessor::GetName(void) const
 {
-    return "Cassandra-gettsechunk";
+    return kTSEChunkProcessorName;
 }
 
 

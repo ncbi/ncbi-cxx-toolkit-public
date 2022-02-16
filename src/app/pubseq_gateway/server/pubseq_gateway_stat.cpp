@@ -540,22 +540,20 @@ CPSGSCounters::CPSGSCounters()
 
 CPSGSCounters::~CPSGSCounters()
 {
-    for (auto & item: m_Counters) {
-        delete item.second;
-    }
+    for (size_t  k=0; k < ePSGS_MaxCounter; ++k)
+        delete m_Counters[k];
 }
 
 
 void CPSGSCounters::Increment(EPSGS_CounterType  counter)
 {
-    auto    it = m_Counters.find(counter);
-    if (it == m_Counters.end()) {
+    if (counter >= ePSGS_MaxCounter) {
         PSG_ERROR("There is no information about the counter with id " +
                   to_string(counter) + ". Nothing was incremented.");
         return;
     }
 
-    ++(it->second->m_Value);
+    ++(m_Counters[counter]->m_Value);
 }
 
 
@@ -621,10 +619,10 @@ void CPSGSCounters::UpdateConfiguredNameDescription(
                             const map<string, tuple<string, string>> &  conf)
 {
     for (auto const & conf_item : conf) {
-        for (auto & counter: m_Counters) {
-            if (counter.second->m_Identifier == conf_item.first) {
-                counter.second->m_Name = get<0>(conf_item.second);
-                counter.second->m_Description = get<1>(conf_item.second);
+        for (size_t  k=0; k < ePSGS_MaxCounter; ++k) {
+            if (m_Counters[k]->m_Identifier == conf_item.first) {
+                m_Counters[k]->m_Name = get<0>(conf_item.second);
+                m_Counters[k]->m_Description = get<1>(conf_item.second);
                 break;
             }
         }
@@ -638,20 +636,20 @@ void CPSGSCounters::PopulateDictionary(CJsonNode &  dict)
     uint64_t    req_sum(0);
     uint64_t    value(0);
 
-    for (auto const & item: m_Counters) {
-        if (!item.second->m_IsMonotonicCounter)
+    for (size_t  k=0; k < ePSGS_MaxCounter; ++k) {
+        if (!m_Counters[k]->m_IsMonotonicCounter)
             continue;
 
-        value = item.second->m_Value;
-        if (item.second->m_IsErrorCounter) {
+        value = m_Counters[k]->m_Value;
+        if (m_Counters[k]->m_IsErrorCounter) {
             err_sum += value;
         } else {
-            if (item.second->m_IsRequestCounter) {
+            if (m_Counters[k]->m_IsRequestCounter) {
                 req_sum += value;
             }
         }
-        AppendValueNode(dict, item.second->m_Identifier,
-                        item.second->m_Name, item.second->m_Description,
+        AppendValueNode(dict, m_Counters[k]->m_Identifier,
+                        m_Counters[k]->m_Name, m_Counters[k]->m_Description,
                         value);
     }
 
