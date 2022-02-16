@@ -1135,7 +1135,7 @@ void CDataSource::x_IndexSplitInfo(const vector<CSeq_id_Handle>& ids,
 void CDataSource::x_IndexSeqTSE(const vector<CSeq_id_Handle>& ids,
                                 CTSE_Info* tse_info)
 {
-    TMainLock::TWriteLockGuard guard(m_DSMainLock);
+    TSeqLock::TWriteLockGuard guard(m_DSSeqLock);
     for ( auto& id : ids ) {
         x_IndexSeqTSELocked(id, tse_info);
     }
