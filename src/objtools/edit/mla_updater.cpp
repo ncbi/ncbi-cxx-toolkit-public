@@ -40,7 +40,7 @@ void CMLAUpdater::SetClient(CMLAClient* mla)
     m_mlac.Reset(mla);
 }
 
-TEntrezId CMLAUpdater::GetPmId(const CPub& pub)
+TEntrezId CMLAUpdater::CitMatch(const CPub& pub)
 {
     try {
         return ENTREZ_ID_FROM(int, m_mlac->AskCitmatchpmid(pub));

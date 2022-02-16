@@ -463,7 +463,7 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
 
         for (const auto& pPubEquiv : arr) {
             if (pPubEquiv->IsArticle()) {
-                id = m_pubmed->GetPmId(*pPubEquiv);
+                id = m_pubmed->CitMatch(*pPubEquiv);
                 if (id > ZERO_ENTREZ_ID && xUpdatePubPMID(arr,id)) {
                     break;
                 }

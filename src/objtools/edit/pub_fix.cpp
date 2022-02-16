@@ -1200,7 +1200,7 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
         TEntrezId pmid = ZERO_ENTREZ_ID;
         try {
             if (m_upd) {
-                pmid = m_upd->GetPmId(*new_pub);
+                pmid = m_upd->CitMatch(*new_pub);
             }
         } catch (...) {
             // pmid == 0
@@ -1364,7 +1364,7 @@ void CPubFix::FixPub(CPub& pub)
         TEntrezId pmid = ZERO_ENTREZ_ID;
         try {
             if (m_upd) {
-                pmid = m_upd->GetPmId(pub);
+                pmid = m_upd->CitMatch(pub);
             }
         } catch (...) {
             // pmid == 0;
