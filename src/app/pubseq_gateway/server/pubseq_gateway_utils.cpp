@@ -248,19 +248,25 @@ string  GetBioseqInfoHeader(size_t  item_id,
 {
     // E.g. PSG-Reply-Chunk: item_id=1&processor_id=get+blob+proc&item_type=bioseq_info&chunk_type=data&size=450&fmt=protobuf
     string      reply(s_ReplyBegin);
+    char        buf[64];
+    long        len;
 
-    reply.append(to_string(item_id))
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
          .append(s_AndProcessorId)
          .append(NStr::URLEncode(processor_id))
          .append(s_AndBioseqInfoItem)
          .append(s_AndDataChunk)
-         .append(s_AndSize)
-         .append(to_string(bioseq_info_size));
+         .append(s_AndSize);
+
+    len = PSGToString(bioseq_info_size, buf);
+    reply.append(buf, len);
     if (output_format == SPSGS_ResolveRequest::ePSGS_JsonFormat)
         reply.append(s_AndFmtJson);
     else
         reply.append(s_AndFmtProtobuf);
-    return reply.append(1, '\n');
+    reply.append(1, '\n');
+    return reply;
 }
 
 
@@ -272,21 +278,31 @@ string  GetBioseqMessageHeader(size_t  item_id,
                                EDiagSev  severity)
 {
     string      reply(s_ReplyBegin);
+    char        buf[64];
+    long        len;
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBioseqInfoItem)
-                .append(s_AndMessageChunk)
-                .append(s_AndSize)
-                .append(to_string(msg_size))
-                .append(s_AndStatus)
-                .append(to_string(static_cast<int>(status)))
-                .append(s_AndCode)
-                .append(to_string(code))
-                .append(s_AndSeverity)
-                .append(SeverityToLowerString(severity))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBioseqInfoItem)
+         .append(s_AndMessageChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(msg_size, buf);
+    reply.append(buf, len)
+         .append(s_AndStatus);
+
+    len = PSGToString(static_cast<int>(status), buf);
+    reply.append(buf, len)
+         .append(s_AndCode);
+
+    len = PSGToString(code, buf);
+    reply.append(buf, len)
+         .append(s_AndSeverity)
+         .append(SeverityToLowerString(severity))
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -296,15 +312,21 @@ string  GetBioseqCompletionHeader(size_t  item_id,
 {
     // E.g. PSG-Reply-Chunk: item_id=1&processor_id=get+blob+proc&item_type=bioseq_info&chunk_type=meta&n_chunks=1
     string      reply(s_ReplyBegin);
+    char        buf[64];
+    long        len;
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBioseqInfoItem)
-                .append(s_AndMetaChunk)
-                .append(s_AndNChunks)
-                .append(to_string(chunk_count))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBioseqInfoItem)
+         .append(s_AndMetaChunk)
+         .append(s_AndNChunks);
+
+    len = PSGToString(chunk_count, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -315,23 +337,31 @@ string  GetBlobPropHeader(size_t  item_id,
                           CBlobRecord::TTimestamp  last_modified)
 {
     string      reply(s_ReplyBegin);
+    char        buf[64];
+    long        len;
 
     string      last_modified_part;
-    if (last_modified != -1)
+    if (last_modified != -1) {
+        len = PSGToString(last_modified, buf);
         last_modified_part.append(s_AndLastModified)
-                          .append(to_string(last_modified));
+                          .append(buf, len);
+    }
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobPropItem)
-                .append(s_AndDataChunk)
-                .append(s_AndSize)
-                .append(to_string(blob_prop_size))
-                .append(s_AndBlobId)
-                .append(blob_id)
-                .append(last_modified_part)
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobPropItem)
+         .append(s_AndDataChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(blob_prop_size, buf);
+    reply.append(buf, len)
+         .append(s_AndBlobId)
+         .append(blob_id)
+         .append(last_modified_part)
+         .append(1, '\n');
+    return reply;
 }
 
 string  GetTSEBlobPropHeader(size_t  item_id,
@@ -341,20 +371,28 @@ string  GetTSEBlobPropHeader(size_t  item_id,
                              size_t  blob_prop_size)
 {
     // E.g. PSG-Reply-Chunk: item_id=2&processor_id=get+blob+proc&item_type=blob_prop&chunk_type=data&size=550
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobPropItem)
-                .append(s_AndDataChunk)
-                .append(s_AndSize)
-                .append(to_string(blob_prop_size))
-                .append(s_AndId2Chunk)
-                .append(to_string(id2_chunk))
-                .append(s_AndId2Info)
-                .append(id2_info)
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobPropItem)
+         .append(s_AndDataChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(blob_prop_size, buf);
+    reply.append(buf, len)
+         .append(s_AndId2Chunk);
+
+    len = PSGToString(id2_chunk, buf);
+    reply.append(buf, len)
+         .append(s_AndId2Info)
+         .append(id2_info)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -365,22 +403,32 @@ string  GetBlobPropMessageHeader(size_t  item_id,
                                  int  code,
                                  EDiagSev  severity)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobPropItem)
-                .append(s_AndMessageChunk)
-                .append(s_AndSize)
-                .append(to_string(msg_size))
-                .append(s_AndStatus)
-                .append(to_string(static_cast<int>(status)))
-                .append(s_AndCode)
-                .append(to_string(code))
-                .append(s_AndSeverity)
-                .append(SeverityToLowerString(severity))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobPropItem)
+         .append(s_AndMessageChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(msg_size, buf);
+    reply.append(buf, len)
+         .append(s_AndStatus);
+
+    len = PSGToString(static_cast<int>(status), buf);
+    reply.append(buf, len)
+         .append(s_AndCode);
+
+    len = PSGToString(code, buf);
+    reply.append(buf, len)
+         .append(s_AndSeverity)
+         .append(SeverityToLowerString(severity))
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -393,42 +441,60 @@ string  GetTSEBlobPropMessageHeader(size_t  item_id,
                                     int  code,
                                     EDiagSev  severity)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndId2Chunk)
-                .append(to_string(id2_chunk))
-                .append(s_AndId2Info)
-                .append(id2_info)
-                .append(s_AndBlobPropItem)
-                .append(s_AndMessageChunk)
-                .append(s_AndSize)
-                .append(to_string(msg_size))
-                .append(s_AndStatus)
-                .append(to_string(static_cast<int>(status)))
-                .append(s_AndCode)
-                .append(to_string(code))
-                .append(s_AndSeverity)
-                .append(SeverityToLowerString(severity))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndId2Chunk);
+
+    len = PSGToString(id2_chunk, buf);
+    reply.append(buf, len)
+         .append(s_AndId2Info)
+         .append(id2_info)
+         .append(s_AndBlobPropItem)
+         .append(s_AndMessageChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(msg_size, buf);
+    reply.append(buf, len)
+         .append(s_AndStatus);
+
+    len = PSGToString(static_cast<int>(status), buf);
+    reply.append(buf, len)
+         .append(s_AndCode);
+
+    len = PSGToString(code, buf);
+    reply.append(buf, len)
+         .append(s_AndSeverity)
+         .append(SeverityToLowerString(severity))
+         .append(1, '\n');
+    return reply;
 }
 
 string  GetBlobPropCompletionHeader(size_t  item_id,
                                     const string &  processor_id,
                                     size_t  chunk_count)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobPropItem)
-                .append(s_AndMetaChunk)
-                .append(s_AndNChunks)
-                .append(to_string(chunk_count))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobPropItem)
+         .append(s_AndMetaChunk)
+         .append(s_AndNChunks);
+
+    len = PSGToString(chunk_count, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -436,16 +502,22 @@ string  GetTSEBlobPropCompletionHeader(size_t  item_id,
                                        const string &  processor_id,
                                        size_t  chunk_count)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobPropItem)
-                .append(s_AndMetaChunk)
-                .append(s_AndNChunks)
-                .append(to_string(chunk_count))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobPropItem)
+         .append(s_AndMetaChunk)
+         .append(s_AndNChunks);
+
+    len = PSGToString(chunk_count, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -457,26 +529,36 @@ string  GetBlobChunkHeader(size_t  item_id,
                            CBlobRecord::TTimestamp  last_modified)
 {
     // E.g. PSG-Reply-Chunk: item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=data&size=2345&blob_id=333.444&blob_chunk=37
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
     string      last_modified_part;
-    if (last_modified != -1)
+    if (last_modified != -1) {
+        len = PSGToString(last_modified, buf);
         last_modified_part.append(s_AndLastModified)
-                          .append(to_string(last_modified));
+                          .append(buf, len);
+    }
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobItem)
-                .append(s_AndDataChunk)
-                .append(s_AndSize)
-                .append(to_string(chunk_size))
-                .append(s_AndBlobId)
-                .append(blob_id)
-                .append(last_modified_part)
-                .append(s_AndBlobChunk)
-                .append(to_string(chunk_number))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobItem)
+         .append(s_AndDataChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(chunk_size, buf);
+    reply.append(buf, len)
+         .append(s_AndBlobId)
+         .append(blob_id)
+         .append(last_modified_part)
+         .append(s_AndBlobChunk);
+
+    len = PSGToString(chunk_number, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -489,22 +571,32 @@ string  GetTSEBlobChunkHeader(size_t  item_id,
 {
     // E.g. PSG-Reply-Chunk:
     // item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=data&size=2345&id2_chunk=11&id2_info=33.44.55&blob_chunk=37
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobItem)
-                .append(s_AndDataChunk)
-                .append(s_AndSize)
-                .append(to_string(chunk_size))
-                .append(s_AndBlobChunk)
-                .append(to_string(chunk_number))
-                .append(s_AndId2Chunk)
-                .append(to_string(id2_chunk))
-                .append(s_AndId2Info)
-                .append(id2_info)
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobItem)
+         .append(s_AndDataChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(chunk_size, buf);
+    reply.append(buf, len)
+         .append(s_AndBlobChunk);
+
+    len = PSGToString(chunk_number, buf);
+    reply.append(buf, len)
+         .append(s_AndId2Chunk);
+
+    len = PSGToString(id2_chunk, buf);
+    reply.append(buf, len)
+         .append(s_AndId2Info)
+         .append(id2_info)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -515,25 +607,31 @@ string  GetBlobExcludeHeader(size_t  item_id,
                              CBlobRecord::TTimestamp  last_modified)
 {
     // E.g. PSG-Reply-Chunk: item_id=5&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=1&reason={excluded,inprogress,sent}
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
     string      last_modified_part;
-    if (last_modified != -1)
+    if (last_modified != -1) {
+        len = PSGToString(last_modified, buf);
         last_modified_part.append(s_AndLastModified)
-                          .append(to_string(last_modified));
+                          .append(buf, len);
+    }
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobItem)
-                .append(s_AndMetaChunk)
-                .append(s_AndBlobId)
-                .append(blob_id)
-                .append(last_modified_part)
-                .append(s_AndNChunksOne)
-                .append(s_AndReason)
-                .append(SkipReasonToString(skip_reason))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobItem)
+         .append(s_AndMetaChunk)
+         .append(s_AndBlobId)
+         .append(blob_id)
+         .append(last_modified_part)
+         .append(s_AndNChunksOne)
+         .append(s_AndReason)
+         .append(SkipReasonToString(skip_reason))
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -545,39 +643,55 @@ string GetBlobExcludeHeader(size_t  item_id,
                             unsigned long  until_resend_mks,
                             CBlobRecord::TTimestamp  last_modified)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
     string      last_modified_part;
-    if (last_modified != -1)
+    if (last_modified != -1) {
+        len = PSGToString(last_modified, buf);
         last_modified_part.append(s_AndLastModified)
-                          .append(to_string(last_modified));
+                          .append(buf, len);
+    }
 
     unsigned long   ago_sec = sent_mks_ago / 1000000;
-    string          ago_mks = to_string(sent_mks_ago - ago_sec * 1000000);
+    len = PSGToString(sent_mks_ago - ago_sec * 1000000, buf);
+    string          ago_mks(buf, len);
     while (ago_mks.size() < 6)
         ago_mks = "0" + ago_mks;
 
     unsigned long   until_sec = until_resend_mks / 1000000;
-    string          until_mks = to_string(until_resend_mks - until_sec * 1000000);
+    len = PSGToString(until_resend_mks - until_sec * 1000000, buf);
+    string          until_mks(buf, len);
     while (until_mks.size() < 6)
         until_mks = "0" + until_mks;
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobItem)
-                .append(s_AndMetaChunk)
-                .append(s_AndBlobId)
-                .append(blob_id)
-                .append(last_modified_part)
-                .append(s_AndNChunksOne)
-                .append(s_AndReason)
-                .append(SkipReasonToString(ePSGS_BlobSent))
-                .append(s_AndSentSecondsAgo)
-                .append(to_string(ago_sec) + "." + ago_mks)
-                .append(s_AndTimeUntilResend)
-                .append(to_string(until_sec) + "." + until_mks)
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobItem)
+         .append(s_AndMetaChunk)
+         .append(s_AndBlobId)
+         .append(blob_id)
+         .append(last_modified_part)
+         .append(s_AndNChunksOne)
+         .append(s_AndReason)
+         .append(SkipReasonToString(ePSGS_BlobSent))
+         .append(s_AndSentSecondsAgo);
+
+    len = PSGToString(ago_sec, buf);
+    reply.append(buf, len)
+         .append(1, '.')
+         .append(ago_mks)
+         .append(s_AndTimeUntilResend);
+
+    len = PSGToString(until_sec, buf);
+    reply.append(buf, len)
+         .append(1, '.')
+         .append(until_mks)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -590,26 +704,32 @@ string  GetTSEBlobExcludeHeader(size_t  item_id,
                                 const string &  id2_info)
 {
     // E.g. PSG-Reply-Chunk: item_id=5&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=1&reason={excluded,inprogress,sent}
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobItem)
-                .append(s_AndMetaChunk)
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobItem)
+         .append(s_AndMetaChunk)
 
-                // NOTE: the blob id argument is temporary to satisfy the older clients
-                .append(s_AndBlobId)
-                .append(blob_id)
+         // NOTE: the blob id argument is temporary to satisfy the older clients
+         .append(s_AndBlobId)
+         .append(blob_id)
 
-                .append(s_AndId2Chunk)
-                .append(to_string(id2_chunk))
-                .append(s_AndId2Info)
-                .append(id2_info)
-                .append(s_AndNChunksOne)
-                .append(s_AndReason)
-                .append(SkipReasonToString(skip_reason))
-                .append(1, '\n');
+         .append(s_AndId2Chunk);
+
+    len = PSGToString(id2_chunk, buf);
+    reply.append(buf, len)
+         .append(s_AndId2Info)
+         .append(id2_info)
+         .append(s_AndNChunksOne)
+         .append(s_AndReason)
+         .append(SkipReasonToString(skip_reason))
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -623,40 +743,55 @@ string  GetTSEBlobExcludeHeader(size_t  item_id,
                                 unsigned long  sent_mks_ago,
                                 unsigned long  until_resend_mks)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
     unsigned long   ago_sec = sent_mks_ago / 1000000;
-    string          ago_mks = to_string(sent_mks_ago - ago_sec * 1000000);
+    len = PSGToString(sent_mks_ago - ago_sec * 1000000, buf);
+    string          ago_mks(buf, len);
     while (ago_mks.size() < 6)
         ago_mks = "0" + ago_mks;
 
     unsigned long   until_sec = until_resend_mks / 1000000;
-    string          until_mks = to_string(until_resend_mks - until_sec * 1000000);
+    len = PSGToString(until_resend_mks - until_sec * 1000000, buf);
+    string          until_mks(buf, len);
     while (until_mks.size() < 6)
         until_mks = "0" + until_mks;
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobItem)
-                .append(s_AndMetaChunk)
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobItem)
+         .append(s_AndMetaChunk)
 
-                // NOTE: the blob id argument is temporary to satisfy the older clients
-                .append(s_AndBlobId)
-                .append(blob_id)
+         // NOTE: the blob id argument is temporary to satisfy the older clients
+         .append(s_AndBlobId)
+         .append(blob_id)
 
-                .append(s_AndId2Chunk)
-                .append(to_string(id2_chunk))
-                .append(s_AndId2Info)
-                .append(id2_info)
-                .append(s_AndNChunksOne)
-                .append(s_AndReason)
-                .append(SkipReasonToString(ePSGS_BlobSent))
-                .append(s_AndSentSecondsAgo)
-                .append(to_string(ago_sec) + "." + ago_mks)
-                .append(s_AndTimeUntilResend)
-                .append(to_string(until_sec) + "." + until_mks)
-                .append(1, '\n');
+         .append(s_AndId2Chunk);
+
+    len = PSGToString(id2_chunk, buf);
+    reply.append(buf, len)
+         .append(s_AndId2Info)
+         .append(id2_info)
+         .append(s_AndNChunksOne)
+         .append(s_AndReason)
+         .append(SkipReasonToString(ePSGS_BlobSent))
+         .append(s_AndSentSecondsAgo);
+
+    len = PSGToString(ago_sec, buf);
+    reply.append(buf, len)
+         .append(1, '.')
+         .append(ago_mks)
+         .append(s_AndTimeUntilResend);
+    len = PSGToString(until_sec, buf);
+    reply.append(buf, len)
+         .append(1, '.')
+         .append(until_mks)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -665,16 +800,22 @@ string  GetBlobCompletionHeader(size_t  item_id,
                                 size_t  chunk_count)
 {
     // E.g. PSG-Reply-Chunk: item_id=4&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&n_chunks=100
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobItem)
-                .append(s_AndMetaChunk)
-                .append(s_AndNChunks)
-                .append(to_string(chunk_count))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobItem)
+         .append(s_AndMetaChunk)
+         .append(s_AndNChunks);
+
+    len = PSGToString(chunk_count, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -684,17 +825,22 @@ string GetTSEBlobCompletionHeader(size_t  item_id,
 {
     // E.g. PSG-Reply-Chunk:
     // item_id=4&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&n_chunks=100
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobItem)
-                .append(s_AndMetaChunk)
-                .append(s_AndNChunks)
-                .append(to_string(chunk_count))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobItem)
+         .append(s_AndMetaChunk)
+         .append(s_AndNChunks);
 
+    len = PSGToString(chunk_count, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -708,30 +854,42 @@ string  GetBlobMessageHeader(size_t  item_id,
                              CBlobRecord::TTimestamp  last_modified)
 {
     // E.g. PSG-Reply-Chunk: item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=message&size=22&blob_id=333.444&status=404&code=5&severity=critical
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
     string      last_modified_part;
-    if (last_modified != -1)
+    if (last_modified != -1) {
+        len = PSGToString(last_modified, buf);
         last_modified_part.append(s_AndLastModified)
-                          .append(to_string(last_modified));
+                          .append(buf, len);
+    }
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobItem)
-                .append(s_AndMessageChunk)
-                .append(s_AndSize)
-                .append(to_string(msg_size))
-                .append(s_AndBlobId)
-                .append(blob_id)
-                .append(last_modified_part)
-                .append(s_AndStatus)
-                .append(to_string(static_cast<int>(status)))
-                .append(s_AndCode)
-                .append(to_string(code))
-                .append(s_AndSeverity)
-                .append(SeverityToLowerString(severity))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobItem)
+         .append(s_AndMessageChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(msg_size, buf);
+    reply.append(buf, len)
+         .append(s_AndBlobId)
+         .append(blob_id)
+         .append(last_modified_part)
+         .append(s_AndStatus);
+
+    len = PSGToString(static_cast<int>(status), buf);
+    reply.append(buf, len)
+         .append(s_AndCode);
+
+    len = PSGToString(code, buf);
+    reply.append(buf, len)
+         .append(s_AndSeverity)
+         .append(SeverityToLowerString(severity))
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -744,26 +902,38 @@ string  GetTSEBlobMessageHeader(size_t  item_id,
                                 int  code,
                                 EDiagSev  severity)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBlobItem)
-                .append(s_AndMessageChunk)
-                .append(s_AndSize)
-                .append(to_string(msg_size))
-                .append(s_AndId2Chunk)
-                .append(to_string(id2_chunk))
-                .append(s_AndId2Info)
-                .append(id2_info)
-                .append(s_AndStatus)
-                .append(to_string(static_cast<int>(status)))
-                .append(s_AndCode)
-                .append(to_string(code))
-                .append(s_AndSeverity)
-                .append(SeverityToLowerString(severity))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBlobItem)
+         .append(s_AndMessageChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(msg_size, buf);
+    reply.append(buf, len)
+         .append(s_AndId2Chunk);
+
+    len = PSGToString(id2_chunk, buf);
+    reply.append(buf, len)
+         .append(s_AndId2Info)
+         .append(id2_info)
+         .append(s_AndStatus);
+
+    len = PSGToString(static_cast<int>(status), buf);
+    reply.append(buf, len)
+         .append(s_AndCode);
+
+    len = PSGToString(code, buf);
+    reply.append(buf, len)
+         .append(s_AndSeverity)
+         .append(SeverityToLowerString(severity))
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -771,15 +941,21 @@ string  GetReplyCompletionHeader(size_t  chunk_count,
                                  const psg_time_point_t &  create_timestamp)
 {
     // E.g. PSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=meta&n_chunks=153
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyCompletionFixedPart);
     auto        now = psg_clock_t::now();
     uint64_t    mks = chrono::duration_cast<chrono::microseconds>
                                         (now - create_timestamp).count();
 
-    return reply.append(to_string(chunk_count))
-                .append(s_AndExecTime)
-                .append(to_string(mks))
-                .append(1, '\n');
+    len = PSGToString(chunk_count, buf);
+    reply.append(buf, len)
+         .append(s_AndExecTime);
+
+    len = PSGToString(mks, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -789,20 +965,29 @@ string  GetReplyMessageHeader(size_t  msg_size,
                               EDiagSev  severity)
 {
     // E.g. PSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=message&size=22&status=404&code=5&severity=critical
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(1, '0')
-                .append(s_AndReplyItem)
-                .append(s_AndMessageChunk)
-                .append(s_AndSize)
-                .append(to_string(msg_size))
-                .append(s_AndStatus)
-                .append(to_string(static_cast<int>(status)))
-                .append(s_AndCode)
-                .append(to_string(code))
-                .append(s_AndSeverity)
-                .append(SeverityToLowerString(severity))
-                .append(1, '\n');
+    reply.append(1, '0')
+         .append(s_AndReplyItem)
+         .append(s_AndMessageChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(msg_size, buf);
+    reply.append(buf, len)
+         .append(s_AndStatus);
+
+    len = PSGToString(static_cast<int>(status), buf);
+    reply.append(buf, len)
+         .append(s_AndCode);
+
+    len = PSGToString(code, buf);
+    reply.append(buf, len)
+         .append(s_AndSeverity)
+         .append(SeverityToLowerString(severity))
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -811,18 +996,22 @@ string  GetProcessorProgressMessageHeader(size_t  item_id,
                                           const string &  progress_status)
 {
     // E.g. PSG-Reply-Chunk: item_id=...&processor_id=...&item_type=processor&chunk_type=meta&n_chunks=1&progress=...
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndProcessorItem)
-                .append(s_AndMetaChunk)
-                .append(s_AndNChunks)
-                .append(1, '1')
-                .append(s_AndProgress)
-                .append(progress_status)
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndProcessorItem)
+         .append(s_AndMetaChunk)
+         .append(s_AndNChunks)
+         .append(1, '1')
+         .append(s_AndProgress)
+         .append(progress_status)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -832,18 +1021,24 @@ string GetNamedAnnotationHeader(size_t  item_id,
                                 size_t  annotation_size)
 {
     // E.g. PSG-Reply-Chunk: item_id=1&processor_id=get+blob+proc&item_type=bioseq_na&chunk_type=data&size=150&na=NA000111.1
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBioseqNAItem)
-                .append(s_AndDataChunk)
-                .append(s_AndSize)
-                .append(to_string(annotation_size))
-                .append(s_AndNA)
-                .append(annot_name)
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBioseqNAItem)
+         .append(s_AndDataChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(annotation_size, buf);
+    reply.append(buf, len)
+         .append(s_AndNA)
+         .append(annot_name)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -856,22 +1051,32 @@ string GetNamedAnnotationMessageHeader(size_t  item_id,
 {
     // E.g. PSG-Reply-Chunk: item_id=5&processor_id=get+blob+proc&item_type=reply&chunk_type=message&size=22&status=404&code=5&severity=critical
 
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBioseqNAItem)
-                .append(s_AndMessageChunk)
-                .append(s_AndSize)
-                .append(to_string(msg_size))
-                .append(s_AndStatus)
-                .append(to_string(static_cast<int>(status)))
-                .append(s_AndCode)
-                .append(to_string(code))
-                .append(s_AndSeverity)
-                .append(SeverityToLowerString(severity))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBioseqNAItem)
+         .append(s_AndMessageChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(msg_size, buf);
+    reply.append(buf, len)
+         .append(s_AndStatus);
+
+    len = PSGToString(static_cast<long>(status), buf);
+    reply.append(buf, len)
+         .append(s_AndCode);
+
+    len = PSGToString(code, buf);
+    reply.append(buf, len)
+         .append(s_AndSeverity)
+         .append(SeverityToLowerString(severity))
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -879,16 +1084,22 @@ string GetNamedAnnotationMessageCompletionHeader(size_t  item_id,
                                                  const string &  processor_id,
                                                  size_t  chunk_count)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBioseqNAItem)
-                .append(s_AndMetaChunk)
-                .append(s_AndNChunks)
-                .append(to_string(chunk_count))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBioseqNAItem)
+         .append(s_AndMetaChunk)
+         .append(s_AndNChunks);
+
+    len = PSGToString(chunk_count, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -896,16 +1107,22 @@ string GetNamedAnnotationCompletionHeader(size_t  item_id,
                                           const string &  processor_id,
                                           size_t  chunk_count)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndBioseqNAItem)
-                .append(s_AndMetaChunk)
-                .append(s_AndNChunks)
-                .append(to_string(chunk_count))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBioseqNAItem)
+         .append(s_AndMetaChunk)
+         .append(s_AndNChunks);
+
+    len = PSGToString(chunk_count, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -914,16 +1131,22 @@ string GetAccVerHistoryHeader(size_t  item_id,
                               size_t  msg_size)
 {
     // E.g. PSG-Reply-Chunk: item_id=1&processor_id=cass-acc-blob-hist&item_type=acc_ver_history&chunk_type=data&size=150
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndAccVerHistoryItem)
-                .append(s_AndDataChunk)
-                .append(s_AndSize)
-                .append(to_string(msg_size))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndAccVerHistoryItem)
+         .append(s_AndDataChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(msg_size, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -931,16 +1154,22 @@ string GetAccVerHistCompletionHeader(size_t  item_id,
                                      const string &  processor_id,
                                      size_t  chunk_count)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndAccVerHistoryItem)
-                .append(s_AndMetaChunk)
-                .append(s_AndNChunks)
-                .append(to_string(chunk_count))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndAccVerHistoryItem)
+         .append(s_AndMetaChunk)
+         .append(s_AndNChunks);
+
+    len = PSGToString(chunk_count, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -951,22 +1180,32 @@ string GetProcessorMessageHeader(size_t  item_id,
                                  int  code,
                                  EDiagSev  severity)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndProcessorItem)
-                .append(s_AndMessageChunk)
-                .append(s_AndSize)
-                .append(to_string(msg_size))
-                .append(s_AndStatus)
-                .append(to_string(static_cast<int>(status)))
-                .append(s_AndCode)
-                .append(to_string(code))
-                .append(s_AndSeverity)
-                .append(SeverityToLowerString(severity))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndProcessorItem)
+         .append(s_AndMessageChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(msg_size, buf);
+    reply.append(buf, len)
+         .append(s_AndStatus);
+
+    len = PSGToString(static_cast<int>(status), buf);
+    reply.append(buf, len)
+         .append(s_AndCode);
+
+    len = PSGToString(code, buf);
+    reply.append(buf, len)
+         .append(s_AndSeverity)
+         .append(SeverityToLowerString(severity))
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -974,16 +1213,22 @@ string GetProcessorMessageCompletionHeader(size_t  item_id,
                                            const string &  processor_id,
                                            size_t  chunk_count)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndProcessorItem)
-                .append(s_AndMetaChunk)
-                .append(s_AndNChunks)
-                .append(to_string(chunk_count))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndProcessorItem)
+         .append(s_AndMetaChunk)
+         .append(s_AndNChunks);
+
+    len = PSGToString(chunk_count, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -993,20 +1238,28 @@ string GetPublicCommentHeader(size_t  item_id,
                               CBlobRecord::TTimestamp  last_modified,
                               size_t  msg_size)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndPublicCommentItem)
-                .append(s_AndDataChunk)
-                .append(s_AndBlobId)
-                .append(blob_id)
-                .append(s_AndLastModified)
-                .append(to_string(last_modified))
-                .append(s_AndSize)
-                .append(to_string(msg_size))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndPublicCommentItem)
+         .append(s_AndDataChunk)
+         .append(s_AndBlobId)
+         .append(blob_id)
+         .append(s_AndLastModified);
+
+    len = PSGToString(last_modified, buf);
+    reply.append(buf, len)
+         .append(s_AndSize);
+
+    len = PSGToString(msg_size, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -1016,21 +1269,28 @@ string GetPublicCommentHeader(size_t  item_id,
                               const string &  id2_info,
                               size_t  msg_size)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndPublicCommentItem)
-                .append(s_AndDataChunk)
-                .append(s_AndId2Chunk)
-                .append(to_string(id2_chunk))
-                .append(s_AndId2Info)
-                .append(id2_info)
-                .append(s_AndSize)
-                .append(to_string(msg_size))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndPublicCommentItem)
+         .append(s_AndDataChunk)
+         .append(s_AndId2Chunk);
 
+    len = PSGToString(id2_chunk, buf);
+    reply.append(buf, len)
+         .append(s_AndId2Info)
+         .append(id2_info)
+         .append(s_AndSize);
+
+    len = PSGToString(msg_size, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -1038,16 +1298,22 @@ string GetPublicCommentCompletionHeader(size_t  item_id,
                                         const string &  processor_id,
                                         size_t  chunk_count)
 {
+    char        buf[64];
+    long        len;
     string      reply(s_ReplyBegin);
 
-    return reply.append(to_string(item_id))
-                .append(s_AndProcessorId)
-                .append(NStr::URLEncode(processor_id))
-                .append(s_AndPublicCommentItem)
-                .append(s_AndMetaChunk)
-                .append(s_AndNChunks)
-                .append(to_string(chunk_count))
-                .append(1, '\n');
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndPublicCommentItem)
+         .append(s_AndMetaChunk)
+         .append(s_AndNChunks);
+
+    len = PSGToString(chunk_count, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
 }
 
 
@@ -1090,6 +1356,46 @@ string FormatPreciseTime(const chrono::system_clock::time_point &  t_point)
 unsigned long GetTimespanToNowMks(const psg_time_point_t &  t_point)
 {
     return chrono::duration_cast<chrono::microseconds>(psg_clock_t::now() - t_point).count();
+}
+
+
+// The standard C++ to_string() seems to use a variation sprintf().
+// It works slow and visible in the profiler.
+// The version below appears faster and more suitable for the PSG purposes
+long PSGToString(long  signed_value, char *  buf)
+{
+    char *          pos = buf;
+    unsigned long   value;
+    long            value_length;
+    char *          first_digit;
+    char            temp;
+
+    if (signed_value < 0) {
+        *pos++ = '-';
+        value = static_cast<unsigned long>(-signed_value);
+    } else {
+        value = static_cast<unsigned long>(signed_value);
+    }
+
+    first_digit = pos;
+
+    // Convert in reverse order
+    do {
+        *pos++ = '0' + value % 10;
+        value /= 10;
+    } while (value);
+
+    value_length = pos - buf;
+    *pos-- = 0;
+
+    // Restore the order
+    do {
+        temp = *pos;
+        *pos-- = *first_digit;
+        *first_digit++ = temp;
+    } while (first_digit < pos);
+
+    return value_length;
 }
 
 

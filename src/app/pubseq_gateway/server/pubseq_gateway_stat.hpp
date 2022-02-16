@@ -145,7 +145,10 @@ class CPSGSCounters
             ePSGS_ActiveRequest,
             ePSGS_ShutdownRequested,
             ePSGS_GracefulShutdownExpiredInSec,
-            ePSGS_SplitInfoCacheSize
+            ePSGS_SplitInfoCacheSize,
+
+            // Used to reserve an array
+            ePSGS_MaxCounter
         };
 
     static EPSGS_CounterType StatusToCounterType(int  status);
@@ -202,7 +205,7 @@ class CPSGSCounters
         };
 
     private:
-        map<EPSGS_CounterType, SCounterInfo *>        m_Counters;
+        SCounterInfo *      m_Counters[ePSGS_MaxCounter];
 };
 
 

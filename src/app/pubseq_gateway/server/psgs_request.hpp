@@ -59,6 +59,8 @@ struct SPSGS_BlobId
         m_Id(blob_id)
     {}
 
+    SPSGS_BlobId(int32_t  sat, int32_t  sat_key);
+
     SPSGS_BlobId(const SPSGS_BlobId &) = default;
     SPSGS_BlobId(SPSGS_BlobId &&) = default;
     SPSGS_BlobId &  operator=(const SPSGS_BlobId &) = default;

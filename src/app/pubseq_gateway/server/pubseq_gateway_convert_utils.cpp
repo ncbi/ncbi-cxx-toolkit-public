@@ -38,53 +38,52 @@
 
 USING_NCBI_SCOPE;
 
+static const string     kAccessionItem = "\"accession\": ";
+static const string     kVersionItem = "\"version\": ";
+static const string     kSeqIdTypeItem = "\"seq_id_type\": ";
+static const string     kNameItem = "\"name\": ";
+static const string     kGiItem = "\"gi\": ";
+static const string     kDateChangedItem = "\"date_changed\": ";
+static const string     kHashItem = "\"hash\": ";
+static const string     kLengthItem = "\"length\": ";
+static const string     kMolItem = "\"mol\": ";
+static const string     kSatItem = "\"sat\": ";
+static const string     kSatKeyItem = "\"sat_key\": ";
+static const string     kBlobIdItem = "\"blob_id\": ";
+static const string     kSeqIdsItem = "\"seq_ids\": ";
+static const string     kSeqStateItem = "\"seq_state\": ";
+static const string     kStateItem = "\"state\": ";
+static const string     kTaxIdItem = "\"tax_id\": ";
+static const string     kSep = ", ";
+static const string     kKeyItem = "\"key\": ";
+static const string     kLastModifiedItem = "\"last_modified\": ";
+static const string     kFlagsItem = "\"flags\": ";
+static const string     kSizeItem = "\"size\": ";
+static const string     kSizeUnpackedItem = "\"size_unpacked\": ";
+static const string     kClassItem = "\"class\": ";
+static const string     kDateAsn1Item = "\"date_asn1\": ";
+static const string     kHupDateItem = "\"hup_date\": ";
+static const string     kDivItem = "\"div\": ";
+static const string     kId2InfoItem = "\"id2_info\": ";
+static const string     kOwnerItem = "\"owner\": ";
+static const string     kUserNameItem = "\"username\": ";
+static const string     kNChunksItem = "\"n_chunks\": ";
+static const string     kStartItem = "\"start\": ";
+static const string     kStopItem = "\"stop\": ";
+static const string     kAnnotInfoItem = "\"annot_info\": ";
+static const string     kSeqAnnotInfoItem = "\"seq_annot_info\": ";
+static const string     kRequestItem = "\"request\": ";
+static const string     kSecSeqIdItem = "\"sec_seq_id\": ";
+static const string     kSecSeqIdTypeItem = "\"sec_seq_id_type\": ";
+static const string     kSecSeqStateItem = "\"sec_seq_state\": ";
+static const string     kSatNameItem = "\"sat_name\": ";
+static const string     kChunksRequestedItem = "\"chunk_requested\": ";
+static const string     kBlopPropProvidedItem = "\"blob_prop_provided\": ";
+static const string     kSplitVersionItem = "\"split_version\": ";
+static const string     kAnnotNamesItem = "\"annotation_names\": ";
+static const string     kDateItem = "\"date\": ";
+static const string     kChainItem = "\"chain\": ";
 
-static const string     kAccession = "accession";
-static const string     kVersion = "version";
-static const string     kSeqIdType = "seq_id_type";
-static const string     kGi = "gi";
-static const string     kMol = "mol";
-static const string     kLength = "length";
-static const string     kSeqState = "seq_state";
-static const string     kState = "state";
-static const string     kSat = "sat";
-static const string     kSatKey = "sat_key";
-static const string     kTaxId = "tax_id";
-static const string     kHash = "hash";
-static const string     kDateChanged = "date_changed";
-static const string     kSeqIds = "seq_ids";
-static const string     kName = "name";
-static const string     kBlobId = "blob_id";
-
-static const string     kKey = "key";
-static const string     kLastModified = "last_modified";
-static const string     kFlags = "flags";
-static const string     kSize = "size";
-static const string     kSizeUnpacked = "size_unpacked";
-static const string     kClass = "class";
-static const string     kDateAsn1 = "date_asn1";
-static const string     kHupDate = "hup_date";
-static const string     kDiv = "div";
-static const string     kId2Info = "id2_info";
-static const string     kOwner = "owner";
-static const string     kUserName = "username";
-static const string     kNChunks = "n_chunks";
-static const string     kStart = "start";
-static const string     kStop = "stop";
-static const string     kSeqAnnotInfo = "seq_annot_info";
-
-static const string     kRequest = "request";
-static const string     kSecSeqId = "sec_seq_id";
-static const string     kSecSeqIdType = "sec_seq_id_type";
-static const string     kSecSeqState = "sec_seq_state";
-static const string     kSatName = "sat_name";
-static const string     kSplitVersion = "split_version";
-static const string     kBlopPropProvided = "blob_prop_provided";
-static const string     kChunksRequested = "chunk_requested";
-static const string     kAnnotNames = "annotation_names";
-
-static const string     kDate = "date";
-static const string     kChain = "chain";
 
 
 string ToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info)
@@ -144,301 +143,776 @@ string ToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info)
 }
 
 
-CJsonNode  ToJson(const CBioseqInfoRecord &  bioseq_info,
-                  SPSGS_ResolveRequest::TPSGS_BioseqIncludeData  include_data_flags,
-                  const string &  custom_blob_id)
+string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
+                    SPSGS_ResolveRequest::TPSGS_BioseqIncludeData  include_data_flags,
+                    const string &  custom_blob_id)
 {
-    CJsonNode       json(CJsonNode::NewObjectNode());
+    string              json;
+    bool                some = false;
 
+    // Up to two values per block are used so use two buffers
+    char                buf[64];
+    long                len;
+
+    json.append(1, '{');
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_CanonicalId) {
-        json.SetString(kAccession, bioseq_info.GetAccession());
-        json.SetInteger(kVersion, bioseq_info.GetVersion());
-        json.SetInteger(kSeqIdType, bioseq_info.GetSeqIdType());
+        len = PSGToString(bioseq_info.GetVersion(), buf);
+        json.append(kAccessionItem)
+            .append(1, '"')
+            .append(NStr::JsonEncode(bioseq_info.GetAccession()))
+            .append(1, '"')
+            .append(kSep)
+            .append(kVersionItem)
+            .append(buf, len)
+            .append(kSep)
+            .append(kSeqIdTypeItem);
+
+        len = PSGToString(bioseq_info.GetSeqIdType(), buf);
+        json.append(buf, len);
+        some = true;
     }
-    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Name)
-        json.SetString(kName, bioseq_info.GetName());
-    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Gi)
-        json.SetInteger(kGi, bioseq_info.GetGI());
-    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_DateChanged)
-        json.SetInteger(kDateChanged, bioseq_info.GetDateChanged());
-    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Hash)
-        json.SetInteger(kHash, bioseq_info.GetHash());
-    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Length)
-        json.SetInteger(kLength, bioseq_info.GetLength());
-    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_MoleculeType)
-        json.SetInteger(kMol, bioseq_info.GetMol());
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Name) {
+        if (some)   json.append(kSep);
+        else        some = true;
+
+        json.append(kNameItem)
+            .append(1, '"')
+            .append(NStr::JsonEncode(bioseq_info.GetName()))
+            .append(1, '"');
+    }
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Gi) {
+        if (some)   json.append(kSep);
+        else        some = true;
+
+        len = PSGToString(bioseq_info.GetGI(), buf);
+        json.append(kGiItem)
+            .append(buf, len);
+    }
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_DateChanged) {
+        if (some)   json.append(kSep);
+        else        some = true;
+
+        len = PSGToString(bioseq_info.GetDateChanged(), buf);
+        json.append(kDateChangedItem)
+            .append(buf, len);
+    }
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Hash) {
+        if (some)   json.append(kSep);
+        else        some = true;
+
+        len = PSGToString(bioseq_info.GetHash(), buf);
+        json.append(kHashItem)
+            .append(buf, len);
+    }
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Length) {
+        if (some)   json.append(kSep);
+        else        some = true;
+
+        len = PSGToString(bioseq_info.GetLength(), buf);
+        json.append(kLengthItem)
+            .append(buf, len);
+    }
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_MoleculeType) {
+        if (some)   json.append(kSep);
+        else        some = true;
+
+        len = PSGToString(bioseq_info.GetMol(), buf);
+        json.append(kMolItem)
+            .append(buf, len);
+    }
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_BlobId) {
+        if (some)   json.append(kSep);
+        else        some = true;
+
         if (custom_blob_id.empty()) {
-            json.SetInteger(kSat, bioseq_info.GetSat());
-            json.SetInteger(kSatKey, bioseq_info.GetSatKey());
+            len = PSGToString(bioseq_info.GetSat(), buf);
+            json.append(kSatItem)
+                .append(buf, len)
+                .append(kSep)
+                .append(kSatKeyItem);
+
+            len = PSGToString(bioseq_info.GetSatKey(), buf);
+            json.append(buf, len)
+                .append(kSep);
 
             // Adding blob_id as a string for future replacement of the separate
             // sat and sat_key
-            json.SetString(kBlobId, to_string(bioseq_info.GetSat()) + "." +
-                                    to_string(bioseq_info.GetSatKey()));
+            json.append(kBlobIdItem)
+                .append(1, '"');
+
+            len = PSGToString(bioseq_info.GetSat(), buf);
+            json.append(buf, len)
+                .append(1, '.');
+
+            len = PSGToString(bioseq_info.GetSatKey(), buf);
+            json.append(buf, len)
+                .append(1, '"');
         } else {
             // If a custom blob_id is provided then there is no need to send
             // the one from bioseq info
-            json.SetString(kBlobId, custom_blob_id);
+            json.append(kBlobIdItem)
+                .append(1, '"')
+                .append(custom_blob_id)
+                .append(1, '"');
         }
     }
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_SeqIds) {
-        CJsonNode       seq_ids(CJsonNode::NewArrayNode());
+        if (some)   json.append(kSep);
+        else        some = true;
+
+        json.append(kSeqIdsItem)
+            .append(1, '[');
+
+        bool    not_first = false;
         for (const auto &  item : bioseq_info.GetSeqIds()) {
-            CJsonNode       item_tuple(CJsonNode::NewArrayNode());
-            item_tuple.AppendInteger(get<0>(item));
-            item_tuple.AppendString(get<1>(item));
-            seq_ids.Append(item_tuple);
+            if (not_first)
+                json.append(kSep);
+            else
+                not_first = true;
+
+            len = PSGToString(get<0>(item), buf);
+            json.append(1, '[')
+                .append(buf, len)
+                .append(kSep)
+                .append(1, '"')
+                .append(NStr::JsonEncode(get<1>(item)))
+                .append(1, '"')
+                .append(1, ']');
         }
-        json.SetByKey(kSeqIds, seq_ids);
+        json.append(1, ']');
     }
 
-    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_SeqState)
-        json.SetInteger(kSeqState, bioseq_info.GetSeqState());
-    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_State)
-        json.SetInteger(kState, bioseq_info.GetState());
-    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_TaxId)
-        json.SetInteger(kTaxId, bioseq_info.GetTaxId());
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_SeqState) {
+        if (some)   json.append(kSep);
+        else        some = true;
+
+        len = PSGToString(bioseq_info.GetSeqState(), buf);
+        json.append(kSeqStateItem)
+            .append(buf, len);
+    }
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_State) {
+        if (some)   json.append(kSep);
+        else        some = true;
+
+        len = PSGToString(bioseq_info.GetState(), buf);
+        json.append(kStateItem)
+            .append(buf, len);
+    }
+    if (include_data_flags & SPSGS_ResolveRequest::fPSGS_TaxId) {
+        if (some)   json.append(kSep);
+        else        some = true;
+
+        len = PSGToString(bioseq_info.GetTaxId(), buf);
+        json.append(kTaxIdItem)
+            .append(buf, len);
+    }
+
+    json.append(1, '}');
+    return json;
+}
+
+
+string  ToJsonString(const CBlobRecord &  blob_prop)
+{
+    string              json;
+    char                buf[64];
+    long                len;
+
+    json.append(1, '{');
+    len = PSGToString(blob_prop.GetKey(), buf);
+    json.append(kKeyItem)
+        .append(buf, len);
+    len = PSGToString(blob_prop.GetModified(), buf);
+    json.append(kSep)
+        .append(kLastModifiedItem)
+        .append(buf, len);
+    len = PSGToString(blob_prop.GetFlags(), buf);
+    json.append(kSep)
+        .append(kFlagsItem)
+        .append(buf, len);
+    len = PSGToString(blob_prop.GetSize(), buf);
+    json.append(kSep)
+        .append(kSizeItem)
+        .append(buf, len);
+    len = PSGToString(blob_prop.GetSizeUnpacked(), buf);
+    json.append(kSep)
+        .append(kSizeUnpackedItem)
+        .append(buf, len);
+    len = PSGToString(blob_prop.GetClass(), buf);
+    json.append(kSep)
+        .append(kClassItem)
+        .append(buf, len);
+    len = PSGToString(blob_prop.GetDateAsn1(), buf);
+    json.append(kSep)
+        .append(kDateAsn1Item)
+        .append(buf, len);
+    len = PSGToString(blob_prop.GetHupDate(), buf);
+    json.append(kSep)
+        .append(kHupDateItem)
+        .append(buf, len)
+
+        .append(kSep)
+        .append(kDivItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(blob_prop.GetDiv()))
+        .append(1, '"')
+
+        .append(kSep)
+        .append(kId2InfoItem)
+        .append(1, '"')
+        .append(blob_prop.GetId2Info())     // Cannot have chars need to escape
+        .append(1, '"');
+
+    len = PSGToString(blob_prop.GetOwner(), buf);
+    json.append(kSep)
+        .append(kOwnerItem)
+        .append(buf, len)
+
+        .append(kSep)
+        .append(kUserNameItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(blob_prop.GetUserName()))
+        .append(1, '"');
+
+    len = PSGToString(blob_prop.GetNChunks(), buf);
+    json.append(kSep)
+        .append(kNChunksItem)
+        .append(buf, len)
+        .append(1, '}');
 
     return json;
 }
 
 
-CJsonNode  ToJson(const CBlobRecord &  blob_prop)
+string ToJsonString(const CNAnnotRecord &  annot_record,
+                    int32_t  sat,
+                    const string &  custom_blob_id)
 {
-    CJsonNode       json(CJsonNode::NewObjectNode());
+    string              json;
+    char                buf[64];
+    long                len;
 
-    json.SetInteger(kKey, blob_prop.GetKey());
-    json.SetInteger(kLastModified, blob_prop.GetModified());
-    json.SetInteger(kFlags, blob_prop.GetFlags());
-    json.SetInteger(kSize, blob_prop.GetSize());
-    json.SetInteger(kSizeUnpacked, blob_prop.GetSizeUnpacked());
-    json.SetInteger(kClass, blob_prop.GetClass());
-    json.SetInteger(kDateAsn1, blob_prop.GetDateAsn1());
-    json.SetInteger(kHupDate, blob_prop.GetHupDate());
-    json.SetString(kDiv, blob_prop.GetDiv());
-    json.SetString(kId2Info, blob_prop.GetId2Info());
-    json.SetInteger(kOwner, blob_prop.GetOwner());
-    json.SetString(kUserName, blob_prop.GetUserName());
-    json.SetInteger(kNChunks, blob_prop.GetNChunks());
-    return json;
-}
+    json.append(1, '{');
 
+    len = PSGToString(annot_record.GetModified(), buf);
+    json.append(kLastModifiedItem)
+        .append(buf, len);
 
-CJsonNode ToJson(const CNAnnotRecord &  annot_record,
-                 int32_t  sat,
-                 const string &  custom_blob_id)
-{
-    CJsonNode       json(CJsonNode::NewObjectNode());
-
-    json.SetInteger(kLastModified, annot_record.GetModified());
     if (custom_blob_id.empty()) {
-        json.SetInteger(kSat, sat);
-        json.SetInteger(kSatKey, annot_record.GetSatKey());
+        len = PSGToString(sat, buf);
+        json.append(kSep)
+            .append(kSatItem)
+            .append(buf, len);
+
+        len = PSGToString(annot_record.GetSatKey(), buf);
+        json.append(kSep)
+            .append(kSatKeyItem)
+            .append(buf, len);
 
         // Adding blob_id as a string for future replacement of the separate
         // sat and sat_key
-        json.SetString(kBlobId, to_string(sat) + "." +
-                                to_string(annot_record.GetSatKey()));
+        len = PSGToString(sat, buf);
+        json.append(kSep)
+            .append(kBlobIdItem)
+            .append(1, '"')
+            .append(buf, len)
+            .append(1, '.');
+        len = PSGToString(annot_record.GetSatKey(), buf);
+        json.append(buf, len)
+            .append(1, '"');
     } else {
         // If a custom blob_id is provided then there is no need to send
         // the one from bioseq info
-        json.SetString(kBlobId, custom_blob_id);
+        json.append(kSep)
+            .append(kBlobIdItem)
+            .append(1, '"')
+            .append(custom_blob_id)
+            .append(1, '"');
     }
 
-    json.SetString(kAccession, annot_record.GetAccession());
-    json.SetInteger(kVersion, annot_record.GetVersion());
-    json.SetInteger(kSeqIdType, annot_record.GetSeqIdType());
-    json.SetInteger(kStart, annot_record.GetStart());
-    json.SetInteger(kStop, annot_record.GetStop());
-    json.SetString("annot_info", "{}");
-    json.SetString(kSeqAnnotInfo, NStr::Base64Encode(annot_record.GetSeqAnnotInfo(), 0));
+    json.append(kSep)
+        .append(kAccessionItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(annot_record.GetAccession()))
+        .append(1, '"');
+
+    len = PSGToString(annot_record.GetVersion(), buf);
+    json.append(kSep)
+        .append(kVersionItem)
+        .append(buf, len);
+
+    len = PSGToString(annot_record.GetSeqIdType(), buf);
+    json.append(kSep)
+        .append(kSeqIdTypeItem)
+        .append(buf, len);
+
+    len = PSGToString(annot_record.GetStart(), buf);
+    json.append(kSep)
+        .append(kStartItem)
+        .append(buf, len);
+
+    len = PSGToString(annot_record.GetStop(), buf);
+    json.append(kSep)
+        .append(kStopItem)
+        .append(buf, len)
+
+        .append(kSep)
+        .append(kAnnotInfoItem)
+        .append("\"{}\"")
+
+        .append(kSep)
+        .append(kSeqAnnotInfoItem)
+        .append(1, '"')
+        .append(NStr::Base64Encode(annot_record.GetSeqAnnotInfo(), 0))
+        .append(1, '"')
+
+        .append(1, '}');
     return json;
 }
 
-CJsonNode ToJson(const CBioseqInfoFetchRequest &  request)
+string ToJsonString(const CBioseqInfoFetchRequest &  request)
 {
-    CJsonNode       json(CJsonNode::NewObjectNode());
+    string              json;
+    char                buf[64];
+    long                len;
 
-    json.SetString(kRequest, "BioseqInfo request");
+    json.append(1, '{')
+        .append(kRequestItem)
+        .append("\"BioseqInfo request\"");
 
     if (request.HasField(CBioseqInfoFetchRequest::EFields::eAccession))
-        json.SetString(kAccession, request.GetAccession());
+        json.append(kSep)
+            .append(kAccessionItem)
+            .append(1, '"')
+            .append(NStr::JsonEncode(request.GetAccession()))
+            .append(1, '"');
     else
-        json.SetNull(kAccession);
+        json.append(kSep)
+            .append(kAccessionItem)
+            .append("null");
 
-    if (request.HasField(CBioseqInfoFetchRequest::EFields::eVersion))
-        json.SetInteger(kVersion, request.GetVersion());
-    else
-        json.SetNull(kVersion);
+    if (request.HasField(CBioseqInfoFetchRequest::EFields::eVersion)) {
+        len = PSGToString(request.GetVersion(), buf);
+        json.append(kSep)
+            .append(kVersionItem)
+            .append(buf, len);
+    } else {
+        json.append(kSep)
+            .append(kVersionItem)
+            .append("null");
+    }
 
-    if (request.HasField(CBioseqInfoFetchRequest::EFields::eSeqIdType))
-        json.SetInteger(kSeqIdType, request.GetSeqIdType());
-    else
-        json.SetNull(kSeqIdType);
+    if (request.HasField(CBioseqInfoFetchRequest::EFields::eSeqIdType)) {
+        len = PSGToString(request.GetSeqIdType(), buf);
+        json.append(kSep)
+            .append(kSeqIdTypeItem)
+            .append(buf, len);
+    } else {
+        json.append(kSep)
+            .append(kSeqIdTypeItem)
+            .append("null");
+    }
 
-    if (request.HasField(CBioseqInfoFetchRequest::EFields::eGI))
-        json.SetInteger(kGi, request.GetGI());
-    else
-        json.SetNull(kGi);
+    if (request.HasField(CBioseqInfoFetchRequest::EFields::eGI)) {
+        len = PSGToString(request.GetGI(), buf);
+        json.append(kSep)
+            .append(kGiItem)
+            .append(buf, len);
+    } else {
+        json.append(kSep)
+            .append(kGiItem)
+            .append("null");
+    }
 
+    json.append(1, '}');
     return json;
 }
 
 
-CJsonNode ToJson(const CSi2CsiFetchRequest &  request)
+string ToJsonString(const CSi2CsiFetchRequest &  request)
 {
-    CJsonNode       json(CJsonNode::NewObjectNode());
+    string              json;
+    char                buf[64];
+    long                len;
 
-    json.SetString(kRequest, "Si2Csi request");
+    json.append(1, '{')
+        .append(kRequestItem)
+        .append("\"Si2Csi request\"");
 
     if (request.HasField(CSi2CsiFetchRequest::EFields::eSecSeqId))
-        json.SetString(kSecSeqId, request.GetSecSeqId());
+        json.append(kSep)
+            .append(kSecSeqIdItem)
+            .append(1, '"')
+            .append(NStr::JsonEncode(request.GetSecSeqId()))
+            .append(1, '"');
     else
-        json.SetNull(kSecSeqId);
+        json.append(kSep)
+            .append(kSecSeqIdItem)
+            .append("null");
 
-    if (request.HasField(CSi2CsiFetchRequest::EFields::eSecSeqIdType))
-        json.SetInteger(kSecSeqIdType, request.GetSecSeqIdType());
-    else
-        json.SetNull(kSecSeqIdType);
-
+    if (request.HasField(CSi2CsiFetchRequest::EFields::eSecSeqIdType)) {
+        len = PSGToString(request.GetSecSeqIdType(), buf);
+        json.append(kSep)
+            .append(kSecSeqIdTypeItem)
+            .append(buf, len);
+    } else {
+        json.append(kSep)
+            .append(kSecSeqIdTypeItem)
+            .append("null");
+    }
+    json.append(1, '}');
     return json;
 }
 
-CJsonNode ToJson(const CBlobFetchRequest &  request)
+string ToJsonString(const CBlobFetchRequest &  request)
 {
-    CJsonNode       json(CJsonNode::NewObjectNode());
+    string              json;
+    char                buf[64];
+    long                len;
 
-    json.SetString(kRequest, "Blob prop request");
+    json.append(1, '{')
+        .append(kRequestItem)
+        .append("\"Blob prop request\"");
 
-    if (request.HasField(CBlobFetchRequest::EFields::eSat))
-        json.SetInteger(kSat, request.GetSat());
-    else
-        json.SetNull(kSat);
+    if (request.HasField(CBlobFetchRequest::EFields::eSat)) {
+        len = PSGToString(request.GetSat(), buf);
+        json.append(kSep)
+            .append(kSatItem)
+            .append(buf, len);
+    } else {
+        json.append(kSep)
+            .append(kSatItem)
+            .append("null");
+    }
 
-    if (request.HasField(CBlobFetchRequest::EFields::eSatKey))
-        json.SetInteger(kSatKey, request.GetSatKey());
-    else
-        json.SetNull(kSatKey);
+    if (request.HasField(CBlobFetchRequest::EFields::eSatKey)) {
+        len = PSGToString(request.GetSatKey(), buf);
+        json.append(kSep)
+            .append(kSatKeyItem)
+            .append(buf, len);
+    } else {
+        json.append(kSep)
+            .append(kSatKeyItem)
+            .append("null");
+    }
 
-    if (request.HasField(CBlobFetchRequest::EFields::eLastModified))
-        json.SetInteger(kLastModified, request.GetLastModified());
-    else
-        json.SetNull(kLastModified);
+    if (request.HasField(CBlobFetchRequest::EFields::eLastModified)) {
+        len = PSGToString(request.GetLastModified(), buf);
+        json.append(kSep)
+            .append(kLastModifiedItem)
+            .append(buf, len);
+    } else {
+        json.append(kSep)
+            .append(kLastModifiedItem)
+            .append("null");
+    }
 
+    json.append(1, '}');
     return json;
 }
 
 
-CJsonNode ToJson(const CSI2CSIRecord &  record)
+string ToJsonString(const CSI2CSIRecord &  record)
 {
-    CJsonNode       json(CJsonNode::NewObjectNode());
+    string              json;
+    char                buf[64];
+    long                len;
 
-    json.SetString(kSecSeqId, record.GetSecSeqId());
-    json.SetInteger(kSecSeqIdType, record.GetSecSeqIdType());
-    json.SetString(kAccession, record.GetAccession());
-    json.SetInteger(kGi, record.GetGI());
-    json.SetInteger(kSecSeqState, record.GetSecSeqState());
-    json.SetInteger(kSeqIdType, record.GetSeqIdType());
-    json.SetInteger(kVersion, record.GetVersion());
+    json.append(1, '{')
+        .append(kSecSeqIdItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(record.GetSecSeqId()))
+        .append(1, '"');
+
+    len = PSGToString(record.GetSecSeqIdType(), buf);
+    json.append(kSep)
+        .append(kSecSeqIdTypeItem)
+        .append(buf, len)
+
+        .append(kSep)
+        .append(kAccessionItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(record.GetAccession()))
+        .append(1, '"');
+
+    len = PSGToString(record.GetGI(), buf);
+    json.append(kSep)
+        .append(kGiItem)
+        .append(buf, len);
+
+    len = PSGToString(record.GetSecSeqState(), buf);
+    json.append(kSep)
+        .append(kSecSeqStateItem)
+        .append(buf, len);
+
+    len = PSGToString(record.GetSeqIdType(), buf);
+    json.append(kSep)
+        .append(kSeqIdTypeItem)
+        .append(buf, len);
+
+    len = PSGToString(record.GetVersion(), buf);
+    json.append(kSep)
+        .append(kVersionItem)
+        .append(buf, len);
+
+    json.append(1, '}');
     return json;
 }
 
 
-CJsonNode ToJson(const CCassBlobTaskLoadBlob &  request)
+string ToJsonString(const CCassBlobTaskLoadBlob &  request)
 {
-    CJsonNode       json(CJsonNode::NewObjectNode());
+    string              json;
+    char                buf[64];
+    long                len;
 
-    json.SetString(kRequest, "Blob request");
-    json.SetString(kSatName, request.GetKeyspace());
-    json.SetInteger(kSatKey, request.GetSatKey());
+    json.append(1, '{')
+        .append(kRequestItem)
+        .append("\"Blob request\"")
+
+        .append(kSep)
+        .append(kSatNameItem)
+        .append(1, '"')
+        .append(request.GetKeyspace())
+        .append(1, '"');
+
+    len = PSGToString(request.GetSatKey(), buf);
+    json.append(kSep)
+        .append(kSatKeyItem)
+        .append(buf, len);
 
     auto    last_modified = request.GetModified();
-    if (last_modified == CCassBlobTaskLoadBlob::kAnyModified)
-        json.SetNull(kLastModified);
-    else
-        json.SetInteger(kLastModified, last_modified);
+    if (last_modified == CCassBlobTaskLoadBlob::kAnyModified) {
+        json.append(kSep)
+            .append(kLastModifiedItem)
+            .append("null");
+    } else {
+        len = PSGToString(last_modified, buf);
+        json.append(kSep)
+            .append(kLastModifiedItem)
+            .append(buf, len);
+    }
 
-    json.SetBoolean(kBlopPropProvided, request.BlobPropsProvided());
-    json.SetBoolean(kChunksRequested, request.LoadChunks());
+    json.append(kSep)
+        .append(kBlopPropProvidedItem);
+    if (request.BlobPropsProvided())
+        json.append("true");
+    else
+        json.append("false");
+
+    json.append(kSep)
+        .append(kChunksRequestedItem);
+    if (request.LoadChunks())
+        json.append("true");
+    else
+        json.append("false");
+
+    json.append(1, '}');
     return json;
 }
 
 
-CJsonNode ToJson(const CCassBlobTaskFetchSplitHistory &  request)
+string ToJsonString(const CCassBlobTaskFetchSplitHistory &  request)
 {
-    CJsonNode       json(CJsonNode::NewObjectNode());
+    string              json;
+    char                buf[64];
+    long                len;
 
-    json.SetString(kRequest, "Split history request");
-    json.SetString(kSatName, request.GetKeyspace());
-    json.SetInteger(kSatKey, request.GetKey());
+    json.append(1, '{')
+        .append(kRequestItem)
+        .append("\"Split history request\"")
+
+        .append(kSep)
+        .append(kSatNameItem)
+        .append(1, '"')
+        .append(request.GetKeyspace())
+        .append(1, '"');
+
+    len = PSGToString(request.GetKey(), buf);
+    json.append(kSep)
+        .append(kSatKeyItem)
+        .append(buf, len);
 
     auto    split_version = request.GetSplitVersion();
-    if (split_version == CCassBlobTaskFetchSplitHistory::kAllVersions)
-        json.SetNull(kSplitVersion);
-    else
-        json.SetInteger(kSplitVersion, split_version);
-
-    return json;
-}
-
-
-CJsonNode ToJson(const CCassNAnnotTaskFetch &  request)
-{
-    CJsonNode       json(CJsonNode::NewObjectNode());
-
-    json.SetString(kRequest, "Named annotation request");
-    json.SetString(kSatName, request.GetKeyspace());
-    json.SetString(kAccession, request.GetAccession());
-    json.SetInteger(kVersion, request.GetVersion());
-    json.SetInteger(kSeqIdType, request.GetSeqIdType());
-
-    CJsonNode       names(CJsonNode::NewArrayNode());
-    for (const auto &  item : request.GetAnnotNames()) {
-        names.AppendString(item);
+    if (split_version == CCassBlobTaskFetchSplitHistory::kAllVersions) {
+        json.append(kSep)
+            .append(kSplitVersionItem)
+            .append("null");
+    } else {
+        len = PSGToString(split_version, buf);
+        json.append(kSep)
+            .append(kSplitVersionItem)
+            .append(buf, len);
     }
-    json.SetByKey(kAnnotNames, names);
+
+    json.append(1, '}');
     return json;
 }
 
 
-CJsonNode ToJson(const CCassStatusHistoryTaskGetPublicComment &  request)
+string ToJsonString(const CCassNAnnotTaskFetch &  request)
 {
-    CJsonNode       json(CJsonNode::NewObjectNode());
+    string              json;
+    char                buf[64];
+    long                len;
 
-    json.SetString(kRequest, "Public comment request");
-    json.SetString(kSatName, request.GetKeySpace());
-    json.SetInteger(kSatKey, request.key());
+    json.append(1, '{')
+        .append(kRequestItem)
+        .append("\"Named annotation request\"")
+
+        .append(kSep)
+        .append(kSatNameItem)
+        .append(1, '"')
+        .append(request.GetKeyspace())
+        .append(1, '"')
+
+        .append(kSep)
+        .append(kAccessionItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(request.GetAccession()))
+        .append(1, '"');
+
+    len = PSGToString(request.GetVersion(), buf);
+    json.append(kSep)
+        .append(kVersionItem)
+        .append(buf, len);
+
+    len = PSGToString(request.GetSeqIdType(), buf);
+    json.append(kSep)
+        .append(kSeqIdTypeItem)
+        .append(buf, len);
+
+    json.append(kAnnotNamesItem)
+        .append(1, '[');
+
+    bool    is_empty_list = true;
+    for (const auto &  item : request.GetAnnotNames()) {
+        if (is_empty_list)  is_empty_list = false;
+        else                json.append(kSep);
+
+        json.append(1, '"')
+            .append(NStr::JsonEncode(item))
+            .append(1, '"');
+    }
+
+    json.append(1, ']');
+    json.append(1, '}');
     return json;
 }
 
 
-CJsonNode ToJson(const CCassAccVerHistoryTaskFetch &  request)
+string ToJsonString(const CCassStatusHistoryTaskGetPublicComment &  request)
 {
-    CJsonNode       json(CJsonNode::NewObjectNode());
+    string              json;
+    char                buf[64];
+    long                len;
 
-    json.SetString(kRequest, "Accession version history request");
-    json.SetString(kSatName, request.GetKeyspace());
-    json.SetString(kAccession, request.GetAccession());
-    json.SetInteger(kVersion, request.GetVersion());
-    json.SetInteger(kSeqIdType, request.GetSeqIdType());
+    json.append(1, '{')
+        .append(kRequestItem)
+        .append("\"Public comment request\"")
 
+        .append(kSep)
+        .append(kSatNameItem)
+        .append(1, '"')
+        .append(request.GetKeySpace())
+        .append(1, '"');
+
+    len = PSGToString(request.key(), buf);
+    json.append(kSep)
+        .append(kSatKeyItem)
+        .append(buf, len);
+
+    json.append(1, '}');
     return json;
 }
 
 
-CJsonNode ToJson(const SAccVerHistRec &  history_record)
+string ToJsonString(const CCassAccVerHistoryTaskFetch &  request)
 {
-    CJsonNode       json(CJsonNode::NewObjectNode());
+    string              json;
+    char                buf[64];
+    long                len;
 
-    json.SetInteger(kGi, history_record.gi);
-    json.SetString(kAccession, history_record.accession);
-    json.SetInteger(kVersion, history_record.version);
-    json.SetInteger(kSeqIdType, history_record.seq_id_type);
-    json.SetInteger(kDate, history_record.date);
-    json.SetInteger(kSatKey, history_record.sat_key);
-    json.SetInteger(kSat, history_record.sat);
-    json.SetInteger(kChain, history_record.chain);
+    json.append(1, '{')
+        .append(kRequestItem)
+        .append("\"Accession version history request\"")
+
+        .append(kSep)
+        .append(kSatNameItem)
+        .append(1, '"')
+        .append(request.GetKeyspace())
+        .append(1, '"')
+
+        .append(kSep)
+        .append(kAccessionItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(request.GetAccession()))
+        .append(1, '"');
+
+    len = PSGToString(request.GetVersion(), buf);
+    json.append(kSep)
+        .append(kVersionItem)
+        .append(buf, len);
+
+    len = PSGToString(request.GetSeqIdType(), buf);
+    json.append(kSep)
+        .append(kSeqIdTypeItem)
+        .append(buf, len)
+
+        .append(1, '}');
+    return json;
+}
+
+
+string ToJsonString(const SAccVerHistRec &  history_record)
+{
+    string              json;
+    char                buf[64];
+    long                len;
+
+    json.append(1, '{');
+
+    len = PSGToString(history_record.gi, buf);
+    json.append(kGiItem)
+        .append(buf, len)
+
+        .append(kSep)
+        .append(kAccessionItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(history_record.accession))
+        .append(1, '"');
+
+    len = PSGToString(history_record.version, buf);
+    json.append(kSep)
+        .append(kVersionItem)
+        .append(buf, len);
+
+    len = PSGToString(history_record.seq_id_type, buf);
+    json.append(kSep)
+        .append(kSeqIdTypeItem)
+        .append(buf, len);
+
+    len = PSGToString(history_record.date, buf);
+    json.append(kSep)
+        .append(kDateItem)
+        .append(buf, len);
+
+    len = PSGToString(history_record.sat_key, buf);
+    json.append(kSep)
+        .append(kSatKeyItem)
+        .append(buf, len);
+
+    len = PSGToString(history_record.sat, buf);
+    json.append(kSep)
+        .append(kSatItem)
+        .append(buf, len);
+
+    len = PSGToString(history_record.chain, buf);
+    json.append(kSep)
+        .append(kChainItem)
+        .append(buf, len)
+
+        .append(1, '}');
     return json;
 }
 

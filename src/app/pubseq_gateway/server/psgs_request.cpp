@@ -34,6 +34,7 @@
 
 #include "psgs_request.hpp"
 #include "pubseq_gateway_logging.hpp"
+#include "pubseq_gateway_utils.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -47,6 +48,18 @@ size_t  GetNextRequestId(void)
     auto request_id = ++s_NextRequestId;
     s_RequestIdLock = false;                    // release lock
     return request_id;
+}
+
+
+SPSGS_BlobId::SPSGS_BlobId(int32_t  sat, int32_t  sat_key)
+{
+    char    buf[64];
+    long    len;
+    len = PSGToString(sat, buf);
+    m_Id.append(buf, len)
+        .append(1, '.');
+    len = PSGToString(sat_key, buf);
+    m_Id.append(buf, len);
 }
 
 

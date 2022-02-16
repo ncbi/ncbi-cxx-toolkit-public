@@ -239,7 +239,7 @@ void CPSGS_GetBlobProcessor::Process(void)
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(
                             "Cassandra request: " +
-                            ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+                            ToJsonString(*load_task),
                             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
@@ -321,9 +321,10 @@ IPSGS_Processor::EPSGS_Status CPSGS_GetBlobProcessor::GetStatus(void)
 }
 
 
+static const string   kGetblobProcessorName = "Cassandra-getblob";
 string CPSGS_GetBlobProcessor::GetName(void) const
 {
-    return "Cassandra-getblob";
+    return kGetblobProcessorName;
 }
 
 

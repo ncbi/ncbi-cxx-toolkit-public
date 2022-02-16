@@ -58,24 +58,24 @@ using namespace std;
 
 
 string ToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info);
-CJsonNode ToJson(const CBioseqInfoRecord &  bioseq_info,
-                 SPSGS_ResolveRequest::TPSGS_BioseqIncludeData  include_data_flags,
-                 const string &  custom_blob_id = "");
-CJsonNode ToJson(const CBlobRecord &  blob);
-CJsonNode ToJson(const CNAnnotRecord &  annot_record, int32_t  sat,
-                 const string &  custom_blob_id = "");
-CJsonNode ToJson(const SAccVerHistRec &  history_record);
+string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
+                    SPSGS_ResolveRequest::TPSGS_BioseqIncludeData  include_data_flags,
+                    const string &  custom_blob_id = "");
+string ToJsonString(const CBlobRecord &  blob);
+string ToJsonString(const CNAnnotRecord &  annot_record, int32_t  sat,
+                    const string &  custom_blob_id = "");
+string ToJsonString(const SAccVerHistRec &  history_record);
 
-CJsonNode ToJson(const CBioseqInfoFetchRequest &  request);
-CJsonNode ToJson(const CSi2CsiFetchRequest &  request);
-CJsonNode ToJson(const CBlobFetchRequest &  request);
+string ToJsonString(const CBioseqInfoFetchRequest &  request);
+string ToJsonString(const CSi2CsiFetchRequest &  request);
+string ToJsonString(const CBlobFetchRequest &  request);
 
-CJsonNode ToJson(const CSI2CSIRecord &  record);
+string ToJsonString(const CSI2CSIRecord &  record);
 
-CJsonNode ToJson(const CCassBlobTaskLoadBlob &  request);
-CJsonNode ToJson(const CCassBlobTaskFetchSplitHistory &  request);
-CJsonNode ToJson(const CCassNAnnotTaskFetch &  request);
-CJsonNode ToJson(const CCassStatusHistoryTaskGetPublicComment &  request);
-CJsonNode ToJson(const CCassAccVerHistoryTaskFetch &  request);
+string ToJsonString(const CCassBlobTaskLoadBlob &  request);
+string ToJsonString(const CCassBlobTaskFetchSplitHistory &  request);
+string ToJsonString(const CCassNAnnotTaskFetch &  request);
+string ToJsonString(const CCassStatusHistoryTaskGetPublicComment &  request);
+string ToJsonString(const CCassAccVerHistoryTaskFetch &  request);
 
 #endif

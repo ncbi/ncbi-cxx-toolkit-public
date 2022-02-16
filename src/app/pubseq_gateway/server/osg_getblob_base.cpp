@@ -164,7 +164,7 @@ void CPSGS_OSGGetBlobBase::x_SendBlobProps(const string& psg_blob_id,
                                            CBlobRecord& blob_props)
 {
     size_t item_id = GetReply()->GetItemId();
-    string data_to_send = ToJson(blob_props).Repr(CJsonNode::fStandardJson);
+    string data_to_send = ToJsonString(blob_props);
     if ( GetDebugLevel() >= eDebug_exchange ) {
         LOG_POST(GetDiagSeverity() << "OSG: "
                  "Sending blob_prop("<<psg_blob_id<<"): "<<data_to_send);
@@ -179,7 +179,7 @@ void CPSGS_OSGGetBlobBase::x_SendChunkBlobProps(const string& id2_info,
                                                 CBlobRecord& blob_props)
 {
     size_t item_id = GetReply()->GetItemId();
-    string data_to_send = ToJson(blob_props).Repr(CJsonNode::fStandardJson);
+    string data_to_send = ToJsonString(blob_props);
     if ( GetDebugLevel() >= eDebug_exchange ) {
         LOG_POST(GetDiagSeverity() << "OSG: "
                  "Sending chunk blob_prop("<<id2_info<<','<<chunk_id<<"): "<<data_to_send);

@@ -38,6 +38,9 @@
 USING_IDBLOB_SCOPE;
 
 
+#include "pubseq_gateway_utils.hpp"
+
+
 // Cassandra blob identifier consists of two integers: sat and sat key.
 // The blob sat eventually needs to be resolved to a sat name.
 struct SCass_BlobId
@@ -68,7 +71,16 @@ struct SCass_BlobId
 
     string ToString(void) const
     {
-        return to_string(m_Sat) + '.' + to_string(m_SatKey);
+        char    buf[64];
+        long    len;
+        string  blob_id;
+
+        len = PSGToString(m_Sat, buf);
+        blob_id.append(buf, len)
+               .append(1, '.');
+        len = PSGToString(m_SatKey, buf);
+        blob_id.append(buf, len);
+        return blob_id;
     }
 
     bool IsValid(void) const

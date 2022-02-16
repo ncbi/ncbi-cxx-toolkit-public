@@ -112,7 +112,7 @@ class CBlobPropCallback
                 if (m_Request->NeedTrace()) {
                     if (is_found) {
                         m_Reply->SendTrace("Cassandra blob props: " +
-                            ToJson(blob).Repr(CJsonNode::fStandardJson),
+                            ToJsonString(blob),
                             m_Request->GetStartTimestamp());
                     } else {
                         m_Reply->SendTrace("Cassandra blob props not found",

@@ -191,7 +191,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveFinished(
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace("Cassandra request: " +
-            ToJson(*fetch_task).Repr(CJsonNode::fStandardJson),
+            ToJsonString(*fetch_task),
             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
@@ -213,9 +213,8 @@ CPSGS_AccessionVersionHistoryProcessor::x_SendBioseqInfo(
         AdjustBioseqAccession(bioseq_resolution);
 
     size_t  item_id = IPSGS_Processor::m_Reply->GetItemId();
-    auto    data_to_send = ToJson(bioseq_resolution.GetBioseqInfo(),
-                                  SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
-                                        Repr(CJsonNode::fStandardJson);
+    auto    data_to_send = ToJsonString(bioseq_resolution.GetBioseqInfo(),
+                                        SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
 
     IPSGS_Processor::m_Reply->PrepareBioseqData(
             item_id, GetName(), data_to_send,
@@ -275,7 +274,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
 
     ++m_RecordCount;
     IPSGS_Processor::m_Reply->PrepareAccVerHistoryData(
-        GetName(), ToJson(acc_ver_hist_record).Repr(CJsonNode::fStandardJson));
+        GetName(), ToJsonString(acc_ver_hist_record));
 
     x_Peek(false);
     return true;
@@ -328,9 +327,10 @@ IPSGS_Processor::EPSGS_Status CPSGS_AccessionVersionHistoryProcessor::GetStatus(
 }
 
 
+static const string   kAccVerHistProcessorName = "Cassandra-accession-version-history";
 string CPSGS_AccessionVersionHistoryProcessor::GetName(void) const
 {
-    return "Cassandra-accession-version-history";
+    return kAccVerHistProcessorName;
 }
 
 

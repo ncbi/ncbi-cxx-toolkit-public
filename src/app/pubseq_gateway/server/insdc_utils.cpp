@@ -34,6 +34,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include "insdc_utils.hpp"
+#include "pubseq_gateway_utils.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -55,10 +56,22 @@ bool IsINSDCSeqIdType(CBioseqInfoRecord::TSeqIdType  seq_id_type)
 
 string GetBioseqRecordId(const CBioseqInfoRecord &  record)
 {
-    return record.GetAccession() + "." +
-           to_string(record.GetVersion()) + "." +
-           to_string(record.GetSeqIdType()) + "." +
-           to_string(record.GetGI());
+    char    buf[64];
+    long    len;
+    string  id(record.GetAccession());
+
+    id.append(1, '.');
+
+    len = PSGToString(record.GetVersion(), buf);
+    id.append(buf, len)
+      .append(1, '.');
+    len = PSGToString(record.GetSeqIdType(), buf);
+    id.append(buf, len)
+      .append(1, '.');
+    len = PSGToString(record.GetGI(), buf);
+    id.append(buf, len);
+
+    return id;
 }
 
 

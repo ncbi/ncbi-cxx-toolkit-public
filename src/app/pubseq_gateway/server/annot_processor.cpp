@@ -232,7 +232,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
 
         if (IPSGS_Processor::m_Request->NeedTrace()) {
             IPSGS_Processor::m_Reply->SendTrace("Cassandra request: " +
-                ToJson(*fetch_task).Repr(CJsonNode::fStandardJson),
+                ToJsonString(*fetch_task),
                 IPSGS_Processor::m_Request->GetStartTimestamp());
         }
 
@@ -289,9 +289,8 @@ CPSGS_AnnotProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
         AdjustBioseqAccession(bioseq_resolution);
 
     size_t  item_id = IPSGS_Processor::m_Reply->GetItemId();
-    auto    data_to_send = ToJson(bioseq_resolution.GetBioseqInfo(),
-                                  SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
-                                        Repr(CJsonNode::fStandardJson);
+    auto    data_to_send = ToJsonString(bioseq_resolution.GetBioseqInfo(),
+                                        SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
 
     IPSGS_Processor::m_Reply->PrepareBioseqData(
             item_id, GetName(), data_to_send,
@@ -363,7 +362,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         // Has not been processed yet at all
         IPSGS_Processor::m_Reply->PrepareNamedAnnotationData(
             annot_record.GetAnnotName(), GetName(),
-            ToJson(annot_record, sat).Repr(CJsonNode::fStandardJson));
+            ToJsonString(annot_record, sat));
         annot_was_sent = true;
     } else if (other_proc_priority < m_Priority) {
         // Was processed by a lower priority processor so it needs to be
@@ -379,7 +378,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         }
         IPSGS_Processor::m_Reply->PrepareNamedAnnotationData(
             annot_record.GetAnnotName(), GetName(),
-            ToJson(annot_record, sat).Repr(CJsonNode::fStandardJson));
+            ToJsonString(annot_record, sat));
         annot_was_sent = true;
     } else {
         // The other processor has already processed it
@@ -471,7 +470,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
-    m_AnnotRequest->m_BlobId = SPSGS_BlobId(to_string(sat) + "." + to_string(sat_key));
+    m_AnnotRequest->m_BlobId = SPSGS_BlobId(sat, sat_key);
     SCass_BlobId    blob_id(m_AnnotRequest->m_BlobId.GetId());
 
     auto    app = CPubseqGatewayApp::GetInstance();
@@ -618,7 +617,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(
                             "Cassandra request: " +
-                            ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+                            ToJsonString(*load_task),
                             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
@@ -751,9 +750,10 @@ IPSGS_Processor::EPSGS_Status CPSGS_AnnotProcessor::GetStatus(void)
 }
 
 
+static const string   kAnnotProcessorName = "Cassandra-getna";
 string CPSGS_AnnotProcessor::GetName(void) const
 {
-    return "Cassandra-getna";
+    return kAnnotProcessorName;
 }
 
 

@@ -133,12 +133,12 @@ CPSGS_AsyncBioseqInfoBase::x_MakeRequest(void)
         if (m_WithSeqIdType)
             m_Reply->SendTrace(
                 "Cassandra request: " +
-                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson),
+                ToJsonString(bioseq_info_request),
                 m_Request->GetStartTimestamp());
         else
             m_Reply->SendTrace(
                 "Cassandra request for INSDC types: " +
-                ToJson(bioseq_info_request).Repr(CJsonNode::fStandardJson),
+                ToJsonString(bioseq_info_request),
                 m_Request->GetStartTimestamp());
     }
 
@@ -157,8 +157,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         string  msg = to_string(records.size()) + " hit(s)";
         for (const auto &  item : records) {
             msg += "\n" +
-                   ToJson(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
-                        Repr(CJsonNode::fStandardJson);
+                   ToJsonString(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
         }
         m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
     }
@@ -212,8 +211,8 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
             "Record with max version (and max date changed if "
             "more than one with max version) selected "
             "(SEQ_STATE_LIFE records are checked first)\n" +
-            ToJson(records[index], SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
-                Repr(CJsonNode::fStandardJson) +
+            ToJsonString(records[index],
+                         SPSGS_ResolveRequest::fPSGS_AllBioseqFields) +
             "\nReport found",
             m_Request->GetStartTimestamp());
     }
@@ -242,8 +241,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
         string  msg = to_string(records.size()) +
                       " hit(s); decision status: " + to_string(decision.status);
         for (const auto &  item : records) {
-            msg += "\n" + ToJson(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
-                            Repr(CJsonNode::fStandardJson);
+            msg += "\n" + ToJsonString(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
         }
         m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
     }

@@ -173,9 +173,8 @@ CPSGS_ResolveProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
 
     string              data_to_send;
     if (effective_output_format == SPSGS_ResolveRequest::ePSGS_JsonFormat) {
-        data_to_send = ToJson(bioseq_resolution.GetBioseqInfo(),
-                              m_ResolveRequest->m_IncludeDataFlags).
-                                                Repr(CJsonNode::fStandardJson);
+        data_to_send = ToJsonString(bioseq_resolution.GetBioseqInfo(),
+                                    m_ResolveRequest->m_IncludeDataFlags);
     } else {
         data_to_send = ToBioseqProtobuf(bioseq_resolution.GetBioseqInfo());
     }
@@ -203,9 +202,10 @@ IPSGS_Processor::EPSGS_Status CPSGS_ResolveProcessor::GetStatus(void)
 }
 
 
+static const string   kResolveProcessorName = "Cassandra-resolve";
 string CPSGS_ResolveProcessor::GetName(void) const
 {
-    return "Cassandra-resolve";
+    return kResolveProcessorName;
 }
 
 

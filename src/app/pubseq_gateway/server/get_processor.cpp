@@ -204,9 +204,8 @@ CPSGS_GetProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
         AdjustBioseqAccession(bioseq_resolution);
 
     size_t  item_id = IPSGS_Processor::m_Reply->GetItemId();
-    auto    data_to_send = ToJson(bioseq_resolution.GetBioseqInfo(),
-                                  SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
-                                        Repr(CJsonNode::fStandardJson);
+    auto    data_to_send = ToJsonString(bioseq_resolution.GetBioseqInfo(),
+                                        SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
 
     IPSGS_Processor::m_Reply->PrepareBioseqData(
             item_id, GetName(), data_to_send,
@@ -370,7 +369,7 @@ void CPSGS_GetProcessor::x_GetBlob(void)
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(
                             "Cassandra request: " +
-                            ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+                            ToJsonString(*load_task),
                             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
@@ -448,9 +447,10 @@ IPSGS_Processor::EPSGS_Status CPSGS_GetProcessor::GetStatus(void)
 }
 
 
+static const string   kGetProcessorName = "Cassandra-get";
 string CPSGS_GetProcessor::GetName(void) const
 {
-    return "Cassandra-get";
+    return kGetProcessorName;
 }
 
 
