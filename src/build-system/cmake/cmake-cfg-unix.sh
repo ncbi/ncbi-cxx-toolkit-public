@@ -37,6 +37,7 @@ fi
 if [ -z "$CMAKECFGRECURSIONGUARD" ]; then
   BUILD_TYPE="Debug"
   BUILD_SHARED_LIBS="OFF"
+  ALLOW_COMPOSITE="OFF"
   USE_CCACHE="OFF"
   USE_DISTCC="ON"
   SKIP_ANALYSIS="OFF"
@@ -69,6 +70,7 @@ OPTIONS:
   --without-dll              -- build all libraries as static ones (default)
   --with-dll                 -- build all libraries as shared ones,
                                 unless explicitly requested otherwise
+  --with-composite-dll       -- same as "--with-dll" plus assemble composite shared libraries
   --with-projects="FILE"     -- build projects listed in ${tree_root}/FILE
                                 FILE can also be a list of subdirectories of ${tree_root}/src
                     examples:   --with-projects="corelib$;serial"
@@ -184,9 +186,15 @@ do
       ;; 
     --with-static|--without-dll) 
       BUILD_SHARED_LIBS=OFF
+      ALLOW_COMPOSITE=OFF
       ;; 
     --with-dll) 
       BUILD_SHARED_LIBS=ON 
+      ALLOW_COMPOSITE=OFF
+      ;; 
+    --with-composite-dll) 
+      BUILD_SHARED_LIBS=ON 
+      ALLOW_COMPOSITE=ON
       ;; 
     --with-debug) 
       BUILD_TYPE=Debug 
@@ -311,7 +319,7 @@ if [ -z "$CMAKECFGRECURSIONGUARD" -a -n "$cxx_name" ]; then
     exit $?
   elif [ -x "$script_dir/cm${cxx_name}.sh" ]; then
     USE_DISTCC="OFF"
-    export BUILD_TYPE BUILD_SHARED_LIBS USE_CCACHE  USE_DISTCC  SKIP_ANALYSIS
+    export BUILD_TYPE BUILD_SHARED_LIBS ALLOW_COMPOSITE USE_CCACHE  USE_DISTCC  SKIP_ANALYSIS
     export CMAKECFGRECURSIONGUARD="lock"
     exec $script_dir/cm${cxx_name}.sh  "$@"
     exit $?
@@ -453,7 +461,7 @@ if [ -n "$INSTALL_PATH" ]; then
   CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_INSTALL_PATH=$(Quote "${INSTALL_PATH}")"
 fi
 CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
-CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
+CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS -DNCBI_PTBCFG_ALLOW_COMPOSITE=$ALLOW_COMPOSITE"
 if test "$CMAKE_GENERATOR" != "Xcode"; then
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_CCACHE=$USE_CCACHE"
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_DISTCC=$USE_DISTCC"

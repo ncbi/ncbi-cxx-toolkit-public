@@ -125,6 +125,7 @@ while [ $# != 0 ]; do
       BUILD_SHARED_LIBS=OFF
       ;; 
     --with-dll) 
+    --with-composite-dll) 
       BUILD_SHARED_LIBS=ON 
       ;; 
     --with-projects=*)
