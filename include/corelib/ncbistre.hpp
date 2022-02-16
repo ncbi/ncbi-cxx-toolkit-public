@@ -310,11 +310,16 @@ public:
     template<class T>
     using enable_if_integral = typename std::enable_if<std::is_integral<T>::value>;
 
+#if 0
     template< typename TInteger, typename = typename enable_if_integral<TInteger>::type >
     [[deprecated("(const char*, Tinteger, ios::openmode) constructor is deprecated, use string argument instead")]]
 	CNcbistrstream_Base(const char *_Ptr, TInteger _Count, IOS_BASE::openmode _Mode = _DefMode)
 		: _Mybase(string(_Ptr, _Count), _Mode) {
 	}
+#else
+    template< typename TInteger, typename = typename enable_if_integral<TInteger>::type >
+	CNcbistrstream_Base(const char *_Ptr, TInteger _Count, IOS_BASE::openmode _Mode = _DefMode) = delete;
+#endif
 #else
     [[deprecated("(const char*, streamsize, ios::openmode) constructor is deprecated, use string argument instead")]]
     CNcbistrstream_Base(const char* s, streamsize n, IOS_BASE::openmode _Mode = _DefMode)
