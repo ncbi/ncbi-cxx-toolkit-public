@@ -23,6 +23,21 @@ setup()
     mkdir -p $STAGE_DIR1/bin $STAGE_DIR1/doc $STAGE_DIR2 $PRODUCT
 }
 
+prep_data_collection_notice_file()
+{
+    cat > data_collection_notice.txt<<EOF
+To help improve the quality of this product and ensure proper funding and
+resource allocation, we collect usage data. For a listing of data
+collected and how this is handled, please visit our privacy policy
+<https://ncbi.nlm.nih.gov/books/NBK569851/>.
+You may choose to opt out of this collection any time by setting the
+following environment variable:
+
+    BLAST_USAGE_REPORT=false
+
+EOF
+}
+
 prep_binary_component_package() 
 {
     BLAST_BINS="blastn blastp blastx tblastn tblastx psiblast rpsblast rpstblastn blast_formatter deltablast legacy_blast.pl update_blastdb.pl cleanup-blastdb-volumes.py get_species_taxids.sh"
@@ -57,6 +72,7 @@ customize_distribution_xml()
     <title>NCBI BLAST+ Command Line Applications</title> \
     <welcome file="welcome.txt" mime-type="text/plain"/> \
     <license file="LICENSE" mime-type="text/plain"/> \
+    <readme file="data_collection_notice.txt" mime-type="text/plain"/>  \
     <background scaling="proportional" alignment="left" file="large-Blue_ncbi_logo.tiff" mime-type="image/tiff"/> \
 ' Distribution.xml 
 }
@@ -70,6 +86,7 @@ create_product_archive()
 
     mkdir $RESOURCES_DIR
     cp -p $INSTALLDIR/LICENSE $RESOURCES_DIR
+    cp -p $INSTALLDIR/data_collection_notice.txt $RESOURCES_DIR
     for f in welcome.txt large-Blue_ncbi_logo.tiff ; do
         cp -p $SCRIPTDIR/$f $RESOURCES_DIR
     done
@@ -89,6 +106,7 @@ create_disk_image()
 }
 
 setup
+prep_data_collection_notice_file
 prep_binary_component_package
 prep_paths_component_package
 create_product_archive
