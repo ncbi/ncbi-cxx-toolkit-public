@@ -64,6 +64,7 @@ BEGIN_NAMESPACE(wgs);
 USING_SCOPE(objects);
 
 static const string kWGSProcessorName = "WGS";
+static const string kWGSProcessorSection = "WGS_PROCESSOR";
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -103,6 +104,17 @@ private:
     TOctetStringSequence& m_Output;
 };
 
+
+class CSemaphoreGuard
+{
+public:
+    CSemaphoreGuard(CSemaphore& sema) : m_Sema(sema) {}
+    ~CSemaphoreGuard(void) { m_Sema.Post(); }
+private:
+    CSemaphore& m_Sema;
+};
+
+
 END_LOCAL_NAMESPACE;
 
 
@@ -132,6 +144,7 @@ void CWGSProcessorRef::Detach()
 
 void CWGSProcessorRef::ResolveSeqId(shared_ptr<CWGSProcessorRef> ref)
 {
+    CSemaphoreGuard gsema(*CPSGS_WGSProcessor::sm_ThreadSema);
     shared_ptr<CWGSClient> client;
     CRef<CSeq_id> seq_id;
     {{
@@ -161,7 +174,7 @@ void CWGSProcessorRef::OnResolvedSeqId(void *data)
     {{
         CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
         if ( ref->m_ProcessorPtr ) {
-            ref->m_ProcessorPtr->OnResolvedSeqId();
+           ref->m_ProcessorPtr->OnResolvedSeqId();
         }
     }}
     delete &ref;
@@ -170,6 +183,7 @@ void CWGSProcessorRef::OnResolvedSeqId(void *data)
 
 void CWGSProcessorRef::GetBlobBySeqId(shared_ptr<CWGSProcessorRef> ref)
 {
+    CSemaphoreGuard gsema(*CPSGS_WGSProcessor::sm_ThreadSema);
     shared_ptr<CWGSClient> client;
     CRef<CSeq_id> seq_id;
     CWGSClient::TBlobIds excluded;
@@ -212,6 +226,7 @@ void CWGSProcessorRef::OnGotBlobBySeqId(void *data)
 
 void CWGSProcessorRef::GetBlobByBlobId(shared_ptr<CWGSProcessorRef> ref)
 {
+    CSemaphoreGuard gsema(*CPSGS_WGSProcessor::sm_ThreadSema);
     shared_ptr<CWGSClient> client;
     string blob_id;
     {{
@@ -252,6 +267,7 @@ void CWGSProcessorRef::OnGotBlobByBlobId(void *data)
 
 void CWGSProcessorRef::GetChunk(shared_ptr<CWGSProcessorRef> ref)
 {
+    CSemaphoreGuard gsema(*CPSGS_WGSProcessor::sm_ThreadSema);
     shared_ptr<CWGSClient> client;
     string id2info;
     int64_t chunk_id;
@@ -296,6 +312,20 @@ void CWGSProcessorRef::OnGotChunk(void* data)
 // CPSGS_WGSProcessor
 /////////////////////////////////////////////////////////////////////////////
 
+
+unique_ptr<CSemaphore> CPSGS_WGSProcessor::sm_ThreadSema;
+
+#define PARAM_VDB_CACHE_SIZE "vdb_cache_size"
+#define PARAM_INDEX_UPDATE_TIME "index_update_time"
+#define PARAM_COMPRESS_DATA "compress_data"
+#define PARAM_WORKER_THREADS "worker_threads"
+
+#define DEFAULT_VDB_CACHE_SIZE 100
+#define DEFAULT_INDEX_UPDATE_TIME 600
+#define DEFAULT_COMPRESS_DATA SWGSProcessor_Config::eCompressData_some
+#define DEFAULT_WORKER_THREADS 5
+
+
 CPSGS_WGSProcessor::CPSGS_WGSProcessor(void)
     : m_Config(new SWGSProcessor_Config),
       m_Status(ePSGS_NotFound),
@@ -303,6 +333,8 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(void)
       m_ChunkId(0),
       m_OutputFormat(SPSGS_ResolveRequest::ePSGS_NativeFormat)
 {
+    x_LoadConfig();
+    sm_ThreadSema.reset(new CSemaphore(m_Config->m_WorkerThreads, m_Config->m_WorkerThreads));
 }
 
 
@@ -332,27 +364,19 @@ CPSGS_WGSProcessor::~CPSGS_WGSProcessor(void)
 }
 
 
-#define PARAM_VDB_CACHE_SIZE "vdb_cache_size"
-#define PARAM_INDEX_UPDATE_TIME "index_update_time"
-#define PARAM_COMPRESS_DATA "compress_data"
-
-#define DEFAULT_VDB_CACHE_SIZE 100
-#define DEFAULT_INDEX_UPDATE_TIME 600
-#define DEFAULT_COMPRESS_DATA SWGSProcessor_Config::eCompressData_some
-
-
-void CPSGS_WGSProcessor::LoadConfig(const CNcbiRegistry& registry)
+void CPSGS_WGSProcessor::x_LoadConfig(void)
 {
-    string section = kWGSProcessorName;
-    m_Config->m_CacheSize = registry.GetInt(section, PARAM_VDB_CACHE_SIZE, DEFAULT_VDB_CACHE_SIZE);
+    const CNcbiRegistry& registry = CPubseqGatewayApp::GetInstance()->GetConfig();
+    m_Config->m_CacheSize = registry.GetInt(kWGSProcessorSection, PARAM_VDB_CACHE_SIZE, DEFAULT_VDB_CACHE_SIZE);
 
-    int compress_data = registry.GetInt(section, PARAM_COMPRESS_DATA, DEFAULT_COMPRESS_DATA);
+    int compress_data = registry.GetInt(kWGSProcessorSection, PARAM_COMPRESS_DATA, DEFAULT_COMPRESS_DATA);
     if ( compress_data >= SWGSProcessor_Config::eCompressData_never &&
          compress_data <= SWGSProcessor_Config::eCompressData_always ) {
         m_Config->m_CompressData = SWGSProcessor_Config::ECompressData(compress_data);
     }
-
-    m_Config->m_UpdateDelay = registry.GetInt(section, PARAM_INDEX_UPDATE_TIME, DEFAULT_INDEX_UPDATE_TIME);
+    m_Config->m_UpdateDelay = registry.GetInt(kWGSProcessorSection, PARAM_INDEX_UPDATE_TIME, DEFAULT_INDEX_UPDATE_TIME);
+    m_Config->m_WorkerThreads = registry.GetInt(kWGSProcessorSection, PARAM_WORKER_THREADS, DEFAULT_WORKER_THREADS);
+    if (m_Config->m_WorkerThreads <= 0) m_Config->m_WorkerThreads = DEFAULT_WORKER_THREADS;
 }
 
 
@@ -445,6 +469,7 @@ void CPSGS_WGSProcessor::x_ProcessResolveRequest(void)
         return;
     }
 
+    if ( !x_WaitForIdleThread() ) return;
     m_ProcessorRef = make_shared<CWGSProcessorRef>(this);
     thread(bind(&CWGSProcessorRef::ResolveSeqId, m_ProcessorRef)).detach();
 }
@@ -461,6 +486,8 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
         x_Finish(ePSGS_Error);
         return;
     }
+
+    if ( !x_WaitForIdleThread() ) return;
     m_ProcessorRef = make_shared<CWGSProcessorRef>(this);
     if (get_request.m_TSEOption == SPSGS_BlobRequestBase::ePSGS_NoneTSE) {
         thread(bind(&CWGSProcessorRef::ResolveSeqId, m_ProcessorRef)).detach();
@@ -483,6 +510,7 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySatSatKeyRequest(void)
     SPSGS_BlobBySatSatKeyRequest& blob_request = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
     m_PSGBlobId = blob_request.m_BlobId.GetId();
 
+    if ( !x_WaitForIdleThread() ) return;
     m_ProcessorRef = make_shared<CWGSProcessorRef>(this);
     thread(bind(&CWGSProcessorRef::GetBlobByBlobId, m_ProcessorRef)).detach();
 }
@@ -494,6 +522,7 @@ void CPSGS_WGSProcessor::x_ProcessTSEChunkRequest(void)
     m_Id2Info = chunk_request.m_Id2Info;
     m_ChunkId = chunk_request.m_Id2Chunk;
 
+    if ( !x_WaitForIdleThread() ) return;
     m_ProcessorRef = make_shared<CWGSProcessorRef>(this);
     thread(bind(&CWGSProcessorRef::GetChunk, m_ProcessorRef)).detach();
 }
@@ -833,6 +862,17 @@ void CPSGS_WGSProcessor::x_Finish(EPSGS_Status status)
     _ASSERT(status != ePSGS_InProgress);
     m_Status = status;
     SignalFinishProcessing();
+}
+
+
+bool CPSGS_WGSProcessor::x_WaitForIdleThread(void)
+{
+    sm_ThreadSema->Wait();
+    if ( x_IsCanceled() ) {
+        sm_ThreadSema->Post();
+        return false;
+    }
+    return true;
 }
 
 

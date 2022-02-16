@@ -41,6 +41,8 @@
 
 BEGIN_NCBI_NAMESPACE;
 
+class CSemaphore;
+
 BEGIN_NAMESPACE(objects);
 class CID2_Blob_Id;
 class CID2_Reply_Data;
@@ -93,8 +95,6 @@ public:
     CPSGS_WGSProcessor(void);
     ~CPSGS_WGSProcessor(void) override;
 
-    void LoadConfig(const CNcbiRegistry& registry);
-
     IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
                                      shared_ptr<CPSGS_Reply> reply,
                                      TProcessorPriority priority) const override;
@@ -117,6 +117,7 @@ private:
                        shared_ptr<CPSGS_Reply> reply,
                        TProcessorPriority priority);
 
+    void x_LoadConfig(void);
     bool x_IsEnabled(CPSGS_Request& request) const;
     void x_InitClient(void) const;
 
@@ -154,6 +155,7 @@ private:
         return obj.IsSetBlob_state() ? obj.GetBlob_state() : 0;
     }
 
+    bool x_WaitForIdleThread(void);
     void x_Finish(EPSGS_Status status);
     bool x_IsCanceled();
     bool x_SignalStartProcessing();
@@ -170,6 +172,8 @@ private:
     TBlobIds m_ExcludedBlobs;
     shared_ptr<SWGSData> m_WGSData;
     EOutputFormat m_OutputFormat;
+
+    static unique_ptr<CSemaphore> sm_ThreadSema;
 };
 
 

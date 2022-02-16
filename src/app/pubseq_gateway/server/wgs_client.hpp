@@ -65,6 +65,7 @@ struct SWGSProcessor_Config
     size_t m_CacheSize = 100;
     unsigned m_UpdateDelay = 600;
     ECompressData m_CompressData = eCompressData_some;
+    unsigned int m_WorkerThreads = 5;
 };
 
 
