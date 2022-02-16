@@ -3909,6 +3909,7 @@ string CDeflineGenerator::GenerateDefline (
         }
         bool ok = true;
         bool limitAutoDef = true;
+        bool suppressedFeats = false;
 
         if (desc) {
             const CUser_object& uo = desc->GetUser();
@@ -3924,6 +3925,8 @@ string CDeflineGenerator::GenerateDefline (
                         if ( featlisttype != "List All Features" ) {
                             preferredSuffix = featlisttype;
                         }
+                    } else if ( field.GetLabel().GetStr() == "SuppressedFeatures" ) {
+                        suppressedFeats = true;
                     }
                 }
             }
@@ -3970,7 +3973,7 @@ string CDeflineGenerator::GenerateDefline (
                     }
                 }
             }
-            if (numGenes + numCDSs > 40) {
+            if (numGenes + numCDSs > 50 && !suppressedFeats) {
                 ok = false;
             }
         }
