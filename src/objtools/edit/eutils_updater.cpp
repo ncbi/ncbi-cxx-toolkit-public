@@ -52,7 +52,7 @@ CEUtilsUpdater::CEUtilsUpdater()
 }
 
 
-TEntrezId CEUtilsUpdater::GetPmId(const CPub& pub)
+TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub)
 {
     // Not yet implemented
     return ZERO_ENTREZ_ID;
