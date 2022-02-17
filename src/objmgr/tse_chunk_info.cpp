@@ -128,19 +128,19 @@ void CTSE_Chunk_Info::x_SplitAttach(CTSE_Split_Info& split_info)
 
     // register bioseq ids
     {{
-        TBioseqIds(m_BioseqIds).swap(m_BioseqIds);
-        sort(m_BioseqIds.begin(), m_BioseqIds.end());
-        split_info.x_SetContainedSeqIds(m_BioseqIds, chunk_id);
-        set<CSeq_id_Handle> ids(m_BioseqIds.begin(), m_BioseqIds.end());
-        ITERATE ( TAnnotContents, it, m_AnnotContents ) {
+        TBioseqIds(m_BioseqIds).swap(m_BioseqIds); // memory compaction
+        sort(m_BioseqIds.begin(), m_BioseqIds.end()); // sort for future lookups
+        set<CSeq_id_Handle> annot_ids;
+        ITERATE ( TAnnotContents, it, m_AnnotContents ) { // collect annot ids
             ITERATE ( TAnnotTypes, tit, it->second ) {
                 ITERATE ( TLocationSet, lit, tit->second ) {
-                    if ( ids.insert(lit->first).second ) {
-                        split_info.x_SetContainedId(lit->first, chunk_id, false);
+                    if ( !ContainsBioseq(lit->first) ) {
+                        annot_ids.insert(lit->first);
                     }
                 }
             }
         }
+        split_info.x_SetContainedSeqIds(m_BioseqIds, annot_ids, chunk_id);
     }}
 
     // register bioseqs places

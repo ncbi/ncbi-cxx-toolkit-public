@@ -321,6 +321,7 @@ void CTSE_Split_Info::x_SetContainedId(const TBioseqId& id,
                                        TChunkId chunk_id,
                                        bool bioseq)
 {
+    CMutexGuard guard(m_SeqIdToChunksMutex);
     m_SeqIdToChunksSorted = false;
     if ( bioseq && !m_ContainsBioseqs ) {
         m_ContainsBioseqs = true;
@@ -332,22 +333,26 @@ void CTSE_Split_Info::x_SetContainedId(const TBioseqId& id,
 }
 
 
-void CTSE_Split_Info::x_SetContainedSeqIds(const vector<TBioseqId>& ids,
+void CTSE_Split_Info::x_SetContainedSeqIds(const vector<TBioseqId>& seq_ids,
+                                           const set<TBioseqId>& annot_ids,
                                            TChunkId chunk_id)
 {
-    if ( ids.empty() ) {
+    if ( seq_ids.empty() && annot_ids.empty() ) {
         return;
     }
+    CMutexGuard guard(m_SeqIdToChunksMutex);
     m_SeqIdToChunksSorted = false;
-    if ( !m_ContainsBioseqs ) {
+    if ( !seq_ids.empty() && !m_ContainsBioseqs ) {
         m_ContainsBioseqs = true;
     }
-    m_SeqIdToChunks.reserve(m_SeqIdToChunks.size()+ids.size());
-    for ( auto& id : ids ) {
+    for ( auto& id : seq_ids ) {
         m_SeqIdToChunks.push_back(pair<CSeq_id_Handle, TChunkId>(id, chunk_id));
     }
-    if ( m_DataLoader ) {
-        m_DataLoader->x_IndexSplitInfo(ids, this);
+    for ( auto& id : annot_ids ) {
+        m_SeqIdToChunks.push_back(pair<CSeq_id_Handle, TChunkId>(id, chunk_id));
+    }
+    if ( m_DataLoader && !seq_ids.empty() ) {
+        m_DataLoader->x_IndexSplitInfo(seq_ids, this);
     }
 }
 
