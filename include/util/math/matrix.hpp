@@ -961,7 +961,7 @@ inline CNcbiIstream& operator>>(CNcbiIstream& is, CNcbiMatrix<T>& M)
         if (line.empty() || line[0] == '#') {
             continue;
         }
-        CNcbiIstrstream iss(line.c_str(), line.size());
+        CNcbiIstrstream iss(line);
         row.clear();
         while(1) {
             iss >> entry;
