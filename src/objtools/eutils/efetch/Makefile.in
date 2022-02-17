@@ -1,0 +1,6 @@
+# $Idefetch$
+
+DTD_PROJ = efetch
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
