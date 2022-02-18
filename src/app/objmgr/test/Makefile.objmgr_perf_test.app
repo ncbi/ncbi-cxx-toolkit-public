@@ -113,4 +113,4 @@ CHECK_CMD = objmgr_perf_test -ids perf_ids1_gi -loader gb -pubseqos -no_split -b
 CHECK_CMD = objmgr_perf_test -ids perf_ids1_gi -loader psg -bulk bioseq
 CHECK_CMD = objmgr_perf_test -ids perf_ids1_gi -loader psg -no_split -bulk bioseq
 
-WATCHERS = grichenk
+WATCHERS = grichenk vasilche
