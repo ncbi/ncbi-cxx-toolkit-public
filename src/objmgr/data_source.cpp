@@ -1895,11 +1895,16 @@ CTSE_LoadLock CDataSource::GetTSE_LoadLockIfLoaded(const TBlobId& blob_id)
 
 CTSE_LoadLock CDataSource::GetLoadedTSE_Lock(const TBlobId& blob_id, const CTimeout& timeout)
 {
+    return GetLoadedTSE_Lock(blob_id, CDeadline(timeout));
+}
+
+
+CTSE_LoadLock CDataSource::GetLoadedTSE_Lock(const TBlobId& blob_id, const CDeadline& deadline)
+{
     CTSE_LoadLock lock = GetTSE_LoadLock(blob_id);
     if ( IsLoaded(*lock) ) {
         return lock;
     }
-    CDeadline deadline(timeout);
     while ( lock.x_GetGuard().WaitForSignal(deadline) ) {
         if ( IsLoaded(*lock) ) {
             return lock;
