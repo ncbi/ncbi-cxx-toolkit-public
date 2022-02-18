@@ -1183,7 +1183,6 @@ public:
         CTSE_LoadLock* load_lock_ptr = nullptr)
         : CPSG_Task(reply, group),
         m_Id(idh),
-        m_ProcessedSkipped(false),
         m_DataSource(data_source),
         m_Loader(loader),
         m_LockASAP(lock_asap),
@@ -1216,8 +1215,7 @@ public:
 
     CSeq_id_Handle m_Id;
     shared_ptr<CPSG_SkippedBlob> m_Skipped;
-    bool m_ProcessedSkipped;
-    CTSE_Lock m_SkippedTSE_Lock;
+    unique_ptr<CDeadline> m_SkippedWaitDeadline;
     
     CPSGDataLoader_Impl::SReplyResult m_ReplyResult;
     shared_ptr<SPsgBlobInfo> m_PsgBlobInfo;
@@ -1234,6 +1232,8 @@ public:
     void ObtainLoadLock();
     bool GotBlobData(const string& psg_blob_id) const;
     CPSGDataLoader_Impl::SReplyResult WaitForSkipped(void);
+    unique_ptr<CDeadline> GetWaitDeadline(const CPSG_SkippedBlob& skipped) const;
+    static const char* GetSkippedType(const CPSG_SkippedBlob& skipped);
 
     void Finish(void) override
     {
@@ -1333,7 +1333,7 @@ bool CPSG_Blob_Task::GotBlobData(const string& psg_blob_id) const
     const TBlobSlot* main_blob_slot = GetTSESlot(psg_blob_id);
     if ( !main_blob_slot || !main_blob_slot->first ) {
         // no TSE blob props yet
-        if ( s_GetDebugLevel() >= 6 ) {
+        if ( s_GetDebugLevel() >= 7 ) {
             LOG_POST("GotBlobData("<<psg_blob_id<<"): no TSE blob props");
         }
         return false;
@@ -1348,7 +1348,7 @@ bool CPSG_Blob_Task::GotBlobData(const string& psg_blob_id) const
     auto id2_info = main_blob_slot->first->GetId2Info();
     if ( id2_info.empty() ) {
         // TSE doesn't have split info
-        if ( s_GetDebugLevel() >= 6 ) {
+        if ( s_GetDebugLevel() >= 7 ) {
             LOG_POST("GotBlobData("<<psg_blob_id<<"): not split");
         }
         return false;
@@ -1356,7 +1356,7 @@ bool CPSG_Blob_Task::GotBlobData(const string& psg_blob_id) const
     const TBlobSlot* split_blob_slot = GetChunkSlot(id2_info, kSplitInfoChunkId);
     if ( !split_blob_slot || !split_blob_slot->second ) {
         // no split info blob data yet
-        if ( s_GetDebugLevel() >= 6 ) {
+        if ( s_GetDebugLevel() >= 7 ) {
             LOG_POST("GotBlobData("<<psg_blob_id<<"): no split blob data");
         }
         return false;
@@ -1406,7 +1406,6 @@ void CPSG_Blob_Task::DoExecute(void)
     ReadReply();
     if (m_Status == eFailed) return;
     if (m_Skipped) {
-        //WaitForSkipped();
         m_Status = eCompleted;
         return;
     }
@@ -1605,6 +1604,43 @@ bool CPSG_Blob_Task::IsChunk(const CPSG_SkippedBlob& skipped)
 }
 
 
+unique_ptr<CDeadline> CPSG_Blob_Task::GetWaitDeadline(const CPSG_SkippedBlob& skipped) const
+{
+    double timeout = 0;
+    switch ( skipped.GetReason() ) {
+    case CPSG_SkippedBlob::eInProgress:
+        timeout = 1;
+        break;
+    case CPSG_SkippedBlob::eSent:
+        if ( skipped.GetTimeUntilResend().IsNull() ) {
+            timeout = 0.2;
+        }
+        else {
+            timeout = skipped.GetTimeUntilResend().GetValue();
+        }
+        break;
+    default:
+        return nullptr;
+    }
+    return make_unique<CDeadline>(CTimeout(timeout));
+}
+
+
+const char* CPSG_Blob_Task::GetSkippedType(const CPSG_SkippedBlob& skipped)
+{
+    switch ( skipped.GetReason() ) {
+    case CPSG_SkippedBlob::eInProgress:
+        return "in progress";
+    case CPSG_SkippedBlob::eSent:
+        return "sent";
+    case CPSG_SkippedBlob::eExcluded:
+        return "excluded";
+    default:
+        return "unknown";
+    }
+}
+
+
 void CPSG_Blob_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
 {
     switch (item->GetType()) {
@@ -1641,7 +1677,9 @@ void CPSG_Blob_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
     {
         // Only main blob can be skipped.
         if ( !m_Skipped && !IsChunk(*static_pointer_cast<CPSG_SkippedBlob>(item)) ) {
-            m_Skipped = static_pointer_cast<CPSG_SkippedBlob>(item);
+            shared_ptr<CPSG_SkippedBlob> skipped = static_pointer_cast<CPSG_SkippedBlob>(item);
+            m_Skipped = skipped;
+            m_SkippedWaitDeadline = GetWaitDeadline(*skipped);
         }
         break;
     }
@@ -1657,48 +1695,28 @@ CPSGDataLoader_Impl::SReplyResult CPSG_Blob_Task::WaitForSkipped(void)
 {
     CPSGDataLoader_Impl::SReplyResult ret;
     ret.blob_id = m_ReplyResult.blob_id;
-    ret.lock = m_SkippedTSE_Lock;
-    if (!m_DataSource || m_ProcessedSkipped) return ret;
+    if (!m_DataSource) return ret;
 
     CDataLoader::TBlobId dl_blob_id = GetDLBlobId(ret.blob_id);
     CTSE_LoadLock load_lock;
     _ASSERT(m_Skipped);
-    CPSG_SkippedBlob::EReason skip_reason = m_Skipped->GetReason();
-    switch (skip_reason) {
-    case CPSG_SkippedBlob::eInProgress:
-        // Try to wait for the blob to be loaded.
-        load_lock = m_DataSource->GetLoadedTSE_Lock(dl_blob_id, CTimeout(1));
-        if ( !load_lock && s_GetDebugLevel() >= 6 ) {
-            LOG_POST("CPSGDataLoader: 'in progress' blob is not loaded: "<<dl_blob_id.ToString());
-        }
-        break;
-    case CPSG_SkippedBlob::eSent:
-        // Try to wait for the blob to be loaded.
-        load_lock = m_DataSource->GetLoadedTSE_Lock(dl_blob_id,
-            CTimeout(m_Skipped->GetTimeUntilResend().IsNull() ?
-                0.2 : m_Skipped->GetTimeUntilResend().GetValue()));
-        if ( !load_lock && s_GetDebugLevel() >= 6 ) {
-            LOG_POST("CPSGDataLoader: 'sent' blob is not loaded: "<<dl_blob_id.ToString());
-        }
-        break;
-    case CPSG_SkippedBlob::eExcluded:
-        // Check if the blob is already loaded, force loading if necessary.
-        load_lock = m_DataSource->GetTSE_LoadLockIfLoaded(dl_blob_id);
-        if ( !load_lock && s_GetDebugLevel() >= 6 ) {
-            LOG_POST("CPSGDataLoader: 'excluded' blob is not loaded: "<<dl_blob_id.ToString());
-        }
-        break;
-    default: // unknown
-        return ret;
+    if ( m_SkippedWaitDeadline ) {
+        load_lock = m_DataSource->GetLoadedTSE_Lock(dl_blob_id, *m_SkippedWaitDeadline);
     }
-    if (load_lock && load_lock.IsLoaded()) {
-        m_SkippedTSE_Lock = load_lock;
+    else {
+        load_lock = m_DataSource->GetTSE_LoadLockIfLoaded(dl_blob_id);
+    }
+    if ( load_lock && load_lock.IsLoaded() ) {
 #ifdef GLOBAL_CHUNKS
         CreateLoadedChunks(load_lock);
 #endif
         ret.lock = load_lock;
     }
-    m_ProcessedSkipped = true;
+    else {
+        if ( s_GetDebugLevel() >= 6 ) {
+            LOG_POST("CPSGDataLoader: '"<<GetSkippedType(*m_Skipped)<<"' blob is not loaded: "<<dl_blob_id.ToString());
+        }
+    }
     return ret;
 }
 
@@ -2713,6 +2731,9 @@ void CPSGDataLoader_Impl::x_SetLoaded(CTSE_LoadLock& load_lock,
         //_ASSERT(!load_lock->x_NeedsDelayedMainChunk());
     }
     else {
+        if ( s_GetDebugLevel() >= 6 ) {
+            LOG_POST("calling SetLoaded("<<load_lock->GetBlobId().ToString()<<")");
+        }
         load_lock.SetLoaded();
     }
 }
