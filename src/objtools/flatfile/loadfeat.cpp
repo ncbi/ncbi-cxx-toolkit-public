@@ -561,7 +561,6 @@ StrNum LinkageEvidenceValues[] = {
     {NULL,                 -1}
 };
 
-
 FeatBlk::~FeatBlk() {
     if (key) {
         MemFree(key);
@@ -573,6 +572,8 @@ FeatBlk::~FeatBlk() {
     }
 }
 
+extern Int2      SpFeatKeyNameValid (const Char *keystr);
+extern CRef<objects::CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids);
 
 /**********************************************************/
 static void FreeFeatBlk(DataBlkPtr dbp, Parser::EFormat format)
@@ -4121,6 +4122,7 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, XmlIndexPtr xip)
         if(xip->subtags == NULL)
             continue;
         fbp = new FeatBlk;
+        fbp->spindex = -1;
         for(xipfeat = xip->subtags; xipfeat != NULL; xipfeat = xipfeat->next)
         {
             if(xipfeat->tag == INSDFEATURE_KEY)
@@ -4792,6 +4794,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp,
     for(num = 0; dbp != NULL; dbp = dbp->mpNext, num++)
     {
         fbp = new FeatBlk;
+        fbp->spindex = -1;
         fbp->num = num;
         dbp->mpData = fbp;
 
@@ -5137,10 +5140,11 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp)
 static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source)
 {
     FeatBlkPtr fbp;
-    char*    p;
+    char       *p;
     Int4       num;
+    Int2       keyindx;
     int        retval = GB_FEAT_ERR_NONE;
-    int        ret;
+    int        ret = 0;
 
     for(num = 0; dbp != NULL; dbp = dbp->mpNext, num++)
     {
@@ -5170,13 +5174,30 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
 
         objects::CSeqFeatData::ESubtype subtype = objects::CSeqFeatData::SubtypeNameToValue(fbp->key);
 
+/* bsv hack: exclude CONFLICT, REGION, SITE, UNSURE UniProt flatfile
+ *           features from valid GenBank ones: for USPTO only
+ * Needs better workaround
+ */
+        if(source == Parser::ESource::USPTO &&
+           (subtype == objects::CSeqFeatData::eSubtype_conflict ||
+            subtype == objects::CSeqFeatData::eSubtype_region ||
+            subtype == objects::CSeqFeatData::eSubtype_site ||
+            subtype == objects::CSeqFeatData::eSubtype_unsure))
+            subtype = objects::CSeqFeatData::eSubtype_bad;
+        keyindx = -1;
         if (subtype == objects::CSeqFeatData::eSubtype_bad && !deb)
         {
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key,
-                      "Feature dropped");
-            dbp->mDrop = true;
-            retval = GB_FEAT_ERR_DROP;
-            continue;
+            if(source == Parser::ESource::USPTO)
+                keyindx = SpFeatKeyNameValid(fbp->key);
+            if(keyindx < 0 && !deb)
+            {
+                ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key,
+                          "Feature dropped");
+                dbp->mDrop = true;
+                retval = GB_FEAT_ERR_DROP;
+                continue;
+            }
+            fbp->spindex = keyindx;
         }
 
         if (!fbp->quals.empty())
@@ -5187,10 +5208,13 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
 
             if (subtype == objects::CSeqFeatData::eSubtype_bad)
             {
-                ErrPostStr(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key);
-                ret = GB_FEAT_ERR_REPAIRABLE;
+                if(keyindx < 0)
+                {
+                    ErrPostStr(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key);
+                    ret = GB_FEAT_ERR_REPAIRABLE;
+                }
             }
-            else
+            else if(fbp->spindex < 0)
             {
                 /* last argument is perform_corrections if debug
                  * mode is FALSE
@@ -6050,7 +6074,11 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
                 continue;
 
             fta_sort_quals(fbp, pp->qamode);
-            CRef<objects::CSeq_feat> feat = ProcFeatBlk(pp, fbp, ids);
+            CRef<objects::CSeq_feat> feat;
+            if(fbp->spindex < 0)
+                feat = ProcFeatBlk(pp, fbp, ids);
+            else
+                feat = SpProcFeatBlk(pp, fbp, ids);
             if (feat.Empty())
             {
                 if(StringCmp(fbp->key, "CDS") == 0)
