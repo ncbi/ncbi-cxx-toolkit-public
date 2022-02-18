@@ -7555,7 +7555,9 @@ if test "$with_vdb" != "no" ; then
          case "$host_os:$host_cpu:$bit64_sfx" in
             darwin*:*86*:64 ) vdb_libpath=mac/$vdb_mode/x86_64/lib   ;;
             darwin*:*86*:* )  vdb_libpath=mac/$vdb_mode/fat86/lib    ;;
+            darwin*:aarch64* ) vdb_libpath=mac/$vdb_mode/aarch64/lib ;;
             linux*:*86*:64 )  vdb_libpath=linux/$vdb_mode/x86_64/lib ;;
+            linux*:aarch64* ) vdb_libpath=linux/$vdb_mode/aarch64/lib ;;
             * )
                if test -n "$with_vdb"; then
                   AC_MSG_ERROR([--with-vdb explicitly specified,
