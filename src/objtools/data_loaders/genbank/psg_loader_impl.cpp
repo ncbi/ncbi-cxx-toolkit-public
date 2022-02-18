@@ -1183,6 +1183,7 @@ public:
         CTSE_LoadLock* load_lock_ptr = nullptr)
         : CPSG_Task(reply, group),
         m_Id(idh),
+        m_ProcessedSkipped(false),
         m_DataSource(data_source),
         m_Loader(loader),
         m_LockASAP(lock_asap),
