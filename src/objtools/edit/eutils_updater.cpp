@@ -41,6 +41,12 @@
 #include <objects/mla/Title_msg.hpp>
 #include <objects/mla/Title_msg_list.hpp>
 
+#include <objects/biblio/Cit_art.hpp>
+#include <objects/biblio/Cit_jour.hpp>
+#include <objects/biblio/Imprint.hpp>
+#include <objects/general/Date.hpp>
+#include <objects/general/Date_std.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -70,18 +76,18 @@ public:
         m_year = n;
     }
 
-    int GetVol() const { return m_vol; }
-    void SetVol(int n)
+    string GetVol() const { return m_vol; }
+    void SetVol(string s)
     {
         Disconnect();
-        m_vol = n;
+        m_vol = s;
     }
 
-    int GetPage() const { return m_page; }
-    void SetPage(int n)
+    string GetPage() const { return m_page; }
+    void SetPage(string s)
     {
         Disconnect();
-        m_page = n;
+        m_page = s;
     }
 
     enum ERetMode {
@@ -120,23 +126,55 @@ public:
             bdata << GetYear();
         }
         bdata << '|';
-        if (GetVol() > 0) {
-            bdata << GetVol();
-        }
-        bdata << '|';
-        bdata << GetPage();
-        bdata << "|||";
+        bdata << GetVol() << '|';
+        bdata << GetPage() << '|';
+        bdata << "||";
 
         args += "&bdata=";
         args += bdata.str();
         return args;
     }
 
+    void SetFromArticle(const CCit_art& A)
+    {
+        if (A.IsSetFrom() && A.GetFrom().IsJournal()) {
+            const CCit_jour& J = A.GetFrom().GetJournal();
+            if (J.IsSetTitle()) {
+                const CTitle& T = J.GetTitle();
+                if (T.IsSet() && !T.Get().empty()) {
+                    for (const auto& it : T.Get()) {
+                        if (it->IsName()) {
+                            this->SetJournal(it->GetName());
+                            break;
+                        }
+                    }
+                }
+            }
+            if (J.IsSetImp()) {
+                const CImprint& I = J.GetImp();
+                if (I.IsSetDate()) {
+                    const CDate& D = I.GetDate();
+                    if (D.IsStd()) {
+                        this->SetYear(D.GetStd().GetYear());
+                    }
+                }
+                if (I.IsSetVolume()) {
+                    this->SetVol(I.GetVolume());
+                }
+                if (I.IsSetPages()) {
+                    string page, page_end;
+                    NStr::SplitInTwo(I.GetPages(), "-", page, page_end);
+                    this->SetPage(page);
+                }
+            }
+        }
+    }
+
 private:
     string m_journal;
     int m_year = 0;
-    int m_vol = 0;
-    int m_page = 0;
+    string m_vol;
+    string m_page;
     ERetMode m_RetMode = eRetMode_none;
 
     const char* x_GetRetModeName() const
@@ -162,7 +200,36 @@ CEUtilsUpdater::CEUtilsUpdater()
 
 TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub)
 {
-    // Not yet implemented
+    unique_ptr<CECitMatch_Request> req(new CECitMatch_Request(m_Ctx));
+
+    req->SetRequestMethod(CEUtils_Request::eHttp_Get);
+    req->SetRetMode(CECitMatch_Request::eRetMode_text);
+    if (pub.IsArticle()) {
+        req->SetFromArticle(pub.GetArticle());
+    }
+
+    string resp;
+    try {
+        string content;
+        req->Read(&content);
+        NStr::TruncateSpacesInPlace(content);
+        vector<string> v;
+        NStr::Split(content, "|", v);
+        if (v.size() >= 7) {
+            resp = NStr::TruncateSpaces(v[6]);
+        }
+    } catch (...) {
+    }
+
+    if (!resp.empty()) {
+        if (!isalpha(resp.front())) {
+            TIntId pmid;
+            if (NStr::StringToNumeric(resp, &pmid, NStr::fConvErr_NoThrow)) {
+                return ENTREZ_ID_FROM(TIntId, pmid);
+            }
+        }
+    }
+
     return ZERO_ENTREZ_ID;
 }
 
