@@ -46,6 +46,7 @@ struct FeatBlk : public CFlatFileData {
     Int4      num = 0;
     char*   key = nullptr;
     char*   location = nullptr;
+    Int2    spindex;
 
     TQualVector quals;
 
