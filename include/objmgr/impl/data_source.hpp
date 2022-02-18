@@ -304,6 +304,7 @@ public:
     CTSE_LoadLock GetTSE_LoadLockIfLoaded(const TBlobId& blob_id);
     // return loaded TSE lock, possibly waiting specified time until it's being loaded by another thread
     // return null lock the TSE wasn't loaded after the timeout
+    CTSE_LoadLock GetLoadedTSE_Lock(const TBlobId& blob_id, const CDeadline& deadline);
     CTSE_LoadLock GetLoadedTSE_Lock(const TBlobId& blob_id, const CTimeout& timeout);
     bool IsLoaded(const CTSE_Info& tse) const;
     void SetLoaded(CTSE_LoadLock& lock);
