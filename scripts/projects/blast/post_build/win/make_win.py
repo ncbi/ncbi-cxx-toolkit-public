@@ -124,7 +124,7 @@ def main():
         
     # makensis is in the path of the script courtesy of the release framework
     # use 3.08 version
-    cmd = "\\snowman\win-coremake\App\ThirdParty\NSIS_3.08\makensis.exe " + os.path.basename(NSIS_CONFIG)
+    cmd = os.path.join('\\\\','snowman','win-coremake','App','ThirdParty','NSIS_3.08','makensis.exe') + os.path.basename(NSIS_CONFIG)
     safe_exec(cmd)
 
     installer_dir = os.path.join(installdir, "installer")
