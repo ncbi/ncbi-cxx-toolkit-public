@@ -46,6 +46,114 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
+
+class CECitMatch_Request : public CEUtils_Request
+{
+public:
+    CECitMatch_Request(CRef<CEUtils_ConnContext>& ctx)
+      : CEUtils_Request(ctx, "ecitmatch.cgi")
+    {
+        SetDatabase("pubmed");
+    }
+
+    const string& GetJournal() const { return m_journal; }
+    void SetJournal(const string& s)
+    {
+        Disconnect();
+        m_journal = s;
+    }
+
+    int GetYear() const { return m_year; }
+    void SetYear(int n)
+    {
+        Disconnect();
+        m_year = n;
+    }
+
+    int GetVol() const { return m_vol; }
+    void SetVol(int n)
+    {
+        Disconnect();
+        m_vol = n;
+    }
+
+    int GetPage() const { return m_page; }
+    void SetPage(int n)
+    {
+        Disconnect();
+        m_page = n;
+    }
+
+    enum ERetMode {
+        eRetMode_none = 0,
+        eRetMode_xml,
+        eRetMode_text,
+    };
+
+    ERetMode GetRetMode() const { return m_RetMode; }
+    void SetRetMode(ERetMode retmode)
+    {
+        Disconnect();
+        m_RetMode = retmode;
+    }
+
+    ESerialDataFormat GetSerialDataFormat() const override
+    {
+        switch (m_RetMode) {
+        case eRetMode_xml:
+            return eSerial_Xml;
+        default:
+            return eSerial_None;
+        }
+    }
+
+    string GetQueryString() const override
+    {
+        string args = CEUtils_Request::GetQueryString();
+        if (m_RetMode != eRetMode_none) {
+            args += "&retmode=" + NStr::URLEncode(x_GetRetModeName(), NStr::eUrlEnc_ProcessMarkChars);
+        }
+
+        ostringstream bdata;
+        bdata << NStr::URLEncode(GetJournal(), NStr::eUrlEnc_ProcessMarkChars) << '|';
+        if (GetYear() > 0) {
+            bdata << GetYear();
+        }
+        bdata << '|';
+        if (GetVol() > 0) {
+            bdata << GetVol();
+        }
+        bdata << '|';
+        bdata << GetPage();
+        bdata << "|||";
+
+        args += "&bdata=";
+        args += bdata.str();
+        return args;
+    }
+
+private:
+    string m_journal;
+    int m_year = 0;
+    int m_vol = 0;
+    int m_page = 0;
+    ERetMode m_RetMode = eRetMode_none;
+
+    const char* x_GetRetModeName() const
+    {
+        switch (m_RetMode) {
+        default:
+        case eRetMode_none:
+            return "none";
+        case eRetMode_xml:
+            return "xml";
+        case eRetMode_text:
+            return "text";
+        }
+    }
+};
+
+
 CEUtilsUpdater::CEUtilsUpdater()
 {
     m_Ctx.Reset(new CEUtils_ConnContext);
