@@ -1406,7 +1406,7 @@ void CPSG_Blob_Task::DoExecute(void)
     ReadReply();
     if (m_Status == eFailed) return;
     if (m_Skipped) {
-        WaitForSkipped();
+        //WaitForSkipped();
         m_Status = eCompleted;
         return;
     }
