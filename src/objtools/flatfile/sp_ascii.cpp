@@ -3845,12 +3845,12 @@ static Int2 GetSPSitesMod(std::string& retstr)
 
 /**********************************************************
  *
- *   static Int2 SpFeatKeyNameValid(keystr):
+ *   Int2 SpFeatKeyNameValid(keystr):
  *
  *                                              10-18-93
  *
  **********************************************************/
-static Int2 SpFeatKeyNameValid(const Char* keystr)
+Int2 SpFeatKeyNameValid(const Char* keystr)
 {
     Int2 i;
 
@@ -3861,6 +3861,118 @@ static Int2 SpFeatKeyNameValid(const Char* keystr)
     if(ParFlat_SPFeat[i].inkey == NULL)
         return(-1);
     return(i);
+}
+
+/**********************************************************/
+CRef<objects::CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp,
+                                       TSeqIdList &seqids)
+{
+    std::string descrip;
+    char        *loc;
+    char        *p;
+    Uint1       type;
+    Int2        indx;
+    bool        err;
+
+    descrip.assign(CpTheQualValue(fbp->quals, "note"));
+
+    if(NStr::EqualNocase("VARSPLIC", fbp->key))
+    {
+        ErrPostStr(SEV_WARNING, ERR_FEATURE_ObsoleteFeature,
+                   "Obsolete UniProt feature \"VARSPLIC\" found. Replaced with \"VAR_SEQ\".");
+        fbp->key = (char *) "VAR_SEQ";
+    }
+
+    if(NStr::EqualNocase(fbp->key, "NON_STD"))
+    {
+        if(NStr::EqualNocase(descrip, "Selenocysteine."))
+        {
+            fbp->key = (char *) "SE_CYS";
+            descrip.clear();
+        }
+        else
+            fbp->key = (char *) "MOD_RES";
+    }
+
+    CRef<objects::CSeq_feat> feat(new objects::CSeq_feat);
+    indx = fbp->spindex;
+    type = ParFlat_SPFeat[indx].type;
+    if(type == ParFlatSPSites)
+    {
+        if(indx == ParFlatSPSitesModB && !descrip.empty())
+            indx = GetSPSitesMod(descrip);
+
+        feat->SetData().SetSite(static_cast<objects::CSeqFeatData::ESite>(ParFlat_SPFeat[indx].keyint));
+    }
+    else if(type == ParFlatSPBonds)
+    {
+        feat->SetData().SetBond(static_cast<objects::CSeqFeatData::EBond>(ParFlat_SPFeat[indx].keyint));
+    }
+    else if(type == ParFlatSPRegions)
+    {
+        feat->SetData().SetRegion(ParFlat_SPFeat[indx].keystring);
+    }
+    else if(type == ParFlatSPImports)
+    {
+        feat->SetData().SetImp().SetKey(ParFlat_SPFeat[indx].keystring);
+        feat->SetData().SetImp().SetDescr("uncertain amino acids");
+    }
+    else
+    {
+        if(type != ParFlatSPInitMet && type != ParFlatSPNonTer &&
+           type != ParFlatSPNonCons)
+        {
+            ErrPostEx(SEV_WARNING, ERR_FEATURE_Dropped,
+                      "Swiss-Prot feature \"%s\" with unknown type dropped.",
+                      fbp->key);
+        }
+        feat->Reset();
+        return(null);
+    }
+
+    if(fbp->location)
+    {
+        loc = fbp->location;
+        for(p = loc; *p; p++)
+            if(*p != ' ')
+                *loc++ = *p;
+        *loc = '\0';
+        if(pp->buf)
+            MemFree(pp->buf);
+        pp->buf = (char *) MemNew(StringLen(fbp->key) +
+                                  StringLen(fbp->location) + 4);
+        StringCpy(pp->buf, fbp->key);
+        StringCpy(pp->buf, " : ");
+        StringCpy(pp->buf, fbp->location);
+        GetSeqLocation(*feat, fbp->location, seqids, &err, pp, fbp->key);
+        if(pp->buf)
+            MemFree(pp->buf);
+        pp->buf = NULL;
+    }
+    if(err)
+    {
+        if(!pp->debug)
+        {
+            ErrPostEx(SEV_ERROR, ERR_FEATURE_Dropped,
+                      "%s|%s| range check detects problems",
+                      fbp->key, fbp->location);
+            if(!descrip.empty())
+                descrip.clear();
+            feat->Reset();
+            return(null);
+        }
+        ErrPostEx(SEV_WARNING, ERR_LOCATION_FailedCheck,
+                  "%s|%s| range check detects problems",
+                  fbp->key, fbp->location);
+    }
+
+    if(SeqLocHaveFuzz(feat->GetLocation()))
+        feat->SetPartial(true);
+
+    if(!descrip.empty())
+        feat->SetComment(descrip);
+
+    return(feat);
 }
 
 /**********************************************************
