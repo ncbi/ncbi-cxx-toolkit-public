@@ -44,6 +44,7 @@
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Cit_jour.hpp>
 #include <objects/biblio/Imprint.hpp>
+#include <objects/biblio/Auth_list.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
 
@@ -60,6 +61,13 @@ public:
       : CEUtils_Request(ctx, "ecitmatch.cgi")
     {
         SetDatabase("pubmed");
+    }
+
+    const string& GetAuthor() const { return m_author; }
+    void SetAuthor(const string& s)
+    {
+        Disconnect();
+        m_author = s;
     }
 
     const string& GetJournal() const { return m_journal; }
@@ -128,7 +136,8 @@ public:
         bdata << '|';
         bdata << GetVol() << '|';
         bdata << GetPage() << '|';
-        bdata << "||";
+        bdata << NStr::URLEncode(GetAuthor(), NStr::eUrlEnc_ProcessMarkChars) << '|';
+        bdata << '|';
 
         args += "&bdata=";
         args += bdata.str();
@@ -137,6 +146,15 @@ public:
 
     void SetFromArticle(const CCit_art& A)
     {
+        if (A.IsSetAuthors()) {
+            const CAuth_list& Au = A.GetAuthors();
+            if (Au.IsSetNames() && Au.GetNames().IsMl()) {
+                const auto& names = Au.GetNames().GetMl();
+                if (!names.empty()) {
+                    this->SetAuthor(names.front());
+                }
+            }
+        }
         if (A.IsSetFrom() && A.GetFrom().IsJournal()) {
             const CCit_jour& J = A.GetFrom().GetJournal();
             if (J.IsSetTitle()) {
@@ -171,6 +189,7 @@ public:
     }
 
 private:
+    string m_author;
     string m_journal;
     int m_year = 0;
     string m_vol;
