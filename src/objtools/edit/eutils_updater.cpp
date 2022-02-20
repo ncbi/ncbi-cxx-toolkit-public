@@ -160,7 +160,7 @@ public:
             if (J.IsSetTitle()) {
                 const CTitle& T = J.GetTitle();
                 if (T.IsSet() && !T.Get().empty()) {
-                    T.GetTitle();
+                    this->SetJournal(T.GetTitle());
                 }
             }
             if (J.IsSetImp()) {
