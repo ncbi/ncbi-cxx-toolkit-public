@@ -533,6 +533,7 @@ void CDeflineGenerator::x_SetFlagsIdx (
 
     m_Breed = bsx->GetBreed();
     m_Cultivar = bsx->GetCultivar();
+    m_SpecimenVoucher = bsx->GetSpecimenVoucher();
     m_Isolate = bsx->GetIsolate();
     m_Strain = bsx->GetStrain();
     m_Substrain = bsx->GetSubstrain();
@@ -696,6 +697,7 @@ void CDeflineGenerator::x_SetFlags (
 
     m_Breed.clear();
     m_Cultivar.clear();
+    m_SpecimenVoucher.clear();
     m_Isolate.clear();
     m_Strain.clear();
     m_Substrain.clear();

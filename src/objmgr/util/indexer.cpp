@@ -903,6 +903,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
 
     m_Breed.clear();
     m_Cultivar.clear();
+    m_SpecimenVoucher.clear();
     m_Isolate.clear();
     m_Strain.clear();
     m_Substrain.clear();
