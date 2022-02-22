@@ -126,7 +126,7 @@ public:
         if (err.Problem() == ILineError::eProblem_Missing && NStr::EndsWith(err.ErrorMessage(), "feature is missing locus tag."))
         {
             NCBI_THROW(CArgException, eNoArg,
-                "GFF annotation requires locus tag, which is missing from arguments");
+                "GFF annotation requires locus tags, which are missing from one or more genes, so the command line argument -locus-tag-prefix is needed");
         }
         bool retval = CMessageListenerLenient::PutError(err);
         return retval;
