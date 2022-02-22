@@ -61,6 +61,8 @@ race:corelib/test/test_tls_object.cpp
 # false positive -- last CRef release
 race:^ncbi::CPoolOfThreads_ForServer::AcceptRequest
 
+# loading locks can come in any order, but deadlocks are tracked and avoided explicitly
+deadlock:^ncbi::objects::GBL::CInfoManager::x_LockInfoMutex
 
 ################################################################
 # lavr CXX-11285
