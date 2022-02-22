@@ -443,7 +443,9 @@ CFormatGuess::EFormat CMultiReader::xAnnotGetFormat(CNcbiIstream& istr) const
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGffAugustus);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff3);
-    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff2);
+    // FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff2); 
+    //  RW-1591: Need at least GFF3 or GTF (plain or Augustus) to properly relate
+    //  the features 
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGtf);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFiveColFeatureTable);
 #ifdef FLATFILE_PARSER_ENABLED
@@ -1106,9 +1108,6 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
         if (ext == ".gff" || ext == ".gff3")
             uFormat = CFormatGuess::eGff3;
         else
-        if (ext == ".gff2")
-            uFormat = CFormatGuess::eGff2;
-        else
         if (ext == ".gtf")
             uFormat = CFormatGuess::eGtf;
         else
@@ -1152,7 +1151,6 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
         }
     }
         break;
-    case CFormatGuess::eGff2:
     case CFormatGuess::eGff3:
         annots = xReadGFF3(*in);
         break;
