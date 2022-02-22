@@ -965,7 +965,7 @@ void CMultiReader::x_PostProcessAnnots(TAnnots& annots)
         if (m_context.m_locus_tags_needed) {
             if (m_context.m_locus_tag_prefix.empty() && !fte.AnnotHasAllLocusTags()) {
                 NCBI_THROW(CArgException, eNoArg,
-                    "GFF annotation requires locus tag, which is missing from arguments");
+                    "GFF annotation requires locus tags, which are missing from one or more genes, so the command line argument -locus-tag-prefix is needed");
             }
             fte.GenerateLocusTags();
         }
