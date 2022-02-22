@@ -52,6 +52,7 @@
 #include <objects/scoremat/CoreBlock.hpp>
 #include <objects/scoremat/CoreDef.hpp>
 #include <objects/scoremat/LoopConstraint.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 #include <algo/blast/core/blast_aalookup.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/ncbi_math.h>
@@ -297,6 +298,7 @@ private:
 
     EBlastDbVersion m_DbVer;
     CRef<CTaxIdSet> m_Taxids;
+    bool m_UserTaxIds;
     bool m_Done;
 
     //For Delta Blast
@@ -317,7 +319,7 @@ CMakeProfileDBApp::CMakeProfileDBApp(void)
                   m_OutDbType(kEmptyStr), m_CreateIndexFile(false),m_GapOpenPenalty(0),
                   m_GapExtPenalty(0), m_PssmScaleFactor(0),m_Matrix(kEmptyStr),  m_op_mode(op_invalid),
                   m_binary_scoremat(false), m_MaxSmpFilesPerVol(0), m_NumOfVols(0), m_DbVer(eBDB_Version5),
-                  m_Taxids(new CTaxIdSet()), m_Done(false),
+                  m_Taxids(new CTaxIdSet()), m_UserTaxIds(false), m_Done(false),
                   m_ObsrvThreshold(0), m_ExcludeInvalid(false),
                   m_UpdateFreqRatios(eUndefined), m_UseModelThreshold(true)
 {
@@ -569,10 +571,12 @@ void CMakeProfileDBApp::x_InitProgramParameters(void)
     if (args["taxid"].HasValue()) {
         _ASSERT( !args["taxid_map"].HasValue() );
         m_Taxids.Reset(new CTaxIdSet(TAX_ID_FROM(int, args["taxid"].AsInteger())));
+        m_UserTaxIds = true;
     } else if (args["taxid_map"].HasValue()) {
         _ASSERT( !args["taxid"].HasValue() );
         _ASSERT( !m_Taxids.Empty() );
         m_Taxids->SetMappingFromFile(args["taxid_map"].AsInputFile());
+        m_UserTaxIds = true;
     }
 }
 
@@ -1437,6 +1441,24 @@ void CMakeProfileDBApp::x_MakeVol(Int4 vol, vector<string> & smps)
 			deflines = s_GenerateBlastDefline(bioseq);
 		}
 
+        // set taxids from the PSSM unless -taxid or -taxid_map option was used
+        if (!m_UserTaxIds) {
+            if (bioseq.IsSetDescr()) {
+                for (const auto& it: bioseq.GetDescr().Get()) {
+                    if (it->IsOrg()) {
+                        TTaxId taxid = it->GetOrg().GetTaxId();
+                        const CSeq_id* seqid = bioseq.GetFirstId();
+                        _ASSERT(seqid);
+                        if (seqid) {
+                            m_Taxids->AddTaxId(*seqid, taxid);
+                        }
+
+                        break;
+                    }
+                }
+            }
+        }
+
 		m_Taxids->FixTaxId(deflines);
 		rpsDbInfo.output_db->AddSequence(bioseq);
 		rpsDbInfo.output_db->SetDeflines(*deflines);
@@ -1474,7 +1496,7 @@ void CMakeProfileDBApp::x_MakeVol(Int4 vol, vector<string> & smps)
 				rpsDbInfo.lookup->threshold = rpsDbInfo.scale_factor * m_WordDefaultScoreThreshold;
 			}
 
-		}
+        }
 
 		x_RPSUpdatePSSM(rpsDbInfo, pssm, seq_index, seq_size);
 		x_RPSUpdateLookup(rpsDbInfo, seq_size);

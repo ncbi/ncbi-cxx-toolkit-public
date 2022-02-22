@@ -40,6 +40,8 @@
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
 
+#include <objects/seqloc/Seq_id.hpp>
+
 BEGIN_NCBI_SCOPE
 
 class NCBI_XOBJWRITE_EXPORT CTaxIdSet : public CObject {
@@ -58,6 +60,8 @@ public:
     void FixTaxId(CRef<objects::CBlast_def_line_set> deflines);
 
     bool HasEverFixedId() const { return m_Matched; };
+
+    void AddTaxId(const objects::CSeq_id& seqid, const TTaxId& taxid);
     
 private:
     TTaxId                m_GlobalTaxId;
