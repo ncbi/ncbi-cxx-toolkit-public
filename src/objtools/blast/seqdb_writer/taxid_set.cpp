@@ -73,6 +73,14 @@ void CTaxIdSet::SetMappingFromFile(CNcbiIstream & f)
     m_Matched = (m_GlobalTaxId != kTaxIdNotSet) || m_TaxIdMap.empty();
 }
 
+
+void CTaxIdSet::AddTaxId(const CSeq_id& seqid, const TTaxId& taxid)
+{
+    string key = AccessionToKey(seqid.AsFastaString());
+    m_TaxIdMap[key] = taxid;
+}
+
+
 TTaxId CTaxIdSet::x_SelectBestTaxid(const objects::CBlast_def_line & defline) 
 {
     TTaxId retval = m_GlobalTaxId;
