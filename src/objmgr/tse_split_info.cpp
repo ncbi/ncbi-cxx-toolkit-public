@@ -214,12 +214,15 @@ void CTSE_Split_Info::x_LoadDelayedMainChunk(void) const
 // chunk attach
 void CTSE_Split_Info::AddChunk(CTSE_Chunk_Info& chunk_info)
 {
-    CMutexGuard guard(m_SeqIdToChunksMutex);
-    _ASSERT(m_Chunks.find(chunk_info.GetChunkId()) == m_Chunks.end());
-    _ASSERT(m_Chunks.empty() || chunk_info.GetChunkId() != chunk_info.kDelayedMain_ChunkId);
-    bool need_update = x_HasDelayedMainChunk();
-    m_Chunks[chunk_info.GetChunkId()].Reset(&chunk_info);
-    chunk_info.x_SplitAttach(*this);
+    bool need_update;
+    {{
+        CMutexGuard guard(m_SeqIdToChunksMutex);
+        _ASSERT(m_Chunks.find(chunk_info.GetChunkId()) == m_Chunks.end());
+        _ASSERT(m_Chunks.empty() || chunk_info.GetChunkId() != chunk_info.kDelayedMain_ChunkId);
+        need_update = x_HasDelayedMainChunk();
+        m_Chunks[chunk_info.GetChunkId()].Reset(&chunk_info);
+        chunk_info.x_SplitAttach(*this);
+    }}
     if ( need_update ) {
         chunk_info.x_EnableAnnotIndex();
     }
