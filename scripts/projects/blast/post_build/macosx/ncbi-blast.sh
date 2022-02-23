@@ -25,7 +25,7 @@ setup()
 
 prep_data_collection_notice_file()
 {
-    cat > ${RESOURCES_DIR}/data_collection_notice.txt<<EOF
+    cat > ${INSTALLDIR}/data_collection_notice.txt<<EOF
 To help improve the quality of this product and ensure proper funding and
 resource allocation, we collect usage data. For a listing of data
 collected and how this is handled, please visit our privacy policy
@@ -37,8 +37,8 @@ following environment variable:
 
 EOF
 
-  if [ ! -f ${RESOURCES_DIR}/data_collection_notice.txt ] ; then
-      echo "prep_data_collection_notice_file: ERROR: missing: ${RESOURCES_DIR}/data_collection_notice.txt"
+  if [ ! -f ${INSTALLDIR}/data_collection_notice.txt ] ; then
+      echo "prep_data_collection_notice_file: ERROR: missing: ${INSTALLDIR}/data_collection_notice.txt"
   fi
 }
 
