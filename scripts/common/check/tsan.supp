@@ -64,6 +64,12 @@ race:^ncbi::CPoolOfThreads_ForServer::AcceptRequest
 # loading locks can come in any order, but deadlocks are tracked and avoided explicitly
 deadlock:^ncbi::objects::GBL::CInfoManager::x_LockInfoMutex
 
+# false positive -- pre-guard initialization check
+race:^ncbi::objects::CCSRADataLoader_Impl::GetSRRFile
+
+# false positive -- one-time initialization, order doesn't matter
+race:^CCSRATestApp::GetMaxSpotId
+
 ################################################################
 # lavr CXX-11285
 
