@@ -139,7 +139,10 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    CountError(ePSGS_UnknownFetch, status, code, severity, message);
+    EPSGS_LoggingFlag           logging_flag = ePSGS_NeedLogging;
+    if (status == CRequestStatus::e404_NotFound)
+        logging_flag = ePSGS_SkipLogging;
+    CountError(ePSGS_UnknownFetch, status, code, severity, message, logging_flag);
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
     IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
