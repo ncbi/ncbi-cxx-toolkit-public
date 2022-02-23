@@ -73,6 +73,7 @@ private:
                       const string& acc,
                       Int8 spot_id);
     Int8 FindMaxSpotId(const string& acc);
+    Int8 GetMaxSpotId(size_t index);
     void LoadRefSeqs();
     
     bool TestShortReads(int idx);
@@ -249,6 +250,19 @@ Int8 CCSRATestApp::FindMaxSpotId(const string& acc)
     return a;
 }
 
+Int8 CCSRATestApp::GetMaxSpotId(size_t index)
+{
+    if ( !m_MaxSpotId[index] ) {
+        m_MaxSpotId[index] = FindMaxSpotId(m_Accession[index]);
+        if ( m_Verbose ) {
+            LOG_POST(Info<<"T"<<CThread::GetSelf()<<": acc["<<index<<"] "<<m_Accession[index]
+                     <<": max id = " << m_MaxSpotId[index]);
+        }
+        _ASSERT(m_MaxSpotId[index] > 0);
+    }
+    return m_MaxSpotId[index];
+}
+
 void CCSRATestApp::LoadRefSeqs()
 {
     CVDBMgr mgr;
@@ -287,17 +301,10 @@ bool CCSRATestApp::TestShortReads(int idx)
         if ( m_Verbose ) {
             LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc);
         }
-        
-        if ( !m_MaxSpotId[index] ) {
-            m_MaxSpotId[index] = FindMaxSpotId(acc);
-            if ( m_Verbose ) {
-                LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc
-                         <<": max id = " << m_MaxSpotId[index]);
-            }
-            _ASSERT(m_MaxSpotId[index] > 0);
-        }
-        Int8 count = min(m_MaxSpotId[index], Int8(m_IterSize));
-        Int8 start_id = random.GetRandUint8(1, m_MaxSpotId[index]-count);
+
+        Int8 max_spot_id = GetMaxSpotId(index);
+        Int8 count = min(max_spot_id, Int8(m_IterSize));
+        Int8 start_id = random.GetRandUint8(1, max_spot_id-count);
         Int8 stop_id = start_id+count;
         if ( m_Verbose ) {
             LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc
