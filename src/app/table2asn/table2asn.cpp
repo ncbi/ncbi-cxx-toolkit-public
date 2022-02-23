@@ -121,17 +121,6 @@ public:
             CMessageListenerLenient::PutProgress(sMessage, iNumDone, iNumTotal);
     }
 
-    bool PutError(const ILineError& err) override
-    {
-        if (err.Problem() == ILineError::eProblem_Missing && NStr::EndsWith(err.ErrorMessage(), "feature is missing locus tag."))
-        {
-            NCBI_THROW(CArgException, eNoArg,
-                "GFF annotation requires locus tags, which are missing from one or more genes, so the command line argument -locus-tag-prefix is needed");
-        }
-        bool retval = CMessageListenerLenient::PutError(err);
-        return retval;
-    }
-
     bool PutMessage(const IObjtoolsMessage& message) override
     {
         auto edit = dynamic_cast<const edit::CRemoteUpdaterMessage*>(&message);
