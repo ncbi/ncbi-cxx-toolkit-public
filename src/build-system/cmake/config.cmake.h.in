@@ -1033,7 +1033,7 @@
 #cmakedefine HAVE_CXA_DEMANGLE 1
 
 /* Define to 1 if the PUBSEQ service is available. */
-#define HAVE_PUBSEQ_OS 1
+#cmakedefine HAVE_PUBSEQ_OS 1
 
 /* Define to 1 if Python libraries are available. */
 #cmakedefine HAVE_PYTHON 1
