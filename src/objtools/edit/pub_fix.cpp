@@ -197,22 +197,18 @@ void MedlineToISO(CCit_art& cit_art, IPubmedUpdater* upd)
 
             if (msg_list_new.NotEmpty() && msg_list_new->IsSetTitles()) {
 
-                bool gotit = false;
-                for (auto& item : msg_list_new->GetTitles()) {
-                    const CTitle &cur_title = item->GetTitle();
+                for (const auto& item : msg_list_new->GetTitles()) {
+                    const CTitle& cur_title = item->GetTitle();
 
                     if (cur_title.IsSet()) {
-
-                        auto iso_jta_title = find_if(cur_title.Get().begin(), cur_title.Get().end(), IsIso_jta);
-                        if (iso_jta_title != cur_title.Get().end()) {
-                            gotit = true;
+                        const auto& title_list = cur_title.Get();
+                        auto iso_jta_title = find_if(title_list.begin(), title_list.end(), IsIso_jta);
+                        if (iso_jta_title != title_list.end()) {
                             first_title.SetIso_jta((*iso_jta_title)->GetIso_jta());
                             break;
                         }
                     }
 
-                    if (gotit)
-                        break;
                 }
             }
         }
@@ -408,7 +404,7 @@ static void s_GetESearchIds(CESearch_Request& req,
         }
         req.Disconnect();
 
-        int sleepSeconds = sqrt(retry);
+        int sleepSeconds = int(sqrt(retry));
         if (sleepSeconds) {
             SleepSec(sleepSeconds);
         }
@@ -441,7 +437,7 @@ static bool s_IsIndexed(CRef<CEUtils_ConnContext> pContext,
         }
         request.Disconnect();
 
-        int sleepSeconds = sqrt(retry);
+        int sleepSeconds = int(sqrt(retry));
         if (sleepSeconds) {
             SleepSec(sleepSeconds);
         }
@@ -609,9 +605,11 @@ void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessag
         in_press = imprint->IsSetPrepub() && imprint->GetPrepub() == CImprint::ePrepub_in_press;
     }
 
+    const string tail = (ostringstream{} << last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page).str();
+
     if (auth) {
         ERR_POST_TO_LISTENER(err_log, eDiag_Error, err_Reference, err_Reference_MedArchMatchIgnored,
-            "Too many author name differences: " << muid << "|" << last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
+            "Too many author name differences: " << muid << "|" << tail);
         return;
     }
 
@@ -622,32 +620,32 @@ void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessag
 
         if (year && cur_year - year > YEAR_MAX_DIFF) {
             ERR_POST_TO_LISTENER(err_log, eDiag_Warning, err_Reference, err_Reference_OldInPress,
-                "encountered in-press article more than 2 years old: " << last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
+                "encountered in-press article more than " << YEAR_MAX_DIFF << " years old: " << tail);
         }
     }
 
     if (found) {
         ERR_POST_TO_LISTENER(err_log, eDiag_Info, err_Reference, err_Reference_SuccessfulPmidLookup,
-            muid << "|" << last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
+            muid << "|" << tail);
     }
     else if (MUIsJournalIndexed(title_str)) {
         if (muid) {
             ERR_POST_TO_LISTENER(err_log, eDiag_Warning, err_Reference, in_press ? err_Reference_PmidNotFoundInPress : err_Reference_PmidNotFound,
-                ">>" << muid << "<<|" << last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
+                ">>" << muid << "<<|" << tail);
         }
         else {
             ERR_POST_TO_LISTENER(err_log, eDiag_Warning, err_Reference, in_press ? err_Reference_PmidNotFoundInPress : err_Reference_PmidNotFound,
-                last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
+                tail);
         }
     }
     else {
         if (muid) {
             ERR_POST_TO_LISTENER(err_log, eDiag_Info, err_Reference, in_press ? err_Reference_NoPmidJournalNotInPubMedInPress : err_Reference_NoPmidJournalNotInPubMed,
-                ">>" << muid << "<<|" << last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
+                ">>" << muid << "<<|" << tail);
         }
         else {
             ERR_POST_TO_LISTENER(err_log, eDiag_Info, err_Reference, in_press ? err_Reference_NoPmidJournalNotInPubMedInPress : err_Reference_NoPmidJournalNotInPubMed,
-                last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page);
+                tail);
         }
     }
 }
@@ -679,10 +677,10 @@ bool TenAuthorsCompare(CCit_art& cit_old, CCit_art& cit_new)
            num_of_authors = count_if(old_names.GetStr().begin(), old_names.GetStr().end(), StrNotEmpty);
 
     size_t match = 0;
-    for (auto& name : old_names.GetStr()) {
+    for (const string& name : old_names.GetStr()) {
 
         if (!name.empty()) {
-            if (NStr::FindNoCase(new_names.GetStr(), name) != nullptr) {
+            if (NStr::FindNoCase(new_names.GetStr(), name)) {
                 ++match;
             }
         }
@@ -706,7 +704,7 @@ size_t ExtractConsortiums(const CAuth_list::C_Names::TStd& names, CAuth_list::C_
 {
     size_t num_of_names = 0;
 
-    for (auto& name: names)
+    for (const auto& name : names)
     {
         const CAuthor& auth = *name;
         if (auth.IsSetName() && auth.GetName().IsName()) {
@@ -842,7 +840,7 @@ void GetFirstTenNames(const CAuth_list::C_Names::TStd& names, list<CTempString>&
     static const size_t MAX_EXTRACTED = 10;
     size_t extracted = 0;
 
-    for (auto& name : names) {
+    for (const auto& name : names) {
         if (name->IsSetName() && name->GetName().IsName() && name->GetName().GetName().IsSetLast()) {
             res.push_back(name->GetName().GetName().GetLast());
             ++extracted;
@@ -914,7 +912,7 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
     GetFirstTenNames(new_cit.GetAuthors().GetNames().GetStd(), new_author_names);
     size_t match = 0;
 
-    for (auto& name: cit.GetAuthors().GetNames().GetStd())
+    for (const auto& name: cit.GetAuthors().GetNames().GetStd())
     {
         const CAuthor& auth = *name;
         if (auth.IsSetName() && auth.GetName().IsName() && auth.GetName().GetName().IsSetLast()) {
@@ -994,7 +992,7 @@ void MergeNonPubmedPubIds(const CCit_art& cit_old, CCit_art& cit_new)
 
     const CArticleIdSet& old_ids = cit_old.GetIds();
 
-    for (auto& cur_id: old_ids.Get()) {
+    for (const auto& cur_id : old_ids.Get()) {
 
         if (!cur_id->IsDoi() && !cur_id->IsOther()) {
             continue;
@@ -1103,7 +1101,7 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
         cit_arts;
 
     if (pub_equiv.IsSet()) {
-        for (auto& pub: pub_equiv.Set())
+        for (auto& pub : pub_equiv.Set())
         {
             if (pub->IsMuid()) {
                 muids.push_back(pub);
@@ -1160,7 +1158,7 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
         oldpmid = pmids.front()->GetPmid();
 
         // check if more than one
-        for (auto& pub: pmids) {
+        for (const auto& pub : pmids) {
             if (pub->GetPmid() != oldpmid) {
                 ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_Reference, err_Reference_Multiple_pmid,
                     "Two different pmids in Pub-equiv [" << oldpmid << "] [" << pub->GetPmid() << "]");
@@ -1175,7 +1173,7 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
         oldmuid = muids.front()->GetMuid();
 
         // check if more than one
-        for (auto& pub : muids) {
+        for (const auto& pub : muids) {
             if (pub->GetMuid() != oldmuid) {
                 ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_Reference, err_Reference_Multiple_pmid,
                     "Two different muids in Pub-equiv  [" << oldmuid << "] [" << pub->GetMuid() << "]");
@@ -1544,7 +1542,7 @@ void CAuthListValidator::DebugDump(CNcbiOstream& out) const
 void CAuthListValidator::dumplist(const char* hdr, const list<string>& lst, CNcbiOstream& out) const
 {
     out << lst.size() << " " << hdr << " authors:\n";
-    for (const auto& a : lst)
+    for (const string& a : lst)
         out << "    " << a << "\n";
 }
 
@@ -1597,7 +1595,7 @@ void CAuthListValidator::get_lastnames(const CAuth_list& authors, list<string>& 
 
 void CAuthListValidator::get_lastnames(const CAuth_list::C_Names::TStd& authors, list<string>& lastnames)
 {
-    for (auto& name : authors) {
+    for (const auto& name : authors) {
         if (name->IsSetName() && name->GetName().IsName() && name->GetName().GetName().IsSetLast()) {
             string lname(name->GetName().GetName().GetLast());
             lastnames.push_back(NStr::ToLower(lname));
@@ -1608,7 +1606,7 @@ void CAuthListValidator::get_lastnames(const CAuth_list::C_Names::TStd& authors,
 void CAuthListValidator::get_lastnames(const CAuth_list::C_Names::TStr& authors, list<string>& lastnames)
 {
     const char* alpha = "abcdefghijklmnopqrstuvwxyz";
-    for (auto auth : authors) {
+    for (string auth : authors) {
         size_t eow = NStr::ToLower(auth).find_first_not_of(alpha);
         lastnames.push_back(auth.substr(0, eow));
     }
