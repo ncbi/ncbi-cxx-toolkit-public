@@ -605,7 +605,9 @@ void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessag
         in_press = imprint->IsSetPrepub() && imprint->GetPrepub() == CImprint::ePrepub_in_press;
     }
 
-    const string tail = (ostringstream{} << last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page).str();
+    ostringstream ostr;
+    ostr << last_name << " " << first_name << "|" << title_str << "|(" << year << ")|" << vol << "|" << page;
+    const string tail = ostr.str();
 
     if (auth) {
         ERR_POST_TO_LISTENER(err_log, eDiag_Error, err_Reference, err_Reference_MedArchMatchIgnored,
