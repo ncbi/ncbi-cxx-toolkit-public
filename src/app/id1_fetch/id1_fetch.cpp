@@ -321,9 +321,6 @@ int CId1FetchApp::Run(void)
         }
     }}
 
-    // Setup application registry, error log, and MT-lock for CONNECT library
-    CONNECT_Init(&GetConfig());
-
     m_E2Client.SetDefaultRequest().SetTool("id1_fetch");
 
     // Open output file
@@ -438,12 +435,12 @@ bool CId1FetchApp::LookUpGI(TGi gi)
         // from an Entrez query in the first place, but wins on generality.
         CEntrez2_id_list uids;
         uids.SetDb() = CEntrez2_db_id(args["db"].AsString());
-        uids.SetNum(1);
-        uids.SetUids().resize(uids.sm_UidSize);
+        uids.Resize(1);
         {{
             CEntrez2_id_list::TUidIterator it = uids.GetUidIterator();
             *it = GI_TO(CEntrez2_id_list::TConstUidIterator::value_type, gi);
         }}
+        uids.PackUids();
         CRef<CEntrez2_docsum_list> docs = m_E2Client.AskGet_docsum(uids);
         if ( !docs->GetCount() ) {
             ERR_POST("Entrez query returned no results.");
@@ -668,7 +665,6 @@ bool CId1FetchApp::LookUpGI(TGi gi)
 // Cleanup
 void CId1FetchApp::Exit(void)
 {
-    SOCK_ShutdownAPI();
     if ( m_ResetDiagStream ) {
         SetDiagStream(0);
     }
