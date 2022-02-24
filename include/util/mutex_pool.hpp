@@ -270,8 +270,8 @@ protected:
 
     void x_Release(void)
         {
-            m_Mutex->GetPool().ReleaseMutex(m_Init, m_Mutex);
             m_Guard.Release();
+            m_Mutex->GetPool().ReleaseMutex(m_Init, m_Mutex);
         }
 
     CInitMutex_Base& m_Init;
