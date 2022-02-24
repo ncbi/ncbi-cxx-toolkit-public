@@ -78,7 +78,7 @@ protected:
     
 private:
     volatile TFilePos m_FilePos;
-    size_t m_Size;
+    volatile size_t m_Size;
     const char* m_Ptr;
     CSimpleBufferT<char> m_Buffer;
     CMemoryFileMap* m_MemFile;
