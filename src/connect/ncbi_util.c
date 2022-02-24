@@ -99,6 +99,7 @@ extern void CORE_SetLOCK(MT_LOCK lk)
     MT_LOCK old_lk = g_CORE_MT_Lock;
     g_CORE_MT_Lock = lk ? lk : &g_CORE_MT_Lock_default;
     g_CORE_Set |= eCORE_SetLOCK;
+    CORE_TRACEF(("CORE_SetLOCK(%p->%p)", old_lk, lk));
     if (old_lk  &&  old_lk != lk)
         MT_LOCK_Delete(old_lk);
 }
@@ -119,11 +120,13 @@ extern MT_LOCK CORE_GetLOCK(void)
 extern void CORE_SetLOG(LOG lg)
 {
     LOG old_lg;
+    CORE_DEBUG_ARG(if (!lg) CORE_TRACEF(("CORE_SetLOG(%p->NULL)",g_CORE_Log)));
     CORE_LOCK_WRITE;
     old_lg = g_CORE_Log;
     g_CORE_Log = lg;
     g_CORE_Set |= eCORE_SetLOG;
     CORE_UNLOCK;
+    CORE_TRACEF(("CORE_SetLOG(%p->%p)", old_lg, lg));
     if (old_lg  &&  old_lg != lg)
         LOG_Delete(old_lg);
 }
